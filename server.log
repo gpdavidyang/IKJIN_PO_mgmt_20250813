@@ -1,0 +1,53 @@
+[dotenv@17.2.0] injecting env (8) from .env (tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild)
+DATABASE_URL not set, using mock connection
+[dotenv@17.2.0] injecting env (0) from .env (tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit)
+7:21:16 PM [express] serving on port 3000
+Browserslist: browsers data (caniuse-lite) is 9 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+getCurrentUser - Session ID: 8CFFv1EuEa2MD3-8MBjtvPPb6QXB-KKS
+getCurrentUser - Session userId: undefined
+getCurrentUser - No userId in session
+7:21:20 PM [express] GET /api/auth/user 401 in 12ms :: {"message":"Not authenticated"}
+7:21:24 PM [express] GET /api/po-template/db-status 404 in 12ms
+7:21:29 PM [express] GET /api/po-template/db-stats 200 in 3ms :: {"success":true,"data":{"stats":{"v…
+7:21:33 PM [express] GET /api/po-template/db-stats 200 in 1ms :: {"success":true,"data":{"stats":{"v…
+7:21:33 PM [express] POST /api/po-template/upload 200 in 190ms :: {"success":true,"message":"파일 파싱 완…
+7:21:33 PM [express] POST /api/po-template/save 200 in 1ms :: {"success":true,"message":"Mock DB 저장 …
+7:21:34 PM [express] POST /api/po-template/extract-sheets 200 in 116ms :: {"success":true,"message":…
+7:21:34 PM [express] GET /api/po-template/db-stats 200 in 1ms :: {"success":true,"data":{"stats":{"v…
+7:21:34 PM [express] POST /api/auth/login 200 in 2ms :: {"message":"Login successful","user":{"id":"…
+getCurrentUser - Session ID: sq5YFlRrFup9jVl0NDJhaLByfRjmYzAB
+getCurrentUser - Session userId: test_admin_001
+7:21:34 PM [express] GET /api/auth/user 200 in 3ms :: {"id":"test_admin_001","email":"test@ikjin.co.…
+7:21:34 PM [express] GET /api/companies 200 in 1ms :: [{"id":1,"companyName":"(주)익진엔지니어링","businessN…
+getCurrentUser - Session ID: sq5YFlRrFup9jVl0NDJhaLByfRjmYzAB
+getCurrentUser - Session userId: test_admin_001
+7:21:44 PM [express] GET /api/auth/user 200 in 7ms :: {"id":"test_admin_001","email":"test@ikjin.co.…
+7:21:44 PM [express] GET /api/companies 200 in 2ms :: [{"id":1,"companyName":"(주)익진엔지니어링","businessN…
+7:21:44 PM [express] GET /api/projects 200 in 3ms :: [{"id":1,"projectName":"강남 오피스빌딩 신축공사","project…
+7:21:44 PM [express] GET /api/vendors 200 in 4ms :: [{"id":1,"name":"(주)건설자재유통","businessNumber":"21…
+7:21:44 PM [express] GET /api/users 200 in 4ms :: [{"id":"test_admin_001","email":"test@ikjin.co.kr"…
+getCurrentUser - Session ID: sq5YFlRrFup9jVl0NDJhaLByfRjmYzAB
+getCurrentUser - Session userId: test_admin_001
+7:21:47 PM [express] GET /api/auth/user 200 in 7ms :: {"id":"test_admin_001","email":"test@ikjin.co.…
+Authentication middleware error: TypeError: Cannot read properties of null (reading 'select')
+    at DatabaseStorage.getUser (/Users/davidyang/workspace/20250713_PO_Mgmt/server/storage.ts:260:29)
+    at requireAuth (/Users/davidyang/workspace/20250713_PO_Mgmt/server/local-auth.ts:180:32)
+    at Layer.handle [as handle_request] (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/layer.js:95:5)
+    at next (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/route.js:149:13)
+    at Route.dispatch (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/route.js:119:3)
+    at Layer.handle [as handle_request] (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/layer.js:95:5)
+    at /Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/index.js:284:15
+    at Function.process_params (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/index.js:280:10)
+    at Immediate.<anonymous> (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express-session/index.js:514:7)
+    at process.processImmediate (node:internal/timers:487:21)
+7:21:47 PM [express] GET /api/order-templates 500 in 24ms :: {"message":"Authentication failed"}
+7:21:47 PM [express] GET /api/companies 200 in 12ms :: [{"id":1,"companyName":"(주)익진엔지니어링","business…
+7:21:47 PM [express] GET /api/vendors 200 in 7ms :: [{"id":1,"name":"(주)건설자재유통","businessNumber":"21…
+7:21:47 PM [express] GET /api/users 200 in 7ms :: [{"id":"test_admin_001","email":"test@ikjin.co.kr"…
+getCurrentUser - Session ID: sq5YFlRrFup9jVl0NDJhaLByfRjmYzAB
+getCurrentUser - Session userId: test_admin_001
+7:21:50 PM [express] GET /api/auth/user 200 in 7ms :: {"id":"test_admin_001","email":"test@ikjin.co.…
+7:21:50 PM [express] GET /api/companies 200 in 1ms :: [{"id":1,"companyName":"(주)익진엔지니어링","businessN…
