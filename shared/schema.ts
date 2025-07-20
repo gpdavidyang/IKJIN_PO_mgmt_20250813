@@ -27,6 +27,32 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
+// Email verification tokens table
+export const emailVerificationTokens = pgTable("email_verification_tokens", {
+  id: serial("id").primaryKey(),
+  email: varchar("email", { length: 255 }).notNull(),
+  token: varchar("token", { length: 255 }).notNull().unique(),
+  tokenType: varchar("token_type", { length: 50 }).notNull(), // 'email_verification', 'password_reset'
+  expiresAt: timestamp("expires_at").notNull(),
+  usedAt: timestamp("used_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Pending user registrations table
+export const pendingRegistrations = pgTable("pending_registrations", {
+  id: serial("id").primaryKey(),
+  email: varchar("email", { length: 255 }).notNull().unique(),
+  hashedPassword: varchar("hashed_password", { length: 255 }).notNull(),
+  fullName: varchar("full_name", { length: 100 }).notNull(),
+  departmentName: varchar("department_name", { length: 100 }),
+  positionId: integer("position_id"),
+  phoneNumber: varchar("phone_number", { length: 20 }),
+  role: varchar("role", { length: 50 }).notNull().default("field_worker"),
+  verificationToken: varchar("verification_token", { length: 255 }).notNull().unique(),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // UI terminology table for soft-coding localization
 export const uiTerms = pgTable("ui_terms", {
   id: serial("id").primaryKey(),
@@ -85,11 +111,19 @@ export const users = pgTable("users", {
   profileImageUrl: varchar("profile_image_url"),
   role: userRoleEnum("role").notNull().default("field_worker"),
   isActive: boolean("is_active").default(true).notNull(),
+  // 2FA 관련 필드
+  twoFactorEnabled: boolean("two_factor_enabled").default(false),
+  twoFactorSecret: varchar("two_factor_secret", { length: 32 }), // TOTP secret
+  twoFactorBackupCodes: jsonb("two_factor_backup_codes"), // 백업 코드 배열
+  lastLoginAt: timestamp("last_login_at"),
+  loginAttempts: integer("login_attempts").default(0),
+  lockedUntil: timestamp("locked_until"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
   index("idx_users_email").on(table.email),
   index("idx_users_role").on(table.role),
+  index("idx_users_locked").on(table.lockedUntil),
 ]);
 
 // Note: order_statuses table removed - using ENUM with display views instead
@@ -305,6 +339,9 @@ export const purchaseOrders = pgTable("purchase_orders", {
   approvedBy: varchar("approved_by").references(() => users.id),
   approvedAt: timestamp("approved_at"),
   sentAt: timestamp("sent_at"),
+  emailStatus: varchar("email_status", { length: 20 }).default("not_sent"), // not_sent, sent, failed
+  emailSentCount: integer("email_sent_count").default(0),
+  lastEmailError: text("last_email_error"),
   currentApproverRole: userRoleEnum("current_approver_role"),
   approvalLevel: integer("approval_level").default(1),
   createdAt: timestamp("created_at").defaultNow(),
@@ -606,6 +643,7 @@ export const itemCategoriesRelations = relations(itemCategories, ({ one, many })
   children: many(itemCategories),
 }));
 
+
 // Insert schemas
 export const insertCompanySchema = createInsertSchema(companies).omit({
   id: true,
@@ -828,6 +866,96 @@ export const insertApprovalAuthoritySchema = createInsertSchema(approvalAuthorit
 export type ApprovalAuthority = typeof approvalAuthorities.$inferSelect;
 export type InsertApprovalAuthority = z.infer<typeof insertApprovalAuthoritySchema>;
 
+// Email sending history table
+export const emailSendingHistory = pgTable("email_sending_history", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id"), // References purchase order ID
+  orderNumber: varchar("order_number", { length: 50 }),
+  senderUserId: varchar("sender_user_id", { length: 50 }).notNull(),
+  recipients: jsonb("recipients").notNull(), // Array of email addresses
+  cc: jsonb("cc"), // Array of CC email addresses
+  bcc: jsonb("bcc"), // Array of BCC email addresses
+  subject: text("subject").notNull(),
+  messageContent: text("message_content"), // Email body content
+  attachmentFiles: jsonb("attachment_files"), // Array of attachment info
+  sendingStatus: varchar("sending_status", { length: 20 }).notNull().default("pending"), // pending, sending, completed, failed
+  sentCount: integer("sent_count").default(0),
+  failedCount: integer("failed_count").default(0),
+  errorMessage: text("error_message"),
+  sentAt: timestamp("sent_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Email sending details table (for individual recipient tracking)
+export const emailSendingDetails = pgTable("email_sending_details", {
+  id: serial("id").primaryKey(),
+  historyId: integer("history_id").notNull(),
+  recipientEmail: varchar("recipient_email", { length: 255 }).notNull(),
+  recipientType: varchar("recipient_type", { length: 10 }).notNull(), // 'to', 'cc', 'bcc'
+  sendingStatus: varchar("sending_status", { length: 20 }).notNull().default("pending"), // pending, sent, failed
+  messageId: varchar("message_id", { length: 255 }), // Email service message ID
+  errorMessage: text("error_message"),
+  sentAt: timestamp("sent_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Item category types
 export type ItemCategory = typeof itemCategories.$inferSelect;
 export type InsertItemCategory = z.infer<typeof insertItemCategorySchema>;
+
+// Email sending history relations
+export const emailSendingHistoryRelations = relations(emailSendingHistory, ({ one, many }) => ({
+  order: one(purchaseOrders, {
+    fields: [emailSendingHistory.orderId],
+    references: [purchaseOrders.id]
+  }),
+  senderUser: one(users, {
+    fields: [emailSendingHistory.senderUserId],
+    references: [users.id]
+  }),
+  details: many(emailSendingDetails),
+}));
+
+export const emailSendingDetailsRelations = relations(emailSendingDetails, ({ one }) => ({
+  history: one(emailSendingHistory, {
+    fields: [emailSendingDetails.historyId],
+    references: [emailSendingHistory.id]
+  }),
+}));
+
+// Email sending history types
+export type EmailSendingHistory = typeof emailSendingHistory.$inferSelect;
+export type InsertEmailSendingHistory = typeof emailSendingHistory.$inferInsert;
+export type EmailSendingDetails = typeof emailSendingDetails.$inferSelect;
+export type InsertEmailSendingDetails = typeof emailSendingDetails.$inferInsert;
+
+// Login audit log table for tracking authentication attempts
+export const loginAuditLogs = pgTable("login_audit_logs", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id"), // null for failed attempts
+  email: varchar("email", { length: 255 }).notNull(),
+  loginStatus: varchar("login_status", { length: 20 }).notNull(), // success, failed, blocked
+  ipAddress: varchar("ip_address", { length: 45 }), // IPv6 support
+  userAgent: text("user_agent"),
+  failureReason: varchar("failure_reason", { length: 100 }), // invalid_password, user_not_found, account_disabled
+  sessionId: varchar("session_id", { length: 255 }), // For successful logins
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_login_audit_user_id").on(table.userId),
+  index("idx_login_audit_email").on(table.email),
+  index("idx_login_audit_created_at").on(table.createdAt),
+  index("idx_login_audit_status").on(table.loginStatus),
+]);
+
+// Login audit log relations
+export const loginAuditLogRelations = relations(loginAuditLogs, ({ one }) => ({
+  user: one(users, {
+    fields: [loginAuditLogs.userId],
+    references: [users.id]
+  }),
+}));
+
+// Login audit log types
+export type LoginAuditLog = typeof loginAuditLogs.$inferSelect;
+export type InsertLoginAuditLog = typeof loginAuditLogs.$inferInsert;

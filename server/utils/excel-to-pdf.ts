@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx';
+import XLSX from 'xlsx';
 import puppeteer from 'puppeteer';
 import path from 'path';
 import fs from 'fs';

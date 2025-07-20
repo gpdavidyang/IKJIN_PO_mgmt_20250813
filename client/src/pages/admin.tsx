@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Users, FileText, Building, Edit, Save, X, Upload, Image, UserCheck, Search, Trash2, UserPlus, ChevronUp, ChevronDown, Mail, Hash, Phone, Calendar, Power, PowerOff, List, Grid3X3 } from "lucide-react";
+import { Plus, Users, FileText, Building, Edit, Save, X, Upload, Image, UserCheck, Search, Trash2, UserPlus, ChevronUp, ChevronDown, Mail, Hash, Phone, Calendar, Power, PowerOff, List, Grid3X3, Database } from "lucide-react";
+import { OfflineManagement } from "@/components/offline/offline-management";
 import { useLocation } from "wouter";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SafeUserDelete } from "@/components/safe-user-delete";
@@ -440,7 +441,7 @@ export default function Admin() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="company" className="flex items-center gap-2 text-sm">
             <Building className="h-4 w-4" />
             회사 정보
@@ -456,6 +457,10 @@ export default function Admin() {
           <TabsTrigger value="terminology" className="flex items-center gap-2 text-sm">
             <FileText className="h-4 w-4" />
             용어집 관리
+          </TabsTrigger>
+          <TabsTrigger value="offline" className="flex items-center gap-2 text-sm">
+            <Database className="h-4 w-4" />
+            오프라인 관리
           </TabsTrigger>
         </TabsList>
 
@@ -949,6 +954,11 @@ export default function Admin() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* 오프라인 관리 탭 */}
+        <TabsContent value="offline" className="mt-2">
+          <OfflineManagement />
         </TabsContent>
 
         {/* 승인 권한 설정 탭 */}

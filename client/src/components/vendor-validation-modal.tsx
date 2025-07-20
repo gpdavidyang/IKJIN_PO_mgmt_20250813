@@ -27,6 +27,8 @@ interface VendorValidationResult {
     contactPerson: string;
     similarity: number;
     distance: number;
+    isRecentlyUsed?: boolean;
+    lastUsedDate?: Date | string;
   }>;
 }
 
@@ -175,14 +177,39 @@ export function VendorValidationModal({
                     onClick={() => handleVendorAction(vendor.vendorName, type, 'use_existing', suggestion.id)}
                   >
                     <div className="flex items-center justify-between">
-                      <div>
+                      <div className="flex-1">
                         <div className="font-medium">{suggestion.name}</div>
-                        <div className="text-sm text-gray-600">{suggestion.email}</div>
-                        <div className="text-sm text-gray-500">담당자: {suggestion.contactPerson}</div>
+                        <div className="text-sm text-gray-600">
+                          <span className="inline-flex items-center">
+                            <Mail className="h-3 w-3 mr-1" />
+                            {suggestion.email}
+                          </span>
+                        </div>
+                        <div className="text-sm text-gray-500 mt-1">
+                          <span className="inline-flex items-center">
+                            <Users className="h-3 w-3 mr-1" />
+                            담당자: {suggestion.contactPerson}
+                          </span>
+                          {suggestion.phone && (
+                            <span className="ml-3">
+                              📞 {suggestion.phone}
+                            </span>
+                          )}
+                        </div>
+                        {suggestion.isRecentlyUsed && (
+                          <div className="text-sm text-orange-600 mt-1">
+                            🔥 최근 사용 ({suggestion.lastUsedDate ? new Date(suggestion.lastUsedDate).toLocaleDateString('ko-KR') : ''})
+                          </div>
+                        )}
                       </div>
-                      <Badge variant="secondary">
-                        {(suggestion.similarity * 100).toFixed(0)}% 유사
-                      </Badge>
+                      <div className="ml-3 text-right">
+                        <Badge variant="secondary">
+                          {(suggestion.similarity * 100).toFixed(0)}% 유사
+                        </Badge>
+                        {resolved?.action === 'use_existing' && resolved?.existingVendorId === suggestion.id && (
+                          <CheckCircle2 className="h-5 w-5 text-blue-500 mt-2 ml-auto" />
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}

@@ -4,8 +4,9 @@
  */
 
 import { db } from "../db";
-import { vendors } from "@shared/schema";
-import { eq, ilike, sql, and } from "drizzle-orm";
+import { vendors, purchaseOrders } from "@shared/schema";
+import { eq, ilike, sql, and, desc } from "drizzle-orm";
+import { MockDB } from "./mock-db";
 
 export interface VendorValidationResult {
   vendorName: string;
@@ -25,6 +26,8 @@ export interface VendorValidationResult {
     contactPerson: string;
     similarity: number; // 0-1 점수
     distance: number; // Levenshtein distance
+    isRecentlyUsed?: boolean; // 최근 사용 여부
+    lastUsedDate?: Date; // 마지막 사용일
   }>;
 }
 
@@ -34,6 +37,44 @@ export interface EmailConflictInfo {
   dbEmail?: string;
   vendorId?: number;
   vendorName?: string;
+}
+
+/**
+ * 최근 사용한 거래처 조회 (30일 이내)
+ */
+async function getRecentlyUsedVendors(vendorType: '거래처' | '납품처' = '거래처'): Promise<Map<number, Date>> {
+  const recentVendorsMap = new Map<number, Date>();
+  
+  try {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const recentOrders = await db
+      .select({
+        vendorId: purchaseOrders.vendorId,
+        orderDate: purchaseOrders.orderDate,
+      })
+      .from(purchaseOrders)
+      .where(sql`${purchaseOrders.orderDate} >= ${thirtyDaysAgo}`)
+      .orderBy(desc(purchaseOrders.orderDate));
+    
+    // vendorId별로 가장 최근 사용일 저장
+    recentOrders.forEach(order => {
+      if (order.vendorId && order.orderDate) {
+        const existing = recentVendorsMap.get(order.vendorId);
+        if (!existing || order.orderDate > existing) {
+          recentVendorsMap.set(order.vendorId, order.orderDate);
+        }
+      }
+    });
+    
+    console.log(`🕐 최근 30일 내 사용된 거래처: ${recentVendorsMap.size}개`);
+    
+  } catch (error) {
+    console.error('최근 거래처 조회 실패:', error);
+  }
+  
+  return recentVendorsMap;
 }
 
 /**
@@ -76,6 +117,9 @@ function levenshteinDistance(str1: string, str2: string): number {
  * 유사도 점수 계산 (0-1, 1이 가장 유사)
  */
 function calculateSimilarity(str1: string, str2: string): number {
+  // null/undefined 값 처리
+  if (!str1 || !str2) return 0;
+  
   const distance = levenshteinDistance(str1.toLowerCase(), str2.toLowerCase());
   const maxLength = Math.max(str1.length, str2.length);
   return maxLength === 0 ? 1 : (maxLength - distance) / maxLength;
@@ -125,19 +169,104 @@ function generateFallbackSuggestions(vendorName: string) {
 export async function validateVendorName(vendorName: string, vendorType: '거래처' | '납품처' = '거래처'): Promise<VendorValidationResult> {
   console.log(`🔍 ${vendorType} 검증 시작: "${vendorName}"`);
 
-  // Quick database connectivity check with very short timeout
+  // Check if DATABASE_URL is set for actual database mode
+  if (!process.env.DATABASE_URL) {
+    console.log(`🔄 모크 모드: DATABASE_URL 미설정, Mock DB 사용: "${vendorName}"`);
+    
+    try {
+      // Mock DB에서 정확한 매칭 확인
+      const exactMatch = await MockDB.findVendorByName(vendorName, vendorType);
+      
+      if (exactMatch) {
+        console.log(`✅ Mock DB에서 발견: ${vendorName} (ID: ${exactMatch.id})`);
+        return {
+          vendorName,
+          exists: true,
+          exactMatch: {
+            id: exactMatch.id,
+            name: exactMatch.name,
+            email: exactMatch.email,
+            phone: exactMatch.phone,
+            contactPerson: exactMatch.contactPerson,
+          },
+          suggestions: [],
+        };
+      }
+      
+      // 유사한 거래처 찾기
+      const allVendors = await MockDB.findVendorsByType(vendorType);
+      const recentVendorsMap = await MockDB.getRecentlyUsedVendors();
+      
+      const suggestions = allVendors
+        .map((vendor: any) => {
+          const similarity = calculateSimilarity(vendorName, vendor.name);
+          const distance = levenshteinDistance(vendorName.toLowerCase(), vendor.name.toLowerCase());
+          const lastUsedDate = recentVendorsMap.get(vendor.id);
+          
+          return {
+            id: vendor.id,
+            name: vendor.name,
+            email: vendor.email,
+            phone: vendor.phone,
+            contactPerson: vendor.contactPerson,
+            similarity,
+            distance,
+            isRecentlyUsed: !!lastUsedDate,
+            lastUsedDate,
+          };
+        })
+        .filter((vendor: any) => vendor.similarity >= 0.3 && vendor.name !== vendorName)
+        .sort((a: any, b: any) => {
+          // 1. 최근 사용 여부 우선
+          if (a.isRecentlyUsed && !b.isRecentlyUsed) return -1;
+          if (!a.isRecentlyUsed && b.isRecentlyUsed) return 1;
+          
+          // 2. 둘 다 최근 사용인 경우, 더 최근 것 우선
+          if (a.isRecentlyUsed && b.isRecentlyUsed && a.lastUsedDate && b.lastUsedDate) {
+            if (a.lastUsedDate > b.lastUsedDate) return -1;
+            if (a.lastUsedDate < b.lastUsedDate) return 1;
+          }
+          
+          // 3. 유사도 높은 순으로 정렬
+          return b.similarity - a.similarity;
+        })
+        .slice(0, 5);
+      
+      console.log(`⚠️ Mock DB에서 미발견: ${vendorName}, 유사 거래처 ${suggestions.length}개 제안`);
+      
+      return {
+        vendorName,
+        exists: false,
+        exactMatch: undefined,
+        suggestions,
+      };
+      
+    } catch (error) {
+      console.error(`❌ Mock DB 검증 중 오류: ${vendorName}`, error);
+      const fallbackSuggestions = generateFallbackSuggestions(vendorName);
+      
+      return {
+        vendorName,
+        exists: false,
+        exactMatch: undefined,
+        suggestions: fallbackSuggestions,
+      };
+    }
+  }
+
+  // Quick database connectivity check with reasonable timeout
   try {
     const quickTest = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Quick DB test timeout')), 2000);
+      setTimeout(() => reject(new Error('Quick DB test timeout')), 10000); // 10 seconds
     });
     
-    const testQuery = db.select({ count: sql`1` }).limit(1);
+    const testQuery = db.select({ count: sql`1` }).from(vendors).limit(1);
     await Promise.race([testQuery, quickTest]);
     
     console.log(`✅ 데이터베이스 연결 확인됨`);
     
   } catch (quickTestError) {
-    console.log(`🔄 데이터베이스 연결 실패 감지, 즉시 폴백 모드로 전환: "${vendorName}"`);
+    console.log(`🔄 데이터베이스 연결 실패 감지, 즉시 폴백 모드로 전환: "${vendorName}"`, quickTestError.message);
     
     const fallbackSuggestions = generateFallbackSuggestions(vendorName);
     
@@ -209,16 +338,22 @@ export async function validateVendorName(vendorName: string, vendorType: '거래
       };
     }
 
-    // 3. 유사도 계산 및 정렬
+    // 3. 최근 사용 거래처 정보 조회
+    const recentVendorsMap = await getRecentlyUsedVendors(vendorType);
+
+    // 4. 유사도 계산 및 정렬
     const suggestions = allVendors
       .map((vendor: any) => {
         const similarity = calculateSimilarity(vendorName, vendor.name);
         const distance = levenshteinDistance(vendorName.toLowerCase(), vendor.name.toLowerCase());
+        const lastUsedDate = recentVendorsMap.get(vendor.id);
         
         return {
           ...vendor,
           similarity,
           distance,
+          isRecentlyUsed: !!lastUsedDate,
+          lastUsedDate,
         };
       })
       .filter((vendor: any) => {
@@ -226,11 +361,22 @@ export async function validateVendorName(vendorName: string, vendorType: '거래
         return vendor.name !== vendorName && vendor.similarity >= 0.3;
       })
       .sort((a: any, b: any) => {
-        // 유사도 높은 순으로 정렬
+        // 1. 최근 사용 여부 우선
+        if (a.isRecentlyUsed && !b.isRecentlyUsed) return -1;
+        if (!a.isRecentlyUsed && b.isRecentlyUsed) return 1;
+        
+        // 2. 둘 다 최근 사용인 경우, 더 최근 것 우선
+        if (a.isRecentlyUsed && b.isRecentlyUsed && a.lastUsedDate && b.lastUsedDate) {
+          if (a.lastUsedDate > b.lastUsedDate) return -1;
+          if (a.lastUsedDate < b.lastUsedDate) return 1;
+        }
+        
+        // 3. 유사도 높은 순으로 정렬
         if (b.similarity !== a.similarity) {
           return b.similarity - a.similarity;
         }
-        // 유사도가 같으면 거리 짧은 순으로 정렬
+        
+        // 4. 유사도가 같으면 거리 짧은 순으로 정렬
         return a.distance - b.distance;
       })
       .slice(0, 5); // 상위 5개만 반환
@@ -247,7 +393,9 @@ export async function validateVendorName(vendorName: string, vendorType: '거래
       console.log(`📍 정확한 매칭: ${result.exactMatch.name} (ID: ${result.exactMatch.id})`);
     }
     suggestions.forEach((suggestion: any, index: number) => {
-      console.log(`💡 추천 ${index + 1}: ${suggestion.name} (유사도: ${(suggestion.similarity * 100).toFixed(1)}%)`);
+      const recentFlag = suggestion.isRecentlyUsed ? ' 🔥최근사용' : '';
+      const lastUsedInfo = suggestion.lastUsedDate ? ` (${suggestion.lastUsedDate.toLocaleDateString('ko-KR')})` : '';
+      console.log(`💡 추천 ${index + 1}: ${suggestion.name} (유사도: ${(suggestion.similarity * 100).toFixed(1)}%)${recentFlag}${lastUsedInfo}`);
     });
 
     return result;
@@ -388,6 +536,11 @@ export async function validateMultipleVendors(
 }> {
   try {
     console.log(`🔄 다중 거래처 검증 시작: ${vendorData.length}개 항목`);
+
+    // Mock DB를 원본 데이터로 초기화 (한 번만)
+    if (!process.env.DATABASE_URL) {
+      MockDB.resetToOriginalData();
+    }
 
     const vendorValidations: VendorValidationResult[] = [];
     const deliveryValidations: VendorValidationResult[] = [];

@@ -1,9 +1,14 @@
 import nodemailer from 'nodemailer';
 import path from 'path';
 import fs from 'fs';
+import { fileURLToPath } from 'url';
 import { convertExcelToPdf } from './excel-to-pdf';
 import { POTemplateProcessor } from './po-template-processor';
-import { AdvancedExcelProcessor } from './advanced-excel-processor';
+import { removeAllInputSheets } from './excel-input-sheet-remover';
+
+// ES 모듈 환경에서 __dirname 대체
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export interface EmailAttachment {
   filename: string;
@@ -26,20 +31,40 @@ export interface POEmailOptions {
 
 export class POEmailService {
   private transporter: nodemailer.Transporter;
+  private isTestMode: boolean;
 
   constructor() {
-    this.transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'smtp.naver.com',
-      port: parseInt(process.env.SMTP_PORT || '587'),
-      secure: false, // true for 465, false for other ports
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-      },
-      tls: {
-        rejectUnauthorized: false
-      }
-    });
+    // 테스트 모드 확인: SMTP 비밀번호가 설정되지 않았거나 기본값인 경우
+    this.isTestMode = !process.env.SMTP_PASS || 
+                      process.env.SMTP_PASS === 'your_naver_password_here' ||
+                      process.env.NODE_ENV === 'test';
+    
+    if (this.isTestMode) {
+      console.log('📧 이메일 서비스 테스트 모드 실행 중 (실제 이메일 발송 안함)');
+      // 테스트 모드에서는 nodemailer 테스트 계정 사용
+      this.transporter = nodemailer.createTransport({
+        host: 'smtp.ethereal.email',
+        port: 587,
+        secure: false,
+        auth: {
+          user: 'test@example.com',
+          pass: 'test'
+        }
+      });
+    } else {
+      this.transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST || 'smtp.naver.com',
+        port: parseInt(process.env.SMTP_PORT || '587'),
+        secure: false, // true for 465, false for other ports
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS
+        },
+        tls: {
+          rejectUnauthorized: false
+        }
+      });
+    }
   }
 
   /**
@@ -48,7 +73,13 @@ export class POEmailService {
    */
   async sendPOWithOriginalFormat(
     originalFilePath: string,
-    emailOptions: POEmailOptions
+    emailOptions: POEmailOptions & { 
+      additionalAttachments?: Array<{
+        filename: string;
+        originalName: string;
+        path: string;
+      }>;
+    }
   ): Promise<{ success: boolean; messageId?: string; error?: string }> {
     try {
       const timestamp = Date.now();
@@ -56,10 +87,9 @@ export class POEmailService {
       
       // 1. 고급 방식으로 Input 시트만 제거하고 원본 형식 완벽 유지
       const processedPath = path.join(uploadsDir, `po-advanced-format-${timestamp}.xlsx`);
-      const removeResult = await AdvancedExcelProcessor.removeInputSheetAdvanced(
+      const removeResult = await removeAllInputSheets(
         originalFilePath,
-        processedPath,
-        'Input'
+        processedPath
       );
 
       if (!removeResult.success) {
@@ -102,6 +132,23 @@ export class POEmailService {
           contentType: 'application/pdf'
         });
         console.log(`📎 PDF 첨부파일 추가: 발주서_${emailOptions.orderNumber || timestamp}.pdf`);
+      }
+
+      // 추가 첨부파일 처리
+      if (emailOptions.additionalAttachments && emailOptions.additionalAttachments.length > 0) {
+        for (const additionalFile of emailOptions.additionalAttachments) {
+          const additionalFilePath = path.join(__dirname, '../../', additionalFile.path);
+          if (fs.existsSync(additionalFilePath)) {
+            attachments.push({
+              filename: additionalFile.originalName,
+              path: additionalFilePath,
+              contentType: this.getContentType(additionalFile.originalName)
+            });
+            console.log(`📎 추가 첨부파일 추가: ${additionalFile.originalName}`);
+          } else {
+            console.warn(`⚠️ 추가 첨부파일을 찾을 수 없습니다: ${additionalFilePath}`);
+          }
+        }
       }
 
       if (attachments.length === 0) {
@@ -240,6 +287,22 @@ export class POEmailService {
     attachments?: EmailAttachment[];
   }): Promise<{ success: boolean; messageId?: string; error?: string }> {
     try {
+      // 테스트 모드에서는 실제 이메일 발송 없이 성공 처리
+      if (this.isTestMode) {
+        const recipients = Array.isArray(options.to) ? options.to.join(', ') : options.to;
+        console.log(`📧 [테스트 모드] 이메일 발송 시뮬레이션: ${recipients}`);
+        console.log(`📧 [테스트 모드] 제목: ${options.subject}`);
+        console.log(`📧 [테스트 모드] 첨부파일: ${options.attachments?.length || 0}개`);
+        
+        // 시뮬레이션 지연 (실제 이메일 발송과 비슷한 시간)
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        return {
+          success: true,
+          messageId: `test_message_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        };
+      }
+
       const info = await this.transporter.sendMail({
         from: `"발주 시스템" <${process.env.SMTP_USER}>`,
         to: Array.isArray(options.to) ? options.to.join(', ') : options.to,
@@ -266,6 +329,13 @@ export class POEmailService {
         error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
+  }
+
+  /**
+   * 이메일 내용 미리보기 생성 (공개 메소드)
+   */
+  generateEmailPreview(options: POEmailOptions): string {
+    return this.generateEmailContent(options);
   }
 
   /**
@@ -433,6 +503,27 @@ export class POEmailService {
         </body>
       </html>
     `;
+  }
+
+  /**
+   * 파일 확장자에 따른 Content-Type 결정
+   */
+  private getContentType(filename: string): string {
+    const ext = path.extname(filename).toLowerCase();
+    const contentTypes: { [key: string]: string } = {
+      '.pdf': 'application/pdf',
+      '.doc': 'application/msword',
+      '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      '.xls': 'application/vnd.ms-excel',
+      '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      '.txt': 'text/plain',
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.png': 'image/png',
+      '.gif': 'image/gif'
+    };
+    
+    return contentTypes[ext] || 'application/octet-stream';
   }
 
   /**

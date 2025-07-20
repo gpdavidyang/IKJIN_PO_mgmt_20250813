@@ -132,6 +132,26 @@ export default function LoginPage() {
           </CardContent>
         </Card>
 
+        {/* 회원가입 및 비밀번호 찾기 링크 */}
+        <div className="mt-6 text-center space-y-3">
+          <div className="flex flex-col sm:flex-row sm:justify-center sm:space-x-4 space-y-2 sm:space-y-0">
+            <button
+              type="button"
+              className="text-sm text-blue-600 hover:underline font-medium"
+              onClick={() => window.location.href = '/register'}
+            >
+              계정이 없으신가요? 회원가입
+            </button>
+            <button
+              type="button"
+              className="text-sm text-blue-600 hover:underline font-medium"
+              onClick={() => window.location.href = '/forgot-password'}
+            >
+              비밀번호를 잊으셨나요?
+            </button>
+          </div>
+        </div>
+
         <div className="mt-8 text-center text-sm text-gray-600">
           <p>기본 로그인 정보:</p>
           <p>이메일: test@ikjin.co.kr</p>

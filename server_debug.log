@@ -1,0 +1,49 @@
+
+> rest-express@1.0.0 dev
+> NODE_ENV=development tsx server/index.ts
+
+[dotenv@17.2.0] injecting env (7) from .env (tip: ⚙️  override existing env vars with { override: true })
+DATABASE_URL not set, using mock connection
+[dotenv@17.2.0] injecting env (0) from .env (tip: ⚙️  override existing env vars with { override: true })
+4:51:37 PM [express] serving on port 3000
+4:51:49 PM [express] POST /api/po-template/extract-sheets 200 in 141ms :: {"success":true,"message":…
+Browserslist: browsers data (caniuse-lite) is 9 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+getCurrentUser - Session ID: 5iJIOgH0P46P00bg5fkXhDYqsrhQGzV4
+getCurrentUser - Session userId: undefined
+getCurrentUser - No userId in session
+4:55:13 PM [express] GET /api/auth/user 401 in 6ms :: {"message":"Not authenticated"}
+4:55:22 PM [express] POST /api/auth/login 200 in 2ms :: {"message":"Login successful","user":{"id":"…
+getCurrentUser - Session ID: 0dPUDCtJLgHl4SPVErouaTT-CXb1Z5SO
+getCurrentUser - Session userId: test_admin_001
+4:55:22 PM [express] GET /api/auth/user 200 in 3ms :: {"id":"test_admin_001","email":"test@ikjin.co.…
+Authentication middleware error: TypeError: Cannot read properties of null (reading 'select')
+    at DatabaseStorage.getUser (/Users/davidyang/workspace/20250713_PO_Mgmt/server/storage.ts:260:29)
+    at requireAuth (/Users/davidyang/workspace/20250713_PO_Mgmt/server/local-auth.ts:186:32)
+    at Layer.handle [as handle_request] (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/layer.js:95:5)
+    at next (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/route.js:149:13)
+    at Route.dispatch (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/route.js:119:3)
+    at Layer.handle [as handle_request] (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/layer.js:95:5)
+    at /Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/index.js:284:15
+    at Function.process_params (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/index.js:280:10)
+    at Immediate.<anonymous> (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express-session/index.js:514:7)
+    at process.processImmediate (node:internal/timers:487:21)
+4:55:22 PM [express] GET /api/dashboard/unified 500 in 12ms :: {"message":"Authentication failed"}
+4:55:22 PM [express] GET /api/companies 200 in 1ms :: [{"id":1,"companyName":"(주)익진엔지니어링","businessN…
+getCurrentUser - Session ID: 0dPUDCtJLgHl4SPVErouaTT-CXb1Z5SO
+getCurrentUser - Session userId: test_admin_001
+4:55:26 PM [express] GET /api/auth/user 200 in 5ms :: {"id":"test_admin_001","email":"test@ikjin.co.…
+4:55:26 PM [express] GET /api/companies 200 in 1ms :: [{"id":1,"companyName":"(주)익진엔지니어링","businessN…
+4:55:36 PM [express] POST /api/po-template/upload 200 in 137ms :: {"success":true,"message":"파일 파싱 완…
+4:55:36 PM [express] POST /api/po-template/save 200 in 0ms :: {"success":true,"message":"Mock DB 저장 …
+4:55:36 PM [express] POST /api/po-template/extract-sheets 200 in 94ms :: {"success":true,"message":"…
+getCurrentUser - Session ID: 0dPUDCtJLgHl4SPVErouaTT-CXb1Z5SO
+getCurrentUser - Session userId: test_admin_001
+4:55:46 PM [express] GET /api/auth/user 200 in 3ms :: {"id":"test_admin_001","email":"test@ikjin.co.…
+getCurrentUser - Session ID: 0dPUDCtJLgHl4SPVErouaTT-CXb1Z5SO
+getCurrentUser - Session userId: test_admin_001
+4:59:14 PM [express] GET /api/auth/user 200 in 5ms :: {"id":"test_admin_001","email":"test@ikjin.co.…
+4:59:26 PM [express] POST /api/po-template/extract-sheets 200 in 81ms :: {"success":true,"message":"…
+4:59:44 PM [express] POST /api/po-template/extract-sheets 200 in 89ms :: {"success":true,"message":"…

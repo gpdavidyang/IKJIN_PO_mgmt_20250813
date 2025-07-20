@@ -3,7 +3,7 @@ import { purchaseOrders, purchaseOrderItems, vendors, projects } from '../../sha
 import { eq, and } from 'drizzle-orm';
 import * as XLSX from 'xlsx';
 import { v4 as uuidv4 } from 'uuid';
-import { removeInputSheetSafely } from './excel-direct-copy';
+import { removeAllInputSheets } from './excel-input-sheet-remover';
 
 export interface POTemplateItem {
   itemName: string;
@@ -16,6 +16,7 @@ export interface POTemplateItem {
   categoryLv1: string;
   categoryLv2: string;
   categoryLv3: string;
+  vendorName: string;
   deliveryName: string;
   notes: string;
 }
@@ -115,6 +116,7 @@ export class POTemplateProcessor {
             categoryLv1,
             categoryLv2,
             categoryLv3,
+            vendorName,
             deliveryName,
             notes
           };
@@ -223,6 +225,10 @@ export class POTemplateProcessor {
   ): Promise<{ success: boolean; extractedSheets: string[]; error?: string }> {
     try {
       console.log(`📄 시트 추출 시작 (xlwings 기반): ${sourcePath} -> ${targetPath}`);
+      console.log(`[DEBUG] POTemplateProcessor.extractSheetsToFile called at ${new Date().toISOString()}`);
+      console.log(`[DEBUG] sourcePath: ${sourcePath}`);
+      console.log(`[DEBUG] targetPath: ${targetPath}`);
+      console.log(`[DEBUG] sheetNames: ${JSON.stringify(sheetNames)}`);
       
       // xlwings 기반 Input 시트 제거 처리 사용
       const result = await POTemplateProcessor.removeInputSheetOnly(
@@ -273,9 +279,13 @@ export class POTemplateProcessor {
   ): Promise<{ success: boolean; removedSheet: boolean; remainingSheets: string[]; error?: string }> {
     try {
       console.log(`📄 Input 시트 제거 시작: ${sourcePath} -> ${targetPath}`);
+      console.log(`[DEBUG] POTemplateProcessor.removeInputSheetOnly called at ${new Date().toISOString()}`);
+      console.log(`[DEBUG] sourcePath: ${sourcePath}`);
+      console.log(`[DEBUG] targetPath: ${targetPath}`);
+      console.log(`[DEBUG] inputSheetName: ${inputSheetName}`);
       
       // 새로운 안전한 방식으로 Input 시트 제거
-      const result = await removeInputSheetSafely(sourcePath, targetPath, inputSheetName);
+      const result = await removeAllInputSheets(sourcePath, targetPath);
       
       if (result.success) {
         console.log(`✅ Input 시트 제거 완료 (원본 서식 보존됨)`);
@@ -283,7 +293,7 @@ export class POTemplateProcessor {
       
       return {
         success: result.success,
-        removedSheet: result.removedSheet,
+        removedSheet: result.removedSheets.length > 0,
         remainingSheets: result.remainingSheets,
         error: result.error
       };

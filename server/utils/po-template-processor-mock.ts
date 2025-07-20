@@ -1,5 +1,7 @@
 import XLSX from 'xlsx';
+import { removeAllInputSheets } from './excel-input-sheet-remover';
 import { MockDB } from './mock-db';
+import { DebugLogger } from './debug-logger';
 
 export interface POTemplateItem {
   itemName: string;
@@ -12,6 +14,7 @@ export interface POTemplateItem {
   categoryLv1: string;
   categoryLv2: string;
   categoryLv3: string;
+  vendorName: string;
   deliveryName: string;
   notes: string;
 }
@@ -111,6 +114,7 @@ export class POTemplateProcessorMock {
             categoryLv1,
             categoryLv2,
             categoryLv3,
+            vendorName,
             deliveryName,
             notes
           };
@@ -208,37 +212,62 @@ export class POTemplateProcessorMock {
   }
 
   /**
-   * 특정 시트들을 별도 파일로 추출
+   * 특정 시트들을 별도 파일로 추출 - 완전한 ZIP 구조 처리로 100% 서식 보존
    */
-  static extractSheetsToFile(
+  static async extractSheetsToFile(
     sourcePath: string,
     targetPath: string,
     sheetNames: string[] = ['갑지', '을지']
-  ): { success: boolean; extractedSheets: string[]; error?: string } {
+  ): Promise<{ success: boolean; extractedSheets: string[]; error?: string }> {
+    DebugLogger.logFunctionEntry('POTemplateProcessorMock.extractSheetsToFile', {
+      sourcePath,
+      targetPath,
+      sheetNames
+    });
+    
     try {
-      const workbook = XLSX.readFile(sourcePath);
-      const newWorkbook = XLSX.utils.book_new();
       
-      const extractedSheets: string[] = [];
+      // Input으로 시작하는 모든 시트를 완전히 제거하고 나머지 시트 보존
+      const result = await removeAllInputSheets(sourcePath, targetPath);
       
-      for (const sheetName of sheetNames) {
-        if (workbook.SheetNames.includes(sheetName)) {
-          const worksheet = workbook.Sheets[sheetName];
-          XLSX.utils.book_append_sheet(newWorkbook, worksheet, sheetName);
-          extractedSheets.push(sheetName);
+      if (result.success) {
+        const returnValue = {
+          success: true,
+          extractedSheets: result.remainingSheets
+        };
+        
+        DebugLogger.logFunctionExit('POTemplateProcessorMock.extractSheetsToFile', returnValue);
+        return returnValue;
+      } else {
+        console.error(`❌ 완전한 서식 보존 추출 실패: ${result.error}`);
+        
+        // 폴백: 기존 XLSX 라이브러리 방식
+        console.log(`🔄 폴백: 기본 XLSX 라이브러리로 시도`);
+        const workbook = XLSX.readFile(sourcePath);
+        const newWorkbook = XLSX.utils.book_new();
+        
+        const extractedSheets: string[] = [];
+        
+        for (const sheetName of sheetNames) {
+          if (workbook.SheetNames.includes(sheetName)) {
+            const worksheet = workbook.Sheets[sheetName];
+            XLSX.utils.book_append_sheet(newWorkbook, worksheet, sheetName);
+            extractedSheets.push(sheetName);
+          }
         }
+        
+        if (extractedSheets.length > 0) {
+          XLSX.writeFile(newWorkbook, targetPath);
+        }
+        
+        return {
+          success: true,
+          extractedSheets
+        };
       }
-      
-      if (extractedSheets.length > 0) {
-        XLSX.writeFile(newWorkbook, targetPath);
-      }
-      
-      return {
-        success: true,
-        extractedSheets
-      };
       
     } catch (error) {
+      console.error(`❌ 시트 추출 완전 실패:`, error);
       return {
         success: false,
         extractedSheets: [],

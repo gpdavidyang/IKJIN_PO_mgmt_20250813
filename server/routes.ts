@@ -32,6 +32,10 @@ import connectPg from "connect-pg-simple";
 import { db } from "./db";
 import { insertOrderTemplateSchema, insertProjectSchema, users, companies } from "@shared/schema";
 import { insertVendorSchema, insertItemSchema, insertPurchaseOrderSchema, insertInvoiceSchema, insertItemReceiptSchema, insertVerificationLogSchema, insertCompanySchema } from "@shared/schema";
+import { rateLimitMiddleware } from "./middleware/rate-limiting";
+import { csrfMiddleware } from "./middleware/csrf-protection";
+import { notificationService } from "./services/notification-service";
+import notificationRoutes from "./routes/notifications";
 import bcrypt from "bcrypt";
 import { z } from "zod";
 import nodemailer from "nodemailer";
@@ -82,14 +86,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // Apply global security middleware
+  app.use(rateLimitMiddleware.global);
+  app.use(rateLimitMiddleware.stats);
+  
+  // Apply CSRF protection
+  app.use(csrfMiddleware.tokenGenerator);
+  app.use(csrfMiddleware.securityHeaders);
+  app.use(csrfMiddleware.stats);
+
   // Serve uploaded files statically
   app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
-  // Local authentication routes
-  app.post('/api/auth/login', login);
-  app.post('/api/auth/logout', logout);
+  // Local authentication routes with specific rate limiting and CSRF protection
+  app.post('/api/auth/login', rateLimitMiddleware.auth, csrfMiddleware.protection, login);
+  app.post('/api/auth/logout', csrfMiddleware.protection, logout);
   app.get('/api/logout', logout); // Support both GET and POST for logout
-  app.get('/api/auth/user', getCurrentUser);
+  app.get('/api/auth/user', rateLimitMiddleware.api, getCurrentUser);
+  
+  // 2FA 세션 검증 라우트 (CSRF 보호 적용)
+  app.post('/api/auth/verify-2fa-session', csrfMiddleware.protection, async (req: any, res) => {
+    try {
+      const { userId } = req.body;
+      
+      if (!userId) {
+        return res.status(400).json({ error: 'User ID required' });
+      }
+      
+      // 세션에 2FA 검증 상태 저장
+      (req.session as any).twoFactorVerified = userId;
+      
+      res.json({ success: true, message: '2FA 세션이 설정되었습니다.' });
+    } catch (error) {
+      console.error('2FA session verification error:', error);
+      res.status(500).json({ error: 'Failed to verify 2FA session' });
+    }
+  });
 
   // User management routes
   app.get("/api/users", async (req, res) => {
@@ -389,7 +421,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Dashboard stats
-  app.get('/api/dashboard/stats', requireAuth, async (req: any, res) => {
+  app.get('/api/dashboard/stats', rateLimitMiddleware.roleBasedRateLimit, requireAuth, async (req: any, res) => {
     try {
       const userId = process.env.NODE_ENV === 'development' ? 'USR_20250531_001' : req.user.id;
       const user = await storage.getUser(userId);
@@ -1506,7 +1538,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/orders', requireAuth, (req: any, res: any, next: any) => {
+  app.post('/api/orders', csrfMiddleware.protection, requireAuth, (req: any, res: any, next: any) => {
     console.log('🚀🚀🚀 POST ORDERS REACHED 🚀🚀🚀');
     
     // Use upload.array('attachments') with enhanced debugging
@@ -1583,6 +1615,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const orderData = insertPurchaseOrderSchema.parse(processedData);
       const order = await storage.createPurchaseOrder(orderData);
+      
+      // 발주서 생성 알림 전송
+      try {
+        await notificationService.createNotification({
+          type: 'order_created',
+          title: '새 발주서 생성',
+          message: `${order.orderNumber} 발주서가 생성되었습니다.`,
+          data: {
+            orderId: order.id,
+            orderNumber: order.orderNumber,
+            totalAmount: order.totalAmount,
+            createdBy: req.user.name,
+          },
+          role: 'project_manager', // 프로젝트 매니저들에게 알림
+          priority: 'medium',
+        });
+      } catch (notificationError) {
+        console.error('Failed to send order creation notification:', notificationError);
+      }
       
       // Handle file attachments if present
       if (req.files && req.files.length > 0) {
@@ -1749,7 +1800,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Order approval (admin only)
-  app.post('/api/orders/:id/approve', requireAuth, async (req: any, res) => {
+  app.post('/api/orders/:id/approve', csrfMiddleware.protection, requireAuth, async (req: any, res) => {
     try {
       const userId = req.user.id;
       const user = await storage.getUser(userId);
@@ -1760,6 +1811,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const id = parseInt(req.params.id);
       const order = await storage.approvePurchaseOrder(id, userId);
+      
+      // 발주서 승인 알림 전송
+      try {
+        await notificationService.createNotification({
+          type: 'order_approved',
+          title: '발주서 승인됨',
+          message: `${order.orderNumber} 발주서가 승인되었습니다.`,
+          data: {
+            orderId: order.id,
+            orderNumber: order.orderNumber,
+            approvedBy: req.user.name,
+            totalAmount: order.totalAmount,
+          },
+          userId: order.userId, // 발주 생성자에게 알림
+          priority: 'high',
+        });
+      } catch (notificationError) {
+        console.error('Failed to send order approval notification:', notificationError);
+      }
+      
       res.json(order);
     } catch (error) {
       console.error("Error approving order:", error);
@@ -1768,7 +1839,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // File upload for orders
-  app.post('/api/orders/:id/attachments', requireAuth, upload.array('files'), async (req: any, res) => {
+  app.post('/api/orders/:id/attachments', rateLimitMiddleware.upload, csrfMiddleware.protection, requireAuth, upload.array('files'), async (req: any, res) => {
     console.log('🎯🎯🎯 ATTACHMENTS ROUTE REACHED 🎯🎯🎯');
     try {
       const userId = process.env.NODE_ENV === 'development' ? 'USR_20250531_001' : req.user.id;
@@ -1802,6 +1873,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return attachment;
         })
       );
+
+      // 파일 업로드 알림 전송
+      try {
+        await notificationService.createNotification({
+          type: 'file_uploaded',
+          title: '파일 업로드 완료',
+          message: `발주서 ${order.orderNumber}에 ${attachments.length}개의 파일이 업로드되었습니다.`,
+          data: {
+            orderId: order.id,
+            orderNumber: order.orderNumber,
+            fileCount: attachments.length,
+            fileNames: attachments.map(a => a.fileName),
+            uploadedBy: req.user.name,
+          },
+          userId: order.userId, // 발주서 소유자에게 알림
+          priority: 'low',
+        });
+      } catch (notificationError) {
+        console.error('Failed to send file upload notification:', notificationError);
+      }
 
       res.status(201).json(attachments);
     } catch (error) {
@@ -2159,7 +2250,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/invoices", requireAuth, upload.single('file'), async (req, res) => {
+  app.post("/api/invoices", rateLimitMiddleware.upload, requireAuth, upload.single('file'), async (req, res) => {
     try {
       const userId = (req.user as any)?.claims?.sub;
       if (!userId) {
@@ -2887,7 +2978,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Company logo upload
-  app.post("/api/companies/:id/logo", requireAuth, upload.single('logo'), async (req: any, res) => {
+  app.post("/api/companies/:id/logo", rateLimitMiddleware.upload, requireAuth, upload.single('logo'), async (req: any, res) => {
     try {
       // Get user from session - req.user should have role directly
       const user = req.user;
@@ -3399,12 +3490,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // PO Template routes (Mock DB 사용)
   try {
-    const poTemplateRouter = await import('./routes/po-template-mock');
+    const poTemplateRouter = await import('./routes/po-template-unified');
     app.use('/api/po-template', poTemplateRouter.default);
+
+    // Excel 자동화 라우트 등록
+    const excelAutomationRouter = await import('./routes/excel-automation');
+    app.use('/api/excel-automation', excelAutomationRouter.default);
+    
+    // 승인 관리 라우트 등록
+    const approvalsRouter = await import('./routes/approvals');
+    app.use('/api/approvals', approvalsRouter.default);
+
+    // 2FA 인증 라우트 등록
+    const twoFactorRouter = await import('./routes/two-factor-auth');
+    app.use('/api/auth/2fa', twoFactorRouter.default);
+
+    // 사용자 등록 및 인증 라우트 등록
+    const authRegistrationRouter = await import('./routes/auth-registration');
+    app.use('/api/auth', authRegistrationRouter.default);
+
+    // 시스템 상태 라우트 등록
+    const systemStatusRouter = await import('./routes/system-status');
+    app.use('/api/system', systemStatusRouter.default);
+
+    // 배치 API 라우트 등록
+    const batchRouter = await import('./routes/batch');
+    app.use('/api/batch', batchRouter.default);
+
+    // Rate Limit 관리 라우트 등록
+    const rateLimitRouter = await import('./routes/rate-limit-management');
+    app.use('/api/admin/rate-limit', rateLimitRouter.default);
+
+    // CSRF 관리 라우트 등록
+    const csrfRouter = await import('./routes/csrf-management');
+    app.use('/api/csrf', csrfRouter.default);
+
+    // 알림 관리 라우트 등록
+    app.use('/api/notifications', notificationRoutes);
   } catch (error) {
-    console.error('PO Template 라우터 로드 실패:', error);
+    console.error('라우터 로드 실패:', error);
   }
 
   const httpServer = createServer(app);
+  
+  // Health check endpoint for offline connectivity testing
+  app.get('/api/health', (req, res) => {
+    res.json({ 
+      status: 'ok', 
+      timestamp: new Date().toISOString(),
+      version: '1.0.0'
+    });
+  });
+
+  // WebSocket 알림 서비스 초기화
+  notificationService.initialize(httpServer);
+  
   return httpServer;
 }
