@@ -29,6 +29,7 @@ export default function OrderDetail({ params }: OrderDetailProps) {
 
   const { data: order, isLoading } = useQuery({
     queryKey: [`/api/orders/${orderId}`],
+    queryFn: () => apiRequest("GET", `/api/orders/${orderId}`),
   });
   
   // 디버깅: order 데이터 로그

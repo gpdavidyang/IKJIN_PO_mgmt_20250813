@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Download, Eye, Edit, FileText, Trash2, ChevronUp, ChevronDown, Filter, EyeOff, Mail, History } from "lucide-react";
+import { Plus, Search, Download, Eye, Edit, FileText, Trash2, ChevronUp, ChevronDown, Filter, EyeOff, Mail } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -42,17 +42,6 @@ export default function Orders() {
   const { toast } = useToast();
   const [location, navigate] = useLocation();
   
-  // Calculate default date range (last 3 months)
-  const getDefaultDateRange = () => {
-    const endDate = new Date();
-    const startDate = new Date();
-    startDate.setMonth(startDate.getMonth() - 3);
-    
-    return {
-      startDate: startDate.toISOString().split('T')[0],
-      endDate: endDate.toISOString().split('T')[0]
-    };
-  };
 
   const [filters, setFilters] = useState({
     status: "all",
@@ -101,7 +90,6 @@ export default function Orders() {
     { key: 'orderDate', label: '발주일자', width: 'w-28 min-w-[7rem]' },
     { key: 'totalAmount', label: '총 금액', width: 'w-32 min-w-[8rem]' },
     { key: 'status', label: '상태', width: 'w-24 min-w-[6rem]' },
-    { key: 'emailStatus', label: '이메일', width: 'w-24 min-w-[6rem]' },
     { key: 'user', label: '작성자', width: 'w-24 min-w-[6rem]' },
     { key: 'actions', label: '작업', width: 'w-20 min-w-[5rem]' }
   ];
@@ -204,12 +192,7 @@ export default function Orders() {
       newFilters.endDate = urgentDate.toISOString().split('T')[0];
       newFilters.status = 'approved'; // 승인된 발주서만
     }
-    // No URL parameters - use default 3-month range
-    else if (!status && !filter && !vendorIdFromUrl) {
-      const defaultRange = getDefaultDateRange();
-      newFilters.startDate = defaultRange.startDate;
-      newFilters.endDate = defaultRange.endDate;
-    }
+    // No URL parameters - no default date range, show all orders
     
     if (vendorIdFromUrl) {
       newFilters.vendorId = vendorIdFromUrl;
@@ -481,15 +464,6 @@ export default function Orders() {
               전체 발주서 보기
             </Button>
           )}
-          <Button 
-            variant="outline"
-            size="sm" 
-            className="h-8 text-sm"
-            onClick={() => navigate("/email-history")}
-          >
-            <History className="h-4 w-4 mr-1" />
-            이메일 이력
-          </Button>
           <Button 
             size="sm" 
             className="h-8 text-sm"
@@ -1027,36 +1001,6 @@ export default function Orders() {
                               <Badge className={`text-xs ${getStatusColor(order.status)}`}>
                                 {order.statusName || getStatusTextForOrder(order.status)}
                               </Badge>
-                            )}
-                            
-                            {column.key === 'emailStatus' && (
-                              <div className="flex items-center gap-1">
-                                {order.emailStatus === 'sent' ? (
-                                  <Badge 
-                                    className="bg-green-100 text-green-800 text-xs cursor-help" 
-                                    title={order.sentAt ? `발송일시: ${new Date(order.sentAt).toLocaleString('ko-KR')}` : '발송 완료'}
-                                  >
-                                    <Mail className="h-3 w-3 mr-1" />
-                                    발송완료
-                                  </Badge>
-                                ) : order.emailStatus === 'failed' ? (
-                                  <Badge 
-                                    className="bg-red-100 text-red-800 text-xs cursor-help" 
-                                    title={order.lastEmailError || '이메일 발송 실패'}
-                                  >
-                                    <Mail className="h-3 w-3 mr-1" />
-                                    발송실패
-                                  </Badge>
-                                ) : (
-                                  <Badge className="bg-gray-100 text-gray-600 text-xs">
-                                    <Mail className="h-3 w-3 mr-1" />
-                                    미발송
-                                  </Badge>
-                                )}
-                                {order.emailSentCount > 0 && (
-                                  <span className="text-xs text-gray-500">({order.emailSentCount})</span>
-                                )}
-                              </div>
                             )}
                             
                             {column.key === 'user' && (

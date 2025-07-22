@@ -9,6 +9,7 @@ export default function OrderPreview() {
 
   const { data: order, isLoading } = useQuery({
     queryKey: [`/api/orders/${orderId}`],
+    queryFn: () => fetch(`/api/orders/${orderId}`).then(res => res.json()),
     enabled: !!orderId,
   });
 

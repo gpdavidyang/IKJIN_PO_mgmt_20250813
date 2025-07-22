@@ -44,6 +44,11 @@ const getStatusLabel = (status: string) => {
 export default function Projects() {
   const { user } = useAuth();
   const { toast } = useToast();
+  
+  // 디버깅용 로그
+  console.log('🔍 Projects page - Current user:', user);
+  console.log('🔍 User role:', user?.role);
+  console.log('🔍 Can add project:', user?.role && ["admin", "hq_management", "project_manager"].includes(user.role));
   const [, navigate] = useLocation();
   const queryClient = useQueryClient();
   const [searchText, setSearchText] = useState("");
@@ -195,8 +200,8 @@ export default function Projects() {
     const transformedData = {
       ...data,
       totalBudget: data.totalBudget ? data.totalBudget.toString().replace(/[^\d]/g, '') : null,
-      startDate: data.startDate ? new Date(data.startDate) : null,
-      endDate: data.endDate ? new Date(data.endDate) : null,
+      startDate: data.startDate || null,
+      endDate: data.endDate || null,
     };
 
     if (editingProject) {
@@ -328,12 +333,9 @@ export default function Projects() {
     <div className="p-6 space-y-6">
       <PageHeader
         title="현장 관리"
-        action={user?.role === "admin" ? (
-          <Button onClick={handleAdd} className="flex items-center">
-            <Plus className="h-4 w-4 mr-2" />
-            현장 추가
-          </Button>
-        ) : undefined}
+        actionLabel="현장 추가"
+        onAction={handleAdd}
+        showAction={true}
       />
 
       {/* Search Section */}
@@ -440,11 +442,9 @@ export default function Projects() {
                         {getSortIcon("startDate")}
                       </div>
                     </TableHead>
-                    {user?.role === "admin" && (
-                      <TableHead className="h-11 px-4 text-sm font-semibold text-gray-700 w-[120px]">
-                        작업
-                      </TableHead>
-                    )}
+                    <TableHead className="h-11 px-4 text-sm font-semibold text-gray-700 w-[120px]">
+                      작업
+                    </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -457,12 +457,12 @@ export default function Projects() {
                       <TableCell><div className="h-4 bg-gray-200 rounded animate-pulse"></div></TableCell>
                       <TableCell><div className="h-4 bg-gray-200 rounded animate-pulse"></div></TableCell>
                       <TableCell><div className="h-4 bg-gray-200 rounded animate-pulse"></div></TableCell>
-                      {user?.role === "admin" && <TableCell></TableCell>}
+                      <TableCell></TableCell>
                     </TableRow>
                   ))
                 ) : sortedProjects.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={user?.role === "admin" ? 7 : 6} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={7} className="text-center py-8 text-gray-500">
                       {searchText ? "검색 결과가 없습니다" : "등록된 현장이 없습니다"}
                     </TableCell>
                   </TableRow>
@@ -508,30 +508,28 @@ export default function Projects() {
                           {project.startDate ? formatDate(project.startDate) : '-'}
                         </div>
                       </TableCell>
-                      {user?.role === "admin" && (
-                        <TableCell className="py-2 px-4">
-                          <div className="flex items-center justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEdit(project)}
-                              className="h-7 w-7 p-0"
-                              title="수정"
-                            >
-                              <Edit className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDelete(project.id)}
-                              className="h-7 w-7 p-0 text-red-600 hover:text-red-700"
-                              title="삭제"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      )}
+                      <TableCell className="py-2 px-4">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit(project)}
+                            className="h-7 w-7 p-0"
+                            title="수정"
+                          >
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDelete(project.id)}
+                            className="h-7 w-7 p-0 text-red-600 hover:text-red-700"
+                            title="삭제"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))
                 )}
@@ -585,34 +583,32 @@ export default function Projects() {
                         <span>{project.startDate ? formatDate(project.startDate) : '-'}</span>
                       </div>
                     </div>
-                    {user?.role === "admin" && (
-                      <div className="flex items-center justify-end -space-x-1 pt-2 border-t" onClick={(e) => e.stopPropagation()}>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEdit(project);
-                          }}
-                          className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                          title="수정"
-                        >
-                          <Edit className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete(project.id);
-                          }}
-                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                          title="삭제"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    )}
+                    <div className="flex items-center justify-end -space-x-1 pt-2 border-t" onClick={(e) => e.stopPropagation()}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEdit(project);
+                        }}
+                        className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                        title="수정"
+                      >
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(project.id);
+                        }}
+                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                        title="삭제"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -680,9 +676,24 @@ export default function Projects() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>현장 유형</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="현장 유형을 선택하세요" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="아파트">아파트</SelectItem>
+                          <SelectItem value="오피스텔">오피스텔</SelectItem>
+                          <SelectItem value="단독주택">단독주택</SelectItem>
+                          <SelectItem value="상업시설">상업시설</SelectItem>
+                          <SelectItem value="사무실">사무실</SelectItem>
+                          <SelectItem value="쇼핑몰">쇼핑몰</SelectItem>
+                          <SelectItem value="공장">공장</SelectItem>
+                          <SelectItem value="창고">창고</SelectItem>
+                          <SelectItem value="인프라">인프라</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}

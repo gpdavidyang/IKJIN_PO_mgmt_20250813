@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useLocation, useParams } from "wouter";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,12 +14,18 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
 
-export default function OrderEdit() {
+interface OrderEditProps {
+  params: { id: string };
+}
+
+export default function OrderEdit({ params }: OrderEditProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [location, navigate] = useLocation();
-  const params = useParams();
   const orderId = params.id;
+  
+  console.log('OrderEdit params:', params);
+  console.log('OrderEdit orderId:', orderId, typeof orderId);
 
   const [formData, setFormData] = useState({
     vendorId: "",
@@ -30,19 +36,31 @@ export default function OrderEdit() {
   });
 
   // Fetch order data
-  const { data: order, isLoading: orderLoading } = useQuery({
+  const { data: order, isLoading: orderLoading, error: orderError } = useQuery({
     queryKey: [`/api/orders/${orderId}`],
+    queryFn: () => apiRequest("GET", `/api/orders/${orderId}`),
     enabled: !!orderId,
+  });
+
+  // Debug logs
+  console.log('OrderEdit Debug:', {
+    orderId,
+    order,
+    orderLoading,
+    orderError,
+    enabled: !!orderId
   });
 
   // Fetch vendors
   const { data: vendors } = useQuery({
     queryKey: ["/api/vendors"],
+    queryFn: () => apiRequest("GET", "/api/vendors"),
   });
 
   // Fetch items
   const { data: itemsData } = useQuery({
     queryKey: ["/api/items"],
+    queryFn: () => apiRequest("GET", "/api/items"),
   });
 
   const items = itemsData?.items || [];
@@ -216,11 +234,26 @@ export default function OrderEdit() {
     );
   }
 
+  if (orderError) {
+    return (
+      <div className="container mx-auto py-6">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">발주서 로드 중 오류가 발생했습니다</h1>
+          <p className="mb-4 text-red-600">{orderError.message}</p>
+          <Button onClick={() => navigate("/orders")}>
+            발주서 목록으로 돌아가기
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   if (!order) {
     return (
       <div className="container mx-auto py-6">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">발주서를 찾을 수 없습니다</h1>
+          <p className="mb-4 text-gray-600">OrderID: {orderId}</p>
           <Button onClick={() => navigate("/orders")}>
             발주서 목록으로 돌아가기
           </Button>

@@ -3,6 +3,7 @@ import {
   text,
   varchar,
   timestamp,
+  date,
   jsonb,
   index,
   serial,
@@ -26,32 +27,6 @@ export const sessions = pgTable(
   },
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
-
-// Email verification tokens table
-export const emailVerificationTokens = pgTable("email_verification_tokens", {
-  id: serial("id").primaryKey(),
-  email: varchar("email", { length: 255 }).notNull(),
-  token: varchar("token", { length: 255 }).notNull().unique(),
-  tokenType: varchar("token_type", { length: 50 }).notNull(), // 'email_verification', 'password_reset'
-  expiresAt: timestamp("expires_at").notNull(),
-  usedAt: timestamp("used_at"),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-// Pending user registrations table
-export const pendingRegistrations = pgTable("pending_registrations", {
-  id: serial("id").primaryKey(),
-  email: varchar("email", { length: 255 }).notNull().unique(),
-  hashedPassword: varchar("hashed_password", { length: 255 }).notNull(),
-  fullName: varchar("full_name", { length: 100 }).notNull(),
-  departmentName: varchar("department_name", { length: 100 }),
-  positionId: integer("position_id"),
-  phoneNumber: varchar("phone_number", { length: 20 }),
-  role: varchar("role", { length: 50 }).notNull().default("field_worker"),
-  verificationToken: varchar("verification_token", { length: 255 }).notNull().unique(),
-  expiresAt: timestamp("expires_at").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-});
 
 // UI terminology table for soft-coding localization
 export const uiTerms = pgTable("ui_terms", {
@@ -84,6 +59,7 @@ export const itemCategories = pgTable("item_categories", {
 export const userRoleEnum = pgEnum("user_role", ["field_worker", "project_manager", "hq_management", "executive", "admin"]);
 export const purchaseOrderStatusEnum = pgEnum("purchase_order_status", ["draft", "pending", "approved", "sent", "completed"]);
 export const projectStatusEnum = pgEnum("project_status", ["planning", "active", "on_hold", "completed", "cancelled"]);
+export const projectTypeEnum = pgEnum("project_type", ["commercial", "residential", "industrial", "infrastructure"]);
 export const invoiceStatusEnum = pgEnum("invoice_status", ["pending", "verified", "paid"]);
 export const itemReceiptStatusEnum = pgEnum("item_receipt_status", ["pending", "approved", "rejected"]);
 export const verificationActionEnum = pgEnum("verification_action", ["invoice_uploaded", "item_verified", "quality_checked"]);
@@ -104,26 +80,19 @@ export const approvalAuthorities = pgTable("approval_authorities", {
 // User storage table for local authentication
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().notNull(),
-  email: varchar("email").unique(),
+  email: varchar("email").unique().notNull(),
   name: varchar("name").notNull(),
-  password: varchar("password").notNull(), // Required for security
-  phoneNumber: varchar("phone_number").notNull(),
+  password: varchar("hashed_password").notNull(), // Match actual database column name
+  phoneNumber: varchar("phone_number"),
   profileImageUrl: varchar("profile_image_url"),
   role: userRoleEnum("role").notNull().default("field_worker"),
-  isActive: boolean("is_active").default(true).notNull(),
-  // 2FA 관련 필드
-  twoFactorEnabled: boolean("two_factor_enabled").default(false),
-  twoFactorSecret: varchar("two_factor_secret", { length: 32 }), // TOTP secret
-  twoFactorBackupCodes: jsonb("two_factor_backup_codes"), // 백업 코드 배열
-  lastLoginAt: timestamp("last_login_at"),
-  loginAttempts: integer("login_attempts").default(0),
-  lockedUntil: timestamp("locked_until"),
+  position: varchar("position"), // Add position field that exists in DB
+  isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
   index("idx_users_email").on(table.email),
   index("idx_users_role").on(table.role),
-  index("idx_users_locked").on(table.lockedUntil),
 ]);
 
 // Note: order_statuses table removed - using ENUM with display views instead
@@ -134,40 +103,32 @@ export const companies = pgTable("companies", {
   companyName: varchar("company_name", { length: 255 }).notNull(),
   businessNumber: varchar("business_number", { length: 50 }),
   address: text("address"),
+  contactPerson: varchar("contact_person", { length: 100 }), // Match actual DB schema
   phone: varchar("phone", { length: 50 }),
-  fax: varchar("fax", { length: 50 }),
   email: varchar("email", { length: 255 }),
-  website: varchar("website", { length: 255 }),
-  representative: varchar("representative", { length: 100 }),
-  logoUrl: varchar("logo_url", { length: 500 }), // Optimized: varchar instead of text
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Vendor type enum for distinguishing between vendors and suppliers
-export const vendorTypeEnum = pgEnum("vendor_type", ["거래처", "납품처"]);
+// vendorTypeEnum 제거 - 실제 데이터베이스 스키마에 맞춤
 
 // Vendors table
 export const vendors = pgTable("vendors", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
-  type: vendorTypeEnum("type").notNull().default("거래처"), // 거래처 또는 납품처 구분
   businessNumber: varchar("business_number", { length: 50 }),
-  industry: varchar("industry", { length: 100 }),
-  representative: varchar("representative", { length: 100 }),
-  mainContact: varchar("main_contact", { length: 100 }).notNull(), // Renamed from contact for clarity
   contactPerson: varchar("contact_person", { length: 100 }).notNull(),
-  email: varchar("email", { length: 255 }).notNull().unique(),
+  email: varchar("email", { length: 255 }).notNull(),
   phone: varchar("phone", { length: 50 }),
   address: text("address"),
-  memo: text("memo"),
+  businessType: varchar("business_type", { length: 100 }),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
   index("idx_vendors_name").on(table.name),
-  index("idx_vendors_type").on(table.type),
   index("idx_vendors_business_number").on(table.businessNumber),
   index("idx_vendors_email").on(table.email),
   index("idx_vendors_active").on(table.isActive),
@@ -177,10 +138,13 @@ export const vendors = pgTable("vendors", {
 export const items = pgTable("items", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
-  category: varchar("category", { length: 100 }),
   specification: text("specification"),
   unit: varchar("unit", { length: 50 }).notNull(),
-  standardPrice: decimal("standard_price", { precision: 15, scale: 2 }),
+  unitPrice: decimal("unit_price", { precision: 15, scale: 2 }),
+  category: varchar("category", { length: 100 }),
+  majorCategory: varchar("major_category", { length: 100 }),
+  middleCategory: varchar("middle_category", { length: 100 }),
+  minorCategory: varchar("minor_category", { length: 100 }),
   description: text("description"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
@@ -215,10 +179,10 @@ export const projects = pgTable("projects", {
   projectName: varchar("project_name", { length: 255 }).notNull(),
   projectCode: varchar("project_code", { length: 100 }).notNull().unique(),
   clientName: varchar("client_name", { length: 255 }),
-  projectType: varchar("project_type", { length: 100 }), // 아파트, 오피스텔, 상업시설 등
+  projectType: projectTypeEnum("project_type").notNull().default("commercial"),
   location: text("location"),
-  startDate: timestamp("start_date"),
-  endDate: timestamp("end_date"),
+  startDate: date("start_date"),
+  endDate: date("end_date"),
   status: projectStatusEnum("status").notNull().default("active"),
   totalBudget: decimal("total_budget", { precision: 15, scale: 2 }),
   projectManagerId: varchar("project_manager_id").references(() => users.id),
@@ -268,7 +232,7 @@ export const orderTemplates = pgTable("order_templates", {
   id: serial("id").primaryKey(),
   templateName: varchar("template_name", { length: 100 }).notNull(),
   templateType: varchar("template_type", { length: 50 }).notNull(), // material_extrusion, panel_manufacturing, general, handsontable
-  fieldsConfig: jsonb("fields_config").notNull(),
+  // fieldsConfig: jsonb("fields_config").notNull(), // TODO: Add this column to database
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -329,19 +293,16 @@ export const purchaseOrders = pgTable("purchase_orders", {
   vendorId: integer("vendor_id").references(() => vendors.id),
   userId: varchar("user_id").references(() => users.id).notNull(),
   templateId: integer("template_id").references(() => orderTemplates.id),
-  orderDate: timestamp("order_date").notNull(),
-  deliveryDate: timestamp("delivery_date"),
+  orderDate: date("order_date").notNull(),
+  deliveryDate: date("delivery_date"),
   status: purchaseOrderStatusEnum("status").notNull().default("pending"),
   totalAmount: decimal("total_amount", { precision: 15, scale: 2 }).default("0").$type<number>(),
   notes: text("notes"),
-  customFields: jsonb("custom_fields"),
+  // customFields: jsonb("custom_fields"), // TODO: Add this column to database
   isApproved: boolean("is_approved").default(false),
   approvedBy: varchar("approved_by").references(() => users.id),
   approvedAt: timestamp("approved_at"),
-  sentAt: timestamp("sent_at"),
-  emailStatus: varchar("email_status", { length: 20 }).default("not_sent"), // not_sent, sent, failed
-  emailSentCount: integer("email_sent_count").default(0),
-  lastEmailError: text("last_email_error"),
+  // sentAt: timestamp("sent_at"), // TODO: Add this column to database
   currentApproverRole: userRoleEnum("current_approver_role"),
   approvalLevel: integer("approval_level").default(1),
   createdAt: timestamp("created_at").defaultNow(),
@@ -362,38 +323,39 @@ export const purchaseOrders = pgTable("purchase_orders", {
 export const purchaseOrderItems = pgTable("purchase_order_items", {
   id: serial("id").primaryKey(),
   orderId: integer("order_id").references(() => purchaseOrders.id).notNull(),
-  itemId: integer("item_id").references(() => items.id),
+  // itemId: integer("item_id").references(() => items.id), // TODO: Add this column to database
   itemName: varchar("item_name", { length: 255 }).notNull(),
   specification: text("specification"),
+  unit: varchar("unit", { length: 50 }), // 실제 DB에 있는 컬럼, NULL 허용
   quantity: decimal("quantity", { precision: 10, scale: 2 }).notNull().$type<number>(),
   unitPrice: decimal("unit_price", { precision: 15, scale: 2 }).notNull().$type<number>(),
   totalAmount: decimal("total_amount", { precision: 15, scale: 2 }).notNull().$type<number>(),
-  // PO Template Input 시트를 위한 새로운 필드들
-  categoryLv1: varchar("category_lv1", { length: 100 }), // 대분류
-  categoryLv2: varchar("category_lv2", { length: 100 }), // 중분류
-  categoryLv3: varchar("category_lv3", { length: 100 }), // 소분류
-  supplyAmount: decimal("supply_amount", { precision: 15, scale: 2 }).default("0").notNull().$type<number>(), // 공급가액
-  taxAmount: decimal("tax_amount", { precision: 15, scale: 2 }).default("0").notNull().$type<number>(), // 세액
-  deliveryName: varchar("delivery_name", { length: 255 }), // 납품처명
+  // PO Template Input 시트를 위한 새로운 필드들 (TODO: Add these columns to database)
+  // categoryLv1: varchar("category_lv1", { length: 100 }), // 대분류
+  // categoryLv2: varchar("category_lv2", { length: 100 }), // 중분류  
+  // categoryLv3: varchar("category_lv3", { length: 100 }), // 소분류
+  // supplyAmount: decimal("supply_amount", { precision: 15, scale: 2 }).default("0").notNull().$type<number>(), // TODO: Add to DB
+  // taxAmount: decimal("tax_amount", { precision: 15, scale: 2 }).default("0").notNull().$type<number>(), // TODO: Add to DB  
+  // deliveryName: varchar("delivery_name", { length: 255 }), // TODO: Add to DB
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
-  index("idx_purchase_order_items_category_lv1").on(table.categoryLv1),
-  index("idx_purchase_order_items_category_lv2").on(table.categoryLv2),
-  index("idx_purchase_order_items_category_lv3").on(table.categoryLv3),
+  // index("idx_purchase_order_items_category_lv1").on(table.categoryLv1), // TODO: Add when column is added
+  // index("idx_purchase_order_items_category_lv2").on(table.categoryLv2), // TODO: Add when column is added
+  // index("idx_purchase_order_items_category_lv3").on(table.categoryLv3), // TODO: Add when column is added
 ]);
 
 // File attachments table
 export const attachments = pgTable("attachments", {
   id: serial("id").primaryKey(),
   orderId: integer("order_id").references(() => purchaseOrders.id).notNull(),
-  fileName: varchar("file_name", { length: 255 }).notNull(),
   originalName: varchar("original_name", { length: 255 }).notNull(),
-  fileSize: integer("file_size").notNull(),
-  mimeType: varchar("mime_type", { length: 100 }).notNull(),
-  filePath: text("file_path").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  storedName: varchar("stored_name", { length: 255 }).notNull(),
+  filePath: varchar("file_path", { length: 500 }).notNull(),
+  fileSize: integer("file_size"),
+  mimeType: varchar("mime_type", { length: 100 }),
+  uploadedBy: varchar("uploaded_by", { length: 50 }),
+  uploadedAt: timestamp("uploaded_at").defaultNow(),
 });
 
 // Order history/audit log table
@@ -643,7 +605,6 @@ export const itemCategoriesRelations = relations(itemCategories, ({ one, many })
   children: many(itemCategories),
 }));
 
-
 // Insert schemas
 export const insertCompanySchema = createInsertSchema(companies).omit({
   id: true,
@@ -718,7 +679,7 @@ export const insertPurchaseOrderItemSchema = createInsertSchema(purchaseOrderIte
 
 export const insertAttachmentSchema = createInsertSchema(attachments).omit({
   id: true,
-  createdAt: true,
+  uploadedAt: true,
 });
 
 export const insertOrderHistorySchema = createInsertSchema(orderHistory).omit({
@@ -866,96 +827,6 @@ export const insertApprovalAuthoritySchema = createInsertSchema(approvalAuthorit
 export type ApprovalAuthority = typeof approvalAuthorities.$inferSelect;
 export type InsertApprovalAuthority = z.infer<typeof insertApprovalAuthoritySchema>;
 
-// Email sending history table
-export const emailSendingHistory = pgTable("email_sending_history", {
-  id: serial("id").primaryKey(),
-  orderId: integer("order_id"), // References purchase order ID
-  orderNumber: varchar("order_number", { length: 50 }),
-  senderUserId: varchar("sender_user_id", { length: 50 }).notNull(),
-  recipients: jsonb("recipients").notNull(), // Array of email addresses
-  cc: jsonb("cc"), // Array of CC email addresses
-  bcc: jsonb("bcc"), // Array of BCC email addresses
-  subject: text("subject").notNull(),
-  messageContent: text("message_content"), // Email body content
-  attachmentFiles: jsonb("attachment_files"), // Array of attachment info
-  sendingStatus: varchar("sending_status", { length: 20 }).notNull().default("pending"), // pending, sending, completed, failed
-  sentCount: integer("sent_count").default(0),
-  failedCount: integer("failed_count").default(0),
-  errorMessage: text("error_message"),
-  sentAt: timestamp("sent_at"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
-
-// Email sending details table (for individual recipient tracking)
-export const emailSendingDetails = pgTable("email_sending_details", {
-  id: serial("id").primaryKey(),
-  historyId: integer("history_id").notNull(),
-  recipientEmail: varchar("recipient_email", { length: 255 }).notNull(),
-  recipientType: varchar("recipient_type", { length: 10 }).notNull(), // 'to', 'cc', 'bcc'
-  sendingStatus: varchar("sending_status", { length: 20 }).notNull().default("pending"), // pending, sent, failed
-  messageId: varchar("message_id", { length: 255 }), // Email service message ID
-  errorMessage: text("error_message"),
-  sentAt: timestamp("sent_at"),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
 // Item category types
 export type ItemCategory = typeof itemCategories.$inferSelect;
 export type InsertItemCategory = z.infer<typeof insertItemCategorySchema>;
-
-// Email sending history relations
-export const emailSendingHistoryRelations = relations(emailSendingHistory, ({ one, many }) => ({
-  order: one(purchaseOrders, {
-    fields: [emailSendingHistory.orderId],
-    references: [purchaseOrders.id]
-  }),
-  senderUser: one(users, {
-    fields: [emailSendingHistory.senderUserId],
-    references: [users.id]
-  }),
-  details: many(emailSendingDetails),
-}));
-
-export const emailSendingDetailsRelations = relations(emailSendingDetails, ({ one }) => ({
-  history: one(emailSendingHistory, {
-    fields: [emailSendingDetails.historyId],
-    references: [emailSendingHistory.id]
-  }),
-}));
-
-// Email sending history types
-export type EmailSendingHistory = typeof emailSendingHistory.$inferSelect;
-export type InsertEmailSendingHistory = typeof emailSendingHistory.$inferInsert;
-export type EmailSendingDetails = typeof emailSendingDetails.$inferSelect;
-export type InsertEmailSendingDetails = typeof emailSendingDetails.$inferInsert;
-
-// Login audit log table for tracking authentication attempts
-export const loginAuditLogs = pgTable("login_audit_logs", {
-  id: serial("id").primaryKey(),
-  userId: varchar("user_id"), // null for failed attempts
-  email: varchar("email", { length: 255 }).notNull(),
-  loginStatus: varchar("login_status", { length: 20 }).notNull(), // success, failed, blocked
-  ipAddress: varchar("ip_address", { length: 45 }), // IPv6 support
-  userAgent: text("user_agent"),
-  failureReason: varchar("failure_reason", { length: 100 }), // invalid_password, user_not_found, account_disabled
-  sessionId: varchar("session_id", { length: 255 }), // For successful logins
-  createdAt: timestamp("created_at").defaultNow(),
-}, (table) => [
-  index("idx_login_audit_user_id").on(table.userId),
-  index("idx_login_audit_email").on(table.email),
-  index("idx_login_audit_created_at").on(table.createdAt),
-  index("idx_login_audit_status").on(table.loginStatus),
-]);
-
-// Login audit log relations
-export const loginAuditLogRelations = relations(loginAuditLogs, ({ one }) => ({
-  user: one(users, {
-    fields: [loginAuditLogs.userId],
-    references: [users.id]
-  }),
-}));
-
-// Login audit log types
-export type LoginAuditLog = typeof loginAuditLogs.$inferSelect;
-export type InsertLoginAuditLog = typeof loginAuditLogs.$inferInsert;
