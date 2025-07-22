@@ -275,6 +275,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // 비밀번호 변경 엔드포인트
+  app.patch('/api/auth/change-password', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { currentPassword, newPassword } = req.body;
+      
+      // 입력값 검증
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ message: "현재 비밀번호와 새 비밀번호를 모두 입력해주세요." });
+      }
+
+      if (newPassword.length < 6) {
+        return res.status(400).json({ message: "새 비밀번호는 최소 6자 이상이어야 합니다." });
+      }
+
+      // 현재 사용자 정보 가져오기
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
+      }
+
+      // 현재 비밀번호 확인
+      const { comparePasswords, hashPassword } = await import('./auth-utils');
+      const isValidPassword = await comparePasswords(currentPassword, user.password || '');
+      
+      if (!isValidPassword) {
+        return res.status(400).json({ message: "현재 비밀번호가 일치하지 않습니다." });
+      }
+
+      // 새 비밀번호 해싱
+      const newHashedPassword = await hashPassword(newPassword);
+
+      // 비밀번호 업데이트
+      await storage.updateUser(userId, { password: newHashedPassword });
+
+      res.json({ message: "비밀번호가 성공적으로 변경되었습니다." });
+    } catch (error) {
+      console.error("Error changing password:", error);
+      res.status(500).json({ message: "비밀번호 변경에 실패했습니다." });
+    }
+  });
+
   // User management routes (admin only)
   app.get('/api/users', requireAuth, async (req: any, res) => {
     try {
@@ -1147,6 +1189,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "Failed to create vendor",
         error: error.message 
       });
+    }
+  });
+
+  app.put('/api/vendors/:id', requireAuth, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      console.log("🔍 Vendor update request - ID:", id);
+      console.log("🔍 Update data:", req.body);
+      
+      const updatedVendor = await storage.updateVendor(id, req.body);
+      
+      if (!updatedVendor) {
+        return res.status(404).json({ message: "Vendor not found" });
+      }
+      
+      console.log("✅ Vendor updated successfully:", updatedVendor);
+      res.json(updatedVendor);
+    } catch (error) {
+      console.error("❌ Error updating vendor:", error);
+      res.status(500).json({ message: "Failed to update vendor" });
     }
   });
 

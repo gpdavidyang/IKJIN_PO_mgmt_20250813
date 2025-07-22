@@ -1,10 +1,18 @@
 import dotenv from "dotenv";
 dotenv.config();
 
+// 환경변수 강제 오버라이드 - Direct Connection 사용
+process.env.DATABASE_URL = process.env.DATABASE_URL || "postgresql://postgres.tbvugytmskxxyqfvqmup:gps110601ysw@db.tbvugytmskxxyqfvqmup.supabase.co:5432/postgres?sslmode=require&connect_timeout=60";
+console.log("🔧 Force-set DATABASE_URL:", process.env.DATABASE_URL.split('@')[0] + '@[HIDDEN]');
+
 import express, { type Request, Response, NextFunction } from "express";
-import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { migratePasswords } from "./migrate-passwords";
+import { createServer } from "http";
+import session from "express-session";
+import connectPgSimple from "connect-pg-simple";
+import router from "./routes/index";
+import { requireAuth } from "./local-auth";
 
 const app = express();
 app.use(express.json());
@@ -47,7 +55,27 @@ app.use((req, res, next) => {
   // Temporarily skip password migration due to connection issues
   // await migratePasswords();
   
-  const server = await registerRoutes(app);
+  // Setup session middleware for local authentication
+  const pgSession = connectPgSimple(session);
+  app.use(session({
+    store: new pgSession({
+      conString: process.env.DATABASE_URL,
+      tableName: 'app_sessions'
+    }),
+    secret: process.env.SESSION_SECRET || 'default-secret-key',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: false, // Set to true in production with HTTPS
+      httpOnly: true,
+      maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
+    }
+  }));
+
+  // Use modular routes
+  app.use(router);
+  
+  const server = createServer(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

@@ -13,12 +13,14 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { getUserInitials, getUserDisplayName, getRoleText } from "@/lib/statusUtils";
-import { User, Settings, Bell, Globe } from "lucide-react";
+import { User, Settings, Bell, Globe, Lock } from "lucide-react";
+import { useLocation } from "wouter";
 
 
 export default function Profile() {
   const { user, isLoading } = useAuth();
   const { toast } = useToast();
+  const [, navigate] = useLocation();
 
   const [profileData, setProfileData] = useState({
     name: "",
@@ -31,6 +33,14 @@ export default function Profile() {
     orderAlerts: true,
     language: "ko",
   });
+
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
 
   useEffect(() => {
     if (user && typeof user === 'object') {
@@ -105,6 +115,81 @@ export default function Profile() {
     updateProfileMutation.mutate(profileData);
   };
 
+  const changePasswordMutation = useMutation({
+    mutationFn: async (data: { currentPassword: string; newPassword: string }) => {
+      const response = await apiRequest("PATCH", "/api/auth/change-password", data);
+      return response;
+    },
+    onSuccess: () => {
+      toast({
+        title: "성공",
+        description: "비밀번호가 성공적으로 변경되었습니다.",
+      });
+      // 비밀번호 폼 초기화
+      setPasswordData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+      setShowPasswordForm(false);
+    },
+    onError: (error: any) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "인증 오류",
+          description: "로그인이 필요합니다. 다시 로그인해주세요.",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          navigate("/login");
+        }, 500);
+      } else {
+        toast({
+          title: "오류",
+          description: error.response?.data?.message || "비밀번호 변경에 실패했습니다.",
+          variant: "destructive",
+        });
+      }
+    }
+  });
+
+  const handlePasswordSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // 입력값 검증
+    if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
+      toast({
+        title: "입력 오류",
+        description: "모든 필드를 입력해주세요.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast({
+        title: "입력 오류",
+        description: "새 비밀번호가 일치하지 않습니다.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      toast({
+        title: "입력 오류",
+        description: "새 비밀번호는 최소 6자 이상이어야 합니다.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    changePasswordMutation.mutate({
+      currentPassword: passwordData.currentPassword,
+      newPassword: passwordData.newPassword,
+    });
+  };
+
   if (isLoading) {
     return (
       <div className="container mx-auto p-6">
@@ -153,7 +238,7 @@ export default function Profile() {
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {/* 프로필 정보 카드 */}
         <Card>
           <CardHeader>
@@ -318,6 +403,101 @@ export default function Profile() {
                 </div>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* 비밀번호 변경 카드 */}
+        <Card className="lg:col-span-1">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Lock className="h-5 w-5" />
+              <span>비밀번호 변경</span>
+            </CardTitle>
+            <CardDescription>
+              계정 보안을 위해 정기적으로 비밀번호를 변경하세요.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {!showPasswordForm ? (
+              <div className="space-y-4">
+                <p className="text-sm text-gray-600">
+                  비밀번호를 변경하려면 아래 버튼을 클릭하세요.
+                </p>
+                <Button 
+                  onClick={() => setShowPasswordForm(true)}
+                  className="w-full"
+                  variant="outline"
+                >
+                  비밀번호 변경하기
+                </Button>
+              </div>
+            ) : (
+              <form onSubmit={handlePasswordSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="currentPassword">현재 비밀번호</Label>
+                  <Input
+                    id="currentPassword"
+                    type="password"
+                    value={passwordData.currentPassword}
+                    onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
+                    placeholder="현재 비밀번호를 입력하세요"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword">새 비밀번호</Label>
+                  <Input
+                    id="newPassword"
+                    type="password"
+                    value={passwordData.newPassword}
+                    onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
+                    placeholder="새 비밀번호를 입력하세요"
+                    required
+                  />
+                  <p className="text-xs text-gray-500">최소 6자 이상 입력하세요</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">새 비밀번호 확인</Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    value={passwordData.confirmPassword}
+                    onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                    placeholder="새 비밀번호를 다시 입력하세요"
+                    required
+                  />
+                </div>
+
+                <Separator />
+
+                <div className="flex space-x-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setShowPasswordForm(false);
+                      setPasswordData({
+                        currentPassword: "",
+                        newPassword: "",
+                        confirmPassword: "",
+                      });
+                    }}
+                    className="flex-1"
+                  >
+                    취소
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    disabled={changePasswordMutation.isPending}
+                    className="flex-1"
+                  >
+                    {changePasswordMutation.isPending ? "변경 중..." : "비밀번호 변경"}
+                  </Button>
+                </div>
+              </form>
+            )}
           </CardContent>
         </Card>
       </div>
