@@ -1,6 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
 import { FileText, Package, Users, Clock, Building, Plus, AlertCircle, BarChart3, CheckCircle, TrendingUp, ShoppingCart, Activity } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useDashboardData } from "@/hooks/use-enhanced-queries";
 import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
@@ -39,13 +39,8 @@ export default function Dashboard() {
     }
   }, [user, authLoading, toast]);
 
-  // Unified dashboard API call - replaces 8 individual API calls with 1
-  const { data: dashboardData, isLoading: dashboardLoading } = useQuery({
-    queryKey: ["/api/dashboard/unified"],
-    enabled: !!user,
-    staleTime: 2 * 60 * 1000, // Cache for 2 minutes
-    refetchInterval: 5 * 60 * 1000, // Auto-refresh every 5 minutes
-  });
+  // Unified dashboard API call with enhanced caching and background sync
+  const { data: dashboardData, isLoading: dashboardLoading } = useDashboardData();
 
   // Extract data from unified response with fallbacks
   const stats = dashboardData?.statistics || {};

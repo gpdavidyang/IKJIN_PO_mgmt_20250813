@@ -19,6 +19,9 @@ import { ThemeProvider } from "@/components/ui/theme-provider";
 // Performance monitoring
 import { usePerformanceMonitor, useBundleAnalytics, usePageLoadMetrics } from "@/hooks/use-performance";
 import { DashboardSkeleton } from "@/components/common/LazyWrapper";
+// Query optimization
+import { useAppInitialization, useCacheWarming } from "@/hooks/use-enhanced-queries";
+import { QueryDevTools, useQueryDevTools } from "@/components/dev/query-devtools";
 
 // Critical components (loaded immediately)
 import NotFound from "@/pages/not-found";
@@ -127,6 +130,16 @@ function Layout() {
   usePerformanceMonitor('Layout');
   useBundleAnalytics();
   const pageMetrics = usePageLoadMetrics();
+  
+  // Query optimization and cache warming
+  const { isInitialized } = useAppInitialization();
+  const { warmEssentialData, warmUserSpecificData } = useCacheWarming();
+  const showQueryDevTools = useQueryDevTools();
+  
+  // Warm caches on app initialization
+  useEffect(() => {
+    warmEssentialData();
+  }, [warmEssentialData]);
   
   // Route-based preloading
   useEffect(() => {
@@ -384,6 +397,9 @@ function Layout() {
           </Suspense>
         </main>
       </div>
+      
+      {/* Query DevTools for development */}
+      {showQueryDevTools && <QueryDevTools />}
     </div>
   );
 }

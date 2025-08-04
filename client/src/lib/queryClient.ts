@@ -1,4 +1,5 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { createOptimizedQueryClient } from "./query-optimization";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -55,17 +56,12 @@ export const getQueryFn: <T>(options: {
     return await res.json();
   };
 
-export const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      queryFn: getQueryFn({ on401: "throw" }),
-      refetchInterval: false,
-      refetchOnWindowFocus: false,
-      staleTime: Infinity,
-      retry: false,
-    },
-    mutations: {
-      retry: false,
-    },
+// Use the optimized query client with enhanced defaults
+export const queryClient = createOptimizedQueryClient();
+
+// Override the default query function
+queryClient.setDefaultOptions({
+  queries: {
+    queryFn: getQueryFn({ on401: "throw" }),
   },
 });

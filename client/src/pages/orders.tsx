@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Search, Download, Filter, ChevronUp, ChevronDown } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { useOrders, useVendors, useProjects, useUsers } from "@/hooks/use-enhanced-queries";
+import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { getStatusText } from "@/lib/statusUtils";
@@ -99,42 +100,11 @@ export default function Orders() {
     setFilters(newFilters);
   }, [location]);
 
-  const { data: ordersData, isLoading: ordersLoading } = useQuery({
-    queryKey: ["/api/orders", filters],
-    queryFn: () => {
-      const params = new URLSearchParams();
-      if (filters.status !== "all" && filters.status) params.append("status", filters.status);
-      if (filters.vendorId !== "all" && filters.vendorId) params.append("vendorId", filters.vendorId);
-      if (filters.projectId !== "all" && filters.projectId) params.append("projectId", filters.projectId);
-      if (filters.userId !== "all" && filters.userId) params.append("userId", filters.userId);
-      if (filters.startDate) params.append("startDate", filters.startDate);
-      if (filters.endDate) params.append("endDate", filters.endDate);
-      if (filters.minAmount) params.append("minAmount", filters.minAmount);
-      if (filters.maxAmount) params.append("maxAmount", filters.maxAmount);
-      if (filters.searchText) params.append("searchText", filters.searchText);
-      params.append("page", filters.page.toString());
-      params.append("limit", filters.limit.toString());
-      
-      const url = `/api/orders${params.toString() ? `?${params.toString()}` : ''}`;
-      return fetch(url).then(res => res.json());
-    },
-  });
-
-  const { data: vendors } = useQuery({
-    queryKey: ["/api/vendors"],
-  });
-
-  const { data: projects } = useQuery({
-    queryKey: ["/api/projects"],
-  });
-
-  const { data: orderStatuses } = useQuery({
-    queryKey: ["/api/order-statuses"],
-  });
-
-  const { data: users } = useQuery({
-    queryKey: ["/api/users"],
-  });
+  // Enhanced queries with optimized caching
+  const { data: ordersData, isLoading: ordersLoading } = useOrders(filters);
+  const { data: vendors } = useVendors();
+  const { data: projects } = useProjects();
+  const { data: users } = useUsers();
 
   const statusChangeMutation = useMutation({
     mutationFn: async ({ orderId, status }: { orderId: string; status: string }) => {
