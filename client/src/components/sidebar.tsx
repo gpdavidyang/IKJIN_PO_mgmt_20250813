@@ -21,29 +21,22 @@ import {
   ChevronDown,
   ChevronRight,
   CheckCircle,
-  Upload,
-  History
+  Upload
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSidebar } from "@/contexts/SidebarContext";
 import type { Company } from "@shared/schema";
-import { hasPermission } from "@/utils/auth-helpers";
 
-// Navigation item type with permission requirement
-type NavItem = {
+// Main navigation sections with separators
+const primaryNavigation: Array<{
   name: string;
   href: string;
   icon: any;
-  permission?: keyof typeof import("@/utils/auth-helpers").ROLE_PERMISSIONS.admin;
-  subItems?: Array<{ name: string; href: string; permission?: keyof typeof import("@/utils/auth-helpers").ROLE_PERMISSIONS.admin }>;
-};
-
-// Main navigation sections with separators
-const primaryNavigation: NavItem[] = [
-  { name: "대시보드", href: "/", icon: Home, permission: "canViewDashboard" },
+  subItems?: Array<{ name: string; href: string }>;
+}> = [
+  { name: "대시보드", href: "/", icon: Home },
   { name: "발주서 관리", href: "/orders", icon: FileText },
-  { name: "이메일 이력", href: "/email-history", icon: History, permission: "canViewEmailHistory" },
-  { name: "승인 관리", href: "/approvals", icon: CheckCircle, permission: "canApproveOrders" },
+  { name: "승인 관리", href: "/approvals", icon: CheckCircle },
   { 
     name: "발주서 작성", 
     href: "/create-order", 
@@ -58,16 +51,16 @@ const primaryNavigation: NavItem[] = [
   },
 ];
 
-const managementNavigation: NavItem[] = [
-  { name: "현장 관리", href: "/projects", icon: Building2, permission: "canManageProjects" },
-  { name: "거래처 관리", href: "/vendors", icon: Building, permission: "canManageVendors" },
+const managementNavigation = [
+  { name: "현장 관리", href: "/projects", icon: Building2 },
+  { name: "거래처 관리", href: "/vendors", icon: Building },
   { name: "품목 관리", href: "/items", icon: Package },
-  { name: "보고서 및 분석", href: "/reports", icon: BarChart3, permission: "canExportData" },
+  { name: "보고서 및 분석", href: "/reports", icon: BarChart3 },
 ];
 
-const systemNavigation: NavItem[] = [
-  { name: "템플릿 관리", href: "/templates", icon: FileSpreadsheet, permission: "canManageSettings" },
-  { name: "시스템 관리", href: "/admin", icon: Settings, permission: "canManageSettings" },
+const systemNavigation = [
+  { name: "템플릿 관리", href: "/templates", icon: FileSpreadsheet },
+  { name: "시스템 관리", href: "/admin", icon: Settings },
 ];
 
 export function Sidebar() {
@@ -126,9 +119,7 @@ export function Sidebar() {
       
       <nav className="mt-8 px-4 space-y-2">
         {/* Primary Navigation */}
-        {primaryNavigation
-          .filter(item => !item.permission || (user && hasPermission(user.role, item.permission)))
-          .map((item) => (
+        {primaryNavigation.map((item) => (
           <div key={item.name}>
             <Button
               variant={isActive(item.href) ? "secondary" : "ghost"}
@@ -163,9 +154,7 @@ export function Sidebar() {
             {/* Sub-items */}
             {item.subItems && !isCollapsed && expandedItems.includes(item.name) && (
               <div className="ml-6 mt-2 space-y-1">
-                {item.subItems
-                  .filter(subItem => !subItem.permission || (user && hasPermission(user.role, subItem.permission)))
-                  .map((subItem) => (
+                {item.subItems.map((subItem) => (
                   <Button
                     key={subItem.name}
                     variant={isActive(subItem.href) ? "secondary" : "ghost"}
@@ -192,9 +181,7 @@ export function Sidebar() {
         </div>
         
         {/* Management Navigation */}
-        {managementNavigation
-          .filter(item => !item.permission || (user && hasPermission(user.role, item.permission)))
-          .map((item) => (
+        {managementNavigation.map((item) => (
           <Button
             key={item.name}
             variant={isActive(item.href) ? "secondary" : "ghost"}
@@ -220,9 +207,13 @@ export function Sidebar() {
         </div>
         
         {/* System Navigation */}
-        {systemNavigation
-          .filter(item => !item.permission || (user && hasPermission(user.role, item.permission)))
-          .map((item) => (
+        {systemNavigation.map((item) => {
+          // Only show system management for admin users
+          if (item.name === "시스템 관리" && (user as any)?.role !== "admin") {
+            return null;
+          }
+          
+          return (
             <Button
               key={item.name}
               variant={isActive(item.href) ? "secondary" : "ghost"}
@@ -240,7 +231,8 @@ export function Sidebar() {
               <item.icon className={cn("h-4 w-4", !isCollapsed && "mr-3")} />
               {!isCollapsed && item.name}
             </Button>
-          ))}
+          );
+        })}
         
         {(user as any)?.role === "admin" && (
           <>

@@ -1,103 +1,84 @@
-import { beforeAll, afterAll, beforeEach, afterEach, jest } from '@jest/globals';
 import { config } from 'dotenv';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
+import * as schema from '@shared/schema';
 
 // Load test environment variables
 config({ path: '.env.test' });
 
-// Mock console methods for cleaner test output
-const consoleMethods = ['log', 'error', 'warn', 'info', 'debug'] as const;
-const originalConsole = {} as any;
+// Global test database connection
+let testDb: ReturnType<typeof drizzle>;
+let sql: ReturnType<typeof postgres>;
 
-beforeAll(() => {
-  // Save original console methods
-  consoleMethods.forEach(method => {
-    originalConsole[method] = console[method];
-  });
+// Setup before all tests
+beforeAll(async () => {
+  // Create test database connection
+  const connectionString = process.env.TEST_DATABASE_URL || process.env.DATABASE_URL;
+  if (!connectionString) {
+    throw new Error('TEST_DATABASE_URL or DATABASE_URL must be set');
+  }
   
-  // Mock console methods in test environment
-  if (process.env.NODE_ENV === 'test') {
-    consoleMethods.forEach(method => {
-      console[method] = jest.fn();
-    });
+  sql = postgres(connectionString);
+  testDb = drizzle(sql, { schema });
+  
+  // Run migrations or setup test database schema
+  // await migrate(testDb, { migrationsFolder: './drizzle' });
+});
+
+// Cleanup after all tests
+afterAll(async () => {
+  // Close database connection
+  if (sql) {
+    await sql.end();
   }
 });
 
-afterAll(() => {
-  // Restore original console methods
-  consoleMethods.forEach(method => {
-    console[method] = originalConsole[method];
-  });
+// Reset database state between test suites
+beforeEach(async () => {
+  // Start a transaction for test isolation
+  // This will be rolled back in afterEach
 });
 
-// Global test setup
-beforeEach(() => {
-  // Clear all mocks before each test
-  jest.clearAllMocks();
+afterEach(async () => {
+  // Rollback transaction to reset database state
+  // Clean up any test files created
 });
 
-afterEach(() => {
-  // Clean up after each test
-  jest.resetAllMocks();
-});
+// Make test database available globally
+(global as any).testDb = testDb;
 
-// Mock environment variables for tests
+// Mock environment variables
 process.env.NODE_ENV = 'test';
-process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test_db';
-process.env.SESSION_SECRET = 'test-secret-key';
-process.env.SMTP_HOST = 'smtp.test.com';
-process.env.SMTP_PORT = '587';
-process.env.SMTP_USER = 'test@test.com';
-process.env.SMTP_PASS = 'testpass';
+process.env.SESSION_SECRET = 'test-secret';
+process.env.VITE_ENVIRONMENT = 'test';
 
-// Global test utilities
-(global as any).testUtils = {
-  // Mock user data
-  mockUser: {
-    id: 'test-user-id',
-    email: 'test@example.com',
-    name: '테스트 사용자',
-    role: 'admin',
-    phoneNumber: '010-1234-5678',
-    profileImageUrl: null,
-    isActive: true,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  
-  // Mock order data
-  mockOrder: {
-    id: 1,
-    orderNumber: 'PO-2024-001',
-    projectId: 1,
-    vendorId: 1,
-    totalAmount: 1000000,
-    status: 'draft',
-    orderDate: new Date(),
-    requiredDate: new Date(),
-    isApproved: false,
-    approvedBy: null,
-    approvedAt: null,
-    currentApproverRole: null,
-    approvalLevel: 1,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  
-  // Mock vendor data
-  mockVendor: {
-    id: 1,
-    name: '테스트 거래처',
-    type: '거래처',
-    businessNumber: '123-45-67890',
-    industry: '제조업',
-    representative: '홍길동',
-    mainContact: '02-1234-5678',
-    contactPerson: '김담당',
-    email: 'vendor@test.com',
-    phone: '010-1234-5678',
-    address: '서울시 강남구',
-    isActive: true,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
+// Mock console methods to reduce noise in test output
+global.console = {
+  ...console,
+  log: jest.fn(),
+  debug: jest.fn(),
+  info: jest.fn(),
+  warn: jest.fn(),
+  error: jest.fn(),
 };
+
+// Add custom matchers if needed
+expect.extend({
+  toBeWithinRange(received: number, floor: number, ceiling: number) {
+    const pass = received >= floor && received <= ceiling;
+    if (pass) {
+      return {
+        message: () => `expected ${received} not to be within range ${floor} - ${ceiling}`,
+        pass: true,
+      };
+    } else {
+      return {
+        message: () => `expected ${received} to be within range ${floor} - ${ceiling}`,
+        pass: false,
+      };
+    }
+  },
+});
+
+// Export test utilities
+export { testDb };

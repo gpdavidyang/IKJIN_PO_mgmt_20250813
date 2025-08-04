@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { LogIn, Building2 } from "lucide-react";
+import { LogIn, Building2, Eye, EyeOff } from "lucide-react";
 import { useLocation } from "wouter";
 
 const loginSchema = z.object({
@@ -22,6 +22,7 @@ export default function LoginPage() {
   const { user, loginMutation } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -100,11 +101,26 @@ export default function LoginPage() {
                     <FormItem>
                       <FormLabel>비밀번호</FormLabel>
                       <FormControl>
-                        <Input
-                          type="password"
-                          placeholder="비밀번호를 입력하세요"
-                          {...field}
-                        />
+                        <div className="relative">
+                          <Input
+                            type={showPassword ? "text" : "password"}
+                            placeholder="비밀번호를 입력하세요"
+                            {...field}
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                            onClick={() => setShowPassword(!showPassword)}
+                          >
+                            {showPassword ? (
+                              <EyeOff className="h-4 w-4 text-gray-500" />
+                            ) : (
+                              <Eye className="h-4 w-4 text-gray-500" />
+                            )}
+                          </Button>
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -131,26 +147,6 @@ export default function LoginPage() {
             </Form>
           </CardContent>
         </Card>
-
-        {/* 회원가입 및 비밀번호 찾기 링크 */}
-        <div className="mt-6 text-center space-y-3">
-          <div className="flex flex-col sm:flex-row sm:justify-center sm:space-x-4 space-y-2 sm:space-y-0">
-            <button
-              type="button"
-              className="text-sm text-blue-600 hover:underline font-medium"
-              onClick={() => window.location.href = '/register'}
-            >
-              계정이 없으신가요? 회원가입
-            </button>
-            <button
-              type="button"
-              className="text-sm text-blue-600 hover:underline font-medium"
-              onClick={() => window.location.href = '/forgot-password'}
-            >
-              비밀번호를 잊으셨나요?
-            </button>
-          </div>
-        </div>
 
         <div className="mt-8 text-center text-sm text-gray-600">
           <p>기본 로그인 정보:</p>

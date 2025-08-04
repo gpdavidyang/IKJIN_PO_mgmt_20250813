@@ -57,7 +57,9 @@ export const createMulterConfig = (prefix: string = 'FILE') => {
         "image/gif",
         "application/dwg",
         "application/x-dwg",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // .xlsx
+        "application/vnd.ms-excel.sheet.macroEnabled.12", // .xlsm (대문자 E)
+        "application/vnd.ms-excel.sheet.macroenabled.12", // .xlsm (소문자 e)
         "application/vnd.ms-excel",
         "application/msword",
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -104,6 +106,8 @@ export const excelUpload = multer({
     
     const allowedTypes = [
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // .xlsx
+      "application/vnd.ms-excel.sheet.macroEnabled.12", // .xlsm (대문자 E)
+      "application/vnd.ms-excel.sheet.macroenabled.12", // .xlsm (소문자 e)
       "application/vnd.ms-excel", // .xls
     ];
     

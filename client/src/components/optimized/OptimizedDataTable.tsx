@@ -139,7 +139,7 @@ export function OptimizedDataTable<TData, TValue>({
           <div key={filter.key} className="flex items-center space-x-2">
             <Filter className="h-4 w-4 text-gray-500" />
             <select
-              value={columnFilters.find(f => f.id === filter.key)?.value || "all"}
+              value={(columnFilters.find(f => f.id === filter.key)?.value as string) || "all"}
               onChange={(e) => handleFilterChange(filter.key, e.target.value)}
               className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >

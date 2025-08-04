@@ -6,7 +6,7 @@
 import { Router } from "express";
 import { storage } from "../storage";
 import { login, logout, getCurrentUser } from "../local-auth";
-import { requireAuth, requireAdmin } from "../temp-auth-fix";
+import { requireAuth, requireAdmin } from "../local-auth";
 import { OptimizedUserQueries } from "../utils/optimized-queries";
 
 const router = Router();

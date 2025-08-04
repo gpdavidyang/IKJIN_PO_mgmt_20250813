@@ -1,4 +1,4 @@
-import XLSX from 'xlsx';
+import * as XLSX from 'xlsx';
 import puppeteer from 'puppeteer';
 import path from 'path';
 import fs from 'fs';
@@ -25,7 +25,7 @@ export class ExcelToPdfConverter {
   ): Promise<{ success: boolean; pdfPath?: string; error?: string }> {
     try {
       const workbook = XLSX.readFile(excelPath);
-      const pdfPath = options.outputPath || excelPath.replace(/\.xlsx?$/, '.pdf');
+      const pdfPath = options.outputPath || excelPath.replace(/\.xlsx?m?$/, '.pdf');
       
       // HTML 생성
       const htmlContent = this.generateHtmlFromWorkbook(workbook);
@@ -77,7 +77,7 @@ export class ExcelToPdfConverter {
   ): Promise<{ success: boolean; pdfPath?: string; error?: string }> {
     try {
       const workbook = XLSX.readFile(excelPath);
-      const pdfPath = options.outputPath || excelPath.replace(/\.xlsx?$/, '-sheets.pdf');
+      const pdfPath = options.outputPath || excelPath.replace(/\.xlsx?m?$/, '-sheets.pdf');
       
       // 지정된 시트들만 HTML로 변환
       const htmlContent = this.generateHtmlFromSheets(workbook, sheetNames);

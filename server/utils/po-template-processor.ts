@@ -327,7 +327,13 @@ export class POTemplateProcessor {
       }
       
       if (typeof dateValue === 'string') {
-        const date = new Date(dateValue);
+        // 한국식 날짜 형식 (YYYY.M.D 또는 YYYY.MM.DD)을 JavaScript가 인식 가능한 형식으로 변환
+        let dateStr = dateValue.trim();
+        if (/^\d{4}\.\d{1,2}\.\d{1,2}$/.test(dateStr)) {
+          dateStr = dateStr.replace(/\./g, '-'); // 2024.6.12 -> 2024-6-12
+        }
+        
+        const date = new Date(dateStr);
         if (!isNaN(date.getTime())) {
           return date.toISOString().split('T')[0];
         }

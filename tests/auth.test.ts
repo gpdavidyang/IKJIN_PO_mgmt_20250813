@@ -1,293 +1,211 @@
-import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
-import { comparePasswords } from '../server/auth-utils';
-import { login, logout, getCurrentUser, requireAuth } from '../server/local-auth';
-import { LoginAuditService } from '../server/utils/login-audit-service';
-import { storage } from '../server/storage';
-import { Request, Response } from 'express';
-
-// Mock dependencies
-jest.mock('../server/storage');
-jest.mock('../server/utils/login-audit-service');
+import request from 'supertest';
+import { Express } from 'express';
+import { createTestUsers, cleanupTestData, testUsers } from './utils/test-helpers';
+import { createApp } from '../server/app'; // Assuming app is exported
 
 describe('Authentication System', () => {
-  let mockRequest: Partial<Request>;
-  let mockResponse: Partial<Response>;
-  let mockNext: jest.Mock;
-
-  beforeEach(() => {
-    mockRequest = {
-      body: {},
-      session: {} as any,
-      sessionID: 'test-session-id',
-      user: undefined,
-    };
-    mockResponse = {
-      json: jest.fn(),
-      status: jest.fn().mockReturnThis(),
-    };
-    mockNext = jest.fn();
+  let app: Express;
+  
+  beforeAll(async () => {
+    // Initialize Express app
+    app = createApp();
+    
+    // Create test users
+    await createTestUsers();
   });
-
-  afterEach(() => {
-    jest.clearAllMocks();
+  
+  afterAll(async () => {
+    // Clean up test data
+    await cleanupTestData();
   });
-
-  describe('Password Utilities', () => {
-    describe('comparePasswords', () => {
-      it('should return true for matching passwords', async () => {
-        const password = 'testpassword';
-        const hashedPassword = '$2b$10$test'; // Mock hash
+  
+  describe('POST /api/auth/login', () => {
+    it('should login successfully with valid credentials', async () => {
+      const response = await request(app)
+        .post('/api/auth/login')
+        .send({
+          email: testUsers.admin.email,
+          password: testUsers.admin.password,
+        });
         
-        // Mock bcrypt compare
-        const bcrypt = await import('bcrypt');
-        jest.spyOn(bcrypt, 'compare').mockResolvedValue(true);
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('user');
+      expect(response.body.user.email).toBe(testUsers.admin.email);
+      expect(response.body.user.role).toBe(testUsers.admin.role);
+      expect(response.body.user).not.toHaveProperty('password');
+    });
+    
+    it('should fail with invalid password', async () => {
+      const response = await request(app)
+        .post('/api/auth/login')
+        .send({
+          email: testUsers.admin.email,
+          password: 'wrongpassword',
+        });
         
-        const result = await comparePasswords(password, hashedPassword);
-        expect(result).toBe(true);
-      });
-
-      it('should return false for non-matching passwords', async () => {
-        const password = 'testpassword';
-        const hashedPassword = '$2b$10$test';
+      expect(response.status).toBe(401);
+      expect(response.body).toHaveProperty('error');
+    });
+    
+    it('should fail with non-existent email', async () => {
+      const response = await request(app)
+        .post('/api/auth/login')
+        .send({
+          email: 'nonexistent@test.com',
+          password: 'somepassword',
+        });
         
-        const bcrypt = await import('bcrypt');
-        jest.spyOn(bcrypt, 'compare').mockResolvedValue(false);
+      expect(response.status).toBe(401);
+      expect(response.body).toHaveProperty('error');
+    });
+    
+    it('should validate email format', async () => {
+      const response = await request(app)
+        .post('/api/auth/login')
+        .send({
+          email: 'invalid-email',
+          password: 'somepassword',
+        });
         
-        const result = await comparePasswords(password, hashedPassword);
-        expect(result).toBe(false);
-      });
+      expect(response.status).toBe(400);
+      expect(response.body).toHaveProperty('error');
     });
   });
-
-  describe('Login Function', () => {
-    it('should return 400 if email or password is missing', async () => {
-      mockRequest.body = { email: 'test@example.com' }; // Missing password
+  
+  describe('POST /api/auth/logout', () => {
+    it('should logout successfully when logged in', async () => {
+      const agent = request.agent(app);
       
-      await login(mockRequest as Request, mockResponse as Response);
-      
-      expect(mockResponse.status).toHaveBeenCalledWith(400);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        message: 'Email and password are required'
-      });
-    });
-
-    it('should return 423 if account is blocked', async () => {
-      mockRequest.body = { email: 'test@example.com', password: 'password' };
-      
-      // Mock blocked account
-      (LoginAuditService.isAccountBlocked as jest.Mock).mockResolvedValue(true);
-      
-      await login(mockRequest as Request, mockResponse as Response);
-      
-      expect(mockResponse.status).toHaveBeenCalledWith(423);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        message: '계정이 일시적으로 차단되었습니다. 30분 후 다시 시도해주세요.'
-      });
-    });
-
-    it('should login successfully with test account in development', async () => {
-      mockRequest.body = { email: 'test@ikjin.co.kr', password: 'admin123' };
-      mockRequest.session = { save: jest.fn((callback) => callback()) } as any;
-      
-      // Mock development environment
-      process.env.NODE_ENV = 'development';
-      (LoginAuditService.isAccountBlocked as jest.Mock).mockResolvedValue(false);
-      (LoginAuditService.logSuccess as jest.Mock).mockResolvedValue(undefined);
-      
-      await login(mockRequest as Request, mockResponse as Response);
-      
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        message: 'Login successful',
-        user: expect.objectContaining({
-          id: 'test_admin_001',
-          email: 'test@ikjin.co.kr',
-          name: '테스트 관리자',
-          role: 'admin'
+      // First login
+      await agent
+        .post('/api/auth/login')
+        .send({
+          email: testUsers.admin.email,
+          password: testUsers.admin.password,
         })
-      });
+        .expect(200);
+      
+      // Then logout
+      const response = await agent
+        .post('/api/auth/logout')
+        .expect(200);
+        
+      expect(response.body).toHaveProperty('message');
+      
+      // Verify session is destroyed
+      const profileResponse = await agent
+        .get('/api/auth/profile')
+        .expect(401);
     });
-
-    it('should return 401 for invalid credentials', async () => {
-      mockRequest.body = { email: 'test@example.com', password: 'wrongpassword' };
-      
-      (LoginAuditService.isAccountBlocked as jest.Mock).mockResolvedValue(false);
-      (storage.getUserByEmail as jest.Mock).mockResolvedValue(null);
-      
-      await login(mockRequest as Request, mockResponse as Response);
-      
-      expect(mockResponse.status).toHaveBeenCalledWith(401);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        message: 'Invalid email or password'
-      });
-    });
-
-    it('should login successfully with valid database user', async () => {
-      const mockUser = {
-        id: 'user-123',
-        email: 'user@example.com',
-        password: '$2b$10$hashedpassword',
-        name: '사용자',
-        role: 'project_manager',
-        isActive: true
-      };
-      
-      mockRequest.body = { email: 'user@example.com', password: 'password' };
-      mockRequest.session = { save: jest.fn((callback) => callback()) } as any;
-      
-      (LoginAuditService.isAccountBlocked as jest.Mock).mockResolvedValue(false);
-      (storage.getUserByEmail as jest.Mock).mockResolvedValue(mockUser);
-      
-      const bcrypt = await import('bcrypt');
-      jest.spyOn(bcrypt, 'compare').mockResolvedValue(true);
-      
-      await login(mockRequest as Request, mockResponse as Response);
-      
-      expect(mockResponse.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          id: 'user-123',
-          email: 'user@example.com',
-          name: '사용자',
-          role: 'project_manager'
-        })
-      );
+    
+    it('should handle logout when not logged in', async () => {
+      const response = await request(app)
+        .post('/api/auth/logout')
+        .expect(200);
+        
+      expect(response.body).toHaveProperty('message');
     });
   });
-
-  describe('Logout Function', () => {
-    it('should logout successfully', () => {
-      mockRequest.session = {
-        destroy: jest.fn((callback) => callback()),
-        userId: 'user-123'
-      } as any;
+  
+  describe('GET /api/auth/profile', () => {
+    it('should return user profile when authenticated', async () => {
+      const agent = request.agent(app);
       
-      logout(mockRequest as Request, mockResponse as Response);
+      // Login first
+      await agent
+        .post('/api/auth/login')
+        .send({
+          email: testUsers.projectManager.email,
+          password: testUsers.projectManager.password,
+        })
+        .expect(200);
       
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        message: 'Logout successful'
-      });
+      // Get profile
+      const response = await agent
+        .get('/api/auth/profile')
+        .expect(200);
+        
+      expect(response.body).toHaveProperty('user');
+      expect(response.body.user.email).toBe(testUsers.projectManager.email);
+      expect(response.body.user.role).toBe(testUsers.projectManager.role);
+      expect(response.body.user).not.toHaveProperty('password');
     });
-
-    it('should handle logout error', () => {
-      mockRequest.session = {
-        destroy: jest.fn((callback) => callback(new Error('Session error'))),
-        userId: 'user-123'
-      } as any;
-      
-      logout(mockRequest as Request, mockResponse as Response);
-      
-      expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        message: 'Logout failed'
-      });
+    
+    it('should return 401 when not authenticated', async () => {
+      const response = await request(app)
+        .get('/api/auth/profile')
+        .expect(401);
+        
+      expect(response.body).toHaveProperty('error');
     });
   });
-
-  describe('Get Current User', () => {
-    it('should return 401 if not authenticated', async () => {
-      mockRequest.session = {} as any;
+  
+  describe('Session Management', () => {
+    it('should maintain session across multiple requests', async () => {
+      const agent = request.agent(app);
       
-      await getCurrentUser(mockRequest as Request, mockResponse as Response);
-      
-      expect(mockResponse.status).toHaveBeenCalledWith(401);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        message: 'Not authenticated'
-      });
-    });
-
-    it('should return test user data', async () => {
-      mockRequest.session = { userId: 'test_admin_001' } as any;
-      
-      await getCurrentUser(mockRequest as Request, mockResponse as Response);
-      
-      expect(mockResponse.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          id: 'test_admin_001',
-          email: 'test@ikjin.co.kr',
-          name: '테스트 관리자',
-          role: 'admin'
+      // Login
+      await agent
+        .post('/api/auth/login')
+        .send({
+          email: testUsers.fieldWorker.email,
+          password: testUsers.fieldWorker.password,
         })
-      );
+        .expect(200);
+      
+      // Make multiple authenticated requests
+      for (let i = 0; i < 3; i++) {
+        const response = await agent
+          .get('/api/auth/profile')
+          .expect(200);
+          
+        expect(response.body.user.email).toBe(testUsers.fieldWorker.email);
+      }
     });
-
-    it('should return database user data', async () => {
-      const mockUser = {
-        id: 'user-123',
-        email: 'user@example.com',
-        name: '사용자',
-        role: 'project_manager'
-      };
-      
-      mockRequest.session = { userId: 'user-123' } as any;
-      (storage.getUser as jest.Mock).mockResolvedValue(mockUser);
-      
-      await getCurrentUser(mockRequest as Request, mockResponse as Response);
-      
-      expect(mockResponse.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          id: 'user-123',
-          email: 'user@example.com',
-          name: '사용자',
-          role: 'project_manager'
-        })
-      );
+    
+    it('should handle session expiration', async () => {
+      // This would require mocking session expiration
+      // Implementation depends on session configuration
     });
   });
-
-  describe('Require Auth Middleware', () => {
-    it('should return 401 if not authenticated', async () => {
-      mockRequest.session = {} as any;
+  
+  describe('Role-Based Access Control', () => {
+    it('should allow admin access to admin endpoints', async () => {
+      const agent = request.agent(app);
       
-      await requireAuth(mockRequest as Request, mockResponse as Response, mockNext);
-      
-      expect(mockResponse.status).toHaveBeenCalledWith(401);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        message: 'Authentication required'
-      });
-      expect(mockNext).not.toHaveBeenCalled();
-    });
-
-    it('should call next() if authenticated with test user', async () => {
-      mockRequest.session = { userId: 'test_admin_001' } as any;
-      
-      await requireAuth(mockRequest as Request, mockResponse as Response, mockNext);
-      
-      expect(mockRequest.user).toEqual(
-        expect.objectContaining({
-          id: 'test_admin_001',
-          role: 'admin'
+      // Login as admin
+      await agent
+        .post('/api/auth/login')
+        .send({
+          email: testUsers.admin.email,
+          password: testUsers.admin.password,
         })
-      );
-      expect(mockNext).toHaveBeenCalled();
+        .expect(200);
+      
+      // Access admin endpoint
+      const response = await agent
+        .get('/api/admin/users')
+        .expect(200);
     });
-
-    it('should call next() if authenticated with database user', async () => {
-      const mockUser = {
-        id: 'user-123',
-        email: 'user@example.com',
-        name: '사용자',
-        role: 'project_manager'
-      };
+    
+    it('should deny non-admin access to admin endpoints', async () => {
+      const agent = request.agent(app);
       
-      mockRequest.session = { userId: 'user-123' } as any;
-      (storage.getUser as jest.Mock).mockResolvedValue(mockUser);
+      // Login as field worker
+      await agent
+        .post('/api/auth/login')
+        .send({
+          email: testUsers.fieldWorker.email,
+          password: testUsers.fieldWorker.password,
+        })
+        .expect(200);
       
-      await requireAuth(mockRequest as Request, mockResponse as Response, mockNext);
-      
-      expect(mockRequest.user).toEqual(mockUser);
-      expect(mockNext).toHaveBeenCalled();
-    });
-
-    it('should return 401 if user not found in database', async () => {
-      mockRequest.session = { userId: 'invalid-user' } as any;
-      (storage.getUser as jest.Mock).mockResolvedValue(null);
-      
-      await requireAuth(mockRequest as Request, mockResponse as Response, mockNext);
-      
-      expect(mockResponse.status).toHaveBeenCalledWith(401);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        message: 'Invalid session'
-      });
-      expect(mockNext).not.toHaveBeenCalled();
+      // Try to access admin endpoint
+      const response = await agent
+        .get('/api/admin/users')
+        .expect(403);
+        
+      expect(response.body).toHaveProperty('error');
     });
   });
 });

@@ -1,0 +1,96 @@
+
+> rest-express@1.0.0 dev
+> NODE_ENV=development tsx server/index.ts
+
+[dotenv@17.2.0] injecting env (13) from .env (tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] })
+🔍 Using DATABASE_URL: postgresql://postgres.tbvugytmskxxyqfvqmup:gps110601ysw@[HIDDEN]
+🔄 Creating PostgreSQL connection pool with URL: postgresql://postgres.tbvugytmskxxyqfvqmup:gps110601ysw@[HIDDEN]
+✅ Database connected successfully (PostgreSQL pool)
+[dotenv@17.2.0] injecting env (0) from .env (tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`)
+🔧 Force-set DATABASE_URL: postgresql://postgres.tbvugytmskxxyqfvqmup:gps110601ysw@[HIDDEN]
+1:21:45 AM [express] serving on port 8080
+Session saved successfully for user: test_admin_001
+1:21:55 AM [express] POST /api/auth/login 200 in 1216ms :: {"message":"Login successful","user":{"id…
+1:22:00 AM [express] GET /api/dashboard/unified 200 in 495ms :: {"statistics":{"totalOrders":7,"tota…
+1:22:07 AM [express] GET /api/dashboard/recent-projects 200 in 250ms :: [{"id":4,"projectName":"삼성래미…
+Error getting urgent orders: error: invalid input value for enum purchase_order_status: "delivered"
+    at /Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async <anonymous> (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/src/node-postgres/session.ts:104:19)
+    at async DatabaseStorage.getUrgentOrders (/Users/davidyang/workspace/20250713_PO_Mgmt/server/storage.ts:1895:14)
+    at async <anonymous> (/Users/davidyang/workspace/20250713_PO_Mgmt/server/routes/dashboard.ts:33:20) {
+  length: 150,
+  severity: 'ERROR',
+  code: '22P02',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: "unnamed portal parameter $3 = '...'",
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'enum.c',
+  line: '129',
+  routine: 'enum_in'
+}
+1:22:10 AM [express] GET /api/dashboard/urgent-orders 200 in 253ms :: []
+Error getting urgent orders: error: invalid input value for enum purchase_order_status: "delivered"
+    at /Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async <anonymous> (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/src/node-postgres/session.ts:104:19)
+    at async DatabaseStorage.getUrgentOrders (/Users/davidyang/workspace/20250713_PO_Mgmt/server/storage.ts:1895:14)
+    at async <anonymous> (/Users/davidyang/workspace/20250713_PO_Mgmt/server/routes/dashboard.ts:33:20) {
+  length: 150,
+  severity: 'ERROR',
+  code: '22P02',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: "unnamed portal parameter $3 = '...'",
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'enum.c',
+  line: '129',
+  routine: 'enum_in'
+}
+1:22:43 AM [express] GET /api/dashboard/urgent-orders 200 in 1085ms :: []
+Browserslist: browsers data (caniuse-lite) is 9 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+1:23:12 AM [express] GET /api/dashboard/unified 200 in 1317ms :: {"statistics":{"totalOrders":7,"tot…
+1:23:12 AM [express] GET /api/dashboard/unified 200 in 168ms :: {"statistics":{"totalOrders":7,"tota…
+1:23:12 AM [express] GET /api/dashboard/recent-projects 200 in 249ms :: [{"id":4,"projectName":"삼성래미…
+Error getting urgent orders: error: invalid input value for enum purchase_order_status: "delivered"
+    at /Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async <anonymous> (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/src/node-postgres/session.ts:104:19)
+    at async DatabaseStorage.getUrgentOrders (/Users/davidyang/workspace/20250713_PO_Mgmt/server/storage.ts:1895:14)
+    at async <anonymous> (/Users/davidyang/workspace/20250713_PO_Mgmt/server/routes/dashboard.ts:33:20) {
+  length: 150,
+  severity: 'ERROR',
+  code: '22P02',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: "unnamed portal parameter $3 = '...'",
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'enum.c',
+  line: '129',
+  routine: 'enum_in'
+}
+1:23:13 AM [express] GET /api/dashboard/urgent-orders 200 in 253ms :: []

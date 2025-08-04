@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from "react";
-import "./styles/responsive.css";
+import React from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -8,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth, AuthProvider } from "@/hooks/useAuth";
 import LoginPage from "@/pages/login";
 import { SidebarProvider, useSidebar } from "@/contexts/SidebarContext";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import Landing from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
@@ -43,19 +43,10 @@ import TemplateEdit from "@/pages/template-edit";
 import Positions from "@/pages/positions";
 import Approvals from "@/pages/approvals";
 import ExcelAutomationTest from "@/pages/excel-automation-test";
-import EmailHistory from "@/pages/email-history";
-import RegisterPage from "@/pages/register";
-import RegisterSuccessPage from "@/pages/register-success";
-import VerifyEmailPage from "@/pages/verify-email";
-import ForgotPasswordPage from "@/pages/forgot-password";
-import ResetPasswordPage from "@/pages/reset-password";
 
 import NotFound from "@/pages/not-found";
 import { Sidebar } from "@/components/sidebar";
 import { Header } from "@/components/header";
-import { NotificationProvider } from "@/components/notifications/notification-provider";
-import { NotificationCenter } from "@/components/notifications/notification-center";
-import { serviceWorkerManager } from "@/lib/service-worker";
 
 function Layout() {
   const { isCollapsed } = useSidebar();
@@ -63,14 +54,10 @@ function Layout() {
   
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Desktop Sidebar - hidden on mobile */}
-      <div className="hidden md:block">
-        <Sidebar />
-      </div>
-      
-      <div className={`transition-all duration-300 ${isCollapsed ? 'md:ml-16' : 'md:ml-64'}`}>
+      <Sidebar />
+      <div className={`transition-all duration-300 ${isCollapsed ? 'lg:ml-16' : 'lg:ml-64'}`}>
         <Header />
-        <main className="min-h-[calc(100vh-4rem)]">
+        <main>
           <Switch>
             <Route path="/" component={Dashboard} />
             <Route path="/login" component={Dashboard} />
@@ -116,7 +103,6 @@ function Layout() {
             <Route path="/positions" component={Positions} />
             <Route path="/approvals" component={Approvals} />
             <Route path="/excel-automation-test" component={ExcelAutomationTest} />
-            <Route path="/email-history" component={EmailHistory} />
 
             <Route component={NotFound} />
           </Switch>
@@ -144,58 +130,29 @@ function Router() {
     );
   }
 
-  // For unauthenticated users, show auth-related pages
+  // For unauthenticated users, always show login page
   if (!user) {
-    // Handle registration-related routes for unauthenticated users
-    if (location === '/register') {
-      return <RegisterPage />;
-    }
-    if (location === '/register-success') {
-      return <RegisterSuccessPage />;
-    }
-    if (location === '/verify-email') {
-      return <VerifyEmailPage />;
-    }
-    if (location === '/forgot-password') {
-      return <ForgotPasswordPage />;
-    }
-    if (location === '/reset-password') {
-      return <ResetPasswordPage />;
-    }
-    
-    // Default to login page for unauthenticated users
     return <LoginPage />;
   }
 
   // For authenticated users on login/root, redirect to dashboard
   if (location === '/login' || location === '/') {
     return (
-      <NotificationProvider>
-        <SidebarProvider>
-          <Layout />
-        </SidebarProvider>
-      </NotificationProvider>
+      <SidebarProvider>
+        <Layout />
+      </SidebarProvider>
     );
   }
 
   // For authenticated users on other routes, show the main application
   return (
-    <NotificationProvider>
-      <SidebarProvider>
-        <Layout />
-      </SidebarProvider>
-    </NotificationProvider>
+    <SidebarProvider>
+      <Layout />
+    </SidebarProvider>
   );
 }
 
 function App() {
-  // Register Service Worker
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'production') {
-      serviceWorkerManager.register().catch(console.error);
-    }
-  }, []);
-
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>

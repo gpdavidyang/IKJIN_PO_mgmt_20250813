@@ -17,14 +17,6 @@ import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { 
-  Table, 
-  TableHeader, 
-  TableBody, 
-  TableHead, 
-  TableRow, 
-  TableCell 
-} from '@/components/ui/table';
-import { 
   Upload, 
   FileText, 
   CheckCircle2, 
@@ -81,14 +73,6 @@ interface AutomationData {
   filePath?: string;
   fileName?: string;
   fileSize?: number;
-  orders?: Array<{
-    orderNumber: string;
-    orderDate: string;
-    siteName: string;
-    vendorName: string;
-    totalAmount: number;
-    items: any[];
-  }>;
 }
 
 export function ExcelAutomationWizard() {
@@ -166,23 +150,13 @@ export function ExcelAutomationWizard() {
       updateStepStatus('validate', 'completed');
       updateStepStatus('preview', 'completed');
 
-      // 디버깅: 받은 데이터 확인
-      console.log('📊 Received automation data:', result.data);
-      console.log('📊 Orders data:', result.data.orders);
-      console.log('📊 Orders exists:', !!result.data.orders);
-      console.log('📊 Orders length:', result.data.orders?.length || 0);
-      console.log('📊 Full response:', result);
-      
       setAutomationData(result.data);
       
       // 거래처 검증이 필요한 경우 모달 표시
       if (result.data.vendorValidation.needsUserAction) {
         setShowVendorModal(true);
       } else {
-        // React 상태 업데이트 배치 문제 해결을 위해 setTimeout 사용
-        setTimeout(() => {
-          setCurrentStep(1); // 이메일 미리보기 단계로
-        }, 100);
+        setCurrentStep(1); // 이메일 미리보기 단계로
       }
 
     } catch (error) {
@@ -198,6 +172,7 @@ export function ExcelAutomationWizard() {
     onDrop,
     accept: {
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+      'application/vnd.ms-excel.sheet.macroEnabled.12': ['.xlsm'],
       'application/vnd.ms-excel': ['.xls']
     },
     maxFiles: 1,
@@ -347,7 +322,7 @@ export function ExcelAutomationWizard() {
               ) : (
                 <div>
                   <p className="text-lg mb-2">Excel 파일을 드래그하거나 클릭하여 업로드</p>
-                  <p className="text-sm text-gray-500">.xlsx, .xls 파일 지원 (최대 10MB)</p>
+                  <p className="text-sm text-gray-500">.xlsx, .xlsm, .xls 파일 지원 (최대 10MB)</p>
                 </div>
               )}
             </div>
@@ -389,24 +364,28 @@ export function ExcelAutomationWizard() {
     );
   }
 
-  // 거래처 검증 모달 - 임시 비활성화
-  if (false && showVendorModal && automationData) {
+  // 거래처 검증 모달
+  if (showVendorModal && automationData) {
     // VendorValidationModal에서 기대하는 형태로 데이터 변환
     const validationData = {
-      vendorValidations: automationData!.vendorValidation.invalidVendors.map(vendor => ({
+      vendorValidations: automationData.vendorValidation.invalidVendors.map(vendor => ({
         vendorName: vendor.vendorName,
         exists: false,
-        suggestions: vendor.suggestions
+        suggestions: vendor.suggestions?.map(s => ({
+          ...s,
+          contactPerson: s.contactPerson || '',
+          distance: s.distance || 0
+        })) || []
       })),
       deliveryValidations: [], // 현재는 납품처 검증을 별도로 하지 않음
       emailConflicts: [], // 현재는 이메일 충돌 검증을 별도로 하지 않음
       summary: {
-        totalVendors: automationData!.vendorValidation.validVendors.length + automationData!.vendorValidation.invalidVendors.length,
+        totalVendors: automationData.vendorValidation.validVendors.length + automationData.vendorValidation.invalidVendors.length,
         totalDeliveries: 0,
-        unregisteredVendors: automationData!.vendorValidation.invalidVendors.length,
+        unregisteredVendors: automationData.vendorValidation.invalidVendors.length,
         unregisteredDeliveries: 0,
         emailConflicts: 0,
-        needsAction: automationData!.vendorValidation.needsUserAction
+        needsAction: automationData.vendorValidation.needsUserAction
       }
     };
 
@@ -431,8 +410,8 @@ export function ExcelAutomationWizard() {
     );
   }
 
-  // 2단계: 이메일 미리보기 - 강제 렌더링
-  if (true) {
+  // 2단계: 이메일 미리보기
+  if (currentStep === 1 && automationData) {
     return (
       <div className="space-y-6">
         <Card>
@@ -462,115 +441,6 @@ export function ExcelAutomationWizard() {
               </div>
             </div>
 
-            <Separator />
-
-            {/* 발주서 데이터 미리보기 */}
-            <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-3">발주서 데이터 미리보기</h3>
-              
-              {/* 디버깅 정보 */}
-              <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-xs">
-                <div>🔍 Debug Info:</div>
-                <div>currentStep: {currentStep}</div>
-                <div>automationData exists: {automationData ? 'true' : 'false'}</div>
-                <div>orders exists: {automationData?.orders ? 'true' : 'false'}</div>
-                <div>orders length: {automationData?.orders?.length || 0}</div>
-                <div>orders is array: {Array.isArray(automationData?.orders) ? 'true' : 'false'}</div>
-                <div>condition result: {(automationData?.orders && Array.isArray(automationData.orders) && automationData.orders.length > 0) ? 'true' : 'false'}</div>
-                <div>Raw orders data: {JSON.stringify(automationData?.orders)}</div>
-              </div>
-              
-              {/* 강제 테스트 테이블 */}
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded">
-                <div className="text-sm font-medium text-red-700 mb-2">🚨 강제 테스트 테이블</div>
-                <div className="border rounded-lg overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>발주번호</TableHead>
-                        <TableHead>발주일</TableHead>
-                        <TableHead>품명</TableHead>
-                        <TableHead>수량</TableHead>
-                        <TableHead>단가</TableHead>
-                        <TableHead>공급가액</TableHead>
-                        <TableHead>거래처명</TableHead>
-                        <TableHead>납품처명</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell>TEST-001</TableCell>
-                        <TableCell>2025-07-18</TableCell>
-                        <TableCell>테스트 품목</TableCell>
-                        <TableCell>1</TableCell>
-                        <TableCell>₩10,000</TableCell>
-                        <TableCell>₩10,000</TableCell>
-                        <TableCell>테스트 거래처</TableCell>
-                        <TableCell>테스트 납품처</TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
-              
-              {/* 아이템 세부 정보 테이블 */}
-              {(automationData?.orders && Array.isArray(automationData.orders) && automationData.orders.length > 0) ? (
-                <div className="border rounded-lg overflow-x-auto max-h-96">
-                  <Table>
-                    <TableHeader className="sticky top-0 bg-gray-50">
-                      <TableRow>
-                        <TableHead className="text-xs whitespace-nowrap">발주번호</TableHead>
-                        <TableHead className="text-xs whitespace-nowrap">발주일</TableHead>
-                        <TableHead className="text-xs whitespace-nowrap">품명</TableHead>
-                        <TableHead className="text-xs whitespace-nowrap">수량</TableHead>
-                        <TableHead className="text-xs whitespace-nowrap">단가</TableHead>
-                        <TableHead className="text-xs whitespace-nowrap">공급가액</TableHead>
-                        <TableHead className="text-xs whitespace-nowrap">거래처명</TableHead>
-                        <TableHead className="text-xs whitespace-nowrap">납품처명</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {automationData.orders.flatMap((order: any) => 
-                        order.items?.map((item: any, itemIndex: number) => (
-                          <TableRow key={`${order.orderNumber}-${itemIndex}`}>
-                            <TableCell className="text-xs font-medium">{order.orderNumber}</TableCell>
-                            <TableCell className="text-xs">{order.orderDate}</TableCell>
-                            <TableCell className="text-xs">{item.itemName}</TableCell>
-                            <TableCell className="text-xs text-right">{item.quantity}</TableCell>
-                            <TableCell className="text-xs text-right">₩{item.unitPrice?.toLocaleString()}</TableCell>
-                            <TableCell className="text-xs text-right">₩{item.supplyAmount?.toLocaleString()}</TableCell>
-                            <TableCell className="text-xs">{item.vendorName || order.vendorName}</TableCell>
-                            <TableCell className="text-xs">{item.deliveryName || '-'}</TableCell>
-                          </TableRow>
-                        )) || []
-                      ).slice(0, 10)}
-                    </TableBody>
-                  </Table>
-                  {automationData.orders.reduce((acc: number, order: any) => acc + (order.items?.length || 0), 0) > 10 && (
-                    <div className="p-3 text-center text-xs text-gray-500 border-t">
-                      ... 외 {automationData.orders.reduce((acc: number, order: any) => acc + (order.items?.length || 0), 0) - 10}개 품목
-                    </div>
-                  )}
-                </div>
-              ) : (
-                /* 데이터가 없을 때 */
-                <div className="border rounded-lg p-8 text-center">
-                  <div className="text-sm text-gray-500">발주서 데이터가 없습니다</div>
-                  <div className="text-xs text-gray-400 mt-1">Excel 파일을 업로드하고 처리해주세요</div>
-                </div>
-              )}
-              
-              {automationData.savedOrders > 0 && (
-                <div className="mt-3 p-3 bg-green-50 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-5 w-5 text-green-600" />
-                    <span className="text-sm text-green-800 font-medium">
-                      {automationData.savedOrders}개의 발주서가 성공적으로 저장되었습니다
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
             <Separator />
 
             {/* 이메일 정보 */}

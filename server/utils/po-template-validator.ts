@@ -26,7 +26,7 @@ export interface POTemplateValidationRule {
 }
 
 export class POTemplateValidator {
-  private static readonly REQUIRED_COLUMNS = [
+  private static readonly REQUIRED_COLUMNS: string[] = [
     '발주번호',
     '발주일자',
     '현장명',
@@ -40,7 +40,7 @@ export class POTemplateValidator {
     '거래처명'
   ];
 
-  private static readonly OPTIONAL_COLUMNS = [
+  private static readonly OPTIONAL_COLUMNS: string[] = [
     '대분류',
     '중분류',
     '소분류',
@@ -148,9 +148,9 @@ export class POTemplateValidator {
 
       // 파일 형식 확인
       const ext = path.extname(filePath).toLowerCase();
-      if (!['.xlsx', '.xls'].includes(ext)) {
+      if (!['.xlsx', '.xlsm', '.xls'].includes(ext)) {
         result.isValid = false;
-        result.errors.push('지원하지 않는 파일 형식입니다. Excel 파일(.xlsx, .xls)만 지원됩니다.');
+        result.errors.push('지원하지 않는 파일 형식입니다. Excel 파일(.xlsx, .xlsm, .xls)만 지원됩니다.');
         return result;
       }
 
@@ -257,7 +257,12 @@ export class POTemplateValidator {
     warnings: string[];
     missingFields: string[];
   } {
-    const result = {
+    const result: {
+      isValid: boolean;
+      errors: string[];
+      warnings: string[];
+      missingFields: string[];
+    } = {
       isValid: true,
       errors: [],
       warnings: [],

@@ -20,7 +20,7 @@ router.get("/dashboard/unified", async (req, res) => {
 
 router.get("/dashboard/recent-projects", async (req, res) => {
   try {
-    const projects = await storage.getRecentProjects();
+    const projects = await storage.getRecentProjectsThisMonth();
     res.json(projects);
   } catch (error) {
     console.error("Error fetching recent projects:", error);

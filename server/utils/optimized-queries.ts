@@ -12,7 +12,7 @@ import {
   companies,
   projectMembers
 } from "@shared/schema";
-import { eq, desc, count, sql, and, gte, lte, like, or } from "drizzle-orm";
+import { eq, desc, count, sql, and, gte, lte, like, or, isNotNull } from "drizzle-orm";
 import { cache } from "./cache";
 
 export class OptimizedOrderQueries {
@@ -33,7 +33,7 @@ export class OptimizedOrderQueries {
           totalAmount: purchaseOrders.totalAmount,
           orderDate: purchaseOrders.orderDate,
           deliveryDate: purchaseOrders.deliveryDate,
-          projectName: projects.name,
+          projectName: projects.projectName,
           vendorName: vendors.name,
           userName: users.name,
           approvalLevel: purchaseOrders.approvalLevel,
@@ -160,12 +160,51 @@ export class OptimizedDashboardQueries {
           status: purchaseOrders.status,
           totalAmount: purchaseOrders.totalAmount,
           orderDate: purchaseOrders.orderDate,
-          projectName: projects.name
+          projectName: projects.projectName
         })
         .from(purchaseOrders)
         .leftJoin(projects, eq(purchaseOrders.projectId, projects.id))
         .orderBy(desc(purchaseOrders.orderDate))
         .limit(5);
+
+      // Get monthly statistics (last 12 months)
+      const monthlyStats = await db
+        .select({
+          month: sql<string>`TO_CHAR(${purchaseOrders.orderDate}, 'YYYY-MM')`,
+          count: count(),
+          amount: sql<number>`COALESCE(SUM(${purchaseOrders.totalAmount}), 0)`
+        })
+        .from(purchaseOrders)
+        .where(sql`${purchaseOrders.orderDate} >= CURRENT_DATE - INTERVAL '12 months'`)
+        .groupBy(sql`TO_CHAR(${purchaseOrders.orderDate}, 'YYYY-MM')`)
+        .orderBy(sql`TO_CHAR(${purchaseOrders.orderDate}, 'YYYY-MM')`);
+
+      // Get status statistics
+      const statusStats = await db
+        .select({
+          status: purchaseOrders.status,
+          count: count(),
+          amount: sql<number>`COALESCE(SUM(${purchaseOrders.totalAmount}), 0)`
+        })
+        .from(purchaseOrders)
+        .groupBy(purchaseOrders.status)
+        .orderBy(desc(count()));
+
+      // Get project statistics (top 10 by order amount)
+      const projectStatsList = await db
+        .select({
+          projectId: projects.id,
+          projectName: projects.projectName,
+          projectType: projects.projectType,
+          orderCount: count(),
+          totalAmount: sql<number>`COALESCE(SUM(${purchaseOrders.totalAmount}), 0)`
+        })
+        .from(purchaseOrders)
+        .leftJoin(projects, eq(purchaseOrders.projectId, projects.id))
+        .where(isNotNull(projects.id))
+        .groupBy(projects.id, projects.projectName, projects.projectType)
+        .orderBy(desc(sql<number>`COALESCE(SUM(${purchaseOrders.totalAmount}), 0)`))
+        .limit(10);
 
       const result = {
         statistics: {
@@ -174,7 +213,10 @@ export class OptimizedDashboardQueries {
           activeProjects: projectStats.activeProjects || 0,
           activeVendors: vendorStats.activeVendors || 0
         },
-        recentOrders
+        recentOrders,
+        monthlyStats,
+        statusStats,
+        projectStats: projectStatsList
       };
 
       cache.set(cacheKey, result, 600); // 10 minutes cache
@@ -183,7 +225,10 @@ export class OptimizedDashboardQueries {
       console.error('Error fetching unified dashboard data:', error);
       return {
         statistics: { totalOrders: 0, totalAmount: 0, activeProjects: 0, activeVendors: 0 },
-        recentOrders: []
+        recentOrders: [],
+        monthlyStats: [],
+        statusStats: [],
+        projectStats: []
       };
     }
   }

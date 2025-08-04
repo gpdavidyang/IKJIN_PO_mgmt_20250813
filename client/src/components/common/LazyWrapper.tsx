@@ -68,7 +68,7 @@ export function withLazyLoading<P extends object>(
   return function WrappedComponent(props: P) {
     return (
       <LazyWrapper fallback={fallback}>
-        <LazyComponent {...props} />
+        <LazyComponent {...(props as any)} />
       </LazyWrapper>
     );
   };
@@ -127,6 +127,23 @@ export function LazyImage({
       } ${className}`}
       loading="lazy"
     />
+  );
+}
+
+/**
+ * Form skeleton for loading states
+ */
+export function FormSkeleton() {
+  return (
+    <div className="space-y-4">
+      <Skeleton className="h-10 w-full" />
+      <Skeleton className="h-10 w-full" />
+      <Skeleton className="h-20 w-full" />
+      <div className="flex gap-2">
+        <Skeleton className="h-10 w-24" />
+        <Skeleton className="h-10 w-24" />
+      </div>
+    </div>
   );
 }
 

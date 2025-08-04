@@ -4,7 +4,7 @@
 
 import { Router } from "express";
 import { storage } from "../storage";
-import { requireAuth, requireAdmin } from "../temp-auth-fix";
+import { requireAuth, requireAdmin } from "../local-auth";
 
 const router = Router();
 
@@ -53,6 +53,38 @@ router.get("/templates/:id", async (req, res) => {
   } catch (error) {
     console.error("Error fetching template:", error);
     res.status(500).json({ message: "Failed to fetch template" });
+  }
+});
+
+router.post("/templates", requireAuth, async (req, res) => {
+  try {
+    const template = await storage.createOrderTemplate(req.body);
+    res.status(201).json(template);
+  } catch (error) {
+    console.error("Error creating template:", error);
+    res.status(500).json({ message: "Failed to create template" });
+  }
+});
+
+router.put("/templates/:id", requireAuth, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const template = await storage.updateOrderTemplate(id, req.body);
+    res.json(template);
+  } catch (error) {
+    console.error("Error updating template:", error);
+    res.status(500).json({ message: "Failed to update template" });
+  }
+});
+
+router.delete("/templates/:id", requireAuth, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    await storage.deleteOrderTemplate(id);
+    res.json({ message: "Template deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting template:", error);
+    res.status(500).json({ message: "Failed to delete template" });
   }
 });
 

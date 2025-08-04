@@ -1,7 +1,4 @@
 import { Bell, LogOut, User, Settings, Menu } from "lucide-react";
-import { NotificationCenter } from "@/components/notifications/notification-center";
-import { NetworkStatusIndicator } from "@/components/offline/network-status-indicator";
-import { MobileSidebar } from "@/components/mobile/mobile-sidebar";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -78,21 +75,20 @@ export function Header() {
   return (
     <header className="bg-white shadow-sm border-b border-gray-200 relative z-10">
       <div className="flex items-center justify-between px-4 py-4">
-        <div className="flex items-center space-x-2 sm:space-x-4 min-w-0 flex-1">
-          {/* Mobile Menu Button */}
-          <MobileSidebar />
-          
-          <div className="min-w-0 flex-1">
-            <h1 className="text-lg sm:text-xl font-semibold text-gray-900 truncate">{currentPage.title}</h1>
-            <nav className="text-xs sm:text-sm text-gray-500 truncate hidden sm:block">{currentPage.breadcrumb}</nav>
+        <div className="flex items-center space-x-4">
+          <div>
+            <h1 className="text-xl font-semibold text-gray-900">{currentPage.title}</h1>
+            <nav className="text-sm text-gray-500">{currentPage.breadcrumb}</nav>
           </div>
         </div>
         
-        <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
-          <NetworkStatusIndicator />
-          <NotificationCenter />
+        <div className="flex items-center space-x-4">
+          <Button variant="ghost" size="sm" className="relative">
+            <Bell className="h-5 w-5" />
+            <Badge className="absolute -top-1 -right-1 h-2 w-2 p-0 bg-red-500" />
+          </Button>
           
-          <div className="flex items-center space-x-2 sm:space-x-3">
+          <div className="flex items-center space-x-3">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <div className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 rounded-lg p-2 transition-colors">

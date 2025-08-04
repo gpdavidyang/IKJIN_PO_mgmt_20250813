@@ -32,7 +32,7 @@ export function ItemForm({ item, onSuccess, onCancel }: ItemFormProps) {
       category: item?.category || "",
       specification: item?.specification || "",
       unit: item?.unit || "",
-      standardPrice: item?.standardPrice || undefined,
+      unitPrice: item?.unitPrice || undefined,
       description: item?.description || "",
       isActive: item?.isActive ?? true,
     },
@@ -42,7 +42,7 @@ export function ItemForm({ item, onSuccess, onCancel }: ItemFormProps) {
     mutationFn: async (data: ItemFormData) => {
       const payload: InsertItem = {
         ...data,
-        standardPrice: data.standardPrice || null
+        unitPrice: data.unitPrice || null
       };
       return await apiRequest("POST", "/api/items", payload);
     },
@@ -53,7 +53,7 @@ export function ItemForm({ item, onSuccess, onCancel }: ItemFormProps) {
     mutationFn: async (data: ItemFormData) => {
       const payload: Partial<InsertItem> = {
         ...data,
-        standardPrice: data.standardPrice || null
+        unitPrice: data.unitPrice || null
       };
       const response = await fetch(`/api/items/${item!.id}`, {
         method: "PATCH",

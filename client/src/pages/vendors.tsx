@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Phone, Mail, MapPin, User, Building, Search, ChevronUp, ChevronDown, Edit, Trash2, List, Grid, Hash } from "lucide-react";
 import { VendorForm } from "@/components/vendor-form";
 import { useAuth } from "@/hooks/useAuth";
@@ -14,8 +13,6 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { PageHeader } from "@/components/ui/page-header";
 import { formatDate } from "@/lib/utils";
-import { hasPermission } from "@/utils/auth-helpers";
-import { ProtectedRoute } from "@/components/auth/protected-route";
 
 export default function Vendors() {
   const { user } = useAuth();
@@ -27,12 +24,6 @@ export default function Vendors() {
   const [sortField, setSortField] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
-  const [typeFilter, setTypeFilter] = useState<string>("all");
-
-  // 권한 확인
-  const canManageVendors = user && hasPermission(user.role, "canManageVendors");
-  const canEditAllVendors = user && hasPermission(user.role, "canEditAllOrders");
-  const canDeleteVendors = user && hasPermission(user.role, "canDeleteOrders");
 
   const { data: vendors, isLoading } = useQuery({
     queryKey: ["/api/vendors"],
@@ -51,16 +42,9 @@ export default function Vendors() {
         vendor.businessNumber?.includes(query) ||
         vendor.industry?.toLowerCase().includes(query) ||
         vendor.contactPerson?.toLowerCase().includes(query) ||
-        vendor.representative?.toLowerCase().includes(query) ||
         vendor.phone?.includes(query) ||
-        vendor.mainContact?.includes(query) ||
         vendor.email?.toLowerCase().includes(query)
       );
-    }
-
-    // 타입 필터링
-    if (typeFilter !== "all") {
-      filtered = filtered.filter((vendor: any) => vendor.type === typeFilter);
     }
 
     // 정렬
@@ -86,7 +70,7 @@ export default function Vendors() {
     }
 
     return filtered;
-  }, [vendors, searchQuery, typeFilter, sortField, sortDirection]);
+  }, [vendors, searchQuery, sortField, sortDirection]);
 
   const deleteVendorMutation = useMutation({
     mutationFn: async (vendorId: number) => {
@@ -149,15 +133,6 @@ export default function Vendors() {
   };
 
   const handleDeleteVendor = (vendorId: number) => {
-    if (!canDeleteVendors) {
-      toast({
-        title: "권한 없음",
-        description: "거래처를 삭제할 권한이 없습니다.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
     if (confirm("정말로 이 거래처를 삭제하시겠습니까?")) {
       deleteVendorMutation.mutate(vendorId);
     }
@@ -170,74 +145,58 @@ export default function Vendors() {
   };
 
   return (
-    <ProtectedRoute>
-      <div className="p-6 space-y-6">
-        <PageHeader
-          title="거래처 관리"
-          action={canManageVendors ? (
-            <Button onClick={handleAddVendor} className="flex items-center">
-              <Plus className="h-4 w-4 mr-2" />
-              거래처 추가
-            </Button>
-          ) : undefined}
-        />
+    <div className="p-6 space-y-6">
+      <PageHeader
+        title="거래처 관리"
+        action={user?.role === "admin" ? (
+          <Button onClick={handleAddVendor} className="flex items-center">
+            <Plus className="h-4 w-4 mr-2" />
+            거래처 추가
+          </Button>
+        ) : undefined}
+      />
 
-        {/* Search and Filter Section */}
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
-                <div className="relative flex-1 max-w-md">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input
-                    placeholder="거래처명, 사업자번호, 업종, 담당자명으로 검색..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 h-10"
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <Select value={typeFilter} onValueChange={setTypeFilter}>
-                    <SelectTrigger className="w-32">
-                      <SelectValue placeholder="구분" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">전체</SelectItem>
-                      <SelectItem value="거래처">거래처</SelectItem>
-                      <SelectItem value="납품처">납품처</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">
-                  {filteredVendors.length}개 거래처
-                </span>
-                <div className="flex items-center bg-gray-100 rounded-lg p-1">
-                  <Button
-                    variant={viewMode === "table" ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => setViewMode("table")}
-                    className="h-8 w-8 p-0"
-                    title="목록 보기"
-                  >
-                    <List className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant={viewMode === "cards" ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => setViewMode("cards")}
-                    className="h-8 w-8 p-0"
-                    title="카드 보기"
-                  >
-                    <Grid className="h-4 w-4" />
-                  </Button>
-                </div>
+      {/* Search Section */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="거래처명, 사업자번호, 업종, 대표자명으로 검색..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 h-10"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">
+                {filteredVendors.length}개 거래처
+              </span>
+              <div className="flex items-center bg-gray-100 rounded-lg p-1">
+                <Button
+                  variant={viewMode === "table" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setViewMode("table")}
+                  className="h-8 w-8 p-0"
+                  title="목록 보기"
+                >
+                  <List className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === "cards" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setViewMode("cards")}
+                  className="h-8 w-8 p-0"
+                  title="카드 보기"
+                >
+                  <Grid className="h-4 w-4" />
+                </Button>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Vendors Display */}
       {viewMode === "table" ? (
@@ -276,15 +235,6 @@ export default function Vendors() {
                   </TableHead>
                   <TableHead 
                     className="h-11 px-4 text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-50 select-none"
-                    onClick={() => handleSort("type")}
-                  >
-                    <div className="flex items-center space-x-1">
-                      <span>구분</span>
-                      {getSortIcon("type")}
-                    </div>
-                  </TableHead>
-                  <TableHead 
-                    className="h-11 px-4 text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-50 select-none"
                     onClick={() => handleSort("contactPerson")}
                   >
                     <div className="flex items-center space-x-1">
@@ -294,11 +244,11 @@ export default function Vendors() {
                   </TableHead>
                   <TableHead 
                     className="h-11 px-4 text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-50 select-none"
-                    onClick={() => handleSort("mainContact")}
+                    onClick={() => handleSort("phone")}
                   >
                     <div className="flex items-center space-x-1">
-                      <span>대표연락처</span>
-                      {getSortIcon("mainContact")}
+                      <span>연락처</span>
+                      {getSortIcon("phone")}
                     </div>
                   </TableHead>
                   <TableHead 
@@ -310,7 +260,7 @@ export default function Vendors() {
                       {getSortIcon("createdAt")}
                     </div>
                   </TableHead>
-                  {(canManageVendors || canEditAllVendors) && (
+                  {user?.role === "admin" && (
                     <TableHead className="h-11 px-4 text-sm font-semibold text-gray-700 text-right">
                       관리
                     </TableHead>
@@ -332,7 +282,7 @@ export default function Vendors() {
                   ))
                 ) : filteredVendors.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={(canManageVendors || canEditAllVendors) ? 8 : 7} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={user?.role === "admin" ? 7 : 6} className="text-center py-8 text-gray-500">
                       {searchQuery ? "검색 결과가 없습니다" : "등록된 거래처가 없습니다"}
                     </TableCell>
                   </TableRow>
@@ -361,21 +311,13 @@ export default function Vendors() {
                         ) : '-'}
                       </TableCell>
                       <TableCell className="py-2 px-4">
-                        <Badge 
-                          variant={vendor.type === '거래처' ? 'default' : 'secondary'}
-                          className="text-xs"
-                        >
-                          {vendor.type || '거래처'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="py-2 px-4">
                         <div className="text-sm text-gray-600">
                           {vendor.contactPerson || '-'}
                         </div>
                       </TableCell>
                       <TableCell className="py-2 px-4">
                         <div className="text-sm text-gray-600">
-                          {vendor.mainContact || vendor.phone || '-'}
+                          {vendor.phone || '-'}
                         </div>
                       </TableCell>
                       <TableCell className="py-2 px-4">
@@ -383,31 +325,27 @@ export default function Vendors() {
                           {formatDate(vendor.createdAt)}
                         </div>
                       </TableCell>
-                      {(canManageVendors || canEditAllVendors) && (
+                      {user?.role === "admin" && (
                         <TableCell className="py-2 px-4">
                           <div className="flex items-center justify-end gap-1">
-                            {canEditAllVendors && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleEditVendor(vendor)}
-                                className="h-7 w-7 p-0"
-                                title="수정"
-                              >
-                                <Edit className="h-3 w-3" />
-                              </Button>
-                            )}
-                            {canDeleteVendors && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeleteVendor(vendor.id)}
-                                className="h-7 w-7 p-0 text-red-600 hover:text-red-700"
-                                title="삭제"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            )}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditVendor(vendor)}
+                              className="h-7 w-7 p-0"
+                              title="수정"
+                            >
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteVendor(vendor.id)}
+                              className="h-7 w-7 p-0 text-red-600 hover:text-red-700"
+                              title="삭제"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
                           </div>
                         </TableCell>
                       )}
@@ -446,19 +384,11 @@ export default function Vendors() {
                     <h3 className="font-semibold text-gray-900 cursor-pointer hover:text-blue-600" onClick={() => navigate(`/vendors/${vendor.id}`)}>
                       {vendor.name}
                     </h3>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Badge 
-                        variant={vendor.type === '거래처' ? 'default' : 'secondary'}
-                        className="text-xs"
-                      >
-                        {vendor.type || '거래처'}
+                    {vendor.industry && (
+                      <Badge variant="outline" className="text-xs mt-1">
+                        {vendor.industry}
                       </Badge>
-                      {vendor.industry && (
-                        <Badge variant="outline" className="text-xs">
-                          {vendor.industry}
-                        </Badge>
-                      )}
-                    </div>
+                    )}
                   </div>
                   <Badge 
                     variant={vendor.isActive ? "default" : "secondary"}
@@ -474,13 +404,6 @@ export default function Vendors() {
                     <span className="font-medium">사업자번호:</span>
                     <span className="ml-1">{vendor.businessNumber || '-'}</span>
                   </div>
-                  {vendor.representative && (
-                    <div className="flex items-center text-sm text-gray-600 gap-2">
-                      <User className="h-4 w-4" />
-                      <span className="font-medium">대표자:</span>
-                      <span className="ml-1">{vendor.representative}</span>
-                    </div>
-                  )}
                   {vendor.contactPerson && (
                     <div className="flex items-center text-sm text-gray-600 gap-2">
                       <User className="h-4 w-4" />
@@ -488,18 +411,11 @@ export default function Vendors() {
                       <span className="ml-1">{vendor.contactPerson}</span>
                     </div>
                   )}
-                  {(vendor.mainContact || vendor.phone) && (
+                  {vendor.phone && (
                     <div className="flex items-center text-sm text-gray-600 gap-2">
                       <Phone className="h-4 w-4" />
-                      <span className="font-medium">연락처:</span>
-                      <span className="ml-1">{vendor.mainContact || vendor.phone}</span>
-                    </div>
-                  )}
-                  {vendor.email && (
-                    <div className="flex items-center text-sm text-gray-600 gap-2">
-                      <Mail className="h-4 w-4" />
-                      <span className="font-medium">이메일:</span>
-                      <span className="ml-1">{vendor.email}</span>
+                      <span className="font-medium">전화번호:</span>
+                      <span className="ml-1">{vendor.phone}</span>
                     </div>
                   )}
                 </div>
@@ -508,30 +424,26 @@ export default function Vendors() {
                   <span>등록일: {formatDate(vendor.createdAt)}</span>
                 </div>
                 
-                {(canManageVendors || canEditAllVendors) && (
+                {user?.role === "admin" && (
                   <div className="flex items-center justify-end -space-x-1 pt-2 border-t">
-                    {canEditAllVendors && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEditVendor(vendor)}
-                        className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                        title="수정"
-                      >
-                        <Edit className="h-3 w-3" />
-                      </Button>
-                    )}
-                    {canDeleteVendors && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteVendor(vendor.id)}
-                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                        title="삭제"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEditVendor(vendor)}
+                      className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                      title="수정"
+                    >
+                      <Edit className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteVendor(vendor.id)}
+                      className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                      title="삭제"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
                   </div>
                 )}
               </Card>
@@ -540,16 +452,15 @@ export default function Vendors() {
         </div>
       )}
 
-        {/* Vendor Form Modal */}
-        {isFormOpen && (
-          <VendorForm
-            isOpen={isFormOpen}
-            vendor={editingVendor}
-            onClose={() => setIsFormOpen(false)}
-            onSuccess={handleFormSuccess}
-          />
-        )}
-      </div>
-    </ProtectedRoute>
+      {/* Vendor Form Modal */}
+      {isFormOpen && (
+        <VendorForm
+          isOpen={isFormOpen}
+          vendor={editingVendor}
+          onClose={() => setIsFormOpen(false)}
+          onSuccess={handleFormSuccess}
+        />
+      )}
+    </div>
   );
 }

@@ -5,7 +5,7 @@
 
 import { Router } from "express";
 import { storage } from "../storage";
-import { requireAuth, requireAdmin, requireOrderManager } from "../temp-auth-fix";
+import { requireAuth, requireAdmin, requireOrderManager } from "../local-auth";
 import { insertPurchaseOrderSchema } from "@shared/schema";
 import { upload } from "../utils/multer-config";
 import { decodeKoreanFilename } from "../utils/korean-filename";
@@ -42,7 +42,7 @@ router.get("/orders", async (req, res) => {
       limit: parseInt(limit as string)
     };
 
-    const result = await OptimizedOrderQueries.getOrdersWithFilters(filters);
+    const result = await storage.getPurchaseOrders(filters);
     res.json(result);
   } catch (error) {
     console.error("Error fetching orders:", error);
@@ -132,8 +132,11 @@ router.post("/orders", requireAuth, upload.array('attachments'), async (req, res
 
         await storage.createAttachment({
           orderId: order.id,
-          fileName: decodedFilename,
-          filePath: file.filename,
+          originalName: decodedFilename,
+          storedName: file.filename,
+          filePath: file.path,
+          fileSize: file.size,
+          mimeType: file.mimetype,
           uploadedBy: userId
         });
       }

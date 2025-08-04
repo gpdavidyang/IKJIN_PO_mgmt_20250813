@@ -90,7 +90,7 @@ export function SimpleExcelUpload({ onDataParsed }: SimpleExcelUploadProps) {
             <input
               ref={fileInputRef}
               type="file"
-              accept=".xlsx,.xls,.csv"
+              accept=".xlsx,.xlsm,.xls,.csv"
               onChange={handleFileInputChange}
               className="hidden"
             />
@@ -102,7 +102,7 @@ export function SimpleExcelUpload({ onDataParsed }: SimpleExcelUploadProps) {
                 Excel 파일을 업로드하여 품목 데이터 불러오기
               </p>
               <p className="text-sm text-gray-500">
-                .xlsx, .xls, .csv 파일을 지원합니다
+                .xlsx, .xlsm, .xls, .csv 파일을 지원합니다
               </p>
             </div>
             

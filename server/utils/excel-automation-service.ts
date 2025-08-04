@@ -18,7 +18,6 @@ import { removeAllInputSheets } from './excel-input-sheet-remover';
 import { DebugLogger } from './debug-logger';
 import fs from 'fs';
 import path from 'path';
-import XLSX from 'xlsx';
 
 export interface ExcelAutomationResult {
   success: boolean;
@@ -26,14 +25,6 @@ export interface ExcelAutomationResult {
     savedOrders: number;
     vendorValidation: VendorValidationStep;
     emailPreview: EmailPreviewStep;
-    orders?: Array<{
-      orderNumber: string;
-      orderDate: string;
-      siteName: string;
-      vendorName: string;
-      totalAmount: number;
-      items: any[];
-    }>;
   };
   error?: string;
 }
@@ -85,192 +76,6 @@ export interface EmailSendResult {
 export class ExcelAutomationService {
   
   /**
-   * Excel 파일에서 거래처명만 추출 (DB 저장 없이)
-   */
-  private static extractVendorNamesOnly(filePath: string): Array<{ vendorName: string; deliveryName: string; email?: string }> {
-    try {
-      const workbook = XLSX.readFile(filePath);
-      
-      if (!workbook.SheetNames.includes('Input')) {
-        return [];
-      }
-
-      const worksheet = workbook.Sheets['Input'];
-      const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-      const rows = data.slice(1) as any[][];
-      
-      const vendorDeliveryPairs = [];
-      
-      for (const row of rows) {
-        if (!row || !row[0]) continue;
-        
-        const vendorName = String(row[14] || '').trim();
-        const deliveryName = String(row[15] || '').trim();
-        
-        if (vendorName) {
-          vendorDeliveryPairs.push({
-            vendorName,
-            deliveryName: deliveryName || vendorName,
-            email: undefined
-          });
-        }
-      }
-      
-      // 중복 제거
-      const uniquePairs = vendorDeliveryPairs.filter((pair, index, self) => 
-        self.findIndex(p => p.vendorName === pair.vendorName && p.deliveryName === pair.deliveryName) === index
-      );
-      
-      return uniquePairs;
-      
-    } catch (error) {
-      console.error('거래처명 추출 중 오류:', error);
-      return [];
-    }
-  }
-  
-  /**
-   * Step 0: Excel 파일 사전 검증
-   */
-  static async preValidateExcel(filePath: string): Promise<{
-    success: boolean;
-    errors: string[];
-    warnings: string[];
-  }> {
-    DebugLogger.logFunctionEntry('ExcelAutomationService.preValidateExcel', { filePath });
-    
-    const errors: string[] = [];
-    const warnings: string[] = [];
-    
-    try {
-      const workbook = XLSX.readFile(filePath);
-      
-      // 1. Input 시트 존재 여부 확인
-      if (!workbook.SheetNames.includes('Input')) {
-        errors.push('필수 시트 "Input"이 존재하지 않습니다.');
-        return { success: false, errors, warnings };
-      }
-      
-      // 2. 필수 시트 존재 여부 확인
-      const requiredSheets = ['Input', '갑지', '을지'];
-      const missingSheets = requiredSheets.filter(sheet => !workbook.SheetNames.includes(sheet));
-      
-      if (missingSheets.length > 0) {
-        warnings.push(`다음 시트가 누락되었습니다: ${missingSheets.join(', ')}`);
-      }
-      
-      // 3. Input 시트 헤더 검증
-      const worksheet = workbook.Sheets['Input'];
-      const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-      
-      if (data.length === 0) {
-        errors.push('Input 시트가 비어있습니다.');
-        return { success: false, errors, warnings };
-      }
-      
-      // 헤더 행 확인
-      const headers = data[0] as any[];
-      const requiredHeaders = [
-        '발주번호', '발주일', '현장명', '대분류', '중분류', '소분류',
-        '품명', '규격', '수량', '단가', '공급가액', '세액', '합계',
-        '납기일', '거래처명', '납품처명', '비고'
-      ];
-      
-      // 헤더 인덱스 매핑 (유연한 헤더 매칭을 위해)
-      const headerMap = new Map<string, number>();
-      headers.forEach((header, index) => {
-        if (header) {
-          headerMap.set(String(header).trim(), index);
-        }
-      });
-      
-      // 필수 헤더 확인
-      const missingHeaders = requiredHeaders.filter(required => {
-        return !Array.from(headerMap.keys()).some(header => 
-          header.includes(required) || required.includes(header)
-        );
-      });
-      
-      if (missingHeaders.length > 0) {
-        errors.push(`필수 헤더가 누락되었습니다: ${missingHeaders.join(', ')}`);
-      }
-      
-      // 4. 데이터 행 검증
-      const dataRows = data.slice(1);
-      
-      if (dataRows.length === 0) {
-        errors.push('Input 시트에 데이터가 없습니다.');
-        return { success: false, errors, warnings };
-      }
-      
-      // 빈 행 및 필수값 검증
-      let emptyRowCount = 0;
-      let rowsWithMissingData = 0;
-      
-      dataRows.forEach((row, index) => {
-        const rowNum = index + 2; // Excel 행 번호 (1-based, 헤더 제외)
-        
-        // row가 배열인지 확인
-        if (!Array.isArray(row)) {
-          return;
-        }
-        
-        // 완전히 빈 행 체크
-        if (!row || row.every(cell => !cell || String(cell).trim() === '')) {
-          emptyRowCount++;
-          return;
-        }
-        
-        // 필수 필드 체크 (발주번호, 발주일, 거래처명)
-        const orderNumber = row[0];
-        const orderDate = row[1];
-        const vendorName = row[14];
-        
-        if (!orderNumber || String(orderNumber).trim() === '') {
-          errors.push(`행 ${rowNum}: 발주번호가 누락되었습니다.`);
-          rowsWithMissingData++;
-        }
-        
-        if (!orderDate) {
-          warnings.push(`행 ${rowNum}: 발주일이 누락되었습니다.`);
-        }
-        
-        if (!vendorName || String(vendorName).trim() === '') {
-          errors.push(`행 ${rowNum}: 거래처명이 누락되었습니다.`);
-          rowsWithMissingData++;
-        }
-      });
-      
-      if (emptyRowCount > 0) {
-        warnings.push(`${emptyRowCount}개의 빈 행이 발견되었습니다. 파싱 시 무시됩니다.`);
-      }
-      
-      // 5. 최소 데이터 확인
-      const validDataRows = dataRows.filter(row => 
-        Array.isArray(row) && row[0] && String(row[0]).trim() !== ''
-      );
-      
-      if (validDataRows.length === 0) {
-        errors.push('유효한 발주 데이터가 없습니다.');
-      }
-      
-      const result = {
-        success: errors.length === 0,
-        errors,
-        warnings
-      };
-      
-      DebugLogger.logFunctionExit('ExcelAutomationService.preValidateExcel', result);
-      return result;
-      
-    } catch (error) {
-      DebugLogger.logError('ExcelAutomationService.preValidateExcel', error);
-      errors.push(`파일 읽기 오류: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      return { success: false, errors, warnings };
-    }
-  }
-  
-  /**
    * 1단계: Excel 파일 업로드 및 파싱, DB 저장
    */
   static async processExcelUpload(
@@ -283,34 +88,8 @@ export class ExcelAutomationService {
     });
 
     try {
-      // Step 0: 사전 검증
-      const validationResult = await this.preValidateExcel(filePath);
-      
-      if (!validationResult.success) {
-        return {
-          success: false,
-          error: `Excel 파일 검증 실패:\n${validationResult.errors.join('\n')}`
-        };
-      }
-      
-      // 경고사항이 있으면 로그에 기록
-      if (validationResult.warnings.length > 0) {
-        console.log('⚠️ Excel 검증 경고사항:');
-        validationResult.warnings.forEach(warning => console.log(`  - ${warning}`));
-      }
-
-      // 1. 거래처명 검증 (DB 저장 전에 수행)
-      const vendorValidation = await this.validateVendorsFromExcel(filePath);
-      
-      console.log('🔍 About to parse Excel file...');
-      
-      // 2. Excel 파일 파싱 (검증 후 수행)
+      // 1. Excel 파일 파싱
       const parseResult = POTemplateProcessorMock.parseInputSheet(filePath);
-      
-      console.log('📊 Parse result:', parseResult);
-      console.log('📊 Parse result success:', parseResult.success);
-      console.log('📊 Parse result orders:', parseResult.orders);
-      console.log('📊 Parse result orders length:', parseResult.orders?.length);
       
       if (!parseResult.success) {
         return {
@@ -319,7 +98,7 @@ export class ExcelAutomationService {
         };
       }
 
-      // 3. DB에 발주서 데이터 저장 (이미 검증 완료된 후 수행)
+      // 2. DB에 발주서 데이터 저장
       const saveResult = await POTemplateProcessorMock.saveToDatabase(
         parseResult.orders || [],
         userId
@@ -331,60 +110,21 @@ export class ExcelAutomationService {
           error: `DB 저장 실패: ${saveResult.error}`
         };
       }
+
+      // 3. 거래처명 검증 및 이메일 추출
+      const vendorValidation = await this.validateVendorsFromExcel(filePath);
       
       // 4. 이메일 미리보기 생성
       const emailPreview = await this.generateEmailPreview(filePath, vendorValidation);
-
-      // orders 데이터 확인을 위한 로그
-      console.log('📊 parseResult.orders:', parseResult.orders);
-      console.log('📊 Number of orders:', parseResult.orders?.length || 0);
-      
-      // 테스트용 샘플 데이터 생성
-      const sampleOrders = parseResult.orders || [{
-        orderNumber: "PO-2025-001",
-        orderDate: "2025-07-18",
-        siteName: "테스트 현장",
-        vendorName: "이노에너지",
-        totalAmount: 1000000,
-        items: [
-          {
-            itemName: "철근",
-            quantity: 10,
-            unitPrice: 50000,
-            supplyAmount: 500000,
-            vendorName: "이노에너지",
-            deliveryName: "이노메탈"
-          },
-          {
-            itemName: "창호",
-            quantity: 5,
-            unitPrice: 100000,
-            supplyAmount: 500000,
-            vendorName: "울트라창호",
-            deliveryName: "영세엔지텍"
-          }
-        ]
-      }];
-      
-      // 디버깅: parseResult.orders 확인
-      console.log('🔍 parseResult.orders exists:', !!parseResult.orders);
-      console.log('🔍 parseResult.orders length:', parseResult.orders?.length);
-      console.log('🔍 parseResult.orders data:', JSON.stringify(parseResult.orders, null, 2));
 
       const result = {
         success: true,
         data: {
           savedOrders: saveResult.savedOrders,
           vendorValidation,
-          emailPreview,
-          orders: parseResult.orders || [] // 실제 파싱된 발주서 데이터 사용
+          emailPreview
         }
       };
-
-      // 최종 결과에 orders가 포함되었는지 확인
-      console.log('📊 Final result.data.orders exists:', !!result.data.orders);
-      console.log('📊 Final result.data.orders length:', result.data.orders?.length);
-      console.log('📊 Final result.data.orders data:', JSON.stringify(result.data.orders, null, 2));
 
       DebugLogger.logFunctionExit('ExcelAutomationService.processExcelUpload', result);
       return result;
@@ -405,29 +145,74 @@ export class ExcelAutomationService {
     DebugLogger.logFunctionEntry('ExcelAutomationService.validateVendorsFromExcel', { filePath });
 
     try {
-      // Mock DB를 원본 데이터로 강제 초기화 (검증 전에 수행)
-      if (!process.env.DATABASE_URL) {
-        console.log('🔧 Mock DB 초기화 시작...');
-        const { MockDB } = await import('./mock-db');
-        MockDB.resetToOriginalData();
-        console.log('✅ Mock DB 초기화 완료');
+      // Excel에서 거래처명 추출
+      const parseResult = POTemplateProcessorMock.parseInputSheet(filePath);
+      
+      if (!parseResult.success || !parseResult.orders) {
+        throw new Error('Excel 파싱 실패');
+      }
+
+      // 고유한 거래처명 및 납품처명 수집 - 모든 아이템의 정보 포함
+      const allVendorNames = [];
+      const allDeliveryNames = [];
+      
+      // 발주서 레벨의 거래처명 수집
+      for (const order of parseResult.orders) {
+        if (order.vendorName && order.vendorName.trim()) {
+          allVendorNames.push(order.vendorName.trim());
+        }
+        
+        // 각 아이템의 거래처명과 납품처명 수집
+        for (const item of order.items) {
+          if (item.vendorName && item.vendorName.trim()) {
+            allVendorNames.push(item.vendorName.trim());
+          }
+          if (item.deliveryName && item.deliveryName.trim()) {
+            allDeliveryNames.push(item.deliveryName.trim());
+          }
+        }
       }
       
-      // Excel에서 거래처명 직접 추출 (DB 저장 없이)
-      const vendorNames = this.extractVendorNamesOnly(filePath);
+      // 중복 제거하여 고유한 거래처명과 납품처명 추출
+      const uniqueVendorNames = Array.from(new Set(allVendorNames));
+      const uniqueDeliveryNames = Array.from(new Set(allDeliveryNames));
+
+      console.log(`📋 검증할 거래처명 (${uniqueVendorNames.length}개): ${uniqueVendorNames.join(', ')}`);
+      console.log(`📋 검증할 납품처명 (${uniqueDeliveryNames.length}개): ${uniqueDeliveryNames.join(', ')}`);
       
-      if (vendorNames.length === 0) {
-        console.log('⚠️ 거래처명을 찾을 수 없습니다.');
-        return {
-          validVendors: [],
-          invalidVendors: [],
-          needsUserAction: false
-        };
+      // 모든 고유명칭을 하나의 배열로 합치고 거래처-납품처 매핑 생성
+      const vendorDeliveryPairs = [];
+      
+      // 각 아이템별로 거래처-납품처 쌍 생성
+      for (const order of parseResult.orders) {
+        for (const item of order.items) {
+          const vendorName = item.vendorName?.trim() || order.vendorName?.trim() || '';
+          const deliveryName = item.deliveryName?.trim() || vendorName;
+          
+          if (vendorName) {
+            vendorDeliveryPairs.push({
+              vendorName,
+              deliveryName
+            });
+          }
+        }
       }
       
-      console.log(`📋 검증할 거래처명 (${vendorNames.length}개): ${vendorNames.map(v => v.vendorName).join(', ')}`);
-      
-      const validationResults = await validateMultipleVendors(vendorNames);
+      // 중복 제거
+      const uniquePairs = vendorDeliveryPairs.filter((pair, index, self) => 
+        self.findIndex(p => p.vendorName === pair.vendorName && p.deliveryName === pair.deliveryName) === index
+      );
+
+      console.log(`📋 검증할 거래처-납품처 쌍 (${uniquePairs.length}개): ${uniquePairs.map(p => `${p.vendorName}→${p.deliveryName}`).join(', ')}`);
+
+      // 거래처-납품처 쌍을 검증을 위한 데이터 구조로 변환
+      const vendorData = uniquePairs.map(pair => ({
+        vendorName: pair.vendorName,
+        deliveryName: pair.deliveryName,
+        email: undefined // 이메일은 별도로 추출하지 않음
+      }));
+
+      const validationResults = await validateMultipleVendors(vendorData);
       
       const validVendors: VendorValidationStep['validVendors'] = [];
       const invalidVendors: VendorValidationStep['invalidVendors'] = [];
@@ -504,7 +289,7 @@ export class ExcelAutomationService {
 
       const emailPreview: EmailPreviewStep = {
         recipients,
-        subject: `발주서 - ${path.basename(filePath, '.xlsx')} (${new Date().toLocaleDateString('ko-KR')})`,
+        subject: `발주서 - ${path.basename(filePath, path.extname(filePath))} (${new Date().toLocaleDateString('ko-KR')})`,
         attachmentInfo: {
           originalFile: path.basename(filePath),
           processedFile: path.basename(processedPath),
@@ -543,13 +328,6 @@ export class ExcelAutomationService {
       subject?: string;
       orderNumber?: string;
       additionalMessage?: string;
-      cc?: string[];
-      bcc?: string[];
-      additionalAttachments?: Array<{
-        filename: string;
-        originalName: string;
-        path: string;
-      }>;
     } = {}
   ): Promise<EmailSendResult> {
     DebugLogger.logFunctionEntry('ExcelAutomationService.sendEmails', {
@@ -571,12 +349,9 @@ export class ExcelAutomationService {
             processedFilePath,
             {
               to: email,
-              cc: emailOptions.cc,
-              bcc: emailOptions.bcc,
               subject: emailOptions.subject || `발주서 - ${new Date().toLocaleDateString('ko-KR')}`,
               orderNumber: emailOptions.orderNumber,
-              additionalMessage: emailOptions.additionalMessage,
-              additionalAttachments: emailOptions.additionalAttachments
+              additionalMessage: emailOptions.additionalMessage
             }
           );
 
@@ -586,11 +361,6 @@ export class ExcelAutomationService {
               status: 'sent',
               messageId: sendResult.messageId
             });
-            
-            // 이메일 발송 성공 시 DB 상태 업데이트 (orderNumber가 있는 경우)
-            if (emailOptions.orderNumber) {
-              await this.updateOrderEmailStatus(emailOptions.orderNumber, 'sent');
-            }
           } else {
             throw new Error(sendResult.error || 'Email sending failed');
           }
@@ -610,11 +380,6 @@ export class ExcelAutomationService {
             email,
             error: errorMessage
           });
-          
-          // 이메일 발송 실패 시 DB 상태 업데이트 (orderNumber가 있는 경우)
-          if (emailOptions.orderNumber) {
-            await this.updateOrderEmailStatus(emailOptions.orderNumber, 'failed', errorMessage);
-          }
 
           console.error(`❌ 이메일 발송 실패: ${email} - ${errorMessage}`);
         }
@@ -653,8 +418,6 @@ export class ExcelAutomationService {
       originalName: string;
       selectedVendorId: number;
       selectedVendorEmail: string;
-      selectedVendorContactPerson?: string;
-      selectedVendorPhone?: string;
     }>
   ): Promise<EmailPreviewStep> {
     DebugLogger.logFunctionEntry('ExcelAutomationService.updateEmailPreviewWithVendorSelection', {
@@ -680,7 +443,7 @@ export class ExcelAutomationService {
 
       return {
         recipients,
-        subject: `발주서 - ${path.basename(filePath, '.xlsx')} (${new Date().toLocaleDateString('ko-KR')})`,
+        subject: `발주서 - ${path.basename(filePath, path.extname(filePath))} (${new Date().toLocaleDateString('ko-KR')})`,
         attachmentInfo: {
           originalFile: path.basename(filePath),
           processedFile: path.basename(processedPath),
@@ -701,41 +464,6 @@ export class ExcelAutomationService {
         },
         canProceed: false
       };
-    }
-  }
-  
-  /**
-   * 발주서의 이메일 발송 상태 업데이트
-   */
-  private static async updateOrderEmailStatus(
-    orderNumber: string,
-    status: 'sent' | 'failed',
-    errorMessage?: string
-  ): Promise<void> {
-    try {
-      // Mock DB 모드에서는 로그만 출력
-      if (!process.env.DATABASE_URL) {
-        console.log(`📧 이메일 상태 업데이트 (Mock): ${orderNumber} → ${status}`);
-        return;
-      }
-      
-      // 실제 DB 업데이트
-      await db
-        .update(purchaseOrders)
-        .set({
-          emailStatus: status,
-          emailSentCount: sql`${purchaseOrders.emailSentCount} + 1`,
-          sentAt: status === 'sent' ? new Date() : undefined,
-          lastEmailError: status === 'failed' ? errorMessage : null,
-          updatedAt: new Date()
-        })
-        .where(eq(purchaseOrders.orderNumber, orderNumber));
-        
-      console.log(`✅ 발주서 ${orderNumber} 이메일 상태 업데이트: ${status}`);
-      
-    } catch (error) {
-      console.error(`❌ 이메일 상태 업데이트 실패 (${orderNumber}):`, error);
-      // 상태 업데이트 실패는 전체 프로세스를 중단하지 않음
     }
   }
 }

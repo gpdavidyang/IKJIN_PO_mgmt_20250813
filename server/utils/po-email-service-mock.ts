@@ -32,7 +32,7 @@ export class POEmailServiceMock {
   constructor() {
     // 이메일 설정이 있는 경우에만 transporter 생성
     if (process.env.SMTP_USER && process.env.SMTP_PASS) {
-      this.transporter = nodemailer.createTransporter({
+      this.transporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST || 'smtp.naver.com',
         port: parseInt(process.env.SMTP_PORT || '587'),
         secure: false, // true for 465, false for other ports
@@ -66,10 +66,11 @@ export class POEmailServiceMock {
         ['갑지', '을지']
       );
 
-      if (!extractResult.success) {
+      const extractResultData = await extractResult;
+      if (!extractResultData.success) {
         return {
           success: false,
-          error: `시트 추출 실패: ${extractResult.error}`
+          error: `시트 추출 실패: ${extractResultData.error}`
         };
       }
 

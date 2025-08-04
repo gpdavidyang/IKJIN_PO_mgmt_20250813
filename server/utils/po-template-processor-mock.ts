@@ -1,6 +1,8 @@
 import XLSX from 'xlsx';
 import { removeAllInputSheets } from './excel-input-sheet-remover';
-import { MockDB } from './mock-db';
+import { db } from "../db";
+import { vendors, projects, purchaseOrders, purchaseOrderItems } from "@shared/schema";
+import { eq } from "drizzle-orm";
 import { DebugLogger } from './debug-logger';
 
 export interface POTemplateItem {
@@ -61,7 +63,7 @@ export class POTemplateProcessorMock {
       // 헤더 행 제거
       const rows = data.slice(1) as any[][];
       
-      // 발주서별로 그룹화
+      // 발주서별로 그룹화 (발주번호로만 구분)
       const ordersByNumber = new Map<string, POTemplateOrder>();
       
       for (const row of rows) {
@@ -93,7 +95,7 @@ export class POTemplateProcessorMock {
             orderDate,
             siteName,
             dueDate,
-            vendorName,
+            vendorName, // 첫 번째 행의 거래처명 사용
             totalAmount: 0,
             items: []
           });
@@ -154,16 +156,44 @@ export class POTemplateProcessorMock {
     try {
       let savedOrders = 0;
 
-      await MockDB.transaction(async (tx) => {
+      await db.transaction(async (tx) => {
         for (const orderData of orders) {
           // 1. 거래처 조회 또는 생성
-          const vendorId = await MockDB.findOrCreateVendor(orderData.vendorName);
+          let vendor = await tx.select().from(vendors).where(eq(vendors.name, orderData.vendorName)).limit(1);
+          let vendorId: number;
+          if (vendor.length === 0) {
+            const newVendor = await tx.insert(vendors).values({
+              name: orderData.vendorName,
+              contactPerson: 'Unknown',
+              email: null,
+              phone: null,
+              isActive: true
+            }).returning({ id: vendors.id });
+            vendorId = newVendor[0].id;
+          } else {
+            vendorId = vendor[0].id;
+          }
           
           // 2. 프로젝트 조회 또는 생성
-          const projectId = await MockDB.findOrCreateProject(orderData.siteName);
+          let project = await tx.select().from(projects).where(eq(projects.name, orderData.siteName)).limit(1);
+          let projectId: number;
+          if (project.length === 0) {
+            const newProject = await tx.insert(projects).values({
+              name: orderData.siteName,
+              description: '',
+              startDate: new Date(),
+              endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1년 후
+              isActive: true,
+              projectManagerId: null,
+              orderManagerId: null
+            }).returning({ id: projects.id });
+            projectId = newProject[0].id;
+          } else {
+            projectId = project[0].id;
+          }
           
           // 3. 발주서 생성
-          const orderId = await MockDB.createPurchaseOrder({
+          const newOrder = await tx.insert(purchaseOrders).values({
             orderNumber: orderData.orderNumber,
             projectId,
             vendorId,
@@ -172,24 +202,20 @@ export class POTemplateProcessorMock {
             deliveryDate: orderData.dueDate,
             totalAmount: orderData.totalAmount,
             notes: `PO Template에서 자동 생성됨`
-          });
+          }).returning({ id: purchaseOrders.id });
+
+          const orderId = newOrder[0].id;
 
           // 4. 발주서 아이템들 생성
           for (const item of orderData.items) {
-            await MockDB.createPurchaseOrderItem({
-              orderId,
+            await tx.insert(purchaseOrderItems).values({
+              purchaseOrderId: orderId,
               itemName: item.itemName,
-              specification: item.specification,
+              specification: item.specification || '',
               quantity: item.quantity,
               unitPrice: item.unitPrice,
               totalAmount: item.totalAmount,
-              categoryLv1: item.categoryLv1,
-              categoryLv2: item.categoryLv2,
-              categoryLv3: item.categoryLv3,
-              supplyAmount: item.supplyAmount,
-              taxAmount: item.taxAmount,
-              deliveryName: item.deliveryName,
-              notes: item.notes
+              notes: `${item.categoryLv1 || ''} ${item.categoryLv2 || ''} ${item.categoryLv3 || ''}`.trim() || null
             });
           }
 
@@ -294,7 +320,13 @@ export class POTemplateProcessorMock {
       }
       
       if (typeof dateValue === 'string') {
-        const date = new Date(dateValue);
+        // 한국식 날짜 형식 (YYYY.M.D 또는 YYYY.MM.DD)을 JavaScript가 인식 가능한 형식으로 변환
+        let dateStr = dateValue.trim();
+        if (/^\d{4}\.\d{1,2}\.\d{1,2}$/.test(dateStr)) {
+          dateStr = dateStr.replace(/\./g, '-'); // 2024.6.12 -> 2024-6-12
+        }
+        
+        const date = new Date(dateStr);
         if (!isNaN(date.getTime())) {
           return date.toISOString().split('T')[0];
         }

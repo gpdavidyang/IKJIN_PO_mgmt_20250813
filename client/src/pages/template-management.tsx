@@ -40,20 +40,26 @@ export default function TemplateManagement() {
 
   // 템플릿 목록 조회
   const { data: templates = [], isLoading } = useQuery({
-    queryKey: ['/api/order-templates'],
-    queryFn: () => fetch('/api/order-templates', { credentials: 'include' }).then(res => res.json()),
+    queryKey: ['/api/admin/templates'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/templates', { credentials: 'include' });
+      const data = await response.json();
+      console.log('🔍 Templates API response:', data);
+      // 응답이 배열이 아닌 경우 빈 배열 반환
+      return Array.isArray(data) ? data : [];
+    },
   });
 
   // 템플릿 생성
   const createTemplateMutation = useMutation({
-    mutationFn: (templateData: any) => fetch('/api/order-templates', {
+    mutationFn: (templateData: any) => fetch('/api/admin/templates', {
       method: 'POST',
       body: JSON.stringify(templateData),
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include'
     }).then(res => res.json()),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/order-templates'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/templates'] });
       setShowBuilder(false);
       toast({
         title: "성공",
@@ -72,14 +78,14 @@ export default function TemplateManagement() {
   // 템플릿 업데이트
   const updateTemplateMutation = useMutation({
     mutationFn: ({ id, templateData }: { id: number; templateData: any }) => 
-      fetch(`/api/order-templates/${id}`, {
+      fetch(`/api/admin/templates/${id}`, {
         method: 'PUT',
         body: JSON.stringify(templateData),
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include'
       }).then(res => res.json()),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/order-templates'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/templates'] });
       setShowBuilder(false);
       setIsEditing(false);
       setSelectedTemplate(null);
@@ -100,7 +106,7 @@ export default function TemplateManagement() {
   // 템플릿 삭제
   const deleteTemplateMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await fetch(`/api/order-templates/${id}`, {
+      const response = await fetch(`/api/admin/templates/${id}`, {
         method: 'DELETE',
         credentials: 'include',
         headers: {
@@ -124,7 +130,7 @@ export default function TemplateManagement() {
       // Force complete cache refresh with new timestamp
       const timestamp = Date.now();
       queryClient.removeQueries({ queryKey: ['/api/order-templates'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/order-templates'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/templates'] });
       queryClient.refetchQueries({ 
         queryKey: ['/api/order-templates'], 
         type: 'active',
@@ -156,7 +162,7 @@ export default function TemplateManagement() {
         credentials: 'include'
       }).then(res => res.json()),
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/order-templates'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/templates'] });
       toast({
         title: "성공",
         description: `템플릿이 ${variables.isActive ? '활성화' : '비활성화'}되었습니다.`,
@@ -171,10 +177,12 @@ export default function TemplateManagement() {
     },
   });
 
-  // 필터링된 템플릿
-  const filteredTemplates = templates.filter((template: Template) =>
-    template.templateName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // 필터링된 템플릿 (안전하게 배열인지 확인)
+  const filteredTemplates = Array.isArray(templates) 
+    ? templates.filter((template: Template) =>
+        template.templateName.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : [];
 
   // 템플릿 타입별 아이콘 (카테고리 기반)
   const getTemplateIcon = (templateType: string) => {

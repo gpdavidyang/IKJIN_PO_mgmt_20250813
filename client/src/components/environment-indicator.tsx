@@ -14,16 +14,16 @@ export function EnvironmentIndicator() {
             className={`${badge.color} text-xs font-semibold px-2 py-1 cursor-help`}
             variant="outline"
           >
-            {badge.label}
+            {badge.text}
           </Badge>
         </TooltipTrigger>
         <TooltipContent>
           <div className="text-sm">
-            <div className="font-semibold">{badge.description}</div>
-            {isDevelopment() && debugInfo && (
+            <div className="font-semibold">환경: {debugInfo.environment}</div>
+            {isDevelopment && debugInfo && (
               <div className="mt-2 text-xs opacity-80">
-                <div>Excel Upload: {debugInfo.featureFlags.EXCEL_UPLOAD ? '활성화' : '비활성화'}</div>
-                <div>Handsontable: {debugInfo.featureFlags.HANDSONTABLE ? '활성화' : '비활성화'}</div>
+                <div>Excel Upload: {debugInfo.features.EXCEL_UPLOAD ? '활성화' : '비활성화'}</div>
+                <div>Handsontable: {debugInfo.features.HANDSONTABLE ? '활성화' : '비활성화'}</div>
               </div>
             )}
           </div>

@@ -177,27 +177,6 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
   const { data: projects } = useQuery({
     queryKey: ["/api/projects"],
   });
-  
-  // Watch vendorId changes to auto-load vendor info
-  const watchedVendorId = watch("vendorId");
-  
-  useEffect(() => {
-    if (watchedVendorId && vendors) {
-      const selectedVendor = vendors.find((v: any) => v.id === watchedVendorId);
-      if (selectedVendor) {
-        setSelectedVendorInfo({
-          ...selectedVendor,
-          contactInfo: `담당자: ${selectedVendor.contactPerson || '-'}`,
-          emailInfo: `이메일: ${selectedVendor.email || '-'}`,
-          phoneInfo: `연락처: ${selectedVendor.phone || '-'}`
-        });
-      } else {
-        setSelectedVendorInfo(null);
-      }
-    } else {
-      setSelectedVendorInfo(null);
-    }
-  }, [watchedVendorId, vendors]);
 
   const { data: orderData, isLoading: orderLoading } = useQuery({
     queryKey: ["/api/orders", orderId],
@@ -762,24 +741,6 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
                 </Select>
                 {errors.vendorId && (
                   <p className="text-red-500 text-sm mt-1">{errors.vendorId.message}</p>
-                )}
-                {selectedVendorInfo && (
-                  <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                    <div className="flex flex-col gap-1 text-sm">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">📋</span>
-                        <span>{selectedVendorInfo.contactInfo}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">✉️</span>
-                        <span>{selectedVendorInfo.emailInfo}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">📞</span>
-                        <span>{selectedVendorInfo.phoneInfo}</span>
-                      </div>
-                    </div>
-                  </div>
                 )}
               </div>
               

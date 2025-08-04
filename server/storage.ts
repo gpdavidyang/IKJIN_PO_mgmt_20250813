@@ -1,4 +1,3 @@
-import { supabaseService, supabaseDb } from './services/supabase-service';
 import {
   users,
   vendors,
@@ -60,9 +59,6 @@ import {
   type InsertCompany,
   type Terminology,
   type InsertTerminology,
-  loginAuditLogs,
-  type LoginAuditLog,
-  type InsertLoginAuditLog,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, asc, ilike, and, or, between, count, sum, sql, gte, lte, inArray, isNotNull, notInArray } from "drizzle-orm";
@@ -228,13 +224,6 @@ export interface IStorage {
   updateTerm(id: number, term: Partial<InsertTerminology>): Promise<Terminology>;
   deleteTerm(id: number): Promise<void>;
   
-  // Login audit operations
-  createLoginAuditLog(log: InsertLoginAuditLog): Promise<LoginAuditLog>;
-  getRecentLoginAttempts(email: string, minutes: number): Promise<number>;
-  getRecentFailedAttempts(email: string, minutes: number): Promise<number>;
-  getLoginHistory(userId?: string, limit?: number, offset?: number): Promise<LoginAuditLog[]>;
-  getRecentSuccessfulLogins(userId: string, minutes: number): Promise<LoginAuditLog[]>;
-  
 
   
   // Company operations
@@ -266,18 +255,9 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  private get database() {
-    // Prioritize Supabase connection, fall back to traditional PostgreSQL
-    const supabaseDatabase = supabaseService.getDatabase();
-    if (supabaseDatabase) {
-      return supabaseDatabase;
-    }
-    return db;
-  }
-
   // User operations
   async getUser(id: string): Promise<User | undefined> {
-    const [user] = await this.database.select().from(users).where(eq(users.id, id));
+    const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
 
@@ -702,7 +682,21 @@ export class DatabaseStorage implements IStorage {
       limit = 50
     } = filters;
 
-    let query = db.select().from(items);
+    let query = db.select({
+      id: items.id,
+      name: items.name,
+      specification: items.specification,
+      unit: items.unit,
+      unitPrice: items.unitPrice,
+      category: items.category,
+      majorCategory: items.majorCategory,
+      middleCategory: items.middleCategory,
+      minorCategory: items.minorCategory,
+      description: items.description,
+      isActive: items.isActive,
+      createdAt: items.createdAt,
+      updatedAt: items.updatedAt,
+    }).from(items);
     let countQuery = db.select({ count: count() }).from(items);
 
     const conditions: any[] = [];
@@ -745,7 +739,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getItem(id: number): Promise<Item | undefined> {
-    const [item] = await db.select().from(items).where(eq(items.id, id));
+    const [item] = await db.select({
+      id: items.id,
+      name: items.name,
+      specification: items.specification,
+      unit: items.unit,
+      unitPrice: items.unitPrice,
+      category: items.category,
+      majorCategory: items.majorCategory,
+      middleCategory: items.middleCategory,
+      minorCategory: items.minorCategory,
+      description: items.description,
+      isActive: items.isActive,
+      createdAt: items.createdAt,
+      updatedAt: items.updatedAt,
+    }).from(items).where(eq(items.id, id));
     return item;
   }
 
@@ -924,6 +932,16 @@ export class DatabaseStorage implements IStorage {
           .from(purchaseOrderItems)
           .where(eq(purchaseOrderItems.orderId, order.purchase_orders.id));
 
+        // 디버깅: 실제 DB 데이터 확인 (모든 발주서)
+        console.log('🔍 DB에서 조회된 발주서 데이터:', {
+          id: order.purchase_orders.id,
+          orderNumber: order.purchase_orders.orderNumber,
+          orderDate: order.purchase_orders.orderDate,
+          deliveryDate: order.purchase_orders.deliveryDate,
+          rawOrderDate: JSON.stringify(order.purchase_orders.orderDate),
+          type: typeof order.purchase_orders.orderDate
+        });
+
         return {
           ...order.purchase_orders,
           vendor: order.vendors || undefined,
@@ -965,7 +983,17 @@ export class DatabaseStorage implements IStorage {
     console.log('Debug: Items found:', items);
 
     const orderAttachments = await db
-      .select()
+      .select({
+        id: attachments.id,
+        orderId: attachments.orderId,
+        originalName: attachments.originalName,
+        storedName: attachments.storedName,
+        filePath: attachments.filePath,
+        fileSize: attachments.fileSize,
+        mimeType: attachments.mimeType,
+        uploadedBy: attachments.uploadedBy,
+        uploadedAt: attachments.uploadedAt,
+      })
       .from(attachments)
       .where(eq(attachments.orderId, id));
 
@@ -1182,12 +1210,32 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAttachment(id: number): Promise<Attachment | undefined> {
-    const [attachment] = await db.select().from(attachments).where(eq(attachments.id, id));
+    const [attachment] = await db.select({
+      id: attachments.id,
+      orderId: attachments.orderId,
+      originalName: attachments.originalName,
+      storedName: attachments.storedName,
+      filePath: attachments.filePath,
+      fileSize: attachments.fileSize,
+      mimeType: attachments.mimeType,
+      uploadedBy: attachments.uploadedBy,
+      uploadedAt: attachments.uploadedAt,
+    }).from(attachments).where(eq(attachments.id, id));
     return attachment || undefined;
   }
 
   async getOrderAttachments(orderId: number): Promise<Attachment[]> {
-    return await db.select().from(attachments).where(eq(attachments.orderId, orderId));
+    return await db.select({
+      id: attachments.id,
+      orderId: attachments.orderId,
+      originalName: attachments.originalName,
+      storedName: attachments.storedName,
+      filePath: attachments.filePath,
+      fileSize: attachments.fileSize,
+      mimeType: attachments.mimeType,
+      uploadedBy: attachments.uploadedBy,
+      uploadedAt: attachments.uploadedAt,
+    }).from(attachments).where(eq(attachments.orderId, orderId));
   }
 
   async deleteAttachment(id: number): Promise<void> {
@@ -1837,7 +1885,7 @@ export class DatabaseStorage implements IStorage {
       const conditions = [
         lte(purchaseOrders.deliveryDate, urgentDate),
         gte(purchaseOrders.deliveryDate, today),
-        notInArray(purchaseOrders.status, ['delivered', 'cancelled'])
+        notInArray(purchaseOrders.status, ['completed'])
       ];
 
       if (userId) {
@@ -2334,164 +2382,6 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-
-  // Login audit operations
-  async createLoginAuditLog(log: InsertLoginAuditLog): Promise<LoginAuditLog> {
-    try {
-      const [auditLog] = await db
-        .insert(loginAuditLogs)
-        .values(log)
-        .returning();
-      return auditLog;
-    } catch (error) {
-      console.error('Error creating login audit log:', error);
-      throw error;
-    }
-  }
-
-  async getRecentLoginAttempts(email: string, minutes: number): Promise<number> {
-    try {
-      const timeThreshold = new Date(Date.now() - minutes * 60 * 1000);
-      const [result] = await db
-        .select({ count: count() })
-        .from(loginAuditLogs)
-        .where(
-          and(
-            eq(loginAuditLogs.email, email),
-            gte(loginAuditLogs.createdAt, timeThreshold)
-          )
-        );
-      return result.count;
-    } catch (error) {
-      console.error('Error getting recent login attempts:', error);
-      return 0;
-    }
-  }
-
-  async getRecentFailedAttempts(email: string, minutes: number): Promise<number> {
-    try {
-      const timeThreshold = new Date(Date.now() - minutes * 60 * 1000);
-      const [result] = await db
-        .select({ count: count() })
-        .from(loginAuditLogs)
-        .where(
-          and(
-            eq(loginAuditLogs.email, email),
-            eq(loginAuditLogs.loginStatus, 'failed'),
-            gte(loginAuditLogs.createdAt, timeThreshold)
-          )
-        );
-      return result.count;
-    } catch (error) {
-      console.error('Error getting recent failed attempts:', error);
-      return 0;
-    }
-  }
-
-  async getLoginHistory(userId?: string, limit: number = 100, offset: number = 0): Promise<LoginAuditLog[]> {
-    try {
-      const query = db
-        .select()
-        .from(loginAuditLogs)
-        .orderBy(desc(loginAuditLogs.createdAt))
-        .limit(limit)
-        .offset(offset);
-
-      if (userId) {
-        return await query.where(eq(loginAuditLogs.userId, userId));
-      }
-
-      return await query;
-    } catch (error) {
-      console.error('Error getting login history:', error);
-      return [];
-    }
-  }
-
-  async getRecentSuccessfulLogins(userId: string, minutes: number): Promise<LoginAuditLog[]> {
-    try {
-      const timeThreshold = new Date(Date.now() - minutes * 60 * 1000);
-      return await db
-        .select()
-        .from(loginAuditLogs)
-        .where(
-          and(
-            eq(loginAuditLogs.userId, userId),
-            eq(loginAuditLogs.loginStatus, 'success'),
-            gte(loginAuditLogs.createdAt, timeThreshold)
-          )
-        )
-        .orderBy(desc(loginAuditLogs.createdAt));
-    } catch (error) {
-      console.error('Error getting recent successful logins:', error);
-      return [];
-    }
-  }
-
-  // 승인 관련 추가 메서드들
-  async getPendingOrders(): Promise<PurchaseOrder[]> {
-    try {
-      return await db
-        .select()
-        .from(purchaseOrders)
-        .where(eq(purchaseOrders.status, 'pending'))
-        .orderBy(asc(purchaseOrders.createdAt));
-    } catch (error) {
-      console.error('Error getting pending orders:', error);
-      return [];
-    }
-  }
-
-  async getApprovedOrdersByUser(userId: string): Promise<PurchaseOrder[]> {
-    try {
-      return await db
-        .select()
-        .from(purchaseOrders)
-        .where(
-          and(
-            eq(purchaseOrders.approvedBy, userId),
-            or(
-              eq(purchaseOrders.status, 'approved'),
-              eq(purchaseOrders.status, 'sent'),
-              eq(purchaseOrders.status, 'completed')
-            )
-          )
-        )
-        .orderBy(desc(purchaseOrders.approvedAt));
-    } catch (error) {
-      console.error('Error getting approved orders by user:', error);
-      return [];
-    }
-  }
-
-  async createOrderHistory(data: InsertOrderHistory): Promise<OrderHistory> {
-    try {
-      const [history] = await db
-        .insert(orderHistory)
-        .values(data)
-        .returning();
-      return history;
-    } catch (error) {
-      console.error('Error creating order history:', error);
-      throw error;
-    }
-  }
 }
 
 export const storage = new DatabaseStorage();
-
-/**
- * Get the active database connection (Supabase or PostgreSQL)
- */
-export function getActiveDatabase() {
-  const supabaseDatabase = supabaseService.getDatabase();
-  if (supabaseDatabase) {
-    console.log('📊 Using Supabase database connection');
-    return supabaseDatabase;
-  }
-  console.log('📊 Using traditional PostgreSQL connection');
-  return db;
-}
-
-// Export the active database for backward compatibility
-export { getActiveDatabase as activeDb };

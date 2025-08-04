@@ -1,0 +1,24 @@
+
+> rest-express@1.0.0 dev
+> NODE_ENV=development tsx server/index.ts
+
+[dotenv@17.2.0] injecting env (13) from .env (tip: ⚙️  override existing env vars with { override: true })
+🔍 Using DATABASE_URL: postgresql://postgres.tbvugytmskxxyqfvqmup:gps110601ysw@[HIDDEN]
+🔄 Creating PostgreSQL connection pool with URL: postgresql://postgres.tbvugytmskxxyqfvqmup:gps110601ysw@[HIDDEN]
+✅ Database connected successfully (PostgreSQL pool)
+[dotenv@17.2.0] injecting env (0) from .env (tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' })
+🔧 Force-set DATABASE_URL: postgresql://postgres.tbvugytmskxxyqfvqmup:gps110601ysw@[HIDDEN]
+1:23:27 AM [express] serving on port 8080
+Session saved successfully for user: test_admin_001
+1:23:37 AM [express] POST /api/auth/login 200 in 1196ms :: {"message":"Login successful","user":{"id…
+1:23:41 AM [express] GET /api/dashboard/urgent-orders 200 in 254ms :: []
+1:23:55 AM [express] GET /api/dashboard/unified 200 in 808ms :: {"statistics":{"totalOrders":7,"tota…
+1:23:55 AM [express] GET /api/dashboard/unified 200 in 164ms :: {"statistics":{"totalOrders":7,"tota…
+1:23:56 AM [express] GET /api/dashboard/recent-projects 200 in 246ms :: [{"id":4,"projectName":"삼성래미…
+1:23:56 AM [express] GET /api/dashboard/urgent-orders 200 in 243ms :: []
+1:26:27 AM [express] GET /api/dashboard/unified 200 in 1285ms :: {"statistics":{"totalOrders":7,"tot…
+getCurrentUser - Session ID: jF47HRjTp2nLY2yyGeHCz2t63rrEezM0
+getCurrentUser - Session userId: test_admin_001
+getCurrentUser - User found: test_admin_001
+1:27:53 AM [express] GET /api/auth/user 200 in 1057ms :: {"id":"test_admin_001","email":"test@ikjin.…
+1:27:59 AM [express] GET /api/dashboard/unified 200 in 477ms :: {"statistics":{"totalOrders":7,"tota…

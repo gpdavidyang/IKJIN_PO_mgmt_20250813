@@ -50,3 +50,26 @@ export function getEnvironmentFeatures() {
   const env = import.meta.env.VITE_ENVIRONMENT as keyof typeof ENV_CONFIG;
   return ENV_CONFIG[env] || ENV_CONFIG.default;
 }
+
+// Environment badge helper
+export function getEnvironmentBadge() {
+  if (IS_DEVELOPMENT_ENV) {
+    return { text: 'DEV', color: 'bg-blue-500' };
+  }
+  if (IS_PRODUCTION_ENV) {
+    return { text: 'PROD', color: 'bg-green-500' };
+  }
+  return { text: 'UNKNOWN', color: 'bg-gray-500' };
+}
+
+// Development detection
+export const isDevelopment = IS_DEVELOPMENT_ENV;
+
+// Debug info helper
+export function getDebugInfo() {
+  return {
+    environment: import.meta.env.VITE_ENVIRONMENT || 'unknown',
+    features: FEATURE_FLAGS,
+    timestamp: new Date().toISOString()
+  };
+}
