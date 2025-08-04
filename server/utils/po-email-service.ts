@@ -2,6 +2,7 @@ import nodemailer from 'nodemailer';
 import path from 'path';
 import fs from 'fs';
 import { convertExcelToPdf } from './excel-to-pdf';
+import { ExcelToPDFConverter } from './excel-to-pdf-converter.js';
 import { POTemplateProcessor } from './po-template-processor';
 import { removeAllInputSheets } from './excel-input-sheet-remover';
 
@@ -72,12 +73,23 @@ export class POEmailService {
       console.log(`🎯 Input 시트 제거 완료`);
       console.log(`📋 남은 시트: ${removeResult.remainingSheets.join(', ')}`);
 
-      // 2. PDF 변환 (남은 모든 시트)
+      // 2. PDF 변환 (남은 모든 시트) - PRD 요구사항: 엑셀파일을 PDF화 한 파일도 첨부
       const pdfPath = path.join(uploadsDir, `po-advanced-format-${timestamp}.pdf`);
-      const pdfResult = await convertExcelToPdf(processedPath, pdfPath, removeResult.remainingSheets);
-
-      if (!pdfResult.success) {
-        console.warn(`⚠️ PDF 변환 실패: ${pdfResult.error}, Excel 파일만 첨부합니다.`);
+      let pdfResult = { success: false, error: '' };
+      
+      try {
+        // 새로운 Excel to PDF 변환기 사용
+        await ExcelToPDFConverter.convertExcelToPDF(processedPath, pdfPath);
+        pdfResult.success = true;
+        console.log(`✅ PDF 변환 성공: ${pdfPath}`);
+      } catch (error) {
+        // 실패 시 기존 변환기로 fallback
+        try {
+          pdfResult = await convertExcelToPdf(processedPath, pdfPath, removeResult.remainingSheets);
+        } catch (fallbackError) {
+          pdfResult.error = `PDF 변환 실패: ${error}`;
+          console.warn(`⚠️ PDF 변환 실패: ${pdfResult.error}, Excel 파일만 첨부합니다.`);
+        }
       }
 
       // 3. 첨부파일 준비

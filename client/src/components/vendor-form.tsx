@@ -9,14 +9,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { FormField } from "@/components/ui/form-field";
+import { FormSelect } from "@/components/ui/form-select";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
+import { Plus, X, Loader2 } from "lucide-react";
 
 const vendorSchema = z.object({
   name: z.string().min(1, "거래처명을 입력하세요"),
@@ -26,6 +27,7 @@ const vendorSchema = z.object({
   phone: z.string().optional(),
   address: z.string().optional(),
   businessType: z.string().optional(),
+  aliases: z.array(z.string()).optional(),
 });
 
 type VendorFormData = z.infer<typeof vendorSchema>;
@@ -40,6 +42,8 @@ interface VendorFormProps {
 export function VendorForm({ isOpen, onClose, onSuccess, vendor }: VendorFormProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [aliases, setAliases] = useState<string[]>([]);
+  const [newAlias, setNewAlias] = useState("");
 
   const {
     register,
@@ -58,8 +62,12 @@ export function VendorForm({ isOpen, onClose, onSuccess, vendor }: VendorFormPro
       phone: "",
       address: "",
       businessType: "",
+      aliases: [],
     },
   });
+
+  const formData = watch();
+  const [validating, setValidating] = useState<Record<string, boolean>>({});
 
   const createVendorMutation = useMutation({
     mutationFn: async (data: VendorFormData) => {
@@ -135,7 +143,9 @@ export function VendorForm({ isOpen, onClose, onSuccess, vendor }: VendorFormPro
         phone: vendor.phone || "",
         address: vendor.address || "",
         businessType: vendor.businessType || "",
+        aliases: vendor.aliases || [],
       });
+      setAliases(vendor.aliases || []);
     } else {
       reset({
         name: "",
@@ -145,9 +155,26 @@ export function VendorForm({ isOpen, onClose, onSuccess, vendor }: VendorFormPro
         phone: "",
         address: "",
         businessType: "",
+        aliases: [],
       });
+      setAliases([]);
     }
   }, [vendor, reset]);
+
+  const addAlias = () => {
+    if (newAlias.trim() && !aliases.includes(newAlias.trim())) {
+      const updatedAliases = [...aliases, newAlias.trim()];
+      setAliases(updatedAliases);
+      setValue("aliases", updatedAliases);
+      setNewAlias("");
+    }
+  };
+
+  const removeAlias = (index: number) => {
+    const updatedAliases = aliases.filter((_, i) => i !== index);
+    setAliases(updatedAliases);
+    setValue("aliases", updatedAliases);
+  };
 
   const handleClose = () => {
     reset();
@@ -156,10 +183,15 @@ export function VendorForm({ isOpen, onClose, onSuccess, vendor }: VendorFormPro
 
   const onSubmit = (data: VendorFormData) => {
     setIsSubmitting(true);
+    const formData = {
+      ...data,
+      aliases: aliases
+    };
+    
     if (vendor) {
-      updateVendorMutation.mutate(data);
+      updateVendorMutation.mutate(formData);
     } else {
-      createVendorMutation.mutate(data);
+      createVendorMutation.mutate(formData);
     }
     setIsSubmitting(false);
   };
@@ -173,79 +205,137 @@ export function VendorForm({ isOpen, onClose, onSuccess, vendor }: VendorFormPro
           </DialogTitle>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div>
-            <Label htmlFor="name">거래처명 *</Label>
-            <Input
-              id="name"
-              {...register("name")}
-              placeholder="거래처명을 입력하세요"
-            />
-            {errors.name && (
-              <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>
-            )}
-          </div>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <FormField
+            label="거래처명"
+            name="name"
+            value={formData.name}
+            onChange={(value) => setValue("name", value)}
+            required
+            error={errors.name?.message}
+            placeholder="거래처명을 입력하세요"
+            helperText="정확한 거래처명을 입력해주세요"
+            validating={validating.name}
+          />
+
+          <FormField
+            label="사업자등록번호"
+            name="businessNumber"
+            value={formData.businessNumber}
+            onChange={(value) => setValue("businessNumber", value)}
+            placeholder="123-45-67890"
+            helperText="'-'를 포함하여 입력해주세요"
+          />
+
+          <FormField
+            label="담당자명"
+            name="contactPerson"
+            value={formData.contactPerson}
+            onChange={(value) => setValue("contactPerson", value)}
+            required
+            error={errors.contactPerson?.message}
+            placeholder="담당자명을 입력하세요"
+          />
+
+          <FormField
+            label="이메일"
+            name="email"
+            type="email"
+            value={formData.email}
+            onChange={(value) => setValue("email", value)}
+            required
+            error={errors.email?.message}
+            placeholder="example@company.com"
+            helperText="업무용 이메일 주소를 입력해주세요"
+            validating={validating.email}
+          />
+
+          <FormField
+            label="연락처"
+            name="phone"
+            type="tel"
+            value={formData.phone}
+            onChange={(value) => setValue("phone", value)}
+            placeholder="02-1234-5678"
+            helperText="하이픈(-)을 포함하여 입력해주세요"
+          />
+
+          <FormField
+            label="주소"
+            name="address"
+            type="textarea"
+            value={formData.address}
+            onChange={(value) => setValue("address", value)}
+            placeholder="주소를 입력하세요"
+            rows={3}
+            maxLength={200}
+          />
+
+          <FormSelect
+            label="업종"
+            name="businessType"
+            value={formData.businessType}
+            onChange={(value) => setValue("businessType", value)}
+            placeholder="업종을 선택하세요"
+            options={[
+              { value: "construction", label: "건설업" },
+              { value: "manufacturing", label: "제조업" },
+              { value: "service", label: "서비스업" },
+              { value: "wholesale", label: "도매업" },
+              { value: "retail", label: "소매업" },
+              { value: "other", label: "기타" },
+            ]}
+            helperText="주요 업종을 선택해주세요"
+          />
 
           <div>
-            <Label htmlFor="businessNumber">사업자등록번호</Label>
-            <Input
-              id="businessNumber"
-              {...register("businessNumber")}
-              placeholder="123-45-67890"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="contactPerson">담당자명 *</Label>
-            <Input
-              id="contactPerson"
-              {...register("contactPerson")}
-              placeholder="담당자명을 입력하세요"
-            />
-            {errors.contactPerson && (
-              <p className="text-red-500 text-sm mt-1">{errors.contactPerson.message}</p>
-            )}
-          </div>
-
-          <div>
-            <Label htmlFor="email">이메일 *</Label>
-            <Input
-              id="email"
-              type="email"
-              {...register("email")}
-              placeholder="example@company.com"
-            />
-            {errors.email && (
-              <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
-            )}
-          </div>
-
-          <div>
-            <Label htmlFor="phone">연락처</Label>
-            <Input
-              id="phone"
-              {...register("phone")}
-              placeholder="02-1234-5678"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="address">주소</Label>
-            <Textarea
-              id="address"
-              {...register("address")}
-              placeholder="주소를 입력하세요"
-              rows={3}
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="businessType">업종</Label>
-            <Input
-              id="businessType"
-              {...register("businessType")}
-              placeholder="업종을 입력하세요 (예: 건설업, 제조업)"
-            />
+            <Label htmlFor="aliases">별칭 (선택사항)</Label>
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <Input
+                  id="newAlias"
+                  value={newAlias}
+                  onChange={(e) => setNewAlias(e.target.value)}
+                  placeholder="별칭 입력 (예: (주)익진, 주식회사 익진)"
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addAlias();
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={addAlias}
+                  className="px-3"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              {aliases.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {aliases.map((alias, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded-md text-sm"
+                    >
+                      <span>{alias}</span>
+                      <button
+                        type="button"
+                        onClick={() => removeAlias(index)}
+                        className="text-gray-500 hover:text-red-500"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <p className="text-xs text-gray-500 mt-1">
+                거래처명의 다양한 표기법을 추가하여 자동 매칭이 가능합니다.
+              </p>
+            </div>
           </div>
 
           <div className="flex justify-end space-x-3 pt-4">
@@ -260,12 +350,18 @@ export function VendorForm({ isOpen, onClose, onSuccess, vendor }: VendorFormPro
             <Button
               type="submit"
               disabled={isSubmitting || createVendorMutation.isPending || updateVendorMutation.isPending}
+              className="min-w-[80px]"
             >
-              {isSubmitting || createVendorMutation.isPending || updateVendorMutation.isPending
-                ? "저장 중..."
-                : vendor
-                ? "수정"
-                : "추가"}
+              {isSubmitting || createVendorMutation.isPending || updateVendorMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  저장 중...
+                </>
+              ) : vendor ? (
+                "수정"
+              ) : (
+                "추가"
+              )}
             </Button>
           </div>
         </form>

@@ -14,6 +14,8 @@ import companyRoutes from "./companies";
 import adminRoutes from "./admin";
 import excelAutomationRoutes from "./excel-automation";
 import poTemplateRoutes from "./po-template-real.js";
+import reportRoutes from "./reports";
+import importExportRoutes from "./import-export";
 
 const router = Router();
 
@@ -28,5 +30,7 @@ router.use("/api", companyRoutes);
 router.use("/api", adminRoutes);
 router.use("/api/excel-automation", excelAutomationRoutes);
 router.use("/api/po-template", poTemplateRoutes);
+router.use("/api/reports", reportRoutes);
+router.use("/api", importExportRoutes);
 
 export default router;

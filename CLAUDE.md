@@ -197,3 +197,7 @@ Excel 업로드 → DB 저장 → 거래처 검증 → 이메일 발송
 - UI components follow Shadcn/ui patterns and styling
 - When debugging Excel processing, use `DebugLogger` and trace scripts
 - Email passwords are stored encrypted in the database
+
+## Task Master AI Instructions
+**Import Task Master's development workflow commands and guidelines, treat as if import is in the main CLAUDE.md file.**
+@./.taskmaster/CLAUDE.md

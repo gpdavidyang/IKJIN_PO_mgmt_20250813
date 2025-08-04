@@ -138,6 +138,20 @@ export class OptimizedDashboardQueries {
         })
         .from(purchaseOrders);
 
+      const [pendingOrderStats] = await db
+        .select({
+          pendingOrders: count()
+        })
+        .from(purchaseOrders)
+        .where(eq(purchaseOrders.status, 'pending'));
+
+      const [monthlyOrderStats] = await db
+        .select({
+          monthlyOrders: count()
+        })
+        .from(purchaseOrders)
+        .where(sql`${purchaseOrders.orderDate} >= DATE_TRUNC('month', CURRENT_DATE)`);
+
       const [projectStats] = await db
         .select({
           activeProjects: count()
@@ -159,13 +173,13 @@ export class OptimizedDashboardQueries {
           orderNumber: purchaseOrders.orderNumber,
           status: purchaseOrders.status,
           totalAmount: purchaseOrders.totalAmount,
-          orderDate: purchaseOrders.orderDate,
-          projectName: projects.projectName
+          createdAt: purchaseOrders.createdAt,
+          vendorName: vendors.vendorName
         })
         .from(purchaseOrders)
-        .leftJoin(projects, eq(purchaseOrders.projectId, projects.id))
-        .orderBy(desc(purchaseOrders.orderDate))
-        .limit(5);
+        .leftJoin(vendors, eq(purchaseOrders.vendorId, vendors.id))
+        .orderBy(desc(purchaseOrders.createdAt))
+        .limit(10);
 
       // Get monthly statistics (last 12 months)
       const monthlyStats = await db
@@ -210,6 +224,8 @@ export class OptimizedDashboardQueries {
         statistics: {
           totalOrders: orderStats.totalOrders || 0,
           totalAmount: orderStats.totalAmount || 0,
+          pendingOrders: pendingOrderStats.pendingOrders || 0,
+          monthlyOrders: monthlyOrderStats.monthlyOrders || 0,
           activeProjects: projectStats.activeProjects || 0,
           activeVendors: vendorStats.activeVendors || 0
         },
@@ -224,7 +240,14 @@ export class OptimizedDashboardQueries {
     } catch (error) {
       console.error('Error fetching unified dashboard data:', error);
       return {
-        statistics: { totalOrders: 0, totalAmount: 0, activeProjects: 0, activeVendors: 0 },
+        statistics: { 
+          totalOrders: 0, 
+          totalAmount: 0, 
+          pendingOrders: 0,
+          monthlyOrders: 0,
+          activeProjects: 0, 
+          activeVendors: 0 
+        },
         recentOrders: [],
         monthlyStats: [],
         statusStats: [],

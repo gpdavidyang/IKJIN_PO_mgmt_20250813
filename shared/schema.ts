@@ -118,6 +118,8 @@ export const companies = pgTable("companies", {
 export const vendors = pgTable("vendors", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
+  vendorCode: varchar("vendor_code", { length: 50 }), // 거래처 코드
+  aliases: jsonb("aliases").default([]).$type<string[]>(), // 별칭 필드 추가 - 예: ["(주)익진", "주식회사 익진", "익진"]
   businessNumber: varchar("business_number", { length: 50 }),
   contactPerson: varchar("contact_person", { length: 100 }).notNull(),
   email: varchar("email", { length: 255 }).notNull(),
@@ -830,3 +832,32 @@ export type InsertApprovalAuthority = z.infer<typeof insertApprovalAuthoritySche
 // Item category types
 export type ItemCategory = typeof itemCategories.$inferSelect;
 export type InsertItemCategory = z.infer<typeof insertItemCategorySchema>;
+
+// Approval workflow settings table
+export const approvalWorkflowSettings = pgTable("approval_workflow_settings", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").references(() => companies.id),
+  approvalMode: varchar("approval_mode", { length: 20 }).notNull().default("staged"), // 'direct' or 'staged'
+  directApprovalRoles: jsonb("direct_approval_roles").default([]).$type<string[]>(), // roles that can approve directly
+  stagedApprovalThresholds: jsonb("staged_approval_thresholds").default({}).$type<{
+    [role: string]: number; // max amount each role can approve
+  }>(),
+  requireAllStages: boolean("require_all_stages").default(true), // whether all stages must approve
+  skipLowerStages: boolean("skip_lower_stages").default(false), // whether higher roles can skip lower stages
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().$onUpdate(() => new Date()),
+  createdBy: varchar("created_by", { length: 255 }).references(() => users.id),
+}, (table) => ({
+  companyIdx: index("idx_approval_workflow_company").on(table.companyId),
+  activeIdx: index("idx_approval_workflow_active").on(table.isActive),
+}));
+
+// Approval workflow settings types
+export const insertApprovalWorkflowSettingsSchema = createInsertSchema(approvalWorkflowSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type ApprovalWorkflowSettings = typeof approvalWorkflowSettings.$inferSelect;
+export type InsertApprovalWorkflowSettings = z.infer<typeof insertApprovalWorkflowSettingsSchema>;

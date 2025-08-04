@@ -8,6 +8,7 @@ import { useLocation, Link } from "wouter";
 import { getUserInitials, getUserDisplayName, getRoleText } from "@/lib/statusUtils";
 import { useSidebar } from "@/contexts/SidebarContext";
 import { useState, useEffect } from "react";
+import { ThemeToggle } from "@/components/ui/theme-provider";
 
 const pageConfig = {
   "/": { title: "대시보드", breadcrumb: "홈 > 대시보드" },
@@ -73,16 +74,18 @@ export function Header() {
 
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200 relative z-10">
+    <header className="bg-background shadow-sm border-b border-border relative z-10">
       <div className="flex items-center justify-between px-4 py-4">
         <div className="flex items-center space-x-4">
           <div>
-            <h1 className="text-xl font-semibold text-gray-900">{currentPage.title}</h1>
-            <nav className="text-sm text-gray-500">{currentPage.breadcrumb}</nav>
+            <h1 className="text-xl font-semibold text-foreground">{currentPage.title}</h1>
+            <nav className="text-sm text-muted-foreground">{currentPage.breadcrumb}</nav>
           </div>
         </div>
         
         <div className="flex items-center space-x-4">
+          <ThemeToggle size="sm" />
+          
           <Button variant="ghost" size="sm" className="relative">
             <Bell className="h-5 w-5" />
             <Badge className="absolute -top-1 -right-1 h-2 w-2 p-0 bg-red-500" />
@@ -91,18 +94,18 @@ export function Header() {
           <div className="flex items-center space-x-3">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <div className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 rounded-lg p-2 transition-colors">
+                <div className="flex items-center space-x-3 cursor-pointer hover:bg-accent rounded-lg p-2 transition-colors">
                   <div className="text-right hidden sm:block">
-                    <div className="text-sm font-medium text-gray-900">
+                    <div className="text-sm font-medium text-foreground">
                       {getUserDisplayName(user as any)}
                     </div>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-muted-foreground">
                       {getRoleText((user as any)?.role || "")}
                     </div>
                   </div>
                   
                   <Avatar>
-                    <AvatarFallback className="bg-primary text-white">
+                    <AvatarFallback className="bg-primary text-primary-foreground">
                       {getUserInitials(user as any)}
                     </AvatarFallback>
                   </Avatar>

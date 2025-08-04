@@ -21,10 +21,12 @@ import {
   ChevronDown,
   ChevronRight,
   CheckCircle,
-  Upload
+  Upload,
+  FileDown
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSidebar } from "@/contexts/SidebarContext";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 import type { Company } from "@shared/schema";
 
 // Main navigation sections with separators
@@ -43,9 +45,10 @@ const primaryNavigation: Array<{
     icon: Plus,
     subItems: [
       { name: "표준 발주서", href: "/create-order/standard" },
-      { name: "압출 발주서", href: "/create-order/extrusion" },
-      { name: "판넬 발주서", href: "/create-order/panel" },
-      { name: "부자재 발주서", href: "/create-order/accessories" },
+      // PRD 요구사항: 압출, 판넬, 부자재 발주서는 현재 UI에서 숨김 처리 (소스코드는 유지)
+      // { name: "압출 발주서", href: "/create-order/extrusion" },
+      // { name: "판넬 발주서", href: "/create-order/panel" },
+      // { name: "부자재 발주서", href: "/create-order/accessories" },
       { name: "엑셀 발주서", href: "/create-order/excel" },
     ]
   },
@@ -56,6 +59,7 @@ const managementNavigation = [
   { name: "거래처 관리", href: "/vendors", icon: Building },
   { name: "품목 관리", href: "/items", icon: Package },
   { name: "보고서 및 분석", href: "/reports", icon: BarChart3 },
+  { name: "가져오기/내보내기", href: "/import-export", icon: FileDown },
 ];
 
 const systemNavigation = [
@@ -126,7 +130,7 @@ export function Sidebar() {
               className={cn(
                 "w-full nav-item",
                 isCollapsed ? "justify-center px-0" : "justify-start",
-                isActive(item.href) && "active bg-primary/10 text-primary"
+                isActive(item.href) && "active bg-primary bg-opacity-10 text-primary"
               )}
               onClick={() => {
                 if (item.subItems && !isCollapsed) {
@@ -160,7 +164,7 @@ export function Sidebar() {
                     variant={isActive(subItem.href) ? "secondary" : "ghost"}
                     className={cn(
                       "w-full justify-start text-sm",
-                      isActive(subItem.href) && "active bg-primary/10 text-primary"
+                      isActive(subItem.href) && "active bg-primary bg-opacity-10 text-primary"
                     )}
                     onClick={() => {
                       window.location.href = subItem.href;
@@ -220,7 +224,7 @@ export function Sidebar() {
               className={cn(
                 "w-full nav-item",
                 isCollapsed ? "justify-center px-0" : "justify-start",
-                isActive(item.href) && "active bg-primary/10 text-primary"
+                isActive(item.href) && "active bg-primary bg-opacity-10 text-primary"
               )}
               onClick={() => {
                 window.location.href = item.href;
@@ -241,13 +245,15 @@ export function Sidebar() {
             {company?.logoUrl && (
               <div className="mt-4 px-0">
                 <div className="flex justify-center">
-                  <img 
+                  <OptimizedImage
                     src={company.logoUrl} 
                     alt={company.companyName}
                     className="h-16 w-auto object-contain pl-[60px] pr-[60px]"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                    }}
+                    priority={true}
+                    quality={85}
+                    lazy={false}
+                    fallback="/images/default-company-logo.png"
+                    placeholder="skeleton"
                   />
                 </div>
               </div>

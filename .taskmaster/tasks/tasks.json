@@ -1,0 +1,267 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "[Phase 2] Form 컴포넌트 개선",
+        "description": "Form 컴포넌트에 더 나은 validation 피드백과 사용자 경험 제공",
+        "details": "- 일관된 form field 컴포넌트 생성\n- 실시간 inline validation 구현 \n- Helper text와 error message 표시\n- 재사용 가능한 form 패턴 생성\n- Auto-save 기능 구현\n- Multi-step form을 위한 progress indicator 추가",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "[Phase 2] Status Badge 및 Filter Tag 개선",
+        "description": "일관된 status badge 시스템과 interactive filter tag 구현",
+        "details": "- Icon이 포함된 일관된 status badge 시스템 디자인\n- 제거 기능이 있는 interactive filter tag 생성\n- 색상 코드화된 status indicator 구현\n- Status 변경을 위한 animation transition 추가\n- Compound filter display 생성",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "[Phase 3] Dark Mode 지원 구현",
+        "description": "CSS 변수 기반 테마 시스템 구현 및 다크 모드 지원",
+        "details": "- CSS 변수 기반 테마 시스템 구현\n- 다크 모드 색상 팔레트 생성\n- 테마 토글 컴포넌트 추가\n- 모든 컴포넌트가 테마 전환을 지원하도록 보장\n- 사용자 설정을 localStorage에 저장",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "[Phase 3] 고급 데이터 시각화 컴포넌트",
+        "description": "Recharts를 사용한 고급 차트 컴포넌트 생성 및 대시보드 위젯 시스템 구현",
+        "details": "- Recharts를 사용한 고급 차트 컴포넌트 생성\n- Interactive tooltip과 legend 구현\n- 데이터 export 기능 추가\n- 대시보드 위젯 시스템 생성\n- 실시간 데이터 업데이트 구현",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "[Phase 3] 반응형 모바일 디자인 개선",
+        "description": "모바일 기기를 위한 모든 컴포넌트 최적화 및 터치 친화적 인터랙션 구현",
+        "details": "- 모든 컴포넌트를 모바일 기기에 최적화\n- 모바일 전용 네비게이션 패턴 생성\n- 터치 친화적 인터랙션 구현\n- 작은 화면을 위한 테이블 디스플레이 최적화\n- 반응형 폼 레이아웃 생성",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "[Phase 4] 접근성 개선",
+        "description": "WCAG 2.1 AA 준수를 위한 전체적인 접근성 개선",
+        "details": "- 모든 인터랙티브 요소의 키보드 접근성 보장\n- 적절한 ARIA 레이블과 설명 추가\n- 포커스 관리 구현\n- 고대비 모드 지원 생성\n- 스크린 리더 최적화 추가",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 7,
+        "title": "[Phase 4] 성능 최적화",
+        "description": "전체 애플리케이션의 성능 최적화 및 로딩 시간 개선",
+        "details": "- 무거운 컴포넌트를 위한 lazy loading 구현\n- 대규모 데이터셋을 위한 가상화 추가\n- 코드 분할로 번들 크기 최적화\n- 이미지 최적화 구현\n- 성능 모니터링 추가",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 8,
+        "title": "[Phase 4] 사용자 경험 개선",
+        "description": "키보드 네비게이션, 로딩 상태, 에러 처리 등 전반적인 UX 개선",
+        "details": "- 키보드 네비게이션 개선\n- 로딩 상태와 스켈레톤 스크린 구현\n- 에러 처리와 사용자 피드백 개선\n- 긴 폼을 위한 자동 저장 기능\n- 다단계 폼을 위한 진행 표시기",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 9,
+        "title": "테스팅 시스템 구축",
+        "description": "Jest, React Testing Library를 사용한 단위 테스트 및 통합 테스트 인프라 구축",
+        "details": "",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 10,
+        "title": "인증 시스템 단위 테스트",
+        "description": "로그인, 로그아웃, 세션 관리에 대한 단위 테스트 작성",
+        "details": "",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 11,
+        "title": "거래처 관리 단위 테스트",
+        "description": "거래처 CRUD 작업 및 유효성 검사에 대한 단위 테스트 작성",
+        "details": "",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 12,
+        "title": "발주서 워크플로우 단위 테스트",
+        "description": "발주서 생성, 승인, 상태 변경에 대한 단위 테스트 작성",
+        "details": "",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 13,
+        "title": "Excel 자동화 시스템 단위 테스트",
+        "description": "업로드, 처리, 유효성 검사에 대한 단위 테스트 작성",
+        "details": "",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 14,
+        "title": "API 엔드포인트 통합 테스트",
+        "description": "인증, 발주서, 거래처, 대시보드 API 엔드포인트에 대한 통합 테스트 작성",
+        "details": "",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 15,
+        "title": "E2E 테스트 구현",
+        "description": "로그인, 발주서 생성, 승인 등 핵심 사용자 워크플로우에 대한 E2E 테스트 작성",
+        "details": "",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 16,
+        "title": "성능 모니터링 및 메트릭 추적",
+        "description": "애플리케이션 성능 모니터링 시스템 구현 및 메트릭 수집",
+        "details": "",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 17,
+        "title": "React Query 캐싱 최적화",
+        "description": "React Query 캐싱 및 무효화 전략 최적화",
+        "details": "",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 18,
+        "title": "서비스 워커 및 오프라인 기능",
+        "description": "캐싱 및 오프라인 기능을 위한 서비스 워커 구현",
+        "details": "",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "low",
+        "subtasks": []
+      },
+      {
+        "id": 19,
+        "title": "보안 테스트",
+        "description": "인증, 권한 부여, 입력 유효성 검사에 대한 보안 테스트",
+        "details": "",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 20,
+        "title": "Tailwind CSS 문법 일관성 분석 및 개선",
+        "description": "현재 혼재되어 있는 bg-opacity- 구문법과 bg-*/opacity 신문법의 사용 현황 분석 및 통일 방안 수립",
+        "details": "",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 21,
+        "title": "CSS 문법 변환 스크립트 개발",
+        "description": "bg-color bg-opacity-* 구문법을 bg-color/opacity 신문법으로 자동 변환하는 스크립트 및 ESLint 규칙 작성",
+        "details": "",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 22,
+        "title": "Tailwind CSS 스타일 가이드 문서화",
+        "description": "프로젝트 전용 Tailwind CSS 사용 가이드라인 및 베스트 프랙티스 문서 작성",
+        "details": "",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "low",
+        "subtasks": []
+      },
+      {
+        "id": 23,
+        "title": "PostCSS 및 Tailwind 설정 최적화",
+        "description": "PostCSS 설정 및 Tailwind JIT 모드 최적화, CSS 컴파일 성능 개선",
+        "details": "",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "low",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "createdAt": "2025-01-23T08:50:00.000Z",
+      "lastUpdated": "2025-01-23T08:50:00.000Z",
+      "version": "1.0.0",
+      "created": "2025-08-04T08:54:47.667Z",
+      "description": "Tasks for master context",
+      "updated": "2025-08-04T10:30:50.701Z"
+    }
+  }
+}

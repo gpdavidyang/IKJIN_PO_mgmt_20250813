@@ -1,20 +1,69 @@
-# UI 표준화 문서 (Phase 1 분석 결과)
-발주서 관리 화면을 기준으로 한 전체 시스템 UI 표준
+# UI 표준화 문서 (Version 2.0)
+Purchase Order Management System - 엔터프라이즈급 디자인 시스템
 
 ## 1. 컬러 시스템
 
-### Primary Colors
-- **Primary Blue**: `#3B82F6` (파란색 계열 - 메인 액션 버튼, 활성 상태)
-- **Primary Blue Light**: `#EBF5FF` (연한 파란색 - 입력 필드 활성 배경)
-- **Primary Blue Border**: `#3B82F6` (파란색 테두리 - 활성 입력 필드)
+### Design Token 기반 컬러 팔레트
 
-### Status Colors
-- **Gray**: `bg-gray-100 text-gray-800` (임시저장, 기본 상태)
-- **Yellow**: `bg-yellow-100 text-yellow-800` (대기 중)
-- **Blue**: `bg-blue-100 text-blue-800` (진행 중)
-- **Green**: `bg-green-100 text-green-800` (완료)
-- **Purple**: `bg-purple-100 text-purple-800` (승인됨)
-- **Red**: `bg-red-100 text-red-800` (취소/오류)
+#### Primary Brand Colors (파란색 계열)
+```css
+--color-primary-50: #eff6ff;    /* 가장 연한 파란색 - 배경 */
+--color-primary-100: #dbeafe;   /* 연한 파란색 - 호버 배경 */
+--color-primary-200: #bfdbfe;   /* 라이트 블루 - 선택된 배경 */
+--color-primary-300: #93c5fd;   /* 중간 파란색 - 보조 */
+--color-primary-400: #60a5fa;   /* 밝은 파란색 - 강조 */
+--color-primary-500: #3b82f6;   /* 메인 파란색 - 주요 액션 */
+--color-primary-600: #2563eb;   /* 진한 파란색 - 호버 */
+--color-primary-700: #1d4ed8;   /* 더 진한 파란색 - 액티브 */
+--color-primary-800: #1e40af;   /* 다크 블루 - 텍스트 */
+--color-primary-900: #1e3a8a;   /* 가장 진한 파란색 */
+```
+
+#### Semantic Colors
+```css
+/* Success (성공) */
+--color-success-50: #f0fdf4;
+--color-success-100: #dcfce7;
+--color-success-500: #22c55e;
+--color-success-600: #16a34a;
+
+/* Warning (경고) */
+--color-warning-50: #fffbeb;
+--color-warning-100: #fef3c7;
+--color-warning-500: #f59e0b;
+--color-warning-600: #d97706;
+
+/* Error (오류) */
+--color-error-50: #fef2f2;
+--color-error-100: #fee2e2;
+--color-error-500: #ef4444;
+--color-error-600: #dc2626;
+```
+
+#### Neutral Grays
+```css
+--color-gray-25: #fcfcfd;   /* 거의 흰색 */
+--color-gray-50: #f9fafb;   /* 페이지 배경 */
+--color-gray-100: #f3f4f6;  /* 카드 배경 */
+--color-gray-200: #e5e7eb;  /* 테두리 */
+--color-gray-300: #d1d5db;  /* 비활성 테두리 */
+--color-gray-400: #9ca3af;  /* 비활성 텍스트 */
+--color-gray-500: #6b7280;  /* 보조 텍스트 */
+--color-gray-600: #4b5563;  /* 본문 텍스트 */
+--color-gray-700: #374151;  /* 제목 텍스트 */
+--color-gray-800: #1f2937;  /* 강조 텍스트 */
+--color-gray-900: #111827;  /* 가장 진한 텍스트 */
+```
+
+### Status Color Mapping
+| 상태 | 배경 | 텍스트 | 테두리 | 사용처 |
+|------|------|--------|--------|--------|
+| Draft (임시저장) | `gray-100` | `gray-800` | `gray-200` | 초안 상태 |
+| Pending (대기중) | `yellow-100` | `yellow-800` | `yellow-200` | 승인 대기 |
+| Approved (승인됨) | `green-100` | `green-800` | `green-200` | 승인 완료 |
+| Sent (발송됨) | `blue-100` | `blue-800` | `blue-200` | 발송 완료 |
+| Completed (완료) | `purple-100` | `purple-800` | `purple-200` | 최종 완료 |
+| Rejected (반려) | `red-100` | `red-800` | `red-200` | 반려/취소 |
 
 ### Filter Tag Colors
 - **Project**: `bg-purple-100 text-purple-800 border-purple-200`
@@ -30,22 +79,50 @@
 - **Text Muted**: `text-gray-400`
 - **Border**: `border-gray-200`
 
-## 2. 타이포그래피
+## 2. 타이포그래피 시스템
 
-### Font Weights
-- **Bold**: `font-bold` (제목, 라벨)
-- **Semibold**: `font-semibold` (중요 정보)
-- **Medium**: `font-medium` (라벨, 버튼)
-- **Regular**: `font-normal` (본문)
+### Typography Scale
+```css
+/* Font Sizes */
+--text-xs: 0.75rem;     /* 12px - 캡션, 작은 라벨 */
+--text-sm: 0.875rem;    /* 14px - 보조 텍스트 */
+--text-base: 1rem;      /* 16px - 본문 */
+--text-lg: 1.125rem;    /* 18px - 서브 헤딩 */
+--text-xl: 1.25rem;     /* 20px - 헤딩 */
+--text-2xl: 1.5rem;     /* 24px - 페이지 타이틀 */
+--text-3xl: 1.875rem;   /* 30px - 대형 타이틀 */
 
-### Font Sizes
-- **Small**: `text-sm` (12px - 보조 정보, 필터 태그)
-- **Base**: `text-base` (14px - 기본 본문)
-- **Large**: `text-lg` (16px - 카드 제목)
+/* Line Heights */
+--leading-none: 1;
+--leading-tight: 1.25;
+--leading-snug: 1.375;
+--leading-normal: 1.5;
+--leading-relaxed: 1.625;
+--leading-loose: 2;
+```
 
-### Line Heights
-- **Tight**: `leading-tight` (제목용)
-- **Normal**: `leading-normal` (본문용)
+### Font Weight System
+| Weight | CSS Class | 사용처 |
+|--------|-----------|--------|
+| Light (300) | `font-light` | 대형 디스플레이 텍스트 |
+| Normal (400) | `font-normal` | 본문 텍스트 |
+| Medium (500) | `font-medium` | 버튼, 라벨 |
+| Semibold (600) | `font-semibold` | 서브 헤딩, 강조 |
+| Bold (700) | `font-bold` | 헤딩, 중요 정보 |
+
+### Typography Components
+```typescript
+/* Heading Styles */
+H1: "text-3xl font-bold tracking-tight text-gray-900"
+H2: "text-2xl font-semibold tracking-tight text-gray-900"
+H3: "text-xl font-semibold text-gray-900"
+H4: "text-lg font-semibold text-gray-900"
+
+/* Body Styles */
+Body: "text-base text-gray-700 leading-relaxed"
+Small: "text-sm text-gray-600"
+Caption: "text-xs text-gray-500"
+```
 
 ## 3. 금액 표시 표준
 
@@ -79,29 +156,80 @@ formatNumber(12345000) → "12,345,000"
 - **금액 텍스트**: `text-blue-600` - 파란색으로 금액 강조 표시
 - **중요 금액**: `font-semibold text-blue-600` - 굵은 파란색으로 강조
 
-## 4. 레이아웃 & 스페이싱
+## 4. 레이아웃 & 스페이싱 시스템
 
-### Container Spacing
-- **Page Container**: `p-6 space-y-6` (24px - 모든 관리 페이지의 메인 컨테이너)
-- **Card Padding**: `p-4` (16px)
-- **Section Spacing**: `space-y-6` (24px - 페이지 섹션 간격)
-- **Table Cell Padding**: `py-2 px-4` (8px 상하, 16px 좌우)
+### Spacing Scale
+```css
+/* Spacing Tokens */
+--space-0: 0;           /* 0px */
+--space-1: 0.25rem;     /* 4px */
+--space-2: 0.5rem;      /* 8px */
+--space-3: 0.75rem;     /* 12px */
+--space-4: 1rem;        /* 16px */
+--space-5: 1.25rem;     /* 20px */
+--space-6: 1.5rem;      /* 24px */
+--space-8: 2rem;        /* 32px */
+--space-10: 2.5rem;     /* 40px */
+--space-12: 3rem;       /* 48px */
+--space-16: 4rem;       /* 64px */
+--space-20: 5rem;       /* 80px */
+```
 
-### Grid System
-- **Mobile**: `grid-cols-1`
-- **Tablet**: `sm:grid-cols-2`
-- **Desktop**: `lg:grid-cols-3`
+### Container System
+```css
+/* Container Widths */
+--container-xs: 20rem;    /* 320px */
+--container-sm: 24rem;    /* 384px */
+--container-md: 28rem;    /* 448px */
+--container-lg: 32rem;    /* 512px */
+--container-xl: 36rem;    /* 576px */
+--container-2xl: 42rem;   /* 672px */
+--container-3xl: 48rem;   /* 768px */
+--container-4xl: 56rem;   /* 896px */
+--container-5xl: 64rem;   /* 1024px */
+--container-6xl: 72rem;   /* 1152px */
+--container-7xl: 80rem;   /* 1280px */
+```
 
-### Component Heights
-- **Input Fields**: `h-10` (40px - 기본), `h-9` (36px - 컴팩트)
-- **Buttons**: `h-8` (32px - 작은 버튼), `h-10` (40px - 기본)
-- **Select Dropdowns**: `h-10` (40px - 기본), `h-9` (36px - 컴팩트)
+### Layout Patterns
+| Component | Spacing | 설명 |
+|-----------|---------|------|
+| Page Container | `p-6 space-y-6` | 페이지 메인 컨테이너 |
+| Card | `p-4` | 카드 내부 패딩 |
+| Section | `space-y-6` | 섹션 간 간격 |
+| Form Fields | `space-y-4` | 폼 필드 간격 |
+| Inline Elements | `space-x-2` | 인라인 요소 간격 |
 
-### Border Radius
-- **Small**: `rounded` (4px - 기본)
-- **Medium**: `rounded-md` (6px - 카드)
-- **Large**: `rounded-lg` (8px - 큰 컴포넌트)
-- **Full**: `rounded-full` (완전한 원형 - 태그, 버튼)
+### Component Dimensions
+```css
+/* Heights */
+--h-8: 2rem;    /* 32px - 작은 버튼 */
+--h-9: 2.25rem; /* 36px - 컴팩트 입력 */
+--h-10: 2.5rem; /* 40px - 기본 입력/버튼 */
+--h-11: 2.75rem;/* 44px - 큰 입력 */
+--h-12: 3rem;   /* 48px - 특대 버튼 */
+
+/* Border Radius */
+--radius-sm: 0.125rem;    /* 2px */
+--radius-md: 0.375rem;    /* 6px - 기본 */
+--radius-lg: 0.5rem;      /* 8px */
+--radius-xl: 0.75rem;     /* 12px */
+--radius-2xl: 1rem;       /* 16px */
+--radius-full: 9999px;    /* 완전한 원 */
+```
+
+### Shadow System
+```css
+/* Box Shadows */
+--shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+--shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+--shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+--shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+--shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+--shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+--shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+--shadow-none: none;
+```
 
 ## 4. 컴포넌트 패턴
 
@@ -354,4 +482,58 @@ const truncateText = (text: string, maxLength: number) => {
 - **title**: 버튼과 입력 필드에 툴팁 제공
 - **placeholder**: 입력 필드 가이드
 
-이 표준을 바탕으로 다른 페이지들을 일관되게 개선할 예정입니다.
+## 11. 구현 가이드라인
+
+### CSS 변수 사용법
+```css
+/* 색상 사용 예시 */
+.primary-button {
+  background-color: var(--color-primary-500);
+  color: white;
+}
+
+.primary-button:hover {
+  background-color: var(--color-primary-600);
+}
+
+/* 간격 사용 예시 */
+.card {
+  padding: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+/* 그림자 사용 예시 */
+.card:hover {
+  box-shadow: var(--shadow-lg);
+}
+```
+
+### Tailwind CSS 통합
+```javascript
+// tailwind.config.js
+module.exports = {
+  theme: {
+    extend: {
+      colors: {
+        primary: {
+          50: 'var(--color-primary-50)',
+          100: 'var(--color-primary-100)',
+          // ... 나머지 색상
+        }
+      },
+      spacing: {
+        '18': 'var(--space-18)',
+        '22': 'var(--space-22)',
+      }
+    }
+  }
+}
+```
+
+### 마이그레이션 전략
+1. **Phase 1**: 새로운 디자인 토큰 시스템 도입
+2. **Phase 2**: 핵심 컴포넌트 리팩토링
+3. **Phase 3**: 페이지별 점진적 업데이트
+4. **Phase 4**: 구 시스템 제거 및 최종 검증
+
+이 표준을 바탕으로 모든 페이지를 일관되게 개선하여 엔터프라이즈급 UI/UX를 구현할 예정입니다.

@@ -5,6 +5,9 @@
 import { Router } from "express";
 import { storage } from "../storage";
 import { requireAuth, requireAdmin } from "../local-auth";
+import { db } from "../db";
+import { approvalWorkflowSettings } from "@shared/schema";
+import { eq, and } from "drizzle-orm";
 
 const router = Router();
 
@@ -85,6 +88,106 @@ router.delete("/templates/:id", requireAuth, async (req, res) => {
   } catch (error) {
     console.error("Error deleting template:", error);
     res.status(500).json({ message: "Failed to delete template" });
+  }
+});
+
+// Approval Workflow Settings
+router.get("/approval-workflow-settings", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    // For now, we'll get settings for company_id = 1 or null (global settings)
+    const settings = await db
+      .select()
+      .from(approvalWorkflowSettings)
+      .where(
+        and(
+          eq(approvalWorkflowSettings.isActive, true),
+          eq(approvalWorkflowSettings.companyId, 1)
+        )
+      )
+      .limit(1);
+
+    if (settings.length === 0) {
+      // Return default settings if none exist
+      res.json({
+        id: 0,
+        companyId: 1,
+        approvalMode: "staged",
+        directApprovalRoles: [],
+        stagedApprovalThresholds: {
+          field_worker: 0,
+          project_manager: 5000000,
+          hq_management: 30000000,
+          executive: 100000000,
+          admin: 999999999
+        },
+        requireAllStages: true,
+        skipLowerStages: false,
+        isActive: true
+      });
+    } else {
+      res.json(settings[0]);
+    }
+  } catch (error) {
+    console.error("Error fetching workflow settings:", error);
+    res.status(500).json({ error: "Failed to fetch workflow settings" });
+  }
+});
+
+// Update workflow settings
+router.put("/approval-workflow-settings", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const {
+      approvalMode,
+      directApprovalRoles,
+      stagedApprovalThresholds,
+      requireAllStages,
+      skipLowerStages
+    } = req.body;
+
+    // Check if settings exist
+    const existing = await db
+      .select()
+      .from(approvalWorkflowSettings)
+      .where(eq(approvalWorkflowSettings.companyId, 1))
+      .limit(1);
+
+    if (existing.length === 0) {
+      // Create new settings
+      const [newSettings] = await db
+        .insert(approvalWorkflowSettings)
+        .values({
+          companyId: 1,
+          approvalMode,
+          directApprovalRoles,
+          stagedApprovalThresholds,
+          requireAllStages,
+          skipLowerStages,
+          isActive: true,
+          createdBy: req.user!.id
+        })
+        .returning();
+
+      res.json(newSettings);
+    } else {
+      // Update existing settings
+      const [updatedSettings] = await db
+        .update(approvalWorkflowSettings)
+        .set({
+          approvalMode,
+          directApprovalRoles,
+          stagedApprovalThresholds,
+          requireAllStages,
+          skipLowerStages,
+          updatedAt: new Date()
+        })
+        .where(eq(approvalWorkflowSettings.id, existing[0].id))
+        .returning();
+
+      res.json(updatedSettings);
+    }
+  } catch (error) {
+    console.error("Error updating workflow settings:", error);
+    res.status(500).json({ error: "Failed to update workflow settings" });
   }
 });
 

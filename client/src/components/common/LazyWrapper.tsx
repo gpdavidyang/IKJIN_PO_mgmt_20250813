@@ -131,7 +131,7 @@ export function LazyImage({
 }
 
 /**
- * Form skeleton for loading states
+ * Enhanced skeleton components for different use cases
  */
 export function FormSkeleton() {
   return (
@@ -142,6 +142,85 @@ export function FormSkeleton() {
       <div className="flex gap-2">
         <Skeleton className="h-10 w-24" />
         <Skeleton className="h-10 w-24" />
+      </div>
+    </div>
+  );
+}
+
+export function ChartSkeleton({ height = 300 }: { height?: number }) {
+  return (
+    <div className="w-full space-y-4">
+      <div className="flex justify-between items-center">
+        <Skeleton className="h-6 w-32" />
+        <Skeleton className="h-4 w-20" />
+      </div>
+      <div className="flex items-end justify-between space-x-2" style={{ height: `${height}px` }}>
+        {Array.from({ length: 7 }).map((_, i) => (
+          <div key={i} className="flex flex-col justify-end space-y-1 flex-1">
+            <Skeleton className={`w-full bg-gradient-to-t from-primary/20 to-primary/5`} 
+              style={{ height: `${Math.random() * 80 + 20}%` }} 
+            />
+            <Skeleton className="h-3 w-8 mx-auto" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function TableSkeleton({ rows = 5 }: { rows?: number }) {
+  return (
+    <div className="w-full space-y-4">
+      <div className="flex justify-between items-center">
+        <Skeleton className="h-6 w-24" />
+        <Skeleton className="h-8 w-20" />
+      </div>
+      <div className="space-y-2">
+        {/* Header */}
+        <div className="grid grid-cols-4 gap-4 pb-2 border-b">
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-4 w-16" />
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-12" />
+        </div>
+        {/* Rows */}
+        {Array.from({ length: rows }).map((_, i) => (
+          <div key={i} className="grid grid-cols-4 gap-4 py-2">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-4 w-5/6" />
+            <Skeleton className="h-4 w-1/2" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function DashboardSkeleton() {
+  return (
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="space-y-2">
+        <Skeleton className="h-8 w-32" />
+        <Skeleton className="h-4 w-48" />
+      </div>
+      
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="p-4 border rounded-lg space-y-2">
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-8 w-16" />
+            <Skeleton className="h-3 w-24" />
+          </div>
+        ))}
+      </div>
+      
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <ChartSkeleton height={300} />
+        <ChartSkeleton height={300} />
       </div>
     </div>
   );

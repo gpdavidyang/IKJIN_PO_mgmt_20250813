@@ -1,0 +1,1 @@
+import{a as r}from"./chunk-D67rGsji.js";function s(e={}){return r({queryKey:["/api/ui-terms",e.category],enabled:!0})}function t(e){return r({queryKey:[`/api/ui-terms/${e}`],enabled:!!e})}function i(e,u=e){const{data:a}=t(e);return a?.termValue||u}export{i as a,s as u};

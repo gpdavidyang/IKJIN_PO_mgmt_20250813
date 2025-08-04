@@ -41,6 +41,10 @@ export default function Reports() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
+  // 리포트 타입 상태
+  const [reportType, setReportType] = useState<'orders' | 'category' | 'project' | 'vendor'>('orders');
+  const [categoryType, setCategoryType] = useState<'major' | 'middle' | 'minor'>('major');
+
   // 필터 상태
   const [filters, setFilters] = useState({
     year: new Date().getFullYear().toString(),
@@ -317,36 +321,105 @@ export default function Reports() {
     enabled: isAuthenticated && !!activeFilters,
   });
 
-  const { data: monthlyReport } = useQuery({
-    queryKey: ["/api/reports/monthly-summary", activeFilters?.year],
+  const { data: summaryReport } = useQuery({
+    queryKey: ["/api/reports/summary", activeFilters?.startDate, activeFilters?.endDate],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (activeFilters?.startDate) params.append('startDate', activeFilters.startDate);
+      if (activeFilters?.endDate) params.append('endDate', activeFilters.endDate);
+      
+      const response = await fetch(`/api/reports/summary?${params.toString()}`);
+      if (!response.ok) throw new Error('Failed to fetch summary report');
+      return response.json();
+    },
     enabled: isAuthenticated && !!activeFilters,
+  });
+
+  const { data: categoryReport } = useQuery({
+    queryKey: ["/api/reports/by-category", activeFilters?.startDate, activeFilters?.endDate, categoryType],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (activeFilters?.startDate) params.append('startDate', activeFilters.startDate);
+      if (activeFilters?.endDate) params.append('endDate', activeFilters.endDate);
+      params.append('categoryType', categoryType);
+      
+      const response = await fetch(`/api/reports/by-category?${params.toString()}`);
+      if (!response.ok) throw new Error('Failed to fetch category report');
+      return response.json();
+    },
+    enabled: isAuthenticated && !!activeFilters && reportType === 'category',
+  });
+
+  const { data: projectReport } = useQuery({
+    queryKey: ["/api/reports/by-project", activeFilters?.startDate, activeFilters?.endDate],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (activeFilters?.startDate) params.append('startDate', activeFilters.startDate);
+      if (activeFilters?.endDate) params.append('endDate', activeFilters.endDate);
+      
+      const response = await fetch(`/api/reports/by-project?${params.toString()}`);
+      if (!response.ok) throw new Error('Failed to fetch project report');
+      return response.json();
+    },
+    enabled: isAuthenticated && !!activeFilters && reportType === 'project',
   });
 
   const { data: vendorReport } = useQuery({
-    queryKey: ["/api/reports/vendor-analysis"],
-    enabled: isAuthenticated && !!activeFilters,
-  });
-
-  const { data: costReport } = useQuery({
-    queryKey: ["/api/reports/cost-analysis", activeFilters?.startDate, activeFilters?.endDate],
-    enabled: isAuthenticated && !!activeFilters,
+    queryKey: ["/api/reports/by-vendor", activeFilters?.startDate, activeFilters?.endDate],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (activeFilters?.startDate) params.append('startDate', activeFilters.startDate);
+      if (activeFilters?.endDate) params.append('endDate', activeFilters.endDate);
+      
+      const response = await fetch(`/api/reports/by-vendor?${params.toString()}`);
+      if (!response.ok) throw new Error('Failed to fetch vendor report');
+      return response.json();
+    },
+    enabled: isAuthenticated && !!activeFilters && reportType === 'vendor',
   });
 
   // Excel 내보내기 핸들러
-  const handleExcelExport = async (reportType: string) => {
+  const handleExcelExport = async () => {
     try {
-      const response = await fetch(`/api/reports/export-excel?type=${reportType}`);
-      if (!response.ok) throw new Error('Export failed');
-      
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.style.display = 'none';
-      a.href = url;
-      a.download = `${reportType}_report.xlsx`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
+      const params = new URLSearchParams();
+      if (reportType === 'orders') {
+        // For orders report, export the current filtered data
+        const ordersParams = new URLSearchParams();
+        if (activeFilters?.startDate) ordersParams.append('startDate', activeFilters.startDate);
+        if (activeFilters?.endDate) ordersParams.append('endDate', activeFilters.endDate);
+        
+        const response = await fetch(`/api/reports/export-excel?type=processing&${ordersParams.toString()}`);
+        if (!response.ok) throw new Error('Export failed');
+        
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `orders_report_${new Date().toISOString().slice(0, 10)}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+      } else {
+        // For other report types
+        params.append('type', reportType);
+        if (activeFilters?.startDate) params.append('startDate', activeFilters.startDate);
+        if (activeFilters?.endDate) params.append('endDate', activeFilters.endDate);
+        if (reportType === 'category') params.append('categoryType', categoryType);
+        
+        const response = await fetch(`/api/reports/export-excel?${params.toString()}`);
+        if (!response.ok) throw new Error('Export failed');
+        
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `${reportType}_report_${new Date().toISOString().slice(0, 10)}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+      }
       
       toast({
         title: "성공",
@@ -392,6 +465,54 @@ export default function Reports() {
         </div>
       </div>
 
+      {/* 리포트 타입 선택 탭 */}
+      <div className="bg-white rounded-lg shadow border">
+        <div className="border-b">
+          <nav className="-mb-px flex">
+            <button
+              onClick={() => setReportType('orders')}
+              className={`py-2 px-6 text-sm font-medium border-b-2 ${
+                reportType === 'orders'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              발주 내역 검색
+            </button>
+            <button
+              onClick={() => setReportType('category')}
+              className={`py-2 px-6 text-sm font-medium border-b-2 ${
+                reportType === 'category'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              분류별 보고서
+            </button>
+            <button
+              onClick={() => setReportType('project')}
+              className={`py-2 px-6 text-sm font-medium border-b-2 ${
+                reportType === 'project'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              프로젝트별 보고서
+            </button>
+            <button
+              onClick={() => setReportType('vendor')}
+              className={`py-2 px-6 text-sm font-medium border-b-2 ${
+                reportType === 'vendor'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              거래처별 보고서
+            </button>
+          </nav>
+        </div>
+      </div>
+
       {/* 필터 섹션 - UI Standards 적용 */}
       <Card>
         <CardHeader className="pb-3">
@@ -402,142 +523,172 @@ export default function Reports() {
         </CardHeader>
         <CardContent className="pt-1">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">연도</label>
-              <Select 
-                value={filters.year} 
-                onValueChange={(value) => setFilters(prev => ({ ...prev, year: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">전체 연도</SelectItem>
-                  <SelectItem value="2025">2025년</SelectItem>
-                  <SelectItem value="2024">2024년</SelectItem>
-                  <SelectItem value="2023">2023년</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Common filters for all report types */}
+            {(reportType === 'orders' || reportType === 'category' || reportType === 'project' || reportType === 'vendor') && (
+              <>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">시작일</label>
+                  <Input 
+                    type="date"
+                    value={filters.startDate}
+                    onChange={(e) => setFilters(prev => ({ ...prev, startDate: e.target.value }))}
+                  />
+                </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">시작일</label>
-              <Input 
-                type="date"
-                value={filters.startDate}
-                onChange={(e) => setFilters(prev => ({ ...prev, startDate: e.target.value }))}
-              />
-            </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">종료일</label>
+                  <Input 
+                    type="date"
+                    value={filters.endDate}
+                    onChange={(e) => setFilters(prev => ({ ...prev, endDate: e.target.value }))}
+                  />
+                </div>
+              </>
+            )}
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">종료일</label>
-              <Input 
-                type="date"
-                value={filters.endDate}
-                onChange={(e) => setFilters(prev => ({ ...prev, endDate: e.target.value }))}
-              />
-            </div>
+            {/* Category type selector for category report */}
+            {reportType === 'category' && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">분류 유형</label>
+                <Select 
+                  value={categoryType} 
+                  onValueChange={(value: 'major' | 'middle' | 'minor') => setCategoryType(value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="major">대분류</SelectItem>
+                    <SelectItem value="middle">중분류</SelectItem>
+                    <SelectItem value="minor">소분류</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">거래처</label>
-              <Select 
-                value={filters.vendorId} 
-                onValueChange={(value) => setFilters(prev => ({ ...prev, vendorId: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">전체 거래처</SelectItem>
-                  {Array.isArray(vendors) && vendors.map((vendor: any) => (
-                    <SelectItem key={vendor.id} value={vendor.id.toString()}>
-                      {vendor.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Orders-specific filters */}
+            {reportType === 'orders' && (
+              <>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">연도</label>
+                  <Select 
+                    value={filters.year} 
+                    onValueChange={(value) => setFilters(prev => ({ ...prev, year: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">전체 연도</SelectItem>
+                      <SelectItem value="2025">2025년</SelectItem>
+                      <SelectItem value="2024">2024년</SelectItem>
+                      <SelectItem value="2023">2023년</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">발주 상태</label>
-              <Select 
-                value={filters.status} 
-                onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">전체 상태</SelectItem>
-                  <SelectItem value="draft">임시 저장</SelectItem>
-                  <SelectItem value="pending">승인 대기</SelectItem>
-                  <SelectItem value="approved">승인 완료</SelectItem>
-                  <SelectItem value="sent">발송됨</SelectItem>
-                  <SelectItem value="completed">발주 완료</SelectItem>
-                  <SelectItem value="rejected">반려</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">거래처</label>
+                  <Select 
+                    value={filters.vendorId} 
+                    onValueChange={(value) => setFilters(prev => ({ ...prev, vendorId: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">전체 거래처</SelectItem>
+                      {Array.isArray(vendors) && vendors.map((vendor: any) => (
+                        <SelectItem key={vendor.id} value={vendor.id.toString()}>
+                          {vendor.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">발주 템플릿</label>
-              <Select 
-                value={filters.templateId} 
-                onValueChange={(value) => setFilters(prev => ({ ...prev, templateId: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">전체 템플릿</SelectItem>
-                  {Array.isArray(templates) && templates.map((template: any) => (
-                    <SelectItem key={template.id} value={template.id.toString()}>
-                      {template.templateName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">발주 상태</label>
+                  <Select 
+                    value={filters.status} 
+                    onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">전체 상태</SelectItem>
+                      <SelectItem value="draft">임시 저장</SelectItem>
+                      <SelectItem value="pending">승인 대기</SelectItem>
+                      <SelectItem value="approved">승인 완료</SelectItem>
+                      <SelectItem value="sent">발송됨</SelectItem>
+                      <SelectItem value="completed">발주 완료</SelectItem>
+                      <SelectItem value="rejected">반려</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">금액 범위</label>
-              <Select 
-                value={filters.amountRange} 
-                onValueChange={(value) => setFilters(prev => ({ ...prev, amountRange: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">전체 금액</SelectItem>
-                  <SelectItem value="0-100000">10만원 이하</SelectItem>
-                  <SelectItem value="100000-500000">10만원 ~ 50만원</SelectItem>
-                  <SelectItem value="500000-1000000">50만원 ~ 100만원</SelectItem>
-                  <SelectItem value="1000000-5000000">100만원 ~ 500만원</SelectItem>
-                  <SelectItem value="5000000-99999999">500만원 이상</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">발주 템플릿</label>
+                  <Select 
+                    value={filters.templateId} 
+                    onValueChange={(value) => setFilters(prev => ({ ...prev, templateId: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">전체 템플릿</SelectItem>
+                      {Array.isArray(templates) && templates.map((template: any) => (
+                        <SelectItem key={template.id} value={template.id.toString()}>
+                          {template.templateName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">담당자</label>
-              <Select 
-                value={filters.userId} 
-                onValueChange={(value) => setFilters(prev => ({ ...prev, userId: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">전체 담당자</SelectItem>
-                  {Array.isArray(users) && users.map((user: any) => (
-                    <SelectItem key={user.id} value={user.id}>
-                      {user.firstName} {user.lastName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">금액 범위</label>
+                  <Select 
+                    value={filters.amountRange} 
+                    onValueChange={(value) => setFilters(prev => ({ ...prev, amountRange: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">전체 금액</SelectItem>
+                      <SelectItem value="0-100000">10만원 이하</SelectItem>
+                      <SelectItem value="100000-500000">10만원 ~ 50만원</SelectItem>
+                      <SelectItem value="500000-1000000">50만원 ~ 100만원</SelectItem>
+                      <SelectItem value="1000000-5000000">100만원 ~ 500만원</SelectItem>
+                      <SelectItem value="5000000-99999999">500만원 이상</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">담당자</label>
+                  <Select 
+                    value={filters.userId} 
+                    onValueChange={(value) => setFilters(prev => ({ ...prev, userId: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">전체 담당자</SelectItem>
+                      {Array.isArray(users) && users.map((user: any) => (
+                        <SelectItem key={user.id} value={user.id}>
+                          {user.firstName} {user.lastName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
           </div>
           
           {/* 활성 필터 표시 */}
@@ -655,29 +806,38 @@ export default function Reports() {
             <div>
               <CardTitle className="text-lg font-semibold flex items-center gap-2 text-gray-900">
                 <Search className="h-5 w-5 text-blue-600" />
-                검색 결과
+                {reportType === 'orders' ? '검색 결과' : 
+                 reportType === 'category' ? '분류별 보고서 결과' :
+                 reportType === 'project' ? '프로젝트별 보고서 결과' :
+                 '거래처별 보고서 결과'}
               </CardTitle>
               <p className="text-sm text-gray-600 mt-1">
-                {processingLoading ? "데이터 로딩 중..." : 
-                 processingReport && processingReport.orders ? 
-                 `총 ${processingReport.orders.length}건의 발주 데이터` : "검색된 데이터가 없습니다"}
+                {reportType === 'orders' ? (
+                  processingLoading ? "데이터 로딩 중..." : 
+                  processingReport && processingReport.orders ? 
+                  `총 ${processingReport.orders.length}건의 발주 데이터` : "검색된 데이터가 없습니다"
+                ) : (
+                  "필터를 설정하고 검색 버튼을 클릭하세요"
+                )}
               </p>
             </div>
             <div className="flex gap-2">
+              {reportType === 'orders' && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => handleReportGeneration()}
+                  disabled={selectedItems.size === 0}
+                  className="bg-green-600 hover:bg-green-700 text-white disabled:bg-gray-300"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  보고서 생성 ({selectedItems.size}건)
+                </Button>
+              )}
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => handleReportGeneration()}
-                disabled={selectedItems.size === 0}
-                className="bg-green-600 hover:bg-green-700 text-white disabled:bg-gray-300"
-              >
-                <FileText className="h-4 w-4 mr-2" />
-                보고서 생성 ({selectedItems.size}건)
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => handleExcelExport('processing')}
+                onClick={() => handleExcelExport()}
                 className="gap-2"
               >
                 <FileDown className="h-4 w-4" />
@@ -692,11 +852,15 @@ export default function Reports() {
               <div className="text-gray-500 text-lg mb-2">검색 조건을 설정하고 검색 버튼을 클릭하세요</div>
               <div className="text-gray-400 text-sm">효율적인 성능을 위해 검색 필터를 먼저 설정해주세요</div>
             </div>
-          ) : processingLoading ? (
-            <div className="text-center py-8">
-              <div className="text-gray-500">데이터를 불러오는 중...</div>
-            </div>
-          ) : processingReport && Array.isArray(processingReport.orders) && processingReport.orders.length > 0 ? (
+          ) : (
+            <>
+              {/* Orders Report View */}
+              {reportType === 'orders' && (
+                processingLoading ? (
+                  <div className="text-center py-8">
+                    <div className="text-gray-500">데이터를 불러오는 중...</div>
+                  </div>
+                ) : processingReport && Array.isArray(processingReport.orders) && processingReport.orders.length > 0 ? (
             <div className="space-y-4">
               {/* 요약 통계 */}
               <div className="space-y-4 mb-6">
@@ -963,11 +1127,220 @@ export default function Reports() {
                 </table>
               </div>
             </div>
-          ) : (
-            <div className="text-center py-8">
-              <div className="text-gray-500">검색 조건에 맞는 데이터가 없습니다.</div>
-              <p className="text-sm text-gray-400 mt-2">필터 조건을 변경하여 다시 검색해보세요.</p>
-            </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="text-gray-500">검색 조건에 맞는 데이터가 없습니다.</div>
+                    <p className="text-sm text-gray-400 mt-2">필터 조건을 변경하여 다시 검색해보세요.</p>
+                  </div>
+                )
+              )}
+
+              {/* Category Report View */}
+              {reportType === 'category' && categoryReport && (
+                <div className="space-y-4">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="text-lg font-semibold mb-2">
+                      {categoryType === 'major' ? '대분류별' : categoryType === 'middle' ? '중분류별' : '소분류별'} 발주 보고서
+                    </h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                      <div>
+                        <span className="text-gray-600">총 분류 수:</span>
+                        <span className="ml-2 font-medium">{categoryReport.summary?.totalCategories || 0}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">총 발주 수:</span>
+                        <span className="ml-2 font-medium">{categoryReport.summary?.totalOrders || 0}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">총 품목 수:</span>
+                        <span className="ml-2 font-medium">{categoryReport.summary?.totalItems || 0}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">총 금액:</span>
+                        <span className="ml-2 font-medium">{formatKoreanWon(Math.floor(categoryReport.summary?.totalAmount || 0))}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse">
+                      <thead>
+                        <tr className="bg-gray-50 border-b">
+                          <th className="text-left py-3 px-4 font-medium">분류</th>
+                          <th className="text-right py-3 px-4 font-medium">발주 수</th>
+                          <th className="text-right py-3 px-4 font-medium">품목 수</th>
+                          <th className="text-right py-3 px-4 font-medium">총 수량</th>
+                          <th className="text-right py-3 px-4 font-medium">총 금액</th>
+                          <th className="text-right py-3 px-4 font-medium">평균 금액</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {categoryReport.data?.map((item: any, index: number) => (
+                          <tr key={index} className="border-b hover:bg-gray-50">
+                            <td className="py-3 px-4">{item.category}</td>
+                            <td className="py-3 px-4 text-right">{item.orderCount}</td>
+                            <td className="py-3 px-4 text-right">{item.itemCount}</td>
+                            <td className="py-3 px-4 text-right">{item.totalQuantity?.toLocaleString()}</td>
+                            <td className="py-3 px-4 text-right font-medium">{formatKoreanWon(Math.floor(item.totalAmount))}</td>
+                            <td className="py-3 px-4 text-right">{formatKoreanWon(Math.floor(item.averageAmount))}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Project Report View */}
+              {reportType === 'project' && projectReport && (
+                <div className="space-y-4">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="text-lg font-semibold mb-2">프로젝트별 발주 보고서</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                      <div>
+                        <span className="text-gray-600">총 프로젝트 수:</span>
+                        <span className="ml-2 font-medium">{projectReport.summary?.totalProjects || 0}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">총 발주 수:</span>
+                        <span className="ml-2 font-medium">{projectReport.summary?.totalOrders || 0}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">총 금액:</span>
+                        <span className="ml-2 font-medium">{formatKoreanWon(Math.floor(projectReport.summary?.totalAmount || 0))}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">프로젝트당 평균:</span>
+                        <span className="ml-2 font-medium">{formatKoreanWon(Math.floor(projectReport.summary?.averagePerProject || 0))}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse">
+                      <thead>
+                        <tr className="bg-gray-50 border-b">
+                          <th className="text-left py-3 px-4 font-medium">프로젝트명</th>
+                          <th className="text-left py-3 px-4 font-medium">프로젝트 코드</th>
+                          <th className="text-left py-3 px-4 font-medium">상태</th>
+                          <th className="text-right py-3 px-4 font-medium">발주 수</th>
+                          <th className="text-right py-3 px-4 font-medium">거래처 수</th>
+                          <th className="text-right py-3 px-4 font-medium">총 금액</th>
+                          <th className="text-right py-3 px-4 font-medium">평균 금액</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {projectReport.data?.map((item: any) => (
+                          <tr key={item.projectId} className="border-b hover:bg-gray-50">
+                            <td className="py-3 px-4">{item.projectName}</td>
+                            <td className="py-3 px-4">{item.projectCode}</td>
+                            <td className="py-3 px-4">
+                              <span className={`px-2 py-1 rounded-full text-xs ${
+                                item.projectStatus === 'active' ? 'bg-green-100 text-green-800' :
+                                item.projectStatus === 'completed' ? 'bg-blue-100 text-blue-800' :
+                                'bg-gray-100 text-gray-800'
+                              }`}>
+                                {item.projectStatus === 'active' ? '진행중' :
+                                 item.projectStatus === 'completed' ? '완료' : '대기'}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 text-right">{item.orderCount}</td>
+                            <td className="py-3 px-4 text-right">{item.vendorCount}</td>
+                            <td className="py-3 px-4 text-right font-medium">{formatKoreanWon(Math.floor(item.totalAmount))}</td>
+                            <td className="py-3 px-4 text-right">{formatKoreanWon(Math.floor(item.averageOrderAmount))}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Vendor Report View */}
+              {reportType === 'vendor' && vendorReport && (
+                <div className="space-y-4">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="text-lg font-semibold mb-2">거래처별 발주 보고서</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                      <div>
+                        <span className="text-gray-600">총 거래처 수:</span>
+                        <span className="ml-2 font-medium">{vendorReport.summary?.totalVendors || 0}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">총 발주 수:</span>
+                        <span className="ml-2 font-medium">{vendorReport.summary?.totalOrders || 0}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">총 금액:</span>
+                        <span className="ml-2 font-medium">{formatKoreanWon(Math.floor(vendorReport.summary?.totalAmount || 0))}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">거래처당 평균:</span>
+                        <span className="ml-2 font-medium">{formatKoreanWon(Math.floor(vendorReport.summary?.averagePerVendor || 0))}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse">
+                      <thead>
+                        <tr className="bg-gray-50 border-b">
+                          <th className="text-left py-3 px-4 font-medium">거래처명</th>
+                          <th className="text-left py-3 px-4 font-medium">거래처 코드</th>
+                          <th className="text-left py-3 px-4 font-medium">사업자번호</th>
+                          <th className="text-right py-3 px-4 font-medium">발주 수</th>
+                          <th className="text-right py-3 px-4 font-medium">프로젝트 수</th>
+                          <th className="text-right py-3 px-4 font-medium">총 금액</th>
+                          <th className="text-right py-3 px-4 font-medium">평균 금액</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {vendorReport.data?.map((item: any) => (
+                          <tr key={item.vendorId} className="border-b hover:bg-gray-50">
+                            <td className="py-3 px-4">{item.vendorName}</td>
+                            <td className="py-3 px-4">{item.vendorCode}</td>
+                            <td className="py-3 px-4">{item.businessNumber}</td>
+                            <td className="py-3 px-4 text-right">{item.orderCount}</td>
+                            <td className="py-3 px-4 text-right">{item.projectCount}</td>
+                            <td className="py-3 px-4 text-right font-medium">{formatKoreanWon(Math.floor(item.totalAmount))}</td>
+                            <td className="py-3 px-4 text-right">{formatKoreanWon(Math.floor(item.averageOrderAmount))}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Top Items for Selected Vendor */}
+                  {vendorReport.data?.length === 1 && vendorReport.data[0].topItems?.length > 0 && (
+                    <div className="mt-6">
+                      <h4 className="text-md font-semibold mb-3">주요 발주 품목</h4>
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <table className="w-full">
+                          <thead>
+                            <tr className="border-b">
+                              <th className="text-left py-2 text-sm">품목명</th>
+                              <th className="text-right py-2 text-sm">수량</th>
+                              <th className="text-right py-2 text-sm">금액</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {vendorReport.data[0].topItems.map((item: any, index: number) => (
+                              <tr key={index} className="border-b last:border-0">
+                                <td className="py-2 text-sm">{item.itemName}</td>
+                                <td className="py-2 text-right text-sm">{item.quantity}</td>
+                                <td className="py-2 text-right text-sm font-medium">
+                                  {formatKoreanWon(Math.floor(item.amount))}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>

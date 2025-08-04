@@ -124,7 +124,7 @@ function generateFallbackSuggestions(vendorName: string) {
 }
 
 /**
- * 거래처명 검증 및 유사 거래처 추천
+ * 거래처명 검증 및 유사 거래처 추천 (PRD 요구사항: 별칭 필드 활용)
  */
 export async function validateVendorName(vendorName: string, vendorType: '거래처' | '납품처' = '거래처'): Promise<VendorValidationResult> {
   console.log(`🔍 ${vendorType} 검증 시작: "${vendorName}"`);
@@ -158,6 +158,7 @@ export async function validateVendorName(vendorName: string, vendorType: '거래
 
   try {
     let exactMatch = [];
+    let aliasMatch = [];
     let allVendors = [];
 
     try {
@@ -174,12 +175,27 @@ export async function validateVendorName(vendorName: string, vendorType: '거래
           email: vendors.email,
           phone: vendors.phone,
           contactPerson: vendors.contactPerson,
+          aliases: vendors.aliases,
         })
         .from(vendors)
         .where(eq(vendors.name, vendorName))
         .limit(1);
 
-      // 2. 모든 활성 거래처 조회 (유사도 계산용)
+      // 2. 별칭으로 매칭 확인 (PRD 요구사항)
+      const aliasMatchQuery = db
+        .select({
+          id: vendors.id,
+          name: vendors.name,
+          email: vendors.email,
+          phone: vendors.phone,
+          contactPerson: vendors.contactPerson,
+          aliases: vendors.aliases,
+        })
+        .from(vendors)
+        .where(sql`${vendors.aliases}::jsonb @> ${JSON.stringify([vendorName])}::jsonb`)
+        .limit(1);
+
+      // 3. 모든 활성 거래처 조회 (유사도 계산용)
       const allVendorsQuery = db
         .select({
           id: vendors.id,
@@ -187,12 +203,14 @@ export async function validateVendorName(vendorName: string, vendorType: '거래
           email: vendors.email,
           phone: vendors.phone,
           contactPerson: vendors.contactPerson,
+          aliases: vendors.aliases,
         })
         .from(vendors)
         .where(eq(vendors.isActive, true));
 
       // Execute with timeout
       exactMatch = await Promise.race([exactMatchQuery, dbTimeout]);
+      aliasMatch = await Promise.race([aliasMatchQuery, dbTimeout]);
       allVendors = await Promise.race([allVendorsQuery, dbTimeout]);
 
     } catch (dbError: any) {
@@ -210,21 +228,47 @@ export async function validateVendorName(vendorName: string, vendorType: '거래
       };
     }
 
-    // 3. 유사도 계산 및 정렬
+    // 정확한 매칭 결정 (정확한 이름 매칭 우선, 그 다음 별칭 매칭)
+    const finalMatch = exactMatch.length > 0 ? exactMatch[0] : (aliasMatch.length > 0 ? aliasMatch[0] : null);
+
+    // 3. 유사도 계산 및 정렬 (별칭도 고려)
     const suggestions = allVendors
       .map((vendor: any) => {
-        const similarity = calculateSimilarity(vendorName, vendor.name);
-        const distance = levenshteinDistance(vendorName.toLowerCase(), vendor.name.toLowerCase());
+        // 이름과의 유사도
+        const nameSimilarity = calculateSimilarity(vendorName, vendor.name);
+        const nameDistance = levenshteinDistance(vendorName.toLowerCase(), vendor.name.toLowerCase());
+        
+        // 별칭과의 최대 유사도 계산
+        let maxAliasSimilarity = 0;
+        let minAliasDistance = Infinity;
+        
+        if (vendor.aliases && Array.isArray(vendor.aliases)) {
+          vendor.aliases.forEach((alias: string) => {
+            const aliasSimilarity = calculateSimilarity(vendorName, alias);
+            const aliasDistance = levenshteinDistance(vendorName.toLowerCase(), alias.toLowerCase());
+            
+            if (aliasSimilarity > maxAliasSimilarity) {
+              maxAliasSimilarity = aliasSimilarity;
+              minAliasDistance = aliasDistance;
+            }
+          });
+        }
+        
+        // 최종 유사도는 이름과 별칭 중 높은 것을 사용
+        const finalSimilarity = Math.max(nameSimilarity, maxAliasSimilarity);
+        const finalDistance = Math.min(nameDistance, minAliasDistance);
         
         return {
           ...vendor,
-          similarity,
-          distance,
+          similarity: finalSimilarity,
+          distance: finalDistance,
+          matchedBy: finalSimilarity === nameSimilarity ? 'name' : 'alias'
         };
       })
       .filter((vendor: any) => {
-        // 정확히 일치하는 경우는 제외하고, 유사도가 0.3 이상인 것만 포함
-        return vendor.name !== vendorName && vendor.similarity >= 0.3;
+        // 이미 매칭된 거래처는 제외하고, 유사도가 0.3 이상인 것만 포함
+        const isAlreadyMatched = finalMatch && vendor.id === finalMatch.id;
+        return !isAlreadyMatched && vendor.similarity >= 0.3;
       })
       .sort((a: any, b: any) => {
         // 유사도 높은 순으로 정렬
@@ -238,17 +282,22 @@ export async function validateVendorName(vendorName: string, vendorType: '거래
 
     const result: VendorValidationResult = {
       vendorName,
-      exists: exactMatch.length > 0,
-      exactMatch: exactMatch.length > 0 ? exactMatch[0] : undefined,
+      exists: finalMatch !== null,
+      exactMatch: finalMatch || undefined,
       suggestions,
     };
 
     console.log(`✅ ${vendorType} 검증 완료: exists=${result.exists}, suggestions=${suggestions.length}개`);
     if (result.exactMatch) {
-      console.log(`📍 정확한 매칭: ${result.exactMatch.name} (ID: ${result.exactMatch.id})`);
+      const matchType = exactMatch.length > 0 ? '이름' : '별칭';
+      console.log(`📍 정확한 매칭 (${matchType}): ${result.exactMatch.name} (ID: ${result.exactMatch.id})`);
+      if (result.exactMatch.aliases && result.exactMatch.aliases.length > 0) {
+        console.log(`   별칭: ${result.exactMatch.aliases.join(', ')}`);
+      }
     }
     suggestions.forEach((suggestion: any, index: number) => {
-      console.log(`💡 추천 ${index + 1}: ${suggestion.name} (유사도: ${(suggestion.similarity * 100).toFixed(1)}%)`);
+      const matchInfo = suggestion.matchedBy === 'alias' ? ' [별칭 매칭]' : '';
+      console.log(`💡 추천 ${index + 1}: ${suggestion.name} (유사도: ${(suggestion.similarity * 100).toFixed(1)}%${matchInfo})`);
     });
 
     return result;
@@ -299,14 +348,18 @@ export async function checkEmailConflict(
         setTimeout(() => reject(new Error('Database connection timeout')), 3000);
       });
 
+      // 이름 또는 별칭으로 거래처 조회
       const dbVendorQuery = db
         .select({
           id: vendors.id,
           name: vendors.name,
           email: vendors.email,
+          aliases: vendors.aliases,
         })
         .from(vendors)
-        .where(eq(vendors.name, vendorName))
+        .where(
+          sql`${vendors.name} = ${vendorName} OR ${vendors.aliases}::jsonb @> ${JSON.stringify([vendorName])}::jsonb`
+        )
         .limit(1);
 
       // 거래처명으로 DB에서 이메일 조회 (with timeout)

@@ -43,7 +43,9 @@ export default function Vendors() {
         vendor.industry?.toLowerCase().includes(query) ||
         vendor.contactPerson?.toLowerCase().includes(query) ||
         vendor.phone?.includes(query) ||
-        vendor.email?.toLowerCase().includes(query)
+        vendor.email?.toLowerCase().includes(query) ||
+        (vendor.aliases && Array.isArray(vendor.aliases) && 
+          vendor.aliases.some((alias: string) => alias.toLowerCase().includes(query)))
       );
     }
 
