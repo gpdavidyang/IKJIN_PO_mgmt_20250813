@@ -48,6 +48,7 @@ const CreateOrder = createNetworkAwareLazyComponent(() => import("@/pages/create
 const CreateExtrusionOrder = createLazyComponent(() => import("@/pages/create-order-extrusion"), 'CreateExtrusionOrder');
 const CreatePanelOrder = createLazyComponent(() => import("@/pages/create-order-panel"), 'CreatePanelOrder');
 const CreateAccessoriesOrder = createLazyComponent(() => import("@/pages/create-order-accessories"), 'CreateAccessoriesOrder');
+const CategoryManagement = createLazyComponent(() => import("@/pages/category-management"), 'CategoryManagement');
 const CreateStandardOrder = createLazyComponent(() => import("@/pages/create-order-standard"), 'CreateStandardOrder');
 const CreateStandardOrderRefactored = createLazyComponent(() => import("@/pages/create-order-standard-refactored"), 'CreateStandardOrderRefactored');
 const CreateMaterialsOrder = createLazyComponent(() => import("@/pages/create-order-materials"), 'CreateMaterialsOrder');
@@ -287,6 +288,13 @@ function Layout() {
               <Route path="/vendors">
                 <Suspense fallback={<PageLoadingFallback />}>
                   <Vendors />
+                </Suspense>
+              </Route>
+              
+              {/* Category Management Route */}
+              <Route path="/category-management">
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <CategoryManagement />
                 </Suspense>
               </Route>
               

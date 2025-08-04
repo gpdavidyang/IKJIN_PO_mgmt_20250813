@@ -14,6 +14,9 @@ import {
   queryKeys,
   CACHE_CONFIGS 
 } from "@/lib/query-optimization";
+
+// Re-export the useCacheWarming hook for use in other components
+export { useCacheWarming };
 import type { 
   PurchaseOrder, 
   Vendor, 

@@ -18,6 +18,17 @@ router.get("/items", async (req, res) => {
   }
 });
 
+// Item categories route - must come before /items/:id to avoid route conflicts
+router.get("/items/categories", async (req, res) => {
+  try {
+    const categories = await storage.getItemCategories();
+    res.json(categories);
+  } catch (error) {
+    console.error("Error fetching item categories:", error);
+    res.status(500).json({ message: "Failed to fetch item categories" });
+  }
+});
+
 router.get("/items/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
@@ -75,6 +86,39 @@ router.get("/item-categories", async (req, res) => {
   } catch (error) {
     console.error("Error fetching item categories:", error);
     res.status(500).json({ message: "Failed to fetch item categories" });
+  }
+});
+
+// Specific category endpoints
+router.get("/item-categories/major", async (req, res) => {
+  try {
+    const categories = await storage.getMajorCategories();
+    res.json(categories);
+  } catch (error) {
+    console.error("Error fetching major categories:", error);
+    res.status(500).json({ message: "Failed to fetch major categories" });
+  }
+});
+
+router.get("/item-categories/middle", async (req, res) => {
+  try {
+    const { majorId } = req.query;
+    const categories = await storage.getMiddleCategories(majorId ? parseInt(majorId as string) : undefined);
+    res.json(categories);
+  } catch (error) {
+    console.error("Error fetching middle categories:", error);
+    res.status(500).json({ message: "Failed to fetch middle categories" });
+  }
+});
+
+router.get("/item-categories/minor", async (req, res) => {
+  try {
+    const { middleId } = req.query;
+    const categories = await storage.getMinorCategories(middleId ? parseInt(middleId as string) : undefined);
+    res.json(categories);
+  } catch (error) {
+    console.error("Error fetching minor categories:", error);
+    res.status(500).json({ message: "Failed to fetch minor categories" });
   }
 });
 

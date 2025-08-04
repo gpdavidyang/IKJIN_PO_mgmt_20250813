@@ -44,7 +44,7 @@ export const uiTerms = pgTable("ui_terms", {
 export const itemCategories = pgTable("item_categories", {
   id: serial("id").primaryKey(),
   categoryType: varchar("category_type", { length: 20 }).notNull(), // 'major', 'middle', 'minor'
-  categoryValue: varchar("category_value", { length: 100 }).notNull(),
+  categoryName: varchar("category_name", { length: 100 }).notNull(),
   parentId: integer("parent_id"), // References parent category ID
   displayOrder: integer("display_order").default(0),
   isActive: boolean("is_active").default(true),

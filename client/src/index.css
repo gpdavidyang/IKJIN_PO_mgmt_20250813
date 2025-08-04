@@ -540,7 +540,7 @@
   }
   
   .nav-item.active {
-    @apply bg-primary bg-opacity-10 text-primary border-r-2 border-primary;
+    @apply bg-primary text-white border-r-2 border-primary shadow-sm;
   }
   
   .nav-item:hover:not(.active) {

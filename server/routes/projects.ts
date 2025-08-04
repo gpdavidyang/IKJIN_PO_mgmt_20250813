@@ -22,6 +22,17 @@ router.get("/projects", async (req, res) => {
   }
 });
 
+// Get active projects
+router.get("/projects/active", async (req, res) => {
+  try {
+    const projects = await storage.getActiveProjects();
+    res.json(projects);
+  } catch (error) {
+    console.error("Error fetching active projects:", error);
+    res.status(500).json({ message: "Failed to fetch active projects" });
+  }
+});
+
 // Get project by ID
 router.get("/projects/:id", async (req, res) => {
   try {

@@ -22,7 +22,8 @@ import {
   ChevronRight,
   CheckCircle,
   Upload,
-  FileDown
+  FileDown,
+  FolderTree
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSidebar } from "@/contexts/SidebarContext";
@@ -58,6 +59,7 @@ const managementNavigation = [
   { name: "현장 관리", href: "/projects", icon: Building2 },
   { name: "거래처 관리", href: "/vendors", icon: Building },
   { name: "품목 관리", href: "/items", icon: Package },
+  { name: "분류 관리", href: "/category-management", icon: FolderTree },
   { name: "보고서 및 분석", href: "/reports", icon: BarChart3 },
   { name: "가져오기/내보내기", href: "/import-export", icon: FileDown },
 ];
@@ -130,7 +132,7 @@ export function Sidebar() {
               className={cn(
                 "w-full nav-item",
                 isCollapsed ? "justify-center px-0" : "justify-start",
-                isActive(item.href) && "active bg-primary bg-opacity-10 text-primary"
+                isActive(item.href) && "active"
               )}
               onClick={() => {
                 if (item.subItems && !isCollapsed) {
@@ -163,8 +165,8 @@ export function Sidebar() {
                     key={subItem.name}
                     variant={isActive(subItem.href) ? "secondary" : "ghost"}
                     className={cn(
-                      "w-full justify-start text-sm",
-                      isActive(subItem.href) && "active bg-primary bg-opacity-10 text-primary"
+                      "w-full justify-start text-sm nav-item",
+                      isActive(subItem.href) && "active"
                     )}
                     onClick={() => {
                       window.location.href = subItem.href;
@@ -192,7 +194,7 @@ export function Sidebar() {
             className={cn(
               "w-full nav-item",
               isCollapsed ? "justify-center px-0" : "justify-start",
-              isActive(item.href) && "active bg-primary/10 text-primary"
+              isActive(item.href) && "active"
             )}
             onClick={() => {
               window.location.href = item.href;
@@ -224,7 +226,7 @@ export function Sidebar() {
               className={cn(
                 "w-full nav-item",
                 isCollapsed ? "justify-center px-0" : "justify-start",
-                isActive(item.href) && "active bg-primary bg-opacity-10 text-primary"
+                isActive(item.href) && "active"
               )}
               onClick={() => {
                 window.location.href = item.href;

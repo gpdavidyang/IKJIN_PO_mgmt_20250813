@@ -11,6 +11,17 @@ import { eq, and } from "drizzle-orm";
 
 const router = Router();
 
+// Positions management
+router.get("/positions", async (req, res) => {
+  try {
+    const positions = await storage.getPositions();
+    res.json(positions);
+  } catch (error) {
+    console.error("Error fetching positions:", error);
+    res.status(500).json({ message: "Failed to fetch positions" });
+  }
+});
+
 // UI Terms management
 router.get("/ui-terms", async (req, res) => {
   try {

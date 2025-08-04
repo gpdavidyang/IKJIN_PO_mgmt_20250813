@@ -91,6 +91,7 @@ export interface IStorage {
   
   // Project operations
   getProjects(): Promise<Project[]>;
+  getActiveProjects(): Promise<Project[]>;
   getProject(id: number): Promise<Project | undefined>;
   createProject(project: InsertProject): Promise<Project>;
   updateProject(id: number, project: Partial<InsertProject>): Promise<Project>;
@@ -252,6 +253,18 @@ export interface IStorage {
   deleteProjectMember(id: number): Promise<void>;
   
   createVerificationLog(log: InsertVerificationLog): Promise<VerificationLog>;
+  
+  // Item Categories operations
+  getItemCategories(): Promise<ItemCategory[]>;
+  createItemCategory(category: InsertItemCategory): Promise<ItemCategory>;
+  updateItemCategory(id: number, category: Partial<InsertItemCategory>): Promise<ItemCategory>;
+  deleteItemCategory(id: number): Promise<void>;
+  
+  // Missing interface methods
+  getMajorCategories(): Promise<ItemCategory[]>;
+  getMiddleCategories(majorId?: number): Promise<ItemCategory[]>;
+  getMinorCategories(middleId?: number): Promise<ItemCategory[]>;
+  getPositions(): Promise<any[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1649,19 +1662,25 @@ export class DatabaseStorage implements IStorage {
 
   // UI terms operations
   async getUiTerms(category?: string): Promise<UiTerm[]> {
-    if (category) {
+    try {
+      if (category) {
+        return await db
+          .select()
+          .from(uiTerms)
+          .where(and(eq(uiTerms.category, category), eq(uiTerms.isActive, true)))
+          .orderBy(asc(uiTerms.termKey));
+      }
+      
       return await db
         .select()
         .from(uiTerms)
-        .where(and(eq(uiTerms.category, category), eq(uiTerms.isActive, true)))
+        .where(eq(uiTerms.isActive, true))
         .orderBy(asc(uiTerms.termKey));
+    } catch (error) {
+      console.error('Database error in getUiTerms:', error);
+      // Return empty array if table doesn't exist or has structure issues
+      return [];
     }
-    
-    return await db
-      .select()
-      .from(uiTerms)
-      .where(eq(uiTerms.isActive, true))
-      .orderBy(asc(uiTerms.termKey));
   }
 
   async getUiTerm(termKey: string): Promise<UiTerm | undefined> {
@@ -2379,6 +2398,66 @@ export class DatabaseStorage implements IStorage {
         .where(eq(itemCategories.id, id));
     } catch (error) {
       console.error('Error deleting item category:', error);
+      throw error;
+    }
+  }
+
+  // Missing methods for API endpoints
+  async getActiveProjects(): Promise<Project[]> {
+    try {
+      return await db
+        .select()
+        .from(projects)
+        .where(and(
+          eq(projects.isActive, true),
+          eq(projects.status, 'active')
+        ))
+        .orderBy(projects.projectName);
+    } catch (error) {
+      console.error('Error getting active projects:', error);
+      throw error;
+    }
+  }
+
+  async getMajorCategories(): Promise<ItemCategory[]> {
+    try {
+      return await this.getItemCategoriesByType('major');
+    } catch (error) {
+      console.error('Error getting major categories:', error);
+      throw error;
+    }
+  }
+
+  async getMiddleCategories(majorId?: number): Promise<ItemCategory[]> {
+    try {
+      return await this.getItemCategoriesByType('middle', majorId);
+    } catch (error) {
+      console.error('Error getting middle categories:', error);
+      throw error;
+    }
+  }
+
+  async getMinorCategories(middleId?: number): Promise<ItemCategory[]> {
+    try {
+      return await this.getItemCategoriesByType('minor', middleId);
+    } catch (error) {
+      console.error('Error getting minor categories:', error);
+      throw error;
+    }
+  }
+
+  async getPositions(): Promise<any[]> {
+    try {
+      // Return mock position data for now
+      return [
+        { id: 1, name: '현장소장', code: 'site_manager', level: 1 },
+        { id: 2, name: '현장대리', code: 'site_deputy', level: 2 },
+        { id: 3, name: '현장팀장', code: 'site_team_leader', level: 3 },
+        { id: 4, name: '현장기사', code: 'site_engineer', level: 4 },
+        { id: 5, name: '현장기능공', code: 'site_worker', level: 5 }
+      ];
+    } catch (error) {
+      console.error('Error getting positions:', error);
       throw error;
     }
   }
