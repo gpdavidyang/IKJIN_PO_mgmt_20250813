@@ -58,7 +58,8 @@ const primaryNavigation: Array<{
 const managementNavigation = [
   { name: "현장 관리", href: "/projects", icon: Building2 },
   { name: "거래처 관리", href: "/vendors", icon: Building },
-  { name: "품목 관리", href: "/items", icon: Package },
+  // PRD 요구사항: 품목 관리 UI는 숨김 처리 (소스코드는 유지, Excel 템플릿 기반 품목 관리)
+  // { name: "품목 관리", href: "/items", icon: Package },
   { name: "분류 관리", href: "/category-management", icon: FolderTree },
   { name: "보고서 및 분석", href: "/reports", icon: BarChart3 },
   { name: "가져오기/내보내기", href: "/import-export", icon: FileDown },
@@ -101,19 +102,19 @@ export function Sidebar() {
 
   const SidebarContent = () => (
     <>
-      <div className="flex items-center justify-between h-16 px-4 bg-primary">
+      <div className="flex items-center justify-between h-16 px-4 bg-sidebar-primary">
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'}`}>
-          <div className="h-8 w-8 bg-white rounded-lg flex items-center justify-center">
-            <ClipboardList className="h-5 w-5 text-primary" />
+          <div className="h-8 w-8 bg-sidebar-primary-foreground rounded-lg flex items-center justify-center">
+            <ClipboardList className="h-5 w-5 text-sidebar-primary" />
           </div>
-          {!isCollapsed && <span className="text-xl font-bold text-white">발주시스템</span>}
+          {!isCollapsed && <span className="text-xl font-bold text-sidebar-primary-foreground">발주시스템</span>}
         </div>
         
         {/* Collapse button - only show when expanded */}
         {!isCollapsed && (
           <button
             onClick={toggleSidebar}
-            className="flex items-center justify-center w-8 h-8 rounded-md text-white hover:bg-white/20 transition-colors"
+            className="flex items-center justify-center w-8 h-8 rounded-md text-sidebar-primary-foreground hover:bg-sidebar-primary-foreground/20 transition-colors"
             title="사이드바 축소"
           >
             <Menu className="w-4 h-4" />
@@ -183,7 +184,7 @@ export function Sidebar() {
         
         {/* First Separator */}
         <div className="py-2">
-          <div className="border-t border-gray-200"></div>
+          <div className="border-t border-sidebar-border"></div>
         </div>
         
         {/* Management Navigation */}
@@ -209,7 +210,7 @@ export function Sidebar() {
         
         {/* Second Separator */}
         <div className="py-2">
-          <div className="border-t border-gray-200"></div>
+          <div className="border-t border-sidebar-border"></div>
         </div>
         
         {/* System Navigation */}
@@ -284,7 +285,7 @@ export function Sidebar() {
         <div className="hidden lg:block fixed top-20 left-20 z-50">
           <button
             onClick={toggleSidebar}
-            className="flex items-center justify-center w-10 h-10 bg-primary text-white rounded-full shadow-xl hover:bg-primary/90 hover:scale-105 transition-all duration-200 border-2 border-white"
+            className="flex items-center justify-center w-10 h-10 bg-sidebar-primary text-sidebar-primary-foreground rounded-full shadow-xl hover:bg-sidebar-primary/90 hover:scale-105 transition-all duration-200 border-2 border-sidebar-background"
             title="사이드바 확장"
           >
             <Menu className="w-4 h-4" />
@@ -294,7 +295,7 @@ export function Sidebar() {
 
       {/* Desktop sidebar */}
       <div className={cn(
-        "hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-50 lg:block lg:bg-white lg:shadow-lg transition-all duration-300",
+        "hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-50 lg:block lg:bg-sidebar-background lg:shadow-lg transition-all duration-300 border-r border-sidebar-border",
         isCollapsed ? "lg:w-16" : "lg:w-64"
       )}>
         <SidebarContent />
@@ -303,8 +304,8 @@ export function Sidebar() {
       {/* Mobile sidebar */}
       {isMobileMenuOpen && (
         <div className="lg:hidden fixed inset-0 z-40">
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setIsMobileMenuOpen(false)} />
-          <div className="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out">
+          <div className="fixed inset-0 bg-black/50 dark:bg-black/70" onClick={() => setIsMobileMenuOpen(false)} />
+          <div className="fixed inset-y-0 left-0 z-50 w-64 bg-sidebar-background shadow-lg transform transition-transform duration-300 ease-in-out border-r border-sidebar-border">
             <SidebarContent />
           </div>
         </div>

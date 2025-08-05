@@ -120,13 +120,13 @@ export function Header() {
                   <div className="text-sm font-medium">
                     {getUserDisplayName(user as any)}
                   </div>
-                  <div className="text-xs text-gray-500 mt-1">
+                  <div className="text-xs text-muted-foreground mt-1">
                     {(user as any)?.email}
                   </div>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-muted-foreground">
                     {getRoleText((user as any)?.role || "")}
                   </div>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-muted-foreground">
                     사용자 ID: {(user as any)?.id}
                   </div>
                 </div>

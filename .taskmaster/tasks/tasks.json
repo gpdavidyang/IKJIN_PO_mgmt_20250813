@@ -253,6 +253,28 @@
         "dependencies": [],
         "priority": "low",
         "subtasks": []
+      },
+      {
+        "id": 24,
+        "title": "엑셀 발주서 템플릿 컬럼 구조 변경 (세액/합계 필드 제거)",
+        "description": "Input 시트 헤더에서 '세액'과 '합계' 필드를 제거하여 13개 컬럼에서 12개 컬럼으로 변경",
+        "details": "주요 변경사항:\n1. Excel 헤더 구조: A:M (13개) → A:L (12개)\n2. 제거되는 필드: totalAmount (합계), taxAmount (세액)  \n3. totalAmount는 quantity * unitPrice로 항상 계산\n4. 영향받는 파일: excel-parser.ts, simple-excel-parser.ts, po-template-processor.ts 등",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 25,
+        "title": "품목 계층 구조 DB 스키마 개선",
+        "description": "purchaseOrderItems 테이블에 품목 계층 필드 추가",
+        "details": "purchaseOrderItems 테이블에 major_category, middle_category, minor_category 필드 추가 및 인덱스 생성",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
       }
     ],
     "metadata": {
@@ -261,7 +283,7 @@
       "version": "1.0.0",
       "created": "2025-08-04T08:54:47.667Z",
       "description": "Tasks for master context",
-      "updated": "2025-08-04T10:30:50.701Z"
+      "updated": "2025-08-05T01:57:33.051Z"
     }
   }
 }

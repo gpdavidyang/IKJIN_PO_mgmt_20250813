@@ -422,11 +422,12 @@ export default function Orders() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">모든 상태</SelectItem>
-                        {(orderStatuses as any[])?.map((status: any) => (
-                          <SelectItem key={status.id} value={status.code}>
-                            {getStatusText(status.code)}
-                          </SelectItem>
-                        ))}
+                        <SelectItem value="draft">{getStatusText("draft")}</SelectItem>
+                        <SelectItem value="pending">{getStatusText("pending")}</SelectItem>
+                        <SelectItem value="approved">{getStatusText("approved")}</SelectItem>
+                        <SelectItem value="sent">{getStatusText("sent")}</SelectItem>
+                        <SelectItem value="completed">{getStatusText("completed")}</SelectItem>
+                        <SelectItem value="rejected">{getStatusText("rejected")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -470,7 +471,7 @@ export default function Orders() {
                       검색: "{filters.searchText}"
                       <button
                         onClick={() => handleFilterChange("searchText", "")}
-                        className="ml-2 hover:bg-gray-200 rounded-full w-4 h-4 flex items-center justify-center text-gray-600"
+                        className="ml-2 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full w-4 h-4 flex items-center justify-center text-gray-600 dark:text-gray-400"
                       >
                         ×
                       </button>
@@ -482,7 +483,7 @@ export default function Orders() {
                       현장: {Array.isArray(projects) ? projects.find((p: any) => p.id.toString() === filters.projectId)?.projectName || "선택된 현장" : "선택된 현장"}
                       <button
                         onClick={() => handleFilterChange("projectId", "all")}
-                        className="ml-2 hover:bg-purple-200 rounded-full w-4 h-4 flex items-center justify-center text-purple-600"
+                        className="ml-2 hover:bg-purple-200 dark:hover:bg-purple-800 rounded-full w-4 h-4 flex items-center justify-center text-purple-600 dark:text-purple-400"
                       >
                         ×
                       </button>

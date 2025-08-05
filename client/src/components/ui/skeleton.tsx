@@ -142,7 +142,7 @@ function StatsSkeleton() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {Array.from({ length: 4 }).map((_, index) => (
-        <div key={index} className="bg-white p-6 rounded-lg border">
+        <div key={index} className="bg-card p-6 rounded-lg border border-border">
           <div className="flex items-center justify-between">
             <div className="space-y-2">
               <Skeleton className="h-4 w-16" />
@@ -167,10 +167,10 @@ function TableSkeleton({
   showHeader?: boolean;
 }) {
   return (
-    <div className="border rounded-lg overflow-hidden">
+    <div className="border border-border rounded-lg overflow-hidden">
       <table className="w-full">
         {showHeader && (
-          <thead className="bg-gray-50">
+          <thead className="bg-muted/50">
             <tr>
               {Array.from({ length: columns }).map((_, index) => (
                 <th key={index} className="px-6 py-3 text-left">
@@ -180,7 +180,7 @@ function TableSkeleton({
             </tr>
           </thead>
         )}
-        <tbody className="divide-y">
+        <tbody className="divide-y divide-border">
           {Array.from({ length: rows }).map((_, index) => (
             <TableRowSkeleton key={index} columns={columns} />
           ))}

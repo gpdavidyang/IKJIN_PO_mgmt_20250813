@@ -134,12 +134,12 @@ export function EnhancedTable<T>({
 
   const getSortIcon = (columnKey: string) => {
     if (sortColumn !== columnKey) {
-      return <ChevronsUpDown className="h-4 w-4 text-gray-400" />;
+      return <ChevronsUpDown className="h-4 w-4 text-gray-400 dark:text-gray-500" />;
     }
     if (sortDirection === "asc") {
-      return <ChevronUp className="h-4 w-4 text-primary-600" />;
+      return <ChevronUp className="h-4 w-4 text-primary-600 dark:text-primary-400" />;
     }
-    return <ChevronDown className="h-4 w-4 text-primary-600" />;
+    return <ChevronDown className="h-4 w-4 text-primary-600 dark:text-primary-400" />;
   };
 
   if (isLoading) {
@@ -158,7 +158,7 @@ export function EnhancedTable<T>({
       {searchable && (
         <div className="mb-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
             <Input
               placeholder={searchPlaceholder}
               value={searchQuery}
@@ -166,7 +166,7 @@ export function EnhancedTable<T>({
                 setSearchQuery(e.target.value);
                 setCurrentPage(1);
               }}
-              className="pl-10 bg-white border-gray-200 focus:border-primary-500 focus:ring-primary-500"
+              className="pl-10 bg-white dark:bg-slate-950 border-gray-200 dark:border-slate-600 focus:border-primary-500 focus:ring-primary-500 dark:text-white dark:placeholder:text-slate-400"
             />
           </div>
         </div>
@@ -175,14 +175,14 @@ export function EnhancedTable<T>({
       {/* Table */}
       <div 
         className={cn(
-          "border border-gray-200 rounded-lg overflow-hidden bg-white",
+          "border border-gray-200 dark:border-slate-700 rounded-lg overflow-hidden bg-white dark:bg-slate-900",
           maxHeight && "overflow-y-auto"
         )}
         style={{ maxHeight }}
       >
         <table className="w-full">
           <thead className={cn(
-            "bg-gray-50 border-b border-gray-200",
+            "bg-gray-50 dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700",
             stickyHeader && "sticky top-0 z-10"
           )}>
             <tr>
@@ -190,10 +190,10 @@ export function EnhancedTable<T>({
                 <th
                   key={String(column.key)}
                   className={cn(
-                    "px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider",
+                    "px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider",
                     column.align === "center" && "text-center",
                     column.align === "right" && "text-right",
-                    column.sortable !== false && "cursor-pointer select-none hover:bg-gray-100 transition-colors",
+                    column.sortable !== false && "cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors",
                     column.className
                   )}
                   style={{ width: column.width }}
@@ -211,15 +211,15 @@ export function EnhancedTable<T>({
               ))}
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-white dark:bg-slate-900 divide-y divide-gray-200 dark:divide-slate-700">
             {paginatedData.length === 0 ? (
               <tr>
                 <td 
                   colSpan={columns.length} 
-                  className="px-4 py-8 text-center text-gray-500"
+                  className="px-4 py-8 text-center text-gray-500 dark:text-gray-400"
                 >
                   <div className="flex flex-col items-center">
-                    <Search className="h-12 w-12 text-gray-300 mb-3" />
+                    <Search className="h-12 w-12 text-gray-300 dark:text-gray-600 mb-3" />
                     <p>{emptyMessage}</p>
                   </div>
                 </td>
@@ -229,9 +229,9 @@ export function EnhancedTable<T>({
                 <tr
                   key={rowKey(row)}
                   className={cn(
-                    "hover:bg-gray-50 transition-colors",
+                    "hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors",
                     onRowClick && "cursor-pointer",
-                    index % 2 === 1 && "bg-gray-50/50"
+                    index % 2 === 1 && "bg-gray-50/50 dark:bg-slate-800/50"
                   )}
                   onClick={() => onRowClick?.(row)}
                 >
@@ -239,7 +239,7 @@ export function EnhancedTable<T>({
                     <td
                       key={String(column.key)}
                       className={cn(
-                        "px-4 py-3 text-sm text-gray-900",
+                        "px-4 py-3 text-sm text-gray-900 dark:text-gray-100",
                         column.align === "center" && "text-center",
                         column.align === "right" && "text-right",
                         column.className
@@ -261,7 +261,7 @@ export function EnhancedTable<T>({
       {showPagination && totalPages > 1 && (
         <div className="mt-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-700">
+            <span className="text-sm text-gray-700 dark:text-gray-300">
               표시 개수:
             </span>
             <Select
@@ -351,7 +351,7 @@ export function EnhancedTable<T>({
             </Button>
           </div>
 
-          <div className="text-sm text-gray-700">
+          <div className="text-sm text-gray-700 dark:text-gray-300">
             총 {sortedData.length}개 중 {((currentPage - 1) * pageSize) + 1}-
             {Math.min(currentPage * pageSize, sortedData.length)}개
           </div>

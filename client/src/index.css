@@ -451,36 +451,36 @@
 }
 
 .dark {
-  /* Dark mode base tokens */
-  --background: 222.2 84% 4.9%;
-  --foreground: 210 40% 98%;
-  --muted: 217.2 32.6% 17.5%;
-  --muted-foreground: 215 20.2% 65.1%;
-  --popover: 222.2 84% 4.9%;
+  /* Dark mode base tokens - Much better readability */
+  --background: 222 47% 11%;  /* Slightly lighter background #0f172a */
+  --foreground: 210 40% 98%;  /* Very bright text */
+  --muted: 217 33% 17%;       /* Lighter muted background #1e293b */
+  --muted-foreground: 215 25% 80%; /* Much brighter muted text */
+  --popover: 222 47% 15%;     /* Lighter popover background */
   --popover-foreground: 210 40% 98%;
-  --card: 222.2 84% 4.9%;
+  --card: 222 47% 14%;        /* Card background with better contrast #1a2332 */
   --card-foreground: 210 40% 98%;
-  --border: 217.2 32.6% 17.5%;
-  --input: 217.2 32.6% 17.5%;
-  --primary: 217.2 91.2% 59.8%;
-  --primary-foreground: 222.2 84% 4.9%;
-  --secondary: 217.2 32.6% 17.5%;
+  --border: 217 33% 30%;      /* Much more visible borders #334155 */
+  --input: 220 47% 7%;        /* Very dark input background #020617 */
+  --primary: 211 100% 60%;    /* Very bright primary color #3b82f6 */
+  --primary-foreground: 0 0% 100%;  /* Pure white on primary */
+  --secondary: 217 33% 22%;   /* Better secondary #2d3748 */
   --secondary-foreground: 210 40% 98%;
-  --accent: 217.2 32.6% 17.5%;
+  --accent: 217 33% 22%;      
   --accent-foreground: 210 40% 98%;
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 210 40% 98%;
-  --ring: 217.2 32.6% 17.5%;
+  --destructive: 0 84% 60%;   /* Bright red for visibility #ef4444 */
+  --destructive-foreground: 0 0% 100%;
+  --ring: 211 100% 60%;       /* Match primary */
   --radius: 0.5rem;
   
-  /* Dark mode sidebar tokens */
-  --sidebar-background: 222.2 84% 4.9%;
-  --sidebar-foreground: 210 40% 98%;
-  --sidebar-primary: 217.2 91.2% 59.8%;
-  --sidebar-primary-foreground: 222.2 84% 4.9%;
-  --sidebar-accent: 217.2 32.6% 17.5%;
+  /* Dark mode sidebar tokens - Better contrast */
+  --sidebar-background: 222 47% 9%;   /* Darker sidebar #0b1121 */
+  --sidebar-foreground: 210 40% 95%;  /* Very bright sidebar text */
+  --sidebar-primary: 211 100% 60%;    /* Very bright primary */
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 217 33% 20%;      /* Better accent */
   --sidebar-accent-foreground: 210 40% 98%;
-  --sidebar-border: 217.2 32.6% 17.5%;
+  --sidebar-border: 217 33% 25%;
   --sidebar-ring: 217.2 32.6% 17.5%;
 
   /* Dark mode color palette overrides */
@@ -532,6 +532,35 @@
     @apply font-sans antialiased bg-background text-foreground;
     font-family: 'Inter', sans-serif;
   }
+  
+  /* Apply sidebar color tokens as Tailwind utilities */
+  .bg-sidebar-background {
+    background-color: hsl(var(--sidebar-background));
+  }
+  
+  .bg-sidebar-primary {
+    background-color: hsl(var(--sidebar-primary));
+  }
+  
+  .bg-sidebar-primary-foreground {
+    background-color: hsl(var(--sidebar-primary-foreground));
+  }
+  
+  .text-sidebar-primary {
+    color: hsl(var(--sidebar-primary));
+  }
+  
+  .text-sidebar-primary-foreground {
+    color: hsl(var(--sidebar-primary-foreground));
+  }
+  
+  .text-sidebar-foreground {
+    color: hsl(var(--sidebar-foreground));
+  }
+  
+  .border-sidebar-border {
+    border-color: hsl(var(--sidebar-border));
+  }
 }
 
 @layer components {
@@ -545,5 +574,211 @@
   
   .nav-item:hover:not(.active) {
     @apply bg-muted text-foreground;
+  }
+}
+
+/* Dark mode specific enhancements for better readability */
+.dark {
+  /* Better table readability */
+  table th {
+    @apply bg-slate-800 text-slate-100;
+  }
+  
+  table tr:hover {
+    @apply bg-slate-800/50;
+  }
+  
+  /* Enhanced form inputs with much better contrast */
+  input:not([type="checkbox"]):not([type="radio"]), 
+  select, 
+  textarea {
+    @apply bg-slate-950/90 border-slate-600 text-slate-50 placeholder-slate-400 !important;
+  }
+  
+  input:not([type="checkbox"]):not([type="radio"]):focus, 
+  select:focus, 
+  textarea:focus {
+    @apply bg-slate-950 border-blue-400 ring-2 ring-blue-400/30 outline-none !important;
+  }
+  
+  /* Disabled form elements */
+  input:disabled, select:disabled, textarea:disabled {
+    @apply bg-slate-800/40 text-slate-500 cursor-not-allowed !important;
+  }
+  
+  /* Better form element borders */
+  input, select, textarea {
+    @apply border border-slate-600 !important;
+  }
+  
+  /* Date picker improvements */
+  input[type="date"], input[type="datetime-local"] {
+    @apply bg-slate-950/90 text-slate-50 !important;
+  }
+  
+  /* Select dropdown improvements */
+  select option {
+    @apply bg-slate-900 text-slate-100 !important;
+  }
+  
+  /* Enhanced button contrast */
+  button:not([class*="bg-"]) {
+    @apply bg-slate-800 text-slate-100 border-slate-600 hover:bg-slate-700 !important;
+  }
+  
+  /* Card hover states with better shadow */
+  [class*="shadow"]:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+  }
+  
+  /* Code blocks */
+  code, pre {
+    @apply bg-slate-900 border-slate-700;
+  }
+  
+  /* Status colors with better contrast */
+  .text-green-600 {
+    @apply text-green-400;
+  }
+  
+  .text-red-600 {
+    @apply text-red-400;
+  }
+  
+  .text-yellow-600 {
+    @apply text-yellow-400;
+  }
+  
+  .text-blue-600 {
+    @apply text-blue-400;
+  }
+  
+  /* Stats cards gradient improvements */
+  .bg-gradient-to-br {
+    @apply brightness-110;
+  }
+  
+  /* Badge visibility */
+  .badge, [class*="badge"] {
+    @apply font-semibold;
+  }
+  
+  /* Dropdown and select content */
+  [data-radix-select-content],
+  [role="menu"] {
+    @apply bg-slate-800 border-slate-700;
+  }
+  
+  /* Tooltip enhancement */
+  [role="tooltip"] {
+    @apply bg-slate-700 text-slate-100;
+  }
+  
+  /* Card improvements */
+  .card, [class*="card"] {
+    @apply bg-slate-900/50 border-slate-700 !important;
+  }
+  
+  /* Modal and dialog backgrounds */
+  [role="dialog"], [data-radix-dialog-content] {
+    @apply bg-slate-900 border-slate-700 !important;
+  }
+  
+  /* Tabs improvements */
+  [role="tab"] {
+    @apply data-[state=active]:bg-slate-800 data-[state=active]:text-slate-50 !important;
+  }
+  
+  /* List items and hover states */
+  li:hover, tr:hover {
+    @apply bg-slate-800/30;
+  }
+  
+  /* Improved scrollbars */
+  ::-webkit-scrollbar {
+    @apply w-2 h-2;
+  }
+  
+  ::-webkit-scrollbar-track {
+    @apply bg-slate-900;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-700 hover:bg-slate-600 rounded;
+  }
+  
+  /* Better text selection */
+  ::selection {
+    @apply bg-blue-600/30 text-blue-100;
+  }
+  
+  /* Improved focus rings */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-blue-400/50;
+  }
+  
+  /* Sheet component improvements */
+  [data-radix-dialog-overlay] {
+    @apply bg-black/80 !important;
+  }
+  
+  /* Popover improvements */
+  [data-radix-popover-content] {
+    @apply bg-slate-900 border-slate-700 !important;
+  }
+  
+  /* Calendar component improvements */
+  [data-calendar] {
+    @apply bg-slate-900 !important;
+  }
+  
+  [data-calendar] button:hover {
+    @apply bg-slate-800 !important;
+  }
+  
+  [data-calendar] button[data-selected] {
+    @apply bg-blue-600 text-white !important;
+  }
+  
+  /* Better text contrast for all elements */
+  p, span, div:not([class*="bg-"]) {
+    @apply text-slate-100;
+  }
+  
+  /* Improved link visibility */
+  a:not([class*="text-"]) {
+    @apply text-blue-400 hover:text-blue-300;
+  }
+  
+  /* Enhanced focus rings for accessibility */
+  *:focus-visible {
+    @apply ring-2 ring-blue-400/50 ring-offset-2 ring-offset-slate-900;
+  }
+  
+  /* Better disabled state visibility */
+  *:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+  
+  /* Improved selection styling */
+  ::selection {
+    @apply bg-blue-600/30 text-slate-100;
+  }
+  
+  /* Better scrollbar styling */
+  ::-webkit-scrollbar {
+    @apply w-2 h-2;
+  }
+  
+  ::-webkit-scrollbar-track {
+    @apply bg-slate-800;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-600 rounded;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-slate-500;
   }
 }

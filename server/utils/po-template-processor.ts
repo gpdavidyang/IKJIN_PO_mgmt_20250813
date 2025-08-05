@@ -186,12 +186,9 @@ export class POTemplateProcessor {
               quantity: item.quantity,
               unitPrice: item.unitPrice,
               totalAmount: item.totalAmount,
-              categoryLv1: item.categoryLv1,
-              categoryLv2: item.categoryLv2,
-              categoryLv3: item.categoryLv3,
-              supplyAmount: item.supplyAmount,
-              taxAmount: item.taxAmount,
-              deliveryName: item.deliveryName,
+              majorCategory: item.categoryLv1,
+              middleCategory: item.categoryLv2,
+              minorCategory: item.categoryLv3,
               notes: item.notes
             });
           }

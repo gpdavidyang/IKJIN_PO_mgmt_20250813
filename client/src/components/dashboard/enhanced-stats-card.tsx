@@ -44,11 +44,11 @@ export function EnhancedStatsCard({
       <CardContent className="p-4">
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
+            <p className="text-sm font-medium text-muted-foreground mb-1">{title}</p>
             <div className="flex items-baseline gap-2">
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-2xl font-bold text-foreground">
                 {isLoading ? (
-                  <span className="inline-block h-7 w-20 bg-gray-200 rounded animate-pulse" />
+                  <span className="inline-block h-7 w-20 bg-muted rounded animate-pulse" />
                 ) : (
                   formattedValue
                 )}
@@ -56,14 +56,14 @@ export function EnhancedStatsCard({
               {trend && !isLoading && (
                 <span className={cn(
                   "text-sm font-medium",
-                  trend.isPositive ? "text-success-600" : "text-error-600"
+                  trend.isPositive ? "text-success-600 dark:text-success-400" : "text-error-600 dark:text-error-400"
                 )}>
                   {trend.isPositive ? '+' : ''}{trend.value}%
                 </span>
               )}
             </div>
             {subtitle && !isLoading && (
-              <p className="text-xs text-gray-500 mt-1">{subtitle}</p>
+              <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
             )}
           </div>
           <div className={cn(

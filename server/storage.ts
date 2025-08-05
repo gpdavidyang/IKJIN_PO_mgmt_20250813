@@ -129,6 +129,9 @@ export interface IStorage {
     startDate?: Date;
     endDate?: Date;
     searchText?: string;
+    majorCategory?: string;
+    middleCategory?: string;
+    minorCategory?: string;
     page?: number;
     limit?: number;
   }): Promise<{ orders: (PurchaseOrder & { vendor?: Vendor; user?: User; items?: PurchaseOrderItem[] })[], total: number }>;
@@ -186,6 +189,15 @@ export interface IStorage {
   getProjectOrderStats(userId?: string): Promise<Array<{
     projectName: string;
     projectCode: string;
+    orderCount: number;
+    totalAmount: number;
+  }>>;
+  
+  // Category statistics
+  getCategoryOrderStats(userId?: string): Promise<Array<{
+    majorCategory: string;
+    middleCategory: string;
+    minorCategory: string;
     orderCount: number;
     totalAmount: number;
   }>>;
@@ -265,6 +277,11 @@ export interface IStorage {
   getMiddleCategories(majorId?: number): Promise<ItemCategory[]>;
   getMinorCategories(middleId?: number): Promise<ItemCategory[]>;
   getPositions(): Promise<any[]>;
+  
+  // Item hierarchy methods for filters
+  getDistinctMajorCategories(): Promise<string[]>;
+  getDistinctMiddleCategories(majorCategory?: string): Promise<string[]>;
+  getDistinctMinorCategories(majorCategory?: string, middleCategory?: string): Promise<string[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -810,10 +827,13 @@ export class DatabaseStorage implements IStorage {
     minAmount?: number;
     maxAmount?: number;
     searchText?: string;
+    majorCategory?: string;
+    middleCategory?: string;
+    minorCategory?: string;
     page?: number;
     limit?: number;
   } = {}): Promise<{ orders: (PurchaseOrder & { vendor?: Vendor; user?: User; items?: PurchaseOrderItem[] })[], total: number }> {
-    const { userId, status, vendorId, templateId, projectId, startDate, endDate, minAmount, maxAmount, searchText, page = 1, limit = 10 } = filters;
+    const { userId, status, vendorId, templateId, projectId, startDate, endDate, minAmount, maxAmount, searchText, majorCategory, middleCategory, minorCategory, page = 1, limit = 10 } = filters;
     
     let whereConditions = [];
     
@@ -931,6 +951,36 @@ export class DatabaseStorage implements IStorage {
         }
         
         return true;
+      });
+    }
+
+    // Apply category filtering if specified
+    if (majorCategory || middleCategory || minorCategory) {
+      // Get all order items with matching categories
+      const categoryConditions = [];
+      
+      if (majorCategory) {
+        categoryConditions.push(eq(purchaseOrderItems.majorCategory, majorCategory));
+      }
+      
+      if (middleCategory) {
+        categoryConditions.push(eq(purchaseOrderItems.middleCategory, middleCategory));
+      }
+      
+      if (minorCategory) {
+        categoryConditions.push(eq(purchaseOrderItems.minorCategory, minorCategory));
+      }
+      
+      const matchingItems = await db
+        .select({ orderId: purchaseOrderItems.orderId })
+        .from(purchaseOrderItems)
+        .where(and(...categoryConditions))
+        .groupBy(purchaseOrderItems.orderId);
+      
+      const matchingOrderIds = new Set(matchingItems.map(item => item.orderId));
+      
+      filteredOrders = filteredOrders.filter(orderRow => {
+        return matchingOrderIds.has(orderRow.purchase_orders.id);
       });
     }
 
@@ -2459,6 +2509,119 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error getting positions:', error);
       throw error;
+    }
+  }
+
+  // Item hierarchy methods for filters
+  async getDistinctMajorCategories(): Promise<string[]> {
+    try {
+      const result = await db
+        .selectDistinct({ majorCategory: purchaseOrderItems.majorCategory })
+        .from(purchaseOrderItems)
+        .where(isNotNull(purchaseOrderItems.majorCategory))
+        .orderBy(purchaseOrderItems.majorCategory);
+      
+      return result
+        .map(row => row.majorCategory)
+        .filter((cat): cat is string => cat !== null && cat !== '');
+    } catch (error) {
+      console.error('Error getting distinct major categories:', error);
+      throw error;
+    }
+  }
+
+  async getDistinctMiddleCategories(majorCategory?: string): Promise<string[]> {
+    try {
+      let query = db
+        .selectDistinct({ middleCategory: purchaseOrderItems.middleCategory })
+        .from(purchaseOrderItems)
+        .where(isNotNull(purchaseOrderItems.middleCategory));
+      
+      if (majorCategory) {
+        query = query.where(eq(purchaseOrderItems.majorCategory, majorCategory));
+      }
+      
+      const result = await query.orderBy(purchaseOrderItems.middleCategory);
+      
+      return result
+        .map(row => row.middleCategory)
+        .filter((cat): cat is string => cat !== null && cat !== '');
+    } catch (error) {
+      console.error('Error getting distinct middle categories:', error);
+      throw error;
+    }
+  }
+
+  async getDistinctMinorCategories(majorCategory?: string, middleCategory?: string): Promise<string[]> {
+    try {
+      let conditions = [isNotNull(purchaseOrderItems.minorCategory)];
+      
+      if (majorCategory) {
+        conditions.push(eq(purchaseOrderItems.majorCategory, majorCategory));
+      }
+      
+      if (middleCategory) {
+        conditions.push(eq(purchaseOrderItems.middleCategory, middleCategory));
+      }
+      
+      const result = await db
+        .selectDistinct({ minorCategory: purchaseOrderItems.minorCategory })
+        .from(purchaseOrderItems)
+        .where(and(...conditions))
+        .orderBy(purchaseOrderItems.minorCategory);
+      
+      return result
+        .map(row => row.minorCategory)
+        .filter((cat): cat is string => cat !== null && cat !== '');
+    } catch (error) {
+      console.error('Error getting distinct minor categories:', error);
+      throw error;
+    }
+  }
+
+  // Category statistics
+  async getCategoryOrderStats(userId?: string): Promise<Array<{
+    majorCategory: string;
+    middleCategory: string;
+    minorCategory: string;
+    orderCount: number;
+    totalAmount: number;
+  }>> {
+    try {
+      const whereClause = userId ? eq(purchaseOrders.userId, userId) : undefined;
+      
+      const results = await db
+        .select({
+          majorCategory: purchaseOrderItems.majorCategory,
+          middleCategory: purchaseOrderItems.middleCategory,
+          minorCategory: purchaseOrderItems.minorCategory,
+          orderCount: count(purchaseOrderItems.id).as('orderCount'),
+          totalAmount: sum(purchaseOrderItems.totalAmount).as('totalAmount')
+        })
+        .from(purchaseOrderItems)
+        .innerJoin(purchaseOrders, eq(purchaseOrderItems.orderId, purchaseOrders.id))
+        .where(whereClause)
+        .groupBy(
+          purchaseOrderItems.majorCategory, 
+          purchaseOrderItems.middleCategory, 
+          purchaseOrderItems.minorCategory
+        )
+        .orderBy(
+          purchaseOrderItems.majorCategory,
+          purchaseOrderItems.middleCategory,
+          purchaseOrderItems.minorCategory
+        );
+
+      return results.map(row => ({
+        majorCategory: row.majorCategory || '미분류',
+        middleCategory: row.middleCategory || '미분류',
+        minorCategory: row.minorCategory || '미분류',
+        orderCount: Number(row.orderCount) || 0,
+        totalAmount: Number(row.totalAmount) || 0
+      }));
+    } catch (error) {
+      console.error('Error getting category order stats:', error);
+      return [];
     }
   }
 }

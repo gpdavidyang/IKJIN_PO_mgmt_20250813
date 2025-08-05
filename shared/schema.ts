@@ -332,6 +332,10 @@ export const purchaseOrderItems = pgTable("purchase_order_items", {
   quantity: decimal("quantity", { precision: 10, scale: 2 }).notNull().$type<number>(),
   unitPrice: decimal("unit_price", { precision: 15, scale: 2 }).notNull().$type<number>(),
   totalAmount: decimal("total_amount", { precision: 15, scale: 2 }).notNull().$type<number>(),
+  // 품목 계층 구조 필드 (2025-08-05 추가)
+  majorCategory: varchar("major_category", { length: 100 }),
+  middleCategory: varchar("middle_category", { length: 100 }),
+  minorCategory: varchar("minor_category", { length: 100 }),
   // PO Template Input 시트를 위한 새로운 필드들 (TODO: Add these columns to database)
   // categoryLv1: varchar("category_lv1", { length: 100 }), // 대분류
   // categoryLv2: varchar("category_lv2", { length: 100 }), // 중분류  
@@ -342,6 +346,10 @@ export const purchaseOrderItems = pgTable("purchase_order_items", {
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
+  index("idx_poi_major_category").on(table.majorCategory),
+  index("idx_poi_middle_category").on(table.middleCategory),
+  index("idx_poi_minor_category").on(table.minorCategory),
+  index("idx_poi_category_hierarchy").on(table.majorCategory, table.middleCategory, table.minorCategory),
   // index("idx_purchase_order_items_category_lv1").on(table.categoryLv1), // TODO: Add when column is added
   // index("idx_purchase_order_items_category_lv2").on(table.categoryLv2), // TODO: Add when column is added
   // index("idx_purchase_order_items_category_lv3").on(table.categoryLv3), // TODO: Add when column is added

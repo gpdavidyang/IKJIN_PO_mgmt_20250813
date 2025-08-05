@@ -56,7 +56,7 @@ export function EnhancedOrdersTable({
       searchable: true,
       width: "150px",
       accessor: (row) => (
-        <div className="font-medium text-primary-600 hover:text-primary-700">
+        <div className="font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300">
           {row.orderNumber}
         </div>
       ),
@@ -81,7 +81,7 @@ export function EnhancedOrdersTable({
       sortable: true,
       searchable: true,
       accessor: (row) => (
-        <div className="text-gray-900">
+        <div className="text-gray-900 dark:text-gray-100">
           {row.projectName || "-"}
         </div>
       ),
@@ -92,7 +92,7 @@ export function EnhancedOrdersTable({
       sortable: true,
       searchable: true,
       accessor: (row) => (
-        <div className="text-gray-900">
+        <div className="text-gray-900 dark:text-gray-100">
           {row.vendorName || "-"}
         </div>
       ),
@@ -104,7 +104,7 @@ export function EnhancedOrdersTable({
       align: "right",
       width: "150px",
       accessor: (row) => (
-        <div className="font-medium text-gray-900">
+        <div className="font-medium text-gray-900 dark:text-gray-100">
           {formatKoreanWon(row.totalAmount)}
         </div>
       ),
@@ -115,7 +115,7 @@ export function EnhancedOrdersTable({
       sortable: true,
       width: "120px",
       accessor: (row) => (
-        <div className="text-gray-600 text-sm">
+        <div className="text-gray-600 dark:text-gray-400 text-sm">
           {format(new Date(row.orderDate), "yyyy.MM.dd", { locale: ko })}
         </div>
       ),
@@ -126,7 +126,7 @@ export function EnhancedOrdersTable({
       sortable: true,
       width: "120px",
       accessor: (row) => (
-        <div className="text-gray-600 text-sm">
+        <div className="text-gray-600 dark:text-gray-400 text-sm">
           {row.deliveryDate 
             ? format(new Date(row.deliveryDate), "yyyy.MM.dd", { locale: ko })
             : "-"
@@ -141,7 +141,7 @@ export function EnhancedOrdersTable({
       searchable: true,
       width: "100px",
       accessor: (row) => (
-        <div className="text-gray-600 text-sm">
+        <div className="text-gray-600 dark:text-gray-400 text-sm">
           {row.userName || "-"}
         </div>
       ),

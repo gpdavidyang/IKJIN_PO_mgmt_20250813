@@ -91,12 +91,12 @@ function PageLoadingFallback() {
   return (
     <div className="p-6 space-y-6">
       <div className="space-y-2">
-        <div className="h-8 w-32 bg-gray-200 rounded animate-pulse" />
-        <div className="h-4 w-48 bg-gray-200 rounded animate-pulse" />
+        <div className="h-8 w-32 bg-muted rounded animate-pulse" />
+        <div className="h-4 w-48 bg-muted rounded animate-pulse" />
       </div>
       <div className="space-y-4">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="h-16 bg-gray-200 rounded animate-pulse" />
+          <div key={i} className="h-16 bg-muted rounded animate-pulse" />
         ))}
       </div>
     </div>
@@ -106,17 +106,17 @@ function PageLoadingFallback() {
 function FormLoadingFallback() {
   return (
     <div className="p-6 space-y-6">
-      <div className="h-8 w-32 bg-gray-200 rounded animate-pulse" />
+      <div className="h-8 w-32 bg-muted rounded animate-pulse" />
       <div className="space-y-4">
         {Array.from({ length: 6 }).map((_, i) => (
           <div key={i} className="space-y-2">
-            <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
-            <div className="h-10 w-full bg-gray-200 rounded animate-pulse" />
+            <div className="h-4 w-24 bg-muted rounded animate-pulse" />
+            <div className="h-10 w-full bg-muted rounded animate-pulse" />
           </div>
         ))}
         <div className="flex gap-2 pt-4">
-          <div className="h-10 w-20 bg-gray-200 rounded animate-pulse" />
-          <div className="h-10 w-20 bg-gray-200 rounded animate-pulse" />
+          <div className="h-10 w-20 bg-muted rounded animate-pulse" />
+          <div className="h-10 w-20 bg-muted rounded animate-pulse" />
         </div>
       </div>
     </div>
@@ -158,7 +158,7 @@ function Layout() {
   }, [pageMetrics]);
   
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <AccessibilityToolbar />
       <Sidebar />
       <div className={`transition-all duration-300 ${isCollapsed ? 'lg:ml-16' : 'lg:ml-64'}`}>
@@ -299,7 +299,8 @@ function Layout() {
               </Route>
               
               {/* Other Routes */}
-              <Route path="/items/:id">
+              {/* PRD 요구사항: 품목 관리 UI는 숨김 처리 (소스코드는 유지, Excel 템플릿 기반 품목 관리) */}
+              {/* <Route path="/items/:id">
                 <Suspense fallback={<PageLoadingFallback />}>
                   <ItemDetail />
                 </Suspense>
@@ -308,7 +309,7 @@ function Layout() {
                 <Suspense fallback={<PageLoadingFallback />}>
                   <Items />
                 </Suspense>
-              </Route>
+              </Route> */}
               <Route path="/projects/:id/edit">
                 <Suspense fallback={<FormLoadingFallback />}>
                   <ProjectEdit />
@@ -421,9 +422,9 @@ function Router() {
   // Show loading spinner while checking authentication
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">로그인 상태를 확인하고 있습니다...</p>
         </div>
       </div>
