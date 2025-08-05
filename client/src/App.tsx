@@ -161,7 +161,10 @@ function Layout() {
     <div className="min-h-screen bg-background">
       <AccessibilityToolbar />
       <Sidebar />
-      <div className={`transition-all duration-300 ${isCollapsed ? 'lg:ml-16' : 'lg:ml-64'}`}>
+      <div className={cn(
+        "transition-all duration-300 sidebar-transition",
+        isCollapsed ? 'lg:ml-16' : 'lg:ml-64'
+      )}>
         <Header />
         <main id="main-content">
           <Suspense fallback={<DashboardLoadingFallback />}>

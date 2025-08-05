@@ -95,7 +95,7 @@
         "description": "Jest, React Testing Library를 사용한 단위 테스트 및 통합 테스트 인프라 구축",
         "details": "",
         "testStrategy": "",
-        "status": "pending",
+        "status": "in-progress",
         "dependencies": [],
         "priority": "high",
         "subtasks": []
@@ -316,7 +316,7 @@
       "version": "1.0.0",
       "created": "2025-08-04T08:54:47.667Z",
       "description": "Tasks for master context",
-      "updated": "2025-08-05T02:39:00.923Z"
+      "updated": "2025-08-05T03:13:41.360Z"
     }
   }
 }

@@ -77,6 +77,19 @@ export function Sidebar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
+  // Keyboard shortcut for sidebar toggle (Ctrl/Cmd + B)
+  useEffect(() => {
+    const handleKeydown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+        e.preventDefault();
+        toggleSidebar();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeydown);
+    return () => document.removeEventListener('keydown', handleKeydown);
+  }, [toggleSidebar]);
+
   // Fetch company data for logo display
   const { data: companies } = useQuery<Company[]>({
     queryKey: ['/api/companies'],
@@ -114,10 +127,10 @@ export function Sidebar() {
         {!isCollapsed && (
           <button
             onClick={toggleSidebar}
-            className="flex items-center justify-center w-8 h-8 rounded-md text-sidebar-primary-foreground hover:bg-sidebar-primary-foreground/20 transition-colors"
+            className="flex items-center justify-center w-8 h-8 rounded-md text-sidebar-primary-foreground hover:bg-sidebar-primary-foreground/20 transition-all duration-200 hover:scale-105"
             title="사이드바 축소"
           >
-            <Menu className="w-4 h-4" />
+            <X className="w-4 h-4" />
           </button>
         )}
       </div>
@@ -280,17 +293,72 @@ export function Sidebar() {
         </Button>
       </div>
 
-      {/* Floating toggle button when sidebar is collapsed */}
+      {/* Improved toggle solutions when sidebar is collapsed */}
       {isCollapsed && (
-        <div className="hidden lg:block fixed top-20 left-20 z-50">
-          <button
+        <>
+          {/* Option 1: Edge hover trigger (invisible but functional) */}
+          <div 
+            className="hidden lg:block fixed left-0 top-0 w-3 h-full z-40 group cursor-pointer"
+            onMouseEnter={() => {
+              // Show a subtle indicator on hover
+              const indicator = document.getElementById('sidebar-hover-indicator');
+              if (indicator) indicator.style.opacity = '1';
+            }}
+            onMouseLeave={() => {
+              const indicator = document.getElementById('sidebar-hover-indicator');
+              if (indicator) indicator.style.opacity = '0';
+            }}
             onClick={toggleSidebar}
-            className="flex items-center justify-center w-10 h-10 bg-sidebar-primary text-sidebar-primary-foreground rounded-full shadow-xl hover:bg-sidebar-primary/90 hover:scale-105 transition-all duration-200 border-2 border-sidebar-background"
-            title="사이드바 확장"
+            title="사이드바 확장 (왜쪽 가장자리 클릭)"
           >
-            <Menu className="w-4 h-4" />
-          </button>
-        </div>
+            {/* Hover indicator */}
+            <div 
+              id="sidebar-hover-indicator"
+              className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-20 bg-gradient-to-b from-primary-400/0 via-primary-500/80 to-primary-400/0 rounded-r-full opacity-0 transition-opacity duration-300"
+            />
+          </div>
+
+          {/* Option 2: Mini sidebar with just icons */}
+          <div className="hidden lg:block fixed left-0 top-0 w-16 h-full bg-sidebar-background/95 backdrop-blur-sm border-r border-sidebar-border/50 z-30">
+            <div className="flex flex-col items-center py-4 space-y-3">
+              {/* Expand button at top */}
+              <button
+                onClick={toggleSidebar}
+                className="flex items-center justify-center w-10 h-10 bg-sidebar-primary/10 hover:bg-sidebar-primary/20 text-sidebar-primary rounded-lg transition-all duration-200 group"
+                title="사이드바 확장"
+              >
+                <ChevronRight className="w-4 h-4 group-hover:scale-110 transition-transform" />
+              </button>
+              
+              {/* Mini navigation icons */}
+              <div className="flex flex-col space-y-2">
+                {primaryNavigation.slice(0, 4).map((item) => (
+                  <button
+                    key={item.name}
+                    onClick={() => {
+                      window.location.href = item.href;
+                    }}
+                    className={cn(
+                      "flex items-center justify-center w-10 h-10 rounded-lg transition-all duration-200 group relative",
+                      isActive(item.href) 
+                        ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-md" 
+                        : "text-sidebar-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent"
+                    )}
+                    title={item.name}
+                  >
+                    <item.icon className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                    
+                    {/* Enhanced tooltip on hover */}
+                    <div className="absolute left-full ml-3 px-3 py-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-xs font-medium rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-50 shadow-xl border border-gray-700 dark:border-gray-300 sidebar-mini-tooltip">
+                      {item.name}
+                      <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-gray-900 dark:border-r-gray-100"></div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </>
       )}
 
       {/* Desktop sidebar */}

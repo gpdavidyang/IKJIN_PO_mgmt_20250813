@@ -13,6 +13,33 @@
   position: fixed !important;
 }
 
+/* Enhanced sidebar interactions */
+.sidebar-mini-tooltip {
+  animation: tooltip-fade-in 0.2s ease-out;
+}
+
+@keyframes tooltip-fade-in {
+  from {
+    opacity: 0;
+    transform: translateX(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Smooth transitions for sidebar state changes */
+.sidebar-transition {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Enhanced hover effects */
+.sidebar-hover-trigger:hover .sidebar-hover-indicator {
+  opacity: 1 !important;
+  transform: translateY(-50%) scaleY(1.1);
+}
+
 /* Print styles for PDF output */
 @media print {
   * {
