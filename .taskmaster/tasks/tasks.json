@@ -117,7 +117,7 @@
         "description": "거래처 CRUD 작업 및 유효성 검사에 대한 단위 테스트 작성",
         "details": "",
         "testStrategy": "",
-        "status": "pending",
+        "status": "done",
         "dependencies": [],
         "priority": "high",
         "subtasks": []
@@ -260,7 +260,7 @@
         "description": "Input 시트 헤더에서 '세액'과 '합계' 필드를 제거하여 13개 컬럼에서 12개 컬럼으로 변경",
         "details": "주요 변경사항:\n1. Excel 헤더 구조: A:M (13개) → A:L (12개)\n2. 제거되는 필드: totalAmount (합계), taxAmount (세액)  \n3. totalAmount는 quantity * unitPrice로 항상 계산\n4. 영향받는 파일: excel-parser.ts, simple-excel-parser.ts, po-template-processor.ts 등",
         "testStrategy": "",
-        "status": "pending",
+        "status": "done",
         "dependencies": [],
         "priority": "high",
         "subtasks": []
@@ -271,9 +271,42 @@
         "description": "purchaseOrderItems 테이블에 품목 계층 필드 추가",
         "details": "purchaseOrderItems 테이블에 major_category, middle_category, minor_category 필드 추가 및 인덱스 생성",
         "testStrategy": "",
-        "status": "pending",
+        "status": "done",
         "dependencies": [],
         "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 26,
+        "title": "품목 관리 UI 숨김 처리 구현",
+        "description": "PRD 요구사항에 따라 품목 관리 UI를 숨김 처리하되 소스코드는 유지",
+        "details": "- 사이드바에서 품목 관리 메뉴 제거\n- App.tsx에서 품목 관리 라우트 주석 처리\n- Excel 템플릿 기반 품목 관리 방식 유지",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 27,
+        "title": "발주서 조회/검색에 품목 계층 필터 추가",
+        "description": "발주서 검색 기능에 대분류/중분류/소분류 필터 기능 구현",
+        "details": "- storage.ts에 카테고리 필터 파라미터 추가\n- getPurchaseOrders 메소드에 필터 로직 구현\n- API 엔드포인트에 카테고리 필터 추가\n- 동적 카테고리 선택을 위한 API 구현",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 28,
+        "title": "대시보드 통계에 품목 계층별 분석 추가",
+        "description": "대시보드에 품목 대분류/중분류/소분류별 발주 통계 시각화 구현",
+        "details": "- getCategoryOrderStats 메소드 구현\n- 통합 대시보드 API에 카테고리 통계 추가\n- 대시보드 UI에 품목 계층별 분석 섹션 추가\n- 파이 차트로 대분류별 분포 표시\n- 금액별 상위 품목 계층 리스트 표시",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "medium",
         "subtasks": []
       }
     ],
@@ -283,7 +316,7 @@
       "version": "1.0.0",
       "created": "2025-08-04T08:54:47.667Z",
       "description": "Tasks for master context",
-      "updated": "2025-08-05T01:57:33.051Z"
+      "updated": "2025-08-05T02:39:00.923Z"
     }
   }
 }

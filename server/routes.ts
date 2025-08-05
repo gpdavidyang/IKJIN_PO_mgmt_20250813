@@ -651,6 +651,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         monthlyStats,
         projectStats,
         statusStats,
+        categoryStats,
         orders,
         activeProjectsCount: { count: activeProjectsCount },
         newProjectsThisMonth: { count: newProjectsThisMonth },

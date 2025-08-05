@@ -3,6 +3,7 @@ import { purchaseOrders, purchaseOrderItems, vendors, projects } from '../../sha
 import { eq, and } from 'drizzle-orm';
 import * as XLSX from 'xlsx';
 import { v4 as uuidv4 } from 'uuid';
+import fs from 'fs';
 import { removeAllInputSheets } from './excel-input-sheet-remover';
 
 export interface POTemplateItem {
@@ -45,9 +46,15 @@ export class POTemplateProcessor {
    */
   static parseInputSheet(filePath: string): POTemplateParseResult {
     try {
-      const workbook = XLSX.readFile(filePath);
+      const buffer = fs.readFileSync(filePath);
+      const workbook = XLSX.read(buffer, { type: 'buffer' });
       
-      if (!workbook.SheetNames.includes('Input')) {
+      // 'Input' 또는 'Input Sheet' 시트 찾기
+      const inputSheetName = workbook.SheetNames.find(name => 
+        name === 'Input' || name === 'Input Sheet'
+      );
+      
+      if (!inputSheetName) {
         return {
           success: false,
           totalOrders: 0,
@@ -57,7 +64,7 @@ export class POTemplateProcessor {
         };
       }
 
-      const worksheet = workbook.Sheets['Input'];
+      const worksheet = workbook.Sheets[inputSheetName];
       const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
       // 헤더 행 제거
