@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { FileSpreadsheet, Upload, Info, CheckCircle, AlertCircle } from 'lucide-react';
+import { FileSpreadsheet, Upload, Info, CheckCircle, AlertCircle, Download, AlertTriangle } from 'lucide-react';
 
 interface UploadResponse {
   success: boolean;
@@ -277,25 +277,114 @@ export default function CreateOrderExcel() {
   };
 
   return (
-    <div className="container mx-auto p-6 max-w-4xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">엑셀 발주서 처리</h1>
-        <p className="text-gray-600">
-          엑셀 파일을 업로드하여 발주서를 생성하세요.
-        </p>
-      </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-[1366px] mx-auto p-6 space-y-6">
+        <div className="flex items-center gap-3">
+          <FileSpreadsheet className="h-5 w-5 text-blue-600" />
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">엑셀 발주서 처리</h1>
+            <p className="text-sm text-gray-600">
+              엑셀 파일을 업로드하여 발주서를 생성하세요.
+            </p>
+          </div>
+        </div>
 
       <div className="space-y-6">
+        {/* 가이드라인 및 템플릿 다운로드 섹션 */}
+        <Card className="border-blue-200 bg-blue-50 shadow-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-blue-800">
+              <Info className="w-5 h-5" />
+              엑셀 발주서 작성 가이드
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="bg-white p-4 rounded-lg border border-blue-200">
+              <h4 className="font-semibold text-blue-800 mb-3">📋 엑셀 파일 요구사항</h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                  <span><strong>시트명:</strong> 'Input' (대소문자 구분)</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                  <span><strong>컬럼 구조:</strong> A~P열 (16개 컬럼) 표준 구조</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                  <span><strong>파일 형식:</strong> .xlsx (Excel 2007 이상)</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                  <span><strong>파일 크기:</strong> 최대 10MB</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
+              <h4 className="font-semibold text-amber-800 mb-3 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4" />
+                ⚠️ 주의사항
+              </h4>
+              <div className="space-y-2 text-sm text-amber-800">
+                <div>• 필수 컬럼 (발주일자, 거래처명, 납품처명, 프로젝트명, 대분류, 품목명, 수량, 단가, 총금액) 누락 시 처리 불가</div>
+                <div>• 거래처명이 시스템에 등록되지 않은 경우 관리자에게 등록 요청 필요</div>
+                <div>• 총금액(O열) = 수량(M열) × 단가(N열) 수식이 정확해야 함</div>
+                <div>• Input 시트 외 다른 시트(갑지, 을지 등)는 그대로 보존됨</div>
+              </div>
+            </div>
+
+            <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+              <h4 className="font-semibold text-green-800 mb-3">📥 표준 템플릿 다운로드</h4>
+              <p className="text-sm text-green-700 mb-3">
+                시스템에 최적화된 16개 컬럼 구조의 표준 템플릿을 다운로드하여 사용하세요.
+              </p>
+              <Button
+                onClick={async () => {
+                  try {
+                    const response = await fetch('/api/excel-template/download', {
+                      method: 'GET',
+                    });
+                    
+                    if (response.ok) {
+                      const blob = await response.blob();
+                      const url = window.URL.createObjectURL(blob);
+                      
+                      const link = document.createElement('a');
+                      link.href = url;
+                      link.download = 'PO_Excel_Template.xlsx';
+                      document.body.appendChild(link);
+                      link.click();
+                      
+                      document.body.removeChild(link);
+                      window.URL.revokeObjectURL(url);
+                    } else {
+                      throw new Error('템플릿 다운로드 실패');
+                    }
+                  } catch (error) {
+                    console.error('템플릿 다운로드 오류:', error);
+                    alert('템플릿 다운로드 중 오류가 발생했습니다.');
+                  }
+                }}
+                className="bg-green-600 hover:bg-green-700 text-white"
+                size="sm"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                PO_Excel_Template.xlsx 다운로드
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* 업로드 섹션 */}
-        <Card>
+        <Card className="shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FileSpreadsheet className="w-5 h-5" />
               엑셀 발주서 업로드
             </CardTitle>
             <CardDescription>
-              PO Template 엑셀 파일을 업로드하면 Input 시트의 데이터가 자동으로 파싱되어 발주서가 생성됩니다.
+              16개 컬럼 구조의 Input 시트가 포함된 엑셀 파일을 업로드하면 자동으로 발주서가 생성됩니다.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -398,7 +487,7 @@ export default function CreateOrderExcel() {
 
       {/* 발주서 미리보기 섹션 */}
       {uploadResult && uploadResult.data?.orders && (
-        <Card className="mt-6">
+        <Card className="mt-6 shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Info className="w-5 h-5 text-blue-600" />
@@ -485,7 +574,7 @@ export default function CreateOrderExcel() {
 
       {/* 처리 결과 섹션 */}
       {uploadResult && (
-        <Card className="mt-6">
+        <Card className="mt-6 shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CheckCircle className="w-5 h-5 text-green-600" />
@@ -493,7 +582,7 @@ export default function CreateOrderExcel() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
               <div className="text-center p-4 bg-blue-50 rounded-lg">
                 <div className="text-2xl font-bold text-blue-600">
                   {uploadResult.data?.totalOrders || 0}
@@ -608,7 +697,7 @@ export default function CreateOrderExcel() {
 
       {/* 거래처 검증 및 이메일 미리보기 섹션 */}
       {emailProcessStep === 'vendor-validation' && vendorValidation && (
-        <Card className="mt-6">
+        <Card className="mt-6 shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Info className="w-5 h-5 text-orange-600" />
@@ -683,7 +772,7 @@ export default function CreateOrderExcel() {
 
       {/* 이메일 미리보기 섹션 */}
       {emailProcessStep === 'email-preview' && emailPreview && (
-        <Card className="mt-6">
+        <Card className="mt-6 shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CheckCircle className="w-5 h-5 text-blue-600" />
@@ -779,7 +868,7 @@ export default function CreateOrderExcel() {
 
       {/* 이메일 발송 완료 */}
       {emailProcessStep === 'completed' && (
-        <Card className="mt-6">
+        <Card className="mt-6 shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CheckCircle className="w-5 h-5 text-green-600" />
@@ -806,7 +895,7 @@ export default function CreateOrderExcel() {
       )}
 
       {/* 사용법 안내 */}
-      <Card className="mt-6">
+      <Card className="mt-6 shadow-sm">
         <CardHeader>
           <CardTitle>사용법 안내</CardTitle>
         </CardHeader>
@@ -839,6 +928,7 @@ export default function CreateOrderExcel() {
           </div>
         </CardContent>
       </Card>
+      </div>
       </div>
     </div>
   );

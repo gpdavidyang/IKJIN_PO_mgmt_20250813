@@ -9,8 +9,11 @@ import path from 'path';
 import * as XLSX from 'xlsx';
 
 // Excel 파싱 유틸리티 모킹
-jest.mock('xlsx');
-const mockXLSX = XLSX as jest.Mocked<typeof XLSX>;
+jest.mock('xlsx', () => ({
+  utils: {
+    sheet_to_json: jest.fn()
+  }
+}));
 
 describe('Excel Parser 16-Column Structure', () => {
   
@@ -90,7 +93,8 @@ describe('Excel Parser 16-Column Structure', () => {
       };
 
       // XLSX.utils.sheet_to_json 모킹
-      mockXLSX.utils.sheet_to_json.mockReturnValue([{
+      const mockSheetToJson = XLSX.utils.sheet_to_json as jest.MockedFunction<typeof XLSX.utils.sheet_to_json>;
+      mockSheetToJson.mockReturnValue([{
         '발주일': '2025-01-15',
         '납기일': '2025-01-20', 
         '거래처명': '테스트거래처',
@@ -111,7 +115,7 @@ describe('Excel Parser 16-Column Structure', () => {
 
       // 파싱 로직 시뮬레이션
       const parseExcelData = (worksheet: any) => {
-        const jsonData = mockXLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
         return jsonData;
       };
 

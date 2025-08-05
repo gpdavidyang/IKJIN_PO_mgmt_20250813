@@ -147,123 +147,139 @@ export default function Vendors() {
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <PageHeader
-        title="거래처 관리"
-        action={user?.role === "admin" ? (
-          <Button onClick={handleAddVendor} className="flex items-center">
-            <Plus className="h-4 w-4 mr-2" />
-            거래처 추가
-          </Button>
-        ) : undefined}
-      />
-
-      {/* Search Section */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="거래처명, 사업자번호, 업종, 대표자명으로 검색..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 h-10"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">
-                {filteredVendors.length}개 거래처
-              </span>
-              <div className="flex items-center bg-gray-100 rounded-lg p-1">
-                <Button
-                  variant={viewMode === "table" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setViewMode("table")}
-                  className="h-8 w-8 p-0"
-                  title="목록 보기"
-                >
-                  <List className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant={viewMode === "cards" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setViewMode("cards")}
-                  className="h-8 w-8 p-0"
-                  title="카드 보기"
-                >
-                  <Grid className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-[1366px] mx-auto p-6">
+        {/* Page Header - 표준화된 구조 */}
+        <div className="mb-6">
+          <div className="flex justify-between items-center mb-2">
+            <h1 className="text-2xl font-bold text-gray-900">거래처 관리</h1>
+            {user?.role === "admin" && (
+              <Button 
+                onClick={handleAddVendor} 
+                className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                거래처 추가
+              </Button>
+            )}
           </div>
-        </CardContent>
-      </Card>
+          <p className="text-sm text-gray-600">거래처 정보를 조회하고 관리하세요</p>
+        </div>
 
-      {/* Vendors Display */}
+        {/* Search Section */}
+        <div className="mb-6">
+          <Card className="shadow-sm">
+            <CardContent className="p-6">
+              <div className="flex flex-col xl:flex-row xl:items-end gap-3">
+                {/* Search Section */}
+                <div className="flex-1">
+                  <label className="text-xs font-medium text-gray-700 block mb-1">검색</label>
+                  <div className="relative">
+                    <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Input
+                      placeholder="거래처명, 사업자번호로 검색..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className={`pl-8 h-10 text-sm ${searchQuery ? "border-blue-500 bg-blue-50" : ""}`}
+                    />
+                  </div>
+                </div>
+
+                {/* View Mode & Count */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-600">
+                    {filteredVendors.length}개 거래처
+                  </span>
+                  <div className="flex items-center bg-gray-100 rounded-lg p-1">
+                    <Button
+                      variant={viewMode === "table" ? "default" : "ghost"}
+                      size="sm"
+                      onClick={() => setViewMode("table")}
+                      className="h-8 w-8 p-0"
+                      title="목록 보기"
+                    >
+                      <List className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant={viewMode === "cards" ? "default" : "ghost"}
+                      size="sm"
+                      onClick={() => setViewMode("cards")}
+                      className="h-8 w-8 p-0"
+                      title="카드 보기"
+                    >
+                      <Grid className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+      {/* TOSS-style High-Density Vendors Display */}
       {viewMode === "table" ? (
-        <Card>
+        <Card className="shadow-sm">
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <Table>
               <TableHeader>
-                <TableRow className="border-b">
+                <TableRow className="border-b border-gray-200">
                   <TableHead 
-                    className="h-11 px-4 text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-50 select-none"
+                    className="px-6 py-3 text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-50 select-none"
                     onClick={() => handleSort("name")}
                   >
-                    <div className="flex items-center space-x-1">
+                    <div className="flex items-center gap-1">
                       <span>거래처명</span>
                       {getSortIcon("name")}
                     </div>
                   </TableHead>
                   <TableHead 
-                    className="h-11 px-4 text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-50 select-none"
+                    className="px-6 py-3 text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-50 select-none"
                     onClick={() => handleSort("businessNumber")}
                   >
-                    <div className="flex items-center space-x-1">
+                    <div className="flex items-center gap-1">
                       <span>사업자번호</span>
                       {getSortIcon("businessNumber")}
                     </div>
                   </TableHead>
                   <TableHead 
-                    className="h-11 px-4 text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-50 select-none"
+                    className="px-6 py-3 text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-50 select-none"
                     onClick={() => handleSort("industry")}
                   >
-                    <div className="flex items-center space-x-1">
+                    <div className="flex items-center gap-1">
                       <span>업종</span>
                       {getSortIcon("industry")}
                     </div>
                   </TableHead>
                   <TableHead 
-                    className="h-11 px-4 text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-50 select-none"
+                    className="px-6 py-3 text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-50 select-none"
                     onClick={() => handleSort("contactPerson")}
                   >
-                    <div className="flex items-center space-x-1">
+                    <div className="flex items-center gap-1">
                       <span>담당자</span>
                       {getSortIcon("contactPerson")}
                     </div>
                   </TableHead>
                   <TableHead 
-                    className="h-11 px-4 text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-50 select-none"
+                    className="px-6 py-3 text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-50 select-none"
                     onClick={() => handleSort("phone")}
                   >
-                    <div className="flex items-center space-x-1">
+                    <div className="flex items-center gap-1">
                       <span>연락처</span>
                       {getSortIcon("phone")}
                     </div>
                   </TableHead>
                   <TableHead 
-                    className="h-11 px-4 text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-50 select-none"
+                    className="px-6 py-3 text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-50 select-none"
                     onClick={() => handleSort("createdAt")}
                   >
-                    <div className="flex items-center space-x-1">
+                    <div className="flex items-center gap-1">
                       <span>등록일</span>
                       {getSortIcon("createdAt")}
                     </div>
                   </TableHead>
                   {user?.role === "admin" && (
-                    <TableHead className="h-11 px-4 text-sm font-semibold text-gray-700 text-right">
+                    <TableHead className="px-6 py-3 text-sm font-medium text-gray-600 text-right">
                       관리
                     </TableHead>
                   )}
@@ -273,68 +289,70 @@ export default function Vendors() {
                 {isLoading ? (
                   [...Array(5)].map((_, i) => (
                     <TableRow key={i}>
-                      <TableCell><div className="h-4 bg-gray-200 rounded animate-pulse"></div></TableCell>
-                      <TableCell><div className="h-4 bg-gray-200 rounded animate-pulse"></div></TableCell>
-                      <TableCell><div className="h-4 bg-gray-200 rounded animate-pulse"></div></TableCell>
-                      <TableCell><div className="h-4 bg-gray-200 rounded animate-pulse"></div></TableCell>
-                      <TableCell><div className="h-4 bg-gray-200 rounded animate-pulse"></div></TableCell>
-                      <TableCell><div className="h-4 bg-gray-200 rounded animate-pulse"></div></TableCell>
+                      <TableCell><div className="h-3 bg-gray-200 rounded animate-pulse"></div></TableCell>
+                      <TableCell><div className="h-3 bg-gray-200 rounded animate-pulse"></div></TableCell>
+                      <TableCell><div className="h-3 bg-gray-200 rounded animate-pulse"></div></TableCell>
+                      <TableCell><div className="h-3 bg-gray-200 rounded animate-pulse"></div></TableCell>
+                      <TableCell><div className="h-3 bg-gray-200 rounded animate-pulse"></div></TableCell>
+                      <TableCell><div className="h-3 bg-gray-200 rounded animate-pulse"></div></TableCell>
                       {user?.role === "admin" && <TableCell></TableCell>}
                     </TableRow>
                   ))
                 ) : filteredVendors.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={user?.role === "admin" ? 7 : 6} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={user?.role === "admin" ? 7 : 6} className="text-center py-6 text-sm text-gray-500">
                       {searchQuery ? "검색 결과가 없습니다" : "등록된 거래처가 없습니다"}
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredVendors.map((vendor: any) => (
-                    <TableRow key={vendor.id} className="h-12 hover:bg-gray-50 border-b border-gray-100">
-                      <TableCell className="py-2 px-4">
+                    <TableRow key={vendor.id} className="hover:bg-gray-50 border-b border-gray-100">
+                      <TableCell className="py-4 px-6">
                         <div 
-                          className="text-sm font-medium text-blue-600 cursor-pointer hover:text-blue-800 hover:underline overflow-hidden text-ellipsis whitespace-nowrap"
+                          className="text-sm font-medium text-blue-600 cursor-pointer hover:text-blue-700 overflow-hidden text-ellipsis whitespace-nowrap"
                           onClick={() => navigate(`/vendors/${vendor.id}`)}
                           title={vendor.name}
                         >
                           {vendor.name}
                         </div>
                       </TableCell>
-                      <TableCell className="py-2 px-4">
-                        <div className="text-sm text-gray-600">
+                      <TableCell className="py-4 px-6">
+                        <div className="text-sm text-gray-900">
                           {vendor.businessNumber || '-'}
                         </div>
                       </TableCell>
-                      <TableCell className="py-2 px-4">
+                      <TableCell className="py-4 px-6">
                         {vendor.industry ? (
-                          <Badge variant="outline" className="text-xs">
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-gray-100 text-gray-800">
                             {vendor.industry}
-                          </Badge>
-                        ) : '-'}
+                          </span>
+                        ) : (
+                          <span className="text-sm text-gray-900">-</span>
+                        )}
                       </TableCell>
-                      <TableCell className="py-2 px-4">
-                        <div className="text-sm text-gray-600">
+                      <TableCell className="py-4 px-6">
+                        <div className="text-sm text-gray-900">
                           {vendor.contactPerson || '-'}
                         </div>
                       </TableCell>
-                      <TableCell className="py-2 px-4">
-                        <div className="text-sm text-gray-600">
+                      <TableCell className="py-4 px-6">
+                        <div className="text-sm text-gray-900">
                           {vendor.phone || '-'}
                         </div>
                       </TableCell>
-                      <TableCell className="py-2 px-4">
-                        <div className="text-sm text-gray-600">
+                      <TableCell className="py-4 px-6">
+                        <div className="text-sm text-gray-900">
                           {formatDate(vendor.createdAt)}
                         </div>
                       </TableCell>
                       {user?.role === "admin" && (
-                        <TableCell className="py-2 px-4">
+                        <TableCell className="py-4 px-6">
                           <div className="flex items-center justify-end gap-1">
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => handleEditVendor(vendor)}
-                              className="h-7 w-7 p-0"
+                              className="h-6 w-6 p-0 text-blue-600 hover:text-blue-700"
                               title="수정"
                             >
                               <Edit className="h-3 w-3" />
@@ -343,7 +361,7 @@ export default function Vendors() {
                               variant="ghost"
                               size="sm"
                               onClick={() => handleDeleteVendor(vendor.id)}
-                              className="h-7 w-7 p-0 text-red-600 hover:text-red-700"
+                              className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
                               title="삭제"
                             >
                               <Trash2 className="h-3 w-3" />
@@ -360,79 +378,85 @@ export default function Vendors() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-2">
           {isLoading ? (
             [...Array(6)].map((_, i) => (
-              <Card key={i}>
-                <CardContent className="p-4">
-                  <div className="space-y-3">
-                    <div className="h-5 bg-gray-200 rounded animate-pulse"></div>
-                    <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>
-                    <div className="h-4 bg-gray-200 rounded animate-pulse w-1/2"></div>
+              <Card key={i} className="shadow-sm">
+                <CardContent className="p-3">
+                  <div className="space-y-2">
+                    <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="h-3 bg-gray-200 rounded animate-pulse w-3/4"></div>
+                    <div className="h-3 bg-gray-200 rounded animate-pulse w-1/2"></div>
                   </div>
                 </CardContent>
               </Card>
             ))
           ) : filteredVendors.length === 0 ? (
-            <div className="col-span-full text-center py-12">
-              <Building className="mx-auto h-12 w-12 text-gray-400" />
-              <p className="text-gray-500 mt-2">등록된 거래처가 없습니다.</p>
+            <div className="col-span-full text-center py-8">
+              <Building className="mx-auto h-8 w-8 text-gray-400" />
+              <p className="text-xs text-gray-500 mt-2">등록된 거래처가 없습니다.</p>
             </div>
           ) : (
             filteredVendors.map((vendor: any) => (
-              <Card key={vendor.id} className="p-4 hover:shadow-md transition-shadow">
+              <Card key={vendor.id} className="p-3 hover:shadow-md transition-shadow shadow-sm">
+                {/* TOSS-style Card Header */}
                 <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <h3 className="font-semibold text-gray-900 cursor-pointer hover:text-blue-600" onClick={() => navigate(`/vendors/${vendor.id}`)}>
-                      {vendor.name}
-                    </h3>
-                    {vendor.industry && (
-                      <Badge variant="outline" className="text-xs mt-1">
-                        {vendor.industry}
-                      </Badge>
-                    )}
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                      <Building className="h-4 w-4 text-blue-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-900 cursor-pointer hover:text-blue-600" onClick={() => navigate(`/vendors/${vendor.id}`)}>
+                        {vendor.name}
+                      </h3>
+                      {vendor.industry && (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-gray-100 text-gray-800 mt-1">
+                          {vendor.industry}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <Badge 
-                    variant={vendor.isActive ? "default" : "secondary"}
-                    className="text-xs"
-                  >
+                  <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs ${vendor.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
                     {vendor.isActive ? "활성" : "비활성"}
-                  </Badge>
+                  </span>
                 </div>
                 
+                {/* TOSS-style Content Section */}
                 <div className="space-y-2 mb-3">
-                  <div className="flex items-center text-sm text-gray-600 gap-2">
-                    <Hash className="h-4 w-4" />
+                  <div className="flex items-center text-xs text-gray-600 gap-2">
+                    <Hash className="h-3 w-3 text-gray-400" />
                     <span className="font-medium">사업자번호:</span>
                     <span className="ml-1">{vendor.businessNumber || '-'}</span>
                   </div>
                   {vendor.contactPerson && (
-                    <div className="flex items-center text-sm text-gray-600 gap-2">
-                      <User className="h-4 w-4" />
+                    <div className="flex items-center text-xs text-gray-600 gap-2">
+                      <User className="h-3 w-3 text-gray-400" />
                       <span className="font-medium">담당자:</span>
                       <span className="ml-1">{vendor.contactPerson}</span>
                     </div>
                   )}
                   {vendor.phone && (
-                    <div className="flex items-center text-sm text-gray-600 gap-2">
-                      <Phone className="h-4 w-4" />
+                    <div className="flex items-center text-xs text-gray-600 gap-2">
+                      <Phone className="h-3 w-3 text-gray-400" />
                       <span className="font-medium">전화번호:</span>
                       <span className="ml-1">{vendor.phone}</span>
                     </div>
                   )}
                 </div>
                 
+                {/* TOSS-style Footer */}
                 <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
                   <span>등록일: {formatDate(vendor.createdAt)}</span>
                 </div>
                 
+                {/* TOSS-style Admin Actions */}
                 {user?.role === "admin" && (
-                  <div className="flex items-center justify-end -space-x-1 pt-2 border-t">
+                  <div className="flex items-center justify-end gap-2 pt-2 border-t">
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => handleEditVendor(vendor)}
-                      className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                      className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700"
                       title="수정"
                     >
                       <Edit className="h-3 w-3" />
@@ -441,7 +465,7 @@ export default function Vendors() {
                       variant="ghost"
                       size="sm"
                       onClick={() => handleDeleteVendor(vendor.id)}
-                      className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                      className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
                       title="삭제"
                     >
                       <Trash2 className="h-3 w-3" />
@@ -463,6 +487,7 @@ export default function Vendors() {
           onSuccess={handleFormSuccess}
         />
       )}
+      </div>
     </div>
   );
 }

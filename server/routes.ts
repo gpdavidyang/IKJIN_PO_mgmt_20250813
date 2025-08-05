@@ -1330,18 +1330,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Use storage layer to get filtered orders
       const result = await storage.getPurchaseOrders(filters);
       
-      console.log(`✅ Found ${result.orders.length} orders (total: ${result.total})`);
+      // Debug logging (disabled for performance)
+      // console.log(`✅ Found ${result.orders.length} orders (total: ${result.total})`);
       
       // Log sample orders for debugging
-      if (result.orders.length > 0) {
-        console.log('📄 Sample orders:', result.orders.slice(0, 2).map(o => ({
-          id: o.id,
-          orderNumber: o.orderNumber,
-          status: o.status,
-          userId: o.userId,
-          totalAmount: o.totalAmount
-        })));
-      }
+      // if (result.orders.length > 0) {
+      //   console.log('📄 Sample orders:', result.orders.slice(0, 2).map(o => ({
+      //     id: o.id,
+      //     orderNumber: o.orderNumber,
+      //     status: o.status,
+      //     userId: o.userId,
+      //     totalAmount: o.totalAmount
+      //   })));
+      // }
       
       res.json(result);
     } catch (error) {
@@ -1477,7 +1478,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   }, async (req: any, res) => {
     try {
-      console.log('POST /api/orders - Request received');
+      // Debug logging (disabled for performance)
+      // console.log('POST /api/orders - Request received');
       const userId = req.user.id;
       
       // Handle both JSON and FormData requests
@@ -3038,7 +3040,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log('간단 파싱 성공. 복잡한 파싱 시도...');
 
-      // Input Sheet 파싱
+      // Input 시트 파싱
       const parsedData = parseExcelInputSheet(req.file.buffer);
       
       // 데이터 검증
@@ -3150,9 +3152,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
       console.log('워크북 시트들:', workbook.SheetNames);
 
-      if (workbook.SheetNames.includes('Input Sheet')) {
-        const worksheet = workbook.Sheets['Input Sheet'];
-        console.log('Input Sheet 정보:', {
+      if (workbook.SheetNames.includes('Input')) {
+        const worksheet = workbook.Sheets['Input'];
+        console.log('Input 시트 정보:', {
           ref: worksheet['!ref'],
           cells: Object.keys(worksheet).filter(key => !key.startsWith('!')).slice(0, 10)
         });
@@ -3169,7 +3171,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         success: true,
         sheets: workbook.SheetNames,
-        hasInputSheet: workbook.SheetNames.includes('Input Sheet'),
+        hasInputSheet: workbook.SheetNames.includes('Input'),
         message: '디버그 정보가 서버 콘솔에 출력되었습니다.'
       });
 

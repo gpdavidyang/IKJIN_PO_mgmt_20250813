@@ -1,0 +1,429 @@
+/* TOSS Design System - Ultra-High Density UI Components */
+/* Inspired by Korean fintech TOSS design principles */
+
+/* ================================
+   1. Design Tokens
+   ================================ */
+:root {
+  /* Spacing Scale - Ultra Compact */
+  --toss-space-0: 0;
+  --toss-space-1: 2px;
+  --toss-space-2: 4px;
+  --toss-space-3: 6px;
+  --toss-space-4: 8px;
+  --toss-space-5: 10px;
+  --toss-space-6: 12px;
+  --toss-space-8: 16px;
+  --toss-space-10: 20px;
+
+  /* Typography Scale - Compressed */
+  --toss-text-xs: 11px;
+  --toss-text-sm: 12px;
+  --toss-text-base: 13px;
+  --toss-text-lg: 14px;
+  --toss-text-xl: 16px;
+  --toss-text-2xl: 18px;
+
+  /* Line Heights - Tight */
+  --toss-leading-tight: 1.2;
+  --toss-leading-snug: 1.3;
+  --toss-leading-normal: 1.4;
+
+  /* Component Heights - Minimal */
+  --toss-h-6: 24px;
+  --toss-h-7: 28px;
+  --toss-h-8: 32px;
+  --toss-h-9: 36px;
+
+  /* Border Radius - Subtle */
+  --toss-radius-sm: 2px;
+  --toss-radius: 4px;
+  --toss-radius-lg: 6px;
+
+  /* Shadows - Minimal */
+  --toss-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+  --toss-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.06);
+  --toss-shadow-md: 0 2px 4px 0 rgba(0, 0, 0, 0.08);
+}
+
+/* ================================
+   2. Base Components
+   ================================ */
+
+/* Ultra-Compact Card */
+.toss-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: var(--toss-radius);
+  padding: var(--toss-space-6);
+  transition: all 0.15s ease;
+}
+
+.toss-card:hover {
+  box-shadow: var(--toss-shadow-md);
+}
+
+.toss-card-compact {
+  padding: var(--toss-space-4);
+}
+
+.toss-card-ultra-compact {
+  padding: var(--toss-space-3);
+}
+
+/* Ultra-Dense Table */
+.toss-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.toss-table th {
+  background: #f9fafb;
+  font-weight: 600;
+  font-size: var(--toss-text-xs);
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: var(--toss-space-3) var(--toss-space-4);
+  border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.toss-table td {
+  font-size: var(--toss-text-sm);
+  color: #374151;
+  padding: var(--toss-space-4);
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.toss-table tr:hover td {
+  background: #f9fafb;
+}
+
+/* Compact Form Elements */
+.toss-input {
+  height: var(--toss-h-8);
+  font-size: var(--toss-text-sm);
+  padding: 0 var(--toss-space-4);
+  border: 1px solid #e5e7eb;
+  border-radius: var(--toss-radius);
+  transition: all 0.15s ease;
+}
+
+.toss-input:focus {
+  border-color: #3b82f6;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.toss-input-sm {
+  height: var(--toss-h-7);
+  font-size: var(--toss-text-xs);
+  padding: 0 var(--toss-space-3);
+}
+
+/* Compact Buttons */
+.toss-button {
+  height: var(--toss-h-8);
+  font-size: var(--toss-text-sm);
+  font-weight: 500;
+  padding: 0 var(--toss-space-6);
+  border-radius: var(--toss-radius);
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--toss-space-2);
+}
+
+.toss-button-sm {
+  height: var(--toss-h-7);
+  font-size: var(--toss-text-xs);
+  padding: 0 var(--toss-space-4);
+}
+
+.toss-button-xs {
+  height: var(--toss-h-6);
+  font-size: var(--toss-text-xs);
+  padding: 0 var(--toss-space-3);
+}
+
+/* Compact Labels */
+.toss-label {
+  font-size: var(--toss-text-xs);
+  font-weight: 500;
+  color: #6b7280;
+  margin-bottom: var(--toss-space-2);
+  display: block;
+}
+
+/* Ultra-Compact Badge */
+.toss-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--toss-text-xs);
+  font-weight: 500;
+  padding: 0 var(--toss-space-3);
+  height: var(--toss-h-6);
+  border-radius: 9999px;
+  transition: all 0.15s ease;
+}
+
+/* ================================
+   3. Layout Patterns
+   ================================ */
+
+/* High-Density Grid */
+.toss-grid {
+  display: grid;
+  gap: var(--toss-space-2);
+}
+
+.toss-grid-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.toss-grid-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.toss-grid-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.toss-grid-6 {
+  grid-template-columns: repeat(6, 1fr);
+}
+
+/* Compact Stack */
+.toss-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--toss-space-2);
+}
+
+.toss-stack-sm {
+  gap: var(--toss-space-1);
+}
+
+/* Inline Flex */
+.toss-inline {
+  display: flex;
+  align-items: center;
+  gap: var(--toss-space-2);
+}
+
+.toss-inline-sm {
+  gap: var(--toss-space-1);
+}
+
+/* ================================
+   4. Data Display Patterns
+   ================================ */
+
+/* KPI Widget */
+.toss-kpi {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: var(--toss-radius);
+  padding: var(--toss-space-4);
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.toss-kpi:hover {
+  box-shadow: var(--toss-shadow);
+  transform: translateY(-1px);
+}
+
+.toss-kpi-icon {
+  width: var(--toss-h-6);
+  height: var(--toss-h-6);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toss-kpi-value {
+  font-size: var(--toss-text-xl);
+  font-weight: 700;
+  line-height: var(--toss-leading-tight);
+}
+
+.toss-kpi-label {
+  font-size: var(--toss-text-xs);
+  color: #6b7280;
+  margin-top: var(--toss-space-1);
+}
+
+/* List Item */
+.toss-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--toss-space-3) var(--toss-space-4);
+  border-radius: var(--toss-radius);
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.toss-list-item:hover {
+  background: #f9fafb;
+}
+
+.toss-list-item-title {
+  font-size: var(--toss-text-sm);
+  font-weight: 500;
+  color: #111827;
+}
+
+.toss-list-item-subtitle {
+  font-size: var(--toss-text-xs);
+  color: #6b7280;
+  margin-top: var(--toss-space-1);
+}
+
+.toss-list-item-value {
+  font-size: var(--toss-text-sm);
+  font-weight: 600;
+  color: #3b82f6;
+}
+
+/* ================================
+   5. Chart Containers
+   ================================ */
+
+.toss-chart-container {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: var(--toss-radius);
+  padding: var(--toss-space-4);
+}
+
+.toss-chart-header {
+  display: flex;
+  align-items: center;
+  gap: var(--toss-space-2);
+  margin-bottom: var(--toss-space-4);
+}
+
+.toss-chart-title {
+  font-size: var(--toss-text-sm);
+  font-weight: 600;
+  color: #111827;
+}
+
+.toss-chart-small {
+  height: 140px;
+}
+
+.toss-chart-medium {
+  height: 200px;
+}
+
+/* ================================
+   6. Status Colors
+   ================================ */
+
+.toss-status-pending {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.toss-status-approved {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.toss-status-sent {
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+}
+
+.toss-status-completed {
+  background: #e9d5ff;
+  color: #6b21a8;
+  border: 1px solid #d8b4fe;
+}
+
+.toss-status-rejected {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+/* ================================
+   7. Utility Classes
+   ================================ */
+
+/* Text Truncation */
+.toss-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Hover Effects */
+.toss-hover-bg:hover {
+  background: #f9fafb;
+}
+
+.toss-hover-shadow:hover {
+  box-shadow: var(--toss-shadow);
+}
+
+/* Transitions */
+.toss-transition {
+  transition: all 0.15s ease;
+}
+
+/* Borders */
+.toss-border {
+  border: 1px solid #e5e7eb;
+}
+
+.toss-border-b {
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* ================================
+   8. Responsive Utilities
+   ================================ */
+
+/* iPad Pro Optimization */
+@media (min-width: 1366px) {
+  .toss-grid-xl-4 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  
+  .toss-grid-xl-6 {
+    grid-template-columns: repeat(6, 1fr);
+  }
+  
+  .toss-hide-xl {
+    display: none;
+  }
+}
+
+/* Mobile Adjustments */
+@media (max-width: 768px) {
+  .toss-grid-2,
+  .toss-grid-3,
+  .toss-grid-4,
+  .toss-grid-6 {
+    grid-template-columns: 1fr;
+  }
+  
+  .toss-card {
+    padding: var(--toss-space-4);
+  }
+  
+  .toss-table {
+    font-size: var(--toss-text-xs);
+  }
+}

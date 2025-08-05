@@ -330,29 +330,45 @@ export default function Projects() {
   }, [filteredProjects, sortField, sortDirection]);
 
   return (
-    <div className="p-6 space-y-6">
-      <PageHeader
-        title="현장 관리"
-        actionLabel="현장 추가"
-        onAction={handleAdd}
-        showAction={true}
-      />
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-[1366px] mx-auto p-6">
+        {/* Page Header - 표준화된 구조 */}
+        <div className="mb-6">
+          <div className="flex justify-between items-center mb-2">
+            <h1 className="text-2xl font-bold text-gray-900">현장 관리</h1>
+            <Button 
+              onClick={handleAdd} 
+              className="px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              현장 추가
+            </Button>
+          </div>
+          <p className="text-sm text-gray-600">프로젝트 현장을 조회하고 관리하세요</p>
+        </div>
 
-      {/* Search Section */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="현장명, 현장 코드, 고객사명으로 검색..."
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                className="pl-10 h-10"
-              />
+        {/* Search Section */}
+        <div className="mb-6">
+          <Card className="shadow-sm">
+            <CardContent className="p-6">
+          <div className="flex flex-col xl:flex-row xl:items-end gap-3">
+            {/* Search Section */}
+            <div className="flex-1">
+              <label className="text-xs font-medium text-gray-700 block mb-1">검색</label>
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="현장명, 고객사명으로 검색..."
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                  className={`pl-8 h-10 text-sm ${searchText ? "border-blue-500 bg-blue-50" : ""}`}
+                />
+              </div>
             </div>
+
+            {/* View Mode & Count */}
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">
+              <span className="text-xs text-gray-600">
                 {filteredProjects.length}개 현장
               </span>
               <div className="flex items-center bg-gray-100 rounded-lg p-1">
@@ -377,19 +393,20 @@ export default function Projects() {
               </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </div>
 
       {/* Projects View */}
       {viewMode === 'table' ? (
-        <Card>
+        <Card className="shadow-sm">
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="border-b">
+                  <TableRow className="border-b border-gray-200">
                     <TableHead 
-                      className="h-11 px-4 text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-50 select-none"
+                      className="px-6 py-3 text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-50 select-none"
                       onClick={() => handleSort("projectName")}
                     >
                       <div className="flex items-center space-x-1">
@@ -398,7 +415,7 @@ export default function Projects() {
                       </div>
                     </TableHead>
                     <TableHead 
-                      className="h-11 px-4 text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-50 select-none"
+                      className="px-6 py-3 text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-50 select-none"
                       onClick={() => handleSort("clientName")}
                     >
                       <div className="flex items-center space-x-1">
@@ -407,7 +424,7 @@ export default function Projects() {
                       </div>
                     </TableHead>
                     <TableHead 
-                      className="h-11 px-4 text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-50 select-none"
+                      className="px-6 py-3 text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-50 select-none"
                       onClick={() => handleSort("status")}
                     >
                       <div className="flex items-center space-x-1">
@@ -416,7 +433,7 @@ export default function Projects() {
                       </div>
                     </TableHead>
                     <TableHead 
-                      className="h-11 px-4 text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-50 select-none"
+                      className="px-6 py-3 text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-50 select-none"
                       onClick={() => handleSort("location")}
                     >
                       <div className="flex items-center space-x-1">
@@ -425,7 +442,7 @@ export default function Projects() {
                       </div>
                     </TableHead>
                     <TableHead 
-                      className="h-11 px-4 text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-50 select-none"
+                      className="px-6 py-3 text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-50 select-none"
                       onClick={() => handleSort("totalBudget")}
                     >
                       <div className="flex items-center space-x-1">
@@ -434,7 +451,7 @@ export default function Projects() {
                       </div>
                     </TableHead>
                     <TableHead 
-                      className="h-11 px-4 text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-50 select-none"
+                      className="px-6 py-3 text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-50 select-none"
                       onClick={() => handleSort("startDate")}
                     >
                       <div className="flex items-center space-x-1">
@@ -442,8 +459,8 @@ export default function Projects() {
                         {getSortIcon("startDate")}
                       </div>
                     </TableHead>
-                    <TableHead className="h-11 px-4 text-sm font-semibold text-gray-700 w-[120px]">
-                      작업
+                    <TableHead className="px-6 py-3 text-sm font-medium text-gray-600 text-right">
+                      관리
                     </TableHead>
                 </TableRow>
               </TableHeader>
@@ -451,70 +468,70 @@ export default function Projects() {
                 {isLoading ? (
                   [...Array(5)].map((_, i) => (
                     <TableRow key={i}>
-                      <TableCell><div className="h-4 bg-gray-200 rounded animate-pulse"></div></TableCell>
-                      <TableCell><div className="h-4 bg-gray-200 rounded animate-pulse"></div></TableCell>
-                      <TableCell><div className="h-4 bg-gray-200 rounded animate-pulse"></div></TableCell>
-                      <TableCell><div className="h-4 bg-gray-200 rounded animate-pulse"></div></TableCell>
-                      <TableCell><div className="h-4 bg-gray-200 rounded animate-pulse"></div></TableCell>
-                      <TableCell><div className="h-4 bg-gray-200 rounded animate-pulse"></div></TableCell>
+                      <TableCell><div className="h-3 bg-gray-200 rounded animate-pulse"></div></TableCell>
+                      <TableCell><div className="h-3 bg-gray-200 rounded animate-pulse"></div></TableCell>
+                      <TableCell><div className="h-3 bg-gray-200 rounded animate-pulse"></div></TableCell>
+                      <TableCell><div className="h-3 bg-gray-200 rounded animate-pulse"></div></TableCell>
+                      <TableCell><div className="h-3 bg-gray-200 rounded animate-pulse"></div></TableCell>
+                      <TableCell><div className="h-3 bg-gray-200 rounded animate-pulse"></div></TableCell>
                       <TableCell></TableCell>
                     </TableRow>
                   ))
                 ) : sortedProjects.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={7} className="text-center py-6 text-xs text-gray-500">
                       {searchText ? "검색 결과가 없습니다" : "등록된 현장이 없습니다"}
                     </TableCell>
                   </TableRow>
                 ) : (
                   sortedProjects.map((project: any) => (
-                    <TableRow key={project.id} className="h-12 hover:bg-gray-50 border-b border-gray-100">
-                      <TableCell className="py-2 px-4">
+                    <TableRow key={project.id} className="hover:bg-gray-50 border-b border-gray-100">
+                      <TableCell className="py-4 px-6">
                         <div>
                           <div 
-                            className="text-sm font-medium text-blue-600 cursor-pointer hover:text-blue-800 hover:underline overflow-hidden text-ellipsis whitespace-nowrap"
+                            className="text-sm font-medium text-blue-600 cursor-pointer hover:text-blue-700 overflow-hidden text-ellipsis whitespace-nowrap"
                             onClick={() => navigate(`/projects/${project.id}`)}
                             title={project.projectName}
                           >
                             {project.projectName}
                           </div>
-                          <div className="text-xs text-gray-500">
+                          <div className="text-sm text-gray-500">
                             {project.projectCode || '-'}
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="py-2 px-4">
-                        <div className="text-sm text-gray-600">
+                      <TableCell className="py-4 px-6">
+                        <div className="text-sm text-gray-900">
                           {project.clientName || '-'}
                         </div>
                       </TableCell>
-                      <TableCell className="py-2 px-4">
+                      <TableCell className="py-4 px-6">
                         <Badge variant={getStatusVariant(project.status)}>
                           {getStatusLabel(project.status)}
                         </Badge>
                       </TableCell>
-                      <TableCell className="py-2 px-4">
-                        <div className="text-sm text-gray-600">
+                      <TableCell className="py-4 px-6">
+                        <div className="text-sm text-gray-900">
                           {project.location || '-'}
                         </div>
                       </TableCell>
-                      <TableCell className="py-2 px-4">
-                        <div className="text-sm font-semibold text-blue-600">
+                      <TableCell className="py-4 px-6">
+                        <div className="text-sm font-medium text-blue-600">
                           {project.totalBudget ? formatKoreanWon(project.totalBudget) : '-'}
                         </div>
                       </TableCell>
-                      <TableCell className="py-2 px-4">
-                        <div className="text-sm text-gray-600">
+                      <TableCell className="py-4 px-6">
+                        <div className="text-sm text-gray-900">
                           {project.startDate ? formatDate(project.startDate) : '-'}
                         </div>
                       </TableCell>
-                      <TableCell className="py-2 px-4">
+                      <TableCell className="py-4 px-6">
                         <div className="flex items-center justify-end gap-1">
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => handleEdit(project)}
-                            className="h-7 w-7 p-0"
+                            className="h-6 w-6 p-0 text-blue-600 hover:text-blue-700"
                             title="수정"
                           >
                             <Edit className="h-3 w-3" />
@@ -523,7 +540,7 @@ export default function Projects() {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleDelete(project.id)}
-                            className="h-7 w-7 p-0 text-red-600 hover:text-red-700"
+                            className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
                             title="삭제"
                           >
                             <Trash2 className="h-3 w-3" />
@@ -539,78 +556,95 @@ export default function Projects() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-2">
           {isLoading ? (
             [...Array(6)].map((_, i) => (
-              <Card key={i}>
-                <CardContent className="p-4">
-                  <div className="space-y-3">
-                    <div className="h-5 bg-gray-200 rounded animate-pulse"></div>
-                    <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>
-                    <div className="h-4 bg-gray-200 rounded animate-pulse w-1/2"></div>
+              <Card key={i} className="shadow-sm">
+                <CardContent className="p-3">
+                  <div className="space-y-2">
+                    <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="h-3 bg-gray-200 rounded animate-pulse w-3/4"></div>
+                    <div className="h-3 bg-gray-200 rounded animate-pulse w-1/2"></div>
                   </div>
                 </CardContent>
               </Card>
             ))
           ) : (
             filteredProjects.map((project: Project) => (
-              <Card key={project.id} className="hover:shadow-md transition-shadow cursor-pointer">
-                <CardContent className="p-4" onClick={() => navigate(`/projects/${project.id}`)}>
-                  <div className="space-y-3">
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <h3 className="font-semibold text-gray-900 cursor-pointer hover:text-blue-600">{project.projectName}</h3>
-                      </div>
-                      <Badge variant={getStatusVariant(project.status)}>
-                        {getStatusLabel(project.status)}
-                      </Badge>
+              <Card key={project.id} className="p-3 hover:shadow-md transition-shadow shadow-sm">
+                {/* TOSS-style Card Header */}
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                      <FolderOpen className="h-4 w-4 text-blue-600" />
                     </div>
-                    <div className="text-sm text-gray-600 space-y-1">
-                      <div className="flex items-center gap-2">
-                        <Building2 className="h-4 w-4" />
-                        <span>{project.clientName || '-'}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4" />
-                        <span>{project.location || '-'}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <DollarSign className="h-4 w-4" />
-                        <span className="font-semibold text-blue-600">{project.totalBudget ? formatKoreanWon(project.totalBudget) : '-'}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
-                        <span>{project.startDate ? formatDate(project.startDate) : '-'}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-end -space-x-1 pt-2 border-t" onClick={(e) => e.stopPropagation()}>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEdit(project);
-                        }}
-                        className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                        title="수정"
-                      >
-                        <Edit className="h-3 w-3" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(project.id);
-                        }}
-                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                        title="삭제"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-900 cursor-pointer hover:text-blue-600" onClick={() => navigate(`/projects/${project.id}`)}>
+                        {project.projectName}
+                      </h3>
+                      {project.projectCode && (
+                        <span className="text-xs text-gray-500">
+                          {project.projectCode}
+                        </span>
+                      )}
                     </div>
                   </div>
-                </CardContent>
+                  <Badge variant={getStatusVariant(project.status)}>
+                    {getStatusLabel(project.status)}
+                  </Badge>
+                </div>
+                
+                {/* TOSS-style Content Section */}
+                <div className="space-y-2 mb-3">
+                  <div className="flex items-center text-xs text-gray-600 gap-2">
+                    <Building2 className="h-3 w-3 text-gray-400" />
+                    <span className="font-medium">고객사:</span>
+                    <span className="ml-1">{project.clientName || '-'}</span>
+                  </div>
+                  {project.location && (
+                    <div className="flex items-center text-xs text-gray-600 gap-2">
+                      <MapPin className="h-3 w-3 text-gray-400" />
+                      <span className="font-medium">위치:</span>
+                      <span className="ml-1">{project.location}</span>
+                    </div>
+                  )}
+                  {project.totalBudget && (
+                    <div className="flex items-center text-xs text-gray-600 gap-2">
+                      <DollarSign className="h-3 w-3 text-gray-400" />
+                      <span className="font-medium">예산:</span>
+                      <span className="ml-1 font-medium text-blue-600">{formatKoreanWon(project.totalBudget)}</span>
+                    </div>
+                  )}
+                  {project.startDate && (
+                    <div className="flex items-center text-xs text-gray-600 gap-2">
+                      <Calendar className="h-3 w-3 text-gray-400" />
+                      <span className="font-medium">시작일:</span>
+                      <span className="ml-1">{formatDate(project.startDate)}</span>
+                    </div>
+                  )}
+                </div>
+                
+                {/* TOSS-style Admin Actions */}
+                <div className="flex items-center justify-end gap-2 pt-2 border-t">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleEdit(project)}
+                    className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700"
+                    title="수정"
+                  >
+                    <Edit className="h-3 w-3" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDelete(project.id)}
+                    className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                    title="삭제"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
               </Card>
             ))
           )}
@@ -954,6 +988,7 @@ export default function Projects() {
           </Form>
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   );
 }

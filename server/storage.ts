@@ -833,27 +833,29 @@ export class DatabaseStorage implements IStorage {
     page?: number;
     limit?: number;
   } = {}): Promise<{ orders: (PurchaseOrder & { vendor?: Vendor; user?: User; items?: PurchaseOrderItem[] })[], total: number }> {
-    const { userId, status, vendorId, templateId, projectId, startDate, endDate, minAmount, maxAmount, searchText, majorCategory, middleCategory, minorCategory, page = 1, limit = 10 } = filters;
+    const { userId, status, vendorId, templateId, projectId, startDate, endDate, minAmount, maxAmount, searchText, majorCategory, middleCategory, minorCategory, page = 1, limit = 50 } = filters;
+    
+    // Debug logging removed for performance
     
     let whereConditions = [];
     
-    if (userId) {
+    if (userId && userId !== 'all') {
       whereConditions.push(eq(purchaseOrders.userId, userId));
     }
     
-    if (status) {
+    if (status && status !== 'all' && status !== '') {
       whereConditions.push(sql`${purchaseOrders.status} = ${status}`);
     }
     
-    if (vendorId) {
+    if (vendorId && vendorId !== 'all') {
       whereConditions.push(eq(purchaseOrders.vendorId, vendorId));
     }
     
-    if (templateId) {
+    if (templateId && templateId !== 'all') {
       whereConditions.push(eq(purchaseOrders.templateId, templateId));
     }
     
-    if (projectId) {
+    if (projectId && projectId !== 'all') {
       whereConditions.push(eq(purchaseOrders.projectId, projectId));
     }
     
@@ -869,6 +871,8 @@ export class DatabaseStorage implements IStorage {
       .select({ count: count() })
       .from(purchaseOrders)
       .where(baseWhereClause);
+    
+    // Debug logging removed for performance
     
     // Get all orders that match basic filters (without search)
     let allOrders = await db
@@ -886,6 +890,9 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(projects, eq(purchaseOrders.projectId, projects.id))
       .where(baseWhereClause)
       .orderBy(desc(purchaseOrders.createdAt));
+
+    // Debug logging (disabled for performance)
+    // Debug logging removed for performance
 
     // If searchText exists, filter in memory
     let filteredOrders = allOrders;
@@ -995,15 +1002,7 @@ export class DatabaseStorage implements IStorage {
           .from(purchaseOrderItems)
           .where(eq(purchaseOrderItems.orderId, order.purchase_orders.id));
 
-        // 디버깅: 실제 DB 데이터 확인 (모든 발주서)
-        console.log('🔍 DB에서 조회된 발주서 데이터:', {
-          id: order.purchase_orders.id,
-          orderNumber: order.purchase_orders.orderNumber,
-          orderDate: order.purchase_orders.orderDate,
-          deliveryDate: order.purchase_orders.deliveryDate,
-          rawOrderDate: JSON.stringify(order.purchase_orders.orderDate),
-          type: typeof order.purchase_orders.orderDate
-        });
+        // Debug logging removed for performance
 
         return {
           ...order.purchase_orders,
@@ -1036,7 +1035,8 @@ export class DatabaseStorage implements IStorage {
 
     if (!order) return undefined;
 
-    console.log('Debug: Order found:', order.purchase_orders);
+    // Debug logging (disabled for performance)
+    // console.log('Debug: Order found:', order.purchase_orders);
 
     const items = await db
       .select()
@@ -1060,7 +1060,7 @@ export class DatabaseStorage implements IStorage {
       .from(attachments)
       .where(eq(attachments.orderId, id));
 
-    console.log('Debug: Attachments found:', orderAttachments);
+    // console.log('Debug: Attachments found:', orderAttachments);
 
     const result = {
       ...order.purchase_orders,

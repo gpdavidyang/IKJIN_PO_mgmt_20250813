@@ -271,6 +271,18 @@ export function AdvancedBarChart({
   loading = false,
   error = null
 }: BarChartProps) {
+  // Debug logging for monthly statistics chart
+  if (title === "월별 발주 통계") {
+    console.log('📊 AdvancedBarChart 렌더링:', {
+      title,
+      data,
+      xAxisKey,
+      bars,
+      dataLength: data?.length,
+      loading,
+      error
+    });
+  }
   if (loading) {
     return (
       <Card className={className}>

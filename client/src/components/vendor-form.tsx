@@ -198,14 +198,15 @@ export function VendorForm({ isOpen, onClose, onSuccess, vendor }: VendorFormPro
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>
             {vendor ? "거래처 수정" : "거래처 추가"}
           </DialogTitle>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <div className="flex-1 overflow-y-auto pr-2 -mr-2">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <FormField
             label="거래처명"
             name="name"
@@ -338,33 +339,34 @@ export function VendorForm({ isOpen, onClose, onSuccess, vendor }: VendorFormPro
             </div>
           </div>
 
-          <div className="flex justify-end space-x-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              disabled={isSubmitting}
-            >
-              취소
-            </Button>
-            <Button
-              type="submit"
-              disabled={isSubmitting || createVendorMutation.isPending || updateVendorMutation.isPending}
-              className="min-w-[80px]"
-            >
-              {isSubmitting || createVendorMutation.isPending || updateVendorMutation.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  저장 중...
-                </>
-              ) : vendor ? (
-                "수정"
-              ) : (
-                "추가"
-              )}
-            </Button>
-          </div>
-        </form>
+            <div className="flex justify-end space-x-3 pt-4 border-t border-border mt-6 pt-6">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleClose}
+                disabled={isSubmitting}
+              >
+                취소
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSubmitting || createVendorMutation.isPending || updateVendorMutation.isPending}
+                className="min-w-[80px]"
+              >
+                {isSubmitting || createVendorMutation.isPending || updateVendorMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    저장 중...
+                  </>
+                ) : vendor ? (
+                  "수정"
+                ) : (
+                  "추가"
+                )}
+              </Button>
+            </div>
+          </form>
+        </div>
       </DialogContent>
     </Dialog>
   );

@@ -23,7 +23,7 @@ export function QuickActions({ actions, title = "빠른 작업" }: QuickActionsP
         <CardTitle className="text-lg font-semibold text-gray-900">{title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
           {actions.map((action, index) => (
             <Button
               key={index}

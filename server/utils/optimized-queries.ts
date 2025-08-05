@@ -130,41 +130,40 @@ export class OptimizedDashboardQueries {
     if (cached) return cached;
 
     try {
-      // Get basic statistics
-      const [orderStats] = await db
-        .select({
-          totalOrders: count(),
-          totalAmount: sql<number>`COALESCE(SUM(${purchaseOrders.totalAmount}), 0)`
-        })
-        .from(purchaseOrders);
+      console.log("🔍 Starting getUnifiedDashboardData query...");
+      
+      // Get basic statistics using raw SQL for better compatibility
+      const orderStatsResult = await db.execute(
+        sql`SELECT 
+          COUNT(*) as "totalOrders",
+          COALESCE(SUM(total_amount), 0) as "totalAmount"
+        FROM purchase_orders`
+      );
+      
+      console.log("📊 Order stats query result:", orderStatsResult);
+      const orderStats = orderStatsResult.rows[0] || { totalOrders: 0, totalAmount: 0 };
 
-      const [pendingOrderStats] = await db
-        .select({
-          pendingOrders: count()
-        })
-        .from(purchaseOrders)
-        .where(eq(purchaseOrders.status, 'pending'));
+      const pendingOrderResult = await db.execute(
+        sql`SELECT COUNT(*) as "pendingOrders" FROM purchase_orders WHERE status = 'pending'`
+      );
+      const pendingOrderStats = pendingOrderResult.rows[0] || { pendingOrders: 0 };
 
-      const [monthlyOrderStats] = await db
-        .select({
-          monthlyOrders: count()
-        })
-        .from(purchaseOrders)
-        .where(sql`${purchaseOrders.orderDate} >= DATE_TRUNC('month', CURRENT_DATE)`);
+      const monthlyOrderResult = await db.execute(
+        sql`SELECT COUNT(*) as "monthlyOrders" 
+            FROM purchase_orders 
+            WHERE order_date >= DATE_TRUNC('month', CURRENT_DATE)`
+      );
+      const monthlyOrderStats = monthlyOrderResult.rows[0] || { monthlyOrders: 0 };
 
-      const [projectStats] = await db
-        .select({
-          activeProjects: count()
-        })
-        .from(projects)
-        .where(eq(projects.isActive, true));
+      const projectResult = await db.execute(
+        sql`SELECT COUNT(*) as "activeProjects" FROM projects WHERE is_active = true`
+      );
+      const projectStats = projectResult.rows[0] || { activeProjects: 0 };
 
-      const [vendorStats] = await db
-        .select({
-          activeVendors: count()
-        })
-        .from(vendors)
-        .where(eq(vendors.isActive, true));
+      const vendorResult = await db.execute(
+        sql`SELECT COUNT(*) as "activeVendors" FROM vendors WHERE is_active = true`
+      );
+      const vendorStats = vendorResult.rows[0] || { activeVendors: 0 };
 
       // Get recent orders
       const recentOrders = await db
@@ -174,24 +173,33 @@ export class OptimizedDashboardQueries {
           status: purchaseOrders.status,
           totalAmount: purchaseOrders.totalAmount,
           createdAt: purchaseOrders.createdAt,
-          vendorName: vendors.vendorName
+          vendorName: vendors.name
         })
         .from(purchaseOrders)
         .leftJoin(vendors, eq(purchaseOrders.vendorId, vendors.id))
         .orderBy(desc(purchaseOrders.createdAt))
         .limit(10);
 
-      // Get monthly statistics (last 12 months)
-      const monthlyStats = await db
+      // Get monthly statistics (last 12 months) with proper chronological sorting
+      const monthlyStatsRaw = await db
         .select({
           month: sql<string>`TO_CHAR(${purchaseOrders.orderDate}, 'YYYY-MM')`,
           count: count(),
-          amount: sql<number>`COALESCE(SUM(${purchaseOrders.totalAmount}), 0)`
+          amount: sql<number>`COALESCE(SUM(${purchaseOrders.totalAmount}), 0)`,
+          orderDate: sql<Date>`DATE_TRUNC('month', ${purchaseOrders.orderDate})` // For proper sorting
         })
         .from(purchaseOrders)
         .where(sql`${purchaseOrders.orderDate} >= CURRENT_DATE - INTERVAL '12 months'`)
-        .groupBy(sql`TO_CHAR(${purchaseOrders.orderDate}, 'YYYY-MM')`)
-        .orderBy(sql`TO_CHAR(${purchaseOrders.orderDate}, 'YYYY-MM')`);
+        .groupBy(sql`TO_CHAR(${purchaseOrders.orderDate}, 'YYYY-MM')`, sql`DATE_TRUNC('month', ${purchaseOrders.orderDate})`)
+        .orderBy(sql`DATE_TRUNC('month', ${purchaseOrders.orderDate}) ASC`); // Sort by actual date, not string
+
+      // Transform and ensure consistent data format
+      const monthlyStats = monthlyStatsRaw.map(item => ({
+        month: item.month,
+        count: item.count,
+        amount: item.amount,
+        totalAmount: item.amount // Add alias for compatibility
+      }));
 
       // Get status statistics
       const statusStats = await db
@@ -222,12 +230,12 @@ export class OptimizedDashboardQueries {
 
       const result = {
         statistics: {
-          totalOrders: orderStats.totalOrders || 0,
-          totalAmount: orderStats.totalAmount || 0,
-          pendingOrders: pendingOrderStats.pendingOrders || 0,
-          monthlyOrders: monthlyOrderStats.monthlyOrders || 0,
-          activeProjects: projectStats.activeProjects || 0,
-          activeVendors: vendorStats.activeVendors || 0
+          totalOrders: parseInt(orderStats.totalOrders) || 0,
+          totalAmount: Number(orderStats.totalAmount) || 0,
+          pendingOrders: parseInt(pendingOrderStats.pendingOrders) || 0,
+          monthlyOrders: parseInt(monthlyOrderStats.monthlyOrders) || 0,
+          activeProjects: parseInt(projectStats.activeProjects) || 0,
+          activeVendors: parseInt(vendorStats.activeVendors) || 0
         },
         recentOrders,
         monthlyStats,
@@ -235,10 +243,19 @@ export class OptimizedDashboardQueries {
         projectStats: projectStatsList
       };
 
+      console.log("✅ Dashboard data compiled successfully:", {
+        totalOrders: result.statistics.totalOrders,
+        activeProjects: result.statistics.activeProjects
+      });
+      
       cache.set(cacheKey, result, 600); // 10 minutes cache
       return result;
     } catch (error) {
-      console.error('Error fetching unified dashboard data:', error);
+      console.error('❌ Error fetching unified dashboard data:', error);
+      console.error('Error details:', error.message);
+      console.error('Stack trace:', error.stack);
+      
+      // Return empty data structure instead of throwing
       return {
         statistics: { 
           totalOrders: 0, 
@@ -277,8 +294,8 @@ export class OptimizedProjectQueries {
       const result = await db
         .select({
           id: projects.id,
-          name: projects.name,
-          code: projects.code,
+          name: projects.projectName,
+          code: projects.projectCode,
           status: projects.status,
           totalBudget: projects.totalBudget,
           startDate: projects.startDate,

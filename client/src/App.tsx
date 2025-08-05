@@ -38,9 +38,9 @@ import {
 import { initializeBundleMonitoring } from "@/utils/bundle-analyzer";
 
 // Enhanced lazy load page components with error handling and retry
-const Dashboard = createNetworkAwareLazyComponent(() => DynamicFeatures.loadDashboard(), 'Dashboard');
-const Orders = createLazyComponent(() => import("@/pages/orders"), 'Orders');
-const OrderDetail = createLazyComponent(() => import("@/pages/order-detail"), 'OrderDetail');
+const Dashboard = createNetworkAwareLazyComponent(() => import("@/pages/dashboard-professional"), 'Dashboard');
+const Orders = createLazyComponent(() => import("@/pages/orders-professional"), 'Orders');
+const OrderDetail = createLazyComponent(() => import("@/pages/order-detail-professional"), 'OrderDetail');
 const OrderDetailStandard = createLazyComponent(() => import("@/pages/order-detail-standard"), 'OrderDetailStandard');
 const OrderEdit = createLazyComponent(() => import("@/pages/order-edit"), 'OrderEdit');
 const OrderPreview = createLazyComponent(() => import("@/pages/order-preview"), 'OrderPreview');
@@ -49,10 +49,11 @@ const CreateExtrusionOrder = createLazyComponent(() => import("@/pages/create-or
 const CreatePanelOrder = createLazyComponent(() => import("@/pages/create-order-panel"), 'CreatePanelOrder');
 const CreateAccessoriesOrder = createLazyComponent(() => import("@/pages/create-order-accessories"), 'CreateAccessoriesOrder');
 const CategoryManagement = createLazyComponent(() => import("@/pages/category-management"), 'CategoryManagement');
-const CreateStandardOrder = createLazyComponent(() => import("@/pages/create-order-standard"), 'CreateStandardOrder');
+const CreateStandardOrder = createLazyComponent(() => import("@/pages/create-order-standard-professional"), 'CreateStandardOrder');
 const CreateStandardOrderRefactored = createLazyComponent(() => import("@/pages/create-order-standard-refactored"), 'CreateStandardOrderRefactored');
 const CreateMaterialsOrder = createLazyComponent(() => import("@/pages/create-order-materials"), 'CreateMaterialsOrder');
 const CreateOrderExcel = createLazyComponent(() => DynamicFeatures.loadExcelPage(), 'CreateOrderExcel');
+const CreateOrderUnified = createLazyComponent(() => import("@/pages/create-order-unified"), 'CreateOrderUnified');
 const Vendors = createNetworkAwareLazyComponent(() => DynamicFeatures.loadVendorList(), 'Vendors');
 const VendorDetail = createLazyComponent(() => DynamicFeatures.loadVendorDetail(), 'VendorDetail');
 const VendorEdit = createLazyComponent(() => import("@/pages/vendor-edit"), 'VendorEdit');
@@ -124,7 +125,6 @@ function FormLoadingFallback() {
 }
 
 function Layout() {
-  const { isCollapsed } = useSidebar();
   const [location] = useLocation();
   
   // Performance monitoring
@@ -133,14 +133,19 @@ function Layout() {
   const pageMetrics = usePageLoadMetrics();
   
   // Query optimization and cache warming
-  const { isInitialized } = useAppInitialization();
+  const { user, isInitialized } = useAppInitialization();
   const { warmEssentialData, warmUserSpecificData } = useCacheWarming();
   const showQueryDevTools = useQueryDevTools();
   
-  // Warm caches on app initialization
+  // Warm caches on app initialization and user authentication
   useEffect(() => {
     warmEssentialData();
-  }, [warmEssentialData]);
+    
+    // Warm user-specific data when user is authenticated
+    if (user && 'id' in user && typeof user.id === 'number') {
+      warmUserSpecificData(user.id);
+    }
+  }, [warmEssentialData, warmUserSpecificData, user]);
   
   // Route-based preloading
   useEffect(() => {
@@ -159,12 +164,11 @@ function Layout() {
   
   return (
     <div className="min-h-screen bg-background">
-      <AccessibilityToolbar />
+      <div className="hidden">
+        <AccessibilityToolbar />
+      </div>
       <Sidebar />
-      <div className={cn(
-        "transition-all duration-300 sidebar-transition",
-        isCollapsed ? 'lg:ml-16' : 'lg:ml-64'
-      )}>
+      <div className="transition-all duration-300 sidebar-transition xl:ml-64">
         <Header />
         <main id="main-content">
           <Suspense fallback={<DashboardLoadingFallback />}>
@@ -274,6 +278,11 @@ function Layout() {
               <Route path="/create-order/excel">
                 <Suspense fallback={<FormLoadingFallback />}>
                   <CreateOrderExcel />
+                </Suspense>
+              </Route>
+              <Route path="/create-order/unified">
+                <Suspense fallback={<FormLoadingFallback />}>
+                  <CreateOrderUnified />
                 </Suspense>
               </Route>
               

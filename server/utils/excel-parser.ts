@@ -73,22 +73,22 @@ export function parseExcelInputSheet(buffer: Buffer): PurchaseOrderMapping[] {
     console.log('워크북 시트 목록:', workbook.SheetNames);
     
     // Input Sheet 확인
-    if (!workbook.SheetNames.includes('Input Sheet')) {
-      throw new Error(`Input Sheet가 존재하지 않습니다. 사용 가능한 시트: ${workbook.SheetNames.join(', ')}`);
+    if (!workbook.SheetNames.includes('Input')) {
+      throw new Error(`Input 시트가 존재하지 않습니다. 사용 가능한 시트: ${workbook.SheetNames.join(', ')}`);
     }
     
-    const worksheet = workbook.Sheets['Input Sheet'];
-    console.log('Input Sheet 로드 완료');
+    const worksheet = workbook.Sheets['Input'];
+    console.log('Input 시트 로드 완료');
     
     console.log('워크시트 정보:', {
-      name: 'Input Sheet',
+      name: 'Input',
       ref: worksheet['!ref'],
       merges: worksheet['!merges'],
     });
 
     // 워크시트의 실제 범위 확인
     if (!worksheet['!ref']) {
-      throw new Error('Input Sheet가 비어있거나 데이터를 찾을 수 없습니다.');
+      throw new Error('Input 시트가 비어있거나 데이터를 찾을 수 없습니다.');
     }
 
     const fullRange = XLSX.utils.decode_range(worksheet['!ref']);
@@ -164,7 +164,7 @@ export function parseExcelInputSheet(buffer: Buffer): PurchaseOrderMapping[] {
     console.log(`추출된 데이터 행 수: ${jsonData.length}`);
     
     if (jsonData.length === 0) {
-      throw new Error('Input Sheet에서 유효한 데이터를 찾을 수 없습니다. 2행부터 데이터가 있는지 확인해주세요.');
+      throw new Error('Input 시트에서 유효한 데이터를 찾을 수 없습니다. 2행부터 데이터가 있는지 확인해주세요.');
     }
     
     // 데이터 검증 및 변환

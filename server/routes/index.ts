@@ -16,6 +16,9 @@ import excelAutomationRoutes from "./excel-automation";
 import poTemplateRoutes from "./po-template-real.js";
 import reportRoutes from "./reports";
 import importExportRoutes from "./import-export";
+import emailHistoryRoutes from "./email-history";
+import excelTemplateRoutes from "./excel-template";
+import ordersOptimizedRoutes from "./orders-optimized";
 
 const router = Router();
 
@@ -32,5 +35,8 @@ router.use("/api/excel-automation", excelAutomationRoutes);
 router.use("/api/po-template", poTemplateRoutes);
 router.use("/api/reports", reportRoutes);
 router.use("/api", importExportRoutes);
+router.use("/api", emailHistoryRoutes);
+router.use("/api/excel-template", excelTemplateRoutes);
+router.use("/api", ordersOptimizedRoutes);
 
 export default router;

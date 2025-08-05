@@ -1,10 +1,12 @@
-import { FileText, Package, Users, Clock, Building, Plus, AlertCircle, BarChart3, CheckCircle, TrendingUp, ShoppingCart, Activity, FolderTree, ChevronRight } from "lucide-react";
+import { FileText, Package, Users, Clock, Building, Plus, AlertCircle, BarChart3, CheckCircle, TrendingUp, ShoppingCart, Activity, FolderTree, ChevronRight, DollarSign } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useDashboardData } from "@/hooks/use-enhanced-queries";
 import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+import { useQueryClient } from "@tanstack/react-query";
 import { formatKoreanWon } from "@/lib/utils";
+import { useTheme } from "@/components/ui/theme-provider";
 
 // Import enhanced components
 import { EnhancedStatsCard } from "@/components/dashboard/enhanced-stats-card";
@@ -16,6 +18,8 @@ import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
 
 // Import new advanced chart components
 import { AdvancedBarChart, AdvancedPieChart, AdvancedLineChart } from "@/components/charts/advanced-chart";
+// Import basic recharts for fallback
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { KPIWidget, ChartWidget, DashboardGrid, useRealTimeData } from "@/components/charts/dashboard-widgets";
 import { InteractiveTooltip } from "@/components/charts/interactive-tooltip";
 
@@ -23,6 +27,11 @@ export default function Dashboard() {
   const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const [, navigate] = useLocation();
+  const queryClient = useQueryClient();
+  const { actualTheme } = useTheme();
+  
+  // Dark mode detection
+  const isDarkMode = actualTheme === 'dark';
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -40,7 +49,17 @@ export default function Dashboard() {
   }, [user, authLoading, toast]);
 
   // Unified dashboard API call with enhanced caching and background sync
-  const { data: dashboardData, isLoading: dashboardLoading } = useDashboardData();
+  const { data: dashboardData, isLoading: dashboardLoading, error: dashboardError } = useDashboardData();
+  
+  // Debug logging
+  useEffect(() => {
+    if (dashboardError) {
+      console.error("Dashboard data fetch error:", dashboardError);
+    }
+    if (dashboardData) {
+      console.log("Dashboard data loaded:", dashboardData);
+    }
+  }, [dashboardData, dashboardError]);
 
   // Extract data from unified response with fallbacks
   const stats = dashboardData?.statistics || {};
@@ -131,7 +150,7 @@ export default function Dashboard() {
 
   // Helper function for formatting amounts in millions
   const formatAmountInMillions = (amount: number) => {
-    return Math.round(amount / 1000000);
+    return Math.round(Number(amount) / 1000000);
   };
 
   // Define quick actions
@@ -164,367 +183,496 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="p-6 space-y-6 bg-gray-50 dark:bg-slate-900 min-h-screen">
-      {/* Page Title with Real-time Indicator */}
-      <div className="flex justify-between items-start">
+    <div className="p-2 min-h-screen" style={{ backgroundColor: isDarkMode ? '#111827' : '#f9fafb' }}>
+      {/* Ultra-Compact TOSS Header */}
+      <div className="flex justify-between items-center mb-2">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">빠른 작업</h1>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">승인 대기 확인 • 긴급 발주서 • 새 발주서 • 보고서 생성</p>
+          <h1 className="text-sm font-semibold" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}>대시보드</h1>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={refreshStats}
             disabled={realtimeLoading}
-            className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="text-xs flex items-center gap-1 px-1 py-0.5 rounded transition-colors"
+            style={{ 
+              color: isDarkMode ? '#9ca3af' : '#6b7280',
+              backgroundColor: 'transparent'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = isDarkMode ? '#d1d5db' : '#374151';
+              e.currentTarget.style.backgroundColor = isDarkMode ? '#374151' : '#f3f4f6';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = isDarkMode ? '#9ca3af' : '#6b7280';
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }}
           >
             <Activity className={`h-3 w-3 ${realtimeLoading ? 'animate-spin' : ''}`} />
-            {realtimeLoading ? '업데이트 중...' : '새로고침'}
+            {realtimeLoading ? '업데이트' : '새로고침'}
           </button>
-          <span className="text-xs text-gray-500 dark:text-gray-400">
-            마지막 업데이트: {new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+          <span className="text-xs" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>
+            {new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
           </span>
         </div>
       </div>
 
-      {/* Main Statistics Cards - 중복 제거하고 주요 지표만 표시 */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <EnhancedStatsCard
-          title="승인 대기 확인"
-          value={stats.pendingOrders || 0}
-          icon={Clock}
-          iconColor="text-white"
-          iconBgColor="bg-warning-500"
+      {/* Ultra-High Density KPI Row */}
+      <div className="grid grid-cols-6 gap-1 mb-2">
+        {/* Pending Orders */}
+        <div 
+          className="rounded border p-2 hover:shadow-sm transition-all cursor-pointer" 
+          style={{ 
+            backgroundColor: isDarkMode ? 'rgba(30, 58, 138, 0.2)' : 'rgba(239, 246, 255, 0.3)',
+            borderColor: isDarkMode ? '#1e40af' : '#93c5fd'
+          }}
           onClick={() => navigate('/orders?status=pending')}
-          isLoading={isAnyLoading}
-          subtitle="즉시 확인 필요"
-          trend={{ value: stats.pendingOrdersTrend || 0, isPositive: false }}
-        />
-        
-        <EnhancedStatsCard
-          title="긴급 발주서"
-          value={stats.urgentOrders || 0}
-          icon={AlertCircle}
-          iconColor="text-white"
-          iconBgColor="bg-danger-500"
+        >
+          <div className="flex items-center justify-between">
+            <div 
+              className="w-6 h-6 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: isDarkMode ? 'rgba(180, 83, 9, 0.3)' : '#fef3c7' }}
+            >
+              <Clock className="h-3 w-3" style={{ color: isDarkMode ? '#fbbf24' : '#d97706' }} />
+            </div>
+            <div className="text-right">
+              <div className="text-lg font-bold" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}>{stats.pendingOrders || 0}</div>
+              <div className="text-xs" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>승인대기</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Urgent Orders */}
+        <div 
+          className="rounded border p-2 hover:shadow-sm transition-all cursor-pointer" 
+          style={{ 
+            backgroundColor: isDarkMode ? 'rgba(30, 58, 138, 0.2)' : 'rgba(239, 246, 255, 0.3)',
+            borderColor: isDarkMode ? '#1e40af' : '#93c5fd'
+          }}
           onClick={() => navigate('/orders?filter=urgent')}
-          isLoading={isAnyLoading}
-          subtitle="7일 이내 납품"
-        />
-        
-        <EnhancedStatsCard
-          title="새 발주서"
-          value={stats.todayOrders || 0}
-          icon={Plus}
-          iconColor="text-white"
-          iconBgColor="bg-success-500"
-          onClick={() => navigate('/create-order')}
-          isLoading={isAnyLoading}
-          subtitle="오늘 생성"
-        />
-        
-        <EnhancedStatsCard
-          title="보고서 생성"
-          value={stats.reportsGenerated || 0}
-          icon={BarChart3}
-          iconColor="text-white"
-          iconBgColor="bg-indigo-500"
-          onClick={() => navigate('/reports')}
-          isLoading={isAnyLoading}
-          subtitle="이번 달"
-        />
+        >
+          <div className="flex items-center justify-between">
+            <div 
+              className="w-6 h-6 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: isDarkMode ? 'rgba(127, 29, 29, 0.3)' : '#fecaca' }}
+            >
+              <AlertCircle className="h-3 w-3" style={{ color: isDarkMode ? '#f87171' : '#dc2626' }} />
+            </div>
+            <div className="text-right">
+              <div className="text-lg font-bold" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}>{stats.urgentOrders || 0}</div>
+              <div className="text-xs" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>긴급발주</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Total Orders */}
+        <div 
+          className="rounded border p-2"
+          style={{ 
+            backgroundColor: isDarkMode ? 'rgba(30, 58, 138, 0.2)' : 'rgba(239, 246, 255, 0.3)',
+            borderColor: isDarkMode ? '#1e40af' : '#93c5fd'
+          }}
+        >
+          <div className="flex items-center justify-between">
+            <div 
+              className="w-6 h-6 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: isDarkMode ? 'rgba(30, 58, 138, 0.3)' : '#dbeafe' }}
+            >
+              <FileText className="h-3 w-3" style={{ color: isDarkMode ? '#60a5fa' : '#2563eb' }} />
+            </div>
+            <div className="text-right">
+              <div className="text-lg font-bold" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}>{stats.totalOrders || 0}</div>
+              <div className="text-xs" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>총발주서</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Total Amount */}
+        <div 
+          className="rounded border p-2"
+          style={{ 
+            backgroundColor: isDarkMode ? 'rgba(30, 58, 138, 0.2)' : 'rgba(239, 246, 255, 0.3)',
+            borderColor: isDarkMode ? '#1e40af' : '#93c5fd'
+          }}
+        >
+          <div className="flex items-center justify-between">
+            <div 
+              className="w-6 h-6 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: isDarkMode ? 'rgba(5, 150, 105, 0.3)' : '#d1fae5' }}
+            >
+              <DollarSign className="h-3 w-3" style={{ color: isDarkMode ? '#34d399' : '#059669' }} />
+            </div>
+            <div className="text-right">
+              <div className="text-sm font-bold" style={{ color: isDarkMode ? '#60a5fa' : '#2563eb' }}>{formatKoreanWon(stats.totalAmount || 0).replace('₩', '').replace(',000,000', 'M')}</div>
+              <div className="text-xs" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>총금액</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Active Projects */}
+        <div 
+          className="rounded border p-2"
+          style={{ 
+            backgroundColor: isDarkMode ? 'rgba(30, 58, 138, 0.2)' : 'rgba(239, 246, 255, 0.3)',
+            borderColor: isDarkMode ? '#1e40af' : '#93c5fd'
+          }}
+        >
+          <div className="flex items-center justify-between">
+            <div 
+              className="w-6 h-6 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: isDarkMode ? 'rgba(107, 33, 168, 0.3)' : '#ede9fe' }}
+            >
+              <Building className="h-3 w-3" style={{ color: isDarkMode ? '#a855f7' : '#7c3aed' }} />
+            </div>
+            <div className="text-right">
+              <div className="text-lg font-bold" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}>{stats.activeProjects || 0}</div>
+              <div className="text-xs" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>활성현장</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Active Vendors */}
+        <div 
+          className="rounded border p-2"
+          style={{ 
+            backgroundColor: isDarkMode ? 'rgba(30, 58, 138, 0.2)' : 'rgba(239, 246, 255, 0.3)',
+            borderColor: isDarkMode ? '#1e40af' : '#93c5fd'
+          }}
+        >
+          <div className="flex items-center justify-between">
+            <div 
+              className="w-6 h-6 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: isDarkMode ? 'rgba(67, 56, 202, 0.3)' : '#e0e7ff' }}
+            >
+              <Users className="h-3 w-3" style={{ color: isDarkMode ? '#818cf8' : '#4f46e5' }} />
+            </div>
+            <div className="text-right">
+              <div className="text-lg font-bold" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}>{stats.activeVendors || 0}</div>
+              <div className="text-xs" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>활성거래처</div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Detailed Analysis Section */}
-      <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">상세 분석</h2>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Monthly Statistics */}
-          {!isAnyLoading && monthlyStats && Array.isArray(monthlyStats) && monthlyStats.length > 0 ? (
-            <AdvancedBarChart
-              data={(monthlyStats as any).map((item: any) => ({
-                month: item.month.replace('-', '/'),
-                orders: item.count,
-                amount: formatAmountInMillions(item.amount)
-              }))}
-              title="월별 발주 통계"
-              subtitle="발주 건수 및 금액 추이"
-              xAxisKey="month"
-              bars={[
-                { dataKey: 'orders', name: '발주 건수', color: '#3b82f6' },
-                { dataKey: 'amount', name: '발주 금액(백만원)', color: '#10b981' }
-              ]}
-              height={300}
-              showExport={true}
-              exportFilename="monthly-order-stats"
-              formatValue={(value, name) => {
-                if (name.includes('금액')) {
-                  return `${value}백만원`;
-                }
-                return `${value}건`;
-              }}
-              loading={isAnyLoading}
-              showGrid={true}
-            />
-          ) : (
-            <ChartCard title="월별 발주 통계" icon={TrendingUp}>
-              <div className="h-[300px] flex items-center justify-center text-gray-500">
-                <div className="text-center">
-                  <BarChart3 className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-                  <p className="text-sm">데이터 준비 중...</p>
+      {/* Ultra-High Density 3-Column Layout */}
+      <div className="grid grid-cols-3 gap-1">
+        {/* Left Column: Monthly Chart + Status Distribution */}
+        <div className="space-y-1">
+          {/* Monthly Statistics - Compact */}
+          {!isAnyLoading && monthlyStats && Array.isArray(monthlyStats) && monthlyStats.length > 0 ? (() => {
+            const chartData = (monthlyStats as any).map((item: any) => ({
+              month: item.month.replace('-', '/'),
+              orders: Number(item.count) || 0
+            }));
+            
+            return (
+              <div 
+                className="rounded border p-2"
+                style={{ 
+                  backgroundColor: isDarkMode ? '#1f2937' : '#ffffff',
+                  borderColor: isDarkMode ? '#374151' : '#93c5fd'
+                }}
+              >
+                <div className="flex items-center gap-1 mb-2">
+                  <TrendingUp className="h-3 w-3" style={{ color: isDarkMode ? '#9ca3af' : '#4b5563' }} />
+                  <h3 className="text-xs font-semibold" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}>월별 발주 통계</h3>
+                </div>
+                <div className="h-[140px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={chartData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="2 2" stroke="#f3f4f6" />
+                      <XAxis dataKey="month" fontSize={9} axisLine={false} tickLine={false} />
+                      <YAxis fontSize={9} axisLine={false} tickLine={false} />
+                      <Tooltip formatter={(value) => [`${value}건`, '발주 건수']} />
+                      <Bar dataKey="orders" fill="#3b82f6" radius={[2, 2, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
               </div>
-            </ChartCard>
+            );
+          })() : (
+            <div 
+              className="rounded border p-2"
+              style={{ 
+                backgroundColor: isDarkMode ? '#1f2937' : '#ffffff',
+                borderColor: isDarkMode ? '#374151' : '#93c5fd'
+              }}
+            >
+              <div className="flex items-center gap-1 mb-2">
+                <TrendingUp className="h-3 w-3" style={{ color: isDarkMode ? '#9ca3af' : '#4b5563' }} />
+                <h3 className="text-xs font-semibold" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}>월별 발주 통계</h3>
+              </div>
+              <div className="h-[140px] flex items-center justify-center" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>
+                <div className="text-center">
+                  <BarChart3 className="h-6 w-6 mx-auto mb-1" style={{ color: isDarkMode ? '#4b5563' : '#d1d5db' }} />
+                  <p className="text-xs">데이터 준비 중...</p>
+                </div>
+              </div>
+            </div>
           )}
 
-          {/* Project-based Statistics */}
-          <ChartCard 
-            title="현장별 발주 현황" 
-            icon={Building}
-            headerAction={
-              <span className="text-xs text-gray-500 dark:text-gray-400">상위 10개</span>
-            }
+          {/* Status Distribution - Pie Chart */}
+          <div 
+            className="rounded border p-2"
+            style={{ 
+              backgroundColor: isDarkMode ? '#1f2937' : '#ffffff',
+              borderColor: isDarkMode ? '#374151' : '#93c5fd'
+            }}
           >
-            {!isAnyLoading && projectStats && Array.isArray(projectStats) && projectStats.length > 0 ? (
-              <ProjectStatsList
-                data={projectStats}
-                onProjectClick={(projectId) => navigate(`/projects/${projectId}`)}
-                maxItems={10}
-              />
+            <div className="flex items-center gap-1 mb-2">
+              <Package className="h-3 w-3" style={{ color: isDarkMode ? '#9ca3af' : '#4b5563' }} />
+              <h3 className="text-xs font-semibold" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}>발주상태분포</h3>
+            </div>
+            {!isAnyLoading && statusStats && Array.isArray(statusStats) && statusStats.length > 0 ? (
+              <div className="h-[140px] w-full">
+                <AdvancedPieChart
+                  data={statusStats.map((item: any) => ({
+                    name: item.status === 'pending' ? '승인대기' : 
+                          item.status === 'approved' ? '승인완료' : 
+                          item.status === 'sent' ? '발송완료' : 
+                          item.status === 'completed' ? '완료' : 
+                          item.status === 'draft' ? '임시저장' :
+                          item.status === 'cancelled' ? '취소됨' : item.status,
+                    value: parseInt(item.count),
+                    status: item.status
+                  }))}
+                  dataKey="value"
+                  nameKey="name"
+                  height={140}
+                  showExport={false}
+                  showLabels={false}
+                  showLegend={false}
+                  innerRadius={20}
+                  outerRadius={45}
+                  colors={[
+                    '#f59e0b', // pending - yellow
+                    '#10b981', // approved - green  
+                    '#3b82f6', // sent - blue
+                    '#8b5cf6', // completed - purple
+                    '#6b7280', // draft - gray
+                    '#ef4444'  // cancelled - red
+                  ]}
+                  formatValue={(value: number) => `${value}건`}
+                />
+              </div>
             ) : (
-              <div className="h-[300px] flex items-center justify-center text-gray-500">
+              <div className="h-[140px] flex items-center justify-center" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>
                 <div className="text-center">
-                  <Building className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-                  <p className="text-sm">데이터 준비 중...</p>
+                  <Package className="h-6 w-6 mx-auto mb-1" style={{ color: isDarkMode ? '#4b5563' : '#d1d5db' }} />
+                  <p className="text-xs">데이터 준비 중...</p>
                 </div>
               </div>
             )}
-          </ChartCard>
+          </div>
         </div>
-      </div>
 
-      {/* Advanced Chart Widgets */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">주요 현황</h2>
-          <button
-            onClick={() => navigate('/reports')}
-            className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium flex items-center gap-1"
-          >
-            상세 보고서
-            <ChevronRight className="h-4 w-4" />
-          </button>
-        </div>
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          {/* Total Summary Card */}
-          <div className="xl:col-span-1">
-            <ChartCard title="전체 요약" icon={Activity}>
-              <div className="space-y-4 p-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">총 발주서</span>
-                  <span className="text-xl font-semibold text-gray-900 dark:text-white">{stats.totalOrders || 0}건</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">총 발주 금액</span>
-                  <span className="text-xl font-semibold text-gray-900 dark:text-white">{formatKoreanWon(stats.totalAmount || 0)}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">활성 프로젝트</span>
-                  <span className="text-xl font-semibold text-gray-900 dark:text-white">{stats.activeProjects || 0}개</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">활성 거래처</span>
-                  <span className="text-xl font-semibold text-gray-900 dark:text-white">{stats.activeVendors || 0}개</span>
-                </div>
-                <div className="pt-3 border-t dark:border-gray-700">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">이번 달 발주</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg font-bold text-gray-900 dark:text-white">{stats.monthlyOrders || 0}건</span>
-                      {stats.monthlyOrdersTrend && (
-                        <span className={`text-xs font-medium ${
-                          stats.monthlyOrdersTrend > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
-                        }`}>
-                          {stats.monthlyOrdersTrend > 0 ? '+' : ''}{stats.monthlyOrdersTrend}%
-                        </span>
-                      )}
+        {/* Center Column: Project Stats List */}
+        <div 
+          className="rounded border p-2"
+          style={{ 
+            backgroundColor: isDarkMode ? '#1f2937' : '#ffffff',
+            borderColor: isDarkMode ? '#374151' : '#e5e7eb'
+          }}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-1">
+              <Building className="h-3 w-3" style={{ color: isDarkMode ? '#9ca3af' : '#4b5563' }} />
+              <h3 className="text-xs font-semibold" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}>현장별 발주 현황</h3>
+            </div>
+            <span className="text-xs" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>상위 10개</span>
+          </div>
+          <div className="h-[260px] overflow-y-auto">
+            {!isAnyLoading && projectStats && Array.isArray(projectStats) && projectStats.length > 0 ? (
+              <div className="space-y-1">
+                {projectStats.slice(0, 10).map((project: any, index: number) => (
+                  <div 
+                    key={index} 
+                    className="flex items-center justify-between p-1.5 rounded cursor-pointer transition-colors"
+                    style={{ backgroundColor: 'transparent' }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = isDarkMode ? '#374151' : '#f9fafb';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                    }}
+                    onClick={() => navigate(`/projects/${project.id}`)}
+                  >
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <span className="text-xs font-medium w-4 text-center" style={{ color: isDarkMode ? '#9ca3af' : '#4b5563' }}>{index + 1}</span>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs font-medium truncate" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }} title={project.projectName}>
+                          {project.projectName}
+                        </div>
+                        <div className="text-xs" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>{project.orderCount}건</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xs font-semibold" style={{ color: isDarkMode ? '#60a5fa' : '#2563eb' }}>
+                        {formatKoreanWon(project.totalAmount || 0).replace('₩', '').replace(',000,000', 'M')}
+                      </div>
                     </div>
                   </div>
+                ))}
+              </div>
+            ) : (
+              <div className="h-[240px] flex items-center justify-center" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>
+                <div className="text-center">
+                  <Building className="h-6 w-6 mx-auto mb-1" style={{ color: isDarkMode ? '#4b5563' : '#d1d5db' }} />
+                  <p className="text-xs">데이터 준비 중...</p>
                 </div>
               </div>
-            </ChartCard>
-          </div>
-
-          {/* Status Distribution */}
-          <div className="xl:col-span-1">
-            {!isAnyLoading && statusStats && Array.isArray(statusStats) && statusStats.length > 0 ? (
-              <AdvancedPieChart
-                data={statusStats.map((item: any) => ({
-                  name: item.status === 'pending' ? '승인대기' : 
-                        item.status === 'approved' ? '승인완료' : 
-                        item.status === 'sent' ? '발송완료' : 
-                        item.status === 'completed' ? '완료' :
-                        item.status === 'rejected' ? '반려' :
-                        item.status === 'cancelled' ? '취소' : item.status,
-                  value: item.count,
-                  status: item.status
-                }))}
-                title="발주서 상태"
-                subtitle="현재 상태별 분포"
-                dataKey="value"
-                nameKey="name"
-                height={280}
-                formatValue={(value) => `${value}건`}
-                loading={isAnyLoading}
-                showLabels={true}
-                showLegend={true}
-                innerRadius={40}
-                outerRadius={80}
-              />
-            ) : (
-              <ChartCard title="발주서 상태" icon={Package}>
-                <div className="h-[280px] flex items-center justify-center text-gray-500">
-                  <div className="text-center">
-                    <Package className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-                    <p className="text-sm">데이터 준비 중...</p>
-                  </div>
-                </div>
-              </ChartCard>
-            )}
-          </div>
-
-          {/* Monthly Trend */}
-          <div className="xl:col-span-1">
-            {!isAnyLoading && monthlyStats && Array.isArray(monthlyStats) && monthlyStats.length > 0 ? (
-              <AdvancedLineChart
-                data={(monthlyStats as any).slice(-6).map((item: any) => ({
-                  month: item.month.substring(5).replace('-', '/'),
-                  orders: item.count,
-                  amount: formatAmountInMillions(item.amount)
-                }))}
-                title="최근 6개월 추이"
-                subtitle="발주 건수 추이"
-                xAxisKey="month"
-                lines={[
-                  { 
-                    dataKey: 'orders', 
-                    name: '발주 건수', 
-                    color: '#3b82f6',
-                    strokeWidth: 2
-                  }
-                ]}
-                height={280}
-                formatValue={(value) => `${value}건`}
-                loading={isAnyLoading}
-                showDots={true}
-                showGrid={false}
-                curve="natural"
-              />
-            ) : (
-              <ChartCard title="최근 6개월 추이" icon={TrendingUp}>
-                <div className="h-[280px] flex items-center justify-center text-gray-500">
-                  <div className="text-center">
-                    <TrendingUp className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-                    <p className="text-sm">데이터 준비 중...</p>
-                  </div>
-                </div>
-              </ChartCard>
             )}
           </div>
         </div>
-      </div>
 
-      {/* Recent Activity Section */}
-      <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">최근 활동</h2>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Recent Orders */}
-          <ChartCard 
-            title="최근 발주서" 
-            icon={Clock}
-            headerAction={
+        {/* Right Column: Recent Activity + Category Stats */}
+        <div className="space-y-1">
+          {/* Recent Orders - Ultra Compact */}
+          <div 
+            className="rounded border p-2"
+            style={{ 
+              backgroundColor: isDarkMode ? '#1f2937' : '#ffffff',
+              borderColor: isDarkMode ? '#374151' : '#e5e7eb'
+            }}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-1">
+                <Clock className="h-3 w-3" style={{ color: isDarkMode ? '#9ca3af' : '#4b5563' }} />
+                <h3 className="text-xs font-semibold" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}>최근 발주서</h3>
+              </div>
               <button 
                 onClick={() => navigate('/orders')}
-                className="text-xs text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium"
+                className="text-xs font-medium transition-colors"
+                style={{ color: isDarkMode ? '#60a5fa' : '#2563eb' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = isDarkMode ? '#3b82f6' : '#1d4ed8';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = isDarkMode ? '#60a5fa' : '#2563eb';
+                }}
               >
-                전체 보기
+                전체보기
               </button>
-            }
-          >
-            {!isAnyLoading && recentOrders.length > 0 ? (
-              <RecentOrdersList
-                orders={recentOrders}
-                onOrderClick={(orderId) => navigate(`/orders/${orderId}`)}
-                maxItems={10}
-              />
-            ) : (
-              <div className="h-64 flex items-center justify-center text-gray-500">
-                <div className="text-center">
-                  <Clock className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-                  <p className="text-sm">데이터 준비 중...</p>
+            </div>
+            <div className="h-[120px] overflow-y-auto">
+              {!isAnyLoading && recentOrders.length > 0 ? (
+                <div className="space-y-1">
+                  {recentOrders.slice(0, 6).map((order: any, index: number) => (
+                    <div 
+                      key={index}
+                      className="flex items-center justify-between p-1 rounded cursor-pointer transition-colors"
+                      style={{ backgroundColor: 'transparent' }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = isDarkMode ? '#374151' : '#f9fafb';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }}
+                      onClick={() => navigate(`/orders/${order.id}`)}
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs font-medium truncate" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}>{order.orderNumber}</div>
+                        <div className="text-xs" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>{order.vendor?.name}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs font-semibold" style={{ color: isDarkMode ? '#60a5fa' : '#2563eb' }}>
+                          {formatKoreanWon(order.totalAmount || 0).replace('₩', '').replace(',000,000', 'M')}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
-            )}
-          </ChartCard>
+              ) : (
+                <div className="h-[100px] flex items-center justify-center" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>
+                  <div className="text-center">
+                    <Clock className="h-6 w-6 mx-auto mb-1" style={{ color: isDarkMode ? '#4b5563' : '#d1d5db' }} />
+                    <p className="text-xs">데이터 준비 중...</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
 
-          {/* Category Summary */}
-          {!isAnyLoading && categoryStats && Array.isArray(categoryStats) && categoryStats.length > 0 ? (
-            <ChartCard 
-              title="품목 분류별 발주 현황" 
-              icon={FolderTree}
-              headerAction={
-                <button 
-                  onClick={() => navigate('/category-management')}
-                  className="text-xs text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium"
-                >
-                  분류 관리
-                </button>
-              }
-            >
-              <div className="h-64 overflow-y-auto">
-                <div className="space-y-2">
+          {/* Category Summary - Ultra Compact */}
+          <div 
+            className="rounded border p-2"
+            style={{ 
+              backgroundColor: isDarkMode ? '#1f2937' : '#ffffff',
+              borderColor: isDarkMode ? '#374151' : '#e5e7eb'
+            }}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-1">
+                <FolderTree className="h-3 w-3" style={{ color: isDarkMode ? '#9ca3af' : '#4b5563' }} />
+                <h3 className="text-xs font-semibold" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}>품목 분류</h3>
+              </div>
+              <button 
+                onClick={() => navigate('/category-management')}
+                className="text-xs font-medium transition-colors"
+                style={{ color: isDarkMode ? '#60a5fa' : '#2563eb' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = isDarkMode ? '#3b82f6' : '#1d4ed8';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = isDarkMode ? '#60a5fa' : '#2563eb';
+                }}
+              >
+                관리
+              </button>
+            </div>
+            <div className="h-[120px] overflow-y-auto">
+              {!isAnyLoading && categoryStats && Array.isArray(categoryStats) && categoryStats.length > 0 ? (
+                <div className="space-y-1">
                   {categoryStats
-                    .slice(0, 8)
+                    .slice(0, 6)
                     .sort((a: any, b: any) => b.totalAmount - a.totalAmount)
                     .map((category: any, index: number) => (
-                      <div key={index} className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      <div 
+                        key={index} 
+                        className="flex items-center justify-between p-1 rounded transition-colors"
+                        style={{ backgroundColor: 'transparent' }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = isDarkMode ? '#374151' : '#f9fafb';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'transparent';
+                        }}
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs font-medium" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}>
                               {category.majorCategory}
                             </span>
                             {category.middleCategory !== '미분류' && (
                               <>
-                                <ChevronRight className="h-3 w-3 text-gray-400 dark:text-gray-500" />
-                                <span className="text-sm text-gray-600 dark:text-gray-400">
+                                <ChevronRight className="h-2 w-2" style={{ color: isDarkMode ? '#6b7280' : '#9ca3af' }} />
+                                <span className="text-xs truncate" style={{ color: isDarkMode ? '#9ca3af' : '#4b5563' }}>
                                   {category.middleCategory}
                                 </span>
                               </>
                             )}
                           </div>
-                          <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                            발주 {category.orderCount}건
+                          <div className="text-xs" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>
+                            {category.orderCount}건
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                            {formatKoreanWon(category.totalAmount)}
+                          <div className="text-xs font-semibold" style={{ color: isDarkMode ? '#60a5fa' : '#2563eb' }}>
+                            {formatKoreanWon(category.totalAmount).replace('₩', '').replace(',000,000', 'M')}
                           </div>
                         </div>
                       </div>
                     ))}
                 </div>
-              </div>
-            </ChartCard>
-          ) : (
-            <ChartCard title="품목 분류별 발주 현황" icon={FolderTree}>
-              <div className="h-64 flex items-center justify-center text-gray-500">
-                <div className="text-center">
-                  <FolderTree className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-                  <p className="text-sm">데이터 준비 중...</p>
+              ) : (
+                <div className="h-[100px] flex items-center justify-center" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>
+                  <div className="text-center">
+                    <FolderTree className="h-6 w-6 mx-auto mb-1" style={{ color: isDarkMode ? '#4b5563' : '#d1d5db' }} />
+                    <p className="text-xs">데이터 준비 중...</p>
+                  </div>
                 </div>
-              </div>
-            </ChartCard>
-          )}
+              )}
+            </div>
+          </div>
         </div>
       </div>
 

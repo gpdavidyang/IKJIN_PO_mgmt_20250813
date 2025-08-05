@@ -59,7 +59,7 @@ export function LoadingOverlay({
   if (!isVisible) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <Card className="w-full max-w-sm mx-4">
         <CardContent className="pt-6">
           <div className="text-center space-y-4">
@@ -368,7 +368,7 @@ export function OperationStatus({
           size="sm"
           variant="ghost"
           onClick={onDismiss}
-          className="h-6 w-6 p-0 text-current hover:bg-current hover:bg-opacity-10"
+          className="h-6 w-6 p-0 text-current hover:bg-current/10"
         >
           ×
         </Button>

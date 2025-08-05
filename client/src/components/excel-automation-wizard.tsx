@@ -463,12 +463,23 @@ export function ExcelAutomationWizard() {
 
               <div>
                 <label className="text-sm font-medium text-gray-700">첨부파일</label>
-                <div className="mt-1 p-2 bg-gray-50 rounded border flex items-center gap-2">
-                  <FileText className="h-4 w-4" />
-                  <span>{automationData.emailPreview.attachmentInfo.processedFile}</span>
-                  <Badge variant="outline">
-                    {formatFileSize(automationData.emailPreview.attachmentInfo.fileSize)}
-                  </Badge>
+                <div className="mt-1 space-y-2">
+                  <div className="p-2 bg-gray-50 rounded border flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-blue-500" />
+                    <span className="flex-1">{automationData.emailPreview.attachmentInfo.processedFile}</span>
+                    <Badge variant="outline">
+                      {formatFileSize(automationData.emailPreview.attachmentInfo.fileSize)}
+                    </Badge>
+                  </div>
+                  {automationData.emailPreview.attachmentInfo.processedPdfFile && (
+                    <div className="p-2 bg-gray-50 rounded border flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-red-500" />
+                      <span className="flex-1">{automationData.emailPreview.attachmentInfo.processedPdfFile}</span>
+                      <Badge variant="outline">
+                        {formatFileSize(automationData.emailPreview.attachmentInfo.pdfFileSize || 0)}
+                      </Badge>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -488,8 +499,21 @@ export function ExcelAutomationWizard() {
                   }}
                 >
                   <Download className="h-4 w-4 mr-2" />
-                  파일 다운로드
+                  Excel 다운로드
                 </Button>
+                {automationData.emailPreview.attachmentInfo.processedPdfFile && (
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      const link = document.createElement('a');
+                      link.href = `/api/excel-automation/download/${automationData.emailPreview.attachmentInfo.processedPdfFile}`;
+                      link.click();
+                    }}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    PDF 다운로드
+                  </Button>
+                )}
                 <Button 
                   onClick={handleSendEmails}
                   disabled={!automationData.emailPreview.canProceed || isProcessing}
@@ -592,7 +616,9 @@ export function ExcelAutomationWizard() {
                     body: JSON.stringify({
                       filePaths: [
                         automationData?.filePath,
-                        `uploads/${automationData?.emailPreview.attachmentInfo.processedFile}`
+                        `uploads/${automationData?.emailPreview.attachmentInfo.processedFile}`,
+                        automationData?.emailPreview.attachmentInfo.processedPdfFile ? 
+                          `uploads/${automationData.emailPreview.attachmentInfo.processedPdfFile}` : null
                       ].filter(Boolean)
                     })
                   });

@@ -108,7 +108,7 @@ export function StatusFilterExample() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8">
+    <div className="max-w-[1366px] mx-auto space-y-8">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Status Badges */}
         <Card>

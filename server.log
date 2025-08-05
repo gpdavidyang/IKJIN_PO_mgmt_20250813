@@ -1,91 +1,25 @@
 
-> rest-express@1.0.0 dev
-> NODE_ENV=development tsx server/index.ts
+> rest-express@1.0.0 start
+> NODE_ENV=production node dist/index.js
 
-[dotenv@17.2.0] injecting env (25) from .env (tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' })
+[dotenv@17.2.0] injecting env (28) from .env (tip: 🔐 encrypt with dotenvx: https://dotenvx.com)
 🔍 Using DATABASE_URL: postgresql://postgres.tbvugytmskxxyqfvqmup:gps110601ysw@[HIDDEN]
 🔄 Creating PostgreSQL connection pool with URL: postgresql://postgres.tbvugytmskxxyqfvqmup:gps110601ysw@[HIDDEN]
 ✅ Database connected successfully (PostgreSQL pool)
-[dotenv@17.2.0] injecting env (0) from .env (tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild)
+[dotenv@17.2.0] injecting env (0) from .env (tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] })
 🔧 Force-set DATABASE_URL: postgresql://postgres.tbvugytmskxxyqfvqmup:gps110601ysw@[HIDDEN]
-10:17:49 PM [express] serving on port 5001
-Database error in getUiTerms: error: column "id" does not exist
-    at /Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/pg-pool/index.js:45:11
-    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at async <anonymous> (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/src/node-postgres/session.ts:104:19)
-    at async DatabaseStorage.getUiTerms (/Users/davidyang/workspace/20250713_PO_Mgmt/server/storage.ts:1674:14)
-    at async <anonymous> (/Users/davidyang/workspace/20250713_PO_Mgmt/server/routes/admin.ts:28:19) {
-  length: 101,
-  severity: 'ERROR',
-  code: '42703',
-  detail: undefined,
-  hint: undefined,
-  position: '8',
-  internalPosition: undefined,
-  internalQuery: undefined,
-  where: undefined,
-  schema: undefined,
-  table: undefined,
-  column: undefined,
-  dataType: undefined,
-  constraint: undefined,
-  file: 'parse_relation.c',
-  line: '3716',
-  routine: 'errorMissingColumn'
+7:37:47 PM [express] serving on port 3000
+🚀 Optimized orders request: {
+  filters: { page: 1, limit: 20 },
+  timestamp: '2025-08-05T10:38:03.435Z'
 }
-10:18:00 PM [express] GET /api/ui-terms 200 in 704ms :: []
-10:18:16 PM [express] GET /api/items/categories 200 in 600ms :: []
-Database error in getUiTerms: error: column "id" does not exist
-    at /Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/pg-pool/index.js:45:11
-    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at async <anonymous> (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/src/node-postgres/session.ts:104:19)
-    at async DatabaseStorage.getUiTerms (/Users/davidyang/workspace/20250713_PO_Mgmt/server/storage.ts:1674:14)
-    at async <anonymous> (/Users/davidyang/workspace/20250713_PO_Mgmt/server/routes/admin.ts:28:19) {
-  length: 101,
-  severity: 'ERROR',
-  code: '42703',
-  detail: undefined,
-  hint: undefined,
-  position: '8',
-  internalPosition: undefined,
-  internalQuery: undefined,
-  where: undefined,
-  schema: undefined,
-  table: undefined,
-  column: undefined,
-  dataType: undefined,
-  constraint: undefined,
-  file: 'parse_relation.c',
-  line: '3716',
-  routine: 'errorMissingColumn'
+✅ Optimized orders response: {
+  ordersCount: 15,
+  total: 15,
+  page: 1,
+  totalPages: 1,
+  vendorsCount: 28,
+  projectsCount: 10
 }
-10:18:16 PM [express] GET /api/ui-terms 200 in 86ms :: []
-10:18:17 PM [express] GET /api/item-categories/major 200 in 586ms :: []
-10:18:17 PM [express] GET /api/item-categories/middle 200 in 85ms :: []
-10:18:17 PM [express] GET /api/item-categories/minor 200 in 86ms :: []
-10:18:25 PM [express] GET /api/item-categories/nonexistent 404 in 8ms
-Database error in getUiTerms: error: column "id" does not exist
-    at /Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/pg-pool/index.js:45:11
-    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at async <anonymous> (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/src/node-postgres/session.ts:104:19)
-    at async DatabaseStorage.getUiTerms (/Users/davidyang/workspace/20250713_PO_Mgmt/server/storage.ts:1674:14)
-    at async <anonymous> (/Users/davidyang/workspace/20250713_PO_Mgmt/server/routes/admin.ts:28:19) {
-  length: 101,
-  severity: 'ERROR',
-  code: '42703',
-  detail: undefined,
-  hint: undefined,
-  position: '8',
-  internalPosition: undefined,
-  internalQuery: undefined,
-  where: undefined,
-  schema: undefined,
-  table: undefined,
-  column: undefined,
-  dataType: undefined,
-  constraint: undefined,
-  file: 'parse_relation.c',
-  line: '3716',
-  routine: 'errorMissingColumn'
-}
-10:18:25 PM [express] GET /api/ui-terms 200 in 90ms :: []
+🐌 Slow query detected: orders-optimized took 1232.75ms
+7:38:04 PM [express] GET /api/orders-optimized 200 in 1238ms :: {"orders":[{"id":41,"orderNumber":"2…

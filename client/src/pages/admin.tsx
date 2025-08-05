@@ -431,14 +431,15 @@ export default function Admin() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <Building className="h-6 w-6" />
-          시스템 관리
-        </h1>
-        <p className="text-sm text-gray-600">사용자 및 시스템 설정을 관리하세요</p>
-      </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-[1366px] mx-auto p-6 space-y-6">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <Shield className="h-5 w-5 text-blue-600" />
+            시스템 관리
+          </h1>
+          <p className="text-sm text-gray-600">사용자 및 시스템 설정을 관리하세요</p>
+        </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-5">
@@ -466,7 +467,7 @@ export default function Admin() {
 
         {/* 회사 정보 탭 */}
         <TabsContent value="company" className="mt-2">
-          <Card>
+          <Card className="shadow-sm">
             <CardHeader className="pb-1">
               <CardTitle className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-1">
@@ -616,7 +617,7 @@ export default function Admin() {
 
         {/* 사용자 관리 탭 */}
         <TabsContent value="users" className="mt-2">
-          <Card>
+          <Card className="shadow-sm">
             <CardHeader className="pb-1">
               <CardTitle className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-1">
@@ -755,9 +756,9 @@ export default function Admin() {
                     </TableBody>
                   </Table>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                     {filteredUsers.map((user) => (
-                      <Card key={user.id} className="p-3">
+                      <Card key={user.id} className="p-3 shadow-sm">
                         <div className="flex items-center gap-3 mb-3">
                           <Avatar className="h-8 w-8">
                             <AvatarFallback className="text-sm">
@@ -839,7 +840,7 @@ export default function Admin() {
 
         {/* 용어집 관리 탭 */}
         <TabsContent value="terminology" className="mt-2">
-          <Card>
+          <Card className="shadow-sm">
             <CardHeader className="pb-1">
               <CardTitle className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-1">
@@ -958,7 +959,7 @@ export default function Admin() {
 
         {/* 승인 권한 설정 탭 */}
         <TabsContent value="approval" className="mt-2">
-          <Card>
+          <Card className="shadow-sm">
             <CardHeader className="pb-1">
               <CardTitle className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-1">

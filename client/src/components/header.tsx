@@ -1,4 +1,4 @@
-import { Bell, LogOut, User, Settings, Menu } from "lucide-react";
+import { Bell, LogOut, User, Settings, Home, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -6,31 +6,127 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation, Link } from "wouter";
 import { getUserInitials, getUserDisplayName, getRoleText } from "@/lib/statusUtils";
-import { useSidebar } from "@/contexts/SidebarContext";
-import { useState, useEffect } from "react";
 import { ThemeToggle } from "@/components/ui/theme-provider";
 
+// 개선된 페이지 설정 - 섹션별 그룹화와 액션 정보 포함
 const pageConfig = {
-  "/": { title: "대시보드", breadcrumb: "홈 > 대시보드" },
-  "/orders": { title: "발주서 관리", breadcrumb: "홈 > 발주서 관리" },
-  "/create-order": { title: "발주서 작성", breadcrumb: "홈 > 발주서 작성" },
-  "/vendors": { title: "거래처 관리", breadcrumb: "홈 > 거래처 관리" },
-  "/items": { title: "품목 관리", breadcrumb: "홈 > 품목 관리" },
-  "/projects": { title: "현장 관리", breadcrumb: "홈 > 현장 관리" },
-  "/templates": { title: "템플릿 관리", breadcrumb: "홈 > 템플릿 관리" },
-  "/reports": { title: "보고서 분석", breadcrumb: "홈 > 보고서 분석" },
-  "/admin": { title: "시스템 관리", breadcrumb: "홈 > 시스템 관리" },
-  "/profile": { title: "프로필 설정", breadcrumb: "홈 > 프로필 설정" },
+  // 핵심 업무
+  "/": { 
+    title: "대시보드", 
+    section: "핵심 업무",
+    breadcrumb: [{ label: "대시보드", href: "/" }],
+    actions: [] 
+  },
+  "/create-order": { 
+    title: "발주서 작성", 
+    section: "핵심 업무",
+    breadcrumb: [{ label: "발주서 작성", href: "/create-order" }],
+    actions: [] 
+  },
+  "/create-order/unified": { 
+    title: "통합 워크플로우", 
+    section: "핵심 업무",
+    breadcrumb: [
+      { label: "발주서 작성", href: "/create-order" },
+      { label: "통합 워크플로우", href: "/create-order/unified" }
+    ],
+    actions: [] 
+  },
+  "/create-order/standard": { 
+    title: "표준 발주서 작성", 
+    section: "핵심 업무",
+    breadcrumb: [
+      { label: "발주서 작성", href: "/create-order" },
+      { label: "표준 발주서", href: "/create-order/standard" }
+    ],
+    actions: [] 
+  },
+  "/create-order/excel": { 
+    title: "엑셀 발주서 작성", 
+    section: "핵심 업무",
+    breadcrumb: [
+      { label: "발주서 작성", href: "/create-order" },
+      { label: "엑셀 발주서", href: "/create-order/excel" }
+    ],
+    actions: [] 
+  },
+  "/orders": { 
+    title: "발주서 관리", 
+    section: "핵심 업무",
+    breadcrumb: [{ label: "발주서 관리", href: "/orders" }],
+    actions: [{ label: "새 발주서", href: "/create-order/unified" }] 
+  },
+  "/approvals": { 
+    title: "승인 관리", 
+    section: "핵심 업무",
+    breadcrumb: [{ label: "승인 관리", href: "/approvals" }],
+    actions: [] 
+  },
+  
+  // 기초 데이터 관리
+  "/projects": { 
+    title: "현장 관리", 
+    section: "기초 데이터 관리",
+    breadcrumb: [{ label: "현장 관리", href: "/projects" }],
+    actions: [{ label: "새 현장", href: "/projects/new" }] 
+  },
+  "/vendors": { 
+    title: "거래처 관리", 
+    section: "기초 데이터 관리",
+    breadcrumb: [{ label: "거래처 관리", href: "/vendors" }],
+    actions: [{ label: "새 거래처", href: "/vendors/new" }] 
+  },
+  "/category-management": { 
+    title: "분류 관리", 
+    section: "기초 데이터 관리",
+    breadcrumb: [{ label: "분류 관리", href: "/category-management" }],
+    actions: [] 
+  },
+  "/items": { 
+    title: "품목 관리", 
+    section: "기초 데이터 관리",
+    breadcrumb: [{ label: "품목 관리", href: "/items" }],
+    actions: [{ label: "새 품목", href: "/items/new" }] 
+  },
+  
+  // 분석 및 도구
+  "/reports": { 
+    title: "보고서 및 분석", 
+    section: "분석 및 도구",
+    breadcrumb: [{ label: "보고서 및 분석", href: "/reports" }],
+    actions: [] 
+  },
+  "/import-export": { 
+    title: "가져오기/내보내기", 
+    section: "분석 및 도구",
+    breadcrumb: [{ label: "가져오기/내보내기", href: "/import-export" }],
+    actions: [] 
+  },
+  "/templates": { 
+    title: "템플릿 관리", 
+    section: "분석 및 도구",
+    breadcrumb: [{ label: "템플릿 관리", href: "/templates" }],
+    actions: [{ label: "새 템플릿", href: "/templates/new" }] 
+  },
+  
+  // 시스템 설정
+  "/admin": { 
+    title: "시스템 관리", 
+    section: "시스템 설정",
+    breadcrumb: [{ label: "시스템 관리", href: "/admin" }],
+    actions: [] 
+  },
+  "/profile": { 
+    title: "프로필 설정", 
+    section: "사용자",
+    breadcrumb: [{ label: "프로필 설정", href: "/profile" }],
+    actions: [] 
+  },
 };
 
 export function Header() {
   const { user } = useAuth();
-  const { toggleSidebar } = useSidebar();
   const [location] = useLocation();
-  
-  const handleSidebarToggle = () => {
-    toggleSidebar();
-  };
   
   // 동적 경로 처리를 위한 함수
   const getCurrentPage = () => {
@@ -39,28 +135,73 @@ export function Header() {
       return pageConfig[location as keyof typeof pageConfig];
     }
     
-    // 동적 경로 처리
+    // 동적 경로 처리 - 새로운 브레드크럼 구조
     if (location.startsWith('/orders/')) {
-      return { title: "발주서 상세", breadcrumb: "홈 > 발주서 관리 > 상세보기" };
+      return { 
+        title: "발주서 상세", 
+        section: "핵심 업무",
+        breadcrumb: [
+          { label: "발주서 관리", href: "/orders" },
+          { label: "상세보기", href: location }
+        ],
+        actions: [{ label: "편집", href: `${location}/edit` }]
+      };
     }
     if (location.startsWith('/projects/')) {
-      return { title: "현장 상세", breadcrumb: "홈 > 현장 관리 > 상세보기" };
+      return { 
+        title: "현장 상세", 
+        section: "기초 데이터 관리",
+        breadcrumb: [
+          { label: "현장 관리", href: "/projects" },
+          { label: "상세보기", href: location }
+        ],
+        actions: [{ label: "편집", href: `${location}/edit` }]
+      };
     }
     if (location.startsWith('/vendors/')) {
-      return { title: "거래처 상세", breadcrumb: "홈 > 거래처 관리 > 상세보기" };
+      return { 
+        title: "거래처 상세", 
+        section: "기초 데이터 관리",
+        breadcrumb: [
+          { label: "거래처 관리", href: "/vendors" },
+          { label: "상세보기", href: location }
+        ],
+        actions: [{ label: "편집", href: `${location}/edit` }]
+      };
     }
     if (location.startsWith('/items/')) {
-      return { title: "품목 상세", breadcrumb: "홈 > 품목 관리 > 상세보기" };
+      return { 
+        title: "품목 상세", 
+        section: "기초 데이터 관리",
+        breadcrumb: [
+          { label: "품목 관리", href: "/items" },
+          { label: "상세보기", href: location }
+        ],
+        actions: [{ label: "편집", href: `${location}/edit` }]
+      };
     }
     if (location.startsWith('/templates/')) {
-      return { title: "템플릿 상세", breadcrumb: "홈 > 템플릿 관리 > 상세보기" };
+      return { 
+        title: "템플릿 상세", 
+        section: "분석 및 도구",
+        breadcrumb: [
+          { label: "템플릿 관리", href: "/templates" },
+          { label: "상세보기", href: location }
+        ],
+        actions: [{ label: "편집", href: `${location}/edit` }]
+      };
     }
     if (location.startsWith('/admin/')) {
-      return { title: "시스템 관리", breadcrumb: "홈 > 시스템 관리" };
+      return { 
+        title: "시스템 관리", 
+        section: "시스템 설정",
+        breadcrumb: [{ label: "시스템 관리", href: "/admin" }],
+        actions: []
+      };
     }
     
     // 기본값
-    return { title: "대시보드", breadcrumb: "홈 > 대시보드" };
+    return pageConfig["/"];
   };
   
   const currentPage = getCurrentPage();
@@ -79,8 +220,44 @@ export function Header() {
         <div className="flex items-center space-x-4">
           <div>
             <h1 className="text-xl font-semibold text-foreground">{currentPage.title}</h1>
-            <nav className="text-sm text-muted-foreground">{currentPage.breadcrumb}</nav>
+            <nav className="flex items-center space-x-1 text-sm text-muted-foreground">
+              {currentPage.breadcrumb.map((item, index) => (
+                <div key={index} className="flex items-center">
+                  {index > 0 && <ChevronRight className="h-3 w-3 mx-1 text-muted-foreground/50" />}
+                  {index === currentPage.breadcrumb.length - 1 ? (
+                    <span className="text-foreground font-medium">{item.label}</span>
+                  ) : (
+                    <Link 
+                      href={item.href}
+                      className="hover:text-foreground transition-colors duration-200 cursor-pointer"
+                    >
+                      {item.label}
+                    </Link>
+                  )}
+                </div>
+              ))}
+            </nav>
           </div>
+          
+          {/* 페이지별 액션 버튼 */}
+          {currentPage.actions && currentPage.actions.length > 0 && (
+            <div className="flex items-center space-x-2 ml-8">
+              {currentPage.actions.map((action, index) => (
+                <Button
+                  key={index}
+                  asChild
+                  size="sm"
+                  variant="outline"
+                  className="text-xs"
+                >
+                  <Link href={action.href}>
+                    <Plus className="h-3 w-3 mr-1" />
+                    {action.label}
+                  </Link>
+                </Button>
+              ))}
+            </div>
+          )}
         </div>
         
         <div className="flex items-center space-x-4">
@@ -95,7 +272,7 @@ export function Header() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <div className="flex items-center space-x-3 cursor-pointer hover:bg-accent rounded-lg p-2 transition-colors">
-                  <div className="text-right hidden sm:block">
+                  <div className="text-right hidden md:block">
                     <div className="text-sm font-medium text-foreground">
                       {getUserDisplayName(user as any)}
                     </div>

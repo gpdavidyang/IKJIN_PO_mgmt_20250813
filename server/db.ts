@@ -3,7 +3,7 @@ dotenv.config();
 
 // 환경변수에서 DATABASE_URL 읽기 - .env 파일의 올바른 pooler 주소 사용
 const DATABASE_URL = process.env.DATABASE_URL;
-console.log("🔍 Using DATABASE_URL:", DATABASE_URL.split('@')[0] + '@[HIDDEN]');
+console.log("🔍 Using DATABASE_URL:", DATABASE_URL?.split('@')[0] + '@[HIDDEN]');
 
 // Use standard postgres driver for better Supabase compatibility
 import pkg from 'pg';
@@ -18,7 +18,7 @@ if (!DATABASE_URL) {
   process.exit(1);
 } else {
   try {
-    console.log("🔄 Creating PostgreSQL connection pool with URL:", DATABASE_URL.split('@')[0] + '@[HIDDEN]');
+    console.log("🔄 Creating PostgreSQL connection pool with URL:", DATABASE_URL?.split('@')[0] + '@[HIDDEN]');
     
     const pool = new Pool({
       connectionString: DATABASE_URL,
@@ -31,7 +31,7 @@ if (!DATABASE_URL) {
     db = drizzle(pool, { schema });
     console.log("✅ Database connected successfully (PostgreSQL pool)");
   } catch (error) {
-    console.error("❌ Database connection failed:", error.message);
+    console.error("❌ Database connection failed:", error instanceof Error ? error.message : String(error));
     process.exit(1);
   }
 }

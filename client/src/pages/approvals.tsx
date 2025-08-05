@@ -192,19 +192,20 @@ export default function Approvals() {
 
   return (
     <TooltipProvider>
-      <div className="p-6 space-y-6">
-        {/* 페이지 헤더 - UI Standards */}
-        <div className="flex items-center gap-3">
-          <CheckCircle className="h-5 w-5 text-blue-600" />
-          <div>
-            <h1 className="text-lg font-semibold text-gray-900">승인 관리</h1>
-            <p className="text-sm text-gray-600">발주서 승인 요청을 검토하고 처리합니다.</p>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-[1366px] mx-auto p-6 space-y-6">
+          {/* 페이지 헤더 - UI Standards */}
+          <div className="flex items-center gap-3">
+            <CheckCircle className="h-5 w-5 text-blue-600" />
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">승인 관리</h1>
+              <p className="text-sm text-gray-600">발주서 승인 요청을 검토하고 처리합니다.</p>
+            </div>
           </div>
-        </div>
 
         {/* 통계 카드 - UI Standards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
+          <Card className="shadow-sm">
             <CardContent className="p-3">
               <div className="flex items-center gap-2">
                 <Clock className="h-5 w-5 text-orange-500" />
@@ -216,7 +217,7 @@ export default function Approvals() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="shadow-sm">
             <CardContent className="p-3">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5 text-red-500" />
@@ -228,7 +229,7 @@ export default function Approvals() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="shadow-sm">
             <CardContent className="p-3">
               <div className="flex items-center gap-2">
                 <Calendar className="h-5 w-5 text-blue-500" />
@@ -240,7 +241,7 @@ export default function Approvals() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="shadow-sm">
             <CardContent className="p-3">
               <div className="flex items-center gap-2">
                 <DollarSign className="h-5 w-5 text-green-500" />
@@ -355,7 +356,7 @@ export default function Approvals() {
                 <p className="text-gray-500">승인 대기 중인 발주서가 없습니다.</p>
               </div>
             ) : viewMode === "table" ? (
-              <Card>
+              <Card className="shadow-sm">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -448,7 +449,7 @@ export default function Approvals() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredPendingApprovals.map((order) => (
-                  <Card key={order.id}>
+                  <Card key={order.id} className="shadow-sm">
                     <CardContent className="p-4">
                       <div className="flex items-center gap-2 mb-2">
                         <h3 className="font-medium text-gray-900">
@@ -512,7 +513,7 @@ export default function Approvals() {
                 <p className="text-gray-500">승인 내역이 없습니다.</p>
               </div>
             ) : viewMode === "table" ? (
-              <Card>
+              <Card className="shadow-sm">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -561,7 +562,7 @@ export default function Approvals() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredApprovalHistory.map((order) => (
-                  <Card key={order.id} className="hover:shadow-md transition-shadow">
+                  <Card key={order.id} className="hover:shadow-md transition-shadow shadow-sm">
                     <CardContent className="p-4">
                       <div className="flex items-center gap-2 mb-2">
                         <h3 className="font-medium text-gray-900">
@@ -602,7 +603,7 @@ export default function Approvals() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               
               {/* 승인 프로세스 */}
-              <Card>
+              <Card className="shadow-sm">
                 <CardContent className="p-4">
                   <h2 className="text-sm font-medium text-gray-900 mb-3">승인 프로세스</h2>
                   <div className="space-y-3">
@@ -631,7 +632,7 @@ export default function Approvals() {
               </Card>
 
               {/* 승인 정책 */}
-              <Card>
+              <Card className="shadow-sm">
                 <CardContent className="p-4">
                   <h2 className="text-sm font-medium text-gray-900 mb-3">승인 정책</h2>
                   <div className="space-y-3">
@@ -668,7 +669,7 @@ export default function Approvals() {
               </Card>
 
               {/* 승인 원칙 */}
-              <Card>
+              <Card className="shadow-sm">
                 <CardContent className="p-4">
                   <h2 className="text-sm font-medium text-gray-900 mb-3">승인 원칙</h2>
                   <div className="space-y-2">
@@ -701,7 +702,7 @@ export default function Approvals() {
               </Card>
 
               {/* 역할과 책임 */}
-              <Card>
+              <Card className="shadow-sm">
                 <CardContent className="p-4">
                   <h2 className="text-sm font-medium text-gray-900 mb-3">역할과 책임</h2>
                   <div className="space-y-2">
@@ -747,7 +748,7 @@ export default function Approvals() {
             </div>
 
             {/* 추가 안내 사항 */}
-            <Card className="bg-blue-50 border-blue-200">
+            <Card className="bg-blue-50 border-blue-200 shadow-sm">
               <CardContent className="p-4">
                 <h2 className="text-sm font-medium text-blue-900 mb-3">승인 시 주의사항</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -784,6 +785,7 @@ export default function Approvals() {
             </Card>
           </TabsContent>
         </Tabs>
+        </div>
       </div>
     </TooltipProvider>
   );

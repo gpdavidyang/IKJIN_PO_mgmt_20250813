@@ -207,7 +207,7 @@ export function DashboardSkeleton() {
       </div>
       
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="p-4 border rounded-lg space-y-2">
             <Skeleton className="h-4 w-20" />
@@ -218,7 +218,7 @@ export function DashboardSkeleton() {
       </div>
       
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         <ChartSkeleton height={300} />
         <ChartSkeleton height={300} />
       </div>

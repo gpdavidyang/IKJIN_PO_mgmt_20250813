@@ -4,6 +4,7 @@ import { db } from "../db";
 import { vendors, projects, purchaseOrders, purchaseOrderItems } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { DebugLogger } from './debug-logger';
+import type { PgTransaction } from 'drizzle-orm/pg-core';
 
 export interface POTemplateItem {
   itemName: string;
@@ -67,26 +68,38 @@ export class POTemplateProcessorMock {
       const ordersByNumber = new Map<string, POTemplateOrder>();
       
       for (const row of rows) {
-        // 빈 행이거나 발주번호가 없는 경우 건너뛰기
-        if (!row || !row[0]) continue;
+        // 빈 행이거나 필수 데이터가 없는 경우 건너뛰기
+        if (!row || row.length === 0 || (!row[0] && !row[2] && !row[10])) continue;
         
-        const orderNumber = String(row[0]).trim();
-        const orderDate = this.formatDate(row[1]);
-        const siteName = String(row[2] || '').trim();
-        const categoryLv1 = String(row[3] || '').trim();
-        const categoryLv2 = String(row[4] || '').trim();
-        const categoryLv3 = String(row[5] || '').trim();
-        const itemName = String(row[6] || '').trim();
-        const specification = String(row[7] || '').trim();
-        const quantity = this.safeNumber(row[8]);
-        const unitPrice = this.safeNumber(row[9]);
-        const supplyAmount = this.safeNumber(row[10]);
-        const taxAmount = this.safeNumber(row[11]);
-        const totalAmount = this.safeNumber(row[12]);
-        const dueDate = this.formatDate(row[13]);
-        const vendorName = String(row[14] || '').trim();
-        const deliveryName = String(row[15] || '').trim();
-        const notes = String(row[16] || '').trim();
+        // 컬럼 수가 부족한 경우 빈 값으로 채우기
+        while (row.length < 16) {
+          row.push('');
+        }
+        
+        // Input 시트의 실제 컬럼 매핑 (A:P)
+        const orderDate = this.formatDate(row[0]) || new Date().toISOString().split('T')[0]; // A열: 발주일자
+        const dueDate = this.formatDate(row[1]) || ''; // B열: 납기일자 (없으면 빈 값)
+        const vendorName = String(row[2] || '').trim(); // C열: 거래처명
+        const vendorEmail = String(row[3] || '').trim(); // D열: 거래처 이메일
+        const deliveryName = String(row[4] || '').trim(); // E열: 납품처명 (없으면 빈 값)
+        const deliveryEmail = String(row[5] || '').trim(); // F열: 납품처 이메일 (없으면 빈 값)
+        const siteName = String(row[6] || '').trim(); // G열: 프로젝트명
+        const categoryLv1 = String(row[7] || '').trim(); // H열: 대분류
+        const categoryLv2 = String(row[8] || '').trim(); // I열: 중분류
+        const categoryLv3 = String(row[9] || '').trim(); // J열: 소분류
+        const itemName = String(row[10] || '').trim(); // K열: 품목명
+        const specification = String(row[11] || '-').trim(); // L열: 규격 (없으면 '-')
+        const quantity = this.safeNumber(row[12]); // M열: 수량
+        const unitPrice = this.safeNumber(row[13]); // N열: 단가
+        const totalAmount = this.safeNumber(row[14]); // O열: 총금액
+        const notes = String(row[15] || '').trim(); // P열: 비고
+        
+        // 발주번호 생성 (발주일자 + 거래처명 기반)
+        const orderNumber = this.generateOrderNumber(orderDate, vendorName);
+        
+        // 세액과 공급가액 계산
+        const supplyAmount = Math.round(totalAmount / 1.1); // 부가세 제외
+        const taxAmount = totalAmount - supplyAmount;
 
         // 발주서 정보 생성 또는 업데이트
         if (!ordersByNumber.has(orderNumber)) {
@@ -156,7 +169,7 @@ export class POTemplateProcessorMock {
     try {
       let savedOrders = 0;
 
-      await db.transaction(async (tx) => {
+      await db.transaction(async (tx: PgTransaction<any, any, any>) => {
         for (const orderData of orders) {
           // 1. 거래처 조회 또는 생성
           let vendor = await tx.select().from(vendors).where(eq(vendors.name, orderData.vendorName)).limit(1);
@@ -165,7 +178,7 @@ export class POTemplateProcessorMock {
             const newVendor = await tx.insert(vendors).values({
               name: orderData.vendorName,
               contactPerson: 'Unknown',
-              email: null,
+              email: 'noemail@example.com',
               phone: null,
               isActive: true
             }).returning({ id: vendors.id });
@@ -175,14 +188,15 @@ export class POTemplateProcessorMock {
           }
           
           // 2. 프로젝트 조회 또는 생성
-          let project = await tx.select().from(projects).where(eq(projects.name, orderData.siteName)).limit(1);
+          let project = await tx.select().from(projects).where(eq(projects.projectName, orderData.siteName)).limit(1);
           let projectId: number;
           if (project.length === 0) {
             const newProject = await tx.insert(projects).values({
-              name: orderData.siteName,
+              projectName: orderData.siteName,
+              projectCode: `AUTO-${Date.now()}`,
               description: '',
-              startDate: new Date(),
-              endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1년 후
+              startDate: new Date().toISOString().split('T')[0],
+              endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 1년 후
               isActive: true,
               projectManagerId: null,
               orderManagerId: null
@@ -209,7 +223,7 @@ export class POTemplateProcessorMock {
           // 4. 발주서 아이템들 생성
           for (const item of orderData.items) {
             await tx.insert(purchaseOrderItems).values({
-              purchaseOrderId: orderId,
+              orderId: orderId,
               itemName: item.itemName,
               specification: item.specification || '',
               quantity: item.quantity,
@@ -346,5 +360,39 @@ export class POTemplateProcessorMock {
       return isNaN(parsed) ? 0 : parsed;
     }
     return 0;
+  }
+
+  /**
+   * 발주번호 생성 (PO-YYYYMMDD-VENDOR-XXX 형식)
+   */
+  private static generateOrderNumber(orderDate: string, vendorName: string): string {
+    const date = orderDate ? orderDate.replace(/-/g, '') : new Date().toISOString().split('T')[0].replace(/-/g, '');
+    const vendorCode = vendorName ? vendorName.substring(0, 3).toUpperCase() : 'UNK';
+    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    return `PO-${date}-${vendorCode}-${random}`;
+  }
+
+  /**
+   * 기본 납기일자 생성 (발주일 + 7일)
+   */
+  private static getDefaultDueDate(orderDateValue: any): string {
+    try {
+      const orderDate = this.formatDate(orderDateValue);
+      if (!orderDate) {
+        // 발주일도 없으면 오늘부터 7일 후
+        const date = new Date();
+        date.setDate(date.getDate() + 7);
+        return date.toISOString().split('T')[0];
+      }
+      
+      const date = new Date(orderDate);
+      date.setDate(date.getDate() + 7);
+      return date.toISOString().split('T')[0];
+    } catch {
+      // 오류 시 오늘부터 7일 후
+      const date = new Date();
+      date.setDate(date.getDate() + 7);
+      return date.toISOString().split('T')[0];
+    }
   }
 }

@@ -167,14 +167,14 @@ export default function CreateStandardOrderRefactored() {
 
   return (
     <>
-      <div className="min-h-screen bg-gray-50 p-4">
-        <div className="max-w-7xl mx-auto space-y-4">
-          {/* Page Header - 기존과 동일 */}
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-[1366px] mx-auto p-6 space-y-6">
+          {/* Page Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <FileText className="h-6 w-6 text-blue-600" />
+              <FileText className="h-5 w-5 text-blue-600" />
               <div>
-                <h1 className="text-xl font-bold text-gray-900">표준 발주서 작성</h1>
+                <h1 className="text-2xl font-bold text-gray-900">표준 발주서 작성</h1>
                 <p className="text-sm text-gray-600">통합된 표준 발주서를 작성합니다</p>
               </div>
               {getStatusBadge()}
@@ -189,8 +189,8 @@ export default function CreateStandardOrderRefactored() {
             </div>
           </div>
 
-          {/* 기본 정보 입력 - 기존 스타일 유지 */}
-          <Card className="shadow-sm hover:shadow-md transition-shadow">
+          {/* 기본 정보 입력 */}
+          <Card className="shadow-sm">
             <CardHeader className="bg-gray-50 border-b p-3">
               <CardTitle className="text-base font-semibold text-gray-900 flex items-center gap-2">
                 <FileText className="h-4 w-4 text-blue-600" />
@@ -208,8 +208,8 @@ export default function CreateStandardOrderRefactored() {
             </CardContent>
           </Card>
 
-          {/* 품목 정보 입력 - 기존 스타일 유지 */}
-          <Card className="shadow-sm hover:shadow-md transition-shadow">
+          {/* 품목 정보 입력 */}
+          <Card className="shadow-sm">
             <CardHeader className="bg-gray-50 border-b p-3">
               <CardTitle className="text-base font-semibold text-gray-900 flex items-center gap-2">
                 <FileText className="h-4 w-4 text-blue-600" />
@@ -228,8 +228,8 @@ export default function CreateStandardOrderRefactored() {
             </CardContent>
           </Card>
 
-          {/* 파일 첨부 - 기존 스타일 유지 */}
-          <Card className="shadow-sm hover:shadow-md transition-shadow">
+          {/* 파일 첨부 */}
+          <Card className="shadow-sm">
             <CardHeader className="bg-gray-50 border-b p-3">
               <CardTitle className="text-base font-semibold text-gray-900 flex items-center gap-2">
                 <FileText className="h-4 w-4 text-blue-600" />
@@ -244,8 +244,8 @@ export default function CreateStandardOrderRefactored() {
             </CardContent>
           </Card>
 
-          {/* 승인 및 제출 관리 - 기존 스타일 유지 */}
-          <Card className="shadow-sm hover:shadow-md transition-shadow">
+          {/* 승인 및 제출 관리 */}
+          <Card className="shadow-sm">
             <CardHeader className="bg-gray-50 border-b p-3">
               <CardTitle className="text-base font-semibold text-gray-900 flex items-center gap-2">
                 <FileText className="h-4 w-4 text-blue-600" />

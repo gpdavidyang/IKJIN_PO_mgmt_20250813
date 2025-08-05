@@ -17,6 +17,7 @@ export interface VendorValidationResult {
     email: string;
     phone?: string | null;
     contactPerson: string;
+    aliases?: string[] | null;
   };
   suggestions: Array<{
     id: number;

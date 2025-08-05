@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useLocation } from "wouter";
+import { useLocation, useParams } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,14 +12,11 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { format } from "date-fns";
 import { formatKoreanWon } from "@/lib/utils";
 
-interface OrderDetailProps {
-  params: { id: string };
-}
-
-export default function OrderDetailStandard({ params }: OrderDetailProps) {
+export default function OrderDetailStandard() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [, navigate] = useLocation();
+  const params = useParams();
   const [showPreview, setShowPreview] = useState(false);
   const orderId = parseInt(params.id);
 
@@ -97,7 +94,8 @@ export default function OrderDetailStandard({ params }: OrderDetailProps) {
   const statusText = orderStatuses?.find((s: any) => s.code === order.status)?.name || order.status;
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-[1366px] mx-auto p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-4">
@@ -113,8 +111,8 @@ export default function OrderDetailStandard({ params }: OrderDetailProps) {
           <div className="flex items-center space-x-3">
             <FileText className="h-5 w-5 text-blue-600" />
             <div>
-              <h1 className="text-lg font-semibold text-gray-900">{order.orderNumber}</h1>
-              <p className="text-xs text-gray-500">표준 발주서 상세</p>
+              <h1 className="text-2xl font-bold text-gray-900">{order.orderNumber}</h1>
+              <p className="text-sm text-gray-500">표준 발주서 상세</p>
             </div>
           </div>
         </div>
@@ -133,8 +131,8 @@ export default function OrderDetailStandard({ params }: OrderDetailProps) {
           {/* 기본 정보 섹션 */}
           <Card className="shadow-sm">
             <CardHeader className="bg-gray-50 py-3 px-4">
-              <CardTitle className="flex items-center space-x-2 text-sm font-semibold">
-                <Building className="h-4 w-4 text-blue-600" />
+              <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                <Building className="h-5 w-5 text-blue-600" />
                 <span>기본 정보</span>
               </CardTitle>
             </CardHeader>
@@ -163,8 +161,8 @@ export default function OrderDetailStandard({ params }: OrderDetailProps) {
           {/* 현장 정보 */}
           <Card className="shadow-sm">
             <CardHeader className="bg-gray-50 py-3 px-4">
-              <CardTitle className="flex items-center space-x-2 text-sm font-semibold">
-                <MapPin className="h-4 w-4 text-blue-600" />
+              <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                <MapPin className="h-5 w-5 text-blue-600" />
                 <span>현장 정보</span>
               </CardTitle>
             </CardHeader>
@@ -193,8 +191,8 @@ export default function OrderDetailStandard({ params }: OrderDetailProps) {
           {/* 거래처 정보 */}
           <Card className="shadow-sm">
             <CardHeader className="bg-gray-50 py-3 px-4">
-              <CardTitle className="flex items-center space-x-2 text-sm font-semibold">
-                <Building className="h-4 w-4 text-blue-600" />
+              <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                <Building className="h-5 w-5 text-blue-600" />
                 <span>납품처</span>
               </CardTitle>
             </CardHeader>
@@ -227,8 +225,8 @@ export default function OrderDetailStandard({ params }: OrderDetailProps) {
           {/* 담당자 정보 */}
           <Card className="shadow-sm">
             <CardHeader className="bg-gray-50 py-3 px-4">
-              <CardTitle className="flex items-center space-x-2 text-sm font-semibold">
-                <User className="h-4 w-4 text-blue-600" />
+              <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                <User className="h-5 w-5 text-blue-600" />
                 <span>담당자</span>
               </CardTitle>
             </CardHeader>
@@ -251,7 +249,7 @@ export default function OrderDetailStandard({ params }: OrderDetailProps) {
             <CardHeader className="bg-gray-50 py-3 px-4">
               <CardTitle className="flex items-center justify-between text-sm font-semibold">
                 <div className="flex items-center space-x-2">
-                  <Package className="h-4 w-4 text-blue-600" />
+                  <Package className="h-5 w-5 text-blue-600" />
                   <span>품목 리스트</span>
                 </div>
                 <span className="text-blue-600">총 합계 {formatKoreanWon(order.totalAmount)}</span>
@@ -300,8 +298,8 @@ export default function OrderDetailStandard({ params }: OrderDetailProps) {
           {order.notes && (
             <Card className="shadow-sm">
               <CardHeader className="bg-gray-50 py-3 px-4">
-                <CardTitle className="flex items-center space-x-2 text-sm font-semibold">
-                  <FileText className="h-4 w-4 text-blue-600" />
+                <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                  <FileText className="h-5 w-5 text-blue-600" />
                   <span>특이사항</span>
                 </CardTitle>
               </CardHeader>
@@ -314,8 +312,8 @@ export default function OrderDetailStandard({ params }: OrderDetailProps) {
           {/* 첨부파일 */}
           <Card className="shadow-sm">
             <CardHeader className="bg-gray-50 py-3 px-4">
-              <CardTitle className="flex items-center space-x-2 text-sm font-semibold">
-                <FileText className="h-4 w-4 text-blue-600" />
+              <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                <FileText className="h-5 w-5 text-blue-600" />
                 <span>첨부파일</span>
               </CardTitle>
             </CardHeader>
@@ -352,8 +350,8 @@ export default function OrderDetailStandard({ params }: OrderDetailProps) {
           {/* 승인 상태 */}
           <Card className="shadow-sm">
             <CardHeader className="bg-gray-50 py-3 px-4">
-              <CardTitle className="flex items-center space-x-2 text-sm font-semibold">
-                <Check className="h-4 w-4 text-blue-600" />
+              <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                <Check className="h-5 w-5 text-blue-600" />
                 <span>승인 상태</span>
               </CardTitle>
             </CardHeader>
@@ -394,8 +392,8 @@ export default function OrderDetailStandard({ params }: OrderDetailProps) {
           {/* 작업 버튼 */}
           <Card className="shadow-sm">
             <CardHeader className="bg-gray-50 py-3 px-4">
-              <CardTitle className="flex items-center space-x-2 text-sm font-semibold">
-                <FileText className="h-4 w-4 text-blue-600" />
+              <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                <FileText className="h-5 w-5 text-blue-600" />
                 <span>작업</span>
               </CardTitle>
             </CardHeader>
@@ -514,6 +512,7 @@ export default function OrderDetailStandard({ params }: OrderDetailProps) {
           </div>
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   );
 }

@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { LogIn, Building2, Eye, EyeOff } from "lucide-react";
+import { LogIn, Building2, Eye, EyeOff, Copy, Check } from "lucide-react";
 import { useLocation } from "wouter";
 
 const loginSchema = z.object({
@@ -23,6 +23,30 @@ export default function LoginPage() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [showPassword, setShowPassword] = useState(false);
+  const [copiedItem, setCopiedItem] = useState<string | null>(null);
+
+  // 복사 함수
+  const copyToClipboard = async (text: string, type: 'email' | 'password') => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedItem(type);
+      toast({
+        title: "복사 완료",
+        description: `${type === 'email' ? '이메일' : '비밀번호'}이 클립보드에 복사되었습니다.`,
+      });
+      
+      // 2초 후 복사 상태 초기화
+      setTimeout(() => {
+        setCopiedItem(null);
+      }, 2000);
+    } catch (error) {
+      toast({
+        title: "복사 실패",
+        description: "클립보드 복사에 실패했습니다.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -149,9 +173,37 @@ export default function LoginPage() {
         </Card>
 
         <div className="mt-8 text-center text-sm text-gray-600">
-          <p>기본 로그인 정보:</p>
-          <p>이메일: test@ikjin.co.kr</p>
-          <p>비밀번호: admin123</p>
+          <p className="mb-3">기본 로그인 정보:</p>
+          <div className="space-y-2">
+            <div className="flex items-center justify-center gap-2">
+              <span>이메일: test@ikjin.co.kr</span>
+              <button
+                onClick={() => copyToClipboard('test@ikjin.co.kr', 'email')}
+                className="p-1 hover:bg-gray-200 rounded transition-colors"
+                title="이메일 복사"
+              >
+                {copiedItem === 'email' ? (
+                  <Check className="h-3 w-3 text-green-600" />
+                ) : (
+                  <Copy className="h-3 w-3 text-gray-500 hover:text-gray-700" />
+                )}
+              </button>
+            </div>
+            <div className="flex items-center justify-center gap-2">
+              <span>비밀번호: admin123</span>
+              <button
+                onClick={() => copyToClipboard('admin123', 'password')}
+                className="p-1 hover:bg-gray-200 rounded transition-colors"
+                title="비밀번호 복사"
+              >
+                {copiedItem === 'password' ? (
+                  <Check className="h-3 w-3 text-green-600" />
+                ) : (
+                  <Copy className="h-3 w-3 text-gray-500 hover:text-gray-700" />
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

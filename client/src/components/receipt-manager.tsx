@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSmartQuery } from "@/hooks/use-enhanced-queries";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,23 +30,12 @@ export function ReceiptManager({ orderItems, orderId }: ReceiptManagerProps) {
   const [selectedReceipt, setSelectedReceipt] = useState<any>(null);
   const [, forceUpdate] = useState(0);
 
-  // Fetch item receipts for this order
-  const receiptQuery = useQuery({
-    queryKey: ["/api/item-receipts", orderId],
-    queryFn: async () => {
-      try {
-        const res = await fetch("/api/item-receipts", {
-          headers: {
-            'Cache-Control': 'no-cache',
-            'Pragma': 'no-cache'
-          }
-        });
-        
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-        }
-        
-        const allReceipts = await res.json();
+  // Fetch item receipts for this order using optimized query
+  const receiptQuery = useSmartQuery(
+    ["/api/item-receipts", orderId],
+    {
+      queryFn: async () => {
+        const allReceipts = await apiRequest("GET", "/api/item-receipts");
         
         // Filter receipts to only include those for items in this order
         const orderItemIds = orderItems.map((item: any) => item.id);
@@ -53,31 +43,22 @@ export function ReceiptManager({ orderItems, orderId }: ReceiptManagerProps) {
           orderItemIds.includes(receipt.orderItemId)
         );
         
-        console.log(`✅ Query successful: Found ${filteredReceipts.length} receipts for order ${orderId}`);
-        console.log(`✅ Filtered receipts:`, filteredReceipts);
         return filteredReceipts;
-      } catch (error) {
-        console.error("❌ Receipt query failed:", error);
-        // Return empty array instead of throwing to prevent error state
-        return [];
-      }
-    },
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
-    retry: false,
-    enabled: orderItems.length > 0,
-  });
+      },
+      cacheType: "DYNAMIC",
+      enabled: orderItems.length > 0,
+    }
+  );
 
   // Fetch invoices for selection
-  const { data: invoices = [] } = useQuery({
-    queryKey: ["/api/invoices", orderId],
-    queryFn: async () => {
-      const res = await apiRequest("GET", `/api/invoices?orderId=${orderId}`);
-      return await res.json();
-    },
-  });
+  const { data: invoices = [] } = useSmartQuery(
+    ["/api/invoices", orderId],
+    {
+      queryFn: () => apiRequest("GET", `/api/invoices?orderId=${orderId}`),
+      cacheType: "MASTER",
+      enabled: !!orderId,
+    }
+  );
 
   // Create item receipt mutation
   const createReceiptMutation = useMutation({

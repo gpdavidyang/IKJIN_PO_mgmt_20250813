@@ -443,7 +443,8 @@ export default function Reports() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-[1366px] mx-auto p-6 space-y-6">
       {/* 페이지 헤더 - UI Standards 적용 */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -466,7 +467,7 @@ export default function Reports() {
       </div>
 
       {/* 리포트 타입 선택 탭 */}
-      <div className="bg-white rounded-lg shadow border">
+      <Card className="shadow-sm">
         <div className="border-b">
           <nav className="-mb-px flex">
             <button
@@ -497,7 +498,7 @@ export default function Reports() {
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-              프로젝트별 보고서
+              현장별 보고서
             </button>
             <button
               onClick={() => setReportType('vendor')}
@@ -511,10 +512,10 @@ export default function Reports() {
             </button>
           </nav>
         </div>
-      </div>
+      </Card>
 
       {/* 필터 섹션 - UI Standards 적용 */}
-      <Card>
+      <Card className="shadow-sm">
         <CardHeader className="pb-3">
           <CardTitle className="text-lg font-semibold flex items-center gap-2 text-gray-900">
             <Filter className="h-5 w-5 text-blue-600" />
@@ -522,7 +523,7 @@ export default function Reports() {
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-1">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
             {/* Common filters for all report types */}
             {(reportType === 'orders' || reportType === 'category' || reportType === 'project' || reportType === 'vendor') && (
               <>
@@ -800,7 +801,7 @@ export default function Reports() {
       </Card>
 
       {/* 검색 결과 리스트 - UI Standards 적용 */}
-      <Card>
+      <Card className="shadow-sm">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div>
@@ -808,7 +809,7 @@ export default function Reports() {
                 <Search className="h-5 w-5 text-blue-600" />
                 {reportType === 'orders' ? '검색 결과' : 
                  reportType === 'category' ? '분류별 보고서 결과' :
-                 reportType === 'project' ? '프로젝트별 보고서 결과' :
+                 reportType === 'project' ? '현장별 보고서 결과' :
                  '거래처별 보고서 결과'}
               </CardTitle>
               <p className="text-sm text-gray-600 mt-1">
@@ -968,6 +969,9 @@ export default function Reports() {
                           {getSortIcon('vendor')}
                         </div>
                       </th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-900">
+                        주요 품목 계층
+                      </th>
                       <th 
                         className="text-left py-3 px-4 text-sm font-medium text-gray-900 cursor-pointer hover:bg-gray-100 select-none"
                         onClick={() => handleSort('orderDate')}
@@ -1045,6 +1049,30 @@ export default function Reports() {
                           ) : '-'}
                         </td>
                         <td className="py-3 px-4 text-sm">
+                          {order.items && order.items.length > 0 ? (
+                            <div className="space-y-1">
+                              {order.items.slice(0, 2).map((item: any, index: number) => (
+                                <div key={index} className="text-xs">
+                                  <span className="font-medium text-blue-600">
+                                    {item.majorCategory || '미분류'}
+                                  </span>
+                                  {item.middleCategory && (
+                                    <span className="text-gray-500"> &gt; {item.middleCategory}</span>
+                                  )}
+                                  {item.minorCategory && (
+                                    <span className="text-gray-400"> &gt; {item.minorCategory}</span>
+                                  )}
+                                </div>
+                              ))}
+                              {order.items.length > 2 && (
+                                <div className="text-xs text-gray-500">
+                                  외 {order.items.length - 2}개 품목
+                                </div>
+                              )}
+                            </div>
+                          ) : '-'}
+                        </td>
+                        <td className="py-3 px-4 text-sm">
                           {order.orderDate ? new Date(order.orderDate).toLocaleDateString('ko-KR') : '-'}
                         </td>
                         <td className="py-3 px-4 text-sm">
@@ -1092,6 +1120,7 @@ export default function Reports() {
                           <td className="border border-gray-200 px-3 py-2 text-sm font-medium">합계</td>
                           <td className="border border-gray-200 px-3 py-2 text-sm"></td>
                           <td className="border border-gray-200 px-3 py-2 text-sm"></td>
+                          <td className="border border-gray-200 px-3 py-2 text-sm"></td>
                           <td className="border border-gray-200 px-3 py-2 text-sm">
                             <span className="font-bold text-blue-600 font-semibold">{formatKoreanWon(Math.floor(totalAmount))}</span>
                           </td>
@@ -1112,6 +1141,7 @@ export default function Reports() {
                         <tr className="bg-gray-50 font-medium">
                           <td className="border border-gray-200 px-3 py-2 text-sm"></td>
                           <td className="border border-gray-200 px-3 py-2 text-sm font-medium">평균</td>
+                          <td className="border border-gray-200 px-3 py-2 text-sm"></td>
                           <td className="border border-gray-200 px-3 py-2 text-sm"></td>
                           <td className="border border-gray-200 px-3 py-2 text-sm"></td>
                           <td className="border border-gray-200 px-3 py-2 text-sm">
@@ -1136,7 +1166,8 @@ export default function Reports() {
               )}
 
               {/* Category Report View */}
-              {reportType === 'category' && categoryReport && (
+              {reportType === 'category' && (
+                categoryReport ? (
                 <div className="space-y-4">
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <h3 className="text-lg font-semibold mb-2">
@@ -1166,36 +1197,71 @@ export default function Reports() {
                     <table className="w-full border-collapse">
                       <thead>
                         <tr className="bg-gray-50 border-b">
-                          <th className="text-left py-3 px-4 font-medium">분류</th>
+                          <th className="text-left py-3 px-4 font-medium">분류 계층</th>
                           <th className="text-right py-3 px-4 font-medium">발주 수</th>
                           <th className="text-right py-3 px-4 font-medium">품목 수</th>
                           <th className="text-right py-3 px-4 font-medium">총 수량</th>
                           <th className="text-right py-3 px-4 font-medium">총 금액</th>
                           <th className="text-right py-3 px-4 font-medium">평균 금액</th>
+                          <th className="text-left py-3 px-4 font-medium">주요 품목</th>
                         </tr>
                       </thead>
                       <tbody>
                         {categoryReport.data?.map((item: any, index: number) => (
                           <tr key={index} className="border-b hover:bg-gray-50">
-                            <td className="py-3 px-4">{item.category}</td>
+                            <td className="py-3 px-4">
+                              <div className="text-sm">
+                                <div className="font-medium text-gray-900">{item.category}</div>
+                                {item.hierarchyPath && item.hierarchyPath !== item.category && (
+                                  <div className="text-xs text-gray-500 mt-1">{item.hierarchyPath}</div>
+                                )}
+                              </div>
+                            </td>
                             <td className="py-3 px-4 text-right">{item.orderCount}</td>
                             <td className="py-3 px-4 text-right">{item.itemCount}</td>
                             <td className="py-3 px-4 text-right">{item.totalQuantity?.toLocaleString()}</td>
                             <td className="py-3 px-4 text-right font-medium">{formatKoreanWon(Math.floor(item.totalAmount))}</td>
                             <td className="py-3 px-4 text-right">{formatKoreanWon(Math.floor(item.averageAmount))}</td>
+                            <td className="py-3 px-4">
+                              {item.topItems && item.topItems.length > 0 ? (
+                                <div className="space-y-1">
+                                  {item.topItems.slice(0, 3).map((topItem: any, itemIndex: number) => (
+                                    <div key={itemIndex} className="text-xs">
+                                      <span className="font-medium text-blue-600">{topItem.itemName}</span>
+                                      <span className="text-gray-500 ml-1">
+                                        ({topItem.quantity}개, {formatKoreanWon(Math.floor(topItem.amount))})
+                                      </span>
+                                    </div>
+                                  ))}
+                                  {item.topItems.length > 3 && (
+                                    <div className="text-xs text-gray-400">
+                                      외 {item.topItems.length - 3}개 품목
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-xs text-gray-400">-</span>
+                              )}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
                 </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="text-gray-500">분류별 보고서 데이터를 불러오는 중이거나 데이터가 없습니다.</div>
+                    <p className="text-sm text-gray-400 mt-2">필터 조건을 변경하여 다시 검색해보세요.</p>
+                  </div>
+                )
               )}
 
               {/* Project Report View */}
               {reportType === 'project' && projectReport && (
                 <div className="space-y-4">
                   <div className="bg-gray-50 p-4 rounded-lg">
-                    <h3 className="text-lg font-semibold mb-2">프로젝트별 발주 보고서</h3>
+                    <h3 className="text-lg font-semibold mb-2">현장별 발주 보고서</h3>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                       <div>
                         <span className="text-gray-600">총 프로젝트 수:</span>
@@ -1257,7 +1323,8 @@ export default function Reports() {
               )}
 
               {/* Vendor Report View */}
-              {reportType === 'vendor' && vendorReport && (
+              {reportType === 'vendor' && (
+                vendorReport ? (
                 <div className="space-y-4">
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <h3 className="text-lg font-semibold mb-2">거래처별 발주 보고서</h3>
@@ -1339,6 +1406,12 @@ export default function Reports() {
                     </div>
                   )}
                 </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="text-gray-500">거래처별 보고서 데이터를 불러오는 중이거나 데이터가 없습니다.</div>
+                    <p className="text-sm text-gray-400 mt-2">필터 조건을 변경하여 다시 검색해보세요.</p>
+                  </div>
+                )
               )}
             </>
           )}
@@ -1653,6 +1726,7 @@ export default function Reports() {
         />
       )}
 
+      </div>
     </div>
   );
 }

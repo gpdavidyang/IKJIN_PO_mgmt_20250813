@@ -16,6 +16,7 @@ import { validateMultipleVendors } from './vendor-validation';
 import { POEmailService } from './po-email-service';
 import { removeAllInputSheets } from './excel-input-sheet-remover';
 import { DebugLogger } from './debug-logger';
+import { ExcelToPDFConverter } from './excel-to-pdf-converter';
 import fs from 'fs';
 import path from 'path';
 
@@ -53,7 +54,9 @@ export interface EmailPreviewStep {
   attachmentInfo: {
     originalFile: string;
     processedFile: string;
+    processedPdfFile?: string;
     fileSize: number;
+    pdfFileSize?: number;
   };
   canProceed: boolean;
 }
@@ -285,7 +288,23 @@ export class ExcelAutomationService {
 
       await removeAllInputSheets(filePath, processedPath);
 
+      // PDF 변환 (FR-014, FR-016 요구사항)
+      const pdfPath = processedPath.replace(/\.(xlsx?)$/i, '.pdf');
+      console.log(`📄 Excel을 PDF로 변환 시도 중: ${pdfPath}`);
+      
+      let pdfConversionSuccess = false;
+      try {
+        await ExcelToPDFConverter.convertExcelToPDF(processedPath, pdfPath);
+        pdfConversionSuccess = true;
+        console.log(`✅ PDF 변환 성공: ${pdfPath}`);
+      } catch (pdfError) {
+        console.error('⚠️ PDF 변환 실패 - Excel 파일만 첨부됩니다:', pdfError);
+        // PDF 변환 실패는 치명적이지 않으므로 계속 진행
+        // Excel 파일만으로도 이메일 발송은 가능
+      }
+
       const stats = fs.statSync(processedPath);
+      const pdfStats = pdfConversionSuccess && fs.existsSync(pdfPath) ? fs.statSync(pdfPath) : null;
 
       const emailPreview: EmailPreviewStep = {
         recipients,
@@ -293,13 +312,18 @@ export class ExcelAutomationService {
         attachmentInfo: {
           originalFile: path.basename(filePath),
           processedFile: path.basename(processedPath),
-          fileSize: stats.size
+          processedPdfFile: pdfStats ? path.basename(pdfPath) : undefined,
+          fileSize: stats.size,
+          pdfFileSize: pdfStats ? pdfStats.size : undefined
         },
         canProceed: recipients.length > 0 && !vendorValidation.needsUserAction
       };
 
       console.log(`📧 이메일 수신자: ${recipients.join(', ')}`);
       console.log(`📎 첨부파일: ${emailPreview.attachmentInfo.processedFile} (${Math.round(stats.size / 1024)}KB)`);
+      if (pdfStats) {
+        console.log(`📄 PDF 파일: ${emailPreview.attachmentInfo.processedPdfFile} (${Math.round(pdfStats.size / 1024)}KB)`);
+      }
 
       return emailPreview;
 
@@ -319,7 +343,7 @@ export class ExcelAutomationService {
   }
 
   /**
-   * 4단계: 이메일 발송 실행
+   * 4단계: 이메일 발송 실행 (Excel과 PDF 첨부)
    */
   static async sendEmails(
     processedFilePath: string,
@@ -328,6 +352,7 @@ export class ExcelAutomationService {
       subject?: string;
       orderNumber?: string;
       additionalMessage?: string;
+      pdfFilePath?: string;
     } = {}
   ): Promise<EmailSendResult> {
     DebugLogger.logFunctionEntry('ExcelAutomationService.sendEmails', {
@@ -439,7 +464,23 @@ export class ExcelAutomationService {
       );
 
       await removeAllInputSheets(filePath, processedPath);
+      
+      // PDF 변환 (FR-014, FR-016 요구사항)
+      const pdfPath = processedPath.replace(/\.(xlsx?)$/i, '.pdf');
+      console.log(`📄 Excel을 PDF로 변환 시도 중: ${pdfPath}`);
+      
+      let pdfConversionSuccess = false;
+      try {
+        await ExcelToPDFConverter.convertExcelToPDF(processedPath, pdfPath);
+        pdfConversionSuccess = true;
+        console.log(`✅ PDF 변환 성공: ${pdfPath}`);
+      } catch (pdfError) {
+        console.error('⚠️ PDF 변환 실패 - Excel 파일만 첨부됩니다:', pdfError);
+        // PDF 변환 실패는 치명적이지 않으므로 계속 진행
+      }
+
       const stats = fs.statSync(processedPath);
+      const pdfStats = pdfConversionSuccess && fs.existsSync(pdfPath) ? fs.statSync(pdfPath) : null;
 
       return {
         recipients,
@@ -447,7 +488,9 @@ export class ExcelAutomationService {
         attachmentInfo: {
           originalFile: path.basename(filePath),
           processedFile: path.basename(processedPath),
-          fileSize: stats.size
+          processedPdfFile: pdfStats ? path.basename(pdfPath) : undefined,
+          fileSize: stats.size,
+          pdfFileSize: pdfStats ? pdfStats.size : undefined
         },
         canProceed: recipients.length > 0
       };

@@ -6,7 +6,15 @@ import { EnhancedTable, Column } from "@/components/ui/enhanced-table";
 import { SmartStatusBadge } from "@/components/ui/status-system";
 import { formatKoreanWon } from "@/lib/utils";
 import { 
-  MoreVertical 
+  MoreVertical,
+  Eye,
+  Edit,
+  Trash2,
+  Mail,
+  MailOpen,
+  MailX,
+  Send,
+  Clock
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -16,6 +24,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface Order {
   id: string;
@@ -29,6 +39,11 @@ interface Order {
   userName: string | null;
   approvalLevel: number | null;
   currentApproverRole: string | null;
+  // Email status fields
+  emailStatus?: string | null;
+  lastSentAt?: string | null;
+  totalEmailsSent?: number;
+  openedAt?: string | null;
 }
 
 interface EnhancedOrdersTableProps {
@@ -36,6 +51,11 @@ interface EnhancedOrdersTableProps {
   isLoading?: boolean;
   onStatusChange?: (orderId: string, newStatus: string) => void;
   onDelete?: (orderId: string) => void;
+  onEmailSend?: (order: Order) => void;
+  onViewEmailHistory?: (order: Order) => void;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+  onSort?: (field: string) => void;
 }
 
 // Status configuration is now handled by the SmartStatusBadge component
@@ -44,9 +64,98 @@ export function EnhancedOrdersTable({
   orders, 
   isLoading = false,
   onStatusChange,
-  onDelete 
+  onDelete,
+  onEmailSend,
+  onViewEmailHistory,
+  sortBy,
+  sortOrder,
+  onSort
 }: EnhancedOrdersTableProps) {
-  const [, navigate] = useLocation();
+  const [location, navigate] = useLocation();
+
+  // Helper function to render email status
+  const renderEmailStatus = (order: Order) => {
+    const handleClick = onViewEmailHistory ? () => onViewEmailHistory(order) : undefined;
+    if (!order.emailStatus || order.totalEmailsSent === 0) {
+      return (
+        <Badge 
+          variant="outline" 
+          className={`text-gray-500 ${handleClick ? 'cursor-pointer hover:bg-gray-100' : ''}`}
+          onClick={handleClick}
+        >
+          <Mail className="h-3 w-3 mr-1" />
+          미발송
+        </Badge>
+      );
+    }
+
+    const emailStatusConfig = {
+      sent: { 
+        icon: Send, 
+        label: "발송됨", 
+        className: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
+        tooltip: order.lastSentAt ? `최근 발송: ${format(new Date(order.lastSentAt), "yyyy.MM.dd HH:mm", { locale: ko })}` : ""
+      },
+      opened: { 
+        icon: MailOpen, 
+        label: "열람됨", 
+        className: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
+        tooltip: order.openedAt ? `열람 시간: ${format(new Date(order.openedAt), "yyyy.MM.dd HH:mm", { locale: ko })}` : ""
+      },
+      clicked: { 
+        icon: MailOpen, 
+        label: "클릭됨", 
+        className: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300",
+        tooltip: "링크 클릭됨"
+      },
+      failed: { 
+        icon: MailX, 
+        label: "실패", 
+        className: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
+        tooltip: "발송 실패"
+      },
+      bounced: { 
+        icon: MailX, 
+        label: "반송됨", 
+        className: "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300",
+        tooltip: "이메일 반송됨"
+      }
+    };
+
+    const config = emailStatusConfig[order.emailStatus as keyof typeof emailStatusConfig] || emailStatusConfig.sent;
+    const Icon = config.icon;
+
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Badge 
+              variant="secondary" 
+              className={`${config.className} ${handleClick ? 'cursor-pointer hover:opacity-80' : ''}`}
+              onClick={handleClick}
+            >
+              <Icon className="h-3 w-3 mr-1" />
+              {config.label}
+              {order.totalEmailsSent && order.totalEmailsSent > 1 && (
+                <span className="ml-1">({order.totalEmailsSent})</span>
+              )}
+            </Badge>
+          </TooltipTrigger>
+          {config.tooltip && (
+            <TooltipContent>
+              <p>{config.tooltip}</p>
+              {order.totalEmailsSent && order.totalEmailsSent > 1 && (
+                <p className="text-xs text-gray-400 mt-1">총 {order.totalEmailsSent}회 발송</p>
+              )}
+              {handleClick && (
+                <p className="text-xs text-gray-400 mt-1">클릭하여 상세 이력 보기</p>
+              )}
+            </TooltipContent>
+          )}
+        </Tooltip>
+      </TooltipProvider>
+    );
+  };
 
   const columns: Column<Order>[] = [
     {
@@ -56,7 +165,22 @@ export function EnhancedOrdersTable({
       searchable: true,
       width: "150px",
       accessor: (row) => (
-        <div className="font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300">
+        <div 
+          className="font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 cursor-pointer"
+          onClick={(e) => {
+            e.stopPropagation();
+            try {
+              if (typeof navigate === 'function') {
+                navigate(`/orders/${row.id}`);
+              } else {
+                window.location.href = `/orders/${row.id}`;
+              }
+            } catch (error) {
+              console.error('Navigation error:', error);
+              window.location.href = `/orders/${row.id}`;
+            }
+          }}
+        >
           {row.orderNumber}
         </div>
       ),
@@ -74,6 +198,13 @@ export function EnhancedOrdersTable({
           animated
         />
       ),
+    },
+    {
+      key: "emailStatus",
+      header: "이메일",
+      sortable: true,
+      width: "120px",
+      accessor: (row) => renderEmailStatus(row),
     },
     {
       key: "projectName",
@@ -148,96 +279,116 @@ export function EnhancedOrdersTable({
     },
     {
       key: "actions",
-      header: "",
-      width: "60px",
+      header: "액션",
+      width: "200px",
       align: "center",
       accessor: (row) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+        <div className="flex items-center justify-center gap-1" onClick={(e) => e.stopPropagation()}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0"
+            onClick={() => {
+              try {
+                if (typeof navigate === 'function') {
+                  navigate(`/orders/${row.id}`);
+                } else {
+                  window.location.href = `/orders/${row.id}`;
+                }
+              } catch (error) {
+                window.location.href = `/orders/${row.id}`;
+              }
+            }}
+            title="상세 보기"
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0"
+            onClick={() => {
+              try {
+                if (typeof navigate === 'function') {
+                  navigate(`/orders/${row.id}/edit`);
+                } else {
+                  window.location.href = `/orders/${row.id}/edit`;
+                }
+              } catch (error) {
+                window.location.href = `/orders/${row.id}/edit`;
+              }
+            }}
+            title="수정"
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+          {onEmailSend && (
             <Button
               variant="ghost"
               size="sm"
               className="h-8 w-8 p-0"
-              onClick={(e) => e.stopPropagation()}
+              onClick={() => onEmailSend(row)}
+              title="이메일 전송"
             >
-              <MoreVertical className="h-4 w-4" />
+              <Mail className="h-4 w-4" />
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(`/orders/${row.id}`);
+          )}
+          {onDelete && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+              onClick={() => {
+                if (confirm("정말로 이 발주서를 삭제하시겠습니까?")) {
+                  onDelete(row.id);
+                }
               }}
+              title="삭제"
             >
-              상세 보기
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(`/orders/${row.id}/edit`);
-              }}
-            >
-              수정
-            </DropdownMenuItem>
-            
-            {onStatusChange && row.status === "draft" && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onStatusChange(row.id, "pending");
-                  }}
-                  className="text-primary-600"
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
+          {onStatusChange && (row.status === "draft" || row.status === "pending") && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
                 >
-                  승인 요청
-                </DropdownMenuItem>
-              </>
-            )}
-            
-            {onStatusChange && row.status === "pending" && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onStatusChange(row.id, "approved");
-                  }}
-                  className="text-green-600"
-                >
-                  승인
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onStatusChange(row.id, "rejected");
-                  }}
-                  className="text-red-600"
-                >
-                  거절
-                </DropdownMenuItem>
-              </>
-            )}
-            
-            {onDelete && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (confirm("정말로 이 발주서를 삭제하시겠습니까?")) {
-                      onDelete(row.id);
-                    }
-                  }}
-                  className="text-red-600"
-                >
-                  삭제
-                </DropdownMenuItem>
-              </>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                {row.status === "draft" && (
+                  <DropdownMenuItem
+                    onClick={() => onStatusChange(row.id, "pending")}
+                    className="text-primary-600"
+                  >
+                    승인 요청
+                  </DropdownMenuItem>
+                )}
+                
+                {row.status === "pending" && (
+                  <>
+                    <DropdownMenuItem
+                      onClick={() => onStatusChange(row.id, "approved")}
+                      className="text-green-600"
+                    >
+                      승인
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => onStatusChange(row.id, "rejected")}
+                      className="text-red-600"
+                    >
+                      거절
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
       ),
     },
   ];
@@ -251,7 +402,17 @@ export function EnhancedOrdersTable({
       showPagination
       pageSize={20}
       pageSizeOptions={[10, 20, 50, 100]}
-      onRowClick={(row) => navigate(`/orders/${row.id}`)}
+      onRowClick={(row) => {
+        try {
+          if (typeof navigate === 'function') {
+            navigate(`/orders/${row.id}`);
+          } else {
+            window.location.href = `/orders/${row.id}`;
+          }
+        } catch (error) {
+          window.location.href = `/orders/${row.id}`;
+        }
+      }}
       rowKey={(row) => row.id}
       emptyMessage="등록된 발주서가 없습니다"
       isLoading={isLoading}

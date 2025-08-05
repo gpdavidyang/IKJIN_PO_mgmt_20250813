@@ -2,7 +2,7 @@ import nodemailer from 'nodemailer';
 import path from 'path';
 import fs from 'fs';
 import { convertExcelToPdf } from './excel-to-pdf';
-import { ExcelToPDFConverter } from './excel-to-pdf-converter.js';
+import { ExcelToPDFConverter } from './excel-to-pdf-converter';
 import { POTemplateProcessor } from './po-template-processor';
 import { removeAllInputSheets } from './excel-input-sheet-remover';
 
@@ -75,7 +75,7 @@ export class POEmailService {
 
       // 2. PDF 변환 (남은 모든 시트) - PRD 요구사항: 엑셀파일을 PDF화 한 파일도 첨부
       const pdfPath = path.join(uploadsDir, `po-advanced-format-${timestamp}.pdf`);
-      let pdfResult = { success: false, error: '' };
+      let pdfResult: { success: boolean; pdfPath?: string; error?: string } = { success: false, error: '' };
       
       try {
         // 새로운 Excel to PDF 변환기 사용

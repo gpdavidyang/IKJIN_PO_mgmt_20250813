@@ -328,16 +328,16 @@ export function DashboardGrid({
   const gridClass = {
     1: "grid-cols-1",
     2: "grid-cols-1 md:grid-cols-2",
-    3: "grid-cols-1 md:grid-cols-2 lg:grid-cols-3",
-    4: "grid-cols-1 md:grid-cols-2 lg:grid-cols-4",
-    5: "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5",
-    6: "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"
+    3: "grid-cols-1 md:grid-cols-2 xl:grid-cols-3",
+    4: "grid-cols-1 md:grid-cols-2 xl:grid-cols-4",
+    5: "grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5",
+    6: "grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6"
   };
 
   return (
     <div className={cn(
       "grid gap-4",
-      gridClass[columns as keyof typeof gridClass] || "grid-cols-1 md:grid-cols-2 lg:grid-cols-4",
+      gridClass[columns as keyof typeof gridClass] || "grid-cols-1 md:grid-cols-2 xl:grid-cols-4",
       className
     )}>
       {widgets.map((widget) => {
@@ -396,7 +396,7 @@ export function SummaryCard({
         <CardTitle className="text-lg font-semibold">{title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {metrics.map((metric, index) => (
             <div key={index} className="space-y-1">
               <p className="text-sm text-muted-foreground">{metric.label}</p>

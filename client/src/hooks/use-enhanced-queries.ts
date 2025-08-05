@@ -15,8 +15,16 @@ import {
   CACHE_CONFIGS 
 } from "@/lib/query-optimization";
 
-// Re-export the useCacheWarming hook for use in other components
-export { useCacheWarming };
+// Re-export commonly used hooks and utilities for use in other components
+export { 
+  useCacheWarming,
+  useSmartQuery,
+  useSmartMutation,
+  useBackgroundSync,
+  usePrefetchManager,
+  queryKeys,
+  CACHE_CONFIGS
+};
 import type { 
   PurchaseOrder, 
   Vendor, 
@@ -70,14 +78,34 @@ export function useDashboardStats(timeRange?: string) {
   );
 }
 
-// Order hooks
+// Order hooks (using optimized endpoint)
 export function useOrders(filters?: any) {
+  const queryFn = async () => {
+    const url = `/api/orders-optimized${filters ? `?${new URLSearchParams(filters).toString()}` : ''}`;
+    console.log('🔍 useOrders - Requesting optimized:', url);
+    console.log('🔍 useOrders - Filters:', filters);
+    
+    const response = await apiRequest("GET", url);
+    console.log('📦 useOrders - Response received:', response);
+    console.log('📦 useOrders - Orders count:', response?.orders?.length || 0);
+    console.log('📦 useOrders - Total count:', response?.total || 0);
+    console.log('📦 useOrders - First order:', response?.orders?.[0]);
+    console.log('📦 useOrders - Vendor/Project info:', {
+      vendorName: response?.orders?.[0]?.vendorName,
+      projectName: response?.orders?.[0]?.projectName
+    });
+    
+    return response;
+  };
+
   return useSmartQuery(
     queryKeys.orders.list(filters),
     {
-      queryFn: () => apiRequest("GET", `/api/orders${filters ? `?${new URLSearchParams(filters).toString()}` : ''}`),
+      queryFn,
       cacheType: "DYNAMIC",
       backgroundSync: true,
+      staleTime: 30000, // 30초 동안 fresh 상태 유지 (재요청 방지)
+      gcTime: 300000, // 5분 동안 캐시 유지
     }
   );
 }
@@ -389,11 +417,11 @@ export function useQueryOptimization() {
 export function useAppInitialization() {
   const { data: user } = useCurrentUser();
   
-  // Prefetch essential static data
+  // Prefetch essential static data only (projects/vendors come via optimized endpoints)
   usePositions();
   useUITerms();
   useItemCategories();
-  useActiveProjects();
+  // Removed useActiveProjects() - this data comes via optimized orders endpoint
   
   // Prefetch user-specific data when user is available
   const { data: permissions } = useUserPermissions(user?.id);

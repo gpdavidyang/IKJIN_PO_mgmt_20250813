@@ -1,5 +1,159 @@
-# UI 표준화 문서 (Version 2.0)
-Purchase Order Management System - 엔터프라이즈급 디자인 시스템
+# UI 표준화 문서 (Version 4.0)
+Purchase Order Management System - 전문적인 UI/UX 디자인 시스템
+
+## 최신 업데이트
+- 2025-08-06: **폰트 크기, 여백, 버튼 일관성 표준화** - 시각적 일관성 문제 해결
+- 2025-08-06: 전문적인 UI/UX 원칙 대폭 강화
+- 최대 너비 1366px 제한 및 레이아웃 표준화
+- 시각적 계층 구조 및 일관된 디자인 패턴 추가
+- 2025-08-05: 통합 워크플로우 UI/UX 가이드라인 추가
+
+## 핵심 UI/UX 원칙
+
+### 0. **UI 일관성 표준 (CRITICAL)** 🔥
+#### 폰트 크기 표준화
+- **페이지 제목**: `text-2xl font-bold` (24px) - 모든 페이지 동일
+- **페이지 설명**: `text-sm text-gray-600` (14px) - 모든 페이지 동일  
+- **테이블 헤더**: `text-xs font-medium text-gray-500 uppercase` (12px)
+- **테이블 데이터**: `text-sm text-gray-900` (14px) - **모든 테이블 동일**
+- **버튼 텍스트**: `text-sm font-medium` (14px)
+
+#### 여백 표준화
+- **페이지 컨테이너**: `p-6` (24px) - 모든 페이지 동일
+- **제목-설명 간격**: `mb-2` (8px) - 모든 페이지 동일
+- **설명-검색영역 간격**: `mb-6` (24px) - **모든 페이지 동일** 
+- **검색영역-테이블 간격**: `mb-6` (24px) - **모든 페이지 동일**
+- **테이블 행 높이**: `py-4` (16px 상하) - **모든 테이블 동일**
+- **테이블 셀 패딩**: `px-6 py-4` (24px 좌우, 16px 상하) - **모든 테이블 동일**
+
+#### 버튼 표준화
+- **주요 액션 버튼**: `px-4 py-2 text-sm font-medium` - 위치 우측 상단 일관
+- **버튼 텍스트 형식**: "{항목명} 추가" (예: "발주서 추가", "현장 추가", "거래처 추가")
+- **아이콘 버튼**: `h-8 w-8 p-0` - 액션 버튼 크기 통일
+- **버튼 간격**: `gap-2` - 액션 버튼 간 간격 통일
+
+#### 검색창 표준화
+- **플레이스홀더 형식**: "{주요필드1}, {주요필드2}로 검색..." (최대 2개)
+- **검색창 높이**: `h-10` (40px) - 모든 페이지 동일
+
+### 1. 레이아웃 & 공간 활용
+- **최대 너비 제한**: 1366px (`max-w-[1366px]`) - 대형 모니터에서도 최적의 가독성 유지
+- **일관된 여백**: 카드 간 6px (`space-y-6`), 카드 내부 `p-4` 또는 `p-6` 표준화
+- **반응형 그리드**: 모바일부터 데스크톱까지 유연하게 대응
+- **메인 컨테이너**: `<div className="max-w-[1366px] mx-auto p-6">`
+
+### 2. 색상 체계
+- **주요 색상**: 파란색 계열 (#3B82F6, #2563EB, #1E40AF)
+- **배경 계층화**:
+  - 메인 배경: `bg-gray-50`
+  - 카드 배경: `bg-white`
+  - 강조 영역: `bg-blue-50`
+- **상태별 색상 코딩**: 일관된 상태 표시 색상 사용
+
+### 3. 시각적 계층 구조
+```tsx
+// 제목 계층
+<h1 className="text-2xl font-bold">     // 페이지 제목
+<h2 className="text-xl font-semibold">  // 섹션 제목
+<h3 className="text-lg font-medium">    // 카드 제목
+<p className="text-sm">                 // 본문
+<span className="text-xs">              // 작은 텍스트
+```
+
+### 4. 그림자 효과
+- **카드**: `shadow-sm` - 부드러운 그림자로 깊이감 표현
+- **버튼**: `shadow-sm` - 미세한 그림자로 클릭 가능함 표시
+- **호버**: `hover:shadow-md` - 인터랙션 시 그림자 강화
+
+### 5. 둥근 모서리
+- **카드**: `rounded-lg` (8px)
+- **버튼**: `rounded-md` (6px)
+- **입력 필드**: `rounded-md` (6px)
+- **배지**: `rounded-full` (완전 둥글게)
+
+### 6. 아이콘 사용 원칙
+- **크기**: 주요 아이콘 `w-5 h-5`, 보조 아이콘 `w-4 h-4`
+- **색상**: 텍스트와 동일하거나 약간 연한 색상
+- **위치**: 텍스트 왼쪽에 배치, `gap-2` 간격
+
+### 7. 호버 효과
+```tsx
+// 일관된 호버 상태
+className="hover:bg-gray-50 transition-colors"  // 테이블 행
+className="hover:text-blue-700"                 // 링크
+className="hover:bg-blue-700"                   // 버튼
+className="text-gray-400 hover:text-blue-600"   // 아이콘 버튼
+```
+
+### 8. 타이포그래피
+- **본문**: `text-sm` (14px) - 대부분의 콘텐츠
+- **작은 텍스트**: `text-xs` (12px) - 라벨, 보조 정보
+- **제목**: `font-bold` 또는 `font-semibold`
+- **줄 간격**: 적절한 `leading-relaxed` 사용
+
+### 9. 상태 표시
+```tsx
+// 배지 스타일 (일관된 패턴)
+<Badge className="bg-[color]-100 text-[color]-800 border border-[color]-200">
+```
+
+### 10. 로딩 상태
+- **스켈레톤 로더**: 콘텐츠 로딩 시
+- **스피너**: `animate-spin` 애니메이션
+- **진행률 표시**: 장시간 작업 시
+
+### 11. 데이터 표시 원칙
+- **숫자**: 천 단위 콤마 (`toLocaleString('ko-KR')`)
+- **통화**: `₩` 기호 + 천 단위 콤마
+- **날짜**: 한국식 표기 (YYYY. MM. DD)
+- **빈 값**: "-" 또는 "없음" 표시
+
+### 12. 인터랙션 피드백
+- **즉각적인 시각적 피드백**: 클릭, 호버 시
+- **토스트 메시지**: 작업 결과 알림
+- **진행 상태 표시**: 실시간 업데이트
+
+### 13. 접근성 고려사항
+- **포커스 표시**: `focus:ring-2 focus:ring-blue-500`
+- **적절한 대비율**: WCAG 기준 준수
+- **키보드 네비게이션**: 모든 인터랙티브 요소 접근 가능
+
+### 14. 폼 디자인
+```tsx
+// 일관된 입력 필드 스타일
+<Input className="h-10 text-sm border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
+```
+
+### 15. 테이블 디자인 (표준화됨)
+```tsx
+// 표준화된 테이블 스타일 - 모든 테이블에 적용
+<table className="w-full">
+  <thead className="bg-gray-50 border-b border-gray-200">
+    <tr>
+      <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+        <button className="flex items-center gap-1 hover:text-gray-700">
+          헤더
+          <ChevronsUpDown className="h-3 w-3" />
+        </button>
+      </th>
+    </tr>
+  </thead>
+  <tbody className="bg-white divide-y divide-gray-200">
+    <tr className="hover:bg-gray-50 transition-colors">
+      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+        내용
+      </td>
+    </tr>
+  </tbody>
+</table>
+```
+
+#### 테이블 표준 요구사항 (CRITICAL)
+- **행 높이**: 모든 테이블 `py-4` (16px 상하) 통일
+- **셀 패딩**: 모든 테이블 `px-6 py-4` (24px 좌우, 16px 상하) 통일  
+- **데이터 폰트**: 모든 테이블 `text-sm text-gray-900` (14px) 통일
+- **헤더 폰트**: 모든 테이블 `text-xs font-medium text-gray-500 uppercase` 통일
+- **호버 효과**: 모든 테이블 `hover:bg-gray-50 transition-colors` 통일
 
 ## 1. 컬러 시스템
 
@@ -396,15 +550,32 @@ className={`h-10 ${value ? "border-blue-500 bg-blue-50" : ""}`}
 
 ## 5. 반응형 브레이크포인트
 
-### Tailwind Breakpoints
+### Tailwind Breakpoints (iPad 기준)
 - **Mobile**: `기본` (0px~)
-- **Small**: `sm:` (640px~)
-- **Large**: `lg:` (1024px~)
+- **Small Mobile**: `sm:` (640px~)
+- **Tablet**: `md:` (768px~)
+- **Large Tablet**: `lg:` (1024px~)
+- **iPad Pro (기준점)**: `xl:` (1386px~)
+- **Desktop**: `2xl:` (1536px~)
+- **Large Desktop**: `3xl:` (1920px~)
 
-### 반응형 패턴
-- **Flex Direction**: `flex-col sm:flex-row`
-- **Grid Columns**: `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`
-- **Gap Spacing**: `gap-4`
+### 반응형 패턴 (iPad 기준 최적화)
+- **Flex Direction**: `flex-col md:flex-row xl:flex-row`
+- **Grid Columns**: 
+  - 모바일: `grid-cols-1`
+  - 태블릿: `md:grid-cols-2`
+  - iPad Pro: `xl:grid-cols-3`
+  - 데스크톱: `2xl:grid-cols-4`
+- **Container Width**:
+  - 기본: `w-full`
+  - iPad Pro: `xl:max-w-[1386px] xl:mx-auto`
+  - 데스크톱: `2xl:max-w-7xl`
+- **Sidebar Layout**:
+  - 모바일/태블릿: 숨김 (햄버거 메뉴)
+  - iPad Pro 이상: `xl:w-64` (고정 사이드바)
+- **주요 컨텐츠 영역**:
+  - iPad Pro: `xl:ml-64` (사이드바 고려)
+  - 패딩: `px-4 md:px-6 xl:px-8`
 
 ## 6. 상태 처리
 
@@ -536,4 +707,350 @@ module.exports = {
 3. **Phase 3**: 페이지별 점진적 업데이트
 4. **Phase 4**: 구 시스템 제거 및 최종 검증
 
-이 표준을 바탕으로 모든 페이지를 일관되게 개선하여 엔터프라이즈급 UI/UX를 구현할 예정입니다.
+## 12. 통합 워크플로우 UI 패턴
+
+### 12.1 워크플로우 진행 상황 표시
+
+#### 5단계 프로세스 표시기
+```tsx
+interface WorkflowStep {
+  id: string;
+  title: string;
+  description?: string;
+  status: 'pending' | 'current' | 'completed' | 'error';
+}
+
+// 통합 워크플로우 단계
+const workflowSteps: WorkflowStep[] = [
+  { id: 'select', title: '방식 선택', description: '표준/엑셀 선택' },
+  { id: 'create', title: '발주서 작성', description: '데이터 입력' },
+  { id: 'approve', title: '승인 처리', description: '선택적' },
+  { id: 'process', title: '후처리', description: 'PDF/이메일' },
+  { id: 'complete', title: '완료', description: '결과 확인' }
+];
+```
+
+#### 진행 상황 표시 스타일
+```css
+/* 워크플로우 진행 상황 표시기 */
+.workflow-progress {
+  --progress-inactive: var(--color-gray-200);
+  --progress-active: var(--color-primary-500);
+  --progress-complete: var(--color-success-500);
+  --progress-error: var(--color-error-500);
+}
+
+.workflow-step {
+  @apply flex items-center space-x-3 p-4 rounded-lg transition-all duration-200;
+}
+
+.workflow-step.pending {
+  @apply bg-gray-50 text-gray-500;
+}
+
+.workflow-step.current {
+  @apply bg-blue-50 text-blue-700 font-semibold shadow-sm;
+}
+
+.workflow-step.completed {
+  @apply bg-green-50 text-green-700;
+}
+
+.workflow-step.error {
+  @apply bg-red-50 text-red-700;
+}
+```
+
+### 12.2 공통 후처리 파이프라인 UI
+
+#### 처리 단계 카드 컴포넌트
+```tsx
+interface ProcessingStep {
+  title: string;
+  description: string;
+  status: 'idle' | 'processing' | 'completed' | 'error';
+  progress?: number;
+  actions?: ReactNode;
+  details?: string[];
+}
+
+// 후처리 단계 스타일
+.processing-step-card {
+  @apply bg-white rounded-lg border border-gray-200 p-6 transition-all;
+  
+  &.processing {
+    @apply border-blue-400 shadow-md;
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  &.completed {
+    @apply border-green-400 bg-green-50;
+  }
+  
+  &.error {
+    @apply border-red-400 bg-red-50;
+  }
+}
+```
+
+### 12.3 통합 액션 버튼 패턴
+
+#### 워크플로우 액션 버튼
+```css
+/* 주요 액션 버튼 (다음 단계) */
+.workflow-action-primary {
+  @apply px-6 py-3 bg-primary-600 text-white font-medium rounded-lg;
+  @apply hover:bg-primary-700 active:bg-primary-800;
+  @apply transition-all duration-200;
+  @apply disabled:bg-gray-300 disabled:cursor-not-allowed;
+}
+
+/* 보조 액션 버튼 (이전, 취소) */
+.workflow-action-secondary {
+  @apply px-6 py-3 bg-white text-gray-700 font-medium rounded-lg;
+  @apply border border-gray-300;
+  @apply hover:bg-gray-50 active:bg-gray-100;
+  @apply transition-all duration-200;
+}
+
+/* 위험 액션 버튼 (삭제, 취소) */
+.workflow-action-danger {
+  @apply px-6 py-3 bg-error-600 text-white font-medium rounded-lg;
+  @apply hover:bg-error-700 active:bg-error-800;
+  @apply transition-all duration-200;
+}
+```
+
+### 12.4 상태별 알림 메시지
+
+#### 통합 알림 스타일
+```css
+.workflow-alert {
+  @apply p-4 rounded-lg flex items-start space-x-3;
+  
+  &.info {
+    @apply bg-blue-50 text-blue-800 border border-blue-200;
+  }
+  
+  &.success {
+    @apply bg-green-50 text-green-800 border border-green-200;
+  }
+  
+  &.warning {
+    @apply bg-yellow-50 text-yellow-800 border border-yellow-200;
+  }
+  
+  &.error {
+    @apply bg-red-50 text-red-800 border border-red-200;
+  }
+}
+```
+
+### 12.5 반응형 워크플로우 레이아웃
+
+#### 브레이크포인트별 레이아웃
+```css
+/* 데스크톱 (1200px+) */
+@media (min-width: 1200px) {
+  .workflow-container {
+    @apply grid grid-cols-12 gap-6;
+  }
+  
+  .workflow-sidebar {
+    @apply col-span-3;
+  }
+  
+  .workflow-main {
+    @apply col-span-6;
+  }
+  
+  .workflow-aside {
+    @apply col-span-3;
+  }
+}
+
+/* 태블릿 (768px-1199px) */
+@media (min-width: 768px) and (max-width: 1199px) {
+  .workflow-container {
+    @apply grid grid-cols-8 gap-4;
+  }
+  
+  .workflow-sidebar {
+    @apply col-span-2;
+  }
+  
+  .workflow-main {
+    @apply col-span-6;
+  }
+}
+
+/* 모바일 (767px 이하) */
+@media (max-width: 767px) {
+  .workflow-container {
+    @apply block space-y-4;
+  }
+  
+  .workflow-progress {
+    @apply overflow-x-auto pb-2;
+  }
+}
+```
+
+### 12.6 애니메이션 및 트랜지션
+
+#### 워크플로우 전환 효과
+```css
+/* 단계 전환 애니메이션 */
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(1rem);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.workflow-step-enter {
+  animation: slideInFromRight 0.3s ease-out;
+}
+
+.workflow-step-exit {
+  animation: fadeIn 0.2s ease-out reverse;
+}
+
+/* 프로그레스 바 애니메이션 */
+.workflow-progress-bar {
+  @apply h-2 bg-primary-600 rounded-full;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+```
+
+## 13. 페이지별 표준 템플릿 (신규 추가)
+
+### 13.1 관리 페이지 표준 템플릿
+모든 관리 페이지(발주서, 현장, 거래처 등)는 동일한 구조를 따라야 합니다.
+
+#### 페이지 구조
+```tsx
+// 표준 관리 페이지 템플릿
+<div className="max-w-[1366px] mx-auto p-6">
+  {/* 1. 페이지 헤더 - 고정 구조 */}
+  <div className="mb-6">
+    <div className="flex justify-between items-center mb-2">
+      <h1 className="text-2xl font-bold text-gray-900">{페이지명} 관리</h1>
+      <Button className="px-4 py-2 text-sm font-medium">
+        <Plus className="h-4 w-4 mr-2" />
+        {페이지명} 추가
+      </Button>
+    </div>
+    <p className="text-sm text-gray-600">{설명문구}</p>
+  </div>
+
+  {/* 2. 검색 및 필터 영역 - 고정 간격 */}
+  <div className="mb-6">
+    <div className="flex flex-col lg:flex-row lg:items-end gap-4 mb-4">
+      <div className="flex-1">
+        <Input
+          className="h-10 text-sm"
+          placeholder="{주요필드1}, {주요필드2}로 검색..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
+      {/* 추가 필터들 */}
+    </div>
+  </div>
+
+  {/* 3. 테이블 영역 - 표준화된 테이블 */}
+  <Card>
+    <CardContent className="p-0">
+      <table className="w-full">
+        <thead className="bg-gray-50 border-b border-gray-200">
+          <tr>
+            <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              {/* 헤더 내용 */}
+            </th>
+          </tr>
+        </thead>
+        <tbody className="bg-white divide-y divide-gray-200">
+          <tr className="hover:bg-gray-50 transition-colors">
+            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              {/* 데이터 내용 */}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </CardContent>
+  </Card>
+</div>
+```
+
+#### 설명문구 표준 형식
+- **발주서 관리**: "전체 발주서를 조회하고 관리하세요"
+- **현장 관리**: "프로젝트 현장을 조회하고 관리하세요"  
+- **거래처 관리**: "거래처 정보를 조회하고 관리하세요"
+- **형식**: "{전체|항목명} {항목}을 조회하고 관리하세요"
+
+#### 검색 플레이스홀더 표준
+- **발주서**: "발주번호, 거래처명으로 검색..."
+- **현장**: "현장명, 고객사명으로 검색..."  
+- **거래처**: "거래처명, 사업자번호로 검색..."
+- **형식**: 최대 2개 주요 필드만 포함
+
+### 13.2 버튼 텍스트 표준화
+모든 관리 페이지의 주요 액션 버튼은 일관된 형식을 사용해야 합니다.
+
+#### 표준 버튼 텍스트
+| 페이지 | 현재 | 표준화 후 |
+|--------|------|----------|
+| 발주서 관리 | "새 발주서 작성" | "발주서 추가" |
+| 현장 관리 | "현장 추가" | "현장 추가" ✅ |
+| 거래처 관리 | "거래처 추가" | "거래처 추가" ✅ |
+
+#### 일관성 규칙
+- **형식**: "{항목명} 추가"
+- **길이**: 4-6자 내외로 통일
+- **위치**: 페이지 우측 상단 고정
+
+### 13.3 테이블 컬럼 표준화
+모든 테이블은 일관된 컬럼 수와 레이아웃을 유지해야 합니다.
+
+#### 권장 컬럼 수
+- **최적**: 6개 컬럼 (현장 관리, 거래처 관리 기준)
+- **최대**: 7개 컬럼 (발주서 관리 기준)
+- **최소**: 5개 컬럼
+
+#### 공통 컬럼 패턴
+1. **식별자** (ID, 번호) - `w-32 min-w-[8rem]`
+2. **주요 이름** (제목, 명칭) - `w-40 min-w-[10rem]`  
+3. **관련 엔티티** (프로젝트, 거래처) - `w-32 min-w-[8rem]`
+4. **상태/구분** (상태, 타입) - `w-24 min-w-[6rem]`
+5. **수치 정보** (금액, 날짜) - `w-28 min-w-[7rem]`
+6. **액션** (관리 버튼) - `w-20 min-w-[5rem]`
+
+### 13.4 시각적 밀도 표준화
+모든 페이지는 동일한 시각적 밀도를 유지해야 합니다.
+
+#### 표준 간격
+- **페이지 패딩**: `p-6` (24px)
+- **섹션 간격**: `mb-6` (24px)  
+- **테이블 행 높이**: `py-4` (상하 16px)
+- **테이블 셀 패딩**: `px-6 py-4` (좌우 24px, 상하 16px)
+
+#### 문제 해결 목표
+- **발주서 관리**: 여백 축소 (현재 너무 넓음)
+- **거래처 관리**: 여백 확대 및 폰트 크기 증가 (현재 너무 좁음)
+- **현장 관리**: 기준점으로 유지 (적절한 밀도)
+
+이 표준을 바탕으로 표준 발주서와 엑셀 발주서의 통합 워크플로우를 일관되게 구현하여 사용자 경험을 통합합니다.

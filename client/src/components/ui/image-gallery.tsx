@@ -164,7 +164,7 @@ export function AdvancedImageGallery({
               onClick={() => handleImageClick(image, index)}
             />
             {image.caption && showCaptions && (
-              <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white p-4">
+              <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white p-4">
                 <p className="text-sm">{image.caption}</p>
               </div>
             )}
@@ -175,7 +175,7 @@ export function AdvancedImageGallery({
   );
 
   const renderLightboxLayout = () => (
-    <div className={cn('grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6', className)} style={{ gap: `${gap}px` }}>
+    <div className={cn('grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6', className)} style={{ gap: `${gap}px` }}>
       {images.map((image, index) => (
         <div key={index} className="group cursor-pointer" onClick={() => handleImageClick(image, index)}>
           <div className="relative">
@@ -187,7 +187,7 @@ export function AdvancedImageGallery({
               className="w-full group-hover:scale-105 transition-transform duration-200"
               containerClassName="rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow"
             />
-            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200 flex items-center justify-center">
               <ZoomIn className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
             </div>
           </div>
@@ -294,7 +294,7 @@ export function AdvancedImageGallery({
               
               {/* Image Info */}
               {currentImage.caption && (
-                <div className="absolute bottom-4 left-4 right-4 z-10 bg-black bg-opacity-50 text-white p-4 rounded-lg">
+                <div className="absolute bottom-4 left-4 right-4 z-10 bg-black/50 text-white p-4 rounded-lg">
                   <p className="text-sm text-center">{currentImage.caption}</p>
                   <p className="text-xs text-gray-300 text-center mt-1">
                     {lightboxIndex + 1} / {images.length}

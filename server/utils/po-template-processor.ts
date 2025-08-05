@@ -49,9 +49,9 @@ export class POTemplateProcessor {
       const buffer = fs.readFileSync(filePath);
       const workbook = XLSX.read(buffer, { type: 'buffer' });
       
-      // 'Input' 또는 'Input Sheet' 시트 찾기
+      // 'Input' 시트 찾기
       const inputSheetName = workbook.SheetNames.find(name => 
-        name === 'Input' || name === 'Input Sheet'
+        name === 'Input'
       );
       
       if (!inputSheetName) {
@@ -163,7 +163,7 @@ export class POTemplateProcessor {
     try {
       let savedOrders = 0;
 
-      await db.transaction(async (tx) => {
+      await db.transaction(async (tx: any) => {
         for (const orderData of orders) {
           // 1. 거래처 조회 또는 생성
           const vendorId = await this.findOrCreateVendor(tx, orderData.vendorName);

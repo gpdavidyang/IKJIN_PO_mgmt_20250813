@@ -121,7 +121,7 @@ export function ImportExportManager() {
   };
 
   return (
-    <Card className="w-full max-w-4xl mx-auto">
+    <Card className="w-full max-w-4xl mx-auto shadow-sm">
       <CardHeader>
         <CardTitle>데이터 가져오기/내보내기</CardTitle>
         <CardDescription>

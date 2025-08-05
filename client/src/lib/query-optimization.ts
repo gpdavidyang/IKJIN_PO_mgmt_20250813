@@ -74,11 +74,11 @@ export const queryKeys = {
     charts: (type: string, period?: string) => ['/api/dashboard/charts', type, period] as const,
   },
   
-  // Orders
+  // Orders (using optimized endpoints)
   orders: {
-    all: () => ['/api/orders'] as const,
-    list: (filters?: any) => ['/api/orders', filters] as const,
-    detail: (id: number) => ['/api/orders', id] as const,
+    all: () => ['/api/orders-optimized'] as const,
+    list: (filters?: any) => ['/api/orders-optimized', filters] as const,
+    detail: (id: number) => ['/api/orders', id] as const, // Keep individual order details as is
     items: (orderId: number) => ['/api/orders', orderId, 'items'] as const,
     history: (orderId: number) => ['/api/orders', orderId, 'history'] as const,
     templates: () => ['/api/orders/templates'] as const,
@@ -369,10 +369,7 @@ export function useCacheWarming() {
       staleTime: CACHE_CONFIGS.MASTER.staleTime,
     });
     
-    queryClient.prefetchQuery({ 
-      queryKey: queryKeys.projects.active(),
-      staleTime: CACHE_CONFIGS.MASTER.staleTime,
-    });
+    // Removed projects.active() prefetch - this data comes via optimized orders endpoint
   }, [queryClient]);
   
   const warmUserSpecificData = useCallback((userId: number) => {
@@ -391,7 +388,7 @@ export function useCacheWarming() {
   return { warmEssentialData, warmUserSpecificData };
 }
 
-// Query performance monitoring
+// Enhanced query performance monitoring with optimization insights
 export function useQueryPerformanceMonitor() {
   const queryClient = useQueryClient();
   
@@ -400,9 +397,11 @@ export function useQueryPerformanceMonitor() {
     
     const unsubscribe = cache.subscribe((event) => {
       if (event?.type === 'queryAdded') {
-        console.log(`Query added: ${JSON.stringify(event.query.queryKey)}`);
+        const query = event.query;
+        const cacheType = query.meta?.cacheType || 'UNKNOWN';
+        console.log(`🔄 Query added [${cacheType}]: ${JSON.stringify(query.queryKey)}`);
       } else if (event?.type === 'queryRemoved') {
-        console.log(`Query removed: ${JSON.stringify(event.query.queryKey)}`);
+        console.log(`🗑️ Query removed: ${JSON.stringify(event.query.queryKey)}`);
       }
     });
     
@@ -413,18 +412,59 @@ export function useQueryPerformanceMonitor() {
     const cache = queryClient.getQueryCache();
     const queries = cache.getAll();
     
+    // Group queries by cache type for optimization insights
+    const cacheTypeStats = queries.reduce((acc, query) => {
+      const cacheType = query.meta?.cacheType || 'UNKNOWN';
+      if (!acc[cacheType]) {
+        acc[cacheType] = { count: 0, stale: 0, error: 0 };
+      }
+      acc[cacheType].count++;
+      if (query.isStale()) acc[cacheType].stale++;
+      if (query.state.status === 'error') acc[cacheType].error++;
+      return acc;
+    }, {} as Record<string, { count: number; stale: number; error: number }>);
+    
     const stats = {
       totalQueries: queries.length,
       activeQueries: queries.filter(q => q.getObserversCount() > 0).length,
       staleQueries: queries.filter(q => q.isStale()).length,
       errorQueries: queries.filter(q => q.state.status === 'error').length,
       cacheSize: queries.reduce((size, query) => {
-        return size + JSON.stringify(query.state.data).length;
+        try {
+          return size + (query.state.data ? JSON.stringify(query.state.data).length : 0);
+        } catch {
+          return size;
+        }
       }, 0),
+      cacheTypeStats,
+      // Optimization insights
+      optimizationSuggestions: generateOptimizationSuggestions(queries),
     };
     
     return stats;
   }, [queryClient]);
   
   return { getQueryStats };
+}
+
+// Generate optimization suggestions based on query patterns
+function generateOptimizationSuggestions(queries: any[]) {
+  const suggestions: string[] = [];
+  
+  const staleRate = queries.filter(q => q.isStale()).length / queries.length;
+  if (staleRate > 0.5) {
+    suggestions.push("Consider increasing staleTime for frequently accessed data");
+  }
+  
+  const errorRate = queries.filter(q => q.state.status === 'error').length / queries.length;
+  if (errorRate > 0.1) {
+    suggestions.push("High error rate detected - review retry strategies");
+  }
+  
+  const unknownCacheType = queries.filter(q => !q.meta?.cacheType).length;
+  if (unknownCacheType > 0) {
+    suggestions.push(`${unknownCacheType} queries without cache type optimization`);
+  }
+  
+  return suggestions;
 }

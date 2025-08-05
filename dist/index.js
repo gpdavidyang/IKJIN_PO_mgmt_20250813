@@ -1,12 +1,921 @@
 var __defProp = Object.defineProperty;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __esm = (fn, res) => function __init() {
+  return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
+};
 var __export = (target, all) => {
   for (var name in all)
     __defProp(target, name, { get: all[name], enumerable: true });
 };
 
+// shared/schema.ts
+var schema_exports = {};
+__export(schema_exports, {
+  approvalAuthorities: () => approvalAuthorities,
+  approvalWorkflowSettings: () => approvalWorkflowSettings,
+  attachments: () => attachments,
+  attachmentsRelations: () => attachmentsRelations,
+  companies: () => companies,
+  emailSendHistory: () => emailSendHistory,
+  emailSendHistoryRelations: () => emailSendHistoryRelations,
+  handsontableConfigs: () => handsontableConfigs,
+  handsontableConfigsRelations: () => handsontableConfigsRelations,
+  insertApprovalAuthoritySchema: () => insertApprovalAuthoritySchema,
+  insertApprovalWorkflowSettingsSchema: () => insertApprovalWorkflowSettingsSchema,
+  insertAttachmentSchema: () => insertAttachmentSchema,
+  insertCompanySchema: () => insertCompanySchema,
+  insertEmailSendHistorySchema: () => insertEmailSendHistorySchema,
+  insertHandsontableConfigSchema: () => insertHandsontableConfigSchema,
+  insertInvoiceSchema: () => insertInvoiceSchema,
+  insertItemCategorySchema: () => insertItemCategorySchema,
+  insertItemReceiptSchema: () => insertItemReceiptSchema,
+  insertItemSchema: () => insertItemSchema,
+  insertOrderHistorySchema: () => insertOrderHistorySchema,
+  insertOrderTemplateSchema: () => insertOrderTemplateSchema,
+  insertProjectHistorySchema: () => insertProjectHistorySchema,
+  insertProjectMemberSchema: () => insertProjectMemberSchema,
+  insertProjectSchema: () => insertProjectSchema,
+  insertPurchaseOrderItemSchema: () => insertPurchaseOrderItemSchema,
+  insertPurchaseOrderSchema: () => insertPurchaseOrderSchema,
+  insertTemplateFieldSchema: () => insertTemplateFieldSchema,
+  insertTemplateVersionSchema: () => insertTemplateVersionSchema,
+  insertTerminologySchema: () => insertTerminologySchema,
+  insertUITermSchema: () => insertUITermSchema,
+  insertUiTermSchema: () => insertUiTermSchema,
+  insertVendorSchema: () => insertVendorSchema,
+  insertVerificationLogSchema: () => insertVerificationLogSchema,
+  invoiceStatusEnum: () => invoiceStatusEnum,
+  invoices: () => invoices,
+  invoicesRelations: () => invoicesRelations,
+  itemCategories: () => itemCategories,
+  itemCategoriesRelations: () => itemCategoriesRelations,
+  itemReceiptStatusEnum: () => itemReceiptStatusEnum,
+  itemReceipts: () => itemReceipts,
+  itemReceiptsRelations: () => itemReceiptsRelations,
+  items: () => items,
+  itemsRelations: () => itemsRelations,
+  orderHistory: () => orderHistory,
+  orderHistoryRelations: () => orderHistoryRelations,
+  orderTemplates: () => orderTemplates,
+  orderTemplatesRelations: () => orderTemplatesRelations,
+  projectHistory: () => projectHistory,
+  projectHistoryRelations: () => projectHistoryRelations,
+  projectMembers: () => projectMembers,
+  projectMembersRelations: () => projectMembersRelations,
+  projectStatusEnum: () => projectStatusEnum,
+  projectTypeEnum: () => projectTypeEnum,
+  projects: () => projects,
+  projectsRelations: () => projectsRelations,
+  purchaseOrderItems: () => purchaseOrderItems,
+  purchaseOrderItemsRelations: () => purchaseOrderItemsRelations,
+  purchaseOrderStatusEnum: () => purchaseOrderStatusEnum,
+  purchaseOrders: () => purchaseOrders,
+  purchaseOrdersRelations: () => purchaseOrdersRelations,
+  sessions: () => sessions,
+  templateFields: () => templateFields,
+  templateFieldsRelations: () => templateFieldsRelations,
+  templateVersions: () => templateVersions,
+  templateVersionsRelations: () => templateVersionsRelations,
+  terminology: () => terminology,
+  uiTerms: () => uiTerms,
+  userRoleEnum: () => userRoleEnum,
+  users: () => users,
+  usersRelations: () => usersRelations,
+  vendors: () => vendors,
+  vendorsRelations: () => vendorsRelations,
+  verificationActionEnum: () => verificationActionEnum,
+  verificationLogs: () => verificationLogs,
+  verificationLogsRelations: () => verificationLogsRelations
+});
+import {
+  pgTable,
+  text,
+  varchar,
+  timestamp,
+  date,
+  jsonb,
+  index,
+  serial,
+  integer,
+  decimal,
+  boolean,
+  unique,
+  pgEnum
+} from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
+var sessions, uiTerms, itemCategories, userRoleEnum, purchaseOrderStatusEnum, projectStatusEnum, projectTypeEnum, invoiceStatusEnum, itemReceiptStatusEnum, verificationActionEnum, approvalAuthorities, users, companies, vendors, items, terminology, projects, projectMembers, projectHistory, orderTemplates, templateFields, handsontableConfigs, templateVersions, purchaseOrders, purchaseOrderItems, attachments, orderHistory, emailSendHistory, invoices, itemReceipts, verificationLogs, usersRelations, vendorsRelations, itemsRelations, projectsRelations, projectMembersRelations, projectHistoryRelations, orderTemplatesRelations, purchaseOrdersRelations, purchaseOrderItemsRelations, attachmentsRelations, orderHistoryRelations, invoicesRelations, itemReceiptsRelations, verificationLogsRelations, templateFieldsRelations, handsontableConfigsRelations, templateVersionsRelations, itemCategoriesRelations, emailSendHistoryRelations, insertCompanySchema, insertVendorSchema, insertItemSchema, insertProjectSchema, insertOrderTemplateSchema, insertItemCategorySchema, insertPurchaseOrderSchema, insertPurchaseOrderItemSchema, insertAttachmentSchema, insertOrderHistorySchema, insertInvoiceSchema, insertItemReceiptSchema, insertVerificationLogSchema, insertEmailSendHistorySchema, insertTemplateFieldSchema, insertHandsontableConfigSchema, insertTemplateVersionSchema, insertProjectMemberSchema, insertProjectHistorySchema, insertUiTermSchema, insertTerminologySchema, insertUITermSchema, insertApprovalAuthoritySchema, approvalWorkflowSettings, insertApprovalWorkflowSettingsSchema;
+var init_schema = __esm({
+  "shared/schema.ts"() {
+    "use strict";
+    sessions = pgTable(
+      "sessions",
+      {
+        sid: varchar("sid").primaryKey(),
+        sess: jsonb("sess").notNull(),
+        expire: timestamp("expire").notNull()
+      },
+      (table) => [index("IDX_session_expire").on(table.expire)]
+    );
+    uiTerms = pgTable("ui_terms", {
+      id: serial("id").primaryKey(),
+      termKey: varchar("term_key", { length: 100 }).notNull().unique(),
+      termValue: varchar("term_value", { length: 255 }).notNull(),
+      category: varchar("category", { length: 50 }).default("general"),
+      description: text("description"),
+      isActive: boolean("is_active").default(true),
+      createdAt: timestamp("created_at").defaultNow(),
+      updatedAt: timestamp("updated_at").defaultNow()
+    });
+    itemCategories = pgTable("item_categories", {
+      id: serial("id").primaryKey(),
+      categoryType: varchar("category_type", { length: 20 }).notNull(),
+      // 'major', 'middle', 'minor'
+      categoryName: varchar("category_name", { length: 100 }).notNull(),
+      parentId: integer("parent_id"),
+      // References parent category ID
+      displayOrder: integer("display_order").default(0),
+      isActive: boolean("is_active").default(true),
+      createdAt: timestamp("created_at").defaultNow(),
+      updatedAt: timestamp("updated_at").defaultNow()
+    }, (table) => [
+      index("idx_item_categories_type").on(table.categoryType),
+      index("idx_item_categories_parent").on(table.parentId)
+    ]);
+    userRoleEnum = pgEnum("user_role", ["field_worker", "project_manager", "hq_management", "executive", "admin"]);
+    purchaseOrderStatusEnum = pgEnum("purchase_order_status", ["draft", "pending", "approved", "sent", "completed"]);
+    projectStatusEnum = pgEnum("project_status", ["planning", "active", "on_hold", "completed", "cancelled"]);
+    projectTypeEnum = pgEnum("project_type", ["commercial", "residential", "industrial", "infrastructure"]);
+    invoiceStatusEnum = pgEnum("invoice_status", ["pending", "verified", "paid"]);
+    itemReceiptStatusEnum = pgEnum("item_receipt_status", ["pending", "approved", "rejected"]);
+    verificationActionEnum = pgEnum("verification_action", ["invoice_uploaded", "item_verified", "quality_checked"]);
+    approvalAuthorities = pgTable("approval_authorities", {
+      id: serial("id").primaryKey(),
+      role: userRoleEnum("role").notNull(),
+      maxAmount: decimal("max_amount", { precision: 15, scale: 2 }).notNull(),
+      description: text("description"),
+      isActive: boolean("is_active").default(true),
+      createdAt: timestamp("created_at").defaultNow(),
+      updatedAt: timestamp("updated_at").defaultNow()
+    }, (table) => [
+      unique("unique_role_approval").on(table.role)
+    ]);
+    users = pgTable("users", {
+      id: varchar("id").primaryKey().notNull(),
+      email: varchar("email").unique().notNull(),
+      name: varchar("name").notNull(),
+      password: varchar("hashed_password").notNull(),
+      // Match actual database column name
+      phoneNumber: varchar("phone_number"),
+      profileImageUrl: varchar("profile_image_url"),
+      role: userRoleEnum("role").notNull().default("field_worker"),
+      position: varchar("position"),
+      // Add position field that exists in DB
+      isActive: boolean("is_active").default(true),
+      createdAt: timestamp("created_at").defaultNow(),
+      updatedAt: timestamp("updated_at").defaultNow()
+    }, (table) => [
+      index("idx_users_email").on(table.email),
+      index("idx_users_role").on(table.role)
+    ]);
+    companies = pgTable("companies", {
+      id: serial("id").primaryKey(),
+      companyName: varchar("company_name", { length: 255 }).notNull(),
+      businessNumber: varchar("business_number", { length: 50 }),
+      address: text("address"),
+      contactPerson: varchar("contact_person", { length: 100 }),
+      // Match actual DB schema
+      phone: varchar("phone", { length: 50 }),
+      email: varchar("email", { length: 255 }),
+      isActive: boolean("is_active").default(true),
+      createdAt: timestamp("created_at").defaultNow(),
+      updatedAt: timestamp("updated_at").defaultNow()
+    });
+    vendors = pgTable("vendors", {
+      id: serial("id").primaryKey(),
+      name: varchar("name", { length: 255 }).notNull(),
+      vendorCode: varchar("vendor_code", { length: 50 }),
+      // 거래처 코드
+      aliases: jsonb("aliases").default([]).$type(),
+      // 별칭 필드 추가 - 예: ["(주)익진", "주식회사 익진", "익진"]
+      businessNumber: varchar("business_number", { length: 50 }),
+      contactPerson: varchar("contact_person", { length: 100 }).notNull(),
+      email: varchar("email", { length: 255 }).notNull(),
+      phone: varchar("phone", { length: 50 }),
+      address: text("address"),
+      businessType: varchar("business_type", { length: 100 }),
+      isActive: boolean("is_active").default(true),
+      createdAt: timestamp("created_at").defaultNow(),
+      updatedAt: timestamp("updated_at").defaultNow()
+    }, (table) => [
+      index("idx_vendors_name").on(table.name),
+      index("idx_vendors_business_number").on(table.businessNumber),
+      index("idx_vendors_email").on(table.email),
+      index("idx_vendors_active").on(table.isActive)
+    ]);
+    items = pgTable("items", {
+      id: serial("id").primaryKey(),
+      name: varchar("name", { length: 255 }).notNull(),
+      specification: text("specification"),
+      unit: varchar("unit", { length: 50 }).notNull(),
+      unitPrice: decimal("unit_price", { precision: 15, scale: 2 }),
+      category: varchar("category", { length: 100 }),
+      majorCategory: varchar("major_category", { length: 100 }),
+      middleCategory: varchar("middle_category", { length: 100 }),
+      minorCategory: varchar("minor_category", { length: 100 }),
+      description: text("description"),
+      isActive: boolean("is_active").default(true),
+      createdAt: timestamp("created_at").defaultNow(),
+      updatedAt: timestamp("updated_at").defaultNow()
+    }, (table) => [
+      index("idx_items_name").on(table.name),
+      index("idx_items_category").on(table.category),
+      index("idx_items_active").on(table.isActive)
+    ]);
+    terminology = pgTable("terminology", {
+      id: serial("id").primaryKey(),
+      termKey: varchar("term_key", { length: 100 }).notNull().unique(),
+      termValue: varchar("term_value", { length: 255 }).notNull(),
+      category: varchar("category", { length: 100 }),
+      description: text("description"),
+      isActive: boolean("is_active").default(true),
+      createdAt: timestamp("created_at").defaultNow(),
+      updatedAt: timestamp("updated_at").defaultNow()
+    }, (table) => [
+      index("idx_terminology_key").on(table.termKey),
+      index("idx_terminology_category").on(table.category),
+      index("idx_terminology_active").on(table.isActive)
+    ]);
+    projects = pgTable("projects", {
+      id: serial("id").primaryKey(),
+      projectName: varchar("project_name", { length: 255 }).notNull(),
+      projectCode: varchar("project_code", { length: 100 }).notNull().unique(),
+      clientName: varchar("client_name", { length: 255 }),
+      projectType: projectTypeEnum("project_type").notNull().default("commercial"),
+      location: text("location"),
+      startDate: date("start_date"),
+      endDate: date("end_date"),
+      status: projectStatusEnum("status").notNull().default("active"),
+      totalBudget: decimal("total_budget", { precision: 15, scale: 2 }),
+      projectManagerId: varchar("project_manager_id").references(() => users.id),
+      orderManagerId: varchar("order_manager_id").references(() => users.id),
+      description: text("description"),
+      isActive: boolean("is_active").default(true),
+      createdAt: timestamp("created_at").defaultNow(),
+      updatedAt: timestamp("updated_at").defaultNow()
+    }, (table) => [
+      index("idx_projects_name").on(table.projectName),
+      index("idx_projects_code").on(table.projectCode),
+      index("idx_projects_status").on(table.status),
+      index("idx_projects_start_date").on(table.startDate),
+      index("idx_projects_active").on(table.isActive),
+      index("idx_projects_manager").on(table.projectManagerId)
+    ]);
+    projectMembers = pgTable("project_members", {
+      id: serial("id").primaryKey(),
+      projectId: integer("project_id").references(() => projects.id, { onDelete: "cascade" }).notNull(),
+      userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+      role: varchar("role", { length: 50 }).notNull(),
+      // 'manager', 'order_manager', 'member', 'viewer'
+      assignedAt: timestamp("assigned_at").defaultNow(),
+      assignedBy: varchar("assigned_by").references(() => users.id),
+      isActive: boolean("is_active").default(true),
+      createdAt: timestamp("created_at").defaultNow(),
+      updatedAt: timestamp("updated_at").defaultNow()
+    }, (table) => [
+      unique("project_members_project_user_unique").on(table.projectId, table.userId)
+    ]);
+    projectHistory = pgTable("project_history", {
+      id: serial("id").primaryKey(),
+      projectId: integer("project_id").references(() => projects.id, { onDelete: "cascade" }).notNull(),
+      fieldName: varchar("field_name", { length: 100 }).notNull(),
+      oldValue: text("old_value"),
+      newValue: text("new_value"),
+      changedBy: varchar("changed_by").references(() => users.id).notNull(),
+      changedAt: timestamp("changed_at").defaultNow(),
+      changeReason: text("change_reason")
+    });
+    orderTemplates = pgTable("order_templates", {
+      id: serial("id").primaryKey(),
+      templateName: varchar("template_name", { length: 100 }).notNull(),
+      templateType: varchar("template_type", { length: 50 }).notNull(),
+      // material_extrusion, panel_manufacturing, general, handsontable
+      // fieldsConfig: jsonb("fields_config").notNull(), // TODO: Add this column to database
+      isActive: boolean("is_active").default(true),
+      createdAt: timestamp("created_at").defaultNow(),
+      updatedAt: timestamp("updated_at").defaultNow()
+    });
+    templateFields = pgTable("template_fields", {
+      id: serial("id").primaryKey(),
+      templateId: integer("template_id").references(() => orderTemplates.id, { onDelete: "cascade" }),
+      fieldType: varchar("field_type", { length: 50 }).notNull(),
+      // 'text', 'number', 'select', 'date', 'textarea'
+      fieldName: varchar("field_name", { length: 100 }).notNull(),
+      label: varchar("label", { length: 255 }).notNull(),
+      placeholder: varchar("placeholder", { length: 255 }),
+      required: boolean("required").default(false),
+      validation: jsonb("validation"),
+      // JSON validation rules
+      options: jsonb("options"),
+      // For select fields
+      gridPosition: jsonb("grid_position").notNull(),
+      // {row, col, span}
+      sectionName: varchar("section_name", { length: 100 }).notNull(),
+      sortOrder: integer("sort_order").default(0),
+      isActive: boolean("is_active").default(true),
+      createdAt: timestamp("created_at").defaultNow(),
+      updatedAt: timestamp("updated_at").defaultNow()
+    });
+    handsontableConfigs = pgTable("handsontable_configs", {
+      id: serial("id").primaryKey(),
+      templateId: integer("template_id").references(() => orderTemplates.id, { onDelete: "cascade" }),
+      colHeaders: jsonb("col_headers").notNull(),
+      // Array of column headers
+      columns: jsonb("columns").notNull(),
+      // Column configurations
+      rowsCount: integer("rows_count").default(10),
+      formulas: jsonb("formulas"),
+      // Formula definitions
+      validationRules: jsonb("validation_rules"),
+      // Cell validation rules
+      customStyles: jsonb("custom_styles"),
+      // Styling rules
+      settings: jsonb("settings"),
+      // Additional Handsontable settings
+      sortOrder: integer("sort_order").default(0),
+      isActive: boolean("is_active").default(true),
+      createdAt: timestamp("created_at").defaultNow(),
+      updatedAt: timestamp("updated_at").defaultNow()
+    });
+    templateVersions = pgTable("template_versions", {
+      id: serial("id").primaryKey(),
+      templateId: integer("template_id").references(() => orderTemplates.id, { onDelete: "cascade" }),
+      versionNumber: varchar("version_number", { length: 20 }).notNull(),
+      changes: jsonb("changes"),
+      // Changelog
+      templateConfig: jsonb("template_config").notNull(),
+      // Snapshot of template at this version
+      createdBy: varchar("created_by", { length: 255 }),
+      createdAt: timestamp("created_at").defaultNow()
+    });
+    purchaseOrders = pgTable("purchase_orders", {
+      id: serial("id").primaryKey(),
+      orderNumber: varchar("order_number", { length: 50 }).notNull().unique(),
+      projectId: integer("project_id").references(() => projects.id).notNull(),
+      vendorId: integer("vendor_id").references(() => vendors.id),
+      userId: varchar("user_id").references(() => users.id).notNull(),
+      templateId: integer("template_id").references(() => orderTemplates.id),
+      orderDate: date("order_date").notNull(),
+      deliveryDate: date("delivery_date"),
+      status: purchaseOrderStatusEnum("status").notNull().default("pending"),
+      totalAmount: decimal("total_amount", { precision: 15, scale: 2 }).default("0").$type(),
+      notes: text("notes"),
+      // customFields: jsonb("custom_fields"), // TODO: Add this column to database
+      isApproved: boolean("is_approved").default(false),
+      approvedBy: varchar("approved_by").references(() => users.id),
+      approvedAt: timestamp("approved_at"),
+      // sentAt: timestamp("sent_at"), // TODO: Add this column to database
+      currentApproverRole: userRoleEnum("current_approver_role"),
+      approvalLevel: integer("approval_level").default(1),
+      createdAt: timestamp("created_at").defaultNow(),
+      updatedAt: timestamp("updated_at").defaultNow()
+    }, (table) => [
+      index("idx_purchase_orders_number").on(table.orderNumber),
+      index("idx_purchase_orders_project").on(table.projectId),
+      index("idx_purchase_orders_vendor").on(table.vendorId),
+      index("idx_purchase_orders_user").on(table.userId),
+      index("idx_purchase_orders_status").on(table.status),
+      index("idx_purchase_orders_date").on(table.orderDate),
+      index("idx_purchase_orders_delivery").on(table.deliveryDate),
+      index("idx_purchase_orders_created").on(table.createdAt),
+      index("idx_purchase_orders_approver").on(table.currentApproverRole)
+    ]);
+    purchaseOrderItems = pgTable("purchase_order_items", {
+      id: serial("id").primaryKey(),
+      orderId: integer("order_id").references(() => purchaseOrders.id).notNull(),
+      // itemId: integer("item_id").references(() => items.id), // TODO: Add this column to database
+      itemName: varchar("item_name", { length: 255 }).notNull(),
+      specification: text("specification"),
+      unit: varchar("unit", { length: 50 }),
+      // 실제 DB에 있는 컬럼, NULL 허용
+      quantity: decimal("quantity", { precision: 10, scale: 2 }).notNull().$type(),
+      unitPrice: decimal("unit_price", { precision: 15, scale: 2 }).notNull().$type(),
+      totalAmount: decimal("total_amount", { precision: 15, scale: 2 }).notNull().$type(),
+      // 품목 계층 구조 필드 (2025-08-05 추가)
+      majorCategory: varchar("major_category", { length: 100 }),
+      middleCategory: varchar("middle_category", { length: 100 }),
+      minorCategory: varchar("minor_category", { length: 100 }),
+      // PO Template Input 시트를 위한 새로운 필드들 (TODO: Add these columns to database)
+      // categoryLv1: varchar("category_lv1", { length: 100 }), // 대분류
+      // categoryLv2: varchar("category_lv2", { length: 100 }), // 중분류  
+      // categoryLv3: varchar("category_lv3", { length: 100 }), // 소분류
+      // supplyAmount: decimal("supply_amount", { precision: 15, scale: 2 }).default("0").notNull().$type<number>(), // TODO: Add to DB
+      // taxAmount: decimal("tax_amount", { precision: 15, scale: 2 }).default("0").notNull().$type<number>(), // TODO: Add to DB  
+      // deliveryName: varchar("delivery_name", { length: 255 }), // TODO: Add to DB
+      notes: text("notes"),
+      createdAt: timestamp("created_at").defaultNow()
+    }, (table) => [
+      index("idx_poi_major_category").on(table.majorCategory),
+      index("idx_poi_middle_category").on(table.middleCategory),
+      index("idx_poi_minor_category").on(table.minorCategory),
+      index("idx_poi_category_hierarchy").on(table.majorCategory, table.middleCategory, table.minorCategory)
+      // index("idx_purchase_order_items_category_lv1").on(table.categoryLv1), // TODO: Add when column is added
+      // index("idx_purchase_order_items_category_lv2").on(table.categoryLv2), // TODO: Add when column is added
+      // index("idx_purchase_order_items_category_lv3").on(table.categoryLv3), // TODO: Add when column is added
+    ]);
+    attachments = pgTable("attachments", {
+      id: serial("id").primaryKey(),
+      orderId: integer("order_id").references(() => purchaseOrders.id).notNull(),
+      originalName: varchar("original_name", { length: 255 }).notNull(),
+      storedName: varchar("stored_name", { length: 255 }).notNull(),
+      filePath: varchar("file_path", { length: 500 }).notNull(),
+      fileSize: integer("file_size"),
+      mimeType: varchar("mime_type", { length: 100 }),
+      uploadedBy: varchar("uploaded_by", { length: 50 }),
+      uploadedAt: timestamp("uploaded_at").defaultNow()
+    });
+    orderHistory = pgTable("order_history", {
+      id: serial("id").primaryKey(),
+      orderId: integer("order_id").references(() => purchaseOrders.id).notNull(),
+      userId: varchar("user_id").references(() => users.id).notNull(),
+      action: varchar("action", { length: 100 }).notNull(),
+      // created, updated, approved, sent, etc.
+      changes: jsonb("changes"),
+      // Store what changed
+      createdAt: timestamp("created_at").defaultNow(),
+      updatedAt: timestamp("updated_at").defaultNow()
+    });
+    emailSendHistory = pgTable("email_send_history", {
+      id: serial("id").primaryKey(),
+      orderId: integer("order_id").notNull().references(() => purchaseOrders.id, { onDelete: "cascade" }),
+      sentAt: timestamp("sent_at").defaultNow().notNull(),
+      sentBy: varchar("sent_by", { length: 255 }).notNull().references(() => users.id),
+      recipientEmail: varchar("recipient_email", { length: 255 }).notNull(),
+      recipientName: varchar("recipient_name", { length: 255 }),
+      ccEmails: text("cc_emails"),
+      // JSON array of CC emails
+      subject: text("subject").notNull(),
+      body: text("body").notNull(),
+      attachments: jsonb("attachments").$type(),
+      status: varchar("status", { length: 50 }).notNull().default("sent"),
+      // sent, failed, bounced, opened, clicked
+      errorMessage: text("error_message"),
+      openedAt: timestamp("opened_at"),
+      clickedAt: timestamp("clicked_at"),
+      ipAddress: varchar("ip_address", { length: 50 }),
+      userAgent: text("user_agent"),
+      trackingId: varchar("tracking_id", { length: 100 }).unique(),
+      emailProvider: varchar("email_provider", { length: 50 }).default("naver"),
+      // naver, gmail, etc.
+      messageId: varchar("message_id", { length: 255 }),
+      // Email message ID for tracking
+      createdAt: timestamp("created_at").defaultNow().notNull()
+    }, (table) => [
+      index("idx_email_history_order").on(table.orderId),
+      index("idx_email_history_sent_by").on(table.sentBy),
+      index("idx_email_history_recipient").on(table.recipientEmail),
+      index("idx_email_history_tracking").on(table.trackingId),
+      index("idx_email_history_status").on(table.status),
+      index("idx_email_history_sent_at").on(table.sentAt)
+    ]);
+    invoices = pgTable("invoices", {
+      id: serial("id").primaryKey(),
+      orderId: integer("order_id").notNull().references(() => purchaseOrders.id, { onDelete: "cascade" }),
+      invoiceNumber: varchar("invoice_number", { length: 100 }).notNull().unique(),
+      invoiceType: varchar("invoice_type", { length: 20 }).notNull(),
+      // 'invoice' or 'tax_invoice'
+      issueDate: timestamp("issue_date").notNull(),
+      dueDate: timestamp("due_date"),
+      totalAmount: decimal("total_amount", { precision: 15, scale: 2 }).notNull().$type(),
+      vatAmount: decimal("vat_amount", { precision: 15, scale: 2 }).default("0").$type(),
+      status: invoiceStatusEnum("status").notNull().default("pending"),
+      filePath: varchar("file_path", { length: 500 }),
+      // 청구서 파일 경로
+      uploadedBy: varchar("uploaded_by").notNull().references(() => users.id),
+      verifiedBy: varchar("verified_by").references(() => users.id),
+      verifiedAt: timestamp("verified_at"),
+      taxInvoiceIssued: boolean("tax_invoice_issued").default(false),
+      // 세금계산서 발행 여부
+      taxInvoiceIssuedDate: timestamp("tax_invoice_issued_date"),
+      // 세금계산서 발행일
+      taxInvoiceIssuedBy: varchar("tax_invoice_issued_by").references(() => users.id),
+      // 세금계산서 발행자
+      notes: text("notes"),
+      createdAt: timestamp("created_at").defaultNow(),
+      updatedAt: timestamp("updated_at").defaultNow()
+    });
+    itemReceipts = pgTable("item_receipts", {
+      id: serial("id").primaryKey(),
+      orderItemId: integer("order_item_id").notNull().references(() => purchaseOrderItems.id, { onDelete: "cascade" }),
+      invoiceId: integer("invoice_id").references(() => invoices.id, { onDelete: "set null" }),
+      receivedQuantity: decimal("received_quantity", { precision: 10, scale: 2 }).notNull().$type(),
+      receivedDate: timestamp("received_date").notNull(),
+      qualityCheck: boolean("quality_check").default(false),
+      qualityNotes: text("quality_notes"),
+      verifiedBy: varchar("verified_by").notNull().references(() => users.id),
+      status: itemReceiptStatusEnum("status").notNull().default("pending"),
+      notes: text("notes"),
+      createdAt: timestamp("created_at").defaultNow(),
+      updatedAt: timestamp("updated_at").defaultNow()
+    });
+    verificationLogs = pgTable("verification_logs", {
+      id: serial("id").primaryKey(),
+      orderId: integer("order_id").notNull().references(() => purchaseOrders.id, { onDelete: "cascade" }),
+      invoiceId: integer("invoice_id").references(() => invoices.id, { onDelete: "set null" }),
+      itemReceiptId: integer("item_receipt_id").references(() => itemReceipts.id, { onDelete: "set null" }),
+      action: verificationActionEnum("action").notNull(),
+      details: text("details"),
+      performedBy: varchar("performed_by").notNull().references(() => users.id),
+      createdAt: timestamp("created_at").defaultNow(),
+      updatedAt: timestamp("updated_at").defaultNow()
+    });
+    usersRelations = relations(users, ({ many }) => ({
+      purchaseOrders: many(purchaseOrders),
+      orderHistory: many(orderHistory),
+      emailsSent: many(emailSendHistory)
+    }));
+    vendorsRelations = relations(vendors, ({ many }) => ({
+      purchaseOrders: many(purchaseOrders)
+    }));
+    itemsRelations = relations(items, ({ many }) => ({
+      purchaseOrderItems: many(purchaseOrderItems)
+    }));
+    projectsRelations = relations(projects, ({ one, many }) => ({
+      purchaseOrders: many(purchaseOrders),
+      projectManager: one(users, {
+        fields: [projects.projectManagerId],
+        references: [users.id]
+      }),
+      orderManager: one(users, {
+        fields: [projects.orderManagerId],
+        references: [users.id]
+      }),
+      projectMembers: many(projectMembers),
+      projectHistory: many(projectHistory)
+    }));
+    projectMembersRelations = relations(projectMembers, ({ one }) => ({
+      project: one(projects, {
+        fields: [projectMembers.projectId],
+        references: [projects.id]
+      }),
+      user: one(users, {
+        fields: [projectMembers.userId],
+        references: [users.id]
+      }),
+      assignedByUser: one(users, {
+        fields: [projectMembers.assignedBy],
+        references: [users.id]
+      })
+    }));
+    projectHistoryRelations = relations(projectHistory, ({ one }) => ({
+      project: one(projects, {
+        fields: [projectHistory.projectId],
+        references: [projects.id]
+      }),
+      changedByUser: one(users, {
+        fields: [projectHistory.changedBy],
+        references: [users.id]
+      })
+    }));
+    orderTemplatesRelations = relations(orderTemplates, ({ many }) => ({
+      fields: many(templateFields),
+      handsontableConfig: many(handsontableConfigs),
+      versions: many(templateVersions),
+      orders: many(purchaseOrders)
+    }));
+    purchaseOrdersRelations = relations(purchaseOrders, ({ one, many }) => ({
+      project: one(projects, {
+        fields: [purchaseOrders.projectId],
+        references: [projects.id]
+      }),
+      vendor: one(vendors, {
+        fields: [purchaseOrders.vendorId],
+        references: [vendors.id]
+      }),
+      user: one(users, {
+        fields: [purchaseOrders.userId],
+        references: [users.id]
+      }),
+      template: one(orderTemplates, {
+        fields: [purchaseOrders.templateId],
+        references: [orderTemplates.id]
+      }),
+      approver: one(users, {
+        fields: [purchaseOrders.approvedBy],
+        references: [users.id]
+      }),
+      items: many(purchaseOrderItems),
+      attachments: many(attachments),
+      history: many(orderHistory),
+      invoices: many(invoices),
+      verificationLogs: many(verificationLogs),
+      emailHistory: many(emailSendHistory)
+    }));
+    purchaseOrderItemsRelations = relations(purchaseOrderItems, ({ one, many }) => ({
+      order: one(purchaseOrders, {
+        fields: [purchaseOrderItems.orderId],
+        references: [purchaseOrders.id]
+      }),
+      receipts: many(itemReceipts)
+    }));
+    attachmentsRelations = relations(attachments, ({ one }) => ({
+      order: one(purchaseOrders, {
+        fields: [attachments.orderId],
+        references: [purchaseOrders.id]
+      })
+    }));
+    orderHistoryRelations = relations(orderHistory, ({ one }) => ({
+      order: one(purchaseOrders, {
+        fields: [orderHistory.orderId],
+        references: [purchaseOrders.id]
+      }),
+      user: one(users, {
+        fields: [orderHistory.userId],
+        references: [users.id]
+      })
+    }));
+    invoicesRelations = relations(invoices, ({ one, many }) => ({
+      order: one(purchaseOrders, {
+        fields: [invoices.orderId],
+        references: [purchaseOrders.id]
+      }),
+      receipts: many(itemReceipts),
+      verificationLogs: many(verificationLogs)
+    }));
+    itemReceiptsRelations = relations(itemReceipts, ({ one, many }) => ({
+      orderItem: one(purchaseOrderItems, {
+        fields: [itemReceipts.orderItemId],
+        references: [purchaseOrderItems.id]
+      }),
+      invoice: one(invoices, {
+        fields: [itemReceipts.invoiceId],
+        references: [invoices.id]
+      }),
+      verificationLogs: many(verificationLogs)
+    }));
+    verificationLogsRelations = relations(verificationLogs, ({ one }) => ({
+      order: one(purchaseOrders, {
+        fields: [verificationLogs.orderId],
+        references: [purchaseOrders.id]
+      }),
+      invoice: one(invoices, {
+        fields: [verificationLogs.invoiceId],
+        references: [invoices.id]
+      }),
+      itemReceipt: one(itemReceipts, {
+        fields: [verificationLogs.itemReceiptId],
+        references: [itemReceipts.id]
+      })
+    }));
+    templateFieldsRelations = relations(templateFields, ({ one }) => ({
+      template: one(orderTemplates, {
+        fields: [templateFields.templateId],
+        references: [orderTemplates.id]
+      })
+    }));
+    handsontableConfigsRelations = relations(handsontableConfigs, ({ one }) => ({
+      template: one(orderTemplates, {
+        fields: [handsontableConfigs.templateId],
+        references: [orderTemplates.id]
+      })
+    }));
+    templateVersionsRelations = relations(templateVersions, ({ one }) => ({
+      template: one(orderTemplates, {
+        fields: [templateVersions.templateId],
+        references: [orderTemplates.id]
+      })
+    }));
+    itemCategoriesRelations = relations(itemCategories, ({ one, many }) => ({
+      parent: one(itemCategories, {
+        fields: [itemCategories.parentId],
+        references: [itemCategories.id]
+      }),
+      children: many(itemCategories)
+    }));
+    emailSendHistoryRelations = relations(emailSendHistory, ({ one }) => ({
+      order: one(purchaseOrders, {
+        fields: [emailSendHistory.orderId],
+        references: [purchaseOrders.id]
+      }),
+      sentByUser: one(users, {
+        fields: [emailSendHistory.sentBy],
+        references: [users.id]
+      })
+    }));
+    insertCompanySchema = createInsertSchema(companies).omit({
+      id: true,
+      createdAt: true,
+      updatedAt: true
+    });
+    insertVendorSchema = createInsertSchema(vendors).omit({
+      id: true,
+      createdAt: true,
+      updatedAt: true
+    });
+    insertItemSchema = createInsertSchema(items).omit({
+      id: true,
+      createdAt: true,
+      updatedAt: true
+    });
+    insertProjectSchema = createInsertSchema(projects).omit({
+      id: true,
+      createdAt: true,
+      updatedAt: true
+    });
+    insertOrderTemplateSchema = createInsertSchema(orderTemplates).omit({
+      id: true,
+      createdAt: true,
+      updatedAt: true
+    });
+    insertItemCategorySchema = createInsertSchema(itemCategories).omit({
+      id: true,
+      createdAt: true,
+      updatedAt: true
+    });
+    insertPurchaseOrderSchema = createInsertSchema(purchaseOrders).omit({
+      id: true,
+      createdAt: true,
+      updatedAt: true,
+      orderNumber: true,
+      userId: true,
+      isApproved: true,
+      approvedBy: true,
+      approvedAt: true
+    }).extend({
+      userId: z.string().min(1),
+      templateId: z.number().nullable().optional(),
+      totalAmount: z.number().positive(),
+      customFields: z.record(z.any()).optional(),
+      items: z.array(z.object({
+        itemName: z.string().min(1),
+        specification: z.string().nullable().optional(),
+        quantity: z.number().positive(),
+        unitPrice: z.number().positive(),
+        totalAmount: z.number().positive(),
+        notes: z.string().nullable().optional()
+      }))
+    });
+    insertPurchaseOrderItemSchema = createInsertSchema(purchaseOrderItems).omit({
+      id: true,
+      createdAt: true
+    }).extend({
+      supplyAmount: z.number().nonnegative().optional(),
+      taxAmount: z.number().nonnegative().optional()
+    });
+    insertAttachmentSchema = createInsertSchema(attachments).omit({
+      id: true,
+      uploadedAt: true
+    });
+    insertOrderHistorySchema = createInsertSchema(orderHistory).omit({
+      id: true,
+      createdAt: true
+    });
+    insertInvoiceSchema = createInsertSchema(invoices).omit({
+      id: true,
+      createdAt: true,
+      updatedAt: true
+    }).extend({
+      totalAmount: z.union([z.string(), z.number()]).transform((val) => String(val)),
+      vatAmount: z.union([z.string(), z.number()]).transform((val) => String(val))
+    });
+    insertItemReceiptSchema = createInsertSchema(itemReceipts).omit({
+      id: true,
+      createdAt: true,
+      updatedAt: true
+    }).extend({
+      receivedQuantity: z.union([z.string(), z.number()]).transform((val) => Number(val)),
+      receivedDate: z.union([z.string(), z.date()]).transform((val) => new Date(val))
+    });
+    insertVerificationLogSchema = createInsertSchema(verificationLogs).omit({
+      id: true,
+      createdAt: true
+    });
+    insertEmailSendHistorySchema = createInsertSchema(emailSendHistory).omit({
+      id: true,
+      sentAt: true,
+      createdAt: true
+    }).extend({
+      ccEmails: z.string().nullable().optional(),
+      attachments: z.array(z.object({
+        filename: z.string(),
+        path: z.string(),
+        size: z.number()
+      })).nullable().optional()
+    });
+    insertTemplateFieldSchema = createInsertSchema(templateFields).omit({
+      id: true,
+      createdAt: true,
+      updatedAt: true
+    });
+    insertHandsontableConfigSchema = createInsertSchema(handsontableConfigs).omit({
+      id: true,
+      createdAt: true,
+      updatedAt: true
+    });
+    insertTemplateVersionSchema = createInsertSchema(templateVersions).omit({
+      id: true,
+      createdAt: true
+    });
+    insertProjectMemberSchema = createInsertSchema(projectMembers).omit({
+      id: true,
+      createdAt: true,
+      updatedAt: true
+    });
+    insertProjectHistorySchema = createInsertSchema(projectHistory).omit({
+      id: true,
+      changedAt: true
+    });
+    insertUiTermSchema = createInsertSchema(uiTerms);
+    insertTerminologySchema = createInsertSchema(terminology).omit({
+      id: true,
+      createdAt: true,
+      updatedAt: true
+    });
+    insertUITermSchema = createInsertSchema(uiTerms).omit({
+      id: true,
+      createdAt: true,
+      updatedAt: true
+    });
+    insertApprovalAuthoritySchema = createInsertSchema(approvalAuthorities).omit({
+      id: true,
+      createdAt: true,
+      updatedAt: true
+    });
+    approvalWorkflowSettings = pgTable("approval_workflow_settings", {
+      id: serial("id").primaryKey(),
+      companyId: integer("company_id").references(() => companies.id),
+      approvalMode: varchar("approval_mode", { length: 20 }).notNull().default("staged"),
+      // 'direct' or 'staged'
+      directApprovalRoles: jsonb("direct_approval_roles").default([]).$type(),
+      // roles that can approve directly
+      stagedApprovalThresholds: jsonb("staged_approval_thresholds").default({}).$type(),
+      requireAllStages: boolean("require_all_stages").default(true),
+      // whether all stages must approve
+      skipLowerStages: boolean("skip_lower_stages").default(false),
+      // whether higher roles can skip lower stages
+      isActive: boolean("is_active").default(true),
+      createdAt: timestamp("created_at").defaultNow(),
+      updatedAt: timestamp("updated_at").defaultNow().$onUpdate(() => /* @__PURE__ */ new Date()),
+      createdBy: varchar("created_by", { length: 255 }).references(() => users.id)
+    }, (table) => ({
+      companyIdx: index("idx_approval_workflow_company").on(table.companyId),
+      activeIdx: index("idx_approval_workflow_active").on(table.isActive)
+    }));
+    insertApprovalWorkflowSettingsSchema = createInsertSchema(approvalWorkflowSettings).omit({
+      id: true,
+      createdAt: true,
+      updatedAt: true
+    });
+  }
+});
+
+// server/db.ts
+var db_exports = {};
+__export(db_exports, {
+  db: () => db
+});
+import dotenv from "dotenv";
+import pkg from "pg";
+import { drizzle } from "drizzle-orm/node-postgres";
+var DATABASE_URL, Pool, db;
+var init_db = __esm({
+  "server/db.ts"() {
+    "use strict";
+    init_schema();
+    dotenv.config();
+    DATABASE_URL = process.env.DATABASE_URL;
+    console.log("\u{1F50D} Using DATABASE_URL:", DATABASE_URL?.split("@")[0] + "@[HIDDEN]");
+    ({ Pool } = pkg);
+    db = null;
+    if (!DATABASE_URL) {
+      console.error("\u274C DATABASE_URL not set - cannot connect to database");
+      process.exit(1);
+    } else {
+      try {
+        console.log("\u{1F504} Creating PostgreSQL connection pool with URL:", DATABASE_URL?.split("@")[0] + "@[HIDDEN]");
+        const pool = new Pool({
+          connectionString: DATABASE_URL,
+          ssl: { rejectUnauthorized: false },
+          // Supabase requires SSL
+          max: 20,
+          // Connection pool size
+          idleTimeoutMillis: 3e4,
+          connectionTimeoutMillis: 1e4
+        });
+        db = drizzle(pool, { schema: schema_exports });
+        console.log("\u2705 Database connected successfully (PostgreSQL pool)");
+      } catch (error) {
+        console.error("\u274C Database connection failed:", error instanceof Error ? error.message : String(error));
+        process.exit(1);
+      }
+    }
+  }
+});
+
 // server/index.ts
 import dotenv2 from "dotenv";
-import express2 from "express";
+import express3 from "express";
 
 // server/vite.ts
 import express from "express";
@@ -43,43 +952,52 @@ var vite_config_default = defineConfig({
     sourcemap: process.env.NODE_ENV === "development",
     rollupOptions: {
       output: {
-        manualChunks: {
-          // Vendor chunks
-          "react-vendor": ["react", "react-dom"],
-          "react-router": ["wouter"],
-          "ui-vendor": [
-            "@tanstack/react-query",
-            "@tanstack/react-table",
-            "react-hook-form",
-            "@hookform/resolvers",
-            "zod"
-          ],
-          "chart-vendor": [
-            "recharts",
-            "lucide-react"
-          ],
-          "utility-vendor": [
-            "clsx",
-            "tailwind-merge",
-            "date-fns"
-          ],
-          // Feature chunks
-          "auth-features": [
-            "./client/src/hooks/useAuth",
-            "./client/src/pages/login"
-          ],
-          "dashboard-features": [
-            "./client/src/pages/dashboard"
-          ],
-          "forms-features": [
-            "./client/src/components/order-form",
-            "./client/src/components/vendor-form",
-            "./client/src/components/item-form"
-          ],
-          "excel-features": [
-            "./client/src/components/excel-upload-with-validation",
-            "./client/src/components/excel-automation-wizard"
-          ]
+        manualChunks: (id) => {
+          if (id.includes("react") || id.includes("react-dom")) {
+            return "react-core";
+          }
+          if (id.includes("wouter") || id.includes("@tanstack/react-query")) {
+            return "state-router";
+          }
+          if (id.includes("@tanstack/react-table") || id.includes("react-hook-form") || id.includes("@hookform/resolvers") || id.includes("zod")) {
+            return "ui-forms";
+          }
+          if (id.includes("recharts") || id.includes("d3")) {
+            return "charts";
+          }
+          if (id.includes("lucide-react")) {
+            return "icons";
+          }
+          if (id.includes("clsx") || id.includes("tailwind-merge") || id.includes("date-fns")) {
+            return "utilities";
+          }
+          if (id.includes("xlsx") || id.includes("exceljs") || id.includes("excel-upload") || id.includes("excel-automation")) {
+            return "excel-processing";
+          }
+          if (id.includes("/orders/") || id.includes("enhanced-orders-table") || id.includes("use-optimized-orders") || id.includes("orders-professional")) {
+            return "orders-core";
+          }
+          if (id.includes("/dashboard") || id.includes("dashboard-widgets") || id.includes("advanced-chart")) {
+            return "dashboard";
+          }
+          if (id.includes("order-form") || id.includes("vendor-form") || id.includes("item-form")) {
+            return "forms";
+          }
+          if (id.includes("/admin") || id.includes("user-management") || id.includes("category-management")) {
+            return "admin";
+          }
+          if (id.includes("auth") || id.includes("login")) {
+            return "auth";
+          }
+          if (id.includes("node_modules")) {
+            if (id.includes("react-query")) return "vendor-query";
+            if (id.includes("react-table")) return "vendor-table";
+            if (id.includes("react-hook-form")) return "vendor-forms";
+            if (id.includes("recharts")) return "vendor-charts";
+            if (id.includes("date-fns")) return "vendor-dates";
+            return "vendor-misc";
+          }
+          return "main";
         },
         chunkFileNames: (chunkInfo) => {
           const facadeModuleId = chunkInfo.facadeModuleId ? chunkInfo.facadeModuleId.split("/").pop()?.replace(/\.\w+$/, "") || "chunk" : "chunk";
@@ -93,10 +1011,16 @@ var vite_config_default = defineConfig({
     minify: "esbuild",
     target: "es2020",
     cssCodeSplit: true,
-    reportCompressedSize: false,
-    // Faster builds
-    chunkSizeWarningLimit: 1e3
-    // Increase chunk size warning limit
+    reportCompressedSize: true,
+    // Enable for performance monitoring
+    chunkSizeWarningLimit: 500,
+    // Lower threshold to catch large chunks
+    // Enable tree shaking
+    treeshake: {
+      moduleSideEffects: false,
+      propertyReadSideEffects: false,
+      unknownGlobalSideEffects: false
+    }
   },
   // Performance optimizations
   optimizeDeps: {
@@ -195,833 +1119,14 @@ import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 
 // server/routes/index.ts
-import { Router as Router13 } from "express";
+import { Router as Router15 } from "express";
 
 // server/routes/auth.ts
 import { Router } from "express";
 
-// shared/schema.ts
-var schema_exports = {};
-__export(schema_exports, {
-  approvalAuthorities: () => approvalAuthorities,
-  approvalWorkflowSettings: () => approvalWorkflowSettings,
-  attachments: () => attachments,
-  attachmentsRelations: () => attachmentsRelations,
-  companies: () => companies,
-  handsontableConfigs: () => handsontableConfigs,
-  handsontableConfigsRelations: () => handsontableConfigsRelations,
-  insertApprovalAuthoritySchema: () => insertApprovalAuthoritySchema,
-  insertApprovalWorkflowSettingsSchema: () => insertApprovalWorkflowSettingsSchema,
-  insertAttachmentSchema: () => insertAttachmentSchema,
-  insertCompanySchema: () => insertCompanySchema,
-  insertHandsontableConfigSchema: () => insertHandsontableConfigSchema,
-  insertInvoiceSchema: () => insertInvoiceSchema,
-  insertItemCategorySchema: () => insertItemCategorySchema,
-  insertItemReceiptSchema: () => insertItemReceiptSchema,
-  insertItemSchema: () => insertItemSchema,
-  insertOrderHistorySchema: () => insertOrderHistorySchema,
-  insertOrderTemplateSchema: () => insertOrderTemplateSchema,
-  insertProjectHistorySchema: () => insertProjectHistorySchema,
-  insertProjectMemberSchema: () => insertProjectMemberSchema,
-  insertProjectSchema: () => insertProjectSchema,
-  insertPurchaseOrderItemSchema: () => insertPurchaseOrderItemSchema,
-  insertPurchaseOrderSchema: () => insertPurchaseOrderSchema,
-  insertTemplateFieldSchema: () => insertTemplateFieldSchema,
-  insertTemplateVersionSchema: () => insertTemplateVersionSchema,
-  insertTerminologySchema: () => insertTerminologySchema,
-  insertUITermSchema: () => insertUITermSchema,
-  insertUiTermSchema: () => insertUiTermSchema,
-  insertVendorSchema: () => insertVendorSchema,
-  insertVerificationLogSchema: () => insertVerificationLogSchema,
-  invoiceStatusEnum: () => invoiceStatusEnum,
-  invoices: () => invoices,
-  invoicesRelations: () => invoicesRelations,
-  itemCategories: () => itemCategories,
-  itemCategoriesRelations: () => itemCategoriesRelations,
-  itemReceiptStatusEnum: () => itemReceiptStatusEnum,
-  itemReceipts: () => itemReceipts,
-  itemReceiptsRelations: () => itemReceiptsRelations,
-  items: () => items,
-  itemsRelations: () => itemsRelations,
-  orderHistory: () => orderHistory,
-  orderHistoryRelations: () => orderHistoryRelations,
-  orderTemplates: () => orderTemplates,
-  orderTemplatesRelations: () => orderTemplatesRelations,
-  projectHistory: () => projectHistory,
-  projectHistoryRelations: () => projectHistoryRelations,
-  projectMembers: () => projectMembers,
-  projectMembersRelations: () => projectMembersRelations,
-  projectStatusEnum: () => projectStatusEnum,
-  projectTypeEnum: () => projectTypeEnum,
-  projects: () => projects,
-  projectsRelations: () => projectsRelations,
-  purchaseOrderItems: () => purchaseOrderItems,
-  purchaseOrderItemsRelations: () => purchaseOrderItemsRelations,
-  purchaseOrderStatusEnum: () => purchaseOrderStatusEnum,
-  purchaseOrders: () => purchaseOrders,
-  purchaseOrdersRelations: () => purchaseOrdersRelations,
-  sessions: () => sessions,
-  templateFields: () => templateFields,
-  templateFieldsRelations: () => templateFieldsRelations,
-  templateVersions: () => templateVersions,
-  templateVersionsRelations: () => templateVersionsRelations,
-  terminology: () => terminology,
-  uiTerms: () => uiTerms,
-  userRoleEnum: () => userRoleEnum,
-  users: () => users,
-  usersRelations: () => usersRelations,
-  vendors: () => vendors,
-  vendorsRelations: () => vendorsRelations,
-  verificationActionEnum: () => verificationActionEnum,
-  verificationLogs: () => verificationLogs,
-  verificationLogsRelations: () => verificationLogsRelations
-});
-import {
-  pgTable,
-  text,
-  varchar,
-  timestamp,
-  date,
-  jsonb,
-  index,
-  serial,
-  integer,
-  decimal,
-  boolean,
-  unique,
-  pgEnum
-} from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
-import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod";
-var sessions = pgTable(
-  "sessions",
-  {
-    sid: varchar("sid").primaryKey(),
-    sess: jsonb("sess").notNull(),
-    expire: timestamp("expire").notNull()
-  },
-  (table) => [index("IDX_session_expire").on(table.expire)]
-);
-var uiTerms = pgTable("ui_terms", {
-  id: serial("id").primaryKey(),
-  termKey: varchar("term_key", { length: 100 }).notNull().unique(),
-  termValue: varchar("term_value", { length: 255 }).notNull(),
-  category: varchar("category", { length: 50 }).default("general"),
-  description: text("description"),
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow()
-});
-var itemCategories = pgTable("item_categories", {
-  id: serial("id").primaryKey(),
-  categoryType: varchar("category_type", { length: 20 }).notNull(),
-  // 'major', 'middle', 'minor'
-  categoryValue: varchar("category_value", { length: 100 }).notNull(),
-  parentId: integer("parent_id"),
-  // References parent category ID
-  displayOrder: integer("display_order").default(0),
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow()
-}, (table) => [
-  index("idx_item_categories_type").on(table.categoryType),
-  index("idx_item_categories_parent").on(table.parentId)
-]);
-var userRoleEnum = pgEnum("user_role", ["field_worker", "project_manager", "hq_management", "executive", "admin"]);
-var purchaseOrderStatusEnum = pgEnum("purchase_order_status", ["draft", "pending", "approved", "sent", "completed"]);
-var projectStatusEnum = pgEnum("project_status", ["planning", "active", "on_hold", "completed", "cancelled"]);
-var projectTypeEnum = pgEnum("project_type", ["commercial", "residential", "industrial", "infrastructure"]);
-var invoiceStatusEnum = pgEnum("invoice_status", ["pending", "verified", "paid"]);
-var itemReceiptStatusEnum = pgEnum("item_receipt_status", ["pending", "approved", "rejected"]);
-var verificationActionEnum = pgEnum("verification_action", ["invoice_uploaded", "item_verified", "quality_checked"]);
-var approvalAuthorities = pgTable("approval_authorities", {
-  id: serial("id").primaryKey(),
-  role: userRoleEnum("role").notNull(),
-  maxAmount: decimal("max_amount", { precision: 15, scale: 2 }).notNull(),
-  description: text("description"),
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow()
-}, (table) => [
-  unique("unique_role_approval").on(table.role)
-]);
-var users = pgTable("users", {
-  id: varchar("id").primaryKey().notNull(),
-  email: varchar("email").unique().notNull(),
-  name: varchar("name").notNull(),
-  password: varchar("hashed_password").notNull(),
-  // Match actual database column name
-  phoneNumber: varchar("phone_number"),
-  profileImageUrl: varchar("profile_image_url"),
-  role: userRoleEnum("role").notNull().default("field_worker"),
-  position: varchar("position"),
-  // Add position field that exists in DB
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow()
-}, (table) => [
-  index("idx_users_email").on(table.email),
-  index("idx_users_role").on(table.role)
-]);
-var companies = pgTable("companies", {
-  id: serial("id").primaryKey(),
-  companyName: varchar("company_name", { length: 255 }).notNull(),
-  businessNumber: varchar("business_number", { length: 50 }),
-  address: text("address"),
-  contactPerson: varchar("contact_person", { length: 100 }),
-  // Match actual DB schema
-  phone: varchar("phone", { length: 50 }),
-  email: varchar("email", { length: 255 }),
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow()
-});
-var vendors = pgTable("vendors", {
-  id: serial("id").primaryKey(),
-  name: varchar("name", { length: 255 }).notNull(),
-  vendorCode: varchar("vendor_code", { length: 50 }),
-  // 거래처 코드
-  aliases: jsonb("aliases").default([]).$type(),
-  // 별칭 필드 추가 - 예: ["(주)익진", "주식회사 익진", "익진"]
-  businessNumber: varchar("business_number", { length: 50 }),
-  contactPerson: varchar("contact_person", { length: 100 }).notNull(),
-  email: varchar("email", { length: 255 }).notNull(),
-  phone: varchar("phone", { length: 50 }),
-  address: text("address"),
-  businessType: varchar("business_type", { length: 100 }),
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow()
-}, (table) => [
-  index("idx_vendors_name").on(table.name),
-  index("idx_vendors_business_number").on(table.businessNumber),
-  index("idx_vendors_email").on(table.email),
-  index("idx_vendors_active").on(table.isActive)
-]);
-var items = pgTable("items", {
-  id: serial("id").primaryKey(),
-  name: varchar("name", { length: 255 }).notNull(),
-  specification: text("specification"),
-  unit: varchar("unit", { length: 50 }).notNull(),
-  unitPrice: decimal("unit_price", { precision: 15, scale: 2 }),
-  category: varchar("category", { length: 100 }),
-  majorCategory: varchar("major_category", { length: 100 }),
-  middleCategory: varchar("middle_category", { length: 100 }),
-  minorCategory: varchar("minor_category", { length: 100 }),
-  description: text("description"),
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow()
-}, (table) => [
-  index("idx_items_name").on(table.name),
-  index("idx_items_category").on(table.category),
-  index("idx_items_active").on(table.isActive)
-]);
-var terminology = pgTable("terminology", {
-  id: serial("id").primaryKey(),
-  termKey: varchar("term_key", { length: 100 }).notNull().unique(),
-  termValue: varchar("term_value", { length: 255 }).notNull(),
-  category: varchar("category", { length: 100 }),
-  description: text("description"),
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow()
-}, (table) => [
-  index("idx_terminology_key").on(table.termKey),
-  index("idx_terminology_category").on(table.category),
-  index("idx_terminology_active").on(table.isActive)
-]);
-var projects = pgTable("projects", {
-  id: serial("id").primaryKey(),
-  projectName: varchar("project_name", { length: 255 }).notNull(),
-  projectCode: varchar("project_code", { length: 100 }).notNull().unique(),
-  clientName: varchar("client_name", { length: 255 }),
-  projectType: projectTypeEnum("project_type").notNull().default("commercial"),
-  location: text("location"),
-  startDate: date("start_date"),
-  endDate: date("end_date"),
-  status: projectStatusEnum("status").notNull().default("active"),
-  totalBudget: decimal("total_budget", { precision: 15, scale: 2 }),
-  projectManagerId: varchar("project_manager_id").references(() => users.id),
-  orderManagerId: varchar("order_manager_id").references(() => users.id),
-  description: text("description"),
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow()
-}, (table) => [
-  index("idx_projects_name").on(table.projectName),
-  index("idx_projects_code").on(table.projectCode),
-  index("idx_projects_status").on(table.status),
-  index("idx_projects_start_date").on(table.startDate),
-  index("idx_projects_active").on(table.isActive),
-  index("idx_projects_manager").on(table.projectManagerId)
-]);
-var projectMembers = pgTable("project_members", {
-  id: serial("id").primaryKey(),
-  projectId: integer("project_id").references(() => projects.id, { onDelete: "cascade" }).notNull(),
-  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
-  role: varchar("role", { length: 50 }).notNull(),
-  // 'manager', 'order_manager', 'member', 'viewer'
-  assignedAt: timestamp("assigned_at").defaultNow(),
-  assignedBy: varchar("assigned_by").references(() => users.id),
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow()
-}, (table) => [
-  unique("project_members_project_user_unique").on(table.projectId, table.userId)
-]);
-var projectHistory = pgTable("project_history", {
-  id: serial("id").primaryKey(),
-  projectId: integer("project_id").references(() => projects.id, { onDelete: "cascade" }).notNull(),
-  fieldName: varchar("field_name", { length: 100 }).notNull(),
-  oldValue: text("old_value"),
-  newValue: text("new_value"),
-  changedBy: varchar("changed_by").references(() => users.id).notNull(),
-  changedAt: timestamp("changed_at").defaultNow(),
-  changeReason: text("change_reason")
-});
-var orderTemplates = pgTable("order_templates", {
-  id: serial("id").primaryKey(),
-  templateName: varchar("template_name", { length: 100 }).notNull(),
-  templateType: varchar("template_type", { length: 50 }).notNull(),
-  // material_extrusion, panel_manufacturing, general, handsontable
-  // fieldsConfig: jsonb("fields_config").notNull(), // TODO: Add this column to database
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow()
-});
-var templateFields = pgTable("template_fields", {
-  id: serial("id").primaryKey(),
-  templateId: integer("template_id").references(() => orderTemplates.id, { onDelete: "cascade" }),
-  fieldType: varchar("field_type", { length: 50 }).notNull(),
-  // 'text', 'number', 'select', 'date', 'textarea'
-  fieldName: varchar("field_name", { length: 100 }).notNull(),
-  label: varchar("label", { length: 255 }).notNull(),
-  placeholder: varchar("placeholder", { length: 255 }),
-  required: boolean("required").default(false),
-  validation: jsonb("validation"),
-  // JSON validation rules
-  options: jsonb("options"),
-  // For select fields
-  gridPosition: jsonb("grid_position").notNull(),
-  // {row, col, span}
-  sectionName: varchar("section_name", { length: 100 }).notNull(),
-  sortOrder: integer("sort_order").default(0),
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow()
-});
-var handsontableConfigs = pgTable("handsontable_configs", {
-  id: serial("id").primaryKey(),
-  templateId: integer("template_id").references(() => orderTemplates.id, { onDelete: "cascade" }),
-  colHeaders: jsonb("col_headers").notNull(),
-  // Array of column headers
-  columns: jsonb("columns").notNull(),
-  // Column configurations
-  rowsCount: integer("rows_count").default(10),
-  formulas: jsonb("formulas"),
-  // Formula definitions
-  validationRules: jsonb("validation_rules"),
-  // Cell validation rules
-  customStyles: jsonb("custom_styles"),
-  // Styling rules
-  settings: jsonb("settings"),
-  // Additional Handsontable settings
-  sortOrder: integer("sort_order").default(0),
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow()
-});
-var templateVersions = pgTable("template_versions", {
-  id: serial("id").primaryKey(),
-  templateId: integer("template_id").references(() => orderTemplates.id, { onDelete: "cascade" }),
-  versionNumber: varchar("version_number", { length: 20 }).notNull(),
-  changes: jsonb("changes"),
-  // Changelog
-  templateConfig: jsonb("template_config").notNull(),
-  // Snapshot of template at this version
-  createdBy: varchar("created_by", { length: 255 }),
-  createdAt: timestamp("created_at").defaultNow()
-});
-var purchaseOrders = pgTable("purchase_orders", {
-  id: serial("id").primaryKey(),
-  orderNumber: varchar("order_number", { length: 50 }).notNull().unique(),
-  projectId: integer("project_id").references(() => projects.id).notNull(),
-  vendorId: integer("vendor_id").references(() => vendors.id),
-  userId: varchar("user_id").references(() => users.id).notNull(),
-  templateId: integer("template_id").references(() => orderTemplates.id),
-  orderDate: date("order_date").notNull(),
-  deliveryDate: date("delivery_date"),
-  status: purchaseOrderStatusEnum("status").notNull().default("pending"),
-  totalAmount: decimal("total_amount", { precision: 15, scale: 2 }).default("0").$type(),
-  notes: text("notes"),
-  // customFields: jsonb("custom_fields"), // TODO: Add this column to database
-  isApproved: boolean("is_approved").default(false),
-  approvedBy: varchar("approved_by").references(() => users.id),
-  approvedAt: timestamp("approved_at"),
-  // sentAt: timestamp("sent_at"), // TODO: Add this column to database
-  currentApproverRole: userRoleEnum("current_approver_role"),
-  approvalLevel: integer("approval_level").default(1),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow()
-}, (table) => [
-  index("idx_purchase_orders_number").on(table.orderNumber),
-  index("idx_purchase_orders_project").on(table.projectId),
-  index("idx_purchase_orders_vendor").on(table.vendorId),
-  index("idx_purchase_orders_user").on(table.userId),
-  index("idx_purchase_orders_status").on(table.status),
-  index("idx_purchase_orders_date").on(table.orderDate),
-  index("idx_purchase_orders_delivery").on(table.deliveryDate),
-  index("idx_purchase_orders_created").on(table.createdAt),
-  index("idx_purchase_orders_approver").on(table.currentApproverRole)
-]);
-var purchaseOrderItems = pgTable("purchase_order_items", {
-  id: serial("id").primaryKey(),
-  orderId: integer("order_id").references(() => purchaseOrders.id).notNull(),
-  // itemId: integer("item_id").references(() => items.id), // TODO: Add this column to database
-  itemName: varchar("item_name", { length: 255 }).notNull(),
-  specification: text("specification"),
-  unit: varchar("unit", { length: 50 }),
-  // 실제 DB에 있는 컬럼, NULL 허용
-  quantity: decimal("quantity", { precision: 10, scale: 2 }).notNull().$type(),
-  unitPrice: decimal("unit_price", { precision: 15, scale: 2 }).notNull().$type(),
-  totalAmount: decimal("total_amount", { precision: 15, scale: 2 }).notNull().$type(),
-  // PO Template Input 시트를 위한 새로운 필드들 (TODO: Add these columns to database)
-  // categoryLv1: varchar("category_lv1", { length: 100 }), // 대분류
-  // categoryLv2: varchar("category_lv2", { length: 100 }), // 중분류  
-  // categoryLv3: varchar("category_lv3", { length: 100 }), // 소분류
-  // supplyAmount: decimal("supply_amount", { precision: 15, scale: 2 }).default("0").notNull().$type<number>(), // TODO: Add to DB
-  // taxAmount: decimal("tax_amount", { precision: 15, scale: 2 }).default("0").notNull().$type<number>(), // TODO: Add to DB  
-  // deliveryName: varchar("delivery_name", { length: 255 }), // TODO: Add to DB
-  notes: text("notes"),
-  createdAt: timestamp("created_at").defaultNow()
-}, (table) => [
-  // index("idx_purchase_order_items_category_lv1").on(table.categoryLv1), // TODO: Add when column is added
-  // index("idx_purchase_order_items_category_lv2").on(table.categoryLv2), // TODO: Add when column is added
-  // index("idx_purchase_order_items_category_lv3").on(table.categoryLv3), // TODO: Add when column is added
-]);
-var attachments = pgTable("attachments", {
-  id: serial("id").primaryKey(),
-  orderId: integer("order_id").references(() => purchaseOrders.id).notNull(),
-  originalName: varchar("original_name", { length: 255 }).notNull(),
-  storedName: varchar("stored_name", { length: 255 }).notNull(),
-  filePath: varchar("file_path", { length: 500 }).notNull(),
-  fileSize: integer("file_size"),
-  mimeType: varchar("mime_type", { length: 100 }),
-  uploadedBy: varchar("uploaded_by", { length: 50 }),
-  uploadedAt: timestamp("uploaded_at").defaultNow()
-});
-var orderHistory = pgTable("order_history", {
-  id: serial("id").primaryKey(),
-  orderId: integer("order_id").references(() => purchaseOrders.id).notNull(),
-  userId: varchar("user_id").references(() => users.id).notNull(),
-  action: varchar("action", { length: 100 }).notNull(),
-  // created, updated, approved, sent, etc.
-  changes: jsonb("changes"),
-  // Store what changed
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow()
-});
-var invoices = pgTable("invoices", {
-  id: serial("id").primaryKey(),
-  orderId: integer("order_id").notNull().references(() => purchaseOrders.id, { onDelete: "cascade" }),
-  invoiceNumber: varchar("invoice_number", { length: 100 }).notNull().unique(),
-  invoiceType: varchar("invoice_type", { length: 20 }).notNull(),
-  // 'invoice' or 'tax_invoice'
-  issueDate: timestamp("issue_date").notNull(),
-  dueDate: timestamp("due_date"),
-  totalAmount: decimal("total_amount", { precision: 15, scale: 2 }).notNull().$type(),
-  vatAmount: decimal("vat_amount", { precision: 15, scale: 2 }).default("0").$type(),
-  status: invoiceStatusEnum("status").notNull().default("pending"),
-  filePath: varchar("file_path", { length: 500 }),
-  // 청구서 파일 경로
-  uploadedBy: varchar("uploaded_by").notNull().references(() => users.id),
-  verifiedBy: varchar("verified_by").references(() => users.id),
-  verifiedAt: timestamp("verified_at"),
-  taxInvoiceIssued: boolean("tax_invoice_issued").default(false),
-  // 세금계산서 발행 여부
-  taxInvoiceIssuedDate: timestamp("tax_invoice_issued_date"),
-  // 세금계산서 발행일
-  taxInvoiceIssuedBy: varchar("tax_invoice_issued_by").references(() => users.id),
-  // 세금계산서 발행자
-  notes: text("notes"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow()
-});
-var itemReceipts = pgTable("item_receipts", {
-  id: serial("id").primaryKey(),
-  orderItemId: integer("order_item_id").notNull().references(() => purchaseOrderItems.id, { onDelete: "cascade" }),
-  invoiceId: integer("invoice_id").references(() => invoices.id, { onDelete: "set null" }),
-  receivedQuantity: decimal("received_quantity", { precision: 10, scale: 2 }).notNull().$type(),
-  receivedDate: timestamp("received_date").notNull(),
-  qualityCheck: boolean("quality_check").default(false),
-  qualityNotes: text("quality_notes"),
-  verifiedBy: varchar("verified_by").notNull().references(() => users.id),
-  status: itemReceiptStatusEnum("status").notNull().default("pending"),
-  notes: text("notes"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow()
-});
-var verificationLogs = pgTable("verification_logs", {
-  id: serial("id").primaryKey(),
-  orderId: integer("order_id").notNull().references(() => purchaseOrders.id, { onDelete: "cascade" }),
-  invoiceId: integer("invoice_id").references(() => invoices.id, { onDelete: "set null" }),
-  itemReceiptId: integer("item_receipt_id").references(() => itemReceipts.id, { onDelete: "set null" }),
-  action: verificationActionEnum("action").notNull(),
-  details: text("details"),
-  performedBy: varchar("performed_by").notNull().references(() => users.id),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow()
-});
-var usersRelations = relations(users, ({ many }) => ({
-  purchaseOrders: many(purchaseOrders),
-  orderHistory: many(orderHistory)
-}));
-var vendorsRelations = relations(vendors, ({ many }) => ({
-  purchaseOrders: many(purchaseOrders)
-}));
-var itemsRelations = relations(items, ({ many }) => ({
-  purchaseOrderItems: many(purchaseOrderItems)
-}));
-var projectsRelations = relations(projects, ({ one, many }) => ({
-  purchaseOrders: many(purchaseOrders),
-  projectManager: one(users, {
-    fields: [projects.projectManagerId],
-    references: [users.id]
-  }),
-  orderManager: one(users, {
-    fields: [projects.orderManagerId],
-    references: [users.id]
-  }),
-  projectMembers: many(projectMembers),
-  projectHistory: many(projectHistory)
-}));
-var projectMembersRelations = relations(projectMembers, ({ one }) => ({
-  project: one(projects, {
-    fields: [projectMembers.projectId],
-    references: [projects.id]
-  }),
-  user: one(users, {
-    fields: [projectMembers.userId],
-    references: [users.id]
-  }),
-  assignedByUser: one(users, {
-    fields: [projectMembers.assignedBy],
-    references: [users.id]
-  })
-}));
-var projectHistoryRelations = relations(projectHistory, ({ one }) => ({
-  project: one(projects, {
-    fields: [projectHistory.projectId],
-    references: [projects.id]
-  }),
-  changedByUser: one(users, {
-    fields: [projectHistory.changedBy],
-    references: [users.id]
-  })
-}));
-var orderTemplatesRelations = relations(orderTemplates, ({ many }) => ({
-  fields: many(templateFields),
-  handsontableConfig: many(handsontableConfigs),
-  versions: many(templateVersions),
-  orders: many(purchaseOrders)
-}));
-var purchaseOrdersRelations = relations(purchaseOrders, ({ one, many }) => ({
-  project: one(projects, {
-    fields: [purchaseOrders.projectId],
-    references: [projects.id]
-  }),
-  vendor: one(vendors, {
-    fields: [purchaseOrders.vendorId],
-    references: [vendors.id]
-  }),
-  user: one(users, {
-    fields: [purchaseOrders.userId],
-    references: [users.id]
-  }),
-  template: one(orderTemplates, {
-    fields: [purchaseOrders.templateId],
-    references: [orderTemplates.id]
-  }),
-  approver: one(users, {
-    fields: [purchaseOrders.approvedBy],
-    references: [users.id]
-  }),
-  items: many(purchaseOrderItems),
-  attachments: many(attachments),
-  history: many(orderHistory),
-  invoices: many(invoices),
-  verificationLogs: many(verificationLogs)
-}));
-var purchaseOrderItemsRelations = relations(purchaseOrderItems, ({ one, many }) => ({
-  order: one(purchaseOrders, {
-    fields: [purchaseOrderItems.orderId],
-    references: [purchaseOrders.id]
-  }),
-  receipts: many(itemReceipts)
-}));
-var attachmentsRelations = relations(attachments, ({ one }) => ({
-  order: one(purchaseOrders, {
-    fields: [attachments.orderId],
-    references: [purchaseOrders.id]
-  })
-}));
-var orderHistoryRelations = relations(orderHistory, ({ one }) => ({
-  order: one(purchaseOrders, {
-    fields: [orderHistory.orderId],
-    references: [purchaseOrders.id]
-  }),
-  user: one(users, {
-    fields: [orderHistory.userId],
-    references: [users.id]
-  })
-}));
-var invoicesRelations = relations(invoices, ({ one, many }) => ({
-  order: one(purchaseOrders, {
-    fields: [invoices.orderId],
-    references: [purchaseOrders.id]
-  }),
-  receipts: many(itemReceipts),
-  verificationLogs: many(verificationLogs)
-}));
-var itemReceiptsRelations = relations(itemReceipts, ({ one, many }) => ({
-  orderItem: one(purchaseOrderItems, {
-    fields: [itemReceipts.orderItemId],
-    references: [purchaseOrderItems.id]
-  }),
-  invoice: one(invoices, {
-    fields: [itemReceipts.invoiceId],
-    references: [invoices.id]
-  }),
-  verificationLogs: many(verificationLogs)
-}));
-var verificationLogsRelations = relations(verificationLogs, ({ one }) => ({
-  order: one(purchaseOrders, {
-    fields: [verificationLogs.orderId],
-    references: [purchaseOrders.id]
-  }),
-  invoice: one(invoices, {
-    fields: [verificationLogs.invoiceId],
-    references: [invoices.id]
-  }),
-  itemReceipt: one(itemReceipts, {
-    fields: [verificationLogs.itemReceiptId],
-    references: [itemReceipts.id]
-  })
-}));
-var templateFieldsRelations = relations(templateFields, ({ one }) => ({
-  template: one(orderTemplates, {
-    fields: [templateFields.templateId],
-    references: [orderTemplates.id]
-  })
-}));
-var handsontableConfigsRelations = relations(handsontableConfigs, ({ one }) => ({
-  template: one(orderTemplates, {
-    fields: [handsontableConfigs.templateId],
-    references: [orderTemplates.id]
-  })
-}));
-var templateVersionsRelations = relations(templateVersions, ({ one }) => ({
-  template: one(orderTemplates, {
-    fields: [templateVersions.templateId],
-    references: [orderTemplates.id]
-  })
-}));
-var itemCategoriesRelations = relations(itemCategories, ({ one, many }) => ({
-  parent: one(itemCategories, {
-    fields: [itemCategories.parentId],
-    references: [itemCategories.id]
-  }),
-  children: many(itemCategories)
-}));
-var insertCompanySchema = createInsertSchema(companies).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true
-});
-var insertVendorSchema = createInsertSchema(vendors).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true
-});
-var insertItemSchema = createInsertSchema(items).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true
-});
-var insertProjectSchema = createInsertSchema(projects).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true
-});
-var insertOrderTemplateSchema = createInsertSchema(orderTemplates).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true
-});
-var insertItemCategorySchema = createInsertSchema(itemCategories).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true
-});
-var insertPurchaseOrderSchema = createInsertSchema(purchaseOrders).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-  orderNumber: true,
-  userId: true,
-  isApproved: true,
-  approvedBy: true,
-  approvedAt: true,
-  sentAt: true
-}).extend({
-  userId: z.string().min(1),
-  templateId: z.number().nullable().optional(),
-  totalAmount: z.number().positive(),
-  customFields: z.record(z.any()).optional(),
-  items: z.array(z.object({
-    itemName: z.string().min(1),
-    specification: z.string().nullable().optional(),
-    quantity: z.number().positive(),
-    unitPrice: z.number().positive(),
-    totalAmount: z.number().positive(),
-    notes: z.string().nullable().optional()
-  }))
-});
-var insertPurchaseOrderItemSchema = createInsertSchema(purchaseOrderItems).omit({
-  id: true,
-  createdAt: true
-}).extend({
-  supplyAmount: z.number().nonnegative().optional(),
-  taxAmount: z.number().nonnegative().optional()
-});
-var insertAttachmentSchema = createInsertSchema(attachments).omit({
-  id: true,
-  uploadedAt: true
-});
-var insertOrderHistorySchema = createInsertSchema(orderHistory).omit({
-  id: true,
-  createdAt: true
-});
-var insertInvoiceSchema = createInsertSchema(invoices).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true
-}).extend({
-  totalAmount: z.union([z.string(), z.number()]).transform((val) => String(val)),
-  vatAmount: z.union([z.string(), z.number()]).transform((val) => String(val))
-});
-var insertItemReceiptSchema = createInsertSchema(itemReceipts).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true
-}).extend({
-  receivedQuantity: z.union([z.string(), z.number()]).transform((val) => Number(val)),
-  receivedDate: z.union([z.string(), z.date()]).transform((val) => new Date(val))
-});
-var insertVerificationLogSchema = createInsertSchema(verificationLogs).omit({
-  id: true,
-  createdAt: true
-});
-var insertTemplateFieldSchema = createInsertSchema(templateFields).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true
-});
-var insertHandsontableConfigSchema = createInsertSchema(handsontableConfigs).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true
-});
-var insertTemplateVersionSchema = createInsertSchema(templateVersions).omit({
-  id: true,
-  createdAt: true
-});
-var insertProjectMemberSchema = createInsertSchema(projectMembers).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true
-});
-var insertProjectHistorySchema = createInsertSchema(projectHistory).omit({
-  id: true,
-  changedAt: true
-});
-var insertUiTermSchema = createInsertSchema(uiTerms);
-var insertTerminologySchema = createInsertSchema(terminology).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true
-});
-var insertUITermSchema = createInsertSchema(uiTerms).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true
-});
-var insertApprovalAuthoritySchema = createInsertSchema(approvalAuthorities).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true
-});
-var approvalWorkflowSettings = pgTable("approval_workflow_settings", {
-  id: serial("id").primaryKey(),
-  companyId: integer("company_id").references(() => companies.id),
-  approvalMode: varchar("approval_mode", { length: 20 }).notNull().default("staged"),
-  // 'direct' or 'staged'
-  directApprovalRoles: jsonb("direct_approval_roles").default([]).$type(),
-  // roles that can approve directly
-  stagedApprovalThresholds: jsonb("staged_approval_thresholds").default({}).$type(),
-  requireAllStages: boolean("require_all_stages").default(true),
-  // whether all stages must approve
-  skipLowerStages: boolean("skip_lower_stages").default(false),
-  // whether higher roles can skip lower stages
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().$onUpdate(() => /* @__PURE__ */ new Date()),
-  createdBy: varchar("created_by", { length: 255 }).references(() => users.id)
-}, (table) => ({
-  companyIdx: index("idx_approval_workflow_company").on(table.companyId),
-  activeIdx: index("idx_approval_workflow_active").on(table.isActive)
-}));
-var insertApprovalWorkflowSettingsSchema = createInsertSchema(approvalWorkflowSettings).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true
-});
-
-// server/db.ts
-import dotenv from "dotenv";
-import pkg from "pg";
-import { drizzle } from "drizzle-orm/node-postgres";
-dotenv.config();
-var DATABASE_URL = process.env.DATABASE_URL;
-console.log("\u{1F50D} Using DATABASE_URL:", DATABASE_URL.split("@")[0] + "@[HIDDEN]");
-var { Pool } = pkg;
-var db = null;
-if (!DATABASE_URL) {
-  console.error("\u274C DATABASE_URL not set - cannot connect to database");
-  process.exit(1);
-} else {
-  try {
-    console.log("\u{1F504} Creating PostgreSQL connection pool with URL:", DATABASE_URL.split("@")[0] + "@[HIDDEN]");
-    const pool = new Pool({
-      connectionString: DATABASE_URL,
-      ssl: { rejectUnauthorized: false },
-      // Supabase requires SSL
-      max: 20,
-      // Connection pool size
-      idleTimeoutMillis: 3e4,
-      connectionTimeoutMillis: 1e4
-    });
-    db = drizzle(pool, { schema: schema_exports });
-    console.log("\u2705 Database connected successfully (PostgreSQL pool)");
-  } catch (error) {
-    console.error("\u274C Database connection failed:", error.message);
-    process.exit(1);
-  }
-}
-
 // server/storage.ts
+init_schema();
+init_db();
 import { eq, desc, asc, ilike, and, or, between, count, sum, sql as sql2, gte, lte, isNotNull, notInArray } from "drizzle-orm";
 var DatabaseStorage = class {
   // User operations
@@ -1364,21 +1469,21 @@ var DatabaseStorage = class {
   }
   // Purchase order operations
   async getPurchaseOrders(filters = {}) {
-    const { userId, status, vendorId, templateId, projectId, startDate, endDate, minAmount, maxAmount, searchText, page = 1, limit = 10 } = filters;
+    const { userId, status, vendorId, templateId, projectId, startDate, endDate, minAmount, maxAmount, searchText, majorCategory, middleCategory, minorCategory, page = 1, limit = 50 } = filters;
     let whereConditions = [];
-    if (userId) {
+    if (userId && userId !== "all") {
       whereConditions.push(eq(purchaseOrders.userId, userId));
     }
-    if (status) {
+    if (status && status !== "all" && status !== "") {
       whereConditions.push(sql2`${purchaseOrders.status} = ${status}`);
     }
-    if (vendorId) {
+    if (vendorId && vendorId !== "all") {
       whereConditions.push(eq(purchaseOrders.vendorId, vendorId));
     }
-    if (templateId) {
+    if (templateId && templateId !== "all") {
       whereConditions.push(eq(purchaseOrders.templateId, templateId));
     }
-    if (projectId) {
+    if (projectId && projectId !== "all") {
       whereConditions.push(eq(purchaseOrders.projectId, projectId));
     }
     if (startDate && endDate) {
@@ -1438,19 +1543,28 @@ var DatabaseStorage = class {
         return true;
       });
     }
+    if (majorCategory || middleCategory || minorCategory) {
+      const categoryConditions = [];
+      if (majorCategory) {
+        categoryConditions.push(eq(purchaseOrderItems.majorCategory, majorCategory));
+      }
+      if (middleCategory) {
+        categoryConditions.push(eq(purchaseOrderItems.middleCategory, middleCategory));
+      }
+      if (minorCategory) {
+        categoryConditions.push(eq(purchaseOrderItems.minorCategory, minorCategory));
+      }
+      const matchingItems = await db.select({ orderId: purchaseOrderItems.orderId }).from(purchaseOrderItems).where(and(...categoryConditions)).groupBy(purchaseOrderItems.orderId);
+      const matchingOrderIds = new Set(matchingItems.map((item) => item.orderId));
+      filteredOrders = filteredOrders.filter((orderRow) => {
+        return matchingOrderIds.has(orderRow.purchase_orders.id);
+      });
+    }
     const totalCount = filteredOrders.length;
     const orders = filteredOrders.slice((page - 1) * limit, page * limit);
     const ordersWithItems = await Promise.all(
       orders.map(async (order) => {
         const items3 = await db.select().from(purchaseOrderItems).where(eq(purchaseOrderItems.orderId, order.purchase_orders.id));
-        console.log("\u{1F50D} DB\uC5D0\uC11C \uC870\uD68C\uB41C \uBC1C\uC8FC\uC11C \uB370\uC774\uD130:", {
-          id: order.purchase_orders.id,
-          orderNumber: order.purchase_orders.orderNumber,
-          orderDate: order.purchase_orders.orderDate,
-          deliveryDate: order.purchase_orders.deliveryDate,
-          rawOrderDate: JSON.stringify(order.purchase_orders.orderDate),
-          type: typeof order.purchase_orders.orderDate
-        });
         return {
           ...order.purchase_orders,
           vendor: order.vendors || void 0,
@@ -1472,7 +1586,6 @@ var DatabaseStorage = class {
   async getPurchaseOrder(id) {
     const [order] = await db.select().from(purchaseOrders).leftJoin(vendors, eq(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq(purchaseOrders.userId, users.id)).leftJoin(projects, eq(purchaseOrders.projectId, projects.id)).where(eq(purchaseOrders.id, id));
     if (!order) return void 0;
-    console.log("Debug: Order found:", order.purchase_orders);
     const items3 = await db.select().from(purchaseOrderItems).where(eq(purchaseOrderItems.orderId, id));
     console.log("Debug: Items found:", items3);
     const orderAttachments = await db.select({
@@ -1486,7 +1599,6 @@ var DatabaseStorage = class {
       uploadedBy: attachments.uploadedBy,
       uploadedAt: attachments.uploadedAt
     }).from(attachments).where(eq(attachments.orderId, id));
-    console.log("Debug: Attachments found:", orderAttachments);
     const result = {
       ...order.purchase_orders,
       vendor: order.vendors || void 0,
@@ -1873,10 +1985,15 @@ var DatabaseStorage = class {
   }
   // UI terms operations
   async getUiTerms(category) {
-    if (category) {
-      return await db.select().from(uiTerms).where(and(eq(uiTerms.category, category), eq(uiTerms.isActive, true))).orderBy(asc(uiTerms.termKey));
+    try {
+      if (category) {
+        return await db.select().from(uiTerms).where(and(eq(uiTerms.category, category), eq(uiTerms.isActive, true))).orderBy(asc(uiTerms.termKey));
+      }
+      return await db.select().from(uiTerms).where(eq(uiTerms.isActive, true)).orderBy(asc(uiTerms.termKey));
+    } catch (error) {
+      console.error("Database error in getUiTerms:", error);
+      return [];
     }
-    return await db.select().from(uiTerms).where(eq(uiTerms.isActive, true)).orderBy(asc(uiTerms.termKey));
   }
   async getUiTerm(termKey) {
     const [term] = await db.select().from(uiTerms).where(and(eq(uiTerms.termKey, termKey), eq(uiTerms.isActive, true)));
@@ -2354,6 +2471,126 @@ var DatabaseStorage = class {
       throw error;
     }
   }
+  // Missing methods for API endpoints
+  async getActiveProjects() {
+    try {
+      return await db.select().from(projects).where(and(
+        eq(projects.isActive, true),
+        eq(projects.status, "active")
+      )).orderBy(projects.projectName);
+    } catch (error) {
+      console.error("Error getting active projects:", error);
+      throw error;
+    }
+  }
+  async getMajorCategories() {
+    try {
+      return await this.getItemCategoriesByType("major");
+    } catch (error) {
+      console.error("Error getting major categories:", error);
+      throw error;
+    }
+  }
+  async getMiddleCategories(majorId) {
+    try {
+      return await this.getItemCategoriesByType("middle", majorId);
+    } catch (error) {
+      console.error("Error getting middle categories:", error);
+      throw error;
+    }
+  }
+  async getMinorCategories(middleId) {
+    try {
+      return await this.getItemCategoriesByType("minor", middleId);
+    } catch (error) {
+      console.error("Error getting minor categories:", error);
+      throw error;
+    }
+  }
+  async getPositions() {
+    try {
+      return [
+        { id: 1, name: "\uD604\uC7A5\uC18C\uC7A5", code: "site_manager", level: 1 },
+        { id: 2, name: "\uD604\uC7A5\uB300\uB9AC", code: "site_deputy", level: 2 },
+        { id: 3, name: "\uD604\uC7A5\uD300\uC7A5", code: "site_team_leader", level: 3 },
+        { id: 4, name: "\uD604\uC7A5\uAE30\uC0AC", code: "site_engineer", level: 4 },
+        { id: 5, name: "\uD604\uC7A5\uAE30\uB2A5\uACF5", code: "site_worker", level: 5 }
+      ];
+    } catch (error) {
+      console.error("Error getting positions:", error);
+      throw error;
+    }
+  }
+  // Item hierarchy methods for filters
+  async getDistinctMajorCategories() {
+    try {
+      const result = await db.selectDistinct({ majorCategory: purchaseOrderItems.majorCategory }).from(purchaseOrderItems).where(isNotNull(purchaseOrderItems.majorCategory)).orderBy(purchaseOrderItems.majorCategory);
+      return result.map((row) => row.majorCategory).filter((cat) => cat !== null && cat !== "");
+    } catch (error) {
+      console.error("Error getting distinct major categories:", error);
+      throw error;
+    }
+  }
+  async getDistinctMiddleCategories(majorCategory) {
+    try {
+      let query = db.selectDistinct({ middleCategory: purchaseOrderItems.middleCategory }).from(purchaseOrderItems).where(isNotNull(purchaseOrderItems.middleCategory));
+      if (majorCategory) {
+        query = query.where(eq(purchaseOrderItems.majorCategory, majorCategory));
+      }
+      const result = await query.orderBy(purchaseOrderItems.middleCategory);
+      return result.map((row) => row.middleCategory).filter((cat) => cat !== null && cat !== "");
+    } catch (error) {
+      console.error("Error getting distinct middle categories:", error);
+      throw error;
+    }
+  }
+  async getDistinctMinorCategories(majorCategory, middleCategory) {
+    try {
+      let conditions = [isNotNull(purchaseOrderItems.minorCategory)];
+      if (majorCategory) {
+        conditions.push(eq(purchaseOrderItems.majorCategory, majorCategory));
+      }
+      if (middleCategory) {
+        conditions.push(eq(purchaseOrderItems.middleCategory, middleCategory));
+      }
+      const result = await db.selectDistinct({ minorCategory: purchaseOrderItems.minorCategory }).from(purchaseOrderItems).where(and(...conditions)).orderBy(purchaseOrderItems.minorCategory);
+      return result.map((row) => row.minorCategory).filter((cat) => cat !== null && cat !== "");
+    } catch (error) {
+      console.error("Error getting distinct minor categories:", error);
+      throw error;
+    }
+  }
+  // Category statistics
+  async getCategoryOrderStats(userId) {
+    try {
+      const whereClause = userId ? eq(purchaseOrders.userId, userId) : void 0;
+      const results = await db.select({
+        majorCategory: purchaseOrderItems.majorCategory,
+        middleCategory: purchaseOrderItems.middleCategory,
+        minorCategory: purchaseOrderItems.minorCategory,
+        orderCount: count(purchaseOrderItems.id).as("orderCount"),
+        totalAmount: sum(purchaseOrderItems.totalAmount).as("totalAmount")
+      }).from(purchaseOrderItems).innerJoin(purchaseOrders, eq(purchaseOrderItems.orderId, purchaseOrders.id)).where(whereClause).groupBy(
+        purchaseOrderItems.majorCategory,
+        purchaseOrderItems.middleCategory,
+        purchaseOrderItems.minorCategory
+      ).orderBy(
+        purchaseOrderItems.majorCategory,
+        purchaseOrderItems.middleCategory,
+        purchaseOrderItems.minorCategory
+      );
+      return results.map((row) => ({
+        majorCategory: row.majorCategory || "\uBBF8\uBD84\uB958",
+        middleCategory: row.middleCategory || "\uBBF8\uBD84\uB958",
+        minorCategory: row.minorCategory || "\uBBF8\uBD84\uB958",
+        orderCount: Number(row.orderCount) || 0,
+        totalAmount: Number(row.totalAmount) || 0
+      }));
+    } catch (error) {
+      console.error("Error getting category order stats:", error);
+      return [];
+    }
+  }
 };
 var storage = new DatabaseStorage();
 
@@ -2478,6 +2715,32 @@ router.post("/auth/login", login);
 router.post("/auth/logout", logout);
 router.get("/logout", logout);
 router.get("/auth/user", getCurrentUser);
+router.get("/auth/me", getCurrentUser);
+router.get("/auth/permissions/:userId", async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const user = await storage.getUser(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    const permissions = {
+      userId: user.id,
+      role: user.role,
+      permissions: {
+        canCreateOrder: true,
+        canApproveOrder: ["project_manager", "hq_management", "executive", "admin"].includes(user.role),
+        canManageUsers: ["admin"].includes(user.role),
+        canManageProjects: ["project_manager", "hq_management", "admin"].includes(user.role),
+        canViewReports: ["hq_management", "executive", "admin"].includes(user.role),
+        canManageSettings: ["admin"].includes(user.role)
+      }
+    };
+    res.json(permissions);
+  } catch (error) {
+    console.error("Error fetching permissions:", error);
+    res.status(500).json({ message: "Failed to fetch permissions" });
+  }
+});
 router.get("/users", async (req, res) => {
   try {
     const users2 = await storage.getUsers();
@@ -2567,8 +2830,11 @@ var auth_default = router;
 
 // server/routes/projects.ts
 import { Router as Router2 } from "express";
+init_schema();
 
 // server/utils/optimized-queries.ts
+init_db();
+init_schema();
 import { eq as eq2, desc as desc2, count as count2, sql as sql3, and as and2, isNotNull as isNotNull2 } from "drizzle-orm";
 
 // server/utils/cache.ts
@@ -2741,35 +3007,55 @@ var OptimizedDashboardQueries = class {
     const cached = cache.get(cacheKey);
     if (cached) return cached;
     try {
-      const [orderStats] = await db.select({
-        totalOrders: count2(),
-        totalAmount: sql3`COALESCE(SUM(${purchaseOrders.totalAmount}), 0)`
-      }).from(purchaseOrders);
-      const [pendingOrderStats] = await db.select({
-        pendingOrders: count2()
-      }).from(purchaseOrders).where(eq2(purchaseOrders.status, "pending"));
-      const [monthlyOrderStats] = await db.select({
-        monthlyOrders: count2()
-      }).from(purchaseOrders).where(sql3`${purchaseOrders.orderDate} >= DATE_TRUNC('month', CURRENT_DATE)`);
-      const [projectStats] = await db.select({
-        activeProjects: count2()
-      }).from(projects).where(eq2(projects.isActive, true));
-      const [vendorStats] = await db.select({
-        activeVendors: count2()
-      }).from(vendors).where(eq2(vendors.isActive, true));
+      console.log("\u{1F50D} Starting getUnifiedDashboardData query...");
+      const orderStatsResult = await db.execute(
+        sql3`SELECT 
+          COUNT(*) as "totalOrders",
+          COALESCE(SUM(total_amount), 0) as "totalAmount"
+        FROM purchase_orders`
+      );
+      console.log("\u{1F4CA} Order stats query result:", orderStatsResult);
+      const orderStats = orderStatsResult.rows[0] || { totalOrders: 0, totalAmount: 0 };
+      const pendingOrderResult = await db.execute(
+        sql3`SELECT COUNT(*) as "pendingOrders" FROM purchase_orders WHERE status = 'pending'`
+      );
+      const pendingOrderStats = pendingOrderResult.rows[0] || { pendingOrders: 0 };
+      const monthlyOrderResult = await db.execute(
+        sql3`SELECT COUNT(*) as "monthlyOrders" 
+            FROM purchase_orders 
+            WHERE order_date >= DATE_TRUNC('month', CURRENT_DATE)`
+      );
+      const monthlyOrderStats = monthlyOrderResult.rows[0] || { monthlyOrders: 0 };
+      const projectResult = await db.execute(
+        sql3`SELECT COUNT(*) as "activeProjects" FROM projects WHERE is_active = true`
+      );
+      const projectStats = projectResult.rows[0] || { activeProjects: 0 };
+      const vendorResult = await db.execute(
+        sql3`SELECT COUNT(*) as "activeVendors" FROM vendors WHERE is_active = true`
+      );
+      const vendorStats = vendorResult.rows[0] || { activeVendors: 0 };
       const recentOrders = await db.select({
         id: purchaseOrders.id,
         orderNumber: purchaseOrders.orderNumber,
         status: purchaseOrders.status,
         totalAmount: purchaseOrders.totalAmount,
         createdAt: purchaseOrders.createdAt,
-        vendorName: vendors.vendorName
+        vendorName: vendors.name
       }).from(purchaseOrders).leftJoin(vendors, eq2(purchaseOrders.vendorId, vendors.id)).orderBy(desc2(purchaseOrders.createdAt)).limit(10);
-      const monthlyStats = await db.select({
+      const monthlyStatsRaw = await db.select({
         month: sql3`TO_CHAR(${purchaseOrders.orderDate}, 'YYYY-MM')`,
         count: count2(),
-        amount: sql3`COALESCE(SUM(${purchaseOrders.totalAmount}), 0)`
-      }).from(purchaseOrders).where(sql3`${purchaseOrders.orderDate} >= CURRENT_DATE - INTERVAL '12 months'`).groupBy(sql3`TO_CHAR(${purchaseOrders.orderDate}, 'YYYY-MM')`).orderBy(sql3`TO_CHAR(${purchaseOrders.orderDate}, 'YYYY-MM')`);
+        amount: sql3`COALESCE(SUM(${purchaseOrders.totalAmount}), 0)`,
+        orderDate: sql3`DATE_TRUNC('month', ${purchaseOrders.orderDate})`
+        // For proper sorting
+      }).from(purchaseOrders).where(sql3`${purchaseOrders.orderDate} >= CURRENT_DATE - INTERVAL '12 months'`).groupBy(sql3`TO_CHAR(${purchaseOrders.orderDate}, 'YYYY-MM')`, sql3`DATE_TRUNC('month', ${purchaseOrders.orderDate})`).orderBy(sql3`DATE_TRUNC('month', ${purchaseOrders.orderDate}) ASC`);
+      const monthlyStats = monthlyStatsRaw.map((item) => ({
+        month: item.month,
+        count: item.count,
+        amount: item.amount,
+        totalAmount: item.amount
+        // Add alias for compatibility
+      }));
       const statusStats = await db.select({
         status: purchaseOrders.status,
         count: count2(),
@@ -2784,22 +3070,28 @@ var OptimizedDashboardQueries = class {
       }).from(purchaseOrders).leftJoin(projects, eq2(purchaseOrders.projectId, projects.id)).where(isNotNull2(projects.id)).groupBy(projects.id, projects.projectName, projects.projectType).orderBy(desc2(sql3`COALESCE(SUM(${purchaseOrders.totalAmount}), 0)`)).limit(10);
       const result = {
         statistics: {
-          totalOrders: orderStats.totalOrders || 0,
-          totalAmount: orderStats.totalAmount || 0,
-          pendingOrders: pendingOrderStats.pendingOrders || 0,
-          monthlyOrders: monthlyOrderStats.monthlyOrders || 0,
-          activeProjects: projectStats.activeProjects || 0,
-          activeVendors: vendorStats.activeVendors || 0
+          totalOrders: parseInt(orderStats.totalOrders) || 0,
+          totalAmount: Number(orderStats.totalAmount) || 0,
+          pendingOrders: parseInt(pendingOrderStats.pendingOrders) || 0,
+          monthlyOrders: parseInt(monthlyOrderStats.monthlyOrders) || 0,
+          activeProjects: parseInt(projectStats.activeProjects) || 0,
+          activeVendors: parseInt(vendorStats.activeVendors) || 0
         },
         recentOrders,
         monthlyStats,
         statusStats,
         projectStats: projectStatsList
       };
+      console.log("\u2705 Dashboard data compiled successfully:", {
+        totalOrders: result.statistics.totalOrders,
+        activeProjects: result.statistics.activeProjects
+      });
       cache.set(cacheKey, result, 600);
       return result;
     } catch (error) {
-      console.error("Error fetching unified dashboard data:", error);
+      console.error("\u274C Error fetching unified dashboard data:", error);
+      console.error("Error details:", error.message);
+      console.error("Stack trace:", error.stack);
       return {
         statistics: {
           totalOrders: 0,
@@ -2833,6 +3125,15 @@ router2.get("/projects", async (req, res) => {
   } catch (error) {
     console.error("Error fetching projects:", error);
     res.status(500).json({ message: "Failed to fetch projects" });
+  }
+});
+router2.get("/projects/active", async (req, res) => {
+  try {
+    const projects2 = await storage.getActiveProjects();
+    res.json(projects2);
+  } catch (error) {
+    console.error("Error fetching active projects:", error);
+    res.status(500).json({ message: "Failed to fetch active projects" });
   }
 });
 router2.get("/projects/:id", async (req, res) => {
@@ -3337,7 +3638,8 @@ router3.get("/orders", async (req, res) => {
   try {
     const {
       page = "1",
-      limit = "20",
+      limit = "50",
+      // Changed default from 20 to 50 to match frontend
       status,
       projectId,
       vendorId,
@@ -3353,7 +3655,8 @@ router3.get("/orders", async (req, res) => {
       startDate: startDate ? new Date(startDate) : void 0,
       endDate: endDate ? new Date(endDate) : void 0,
       userId,
-      search,
+      searchText: search,
+      // Changed from 'search' to 'searchText' to match storage.ts
       page: parseInt(page),
       limit: parseInt(limit)
     };
@@ -3643,6 +3946,7 @@ var vendors_default = router4;
 
 // server/routes/items.ts
 import { Router as Router5 } from "express";
+init_schema();
 var router5 = Router5();
 router5.get("/items", async (req, res) => {
   try {
@@ -3651,6 +3955,15 @@ router5.get("/items", async (req, res) => {
   } catch (error) {
     console.error("Error fetching items:", error);
     res.status(500).json({ message: "Failed to fetch items" });
+  }
+});
+router5.get("/items/categories", async (req, res) => {
+  try {
+    const categories = await storage.getItemCategories();
+    res.json(categories);
+  } catch (error) {
+    console.error("Error fetching item categories:", error);
+    res.status(500).json({ message: "Failed to fetch item categories" });
   }
 });
 router5.get("/items/:id", async (req, res) => {
@@ -3705,6 +4018,35 @@ router5.get("/item-categories", async (req, res) => {
     res.status(500).json({ message: "Failed to fetch item categories" });
   }
 });
+router5.get("/item-categories/major", async (req, res) => {
+  try {
+    const categories = await storage.getMajorCategories();
+    res.json(categories);
+  } catch (error) {
+    console.error("Error fetching major categories:", error);
+    res.status(500).json({ message: "Failed to fetch major categories" });
+  }
+});
+router5.get("/item-categories/middle", async (req, res) => {
+  try {
+    const { majorId } = req.query;
+    const categories = await storage.getMiddleCategories(majorId ? parseInt(majorId) : void 0);
+    res.json(categories);
+  } catch (error) {
+    console.error("Error fetching middle categories:", error);
+    res.status(500).json({ message: "Failed to fetch middle categories" });
+  }
+});
+router5.get("/item-categories/minor", async (req, res) => {
+  try {
+    const { middleId } = req.query;
+    const categories = await storage.getMinorCategories(middleId ? parseInt(middleId) : void 0);
+    res.json(categories);
+  } catch (error) {
+    console.error("Error fetching minor categories:", error);
+    res.status(500).json({ message: "Failed to fetch minor categories" });
+  }
+});
 router5.post("/item-categories", async (req, res) => {
   try {
     const category = await storage.createItemCategory(req.body);
@@ -3738,9 +4080,23 @@ var items_default = router5;
 
 // server/routes/dashboard.ts
 import { Router as Router6 } from "express";
+import { sql as sql4 } from "drizzle-orm";
 var router6 = Router6();
+router6.get("/dashboard/test-db", async (req, res) => {
+  try {
+    const { db: db2 } = await Promise.resolve().then(() => (init_db(), db_exports));
+    const result = await db2.execute(sql4`SELECT COUNT(*) as count FROM purchase_orders`);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    console.error("DB test error:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 router6.get("/dashboard/unified", async (req, res) => {
   try {
+    if (req.query.force === "true") {
+      cache.delete("unified_dashboard_data");
+    }
     const stats = await OptimizedDashboardQueries.getUnifiedDashboardData();
     res.json(stats);
   } catch (error) {
@@ -3770,6 +4126,7 @@ var dashboard_default = router6;
 
 // server/routes/companies.ts
 import { Router as Router7 } from "express";
+init_schema();
 var router7 = Router7();
 router7.get("/companies", async (req, res) => {
   try {
@@ -3812,8 +4169,19 @@ var companies_default = router7;
 
 // server/routes/admin.ts
 import { Router as Router8 } from "express";
+init_db();
+init_schema();
 import { eq as eq3, and as and3 } from "drizzle-orm";
 var router8 = Router8();
+router8.get("/positions", async (req, res) => {
+  try {
+    const positions = await storage.getPositions();
+    res.json(positions);
+  } catch (error) {
+    console.error("Error fetching positions:", error);
+    res.status(500).json({ message: "Failed to fetch positions" });
+  }
+});
 router8.get("/ui-terms", async (req, res) => {
   try {
     const terms = await storage.getUiTerms();
@@ -3960,7 +4328,7 @@ var admin_default = router8;
 import { Router as Router9 } from "express";
 import multer2 from "multer";
 import path7 from "path";
-import fs6 from "fs";
+import fs7 from "fs";
 
 // server/utils/po-template-processor-mock.ts
 import XLSX from "xlsx";
@@ -4119,6 +4487,8 @@ async function removeAllInputSheets(sourcePath, targetPath) {
 }
 
 // server/utils/po-template-processor-mock.ts
+init_db();
+init_schema();
 import { eq as eq4 } from "drizzle-orm";
 
 // server/utils/debug-logger.ts
@@ -4182,24 +4552,29 @@ var POTemplateProcessorMock = class {
       const rows = data.slice(1);
       const ordersByNumber = /* @__PURE__ */ new Map();
       for (const row of rows) {
-        if (!row || !row[0]) continue;
-        const orderNumber = String(row[0]).trim();
-        const orderDate = this.formatDate(row[1]);
-        const siteName = String(row[2] || "").trim();
-        const categoryLv1 = String(row[3] || "").trim();
-        const categoryLv2 = String(row[4] || "").trim();
-        const categoryLv3 = String(row[5] || "").trim();
-        const itemName = String(row[6] || "").trim();
-        const specification = String(row[7] || "").trim();
-        const quantity = this.safeNumber(row[8]);
-        const unitPrice = this.safeNumber(row[9]);
-        const supplyAmount = this.safeNumber(row[10]);
-        const taxAmount = this.safeNumber(row[11]);
-        const totalAmount = this.safeNumber(row[12]);
-        const dueDate = this.formatDate(row[13]);
-        const vendorName = String(row[14] || "").trim();
-        const deliveryName = String(row[15] || "").trim();
-        const notes = String(row[16] || "").trim();
+        if (!row || row.length === 0 || !row[0] && !row[2] && !row[10]) continue;
+        while (row.length < 16) {
+          row.push("");
+        }
+        const orderDate = this.formatDate(row[0]) || (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
+        const dueDate = this.formatDate(row[1]) || "";
+        const vendorName = String(row[2] || "").trim();
+        const vendorEmail = String(row[3] || "").trim();
+        const deliveryName = String(row[4] || "").trim();
+        const deliveryEmail = String(row[5] || "").trim();
+        const siteName = String(row[6] || "").trim();
+        const categoryLv1 = String(row[7] || "").trim();
+        const categoryLv2 = String(row[8] || "").trim();
+        const categoryLv3 = String(row[9] || "").trim();
+        const itemName = String(row[10] || "").trim();
+        const specification = String(row[11] || "-").trim();
+        const quantity = this.safeNumber(row[12]);
+        const unitPrice = this.safeNumber(row[13]);
+        const totalAmount = this.safeNumber(row[14]);
+        const notes = String(row[15] || "").trim();
+        const orderNumber = this.generateOrderNumber(orderDate, vendorName);
+        const supplyAmount = Math.round(totalAmount / 1.1);
+        const taxAmount = totalAmount - supplyAmount;
         if (!ordersByNumber.has(orderNumber)) {
           ordersByNumber.set(orderNumber, {
             orderNumber,
@@ -4264,7 +4639,7 @@ var POTemplateProcessorMock = class {
             const newVendor = await tx.insert(vendors).values({
               name: orderData.vendorName,
               contactPerson: "Unknown",
-              email: null,
+              email: "noemail@example.com",
               phone: null,
               isActive: true
             }).returning({ id: vendors.id });
@@ -4272,14 +4647,15 @@ var POTemplateProcessorMock = class {
           } else {
             vendorId = vendor[0].id;
           }
-          let project = await tx.select().from(projects).where(eq4(projects.name, orderData.siteName)).limit(1);
+          let project = await tx.select().from(projects).where(eq4(projects.projectName, orderData.siteName)).limit(1);
           let projectId;
           if (project.length === 0) {
             const newProject = await tx.insert(projects).values({
-              name: orderData.siteName,
+              projectName: orderData.siteName,
+              projectCode: `AUTO-${Date.now()}`,
               description: "",
-              startDate: /* @__PURE__ */ new Date(),
-              endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1e3),
+              startDate: (/* @__PURE__ */ new Date()).toISOString().split("T")[0],
+              endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1e3).toISOString().split("T")[0],
               // 1년 후
               isActive: true,
               projectManagerId: null,
@@ -4302,7 +4678,7 @@ var POTemplateProcessorMock = class {
           const orderId = newOrder[0].id;
           for (const item of orderData.items) {
             await tx.insert(purchaseOrderItems).values({
-              purchaseOrderId: orderId,
+              orderId,
               itemName: item.itemName,
               specification: item.specification || "",
               quantity: item.quantity,
@@ -4411,10 +4787,41 @@ var POTemplateProcessorMock = class {
     }
     return 0;
   }
+  /**
+   * 발주번호 생성 (PO-YYYYMMDD-VENDOR-XXX 형식)
+   */
+  static generateOrderNumber(orderDate, vendorName) {
+    const date2 = orderDate ? orderDate.replace(/-/g, "") : (/* @__PURE__ */ new Date()).toISOString().split("T")[0].replace(/-/g, "");
+    const vendorCode = vendorName ? vendorName.substring(0, 3).toUpperCase() : "UNK";
+    const random = Math.floor(Math.random() * 1e3).toString().padStart(3, "0");
+    return `PO-${date2}-${vendorCode}-${random}`;
+  }
+  /**
+   * 기본 납기일자 생성 (발주일 + 7일)
+   */
+  static getDefaultDueDate(orderDateValue) {
+    try {
+      const orderDate = this.formatDate(orderDateValue);
+      if (!orderDate) {
+        const date3 = /* @__PURE__ */ new Date();
+        date3.setDate(date3.getDate() + 7);
+        return date3.toISOString().split("T")[0];
+      }
+      const date2 = new Date(orderDate);
+      date2.setDate(date2.getDate() + 7);
+      return date2.toISOString().split("T")[0];
+    } catch {
+      const date2 = /* @__PURE__ */ new Date();
+      date2.setDate(date2.getDate() + 7);
+      return date2.toISOString().split("T")[0];
+    }
+  }
 };
 
 // server/utils/vendor-validation.ts
-import { eq as eq5, sql as sql4 } from "drizzle-orm";
+init_db();
+init_schema();
+import { eq as eq5, sql as sql5 } from "drizzle-orm";
 function levenshteinDistance(str1, str2) {
   const matrix = [];
   if (str1.length === 0) return str2.length;
@@ -4505,7 +4912,7 @@ async function validateVendorName(vendorName, vendorType = "\uAC70\uB798\uCC98")
     const quickTest = new Promise((_, reject) => {
       setTimeout(() => reject(new Error("Quick DB test timeout")), 1e4);
     });
-    const testQuery = db.select({ count: sql4`1` }).from(vendors).limit(1);
+    const testQuery = db.select({ count: sql5`1` }).from(vendors).limit(1);
     await Promise.race([testQuery, quickTest]);
     console.log(`\u2705 \uB370\uC774\uD130\uBCA0\uC774\uC2A4 \uC5F0\uACB0 \uD655\uC778\uB428`);
   } catch (quickTestError) {
@@ -4542,7 +4949,7 @@ async function validateVendorName(vendorName, vendorType = "\uAC70\uB798\uCC98")
         phone: vendors.phone,
         contactPerson: vendors.contactPerson,
         aliases: vendors.aliases
-      }).from(vendors).where(sql4`${vendors.aliases}::jsonb @> ${JSON.stringify([vendorName])}::jsonb`).limit(1);
+      }).from(vendors).where(sql5`${vendors.aliases}::jsonb @> ${JSON.stringify([vendorName])}::jsonb`).limit(1);
       const allVendorsQuery = db.select({
         id: vendors.id,
         name: vendors.name,
@@ -4647,7 +5054,7 @@ async function checkEmailConflict(vendorName, excelEmail) {
         email: vendors.email,
         aliases: vendors.aliases
       }).from(vendors).where(
-        sql4`${vendors.name} = ${vendorName} OR ${vendors.aliases}::jsonb @> ${JSON.stringify([vendorName])}::jsonb`
+        sql5`${vendors.name} = ${vendorName} OR ${vendors.aliases}::jsonb @> ${JSON.stringify([vendorName])}::jsonb`
       ).limit(1);
       dbVendor = await Promise.race([dbVendorQuery, dbTimeout]);
     } catch (dbError) {
@@ -4760,7 +5167,7 @@ async function validateMultipleVendors(vendorData) {
 // server/utils/po-email-service.ts
 import nodemailer from "nodemailer";
 import path5 from "path";
-import fs4 from "fs";
+import fs5 from "fs";
 
 // server/utils/excel-to-pdf.ts
 import * as XLSX2 from "xlsx";
@@ -5235,17 +5642,24 @@ var ExcelToPDFConverter = class {
 };
 
 // server/utils/po-template-processor.ts
+init_db();
+init_schema();
 import { eq as eq6 } from "drizzle-orm";
 import * as XLSX3 from "xlsx";
 import { v4 as uuidv4 } from "uuid";
+import fs4 from "fs";
 var POTemplateProcessor = class _POTemplateProcessor {
   /**
    * Excel 파일에서 Input 시트를 파싱하여 발주서 데이터 추출
    */
   static parseInputSheet(filePath) {
     try {
-      const workbook = XLSX3.readFile(filePath);
-      if (!workbook.SheetNames.includes("Input")) {
+      const buffer = fs4.readFileSync(filePath);
+      const workbook = XLSX3.read(buffer, { type: "buffer" });
+      const inputSheetName = workbook.SheetNames.find(
+        (name) => name === "Input"
+      );
+      if (!inputSheetName) {
         return {
           success: false,
           totalOrders: 0,
@@ -5254,7 +5668,7 @@ var POTemplateProcessor = class _POTemplateProcessor {
           error: "Input \uC2DC\uD2B8\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
         };
       }
-      const worksheet = workbook.Sheets["Input"];
+      const worksheet = workbook.Sheets[inputSheetName];
       const data = XLSX3.utils.sheet_to_json(worksheet, { header: 1 });
       const rows = data.slice(1);
       const ordersByNumber = /* @__PURE__ */ new Map();
@@ -5355,12 +5769,9 @@ var POTemplateProcessor = class _POTemplateProcessor {
               quantity: item.quantity,
               unitPrice: item.unitPrice,
               totalAmount: item.totalAmount,
-              categoryLv1: item.categoryLv1,
-              categoryLv2: item.categoryLv2,
-              categoryLv3: item.categoryLv3,
-              supplyAmount: item.supplyAmount,
-              taxAmount: item.taxAmount,
-              deliveryName: item.deliveryName,
+              majorCategory: item.categoryLv1,
+              middleCategory: item.categoryLv2,
+              minorCategory: item.categoryLv3,
               notes: item.notes
             });
           }
@@ -5587,7 +5998,7 @@ var POEmailService = class {
         }
       }
       const attachments2 = [];
-      if (fs4.existsSync(processedPath)) {
+      if (fs5.existsSync(processedPath)) {
         attachments2.push({
           filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`,
           path: processedPath,
@@ -5595,7 +6006,7 @@ var POEmailService = class {
         });
         console.log(`\u{1F4CE} Excel \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00: \uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`);
       }
-      if (pdfResult.success && fs4.existsSync(pdfPath)) {
+      if (pdfResult.success && fs5.existsSync(pdfPath)) {
         attachments2.push({
           filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`,
           path: pdfPath,
@@ -5661,14 +6072,14 @@ var POEmailService = class {
         };
       }
       const attachments2 = [];
-      if (fs4.existsSync(extractedPath)) {
+      if (fs5.existsSync(extractedPath)) {
         attachments2.push({
           filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`,
           path: extractedPath,
           contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         });
       }
-      if (fs4.existsSync(pdfPath)) {
+      if (fs5.existsSync(pdfPath)) {
         attachments2.push({
           filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`,
           path: pdfPath,
@@ -5893,8 +6304,8 @@ var POEmailService = class {
   cleanupTempFiles(filePaths) {
     filePaths.forEach((filePath) => {
       try {
-        if (fs4.existsSync(filePath)) {
-          fs4.unlinkSync(filePath);
+        if (fs5.existsSync(filePath)) {
+          fs5.unlinkSync(filePath);
         }
       } catch (error) {
         console.error(`\uD30C\uC77C \uC815\uB9AC \uC2E4\uD328: ${filePath}`, error);
@@ -5918,7 +6329,7 @@ var POEmailService = class {
 };
 
 // server/utils/excel-automation-service.ts
-import fs5 from "fs";
+import fs6 from "fs";
 import path6 from "path";
 var ExcelAutomationService = class {
   /**
@@ -6076,19 +6487,32 @@ var ExcelAutomationService = class {
         `processed-${timestamp2}.xlsx`
       );
       await removeAllInputSheets(filePath, processedPath);
-      const stats = fs5.statSync(processedPath);
+      const pdfPath = processedPath.replace(/\.(xlsx?)$/i, ".pdf");
+      console.log(`\u{1F4C4} Excel\uC744 PDF\uB85C \uBCC0\uD658 \uC911: ${pdfPath}`);
+      try {
+        await ExcelToPDFConverter.convertExcelToPDF(processedPath, pdfPath);
+      } catch (pdfError) {
+        console.error("\u26A0\uFE0F PDF \uBCC0\uD658 \uC2E4\uD328:", pdfError);
+      }
+      const stats = fs6.statSync(processedPath);
+      const pdfStats = fs6.existsSync(pdfPath) ? fs6.statSync(pdfPath) : null;
       const emailPreview = {
         recipients,
         subject: `\uBC1C\uC8FC\uC11C - ${path6.basename(filePath, path6.extname(filePath))} (${(/* @__PURE__ */ new Date()).toLocaleDateString("ko-KR")})`,
         attachmentInfo: {
           originalFile: path6.basename(filePath),
           processedFile: path6.basename(processedPath),
-          fileSize: stats.size
+          processedPdfFile: pdfStats ? path6.basename(pdfPath) : void 0,
+          fileSize: stats.size,
+          pdfFileSize: pdfStats ? pdfStats.size : void 0
         },
         canProceed: recipients.length > 0 && !vendorValidation.needsUserAction
       };
       console.log(`\u{1F4E7} \uC774\uBA54\uC77C \uC218\uC2E0\uC790: ${recipients.join(", ")}`);
       console.log(`\u{1F4CE} \uCCA8\uBD80\uD30C\uC77C: ${emailPreview.attachmentInfo.processedFile} (${Math.round(stats.size / 1024)}KB)`);
+      if (pdfStats) {
+        console.log(`\u{1F4C4} PDF \uD30C\uC77C: ${emailPreview.attachmentInfo.processedPdfFile} (${Math.round(pdfStats.size / 1024)}KB)`);
+      }
       return emailPreview;
     } catch (error) {
       DebugLogger.logError("ExcelAutomationService.generateEmailPreview", error);
@@ -6105,7 +6529,7 @@ var ExcelAutomationService = class {
     }
   }
   /**
-   * 4단계: 이메일 발송 실행
+   * 4단계: 이메일 발송 실행 (Excel과 PDF 첨부)
    */
   static async sendEmails(processedFilePath, recipients, emailOptions = {}) {
     DebugLogger.logFunctionEntry("ExcelAutomationService.sendEmails", {
@@ -6192,14 +6616,24 @@ var ExcelAutomationService = class {
         `processed-${timestamp2}.xlsx`
       );
       await removeAllInputSheets(filePath, processedPath);
-      const stats = fs5.statSync(processedPath);
+      const pdfPath = processedPath.replace(/\.(xlsx?)$/i, ".pdf");
+      console.log(`\u{1F4C4} Excel\uC744 PDF\uB85C \uBCC0\uD658 \uC911: ${pdfPath}`);
+      try {
+        await ExcelToPDFConverter.convertExcelToPDF(processedPath, pdfPath);
+      } catch (pdfError) {
+        console.error("\u26A0\uFE0F PDF \uBCC0\uD658 \uC2E4\uD328:", pdfError);
+      }
+      const stats = fs6.statSync(processedPath);
+      const pdfStats = fs6.existsSync(pdfPath) ? fs6.statSync(pdfPath) : null;
       return {
         recipients,
         subject: `\uBC1C\uC8FC\uC11C - ${path6.basename(filePath, path6.extname(filePath))} (${(/* @__PURE__ */ new Date()).toLocaleDateString("ko-KR")})`,
         attachmentInfo: {
           originalFile: path6.basename(filePath),
           processedFile: path6.basename(processedPath),
-          fileSize: stats.size
+          processedPdfFile: pdfStats ? path6.basename(pdfPath) : void 0,
+          fileSize: stats.size,
+          pdfFileSize: pdfStats ? pdfStats.size : void 0
         },
         canProceed: recipients.length > 0
       };
@@ -6224,8 +6658,8 @@ var router9 = Router9();
 var storage2 = multer2.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir2 = "uploads";
-    if (!fs6.existsSync(uploadDir2)) {
-      fs6.mkdirSync(uploadDir2, { recursive: true });
+    if (!fs7.existsSync(uploadDir2)) {
+      fs7.mkdirSync(uploadDir2, { recursive: true });
     }
     cb(null, uploadDir2);
   },
@@ -6279,8 +6713,8 @@ router9.post("/upload-and-process", requireAuth, upload2.single("file"), async (
     console.log(`\u{1F4C1} Excel \uC790\uB3D9\uD654 \uCC98\uB9AC \uC2DC\uC791: ${filePath}`);
     const result = await ExcelAutomationService.processExcelUpload(filePath, userId);
     if (!result.success) {
-      if (fs6.existsSync(filePath)) {
-        fs6.unlinkSync(filePath);
+      if (fs7.existsSync(filePath)) {
+        fs7.unlinkSync(filePath);
       }
       return res.status(400).json(result);
     }
@@ -6296,8 +6730,8 @@ router9.post("/upload-and-process", requireAuth, upload2.single("file"), async (
     });
   } catch (error) {
     console.error("Excel \uC790\uB3D9\uD654 \uCC98\uB9AC \uC624\uB958:", error);
-    if (req.file?.path && fs6.existsSync(req.file.path)) {
-      fs6.unlinkSync(req.file.path);
+    if (req.file?.path && fs7.existsSync(req.file.path)) {
+      fs7.unlinkSync(req.file.path);
     }
     res.status(500).json({
       success: false,
@@ -6361,7 +6795,7 @@ router9.post("/send-emails", requireAuth, async (req, res) => {
         error: "\uC774\uBA54\uC77C \uC218\uC2E0\uC790\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4."
       });
     }
-    if (!fs6.existsSync(processedFilePath)) {
+    if (!fs7.existsSync(processedFilePath)) {
       return res.status(400).json({
         success: false,
         error: "\uCC98\uB9AC\uB41C \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
@@ -6390,7 +6824,7 @@ router9.post("/send-emails", requireAuth, async (req, res) => {
 router9.post("/validate-vendors", requireAuth, async (req, res) => {
   try {
     const { filePath } = req.body;
-    if (!filePath || !fs6.existsSync(filePath)) {
+    if (!filePath || !fs7.existsSync(filePath)) {
       return res.status(400).json({
         success: false,
         error: "\uC720\uD6A8\uD55C \uD30C\uC77C \uACBD\uB85C\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4."
@@ -6415,7 +6849,7 @@ router9.get("/download/:filename", requireAuth, (req, res) => {
   try {
     const filename = req.params.filename;
     const filePath = path7.join("uploads", filename);
-    if (!fs6.existsSync(filePath)) {
+    if (!fs7.existsSync(filePath)) {
       return res.status(404).json({
         success: false,
         error: "\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
@@ -6451,8 +6885,8 @@ router9.delete("/cleanup", requireAuth, async (req, res) => {
     const errors = [];
     for (const filePath of filePaths) {
       try {
-        if (fs6.existsSync(filePath)) {
-          fs6.unlinkSync(filePath);
+        if (fs7.existsSync(filePath)) {
+          fs7.unlinkSync(filePath);
           deletedCount++;
           console.log(`\u{1F5D1}\uFE0F \uD30C\uC77C \uC0AD\uC81C: ${filePath}`);
         }
@@ -6484,13 +6918,13 @@ var excel_automation_default = router9;
 import { Router as Router10 } from "express";
 import multer3 from "multer";
 import path11 from "path";
-import fs10 from "fs";
+import fs11 from "fs";
 import { fileURLToPath as fileURLToPath3 } from "url";
 
 // server/utils/po-email-service-mock.ts
 import nodemailer2 from "nodemailer";
 import path8 from "path";
-import fs7 from "fs";
+import fs8 from "fs";
 import { fileURLToPath as fileURLToPath2 } from "url";
 var __filename2 = fileURLToPath2(import.meta.url);
 var __dirname3 = path8.dirname(__filename2);
@@ -6542,14 +6976,14 @@ var POEmailServiceMock = class {
         };
       }
       const attachments2 = [];
-      if (fs7.existsSync(extractedPath)) {
+      if (fs8.existsSync(extractedPath)) {
         attachments2.push({
           filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`,
           path: extractedPath,
           contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         });
       }
-      if (fs7.existsSync(pdfPath)) {
+      if (fs8.existsSync(pdfPath)) {
         attachments2.push({
           filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`,
           path: pdfPath,
@@ -6642,11 +7076,11 @@ var POEmailServiceMock = class {
     console.log("  \uCCA8\uBD80\uD30C\uC77C:", options.attachments?.length || 0, "\uAC1C");
     console.log("  \uBC1C\uC1A1 \uC2DC\uAC04:", mockLog.timestamp);
     const logDir = path8.join(__dirname3, "../../logs");
-    if (!fs7.existsSync(logDir)) {
-      fs7.mkdirSync(logDir, { recursive: true });
+    if (!fs8.existsSync(logDir)) {
+      fs8.mkdirSync(logDir, { recursive: true });
     }
     const logFile = path8.join(logDir, `mock-email-${Date.now()}.json`);
-    fs7.writeFileSync(logFile, JSON.stringify(mockLog, null, 2));
+    fs8.writeFileSync(logFile, JSON.stringify(mockLog, null, 2));
     return {
       success: true,
       messageId: `mock-${Date.now()}@po-management.local`,
@@ -6725,7 +7159,7 @@ trailer
 startxref
 456
 %%EOF`;
-      fs7.writeFileSync(pdfPath, pdfContent);
+      fs8.writeFileSync(pdfPath, pdfContent);
       return { success: true };
     } catch (error) {
       return {
@@ -6739,7 +7173,7 @@ startxref
    */
   getFileSize(filePath) {
     try {
-      const stats = fs7.statSync(filePath);
+      const stats = fs8.statSync(filePath);
       const bytes = stats.size;
       if (bytes === 0) return "0 Bytes";
       const k = 1024;
@@ -6933,8 +7367,8 @@ startxref
   cleanupTempFiles(filePaths) {
     filePaths.forEach((filePath) => {
       try {
-        if (fs7.existsSync(filePath)) {
-          fs7.unlinkSync(filePath);
+        if (fs8.existsSync(filePath)) {
+          fs8.unlinkSync(filePath);
           console.log(`\u2705 \uC784\uC2DC \uD30C\uC77C \uC815\uB9AC: ${path8.basename(filePath)}`);
         }
       } catch (error) {
@@ -6972,14 +7406,14 @@ startxref
 // server/utils/excel-to-pdf-mock.ts
 import XLSX4 from "xlsx";
 import path9 from "path";
-import fs8 from "fs";
+import fs9 from "fs";
 var ExcelToPdfConverterMock = class {
   /**
    * Excel 파일을 PDF로 변환 (Mock 버전)
    */
   static async convertToPdf(excelPath, options = {}) {
     try {
-      if (!fs8.existsSync(excelPath)) {
+      if (!fs9.existsSync(excelPath)) {
         return {
           success: false,
           error: "Excel \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
@@ -7008,7 +7442,7 @@ var ExcelToPdfConverterMock = class {
    */
   static async convertSheetsToPdf(excelPath, sheetNames, options = {}) {
     try {
-      if (!fs8.existsSync(excelPath)) {
+      if (!fs9.existsSync(excelPath)) {
         return {
           success: false,
           error: "Excel \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
@@ -7112,7 +7546,7 @@ trailer
 startxref
 589
 %%EOF`;
-      fs8.writeFileSync(pdfPath, pdfContent);
+      fs9.writeFileSync(pdfPath, pdfContent);
       console.log(`\u{1F4C4} Mock PDF \uC0DD\uC131 \uC644\uB8CC: ${path9.basename(pdfPath)}`);
       return { success: true };
     } catch (error) {
@@ -7277,7 +7711,7 @@ async function convertExcelToPdfMock(excelPath, outputPath, sheetsOnly) {
 
 // server/utils/po-template-validator.ts
 import XLSX5 from "xlsx";
-import fs9 from "fs";
+import fs10 from "fs";
 import path10 from "path";
 var POTemplateValidator = class {
   static {
@@ -7395,7 +7829,7 @@ var POTemplateValidator = class {
       }
     };
     try {
-      if (!fs9.existsSync(filePath)) {
+      if (!fs10.existsSync(filePath)) {
         result.isValid = false;
         result.errors.push("\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.");
         return result;
@@ -7637,7 +8071,7 @@ var POTemplateValidator = class {
       errors: []
     };
     try {
-      if (!fs9.existsSync(filePath)) {
+      if (!fs10.existsSync(filePath)) {
         result.isValid = false;
         result.errors.push("\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.");
         return result;
@@ -7667,6 +8101,8 @@ var POTemplateValidator = class {
 };
 
 // server/routes/po-template-real.ts
+init_db();
+init_schema();
 import { eq as eq7 } from "drizzle-orm";
 var router10 = Router10();
 router10.get("/test", (req, res) => {
@@ -7677,8 +8113,8 @@ var __dirname4 = path11.dirname(__filename3);
 var storage3 = multer3.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir2 = path11.join(__dirname4, "../../uploads");
-    if (!fs10.existsSync(uploadDir2)) {
-      fs10.mkdirSync(uploadDir2, { recursive: true });
+    if (!fs11.existsSync(uploadDir2)) {
+      fs11.mkdirSync(uploadDir2, { recursive: true });
     }
     cb(null, uploadDir2);
   },
@@ -7752,7 +8188,7 @@ router10.post("/upload", requireAuth2, upload3.single("file"), async (req, res) 
     const filePath = req.file.path;
     const quickValidation = await POTemplateValidator.quickValidate(filePath);
     if (!quickValidation.isValid) {
-      fs10.unlinkSync(filePath);
+      fs11.unlinkSync(filePath);
       return res.status(400).json({
         error: "\uD30C\uC77C \uC720\uD6A8\uC131 \uAC80\uC0AC \uC2E4\uD328",
         details: quickValidation.errors.join(", "),
@@ -7761,7 +8197,7 @@ router10.post("/upload", requireAuth2, upload3.single("file"), async (req, res) 
     }
     const parseResult = POTemplateProcessorMock.parseInputSheet(filePath);
     if (!parseResult.success) {
-      fs10.unlinkSync(filePath);
+      fs11.unlinkSync(filePath);
       return res.status(400).json({
         error: "\uD30C\uC2F1 \uC2E4\uD328",
         details: parseResult.error
@@ -7782,8 +8218,8 @@ router10.post("/upload", requireAuth2, upload3.single("file"), async (req, res) 
     });
   } catch (error) {
     console.error("PO Template \uC5C5\uB85C\uB4DC \uC624\uB958:", error);
-    if (req.file && fs10.existsSync(req.file.path)) {
-      fs10.unlinkSync(req.file.path);
+    if (req.file && fs11.existsSync(req.file.path)) {
+      fs11.unlinkSync(req.file.path);
     }
     res.status(500).json({
       error: "\uC11C\uBC84 \uC624\uB958",
@@ -7964,7 +8400,7 @@ router10.post("/extract-sheets", requireAuth2, async (req, res) => {
     if (!filePath) {
       return res.status(400).json({ error: "\uD30C\uC77C \uACBD\uB85C\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4." });
     }
-    if (!fs10.existsSync(filePath)) {
+    if (!fs11.existsSync(filePath)) {
       return res.status(400).json({ error: "\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4." });
     }
     const timestamp2 = Date.now();
@@ -8089,7 +8525,7 @@ router10.post("/send-email", requireAuth2, async (req, res) => {
         error: "\uD544\uC218 \uB370\uC774\uD130\uAC00 \uB204\uB77D\uB418\uC5C8\uC2B5\uB2C8\uB2E4. (filePath, to, subject \uD544\uC218)"
       });
     }
-    if (!fs10.existsSync(filePath)) {
+    if (!fs11.existsSync(filePath)) {
       return res.status(400).json({ error: "\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4." });
     }
     const emailService = new POEmailServiceMock();
@@ -8135,7 +8571,7 @@ router10.post("/convert-to-pdf", requireAuth2, async (req, res) => {
     if (!filePath) {
       return res.status(400).json({ error: "\uD30C\uC77C \uACBD\uB85C\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4." });
     }
-    if (!fs10.existsSync(filePath)) {
+    if (!fs11.existsSync(filePath)) {
       return res.status(400).json({ error: "\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4." });
     }
     const timestamp2 = Date.now();
@@ -8193,7 +8629,7 @@ router10.post("/process-complete", requireAuth2, upload3.single("file"), async (
     const validation = await POTemplateValidator.validatePOTemplateFile(filePath);
     results.validation = validation;
     if (!validation.isValid) {
-      fs10.unlinkSync(filePath);
+      fs11.unlinkSync(filePath);
       return res.status(400).json({
         error: "\uC720\uD6A8\uC131 \uAC80\uC0AC \uC2E4\uD328",
         details: validation.errors.join(", "),
@@ -8204,7 +8640,7 @@ router10.post("/process-complete", requireAuth2, upload3.single("file"), async (
     const parseResult = POTemplateProcessorMock.parseInputSheet(filePath);
     results.parsing = parseResult;
     if (!parseResult.success) {
-      fs10.unlinkSync(filePath);
+      fs11.unlinkSync(filePath);
       return res.status(400).json({
         error: "\uD30C\uC2F1 \uC2E4\uD328",
         details: parseResult.error,
@@ -8270,8 +8706,8 @@ router10.post("/process-complete", requireAuth2, upload3.single("file"), async (
     });
   } catch (error) {
     console.error("\uD1B5\uD569 \uCC98\uB9AC \uC624\uB958:", error);
-    if (req.file && fs10.existsSync(req.file.path)) {
-      fs10.unlinkSync(req.file.path);
+    if (req.file && fs11.existsSync(req.file.path)) {
+      fs11.unlinkSync(req.file.path);
     }
     res.status(500).json({
       error: "\uC11C\uBC84 \uC624\uB958",
@@ -8404,76 +8840,154 @@ var po_template_real_default = router10;
 
 // server/routes/reports.ts
 import { Router as Router11 } from "express";
-import { eq as eq8, sql as sql5, and as and5, gte as gte3, lte as lte3, inArray as inArray2 } from "drizzle-orm";
+init_db();
+init_schema();
+import { eq as eq8, sql as sql6, and as and5, gte as gte3, lte as lte3, inArray as inArray2 } from "drizzle-orm";
 import * as XLSX6 from "xlsx";
 var formatKoreanWon = (amount) => {
   return `\u20A9${amount.toLocaleString("ko-KR")}`;
 };
 var router11 = Router11();
+router11.get("/debug-data", async (req, res) => {
+  try {
+    console.log("Debug data endpoint called");
+    const orderCount = await db.select({
+      count: sql6`count(*)`
+    }).from(purchaseOrders);
+    const itemCount = await db.select({
+      count: sql6`count(*)`
+    }).from(purchaseOrderItems);
+    const itemsWithCategories = await db.select({
+      count: sql6`count(*)`,
+      withMajor: sql6`count(${items.majorCategory})`,
+      withMiddle: sql6`count(${items.middleCategory})`,
+      withMinor: sql6`count(${items.minorCategory})`
+    }).from(items);
+    const vendorCount = await db.select({
+      count: sql6`count(*)`
+    }).from(vendors);
+    const sampleOrders = await db.select().from(purchaseOrders).limit(3);
+    const sampleItems = await db.select().from(purchaseOrderItems).limit(3);
+    const sampleItemsData = await db.select().from(items).limit(3);
+    res.json({
+      counts: {
+        orders: orderCount[0],
+        orderItems: itemCount[0],
+        items: itemsWithCategories[0],
+        vendors: vendorCount[0]
+      },
+      samples: {
+        orders: sampleOrders,
+        orderItems: sampleItems,
+        items: sampleItemsData
+      }
+    });
+  } catch (error) {
+    console.error("Debug data error:", error);
+    res.status(500).json({ error: "Debug failed" });
+  }
+});
 var parseDateFilters = (startDate, endDate) => {
   const filters = [];
-  if (startDate) {
+  if (startDate && startDate !== "") {
     filters.push(gte3(purchaseOrders.orderDate, new Date(startDate)));
   }
-  if (endDate) {
+  if (endDate && endDate !== "") {
     filters.push(lte3(purchaseOrders.orderDate, new Date(endDate)));
   }
   return filters;
 };
-router11.get("/by-category", requireAuth, async (req, res) => {
+router11.get("/by-category", async (req, res) => {
   try {
     const { startDate, endDate, categoryType = "major" } = req.query;
     const dateFilters = parseDateFilters(startDate, endDate);
-    const categories = await db.select().from(itemCategories).where(eq8(itemCategories.categoryType, categoryType));
-    const orderItemsWithCategories = await db.select({
-      orderId: purchaseOrderItems.purchaseOrderId,
-      itemId: purchaseOrderItems.itemId,
-      categoryValue: items.majorCategory,
-      middleCategory: items.middleCategory,
-      minorCategory: items.minorCategory,
+    console.log("Category report filters:", { startDate, endDate, categoryType });
+    let query = db.select({
+      orderId: purchaseOrderItems.orderId,
+      itemName: purchaseOrderItems.itemName,
+      majorCategory: purchaseOrderItems.majorCategory,
+      middleCategory: purchaseOrderItems.middleCategory,
+      minorCategory: purchaseOrderItems.minorCategory,
       quantity: purchaseOrderItems.quantity,
       totalAmount: purchaseOrderItems.totalAmount,
       orderDate: purchaseOrders.orderDate,
-      orderStatus: purchaseOrders.status
-    }).from(purchaseOrderItems).innerJoin(items, eq8(purchaseOrderItems.itemId, items.id)).innerJoin(purchaseOrders, eq8(purchaseOrderItems.purchaseOrderId, purchaseOrders.id)).where(and5(...dateFilters));
+      orderStatus: purchaseOrders.status,
+      specification: purchaseOrderItems.specification,
+      unitPrice: purchaseOrderItems.unitPrice
+    }).from(purchaseOrderItems).innerJoin(purchaseOrders, eq8(purchaseOrderItems.orderId, purchaseOrders.id));
+    if (dateFilters.length > 0) {
+      query = query.where(and5(...dateFilters));
+    }
+    const orderItemsWithCategories = await query;
+    console.log("Order items with categories found:", orderItemsWithCategories.length);
+    if (orderItemsWithCategories.length > 0) {
+      console.log("Sample item:", orderItemsWithCategories[0]);
+    }
     const categoryReport = orderItemsWithCategories.reduce((acc, item) => {
       let categoryKey = "";
+      let hierarchyPath = "";
       switch (categoryType) {
         case "major":
-          categoryKey = item.categoryValue || "\uBBF8\uBD84\uB958";
+          categoryKey = item.majorCategory || "\uBBF8\uBD84\uB958";
+          hierarchyPath = categoryKey;
           break;
         case "middle":
           categoryKey = item.middleCategory || "\uBBF8\uBD84\uB958";
+          hierarchyPath = `${item.majorCategory || "\uBBF8\uBD84\uB958"} > ${categoryKey}`;
           break;
         case "minor":
           categoryKey = item.minorCategory || "\uBBF8\uBD84\uB958";
+          hierarchyPath = `${item.majorCategory || "\uBBF8\uBD84\uB958"} > ${item.middleCategory || "\uBBF8\uBD84\uB958"} > ${categoryKey}`;
           break;
       }
       if (!acc[categoryKey]) {
         acc[categoryKey] = {
           category: categoryKey,
+          hierarchyPath,
+          majorCategory: item.majorCategory,
+          middleCategory: item.middleCategory,
+          minorCategory: item.minorCategory,
           orderCount: /* @__PURE__ */ new Set(),
           itemCount: 0,
           totalQuantity: 0,
           totalAmount: 0,
-          statusBreakdown: {}
+          statusBreakdown: {},
+          topItems: {}
         };
       }
       acc[categoryKey].orderCount.add(item.orderId);
       acc[categoryKey].itemCount += 1;
-      acc[categoryKey].totalQuantity += item.quantity;
+      acc[categoryKey].totalQuantity += parseFloat(item.quantity);
       acc[categoryKey].totalAmount += parseFloat(item.totalAmount);
       if (!acc[categoryKey].statusBreakdown[item.orderStatus]) {
         acc[categoryKey].statusBreakdown[item.orderStatus] = 0;
       }
       acc[categoryKey].statusBreakdown[item.orderStatus] += 1;
+      if (!acc[categoryKey].topItems[item.itemName]) {
+        acc[categoryKey].topItems[item.itemName] = {
+          quantity: 0,
+          amount: 0,
+          specification: item.specification
+        };
+      }
+      acc[categoryKey].topItems[item.itemName].quantity += parseFloat(item.quantity);
+      acc[categoryKey].topItems[item.itemName].amount += parseFloat(item.totalAmount);
       return acc;
     }, {});
-    const reportData = Object.values(categoryReport).map((item) => ({
-      ...item,
-      orderCount: item.orderCount.size,
-      averageAmount: item.totalAmount / item.itemCount
-    }));
+    const reportData = Object.values(categoryReport).map((item) => {
+      const topItemsArray = Object.entries(item.topItems).map(([name, data]) => ({
+        itemName: name,
+        quantity: data.quantity,
+        amount: data.amount,
+        specification: data.specification
+      })).sort((a, b) => b.amount - a.amount).slice(0, 5);
+      return {
+        ...item,
+        orderCount: item.orderCount.size,
+        averageAmount: item.totalAmount / item.itemCount,
+        topItems: topItemsArray
+      };
+    });
     reportData.sort((a, b) => b.totalAmount - a.totalAmount);
     res.json({
       categoryType,
@@ -8513,7 +9027,7 @@ router11.get("/by-project", requireAuth, async (req, res) => {
       orderStatus: purchaseOrders.status,
       vendorId: purchaseOrders.vendorId,
       vendorName: vendors.name
-    }).from(purchaseOrders).innerJoin(projects, eq8(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq8(purchaseOrders.vendorId, vendors.id)).where(and5(...filters));
+    }).from(purchaseOrders).innerJoin(projects, eq8(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq8(purchaseOrders.vendorId, vendors.id)).where(filters.length > 0 ? and5(...filters) : void 0);
     const projectReport = ordersWithProjects.reduce((acc, order) => {
       const projectKey = order.projectId;
       if (!acc[projectKey]) {
@@ -8574,14 +9088,14 @@ router11.get("/by-project", requireAuth, async (req, res) => {
     res.status(500).json({ error: "Failed to generate project report" });
   }
 });
-router11.get("/by-vendor", requireAuth, async (req, res) => {
+router11.get("/by-vendor", async (req, res) => {
   try {
     const { startDate, endDate, vendorId } = req.query;
     const filters = parseDateFilters(startDate, endDate);
-    if (vendorId) {
-      filters.push(eq8(purchaseOrders.vendorId, parseInt(vendorId)));
-    }
-    const ordersWithVendors = await db.select({
+    console.log("Vendor report starting...");
+    console.log("Vendor report filters:", { startDate, endDate, vendorId, filters });
+    console.log("Starting vendor report generation...");
+    let vendorQuery = db.select({
       vendorId: vendors.id,
       vendorName: vendors.name,
       vendorCode: vendors.vendorCode,
@@ -8592,25 +9106,31 @@ router11.get("/by-vendor", requireAuth, async (req, res) => {
       totalAmount: purchaseOrders.totalAmount,
       orderStatus: purchaseOrders.status,
       projectId: purchaseOrders.projectId,
-      projectName: projects.projectName
-    }).from(purchaseOrders).innerJoin(vendors, eq8(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq8(purchaseOrders.projectId, projects.id)).where(and5(...filters));
+      projectName: projects.projectName,
+      originalVendorId: purchaseOrders.vendorId
+      // Add original vendorId for null check
+    }).from(purchaseOrders).leftJoin(vendors, eq8(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq8(purchaseOrders.projectId, projects.id));
+    if (filters.length > 0) {
+      vendorQuery = vendorQuery.where(and5(...filters));
+    }
+    const ordersWithVendors = await vendorQuery;
+    console.log("Orders with vendors found:", ordersWithVendors.length);
     const orderIds = ordersWithVendors.map((o) => o.orderId);
     const orderItemsData = await db.select({
-      orderId: purchaseOrderItems.purchaseOrderId,
-      itemId: purchaseOrderItems.itemId,
-      itemName: items.itemName,
-      majorCategory: items.majorCategory,
+      orderId: purchaseOrderItems.orderId,
+      itemName: purchaseOrderItems.itemName,
+      majorCategory: purchaseOrderItems.majorCategory,
       quantity: purchaseOrderItems.quantity,
       totalAmount: purchaseOrderItems.totalAmount
-    }).from(purchaseOrderItems).innerJoin(items, eq8(purchaseOrderItems.itemId, items.id)).where(inArray2(purchaseOrderItems.purchaseOrderId, orderIds));
+    }).from(purchaseOrderItems).where(inArray2(purchaseOrderItems.orderId, orderIds));
     const vendorReport = ordersWithVendors.reduce((acc, order) => {
-      const vendorKey = order.vendorId;
+      const vendorKey = order.vendorId || "unassigned";
       if (!acc[vendorKey]) {
         acc[vendorKey] = {
           vendorId: order.vendorId,
-          vendorName: order.vendorName,
-          vendorCode: order.vendorCode,
-          businessNumber: order.businessNumber,
+          vendorName: order.vendorName || "\uAC70\uB798\uCC98 \uBBF8\uC9C0\uC815",
+          vendorCode: order.vendorCode || "N/A",
+          businessNumber: order.businessNumber || "N/A",
           orderCount: 0,
           totalAmount: 0,
           projects: /* @__PURE__ */ new Set(),
@@ -8642,25 +9162,28 @@ router11.get("/by-vendor", requireAuth, async (req, res) => {
     }, {});
     orderItemsData.forEach((item) => {
       const order = ordersWithVendors.find((o) => o.orderId === item.orderId);
-      if (order && vendorReport[order.vendorId]) {
-        const vendor = vendorReport[order.vendorId];
-        const category = item.majorCategory || "\uBBF8\uBD84\uB958";
-        if (!vendor.categoryBreakdown[category]) {
-          vendor.categoryBreakdown[category] = {
-            count: 0,
-            amount: 0
-          };
+      if (order) {
+        const vendorKey = order.vendorId || "unassigned";
+        if (vendorReport[vendorKey]) {
+          const vendor = vendorReport[vendorKey];
+          const category = item.majorCategory || "\uBBF8\uBD84\uB958";
+          if (!vendor.categoryBreakdown[category]) {
+            vendor.categoryBreakdown[category] = {
+              count: 0,
+              amount: 0
+            };
+          }
+          vendor.categoryBreakdown[category].count += 1;
+          vendor.categoryBreakdown[category].amount += parseFloat(item.totalAmount);
+          if (!vendor.topItems[item.itemName]) {
+            vendor.topItems[item.itemName] = {
+              quantity: 0,
+              amount: 0
+            };
+          }
+          vendor.topItems[item.itemName].quantity += parseFloat(item.quantity);
+          vendor.topItems[item.itemName].amount += parseFloat(item.totalAmount);
         }
-        vendor.categoryBreakdown[category].count += 1;
-        vendor.categoryBreakdown[category].amount += parseFloat(item.totalAmount);
-        if (!vendor.topItems[item.itemName]) {
-          vendor.topItems[item.itemName] = {
-            quantity: 0,
-            amount: 0
-          };
-        }
-        vendor.topItems[item.itemName].quantity += item.quantity;
-        vendor.topItems[item.itemName].amount += parseFloat(item.totalAmount);
       }
     });
     const reportData = Object.values(vendorReport).map((vendor) => {
@@ -8693,7 +9216,12 @@ router11.get("/by-vendor", requireAuth, async (req, res) => {
     });
   } catch (error) {
     console.error("Error generating vendor report:", error);
-    res.status(500).json({ error: "Failed to generate vendor report" });
+    console.error("Error details:", error.message, error.stack);
+    res.status(500).json({
+      error: "Failed to generate vendor report",
+      details: error.message,
+      debug: "Check server console for full error"
+    });
   }
 });
 router11.get("/export-excel", requireAuth, async (req, res) => {
@@ -8810,32 +9338,32 @@ router11.get("/summary", requireAuth, async (req, res) => {
     const { startDate, endDate } = req.query;
     const dateFilters = parseDateFilters(startDate, endDate);
     const ordersSummary = await db.select({
-      totalOrders: sql5`count(*)`,
-      totalAmount: sql5`sum(${purchaseOrders.totalAmount})`,
-      avgAmount: sql5`avg(${purchaseOrders.totalAmount})`
-    }).from(purchaseOrders).where(and5(...dateFilters));
+      totalOrders: sql6`count(*)`,
+      totalAmount: sql6`sum(${purchaseOrders.totalAmount})`,
+      avgAmount: sql6`avg(${purchaseOrders.totalAmount})`
+    }).from(purchaseOrders).where(dateFilters.length > 0 ? and5(...dateFilters) : void 0);
     const statusBreakdown = await db.select({
       status: purchaseOrders.status,
-      count: sql5`count(*)`,
-      totalAmount: sql5`sum(${purchaseOrders.totalAmount})`
+      count: sql6`count(*)`,
+      totalAmount: sql6`sum(${purchaseOrders.totalAmount})`
     }).from(purchaseOrders).where(and5(...dateFilters)).groupBy(purchaseOrders.status);
     const topVendors = await db.select({
       vendorId: vendors.id,
       vendorName: vendors.name,
-      orderCount: sql5`count(${purchaseOrders.id})`,
-      totalAmount: sql5`sum(${purchaseOrders.totalAmount})`
-    }).from(purchaseOrders).innerJoin(vendors, eq8(purchaseOrders.vendorId, vendors.id)).where(and5(...dateFilters)).groupBy(vendors.id, vendors.name).orderBy(sql5`sum(${purchaseOrders.totalAmount}) desc`).limit(10);
+      orderCount: sql6`count(${purchaseOrders.id})`,
+      totalAmount: sql6`sum(${purchaseOrders.totalAmount})`
+    }).from(purchaseOrders).innerJoin(vendors, eq8(purchaseOrders.vendorId, vendors.id)).where(and5(...dateFilters)).groupBy(vendors.id, vendors.name).orderBy(sql6`sum(${purchaseOrders.totalAmount}) desc`).limit(10);
     const topProjects = await db.select({
       projectId: projects.id,
       projectName: projects.projectName,
-      orderCount: sql5`count(${purchaseOrders.id})`,
-      totalAmount: sql5`sum(${purchaseOrders.totalAmount})`
-    }).from(purchaseOrders).innerJoin(projects, eq8(purchaseOrders.projectId, projects.id)).where(and5(...dateFilters)).groupBy(projects.id, projects.projectName).orderBy(sql5`sum(${purchaseOrders.totalAmount}) desc`).limit(10);
+      orderCount: sql6`count(${purchaseOrders.id})`,
+      totalAmount: sql6`sum(${purchaseOrders.totalAmount})`
+    }).from(purchaseOrders).innerJoin(projects, eq8(purchaseOrders.projectId, projects.id)).where(and5(...dateFilters)).groupBy(projects.id, projects.projectName).orderBy(sql6`sum(${purchaseOrders.totalAmount}) desc`).limit(10);
     const monthlyTrend = await db.select({
-      month: sql5`to_char(${purchaseOrders.orderDate}, 'YYYY-MM')`,
-      orderCount: sql5`count(*)`,
-      totalAmount: sql5`sum(${purchaseOrders.totalAmount})`
-    }).from(purchaseOrders).where(and5(...dateFilters)).groupBy(sql5`to_char(${purchaseOrders.orderDate}, 'YYYY-MM')`).orderBy(sql5`to_char(${purchaseOrders.orderDate}, 'YYYY-MM')`);
+      month: sql6`to_char(${purchaseOrders.orderDate}, 'YYYY-MM')`,
+      orderCount: sql6`count(*)`,
+      totalAmount: sql6`sum(${purchaseOrders.totalAmount})`
+    }).from(purchaseOrders).where(and5(...dateFilters)).groupBy(sql6`to_char(${purchaseOrders.orderDate}, 'YYYY-MM')`).orderBy(sql6`to_char(${purchaseOrders.orderDate}, 'YYYY-MM')`);
     res.json({
       period: {
         startDate: startDate || "all",
@@ -8858,10 +9386,12 @@ var reports_default = router11;
 import { Router as Router12 } from "express";
 
 // server/utils/import-export-service.ts
+init_db();
+init_schema();
 import * as XLSX7 from "xlsx";
 import Papa from "papaparse";
 import { eq as eq9 } from "drizzle-orm";
-import fs11 from "fs";
+import fs12 from "fs";
 var ImportExportService = class {
   // Parse Excel file
   static parseExcelFile(filePath) {
@@ -8874,7 +9404,7 @@ var ImportExportService = class {
   // Parse CSV file
   static parseCSVFile(filePath) {
     return new Promise((resolve, reject) => {
-      const fileContent = fs11.readFileSync(filePath, "utf8");
+      const fileContent = fs12.readFileSync(filePath, "utf8");
       Papa.parse(fileContent, {
         header: true,
         complete: (results) => {
@@ -9169,7 +9699,7 @@ var ImportExportService = class {
 
 // server/routes/import-export.ts
 import multer4 from "multer";
-import fs12 from "fs";
+import fs13 from "fs";
 import path12 from "path";
 var upload4 = multer4({
   dest: "uploads/",
@@ -9202,7 +9732,7 @@ router12.post("/import/vendors", requireAuth, upload4.single("file"), async (req
     }
     const fileType = getFileType(req.file.filename);
     const result = await ImportExportService.importVendors(req.file.path, fileType);
-    fs12.unlinkSync(req.file.path);
+    fs13.unlinkSync(req.file.path);
     res.json({
       message: "Vendor import completed",
       imported: result.imported,
@@ -9221,7 +9751,7 @@ router12.post("/import/items", requireAuth, upload4.single("file"), async (req, 
     }
     const fileType = getFileType(req.file.filename);
     const result = await ImportExportService.importItems(req.file.path, fileType);
-    fs12.unlinkSync(req.file.path);
+    fs13.unlinkSync(req.file.path);
     res.json({
       message: "Item import completed",
       imported: result.imported,
@@ -9240,7 +9770,7 @@ router12.post("/import/projects", requireAuth, upload4.single("file"), async (re
     }
     const fileType = getFileType(req.file.filename);
     const result = await ImportExportService.importProjects(req.file.path, fileType);
-    fs12.unlinkSync(req.file.path);
+    fs13.unlinkSync(req.file.path);
     res.json({
       message: "Project import completed",
       imported: result.imported,
@@ -9318,30 +9848,888 @@ router12.get("/template/:entity", requireAuth, async (req, res) => {
 });
 var import_export_default = router12;
 
-// server/routes/index.ts
+// server/routes/email-history.ts
+init_db();
+init_schema();
+import { Router as Router13 } from "express";
+import { eq as eq10, desc as desc3, sql as sql7 } from "drizzle-orm";
+import { z as z2 } from "zod";
 var router13 = Router13();
-router13.use("/api", auth_default);
-router13.use("/api", projects_default);
-router13.use("/api", orders_default);
-router13.use("/api", vendors_default);
-router13.use("/api", items_default);
-router13.use("/api", dashboard_default);
-router13.use("/api", companies_default);
-router13.use("/api", admin_default);
-router13.use("/api/excel-automation", excel_automation_default);
-router13.use("/api/po-template", po_template_real_default);
-router13.use("/api/reports", reports_default);
-router13.use("/api", import_export_default);
-var routes_default = router13;
+var createEmailHistorySchema = z2.object({
+  orderId: z2.number(),
+  recipientEmail: z2.string().email(),
+  recipientName: z2.string().optional(),
+  ccEmails: z2.string().optional(),
+  subject: z2.string(),
+  body: z2.string(),
+  attachments: z2.array(z2.object({
+    filename: z2.string(),
+    path: z2.string(),
+    size: z2.number()
+  })).optional(),
+  status: z2.enum(["sent", "failed", "bounced", "opened", "clicked"]).default("sent"),
+  errorMessage: z2.string().optional(),
+  emailProvider: z2.string().default("naver"),
+  messageId: z2.string().optional()
+});
+router13.get("/orders/:orderId/email-history", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    const orderId = parseInt(req.params.orderId);
+    if (isNaN(orderId)) {
+      return res.status(400).json({ error: "Invalid order ID" });
+    }
+    const order = await db.query.purchaseOrders.findFirst({
+      where: eq10(purchaseOrders.id, orderId)
+    });
+    if (!order) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+    const emailHistory = await db.select({
+      id: emailSendHistory.id,
+      orderId: emailSendHistory.orderId,
+      sentAt: emailSendHistory.sentAt,
+      sentBy: emailSendHistory.sentBy,
+      sentByName: users.name,
+      sentByEmail: users.email,
+      recipientEmail: emailSendHistory.recipientEmail,
+      recipientName: emailSendHistory.recipientName,
+      ccEmails: emailSendHistory.ccEmails,
+      subject: emailSendHistory.subject,
+      body: emailSendHistory.body,
+      attachments: emailSendHistory.attachments,
+      status: emailSendHistory.status,
+      errorMessage: emailSendHistory.errorMessage,
+      openedAt: emailSendHistory.openedAt,
+      clickedAt: emailSendHistory.clickedAt,
+      trackingId: emailSendHistory.trackingId,
+      emailProvider: emailSendHistory.emailProvider,
+      messageId: emailSendHistory.messageId
+    }).from(emailSendHistory).leftJoin(users, eq10(emailSendHistory.sentBy, users.id)).where(eq10(emailSendHistory.orderId, orderId)).orderBy(desc3(emailSendHistory.sentAt));
+    res.json(emailHistory);
+  } catch (error) {
+    console.error("Error fetching email history:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+router13.post("/email-history", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    const validatedData = createEmailHistorySchema.parse(req.body);
+    const trackingId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const [newEmailHistory] = await db.insert(emailSendHistory).values({
+      ...validatedData,
+      sentBy: req.user.id,
+      trackingId,
+      attachments: validatedData.attachments || null
+    }).returning();
+    const order = await db.query.purchaseOrders.findFirst({
+      where: eq10(purchaseOrders.id, validatedData.orderId)
+    });
+    if (order && order.status === "approved") {
+      await db.update(purchaseOrders).set({
+        status: "sent",
+        updatedAt: /* @__PURE__ */ new Date()
+      }).where(eq10(purchaseOrders.id, validatedData.orderId));
+    }
+    res.json(newEmailHistory);
+  } catch (error) {
+    if (error instanceof z2.ZodError) {
+      return res.status(400).json({ error: "Invalid data", details: error.errors });
+    }
+    console.error("Error creating email history:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+router13.get("/orders-email-status", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    const emailStatusQuery = await db.execute(sql7`
+      WITH latest_emails AS (
+        SELECT DISTINCT ON (order_id) 
+          order_id,
+          status,
+          sent_at,
+          recipient_email,
+          opened_at
+        FROM email_send_history
+        ORDER BY order_id, sent_at DESC
+      )
+      SELECT 
+        po.id,
+        po.order_number,
+        le.status as email_status,
+        le.sent_at as last_sent_at,
+        le.recipient_email,
+        le.opened_at,
+        COUNT(eh.id) as total_emails_sent
+      FROM purchase_orders po
+      LEFT JOIN latest_emails le ON po.id = le.order_id
+      LEFT JOIN email_send_history eh ON po.id = eh.order_id
+      GROUP BY po.id, po.order_number, le.status, le.sent_at, le.recipient_email, le.opened_at
+    `);
+    res.json(emailStatusQuery.rows);
+  } catch (error) {
+    console.error("Error fetching orders email status:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+router13.put("/email-tracking/:trackingId", async (req, res) => {
+  try {
+    const { trackingId } = req.params;
+    const { action } = req.body;
+    if (!["opened", "clicked"].includes(action)) {
+      return res.status(400).json({ error: "Invalid action" });
+    }
+    const updateData = {};
+    if (action === "opened") {
+      updateData.openedAt = /* @__PURE__ */ new Date();
+      updateData.status = "opened";
+    } else if (action === "clicked") {
+      updateData.clickedAt = /* @__PURE__ */ new Date();
+      updateData.status = "clicked";
+    }
+    if (req.headers["x-forwarded-for"] || req.ip) {
+      updateData.ipAddress = (req.headers["x-forwarded-for"] || req.ip).split(",")[0];
+    }
+    if (req.headers["user-agent"]) {
+      updateData.userAgent = req.headers["user-agent"];
+    }
+    const [updated] = await db.update(emailSendHistory).set(updateData).where(eq10(emailSendHistory.trackingId, trackingId)).returning();
+    if (!updated) {
+      return res.status(404).json({ error: "Email not found" });
+    }
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error updating email tracking:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+router13.get("/email-history/:id", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    const emailId = parseInt(req.params.id);
+    if (isNaN(emailId)) {
+      return res.status(400).json({ error: "Invalid email ID" });
+    }
+    const email = await db.select({
+      id: emailSendHistory.id,
+      orderId: emailSendHistory.orderId,
+      orderNumber: purchaseOrders.orderNumber,
+      vendorName: vendors.name,
+      sentAt: emailSendHistory.sentAt,
+      sentBy: emailSendHistory.sentBy,
+      sentByName: users.name,
+      sentByEmail: users.email,
+      recipientEmail: emailSendHistory.recipientEmail,
+      recipientName: emailSendHistory.recipientName,
+      ccEmails: emailSendHistory.ccEmails,
+      subject: emailSendHistory.subject,
+      body: emailSendHistory.body,
+      attachments: emailSendHistory.attachments,
+      status: emailSendHistory.status,
+      errorMessage: emailSendHistory.errorMessage,
+      openedAt: emailSendHistory.openedAt,
+      clickedAt: emailSendHistory.clickedAt,
+      ipAddress: emailSendHistory.ipAddress,
+      userAgent: emailSendHistory.userAgent,
+      trackingId: emailSendHistory.trackingId,
+      emailProvider: emailSendHistory.emailProvider,
+      messageId: emailSendHistory.messageId
+    }).from(emailSendHistory).leftJoin(purchaseOrders, eq10(emailSendHistory.orderId, purchaseOrders.id)).leftJoin(vendors, eq10(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq10(emailSendHistory.sentBy, users.id)).where(eq10(emailSendHistory.id, emailId));
+    if (!email || email.length === 0) {
+      return res.status(404).json({ error: "Email not found" });
+    }
+    res.json(email[0]);
+  } catch (error) {
+    console.error("Error fetching email detail:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+var email_history_default = router13;
+
+// server/routes/excel-template.ts
+import express2 from "express";
+import * as XLSX8 from "xlsx";
+var router14 = express2.Router();
+router14.get("/download", async (req, res) => {
+  try {
+    const templateData = [
+      // 헤더 행
+      [
+        "\uBC1C\uC8FC\uC77C\uC790",
+        "\uB0A9\uAE30\uC77C\uC790",
+        "\uAC70\uB798\uCC98\uBA85",
+        "\uAC70\uB798\uCC98 \uC774\uBA54\uC77C",
+        "\uB0A9\uD488\uCC98\uBA85",
+        "\uB0A9\uD488\uCC98 \uC774\uBA54\uC77C",
+        "\uD504\uB85C\uC81D\uD2B8\uBA85",
+        "\uB300\uBD84\uB958",
+        "\uC911\uBD84\uB958",
+        "\uC18C\uBD84\uB958",
+        "\uD488\uBAA9\uBA85",
+        "\uADDC\uACA9",
+        "\uC218\uB7C9",
+        "\uB2E8\uAC00",
+        "\uCD1D\uAE08\uC561",
+        "\uBE44\uACE0"
+      ],
+      // 샘플 데이터 행 1
+      [
+        "2025-08-05",
+        "2025-08-12",
+        "(\uC8FC)\uC775\uC9C4",
+        "ikjin@example.com",
+        "(\uC8FC)\uC775\uC9C4",
+        "ikjin@example.com",
+        "\uC11C\uC6B8 \uC544\uD30C\uD2B8 \uC2E0\uCD95\uACF5\uC0AC",
+        "\uCCA0\uADFC",
+        "\uBD09\uAC15",
+        "D19",
+        "D19 \uCCA0\uADFC",
+        "KS D 3504",
+        100,
+        5e4,
+        5e6,
+        "\uAE34\uAE09 \uB0A9\uD488 \uC694\uCCAD"
+      ],
+      // 샘플 데이터 행 2
+      [
+        "2025-08-05",
+        "2025-08-15",
+        "\uC0BC\uC131\uAC74\uC124",
+        "samsung@example.com",
+        "\uC0BC\uC131\uAC74\uC124",
+        "samsung@example.com",
+        "\uBD80\uC0B0 \uC0C1\uAC00 \uAC74\uC124",
+        "\uCF58\uD06C\uB9AC\uD2B8",
+        "\uB808\uBBF8\uCF58",
+        "C24",
+        "\uB808\uBBF8\uCF58 C24",
+        "24MPa",
+        50,
+        12e4,
+        6e6,
+        "\uD604\uC7A5 \uC9C1\uB0A9"
+      ],
+      // 샘플 데이터 행 3
+      [
+        "2025-08-05",
+        "2025-08-10",
+        "\uD604\uB300\uAC74\uC124",
+        "hyundai@example.com",
+        "\uD604\uB300\uAC74\uC124",
+        "hyundai@example.com",
+        "\uB300\uC804 \uACF5\uC7A5 \uC99D\uCD95",
+        "\uAC15\uC7AC",
+        "H\uBE54",
+        "H-400x200",
+        "H\uBE54 400x200",
+        "SS400",
+        20,
+        15e4,
+        3e6,
+        "\uD488\uC9C8 \uAC80\uC0AC \uD544\uC218"
+      ]
+    ];
+    const workbook = XLSX8.utils.book_new();
+    const inputWorksheet = XLSX8.utils.aoa_to_sheet(templateData);
+    const columnWidths = [
+      { wch: 12 },
+      // A: 발주일자
+      { wch: 12 },
+      // B: 납기일자
+      { wch: 15 },
+      // C: 거래처명
+      { wch: 20 },
+      // D: 거래처 이메일
+      { wch: 15 },
+      // E: 납품처명
+      { wch: 20 },
+      // F: 납품처 이메일
+      { wch: 20 },
+      // G: 프로젝트명
+      { wch: 10 },
+      // H: 대분류
+      { wch: 10 },
+      // I: 중분류
+      { wch: 10 },
+      // J: 소분류
+      { wch: 20 },
+      // K: 품목명
+      { wch: 15 },
+      // L: 규격
+      { wch: 10 },
+      // M: 수량
+      { wch: 12 },
+      // N: 단가
+      { wch: 15 },
+      // O: 총금액
+      { wch: 20 }
+      // P: 비고
+    ];
+    inputWorksheet["!cols"] = columnWidths;
+    const headerStyle = {
+      fill: { fgColor: { rgb: "CCCCCC" } },
+      font: { bold: true, color: { rgb: "000000" } },
+      alignment: { horizontal: "center", vertical: "center" },
+      border: {
+        top: { style: "thin", color: { rgb: "000000" } },
+        bottom: { style: "thin", color: { rgb: "000000" } },
+        left: { style: "thin", color: { rgb: "000000" } },
+        right: { style: "thin", color: { rgb: "000000" } }
+      }
+    };
+    for (let col = 0; col < 16; col++) {
+      const cellRef = XLSX8.utils.encode_cell({ r: 0, c: col });
+      if (!inputWorksheet[cellRef]) inputWorksheet[cellRef] = { v: "", t: "s" };
+      inputWorksheet[cellRef].s = headerStyle;
+    }
+    const dataBorder = {
+      border: {
+        top: { style: "thin", color: { rgb: "CCCCCC" } },
+        bottom: { style: "thin", color: { rgb: "CCCCCC" } },
+        left: { style: "thin", color: { rgb: "CCCCCC" } },
+        right: { style: "thin", color: { rgb: "CCCCCC" } }
+      }
+    };
+    for (let row = 1; row <= 3; row++) {
+      for (let col = 0; col < 16; col++) {
+        const cellRef = XLSX8.utils.encode_cell({ r: row, c: col });
+        if (!inputWorksheet[cellRef]) inputWorksheet[cellRef] = { v: "", t: "s" };
+        inputWorksheet[cellRef].s = dataBorder;
+      }
+    }
+    XLSX8.utils.book_append_sheet(workbook, inputWorksheet, "Input");
+    const gapjiData = [
+      ["\uBC1C\uC8FC\uC11C (\uAC11\uC9C0)", "", "", "", "", ""],
+      ["", "", "", "", "", ""],
+      ["\uBC1C\uC8FC\uBC88\uD638:", "", "\uBC1C\uC8FC\uC77C\uC790:", "", "", ""],
+      ["\uAC70\uB798\uCC98:", "", "\uB0A9\uAE30\uC77C\uC790:", "", "", ""],
+      ["\uB0A9\uD488\uCC98:", "", "\uD504\uB85C\uC81D\uD2B8:", "", "", ""],
+      ["", "", "", "", "", ""],
+      ["\uC21C\uBC88", "\uD488\uBAA9\uBA85", "\uADDC\uACA9", "\uC218\uB7C9", "\uB2E8\uAC00", "\uAE08\uC561"],
+      ["1", "", "", "", "", ""],
+      ["2", "", "", "", "", ""],
+      ["3", "", "", "", "", ""],
+      ["", "", "", "", "", ""],
+      ["", "", "", "\uD569\uACC4:", "", ""]
+    ];
+    const gapjiWorksheet = XLSX8.utils.aoa_to_sheet(gapjiData);
+    gapjiWorksheet["!cols"] = [
+      { wch: 8 },
+      { wch: 25 },
+      { wch: 15 },
+      { wch: 10 },
+      { wch: 12 },
+      { wch: 15 }
+    ];
+    XLSX8.utils.book_append_sheet(workbook, gapjiWorksheet, "\uAC11\uC9C0");
+    const euljiData = [
+      ["\uBC1C\uC8FC\uC11C (\uC744\uC9C0)", "", "", "", "", ""],
+      ["", "", "", "", "", ""],
+      ["\uBC1C\uC8FC\uBC88\uD638:", "", "\uBC1C\uC8FC\uC77C\uC790:", "", "", ""],
+      ["\uAC70\uB798\uCC98:", "", "\uB0A9\uAE30\uC77C\uC790:", "", "", ""],
+      ["\uB0A9\uD488\uCC98:", "", "\uD504\uB85C\uC81D\uD2B8:", "", "", ""],
+      ["", "", "", "", "", ""],
+      ["\uC21C\uBC88", "\uD488\uBAA9\uBA85", "\uADDC\uACA9", "\uC218\uB7C9", "\uB2E8\uAC00", "\uAE08\uC561"],
+      ["1", "", "", "", "", ""],
+      ["2", "", "", "", "", ""],
+      ["3", "", "", "", "", ""],
+      ["", "", "", "", "", ""],
+      ["", "", "", "\uD569\uACC4:", "", ""]
+    ];
+    const euljiWorksheet = XLSX8.utils.aoa_to_sheet(euljiData);
+    euljiWorksheet["!cols"] = [
+      { wch: 8 },
+      { wch: 25 },
+      { wch: 15 },
+      { wch: 10 },
+      { wch: 12 },
+      { wch: 15 }
+    ];
+    XLSX8.utils.book_append_sheet(workbook, euljiWorksheet, "\uC744\uC9C0");
+    const buffer = XLSX8.write(workbook, {
+      type: "buffer",
+      bookType: "xlsx",
+      cellStyles: true,
+      bookSST: false
+    });
+    const filename = "PO_Excel_Template.xlsx";
+    const encodedFilename = encodeURIComponent(filename);
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"; filename*=UTF-8''${encodedFilename}`);
+    res.setHeader("Content-Length", buffer.length.toString());
+    res.send(buffer);
+  } catch (error) {
+    console.error("Excel \uD15C\uD50C\uB9BF \uC0DD\uC131 \uC624\uB958:", error);
+    res.status(500).json({
+      success: false,
+      error: "Excel \uD15C\uD50C\uB9BF \uC0DD\uC131 \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4."
+    });
+  }
+});
+router14.get("/info", (req, res) => {
+  try {
+    const templateInfo = {
+      success: true,
+      data: {
+        fileName: "PO_Excel_Template.xlsx",
+        description: "16\uAC1C \uCEEC\uB7FC \uAD6C\uC870\uC758 \uD45C\uC900 \uBC1C\uC8FC\uC11C Excel \uD15C\uD50C\uB9BF",
+        columns: [
+          { column: "A", name: "\uBC1C\uC8FC\uC77C\uC790", required: true, description: "\uBC1C\uC8FC\uC11C \uC791\uC131 \uB0A0\uC9DC (YYYY-MM-DD)" },
+          { column: "B", name: "\uB0A9\uAE30\uC77C\uC790", required: false, description: "\uB0A9\uD488 \uC608\uC815 \uB0A0\uC9DC (YYYY-MM-DD)" },
+          { column: "C", name: "\uAC70\uB798\uCC98\uBA85", required: true, description: "\uACF5\uAE09\uC5C5\uCCB4 \uC774\uB984" },
+          { column: "D", name: "\uAC70\uB798\uCC98 \uC774\uBA54\uC77C", required: false, description: "\uACF5\uAE09\uC5C5\uCCB4 \uC774\uBA54\uC77C \uC8FC\uC18C" },
+          { column: "E", name: "\uB0A9\uD488\uCC98\uBA85", required: true, description: "\uB0A9\uD488\uBC1B\uC744 \uC5C5\uCCB4\uBA85" },
+          { column: "F", name: "\uB0A9\uD488\uCC98 \uC774\uBA54\uC77C", required: false, description: "\uB0A9\uD488\uCC98 \uC774\uBA54\uC77C \uC8FC\uC18C" },
+          { column: "G", name: "\uD504\uB85C\uC81D\uD2B8\uBA85", required: true, description: "\uD574\uB2F9 \uD504\uB85C\uC81D\uD2B8/\uD604\uC7A5\uBA85" },
+          { column: "H", name: "\uB300\uBD84\uB958", required: true, description: "\uD488\uBAA9 \uB300\uBD84\uB958" },
+          { column: "I", name: "\uC911\uBD84\uB958", required: false, description: "\uD488\uBAA9 \uC911\uBD84\uB958" },
+          { column: "J", name: "\uC18C\uBD84\uB958", required: false, description: "\uD488\uBAA9 \uC18C\uBD84\uB958" },
+          { column: "K", name: "\uD488\uBAA9\uBA85", required: true, description: "\uAD6C\uCCB4\uC801\uC778 \uD488\uBAA9 \uC774\uB984" },
+          { column: "L", name: "\uADDC\uACA9", required: false, description: "\uD488\uBAA9 \uADDC\uACA9/\uC0AC\uC591" },
+          { column: "M", name: "\uC218\uB7C9", required: true, description: "\uC8FC\uBB38 \uC218\uB7C9" },
+          { column: "N", name: "\uB2E8\uAC00", required: true, description: "\uD488\uBAA9 \uB2E8\uAC00" },
+          { column: "O", name: "\uCD1D\uAE08\uC561", required: true, description: "\uC218\uB7C9 \xD7 \uB2E8\uAC00 = \uCD1D \uAE08\uC561" },
+          { column: "P", name: "\uBE44\uACE0", required: false, description: "\uCD94\uAC00 \uC124\uBA85/\uBA54\uBAA8" }
+        ],
+        sheets: ["Input", "\uAC11\uC9C0", "\uC744\uC9C0"],
+        rules: [
+          "\uD544\uC218 \uCEEC\uB7FC \uB204\uB77D \uC2DC \uAC80\uC99D \uC624\uB958 \uBC1C\uC0DD",
+          "\uCD1D\uAE08\uC561(O\uC5F4) = \uC218\uB7C9(M\uC5F4) \xD7 \uB2E8\uAC00(N\uC5F4) \uC790\uB3D9 \uACC4\uC0B0 \uAC80\uC99D",
+          "\uAC70\uB798\uCC98\uBA85\uC774 \uC788\uC73C\uBA74 \uB0A9\uD488\uCC98\uBA85\uC5D0 \uC790\uB3D9 \uBCF5\uC0AC",
+          '\uD504\uB85C\uC81D\uD2B8\uBA85\uC774 \uC5C6\uC73C\uBA74 \uAE30\uBCF8\uAC12 "\uD504\uB85C\uC81D\uD2B8\uBA85" \uC124\uC815'
+        ]
+      }
+    };
+    res.json(templateInfo);
+  } catch (error) {
+    console.error("\uD15C\uD50C\uB9BF \uC815\uBCF4 \uC870\uD68C \uC624\uB958:", error);
+    res.status(500).json({
+      success: false,
+      error: "\uD15C\uD50C\uB9BF \uC815\uBCF4 \uC870\uD68C \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4."
+    });
+  }
+});
+var excel_template_default = router14;
+
+// server/routes/orders-optimized.ts
+import { Router as Router14 } from "express";
+
+// server/utils/optimized-orders-query.ts
+init_db();
+init_schema();
+import { eq as eq11, desc as desc4, asc as asc2, ilike as ilike3, and as and7, or as or3, between as between2, count as count3, sql as sql8, gte as gte4, lte as lte4 } from "drizzle-orm";
+var OptimizedOrdersService = class _OptimizedOrdersService {
+  /**
+   * 정렬 필드에 따른 ORDER BY 절 생성
+   */
+  static getOrderByClause(sortBy, sortOrder = "desc") {
+    const getSortField = (field) => {
+      switch (field) {
+        case "orderNumber":
+          return purchaseOrders.orderNumber;
+        case "status":
+          return purchaseOrders.status;
+        case "vendorName":
+          return vendors.name;
+        case "projectName":
+          return projects.projectName;
+        case "userName":
+          return users.name;
+        case "orderDate":
+          return purchaseOrders.orderDate;
+        case "totalAmount":
+          return purchaseOrders.totalAmount;
+        default:
+          return purchaseOrders.createdAt;
+      }
+    };
+    const sortField = getSortField(sortBy || "createdAt");
+    return sortOrder === "asc" ? asc2(sortField) : desc4(sortField);
+  }
+  /**
+   * High-performance order listing with metadata
+   * Single query with optimized joins and proper pagination
+   */
+  static async getOrdersWithMetadata(filters = {}) {
+    const {
+      userId,
+      status,
+      vendorId,
+      projectId,
+      startDate,
+      endDate,
+      minAmount,
+      maxAmount,
+      searchText,
+      page = 1,
+      limit = 20,
+      sortBy,
+      sortOrder = "desc"
+    } = filters;
+    const whereConditions = [];
+    if (userId && userId !== "all") {
+      whereConditions.push(eq11(purchaseOrders.userId, userId));
+    }
+    if (status && status !== "all" && status !== "") {
+      whereConditions.push(sql8`${purchaseOrders.status} = ${status}`);
+    }
+    if (vendorId && vendorId !== "all") {
+      whereConditions.push(eq11(purchaseOrders.vendorId, vendorId));
+    }
+    if (projectId && projectId !== "all") {
+      whereConditions.push(eq11(purchaseOrders.projectId, projectId));
+    }
+    if (startDate && endDate) {
+      whereConditions.push(between2(purchaseOrders.orderDate, startDate, endDate));
+    }
+    if (minAmount) {
+      whereConditions.push(gte4(purchaseOrders.totalAmount, minAmount));
+    }
+    if (maxAmount) {
+      whereConditions.push(lte4(purchaseOrders.totalAmount, maxAmount));
+    }
+    if (searchText) {
+      const searchPattern = `%${searchText.toLowerCase()}%`;
+      whereConditions.push(
+        or3(
+          ilike3(purchaseOrders.orderNumber, searchPattern),
+          ilike3(vendors.name, searchPattern),
+          ilike3(projects.projectName, searchPattern),
+          ilike3(users.name, searchPattern)
+        )
+      );
+    }
+    const whereClause = whereConditions.length > 0 ? and7(...whereConditions) : void 0;
+    const ordersQuery = db.select({
+      // Order fields
+      id: purchaseOrders.id,
+      orderNumber: purchaseOrders.orderNumber,
+      status: purchaseOrders.status,
+      totalAmount: purchaseOrders.totalAmount,
+      orderDate: purchaseOrders.orderDate,
+      deliveryDate: purchaseOrders.deliveryDate,
+      userId: purchaseOrders.userId,
+      vendorId: purchaseOrders.vendorId,
+      projectId: purchaseOrders.projectId,
+      approvalLevel: purchaseOrders.approvalLevel,
+      currentApproverRole: purchaseOrders.currentApproverRole,
+      createdAt: purchaseOrders.createdAt,
+      // Joined fields
+      vendorName: vendors.name,
+      projectName: projects.projectName,
+      userName: users.name
+    }).from(purchaseOrders).leftJoin(vendors, eq11(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq11(purchaseOrders.projectId, projects.id)).leftJoin(users, eq11(purchaseOrders.userId, users.id)).where(whereClause).orderBy(_OptimizedOrdersService.getOrderByClause(sortBy, sortOrder)).limit(limit).offset((page - 1) * limit);
+    const countQuery = db.select({ count: count3() }).from(purchaseOrders).leftJoin(vendors, eq11(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq11(purchaseOrders.projectId, projects.id)).leftJoin(users, eq11(purchaseOrders.userId, users.id)).where(whereClause);
+    const [orders, [{ count: totalCount }]] = await Promise.all([
+      ordersQuery,
+      countQuery
+    ]);
+    return {
+      orders,
+      total: totalCount,
+      page,
+      limit,
+      totalPages: Math.ceil(totalCount / limit)
+    };
+  }
+  /**
+   * Get order metadata (vendors, projects, users) for filters
+   * Cached and optimized for dropdown population
+   */
+  static async getOrderMetadata() {
+    const [vendorsList, projectsList, usersList] = await Promise.all([
+      // Only active vendors with recent orders
+      db.select({
+        id: vendors.id,
+        name: vendors.name
+      }).from(vendors).where(eq11(vendors.isActive, true)).orderBy(asc2(vendors.name)),
+      // Only active projects
+      db.select({
+        id: projects.id,
+        projectName: projects.projectName,
+        projectCode: projects.projectCode
+      }).from(projects).where(eq11(projects.isActive, true)).orderBy(asc2(projects.projectName)),
+      // Only active users
+      db.select({
+        id: users.id,
+        name: users.name,
+        email: users.email
+      }).from(users).where(eq11(users.isActive, true)).orderBy(asc2(users.name))
+    ]);
+    return {
+      vendors: vendorsList,
+      projects: projectsList,
+      users: usersList
+    };
+  }
+  /**
+   * Get orders with email status in a single optimized query
+   * TEMPORARY: Email functionality disabled until email_send_history table is created
+   */
+  static async getOrdersWithEmailStatus(filters = {}) {
+    const ordersResult = await this.getOrdersWithMetadata(filters);
+    const ordersWithEmailStatus = ordersResult.orders.map((order) => ({
+      ...order,
+      emailStatus: null,
+      lastSentAt: null,
+      totalEmailsSent: 0,
+      openedAt: null
+    }));
+    return {
+      ...ordersResult,
+      orders: ordersWithEmailStatus
+    };
+  }
+  /**
+   * Batch operation for updating multiple order statuses
+   * Reduces multiple API calls for bulk operations
+   */
+  static async batchUpdateOrderStatus(orderIds, status, userId) {
+    const result = await db.update(purchaseOrders).set({
+      status,
+      updatedAt: /* @__PURE__ */ new Date()
+    }).where(sql8`${purchaseOrders.id} = ANY(${orderIds})`).returning();
+    return result;
+  }
+  /**
+   * Get order statistics for dashboard
+   * Uses materialized view for better performance
+   */
+  static async getOrderStatistics(userId) {
+    const whereClause = userId ? eq11(purchaseOrders.userId, userId) : void 0;
+    const stats = await db.select({
+      status: purchaseOrders.status,
+      count: count3(),
+      totalAmount: sql8`COALESCE(SUM(${purchaseOrders.totalAmount}), 0)`,
+      avgAmount: sql8`COALESCE(AVG(${purchaseOrders.totalAmount}), 0)`
+    }).from(purchaseOrders).where(whereClause).groupBy(purchaseOrders.status);
+    return stats;
+  }
+};
+var QueryPerformanceMonitor = class {
+  static {
+    this.queryTimes = /* @__PURE__ */ new Map();
+  }
+  static startTimer(queryName) {
+    const start = performance.now();
+    return () => {
+      const end = performance.now();
+      const duration = end - start;
+      if (!this.queryTimes.has(queryName)) {
+        this.queryTimes.set(queryName, []);
+      }
+      this.queryTimes.get(queryName).push(duration);
+      if (duration > 500) {
+        console.warn(`\u{1F40C} Slow query detected: ${queryName} took ${duration.toFixed(2)}ms`);
+      }
+    };
+  }
+  static getStats() {
+    const stats = {};
+    for (const [queryName, times] of this.queryTimes.entries()) {
+      const avg = times.reduce((a, b) => a + b, 0) / times.length;
+      const min = Math.min(...times);
+      const max = Math.max(...times);
+      stats[queryName] = { avg, min, max, count: times.length };
+    }
+    return stats;
+  }
+};
+
+// server/routes/orders-optimized.ts
+import { z as z3 } from "zod";
+var router15 = Router14();
+var OrderFiltersSchema = z3.object({
+  page: z3.string().optional().transform((val) => val ? parseInt(val) : 1),
+  limit: z3.string().optional().transform((val) => val ? parseInt(val) : 20),
+  status: z3.string().optional(),
+  projectId: z3.string().optional().transform((val) => val && val !== "all" ? parseInt(val) : void 0),
+  vendorId: z3.string().optional().transform((val) => val && val !== "all" ? parseInt(val) : void 0),
+  userId: z3.string().optional(),
+  startDate: z3.string().optional().transform((val) => val ? new Date(val) : void 0),
+  endDate: z3.string().optional().transform((val) => val ? new Date(val) : void 0),
+  minAmount: z3.string().optional().transform((val) => val ? parseFloat(val) : void 0),
+  maxAmount: z3.string().optional().transform((val) => val ? parseFloat(val) : void 0),
+  searchText: z3.string().optional(),
+  sortBy: z3.string().optional(),
+  sortOrder: z3.enum(["asc", "desc"]).optional().default("desc")
+});
+router15.get("/orders-optimized", async (req, res) => {
+  const endTimer = QueryPerformanceMonitor.startTimer("orders-optimized");
+  try {
+    const filters = OrderFiltersSchema.parse(req.query);
+    console.log("\u{1F680} Optimized orders request:", {
+      filters,
+      timestamp: (/* @__PURE__ */ new Date()).toISOString()
+    });
+    const result = await OptimizedOrdersService.getOrdersWithEmailStatus(filters);
+    const metadata = await OptimizedOrdersService.getOrderMetadata();
+    const response = {
+      ...result,
+      metadata,
+      performance: {
+        queryTime: `${performance.now().toFixed(2)}ms`,
+        cacheHit: false,
+        // TODO: Implement Redis caching
+        timestamp: (/* @__PURE__ */ new Date()).toISOString()
+      }
+    };
+    console.log("\u2705 Optimized orders response:", {
+      ordersCount: result.orders.length,
+      total: result.total,
+      page: result.page,
+      totalPages: result.totalPages,
+      vendorsCount: metadata.vendors.length,
+      projectsCount: metadata.projects.length
+    });
+    res.json(response);
+  } catch (error) {
+    console.error("\u274C Error in optimized orders endpoint:", error);
+    res.status(500).json({
+      message: "Failed to fetch orders",
+      error: process.env.NODE_ENV === "development" ? error.message : void 0
+    });
+  } finally {
+    endTimer();
+  }
+});
+router15.get("/orders-metadata", async (req, res) => {
+  const endTimer = QueryPerformanceMonitor.startTimer("orders-metadata");
+  try {
+    const metadata = await OptimizedOrdersService.getOrderMetadata();
+    res.json({
+      ...metadata,
+      cached: false,
+      // TODO: Implement caching
+      timestamp: (/* @__PURE__ */ new Date()).toISOString()
+    });
+  } catch (error) {
+    console.error("\u274C Error fetching orders metadata:", error);
+    res.status(500).json({ message: "Failed to fetch metadata" });
+  } finally {
+    endTimer();
+  }
+});
+router15.get("/orders-stats", async (req, res) => {
+  const endTimer = QueryPerformanceMonitor.startTimer("orders-stats");
+  try {
+    const { userId } = req.query;
+    const stats = await OptimizedOrdersService.getOrderStatistics(userId);
+    res.json({
+      stats,
+      timestamp: (/* @__PURE__ */ new Date()).toISOString()
+    });
+  } catch (error) {
+    console.error("\u274C Error fetching order statistics:", error);
+    res.status(500).json({ message: "Failed to fetch statistics" });
+  } finally {
+    endTimer();
+  }
+});
+router15.put("/orders-bulk-status", async (req, res) => {
+  const endTimer = QueryPerformanceMonitor.startTimer("orders-bulk-status");
+  try {
+    const { orderIds, status } = req.body;
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: "User not authenticated" });
+    }
+    if (!Array.isArray(orderIds) || orderIds.length === 0) {
+      return res.status(400).json({ message: "Invalid order IDs" });
+    }
+    if (!status) {
+      return res.status(400).json({ message: "Status is required" });
+    }
+    const result = await OptimizedOrdersService.batchUpdateOrderStatus(
+      orderIds,
+      status,
+      userId
+    );
+    res.json({
+      message: `Updated ${result.length} orders`,
+      updatedOrders: result,
+      timestamp: (/* @__PURE__ */ new Date()).toISOString()
+    });
+  } catch (error) {
+    console.error("\u274C Error in bulk status update:", error);
+    res.status(500).json({ message: "Failed to update orders" });
+  } finally {
+    endTimer();
+  }
+});
+router15.get("/query-performance", async (req, res) => {
+  if (process.env.NODE_ENV !== "development") {
+    return res.status(404).json({ message: "Not found" });
+  }
+  const stats = QueryPerformanceMonitor.getStats();
+  res.json({
+    queryStats: stats,
+    recommendations: generatePerformanceRecommendations(stats),
+    timestamp: (/* @__PURE__ */ new Date()).toISOString()
+  });
+});
+function generatePerformanceRecommendations(stats) {
+  const recommendations = [];
+  for (const [queryName, data] of Object.entries(stats)) {
+    if (data.avg > 500) {
+      recommendations.push({
+        query: queryName,
+        issue: "Slow average response time",
+        avgTime: `${data.avg.toFixed(2)}ms`,
+        recommendation: "Consider adding database indexes or optimizing query"
+      });
+    }
+    if (data.max > 2e3) {
+      recommendations.push({
+        query: queryName,
+        issue: "Very slow maximum response time",
+        maxTime: `${data.max.toFixed(2)}ms`,
+        recommendation: "Investigate query execution plan and add appropriate indexes"
+      });
+    }
+  }
+  return recommendations;
+}
+var orders_optimized_default = router15;
+
+// server/routes/index.ts
+var router16 = Router15();
+router16.use("/api", auth_default);
+router16.use("/api", projects_default);
+router16.use("/api", orders_default);
+router16.use("/api", vendors_default);
+router16.use("/api", items_default);
+router16.use("/api", dashboard_default);
+router16.use("/api", companies_default);
+router16.use("/api", admin_default);
+router16.use("/api/excel-automation", excel_automation_default);
+router16.use("/api/po-template", po_template_real_default);
+router16.use("/api/reports", reports_default);
+router16.use("/api", import_export_default);
+router16.use("/api", email_history_default);
+router16.use("/api/excel-template", excel_template_default);
+router16.use("/api", orders_optimized_default);
+var routes_default = router16;
 
 // server/index.ts
 dotenv2.config();
 process.env.DATABASE_URL = process.env.DATABASE_URL || "postgresql://postgres.tbvugytmskxxyqfvqmup:gps110601ysw@db.tbvugytmskxxyqfvqmup.supabase.co:5432/postgres?sslmode=require&connect_timeout=60";
 console.log("\u{1F527} Force-set DATABASE_URL:", process.env.DATABASE_URL.split("@")[0] + "@[HIDDEN]");
-var app = express2();
-app.use(express2.json());
-app.use(express2.urlencoded({ extended: false }));
-app.use("/attached_assets", express2.static("attached_assets"));
+var app = express3();
+app.use(express3.json());
+app.use(express3.urlencoded({ extended: false }));
+app.use("/attached_assets", express3.static("attached_assets"));
 app.use((req, res, next) => {
   const start = Date.now();
   const path13 = req.path;

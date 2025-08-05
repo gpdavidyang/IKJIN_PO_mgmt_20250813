@@ -20,7 +20,7 @@ Object.defineProperty(window, 'matchMedia', {
 });
 
 // Mock IntersectionObserver
-global.IntersectionObserver = class IntersectionObserver {
+(global as any).IntersectionObserver = class IntersectionObserver {
   constructor() {}
   disconnect() {}
   observe() {}
@@ -28,8 +28,8 @@ global.IntersectionObserver = class IntersectionObserver {
 };
 
 // Mock ResizeObserver
-global.ResizeObserver = class ResizeObserver {
-  constructor(callback: ResizeObserverCallback) {}
+(global as any).ResizeObserver = class ResizeObserver {
+  constructor(callback: any) {}
   disconnect() {}
   observe() {}
   unobserve() {}

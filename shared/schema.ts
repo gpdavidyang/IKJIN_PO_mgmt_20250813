@@ -379,6 +379,37 @@ export const orderHistory = pgTable("order_history", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Email send history
+export const emailSendHistory = pgTable("email_send_history", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id").notNull().references(() => purchaseOrders.id, { onDelete: "cascade" }),
+  sentAt: timestamp("sent_at").defaultNow().notNull(),
+  sentBy: varchar("sent_by", { length: 255 }).notNull().references(() => users.id),
+  recipientEmail: varchar("recipient_email", { length: 255 }).notNull(),
+  recipientName: varchar("recipient_name", { length: 255 }),
+  ccEmails: text("cc_emails"), // JSON array of CC emails
+  subject: text("subject").notNull(),
+  body: text("body").notNull(),
+  attachments: jsonb("attachments").$type<{ filename: string; path: string; size: number }[]>(),
+  status: varchar("status", { length: 50 }).notNull().default('sent'), // sent, failed, bounced, opened, clicked
+  errorMessage: text("error_message"),
+  openedAt: timestamp("opened_at"),
+  clickedAt: timestamp("clicked_at"),
+  ipAddress: varchar("ip_address", { length: 50 }),
+  userAgent: text("user_agent"),
+  trackingId: varchar("tracking_id", { length: 100 }).unique(),
+  emailProvider: varchar("email_provider", { length: 50 }).default('naver'), // naver, gmail, etc.
+  messageId: varchar("message_id", { length: 255 }), // Email message ID for tracking
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_email_history_order").on(table.orderId),
+  index("idx_email_history_sent_by").on(table.sentBy),
+  index("idx_email_history_recipient").on(table.recipientEmail),
+  index("idx_email_history_tracking").on(table.trackingId),
+  index("idx_email_history_status").on(table.status),
+  index("idx_email_history_sent_at").on(table.sentAt),
+]);
+
 // 청구서/세금계산서 테이블
 export const invoices = pgTable("invoices", {
   id: serial("id").primaryKey(),
@@ -435,6 +466,7 @@ export const verificationLogs = pgTable("verification_logs", {
 export const usersRelations = relations(users, ({ many }) => ({
   purchaseOrders: many(purchaseOrders),
   orderHistory: many(orderHistory),
+  emailsSent: many(emailSendHistory),
 }));
 
 export const vendorsRelations = relations(vendors, ({ many }) => ({
@@ -520,6 +552,7 @@ export const purchaseOrdersRelations = relations(purchaseOrders, ({ one, many })
   history: many(orderHistory),
   invoices: many(invoices),
   verificationLogs: many(verificationLogs),
+  emailHistory: many(emailSendHistory),
 }));
 
 export const purchaseOrderItemsRelations = relations(purchaseOrderItems, ({ one, many }) => ({
@@ -615,6 +648,17 @@ export const itemCategoriesRelations = relations(itemCategories, ({ one, many })
   children: many(itemCategories),
 }));
 
+export const emailSendHistoryRelations = relations(emailSendHistory, ({ one }) => ({
+  order: one(purchaseOrders, {
+    fields: [emailSendHistory.orderId],
+    references: [purchaseOrders.id],
+  }),
+  sentByUser: one(users, {
+    fields: [emailSendHistory.sentBy],
+    references: [users.id],
+  }),
+}));
+
 // Insert schemas
 export const insertCompanySchema = createInsertSchema(companies).omit({
   id: true,
@@ -663,7 +707,6 @@ export const insertPurchaseOrderSchema = createInsertSchema(purchaseOrders).omit
   isApproved: true,
   approvedBy: true,
   approvedAt: true,
-  sentAt: true,
 }).extend({
   userId: z.string().min(1),
   templateId: z.number().nullable().optional(),
@@ -720,6 +763,19 @@ export const insertVerificationLogSchema = createInsertSchema(verificationLogs).
   createdAt: true,
 });
 
+export const insertEmailSendHistorySchema = createInsertSchema(emailSendHistory).omit({
+  id: true,
+  sentAt: true,
+  createdAt: true,
+}).extend({
+  ccEmails: z.string().nullable().optional(),
+  attachments: z.array(z.object({
+    filename: z.string(),
+    path: z.string(),
+    size: z.number(),
+  })).nullable().optional(),
+});
+
 // Note: Order status schemas removed - using ENUM types instead
 
 // New insert schemas for template management
@@ -772,6 +828,8 @@ export type ItemReceipt = typeof itemReceipts.$inferSelect;
 export type InsertItemReceipt = z.infer<typeof insertItemReceiptSchema>;
 export type VerificationLog = typeof verificationLogs.$inferSelect;
 export type InsertVerificationLog = z.infer<typeof insertVerificationLogSchema>;
+export type EmailSendHistory = typeof emailSendHistory.$inferSelect;
+export type InsertEmailSendHistory = z.infer<typeof insertEmailSendHistorySchema>;
 // Order status types now use ENUM values directly
 
 // New template management types

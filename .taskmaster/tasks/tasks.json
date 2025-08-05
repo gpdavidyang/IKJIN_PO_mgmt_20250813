@@ -95,7 +95,7 @@
         "description": "Jest, React Testing Library를 사용한 단위 테스트 및 통합 테스트 인프라 구축",
         "details": "",
         "testStrategy": "",
-        "status": "in-progress",
+        "status": "done",
         "dependencies": [],
         "priority": "high",
         "subtasks": []
@@ -106,7 +106,7 @@
         "description": "로그인, 로그아웃, 세션 관리에 대한 단위 테스트 작성",
         "details": "",
         "testStrategy": "",
-        "status": "pending",
+        "status": "deferred",
         "dependencies": [],
         "priority": "high",
         "subtasks": []
@@ -128,7 +128,7 @@
         "description": "발주서 생성, 승인, 상태 변경에 대한 단위 테스트 작성",
         "details": "",
         "testStrategy": "",
-        "status": "pending",
+        "status": "deferred",
         "dependencies": [],
         "priority": "high",
         "subtasks": []
@@ -139,7 +139,7 @@
         "description": "업로드, 처리, 유효성 검사에 대한 단위 테스트 작성",
         "details": "",
         "testStrategy": "",
-        "status": "pending",
+        "status": "done",
         "dependencies": [],
         "priority": "high",
         "subtasks": []
@@ -150,7 +150,7 @@
         "description": "인증, 발주서, 거래처, 대시보드 API 엔드포인트에 대한 통합 테스트 작성",
         "details": "",
         "testStrategy": "",
-        "status": "pending",
+        "status": "in-progress",
         "dependencies": [],
         "priority": "medium",
         "subtasks": []
@@ -161,7 +161,7 @@
         "description": "로그인, 발주서 생성, 승인 등 핵심 사용자 워크플로우에 대한 E2E 테스트 작성",
         "details": "",
         "testStrategy": "",
-        "status": "pending",
+        "status": "in-progress",
         "dependencies": [],
         "priority": "medium",
         "subtasks": []
@@ -183,7 +183,7 @@
         "description": "React Query 캐싱 및 무효화 전략 최적화",
         "details": "",
         "testStrategy": "",
-        "status": "pending",
+        "status": "in-progress",
         "dependencies": [],
         "priority": "high",
         "subtasks": []
@@ -194,7 +194,7 @@
         "description": "캐싱 및 오프라인 기능을 위한 서비스 워커 구현",
         "details": "",
         "testStrategy": "",
-        "status": "pending",
+        "status": "done",
         "dependencies": [],
         "priority": "low",
         "subtasks": []
@@ -216,7 +216,7 @@
         "description": "현재 혼재되어 있는 bg-opacity- 구문법과 bg-*/opacity 신문법의 사용 현황 분석 및 통일 방안 수립",
         "details": "",
         "testStrategy": "",
-        "status": "pending",
+        "status": "deferred",
         "dependencies": [],
         "priority": "medium",
         "subtasks": []
@@ -308,6 +308,85 @@
         "dependencies": [],
         "priority": "medium",
         "subtasks": []
+      },
+      {
+        "id": 29,
+        "title": "Excel 파일의 PDF 변환 및 첨부 기능",
+        "description": "PRD FR-014, FR-016 요구사항 구현: 엑셀 파일을 PDF로 변환하여 보존 및 이메일 첨부",
+        "details": "PRD에서 명시된 중요 요구사항:\n- FR-014: \"엑셀 파일과 함께 엑셀파일을 PDF화 한 파일도 보존해야 함\"\n- FR-016: \"처리된 Excel 파일을 PDF화 한 파일도 첨부\"\n\n구현 필요 사항:\n1. Excel 파일을 PDF로 변환하는 유틸리티 함수\n2. 발주서 처리 시 PDF 파일 생성 및 저장\n3. 이메일 발송 시 PDF 파일 첨부\n4. PDF 파일 관리 (임시 파일 정리 등)",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [
+          13
+        ],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 30,
+        "title": "단계별 승인 절차 설정 옵션",
+        "description": "직접 승인/거부와 단계별 승인을 모두 지원하는 설정 옵션 구현",
+        "details": "PRD FR-011 요구사항:\n\"현재는 사용자가 직접 승인/거부를 처리할 수 있으나, 향후 단계별 승인 절차 도입을 고려하여, 승인관리 기능에서 직접 승인/거부와 단계별 승인 모두를 지원하는 설정 옵션이 필요합니다.\"\n\n구현 필요 사항:\n1. 승인 방식 설정 옵션 (직접 승인 / 단계별 승인)\n2. 단계별 승인 규칙 설정 (금액별, 역할별)\n3. 승인 경로 자동 결정 로직\n4. UI에서 설정 변경 기능",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 31,
+        "title": "UI 표준화 적용 - Phase 1 (핵심 화면)",
+        "description": "새로운 UI/UX 원칙을 주요 업무 화면들에 적용. 최대 너비 1366px, 파란색 계열 색상 체계, 배경색 계층화, 그림자 효과, 호버 효과, 테이블 헤더 정렬 기능 등을 포함. 발주서 관리(orders.tsx), 대시보드(dashboard-professional.tsx), 발주서 상세/생성 화면들 총 15개 화면 업데이트",
+        "details": "",
+        "testStrategy": "",
+        "status": "in-progress",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 32,
+        "title": "UI 표준화 적용 - Phase 2 (관리 화면)",
+        "description": "거래처, 프로젝트, 품목, 사용자 관리 화면들에 새로운 UI 표준 적용. 카드뷰/테이블뷰 토글, 필터 섹션 개선, 액션 버튼 표준화, 호버 효과 통일. 총 15개 관리 화면 업데이트",
+        "details": "",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 33,
+        "title": "UI 표준화 적용 - Phase 3 (보조 기능)",
+        "description": "관리자 설정, 보고서, 템플릿 관리 등 보조 기능 화면들에 UI 표준 적용. 통일된 카드 스타일, 폼 레이아웃, 버튼 스타일 적용. 총 8개 화면 업데이트",
+        "details": "",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 34,
+        "title": "UI 표준화 적용 - Phase 4 (특수 기능)",
+        "description": "엑셀 자동화, 특수 발주서 유형, 가져오기/내보내기 등 특수 기능 화면들과 로그인, 랜딩, 404 페이지 등 기타 페이지들에 UI 표준 적용. 총 12개 화면 업데이트",
+        "details": "",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "low",
+        "subtasks": []
+      },
+      {
+        "id": 35,
+        "title": "공통 컴포넌트 UI 표준화",
+        "description": "Header, Sidebar, FilterSection, StatusBadge, LoadingStates 등 공통 컴포넌트들에 새로운 UI 표준 적용. 일관된 스타일링과 인터랙션 효과 구현",
+        "details": "",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
       }
     ],
     "metadata": {
@@ -316,7 +395,7 @@
       "version": "1.0.0",
       "created": "2025-08-04T08:54:47.667Z",
       "description": "Tasks for master context",
-      "updated": "2025-08-05T03:13:41.360Z"
+      "updated": "2025-08-05T17:58:02.018Z"
     }
   }
 }

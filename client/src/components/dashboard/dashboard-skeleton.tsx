@@ -16,7 +16,7 @@ export function DashboardSkeleton() {
           <Skeleton className="h-6 w-32" />
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
             {[1, 2, 3, 4].map((i) => (
               <Skeleton key={i} className="h-16" />
             ))}
@@ -25,7 +25,7 @@ export function DashboardSkeleton() {
       </Card>
 
       {/* Stats Cards Skeleton */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6 gap-4">
         {[1, 2, 3, 4, 5, 6].map((i) => (
           <Card key={i}>
             <CardContent className="p-4">
@@ -42,7 +42,7 @@ export function DashboardSkeleton() {
       </div>
 
       {/* Charts Skeleton */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {[1, 2].map((i) => (
           <Card key={i}>
             <CardHeader>
@@ -56,7 +56,7 @@ export function DashboardSkeleton() {
       </div>
 
       {/* Lists Skeleton */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {[1, 2].map((i) => (
           <Card key={i}>
             <CardHeader>

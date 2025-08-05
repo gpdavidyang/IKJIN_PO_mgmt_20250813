@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { ArrowLeft, Building2, Phone, Mail, MapPin, Edit, Trash2, Building, Hash, User, ClipboardList } from "lucide-react";
-import { useLocation } from "wouter";
+import { useLocation, useRoute } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -14,16 +14,13 @@ import { getStatusText, getStatusColor } from "@/lib/statusUtils";
 
 import type { Vendor } from "@shared/schema";
 
-interface VendorDetailProps {
-  params: { id: string };
-}
-
-export default function VendorDetail({ params }: VendorDetailProps) {
+export default function VendorDetail() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const queryClient = useQueryClient();
-  const vendorId = parseInt(params.id);
+  const [match, params] = useRoute("/vendors/:id");
+  const vendorId = params?.id ? parseInt(params.id) : 0;
 
   const { data: vendor, isLoading: vendorLoading } = useQuery<Vendor>({
     queryKey: [`/api/vendors/${vendorId}`],
@@ -147,7 +144,8 @@ export default function VendorDetail({ params }: VendorDetailProps) {
 
 
   return (
-    <div className="p-6">
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-[1366px] mx-auto p-6">
       {/* Page Header */}
       <div className="mb-6">
         <div className="flex items-center justify-between">
@@ -216,11 +214,11 @@ export default function VendorDetail({ params }: VendorDetailProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Basic Information */}
-        <Card>
+        <Card className="shadow-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center text-lg">
+            <CardTitle className="flex items-center text-lg font-semibold">
               <Building2 className="h-5 w-5 mr-2 text-blue-600" />
               기본 정보
             </CardTitle>
@@ -264,9 +262,9 @@ export default function VendorDetail({ params }: VendorDetailProps) {
         </Card>
 
         {/* Contact Information */}
-        <Card>
+        <Card className="shadow-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center text-lg">
+            <CardTitle className="flex items-center text-lg font-semibold">
               <Phone className="h-5 w-5 mr-2 text-blue-600" />
               연락처 정보
             </CardTitle>
@@ -312,9 +310,9 @@ export default function VendorDetail({ params }: VendorDetailProps) {
         </Card>
 
         {/* Recent Orders */}
-        <Card>
+        <Card className="shadow-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center text-lg">
+            <CardTitle className="flex items-center text-lg font-semibold">
               <ClipboardList className="h-5 w-5 mr-2 text-blue-600" />
               최근 발주서
             </CardTitle>
@@ -372,6 +370,7 @@ export default function VendorDetail({ params }: VendorDetailProps) {
             )}
           </CardContent>
         </Card>
+      </div>
       </div>
     </div>
   );

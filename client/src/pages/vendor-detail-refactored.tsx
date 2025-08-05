@@ -136,7 +136,7 @@ export default function VendorDetailRefactored({ params }: VendorDetailProps) {
       showDelete={true}
       backPath="/vendors"
     >
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* 기본 정보 */}
         <DetailSection title="기본 정보" icon={<Building2 className="h-5 w-5 text-blue-600" />}>
           <div className="grid grid-cols-1 gap-4">
@@ -295,7 +295,7 @@ export default function VendorDetailRefactored({ params }: VendorDetailProps) {
 
       {/* 삭제 확인 다이얼로그 */}
       {showConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg max-w-md">
             <h3 className="text-lg font-semibold mb-2">거래처 삭제</h3>
             <p className="text-gray-600 mb-4">

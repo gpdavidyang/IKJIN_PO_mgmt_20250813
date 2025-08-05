@@ -21,27 +21,67 @@ export class ExcelToPDFConverter {
    * @returns PDF 파일 경로
    */
   static async convertExcelToPDF(excelPath: string, outputPath?: string): Promise<string> {
+    let browser;
     try {
+      console.log(`📄 PDF 변환 시작: ${excelPath}`);
+      
+      // 파일 존재 확인
+      if (!fs.existsSync(excelPath)) {
+        throw new Error(`Excel 파일이 존재하지 않습니다: ${excelPath}`);
+      }
+      
       // 출력 경로 생성
       const pdfPath = outputPath || excelPath.replace(/\.(xlsx?|xlsm)$/i, '.pdf');
+      console.log(`📄 PDF 출력 경로: ${pdfPath}`);
+      
+      // 출력 디렉토리 확인 및 생성
+      const outputDir = path.dirname(pdfPath);
+      if (!fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir, { recursive: true });
+        console.log(`📁 출력 디렉토리 생성: ${outputDir}`);
+      }
       
       // Excel 파일 읽기
+      console.log(`📖 Excel 파일 읽는 중...`);
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.readFile(excelPath);
+      console.log(`📖 Excel 파일 읽기 완료. 시트 수: ${workbook.worksheets.length}`);
       
       // HTML 생성
+      console.log(`🌐 HTML 생성 중...`);
       const html = await this.generateHTMLFromWorkbook(workbook);
+      console.log(`🌐 HTML 생성 완료. 크기: ${html.length} 문자`);
       
-      // Puppeteer로 PDF 생성
-      const browser = await puppeteer.launch({
+      // Puppeteer 브라우저 실행
+      console.log(`🚀 Puppeteer 브라우저 시작 중...`);
+      browser = await puppeteer.launch({
         headless: 'new',
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
+        args: [
+          '--no-sandbox', 
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-accelerated-2d-canvas',
+          '--no-first-run',
+          '--no-zygote',
+          '--single-process',
+          '--disable-gpu'
+        ]
       });
+      console.log(`🚀 Puppeteer 브라우저 시작 완료`);
       
       const page = await browser.newPage();
-      await page.setContent(html, { waitUntil: 'networkidle0' });
+      console.log(`📄 새 페이지 생성 완료`);
       
-      // PDF 생성 옵션
+      // HTML 컨텐츠 설정
+      console.log(`📄 HTML 컨텐츠 설정 중...`);
+      await page.setContent(html, { 
+        waitUntil: 'networkidle0',
+        timeout: 30000 // 30초 타임아웃
+      });
+      console.log(`📄 HTML 컨텐츠 설정 완료`);
+      
+      // PDF 생성
+      console.log(`📄 PDF 생성 중...`);
       await page.pdf({
         path: pdfPath,
         format: 'A4',
@@ -54,15 +94,39 @@ export class ExcelToPDFConverter {
           right: '15mm'
         }
       });
+      console.log(`📄 PDF 파일 생성 완료`);
       
       await browser.close();
+      browser = null;
       
-      console.log(`PDF 생성 완료: ${pdfPath}`);
+      // 생성된 파일 확인
+      if (!fs.existsSync(pdfPath)) {
+        throw new Error(`PDF 파일이 생성되지 않았습니다: ${pdfPath}`);
+      }
+      
+      const stats = fs.statSync(pdfPath);
+      console.log(`✅ PDF 생성 완료: ${pdfPath} (${Math.round(stats.size / 1024)}KB)`);
       return pdfPath;
       
     } catch (error) {
-      console.error('Excel to PDF 변환 오류:', error);
-      throw error;
+      console.error('❌ Excel to PDF 변환 오류:', error);
+      
+      // 브라우저 정리
+      if (browser) {
+        try {
+          await browser.close();
+        } catch (closeError) {
+          console.error('브라우저 종료 오류:', closeError);
+        }
+      }
+      
+      // 상세한 에러 메시지 생성
+      let errorMessage = 'PDF 변환에 실패했습니다';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
+      throw new Error(`PDF 변환 실패: ${errorMessage}`);
     }
   }
 

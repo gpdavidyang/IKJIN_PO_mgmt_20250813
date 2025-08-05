@@ -88,8 +88,8 @@ export default function ReportPreview({ config, orders, onClose }: ReportPreview
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-6xl max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg shadow-xl max-w-[1366px] max-h-[90vh] overflow-y-auto">
         <div className="p-4 border-b flex items-center justify-between">
           <h2 className="text-lg font-semibold flex items-center gap-2">
             <FileText className="h-5 w-5" />

@@ -262,19 +262,20 @@ export default function TemplateManagement() {
   }
 
   return (
-    <div className="p-6">
-      {/* Page Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Layers className="h-6 w-6 text-blue-600" />
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">템플릿 관리</h1>
-              <p className="text-sm text-gray-600 mt-1">
-                발주서 템플릿을 생성하고 관리합니다
-              </p>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-[1366px] mx-auto p-6 space-y-6">
+        {/* Page Header */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Layers className="h-5 w-5 text-blue-600" />
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">템플릿 관리</h1>
+                <p className="text-sm text-gray-600 mt-1">
+                  발주서 템플릿을 생성하고 관리합니다
+                </p>
+              </div>
             </div>
-          </div>
           <div className="flex items-center gap-3">
             <Badge variant="outline" className="text-sm">
               총 {filteredTemplates.length}개
@@ -288,7 +289,7 @@ export default function TemplateManagement() {
       </div>
 
       {/* Filter Section */}
-      <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
+      <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6 shadow-sm">
         <div className="flex items-center justify-between">
           <div className="flex-1 max-w-md">
             <Input
@@ -342,10 +343,10 @@ export default function TemplateManagement() {
       </div>
       {/* 템플릿 목록 */}
       {viewMode === 'card' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {isLoading ? (
             Array.from({ length: 6 }).map((_, index) => (
-              <Card key={index} className="animate-pulse">
+              <Card key={index} className="animate-pulse shadow-sm">
                 <CardContent className="p-4">
                   <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
                   <div className="h-3 bg-gray-200 rounded w-1/2 mb-3"></div>
@@ -373,7 +374,7 @@ export default function TemplateManagement() {
             </div>
           ) : (
             filteredTemplates.map((template: Template) => (
-              <Card key={template.id} className="p-4 hover:shadow-md transition-shadow">
+              <Card key={template.id} className="p-4 hover:shadow-md transition-shadow shadow-sm">
                 <div className="space-y-3">
                   {/* Header Section - Standardized */}
                   <div className="flex items-start justify-between mb-3">
@@ -492,7 +493,7 @@ export default function TemplateManagement() {
           )}
         </div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50">
@@ -663,6 +664,7 @@ export default function TemplateManagement() {
             </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

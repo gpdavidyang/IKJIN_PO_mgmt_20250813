@@ -23,13 +23,15 @@ export default function ImportExportPage() {
   }
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <PageHeader
-        title="데이터 가져오기/내보내기"
-        description="엑셀 및 CSV 파일을 사용하여 데이터를 일괄 처리합니다."
-      />
-      
-      <ImportExportManager />
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-[1366px] mx-auto p-6 space-y-6">
+        <PageHeader
+          title="데이터 가져오기/내보내기"
+          description="엑셀 및 CSV 파일을 사용하여 데이터를 일괄 처리합니다."
+        />
+        
+        <ImportExportManager />
+      </div>
     </div>
   );
 }

@@ -140,7 +140,7 @@ function ListSkeleton({
 // Skeleton for dashboard stats
 function StatsSkeleton() {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
       {Array.from({ length: 4 }).map((_, index) => (
         <div key={index} className="bg-card p-6 rounded-lg border border-border">
           <div className="flex items-center justify-between">

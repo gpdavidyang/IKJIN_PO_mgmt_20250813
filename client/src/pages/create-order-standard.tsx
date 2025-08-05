@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import "@/styles/compact-form.css";
 
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
@@ -127,6 +128,20 @@ export default function CreateStandardOrder() {
     queryFn: () => fetch("/api/item-categories/minor").then(res => res.json()),
   });
 
+  // 대분류에 따른 중분류 필터링 함수
+  const getFilteredMiddleCategories = (majorCategory: string) => {
+    if (!majorCategory) return middleCategories;
+    // 현재는 모든 중분류를 반환하지만, 실제로는 대분류에 따라 필터링해야 함
+    return middleCategories;
+  };
+
+  // 중분류에 따른 소분류 필터링 함수
+  const getFilteredMinorCategories = (middleCategory: string) => {
+    if (!middleCategory) return minorCategories;
+    // 현재는 모든 소분류를 반환하지만, 실제로는 중분류에 따라 필터링해야 함
+    return minorCategories;
+  };
+
   // Mutation for creating purchase order with file upload
   const createOrderMutation = useMutation({
     mutationFn: async (orderData: any) => {
@@ -202,6 +217,16 @@ export default function CreateStandardOrder() {
       newItems[index].price = quantity * unitPrice;
     } else {
       newItems[index] = { ...newItems[index], [field]: value };
+
+      // 카테고리 계층 구조 로직: 상위 카테고리 변경 시 하위 카테고리 초기화
+      if (field === "category") {
+        // 대분류 변경 시 중분류, 소분류 초기화
+        newItems[index].subCategory1 = "";
+        newItems[index].subCategory2 = "";
+      } else if (field === "subCategory1") {
+        // 중분류 변경 시 소분류 초기화
+        newItems[index].subCategory2 = "";
+      }
     }
 
     setItems(newItems);
@@ -323,6 +348,9 @@ export default function CreateStandardOrder() {
             unitPrice: parseFloat(removeCommas(item.unitPrice)) || 0,
             totalAmount: item.price || 0,
             specification: item.name || undefined,
+            majorCategory: item.category || undefined,
+            middleCategory: item.subCategory1 || undefined,
+            minorCategory: item.subCategory2 || undefined,
             notes: `${item.category}/${item.subCategory1}/${item.subCategory2}`.replace(/\/+/g, '/').replace(/^\/|\/$/g, '') || undefined
           }))
       };
@@ -428,7 +456,7 @@ export default function CreateStandardOrder() {
     const managerUser = users.find(u => u.id === formData.manager);
     
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-lg max-w-5xl w-full max-h-[90vh] overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b bg-gray-50">
@@ -655,16 +683,16 @@ export default function CreateStandardOrder() {
                       items.filter(item => item.item).map((item, index) => (
                         <tr key={index} className="border-b border-gray-200 hover:bg-gray-25">
                           <td className="border-r border-gray-300 px-1 py-1 text-center text-gray-800">{index + 1}</td>
-                          <td className="border-r border-gray-300 px-1 py-1 text-gray-800">{item.category || '건축자재'}</td>
-                          <td className="border-r border-gray-300 px-1 py-1 text-gray-800">{item.subCategory1 || '철근'}</td>
+                          <td className="border-r border-gray-300 px-1 py-1 text-gray-800">{item.category || '미분류'}</td>
+                          <td className="border-r border-gray-300 px-1 py-1 text-gray-800">{item.subCategory1 || '미분류'}</td>
                           <td className="border-r border-gray-300 px-1 py-1 text-gray-800">{item.subCategory2 || '-'}</td>
                           <td className="border-r border-gray-300 px-1 py-1 text-gray-800">{item.item}</td>
                           <td className="border-r border-gray-300 px-1 py-1 text-center text-gray-800">{formatNumberWithCommas(item.quantity)}</td>
-                          <td className="border-r border-gray-300 px-1 py-1 text-center text-gray-800">{item.unit || 'kg'}</td>
+                          <td className="border-r border-gray-300 px-1 py-1 text-center text-gray-800">{item.unit || 'ea'}</td>
                           <td className="border-r border-gray-300 px-1 py-1 text-right text-gray-800">₩{Number(removeCommas(item.unitPrice)).toLocaleString()}</td>
                           <td className="border-r border-gray-300 px-1 py-1 text-right font-medium text-gray-900">₩{item.price.toLocaleString()}</td>
-                          <td className="border-r border-gray-300 px-1 py-1 text-gray-800">{item.vendor || '한국철강'}</td>
-                          <td className="px-1 py-1 text-gray-800">{item.deliveryLocation || '현장사 창고'}</td>
+                          <td className="border-r border-gray-300 px-1 py-1 text-gray-800">{item.vendor || '미지정'}</td>
+                          <td className="px-1 py-1 text-gray-800">{item.deliveryLocation || '미지정'}</td>
                         </tr>
                       ))
                     ) : (
@@ -874,131 +902,140 @@ export default function CreateStandardOrder() {
 
   return (
     <>
-      <div className="min-h-screen bg-gray-50 p-4">
-      <div className="max-w-7xl mx-auto space-y-4">
-        {/* Page Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <FileText className="h-6 w-6 text-blue-600" />
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">표준 발주서 작성</h1>
-              <p className="text-sm text-gray-600">통합된 표준 발주서를 작성합니다</p>
-            </div>
-            {getStatusBadge()}
-          </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-xs">
-              {poNumber}
-            </Badge>
-            <Badge variant="outline" className="text-xs">
-              {new Date().toLocaleDateString("ko-KR")}
-            </Badge>
-          </div>
-        </div>
-
-
-
-        {/* 기본 정보 입력 */}
-        <Card className="shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="bg-gray-50 border-b p-3">
-            <CardTitle className="text-base font-semibold text-gray-900 flex items-center gap-2">
-              <FileText className="h-4 w-4 text-blue-600" />
-              기본 정보 입력
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-3">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <Label htmlFor="site" className="text-sm font-medium">현장 선택</Label>
-                <Select value={formData.site} onValueChange={(value) => setFormData({...formData, site: value})}>
-                  <SelectTrigger className="h-8 text-sm">
-                    <SelectValue placeholder="현장을 선택하세요" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {projects.map((project) => (
-                      <SelectItem key={project.id} value={project.id.toString()}>
-                        {project.projectName} - {project.projectCode}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-[1366px] mx-auto p-6 space-y-6">
+          {/* Page Header */}
+          <div className="bg-white rounded-lg p-4 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <FileText className="h-5 w-5 text-blue-600" />
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900">표준 발주서 작성</h1>
+                </div>
+                {getStatusBadge()}
               </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="text-xs">
+                  {poNumber}
+                </Badge>
+                <Badge variant="outline" className="text-xs">
+                  {new Date().toLocaleDateString("ko-KR")}
+                </Badge>
+              </div>
+            </div>
+          </div>
 
-              <div className="space-y-1">
-                <Label className="text-sm font-medium">납품희망일</Label>
-                <div className="flex gap-2 items-center">
-                  <Input 
-                    type="date" 
-                    className="flex-1 h-8 text-sm" 
-                    disabled={isNegotiable}
-                    value={formData.deliveryDate}
-                    onChange={(e) => setFormData({...formData, deliveryDate: e.target.value})}
-                  />
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="negotiable"
-                      checked={isNegotiable}
-                      onCheckedChange={(checked) => {
-                        setIsNegotiable(checked as boolean);
-                        setFormData({...formData, isNegotiable: checked as boolean});
-                      }}
-                      className="h-4 w-4"
-                    />
-                    <Label htmlFor="negotiable" className="text-xs">
-                      협의
-                    </Label>
+
+
+          {/* 기본 정보 입력 */}
+          <Card className="shadow-sm">
+            <div className="section-header">
+              <div className="section-title flex items-center gap-2">
+                <FileText className="h-4 w-4 text-blue-600" />
+                기본 정보
+              </div>
+            </div>
+            <CardContent className="p-3">
+              {/* Two column grid for efficient space usage */}
+              <div className="form-grid-2col">
+                {/* Column 1 */}
+                <div className="space-y-3">
+                  <div className="inline-field">
+                    <Label htmlFor="site" className="text-sm">현장</Label>
+                    <Select value={formData.site} onValueChange={(value) => setFormData({...formData, site: value})}>
+                      <SelectTrigger className="compact-input flex-1">
+                        <SelectValue placeholder="현장 선택" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {projects.map((project) => (
+                          <SelectItem key={project.id} value={project.id.toString()}>
+                            {project.projectName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="inline-field">
+                    <Label htmlFor="receiver" className="text-sm">인수자</Label>
+                    <Select value={formData.receiver} onValueChange={(value) => setFormData({...formData, receiver: value})}>
+                      <SelectTrigger className="compact-input flex-1">
+                        <SelectValue placeholder="선택" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {users.map((user) => (
+                          <SelectItem key={user.id} value={user.id}>
+                            {user.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Column 2 */}
+                <div className="space-y-3">
+                  <div className="inline-field">
+                    <Label className="text-sm">납기일</Label>
+                    <div className="flex items-center gap-2 flex-1">
+                      <Input 
+                        type="date" 
+                        className="compact-input flex-1" 
+                        disabled={isNegotiable}
+                        value={formData.deliveryDate}
+                        onChange={(e) => setFormData({...formData, deliveryDate: e.target.value})}
+                      />
+                      <div className="flex items-center gap-1">
+                        <Checkbox
+                          id="negotiable"
+                          checked={isNegotiable}
+                          onCheckedChange={(checked) => {
+                            setIsNegotiable(checked as boolean);
+                            setFormData({...formData, isNegotiable: checked as boolean});
+                          }}
+                          className="h-4 w-4"
+                        />
+                        <Label htmlFor="negotiable" className="text-xs">협의</Label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="inline-field">
+                    <Label htmlFor="manager" className="text-sm">담당자</Label>
+                    <Select value={formData.manager} onValueChange={(value) => setFormData({...formData, manager: value})}>
+                      <SelectTrigger className="compact-input flex-1">
+                        <SelectValue placeholder="선택" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {users.map((user) => (
+                          <SelectItem key={user.id} value={user.id}>
+                            {user.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <Label htmlFor="receiver" className="text-sm font-medium">자재 인수자</Label>
-                <Select value={formData.receiver} onValueChange={(value) => setFormData({...formData, receiver: value})}>
-                  <SelectTrigger className="h-8 text-sm">
-                    <SelectValue placeholder="인수자를 선택하세요" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {users.map((user) => (
-                      <SelectItem key={user.id} value={user.id}>
-                        {user.name} - {user.email}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-1">
-                <Label htmlFor="manager" className="text-sm font-medium">본사 담당자</Label>
-                <Select value={formData.manager} onValueChange={(value) => setFormData({...formData, manager: value})}>
-                  <SelectTrigger className="h-8 text-sm">
-                    <SelectValue placeholder="담당자를 선택하세요" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {users.map((user) => (
-                      <SelectItem key={user.id} value={user.id}>
-                        {user.name} - {user.email}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-1 md:col-span-2">
-                <Label htmlFor="files" className="text-sm font-medium">첨부파일</Label>
-                <div className="border border-dashed border-gray-300 rounded p-3 text-center hover:border-gray-400 transition-colors">
-                  <Upload className="mx-auto h-5 w-5 text-gray-400 mb-1" />
-                  <Input 
-                    type="file" 
-                    multiple 
-                    className="hidden" 
-                    id="file-upload"
-                    onChange={handleFileUpload}
-                    accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif"
-                  />
-                  <Label htmlFor="file-upload" className="cursor-pointer">
-                    <span className="text-xs text-gray-600">파일을 선택하거나 여기에 드래그하세요</span>
+              {/* Attachments - full width */}
+              <div className="mt-3">
+                <div className="inline-field">
+                  <Label htmlFor="files" className="text-sm">첨부파일</Label>
+                  <div className="flex-1 border border-dashed border-gray-300 dark:border-gray-600 rounded p-2 hover:border-gray-400 transition-colors">
+                    <Input 
+                      type="file" 
+                      multiple 
+                      className="hidden" 
+                      id="file-upload"
+                      onChange={handleFileUpload}
+                      accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif"
+                    />
+                    <Label htmlFor="file-upload" className="cursor-pointer flex items-center gap-2 text-sm text-gray-600">
+                      <Upload className="h-4 w-4" />
+                    <span className="text-xs text-gray-600 dark:text-gray-400">파일을 선택하거나 여기에 드래그하세요</span>
                     <br />
-                    <span className="text-xs text-gray-500">PDF, Word, Excel, 이미지 파일 지원</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-500">PDF, Word, Excel, 이미지 파일 지원</span>
                   </Label>
                 </div>
                 
@@ -1006,13 +1043,13 @@ export default function CreateStandardOrder() {
                   <div className="mt-2 space-y-1">
                     <Label className="text-xs font-medium">업로드된 파일:</Label>
                     {uploadedFiles.map((file, index) => (
-                      <div key={index} className="flex items-center justify-between bg-gray-100 p-2 rounded text-xs">
-                        <span>{file.name}</span>
+                      <div key={index} className="flex items-center justify-between bg-gray-100 dark:bg-gray-700 p-2 rounded text-xs">
+                        <span className="text-gray-900 dark:text-gray-100">{file.name}</span>
                         <Button
                           size="sm"
                           variant="ghost"
                           onClick={() => removeFile(index)}
-                          className="text-red-600 hover:text-red-800 h-6 w-6 p-0"
+                          className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 h-6 w-6 p-0"
                         >
                           <Trash2 className="w-3 h-3" />
                         </Button>
@@ -1038,30 +1075,30 @@ export default function CreateStandardOrder() {
         </Card>
 
         {/* 품목 입력 */}
-        <Card className="shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="bg-gray-50 border-b p-3">
+        <Card className="shadow-sm">
+          <CardHeader className="bg-gray-50 dark:bg-gray-700 border-b dark:border-gray-600 p-3">
             <div className="flex justify-between items-center">
-              <CardTitle className="text-base font-semibold text-gray-900 flex items-center gap-2">
-                <PlusCircle className="h-4 w-4 text-blue-600" />
+              <CardTitle className="text-base font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                <PlusCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                 품목 입력
               </CardTitle>
-              <Button onClick={addItem} variant="outline" size="sm" className="gap-2 h-8 px-3 text-sm bg-transparent">
+              <Button onClick={addItem} variant="outline" size="sm" className="gap-2 h-8 px-3 text-sm bg-transparent dark:text-gray-100 dark:border-gray-600 dark:hover:bg-gray-700">
                 <PlusCircle className="w-3 h-3" />
                 품목 추가
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="p-3 space-y-3">
+          <CardContent className="p-3 space-y-3 dark:bg-gray-800">
             {items.map((item, index) => (
-              <div key={index} className="border rounded-lg p-3 bg-white shadow-sm hover:shadow-md transition-shadow">
+              <div key={index} className="border dark:border-gray-700 rounded-lg p-3 bg-white dark:bg-gray-750 shadow-sm hover:shadow-md transition-shadow">
                   <div className="flex justify-between items-start mb-3">
-                    <h4 className="text-xs font-medium text-gray-700">품목 #{index + 1}</h4>
+                    <h4 className="text-xs font-medium text-gray-700 dark:text-gray-300">품목 #{index + 1}</h4>
                     <div className="flex gap-1 -space-x-1">
                       <Button
                         size="sm"
                         variant="ghost"
                         onClick={() => copyItem(index)}
-                        className="h-6 w-6 p-0 text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                        className="h-6 w-6 p-0 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20"
                         title="품목 복사"
                       >
                         <Copy className="w-3 h-3" />
@@ -1071,7 +1108,7 @@ export default function CreateStandardOrder() {
                         variant="ghost"
                         onClick={() => removeItem(index)}
                         disabled={items.length === 1}
-                        className="h-8 w-8 p-0 text-red-600 hover:text-red-800 hover:bg-red-50 disabled:opacity-50"
+                        className="h-8 w-8 p-0 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50"
                         title="품목 삭제"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -1079,87 +1116,97 @@ export default function CreateStandardOrder() {
                     </div>
                   </div>
                   
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* 분류 정보 */}
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+                  {/* 분류 정보 - 더 눈에 띄게 개선 */}
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between border-b pb-1">
-                      <h5 className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                        <PlusCircle className="h-4 w-4 text-blue-600" />
-                        분류 정보
+                    <div className="flex items-center justify-between border-b-2 border-blue-200 dark:border-gray-600 pb-2">
+                      <h5 className="text-sm font-bold text-blue-700 dark:text-blue-300 flex items-center gap-2">
+                        <PlusCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        카테고리 분류 (필수)
                       </h5>
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => setShowCategoryManager(true)}
-                        className="h-6 px-2 text-xs"
+                        className="h-6 px-2 text-xs dark:text-gray-100 dark:border-gray-600 dark:hover:bg-gray-700"
                       >
                         분류 관리
                       </Button>
                     </div>
-                    <div className="space-y-2">
-                      <div>
-                        <Label className="text-xs text-gray-600">대분류</Label>
-                        <Select
-                          value={item.category}
-                          onValueChange={(value) => handleItemChange(index, "category", value)}
-                        >
-                          <SelectTrigger className="h-8">
-                            <SelectValue placeholder="선택" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {majorCategories.map((category: any) => (
-                              <SelectItem key={category.id} value={category.categoryValue}>
-                                {category.categoryValue}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label className="text-xs text-gray-600">중분류</Label>
-                        <Select
-                          value={item.subCategory1}
-                          onValueChange={(value) => handleItemChange(index, "subCategory1", value)}
-                        >
-                          <SelectTrigger className="h-8">
-                            <SelectValue placeholder="선택" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {middleCategories.map((category: any) => (
-                              <SelectItem key={category.id} value={category.categoryValue}>
-                                {category.categoryValue}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label className="text-xs text-gray-600">소분류</Label>
-                        <Select
-                          value={item.subCategory2}
-                          onValueChange={(value) => handleItemChange(index, "subCategory2", value)}
-                        >
-                          <SelectTrigger className="h-8">
-                            <SelectValue placeholder="선택" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {minorCategories.map((category: any) => (
-                              <SelectItem key={category.id} value={category.categoryValue}>
-                                {category.categoryValue}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                    <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <div className="space-y-3">
+                        <div>
+                          <Label className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-1 block">
+                            대분류 *
+                          </Label>
+                          <Select
+                            value={item.category}
+                            onValueChange={(value) => handleItemChange(index, "category", value)}
+                          >
+                            <SelectTrigger className="h-9 bg-white dark:bg-gray-800 border-blue-300 dark:border-blue-600">
+                              <SelectValue placeholder="대분류를 선택하세요" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {majorCategories.map((category: any) => (
+                                <SelectItem key={category.id} value={category.categoryValue}>
+                                  {category.categoryValue}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-1 block">
+                            중분류 *
+                          </Label>
+                          <Select
+                            value={item.subCategory1}
+                            onValueChange={(value) => handleItemChange(index, "subCategory1", value)}
+                            disabled={!item.category}
+                          >
+                            <SelectTrigger className="h-9 bg-white dark:bg-gray-800 border-blue-300 dark:border-blue-600">
+                              <SelectValue placeholder={item.category ? "중분류를 선택하세요" : "먼저 대분류를 선택하세요"} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {getFilteredMiddleCategories(item.category).map((category: any) => (
+                                <SelectItem key={category.id} value={category.categoryValue}>
+                                  {category.categoryValue}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-1 block">
+                            소분류
+                          </Label>
+                          <Select
+                            value={item.subCategory2}
+                            onValueChange={(value) => handleItemChange(index, "subCategory2", value)}
+                            disabled={!item.subCategory1}
+                          >
+                            <SelectTrigger className="h-9 bg-white dark:bg-gray-800 border-blue-300 dark:border-blue-600">
+                              <SelectValue placeholder={item.subCategory1 ? "소분류를 선택하세요 (선택사항)" : "먼저 중분류를 선택하세요"} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {getFilteredMinorCategories(item.subCategory1).map((category: any) => (
+                                <SelectItem key={category.id} value={category.categoryValue}>
+                                  {category.categoryValue}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
                     </div>
                   </div>
 
                   {/* 품목 및 수량 정보 */}
                   <div className="space-y-3">
-                    <h5 className="text-sm font-medium text-gray-700 border-b pb-1">품목 및 수량</h5>
+                    <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 border-b dark:border-gray-600 pb-1">품목 및 수량</h5>
                     <div className="space-y-2">
                       <div>
-                        <Label className="text-xs text-gray-600">품목명</Label>
+                        <Label className="text-xs text-gray-600 dark:text-gray-400">품목명</Label>
                         <Input
                           value={item.item}
                           onChange={(e) => handleItemChange(index, "item", e.target.value)}
@@ -1169,7 +1216,7 @@ export default function CreateStandardOrder() {
                       </div>
                       <div className="flex gap-2">
                         <div className="flex-1">
-                          <Label className="text-xs text-gray-600">수량</Label>
+                          <Label className="text-xs text-gray-600 dark:text-gray-400">수량</Label>
                           <Input
                             type="text"
                             value={formatNumberWithCommas(item.quantity)}
@@ -1179,7 +1226,7 @@ export default function CreateStandardOrder() {
                           />
                         </div>
                         <div className="w-20">
-                          <Label className="text-xs text-gray-600">단위</Label>
+                          <Label className="text-xs text-gray-600 dark:text-gray-400">단위</Label>
                           <Select value={item.unit} onValueChange={(value) => handleItemChange(index, "unit", value)}>
                             <SelectTrigger className="h-8">
                               <SelectValue placeholder="단위" />
@@ -1202,9 +1249,9 @@ export default function CreateStandardOrder() {
                         </div>
                       </div>
                       <div>
-                        <Label className="text-xs text-gray-600">단가</Label>
+                        <Label className="text-xs text-gray-600 dark:text-gray-400">단가</Label>
                         <div className="relative">
-                          <span className="absolute left-2 top-1/2 transform -translate-y-1/2 text-xs text-gray-500">
+                          <span className="absolute left-2 top-1/2 transform -translate-y-1/2 text-xs text-gray-500 dark:text-gray-400">
                             ₩
                           </span>
                           <Input
@@ -1216,19 +1263,19 @@ export default function CreateStandardOrder() {
                           />
                         </div>
                       </div>
-                      <div className="bg-blue-50 p-2 rounded text-center">
-                        <Label className="text-xs text-gray-600">금액</Label>
-                        <div className="text-lg font-semibold text-blue-600">{formatKoreanWon(item.price)}</div>
+                      <div className="bg-blue-50 dark:bg-blue-900/20 p-2 rounded text-center">
+                        <Label className="text-xs text-gray-600 dark:text-gray-400">금액</Label>
+                        <div className="text-lg font-semibold text-blue-600 dark:text-blue-400">{formatKoreanWon(item.price)}</div>
                       </div>
                     </div>
                   </div>
 
                   {/* 거래처 및 납품 정보 */}
                   <div className="space-y-3">
-                    <h5 className="text-sm font-medium text-gray-700 border-b pb-1">거래처 및 납품 정보</h5>
+                    <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 border-b dark:border-gray-600 pb-1">거래처 및 납품 정보</h5>
                     <div className="space-y-2">
                       <div>
-                        <Label className="text-xs text-gray-600">거래처명</Label>
+                        <Label className="text-xs text-gray-600 dark:text-gray-400">거래처명</Label>
                         <Select
                           value={item.vendor}
                           onValueChange={(value) => handleItemChange(index, "vendor", value)}
@@ -1246,7 +1293,7 @@ export default function CreateStandardOrder() {
                         </Select>
                       </div>
                       <div>
-                        <Label className="text-xs text-gray-600">납품처</Label>
+                        <Label className="text-xs text-gray-600 dark:text-gray-400">납품처</Label>
                         <div className="flex gap-2 items-center">
                           <Select
                             value={item.deliveryLocation === "현장" ? "" : item.deliveryLocation}
@@ -1286,13 +1333,13 @@ export default function CreateStandardOrder() {
             ))}
             
             {/* 총계 표시 */}
-            <Card className="border-2 border-blue-200 bg-blue-50">
+            <Card className="border-2 border-blue-200 bg-blue-50 shadow-sm">
               <CardContent className="p-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-lg font-medium text-gray-700">총 주문 금액</span>
-                  <span className="text-2xl font-bold text-blue-600">{formatKoreanWon(totalAmount)}</span>
+                  <span className="text-lg font-medium text-gray-700 dark:text-gray-300">총 주문 금액</span>
+                  <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">{formatKoreanWon(totalAmount)}</span>
                 </div>
-                <div className="text-sm text-gray-600 mt-1">
+                <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                   총 {items.filter(item => item.item).length}개 품목
                 </div>
               </CardContent>
@@ -1300,52 +1347,49 @@ export default function CreateStandardOrder() {
           </CardContent>
         </Card>
 
-        {/* Action Buttons - 하단 배치 */}
+        {/* Action Buttons */}
         <div className="flex justify-between items-center bg-white p-4 border-t border-gray-200 rounded-lg shadow-sm">
           <div className="flex gap-2">
-            <Button variant="outline" onClick={handleSave} className="gap-2 h-8 px-3 text-sm">
+            <Button variant="outline" onClick={handleSave} className="gap-2 h-8 px-3 text-sm dark:text-gray-100 dark:border-gray-600 dark:hover:bg-gray-700">
               <Save className="w-3 h-3" />
               임시저장
             </Button>
-            <Button onClick={handlePreviewPDF} className="gap-2 h-8 px-3 text-sm" variant="outline">
+            <Button onClick={handlePreviewPDF} className="gap-2 h-8 px-3 text-sm dark:text-gray-100 dark:border-gray-600 dark:hover:bg-gray-700" variant="outline">
               <Eye className="w-3 h-3" />
               PDF 미리보기
             </Button>
-            <Button onClick={handleSendEmail} className="gap-2 h-8 px-3 text-sm" variant="outline">
+            <Button onClick={handleSendEmail} className="gap-2 h-8 px-3 text-sm dark:text-gray-100 dark:border-gray-600 dark:hover:bg-gray-700" variant="outline">
               <Mail className="w-3 h-3" />
               이메일 발송
             </Button>
           </div>
           <div className="flex gap-2">
             {allowSkipApproval && approvalStatus === "draft" && (
-              <Button onClick={handleSkipApproval} variant="outline" className="gap-2 h-8 px-3 text-sm">
+              <Button onClick={handleSkipApproval} variant="outline" className="gap-2 h-8 px-3 text-sm dark:text-gray-100 dark:border-gray-600 dark:hover:bg-gray-700">
                 <AlertTriangle className="w-3 h-3" />
                 승인 생략
               </Button>
             )}
             {approvalStatus === "draft" && (
-              <Button onClick={handleRequestApproval} className="gap-2 h-8 px-3 text-sm bg-blue-600 hover:bg-blue-700">
+              <Button onClick={handleRequestApproval} className="gap-2 h-8 px-3 text-sm bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700">
                 <CheckCircle className="w-3 h-3" />
                 승인 요청
               </Button>
             )}
             {canProceedToNext && (
-              <Button onClick={handlePreview} className="gap-2 h-8 px-3 text-sm bg-green-600 hover:bg-green-700">
+              <Button onClick={handlePreview} className="gap-2 h-8 px-3 text-sm bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700">
                 <CheckCircle className="w-3 h-3" />
                 다음 단계
               </Button>
             )}
-          </div>
         </div>
-
       </div>
-    </div>
     
     <PDFPreviewModal />
     
     {/* Item Category Manager Modal */}
     {showCategoryManager && (
-      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
           <div className="flex items-center justify-between p-4 border-b">
             <h2 className="text-lg font-semibold">품목 분류 관리</h2>
@@ -1364,7 +1408,6 @@ export default function CreateStandardOrder() {
         </div>
       </div>
     )}
-    
     </>
   );
 }

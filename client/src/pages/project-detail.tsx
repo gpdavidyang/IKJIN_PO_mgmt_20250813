@@ -180,7 +180,8 @@ export default function ProjectDetail() {
   }
 
   return (
-    <div className="p-6">
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-[1366px] mx-auto p-6 space-y-6">
       {/* Page Header */}
       <div className="mb-6">
         <div className="flex items-center justify-between">
@@ -219,10 +220,10 @@ export default function ProjectDetail() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Info */}
         <div className="lg:col-span-2 space-y-2">
-          <Card>
+          <Card className="shadow-sm">
             <CardHeader className="pb-2">
-              <CardTitle className="flex items-center text-sm">
-                <Building2 className="h-4 w-4 mr-1" />
+              <CardTitle className="flex items-center text-lg font-semibold">
+                <Building2 className="h-5 w-5 mr-2 text-blue-600" />
                 현장 정보
               </CardTitle>
             </CardHeader>
@@ -263,10 +264,10 @@ export default function ProjectDetail() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="shadow-sm">
             <CardHeader className="pb-2">
-              <CardTitle className="flex items-center text-sm">
-                <Calendar className="h-4 w-4 mr-1" />
+              <CardTitle className="flex items-center text-lg font-semibold">
+                <Calendar className="h-5 w-5 mr-2 text-blue-600" />
                 일정 정보
               </CardTitle>
             </CardHeader>
@@ -291,10 +292,10 @@ export default function ProjectDetail() {
 
         {/* Sidebar */}
         <div className="space-y-2">
-          <Card>
+          <Card className="shadow-sm">
             <CardHeader className="pb-2">
-              <CardTitle className="flex items-center text-sm">
-                <User className="h-4 w-4 mr-1" />
+              <CardTitle className="flex items-center text-lg font-semibold">
+                <User className="h-5 w-5 mr-2 text-blue-600" />
                 담당자 정보
               </CardTitle>
             </CardHeader>
@@ -314,10 +315,10 @@ export default function ProjectDetail() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="shadow-sm">
             <CardHeader className="pb-2">
-              <CardTitle className="flex items-center text-sm">
-                <FileText className="h-4 w-4 mr-1" />
+              <CardTitle className="flex items-center text-lg font-semibold">
+                <FileText className="h-5 w-5 mr-2 text-blue-600" />
                 현장 통계
               </CardTitle>
             </CardHeader>
@@ -349,11 +350,11 @@ export default function ProjectDetail() {
 
       {/* Purchase Orders Section */}
       <div className="mt-2">
-        <Card>
+        <Card className="shadow-sm">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center text-sm">
-                <ShoppingCart className="h-4 w-4 mr-1" />
+              <CardTitle className="flex items-center text-lg font-semibold">
+                <ShoppingCart className="h-5 w-5 mr-2 text-blue-600" />
                 프로젝트 발주서 목록
                 {ordersData && (
                   <Badge variant="secondary" className="ml-2 text-xs">
@@ -519,6 +520,7 @@ export default function ProjectDetail() {
             )}
           </CardContent>
         </Card>
+      </div>
       </div>
     </div>
   );

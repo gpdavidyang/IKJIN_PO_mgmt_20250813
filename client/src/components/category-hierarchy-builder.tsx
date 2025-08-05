@@ -953,11 +953,50 @@ export default function CategoryHierarchyBuilder() {
                         <Target className="w-4 h-4 text-gray-400" />
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent className="max-w-xs">
-                      <div className="space-y-1 text-xs">
-                        <p><strong>드래그 앤 드롭:</strong> 분류를 드래그하여 재정렬하거나 다른 부모로 이동</p>
-                        <p><strong>키보드:</strong> 화살표 키로 탐색, Delete로 삭제, Ctrl+A로 전체 선택</p>
-                        <p><strong>다중 선택:</strong> Ctrl+클릭 또는 다중 선택 모드 활성화</p>
+                    <TooltipContent className="max-w-md">
+                      <div className="space-y-3 text-xs">
+                        <div>
+                          <p className="font-semibold text-blue-800 mb-2 flex items-center gap-1">
+                            🚀 주요 기능
+                          </p>
+                          <div className="grid grid-cols-1 gap-1 text-gray-700">
+                            <div className="flex items-center gap-2">
+                              <TreePine className="w-3 h-3 text-blue-600" />
+                              <span><strong>드래그 앤 드롭:</strong> 직관적인 재배열</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="w-3 h-3 rounded bg-green-100 flex items-center justify-center">
+                                <div className="w-1.5 h-1.5 bg-green-600 rounded"></div>
+                              </div>
+                              <span><strong>실시간 편집:</strong> 즉시 반영되는 변경사항</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="w-3 h-3 rounded bg-purple-100 flex items-center justify-center">
+                                <div className="w-1.5 h-1.5 bg-purple-600 rounded"></div>
+                              </div>
+                              <span><strong>다중 선택:</strong> 일괄 작업 지원</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="w-3 h-3 rounded bg-orange-100 flex items-center justify-center">
+                                <div className="w-1.5 h-1.5 bg-orange-600 rounded"></div>
+                              </div>
+                              <span><strong>스마트 검색:</strong> 고급 필터링</span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <p className="font-semibold text-blue-800 mb-2 flex items-center gap-1">
+                            ⌨️ 단축키 및 조작법
+                          </p>
+                          <div className="space-y-1 text-gray-700">
+                            <p><strong>드래그 앤 드롭:</strong> 분류를 드래그하여 재정렬하거나 다른 부모로 이동</p>
+                            <p><strong>키보드:</strong> 화살표 키로 탐색, Delete로 삭제, Ctrl+A로 전체 선택</p>
+                            <p><strong>다중 선택:</strong> Ctrl+클릭 또는 다중 선택 모드 활성화</p>
+                            <p><strong>검색:</strong> Ctrl+F로 빠른 검색, 실시간 필터링</p>
+                            <p><strong>확장/축소:</strong> 전체 확장/축소, 줌 조절 기능</p>
+                          </div>
+                        </div>
                       </div>
                     </TooltipContent>
                   </Tooltip>
@@ -1146,7 +1185,7 @@ export default function CategoryHierarchyBuilder() {
           <CardContent className="flex-1 overflow-hidden relative">
             {/* Loading overlay during drag operations */}
             {isDragOperationInProgress && (
-              <div className="absolute inset-0 bg-white bg-opacity-50 z-50 flex items-center justify-center">
+              <div className="absolute inset-0 bg-white/50 z-50 flex items-center justify-center">
                 <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow-lg border">
                   <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
                   <span className="text-sm font-medium">분류 이동 중...</span>
