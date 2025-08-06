@@ -51,6 +51,14 @@ const PDFPreviewModal: React.FC<PDFPreviewModalProps> = ({
     setPdfStatus({ status: 'generating', progress: 0 });
     
     try {
+      // 디버깅: orderData 확인
+      console.log('PDF 생성 시작 - orderData:', orderData);
+      
+      // orderData가 없거나 비어있는 경우 에러 처리
+      if (!orderData || Object.keys(orderData).length === 0) {
+        throw new Error('발주서 데이터가 없습니다. 발주서를 먼저 생성해주세요.');
+      }
+      
       // 단계별 진행률 시뮬레이션
       const steps = [
         { message: '발주서 데이터 준비 중...', progress: 20 },
@@ -65,14 +73,24 @@ const PDFPreviewModal: React.FC<PDFPreviewModalProps> = ({
         await new Promise(resolve => setTimeout(resolve, 800));
       }
 
-      // 실제 API 호출 (현재는 목업 데이터)
+      // 실제 API 호출 - 전체 orderData를 전송
       const response = await fetch('/api/orders/generate-pdf', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          orderData,
+          orderData: {
+            orderNumber: orderData.orderNumber || 'PO-TEMP-001',
+            projectName: orderData.projectName || orderData.project?.name || '프로젝트 미지정',
+            vendorName: orderData.vendorName || orderData.vendor?.name || '거래처 미지정',
+            items: orderData.items || [],
+            totalAmount: orderData.totalAmount || 0,
+            notes: orderData.notes || orderData.remarks || '',
+            orderDate: orderData.orderDate || new Date().toISOString(),
+            deliveryDate: orderData.deliveryDate || orderData.dueDate || null,
+            createdBy: orderData.createdBy || orderData.user?.name || '작성자 미상'
+          },
           options: {
             includeWatermark: true,
             format: 'A4',
@@ -281,24 +299,24 @@ const PDFPreviewModal: React.FC<PDFPreviewModalProps> = ({
               <CardTitle>발주서 상세 정보</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {orderData && (
+              {orderData ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="font-medium text-gray-600">발주서 번호:</span>
-                    <p className="mt-1">{orderData.orderNumber || '미생성'}</p>
+                    <p className="mt-1">{orderData.orderNumber || 'PO-TEMP-001'}</p>
                   </div>
                   <div>
                     <span className="font-medium text-gray-600">프로젝트:</span>
-                    <p className="mt-1">{orderData.projectName || '미지정'}</p>
+                    <p className="mt-1">{orderData.projectName || orderData.project?.name || '프로젝트 미지정'}</p>
                   </div>
                   <div>
                     <span className="font-medium text-gray-600">거래처:</span>
-                    <p className="mt-1">{orderData.vendorName || '미지정'}</p>
+                    <p className="mt-1">{orderData.vendorName || orderData.vendor?.name || '거래처 미지정'}</p>
                   </div>
                   <div>
                     <span className="font-medium text-gray-600">총 금액:</span>
                     <p className="mt-1">
-                      {orderData.totalAmount ? `₩${orderData.totalAmount.toLocaleString()}` : '미계산'}
+                      {orderData.totalAmount ? `₩${orderData.totalAmount.toLocaleString()}` : '₩0'}
                     </p>
                   </div>
                   <div>
@@ -307,8 +325,21 @@ const PDFPreviewModal: React.FC<PDFPreviewModalProps> = ({
                   </div>
                   <div>
                     <span className="font-medium text-gray-600">작성 방식:</span>
-                    <p className="mt-1">{orderData.type === 'excel' ? 'Excel 업로드' : '표준 입력'}</p>
+                    <p className="mt-1">{orderData.type === 'excel' ? 'Excel 업로드' : orderData.creationMethod === 'excel' ? 'Excel 업로드' : '표준 입력'}</p>
                   </div>
+                  <div>
+                    <span className="font-medium text-gray-600">발주일자:</span>
+                    <p className="mt-1">{orderData.orderDate ? new Date(orderData.orderDate).toLocaleDateString('ko-KR') : new Date().toLocaleDateString('ko-KR')}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">납기일자:</span>
+                    <p className="mt-1">{orderData.deliveryDate || orderData.dueDate ? new Date(orderData.deliveryDate || orderData.dueDate).toLocaleDateString('ko-KR') : '미지정'}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <p>발주서 데이터가 없습니다.</p>
+                  <p className="text-sm mt-2">발주서를 먼저 생성해주세요.</p>
                 </div>
               )}
               

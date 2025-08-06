@@ -34,6 +34,15 @@ interface UploadResponse {
   error?: string;
 }
 
+interface ParsedOrder {
+  orderNumber: string;
+  projectName: string;
+  vendorName: string;
+  totalAmount: number;
+  items: any[];
+  [key: string]: any;
+}
+
 interface ExcelUploadComponentProps {
   onUploadComplete: (data: any) => void;
   disabled?: boolean;
@@ -47,6 +56,8 @@ const ExcelUploadComponent: React.FC<ExcelUploadComponentProps> = ({
   const [dragActive, setDragActive] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [uploadResult, setUploadResult] = useState<UploadResponse | null>(null);
+  const [selectedOrderIndex, setSelectedOrderIndex] = useState<number>(0);
+  const [showOrderSelection, setShowOrderSelection] = useState(false);
   const [processingSteps, setProcessingSteps] = useState<ProcessingStep[]>([
     { id: 'upload', title: '파일 업로드', description: '엑셀 파일을 서버로 업로드', status: 'pending' },
     { id: 'parse', title: 'Input 시트 파싱', description: '엑셀 파일의 Input 시트 데이터 분석', status: 'pending' },
@@ -97,6 +108,56 @@ const ExcelUploadComponent: React.FC<ExcelUploadComponentProps> = ({
     setProcessingSteps(prev => prev.map(step => 
       step.id === id ? { ...step, status, message } : step
     ));
+  };
+
+  const submitSelectedOrder = (orders: ParsedOrder[], index: number, uploadData: UploadResponse) => {
+    const selectedOrder = orders[index];
+    if (!selectedOrder) {
+      console.error('선택된 발주서가 없습니다.');
+      return;
+    }
+    
+    const dataToSubmit = {
+      // 발주서 기본 정보
+      orderNumber: selectedOrder.orderNumber,
+      projectName: selectedOrder.projectName,
+      projectId: selectedOrder.projectId,
+      vendorName: selectedOrder.vendorName,
+      vendorId: selectedOrder.vendorId,
+      vendorEmail: selectedOrder.vendorEmail,
+      
+      // 날짜 정보
+      orderDate: selectedOrder.orderDate,
+      deliveryDate: selectedOrder.dueDate || selectedOrder.deliveryDate,
+      dueDate: selectedOrder.dueDate || selectedOrder.deliveryDate,
+      
+      // 금액 정보
+      totalAmount: selectedOrder.totalAmount || 0,
+      totalItems: selectedOrder.items?.length || 0,
+      
+      // 아이템 정보
+      items: selectedOrder.items || [],
+      
+      // 추가 정보
+      notes: selectedOrder.notes || selectedOrder.remarks || '',
+      remarks: selectedOrder.notes || selectedOrder.remarks || '',
+      createdBy: selectedOrder.createdBy || '',
+      
+      // 메타 정보
+      creationMethod: 'excel',
+      type: 'excel',
+      excelFileName: uploadData.data?.fileName,
+      filePath: uploadData.data?.filePath,
+      
+      // 여러 발주서가 있는 경우 전체 목록도 포함
+      allOrders: orders,
+      totalOrders: orders.length,
+      selectedOrderIndex: index
+    };
+    
+    console.log('ExcelUploadComponent submitting orderData:', dataToSubmit);
+    onUploadComplete(dataToSubmit);
+    setShowOrderSelection(false);
   };
 
   const handleUpload = async () => {
@@ -169,18 +230,13 @@ const ExcelUploadComponent: React.FC<ExcelUploadComponentProps> = ({
 
       setUploadResult(uploadData);
       
-      // 업로드 완료 시 상위 컴포넌트에 데이터 전달
-      const dataToSubmit = {
-        type: 'excel',
-        orders: uploadData.data.orders,
-        filePath: uploadData.data.filePath,
-        totalOrders: uploadData.data.totalOrders,
-        totalItems: uploadData.data.totalItems,
-        fileName: uploadData.data.fileName
-      };
-      
-      console.log('ExcelUploadComponent submitting data:', dataToSubmit);
-      onUploadComplete(dataToSubmit);
+      // 여러 발주서가 있는 경우 선택 UI 표시
+      if (uploadData.data.orders.length > 1) {
+        setShowOrderSelection(true);
+      } else {
+        // 발주서가 하나뿐인 경우 바로 전달
+        submitSelectedOrder(uploadData.data.orders, 0, uploadData);
+      }
       
     } catch (error) {
       console.error('Processing error:', error);
@@ -462,8 +518,85 @@ const ExcelUploadComponent: React.FC<ExcelUploadComponentProps> = ({
         </Card>
       )}
 
+      {/* 발주서 선택 UI */}
+      {showOrderSelection && uploadResult && uploadResult.data && (
+        <Card>
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">발주서 선택</h3>
+                <Badge variant="secondary">{uploadResult.data.orders.length}개 발주서</Badge>
+              </div>
+              
+              <Alert>
+                <Info className="h-4 w-4" />
+                <AlertDescription>
+                  여러 개의 발주서가 업로드되었습니다. 처리할 발주서를 선택해주세요.
+                </AlertDescription>
+              </Alert>
+              
+              <div className="space-y-3">
+                {uploadResult.data.orders.map((order, index) => (
+                  <div
+                    key={index}
+                    className={`border rounded-lg p-4 cursor-pointer transition-colors ${
+                      selectedOrderIndex === index 
+                        ? 'border-blue-500 bg-blue-50' 
+                        : 'border-gray-300 hover:border-gray-400'
+                    }`}
+                    onClick={() => setSelectedOrderIndex(index)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <div className="font-medium">{order.orderNumber}</div>
+                        <div className="text-sm text-gray-600">
+                          {order.projectName} | {order.vendorName}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {order.items?.length || 0}개 품목 | 
+                          총액: ₩{(order.totalAmount || 0).toLocaleString()}
+                        </div>
+                      </div>
+                      <input
+                        type="radio"
+                        name="orderSelection"
+                        checked={selectedOrderIndex === index}
+                        onChange={() => setSelectedOrderIndex(index)}
+                        className="w-4 h-4 text-blue-600"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="flex gap-3 pt-4">
+                <Button
+                  onClick={() => submitSelectedOrder(uploadResult.data.orders, selectedOrderIndex, uploadResult)}
+                  className="flex-1"
+                  disabled={disabled}
+                >
+                  선택한 발주서로 진행
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowOrderSelection(false);
+                    setUploadResult(null);
+                    setFile(null);
+                    resetProcessingSteps();
+                  }}
+                  disabled={disabled}
+                >
+                  취소
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* 처리 결과 */}
-      {uploadResult && (
+      {uploadResult && !showOrderSelection && (
         <Alert>
           <CheckCircle className="h-4 w-4" />
           <AlertDescription>

@@ -16,13 +16,7 @@ import PDFPreviewModal from '../preview/PDFPreviewModal';
 import EmailPreviewModal from '../preview/EmailPreviewModal';
 
 interface ActionButtonsProps {
-  orderData?: {
-    orderNumber?: string;
-    pdfUrl?: string;
-    emailsSent?: boolean;
-    canEdit?: boolean;
-    canResend?: boolean;
-  };
+  orderData?: any; // 전체 orderData 객체를 받도록 수정
   onViewPDF?: () => void;
   onDownloadPDF?: () => void;
   onSendEmail?: () => void;
