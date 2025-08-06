@@ -376,7 +376,6 @@ export const orderHistory = pgTable("order_history", {
   action: varchar("action", { length: 100 }).notNull(), // created, updated, approved, sent, etc.
   changes: jsonb("changes"), // Store what changed
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Email send history

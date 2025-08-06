@@ -568,16 +568,44 @@ router.post("/orders/generate-pdf", requireAuth, async (req, res) => {
   }
 });
 
-// Download generated PDF
+// Download or preview generated PDF
 router.get("/orders/download-pdf/:timestamp", (req, res) => {
   try {
     const { timestamp } = req.params;
-    const pdfPath = path.join('uploads/temp-pdf', `order-${timestamp}.pdf`);
+    const { download } = req.query; // ?download=true 면 다운로드, 없으면 미리보기
+    const pdfPath = path.join(process.cwd(), 'uploads/temp-pdf', `order-${timestamp}.pdf`);
+    
+    console.log(`📄 PDF 다운로드 요청: ${pdfPath}`);
+    console.log(`📄 파일 존재 여부: ${fs.existsSync(pdfPath)}`);
 
     if (fs.existsSync(pdfPath)) {
-      res.download(pdfPath, `발주서_${timestamp}.pdf`);
+      // CORS headers for iframe/embed support
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET');
+      res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+      
+      if (download === 'true') {
+        // 다운로드 모드
+        res.download(pdfPath, `발주서_${timestamp}.pdf`);
+      } else {
+        // 미리보기 모드 - 브라우저에서 직접 표시
+        const stat = fs.statSync(pdfPath);
+        
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `inline; filename*=UTF-8''${encodeURIComponent('발주서.pdf')}`);
+        res.setHeader('Content-Length', stat.size.toString());
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        
+        const pdfStream = fs.createReadStream(pdfPath);
+        pdfStream.on('error', (error) => {
+          console.error('PDF 스트림 오류:', error);
+          if (!res.headersSent) {
+            res.status(500).json({ error: 'PDF 읽기 실패' });
+          }
+        });
+        pdfStream.pipe(res);
+      }
     } else {
-      // Return a placeholder response for now
       res.status(404).json({
         success: false,
         error: "PDF 파일을 찾을 수 없습니다."
