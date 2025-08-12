@@ -1,4 +1,3 @@
-import { supabaseService, supabaseDb } from './services/supabase-service';
 import {
   users,
   vendors,
@@ -60,9 +59,6 @@ import {
   type InsertCompany,
   type Terminology,
   type InsertTerminology,
-  loginAuditLogs,
-  type LoginAuditLog,
-  type InsertLoginAuditLog,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, asc, ilike, and, or, between, count, sum, sql, gte, lte, inArray, isNotNull, notInArray } from "drizzle-orm";
@@ -95,6 +91,7 @@ export interface IStorage {
   
   // Project operations
   getProjects(): Promise<Project[]>;
+  getActiveProjects(): Promise<Project[]>;
   getProject(id: number): Promise<Project | undefined>;
   createProject(project: InsertProject): Promise<Project>;
   updateProject(id: number, project: Partial<InsertProject>): Promise<Project>;
@@ -132,6 +129,9 @@ export interface IStorage {
     startDate?: Date;
     endDate?: Date;
     searchText?: string;
+    majorCategory?: string;
+    middleCategory?: string;
+    minorCategory?: string;
     page?: number;
     limit?: number;
   }): Promise<{ orders: (PurchaseOrder & { vendor?: Vendor; user?: User; items?: PurchaseOrderItem[] })[], total: number }>;
@@ -193,6 +193,15 @@ export interface IStorage {
     totalAmount: number;
   }>>;
   
+  // Category statistics
+  getCategoryOrderStats(userId?: string): Promise<Array<{
+    majorCategory: string;
+    middleCategory: string;
+    minorCategory: string;
+    orderCount: number;
+    totalAmount: number;
+  }>>;
+  
   // Generate order number
   generateOrderNumber(): Promise<string>;
   
@@ -228,13 +237,6 @@ export interface IStorage {
   updateTerm(id: number, term: Partial<InsertTerminology>): Promise<Terminology>;
   deleteTerm(id: number): Promise<void>;
   
-  // Login audit operations
-  createLoginAuditLog(log: InsertLoginAuditLog): Promise<LoginAuditLog>;
-  getRecentLoginAttempts(email: string, minutes: number): Promise<number>;
-  getRecentFailedAttempts(email: string, minutes: number): Promise<number>;
-  getLoginHistory(userId?: string, limit?: number, offset?: number): Promise<LoginAuditLog[]>;
-  getRecentSuccessfulLogins(userId: string, minutes: number): Promise<LoginAuditLog[]>;
-  
 
   
   // Company operations
@@ -263,21 +265,29 @@ export interface IStorage {
   deleteProjectMember(id: number): Promise<void>;
   
   createVerificationLog(log: InsertVerificationLog): Promise<VerificationLog>;
+  
+  // Item Categories operations
+  getItemCategories(): Promise<ItemCategory[]>;
+  createItemCategory(category: InsertItemCategory): Promise<ItemCategory>;
+  updateItemCategory(id: number, category: Partial<InsertItemCategory>): Promise<ItemCategory>;
+  deleteItemCategory(id: number): Promise<void>;
+  
+  // Missing interface methods
+  getMajorCategories(): Promise<ItemCategory[]>;
+  getMiddleCategories(majorId?: number): Promise<ItemCategory[]>;
+  getMinorCategories(middleId?: number): Promise<ItemCategory[]>;
+  getPositions(): Promise<any[]>;
+  
+  // Item hierarchy methods for filters
+  getDistinctMajorCategories(): Promise<string[]>;
+  getDistinctMiddleCategories(majorCategory?: string): Promise<string[]>;
+  getDistinctMinorCategories(majorCategory?: string, middleCategory?: string): Promise<string[]>;
 }
 
 export class DatabaseStorage implements IStorage {
-  private get database() {
-    // Prioritize Supabase connection, fall back to traditional PostgreSQL
-    const supabaseDatabase = supabaseService.getDatabase();
-    if (supabaseDatabase) {
-      return supabaseDatabase;
-    }
-    return db;
-  }
-
   // User operations
   async getUser(id: string): Promise<User | undefined> {
-    const [user] = await this.database.select().from(users).where(eq(users.id, id));
+    const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
 
@@ -702,7 +712,21 @@ export class DatabaseStorage implements IStorage {
       limit = 50
     } = filters;
 
-    let query = db.select().from(items);
+    let query = db.select({
+      id: items.id,
+      name: items.name,
+      specification: items.specification,
+      unit: items.unit,
+      unitPrice: items.unitPrice,
+      category: items.category,
+      majorCategory: items.majorCategory,
+      middleCategory: items.middleCategory,
+      minorCategory: items.minorCategory,
+      description: items.description,
+      isActive: items.isActive,
+      createdAt: items.createdAt,
+      updatedAt: items.updatedAt,
+    }).from(items);
     let countQuery = db.select({ count: count() }).from(items);
 
     const conditions: any[] = [];
@@ -745,7 +769,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getItem(id: number): Promise<Item | undefined> {
-    const [item] = await db.select().from(items).where(eq(items.id, id));
+    const [item] = await db.select({
+      id: items.id,
+      name: items.name,
+      specification: items.specification,
+      unit: items.unit,
+      unitPrice: items.unitPrice,
+      category: items.category,
+      majorCategory: items.majorCategory,
+      middleCategory: items.middleCategory,
+      minorCategory: items.minorCategory,
+      description: items.description,
+      isActive: items.isActive,
+      createdAt: items.createdAt,
+      updatedAt: items.updatedAt,
+    }).from(items).where(eq(items.id, id));
     return item;
   }
 
@@ -789,30 +827,35 @@ export class DatabaseStorage implements IStorage {
     minAmount?: number;
     maxAmount?: number;
     searchText?: string;
+    majorCategory?: string;
+    middleCategory?: string;
+    minorCategory?: string;
     page?: number;
     limit?: number;
   } = {}): Promise<{ orders: (PurchaseOrder & { vendor?: Vendor; user?: User; items?: PurchaseOrderItem[] })[], total: number }> {
-    const { userId, status, vendorId, templateId, projectId, startDate, endDate, minAmount, maxAmount, searchText, page = 1, limit = 10 } = filters;
+    const { userId, status, vendorId, templateId, projectId, startDate, endDate, minAmount, maxAmount, searchText, majorCategory, middleCategory, minorCategory, page = 1, limit = 50 } = filters;
+    
+    // Debug logging removed for performance
     
     let whereConditions = [];
     
-    if (userId) {
+    if (userId && userId !== 'all') {
       whereConditions.push(eq(purchaseOrders.userId, userId));
     }
     
-    if (status) {
+    if (status && status !== 'all' && status !== '') {
       whereConditions.push(sql`${purchaseOrders.status} = ${status}`);
     }
     
-    if (vendorId) {
+    if (vendorId && vendorId !== 'all') {
       whereConditions.push(eq(purchaseOrders.vendorId, vendorId));
     }
     
-    if (templateId) {
+    if (templateId && templateId !== 'all') {
       whereConditions.push(eq(purchaseOrders.templateId, templateId));
     }
     
-    if (projectId) {
+    if (projectId && projectId !== 'all') {
       whereConditions.push(eq(purchaseOrders.projectId, projectId));
     }
     
@@ -828,6 +871,8 @@ export class DatabaseStorage implements IStorage {
       .select({ count: count() })
       .from(purchaseOrders)
       .where(baseWhereClause);
+    
+    // Debug logging removed for performance
     
     // Get all orders that match basic filters (without search)
     let allOrders = await db
@@ -845,6 +890,9 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(projects, eq(purchaseOrders.projectId, projects.id))
       .where(baseWhereClause)
       .orderBy(desc(purchaseOrders.createdAt));
+
+    // Debug logging (disabled for performance)
+    // Debug logging removed for performance
 
     // If searchText exists, filter in memory
     let filteredOrders = allOrders;
@@ -913,6 +961,36 @@ export class DatabaseStorage implements IStorage {
       });
     }
 
+    // Apply category filtering if specified
+    if (majorCategory || middleCategory || minorCategory) {
+      // Get all order items with matching categories
+      const categoryConditions = [];
+      
+      if (majorCategory) {
+        categoryConditions.push(eq(purchaseOrderItems.majorCategory, majorCategory));
+      }
+      
+      if (middleCategory) {
+        categoryConditions.push(eq(purchaseOrderItems.middleCategory, middleCategory));
+      }
+      
+      if (minorCategory) {
+        categoryConditions.push(eq(purchaseOrderItems.minorCategory, minorCategory));
+      }
+      
+      const matchingItems = await db
+        .select({ orderId: purchaseOrderItems.orderId })
+        .from(purchaseOrderItems)
+        .where(and(...categoryConditions))
+        .groupBy(purchaseOrderItems.orderId);
+      
+      const matchingOrderIds = new Set(matchingItems.map(item => item.orderId));
+      
+      filteredOrders = filteredOrders.filter(orderRow => {
+        return matchingOrderIds.has(orderRow.purchase_orders.id);
+      });
+    }
+
     // Apply pagination
     const totalCount = filteredOrders.length;
     const orders = filteredOrders.slice((page - 1) * limit, page * limit);
@@ -923,6 +1001,8 @@ export class DatabaseStorage implements IStorage {
           .select()
           .from(purchaseOrderItems)
           .where(eq(purchaseOrderItems.orderId, order.purchase_orders.id));
+
+        // Debug logging removed for performance
 
         return {
           ...order.purchase_orders,
@@ -955,7 +1035,8 @@ export class DatabaseStorage implements IStorage {
 
     if (!order) return undefined;
 
-    console.log('Debug: Order found:', order.purchase_orders);
+    // Debug logging (disabled for performance)
+    // console.log('Debug: Order found:', order.purchase_orders);
 
     const items = await db
       .select()
@@ -965,11 +1046,21 @@ export class DatabaseStorage implements IStorage {
     console.log('Debug: Items found:', items);
 
     const orderAttachments = await db
-      .select()
+      .select({
+        id: attachments.id,
+        orderId: attachments.orderId,
+        originalName: attachments.originalName,
+        storedName: attachments.storedName,
+        filePath: attachments.filePath,
+        fileSize: attachments.fileSize,
+        mimeType: attachments.mimeType,
+        uploadedBy: attachments.uploadedBy,
+        uploadedAt: attachments.uploadedAt,
+      })
       .from(attachments)
       .where(eq(attachments.orderId, id));
 
-    console.log('Debug: Attachments found:', orderAttachments);
+    // console.log('Debug: Attachments found:', orderAttachments);
 
     const result = {
       ...order.purchase_orders,
@@ -1182,12 +1273,32 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAttachment(id: number): Promise<Attachment | undefined> {
-    const [attachment] = await db.select().from(attachments).where(eq(attachments.id, id));
+    const [attachment] = await db.select({
+      id: attachments.id,
+      orderId: attachments.orderId,
+      originalName: attachments.originalName,
+      storedName: attachments.storedName,
+      filePath: attachments.filePath,
+      fileSize: attachments.fileSize,
+      mimeType: attachments.mimeType,
+      uploadedBy: attachments.uploadedBy,
+      uploadedAt: attachments.uploadedAt,
+    }).from(attachments).where(eq(attachments.id, id));
     return attachment || undefined;
   }
 
   async getOrderAttachments(orderId: number): Promise<Attachment[]> {
-    return await db.select().from(attachments).where(eq(attachments.orderId, orderId));
+    return await db.select({
+      id: attachments.id,
+      orderId: attachments.orderId,
+      originalName: attachments.originalName,
+      storedName: attachments.storedName,
+      filePath: attachments.filePath,
+      fileSize: attachments.fileSize,
+      mimeType: attachments.mimeType,
+      uploadedBy: attachments.uploadedBy,
+      uploadedAt: attachments.uploadedAt,
+    }).from(attachments).where(eq(attachments.orderId, orderId));
   }
 
   async deleteAttachment(id: number): Promise<void> {
@@ -1601,19 +1712,25 @@ export class DatabaseStorage implements IStorage {
 
   // UI terms operations
   async getUiTerms(category?: string): Promise<UiTerm[]> {
-    if (category) {
+    try {
+      if (category) {
+        return await db
+          .select()
+          .from(uiTerms)
+          .where(and(eq(uiTerms.category, category), eq(uiTerms.isActive, true)))
+          .orderBy(asc(uiTerms.termKey));
+      }
+      
       return await db
         .select()
         .from(uiTerms)
-        .where(and(eq(uiTerms.category, category), eq(uiTerms.isActive, true)))
+        .where(eq(uiTerms.isActive, true))
         .orderBy(asc(uiTerms.termKey));
+    } catch (error) {
+      console.error('Database error in getUiTerms:', error);
+      // Return empty array if table doesn't exist or has structure issues
+      return [];
     }
-    
-    return await db
-      .select()
-      .from(uiTerms)
-      .where(eq(uiTerms.isActive, true))
-      .orderBy(asc(uiTerms.termKey));
   }
 
   async getUiTerm(termKey: string): Promise<UiTerm | undefined> {
@@ -1837,7 +1954,7 @@ export class DatabaseStorage implements IStorage {
       const conditions = [
         lte(purchaseOrders.deliveryDate, urgentDate),
         gte(purchaseOrders.deliveryDate, today),
-        notInArray(purchaseOrders.status, ['delivered', 'cancelled'])
+        notInArray(purchaseOrders.status, ['completed'])
       ];
 
       if (userId) {
@@ -2335,163 +2452,178 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Login audit operations
-  async createLoginAuditLog(log: InsertLoginAuditLog): Promise<LoginAuditLog> {
+  // Missing methods for API endpoints
+  async getActiveProjects(): Promise<Project[]> {
     try {
-      const [auditLog] = await db
-        .insert(loginAuditLogs)
-        .values(log)
-        .returning();
-      return auditLog;
+      return await db
+        .select()
+        .from(projects)
+        .where(and(
+          eq(projects.isActive, true),
+          eq(projects.status, 'active')
+        ))
+        .orderBy(projects.projectName);
     } catch (error) {
-      console.error('Error creating login audit log:', error);
+      console.error('Error getting active projects:', error);
       throw error;
     }
   }
 
-  async getRecentLoginAttempts(email: string, minutes: number): Promise<number> {
+  async getMajorCategories(): Promise<ItemCategory[]> {
     try {
-      const timeThreshold = new Date(Date.now() - minutes * 60 * 1000);
-      const [result] = await db
-        .select({ count: count() })
-        .from(loginAuditLogs)
-        .where(
-          and(
-            eq(loginAuditLogs.email, email),
-            gte(loginAuditLogs.createdAt, timeThreshold)
-          )
-        );
-      return result.count;
+      return await this.getItemCategoriesByType('major');
     } catch (error) {
-      console.error('Error getting recent login attempts:', error);
-      return 0;
+      console.error('Error getting major categories:', error);
+      throw error;
     }
   }
 
-  async getRecentFailedAttempts(email: string, minutes: number): Promise<number> {
+  async getMiddleCategories(majorId?: number): Promise<ItemCategory[]> {
     try {
-      const timeThreshold = new Date(Date.now() - minutes * 60 * 1000);
-      const [result] = await db
-        .select({ count: count() })
-        .from(loginAuditLogs)
-        .where(
-          and(
-            eq(loginAuditLogs.email, email),
-            eq(loginAuditLogs.loginStatus, 'failed'),
-            gte(loginAuditLogs.createdAt, timeThreshold)
-          )
-        );
-      return result.count;
+      return await this.getItemCategoriesByType('middle', majorId);
     } catch (error) {
-      console.error('Error getting recent failed attempts:', error);
-      return 0;
+      console.error('Error getting middle categories:', error);
+      throw error;
     }
   }
 
-  async getLoginHistory(userId?: string, limit: number = 100, offset: number = 0): Promise<LoginAuditLog[]> {
+  async getMinorCategories(middleId?: number): Promise<ItemCategory[]> {
     try {
-      const query = db
-        .select()
-        .from(loginAuditLogs)
-        .orderBy(desc(loginAuditLogs.createdAt))
-        .limit(limit)
-        .offset(offset);
+      return await this.getItemCategoriesByType('minor', middleId);
+    } catch (error) {
+      console.error('Error getting minor categories:', error);
+      throw error;
+    }
+  }
 
-      if (userId) {
-        return await query.where(eq(loginAuditLogs.userId, userId));
+  async getPositions(): Promise<any[]> {
+    try {
+      // Return mock position data for now
+      return [
+        { id: 1, name: '현장소장', code: 'site_manager', level: 1 },
+        { id: 2, name: '현장대리', code: 'site_deputy', level: 2 },
+        { id: 3, name: '현장팀장', code: 'site_team_leader', level: 3 },
+        { id: 4, name: '현장기사', code: 'site_engineer', level: 4 },
+        { id: 5, name: '현장기능공', code: 'site_worker', level: 5 }
+      ];
+    } catch (error) {
+      console.error('Error getting positions:', error);
+      throw error;
+    }
+  }
+
+  // Item hierarchy methods for filters
+  async getDistinctMajorCategories(): Promise<string[]> {
+    try {
+      const result = await db
+        .selectDistinct({ majorCategory: purchaseOrderItems.majorCategory })
+        .from(purchaseOrderItems)
+        .where(isNotNull(purchaseOrderItems.majorCategory))
+        .orderBy(purchaseOrderItems.majorCategory);
+      
+      return result
+        .map(row => row.majorCategory)
+        .filter((cat): cat is string => cat !== null && cat !== '');
+    } catch (error) {
+      console.error('Error getting distinct major categories:', error);
+      throw error;
+    }
+  }
+
+  async getDistinctMiddleCategories(majorCategory?: string): Promise<string[]> {
+    try {
+      let query = db
+        .selectDistinct({ middleCategory: purchaseOrderItems.middleCategory })
+        .from(purchaseOrderItems)
+        .where(isNotNull(purchaseOrderItems.middleCategory));
+      
+      if (majorCategory) {
+        query = query.where(eq(purchaseOrderItems.majorCategory, majorCategory));
       }
-
-      return await query;
+      
+      const result = await query.orderBy(purchaseOrderItems.middleCategory);
+      
+      return result
+        .map(row => row.middleCategory)
+        .filter((cat): cat is string => cat !== null && cat !== '');
     } catch (error) {
-      console.error('Error getting login history:', error);
-      return [];
-    }
-  }
-
-  async getRecentSuccessfulLogins(userId: string, minutes: number): Promise<LoginAuditLog[]> {
-    try {
-      const timeThreshold = new Date(Date.now() - minutes * 60 * 1000);
-      return await db
-        .select()
-        .from(loginAuditLogs)
-        .where(
-          and(
-            eq(loginAuditLogs.userId, userId),
-            eq(loginAuditLogs.loginStatus, 'success'),
-            gte(loginAuditLogs.createdAt, timeThreshold)
-          )
-        )
-        .orderBy(desc(loginAuditLogs.createdAt));
-    } catch (error) {
-      console.error('Error getting recent successful logins:', error);
-      return [];
-    }
-  }
-
-  // 승인 관련 추가 메서드들
-  async getPendingOrders(): Promise<PurchaseOrder[]> {
-    try {
-      return await db
-        .select()
-        .from(purchaseOrders)
-        .where(eq(purchaseOrders.status, 'pending'))
-        .orderBy(asc(purchaseOrders.createdAt));
-    } catch (error) {
-      console.error('Error getting pending orders:', error);
-      return [];
-    }
-  }
-
-  async getApprovedOrdersByUser(userId: string): Promise<PurchaseOrder[]> {
-    try {
-      return await db
-        .select()
-        .from(purchaseOrders)
-        .where(
-          and(
-            eq(purchaseOrders.approvedBy, userId),
-            or(
-              eq(purchaseOrders.status, 'approved'),
-              eq(purchaseOrders.status, 'sent'),
-              eq(purchaseOrders.status, 'completed')
-            )
-          )
-        )
-        .orderBy(desc(purchaseOrders.approvedAt));
-    } catch (error) {
-      console.error('Error getting approved orders by user:', error);
-      return [];
-    }
-  }
-
-  async createOrderHistory(data: InsertOrderHistory): Promise<OrderHistory> {
-    try {
-      const [history] = await db
-        .insert(orderHistory)
-        .values(data)
-        .returning();
-      return history;
-    } catch (error) {
-      console.error('Error creating order history:', error);
+      console.error('Error getting distinct middle categories:', error);
       throw error;
+    }
+  }
+
+  async getDistinctMinorCategories(majorCategory?: string, middleCategory?: string): Promise<string[]> {
+    try {
+      let conditions = [isNotNull(purchaseOrderItems.minorCategory)];
+      
+      if (majorCategory) {
+        conditions.push(eq(purchaseOrderItems.majorCategory, majorCategory));
+      }
+      
+      if (middleCategory) {
+        conditions.push(eq(purchaseOrderItems.middleCategory, middleCategory));
+      }
+      
+      const result = await db
+        .selectDistinct({ minorCategory: purchaseOrderItems.minorCategory })
+        .from(purchaseOrderItems)
+        .where(and(...conditions))
+        .orderBy(purchaseOrderItems.minorCategory);
+      
+      return result
+        .map(row => row.minorCategory)
+        .filter((cat): cat is string => cat !== null && cat !== '');
+    } catch (error) {
+      console.error('Error getting distinct minor categories:', error);
+      throw error;
+    }
+  }
+
+  // Category statistics
+  async getCategoryOrderStats(userId?: string): Promise<Array<{
+    majorCategory: string;
+    middleCategory: string;
+    minorCategory: string;
+    orderCount: number;
+    totalAmount: number;
+  }>> {
+    try {
+      const whereClause = userId ? eq(purchaseOrders.userId, userId) : undefined;
+      
+      const results = await db
+        .select({
+          majorCategory: purchaseOrderItems.majorCategory,
+          middleCategory: purchaseOrderItems.middleCategory,
+          minorCategory: purchaseOrderItems.minorCategory,
+          orderCount: count(purchaseOrderItems.id).as('orderCount'),
+          totalAmount: sum(purchaseOrderItems.totalAmount).as('totalAmount')
+        })
+        .from(purchaseOrderItems)
+        .innerJoin(purchaseOrders, eq(purchaseOrderItems.orderId, purchaseOrders.id))
+        .where(whereClause)
+        .groupBy(
+          purchaseOrderItems.majorCategory, 
+          purchaseOrderItems.middleCategory, 
+          purchaseOrderItems.minorCategory
+        )
+        .orderBy(
+          purchaseOrderItems.majorCategory,
+          purchaseOrderItems.middleCategory,
+          purchaseOrderItems.minorCategory
+        );
+
+      return results.map(row => ({
+        majorCategory: row.majorCategory || '미분류',
+        middleCategory: row.middleCategory || '미분류',
+        minorCategory: row.minorCategory || '미분류',
+        orderCount: Number(row.orderCount) || 0,
+        totalAmount: Number(row.totalAmount) || 0
+      }));
+    } catch (error) {
+      console.error('Error getting category order stats:', error);
+      return [];
     }
   }
 }
 
 export const storage = new DatabaseStorage();
-
-/**
- * Get the active database connection (Supabase or PostgreSQL)
- */
-export function getActiveDatabase() {
-  const supabaseDatabase = supabaseService.getDatabase();
-  if (supabaseDatabase) {
-    console.log('📊 Using Supabase database connection');
-    return supabaseDatabase;
-  }
-  console.log('📊 Using traditional PostgreSQL connection');
-  return db;
-}
-
-// Export the active database for backward compatibility
-export { getActiveDatabase as activeDb };

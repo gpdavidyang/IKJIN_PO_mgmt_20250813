@@ -266,7 +266,8 @@ export default function UserManagement() {
   }
 
   return (
-    <div className="p-6">
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-[1366px] mx-auto p-6 space-y-6">
       {/* Page Header */}
       <div className="mb-6">
         <div className="flex items-center justify-between">
@@ -310,7 +311,7 @@ export default function UserManagement() {
         </ToggleGroup>
       </div>
       {/* Users Content */}
-      <Card>
+      <Card className="shadow-sm">
         <CardContent className="p-0">
           {isLoading ? (
             <div className="space-y-1 p-2">
@@ -400,9 +401,9 @@ export default function UserManagement() {
                   ))}
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 p-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2 p-2">
                   {filteredUsers.map((user: any) => (
-                    <Card key={user.id} className="p-3 hover:shadow-md transition-shadow">
+                    <Card key={user.id} className="p-3 hover:shadow-md transition-shadow shadow-sm">
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1">
                           <h4 className="font-medium text-sm text-gray-900 truncate">
@@ -577,6 +578,7 @@ export default function UserManagement() {
           </Form>
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   );
 }

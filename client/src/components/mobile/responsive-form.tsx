@@ -1,386 +1,313 @@
-/**
- * Responsive Form Component
- * 
- * Mobile-optimized form with:
- * - Adaptive layouts (stacked on mobile, grid on desktop)
- * - Touch-friendly inputs
- * - Floating action buttons for mobile
- * - Step-by-step wizard on mobile for complex forms
- */
+import React from "react";
+import { cn } from "@/lib/utils";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { FormProgress } from "@/components/ui/form-progress";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
-import { Progress } from '@/components/ui/progress';
-import {
-  ChevronLeft,
-  ChevronRight,
-  Save,
-  X,
-  Check,
-  AlertCircle,
-} from 'lucide-react';
-import { useResponsive } from '@/hooks/useResponsive';
-import { cn } from '@/lib/utils';
-
-export interface FormField {
-  name: string;
-  label: string;
-  type: 'text' | 'email' | 'password' | 'number' | 'textarea' | 'select' | 'date' | 'file';
-  placeholder?: string;
-  required?: boolean;
-  options?: { value: string; label: string }[];
-  validation?: (value: any) => string | null;
-  gridColumn?: 'full' | 'half' | 'third';
-  mobileColumn?: 'full' | 'half';
-  step?: number; // For wizard forms
-  section?: string;
-  description?: string;
-}
-
-export interface FormSection {
-  title: string;
-  description?: string;
-  fields: FormField[];
-  step?: number;
-}
-
-export interface ResponsiveFormProps {
+interface ResponsiveFormProps {
+  children: React.ReactNode;
   title?: string;
   description?: string;
-  fields?: FormField[];
-  sections?: FormSection[];
-  values: Record<string, any>;
-  onChange: (name: string, value: any) => void;
-  onSubmit: (values: Record<string, any>) => void;
-  onCancel?: () => void;
-  loading?: boolean;
-  errors?: Record<string, string>;
-  submitLabel?: string;
-  cancelLabel?: string;
-  wizardMode?: boolean; // Enable step-by-step on mobile
   className?: string;
+  showCard?: boolean;
 }
 
 export function ResponsiveForm({
+  children,
   title,
   description,
-  fields = [],
-  sections = [],
-  values,
-  onChange,
-  onSubmit,
-  onCancel,
-  loading = false,
-  errors = {},
-  submitLabel = '저장',
-  cancelLabel = '취소',
-  wizardMode = false,
   className,
+  showCard = true,
 }: ResponsiveFormProps) {
-  const { isMobile } = useResponsive();
-  const [currentStep, setCurrentStep] = useState(0);
-
-  // Prepare form data
-  const formData = sections.length > 0 ? sections : [{ 
-    title: title || '폼', 
-    description, 
-    fields,
-    step: 0 
-  }];
-
-  // Wizard mode for mobile
-  const isWizardMode = isMobile && wizardMode && formData.length > 1;
-  const totalSteps = isWizardMode ? formData.length : 1;
-  const progress = isWizardMode ? ((currentStep + 1) / totalSteps) * 100 : 100;
-
-  const currentSection = isWizardMode ? formData[currentStep] : null;
-  const visibleSections = isWizardMode ? [currentSection!] : formData;
-
-  const handleNext = () => {
-    if (currentStep < formData.length - 1) {
-      setCurrentStep(currentStep + 1);
-    }
-  };
-
-  const handlePrevious = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit(values);
-  };
-
-  const getGridClassName = (field: FormField) => {
-    if (isMobile) {
-      return field.mobileColumn === 'half' ? 'col-span-6' : 'col-span-12';
-    }
-    
-    switch (field.gridColumn) {
-      case 'half': return 'col-span-6';
-      case 'third': return 'col-span-4';
-      default: return 'col-span-12';
-    }
-  };
-
-  const renderField = (field: FormField) => {
-    const hasError = errors[field.name];
-    const inputClassName = cn(
-      "transition-colors",
-      hasError && "border-red-500 focus:border-red-500"
-    );
-
-    const fieldContent = (
-      <div className={getGridClassName(field)}>
-        <div className="space-y-2">
-          <Label htmlFor={field.name} className={cn(
-            "text-sm font-medium",
-            field.required && "after:content-['*'] after:text-red-500 after:ml-1"
-          )}>
-            {field.label}
-          </Label>
-          
-          {field.description && (
-            <p className="text-xs text-gray-500">{field.description}</p>
+  const content = (
+    <div className={cn("space-y-6", !showCard && className)}>
+      {(title || description) && (
+        <div className="space-y-1">
+          {title && (
+            <h2 className="text-xl font-semibold text-gray-900 sm:text-2xl">
+              {title}
+            </h2>
           )}
-
-          {field.type === 'textarea' ? (
-            <Textarea
-              id={field.name}
-              name={field.name}
-              placeholder={field.placeholder}
-              value={values[field.name] || ''}
-              onChange={(e) => onChange(field.name, e.target.value)}
-              className={inputClassName}
-              rows={isMobile ? 3 : 4}
-            />
-          ) : field.type === 'select' ? (
-            <Select
-              value={values[field.name] || ''}
-              onValueChange={(value) => onChange(field.name, value)}
-            >
-              <SelectTrigger className={inputClassName}>
-                <SelectValue placeholder={field.placeholder} />
-              </SelectTrigger>
-              <SelectContent>
-                {field.options?.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : (
-            <Input
-              id={field.name}
-              name={field.name}
-              type={field.type}
-              placeholder={field.placeholder}
-              value={values[field.name] || ''}
-              onChange={(e) => onChange(field.name, e.target.value)}
-              className={inputClassName}
-            />
-          )}
-
-          {hasError && (
-            <div className="flex items-center gap-1 text-red-600 text-xs">
-              <AlertCircle className="h-3 w-3" />
-              {errors[field.name]}
-            </div>
+          {description && (
+            <p className="text-sm text-gray-600 sm:text-base">
+              {description}
+            </p>
           )}
         </div>
-      </div>
-    );
+      )}
+      {children}
+    </div>
+  );
 
-    return fieldContent;
-  };
+  if (!showCard) {
+    return <div className={className}>{content}</div>;
+  }
 
   return (
-    <div className={cn("space-y-6", className)}>
-      {/* Wizard Progress (Mobile) */}
-      {isWizardMode && (
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-600">
-              단계 {currentStep + 1} / {totalSteps}
-            </span>
-            <span className="font-medium">
-              {Math.round(progress)}% 완료
-            </span>
-          </div>
-          <Progress value={progress} className="h-2" />
-        </div>
-      )}
+    <Card className={className}>
+      <CardContent className="p-4 sm:p-6">
+        {content}
+      </CardContent>
+    </Card>
+  );
+}
 
-      {/* Form */}
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {visibleSections.map((section, sectionIndex) => (
-          <Card key={sectionIndex} className={cn(
-            isMobile && "border-x-0 rounded-none shadow-none"
-          )}>
-            <CardHeader className={cn(
-              "pb-4",
-              isMobile && "px-4 py-4"
-            )}>
-              <CardTitle className="text-lg">
-                {section.title}
-              </CardTitle>
-              {section.description && (
-                <p className="text-sm text-gray-600 mt-1">
-                  {section.description}
-                </p>
-              )}
-            </CardHeader>
-            
-            <CardContent className={cn(
-              "space-y-4",
-              isMobile && "px-4 pb-4"
-            )}>
-              <div className={cn(
-                "grid gap-4",
-                isMobile ? "grid-cols-12" : "grid-cols-12"
-              )}>
-                {section.fields.map((field) => renderField(field))}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+// Form Section for organizing form fields
+interface FormSectionProps {
+  title?: string;
+  description?: string;
+  children: React.ReactNode;
+  className?: string;
+}
 
-        {/* Navigation and Actions */}
-        <div className={cn(
-          "flex gap-3",
-          isMobile ? "flex-col" : "flex-row justify-end"
-        )}>
-          {/* Mobile Wizard Navigation */}
-          {isWizardMode && (
-            <>
-              <div className="flex gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handlePrevious}
-                  disabled={currentStep === 0}
-                  className="flex-1"
-                >
-                  <ChevronLeft className="h-4 w-4 mr-2" />
-                  이전
-                </Button>
-                
-                {currentStep < formData.length - 1 ? (
-                  <Button
-                    type="button"
-                    onClick={handleNext}
-                    className="flex-1"
-                  >
-                    다음
-                    <ChevronRight className="h-4 w-4 ml-2" />
-                  </Button>
-                ) : (
-                  <Button
-                    type="submit"
-                    disabled={loading}
-                    className="flex-1"
-                  >
-                    {loading ? (
-                      <div className="flex items-center">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                        저장 중...
-                      </div>
-                    ) : (
-                      <>
-                        <Check className="h-4 w-4 mr-2" />
-                        {submitLabel}
-                      </>
-                    )}
-                  </Button>
-                )}
-              </div>
-              
-              {onCancel && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={onCancel}
-                  className="w-full"
-                >
-                  <X className="h-4 w-4 mr-2" />
-                  {cancelLabel}
-                </Button>
-              )}
-            </>
+export function FormSection({
+  title,
+  description,
+  children,
+  className,
+}: FormSectionProps) {
+  return (
+    <div className={cn("space-y-4", className)}>
+      {(title || description) && (
+        <div className="space-y-1">
+          {title && (
+            <h3 className="text-base font-medium text-gray-900 sm:text-lg">
+              {title}
+            </h3>
           )}
-
-          {/* Standard Navigation */}
-          {!isWizardMode && (
-            <>
-              {onCancel && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={onCancel}
-                  className={isMobile ? "w-full" : ""}
-                >
-                  <X className="h-4 w-4 mr-2" />
-                  {cancelLabel}
-                </Button>
-              )}
-              
-              <Button
-                type="submit"
-                disabled={loading}
-                className={isMobile ? "w-full" : ""}
-              >
-                {loading ? (
-                  <div className="flex items-center">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                    저장 중...
-                  </div>
-                ) : (
-                  <>
-                    <Save className="h-4 w-4 mr-2" />
-                    {submitLabel}
-                  </>
-                )}
-              </Button>
-            </>
+          {description && (
+            <p className="text-sm text-gray-600">
+              {description}
+            </p>
           )}
         </div>
-      </form>
-
-      {/* Mobile Floating Actions (Alternative) */}
-      {isMobile && !isWizardMode && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t shadow-lg">
-          <div className="flex gap-3">
-            {onCancel && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onCancel}
-                className="flex-1"
-              >
-                {cancelLabel}
-              </Button>
-            )}
-            <Button
-              onClick={() => onSubmit(values)}
-              disabled={loading}
-              className="flex-1"
-            >
-              {loading ? '저장 중...' : submitLabel}
-            </Button>
-          </div>
-        </div>
       )}
+      <div className="space-y-4 sm:grid sm:grid-cols-2 sm:gap-4 sm:space-y-0">
+        {children}
+      </div>
     </div>
   );
 }
 
-export default ResponsiveForm;
+// Form Grid for responsive field layouts
+interface FormGridProps {
+  children: React.ReactNode;
+  columns?: 1 | 2 | 3;
+  className?: string;
+}
+
+export function FormGrid({
+  children,
+  columns = 2,
+  className,
+}: FormGridProps) {
+  const gridCols = {
+    1: "grid-cols-1",
+    2: "grid-cols-1 sm:grid-cols-2",
+    3: "grid-cols-1 sm:grid-cols-2 xl:grid-cols-3",
+  };
+
+  return (
+    <div className={cn("grid gap-4", gridCols[columns], className)}>
+      {children}
+    </div>
+  );
+}
+
+// Full-width form field wrapper
+interface FormFieldWrapperProps {
+  children: React.ReactNode;
+  fullWidth?: boolean;
+  className?: string;
+}
+
+export function FormFieldWrapper({
+  children,
+  fullWidth = false,
+  className,
+}: FormFieldWrapperProps) {
+  return (
+    <div className={cn(
+      fullWidth && "sm:col-span-2 lg:col-span-3",
+      className
+    )}>
+      {children}
+    </div>
+  );
+}
+
+// Mobile-optimized multi-step form
+interface MobileMultiStepFormProps {
+  steps: Array<{
+    id: string;
+    title: string;
+    description?: string;
+  }>;
+  currentStep: number;
+  onStepChange?: (step: number) => void;
+  onNext?: () => void;
+  onPrevious?: () => void;
+  onSubmit?: () => void;
+  canProceed?: boolean;
+  isSubmitting?: boolean;
+  children: React.ReactNode;
+  className?: string;
+}
+
+export function MobileMultiStepForm({
+  steps,
+  currentStep,
+  onStepChange,
+  onNext,
+  onPrevious,
+  onSubmit,
+  canProceed = true,
+  isSubmitting = false,
+  children,
+  className,
+}: MobileMultiStepFormProps) {
+  const isFirstStep = currentStep === 0;
+  const isLastStep = currentStep === steps.length - 1;
+
+  return (
+    <div className={cn("space-y-6", className)}>
+      {/* Progress - Mobile optimized */}
+      <div className="bg-white sticky top-0 z-10 pb-4 border-b sm:border-b-0 sm:bg-transparent sm:static">
+        <div className="block sm:hidden">
+          {/* Mobile: Simple progress bar */}
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm font-medium text-gray-900">
+              {steps[currentStep].title}
+            </span>
+            <span className="text-xs text-gray-500">
+              {currentStep + 1} / {steps.length}
+            </span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div
+              className="bg-primary-600 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
+            />
+          </div>
+        </div>
+        
+        <div className="hidden sm:block">
+          {/* Desktop: Full progress indicator */}
+          <FormProgress
+            steps={steps}
+            currentStep={currentStep}
+            onStepClick={onStepChange}
+            allowStepClick={!!onStepChange}
+          />
+        </div>
+      </div>
+
+      {/* Form Content */}
+      <div className="min-h-[400px]">
+        {children}
+      </div>
+
+      {/* Actions - Mobile optimized */}
+      <div className="bg-white border-t sticky bottom-0 -mx-4 px-4 py-4 sm:border-t-0 sm:static sm:mx-0 sm:px-0 sm:py-0">
+        <div className="flex justify-between items-center gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onPrevious}
+            disabled={isFirstStep || isSubmitting}
+            className="flex-1 sm:flex-none"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            이전
+          </Button>
+
+          <div className="hidden sm:block text-sm text-gray-500">
+            {currentStep + 1} / {steps.length} 단계
+          </div>
+
+          {isLastStep ? (
+            <Button
+              type="button"
+              onClick={onSubmit}
+              disabled={!canProceed || isSubmitting}
+              className="flex-1 sm:flex-none"
+            >
+              {isSubmitting ? "처리 중..." : "완료"}
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              onClick={onNext}
+              disabled={!canProceed || isSubmitting}
+              className="flex-1 sm:flex-none"
+            >
+              다음
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Touch-friendly input wrapper
+interface TouchInputWrapperProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export function TouchInputWrapper({
+  children,
+  className,
+}: TouchInputWrapperProps) {
+  return (
+    <div className={cn(
+      "[&_input]:min-h-[44px] [&_button]:min-h-[44px]", // iOS minimum touch target
+      "[&_textarea]:min-h-[88px]", // Larger touch area for textarea
+      "[&_select]:min-h-[44px]",
+      className
+    )}>
+      {children}
+    </div>
+  );
+}
+
+// Mobile-friendly spacing utilities
+export const mobileSpacing = {
+  container: "px-4 sm:px-6 lg:px-8",
+  section: "py-6 sm:py-8 lg:py-12",
+  element: "mb-4 sm:mb-6",
+  tight: "mb-2 sm:mb-3",
+  loose: "mb-6 sm:mb-8 lg:mb-12",
+};
+
+// Responsive breakpoints hook
+export function useBreakpoint() {
+  const [breakpoint, setBreakpoint] = React.useState<'mobile' | 'tablet' | 'desktop'>('mobile');
+
+  React.useEffect(() => {
+    const updateBreakpoint = () => {
+      const width = window.innerWidth;
+      if (width < 768) {
+        setBreakpoint('mobile');
+      } else if (width < 1024) {
+        setBreakpoint('tablet');
+      } else {
+        setBreakpoint('desktop');
+      }
+    };
+
+    updateBreakpoint();
+    window.addEventListener('resize', updateBreakpoint);
+    return () => window.removeEventListener('resize', updateBreakpoint);
+  }, []);
+
+  return {
+    breakpoint,
+    isMobile: breakpoint === 'mobile',
+    isTablet: breakpoint === 'tablet',
+    isDesktop: breakpoint === 'desktop',
+  };
+}

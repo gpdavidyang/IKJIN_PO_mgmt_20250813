@@ -5,12 +5,15 @@
 
 import { Router } from "express";
 import { storage } from "../storage";
-import { requireAuth, requireAdmin, requireOrderManager } from "../temp-auth-fix";
+import { requireAuth, requireAdmin, requireOrderManager } from "../local-auth";
 import { insertPurchaseOrderSchema } from "@shared/schema";
 import { upload } from "../utils/multer-config";
 import { decodeKoreanFilename } from "../utils/korean-filename";
 import { OrderService } from "../services/order-service";
 import { OptimizedOrderQueries, OptimizedDashboardQueries } from "../utils/optimized-queries";
+import { ExcelToPDFConverter } from "../utils/excel-to-pdf-converter";
+import fs from "fs";
+import path from "path";
 import { z } from "zod";
 
 const router = Router();
@@ -20,7 +23,7 @@ router.get("/orders", async (req, res) => {
   try {
     const { 
       page = "1", 
-      limit = "20",
+      limit = "50",  // Changed default from 20 to 50 to match frontend
       status,
       projectId,
       vendorId,
@@ -30,6 +33,9 @@ router.get("/orders", async (req, res) => {
       search
     } = req.query;
 
+    // Debug logging (disabled for performance)
+    // console.log('📥 GET /api/orders - Request query:', req.query);
+
     const filters = {
       status: status as string,
       projectId: projectId ? parseInt(projectId as string) : undefined,
@@ -37,12 +43,21 @@ router.get("/orders", async (req, res) => {
       startDate: startDate ? new Date(startDate as string) : undefined,
       endDate: endDate ? new Date(endDate as string) : undefined,
       userId: userId as string,
-      search: search as string,
+      searchText: search as string,  // Changed from 'search' to 'searchText' to match storage.ts
       page: parseInt(page as string),
       limit: parseInt(limit as string)
     };
 
-    const result = await OptimizedOrderQueries.getOrdersWithFilters(filters);
+    // console.log('🔍 GET /api/orders - Parsed filters:', filters);
+
+    const result = await storage.getPurchaseOrders(filters);
+    
+    // console.log('📤 GET /api/orders - Result:', {
+    //   ordersCount: result.orders?.length || 0,
+    //   total: result.total,
+    //   firstOrder: result.orders?.[0]?.orderNumber
+    // });
+
     res.json(result);
   } catch (error) {
     console.error("Error fetching orders:", error);
@@ -132,8 +147,11 @@ router.post("/orders", requireAuth, upload.array('attachments'), async (req, res
 
         await storage.createAttachment({
           orderId: order.id,
-          fileName: decodedFilename,
-          filePath: file.filename,
+          originalName: decodedFilename,
+          storedName: file.filename,
+          filePath: file.path,
+          fileSize: file.size,
+          mimeType: file.mimetype,
           uploadedBy: userId
         });
       }
@@ -277,6 +295,328 @@ router.get("/orders/stats", async (req, res) => {
   } catch (error) {
     console.error("Error fetching order statistics:", error);
     res.status(500).json({ message: "Failed to fetch order statistics" });
+  }
+});
+
+// Generate PDF for order
+router.post("/orders/generate-pdf", requireAuth, async (req, res) => {
+  try {
+    const { orderData, options = {} } = req.body;
+
+    if (!orderData) {
+      return res.status(400).json({ 
+        success: false,
+        error: "발주서 데이터가 필요합니다." 
+      });
+    }
+
+    console.log(`📄 PDF 생성 요청: 발주서 ${orderData.orderNumber || 'N/A'}`);
+
+    // Create temporary directory for PDF generation
+    const timestamp = Date.now();
+    const tempDir = 'uploads/temp-pdf';
+    
+    // Ensure temp directory exists
+    if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir, { recursive: true });
+    }
+
+    const tempHtmlPath = path.join(tempDir, `order-${timestamp}.html`);
+    const tempPdfPath = path.join(tempDir, `order-${timestamp}.pdf`);
+
+    try {
+      // Create HTML content for PDF generation
+      const orderHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>발주서 - ${orderData.orderNumber || '미생성'}</title>
+  <style>
+    body {
+      font-family: 'Malgun Gothic', sans-serif;
+      margin: 20px;
+      line-height: 1.6;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid #3B82F6;
+    }
+    .header h1 {
+      color: #1F2937;
+      margin: 0;
+      font-size: 28px;
+    }
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    .info-item {
+      padding: 10px;
+      border: 1px solid #E5E7EB;
+      border-radius: 8px;
+      background-color: #F9FAFB;
+    }
+    .info-label {
+      font-weight: bold;
+      color: #374151;
+      margin-bottom: 5px;
+    }
+    .info-value {
+      color: #1F2937;
+    }
+    .items-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    .items-table th, .items-table td {
+      border: 1px solid #D1D5DB;
+      padding: 12px;
+      text-align: left;
+    }
+    .items-table th {
+      background-color: #F3F4F6;
+      font-weight: bold;
+      color: #374151;
+    }
+    .items-table tbody tr:nth-child(even) {
+      background-color: #F9FAFB;
+    }
+    .total-row {
+      background-color: #EEF2FF !important;
+      font-weight: bold;
+    }
+    .watermark {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-45deg);
+      font-size: 60px;
+      color: rgba(59, 130, 246, 0.1);
+      z-index: -1;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="watermark">발주서</div>
+  
+  <div class="header">
+    <h1>구매 발주서</h1>
+    <p style="margin: 5px 0; color: #6B7280;">Purchase Order</p>
+  </div>
+
+  <div class="info-grid">
+    <div class="info-item">
+      <div class="info-label">발주서 번호</div>
+      <div class="info-value">${orderData.orderNumber || '미생성'}</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">발주일자</div>
+      <div class="info-value">${new Date().toLocaleDateString('ko-KR')}</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">프로젝트</div>
+      <div class="info-value">${orderData.projectName || '미지정'}</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">거래처</div>
+      <div class="info-value">${orderData.vendorName || '미지정'}</div>
+    </div>
+  </div>
+
+  <h3 style="color: #374151; border-bottom: 1px solid #D1D5DB; padding-bottom: 10px;">발주 품목</h3>
+  
+  <table class="items-table">
+    <thead>
+      <tr>
+        <th style="width: 50px;">순번</th>
+        <th>품목명</th>
+        <th style="width: 80px;">수량</th>
+        <th style="width: 60px;">단위</th>
+        <th style="width: 120px;">단가</th>
+        <th style="width: 120px;">금액</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${orderData.items?.map((item: any, index: number) => `
+        <tr>
+          <td style="text-align: center;">${index + 1}</td>
+          <td>${item.name || '품목명 없음'}</td>
+          <td style="text-align: right;">${item.quantity || 0}</td>
+          <td style="text-align: center;">${item.unit || 'EA'}</td>
+          <td style="text-align: right;">₩${(item.unitPrice || 0).toLocaleString()}</td>
+          <td style="text-align: right;">₩${((item.quantity || 0) * (item.unitPrice || 0)).toLocaleString()}</td>
+        </tr>
+      `).join('') || '<tr><td colspan="6" style="text-align: center; color: #6B7280;">품목 정보 없음</td></tr>'}
+      <tr class="total-row">
+        <td colspan="5" style="text-align: right; font-weight: bold;">총 금액</td>
+        <td style="text-align: right; font-weight: bold;">₩${(orderData.totalAmount || 0).toLocaleString()}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div style="margin-top: 40px; padding: 20px; background-color: #F3F4F6; border-radius: 8px;">
+    <h4 style="margin-top: 0; color: #374151;">비고</h4>
+    <p style="margin: 0; color: #6B7280;">
+      ${orderData.notes || '특이사항 없음'}
+    </p>
+  </div>
+
+  <div style="margin-top: 30px; text-align: center; color: #9CA3AF; font-size: 12px;">
+    이 문서는 시스템에서 자동 생성되었습니다. (생성일: ${new Date().toLocaleString('ko-KR')})
+  </div>
+</body>
+</html>
+      `;
+
+      // Write HTML file
+      fs.writeFileSync(tempHtmlPath, orderHtml, 'utf8');
+
+      // Use ExcelToPDFConverter to convert HTML to PDF
+      // Note: This is a workaround since ExcelToPDFConverter expects Excel files
+      // We could extend it or create a separate HTML to PDF converter
+      
+      // For now, create a simple PDF using the existing converter's Puppeteer setup
+      const puppeteer = await import('puppeteer');
+      
+      const browser = await puppeteer.default.launch({
+        headless: 'new',
+        args: [
+          '--no-sandbox', 
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-accelerated-2d-canvas',
+          '--no-first-run',
+          '--no-zygote',
+          '--single-process',
+          '--disable-gpu'
+        ]
+      });
+
+      const page = await browser.newPage();
+      await page.setContent(orderHtml, { 
+        waitUntil: 'networkidle0',
+        timeout: 30000
+      });
+      
+      await page.pdf({
+        path: tempPdfPath,
+        format: 'A4',
+        landscape: false,
+        printBackground: true,
+        margin: {
+          top: '20mm',
+          bottom: '20mm',
+          left: '15mm',
+          right: '15mm'
+        }
+      });
+
+      await browser.close();
+
+      // Verify PDF was created
+      if (!fs.existsSync(tempPdfPath)) {
+        throw new Error('PDF 파일이 생성되지 않았습니다.');
+      }
+
+      const pdfUrl = `/api/orders/download-pdf/${timestamp}`;
+
+      console.log(`✅ PDF 생성 완료: ${pdfUrl}`);
+
+      // Clean up HTML file
+      if (fs.existsSync(tempHtmlPath)) {
+        fs.unlinkSync(tempHtmlPath);
+      }
+
+      res.json({
+        success: true,
+        pdfUrl,
+        message: "PDF가 성공적으로 생성되었습니다."
+      });
+
+    } catch (conversionError) {
+      console.error('PDF 변환 오류:', conversionError);
+      
+      // Clean up temp files
+      try {
+        if (fs.existsSync(tempHtmlPath)) fs.unlinkSync(tempHtmlPath);
+        if (fs.existsSync(tempPdfPath)) fs.unlinkSync(tempPdfPath);
+      } catch (cleanupError) {
+        console.error('임시 파일 정리 실패:', cleanupError);
+      }
+
+      res.status(500).json({
+        success: false,
+        error: "PDF 생성 중 오류가 발생했습니다.",
+        details: conversionError instanceof Error ? conversionError.message : "알 수 없는 오류"
+      });
+    }
+
+  } catch (error) {
+    console.error("PDF 생성 API 오류:", error);
+    res.status(500).json({ 
+      success: false,
+      error: "PDF 생성 에러가 발생 함",
+      details: error instanceof Error ? error.message : "알 수 없는 오류"
+    });
+  }
+});
+
+// Download or preview generated PDF
+router.get("/orders/download-pdf/:timestamp", (req, res) => {
+  try {
+    const { timestamp } = req.params;
+    const { download } = req.query; // ?download=true 면 다운로드, 없으면 미리보기
+    const pdfPath = path.join(process.cwd(), 'uploads/temp-pdf', `order-${timestamp}.pdf`);
+    
+    console.log(`📄 PDF 다운로드 요청: ${pdfPath}`);
+    console.log(`📄 파일 존재 여부: ${fs.existsSync(pdfPath)}`);
+
+    if (fs.existsSync(pdfPath)) {
+      // CORS headers for iframe/embed support
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET');
+      res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+      
+      if (download === 'true') {
+        // 다운로드 모드
+        res.download(pdfPath, `발주서_${timestamp}.pdf`);
+      } else {
+        // 미리보기 모드 - 브라우저에서 직접 표시
+        const stat = fs.statSync(pdfPath);
+        
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `inline; filename*=UTF-8''${encodeURIComponent('발주서.pdf')}`);
+        res.setHeader('Content-Length', stat.size.toString());
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        
+        const pdfStream = fs.createReadStream(pdfPath);
+        pdfStream.on('error', (error) => {
+          console.error('PDF 스트림 오류:', error);
+          if (!res.headersSent) {
+            res.status(500).json({ error: 'PDF 읽기 실패' });
+          }
+        });
+        pdfStream.pipe(res);
+      }
+    } else {
+      res.status(404).json({
+        success: false,
+        error: "PDF 파일을 찾을 수 없습니다."
+      });
+    }
+  } catch (error) {
+    console.error("PDF 다운로드 오류:", error);
+    res.status(500).json({
+      success: false,
+      error: "PDF 다운로드 중 오류가 발생했습니다."
+    });
   }
 });
 

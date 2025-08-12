@@ -1,0 +1,20 @@
+
+> rest-express@1.0.0 dev
+> NODE_ENV=development tsx server/index.ts
+
+[dotenv@17.2.0] injecting env (13) from .env (tip: ⚙️  suppress all logs with { quiet: true })
+🔍 Using DATABASE_URL: postgresql://postgres.tbvugytmskxxyqfvqmup:gps110601ysw@[HIDDEN]
+🔄 Creating PostgreSQL connection pool with URL: postgresql://postgres.tbvugytmskxxyqfvqmup:gps110601ysw@[HIDDEN]
+✅ Database connected successfully (PostgreSQL pool)
+[dotenv@17.2.0] injecting env (0) from .env (tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' })
+🔧 Force-set DATABASE_URL: postgresql://postgres.tbvugytmskxxyqfvqmup:gps110601ysw@[HIDDEN]
+1:31:51 AM [express] serving on port 8080
+Session saved successfully for user: test_admin_001
+1:32:01 AM [express] POST /api/auth/login 200 in 1166ms :: {"message":"Login successful","user":{"id…
+1:32:07 AM [express] GET /api/dashboard/unified 200 in 734ms :: {"statistics":{"totalOrders":7,"tota…
+1:32:32 AM [express] GET /api/dashboard/unified 200 in 1063ms :: {"statistics":{"totalOrders":7,"tot…
+1:32:32 AM [express] GET /api/dashboard/unified 200 in 167ms :: {"statistics":{"totalOrders":7,"tota…
+1:32:32 AM [express] GET /api/dashboard/unified 200 in 170ms :: {"statistics":{"totalOrders":7,"tota…
+1:33:34 AM [express] GET /api/dashboard/unified 200 in 1671ms :: {"statistics":{"totalOrders":7,"tot…
+1:33:35 AM [express] GET /api/dashboard/unified 200 in 171ms :: {"statistics":{"totalOrders":7,"tota…
+1:33:35 AM [express] GET /api/dashboard/unified 200 in 172ms :: {"statistics":{"totalOrders":7,"tota…

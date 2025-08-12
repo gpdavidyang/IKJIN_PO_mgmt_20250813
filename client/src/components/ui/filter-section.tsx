@@ -91,7 +91,7 @@ export function FilterSection({
       <CardContent className="p-4">
         {/* Always Visible Section */}
         <div className="space-y-4 mb-4">
-          <div className="flex flex-col lg:flex-row lg:items-end gap-4">
+          <div className="flex flex-col xl:flex-row xl:items-end gap-4">
             {/* Search Section */}
             <div className="flex-1">
               <label className="text-sm font-medium text-gray-700 block mb-2">검색</label>
@@ -122,7 +122,7 @@ export function FilterSection({
 
             {/* Primary Filters */}
             {primaryFilters.map((field) => (
-              <div key={field.key} className="w-full lg:w-80">
+              <div key={field.key} className="w-full xl:w-80">
                 <label className="text-sm font-medium text-gray-700 block mb-2">{field.label}</label>
                 {renderFilterField(field)}
               </div>
@@ -153,7 +153,7 @@ export function FilterSection({
         {isExpanded && secondaryFilters.length > 0 && (
           <div className="border-t pt-4">
             <div className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                 {secondaryFilters.map((field) => (
                   <div key={field.key} className="space-y-2">
                     <label className="text-sm font-medium text-gray-700">{field.label}</label>
@@ -181,7 +181,7 @@ export function FilterSection({
                   {filter.label}: {filter.value}
                   <button
                     onClick={filter.onRemove}
-                    className="ml-2 hover:bg-opacity-20 hover:bg-black rounded-full w-4 h-4 flex items-center justify-center"
+                    className="ml-2 hover:bg-black/20 rounded-full w-4 h-4 flex items-center justify-center"
                     title="필터 제거"
                   >
                     ×

@@ -179,15 +179,16 @@ export default function ProjectEdit() {
   }
 
   return (
-    <div className="p-6">
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-[1366px] mx-auto p-6 space-y-6">
       <PageHeader
         title="프로젝트 수정"
         description={`${project.projectName} 프로젝트 정보를 수정합니다`}
       />
 
-      <Card className="max-w-4xl">
+      <Card className="max-w-4xl shadow-sm">
         <CardHeader>
-          <CardTitle>프로젝트 정보</CardTitle>
+          <CardTitle className="text-lg font-semibold">프로젝트 정보</CardTitle>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -533,6 +534,7 @@ export default function ProjectEdit() {
           </Form>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }

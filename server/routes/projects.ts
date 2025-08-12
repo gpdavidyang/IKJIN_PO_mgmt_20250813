@@ -5,7 +5,7 @@
 
 import { Router } from "express";
 import { storage } from "../storage";
-import { requireAuth, requireAdmin } from "../temp-auth-fix";
+import { requireAuth, requireAdmin } from "../local-auth";
 import { insertProjectSchema } from "@shared/schema";
 import { OptimizedOrderQueries } from "../utils/optimized-queries";
 
@@ -19,6 +19,17 @@ router.get("/projects", async (req, res) => {
   } catch (error) {
     console.error("Error fetching projects:", error);
     res.status(500).json({ message: "Failed to fetch projects" });
+  }
+});
+
+// Get active projects
+router.get("/projects/active", async (req, res) => {
+  try {
+    const projects = await storage.getActiveProjects();
+    res.json(projects);
+  } catch (error) {
+    console.error("Error fetching active projects:", error);
+    res.status(500).json({ message: "Failed to fetch active projects" });
   }
 });
 
@@ -52,14 +63,56 @@ router.post('/projects', requireAuth, async (req, res) => {
       return res.status(403).json({ message: "Admin access required" });
     }
 
-    console.log("Project creation request body:", req.body);
+    console.log("🔍 Project creation request body:", JSON.stringify(req.body, null, 2));
+    
+    // Map Korean project types to English enum values
+    const projectTypeMap: Record<string, string> = {
+      "아파트": "residential",
+      "오피스텔": "residential", 
+      "단독주택": "residential",
+      "주거시설": "residential",
+      "상업시설": "commercial",
+      "사무실": "commercial",
+      "쇼핑몰": "commercial",
+      "산업시설": "industrial",
+      "공장": "industrial",
+      "창고": "industrial",
+      "인프라": "infrastructure",
+      "도로": "infrastructure",
+      "교량": "infrastructure",
+    };
+    
+    console.log("🔧 Original projectType:", req.body.projectType, "typeof:", typeof req.body.projectType);
+    console.log("🔧 Mapped projectType:", projectTypeMap[req.body.projectType]);
+    console.log("🔧 Original dates - startDate:", req.body.startDate, "endDate:", req.body.endDate);
+    console.log("🔧 Date types - startDate:", typeof req.body.startDate, "endDate:", typeof req.body.endDate);
     
     // Transform the data to match schema expectations
+    let transformedStartDate = null;
+    let transformedEndDate = null;
+    
+    if (req.body.startDate) {
+      if (typeof req.body.startDate === 'string') {
+        transformedStartDate = req.body.startDate.split('T')[0];
+      } else if (req.body.startDate instanceof Date) {
+        transformedStartDate = req.body.startDate.toISOString().split('T')[0];
+      }
+    }
+    
+    if (req.body.endDate) {
+      if (typeof req.body.endDate === 'string') {
+        transformedEndDate = req.body.endDate.split('T')[0];
+      } else if (req.body.endDate instanceof Date) {
+        transformedEndDate = req.body.endDate.toISOString().split('T')[0];
+      }
+    }
+    
     const transformedData = {
       ...req.body,
-      startDate: req.body.startDate ? new Date(req.body.startDate) : null,
-      endDate: req.body.endDate ? new Date(req.body.endDate) : null,
+      startDate: transformedStartDate,
+      endDate: transformedEndDate,
       totalBudget: req.body.totalBudget ? req.body.totalBudget : null,
+      projectType: projectTypeMap[req.body.projectType] || req.body.projectType || "commercial",
     };
     
     console.log("Transformed project data:", transformedData);

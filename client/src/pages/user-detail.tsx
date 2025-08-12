@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { AvatarImage } from "@/components/ui/optimized-image";
 import { formatDate } from "@/lib/utils";
 
 export default function UserDetail() {
@@ -91,17 +92,16 @@ export default function UserDetail() {
             목록으로
           </Button>
           <div className="flex items-center space-x-3">
-            {user.profileImageUrl ? (
-              <img 
-                src={user.profileImageUrl} 
-                alt={userName}
-                className="h-12 w-12 rounded-full object-cover"
-              />
-            ) : (
-              <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
-                <User className="h-6 w-6 text-blue-600" />
-              </div>
-            )}
+            <AvatarImage
+              src={user.profileImageUrl || ''}
+              alt={userName}
+              size="lg"
+              shape="circle"
+              initials={userName.slice(0, 2)}
+              quality={90}
+              lazy={false}
+              priority={true}
+            />
             <div>
               <h1 className="text-xl font-bold text-gray-900">{userName}</h1>
               <p className="text-sm text-gray-600">{user.email}</p>
@@ -119,7 +119,7 @@ export default function UserDetail() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Main Info */}
         <div className="lg:col-span-2 space-y-6">
           <Card>
@@ -223,10 +223,14 @@ export default function UserDetail() {
                 <CardTitle>프로필 이미지</CardTitle>
               </CardHeader>
               <CardContent>
-                <img 
-                  src={user.profileImageUrl} 
+                <AvatarImage
+                  src={user.profileImageUrl}
                   alt={userName}
-                  className="w-full rounded-lg object-cover"
+                  size="xl"
+                  shape="rounded"
+                  initials={userName.slice(0, 2)}
+                  quality={95}
+                  containerClassName="w-full max-w-md mx-auto"
                 />
               </CardContent>
             </Card>

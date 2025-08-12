@@ -6,7 +6,7 @@
 import { Router } from "express";
 import { storage } from "../storage";
 import { login, logout, getCurrentUser } from "../local-auth";
-import { requireAuth, requireAdmin } from "../temp-auth-fix";
+import { requireAuth, requireAdmin } from "../local-auth";
 import { OptimizedUserQueries } from "../utils/optimized-queries";
 
 const router = Router();
@@ -16,6 +16,38 @@ router.post('/auth/login', login);
 router.post('/auth/logout', logout);
 router.get('/logout', logout); // Support both GET and POST for logout
 router.get('/auth/user', getCurrentUser);
+router.get('/auth/me', getCurrentUser); // Alias for /auth/user
+
+// Permission check endpoint
+router.get("/auth/permissions/:userId", async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const user = await storage.getUser(userId);
+    
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    
+    // Return permissions based on role
+    const permissions = {
+      userId: user.id,
+      role: user.role,
+      permissions: {
+        canCreateOrder: true,
+        canApproveOrder: ["project_manager", "hq_management", "executive", "admin"].includes(user.role),
+        canManageUsers: ["admin"].includes(user.role),
+        canManageProjects: ["project_manager", "hq_management", "admin"].includes(user.role),
+        canViewReports: ["hq_management", "executive", "admin"].includes(user.role),
+        canManageSettings: ["admin"].includes(user.role),
+      }
+    };
+    
+    res.json(permissions);
+  } catch (error) {
+    console.error("Error fetching permissions:", error);
+    res.status(500).json({ message: "Failed to fetch permissions" });
+  }
+});
 
 // User management routes
 router.get("/users", async (req, res) => {

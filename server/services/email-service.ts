@@ -1,6 +1,8 @@
 import nodemailer from "nodemailer";
 import path from "path";
 import fs from "fs/promises";
+import { db } from "../db";
+import { emailSendHistory } from "@shared/schema";
 
 /**
  * Naver 메일 발송 서비스
@@ -111,8 +113,10 @@ export async function sendPurchaseOrderEmail(params: {
   excelFilePath: string;
   recipients: string[];
   cc?: string[];
+  userId?: string;
+  orderId?: number;
 }) {
-  const { orderData, excelFilePath, recipients, cc = [] } = params;
+  const { orderData, excelFilePath, recipients, cc = [], userId, orderId } = params;
 
   try {
     // 엑셀 파일 존재 확인
@@ -141,6 +145,37 @@ export async function sendPurchaseOrderEmail(params: {
     const info = await transporter.sendMail(mailOptions);
     
     console.log("✅ 이메일 발송 성공:", info.messageId);
+    
+    // 이메일 발송 이력 저장
+    if (orderId && userId) {
+      try {
+        const trackingId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        const fileStats = await fs.stat(excelFilePath);
+        
+        await db.insert(emailSendHistory).values({
+          orderId,
+          sentBy: userId,
+          recipientEmail: recipients.join(", "),
+          recipientName: orderData.vendorName,
+          ccEmails: cc.length > 0 ? cc.join(", ") : null,
+          subject: mailOptions.subject,
+          body: mailOptions.html,
+          attachments: [{
+            filename: path.basename(excelFilePath),
+            path: excelFilePath,
+            size: fileStats.size
+          }],
+          status: 'sent',
+          emailProvider: 'naver',
+          messageId: info.messageId,
+          trackingId
+        });
+      } catch (historyError) {
+        console.error("⚠️ 이메일 이력 저장 실패:", historyError);
+        // 이력 저장 실패는 이메일 발송에 영향을 주지 않도록 함
+      }
+    }
+    
     return {
       success: true,
       messageId: info.messageId,
@@ -150,6 +185,34 @@ export async function sendPurchaseOrderEmail(params: {
 
   } catch (error) {
     console.error("❌ 이메일 발송 실패:", error);
+    
+    // 이메일 발송 실패 이력 저장
+    if (orderId && userId) {
+      try {
+        const trackingId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        
+        await db.insert(emailSendHistory).values({
+          orderId,
+          sentBy: userId,
+          recipientEmail: recipients.join(", "),
+          recipientName: orderData.vendorName,
+          ccEmails: cc.length > 0 ? cc.join(", ") : null,
+          subject: emailTemplates.purchaseOrder.subject(
+            orderData.orderNumber,
+            orderData.projectName
+          ),
+          body: emailTemplates.purchaseOrder.html(orderData),
+          attachments: null,
+          status: 'failed',
+          errorMessage: error.message,
+          emailProvider: 'naver',
+          trackingId
+        });
+      } catch (historyError) {
+        console.error("⚠️ 이메일 실패 이력 저장 실패:", historyError);
+      }
+    }
+    
     throw new Error(`이메일 발송 중 오류가 발생했습니다: ${error.message}`);
   }
 }

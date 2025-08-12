@@ -11,8 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Users, FileText, Building, Edit, Save, X, Upload, Image, UserCheck, Search, Trash2, UserPlus, ChevronUp, ChevronDown, Mail, Hash, Phone, Calendar, Power, PowerOff, List, Grid3X3, Database } from "lucide-react";
-import { OfflineManagement } from "@/components/offline/offline-management";
+import { Plus, Users, FileText, Building, Edit, Save, X, Upload, Image, UserCheck, Search, Trash2, UserPlus, ChevronUp, ChevronDown, Mail, Hash, Phone, Calendar, Power, PowerOff, List, Grid3X3, Settings2, Shield } from "lucide-react";
 import { useLocation } from "wouter";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SafeUserDelete } from "@/components/safe-user-delete";
@@ -25,6 +24,7 @@ import { z } from "zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Company, User } from "@shared/schema";
 import { formatKoreanWon } from "@/lib/formatters";
+import { ApprovalWorkflowSettings } from "@/components/admin/approval-workflow-settings";
 
 interface Terminology {
   id: number;
@@ -431,14 +431,15 @@ export default function Admin() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <Building className="h-6 w-6" />
-          시스템 관리
-        </h1>
-        <p className="text-sm text-gray-600">사용자 및 시스템 설정을 관리하세요</p>
-      </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-[1366px] mx-auto p-6 space-y-6">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <Shield className="h-5 w-5 text-blue-600" />
+            시스템 관리
+          </h1>
+          <p className="text-sm text-gray-600">사용자 및 시스템 설정을 관리하세요</p>
+        </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-5">
@@ -454,19 +455,19 @@ export default function Admin() {
             <UserCheck className="h-4 w-4" />
             승인 권한
           </TabsTrigger>
+          <TabsTrigger value="workflow" className="flex items-center gap-2 text-sm">
+            <Settings2 className="h-4 w-4" />
+            워크플로우
+          </TabsTrigger>
           <TabsTrigger value="terminology" className="flex items-center gap-2 text-sm">
             <FileText className="h-4 w-4" />
             용어집 관리
-          </TabsTrigger>
-          <TabsTrigger value="offline" className="flex items-center gap-2 text-sm">
-            <Database className="h-4 w-4" />
-            오프라인 관리
           </TabsTrigger>
         </TabsList>
 
         {/* 회사 정보 탭 */}
         <TabsContent value="company" className="mt-2">
-          <Card>
+          <Card className="shadow-sm">
             <CardHeader className="pb-1">
               <CardTitle className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-1">
@@ -616,7 +617,7 @@ export default function Admin() {
 
         {/* 사용자 관리 탭 */}
         <TabsContent value="users" className="mt-2">
-          <Card>
+          <Card className="shadow-sm">
             <CardHeader className="pb-1">
               <CardTitle className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-1">
@@ -755,9 +756,9 @@ export default function Admin() {
                     </TableBody>
                   </Table>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                     {filteredUsers.map((user) => (
-                      <Card key={user.id} className="p-3">
+                      <Card key={user.id} className="p-3 shadow-sm">
                         <div className="flex items-center gap-3 mb-3">
                           <Avatar className="h-8 w-8">
                             <AvatarFallback className="text-sm">
@@ -839,7 +840,7 @@ export default function Admin() {
 
         {/* 용어집 관리 탭 */}
         <TabsContent value="terminology" className="mt-2">
-          <Card>
+          <Card className="shadow-sm">
             <CardHeader className="pb-1">
               <CardTitle className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-1">
@@ -956,14 +957,9 @@ export default function Admin() {
           </Card>
         </TabsContent>
 
-        {/* 오프라인 관리 탭 */}
-        <TabsContent value="offline" className="mt-2">
-          <OfflineManagement />
-        </TabsContent>
-
         {/* 승인 권한 설정 탭 */}
         <TabsContent value="approval" className="mt-2">
-          <Card>
+          <Card className="shadow-sm">
             <CardHeader className="pb-1">
               <CardTitle className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-1">
@@ -1033,6 +1029,11 @@ export default function Admin() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* 워크플로우 설정 탭 */}
+        <TabsContent value="workflow" className="mt-2">
+          <ApprovalWorkflowSettings />
         </TabsContent>
       </Tabs>
 

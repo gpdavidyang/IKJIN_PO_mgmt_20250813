@@ -419,7 +419,7 @@ export default function CreateAccessoriesOrder() {
         </div>
 
         {/* 현장 정보 요약 */}
-        <Card className="hover:shadow-md transition-shadow">
+        <Card className="hover:shadow-md transition-shadow shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Building2 className="h-5 w-5 text-blue-600" />
@@ -427,7 +427,7 @@ export default function CreateAccessoriesOrder() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               <div>
                 <Label className="text-sm font-medium text-gray-600">현장명</Label>
                 <p className="text-sm font-semibold">{savedData.projectSettings.siteName}</p>
@@ -451,9 +451,9 @@ export default function CreateAccessoriesOrder() {
         </Card>
 
         {/* 공정별 정보 요약 */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           {/* 하드웨어 정보 */}
-          <Card className="border-orange-200">
+          <Card className="border-orange-200 shadow-sm">
             <CardHeader className="bg-orange-50">
               <CardTitle className="text-orange-700 text-sm">하드웨어</CardTitle>
             </CardHeader>
@@ -476,7 +476,7 @@ export default function CreateAccessoriesOrder() {
           </Card>
 
           {/* 실링재 정보 */}
-          <Card className="border-teal-200">
+          <Card className="border-teal-200 shadow-sm">
             <CardHeader className="bg-teal-50">
               <CardTitle className="text-teal-700 text-sm">실링재</CardTitle>
             </CardHeader>
@@ -499,7 +499,7 @@ export default function CreateAccessoriesOrder() {
           </Card>
 
           {/* 마감재 정보 */}
-          <Card className="border-indigo-200">
+          <Card className="border-indigo-200 shadow-sm">
             <CardHeader className="bg-indigo-50">
               <CardTitle className="text-indigo-700 text-sm">마감재</CardTitle>
             </CardHeader>
@@ -523,7 +523,7 @@ export default function CreateAccessoriesOrder() {
         </div>
 
         {/* 스프레드시트 데이터 미리보기 */}
-        <Card className="hover:shadow-md transition-shadow">
+        <Card className="hover:shadow-md transition-shadow shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FileSpreadsheet className="h-5 w-5 text-orange-600" />
@@ -594,16 +594,15 @@ export default function CreateAccessoriesOrder() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      {/* 페이지 헤더 - UI Standards 적용 */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-          <Wrench className="h-5 w-5 text-orange-600" />
-        </div>
-        <div>
-          <h1 className="text-xl font-bold text-gray-900 leading-tight">부자재 발주서</h1>
-          <p className="text-sm text-gray-600">부자재 공정 전용 발주서를 작성하고 관리합니다.</p>
-        </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-[1366px] mx-auto p-6 space-y-6">
+        {/* 페이지 헤더 - UI Standards 적용 */}
+        <div className="flex items-center gap-3">
+          <Wrench className="h-5 w-5 text-blue-600" />
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">부자재 발주서</h1>
+            <p className="text-sm text-gray-600">부자재 공정 전용 발주서를 작성하고 관리합니다.</p>
+          </div>
         <div className="ml-auto">
           <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">
             실험적 기능
@@ -612,7 +611,7 @@ export default function CreateAccessoriesOrder() {
       </div>
 
       {/* 현장 설정 섹션 - UI Standards 적용 */}
-      <Card className="hover:shadow-md transition-shadow">
+      <Card className="hover:shadow-md transition-shadow shadow-sm">
         <CardContent className="p-4">
           <div className="flex items-center gap-2 mb-4">
             <Settings className="h-5 w-5 text-blue-600" />
@@ -752,7 +751,7 @@ export default function CreateAccessoriesOrder() {
       </Card>
 
       {/* 하드웨어 공정 설정 섹션 */}
-      <Card className="hover:shadow-md transition-shadow border-orange-200">
+      <Card className="hover:shadow-md transition-shadow border-orange-200 shadow-sm">
         <CardContent className="p-4">
           <div className="flex items-center gap-2 mb-4">
             <Wrench className="h-5 w-5 text-orange-600" />
@@ -860,7 +859,7 @@ export default function CreateAccessoriesOrder() {
       </Card>
 
       {/* 실링재 공정 설정 섹션 */}
-      <Card className="hover:shadow-md transition-shadow border-teal-200">
+      <Card className="hover:shadow-md transition-shadow border-teal-200 shadow-sm">
         <CardContent className="p-4">
           <div className="flex items-center gap-2 mb-4">
             <Settings className="h-5 w-5 text-teal-600" />
@@ -939,7 +938,7 @@ export default function CreateAccessoriesOrder() {
       </Card>
 
       {/* 마감재 공정 설정 섹션 */}
-      <Card className="hover:shadow-md transition-shadow border-indigo-200">
+      <Card className="hover:shadow-md transition-shadow border-indigo-200 shadow-sm">
         <CardContent className="p-4">
           <div className="flex items-center gap-2 mb-4">
             <Building2 className="h-5 w-5 text-indigo-600" />
@@ -1018,7 +1017,7 @@ export default function CreateAccessoriesOrder() {
       </Card>
 
       {/* Excel 파일 업로드 섹션 */}
-      <Card className="hover:shadow-md transition-shadow">
+      <Card className="hover:shadow-md transition-shadow shadow-sm">
         <CardContent className="p-4">
           <div className="flex items-center gap-2 mb-4">
             <FileSpreadsheet className="h-5 w-5 text-orange-600" />
@@ -1055,7 +1054,7 @@ export default function CreateAccessoriesOrder() {
 
       {/* 스프레드시트 데이터 표시 */}
       {data.length > 0 && (
-        <Card className="hover:shadow-md transition-shadow">
+        <Card className="hover:shadow-md transition-shadow shadow-sm">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-4">
               <FileSpreadsheet className="h-5 w-5 text-blue-600" />
@@ -1112,6 +1111,7 @@ export default function CreateAccessoriesOrder() {
           <ArrowRight className="h-4 w-4" />
           저장하고 다음 단계로
         </Button>
+      </div>
       </div>
     </div>
   )

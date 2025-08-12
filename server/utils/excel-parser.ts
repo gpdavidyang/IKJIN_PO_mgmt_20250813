@@ -1,7 +1,7 @@
 import * as XLSX from 'xlsx';
 import { z } from 'zod';
 
-// Excel Input Sheet 컬럼 정의 (A:M 열)
+// Excel Input Sheet 컬럼 정의 (A:P 열) - 품목 계층 추가
 const ExcelRowSchema = z.object({
   orderDate: z.string(), // A열: 발주일자
   deliveryDate: z.string(), // B열: 납기일자  
@@ -10,12 +10,15 @@ const ExcelRowSchema = z.object({
   deliveryName: z.string(), // E열: 납품처명
   deliveryEmail: z.string().email().optional(), // F열: 납품처 이메일
   projectName: z.string(), // G열: 프로젝트명
-  itemName: z.string(), // H열: 품목명
-  specification: z.string().optional(), // I열: 규격
-  quantity: z.number(), // J열: 수량
-  unitPrice: z.number(), // K열: 단가
-  totalAmount: z.number(), // L열: 총금액
-  notes: z.string().optional(), // M열: 비고
+  majorCategory: z.string().optional(), // H열: 대분류
+  middleCategory: z.string().optional(), // I열: 중분류
+  minorCategory: z.string().optional(), // J열: 소분류
+  itemName: z.string(), // K열: 품목명
+  specification: z.string().optional(), // L열: 규격
+  quantity: z.number(), // M열: 수량
+  unitPrice: z.number(), // N열: 단가
+  totalAmount: z.number(), // O열: 총금액
+  notes: z.string().optional(), // P열: 비고
 });
 
 export type ExcelParsedRow = z.infer<typeof ExcelRowSchema>;
@@ -40,6 +43,9 @@ export const PurchaseOrderMappingSchema = z.object({
   deliveryName: z.string(), 
   deliveryEmail: z.string().optional(),
   projectName: z.string(),
+  majorCategory: z.string().optional(),
+  middleCategory: z.string().optional(),
+  minorCategory: z.string().optional(),
   itemName: z.string(),
   specification: z.string().optional(),
   quantity: z.number(),
@@ -67,22 +73,22 @@ export function parseExcelInputSheet(buffer: Buffer): PurchaseOrderMapping[] {
     console.log('워크북 시트 목록:', workbook.SheetNames);
     
     // Input Sheet 확인
-    if (!workbook.SheetNames.includes('Input Sheet')) {
-      throw new Error(`Input Sheet가 존재하지 않습니다. 사용 가능한 시트: ${workbook.SheetNames.join(', ')}`);
+    if (!workbook.SheetNames.includes('Input')) {
+      throw new Error(`Input 시트가 존재하지 않습니다. 사용 가능한 시트: ${workbook.SheetNames.join(', ')}`);
     }
     
-    const worksheet = workbook.Sheets['Input Sheet'];
-    console.log('Input Sheet 로드 완료');
+    const worksheet = workbook.Sheets['Input'];
+    console.log('Input 시트 로드 완료');
     
     console.log('워크시트 정보:', {
-      name: 'Input Sheet',
+      name: 'Input',
       ref: worksheet['!ref'],
       merges: worksheet['!merges'],
     });
 
     // 워크시트의 실제 범위 확인
     if (!worksheet['!ref']) {
-      throw new Error('Input Sheet가 비어있거나 데이터를 찾을 수 없습니다.');
+      throw new Error('Input 시트가 비어있거나 데이터를 찾을 수 없습니다.');
     }
 
     const fullRange = XLSX.utils.decode_range(worksheet['!ref']);
@@ -91,10 +97,10 @@ export function parseExcelInputSheet(buffer: Buffer): PurchaseOrderMapping[] {
       end: { row: fullRange.e.r, col: fullRange.e.c }
     });
 
-    // A:M 범위의 데이터만 추출 (2행부터)
+    // A:P 범위의 데이터만 추출 (2행부터) - 품목 계층 컬럼 추가
     const range = {
       s: { c: 0, r: 1 }, // A2부터 시작
-      e: { c: 12, r: fullRange.e.r } // M열까지, 마지막 행까지
+      e: { c: 15, r: fullRange.e.r } // P열까지, 마지막 행까지
     };
     
     console.log('파싱 범위:', range);
@@ -103,8 +109,9 @@ export function parseExcelInputSheet(buffer: Buffer): PurchaseOrderMapping[] {
     const jsonData: any[] = [];
     const headers = [
       'orderDate', 'deliveryDate', 'vendorName', 'vendorEmail',
-      'deliveryName', 'deliveryEmail', 'projectName', 'itemName',
-      'specification', 'quantity', 'unitPrice', 'totalAmount', 'notes'
+      'deliveryName', 'deliveryEmail', 'projectName', 
+      'majorCategory', 'middleCategory', 'minorCategory',
+      'itemName', 'specification', 'quantity', 'unitPrice', 'totalAmount', 'notes'
     ];
     
     console.log('헤더 배열:', headers);
@@ -157,7 +164,7 @@ export function parseExcelInputSheet(buffer: Buffer): PurchaseOrderMapping[] {
     console.log(`추출된 데이터 행 수: ${jsonData.length}`);
     
     if (jsonData.length === 0) {
-      throw new Error('Input Sheet에서 유효한 데이터를 찾을 수 없습니다. 2행부터 데이터가 있는지 확인해주세요.');
+      throw new Error('Input 시트에서 유효한 데이터를 찾을 수 없습니다. 2행부터 데이터가 있는지 확인해주세요.');
     }
     
     // 데이터 검증 및 변환
@@ -235,6 +242,9 @@ export function parseExcelInputSheet(buffer: Buffer): PurchaseOrderMapping[] {
           deliveryName: row.deliveryName?.trim() || '',
           deliveryEmail: row.deliveryEmail?.trim() || undefined,
           projectName: row.projectName?.trim() || '',
+          majorCategory: row.majorCategory?.trim() || undefined,
+          middleCategory: row.middleCategory?.trim() || undefined,
+          minorCategory: row.minorCategory?.trim() || undefined,
           itemName: row.itemName?.trim() || '',
           specification: row.specification?.trim() || undefined,
           quantity,

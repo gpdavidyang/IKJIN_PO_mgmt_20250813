@@ -261,11 +261,11 @@ export default function ExcelAutomationTest() {
   };
 
   return (
-    <div className="container mx-auto p-6 max-w-6xl">
+    <div className="container mx-auto p-6 max-w-[1366px]">
       <div className="mb-6">
         <h1 className="text-3xl font-bold mb-2">엑셀 템플릿 자동화 테스트</h1>
         <p className="text-muted-foreground">
-          Input Sheet의 A:M 열을 파싱하여 JSON으로 변환하는 기능을 테스트합니다.
+          Input 시트의 A:P 열을 파싱하여 JSON으로 변환하는 기능을 테스트합니다.
         </p>
       </div>
 
@@ -274,7 +274,7 @@ export default function ExcelAutomationTest() {
         <CardHeader>
           <CardTitle>1단계: 엑셀 파일 업로드</CardTitle>
           <CardDescription>
-            'Input Sheet' 시트가 포함된 Excel 파일을 업로드하세요.
+            'Input' 시트가 포함된 Excel 파일을 업로드하세요.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

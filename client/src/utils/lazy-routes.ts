@@ -7,7 +7,7 @@ import { lazy } from "react";
 
 // Main pages - loaded on demand
 export const Dashboard = lazy(() => import("@/pages/dashboard"));
-export const Orders = lazy(() => import("@/pages/orders"));
+export const Orders = lazy(() => import("@/pages/orders-professional"));
 export const CreateOrderStandard = lazy(() => import("@/pages/create-order-standard"));
 export const CreateOrderExcel = lazy(() => import("@/pages/create-order-excel"));
 

@@ -198,7 +198,8 @@ export default function Items() {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-[1366px] mx-auto p-6 space-y-6">
       <PageHeader
         title="품목 관리"
         action={user?.role === "admin" ? (
@@ -210,7 +211,7 @@ export default function Items() {
       />
 
       {/* Search and Filter Section */}
-      <Card>
+      <Card className="shadow-sm">
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
             <div className="flex flex-col sm:flex-row gap-4 flex-1">
@@ -272,7 +273,7 @@ export default function Items() {
 
       {/* Content based on view mode */}
       {viewMode === 'table' ? (
-        <Card>
+        <Card className="shadow-sm">
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <Table>
@@ -430,10 +431,10 @@ export default function Items() {
         </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {isLoading ? (
             [...Array(6)].map((_, i) => (
-              <Card key={i} className="p-6">
+              <Card key={i} className="p-6 shadow-sm">
                 <div className="animate-pulse">
                   <div className="h-4 bg-gray-200 rounded mb-3"></div>
                   <div className="h-3 bg-gray-200 rounded w-3/4 mb-2"></div>
@@ -447,7 +448,7 @@ export default function Items() {
             </div>
           ) : (
             filteredItems.map((item: any) => (
-              <Card key={item.id} className="p-4 hover:shadow-md transition-shadow">
+              <Card key={item.id} className="p-4 hover:shadow-md transition-shadow shadow-sm">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-gray-900 cursor-pointer hover:text-blue-600 truncate" onClick={() => navigate(`/items/${item.id}`)}>
@@ -525,6 +526,7 @@ export default function Items() {
           onSuccess={handleFormSuccess}
         />
       )}
+      </div>
     </div>
   );
 }

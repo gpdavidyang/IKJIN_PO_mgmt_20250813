@@ -17,15 +17,15 @@ export function simpleParseExcel(buffer: Buffer) {
     const workbook = XLSX.read(buffer, { type: 'buffer' });
     console.log('시트 목록:', workbook.SheetNames);
 
-    // 3. Input Sheet 찾기
+    // 3. Input 시트 찾기
     const sheetName = workbook.SheetNames.find(name => 
-      name === 'Input Sheet' || name.toLowerCase().includes('input')
+      name === 'Input' || name.toLowerCase().includes('input')
     );
     
     if (!sheetName) {
       return {
         success: false,
-        error: `Input Sheet를 찾을 수 없습니다. 사용 가능한 시트: ${workbook.SheetNames.join(', ')}`
+        error: `Input 시트를 찾을 수 없습니다. 사용 가능한 시트: ${workbook.SheetNames.join(', ')}`
       };
     }
 

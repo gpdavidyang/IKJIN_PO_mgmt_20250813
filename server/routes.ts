@@ -589,13 +589,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         monthlyStats,
         orders,
         activeProjectsCount,
-        newProjectsThisMonth
+        newProjectsThisMonth,
+        categoryStats
       ] = await Promise.all([
         storage.getDashboardStats(isAdmin ? undefined : userId),
         storage.getMonthlyOrderStats(isAdmin ? undefined : userId),
         storage.getPurchaseOrders({}),
         storage.getActiveProjectsCount(isAdmin ? undefined : userId),
-        storage.getNewProjectsThisMonth(isAdmin ? undefined : userId)
+        storage.getNewProjectsThisMonth(isAdmin ? undefined : userId),
+        storage.getCategoryOrderStats(isAdmin ? undefined : userId)
       ]);
 
       // Get recent projects from orders data
@@ -649,6 +651,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         monthlyStats,
         projectStats,
         statusStats,
+        categoryStats,
         orders,
         activeProjectsCount: { count: activeProjectsCount },
         newProjectsThisMonth: { count: newProjectsThisMonth },
@@ -1068,6 +1071,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // 품목 계층 필터용 카테고리 조회
+  app.get('/api/items/major-categories', async (req, res) => {
+    try {
+      const categories = await storage.getDistinctMajorCategories();
+      res.json(categories);
+    } catch (error) {
+      console.error("Error fetching major categories:", error);
+      res.status(500).json({ message: "Failed to fetch major categories" });
+    }
+  });
+
+  app.get('/api/items/middle-categories', async (req, res) => {
+    try {
+      const majorCategory = req.query.majorCategory as string;
+      const categories = await storage.getDistinctMiddleCategories(majorCategory);
+      res.json(categories);
+    } catch (error) {
+      console.error("Error fetching middle categories:", error);
+      res.status(500).json({ message: "Failed to fetch middle categories" });
+    }
+  });
+
+  app.get('/api/items/minor-categories', async (req, res) => {
+    try {
+      const majorCategory = req.query.majorCategory as string;
+      const middleCategory = req.query.middleCategory as string;
+      const categories = await storage.getDistinctMinorCategories(majorCategory, middleCategory);
+      res.json(categories);
+    } catch (error) {
+      console.error("Error fetching minor categories:", error);
+      res.status(500).json({ message: "Failed to fetch minor categories" });
+    }
+  });
+
   app.get('/api/items/:id', requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id, 10);
@@ -1273,6 +1310,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         filters.searchText = req.query.searchText;
       }
       
+      // Category filters
+      if (req.query.majorCategory && req.query.majorCategory !== 'all') {
+        filters.majorCategory = req.query.majorCategory;
+      }
+      if (req.query.middleCategory && req.query.middleCategory !== 'all') {
+        filters.middleCategory = req.query.middleCategory;
+      }
+      if (req.query.minorCategory && req.query.minorCategory !== 'all') {
+        filters.minorCategory = req.query.minorCategory;
+      }
+      
       // Pagination
       filters.page = parseInt(req.query.page || '1');
       filters.limit = parseInt(req.query.limit || '50');
@@ -1282,18 +1330,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Use storage layer to get filtered orders
       const result = await storage.getPurchaseOrders(filters);
       
-      console.log(`✅ Found ${result.orders.length} orders (total: ${result.total})`);
+      // Debug logging (disabled for performance)
+      // console.log(`✅ Found ${result.orders.length} orders (total: ${result.total})`);
       
       // Log sample orders for debugging
-      if (result.orders.length > 0) {
-        console.log('📄 Sample orders:', result.orders.slice(0, 2).map(o => ({
-          id: o.id,
-          orderNumber: o.orderNumber,
-          status: o.status,
-          userId: o.userId,
-          totalAmount: o.totalAmount
-        })));
-      }
+      // if (result.orders.length > 0) {
+      //   console.log('📄 Sample orders:', result.orders.slice(0, 2).map(o => ({
+      //     id: o.id,
+      //     orderNumber: o.orderNumber,
+      //     status: o.status,
+      //     userId: o.userId,
+      //     totalAmount: o.totalAmount
+      //   })));
+      // }
       
       res.json(result);
     } catch (error) {
@@ -1326,6 +1375,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         minAmount: req.query.minAmount ? parseFloat(req.query.minAmount) : undefined,
         maxAmount: req.query.maxAmount ? parseFloat(req.query.maxAmount) : undefined,
         searchText: req.query.searchText,
+        majorCategory: req.query.majorCategory && req.query.majorCategory !== 'all' ? req.query.majorCategory : undefined,
+        middleCategory: req.query.middleCategory && req.query.middleCategory !== 'all' ? req.query.middleCategory : undefined,
+        minorCategory: req.query.minorCategory && req.query.minorCategory !== 'all' ? req.query.minorCategory : undefined,
         limit: 1000, // Export more records
       };
       
@@ -1426,7 +1478,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   }, async (req: any, res) => {
     try {
-      console.log('POST /api/orders - Request received');
+      // Debug logging (disabled for performance)
+      // console.log('POST /api/orders - Request received');
       const userId = req.user.id;
       
       // Handle both JSON and FormData requests
@@ -2365,6 +2418,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           data = await storage.getVendorOrderStats();
           filename = "거래처별_발주_통계.xlsx";
           break;
+        case "category":
+          // 품목 계층별 통계
+          const categoryStats = await storage.getCategoryOrderStats();
+          data = categoryStats;
+          filename = "품목계층별_발주_통계.xlsx";
+          break;
         case "orders":
           const orders = await storage.getPurchaseOrders({
             startDate,
@@ -2372,18 +2431,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
             page: 1,
             limit: 1000
           });
-          data = orders.orders.map(order => ({
-            발주번호: order.orderNumber,
-            거래처: order.vendor?.name || "",
-            발주일: order.orderDate.toLocaleDateString("ko-KR"),
-            납품희망일: order.deliveryDate?.toLocaleDateString("ko-KR") || "",
-            총금액: order.totalAmount?.toLocaleString("ko-KR") || "0",
-            상태: order.status === "pending" ? "대기" : 
-                  order.status === "approved" ? "승인" : 
-                  order.status === "completed" ? "완료" : order.status,
-            작성자: order.user?.name || ""
-          }));
-          filename = "발주서_목록.xlsx";
+          
+          // 각 발주서의 품목 정보도 포함하여 상세 Excel 생성
+          data = [];
+          for (const order of orders.orders) {
+            if (order.items && order.items.length > 0) {
+              // 품목별로 행 생성
+              for (const item of order.items) {
+                data.push({
+                  발주번호: order.orderNumber,
+                  발주일: order.orderDate.toLocaleDateString("ko-KR"),
+                  거래처명: order.vendor?.name || "",
+                  거래처이메일: order.customFields?.vendorEmail || "",
+                  납품처명: order.customFields?.deliveryName || "",
+                  납품처이메일: order.customFields?.deliveryEmail || "",
+                  프로젝트명: order.project?.projectName || "",
+                  대분류: item.majorCategory || "",
+                  중분류: item.middleCategory || "",
+                  소분류: item.minorCategory || "",
+                  품목명: item.itemName || "",
+                  규격: item.specification || "",
+                  수량: item.quantity || 0,
+                  단가: item.unitPrice || 0,
+                  총금액: item.totalAmount || 0,
+                  비고: item.notes || "",
+                  납품희망일: order.deliveryDate?.toLocaleDateString("ko-KR") || "",
+                  상태: order.status === "pending" ? "대기" : 
+                        order.status === "approved" ? "승인" : 
+                        order.status === "completed" ? "완료" : order.status,
+                  작성자: order.user?.name || ""
+                });
+              }
+            } else {
+              // 품목이 없는 경우 발주서 정보만
+              data.push({
+                발주번호: order.orderNumber,
+                발주일: order.orderDate.toLocaleDateString("ko-KR"),
+                거래처명: order.vendor?.name || "",
+                프로젝트명: order.project?.projectName || "",
+                총금액: order.totalAmount?.toLocaleString("ko-KR") || "0",
+                납품희망일: order.deliveryDate?.toLocaleDateString("ko-KR") || "",
+                상태: order.status === "pending" ? "대기" : 
+                      order.status === "approved" ? "승인" : 
+                      order.status === "completed" ? "완료" : order.status,
+                작성자: order.user?.name || ""
+              });
+            }
+          }
+          filename = "발주서_상세목록.xlsx";
           break;
         default:
           return res.status(400).json({ message: "Invalid report type" });
@@ -2945,7 +3040,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log('간단 파싱 성공. 복잡한 파싱 시도...');
 
-      // Input Sheet 파싱
+      // Input 시트 파싱
       const parsedData = parseExcelInputSheet(req.file.buffer);
       
       // 데이터 검증
@@ -3057,9 +3152,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
       console.log('워크북 시트들:', workbook.SheetNames);
 
-      if (workbook.SheetNames.includes('Input Sheet')) {
-        const worksheet = workbook.Sheets['Input Sheet'];
-        console.log('Input Sheet 정보:', {
+      if (workbook.SheetNames.includes('Input')) {
+        const worksheet = workbook.Sheets['Input'];
+        console.log('Input 시트 정보:', {
           ref: worksheet['!ref'],
           cells: Object.keys(worksheet).filter(key => !key.startsWith('!')).slice(0, 10)
         });
@@ -3076,7 +3171,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         success: true,
         sheets: workbook.SheetNames,
-        hasInputSheet: workbook.SheetNames.includes('Input Sheet'),
+        hasInputSheet: workbook.SheetNames.includes('Input'),
         message: '디버그 정보가 서버 콘솔에 출력되었습니다.'
       });
 

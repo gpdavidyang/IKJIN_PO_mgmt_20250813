@@ -27,21 +27,20 @@ export default function CreateOrder() {
   };
 
   return (
-    <div className="p-6">
-      {/* Page Header */}
-      <div className="mb-6">
-        <div className="flex items-center gap-3">
-          <FileText className="h-6 w-6 text-blue-600" />
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">발주서 작성</h1>
-            <p className="text-sm text-gray-600 mt-1">
-              새로운 발주서를 작성하거나 Excel 파일을 업로드해주세요
-            </p>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-[1366px] mx-auto p-6 space-y-6">
+        {/* Page Header */}
+        <div className="mb-6">
+          <div className="flex items-center gap-3">
+            <FileText className="h-5 w-5 text-blue-600" />
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">발주서 작성</h1>
+              <p className="text-sm text-gray-600 mt-1">
+                새로운 발주서를 작성하거나 Excel 파일을 업로드해주세요
+              </p>
+            </div>
           </div>
         </div>
-      </div>
-
-      <div className="max-w-6xl mx-auto">
         {isExcelUploadEnabled ? (
           <Tabs defaultValue="form" className="w-full">
             <TabsList className="grid w-full grid-cols-2">

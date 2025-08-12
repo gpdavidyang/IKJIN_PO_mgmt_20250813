@@ -40,20 +40,26 @@ export default function TemplateManagement() {
 
   // 템플릿 목록 조회
   const { data: templates = [], isLoading } = useQuery({
-    queryKey: ['/api/order-templates'],
-    queryFn: () => fetch('/api/order-templates', { credentials: 'include' }).then(res => res.json()),
+    queryKey: ['/api/admin/templates'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/templates', { credentials: 'include' });
+      const data = await response.json();
+      console.log('🔍 Templates API response:', data);
+      // 응답이 배열이 아닌 경우 빈 배열 반환
+      return Array.isArray(data) ? data : [];
+    },
   });
 
   // 템플릿 생성
   const createTemplateMutation = useMutation({
-    mutationFn: (templateData: any) => fetch('/api/order-templates', {
+    mutationFn: (templateData: any) => fetch('/api/admin/templates', {
       method: 'POST',
       body: JSON.stringify(templateData),
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include'
     }).then(res => res.json()),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/order-templates'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/templates'] });
       setShowBuilder(false);
       toast({
         title: "성공",
@@ -72,14 +78,14 @@ export default function TemplateManagement() {
   // 템플릿 업데이트
   const updateTemplateMutation = useMutation({
     mutationFn: ({ id, templateData }: { id: number; templateData: any }) => 
-      fetch(`/api/order-templates/${id}`, {
+      fetch(`/api/admin/templates/${id}`, {
         method: 'PUT',
         body: JSON.stringify(templateData),
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include'
       }).then(res => res.json()),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/order-templates'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/templates'] });
       setShowBuilder(false);
       setIsEditing(false);
       setSelectedTemplate(null);
@@ -100,7 +106,7 @@ export default function TemplateManagement() {
   // 템플릿 삭제
   const deleteTemplateMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await fetch(`/api/order-templates/${id}`, {
+      const response = await fetch(`/api/admin/templates/${id}`, {
         method: 'DELETE',
         credentials: 'include',
         headers: {
@@ -124,7 +130,7 @@ export default function TemplateManagement() {
       // Force complete cache refresh with new timestamp
       const timestamp = Date.now();
       queryClient.removeQueries({ queryKey: ['/api/order-templates'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/order-templates'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/templates'] });
       queryClient.refetchQueries({ 
         queryKey: ['/api/order-templates'], 
         type: 'active',
@@ -156,7 +162,7 @@ export default function TemplateManagement() {
         credentials: 'include'
       }).then(res => res.json()),
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/order-templates'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/templates'] });
       toast({
         title: "성공",
         description: `템플릿이 ${variables.isActive ? '활성화' : '비활성화'}되었습니다.`,
@@ -171,10 +177,12 @@ export default function TemplateManagement() {
     },
   });
 
-  // 필터링된 템플릿
-  const filteredTemplates = templates.filter((template: Template) =>
-    template.templateName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // 필터링된 템플릿 (안전하게 배열인지 확인)
+  const filteredTemplates = Array.isArray(templates) 
+    ? templates.filter((template: Template) =>
+        template.templateName.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : [];
 
   // 템플릿 타입별 아이콘 (카테고리 기반)
   const getTemplateIcon = (templateType: string) => {
@@ -254,19 +262,20 @@ export default function TemplateManagement() {
   }
 
   return (
-    <div className="p-6">
-      {/* Page Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Layers className="h-6 w-6 text-blue-600" />
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">템플릿 관리</h1>
-              <p className="text-sm text-gray-600 mt-1">
-                발주서 템플릿을 생성하고 관리합니다
-              </p>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-[1366px] mx-auto p-6 space-y-6">
+        {/* Page Header */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Layers className="h-5 w-5 text-blue-600" />
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">템플릿 관리</h1>
+                <p className="text-sm text-gray-600 mt-1">
+                  발주서 템플릿을 생성하고 관리합니다
+                </p>
+              </div>
             </div>
-          </div>
           <div className="flex items-center gap-3">
             <Badge variant="outline" className="text-sm">
               총 {filteredTemplates.length}개
@@ -280,7 +289,7 @@ export default function TemplateManagement() {
       </div>
 
       {/* Filter Section */}
-      <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
+      <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6 shadow-sm">
         <div className="flex items-center justify-between">
           <div className="flex-1 max-w-md">
             <Input
@@ -334,10 +343,10 @@ export default function TemplateManagement() {
       </div>
       {/* 템플릿 목록 */}
       {viewMode === 'card' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {isLoading ? (
             Array.from({ length: 6 }).map((_, index) => (
-              <Card key={index} className="animate-pulse">
+              <Card key={index} className="animate-pulse shadow-sm">
                 <CardContent className="p-4">
                   <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
                   <div className="h-3 bg-gray-200 rounded w-1/2 mb-3"></div>
@@ -365,7 +374,7 @@ export default function TemplateManagement() {
             </div>
           ) : (
             filteredTemplates.map((template: Template) => (
-              <Card key={template.id} className="p-4 hover:shadow-md transition-shadow">
+              <Card key={template.id} className="p-4 hover:shadow-md transition-shadow shadow-sm">
                 <div className="space-y-3">
                   {/* Header Section - Standardized */}
                   <div className="flex items-start justify-between mb-3">
@@ -484,7 +493,7 @@ export default function TemplateManagement() {
           )}
         </div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50">
@@ -655,6 +664,7 @@ export default function TemplateManagement() {
             </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

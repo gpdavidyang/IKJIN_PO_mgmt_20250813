@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drag and Drop Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .test-node {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            margin: 4px 0;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            background: white;
+            cursor: grab;
+            transition: all 0.2s;
+        }
+        .test-node:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+        }
+        .test-node.dragging {
+            opacity: 0.5;
+            transform: scale(0.95);
+        }
+        .test-node.drag-over {
+            background: #dbeafe;
+            border-color: #3b82f6;
+        }
+        .drop-indicator {
+            height: 4px;
+            background: #3b82f6;
+            border-radius: 2px;
+            margin: 2px 0;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .drop-indicator.active {
+            opacity: 1;
+        }
+        .badge {
+            background: #e0e7ff;
+            color: #3730a3;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 10px;
+            background: #f0f9ff;
+            border: 1px solid #0ea5e9;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h2>Category Hierarchy Drag & Drop Test</h2>
+        <p>이 테스트는 분류 계층 구조에서 드래그 앤 드롭 기능이 올바르게 작동하는지 확인합니다.</p>
+        
+        <div id="tree-container">
+            <div class="test-node" draggable="true" data-id="1" data-parent="null" data-order="0">
+                <span class="badge">🏗️ 대분류</span>
+                <span>건설 자재</span>
+            </div>
+            
+            <div class="test-node" draggable="true" data-id="2" data-parent="1" data-order="0" style="margin-left: 24px;">
+                <span class="badge">📁 중분류</span>
+                <span>철근 및 철재</span>
+            </div>
+            
+            <div class="test-node" draggable="true" data-id="3" data-parent="2" data-order="0" style="margin-left: 48px;">
+                <span class="badge">📄 소분류</span>
+                <span>D10 철근</span>
+            </div>
+            
+            <div class="test-node" draggable="true" data-id="4" data-parent="2" data-order="1" style="margin-left: 48px;">
+                <span class="badge">📄 소분류</span>
+                <span>D13 철근</span>
+            </div>
+            
+            <div class="test-node" draggable="true" data-id="5" data-parent="1" data-order="1" style="margin-left: 24px;">
+                <span class="badge">📁 중분류</span>
+                <span>콘크리트</span>
+            </div>
+            
+            <div class="test-node" draggable="true" data-id="6" data-parent="null" data-order="1">
+                <span class="badge">🏗️ 대분류</span>
+                <span>전기 설비</span>
+            </div>
+        </div>
+        
+        <div class="status" id="status">
+            준비됨 - 항목을 드래그하여 재정렬하거나 다른 부모로 이동하세요.
+        </div>
+    </div>
+
+    <script>
+        let draggedElement = null;
+        let draggedOver = null;
+
+        // Add event listeners to all nodes
+        document.querySelectorAll('.test-node').forEach(node => {
+            node.addEventListener('dragstart', handleDragStart);
+            node.addEventListener('dragend', handleDragEnd);
+            node.addEventListener('dragover', handleDragOver);
+            node.addEventListener('dragleave', handleDragLeave);
+            node.addEventListener('drop', handleDrop);
+        });
+
+        function handleDragStart(e) {
+            draggedElement = this;
+            this.classList.add('dragging');
+            
+            e.dataTransfer.setData('application/json', JSON.stringify({
+                id: this.dataset.id,
+                parent: this.dataset.parent,
+                order: this.dataset.order
+            }));
+            
+            updateStatus('드래그 시작: ' + this.textContent.trim());
+        }
+
+        function handleDragEnd(e) {
+            this.classList.remove('dragging');
+            if (draggedOver) {
+                draggedOver.classList.remove('drag-over');
+            }
+            draggedElement = null;
+            draggedOver = null;
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            
+            if (this === draggedElement) return;
+            
+            if (draggedOver && draggedOver !== this) {
+                draggedOver.classList.remove('drag-over');
+            }
+            
+            this.classList.add('drag-over');
+            draggedOver = this;
+            
+            updateStatus('드래그 오버: ' + this.textContent.trim());
+        }
+
+        function handleDragLeave(e) {
+            this.classList.remove('drag-over');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            this.classList.remove('drag-over');
+            
+            if (this === draggedElement) return;
+            
+            try {
+                const dragData = JSON.parse(e.dataTransfer.getData('application/json'));
+                const targetData = {
+                    id: this.dataset.id,
+                    parent: this.dataset.parent,
+                    order: this.dataset.order
+                };
+                
+                updateStatus(`드롭 성공: ${draggedElement.textContent.trim()} → ${this.textContent.trim()}`);
+                
+                // In real implementation, this would trigger the API call
+                console.log('Move operation:', {
+                    draggedNode: dragData,
+                    targetNode: targetData,
+                    action: 'move'
+                });
+                
+            } catch (error) {
+                updateStatus('드롭 실패: 데이터 파싱 오류');
+                console.error('Drop error:', error);
+            }
+        }
+
+        function updateStatus(message) {
+            document.getElementById('status').textContent = message;
+        }
+
+        // Instructions
+        updateStatus('준비됨 - 항목을 드래그하여 이동해보세요. 브라우저 콘솔에서 로그를 확인하세요.');
+    </script>
+</body>
+</html>

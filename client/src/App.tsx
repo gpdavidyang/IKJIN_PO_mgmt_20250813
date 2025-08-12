@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from "react";
-import "./styles/responsive.css";
+import React, { Suspense, lazy } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -8,120 +7,420 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth, AuthProvider } from "@/hooks/useAuth";
 import LoginPage from "@/pages/login";
 import { SidebarProvider, useSidebar } from "@/contexts/SidebarContext";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import Landing from "@/pages/landing";
-import Dashboard from "@/pages/dashboard";
-import Orders from "@/pages/orders";
-import OrderDetail from "@/pages/order-detail";
-import OrderDetailStandard from "@/pages/order-detail-standard";
-import OrderEdit from "@/pages/order-edit";
-import OrderPreview from "@/pages/order-preview";
-import CreateOrder from "@/pages/create-order";
-import CreateExtrusionOrder from "@/pages/create-order-extrusion";
-import CreatePanelOrder from "@/pages/create-order-panel";
-import CreateAccessoriesOrder from "@/pages/create-order-accessories";
-import CreateStandardOrder from "@/pages/create-order-standard";
-import CreateStandardOrderRefactored from "@/pages/create-order-standard-refactored";
-import CreateMaterialsOrder from "@/pages/create-order-materials";
-import CreateOrderExcel from "@/pages/create-order-excel";
-import Vendors from "@/pages/vendors";
-import VendorDetail from "@/pages/vendor-detail";
-import VendorEdit from "@/pages/vendor-edit";
-import Items from "@/pages/items";
-import ItemDetail from "@/pages/item-detail";
-import Projects from "@/pages/projects";
-import ProjectDetail from "@/pages/project-detail";
-import ProjectEdit from "@/pages/project-edit";
-import UserDetail from "@/pages/user-detail";
-import Admin from "@/pages/admin";
-import Users from "@/pages/users";
-import UserManagement from "@/pages/user-management";
-import Profile from "@/pages/profile";
-import Reports from "@/pages/reports";
-import TemplateManagement from "@/pages/template-management";
-import TemplateEdit from "@/pages/template-edit";
-import Positions from "@/pages/positions";
-import Approvals from "@/pages/approvals";
-import ExcelAutomationTest from "@/pages/excel-automation-test";
-import EmailHistory from "@/pages/email-history";
-import RegisterPage from "@/pages/register";
-import RegisterSuccessPage from "@/pages/register-success";
-import VerifyEmailPage from "@/pages/verify-email";
-import ForgotPasswordPage from "@/pages/forgot-password";
-import ResetPasswordPage from "@/pages/reset-password";
+// Accessibility imports
+import { AccessibilityProvider, AccessibilityToolbar } from "@/components/accessibility/accessibility-toolbar";
+import { ContrastProvider } from "@/components/accessibility/high-contrast";
+import { FocusProvider } from "@/components/accessibility/focus-management";
+import "@/styles/accessibility.css";
+// Theme imports
+import { ThemeProvider } from "@/components/ui/theme-provider";
+// Performance monitoring
+import { usePerformanceMonitor, useBundleAnalytics, usePageLoadMetrics } from "@/hooks/use-performance";
+import { DashboardSkeleton } from "@/components/common/LazyWrapper";
+// Query optimization
+import { useAppInitialization, useCacheWarming } from "@/hooks/use-enhanced-queries";
+import { QueryDevTools, useQueryDevTools } from "@/components/dev/query-devtools";
 
+// Critical components (loaded immediately)
 import NotFound from "@/pages/not-found";
+
+// Import dynamic loading utilities
+import {
+  createLazyComponent,
+  createNetworkAwareLazyComponent,
+  initializeCriticalPreloading,
+  preloadRouteComponents,
+  logBundleInfo,
+  DynamicFeatures
+} from "@/utils/dynamic-imports";
+import { initializeBundleMonitoring } from "@/utils/bundle-analyzer";
+
+// Enhanced lazy load page components with error handling and retry
+const Dashboard = createNetworkAwareLazyComponent(() => import("@/pages/dashboard-professional"), 'Dashboard');
+const Orders = createLazyComponent(() => import("@/pages/orders-professional"), 'Orders');
+const OrderDetail = createLazyComponent(() => import("@/pages/order-detail-professional"), 'OrderDetail');
+const OrderDetailStandard = createLazyComponent(() => import("@/pages/order-detail-standard"), 'OrderDetailStandard');
+const OrderEdit = createLazyComponent(() => import("@/pages/order-edit"), 'OrderEdit');
+const OrderPreview = createLazyComponent(() => import("@/pages/order-preview"), 'OrderPreview');
+const CreateOrder = createNetworkAwareLazyComponent(() => import("@/pages/create-order"), 'CreateOrder');
+const CreateExtrusionOrder = createLazyComponent(() => import("@/pages/create-order-extrusion"), 'CreateExtrusionOrder');
+const CreatePanelOrder = createLazyComponent(() => import("@/pages/create-order-panel"), 'CreatePanelOrder');
+const CreateAccessoriesOrder = createLazyComponent(() => import("@/pages/create-order-accessories"), 'CreateAccessoriesOrder');
+const CategoryManagement = createLazyComponent(() => import("@/pages/category-management"), 'CategoryManagement');
+const CreateStandardOrder = createLazyComponent(() => import("@/pages/create-order-standard-professional"), 'CreateStandardOrder');
+const CreateStandardOrderRefactored = createLazyComponent(() => import("@/pages/create-order-standard-refactored"), 'CreateStandardOrderRefactored');
+const CreateMaterialsOrder = createLazyComponent(() => import("@/pages/create-order-materials"), 'CreateMaterialsOrder');
+const CreateOrderExcel = createLazyComponent(() => DynamicFeatures.loadExcelPage(), 'CreateOrderExcel');
+const CreateOrderUnified = createLazyComponent(() => import("@/pages/create-order-unified"), 'CreateOrderUnified');
+const Vendors = createNetworkAwareLazyComponent(() => DynamicFeatures.loadVendorList(), 'Vendors');
+const VendorDetail = createLazyComponent(() => DynamicFeatures.loadVendorDetail(), 'VendorDetail');
+const VendorEdit = createLazyComponent(() => import("@/pages/vendor-edit"), 'VendorEdit');
+const Items = createLazyComponent(() => import("@/pages/items"), 'Items');
+const ItemDetail = createLazyComponent(() => import("@/pages/item-detail"), 'ItemDetail');
+const Projects = createNetworkAwareLazyComponent(() => DynamicFeatures.loadProjectList(), 'Projects');
+const ProjectDetail = createLazyComponent(() => DynamicFeatures.loadProjectDetail(), 'ProjectDetail');
+const ProjectEdit = createLazyComponent(() => import("@/pages/project-edit"), 'ProjectEdit');
+const UserDetail = createLazyComponent(() => import("@/pages/user-detail"), 'UserDetail');
+const Admin = createLazyComponent(() => DynamicFeatures.loadAdminPanel(), 'Admin');
+const Users = createLazyComponent(() => import("@/pages/users"), 'Users');
+const UserManagement = createLazyComponent(() => DynamicFeatures.loadUserManagement(), 'UserManagement');
+const Profile = createLazyComponent(() => import("@/pages/profile"), 'Profile');
+const Reports = createLazyComponent(() => import("@/pages/reports"), 'Reports');
+const TemplateManagement = createNetworkAwareLazyComponent(() => DynamicFeatures.loadTemplateManagement(), 'TemplateManagement');
+const TemplateEdit = createLazyComponent(() => import("@/pages/template-edit"), 'TemplateEdit');
+const Positions = createLazyComponent(() => import("@/pages/positions"), 'Positions');
+const Approvals = createLazyComponent(() => import("@/pages/approvals"), 'Approvals');
+const ExcelAutomationTest = createLazyComponent(() => import("@/pages/excel-automation-test"), 'ExcelAutomationTest');
+const ImportExport = createLazyComponent(() => import("@/pages/import-export"), 'ImportExport');
+const AccessibilityExample = createLazyComponent(
+  () => import("@/components/examples/accessibility-example").then(module => ({
+    default: module.AccessibilityExample
+  })),
+  'AccessibilityExample'
+);
 import { Sidebar } from "@/components/sidebar";
 import { Header } from "@/components/header";
-import { NotificationProvider } from "@/components/notifications/notification-provider";
-import { NotificationCenter } from "@/components/notifications/notification-center";
-import { serviceWorkerManager } from "@/lib/service-worker";
+
+// Loading fallback components for different page types
+function DashboardLoadingFallback() {
+  return <DashboardSkeleton />;
+}
+
+function PageLoadingFallback() {
+  return (
+    <div className="p-6 space-y-6">
+      <div className="space-y-2">
+        <div className="h-8 w-32 bg-muted rounded animate-pulse" />
+        <div className="h-4 w-48 bg-muted rounded animate-pulse" />
+      </div>
+      <div className="space-y-4">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="h-16 bg-muted rounded animate-pulse" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FormLoadingFallback() {
+  return (
+    <div className="p-6 space-y-6">
+      <div className="h-8 w-32 bg-muted rounded animate-pulse" />
+      <div className="space-y-4">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="space-y-2">
+            <div className="h-4 w-24 bg-muted rounded animate-pulse" />
+            <div className="h-10 w-full bg-muted rounded animate-pulse" />
+          </div>
+        ))}
+        <div className="flex gap-2 pt-4">
+          <div className="h-10 w-20 bg-muted rounded animate-pulse" />
+          <div className="h-10 w-20 bg-muted rounded animate-pulse" />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function Layout() {
-  const { isCollapsed } = useSidebar();
   const [location] = useLocation();
   
+  // Performance monitoring
+  usePerformanceMonitor('Layout');
+  useBundleAnalytics();
+  const pageMetrics = usePageLoadMetrics();
+  
+  // Query optimization and cache warming
+  const { user, isInitialized } = useAppInitialization();
+  const { warmEssentialData, warmUserSpecificData } = useCacheWarming();
+  const showQueryDevTools = useQueryDevTools();
+  
+  // Warm caches on app initialization and user authentication
+  useEffect(() => {
+    warmEssentialData();
+    
+    // Warm user-specific data when user is authenticated
+    if (user && 'id' in user && typeof user.id === 'number') {
+      warmUserSpecificData(user.id);
+    }
+  }, [warmEssentialData, warmUserSpecificData, user]);
+  
+  // Route-based preloading
+  useEffect(() => {
+    preloadRouteComponents(location);
+  }, [location]);
+  
+  // Log performance metrics and bundle info in development
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      if (pageMetrics.fcp) {
+        console.log(`Page performance metrics:`, pageMetrics);
+      }
+      logBundleInfo();
+    }
+  }, [pageMetrics]);
+  
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Desktop Sidebar - hidden on mobile */}
-      <div className="hidden md:block">
-        <Sidebar />
+    <div className="min-h-screen bg-background">
+      <div className="hidden">
+        <AccessibilityToolbar />
       </div>
-      
-      <div className={`transition-all duration-300 ${isCollapsed ? 'md:ml-16' : 'md:ml-64'}`}>
+      <Sidebar />
+      <div className="transition-all duration-300 sidebar-transition xl:ml-64">
         <Header />
-        <main className="min-h-[calc(100vh-4rem)]">
-          <Switch>
-            <Route path="/" component={Dashboard} />
-            <Route path="/login" component={Dashboard} />
-            <Route path="/dashboard" component={Dashboard} />
-            <Route path="/orders/new" component={CreateOrder} />
-            <Route path="/orders/:id/preview" component={OrderPreview} />
-            <Route path="/order-preview/:id" component={OrderPreview} />
-            <Route path="/orders/:id/edit" component={OrderEdit} />
-            <Route path="/orders/:id/standard" component={OrderDetailStandard} />
-            <Route path="/orders/:id" component={OrderDetail} />
-            <Route path="/orders" component={Orders} />
-            <Route path="/create-order" component={CreateOrder} />
-            <Route path="/create-order/extrusion" component={CreateExtrusionOrder} />
-            <Route path="/create-order-extrusion" component={CreateExtrusionOrder} />
-            <Route path="/create-order/panel" component={CreatePanelOrder} />
-            <Route path="/create-order-panel" component={CreatePanelOrder} />
-            <Route path="/create-order/accessories" component={CreateAccessoriesOrder} />
-            <Route path="/create-order-accessories" component={CreateAccessoriesOrder} />
-            <Route path="/create-order/standard" component={CreateStandardOrder} />
-            <Route path="/create-order-standard" component={CreateStandardOrder} />
-            <Route path="/create-order/standard-new" component={CreateStandardOrderRefactored} />
-            <Route path="/create-order/materials" component={CreateMaterialsOrder} />
-            <Route path="/create-order-materials" component={CreateMaterialsOrder} />
-            <Route path="/create-order/excel" component={CreateOrderExcel} />
-            <Route path="/vendors/:id/edit" component={VendorEdit} />
-            <Route path="/vendors/:id" component={VendorDetail} />
-            <Route path="/vendors" component={Vendors} />
-            <Route path="/items/:id" component={ItemDetail} />
-            <Route path="/items" component={Items} />
-            <Route path="/projects/:id/edit" component={ProjectEdit} />
-            <Route path="/projects/:id" component={ProjectDetail} />
-            <Route path="/projects" component={Projects} />
-            <Route path="/users/:id" component={UserDetail} />
-            <Route path="/users" component={Users} />
-            <Route path="/user-management" component={UserManagement} />
-            <Route path="/admin" component={Admin} />
-            <Route path="/profile" component={Profile} />
-            <Route path="/reports" component={Reports} />
-            <Route path="/templates/edit/:id" component={TemplateEdit} />
-            <Route path="/templates/new" component={TemplateEdit} />
-            <Route path="/templates" component={TemplateManagement} />
-            <Route path="/template-management" component={TemplateManagement} />
-            <Route path="/positions" component={Positions} />
-            <Route path="/approvals" component={Approvals} />
-            <Route path="/excel-automation-test" component={ExcelAutomationTest} />
-            <Route path="/email-history" component={EmailHistory} />
+        <main id="main-content">
+          <Suspense fallback={<DashboardLoadingFallback />}>
+            <Switch>
+              <Route path="/" component={Dashboard} />
+              <Route path="/login" component={Dashboard} />
+              <Route path="/dashboard" component={Dashboard} />
+              
+              {/* Order Routes */}
+              <Route path="/orders/new">
+                <Suspense fallback={<FormLoadingFallback />}>
+                  <CreateOrder />
+                </Suspense>
+              </Route>
+              <Route path="/orders/:id/preview">
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <OrderPreview />
+                </Suspense>
+              </Route>
+              <Route path="/order-preview/:id">
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <OrderPreview />
+                </Suspense>
+              </Route>
+              <Route path="/orders/:id/edit">
+                <Suspense fallback={<FormLoadingFallback />}>
+                  <OrderEdit />
+                </Suspense>
+              </Route>
+              <Route path="/orders/:id/standard">
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <OrderDetailStandard />
+                </Suspense>
+              </Route>
+              <Route path="/orders/:id">
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <OrderDetail />
+                </Suspense>
+              </Route>
+              <Route path="/orders">
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <Orders />
+                </Suspense>
+              </Route>
+              
+              {/* Create Order Routes */}
+              <Route path="/create-order">
+                <Suspense fallback={<FormLoadingFallback />}>
+                  <CreateOrder />
+                </Suspense>
+              </Route>
+              <Route path="/create-order/extrusion">
+                <Suspense fallback={<FormLoadingFallback />}>
+                  <CreateExtrusionOrder />
+                </Suspense>
+              </Route>
+              <Route path="/create-order-extrusion">
+                <Suspense fallback={<FormLoadingFallback />}>
+                  <CreateExtrusionOrder />
+                </Suspense>
+              </Route>
+              <Route path="/create-order/panel">
+                <Suspense fallback={<FormLoadingFallback />}>
+                  <CreatePanelOrder />
+                </Suspense>
+              </Route>
+              <Route path="/create-order-panel">
+                <Suspense fallback={<FormLoadingFallback />}>
+                  <CreatePanelOrder />
+                </Suspense>
+              </Route>
+              <Route path="/create-order/accessories">
+                <Suspense fallback={<FormLoadingFallback />}>
+                  <CreateAccessoriesOrder />
+                </Suspense>
+              </Route>
+              <Route path="/create-order-accessories">
+                <Suspense fallback={<FormLoadingFallback />}>
+                  <CreateAccessoriesOrder />
+                </Suspense>
+              </Route>
+              <Route path="/create-order/standard">
+                <Suspense fallback={<FormLoadingFallback />}>
+                  <CreateStandardOrder />
+                </Suspense>
+              </Route>
+              <Route path="/create-order-standard">
+                <Suspense fallback={<FormLoadingFallback />}>
+                  <CreateStandardOrder />
+                </Suspense>
+              </Route>
+              <Route path="/create-order/standard-new">
+                <Suspense fallback={<FormLoadingFallback />}>
+                  <CreateStandardOrderRefactored />
+                </Suspense>
+              </Route>
+              <Route path="/create-order/materials">
+                <Suspense fallback={<FormLoadingFallback />}>
+                  <CreateMaterialsOrder />
+                </Suspense>
+              </Route>
+              <Route path="/create-order-materials">
+                <Suspense fallback={<FormLoadingFallback />}>
+                  <CreateMaterialsOrder />
+                </Suspense>
+              </Route>
+              <Route path="/create-order/excel">
+                <Suspense fallback={<FormLoadingFallback />}>
+                  <CreateOrderExcel />
+                </Suspense>
+              </Route>
+              <Route path="/create-order/unified">
+                <Suspense fallback={<FormLoadingFallback />}>
+                  <CreateOrderUnified />
+                </Suspense>
+              </Route>
+              
+              {/* Vendor Routes */}
+              <Route path="/vendors/:id/edit">
+                <Suspense fallback={<FormLoadingFallback />}>
+                  <VendorEdit />
+                </Suspense>
+              </Route>
+              <Route path="/vendors/:id">
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <VendorDetail />
+                </Suspense>
+              </Route>
+              <Route path="/vendors">
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <Vendors />
+                </Suspense>
+              </Route>
+              
+              {/* Category Management Route */}
+              <Route path="/category-management">
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <CategoryManagement />
+                </Suspense>
+              </Route>
+              
+              {/* Other Routes */}
+              {/* PRD 요구사항: 품목 관리 UI는 숨김 처리 (소스코드는 유지, Excel 템플릿 기반 품목 관리) */}
+              {/* <Route path="/items/:id">
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <ItemDetail />
+                </Suspense>
+              </Route>
+              <Route path="/items">
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <Items />
+                </Suspense>
+              </Route> */}
+              <Route path="/projects/:id/edit">
+                <Suspense fallback={<FormLoadingFallback />}>
+                  <ProjectEdit />
+                </Suspense>
+              </Route>
+              <Route path="/projects/:id">
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <ProjectDetail />
+                </Suspense>
+              </Route>
+              <Route path="/projects">
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <Projects />
+                </Suspense>
+              </Route>
+              <Route path="/users/:id">
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <UserDetail />
+                </Suspense>
+              </Route>
+              <Route path="/users">
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <Users />
+                </Suspense>
+              </Route>
+              <Route path="/user-management">
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <UserManagement />
+                </Suspense>
+              </Route>
+              <Route path="/admin">
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <Admin />
+                </Suspense>
+              </Route>
+              <Route path="/profile">
+                <Suspense fallback={<FormLoadingFallback />}>
+                  <Profile />
+                </Suspense>
+              </Route>
+              <Route path="/reports">
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <Reports />
+                </Suspense>
+              </Route>
+              <Route path="/templates/edit/:id">
+                <Suspense fallback={<FormLoadingFallback />}>
+                  <TemplateEdit />
+                </Suspense>
+              </Route>
+              <Route path="/templates/new">
+                <Suspense fallback={<FormLoadingFallback />}>
+                  <TemplateEdit />
+                </Suspense>
+              </Route>
+              <Route path="/templates">
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <TemplateManagement />
+                </Suspense>
+              </Route>
+              <Route path="/template-management">
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <TemplateManagement />
+                </Suspense>
+              </Route>
+              <Route path="/positions">
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <Positions />
+                </Suspense>
+              </Route>
+              <Route path="/approvals">
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <Approvals />
+                </Suspense>
+              </Route>
+              <Route path="/excel-automation-test">
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <ExcelAutomationTest />
+                </Suspense>
+              </Route>
+              <Route path="/import-export">
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <ImportExport />
+                </Suspense>
+              </Route>
+              <Route path="/accessibility-example">
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <AccessibilityExample />
+                </Suspense>
+              </Route>
 
-            <Route component={NotFound} />
-          </Switch>
+              <Route component={NotFound} />
+            </Switch>
+          </Suspense>
         </main>
       </div>
+      
+      {/* Query DevTools for development */}
+      {showQueryDevTools && <QueryDevTools />}
     </div>
   );
 }
@@ -135,75 +434,60 @@ function Router() {
   // Show loading spinner while checking authentication
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">로그인 상태를 확인하고 있습니다...</p>
         </div>
       </div>
     );
   }
 
-  // For unauthenticated users, show auth-related pages
+  // For unauthenticated users, always show login page
   if (!user) {
-    // Handle registration-related routes for unauthenticated users
-    if (location === '/register') {
-      return <RegisterPage />;
-    }
-    if (location === '/register-success') {
-      return <RegisterSuccessPage />;
-    }
-    if (location === '/verify-email') {
-      return <VerifyEmailPage />;
-    }
-    if (location === '/forgot-password') {
-      return <ForgotPasswordPage />;
-    }
-    if (location === '/reset-password') {
-      return <ResetPasswordPage />;
-    }
-    
-    // Default to login page for unauthenticated users
     return <LoginPage />;
   }
 
   // For authenticated users on login/root, redirect to dashboard
   if (location === '/login' || location === '/') {
     return (
-      <NotificationProvider>
-        <SidebarProvider>
-          <Layout />
-        </SidebarProvider>
-      </NotificationProvider>
+      <SidebarProvider>
+        <Layout />
+      </SidebarProvider>
     );
   }
 
   // For authenticated users on other routes, show the main application
   return (
-    <NotificationProvider>
-      <SidebarProvider>
-        <Layout />
-      </SidebarProvider>
-    </NotificationProvider>
+    <SidebarProvider>
+      <Layout />
+    </SidebarProvider>
   );
 }
 
 function App() {
-  // Register Service Worker
+  // Initialize critical component preloading and bundle monitoring
   useEffect(() => {
-    if (process.env.NODE_ENV === 'production') {
-      serviceWorkerManager.register().catch(console.error);
-    }
+    initializeCriticalPreloading();
+    initializeBundleMonitoring();
   }, []);
-
+  
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
-      </AuthProvider>
+      <ThemeProvider defaultTheme="system" enableSystem>
+        <AuthProvider>
+          <AccessibilityProvider>
+            <ContrastProvider>
+              <FocusProvider>
+                <TooltipProvider>
+                  <Toaster />
+                  <Router />
+                </TooltipProvider>
+              </FocusProvider>
+            </ContrastProvider>
+          </AccessibilityProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

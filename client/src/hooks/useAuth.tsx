@@ -5,8 +5,6 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 
-type UserRole = "field_worker" | "project_manager" | "hq_management" | "executive" | "admin";
-
 type User = {
   id: string;
   email: string | null;
@@ -15,26 +13,9 @@ type User = {
   positionId: number | null;
   phoneNumber: string;
   profileImageUrl: string | null;
-  role: UserRole;
-  isActive: boolean;
+  role: "field_worker" | "project_manager" | "hq_management" | "executive" | "admin";
   createdAt: Date | null;
   updatedAt: Date | null;
-};
-
-type LoginCredentials = {
-  email: string;
-  password: string;
-};
-
-type LoginResponse = {
-  success: boolean;
-  user: User;
-  message?: string;
-};
-
-type LogoutResponse = {
-  success: boolean;
-  message?: string;
 };
 
 type AuthContextType = {
@@ -42,26 +23,8 @@ type AuthContextType = {
   isLoading: boolean;
   isAuthenticated: boolean;
   error: Error | null;
-  loginMutation: {
-    mutate: (credentials: LoginCredentials) => void;
-    mutateAsync: (credentials: LoginCredentials) => Promise<LoginResponse>;
-    isPending: boolean;
-    isError: boolean;
-    error: Error | null;
-    isSuccess: boolean;
-    data: LoginResponse | undefined;
-    reset: () => void;
-  };
-  logoutMutation: {
-    mutate: () => void;
-    mutateAsync: () => Promise<LogoutResponse>;
-    isPending: boolean;
-    isError: boolean;
-    error: Error | null;
-    isSuccess: boolean;
-    data: LogoutResponse | undefined;
-    reset: () => void;
-  };
+  loginMutation: any;
+  logoutMutation: any;
 };
 
 export const AuthContext = createContext<AuthContextType | null>(null);
@@ -87,7 +50,9 @@ function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error("Failed to get user");
       }
       
-      return await response.json();
+      const userData = await response.json();
+      console.log('🔍 useAuth - Fetched user data:', userData);
+      return userData;
     },
     retry: false,
     staleTime: 0, // Always fresh
@@ -97,8 +62,8 @@ function AuthProvider({ children }: { children: ReactNode }) {
     refetchInterval: false,
   });
 
-  const loginMutation = useMutation<LoginResponse, Error, LoginCredentials>({
-    mutationFn: async (credentials: LoginCredentials): Promise<LoginResponse> => {
+  const loginMutation = useMutation({
+    mutationFn: async (credentials: { email: string; password: string }) => {
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: {
@@ -115,14 +80,14 @@ function AuthProvider({ children }: { children: ReactNode }) {
 
       return await response.json();
     },
-    onSuccess: (data: LoginResponse) => {
-      queryClient.setQueryData(["/api/auth/user"], data.user);
+    onSuccess: (user: User) => {
+      queryClient.setQueryData(["/api/auth/user"], user);
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
     },
   });
 
-  const logoutMutation = useMutation<LogoutResponse, Error, void>({
-    mutationFn: async (): Promise<LogoutResponse> => {
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
       const response = await fetch("/api/auth/logout", {
         method: "POST",
         credentials: 'include',
@@ -131,8 +96,6 @@ function AuthProvider({ children }: { children: ReactNode }) {
       if (!response.ok) {
         throw new Error("Logout failed");
       }
-
-      return { success: true, message: "Logged out successfully" };
     },
     onSuccess: () => {
       queryClient.setQueryData(["/api/auth/user"], null);

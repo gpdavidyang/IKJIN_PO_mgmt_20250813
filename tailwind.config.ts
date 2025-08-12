@@ -4,13 +4,25 @@ export default {
   darkMode: ["class"],
   content: ["./client/index.html", "./client/src/**/*.{js,jsx,ts,tsx}"],
   theme: {
+    screens: {
+      'sm': '640px',    // Small Mobile
+      'md': '768px',    // Tablet
+      'lg': '1024px',   // Large Tablet
+      'xl': '1386px',   // iPad Pro Landscape (Main breakpoint)
+      '2xl': '1536px',  // Desktop
+      '3xl': '1920px',  // Large Desktop
+    },
     extend: {
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        sm: "var(--radius-sm)",
+        md: "var(--radius-md)",
+        lg: "var(--radius-lg)",
+        xl: "var(--radius-xl)",
+        "2xl": "var(--radius-2xl)",
+        full: "var(--radius-full)",
       },
       colors: {
+        // Existing shadcn/ui colors for compatibility
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         card: {
@@ -21,9 +33,20 @@ export default {
           DEFAULT: "hsl(var(--popover))",
           foreground: "hsl(var(--popover-foreground))",
         },
+        // Enhanced primary color scale
         primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
+          50: "var(--color-primary-50)",
+          100: "var(--color-primary-100)",
+          200: "var(--color-primary-200)",
+          300: "var(--color-primary-300)",
+          400: "var(--color-primary-400)",
+          500: "var(--color-primary-500)",
+          600: "var(--color-primary-600)",
+          700: "var(--color-primary-700)",
+          800: "var(--color-primary-800)",
+          900: "var(--color-primary-900)",
+          DEFAULT: "var(--color-primary-500)",
+          foreground: "white",
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
@@ -41,9 +64,45 @@ export default {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
         },
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
+        // Semantic colors
+        success: {
+          50: "var(--color-success-50)",
+          100: "var(--color-success-100)",
+          500: "var(--color-success-500)",
+          600: "var(--color-success-600)",
+          DEFAULT: "var(--color-success-500)",
+        },
+        warning: {
+          50: "var(--color-warning-50)",
+          100: "var(--color-warning-100)",
+          500: "var(--color-warning-500)",
+          600: "var(--color-warning-600)",
+          DEFAULT: "var(--color-warning-500)",
+        },
+        error: {
+          50: "var(--color-error-50)",
+          100: "var(--color-error-100)",
+          500: "var(--color-error-500)",
+          600: "var(--color-error-600)",
+          DEFAULT: "var(--color-error-500)",
+        },
+        // Gray scale
+        gray: {
+          25: "var(--color-gray-25)",
+          50: "var(--color-gray-50)",
+          100: "var(--color-gray-100)",
+          200: "var(--color-gray-200)",
+          300: "var(--color-gray-300)",
+          400: "var(--color-gray-400)",
+          500: "var(--color-gray-500)",
+          600: "var(--color-gray-600)",
+          700: "var(--color-gray-700)",
+          800: "var(--color-gray-800)",
+          900: "var(--color-gray-900)",
+        },
+        border: "var(--color-gray-200)",
+        input: "var(--color-gray-200)",
+        ring: "var(--color-primary-500)",
         chart: {
           "1": "hsl(var(--chart-1))",
           "2": "hsl(var(--chart-2))",
@@ -61,6 +120,73 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+      },
+      // Spacing scale
+      spacing: {
+        "0": "var(--space-0)",
+        "1": "var(--space-1)",
+        "2": "var(--space-2)",
+        "3": "var(--space-3)",
+        "4": "var(--space-4)",
+        "5": "var(--space-5)",
+        "6": "var(--space-6)",
+        "8": "var(--space-8)",
+        "10": "var(--space-10)",
+        "12": "var(--space-12)",
+        "16": "var(--space-16)",
+        "20": "var(--space-20)",
+      },
+      // Font sizes
+      fontSize: {
+        xs: "var(--text-xs)",
+        sm: "var(--text-sm)",
+        base: "var(--text-base)",
+        lg: "var(--text-lg)",
+        xl: "var(--text-xl)",
+        "2xl": "var(--text-2xl)",
+        "3xl": "var(--text-3xl)",
+      },
+      // Line heights
+      lineHeight: {
+        none: "var(--leading-none)",
+        tight: "var(--leading-tight)",
+        snug: "var(--leading-snug)",
+        normal: "var(--leading-normal)",
+        relaxed: "var(--leading-relaxed)",
+        loose: "var(--leading-loose)",
+      },
+      // Container widths
+      maxWidth: {
+        xs: "var(--container-xs)",
+        sm: "var(--container-sm)",
+        md: "var(--container-md)",
+        lg: "var(--container-lg)",
+        xl: "var(--container-xl)",
+        "2xl": "var(--container-2xl)",
+        "3xl": "var(--container-3xl)",
+        "4xl": "var(--container-4xl)",
+        "5xl": "var(--container-5xl)",
+        "6xl": "var(--container-6xl)",
+        "7xl": "var(--container-7xl)",
+      },
+      // Heights
+      height: {
+        "8": "var(--h-8)",
+        "9": "var(--h-9)",
+        "10": "var(--h-10)",
+        "11": "var(--h-11)",
+        "12": "var(--h-12)",
+      },
+      // Box shadows
+      boxShadow: {
+        xs: "var(--shadow-xs)",
+        sm: "var(--shadow-sm)",
+        md: "var(--shadow-md)",
+        lg: "var(--shadow-lg)",
+        xl: "var(--shadow-xl)",
+        "2xl": "var(--shadow-2xl)",
+        inner: "var(--shadow-inner)",
+        none: "var(--shadow-none)",
       },
       keyframes: {
         "accordion-down": {

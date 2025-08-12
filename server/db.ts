@@ -1,50 +1,38 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-import { neon } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-http';
-// Alternative: Use standard postgres driver for better compatibility
+// 환경변수에서 DATABASE_URL 읽기 - .env 파일의 올바른 pooler 주소 사용
+const DATABASE_URL = process.env.DATABASE_URL;
+console.log("🔍 Using DATABASE_URL:", DATABASE_URL?.split('@')[0] + '@[HIDDEN]');
+
+// Use standard postgres driver for better Supabase compatibility
 import pkg from 'pg';
 const { Pool } = pkg;
-import { drizzle as pgDrizzle } from 'drizzle-orm/node-postgres';
+import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from "@shared/schema";
 
 let db: any = null;
 
-if (!process.env.DATABASE_URL) {
-  console.warn("DATABASE_URL not set, using mock connection");
-  db = null;
+if (!DATABASE_URL) {
+  console.error("❌ DATABASE_URL not set - cannot connect to database");
+  process.exit(1);
 } else {
   try {
-    // Try multiple connection methods for better reliability
+    console.log("🔄 Creating PostgreSQL connection pool with URL:", DATABASE_URL?.split('@')[0] + '@[HIDDEN]');
     
-    // Method 1: Try Neon serverless (current)
-    try {
-      const sql = neon(process.env.DATABASE_URL);
-      db = drizzle(sql, { schema });
-      console.log("✅ Database connected successfully (Neon serverless)");
-    } catch (neonError) {
-      console.warn("⚠️ Neon connection failed, trying standard PostgreSQL...", neonError.message);
-      
-      // Method 2: Try standard PostgreSQL connection
-      const pool = new Pool({
-        connectionString: process.env.DATABASE_URL,
-        ssl: { rejectUnauthorized: false },
-        max: 1, // Limit connections for development
-        idleTimeoutMillis: 10000,
-        connectionTimeoutMillis: 5000,
-      });
-      
-      db = pgDrizzle(pool, { schema });
-      
-      // Test the connection
-      await pool.query('SELECT 1');
-      console.log("✅ Database connected successfully (PostgreSQL)");
-    }
+    const pool = new Pool({
+      connectionString: DATABASE_URL,
+      ssl: { rejectUnauthorized: false }, // Supabase requires SSL
+      max: 20, // Connection pool size
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 10000,
+    });
+    
+    db = drizzle(pool, { schema });
+    console.log("✅ Database connected successfully (PostgreSQL pool)");
   } catch (error) {
-    console.error("❌ All database connection methods failed:", error.message);
-    console.warn("🔄 Falling back to mock data mode");
-    db = null;
+    console.error("❌ Database connection failed:", error instanceof Error ? error.message : String(error));
+    process.exit(1);
   }
 }
 

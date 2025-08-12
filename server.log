@@ -2,641 +2,215 @@
 > rest-express@1.0.0 dev
 > NODE_ENV=development tsx server/index.ts
 
-[dotenv@17.2.0] injecting env (7) from .env (tip: ⚙️  override existing env vars with { override: true })
-DATABASE_URL not set, using mock connection
-[dotenv@17.2.0] injecting env (0) from .env (tip: 🔐 encrypt with dotenvx: https://dotenvx.com)
-7:37:02 PM [express] serving on port 3000
-Browserslist: browsers data (caniuse-lite) is 9 months old. Please run:
+[dotenv@17.2.0] injecting env (28) from .env (tip: ⚙️  suppress all logs with { quiet: true })
+🔍 Using DATABASE_URL: postgresql://postgres.tbvugytmskxxyqfvqmup:gps110601ysw@[HIDDEN]
+🔄 Creating PostgreSQL connection pool with URL: postgresql://postgres.tbvugytmskxxyqfvqmup:gps110601ysw@[HIDDEN]
+✅ Database connected successfully (PostgreSQL pool)
+[dotenv@17.2.0] injecting env (0) from .env (tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild)
+🔧 Force-set DATABASE_URL: postgresql://postgres.tbvugytmskxxyqfvqmup:gps110601ysw@[HIDDEN]
+8:53:22 AM [express] serving on port 3000
+📄 PDF 생성 요청: 발주서 PO-2025-0001
+✅ PDF 생성 완료: /api/orders/download-pdf/1754438013917
+8:53:40 AM [express] POST /api/orders/generate-pdf 200 in 6497ms :: {"success":true,"pdfUrl":"/api/o…
+8:53:48 AM [express] GET /api/orders/download-pdf/1754438013917 200 in 4ms
+Browserslist: browsers data (caniuse-lite) is 10 months old. Please run:
   npx update-browserslist-db@latest
   Why you should do it regularly: https://github.com/browserslist/update-db#readme
-getCurrentUser - Session ID: JX0MXSEhc8cGHW5lCDTYBQ9HUCIDRbpK
-getCurrentUser - Session userId: undefined
-getCurrentUser - No userId in session
-7:37:08 PM [express] GET /api/auth/user 401 in 13ms :: {"message":"Not authenticated"}
-getCurrentUser - Session ID: 0jjRlBFx91BX6D53XJ--MteGHeZRa7Nt
-getCurrentUser - Session userId: undefined
-getCurrentUser - No userId in session
-7:37:59 PM [express] GET /api/auth/user 401 in 6ms :: {"message":"Not authenticated"}
-getCurrentUser - Session ID: heqwoU60Mzrg30JbTpNwUvLjsS4i1qBi
-getCurrentUser - Session userId: undefined
-getCurrentUser - No userId in session
-7:38:06 PM [express] GET /api/auth/user 401 in 3ms :: {"message":"Not authenticated"}
-getCurrentUser - Session ID: OMQTDu3SGag-oQU3SwsUvJN3JbSwQ_gD
-getCurrentUser - Session userId: undefined
-getCurrentUser - No userId in session
-7:38:07 PM [express] GET /api/auth/user 401 in 2ms :: {"message":"Not authenticated"}
-7:38:16 PM [express] POST /api/auth/login 200 in 3ms :: {"message":"Login successful","user":{"id":"…
-getCurrentUser - Session ID: lspBDN_HT7GX-2fX3Jhmi5QWZOAN6z-N
+getCurrentUser - Session ID: Rw5d6OeIMKNf2JPo_XNMlHCwGni6Jo4Y
 getCurrentUser - Session userId: test_admin_001
-7:38:16 PM [express] GET /api/auth/user 200 in 2ms :: {"id":"test_admin_001","email":"test@ikjin.co.…
-Error fetching unified dashboard data: TypeError: Cannot read properties of null (reading 'select')
-    at DatabaseStorage.getUser (/Users/davidyang/workspace/20250713_PO_Mgmt/server/storage.ts:260:29)
-    at <anonymous> (/Users/davidyang/workspace/20250713_PO_Mgmt/server/routes.ts:587:34)
-    at Layer.handle [as handle_request] (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/layer.js:95:5)
-    at next (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/route.js:149:13)
-    at requireAuth (/Users/davidyang/workspace/20250713_PO_Mgmt/server/local-auth.ts:201:14)
-    at Layer.handle [as handle_request] (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/layer.js:95:5)
-    at next (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/route.js:149:13)
-    at Route.dispatch (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/route.js:119:3)
-    at Layer.handle [as handle_request] (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/layer.js:95:5)
-    at /Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/index.js:284:15
-    at Function.process_params (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/index.js:346:12)
-    at next (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/index.js:280:10)
-    at Immediate.<anonymous> (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express-session/index.js:514:7)
-    at process.processImmediate (node:internal/timers:487:21)
-7:38:16 PM [express] GET /api/dashboard/unified 500 in 34ms :: {"message":"Failed to fetch dashboard…
-7:38:16 PM [express] GET /api/companies 200 in 1ms :: [{"id":1,"companyName":"(주)익진엔지니어링","businessN…
-getCurrentUser - Session ID: lspBDN_HT7GX-2fX3Jhmi5QWZOAN6z-N
+getCurrentUser - User found: test_admin_001
+8:55:50 AM [express] GET /api/auth/user 304 in 837ms :: {"id":"test_admin_001","email":"test@ikjin.c…
+getCurrentUser - Session ID: Rw5d6OeIMKNf2JPo_XNMlHCwGni6Jo4Y
 getCurrentUser - Session userId: test_admin_001
-7:38:20 PM [express] GET /api/auth/user 200 in 1ms :: {"id":"test_admin_001","email":"test@ikjin.co.…
-7:38:21 PM [express] GET /api/companies 200 in 1ms :: [{"id":1,"companyName":"(주)익진엔지니어링","businessN…
-7:38:30 PM [express] POST /api/po-template/upload 200 in 212ms :: {"success":true,"message":"파일 파싱 완…
-7:38:30 PM [express] POST /api/po-template/save 200 in 3ms :: {"success":true,"message":"Mock DB 저장 …
-======== EXTRACT-SHEETS ROUTE CALLED ========
+8:55:50 AM [express] GET /api/positions 304 in 190ms :: [{"id":1,"name":"현장소장","code":"site_manager"…
+8:55:50 AM [express] GET /api/companies 304 in 276ms :: [{"id":1,"companyName":"(주)익진엔지니어링","busines…
+🔍 Starting getUnifiedDashboardData query...
+📊 Order stats query result: Result {
+  command: 'SELECT',
+  rowCount: 1,
+  oid: null,
+  rows: [ { totalOrders: '86', totalAmount: '1887408084.93' } ],
+  fields: [
+    Field {
+      name: 'totalOrders',
+      tableID: 0,
+      columnID: 0,
+      dataTypeID: 20,
+      dataTypeSize: 8,
+      dataTypeModifier: -1,
+      format: 'text'
+    },
+    Field {
+      name: 'totalAmount',
+      tableID: 0,
+      columnID: 0,
+      dataTypeID: 1700,
+      dataTypeSize: -1,
+      dataTypeModifier: -1,
+      format: 'text'
+    }
+  ],
+  _parsers: [ [Function: parseBigInteger], [Function: noParse] ],
+  _types: { getTypeParser: [Function: getTypeParser] },
+  RowCtor: null,
+  rowAsArray: false,
+  _prebuiltEmptyResultObject: { totalOrders: null, totalAmount: null }
+}
+getCurrentUser - User found: test_admin_001
+Database error in getUiTerms: error: column "id" does not exist
+    at /Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async <anonymous> (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/src/node-postgres/session.ts:104:19)
+    at async DatabaseStorage.getUiTerms (/Users/davidyang/workspace/20250713_PO_Mgmt/server/storage.ts:1724:14)
+    at async <anonymous> (/Users/davidyang/workspace/20250713_PO_Mgmt/server/routes/admin.ts:28:19) {
+  length: 101,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '8',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '3716',
+  routine: 'errorMissingColumn'
+}
+8:55:51 AM [express] GET /api/auth/me 304 in 771ms :: {"id":"test_admin_001","email":"test@ikjin.co.…
+8:55:51 AM [express] GET /api/items/categories 304 in 774ms :: [{"id":6,"categoryType":"major","cate…
+8:55:51 AM [express] GET /api/ui-terms 304 in 787ms :: []
+8:55:51 AM [express] GET /api/auth/permissions/test_admin_001 304 in 249ms :: {"userId":"test_admin_…
+✅ Dashboard data compiled successfully: { totalOrders: 86, activeProjects: 11 }
+8:55:51 AM [express] GET /api/dashboard/unified 304 in 929ms :: {"statistics":{"totalOrders":86,"tot…
+🚀 Optimized orders request: {
+  filters: { page: 1, limit: 20, sortOrder: 'desc' },
+  timestamp: '2025-08-05T23:55:54.021Z'
+}
+8:55:54 AM [express] GET /api/projects/active 304 in 268ms :: [{"id":17,"projectName":"(주)익진","proje…
+8:55:54 AM [express] GET /api/vendors 304 in 338ms :: [{"id":3,"name":"(주)대한알루미늄압출","vendorCode":nul…
+✅ Optimized orders response: {
+  ordersCount: 20,
+  total: 86,
+  page: 1,
+  totalPages: 5,
+  vendorsCount: 51,
+  projectsCount: 11
+}
+🐌 Slow query detected: orders-optimized took 668.84ms
+8:55:54 AM [express] GET /api/orders-optimized 200 in 846ms :: {"orders":[{"id":114,"orderNumber":"P…
+8:56:14 AM [express] POST /api/po-template/upload 200 in 546ms :: {"success":true,"message":"파일 파싱 완…
+🔥🔥🔥 /save 엔드포인트 호출됨 - 새로운 디버깅 코드 적용됨
+📋 최종 발주번호: PO-20250805-이노에-466 (원본: PO-20250805-이노에-466)
+📅 발주일자 디버깅: orderData.orderDate="2025-08-05", type=string
+📅 납기일자 디버깅: orderData.dueDate="", type=string
+🔥🔥🔥 날짜 변환 함수 시작 - 새 코드 실행됨
+🔥📅 parseDate 입력값: "2025-08-05", type=string, isEmpty=false
+🔥📅 parseDate 결과: "2025-08-05" -> 2025-08-05T00:00:00.000Z (valid: true)
+🔥📅 parseDate 입력값: "", type=string, isEmpty=true
+🔥📅 parseDate 결과: null (빈 문자열)
+📅 최종 저장할 날짜들: {
+  orderDate: 2025-08-05T00:00:00.000Z,
+  deliveryDate: null,
+  orderDateISO: '2025-08-05T00:00:00.000Z',
+  deliveryDateISO: null
+}
+📅 DB에 저장된 발주서: {
+  id: 115,
+  orderNumber: 'PO-20250805-이노에-466',
+  orderDate: '2025-08-05',
+  deliveryDate: null
+}
+📋 최종 발주번호: PO-20240805-울트라-856 (원본: PO-20240805-울트라-856)
+📅 발주일자 디버깅: orderData.orderDate="2024-08-05", type=string
+📅 납기일자 디버깅: orderData.dueDate="", type=string
+🔥🔥🔥 날짜 변환 함수 시작 - 새 코드 실행됨
+🔥📅 parseDate 입력값: "2024-08-05", type=string, isEmpty=false
+🔥📅 parseDate 결과: "2024-08-05" -> 2024-08-05T00:00:00.000Z (valid: true)
+🔥📅 parseDate 입력값: "", type=string, isEmpty=true
+🔥📅 parseDate 결과: null (빈 문자열)
+📅 최종 저장할 날짜들: {
+  orderDate: 2024-08-05T00:00:00.000Z,
+  deliveryDate: null,
+  orderDateISO: '2024-08-05T00:00:00.000Z',
+  deliveryDateISO: null
+}
+📅 DB에 저장된 발주서: {
+  id: 116,
+  orderNumber: 'PO-20240805-울트라-856',
+  orderDate: '2024-08-05',
+  deliveryDate: null
+}
+📋 최종 발주번호: PO-20240805-더골창-686 (원본: PO-20240805-더골창-686)
+📅 발주일자 디버깅: orderData.orderDate="2024-08-05", type=string
+📅 납기일자 디버깅: orderData.dueDate="", type=string
+🔥🔥🔥 날짜 변환 함수 시작 - 새 코드 실행됨
+🔥📅 parseDate 입력값: "2024-08-05", type=string, isEmpty=false
+🔥📅 parseDate 결과: "2024-08-05" -> 2024-08-05T00:00:00.000Z (valid: true)
+🔥📅 parseDate 입력값: "", type=string, isEmpty=true
+🔥📅 parseDate 결과: null (빈 문자열)
+📅 최종 저장할 날짜들: {
+  orderDate: 2024-08-05T00:00:00.000Z,
+  deliveryDate: null,
+  orderDateISO: '2024-08-05T00:00:00.000Z',
+  deliveryDateISO: null
+}
+📅 DB에 저장된 발주서: {
+  id: 117,
+  orderNumber: 'PO-20240805-더골창-686',
+  orderDate: '2024-08-05',
+  deliveryDate: null
+}
+8:56:15 AM [express] POST /api/po-template/save 200 in 1438ms :: {"success":true,"message":"실제 DB 저장…
+🔍 [EXECUTION PATH]
+   API: /api/po-template/extract-sheets
+   실제 호출: POTemplateProcessorMock.extractSheetsToFile
+   시간: 2025-08-05T23:56:16.062Z
+   ===============================
 🔧 [ENTRY] POTemplateProcessorMock.extractSheetsToFile
-   시간: 2025-07-17T10:38:30.561Z
+   시간: 2025-08-05T23:56:16.063Z
    파라미터: {
-  "sourcePath": "/Users/davidyang/workspace/20250713_PO_Mgmt/uploads/1752748710348-PO_number01.xlsx",
-  "targetPath": "/Users/davidyang/workspace/20250713_PO_Mgmt/uploads/extracted-1752748710561.xlsx",
+  "sourcePath": "/Users/davidyang/workspace/20250713_PO_Mgmt/uploads/1754438174403-PO_Excel_InputSheet_Template_updated.xlsx",
+  "targetPath": "/Users/davidyang/workspace/20250713_PO_Mgmt/uploads/extracted-1754438176063.xlsx",
   "sheetNames": [
     "갑지",
     "을지"
   ]
 }
    ===============================
-🔧 Input 시트 완전 제거 시작: /Users/davidyang/workspace/20250713_PO_Mgmt/uploads/1752748710348-PO_number01.xlsx -> /Users/davidyang/workspace/20250713_PO_Mgmt/uploads/extracted-1752748710561.xlsx
-📋 발견된 모든 시트: Input, 갑지, 을지, Input_임시비교
-🎯 제거할 Input 시트들: Input, Input_임시비교
-📋 보존할 시트들: 갑지, 을지
+🔧 Input 시트 완전 제거 시작: /Users/davidyang/workspace/20250713_PO_Mgmt/uploads/1754438174403-PO_Excel_InputSheet_Template_updated.xlsx -> /Users/davidyang/workspace/20250713_PO_Mgmt/uploads/extracted-1754438176063.xlsx
+📋 발견된 모든 시트: Input
+🎯 제거할 Input 시트들: Input
+📋 보존할 시트들: 
 🔍 매핑 확인: Input -> sheet1.xml
-🔍 매핑 확인: Input_임시비교 -> sheet4.xml
 🗑️ [Content_Types].xml에서 제거: /xl/worksheets/sheet1.xml
-🗑️ [Content_Types].xml에서 제거: /xl/worksheets/sheet4.xml
 🗑️ 관계 제거: rId1
-🗑️ 관계 제거: rId4
 🗑️ 파일 제거: xl/worksheets/sheet1.xml
-🗑️ 파일 제거: xl/worksheets/sheet4.xml
-🗑️ 파일 제거: xl/worksheets/_rels/sheet4.xml.rels
-✅ Input 시트 완전 제거 완료: /Users/davidyang/workspace/20250713_PO_Mgmt/uploads/extracted-1752748710561.xlsx
-📊 제거된 시트: Input, Input_임시비교
-📊 보존된 시트: 갑지, 을지
+✅ Input 시트 완전 제거 완료: /Users/davidyang/workspace/20250713_PO_Mgmt/uploads/extracted-1754438176063.xlsx
+📊 제거된 시트: Input
+📊 보존된 시트: 
 ✅ [EXIT] POTemplateProcessorMock.extractSheetsToFile
-   시간: 2025-07-17T10:38:30.706Z
+   시간: 2025-08-05T23:56:16.101Z
    결과: {
   "success": true,
-  "extractedSheets": [
-    "갑지",
-    "을지"
-  ]
+  "extractedSheets": []
 }
    ===============================
-7:38:30 PM [express] POST /api/po-template/extract-sheets 200 in 147ms :: {"success":true,"message":…
-🔧 [ENTRY] ExcelAutomationService.validateVendorsFromExcel
-   시간: 2025-07-17T10:38:37.325Z
-   파라미터: {
-  "filePath": "/Users/davidyang/workspace/20250713_PO_Mgmt/uploads/1752748710348-PO_number01.xlsx"
-}
-   ===============================
-📋 검증할 거래처명 (3개): 이노에너지, 울트라창호, 더골창호
-📋 검증할 납품처명 (3개): 이노메탈, 영세엔지텍, 신오창호
-📋 검증할 거래처-납품처 쌍 (3개): 이노에너지→이노메탈, 울트라창호→영세엔지텍, 더골창호→신오창호
-🔄 다중 거래처 검증 시작: 3개 항목
-🔍 거래처 검증 시작: "이노에너지"
-🔄 모크 모드: DATABASE_URL 미설정, 폴백 모드로 전환: "이노에너지"
-🔄 폴백 추천 생성: 0개 추천
-🔍 납품처 검증 시작: "이노메탈"
-🔄 모크 모드: DATABASE_URL 미설정, 폴백 모드로 전환: "이노메탈"
-🔄 폴백 추천 생성: 0개 추천
-🔍 거래처 검증 시작: "울트라창호"
-🔄 모크 모드: DATABASE_URL 미설정, 폴백 모드로 전환: "울트라창호"
-🔄 폴백 추천 생성: 0개 추천
-🔍 납품처 검증 시작: "영세엔지텍"
-🔄 모크 모드: DATABASE_URL 미설정, 폴백 모드로 전환: "영세엔지텍"
-🔄 폴백 추천 생성: 0개 추천
-🔍 거래처 검증 시작: "더골창호"
-🔄 모크 모드: DATABASE_URL 미설정, 폴백 모드로 전환: "더골창호"
-🔄 폴백 추천 생성: 0개 추천
-🔍 납품처 검증 시작: "신오창호"
-🔄 모크 모드: DATABASE_URL 미설정, 폴백 모드로 전환: "신오창호"
-🔄 폴백 추천 생성: 0개 추천
-✅ 다중 거래처 검증 완료: 거래처=3, 납품처=3, 이메일충돌=0
-✅ 유효한 거래처: 0개
-⚠️ 확인 필요한 거래처: 3개
-7:38:37 PM [express] POST /api/excel-automation/validate-vendors 200 in 126ms :: {"success":true,"me…
-getCurrentUser - Session ID: lspBDN_HT7GX-2fX3Jhmi5QWZOAN6z-N
-getCurrentUser - Session userId: test_admin_001
-7:39:40 PM [express] GET /api/auth/user 200 in 18ms :: {"id":"test_admin_001","email":"test@ikjin.co…
-7:42:05 PM [vite] hmr update /src/pages/create-order-excel.tsx, /src/index.css?v=3jC-3TlUDgho0zgPqED-m
-getCurrentUser - Session ID: lspBDN_HT7GX-2fX3Jhmi5QWZOAN6z-N
-getCurrentUser - Session userId: test_admin_001
-7:43:48 PM [express] GET /api/auth/user 200 in 8ms :: {"id":"test_admin_001","email":"test@ikjin.co.…
-Error fetching unified dashboard data: TypeError: Cannot read properties of null (reading 'select')
-    at DatabaseStorage.getUser (/Users/davidyang/workspace/20250713_PO_Mgmt/server/storage.ts:260:29)
-    at <anonymous> (/Users/davidyang/workspace/20250713_PO_Mgmt/server/routes.ts:587:34)
-    at Layer.handle [as handle_request] (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/layer.js:95:5)
-    at next (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/route.js:149:13)
-    at requireAuth (/Users/davidyang/workspace/20250713_PO_Mgmt/server/local-auth.ts:201:14)
-    at Layer.handle [as handle_request] (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/layer.js:95:5)
-    at next (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/route.js:149:13)
-    at Route.dispatch (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/route.js:119:3)
-    at Layer.handle [as handle_request] (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/layer.js:95:5)
-    at /Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/index.js:284:15
-    at Function.process_params (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/index.js:346:12)
-    at next (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/index.js:280:10)
-    at Immediate.<anonymous> (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express-session/index.js:514:7)
-    at process.processImmediate (node:internal/timers:487:21)
-7:43:48 PM [express] GET /api/dashboard/unified 500 in 8ms :: {"message":"Failed to fetch dashboard …
-7:43:48 PM [express] GET /api/companies 200 in 2ms :: [{"id":1,"companyName":"(주)익진엔지니어링","businessN…
-getCurrentUser - Session ID: lspBDN_HT7GX-2fX3Jhmi5QWZOAN6z-N
-getCurrentUser - Session userId: test_admin_001
-7:43:51 PM [express] GET /api/auth/user 200 in 2ms :: {"id":"test_admin_001","email":"test@ikjin.co.…
-7:43:52 PM [express] GET /api/companies 200 in 1ms :: [{"id":1,"companyName":"(주)익진엔지니어링","businessN…
-7:44:05 PM [express] POST /api/po-template/upload 200 in 138ms :: {"success":true,"message":"파일 파싱 완…
-7:44:05 PM [express] POST /api/po-template/save 200 in 2ms :: {"success":true,"message":"Mock DB 저장 …
-======== EXTRACT-SHEETS ROUTE CALLED ========
-🔧 [ENTRY] POTemplateProcessorMock.extractSheetsToFile
-   시간: 2025-07-17T10:44:05.059Z
-   파라미터: {
-  "sourcePath": "/Users/davidyang/workspace/20250713_PO_Mgmt/uploads/1752749044921-PO_number01.xlsx",
-  "targetPath": "/Users/davidyang/workspace/20250713_PO_Mgmt/uploads/extracted-1752749045059.xlsx",
-  "sheetNames": [
-    "갑지",
-    "을지"
-  ]
-}
-   ===============================
-🔧 Input 시트 완전 제거 시작: /Users/davidyang/workspace/20250713_PO_Mgmt/uploads/1752749044921-PO_number01.xlsx -> /Users/davidyang/workspace/20250713_PO_Mgmt/uploads/extracted-1752749045059.xlsx
-📋 발견된 모든 시트: Input, 갑지, 을지, Input_임시비교
-🎯 제거할 Input 시트들: Input, Input_임시비교
-📋 보존할 시트들: 갑지, 을지
-🔍 매핑 확인: Input -> sheet1.xml
-🔍 매핑 확인: Input_임시비교 -> sheet4.xml
-🗑️ [Content_Types].xml에서 제거: /xl/worksheets/sheet1.xml
-🗑️ [Content_Types].xml에서 제거: /xl/worksheets/sheet4.xml
-🗑️ 관계 제거: rId1
-🗑️ 관계 제거: rId4
-🗑️ 파일 제거: xl/worksheets/sheet1.xml
-🗑️ 파일 제거: xl/worksheets/sheet4.xml
-🗑️ 파일 제거: xl/worksheets/_rels/sheet4.xml.rels
-✅ Input 시트 완전 제거 완료: /Users/davidyang/workspace/20250713_PO_Mgmt/uploads/extracted-1752749045059.xlsx
-📊 제거된 시트: Input, Input_임시비교
-📊 보존된 시트: 갑지, 을지
-✅ [EXIT] POTemplateProcessorMock.extractSheetsToFile
-   시간: 2025-07-17T10:44:05.116Z
-   결과: {
-  "success": true,
-  "extractedSheets": [
-    "갑지",
-    "을지"
-  ]
-}
-   ===============================
-7:44:05 PM [express] POST /api/po-template/extract-sheets 200 in 60ms :: {"success":true,"message":"…
-🔧 [ENTRY] ExcelAutomationService.validateVendorsFromExcel
-   시간: 2025-07-17T10:44:08.488Z
-   파라미터: {
-  "filePath": "/Users/davidyang/workspace/20250713_PO_Mgmt/uploads/1752749044921-PO_number01.xlsx"
-}
-   ===============================
-📋 검증할 거래처명 (3개): 이노에너지, 울트라창호, 더골창호
-📋 검증할 납품처명 (3개): 이노메탈, 영세엔지텍, 신오창호
-📋 검증할 거래처-납품처 쌍 (3개): 이노에너지→이노메탈, 울트라창호→영세엔지텍, 더골창호→신오창호
-🔄 다중 거래처 검증 시작: 3개 항목
-🔍 거래처 검증 시작: "이노에너지"
-🔄 모크 모드: DATABASE_URL 미설정, 폴백 모드로 전환: "이노에너지"
-🔄 폴백 추천 생성: 0개 추천
-🔍 납품처 검증 시작: "이노메탈"
-🔄 모크 모드: DATABASE_URL 미설정, 폴백 모드로 전환: "이노메탈"
-🔄 폴백 추천 생성: 0개 추천
-🔍 거래처 검증 시작: "울트라창호"
-🔄 모크 모드: DATABASE_URL 미설정, 폴백 모드로 전환: "울트라창호"
-🔄 폴백 추천 생성: 0개 추천
-🔍 납품처 검증 시작: "영세엔지텍"
-🔄 모크 모드: DATABASE_URL 미설정, 폴백 모드로 전환: "영세엔지텍"
-🔄 폴백 추천 생성: 0개 추천
-🔍 거래처 검증 시작: "더골창호"
-🔄 모크 모드: DATABASE_URL 미설정, 폴백 모드로 전환: "더골창호"
-🔄 폴백 추천 생성: 0개 추천
-🔍 납품처 검증 시작: "신오창호"
-🔄 모크 모드: DATABASE_URL 미설정, 폴백 모드로 전환: "신오창호"
-🔄 폴백 추천 생성: 0개 추천
-✅ 다중 거래처 검증 완료: 거래처=3, 납품처=3, 이메일충돌=0
-✅ 유효한 거래처: 0개
-⚠️ 확인 필요한 거래처: 3개
-7:44:08 PM [express] POST /api/excel-automation/validate-vendors 200 in 111ms :: {"success":true,"me…
-7:46:08 PM [vite] hmr update /src/pages/create-order-excel.tsx, /src/index.css?v=3jC-3TlUDgho0zgPqED-m
-7:48:03 PM [vite] hmr update /src/pages/create-order-excel.tsx, /src/index.css?v=3jC-3TlUDgho0zgPqED-m
-7:48:14 PM [vite] hmr update /src/pages/create-order-excel.tsx, /src/index.css?v=3jC-3TlUDgho0zgPqED-m
-getCurrentUser - Session ID: lspBDN_HT7GX-2fX3Jhmi5QWZOAN6z-N
-getCurrentUser - Session userId: test_admin_001
-7:48:39 PM [express] GET /api/auth/user 200 in 2ms :: {"id":"test_admin_001","email":"test@ikjin.co.…
-7:48:39 PM [express] GET /api/companies 200 in 1ms :: [{"id":1,"companyName":"(주)익진엔지니어링","businessN…
-7:48:51 PM [express] POST /api/po-template/upload 200 in 164ms :: {"success":true,"message":"파일 파싱 완…
-7:48:51 PM [express] POST /api/po-template/save 200 in 1ms :: {"success":true,"message":"Mock DB 저장 …
-======== EXTRACT-SHEETS ROUTE CALLED ========
-🔧 [ENTRY] POTemplateProcessorMock.extractSheetsToFile
-   시간: 2025-07-17T10:48:51.743Z
-   파라미터: {
-  "sourcePath": "/Users/davidyang/workspace/20250713_PO_Mgmt/uploads/1752749331578-PO_number01.xlsx",
-  "targetPath": "/Users/davidyang/workspace/20250713_PO_Mgmt/uploads/extracted-1752749331743.xlsx",
-  "sheetNames": [
-    "갑지",
-    "을지"
-  ]
-}
-   ===============================
-🔧 Input 시트 완전 제거 시작: /Users/davidyang/workspace/20250713_PO_Mgmt/uploads/1752749331578-PO_number01.xlsx -> /Users/davidyang/workspace/20250713_PO_Mgmt/uploads/extracted-1752749331743.xlsx
-📋 발견된 모든 시트: Input, 갑지, 을지, Input_임시비교
-🎯 제거할 Input 시트들: Input, Input_임시비교
-📋 보존할 시트들: 갑지, 을지
-🔍 매핑 확인: Input -> sheet1.xml
-🔍 매핑 확인: Input_임시비교 -> sheet4.xml
-🗑️ [Content_Types].xml에서 제거: /xl/worksheets/sheet1.xml
-🗑️ [Content_Types].xml에서 제거: /xl/worksheets/sheet4.xml
-🗑️ 관계 제거: rId1
-🗑️ 관계 제거: rId4
-🗑️ 파일 제거: xl/worksheets/sheet1.xml
-🗑️ 파일 제거: xl/worksheets/sheet4.xml
-🗑️ 파일 제거: xl/worksheets/_rels/sheet4.xml.rels
-✅ Input 시트 완전 제거 완료: /Users/davidyang/workspace/20250713_PO_Mgmt/uploads/extracted-1752749331743.xlsx
-📊 제거된 시트: Input, Input_임시비교
-📊 보존된 시트: 갑지, 을지
-✅ [EXIT] POTemplateProcessorMock.extractSheetsToFile
-   시간: 2025-07-17T10:48:51.793Z
-   결과: {
-  "success": true,
-  "extractedSheets": [
-    "갑지",
-    "을지"
-  ]
-}
-   ===============================
-7:48:51 PM [express] POST /api/po-template/extract-sheets 200 in 52ms :: {"success":true,"message":"…
-getCurrentUser - Session ID: lspBDN_HT7GX-2fX3Jhmi5QWZOAN6z-N
-getCurrentUser - Session userId: test_admin_001
-7:49:17 PM [express] GET /api/auth/user 200 in 3ms :: {"id":"test_admin_001","email":"test@ikjin.co.…
-Error fetching unified dashboard data: TypeError: Cannot read properties of null (reading 'select')
-    at DatabaseStorage.getUser (/Users/davidyang/workspace/20250713_PO_Mgmt/server/storage.ts:260:29)
-    at <anonymous> (/Users/davidyang/workspace/20250713_PO_Mgmt/server/routes.ts:587:34)
-    at Layer.handle [as handle_request] (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/layer.js:95:5)
-    at next (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/route.js:149:13)
-    at requireAuth (/Users/davidyang/workspace/20250713_PO_Mgmt/server/local-auth.ts:201:14)
-    at Layer.handle [as handle_request] (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/layer.js:95:5)
-    at next (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/route.js:149:13)
-    at Route.dispatch (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/route.js:119:3)
-    at Layer.handle [as handle_request] (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/layer.js:95:5)
-    at /Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/index.js:284:15
-    at Function.process_params (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/index.js:346:12)
-    at next (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/index.js:280:10)
-    at Immediate.<anonymous> (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express-session/index.js:514:7)
-    at process.processImmediate (node:internal/timers:487:21)
-7:49:18 PM [express] GET /api/dashboard/unified 500 in 4ms :: {"message":"Failed to fetch dashboard …
-7:49:18 PM [express] GET /api/companies 200 in 3ms :: [{"id":1,"companyName":"(주)익진엔지니어링","businessN…
-getCurrentUser - Session ID: lspBDN_HT7GX-2fX3Jhmi5QWZOAN6z-N
-getCurrentUser - Session userId: test_admin_001
-7:49:26 PM [express] GET /api/auth/user 200 in 13ms :: {"id":"test_admin_001","email":"test@ikjin.co…
-7:49:26 PM [express] GET /api/companies 200 in 4ms :: [{"id":1,"companyName":"(주)익진엔지니어링","businessN…
-7:49:35 PM [express] POST /api/po-template/upload 200 in 130ms :: {"success":true,"message":"파일 파싱 완…
-7:49:35 PM [express] POST /api/po-template/save 200 in 2ms :: {"success":true,"message":"Mock DB 저장 …
-======== EXTRACT-SHEETS ROUTE CALLED ========
-🔧 [ENTRY] POTemplateProcessorMock.extractSheetsToFile
-   시간: 2025-07-17T10:49:35.391Z
-   파라미터: {
-  "sourcePath": "/Users/davidyang/workspace/20250713_PO_Mgmt/uploads/1752749375259-PO_number01.xlsx",
-  "targetPath": "/Users/davidyang/workspace/20250713_PO_Mgmt/uploads/extracted-1752749375391.xlsx",
-  "sheetNames": [
-    "갑지",
-    "을지"
-  ]
-}
-   ===============================
-🔧 Input 시트 완전 제거 시작: /Users/davidyang/workspace/20250713_PO_Mgmt/uploads/1752749375259-PO_number01.xlsx -> /Users/davidyang/workspace/20250713_PO_Mgmt/uploads/extracted-1752749375391.xlsx
-📋 발견된 모든 시트: Input, 갑지, 을지, Input_임시비교
-🎯 제거할 Input 시트들: Input, Input_임시비교
-📋 보존할 시트들: 갑지, 을지
-🔍 매핑 확인: Input -> sheet1.xml
-🔍 매핑 확인: Input_임시비교 -> sheet4.xml
-🗑️ [Content_Types].xml에서 제거: /xl/worksheets/sheet1.xml
-🗑️ [Content_Types].xml에서 제거: /xl/worksheets/sheet4.xml
-🗑️ 관계 제거: rId1
-🗑️ 관계 제거: rId4
-🗑️ 파일 제거: xl/worksheets/sheet1.xml
-🗑️ 파일 제거: xl/worksheets/sheet4.xml
-🗑️ 파일 제거: xl/worksheets/_rels/sheet4.xml.rels
-✅ Input 시트 완전 제거 완료: /Users/davidyang/workspace/20250713_PO_Mgmt/uploads/extracted-1752749375391.xlsx
-📊 제거된 시트: Input, Input_임시비교
-📊 보존된 시트: 갑지, 을지
-✅ [EXIT] POTemplateProcessorMock.extractSheetsToFile
-   시간: 2025-07-17T10:49:35.461Z
-   결과: {
-  "success": true,
-  "extractedSheets": [
-    "갑지",
-    "을지"
-  ]
-}
-   ===============================
-7:49:35 PM [express] POST /api/po-template/extract-sheets 200 in 72ms :: {"success":true,"message":"…
-7:50:19 PM [vite] hmr update /src/pages/create-order-excel.tsx, /src/index.css?v=3jC-3TlUDgho0zgPqED-m
-7:50:30 PM [vite] hmr update /src/pages/create-order-excel.tsx, /src/index.css?v=3jC-3TlUDgho0zgPqED-m
-7:50:45 PM [vite] hmr update /src/pages/create-order-excel.tsx, /src/index.css?v=3jC-3TlUDgho0zgPqED-m
-getCurrentUser - Session ID: lspBDN_HT7GX-2fX3Jhmi5QWZOAN6z-N
-getCurrentUser - Session userId: test_admin_001
-7:51:42 PM [express] GET /api/auth/user 200 in 2ms :: {"id":"test_admin_001","email":"test@ikjin.co.…
-7:51:43 PM [express] GET /api/companies 200 in 1ms :: [{"id":1,"companyName":"(주)익진엔지니어링","businessN…
-7:51:52 PM [express] POST /api/po-template/upload 200 in 126ms :: {"success":true,"message":"파일 파싱 완…
-7:51:52 PM [express] POST /api/po-template/save 200 in 1ms :: {"success":true,"message":"Mock DB 저장 …
-======== EXTRACT-SHEETS ROUTE CALLED ========
-🔧 [ENTRY] POTemplateProcessorMock.extractSheetsToFile
-   시간: 2025-07-17T10:51:52.030Z
-   파라미터: {
-  "sourcePath": "/Users/davidyang/workspace/20250713_PO_Mgmt/uploads/1752749511901-PO_number01.xlsx",
-  "targetPath": "/Users/davidyang/workspace/20250713_PO_Mgmt/uploads/extracted-1752749512030.xlsx",
-  "sheetNames": [
-    "갑지",
-    "을지"
-  ]
-}
-   ===============================
-🔧 Input 시트 완전 제거 시작: /Users/davidyang/workspace/20250713_PO_Mgmt/uploads/1752749511901-PO_number01.xlsx -> /Users/davidyang/workspace/20250713_PO_Mgmt/uploads/extracted-1752749512030.xlsx
-📋 발견된 모든 시트: Input, 갑지, 을지, Input_임시비교
-🎯 제거할 Input 시트들: Input, Input_임시비교
-📋 보존할 시트들: 갑지, 을지
-🔍 매핑 확인: Input -> sheet1.xml
-🔍 매핑 확인: Input_임시비교 -> sheet4.xml
-🗑️ [Content_Types].xml에서 제거: /xl/worksheets/sheet1.xml
-🗑️ [Content_Types].xml에서 제거: /xl/worksheets/sheet4.xml
-🗑️ 관계 제거: rId1
-🗑️ 관계 제거: rId4
-🗑️ 파일 제거: xl/worksheets/sheet1.xml
-🗑️ 파일 제거: xl/worksheets/sheet4.xml
-🗑️ 파일 제거: xl/worksheets/_rels/sheet4.xml.rels
-✅ Input 시트 완전 제거 완료: /Users/davidyang/workspace/20250713_PO_Mgmt/uploads/extracted-1752749512030.xlsx
-📊 제거된 시트: Input, Input_임시비교
-📊 보존된 시트: 갑지, 을지
-✅ [EXIT] POTemplateProcessorMock.extractSheetsToFile
-   시간: 2025-07-17T10:51:52.071Z
-   결과: {
-  "success": true,
-  "extractedSheets": [
-    "갑지",
-    "을지"
-  ]
-}
-   ===============================
-7:51:52 PM [express] POST /api/po-template/extract-sheets 200 in 43ms :: {"success":true,"message":"…
-7:52:33 PM [vite] hmr update /src/pages/create-order-excel.tsx, /src/index.css?v=3jC-3TlUDgho0zgPqED-m
-getCurrentUser - Session ID: lspBDN_HT7GX-2fX3Jhmi5QWZOAN6z-N
-getCurrentUser - Session userId: test_admin_001
-7:52:38 PM [express] GET /api/auth/user 200 in 2ms :: {"id":"test_admin_001","email":"test@ikjin.co.…
-7:52:38 PM [express] GET /api/companies 200 in 7ms :: [{"id":1,"companyName":"(주)익진엔지니어링","businessN…
-7:52:50 PM [vite] hmr update /src/pages/create-order-excel.tsx, /src/index.css?v=3jC-3TlUDgho0zgPqED-m
-7:54:36 PM [express] POST /api/po-template/upload 200 in 144ms :: {"success":true,"message":"파일 파싱 완…
-7:54:36 PM [express] POST /api/po-template/save 200 in 1ms :: {"success":true,"message":"Mock DB 저장 …
-======== EXTRACT-SHEETS ROUTE CALLED ========
-🔧 [ENTRY] POTemplateProcessorMock.extractSheetsToFile
-   시간: 2025-07-17T10:54:36.909Z
-   파라미터: {
-  "sourcePath": "/Users/davidyang/workspace/20250713_PO_Mgmt/uploads/1752749676767-PO_number01.xlsx",
-  "targetPath": "/Users/davidyang/workspace/20250713_PO_Mgmt/uploads/extracted-1752749676909.xlsx",
-  "sheetNames": [
-    "갑지",
-    "을지"
-  ]
-}
-   ===============================
-🔧 Input 시트 완전 제거 시작: /Users/davidyang/workspace/20250713_PO_Mgmt/uploads/1752749676767-PO_number01.xlsx -> /Users/davidyang/workspace/20250713_PO_Mgmt/uploads/extracted-1752749676909.xlsx
-📋 발견된 모든 시트: Input, 갑지, 을지, Input_임시비교
-🎯 제거할 Input 시트들: Input, Input_임시비교
-📋 보존할 시트들: 갑지, 을지
-🔍 매핑 확인: Input -> sheet1.xml
-🔍 매핑 확인: Input_임시비교 -> sheet4.xml
-🗑️ [Content_Types].xml에서 제거: /xl/worksheets/sheet1.xml
-🗑️ [Content_Types].xml에서 제거: /xl/worksheets/sheet4.xml
-🗑️ 관계 제거: rId1
-🗑️ 관계 제거: rId4
-🗑️ 파일 제거: xl/worksheets/sheet1.xml
-🗑️ 파일 제거: xl/worksheets/sheet4.xml
-🗑️ 파일 제거: xl/worksheets/_rels/sheet4.xml.rels
-✅ Input 시트 완전 제거 완료: /Users/davidyang/workspace/20250713_PO_Mgmt/uploads/extracted-1752749676909.xlsx
-📊 제거된 시트: Input, Input_임시비교
-📊 보존된 시트: 갑지, 을지
-✅ [EXIT] POTemplateProcessorMock.extractSheetsToFile
-   시간: 2025-07-17T10:54:36.947Z
-   결과: {
-  "success": true,
-  "extractedSheets": [
-    "갑지",
-    "을지"
-  ]
-}
-   ===============================
-7:54:36 PM [express] POST /api/po-template/extract-sheets 200 in 39ms :: {"success":true,"message":"…
-🔧 [ENTRY] ExcelAutomationService.validateVendorsFromExcel
-   시간: 2025-07-17T10:54:37.455Z
-   파라미터: {
-  "filePath": "/Users/davidyang/workspace/20250713_PO_Mgmt/uploads/1752749676767-PO_number01.xlsx"
-}
-   ===============================
-📋 검증할 거래처명 (3개): 이노에너지, 울트라창호, 더골창호
-📋 검증할 납품처명 (3개): 이노메탈, 영세엔지텍, 신오창호
-📋 검증할 거래처-납품처 쌍 (3개): 이노에너지→이노메탈, 울트라창호→영세엔지텍, 더골창호→신오창호
-🔄 다중 거래처 검증 시작: 3개 항목
-🔍 거래처 검증 시작: "이노에너지"
-🔄 모크 모드: DATABASE_URL 미설정, 폴백 모드로 전환: "이노에너지"
-🔄 폴백 추천 생성: 0개 추천
-🔍 납품처 검증 시작: "이노메탈"
-🔄 모크 모드: DATABASE_URL 미설정, 폴백 모드로 전환: "이노메탈"
-🔄 폴백 추천 생성: 0개 추천
-🔍 거래처 검증 시작: "울트라창호"
-🔄 모크 모드: DATABASE_URL 미설정, 폴백 모드로 전환: "울트라창호"
-🔄 폴백 추천 생성: 0개 추천
-🔍 납품처 검증 시작: "영세엔지텍"
-🔄 모크 모드: DATABASE_URL 미설정, 폴백 모드로 전환: "영세엔지텍"
-🔄 폴백 추천 생성: 0개 추천
-🔍 거래처 검증 시작: "더골창호"
-🔄 모크 모드: DATABASE_URL 미설정, 폴백 모드로 전환: "더골창호"
-🔄 폴백 추천 생성: 0개 추천
-🔍 납품처 검증 시작: "신오창호"
-🔄 모크 모드: DATABASE_URL 미설정, 폴백 모드로 전환: "신오창호"
-🔄 폴백 추천 생성: 0개 추천
-✅ 다중 거래처 검증 완료: 거래처=3, 납품처=3, 이메일충돌=0
-✅ 유효한 거래처: 0개
-⚠️ 확인 필요한 거래처: 3개
-7:54:37 PM [express] POST /api/excel-automation/validate-vendors 200 in 138ms :: {"success":true,"me…
-7:59:46 PM [express] POST /api/excel-automation/vendor-validation 404 in 39ms
-8:00:21 PM [express] POST /api/excel-automation/validate-vendors 401 in 6ms :: {"message":"Authentic…
-getCurrentUser - Session ID: lspBDN_HT7GX-2fX3Jhmi5QWZOAN6z-N
-getCurrentUser - Session userId: test_admin_001
-8:02:42 PM [express] GET /api/auth/user 200 in 2ms :: {"id":"test_admin_001","email":"test@ikjin.co.…
-8:02:42 PM [express] GET /api/companies 200 in 2ms :: [{"id":1,"companyName":"(주)익진엔지니어링","businessN…
-8:02:51 PM [express] POST /api/po-template/upload 200 in 127ms :: {"success":true,"message":"파일 파싱 완…
-8:02:51 PM [express] POST /api/po-template/save 200 in 1ms :: {"success":true,"message":"Mock DB 저장 …
-======== EXTRACT-SHEETS ROUTE CALLED ========
-🔧 [ENTRY] POTemplateProcessorMock.extractSheetsToFile
-   시간: 2025-07-17T11:02:51.808Z
-   파라미터: {
-  "sourcePath": "/Users/davidyang/workspace/20250713_PO_Mgmt/uploads/1752750171679-PO_number01.xlsx",
-  "targetPath": "/Users/davidyang/workspace/20250713_PO_Mgmt/uploads/extracted-1752750171808.xlsx",
-  "sheetNames": [
-    "갑지",
-    "을지"
-  ]
-}
-   ===============================
-🔧 Input 시트 완전 제거 시작: /Users/davidyang/workspace/20250713_PO_Mgmt/uploads/1752750171679-PO_number01.xlsx -> /Users/davidyang/workspace/20250713_PO_Mgmt/uploads/extracted-1752750171808.xlsx
-📋 발견된 모든 시트: Input, 갑지, 을지, Input_임시비교
-🎯 제거할 Input 시트들: Input, Input_임시비교
-📋 보존할 시트들: 갑지, 을지
-🔍 매핑 확인: Input -> sheet1.xml
-🔍 매핑 확인: Input_임시비교 -> sheet4.xml
-🗑️ [Content_Types].xml에서 제거: /xl/worksheets/sheet1.xml
-🗑️ [Content_Types].xml에서 제거: /xl/worksheets/sheet4.xml
-🗑️ 관계 제거: rId1
-🗑️ 관계 제거: rId4
-🗑️ 파일 제거: xl/worksheets/sheet1.xml
-🗑️ 파일 제거: xl/worksheets/sheet4.xml
-🗑️ 파일 제거: xl/worksheets/_rels/sheet4.xml.rels
-✅ Input 시트 완전 제거 완료: /Users/davidyang/workspace/20250713_PO_Mgmt/uploads/extracted-1752750171808.xlsx
-📊 제거된 시트: Input, Input_임시비교
-📊 보존된 시트: 갑지, 을지
-✅ [EXIT] POTemplateProcessorMock.extractSheetsToFile
-   시간: 2025-07-17T11:02:51.849Z
-   결과: {
-  "success": true,
-  "extractedSheets": [
-    "갑지",
-    "을지"
-  ]
-}
-   ===============================
-8:02:51 PM [express] POST /api/po-template/extract-sheets 200 in 42ms :: {"success":true,"message":"…
-🔧 [ENTRY] ExcelAutomationService.validateVendorsFromExcel
-   시간: 2025-07-17T11:02:52.356Z
-   파라미터: {
-  "filePath": "/Users/davidyang/workspace/20250713_PO_Mgmt/uploads/1752750171679-PO_number01.xlsx"
-}
-   ===============================
-📋 검증할 거래처명 (3개): 이노에너지, 울트라창호, 더골창호
-📋 검증할 납품처명 (3개): 이노메탈, 영세엔지텍, 신오창호
-📋 검증할 거래처-납품처 쌍 (3개): 이노에너지→이노메탈, 울트라창호→영세엔지텍, 더골창호→신오창호
-🔄 다중 거래처 검증 시작: 3개 항목
-🔍 거래처 검증 시작: "이노에너지"
-🔄 모크 모드: DATABASE_URL 미설정, 폴백 모드로 전환: "이노에너지"
-🔄 폴백 추천 생성: 0개 추천
-🔍 납품처 검증 시작: "이노메탈"
-🔄 모크 모드: DATABASE_URL 미설정, 폴백 모드로 전환: "이노메탈"
-🔄 폴백 추천 생성: 0개 추천
-🔍 거래처 검증 시작: "울트라창호"
-🔄 모크 모드: DATABASE_URL 미설정, 폴백 모드로 전환: "울트라창호"
-🔄 폴백 추천 생성: 0개 추천
-🔍 납품처 검증 시작: "영세엔지텍"
-🔄 모크 모드: DATABASE_URL 미설정, 폴백 모드로 전환: "영세엔지텍"
-🔄 폴백 추천 생성: 0개 추천
-🔍 거래처 검증 시작: "더골창호"
-🔄 모크 모드: DATABASE_URL 미설정, 폴백 모드로 전환: "더골창호"
-🔄 폴백 추천 생성: 0개 추천
-🔍 납품처 검증 시작: "신오창호"
-🔄 모크 모드: DATABASE_URL 미설정, 폴백 모드로 전환: "신오창호"
-🔄 폴백 추천 생성: 0개 추천
-✅ 다중 거래처 검증 완료: 거래처=3, 납품처=3, 이메일충돌=0
-✅ 유효한 거래처: 0개
-⚠️ 확인 필요한 거래처: 3개
-8:02:52 PM [express] POST /api/excel-automation/validate-vendors 200 in 120ms :: {"success":true,"me…
-getCurrentUser - Session ID: lspBDN_HT7GX-2fX3Jhmi5QWZOAN6z-N
-getCurrentUser - Session userId: test_admin_001
-8:03:18 PM [express] GET /api/auth/user 200 in 14ms :: {"id":"test_admin_001","email":"test@ikjin.co…
-Error fetching unified dashboard data: TypeError: Cannot read properties of null (reading 'select')
-    at DatabaseStorage.getUser (/Users/davidyang/workspace/20250713_PO_Mgmt/server/storage.ts:260:29)
-    at <anonymous> (/Users/davidyang/workspace/20250713_PO_Mgmt/server/routes.ts:587:34)
-    at Layer.handle [as handle_request] (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/layer.js:95:5)
-    at next (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/route.js:149:13)
-    at requireAuth (/Users/davidyang/workspace/20250713_PO_Mgmt/server/local-auth.ts:201:14)
-    at Layer.handle [as handle_request] (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/layer.js:95:5)
-    at next (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/route.js:149:13)
-    at Route.dispatch (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/route.js:119:3)
-    at Layer.handle [as handle_request] (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/layer.js:95:5)
-    at /Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/index.js:284:15
-    at Function.process_params (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/index.js:346:12)
-    at next (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/index.js:280:10)
-    at Immediate.<anonymous> (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express-session/index.js:514:7)
-    at process.processImmediate (node:internal/timers:487:21)
-8:03:19 PM [express] GET /api/dashboard/unified 500 in 17ms :: {"message":"Failed to fetch dashboard…
-8:03:19 PM [express] GET /api/companies 200 in 3ms :: [{"id":1,"companyName":"(주)익진엔지니어링","businessN…
-getCurrentUser - Session ID: lspBDN_HT7GX-2fX3Jhmi5QWZOAN6z-N
-getCurrentUser - Session userId: test_admin_001
-8:03:23 PM [express] GET /api/auth/user 200 in 12ms :: {"id":"test_admin_001","email":"test@ikjin.co…
-8:03:23 PM [express] GET /api/companies 200 in 1ms :: [{"id":1,"companyName":"(주)익진엔지니어링","businessN…
-8:03:48 PM [express] POST /api/po-template/upload 200 in 136ms :: {"success":true,"message":"파일 파싱 완…
-8:03:48 PM [express] POST /api/po-template/save 200 in 1ms :: {"success":true,"message":"Mock DB 저장 …
-======== EXTRACT-SHEETS ROUTE CALLED ========
-🔧 [ENTRY] POTemplateProcessorMock.extractSheetsToFile
-   시간: 2025-07-17T11:03:48.731Z
-   파라미터: {
-  "sourcePath": "/Users/davidyang/workspace/20250713_PO_Mgmt/uploads/1752750228594-PO_number01.xlsx",
-  "targetPath": "/Users/davidyang/workspace/20250713_PO_Mgmt/uploads/extracted-1752750228731.xlsx",
-  "sheetNames": [
-    "갑지",
-    "을지"
-  ]
-}
-   ===============================
-🔧 Input 시트 완전 제거 시작: /Users/davidyang/workspace/20250713_PO_Mgmt/uploads/1752750228594-PO_number01.xlsx -> /Users/davidyang/workspace/20250713_PO_Mgmt/uploads/extracted-1752750228731.xlsx
-📋 발견된 모든 시트: Input, 갑지, 을지, Input_임시비교
-🎯 제거할 Input 시트들: Input, Input_임시비교
-📋 보존할 시트들: 갑지, 을지
-🔍 매핑 확인: Input -> sheet1.xml
-🔍 매핑 확인: Input_임시비교 -> sheet4.xml
-🗑️ [Content_Types].xml에서 제거: /xl/worksheets/sheet1.xml
-🗑️ [Content_Types].xml에서 제거: /xl/worksheets/sheet4.xml
-🗑️ 관계 제거: rId1
-🗑️ 관계 제거: rId4
-🗑️ 파일 제거: xl/worksheets/sheet1.xml
-🗑️ 파일 제거: xl/worksheets/sheet4.xml
-🗑️ 파일 제거: xl/worksheets/_rels/sheet4.xml.rels
-✅ Input 시트 완전 제거 완료: /Users/davidyang/workspace/20250713_PO_Mgmt/uploads/extracted-1752750228731.xlsx
-📊 제거된 시트: Input, Input_임시비교
-📊 보존된 시트: 갑지, 을지
-✅ [EXIT] POTemplateProcessorMock.extractSheetsToFile
-   시간: 2025-07-17T11:03:48.767Z
-   결과: {
-  "success": true,
-  "extractedSheets": [
-    "갑지",
-    "을지"
-  ]
-}
-   ===============================
-8:03:48 PM [express] POST /api/po-template/extract-sheets 200 in 36ms :: {"success":true,"message":"…
-🔧 [ENTRY] ExcelAutomationService.validateVendorsFromExcel
-   시간: 2025-07-17T11:03:49.273Z
-   파라미터: {
-  "filePath": "/Users/davidyang/workspace/20250713_PO_Mgmt/uploads/1752750228594-PO_number01.xlsx"
-}
-   ===============================
-📋 검증할 거래처명 (3개): 이노에너지, 울트라창호, 더골창호
-📋 검증할 납품처명 (3개): 이노메탈, 영세엔지텍, 신오창호
-📋 검증할 거래처-납품처 쌍 (3개): 이노에너지→이노메탈, 울트라창호→영세엔지텍, 더골창호→신오창호
-🔄 다중 거래처 검증 시작: 3개 항목
-🔍 거래처 검증 시작: "이노에너지"
-🔄 모크 모드: DATABASE_URL 미설정, 폴백 모드로 전환: "이노에너지"
-🔄 폴백 추천 생성: 0개 추천
-🔍 납품처 검증 시작: "이노메탈"
-🔄 모크 모드: DATABASE_URL 미설정, 폴백 모드로 전환: "이노메탈"
-🔄 폴백 추천 생성: 0개 추천
-🔍 거래처 검증 시작: "울트라창호"
-🔄 모크 모드: DATABASE_URL 미설정, 폴백 모드로 전환: "울트라창호"
-🔄 폴백 추천 생성: 0개 추천
-🔍 납품처 검증 시작: "영세엔지텍"
-🔄 모크 모드: DATABASE_URL 미설정, 폴백 모드로 전환: "영세엔지텍"
-🔄 폴백 추천 생성: 0개 추천
-🔍 거래처 검증 시작: "더골창호"
-🔄 모크 모드: DATABASE_URL 미설정, 폴백 모드로 전환: "더골창호"
-🔄 폴백 추천 생성: 0개 추천
-🔍 납품처 검증 시작: "신오창호"
-🔄 모크 모드: DATABASE_URL 미설정, 폴백 모드로 전환: "신오창호"
-🔄 폴백 추천 생성: 0개 추천
-✅ 다중 거래처 검증 완료: 거래처=3, 납품처=3, 이메일충돌=0
-✅ 유효한 거래처: 0개
-⚠️ 확인 필요한 거래처: 3개
-8:03:49 PM [express] POST /api/excel-automation/validate-vendors 200 in 114ms :: {"success":true,"me…
+8:56:16 AM [express] POST /api/po-template/extract-sheets 200 in 204ms :: {"success":true,"message":…
+📄 PDF 생성 요청: 발주서 N/A
+✅ PDF 생성 완료: /api/orders/download-pdf/1754438201335
+8:56:45 AM [express] POST /api/orders/generate-pdf 200 in 4244ms :: {"success":true,"pdfUrl":"/api/o…
+8:56:45 AM [express] GET /api/orders/download-pdf/1754438201335 200 in 175ms
+9:00:13 AM [vite] hmr update /src/components/workflow/completion/ActionButtons.tsx, /src/index.css?v=sIrDNQuwPrNAX3ik2GukX
+9:00:36 AM [vite] hmr update /src/components/workflow/preview/PDFPreviewModal.tsx, /src/index.css?v=sIrDNQuwPrNAX3ik2GukX
+9:01:03 AM [vite] hmr update /src/components/workflow/preview/PDFPreviewModal.tsx, /src/index.css?v=sIrDNQuwPrNAX3ik2GukX
+9:04:18 AM [vite] hmr update /src/components/workflow/excel/ExcelUploadComponent.tsx, /src/index.css?v=sIrDNQuwPrNAX3ik2GukX
+9:04:27 AM [vite] hmr update /src/components/workflow/excel/ExcelUploadComponent.tsx, /src/index.css?v=sIrDNQuwPrNAX3ik2GukX
+9:04:46 AM [vite] hmr update /src/components/workflow/excel/ExcelUploadComponent.tsx, /src/index.css?v=sIrDNQuwPrNAX3ik2GukX
+9:05:06 AM [vite] hmr update /src/components/workflow/excel/ExcelUploadComponent.tsx, /src/index.css?v=sIrDNQuwPrNAX3ik2GukX
+9:05:26 AM [vite] hmr update /src/components/workflow/excel/ExcelUploadComponent.tsx, /src/index.css?v=sIrDNQuwPrNAX3ik2GukX
+9:06:07 AM [vite] hmr update /src/components/workflow/excel/ExcelUploadComponent.tsx, /src/index.css?v=sIrDNQuwPrNAX3ik2GukX

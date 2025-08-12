@@ -3,6 +3,7 @@ import { purchaseOrders, purchaseOrderItems, vendors, projects } from '../../sha
 import { eq, and } from 'drizzle-orm';
 import * as XLSX from 'xlsx';
 import { v4 as uuidv4 } from 'uuid';
+import fs from 'fs';
 import { removeAllInputSheets } from './excel-input-sheet-remover';
 
 export interface POTemplateItem {
@@ -45,9 +46,15 @@ export class POTemplateProcessor {
    */
   static parseInputSheet(filePath: string): POTemplateParseResult {
     try {
-      const workbook = XLSX.readFile(filePath);
+      const buffer = fs.readFileSync(filePath);
+      const workbook = XLSX.read(buffer, { type: 'buffer' });
       
-      if (!workbook.SheetNames.includes('Input')) {
+      // 'Input' 시트 찾기
+      const inputSheetName = workbook.SheetNames.find(name => 
+        name === 'Input'
+      );
+      
+      if (!inputSheetName) {
         return {
           success: false,
           totalOrders: 0,
@@ -57,7 +64,7 @@ export class POTemplateProcessor {
         };
       }
 
-      const worksheet = workbook.Sheets['Input'];
+      const worksheet = workbook.Sheets[inputSheetName];
       const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
       // 헤더 행 제거
@@ -156,7 +163,7 @@ export class POTemplateProcessor {
     try {
       let savedOrders = 0;
 
-      await db.transaction(async (tx) => {
+      await db.transaction(async (tx: any) => {
         for (const orderData of orders) {
           // 1. 거래처 조회 또는 생성
           const vendorId = await this.findOrCreateVendor(tx, orderData.vendorName);
@@ -186,12 +193,9 @@ export class POTemplateProcessor {
               quantity: item.quantity,
               unitPrice: item.unitPrice,
               totalAmount: item.totalAmount,
-              categoryLv1: item.categoryLv1,
-              categoryLv2: item.categoryLv2,
-              categoryLv3: item.categoryLv3,
-              supplyAmount: item.supplyAmount,
-              taxAmount: item.taxAmount,
-              deliveryName: item.deliveryName,
+              majorCategory: item.categoryLv1,
+              middleCategory: item.categoryLv2,
+              minorCategory: item.categoryLv3,
               notes: item.notes
             });
           }
@@ -327,7 +331,13 @@ export class POTemplateProcessor {
       }
       
       if (typeof dateValue === 'string') {
-        const date = new Date(dateValue);
+        // 한국식 날짜 형식 (YYYY.M.D 또는 YYYY.MM.DD)을 JavaScript가 인식 가능한 형식으로 변환
+        let dateStr = dateValue.trim();
+        if (/^\d{4}\.\d{1,2}\.\d{1,2}$/.test(dateStr)) {
+          dateStr = dateStr.replace(/\./g, '-'); // 2024.6.12 -> 2024-6-12
+        }
+        
+        const date = new Date(dateStr);
         if (!isNaN(date.getTime())) {
           return date.toISOString().split('T')[0];
         }

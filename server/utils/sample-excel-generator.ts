@@ -4,7 +4,7 @@ import * as XLSX from 'xlsx';
  * 테스트용 샘플 Excel 파일 생성
  */
 export function generateSampleExcel(): Buffer {
-  // Input Sheet 데이터
+  // Input 시트 데이터
   const inputSheetData = [
     // 헤더 행 (1행)
     [
@@ -57,7 +57,7 @@ export function generateSampleExcel(): Buffer {
   // 워크북 생성
   const workbook = XLSX.utils.book_new();
 
-  // Input Sheet 생성
+  // Input 시트 생성
   const inputSheet = XLSX.utils.aoa_to_sheet(inputSheetData);
   
   // 컬럼 너비 설정
@@ -83,7 +83,7 @@ export function generateSampleExcel(): Buffer {
   const euljiSheet = XLSX.utils.aoa_to_sheet(euljiData);
 
   // 워크북에 시트 추가
-  XLSX.utils.book_append_sheet(workbook, inputSheet, 'Input Sheet');
+  XLSX.utils.book_append_sheet(workbook, inputSheet, 'Input');
   XLSX.utils.book_append_sheet(workbook, gapjiSheet, '갑지');
   XLSX.utils.book_append_sheet(workbook, euljiSheet, '을지');
 
@@ -102,7 +102,7 @@ export function generateSampleExcel(): Buffer {
 export const sampleExcelMeta = {
   filename: 'sample-purchase-orders.xlsx',
   description: '발주서 자동화 테스트용 샘플 Excel 파일',
-  sheets: ['Input Sheet', '갑지', '을지'],
+  sheets: ['Input', '갑지', '을지'],
   dataRows: 3,
   columns: 13
 };

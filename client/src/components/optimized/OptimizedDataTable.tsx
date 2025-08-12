@@ -2,7 +2,7 @@
  * Optimized DataTable component with virtualization and performance enhancements
  */
 
-import React, { useMemo, useState, useCallback } from "react";
+import React, { useMemo, useState, useCallback, useRef, useEffect } from "react";
 import { 
   ColumnDef, 
   flexRender, 
@@ -18,8 +18,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, ChevronRight, Search, Filter } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, Filter, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { VirtualList } from "@/components/common/LazyWrapper";
+import { useWindowSize, usePerformanceMonitor } from "@/hooks/use-performance";
 
 interface OptimizedDataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -37,6 +39,11 @@ interface OptimizedDataTableProps<TData, TValue> {
   enablePagination?: boolean;
   pageSize?: number;
   emptyMessage?: string;
+  // Virtualization options
+  enableVirtualization?: boolean;
+  virtualItemHeight?: number;
+  virtualContainerHeight?: number;
+  virtualizationThreshold?: number;
 }
 
 export function OptimizedDataTable<TData, TValue>({
@@ -51,16 +58,36 @@ export function OptimizedDataTable<TData, TValue>({
   enablePagination = true,
   pageSize = 20,
   emptyMessage = "데이터가 없습니다",
+  enableVirtualization = false,
+  virtualItemHeight = 60,
+  virtualContainerHeight = 400,
+  virtualizationThreshold = 100,
 }: OptimizedDataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
+  const [isVirtualized, setIsVirtualized] = useState(false);
+  
+  // Performance monitoring
+  usePerformanceMonitor('OptimizedDataTable');
+  const { height: windowHeight } = useWindowSize();
 
   // Memoized columns to prevent unnecessary re-renders
   const memoizedColumns = useMemo(() => columns, [columns]);
 
   // Memoized data to prevent unnecessary re-renders
   const memoizedData = useMemo(() => data, [data]);
+  
+  // Auto-enable virtualization based on data size and user preference
+  const shouldVirtualize = useMemo(() => {
+    if (enableVirtualization === false) return false;
+    return data.length >= virtualizationThreshold || enableVirtualization === true;
+  }, [data.length, enableVirtualization, virtualizationThreshold]);
+  
+  // Update virtualization state
+  useEffect(() => {
+    setIsVirtualized(shouldVirtualize);
+  }, [shouldVirtualize]);
 
   const table = useReactTable({
     data: memoizedData,
@@ -68,7 +95,7 @@ export function OptimizedDataTable<TData, TValue>({
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: enablePagination ? getPaginationRowModel() : undefined,
+    getPaginationRowModel: (enablePagination && !isVirtualized) ? getPaginationRowModel() : undefined,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onGlobalFilterChange: setGlobalFilter,
@@ -79,7 +106,7 @@ export function OptimizedDataTable<TData, TValue>({
     },
     initialState: {
       pagination: {
-        pageSize,
+        pageSize: isVirtualized ? data.length : pageSize, // Show all data when virtualized
       },
     },
   });
@@ -123,6 +150,19 @@ export function OptimizedDataTable<TData, TValue>({
     <div className={cn("space-y-4", className)}>
       {/* Search and Filters */}
       <div className="flex items-center space-x-2 flex-wrap gap-2">
+        {/* Virtualization Toggle */}
+        {data.length >= virtualizationThreshold && (
+          <div className="flex items-center space-x-2 px-3 py-1 bg-blue-50 rounded-md border border-blue-200">
+            <Zap className="h-4 w-4 text-blue-600" />
+            <span className="text-xs text-blue-700">가상화 활성</span>
+            <button
+              onClick={() => setIsVirtualized(!isVirtualized)}
+              className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+            >
+              {isVirtualized ? '비활성화' : '활성화'}
+            </button>
+          </div>
+        )}
         {searchKey && (
           <div className="relative flex-1 min-w-80">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -139,7 +179,7 @@ export function OptimizedDataTable<TData, TValue>({
           <div key={filter.key} className="flex items-center space-x-2">
             <Filter className="h-4 w-4 text-gray-500" />
             <select
-              value={columnFilters.find(f => f.id === filter.key)?.value || "all"}
+              value={(columnFilters.find(f => f.id === filter.key)?.value as string) || "all"}
               onChange={(e) => handleFilterChange(filter.key, e.target.value)}
               className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
@@ -177,80 +217,105 @@ export function OptimizedDataTable<TData, TValue>({
 
       {/* Table */}
       <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead 
-                    key={header.id}
-                    className={cn(
-                      "font-medium text-gray-700",
-                      header.column.getCanSort() && "cursor-pointer select-none hover:bg-gray-50"
-                    )}
-                    onClick={header.column.getToggleSortingHandler()}
-                  >
-                    <div className="flex items-center space-x-1">
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())
-                      }
-                      {header.column.getCanSort() && (
-                        <span className="text-gray-400">
-                          {{
-                            asc: "↑",
-                            desc: "↓",
-                          }[header.column.getIsSorted() as string] ?? "↕"}
-                        </span>
+        {isVirtualized ? (
+          <VirtualizedTable 
+            table={table}
+            columns={columns}
+            onRowClick={onRowClick}
+            itemHeight={virtualItemHeight}
+            containerHeight={virtualContainerHeight}
+            emptyMessage={emptyMessage}
+          />
+        ) : (
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <TableHead 
+                      key={header.id}
+                      className={cn(
+                        "font-medium text-gray-700",
+                        header.column.getCanSort() && "cursor-pointer select-none hover:bg-gray-50"
                       )}
-                    </div>
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                  className={cn(
-                    "hover:bg-gray-50 transition-colors",
-                    onRowClick && "cursor-pointer"
-                  )}
-                  onClick={() => onRowClick?.(row.original)}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="py-3 px-4">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
+                      onClick={header.column.getToggleSortingHandler()}
+                    >
+                      <div className="flex items-center space-x-1">
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(header.column.columnDef.header, header.getContext())
+                        }
+                        {header.column.getCanSort() && (
+                          <span className="text-gray-400">
+                            {{
+                              asc: "↑",
+                              desc: "↓",
+                            }[header.column.getIsSorted() as string] ?? "↕"}
+                          </span>
+                        )}
+                      </div>
+                    </TableHead>
                   ))}
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center text-gray-500">
-                  {emptyMessage}
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                    className={cn(
+                      "hover:bg-gray-50 transition-colors",
+                      onRowClick && "cursor-pointer"
+                    )}
+                    onClick={() => onRowClick?.(row.original)}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id} className="py-3 px-4">
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={columns.length} className="h-24 text-center text-gray-500">
+                    {emptyMessage}
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        )}
       </div>
 
-      {/* Pagination */}
-      {enablePagination && (
-        <div className="flex items-center justify-between space-x-2 py-4">
-          <div className="text-sm text-gray-500">
-            총 {table.getFilteredRowModel().rows.length}개 중{" "}
-            {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}-
-            {Math.min(
-              (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
-              table.getFilteredRowModel().rows.length
+      {/* Pagination and Status */}
+      <div className="flex items-center justify-between space-x-2 py-4">
+        <div className="text-sm text-gray-500 flex items-center space-x-4">
+          <span>
+            총 {table.getFilteredRowModel().rows.length}개
+            {!isVirtualized && enablePagination && (
+              <>
+                {" "}중{" "}
+                {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}-
+                {Math.min(
+                  (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
+                  table.getFilteredRowModel().rows.length
+                )}
+                개 표시
+              </>
             )}
-            개 표시
-          </div>
+          </span>
+          {isVirtualized && (
+            <div className="flex items-center space-x-1 text-blue-600">
+              <Zap className="h-3 w-3" />
+              <span className="text-xs">가상화 렌더링 활성</span>
+            </div>
+          )}
+        </div>
+        
+        {enablePagination && !isVirtualized && (
           <div className="flex items-center space-x-2">
             <Button
               variant="outline"
@@ -277,8 +342,114 @@ export function OptimizedDataTable<TData, TValue>({
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
+  );
+}
+
+/**
+ * Virtualized Table Component for large datasets
+ */
+interface VirtualizedTableProps<TData, TValue> {
+  table: any;
+  columns: ColumnDef<TData, TValue>[];
+  onRowClick?: (row: TData) => void;
+  itemHeight: number;
+  containerHeight: number;
+  emptyMessage: string;
+}
+
+function VirtualizedTable<TData, TValue>({
+  table,
+  columns,
+  onRowClick,
+  itemHeight,
+  containerHeight,
+  emptyMessage,
+}: VirtualizedTableProps<TData, TValue>) {
+  const rows = table.getRowModel().rows;
+  
+  if (!rows?.length) {
+    return (
+      <div className="h-24 flex items-center justify-center text-gray-500">
+        {emptyMessage}
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full">
+      {/* Fixed Header */}
+      <div className="border-b bg-gray-50">
+        <div className="grid" style={{ gridTemplateColumns: `repeat(${columns.length}, 1fr)` }}>
+          {table.getHeaderGroups().map((headerGroup: any) =>
+            headerGroup.headers.map((header: any) => (
+              <div
+                key={header.id}
+                className={cn(
+                  "px-4 py-3 text-left font-medium text-gray-700 border-r last:border-r-0",
+                  header.column.getCanSort() && "cursor-pointer select-none hover:bg-gray-100"
+                )}
+                onClick={header.column.getToggleSortingHandler()}
+              >
+                <div className="flex items-center space-x-1">
+                  {header.isPlaceholder
+                    ? null
+                    : flexRender(header.column.columnDef.header, header.getContext())
+                  }
+                  {header.column.getCanSort() && (
+                    <span className="text-gray-400">
+                      {{
+                        asc: "↑",
+                        desc: "↓",
+                      }[header.column.getIsSorted() as string] ?? "↕"}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+      
+      {/* Virtualized Body */}
+      <VirtualList
+        items={rows}
+        itemHeight={itemHeight}
+        containerHeight={containerHeight}
+        className="border-0"
+        renderItem={(row, index) => (
+          <div
+            className={cn(
+              "grid border-b hover:bg-gray-50 transition-colors",
+              onRowClick && "cursor-pointer"
+            )}
+            style={{ gridTemplateColumns: `repeat(${columns.length}, 1fr)` }}
+            onClick={() => onRowClick?.(row.original)}
+          >
+            {row.getVisibleCells().map((cell: any) => (
+              <div key={cell.id} className="px-4 py-3 border-r last:border-r-0 flex items-center">
+                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+              </div>
+            ))}
+          </div>
+        )}
+      />
+    </div>
+  );
+}
+
+/**
+ * High-performance virtualized data table for very large datasets
+ */
+export function VirtualDataTable<TData, TValue>(props: OptimizedDataTableProps<TData, TValue>) {
+  return (
+    <OptimizedDataTable
+      {...props}
+      enableVirtualization={true}
+      enablePagination={false}
+      virtualizationThreshold={50}
+    />
   );
 }

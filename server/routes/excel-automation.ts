@@ -35,8 +35,10 @@ const upload = multer({
   storage,
   fileFilter: (req, file, cb) => {
     const allowedTypes = [
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'application/vnd.ms-excel'
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+      'application/vnd.ms-excel.sheet.macroEnabled.12', // .xlsm (대문자 E)
+      'application/vnd.ms-excel.sheet.macroenabled.12', // .xlsm (소문자 e)
+      'application/vnd.ms-excel' // .xls
     ];
     
     if (allowedTypes.includes(file.mimetype)) {
@@ -175,9 +177,6 @@ router.post('/send-emails', requireAuth, async (req: any, res) => {
     const { 
       processedFilePath,
       recipients,
-      cc,
-      bcc,
-      additionalAttachments = [],
       emailOptions = {}
     } = req.body;
 
@@ -207,12 +206,7 @@ router.post('/send-emails', requireAuth, async (req: any, res) => {
     const sendResult = await ExcelAutomationService.sendEmails(
       processedFilePath,
       recipients,
-      {
-        ...emailOptions,
-        cc,
-        bcc,
-        additionalAttachments
-      }
+      emailOptions
     );
 
     res.json({
@@ -225,51 +219,6 @@ router.post('/send-emails', requireAuth, async (req: any, res) => {
 
   } catch (error) {
     console.error('이메일 발송 오류:', error);
-    res.status(500).json({
-      success: false,
-      error: '서버 오류가 발생했습니다.',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
-});
-
-/**
- * 이메일 내용 미리보기 생성
- * POST /api/excel-automation/email-preview
- */
-router.post('/email-preview', requireAuth, async (req: any, res) => {
-  try {
-    const { 
-      subject, 
-      orderNumber, 
-      vendorName, 
-      orderDate, 
-      totalAmount, 
-      additionalMessage 
-    } = req.body;
-
-    const { POEmailService } = await import('../utils/po-email-service.js');
-    const emailService = new POEmailService();
-
-    const htmlContent = emailService.generateEmailPreview({
-      to: 'preview@example.com', // 미리보기용 더미 이메일
-      subject: subject || '발주서 전송',
-      orderNumber,
-      vendorName,
-      orderDate,
-      totalAmount,
-      additionalMessage
-    });
-
-    res.json({
-      success: true,
-      data: {
-        htmlContent
-      }
-    });
-
-  } catch (error) {
-    console.error('이메일 미리보기 생성 오류:', error);
     res.status(500).json({
       success: false,
       error: '서버 오류가 발생했습니다.',
@@ -312,106 +261,6 @@ router.post('/validate-vendors', requireAuth, async (req: any, res) => {
 });
 
 /**
- * 추가 첨부파일 업로드
- * POST /api/excel-automation/upload-attachment
- */
-router.post('/upload-attachment', requireAuth, upload.array('attachments', 10), async (req: any, res) => {
-  try {
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).json({
-        success: false,
-        error: '업로드된 파일이 없습니다.'
-      });
-    }
-
-    const uploadedFiles = req.files.map((file: any) => ({
-      filename: file.filename,
-      originalName: Buffer.from(file.originalname, 'latin1').toString('utf8'),
-      size: file.size,
-      path: file.path,
-      mimetype: file.mimetype
-    }));
-
-    console.log(`📎 추가 첨부파일 업로드: ${uploadedFiles.length}개`);
-
-    res.json({
-      success: true,
-      message: '파일 업로드 완료',
-      data: {
-        files: uploadedFiles
-      }
-    });
-
-  } catch (error) {
-    console.error('추가 첨부파일 업로드 오류:', error);
-    res.status(500).json({
-      success: false,
-      error: '서버 오류가 발생했습니다.'
-    });
-  }
-});
-
-/**
- * PDF 파일 생성 및 다운로드
- * POST /api/excel-automation/generate-pdf
- */
-router.post('/generate-pdf', requireAuth, async (req: any, res) => {
-  try {
-    const { processedFilePath, orderNumber } = req.body;
-
-    if (!processedFilePath) {
-      return res.status(400).json({
-        success: false,
-        error: '처리된 파일 경로가 필요합니다.'
-      });
-    }
-
-    const filePath = path.join('uploads', processedFilePath);
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({
-        success: false,
-        error: '처리된 파일을 찾을 수 없습니다.'
-      });
-    }
-
-    // PDF 변환
-    const { convertExcelToPdf } = await import('../utils/excel-to-pdf.js');
-    const timestamp = Date.now();
-    const pdfPath = path.join('uploads', `po-pdf-${timestamp}.pdf`);
-    
-    console.log(`📄 PDF 생성 시작: ${filePath} -> ${pdfPath}`);
-    
-    const pdfResult = await convertExcelToPdf(filePath, pdfPath, ['갑지', '을지']);
-    
-    if (!pdfResult.success) {
-      return res.status(500).json({
-        success: false,
-        error: `PDF 변환 실패: ${pdfResult.error}`
-      });
-    }
-
-    const pdfFilename = `발주서_${orderNumber || timestamp}.pdf`;
-    
-    res.json({
-      success: true,
-      message: 'PDF 생성 완료',
-      data: {
-        pdfPath: `po-pdf-${timestamp}.pdf`,
-        pdfFilename
-      }
-    });
-
-  } catch (error) {
-    console.error('PDF 생성 오류:', error);
-    res.status(500).json({
-      success: false,
-      error: '서버 오류가 발생했습니다.',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
-});
-
-/**
  * 처리된 파일 다운로드
  * GET /api/excel-automation/download/:filename
  */
@@ -443,102 +292,6 @@ router.get('/download/:filename', requireAuth, (req: any, res) => {
     res.status(500).json({
       success: false,
       error: '서버 오류가 발생했습니다.'
-    });
-  }
-});
-
-/**
- * 이메일 발송 이력 조회
- * GET /api/excel-automation/email-history
- */
-router.get('/email-history', requireAuth, async (req: any, res) => {
-  try {
-    const { page = 1, limit = 10, status, orderNumber, userId } = req.query;
-    
-    const { EmailHistoryService } = await import('../utils/email-history-service.js');
-    
-    const result = await EmailHistoryService.getEmailHistory({
-      page: parseInt(page),
-      limit: parseInt(limit),
-      status,
-      orderNumber,
-      userId: userId || req.user?.id
-    });
-
-    res.json({
-      success: true,
-      data: result
-    });
-
-  } catch (error) {
-    console.error('이메일 발송 이력 조회 오류:', error);
-    res.status(500).json({
-      success: false,
-      error: '서버 오류가 발생했습니다.',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
-});
-
-/**
- * 특정 이메일 발송 이력 상세 조회
- * GET /api/excel-automation/email-history/:id
- */
-router.get('/email-history/:id', requireAuth, async (req: any, res) => {
-  try {
-    const { id } = req.params;
-    
-    const { EmailHistoryService } = await import('../utils/email-history-service.js');
-    
-    const result = await EmailHistoryService.getEmailHistoryDetail(parseInt(id));
-
-    if (!result) {
-      return res.status(404).json({
-        success: false,
-        error: '이메일 발송 이력을 찾을 수 없습니다.'
-      });
-    }
-
-    res.json({
-      success: true,
-      data: result
-    });
-
-  } catch (error) {
-    console.error('이메일 발송 이력 상세 조회 오류:', error);
-    res.status(500).json({
-      success: false,
-      error: '서버 오류가 발생했습니다.',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
-});
-
-/**
- * 이메일 재발송
- * POST /api/excel-automation/resend-email/:id
- */
-router.post('/resend-email/:id', requireAuth, async (req: any, res) => {
-  try {
-    const { id } = req.params;
-    const { recipients } = req.body;
-    
-    const { EmailHistoryService } = await import('../utils/email-history-service.js');
-    
-    const result = await EmailHistoryService.resendEmail(parseInt(id), recipients || []);
-
-    res.json({
-      success: result.success,
-      message: result.success ? '이메일 재발송 완료' : '이메일 재발송 실패',
-      data: result
-    });
-
-  } catch (error) {
-    console.error('이메일 재발송 오류:', error);
-    res.status(500).json({
-      success: false,
-      error: '서버 오류가 발생했습니다.',
-      details: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 });

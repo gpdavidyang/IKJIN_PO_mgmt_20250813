@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useRef } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +13,42 @@ export default function FileUpload({
   uploadedFiles, 
   onFilesChange 
 }: FileUploadProps) {
+  const [isDragOver, setIsDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      onFilesChange([...uploadedFiles, ...files]);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const newFiles = Array.from(e.target.files);
+      onFilesChange([...uploadedFiles, ...newFiles]);
+    }
+  };
+
+  const handleClickUpload = () => {
+    fileInputRef.current?.click();
+  };
   return (
     <Card className="shadow-sm hover:shadow-md transition-shadow">
       <CardHeader className="bg-gray-50 border-b">
@@ -23,22 +59,41 @@ export default function FileUpload({
       </CardHeader>
       <CardContent className="p-4 space-y-4">
         <div className="space-y-1">
-          <Label htmlFor="fileUpload" className="text-sm font-medium flex items-center gap-2">
+          <Label className="text-sm font-medium flex items-center gap-2">
             <Upload className="h-4 w-4" />
-            파일 첨부
+            첨부파일
           </Label>
-          <Input
-            type="file"
-            id="fileUpload"
-            multiple
-            className="h-10"
-            onChange={(e) => {
-              if (e.target.files) {
-                const newFiles = Array.from(e.target.files);
-                onFilesChange([...uploadedFiles, ...newFiles]);
-              }
-            }}
-          />
+          
+          {/* 드래그앤드랍 영역 */}
+          <div
+            className={`relative border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer ${
+              isDragOver 
+                ? 'border-blue-500 bg-blue-50' 
+                : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
+            }`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={handleClickUpload}
+          >
+            <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+            <p className="text-sm text-gray-600 mb-1">
+              파일을 선택하거나 여기에 드래그하세요
+            </p>
+            <p className="text-xs text-gray-500">
+              PDF, Word, Excel, 이미지 파일 지원
+            </p>
+            
+            {/* 숨겨진 파일 input */}
+            <Input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              className="hidden"
+              onChange={handleFileSelect}
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.gif"
+            />
+          </div>
         </div>
 
         {uploadedFiles.length > 0 && (
@@ -63,15 +118,13 @@ export default function FileUpload({
           </div>
         )}
 
-        <div className="space-y-1">
-          <Label className="text-sm font-medium">파일이 성공적으로 업로드되었습니다.</Label>
-          <p className="text-sm text-gray-600">
-            {uploadedFiles.length > 0 
-              ? `${uploadedFiles.length}개의 파일이 첨부되었습니다.`
-              : "파일을 선택하여 업로드하세요."
-            }
-          </p>
-        </div>
+        {uploadedFiles.length > 0 && (
+          <div className="space-y-1 p-3 bg-green-50 border border-green-200 rounded-lg">
+            <p className="text-sm font-medium text-green-800">
+              ✅ {uploadedFiles.length}개의 파일이 첨부되었습니다.
+            </p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

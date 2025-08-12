@@ -44,7 +44,7 @@ export const uiTerms = pgTable("ui_terms", {
 export const itemCategories = pgTable("item_categories", {
   id: serial("id").primaryKey(),
   categoryType: varchar("category_type", { length: 20 }).notNull(), // 'major', 'middle', 'minor'
-  categoryValue: varchar("category_value", { length: 100 }).notNull(),
+  categoryName: varchar("category_name", { length: 100 }).notNull(),
   parentId: integer("parent_id"), // References parent category ID
   displayOrder: integer("display_order").default(0),
   isActive: boolean("is_active").default(true),
@@ -118,6 +118,8 @@ export const companies = pgTable("companies", {
 export const vendors = pgTable("vendors", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
+  vendorCode: varchar("vendor_code", { length: 50 }), // 거래처 코드
+  aliases: jsonb("aliases").default([]).$type<string[]>(), // 별칭 필드 추가 - 예: ["(주)익진", "주식회사 익진", "익진"]
   businessNumber: varchar("business_number", { length: 50 }),
   contactPerson: varchar("contact_person", { length: 100 }).notNull(),
   email: varchar("email", { length: 255 }).notNull(),
@@ -330,6 +332,10 @@ export const purchaseOrderItems = pgTable("purchase_order_items", {
   quantity: decimal("quantity", { precision: 10, scale: 2 }).notNull().$type<number>(),
   unitPrice: decimal("unit_price", { precision: 15, scale: 2 }).notNull().$type<number>(),
   totalAmount: decimal("total_amount", { precision: 15, scale: 2 }).notNull().$type<number>(),
+  // 품목 계층 구조 필드 (2025-08-05 추가)
+  majorCategory: varchar("major_category", { length: 100 }),
+  middleCategory: varchar("middle_category", { length: 100 }),
+  minorCategory: varchar("minor_category", { length: 100 }),
   // PO Template Input 시트를 위한 새로운 필드들 (TODO: Add these columns to database)
   // categoryLv1: varchar("category_lv1", { length: 100 }), // 대분류
   // categoryLv2: varchar("category_lv2", { length: 100 }), // 중분류  
@@ -340,6 +346,10 @@ export const purchaseOrderItems = pgTable("purchase_order_items", {
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
+  index("idx_poi_major_category").on(table.majorCategory),
+  index("idx_poi_middle_category").on(table.middleCategory),
+  index("idx_poi_minor_category").on(table.minorCategory),
+  index("idx_poi_category_hierarchy").on(table.majorCategory, table.middleCategory, table.minorCategory),
   // index("idx_purchase_order_items_category_lv1").on(table.categoryLv1), // TODO: Add when column is added
   // index("idx_purchase_order_items_category_lv2").on(table.categoryLv2), // TODO: Add when column is added
   // index("idx_purchase_order_items_category_lv3").on(table.categoryLv3), // TODO: Add when column is added
@@ -366,8 +376,38 @@ export const orderHistory = pgTable("order_history", {
   action: varchar("action", { length: 100 }).notNull(), // created, updated, approved, sent, etc.
   changes: jsonb("changes"), // Store what changed
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
 });
+
+// Email send history
+export const emailSendHistory = pgTable("email_send_history", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id").notNull().references(() => purchaseOrders.id, { onDelete: "cascade" }),
+  sentAt: timestamp("sent_at").defaultNow().notNull(),
+  sentBy: varchar("sent_by", { length: 255 }).notNull().references(() => users.id),
+  recipientEmail: varchar("recipient_email", { length: 255 }).notNull(),
+  recipientName: varchar("recipient_name", { length: 255 }),
+  ccEmails: text("cc_emails"), // JSON array of CC emails
+  subject: text("subject").notNull(),
+  body: text("body").notNull(),
+  attachments: jsonb("attachments").$type<{ filename: string; path: string; size: number }[]>(),
+  status: varchar("status", { length: 50 }).notNull().default('sent'), // sent, failed, bounced, opened, clicked
+  errorMessage: text("error_message"),
+  openedAt: timestamp("opened_at"),
+  clickedAt: timestamp("clicked_at"),
+  ipAddress: varchar("ip_address", { length: 50 }),
+  userAgent: text("user_agent"),
+  trackingId: varchar("tracking_id", { length: 100 }).unique(),
+  emailProvider: varchar("email_provider", { length: 50 }).default('naver'), // naver, gmail, etc.
+  messageId: varchar("message_id", { length: 255 }), // Email message ID for tracking
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_email_history_order").on(table.orderId),
+  index("idx_email_history_sent_by").on(table.sentBy),
+  index("idx_email_history_recipient").on(table.recipientEmail),
+  index("idx_email_history_tracking").on(table.trackingId),
+  index("idx_email_history_status").on(table.status),
+  index("idx_email_history_sent_at").on(table.sentAt),
+]);
 
 // 청구서/세금계산서 테이블
 export const invoices = pgTable("invoices", {
@@ -425,6 +465,7 @@ export const verificationLogs = pgTable("verification_logs", {
 export const usersRelations = relations(users, ({ many }) => ({
   purchaseOrders: many(purchaseOrders),
   orderHistory: many(orderHistory),
+  emailsSent: many(emailSendHistory),
 }));
 
 export const vendorsRelations = relations(vendors, ({ many }) => ({
@@ -510,6 +551,7 @@ export const purchaseOrdersRelations = relations(purchaseOrders, ({ one, many })
   history: many(orderHistory),
   invoices: many(invoices),
   verificationLogs: many(verificationLogs),
+  emailHistory: many(emailSendHistory),
 }));
 
 export const purchaseOrderItemsRelations = relations(purchaseOrderItems, ({ one, many }) => ({
@@ -605,6 +647,17 @@ export const itemCategoriesRelations = relations(itemCategories, ({ one, many })
   children: many(itemCategories),
 }));
 
+export const emailSendHistoryRelations = relations(emailSendHistory, ({ one }) => ({
+  order: one(purchaseOrders, {
+    fields: [emailSendHistory.orderId],
+    references: [purchaseOrders.id],
+  }),
+  sentByUser: one(users, {
+    fields: [emailSendHistory.sentBy],
+    references: [users.id],
+  }),
+}));
+
 // Insert schemas
 export const insertCompanySchema = createInsertSchema(companies).omit({
   id: true,
@@ -653,7 +706,6 @@ export const insertPurchaseOrderSchema = createInsertSchema(purchaseOrders).omit
   isApproved: true,
   approvedBy: true,
   approvedAt: true,
-  sentAt: true,
 }).extend({
   userId: z.string().min(1),
   templateId: z.number().nullable().optional(),
@@ -710,6 +762,19 @@ export const insertVerificationLogSchema = createInsertSchema(verificationLogs).
   createdAt: true,
 });
 
+export const insertEmailSendHistorySchema = createInsertSchema(emailSendHistory).omit({
+  id: true,
+  sentAt: true,
+  createdAt: true,
+}).extend({
+  ccEmails: z.string().nullable().optional(),
+  attachments: z.array(z.object({
+    filename: z.string(),
+    path: z.string(),
+    size: z.number(),
+  })).nullable().optional(),
+});
+
 // Note: Order status schemas removed - using ENUM types instead
 
 // New insert schemas for template management
@@ -762,6 +827,8 @@ export type ItemReceipt = typeof itemReceipts.$inferSelect;
 export type InsertItemReceipt = z.infer<typeof insertItemReceiptSchema>;
 export type VerificationLog = typeof verificationLogs.$inferSelect;
 export type InsertVerificationLog = z.infer<typeof insertVerificationLogSchema>;
+export type EmailSendHistory = typeof emailSendHistory.$inferSelect;
+export type InsertEmailSendHistory = z.infer<typeof insertEmailSendHistorySchema>;
 // Order status types now use ENUM values directly
 
 // New template management types
@@ -830,3 +897,32 @@ export type InsertApprovalAuthority = z.infer<typeof insertApprovalAuthoritySche
 // Item category types
 export type ItemCategory = typeof itemCategories.$inferSelect;
 export type InsertItemCategory = z.infer<typeof insertItemCategorySchema>;
+
+// Approval workflow settings table
+export const approvalWorkflowSettings = pgTable("approval_workflow_settings", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").references(() => companies.id),
+  approvalMode: varchar("approval_mode", { length: 20 }).notNull().default("staged"), // 'direct' or 'staged'
+  directApprovalRoles: jsonb("direct_approval_roles").default([]).$type<string[]>(), // roles that can approve directly
+  stagedApprovalThresholds: jsonb("staged_approval_thresholds").default({}).$type<{
+    [role: string]: number; // max amount each role can approve
+  }>(),
+  requireAllStages: boolean("require_all_stages").default(true), // whether all stages must approve
+  skipLowerStages: boolean("skip_lower_stages").default(false), // whether higher roles can skip lower stages
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().$onUpdate(() => new Date()),
+  createdBy: varchar("created_by", { length: 255 }).references(() => users.id),
+}, (table) => ({
+  companyIdx: index("idx_approval_workflow_company").on(table.companyId),
+  activeIdx: index("idx_approval_workflow_active").on(table.isActive),
+}));
+
+// Approval workflow settings types
+export const insertApprovalWorkflowSettingsSchema = createInsertSchema(approvalWorkflowSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type ApprovalWorkflowSettings = typeof approvalWorkflowSettings.$inferSelect;
+export type InsertApprovalWorkflowSettings = z.infer<typeof insertApprovalWorkflowSettingsSchema>;

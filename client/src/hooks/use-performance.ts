@@ -248,6 +248,148 @@ export function useLocalStorage<T>(
   return [storedValue, setValue];
 }
 
+/**
+ * Performance monitoring hook
+ */
+export function usePerformanceMonitor(componentName: string) {
+  const startTime = useRef<number>();
+  const renderCount = useRef(0);
+
+  useEffect(() => {
+    startTime.current = performance.now();
+    renderCount.current += 1;
+
+    return () => {
+      if (startTime.current) {
+        const endTime = performance.now();
+        const duration = endTime - startTime.current;
+        
+        // Log slow renders
+        if (duration > 16) { // 16ms threshold for 60fps
+          console.warn(`Slow render detected in ${componentName}: ${duration.toFixed(2)}ms`);
+        }
+
+        // Log excessive re-renders
+        if (renderCount.current > 10) {
+          console.warn(`Excessive re-renders in ${componentName}: ${renderCount.current} renders`);
+        }
+      }
+    };
+  });
+
+  return { renderCount: renderCount.current };
+}
+
+/**
+ * Memory usage monitoring hook
+ */
+export function useMemoryMonitor() {
+  const [memoryInfo, setMemoryInfo] = useState<{
+    usedJSMemory?: number;
+    totalJSMemory?: number;
+    memoryLimit?: number;
+  }>({});
+
+  useEffect(() => {
+    const updateMemoryInfo = () => {
+      if ('memory' in performance) {
+        const memory = (performance as any).memory;
+        setMemoryInfo({
+          usedJSMemory: memory.usedJSHeapSize,
+          totalJSMemory: memory.totalJSHeapSize,
+          memoryLimit: memory.jsHeapSizeLimit,
+        });
+      }
+    };
+
+    updateMemoryInfo();
+    const interval = setInterval(updateMemoryInfo, 5000); // Update every 5 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return memoryInfo;
+}
+
+/**
+ * First Contentful Paint monitoring
+ */
+export function usePageLoadMetrics() {
+  const [metrics, setMetrics] = useState<{
+    fcp?: number;
+    lcp?: number;
+    cls?: number;
+    fid?: number;
+  }>({});
+
+  useEffect(() => {
+    // Measure First Contentful Paint
+    const observer = new PerformanceObserver((list) => {
+      const entries = list.getEntries();
+      entries.forEach((entry) => {
+        if (entry.entryType === 'paint' && entry.name === 'first-contentful-paint') {
+          setMetrics(prev => ({ ...prev, fcp: entry.startTime }));
+        }
+        if (entry.entryType === 'largest-contentful-paint') {
+          setMetrics(prev => ({ ...prev, lcp: entry.startTime }));
+        }
+      });
+    });
+
+    observer.observe({ entryTypes: ['paint', 'largest-contentful-paint'] });
+
+    return () => observer.disconnect();
+  }, []);
+
+  return metrics;
+}
+
+/**
+ * Component size monitoring hook
+ */
+export function useComponentSize(ref: React.RefObject<HTMLElement>) {
+  const [size, setSize] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    if (!ref.current) return;
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        setSize({ width, height });
+      }
+    });
+
+    resizeObserver.observe(ref.current);
+
+    return () => resizeObserver.disconnect();
+  }, [ref]);
+
+  return size;
+}
+
+/**
+ * Bundle size analytics
+ */
+export function useBundleAnalytics() {
+  useEffect(() => {
+    // Log bundle information in development
+    if (process.env.NODE_ENV === 'development') {
+      const scripts = Array.from(document.querySelectorAll('script[src]'));
+      const totalSize = scripts.reduce((acc, script) => {
+        const src = script.getAttribute('src');
+        if (src && src.includes('chunk')) {
+          // Estimate chunk size (would need actual measurements in production)
+          return acc + 100; // Placeholder
+        }
+        return acc;
+      }, 0);
+
+      console.log(`Estimated bundle size: ${totalSize}KB`);
+    }
+  }, []);
+}
+
 // Utility function for deep equality check
 function deepEqual(a: any, b: any): boolean {
   if (a === b) return true;

@@ -13,7 +13,7 @@ import { apiRequest } from '@/lib/queryClient';
 interface ItemCategory {
   id: number;
   categoryType: 'major' | 'middle' | 'minor';
-  categoryValue: string;
+  categoryName: string;
   parentId: number | null;
   displayOrder: number;
   isActive: boolean;
@@ -34,7 +34,7 @@ export function ItemCategoryManager({ onCategorySelect, selectedCategory }: Cate
   const [editingCategory, setEditingCategory] = useState<ItemCategory | null>(null);
   const [newCategory, setNewCategory] = useState({
     categoryType: 'major' as 'major' | 'middle' | 'minor',
-    categoryValue: '',
+    categoryName: '',
     parentId: null as number | null,
     displayOrder: 0
   });
@@ -53,7 +53,7 @@ export function ItemCategoryManager({ onCategorySelect, selectedCategory }: Cate
       setIsAddDialogOpen(false);
       setNewCategory({
         categoryType: 'major',
-        categoryValue: '',
+        categoryName: '',
         parentId: null,
         displayOrder: 0
       });
@@ -117,7 +117,7 @@ export function ItemCategoryManager({ onCategorySelect, selectedCategory }: Cate
   const minorCategories = categories.filter((c: ItemCategory) => c.categoryType === 'minor');
 
   const handleAddCategory = () => {
-    if (!newCategory.categoryValue.trim()) {
+    if (!newCategory.categoryName.trim()) {
       toast({
         title: "입력 오류",
         description: "분류명을 입력해주세요.",
@@ -139,7 +139,7 @@ export function ItemCategoryManager({ onCategorySelect, selectedCategory }: Cate
     updateCategoryMutation.mutate({
       id: editingCategory.id,
       data: {
-        categoryValue: editingCategory.categoryValue,
+        categoryName: editingCategory.categoryName,
         displayOrder: editingCategory.displayOrder
       }
     });
@@ -202,7 +202,7 @@ export function ItemCategoryManager({ onCategorySelect, selectedCategory }: Cate
                     <SelectContent>
                       {getParentOptions(newCategory.categoryType).map((parent: ItemCategory) => (
                         <SelectItem key={parent.id} value={parent.id.toString()}>
-                          {parent.categoryValue}
+                          {parent.categoryName}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -211,11 +211,11 @@ export function ItemCategoryManager({ onCategorySelect, selectedCategory }: Cate
               )}
 
               <div>
-                <Label htmlFor="categoryValue">분류명</Label>
+                <Label htmlFor="categoryName">분류명</Label>
                 <Input
-                  id="categoryValue"
-                  value={newCategory.categoryValue}
-                  onChange={(e) => setNewCategory({...newCategory, categoryValue: e.target.value})}
+                  id="categoryName"
+                  value={newCategory.categoryName}
+                  onChange={(e) => setNewCategory({...newCategory, categoryName: e.target.value})}
                   placeholder="분류명을 입력하세요"
                 />
               </div>
@@ -256,8 +256,8 @@ export function ItemCategoryManager({ onCategorySelect, selectedCategory }: Cate
                   {editingCategory?.id === category.id ? (
                     <div className="flex-1 flex gap-2">
                       <Input
-                        value={editingCategory.categoryValue}
-                        onChange={(e) => setEditingCategory({...editingCategory, categoryValue: e.target.value})}
+                        value={editingCategory.categoryName}
+                        onChange={(e) => setEditingCategory({...editingCategory, categoryName: e.target.value})}
                         className="h-8"
                       />
                       <Button size="sm" onClick={handleUpdateCategory}>저장</Button>
@@ -271,7 +271,7 @@ export function ItemCategoryManager({ onCategorySelect, selectedCategory }: Cate
                         }`}
                         onClick={() => onCategorySelect?.(category)}
                       >
-                        {category.categoryValue}
+                        {category.categoryName}
                       </span>
                       <div className="flex gap-1">
                         <Button
@@ -309,8 +309,8 @@ export function ItemCategoryManager({ onCategorySelect, selectedCategory }: Cate
                   {editingCategory?.id === category.id ? (
                     <div className="flex-1 flex gap-2">
                       <Input
-                        value={editingCategory.categoryValue}
-                        onChange={(e) => setEditingCategory({...editingCategory, categoryValue: e.target.value})}
+                        value={editingCategory.categoryName}
+                        onChange={(e) => setEditingCategory({...editingCategory, categoryName: e.target.value})}
                         className="h-8"
                       />
                       <Button size="sm" onClick={handleUpdateCategory}>저장</Button>
@@ -324,7 +324,7 @@ export function ItemCategoryManager({ onCategorySelect, selectedCategory }: Cate
                         }`}
                         onClick={() => onCategorySelect?.(category)}
                       >
-                        {category.categoryValue}
+                        {category.categoryName}
                       </span>
                       <div className="flex gap-1">
                         <Button
@@ -362,8 +362,8 @@ export function ItemCategoryManager({ onCategorySelect, selectedCategory }: Cate
                   {editingCategory?.id === category.id ? (
                     <div className="flex-1 flex gap-2">
                       <Input
-                        value={editingCategory.categoryValue}
-                        onChange={(e) => setEditingCategory({...editingCategory, categoryValue: e.target.value})}
+                        value={editingCategory.categoryName}
+                        onChange={(e) => setEditingCategory({...editingCategory, categoryName: e.target.value})}
                         className="h-8"
                       />
                       <Button size="sm" onClick={handleUpdateCategory}>저장</Button>
@@ -377,7 +377,7 @@ export function ItemCategoryManager({ onCategorySelect, selectedCategory }: Cate
                         }`}
                         onClick={() => onCategorySelect?.(category)}
                       >
-                        {category.categoryValue}
+                        {category.categoryName}
                       </span>
                       <div className="flex gap-1">
                         <Button
@@ -413,11 +413,11 @@ export function ItemCategoryManager({ onCategorySelect, selectedCategory }: Cate
           {editingCategory && (
             <div className="space-y-4">
               <div>
-                <Label htmlFor="editCategoryValue">분류명</Label>
+                <Label htmlFor="editCategoryName">분류명</Label>
                 <Input
-                  id="editCategoryValue"
-                  value={editingCategory.categoryValue}
-                  onChange={(e) => setEditingCategory({...editingCategory, categoryValue: e.target.value})}
+                  id="editCategoryName"
+                  value={editingCategory.categoryName}
+                  onChange={(e) => setEditingCategory({...editingCategory, categoryName: e.target.value})}
                 />
               </div>
               <div>

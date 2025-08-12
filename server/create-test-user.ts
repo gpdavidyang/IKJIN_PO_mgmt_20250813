@@ -16,11 +16,12 @@ async function createTestUser() {
     const testUser = {
       id: "test_admin_001",
       email: "test@ikjin.co.kr",
-      password: hashedPassword,
+      password: hashedPassword, // This will map to hashed_password column
       name: "테스트 관리자",
-      role: "admin",
+      role: "admin" as const,
       phoneNumber: "010-1234-5678",
       profileImageUrl: null,
+      position: null,
       isActive: true
     };
 
@@ -28,20 +29,20 @@ async function createTestUser() {
     await db.insert(users).values(testUser).onConflictDoUpdate({
       target: users.email,
       set: {
-        password: hashedPassword,
+        password: hashedPassword, // Maps to hashed_password
         name: "테스트 관리자",
         role: "admin",
         isActive: true
       }
     });
 
-    // 회사 정보도 생성 (필요한 경우)
+    // 회사 정보도 생성 (필요한 경우) - 실제 DB 스키마에 맞게 수정
     const companyData = {
       id: 1,
       companyName: "(주)익진엔지니어링",
       businessNumber: "123-45-67890",
-      representative: "홍길동",
       address: "서울특별시 강남구 테헤란로 123",
+      contactPerson: "홍길동",
       phone: "02-1234-5678",
       email: "info@ikjin.co.kr",
       isActive: true

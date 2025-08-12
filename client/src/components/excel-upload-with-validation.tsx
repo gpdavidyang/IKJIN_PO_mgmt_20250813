@@ -192,7 +192,7 @@ export function ExcelUploadWithValidation({ onDataConfirmed }: ExcelUploadWithVa
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".xlsx,.xls"
+                accept=".xlsx,.xlsm,.xls"
                 onChange={handleFileInputChange}
                 className="hidden"
               />
@@ -204,7 +204,7 @@ export function ExcelUploadWithValidation({ onDataConfirmed }: ExcelUploadWithVa
                   Excel 발주서 파일을 업로드하여 자동 처리
                 </p>
                 <p className="text-sm text-gray-500">
-                  .xlsx, .xls 파일을 지원합니다. Input 시트의 A:M 열 데이터를 자동으로 파싱합니다.
+                  .xlsx, .xlsm, .xls 파일을 지원합니다. Input 시트의 A:M 열 데이터를 자동으로 파싱합니다.
                 </p>
               </div>
               

@@ -150,7 +150,7 @@ export function FilterSection({
 
   const FilterContent = () => (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {fields.map((field) => (
           <div key={field.key} className={`space-y-2 ${getFieldWidth(field.width)}`}>
             <label className="text-sm font-medium text-gray-700">{field.label}</label>

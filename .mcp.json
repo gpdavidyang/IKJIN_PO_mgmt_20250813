@@ -1,0 +1,85 @@
+{
+	"mcpServers": {
+		"supabase": {
+			"type": "stdio",
+			"command": "npx",
+			"args": [
+				"-y",
+				"@supabase/mcp-server-supabase"
+			],
+			"env": {
+				"SUPABASE_URL": "https://tbvugytmskxxyqfvqmup.supabase.co",
+				"SUPABASE_SERVICE_ROLE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidnVneXRtc2t4eHlxZnZxbXVwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MjM3OTUxOCwiZXhwIjoyMDY3OTU1NTE4fQ.1xyuCHnAtXlMailPc52C7z6olHXRob40TkjYaXwuqMY",
+				"SUPABASE_ACCESS_TOKEN": "sbp_10d96376d2362334606fa79f9bc1499b54ed841e"
+			}
+		},
+		"task-master-ai": {
+			"type": "stdio",
+			"command": "npx",
+			"args": [
+				"-y",
+				"--package=task-master-ai",
+				"task-master-ai"
+			],
+			"env": {
+				"ANTHROPIC_API_KEY": "your_anthropic_api_key_here",
+				"PERPLEXITY_API_KEY": "your_perplexity_api_key_here",
+				"OPENAI_API_KEY": "your_openai_api_key_here",
+				"GOOGLE_API_KEY": "your_google_api_key_here",
+				"XAI_API_KEY": "your_xai_api_key_here",
+				"OPENROUTER_API_KEY": "your_openrouter_api_key_here",
+				"MISTRAL_API_KEY": "your_mistral_api_key_here",
+				"AZURE_OPENAI_API_KEY": "your_azure_openai_api_key_here",
+				"OLLAMA_API_KEY": "your_ollama_api_key_here"
+			}
+		},
+		"ide": {
+			"type": "stdio",
+			"command": "npx",
+			"args": [
+				"-y",
+				"@modelcontextprotocol/server-vscode"
+			],
+			"cwd": "/Users/davidyang/workspace/20250713_PO_Mgmt"
+		},
+		"filesystem": {
+			"type": "stdio",
+			"command": "npx",
+			"args": [
+				"-y",
+				"@modelcontextprotocol/server-filesystem",
+				"/Users/davidyang/workspace/20250713_PO_Mgmt"
+			]
+		},
+		"sequential-thinking": {
+			"type": "stdio",
+			"command": "npx",
+			"args": [
+				"-y",
+				"@modelcontextprotocol/server-sequential-thinking"
+			]
+		},
+		"github": {
+			"type": "stdio",
+			"command": "npx",
+			"args": [
+				"-y",
+				"@modelcontextprotocol/server-github"
+			],
+			"env": {
+				"GITHUB_PERSONAL_ACCESS_TOKEN": "your_github_token_here"
+			}
+		},
+		"brave-search": {
+			"type": "stdio",
+			"command": "npx",
+			"args": [
+				"-y",
+				"@modelcontextprotocol/server-brave-search"
+			],
+			"env": {
+				"BRAVE_API_KEY": "your_brave_api_key_here"
+			}
+		}
+	}
+}

@@ -21,6 +21,9 @@ const orderItemSchema = z.object({
   itemId: z.number().min(1, "품목을 선택하세요"),
   itemName: z.string().min(1, "품목명을 입력하세요"),
   specification: z.string().optional(),
+  majorCategory: z.string().optional(),
+  middleCategory: z.string().optional(),
+  minorCategory: z.string().optional(),
   quantity: z.number().positive("수량은 0보다 커야 합니다"),
   unitPrice: z.number().positive("단가는 0보다 커야 합니다"),
   notes: z.string().optional(),
@@ -103,6 +106,17 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
     retry: 1
   });
 
+  // Fetch item categories for hierarchy
+  const { data: majorCategories } = useQuery({
+    queryKey: ['/api/item-categories/major'],
+    retry: 1
+  });
+
+  const { data: allCategories } = useQuery({
+    queryKey: ['/api/item-categories'],
+    retry: 1
+  });
+
   // Fetch projects from database
   const { data: projectsData, isLoading: isLoadingProjects } = useQuery({
     queryKey: ['/api/projects'],
@@ -121,6 +135,9 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
       itemId: 0,
       itemName: "",
       specification: "",
+      majorCategory: "",
+      middleCategory: "",
+      minorCategory: "",
       quantity: 0,
       unitPrice: 0,
       notes: "",
@@ -177,27 +194,6 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
   const { data: projects } = useQuery({
     queryKey: ["/api/projects"],
   });
-  
-  // Watch vendorId changes to auto-load vendor info
-  const watchedVendorId = watch("vendorId");
-  
-  useEffect(() => {
-    if (watchedVendorId && vendors) {
-      const selectedVendor = vendors.find((v: any) => v.id === watchedVendorId);
-      if (selectedVendor) {
-        setSelectedVendorInfo({
-          ...selectedVendor,
-          contactInfo: `담당자: ${selectedVendor.contactPerson || '-'}`,
-          emailInfo: `이메일: ${selectedVendor.email || '-'}`,
-          phoneInfo: `연락처: ${selectedVendor.phone || '-'}`
-        });
-      } else {
-        setSelectedVendorInfo(null);
-      }
-    } else {
-      setSelectedVendorInfo(null);
-    }
-  }, [watchedVendorId, vendors]);
 
   const { data: orderData, isLoading: orderLoading } = useQuery({
     queryKey: ["/api/orders", orderId],
@@ -315,6 +311,9 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
         itemId: item.itemId || 0,
         itemName: item.itemName,
         specification: item.specification || "",
+        majorCategory: item.majorCategory || "",
+        middleCategory: item.middleCategory || "",
+        minorCategory: item.minorCategory || "",
         quantity: item.quantity,
         unitPrice: item.unitPrice,
         notes: item.notes || "",
@@ -340,6 +339,9 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
       itemId: lastItem.itemId,
       itemName: lastItem.itemName,
       specification: lastItem.specification,
+      majorCategory: lastItem.majorCategory,
+      middleCategory: lastItem.middleCategory,
+      minorCategory: lastItem.minorCategory,
       quantity: lastItem.quantity,
       unitPrice: lastItem.unitPrice,
       notes: lastItem.notes,
@@ -347,6 +349,9 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
       itemId: 0,
       itemName: "",
       specification: "",
+      majorCategory: "",
+      middleCategory: "",
+      minorCategory: "",
       quantity: 0,
       unitPrice: 0,
       notes: "",
@@ -367,6 +372,9 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
       itemId: itemToCopy.itemId,
       itemName: itemToCopy.itemName,
       specification: itemToCopy.specification,
+      majorCategory: itemToCopy.majorCategory,
+      middleCategory: itemToCopy.middleCategory,
+      minorCategory: itemToCopy.minorCategory,
       quantity: itemToCopy.quantity,
       unitPrice: itemToCopy.unitPrice,
       notes: itemToCopy.notes,
@@ -406,6 +414,9 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
         itemId: selectedItem.id,
         itemName: selectedItem.name,
         specification: selectedItem.specification || "",
+        majorCategory: selectedItem.majorCategory || "",
+        middleCategory: selectedItem.middleCategory || "",
+        minorCategory: selectedItem.minorCategory || "",
         unitPrice: standardPrice,
       };
       setOrderItems(newItems);
@@ -657,6 +668,9 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
                       itemId: 0,
                       itemName: "",
                       specification: "",
+                      majorCategory: "",
+                      middleCategory: "",
+                      minorCategory: "",
                       quantity: 1,
                       unitPrice: 0,
                       totalAmount: 0,
@@ -666,6 +680,9 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
                       itemId: 0,
                       itemName: "",
                       specification: "",
+                      majorCategory: "",
+                      middleCategory: "",
+                      minorCategory: "",
                       quantity: 1,
                       unitPrice: 0,
                       totalAmount: 0,
@@ -762,24 +779,6 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
                 </Select>
                 {errors.vendorId && (
                   <p className="text-red-500 text-sm mt-1">{errors.vendorId.message}</p>
-                )}
-                {selectedVendorInfo && (
-                  <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                    <div className="flex flex-col gap-1 text-sm">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">📋</span>
-                        <span>{selectedVendorInfo.contactInfo}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">✉️</span>
-                        <span>{selectedVendorInfo.emailInfo}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">📞</span>
-                        <span>{selectedVendorInfo.phoneInfo}</span>
-                      </div>
-                    </div>
-                  </div>
                 )}
               </div>
               
@@ -910,6 +909,9 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
                   <TableRow>
                     <TableHead className="py-2">품목명</TableHead>
                     <TableHead className="py-2">규격</TableHead>
+                    <TableHead className="py-2">대분류</TableHead>
+                    <TableHead className="py-2">중분류</TableHead>
+                    <TableHead className="py-2">소분류</TableHead>
                     <TableHead className="py-2">수량</TableHead>
                     <TableHead className="py-2">단가</TableHead>
                     <TableHead className="py-2">금액</TableHead>
@@ -946,6 +948,30 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
                           placeholder="규격"
                           value={item.specification}
                           onChange={(e) => updateOrderItem(index, "specification", e.target.value)}
+                        />
+                      </TableCell>
+                      <TableCell className="py-1">
+                        <Input
+                          className="h-8"
+                          placeholder="대분류"
+                          value={item.majorCategory}
+                          onChange={(e) => updateOrderItem(index, "majorCategory", e.target.value)}
+                        />
+                      </TableCell>
+                      <TableCell className="py-1">
+                        <Input
+                          className="h-8"
+                          placeholder="중분류"
+                          value={item.middleCategory}
+                          onChange={(e) => updateOrderItem(index, "middleCategory", e.target.value)}
+                        />
+                      </TableCell>
+                      <TableCell className="py-1">
+                        <Input
+                          className="h-8"
+                          placeholder="소분류"
+                          value={item.minorCategory}
+                          onChange={(e) => updateOrderItem(index, "minorCategory", e.target.value)}
                         />
                       </TableCell>
                       <TableCell className="py-1">
@@ -1023,7 +1049,7 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
                 </TableBody>
                 <tfoot className="bg-gray-50">
                   <TableRow>
-                    <TableCell colSpan={4} className="py-2 text-right font-medium">
+                    <TableCell colSpan={7} className="py-2 text-right font-medium">
                       총 금액:
                     </TableCell>
                     <TableCell className="py-2 font-bold text-lg">

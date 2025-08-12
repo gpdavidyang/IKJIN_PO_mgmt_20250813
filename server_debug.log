@@ -2,48 +2,107 @@
 > rest-express@1.0.0 dev
 > NODE_ENV=development tsx server/index.ts
 
-[dotenv@17.2.0] injecting env (7) from .env (tip: ⚙️  override existing env vars with { override: true })
-DATABASE_URL not set, using mock connection
-[dotenv@17.2.0] injecting env (0) from .env (tip: ⚙️  override existing env vars with { override: true })
-4:51:37 PM [express] serving on port 3000
-4:51:49 PM [express] POST /api/po-template/extract-sheets 200 in 141ms :: {"success":true,"message":…
+[dotenv@17.2.0] injecting env (14) from .env (tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit)
+✅ Database connected successfully (Neon serverless)
+[dotenv@17.2.0] injecting env (0) from .env (tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] })
+3:10:37 PM [express] serving on port 3000
 Browserslist: browsers data (caniuse-lite) is 9 months old. Please run:
   npx update-browserslist-db@latest
   Why you should do it regularly: https://github.com/browserslist/update-db#readme
-getCurrentUser - Session ID: 5iJIOgH0P46P00bg5fkXhDYqsrhQGzV4
+getCurrentUser - Session ID: h15ti6-33Y2DV_t8QbVhfDioQDEwRtgN
 getCurrentUser - Session userId: undefined
 getCurrentUser - No userId in session
-4:55:13 PM [express] GET /api/auth/user 401 in 6ms :: {"message":"Not authenticated"}
-4:55:22 PM [express] POST /api/auth/login 200 in 2ms :: {"message":"Login successful","user":{"id":"…
-getCurrentUser - Session ID: 0dPUDCtJLgHl4SPVErouaTT-CXb1Z5SO
+3:10:42 PM [express] GET /api/auth/user 401 in 12ms :: {"message":"Not authenticated"}
+getCurrentUser - Session ID: i9qKZAqVfU4RuF6P-RrJnbIQwjM9H-3L
+getCurrentUser - Session userId: undefined
+getCurrentUser - No userId in session
+3:11:19 PM [express] GET /api/auth/user 401 in 6ms :: {"message":"Not authenticated"}
+3:13:59 PM [express] POST /api/auth/login 200 in 4ms :: {"message":"Login successful","user":{"id":"…
+getCurrentUser - Session ID: fub8XxqB1z6yrQEem7UklfyOBuxiKKoK
 getCurrentUser - Session userId: test_admin_001
-4:55:22 PM [express] GET /api/auth/user 200 in 3ms :: {"id":"test_admin_001","email":"test@ikjin.co.…
-Authentication middleware error: TypeError: Cannot read properties of null (reading 'select')
-    at DatabaseStorage.getUser (/Users/davidyang/workspace/20250713_PO_Mgmt/server/storage.ts:260:29)
-    at requireAuth (/Users/davidyang/workspace/20250713_PO_Mgmt/server/local-auth.ts:186:32)
-    at Layer.handle [as handle_request] (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/layer.js:95:5)
-    at next (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/route.js:149:13)
-    at Route.dispatch (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/route.js:119:3)
-    at Layer.handle [as handle_request] (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/layer.js:95:5)
-    at /Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/index.js:284:15
-    at Function.process_params (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/index.js:346:12)
-    at next (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express/lib/router/index.js:280:10)
-    at Immediate.<anonymous> (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/express-session/index.js:514:7)
-    at process.processImmediate (node:internal/timers:487:21)
-4:55:22 PM [express] GET /api/dashboard/unified 500 in 12ms :: {"message":"Authentication failed"}
-4:55:22 PM [express] GET /api/companies 200 in 1ms :: [{"id":1,"companyName":"(주)익진엔지니어링","businessN…
-getCurrentUser - Session ID: 0dPUDCtJLgHl4SPVErouaTT-CXb1Z5SO
+3:13:59 PM [express] GET /api/auth/user 200 in 2ms :: {"id":"test_admin_001","email":"test@ikjin.co.…
+3:13:59 PM [express] GET /api/companies 200 in 2ms :: [{"id":1,"companyName":"(주)익진엔지니어링","businessN…
+Error fetching unified dashboard data: NeonDbError: Error connecting to database: fetch failed
+    at execute (file:///Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/@neondatabase/serverless/index.mjs:1549:24)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async NeonHttpPreparedQuery.execute (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/src/neon-http/session.ts:68:18)
+    at async DatabaseStorage.getUser (/Users/davidyang/workspace/20250713_PO_Mgmt/server/storage.ts:260:20)
+    at async <anonymous> (/Users/davidyang/workspace/20250713_PO_Mgmt/server/routes.ts:587:20) {
+  severity: undefined,
+  code: undefined,
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: undefined,
+  line: undefined,
+  routine: undefined,
+  sourceError: TypeError: fetch failed
+      at node:internal/deps/undici/undici:13510:13
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async execute (file:///Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/@neondatabase/serverless/index.mjs:1548:15)
+      at async NeonHttpPreparedQuery.execute (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/src/neon-http/session.ts:68:18)
+      at async DatabaseStorage.getUser (/Users/davidyang/workspace/20250713_PO_Mgmt/server/storage.ts:260:20)
+      at async <anonymous> (/Users/davidyang/workspace/20250713_PO_Mgmt/server/routes.ts:587:20) {
+    [cause]: Error: getaddrinfo ENOTFOUND api.pooler.supabase.com
+        at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26) {
+      errno: -3008,
+      code: 'ENOTFOUND',
+      syscall: 'getaddrinfo',
+      hostname: 'api.pooler.supabase.com'
+    }
+  }
+}
+3:13:59 PM [express] GET /api/dashboard/unified 500 in 110ms :: {"message":"Failed to fetch dashboar…
+getCurrentUser - Session ID: fub8XxqB1z6yrQEem7UklfyOBuxiKKoK
 getCurrentUser - Session userId: test_admin_001
-4:55:26 PM [express] GET /api/auth/user 200 in 5ms :: {"id":"test_admin_001","email":"test@ikjin.co.…
-4:55:26 PM [express] GET /api/companies 200 in 1ms :: [{"id":1,"companyName":"(주)익진엔지니어링","businessN…
-4:55:36 PM [express] POST /api/po-template/upload 200 in 137ms :: {"success":true,"message":"파일 파싱 완…
-4:55:36 PM [express] POST /api/po-template/save 200 in 0ms :: {"success":true,"message":"Mock DB 저장 …
-4:55:36 PM [express] POST /api/po-template/extract-sheets 200 in 94ms :: {"success":true,"message":"…
-getCurrentUser - Session ID: 0dPUDCtJLgHl4SPVErouaTT-CXb1Z5SO
+3:14:06 PM [express] GET /api/auth/user 200 in 6ms :: {"id":"test_admin_001","email":"test@ikjin.co.…
+3:14:06 PM [express] GET /api/companies 200 in 2ms :: [{"id":1,"companyName":"(주)익진엔지니어링","businessN…
+File upload attempt: {
+  originalname: 'PO_Test01.xlsm',
+  mimetype: 'application/vnd.ms-excel.sheet.macroenabled.12',
+  fieldname: 'file'
+}
+File rejected - Invalid mimetype: application/vnd.ms-excel.sheet.macroenabled.12
+Allowed mimetypes: [
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-excel.sheet.macroEnabled.12',
+  'application/vnd.ms-excel'
+]
+3:14:20 PM [express] POST /api/po-template/upload 500 in 14ms :: {"message":"Excel 파일만 업로드 가능합니다. (받…
+Error: Excel 파일만 업로드 가능합니다. (받은 타입: application/vnd.ms-excel.sheet.macroenabled.12)
+    at fileFilter (/Users/davidyang/workspace/20250713_PO_Mgmt/server/routes/po-template-mock.ts:54:10)
+    at wrappedFileFilter (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/multer/index.js:44:7)
+    at Multipart.<anonymous> (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/multer/lib/make-middleware.js:121:7)
+    at Multipart.emit (node:events:518:28)
+    at HeaderParser.cb (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/busboy/lib/types/multipart.js:358:14)
+    at HeaderParser.push (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/busboy/lib/types/multipart.js:162:20)
+    at SBMH.ssCb [as _cb] (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/busboy/lib/types/multipart.js:394:37)
+    at feed (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/streamsearch/lib/sbmh.js:248:10)
+    at SBMH.push (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/streamsearch/lib/sbmh.js:104:16)
+    at Multipart._write (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/busboy/lib/types/multipart.js:567:19)
+    at writeOrBuffer (node:internal/streams/writable:572:12)
+    at _write (node:internal/streams/writable:501:10)
+    at Writable.write (node:internal/streams/writable:510:10)
+    at IncomingMessage.ondata (node:internal/streams/readable:1009:22)
+    at IncomingMessage.emit (node:events:518:28)
+    at Readable.read (node:internal/streams/readable:782:10)
+    at flow (node:internal/streams/readable:1283:53)
+    at resume_ (node:internal/streams/readable:1262:3)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+3:14:24 PM [express] GET /api/po-template/upload 404 in 9ms
+getCurrentUser - Session ID: fub8XxqB1z6yrQEem7UklfyOBuxiKKoK
 getCurrentUser - Session userId: test_admin_001
-4:55:46 PM [express] GET /api/auth/user 200 in 3ms :: {"id":"test_admin_001","email":"test@ikjin.co.…
-getCurrentUser - Session ID: 0dPUDCtJLgHl4SPVErouaTT-CXb1Z5SO
-getCurrentUser - Session userId: test_admin_001
-4:59:14 PM [express] GET /api/auth/user 200 in 5ms :: {"id":"test_admin_001","email":"test@ikjin.co.…
-4:59:26 PM [express] POST /api/po-template/extract-sheets 200 in 81ms :: {"success":true,"message":"…
-4:59:44 PM [express] POST /api/po-template/extract-sheets 200 in 89ms :: {"success":true,"message":"…
+3:14:27 PM [express] GET /api/auth/user 200 in 20ms :: {"id":"test_admin_001","email":"test@ikjin.co…
+3:14:54 PM [express] POST /api/auth/logout 200 in 4ms :: {"message":"Logout successful"}
+getCurrentUser - Session ID: NoMD1qHTmQEOwgOq1fGi4mXcOG_2tkJ3
+getCurrentUser - Session userId: undefined
+getCurrentUser - No userId in session
+3:14:55 PM [express] GET /api/auth/user 401 in 2ms :: {"message":"Not authenticated"}

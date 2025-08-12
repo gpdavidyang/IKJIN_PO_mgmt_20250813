@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { ArrowLeft, Building2, Save, Edit } from "lucide-react";
-import { useLocation } from "wouter";
+import { useLocation, useRoute } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -31,16 +31,13 @@ const vendorFormSchema = z.object({
 
 type VendorFormData = z.infer<typeof vendorFormSchema>;
 
-interface VendorEditProps {
-  params: { id: string };
-}
-
-export default function VendorEdit({ params }: VendorEditProps) {
+export default function VendorEdit() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const queryClient = useQueryClient();
-  const vendorId = parseInt(params.id);
+  const [match, params] = useRoute("/vendors/:id/edit");
+  const vendorId = params?.id ? parseInt(params.id) : 0;
 
   // Redirect to home if not authenticated or not admin
   useEffect(() => {
@@ -161,7 +158,8 @@ export default function VendorEdit({ params }: VendorEditProps) {
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-[1366px] mx-auto p-6">
       {/* Page Header */}
       <div className="mb-6">
         <div className="flex items-center justify-between">
@@ -185,9 +183,9 @@ export default function VendorEdit({ params }: VendorEditProps) {
         </div>
       </div>
 
-      <Card>
+      <Card className="shadow-sm">
         <CardHeader>
-          <CardTitle className="flex items-center">
+          <CardTitle className="flex items-center text-lg font-semibold">
             <Building2 className="h-5 w-5 mr-2" />
             거래처 정보
           </CardTitle>
@@ -347,6 +345,7 @@ export default function VendorEdit({ params }: VendorEditProps) {
           </Form>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }
