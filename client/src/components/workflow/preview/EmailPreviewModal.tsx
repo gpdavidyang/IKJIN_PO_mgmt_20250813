@@ -279,6 +279,9 @@ ${data?.senderPhone || '연락처'}`;
                   </div>
                   <ul className="mt-2 text-sm text-blue-700">
                     <li>• 발주서_{orderData?.orderNumber || 'unknown'}.pdf</li>
+                    {orderData?.processedExcelUrl && (
+                      <li>• 처리된_Excel_파일_{orderData?.excelFileName || 'Input제거'}.xlsx</li>
+                    )}
                   </ul>
                 </div>
               )}

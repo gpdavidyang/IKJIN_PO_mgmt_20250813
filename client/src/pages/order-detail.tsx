@@ -450,7 +450,8 @@ export default function OrderDetail() {
                   </div>
                 )}
               </div>
-            </div>
+              </CardContent>
+            </Card>
           )}
 
           {/* Project Information */}
@@ -599,6 +600,7 @@ export default function OrderDetail() {
                 </div>
               </div>
             </div>
+          </div>
           </CardContent>
         </Card>
 
@@ -707,6 +709,7 @@ export default function OrderDetail() {
             </div>
           </DialogContent>
         </Dialog>
+      </div>
       </div>
     </div>
   );

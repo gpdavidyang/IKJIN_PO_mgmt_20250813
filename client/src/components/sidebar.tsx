@@ -44,6 +44,7 @@ const navigationSections = [
         highlight: true, // 주요 기능 강조
         subItems: [
           { name: "🚀 통합 워크플로우", href: "/create-order/unified", highlight: true },
+          { name: "🆕 통합 워크플로우 V2", href: "/create-order/unified-v2", highlight: true, badge: "NEW" },
           { name: "표준 발주서", href: "/create-order/standard" },
           { name: "엑셀 발주서", href: "/create-order/excel" },
           // PRD 요구사항: 압출, 판넬, 부자재 발주서는 현재 UI에서 숨김 처리 (소스코드는 유지)
@@ -203,8 +204,17 @@ export function Sidebar() {
                               setIsMobileMenuOpen(false);
                             }}
                           >
-                            {subItem.highlight && "⭐ "}
-                            {subItem.name}
+                            <span className="flex items-center justify-between w-full">
+                              <span>
+                                {subItem.highlight && "⭐ "}
+                                {subItem.name}
+                              </span>
+                              {subItem.badge && (
+                                <span className="ml-2 px-2 py-0.5 text-xs font-semibold bg-blue-500 text-white rounded">
+                                  {subItem.badge}
+                                </span>
+                              )}
+                            </span>
                           </Button>
                         ))}
                       </div>
