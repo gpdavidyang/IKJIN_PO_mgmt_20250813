@@ -38,7 +38,7 @@
   ],
   "env": {
     "DATABASE_URL": "postgresql://postgres.tbvugytmskxxyqfvqmup:gps110601ysw@db.tbvugytmskxxyqfvqmup.supabase.co:5432/postgres?sslmode=require&connect_timeout=60",
-    "SESSION_SECRET": "your-secret-key-here",
+    "SESSION_SECRET": "ikjin-po-mgmt-secure-session-key-2025",
     "VERCEL": "1",
     "NODE_ENV": "production"
   }
