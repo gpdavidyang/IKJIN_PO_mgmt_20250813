@@ -10991,11 +10991,17 @@ var routes_default = router16;
 
 // server/production.ts
 dotenv2.config();
-if (!process.env.DATABASE_URL) {
-  console.error("\u274C DATABASE_URL environment variable not set in Vercel");
-  process.exit(1);
+var originalDatabaseUrl = process.env.DATABASE_URL;
+if (originalDatabaseUrl) {
+  console.log("\u{1F50D} Original DATABASE_URL:", originalDatabaseUrl.split("@")[0] + "@[HIDDEN]");
+  if (originalDatabaseUrl.includes("db.tbvugytmskxxyqfvqmup.supabase.co")) {
+    console.log("\u{1F527} Fixing incorrect hostname in DATABASE_URL");
+    process.env.DATABASE_URL = originalDatabaseUrl.replace("db.tbvugytmskxxyqfvqmup.supabase.co", "tbvugytmskxxyqfvqmup.supabase.co");
+    console.log("\u{1F527} Fixed DATABASE_URL:", process.env.DATABASE_URL.split("@")[0] + "@[HIDDEN]");
+  }
 } else {
-  console.log("\u{1F527} Using Vercel DATABASE_URL:", process.env.DATABASE_URL.split("@")[0] + "@[HIDDEN]");
+  console.error("\u274C DATABASE_URL environment variable not set");
+  process.exit(1);
 }
 console.log("\u2728 Production server starting without static file serving");
 var app = express2();

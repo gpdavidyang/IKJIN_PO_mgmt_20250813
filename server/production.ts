@@ -2,11 +2,19 @@ import dotenv from "dotenv";
 dotenv.config();
 
 // 환경변수 확인 및 Supabase 연결 설정
-if (!process.env.DATABASE_URL) {
-  console.error("❌ DATABASE_URL environment variable not set in Vercel");
-  process.exit(1);
+const originalDatabaseUrl = process.env.DATABASE_URL;
+if (originalDatabaseUrl) {
+  console.log("🔍 Original DATABASE_URL:", originalDatabaseUrl.split('@')[0] + '@[HIDDEN]');
+  
+  // Fix incorrect hostname in DATABASE_URL
+  if (originalDatabaseUrl.includes('db.tbvugytmskxxyqfvqmup.supabase.co')) {
+    console.log("🔧 Fixing incorrect hostname in DATABASE_URL");
+    process.env.DATABASE_URL = originalDatabaseUrl.replace('db.tbvugytmskxxyqfvqmup.supabase.co', 'tbvugytmskxxyqfvqmup.supabase.co');
+    console.log("🔧 Fixed DATABASE_URL:", process.env.DATABASE_URL.split('@')[0] + '@[HIDDEN]');
+  }
 } else {
-  console.log("🔧 Using Vercel DATABASE_URL:", process.env.DATABASE_URL.split('@')[0] + '@[HIDDEN]');
+  console.error("❌ DATABASE_URL environment variable not set");
+  process.exit(1);
 }
 console.log("✨ Production server starting without static file serving");
 
