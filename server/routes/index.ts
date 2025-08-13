@@ -19,6 +19,13 @@ import importExportRoutes from "./import-export";
 import emailHistoryRoutes from "./email-history";
 import excelTemplateRoutes from "./excel-template";
 import ordersOptimizedRoutes from "./orders-optimized";
+import orderStatusesRoutes from "./order-statuses";
+import invoicesRoutes from "./invoices";
+import verificationLogsRoutes from "./verification-logs";
+import itemReceiptsRoutes from "./item-receipts";
+import approvalsRoutes from "./approvals";
+import projectMembersRoutes from "./project-members";
+import projectTypesRoutes from "./project-types";
 
 const router = Router();
 
@@ -38,5 +45,12 @@ router.use("/api", importExportRoutes);
 router.use("/api", emailHistoryRoutes);
 router.use("/api/excel-template", excelTemplateRoutes);
 router.use("/api", ordersOptimizedRoutes);
+router.use("/api", orderStatusesRoutes);
+router.use("/api", invoicesRoutes);
+router.use("/api", verificationLogsRoutes);
+router.use("/api", itemReceiptsRoutes);
+router.use("/api", approvalsRoutes);
+router.use("/api", projectMembersRoutes);
+router.use("/api", projectTypesRoutes);
 
 export default router;

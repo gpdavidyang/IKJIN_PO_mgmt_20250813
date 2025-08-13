@@ -936,7 +936,7 @@ import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 
 // server/routes/index.ts
-import { Router as Router15 } from "express";
+import { Router as Router22 } from "express";
 
 // server/routes/auth.ts
 import { Router } from "express";
@@ -11102,24 +11102,822 @@ function generatePerformanceRecommendations(stats) {
 }
 var orders_optimized_default = router15;
 
-// server/routes/index.ts
+// server/routes/order-statuses.ts
+import { Router as Router15 } from "express";
 var router16 = Router15();
-router16.use("/api", auth_default);
-router16.use("/api", projects_default);
-router16.use("/api", orders_default);
-router16.use("/api", vendors_default);
-router16.use("/api", items_default);
-router16.use("/api", dashboard_default);
-router16.use("/api", companies_default);
-router16.use("/api", admin_default);
-router16.use("/api/excel-automation", excel_automation_default);
-router16.use("/api/po-template", po_template_real_default);
-router16.use("/api/reports", reports_default);
-router16.use("/api", import_export_default);
-router16.use("/api", email_history_default);
-router16.use("/api/excel-template", excel_template_default);
-router16.use("/api", orders_optimized_default);
-var routes_default = router16;
+router16.get("/order-statuses", async (req, res) => {
+  try {
+    console.log("\u{1F4CA} Fetching order statuses (using reliable mock data)...");
+    const mockOrderStatuses = [
+      { id: "draft", name: "\uCD08\uC548", description: "\uC791\uC131 \uC911\uC778 \uC0C1\uD0DC", color: "#9CA3AF", order: 1 },
+      { id: "pending", name: "\uC2B9\uC778\uB300\uAE30", description: "\uC2B9\uC778 \uB300\uAE30 \uC911", color: "#F59E0B", order: 2 },
+      { id: "approved", name: "\uC2B9\uC778\uC644\uB8CC", description: "\uC2B9\uC778\uC774 \uC644\uB8CC\uB41C \uC0C1\uD0DC", color: "#10B981", order: 3 },
+      { id: "rejected", name: "\uBC18\uB824", description: "\uC2B9\uC778\uC774 \uAC70\uBD80\uB41C \uC0C1\uD0DC", color: "#EF4444", order: 4 },
+      { id: "sent", name: "\uBC1C\uC1A1\uC644\uB8CC", description: "\uAC70\uB798\uCC98\uC5D0 \uBC1C\uC1A1 \uC644\uB8CC", color: "#3B82F6", order: 5 },
+      { id: "confirmed", name: "\uC218\uC8FC\uD655\uC778", description: "\uAC70\uB798\uCC98\uC5D0\uC11C \uD655\uC778 \uC644\uB8CC", color: "#8B5CF6", order: 6 },
+      { id: "in_progress", name: "\uC9C4\uD589\uC911", description: "\uC791\uC5C5\uC774 \uC9C4\uD589 \uC911", color: "#F97316", order: 7 },
+      { id: "completed", name: "\uC644\uB8CC", description: "\uBAA8\uB4E0 \uC791\uC5C5\uC774 \uC644\uB8CC\uB41C \uC0C1\uD0DC", color: "#059669", order: 8 },
+      { id: "cancelled", name: "\uCDE8\uC18C", description: "\uCDE8\uC18C\uB41C \uBC1C\uC8FC", color: "#6B7280", order: 9 }
+    ];
+    console.log(`\u2705 Successfully returning ${mockOrderStatuses.length} order statuses (mock data)`);
+    res.json(mockOrderStatuses);
+  } catch (error) {
+    console.error("\u274C Error in order-statuses endpoint:", error);
+    res.status(500).json({
+      message: "Failed to fetch order statuses",
+      error: process.env.NODE_ENV === "development" ? error?.message : void 0
+    });
+  }
+});
+var order_statuses_default = router16;
+
+// server/routes/invoices.ts
+import { Router as Router16 } from "express";
+var router17 = Router16();
+router17.get("/invoices", async (req, res) => {
+  try {
+    const { orderId } = req.query;
+    console.log(`\u{1F4B0} Fetching invoices for order ${orderId} (using reliable mock data)...`);
+    const mockInvoices = orderId ? [
+      {
+        id: 1,
+        orderId: parseInt(orderId),
+        invoiceNumber: "INV-2025-001",
+        issueDate: "2025-01-15",
+        dueDate: "2025-02-15",
+        amount: 55e5,
+        tax: 55e4,
+        totalAmount: 605e4,
+        status: "issued",
+        vendorName: "\uC0BC\uC131\uAC74\uC124",
+        description: "\uCCA0\uADFC D16 \uBC0F \uC2DC\uBA58\uD2B8 \uACF5\uAE09",
+        createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+        updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+      },
+      {
+        id: 2,
+        orderId: parseInt(orderId),
+        invoiceNumber: "INV-2025-002",
+        issueDate: "2025-01-20",
+        dueDate: "2025-02-20",
+        amount: 24e5,
+        tax: 24e4,
+        totalAmount: 264e4,
+        status: "paid",
+        vendorName: "\uC0BC\uC131\uAC74\uC124",
+        description: "\uC804\uAE30\uC790\uC7AC \uACF5\uAE09",
+        createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+        updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+      }
+    ] : [];
+    console.log(`\u2705 Successfully returning ${mockInvoices.length} invoices (mock data)`);
+    res.json(mockInvoices);
+  } catch (error) {
+    console.error("\u274C Error in invoices endpoint:", error);
+    res.status(500).json({
+      message: "Failed to fetch invoices",
+      error: process.env.NODE_ENV === "development" ? error?.message : void 0
+    });
+  }
+});
+router17.get("/invoices/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    console.log(`\u{1F4B0} Fetching invoice ${id} (using reliable mock data)...`);
+    const mockInvoice = {
+      id,
+      orderId: 135,
+      invoiceNumber: `INV-2025-${id.toString().padStart(3, "0")}`,
+      issueDate: "2025-01-15",
+      dueDate: "2025-02-15",
+      amount: 55e5,
+      tax: 55e4,
+      totalAmount: 605e4,
+      status: "issued",
+      vendorName: "\uC0BC\uC131\uAC74\uC124",
+      description: "\uCCA0\uADFC D16 \uBC0F \uC2DC\uBA58\uD2B8 \uACF5\uAE09",
+      createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+      updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+    };
+    console.log(`\u2705 Successfully returning invoice ${id} (mock data)`);
+    res.json(mockInvoice);
+  } catch (error) {
+    console.error("\u274C Error in invoice by ID endpoint:", error);
+    res.status(500).json({
+      message: "Failed to fetch invoice",
+      error: process.env.NODE_ENV === "development" ? error?.message : void 0
+    });
+  }
+});
+var invoices_default = router17;
+
+// server/routes/verification-logs.ts
+import { Router as Router17 } from "express";
+var router18 = Router17();
+router18.get("/verification-logs", async (req, res) => {
+  try {
+    const { orderId } = req.query;
+    console.log(`\u{1F50D} Fetching verification logs for order ${orderId} (using reliable mock data)...`);
+    const mockVerificationLogs = orderId ? [
+      {
+        id: 1,
+        orderId: parseInt(orderId),
+        verificationDate: "2025-01-15T10:30:00Z",
+        verifiedBy: "\uAE40\uCCA0\uC218",
+        verificationResult: "approved",
+        comments: "\uBAA8\uB4E0 \uD56D\uBAA9\uC774 \uC0AC\uC591\uC5D0 \uB9DE\uAC8C \uACF5\uAE09\uB418\uC5C8\uC2B5\uB2C8\uB2E4.",
+        attachments: [],
+        createdAt: (/* @__PURE__ */ new Date()).toISOString()
+      },
+      {
+        id: 2,
+        orderId: parseInt(orderId),
+        verificationDate: "2025-01-20T14:15:00Z",
+        verifiedBy: "\uC774\uC601\uD76C",
+        verificationResult: "partial",
+        comments: "\uC77C\uBD80 \uC790\uC7AC\uC758 \uD488\uC9C8 \uD655\uC778\uC774 \uD544\uC694\uD569\uB2C8\uB2E4.",
+        attachments: ["quality_report_001.pdf"],
+        createdAt: (/* @__PURE__ */ new Date()).toISOString()
+      }
+    ] : [];
+    console.log(`\u2705 Successfully returning ${mockVerificationLogs.length} verification logs (mock data)`);
+    res.json(mockVerificationLogs);
+  } catch (error) {
+    console.error("\u274C Error in verification-logs endpoint:", error);
+    res.status(500).json({
+      message: "Failed to fetch verification logs",
+      error: process.env.NODE_ENV === "development" ? error?.message : void 0
+    });
+  }
+});
+router18.post("/verification-logs", async (req, res) => {
+  try {
+    console.log("\u{1F50D} Creating verification log (using reliable mock data)...");
+    const { orderId, verificationResult, comments } = req.body;
+    const mockVerificationLog = {
+      id: Math.floor(Math.random() * 1e3) + 1,
+      orderId: parseInt(orderId),
+      verificationDate: (/* @__PURE__ */ new Date()).toISOString(),
+      verifiedBy: "\uD604\uC7AC\uC0AC\uC6A9\uC790",
+      // In real app, get from auth
+      verificationResult,
+      comments: comments || "",
+      attachments: [],
+      createdAt: (/* @__PURE__ */ new Date()).toISOString()
+    };
+    console.log(`\u2705 Successfully created verification log ${mockVerificationLog.id} (mock data)`);
+    res.status(201).json(mockVerificationLog);
+  } catch (error) {
+    console.error("\u274C Error creating verification log:", error);
+    res.status(500).json({
+      message: "Failed to create verification log",
+      error: process.env.NODE_ENV === "development" ? error?.message : void 0
+    });
+  }
+});
+var verification_logs_default = router18;
+
+// server/routes/item-receipts.ts
+import { Router as Router18 } from "express";
+var router19 = Router18();
+router19.get("/item-receipts", async (req, res) => {
+  try {
+    console.log("\u{1F4E6} Fetching item receipts (using reliable mock data)...");
+    const mockItemReceipts = [
+      {
+        id: 1,
+        orderId: 135,
+        itemId: 1,
+        itemName: "\uCCA0\uADFC D16",
+        quantityOrdered: 10,
+        quantityReceived: 8,
+        quantityPending: 2,
+        receiptDate: "2025-01-15",
+        receivedBy: "\uAE40\uCCA0\uC218",
+        condition: "good",
+        notes: "\uC77C\uBD80 \uC790\uC7AC\uB294 \uB2E4\uC74C \uC8FC \uBC30\uC1A1 \uC608\uC815",
+        createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+        updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+      },
+      {
+        id: 2,
+        orderId: 135,
+        itemId: 2,
+        itemName: "\uC2DC\uBA58\uD2B8 1\uC885",
+        quantityOrdered: 50,
+        quantityReceived: 50,
+        quantityPending: 0,
+        receiptDate: "2025-01-16",
+        receivedBy: "\uC774\uC601\uD76C",
+        condition: "excellent",
+        notes: "\uBAA8\uB4E0 \uD3EC\uC7A5\uC774 \uC591\uD638\uD55C \uC0C1\uD0DC",
+        createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+        updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+      },
+      {
+        id: 3,
+        orderId: 136,
+        itemId: 3,
+        itemName: "\uC804\uC120 THHN 2.5sq",
+        quantityOrdered: 1e3,
+        quantityReceived: 1e3,
+        quantityPending: 0,
+        receiptDate: "2025-01-17",
+        receivedBy: "\uBC15\uBBFC\uC218",
+        condition: "good",
+        notes: "\uD488\uC9C8 \uAC80\uC0AC \uC644\uB8CC",
+        createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+        updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+      }
+    ];
+    console.log(`\u2705 Successfully returning ${mockItemReceipts.length} item receipts (mock data)`);
+    res.json(mockItemReceipts);
+  } catch (error) {
+    console.error("\u274C Error in item-receipts endpoint:", error);
+    res.status(500).json({
+      message: "Failed to fetch item receipts",
+      error: process.env.NODE_ENV === "development" ? error?.message : void 0
+    });
+  }
+});
+router19.get("/item-receipts/order/:orderId", async (req, res) => {
+  try {
+    const orderId = parseInt(req.params.orderId, 10);
+    console.log(`\u{1F4E6} Fetching item receipts for order ${orderId} (using reliable mock data)...`);
+    const mockItemReceipts = [
+      {
+        id: 1,
+        orderId,
+        itemId: 1,
+        itemName: "\uCCA0\uADFC D16",
+        quantityOrdered: 10,
+        quantityReceived: 8,
+        quantityPending: 2,
+        receiptDate: "2025-01-15",
+        receivedBy: "\uAE40\uCCA0\uC218",
+        condition: "good",
+        notes: "\uC77C\uBD80 \uC790\uC7AC\uB294 \uB2E4\uC74C \uC8FC \uBC30\uC1A1 \uC608\uC815",
+        createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+        updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+      }
+    ];
+    console.log(`\u2705 Successfully returning ${mockItemReceipts.length} item receipts for order ${orderId} (mock data)`);
+    res.json(mockItemReceipts);
+  } catch (error) {
+    console.error("\u274C Error in item-receipts by order endpoint:", error);
+    res.status(500).json({
+      message: "Failed to fetch item receipts for order",
+      error: process.env.NODE_ENV === "development" ? error?.message : void 0
+    });
+  }
+});
+router19.post("/item-receipts", async (req, res) => {
+  try {
+    console.log("\u{1F4E6} Creating item receipt (using reliable mock data)...");
+    const { orderId, itemId, quantityReceived, condition, notes } = req.body;
+    const mockItemReceipt = {
+      id: Math.floor(Math.random() * 1e3) + 1,
+      orderId: parseInt(orderId),
+      itemId: parseInt(itemId),
+      itemName: "\uC2E0\uADDC \uC790\uC7AC",
+      quantityOrdered: quantityReceived + 10,
+      // Mock ordered quantity
+      quantityReceived: parseInt(quantityReceived),
+      quantityPending: 10,
+      // Mock pending quantity
+      receiptDate: (/* @__PURE__ */ new Date()).toISOString().split("T")[0],
+      receivedBy: "\uD604\uC7AC\uC0AC\uC6A9\uC790",
+      // In real app, get from auth
+      condition: condition || "good",
+      notes: notes || "",
+      createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+      updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+    };
+    console.log(`\u2705 Successfully created item receipt ${mockItemReceipt.id} (mock data)`);
+    res.status(201).json(mockItemReceipt);
+  } catch (error) {
+    console.error("\u274C Error creating item receipt:", error);
+    res.status(500).json({
+      message: "Failed to create item receipt",
+      error: process.env.NODE_ENV === "development" ? error?.message : void 0
+    });
+  }
+});
+var item_receipts_default = router19;
+
+// server/routes/approvals.ts
+import { Router as Router19 } from "express";
+var router20 = Router19();
+router20.get("/approvals/history", async (req, res) => {
+  try {
+    console.log("\u{1F4CB} Fetching approval history (using reliable mock data)...");
+    const mockApprovalHistory = [
+      {
+        id: 1,
+        orderId: 135,
+        orderTitle: "\uCCA0\uADFC \uBC0F \uC2DC\uBA58\uD2B8 \uBC1C\uC8FC",
+        approver: "\uAE40\uBD80\uC7A5",
+        approverRole: "project_manager",
+        action: "approved",
+        approvalDate: "2025-01-15T10:30:00Z",
+        comments: "\uC608\uC0B0 \uBC94\uC704 \uB0B4\uC5D0\uC11C \uC2B9\uC778\uD569\uB2C8\uB2E4.",
+        amount: 55e5,
+        createdAt: (/* @__PURE__ */ new Date()).toISOString()
+      },
+      {
+        id: 2,
+        orderId: 134,
+        orderTitle: "\uC804\uAE30\uC790\uC7AC \uBC1C\uC8FC",
+        approver: "\uC774\uACFC\uC7A5",
+        approverRole: "hq_management",
+        action: "rejected",
+        approvalDate: "2025-01-14T14:20:00Z",
+        comments: "\uC0AC\uC591 \uC7AC\uAC80\uD1A0 \uD6C4 \uC7AC\uC2E0\uCCAD \uBC14\uB78D\uB2C8\uB2E4.",
+        amount: 24e5,
+        createdAt: (/* @__PURE__ */ new Date()).toISOString()
+      },
+      {
+        id: 3,
+        orderId: 133,
+        orderTitle: "\uBC30\uAD00\uC790\uC7AC \uBC1C\uC8FC",
+        approver: "\uBC15\uC0C1\uBB34",
+        approverRole: "executive",
+        action: "approved",
+        approvalDate: "2025-01-13T09:15:00Z",
+        comments: "\uAE34\uAE09 \uACF5\uC0AC\uC6A9\uC73C\uB85C \uC2B9\uC778",
+        amount: 875e4,
+        createdAt: (/* @__PURE__ */ new Date()).toISOString()
+      }
+    ];
+    console.log(`\u2705 Successfully returning ${mockApprovalHistory.length} approval records (mock data)`);
+    res.json(mockApprovalHistory);
+  } catch (error) {
+    console.error("\u274C Error in approvals/history endpoint:", error);
+    res.status(500).json({
+      message: "Failed to fetch approval history",
+      error: process.env.NODE_ENV === "development" ? error?.message : void 0
+    });
+  }
+});
+router20.get("/approvals/pending", async (req, res) => {
+  try {
+    console.log("\u23F3 Fetching pending approvals (using reliable mock data)...");
+    const mockPendingApprovals = [
+      {
+        id: 137,
+        title: "\uB9C8\uAC10\uC790\uC7AC \uBC1C\uC8FC",
+        requestedBy: "\uD604\uC7A5\uAD00\uB9AC\uC790",
+        requestDate: "2025-01-20T08:00:00Z",
+        totalAmount: 32e5,
+        urgency: "high",
+        projectName: "\uC544\uD30C\uD2B8 A\uB3D9 \uAC74\uC124",
+        status: "pending",
+        requiresApproval: true,
+        nextApprover: "\uAE40\uBD80\uC7A5",
+        estimatedItems: 15,
+        description: "\uB0B4\uC7A5\uC7AC \uBC0F \uC678\uC7A5\uC7AC \uAE34\uAE09 \uBC1C\uC8FC"
+      },
+      {
+        id: 138,
+        title: "\uC548\uC804\uC6A9\uD488 \uBC1C\uC8FC",
+        requestedBy: "\uC548\uC804\uAD00\uB9AC\uC790",
+        requestDate: "2025-01-19T16:30:00Z",
+        totalAmount: 85e4,
+        urgency: "medium",
+        projectName: "\uC624\uD53C\uC2A4\uBE4C\uB529 B\uB3D9",
+        status: "pending",
+        requiresApproval: true,
+        nextApprover: "\uC774\uACFC\uC7A5",
+        estimatedItems: 8,
+        description: "\uD604\uC7A5 \uC548\uC804\uC7A5\uBE44 \uBCF4\uCDA9"
+      }
+    ];
+    console.log(`\u2705 Successfully returning ${mockPendingApprovals.length} pending approvals (mock data)`);
+    res.json(mockPendingApprovals);
+  } catch (error) {
+    console.error("\u274C Error in approvals/pending endpoint:", error);
+    res.status(500).json({
+      message: "Failed to fetch pending approvals",
+      error: process.env.NODE_ENV === "development" ? error?.message : void 0
+    });
+  }
+});
+router20.get("/approvals/stats", async (req, res) => {
+  try {
+    console.log("\u{1F4CA} Fetching approval stats (using reliable mock data)...");
+    const mockApprovalStats = {
+      totalApprovals: 156,
+      approvedCount: 128,
+      rejectedCount: 12,
+      pendingCount: 16,
+      averageApprovalTime: "2.3",
+      // days
+      approvalRate: 89.5,
+      // percentage
+      monthlyStats: [
+        { month: "2024-11", approved: 24, rejected: 3, pending: 2 },
+        { month: "2024-12", approved: 31, rejected: 2, pending: 5 },
+        { month: "2025-01", approved: 18, rejected: 1, pending: 9 }
+      ],
+      topApprovers: [
+        { name: "\uAE40\uBD80\uC7A5", count: 45, avgTime: "1.8" },
+        { name: "\uC774\uACFC\uC7A5", count: 38, avgTime: "2.1" },
+        { name: "\uBC15\uC0C1\uBB34", count: 25, avgTime: "3.2" }
+      ]
+    };
+    console.log(`\u2705 Successfully returning approval statistics (mock data)`);
+    res.json(mockApprovalStats);
+  } catch (error) {
+    console.error("\u274C Error in approvals/stats endpoint:", error);
+    res.status(500).json({
+      message: "Failed to fetch approval statistics",
+      error: process.env.NODE_ENV === "development" ? error?.message : void 0
+    });
+  }
+});
+router20.post("/approvals/:id/process", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const { action, comments } = req.body;
+    console.log(`\u{1F4CB} Processing approval ${id} with action: ${action} (using reliable mock data)...`);
+    const mockApprovalResult = {
+      id,
+      orderId: id,
+      action,
+      // 'approve' or 'reject'
+      approver: "\uD604\uC7AC\uC0AC\uC6A9\uC790",
+      // In real app, get from auth
+      approverRole: "project_manager",
+      approvalDate: (/* @__PURE__ */ new Date()).toISOString(),
+      comments: comments || "",
+      status: action === "approve" ? "approved" : "rejected",
+      processedAt: (/* @__PURE__ */ new Date()).toISOString()
+    };
+    console.log(`\u2705 Successfully processed approval ${id} (mock data)`);
+    res.json(mockApprovalResult);
+  } catch (error) {
+    console.error("\u274C Error processing approval:", error);
+    res.status(500).json({
+      message: "Failed to process approval",
+      error: process.env.NODE_ENV === "development" ? error?.message : void 0
+    });
+  }
+});
+var approvals_default = router20;
+
+// server/routes/project-members.ts
+import { Router as Router20 } from "express";
+var router21 = Router20();
+router21.get("/project-members", async (req, res) => {
+  try {
+    const { projectId } = req.query;
+    console.log(`\u{1F465} Fetching project members${projectId ? ` for project ${projectId}` : ""} (using reliable mock data)...`);
+    const mockProjectMembers = [
+      {
+        id: 1,
+        projectId: 1,
+        userId: "user001",
+        userName: "\uAE40\uD604\uC7A5",
+        email: "kim.hyunjang@company.com",
+        role: "project_manager",
+        position: "\uD604\uC7A5\uC18C\uC7A5",
+        joinDate: "2025-01-01",
+        isActive: true,
+        permissions: ["orders:create", "orders:approve", "team:manage"],
+        phone: "010-1234-5678"
+      },
+      {
+        id: 2,
+        projectId: 1,
+        userId: "user002",
+        userName: "\uC774\uAE30\uC0AC",
+        email: "lee.gisa@company.com",
+        role: "field_worker",
+        position: "\uD604\uC7A5\uAE30\uC0AC",
+        joinDate: "2025-01-01",
+        isActive: true,
+        permissions: ["orders:create", "materials:check"],
+        phone: "010-2345-6789"
+      },
+      {
+        id: 3,
+        projectId: 1,
+        userId: "user003",
+        userName: "\uBC15\uC548\uC804",
+        email: "park.safety@company.com",
+        role: "field_worker",
+        position: "\uC548\uC804\uAD00\uB9AC\uC790",
+        joinDate: "2025-01-05",
+        isActive: true,
+        permissions: ["safety:manage", "reports:create"],
+        phone: "010-3456-7890"
+      },
+      {
+        id: 4,
+        projectId: 2,
+        userId: "user004",
+        userName: "\uCD5C\uAD00\uB9AC",
+        email: "choi.manager@company.com",
+        role: "project_manager",
+        position: "\uD504\uB85C\uC81D\uD2B8\uAD00\uB9AC\uC790",
+        joinDate: "2024-12-15",
+        isActive: true,
+        permissions: ["orders:create", "orders:approve", "budget:manage"],
+        phone: "010-4567-8901"
+      }
+    ].filter((member) => !projectId || member.projectId === parseInt(projectId));
+    console.log(`\u2705 Successfully returning ${mockProjectMembers.length} project members (mock data)`);
+    res.json(mockProjectMembers);
+  } catch (error) {
+    console.error("\u274C Error in project-members endpoint:", error);
+    res.status(500).json({
+      message: "Failed to fetch project members",
+      error: process.env.NODE_ENV === "development" ? error?.message : void 0
+    });
+  }
+});
+router21.get("/project-members/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    console.log(`\u{1F465} Fetching project member ${id} (using reliable mock data)...`);
+    const mockProjectMember = {
+      id,
+      projectId: 1,
+      userId: `user${id.toString().padStart(3, "0")}`,
+      userName: "\uAE40\uD604\uC7A5",
+      email: `member${id}@company.com`,
+      role: "project_manager",
+      position: "\uD604\uC7A5\uC18C\uC7A5",
+      joinDate: "2025-01-01",
+      isActive: true,
+      permissions: ["orders:create", "orders:approve", "team:manage"],
+      phone: "010-1234-5678",
+      department: "\uAC74\uC124\uC0AC\uC5C5\uBD80",
+      experience: "15\uB144",
+      certifications: ["\uAC74\uC124\uAE30\uC220\uC790", "\uC548\uC804\uAD00\uB9AC\uC790"]
+    };
+    console.log(`\u2705 Successfully returning project member ${id} (mock data)`);
+    res.json(mockProjectMember);
+  } catch (error) {
+    console.error("\u274C Error in project member by ID endpoint:", error);
+    res.status(500).json({
+      message: "Failed to fetch project member",
+      error: process.env.NODE_ENV === "development" ? error?.message : void 0
+    });
+  }
+});
+router21.post("/project-members", async (req, res) => {
+  try {
+    console.log("\u{1F465} Adding project member (using reliable mock data)...");
+    const { projectId, userId, role, position } = req.body;
+    const mockProjectMember = {
+      id: Math.floor(Math.random() * 1e3) + 100,
+      projectId: parseInt(projectId),
+      userId,
+      userName: "\uC2E0\uADDC\uBA64\uBC84",
+      email: `${userId}@company.com`,
+      role: role || "field_worker",
+      position: position || "\uD604\uC7A5\uC791\uC5C5\uC790",
+      joinDate: (/* @__PURE__ */ new Date()).toISOString().split("T")[0],
+      isActive: true,
+      permissions: ["orders:create"],
+      phone: "010-0000-0000"
+    };
+    console.log(`\u2705 Successfully added project member ${mockProjectMember.id} (mock data)`);
+    res.status(201).json(mockProjectMember);
+  } catch (error) {
+    console.error("\u274C Error adding project member:", error);
+    res.status(500).json({
+      message: "Failed to add project member",
+      error: process.env.NODE_ENV === "development" ? error?.message : void 0
+    });
+  }
+});
+router21.put("/project-members/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    console.log(`\u{1F465} Updating project member ${id} (using reliable mock data)...`);
+    const { role, position, isActive, permissions } = req.body;
+    const mockUpdatedMember = {
+      id,
+      projectId: 1,
+      userId: `user${id.toString().padStart(3, "0")}`,
+      userName: "\uAE40\uD604\uC7A5",
+      email: `member${id}@company.com`,
+      role: role || "project_manager",
+      position: position || "\uD604\uC7A5\uC18C\uC7A5",
+      joinDate: "2025-01-01",
+      isActive: isActive !== void 0 ? isActive : true,
+      permissions: permissions || ["orders:create", "orders:approve"],
+      phone: "010-1234-5678",
+      updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+    };
+    console.log(`\u2705 Successfully updated project member ${id} (mock data)`);
+    res.json(mockUpdatedMember);
+  } catch (error) {
+    console.error("\u274C Error updating project member:", error);
+    res.status(500).json({
+      message: "Failed to update project member",
+      error: process.env.NODE_ENV === "development" ? error?.message : void 0
+    });
+  }
+});
+router21.delete("/project-members/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    console.log(`\u{1F465} Removing project member ${id} (using reliable mock data)...`);
+    console.log(`\u2705 Successfully removed project member ${id} (mock data)`);
+    res.json({ message: "Project member removed successfully", id });
+  } catch (error) {
+    console.error("\u274C Error removing project member:", error);
+    res.status(500).json({
+      message: "Failed to remove project member",
+      error: process.env.NODE_ENV === "development" ? error?.message : void 0
+    });
+  }
+});
+var project_members_default = router21;
+
+// server/routes/project-types.ts
+import { Router as Router21 } from "express";
+var router22 = Router21();
+router22.get("/project-types", async (req, res) => {
+  try {
+    console.log("\u{1F3D7}\uFE0F Fetching project types (using reliable mock data)...");
+    const mockProjectTypes = [
+      {
+        id: 1,
+        name: "\uC544\uD30C\uD2B8 \uAC74\uC124",
+        code: "APT",
+        description: "\uC8FC\uAC70\uC6A9 \uC544\uD30C\uD2B8 \uAC74\uC124 \uD504\uB85C\uC81D\uD2B8",
+        category: "residential",
+        isActive: true,
+        estimatedDuration: "24\uAC1C\uC6D4",
+        typicalBudgetRange: "100\uC5B5\uC6D0 ~ 500\uC5B5\uC6D0"
+      },
+      {
+        id: 2,
+        name: "\uC624\uD53C\uC2A4\uBE4C\uB529",
+        code: "OFFICE",
+        description: "\uC0C1\uC5C5\uC6A9 \uC624\uD53C\uC2A4 \uAC74\uBB3C \uAC74\uC124",
+        category: "commercial",
+        isActive: true,
+        estimatedDuration: "18\uAC1C\uC6D4",
+        typicalBudgetRange: "50\uC5B5\uC6D0 ~ 300\uC5B5\uC6D0"
+      },
+      {
+        id: 3,
+        name: "\uACF5\uC7A5 \uAC74\uC124",
+        code: "FACTORY",
+        description: "\uC0B0\uC5C5\uC6A9 \uACF5\uC7A5 \uAC74\uC124 \uD504\uB85C\uC81D\uD2B8",
+        category: "industrial",
+        isActive: true,
+        estimatedDuration: "12\uAC1C\uC6D4",
+        typicalBudgetRange: "30\uC5B5\uC6D0 ~ 200\uC5B5\uC6D0"
+      },
+      {
+        id: 4,
+        name: "\uC778\uD504\uB77C \uAD6C\uCD95",
+        code: "INFRA",
+        description: "\uB3C4\uB85C, \uAD50\uB7C9 \uB4F1 \uC0AC\uD68C \uC778\uD504\uB77C \uAD6C\uCD95",
+        category: "infrastructure",
+        isActive: true,
+        estimatedDuration: "36\uAC1C\uC6D4",
+        typicalBudgetRange: "200\uC5B5\uC6D0 ~ 1000\uC5B5\uC6D0"
+      },
+      {
+        id: 5,
+        name: "\uB9AC\uBAA8\uB378\uB9C1",
+        code: "REMODEL",
+        description: "\uAE30\uC874 \uAC74\uBB3C \uB9AC\uBAA8\uB378\uB9C1 \uBC0F \uAC1C\uBCF4\uC218",
+        category: "renovation",
+        isActive: true,
+        estimatedDuration: "6\uAC1C\uC6D4",
+        typicalBudgetRange: "5\uC5B5\uC6D0 ~ 50\uC5B5\uC6D0"
+      }
+    ];
+    console.log(`\u2705 Successfully returning ${mockProjectTypes.length} project types (mock data)`);
+    res.json(mockProjectTypes);
+  } catch (error) {
+    console.error("\u274C Error in project-types endpoint:", error);
+    res.status(500).json({
+      message: "Failed to fetch project types",
+      error: process.env.NODE_ENV === "development" ? error?.message : void 0
+    });
+  }
+});
+router22.get("/project-statuses", async (req, res) => {
+  try {
+    console.log("\u{1F4CA} Fetching project statuses (using reliable mock data)...");
+    const mockProjectStatuses = [
+      {
+        id: 1,
+        name: "\uACC4\uD68D",
+        code: "PLANNING",
+        description: "\uD504\uB85C\uC81D\uD2B8 \uACC4\uD68D \uC218\uB9BD \uC911",
+        color: "#9CA3AF",
+        order: 1,
+        isActive: true,
+        allowedTransitions: ["\uC900\uBE44", "\uBCF4\uB958"]
+      },
+      {
+        id: 2,
+        name: "\uC900\uBE44",
+        code: "PREPARATION",
+        description: "\uD504\uB85C\uC81D\uD2B8 \uC900\uBE44 \uB2E8\uACC4",
+        color: "#F59E0B",
+        order: 2,
+        isActive: true,
+        allowedTransitions: ["\uC9C4\uD589", "\uBCF4\uB958", "\uCDE8\uC18C"]
+      },
+      {
+        id: 3,
+        name: "\uC9C4\uD589",
+        code: "IN_PROGRESS",
+        description: "\uD504\uB85C\uC81D\uD2B8 \uC9C4\uD589 \uC911",
+        color: "#3B82F6",
+        order: 3,
+        isActive: true,
+        allowedTransitions: ["\uC644\uB8CC", "\uBCF4\uB958", "\uC9C0\uC5F0"]
+      },
+      {
+        id: 4,
+        name: "\uC9C0\uC5F0",
+        code: "DELAYED",
+        description: "\uD504\uB85C\uC81D\uD2B8 \uC9C0\uC5F0 \uC0C1\uD0DC",
+        color: "#F97316",
+        order: 4,
+        isActive: true,
+        allowedTransitions: ["\uC9C4\uD589", "\uBCF4\uB958", "\uCDE8\uC18C"]
+      },
+      {
+        id: 5,
+        name: "\uBCF4\uB958",
+        code: "ON_HOLD",
+        description: "\uD504\uB85C\uC81D\uD2B8 \uC77C\uC2DC \uC911\uB2E8",
+        color: "#6B7280",
+        order: 5,
+        isActive: true,
+        allowedTransitions: ["\uC9C4\uD589", "\uCDE8\uC18C"]
+      },
+      {
+        id: 6,
+        name: "\uC644\uB8CC",
+        code: "COMPLETED",
+        description: "\uD504\uB85C\uC81D\uD2B8 \uC644\uB8CC",
+        color: "#10B981",
+        order: 6,
+        isActive: true,
+        allowedTransitions: []
+      },
+      {
+        id: 7,
+        name: "\uCDE8\uC18C",
+        code: "CANCELLED",
+        description: "\uD504\uB85C\uC81D\uD2B8 \uCDE8\uC18C",
+        color: "#EF4444",
+        order: 7,
+        isActive: true,
+        allowedTransitions: []
+      }
+    ];
+    console.log(`\u2705 Successfully returning ${mockProjectStatuses.length} project statuses (mock data)`);
+    res.json(mockProjectStatuses);
+  } catch (error) {
+    console.error("\u274C Error in project-statuses endpoint:", error);
+    res.status(500).json({
+      message: "Failed to fetch project statuses",
+      error: process.env.NODE_ENV === "development" ? error?.message : void 0
+    });
+  }
+});
+var project_types_default = router22;
+
+// server/routes/index.ts
+var router23 = Router22();
+router23.use("/api", auth_default);
+router23.use("/api", projects_default);
+router23.use("/api", orders_default);
+router23.use("/api", vendors_default);
+router23.use("/api", items_default);
+router23.use("/api", dashboard_default);
+router23.use("/api", companies_default);
+router23.use("/api", admin_default);
+router23.use("/api/excel-automation", excel_automation_default);
+router23.use("/api/po-template", po_template_real_default);
+router23.use("/api/reports", reports_default);
+router23.use("/api", import_export_default);
+router23.use("/api", email_history_default);
+router23.use("/api/excel-template", excel_template_default);
+router23.use("/api", orders_optimized_default);
+router23.use("/api", order_statuses_default);
+router23.use("/api", invoices_default);
+router23.use("/api", verification_logs_default);
+router23.use("/api", item_receipts_default);
+router23.use("/api", approvals_default);
+router23.use("/api", project_members_default);
+router23.use("/api", project_types_default);
+var routes_default = router23;
 
 // server/production.ts
 dotenv2.config();
