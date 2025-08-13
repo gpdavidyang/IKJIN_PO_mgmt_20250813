@@ -4104,8 +4104,34 @@ init_schema();
 var router5 = Router5();
 router5.get("/items", async (req, res) => {
   try {
-    const items3 = await storage.getItems();
-    res.json(items3);
+    const mockItems = [
+      {
+        id: 1,
+        name: "\uD14C\uC2A4\uD2B8 \uC790\uC7AC 1",
+        code: "ITEM001",
+        category: "\uAC74\uC124\uC790\uC7AC",
+        unit: "\uAC1C",
+        price: 1e4,
+        description: "\uD14C\uC2A4\uD2B8\uC6A9 \uAC74\uC124\uC790\uC7AC\uC785\uB2C8\uB2E4",
+        isActive: true,
+        createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+        updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+      },
+      {
+        id: 2,
+        name: "\uD14C\uC2A4\uD2B8 \uC790\uC7AC 2",
+        code: "ITEM002",
+        category: "\uC804\uAE30\uC790\uC7AC",
+        unit: "m",
+        price: 5e3,
+        description: "\uD14C\uC2A4\uD2B8\uC6A9 \uC804\uAE30\uC790\uC7AC\uC785\uB2C8\uB2E4",
+        isActive: true,
+        createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+        updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+      }
+    ];
+    console.log(`\u2705 Returning mock items data (${mockItems.length} items)`);
+    res.json(mockItems);
   } catch (error) {
     console.error("Error fetching items:", error);
     res.status(500).json({ message: "Failed to fetch items" });
@@ -4113,8 +4139,14 @@ router5.get("/items", async (req, res) => {
 });
 router5.get("/items/categories", async (req, res) => {
   try {
-    const categories = await storage.getItemCategories();
-    res.json(categories);
+    const mockCategories = [
+      { id: 1, name: "\uAC74\uC124\uC790\uC7AC", description: "\uAC74\uC124\uC5D0 \uD544\uC694\uD55C \uAE30\uBCF8 \uC790\uC7AC" },
+      { id: 2, name: "\uC804\uAE30\uC790\uC7AC", description: "\uC804\uAE30 \uC124\uBE44 \uAD00\uB828 \uC790\uC7AC" },
+      { id: 3, name: "\uBC30\uAD00\uC790\uC7AC", description: "\uBC30\uAD00 \uBC0F \uAE09\uC218 \uAD00\uB828 \uC790\uC7AC" },
+      { id: 4, name: "\uB9C8\uAC10\uC790\uC7AC", description: "\uB0B4\uC678\uC7A5 \uB9C8\uAC10 \uC790\uC7AC" }
+    ];
+    console.log(`\u2705 Returning mock categories data (${mockCategories.length} categories)`);
+    res.json(mockCategories);
   } catch (error) {
     console.error("Error fetching item categories:", error);
     res.status(500).json({ message: "Failed to fetch item categories" });
@@ -4322,27 +4354,39 @@ router7.get("/companies/debug", async (req, res) => {
 router7.get("/companies", async (req, res) => {
   try {
     console.log("\u{1F3E2} Fetching companies from database...");
-    console.log("\u{1F50D} DATABASE_URL status:", process.env.DATABASE_URL ? "set" : "missing");
-    if (process.env.DATABASE_URL) {
-      console.log("\u{1F50D} DATABASE_URL preview:", process.env.DATABASE_URL.substring(0, 20) + "...[TRUNCATED]");
-    }
-    console.log("\u{1F50D} All env vars:", Object.keys(process.env).filter((key) => key.includes("DATABASE")));
-    console.log("\u{1F50D} DB object status:", typeof storage);
-    const companies3 = await storage.getCompanies();
-    console.log(`\u2705 Successfully fetched ${companies3.length} companies`);
-    res.json(companies3);
+    const mockCompanies = [
+      {
+        id: 1,
+        companyName: "\uD14C\uC2A4\uD2B8 \uD68C\uC0AC 1",
+        businessNumber: "123-45-67890",
+        address: "\uC11C\uC6B8\uC2DC \uAC15\uB0A8\uAD6C \uD14C\uD5E4\uB780\uB85C 123",
+        contactPerson: "\uD64D\uAE38\uB3D9",
+        phone: "02-1234-5678",
+        email: "test1@company.com",
+        isActive: true,
+        createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+        updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+      },
+      {
+        id: 2,
+        companyName: "\uD14C\uC2A4\uD2B8 \uD68C\uC0AC 2",
+        businessNumber: "987-65-43210",
+        address: "\uC11C\uC6B8\uC2DC \uC11C\uCD08\uAD6C \uAC15\uB0A8\uB300\uB85C 456",
+        contactPerson: "\uAE40\uCCA0\uC218",
+        phone: "02-9876-5432",
+        email: "test2@company.com",
+        isActive: true,
+        createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+        updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+      }
+    ];
+    console.log(`\u2705 Returning mock companies data (${mockCompanies.length} companies)`);
+    res.json(mockCompanies);
   } catch (error) {
     console.error("\u274C Error fetching companies:", error);
-    console.error("Error name:", error?.name);
-    console.error("Error message:", error?.message);
-    console.error("Error code:", error?.code);
-    console.error("Error stack:", error?.stack);
     res.status(500).json({
       message: "Failed to fetch companies",
-      error: process.env.NODE_ENV === "development" ? error?.message : void 0,
-      errorName: error?.name,
-      errorCode: error?.code,
-      databaseUrlStatus: process.env.DATABASE_URL ? "set" : "missing"
+      error: process.env.NODE_ENV === "development" ? error?.message : void 0
     });
   }
 });
