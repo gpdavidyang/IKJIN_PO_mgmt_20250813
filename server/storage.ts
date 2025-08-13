@@ -1821,11 +1821,22 @@ export class DatabaseStorage implements IStorage {
       console.log("🔍 Storage: DB instance check:", typeof db, !!db);
       console.log("🔍 Storage: Companies table check:", typeof companies);
       
+      // Test basic connection first
+      console.log("🔍 Storage: Testing basic query first...");
+      const testResult = await db.execute(sql`SELECT 1 as test`);
+      console.log("🔍 Storage: Basic query test result:", testResult);
+      
+      // Test companies table exists
+      console.log("🔍 Storage: Testing companies table exists...");
+      const tableCheck = await db.execute(sql`SELECT COUNT(*) FROM companies`);
+      console.log("🔍 Storage: Companies table count:", tableCheck);
+      
+      // Try simplified query first
+      console.log("🔍 Storage: Trying simplified companies query...");
       const result = await db
         .select()
         .from(companies)
-        .where(eq(companies.isActive, true))
-        .orderBy(asc(companies.companyName));
+        .limit(10);
       console.log(`🔍 Storage: getCompanies returned ${result.length} companies`);
       return result;
     } catch (error) {
@@ -1833,6 +1844,7 @@ export class DatabaseStorage implements IStorage {
       console.error("💥 Storage: Error name:", error?.name);
       console.error("💥 Storage: Error code:", error?.code);
       console.error("💥 Storage: Error message:", error?.message);
+      console.error("💥 Storage: Error stack:", error?.stack);
       throw error;
     }
   }

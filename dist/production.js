@@ -1851,7 +1851,14 @@ var DatabaseStorage = class {
       console.log("\u{1F50D} Storage: Executing getCompanies query...");
       console.log("\u{1F50D} Storage: DB instance check:", typeof db, !!db);
       console.log("\u{1F50D} Storage: Companies table check:", typeof companies);
-      const result = await db.select().from(companies).where(eq(companies.isActive, true)).orderBy(asc(companies.companyName));
+      console.log("\u{1F50D} Storage: Testing basic query first...");
+      const testResult = await db.execute(sql2`SELECT 1 as test`);
+      console.log("\u{1F50D} Storage: Basic query test result:", testResult);
+      console.log("\u{1F50D} Storage: Testing companies table exists...");
+      const tableCheck = await db.execute(sql2`SELECT COUNT(*) FROM companies`);
+      console.log("\u{1F50D} Storage: Companies table count:", tableCheck);
+      console.log("\u{1F50D} Storage: Trying simplified companies query...");
+      const result = await db.select().from(companies).limit(10);
       console.log(`\u{1F50D} Storage: getCompanies returned ${result.length} companies`);
       return result;
     } catch (error) {
@@ -1859,6 +1866,7 @@ var DatabaseStorage = class {
       console.error("\u{1F4A5} Storage: Error name:", error?.name);
       console.error("\u{1F4A5} Storage: Error code:", error?.code);
       console.error("\u{1F4A5} Storage: Error message:", error?.message);
+      console.error("\u{1F4A5} Storage: Error stack:", error?.stack);
       throw error;
     }
   }
