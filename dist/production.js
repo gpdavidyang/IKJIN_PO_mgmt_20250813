@@ -935,7 +935,7 @@ import express2 from "express";
 import session from "express-session";
 
 // server/routes/index.ts
-import { Router as Router22 } from "express";
+import { Router as Router23 } from "express";
 
 // server/routes/auth.ts
 import { Router } from "express";
@@ -2494,7 +2494,7 @@ async function getCurrentUser(req, res) {
       console.log("getCurrentUser - No userId in session");
       return res.status(401).json({ message: "Not authenticated" });
     }
-    const mockUsers = [
+    const mockUsers2 = [
       {
         id: "admin",
         email: "admin@company.com",
@@ -2529,7 +2529,7 @@ async function getCurrentUser(req, res) {
         createdAt: (/* @__PURE__ */ new Date()).toISOString()
       }
     ];
-    const user = mockUsers.find((u) => u.id === authSession.userId);
+    const user = mockUsers2.find((u) => u.id === authSession.userId);
     if (!user) {
       console.log("getCurrentUser - Mock user not found:", authSession.userId);
       authSession.userId = void 0;
@@ -11970,31 +11970,138 @@ router22.get("/project-statuses", async (req, res) => {
 });
 var project_types_default = router22;
 
-// server/routes/index.ts
+// server/routes/simple-auth.ts
+import { Router as Router22 } from "express";
 var router23 = Router22();
-router23.use("/api", auth_default);
-router23.use("/api", projects_default);
-router23.use("/api", orders_default);
-router23.use("/api", vendors_default);
-router23.use("/api", items_default);
-router23.use("/api", dashboard_default);
-router23.use("/api", companies_default);
-router23.use("/api", admin_default);
-router23.use("/api/excel-automation", excel_automation_default);
-router23.use("/api/po-template", po_template_real_default);
-router23.use("/api/reports", reports_default);
-router23.use("/api", import_export_default);
-router23.use("/api", email_history_default);
-router23.use("/api/excel-template", excel_template_default);
-router23.use("/api", orders_optimized_default);
-router23.use("/api", order_statuses_default);
-router23.use("/api", invoices_default);
-router23.use("/api", verification_logs_default);
-router23.use("/api", item_receipts_default);
-router23.use("/api", approvals_default);
-router23.use("/api", project_members_default);
-router23.use("/api", project_types_default);
-var routes_default = router23;
+var mockUsers = [
+  {
+    id: "admin",
+    username: "admin",
+    email: "admin@company.com",
+    password: "admin123",
+    name: "\uAD00\uB9AC\uC790",
+    role: "admin",
+    isActive: true,
+    position: "\uC2DC\uC2A4\uD15C\uAD00\uB9AC\uC790",
+    department: "IT\uD300"
+  },
+  {
+    id: "manager",
+    username: "manager",
+    email: "manager@company.com",
+    password: "manager123",
+    name: "\uAE40\uBD80\uC7A5",
+    role: "project_manager",
+    isActive: true,
+    position: "\uD504\uB85C\uC81D\uD2B8\uAD00\uB9AC\uC790",
+    department: "\uAC74\uC124\uC0AC\uC5C5\uBD80"
+  },
+  {
+    id: "user",
+    username: "user",
+    email: "user@company.com",
+    password: "user123",
+    name: "\uC774\uAE30\uC0AC",
+    role: "field_worker",
+    isActive: true,
+    position: "\uD604\uC7A5\uAE30\uC0AC",
+    department: "\uD604\uC7A5\uD300"
+  }
+];
+router23.post("/simple-auth/login", (req, res) => {
+  try {
+    console.log("\u{1F510} Simple auth login request:", req.body);
+    const { username, password, email } = req.body;
+    const identifier = username || email;
+    if (!identifier || !password) {
+      return res.status(400).json({
+        message: "Email/username and password are required",
+        success: false
+      });
+    }
+    console.log("\u{1F50D} Looking for user with identifier:", identifier);
+    const user = mockUsers.find(
+      (u) => u.username === identifier || u.email === identifier
+    );
+    if (!user) {
+      console.log("\u274C User not found:", identifier);
+      return res.status(401).json({
+        message: "Invalid credentials",
+        success: false
+      });
+    }
+    if (!user.isActive) {
+      console.log("\u274C User inactive:", identifier);
+      return res.status(401).json({
+        message: "Account is deactivated",
+        success: false
+      });
+    }
+    if (password !== user.password) {
+      console.log("\u274C Invalid password for user:", identifier);
+      return res.status(401).json({
+        message: "Invalid credentials",
+        success: false
+      });
+    }
+    console.log("\u2705 Simple auth successful for user:", user.name);
+    const { password: _, ...userWithoutPassword } = user;
+    res.json({
+      message: "Login successful",
+      user: userWithoutPassword,
+      success: true
+    });
+  } catch (error) {
+    console.error("Simple auth error:", error);
+    res.status(500).json({
+      message: "Login failed",
+      error: error?.message || "Unknown error",
+      success: false
+    });
+  }
+});
+router23.post("/simple-auth/logout", (req, res) => {
+  console.log("\u{1F6AA} Simple logout request");
+  res.json({
+    message: "Logout successful",
+    success: true
+  });
+});
+router23.get("/simple-auth/me", (req, res) => {
+  console.log("\u{1F464} Simple me request (no session support)");
+  res.status(401).json({
+    message: "Not authenticated",
+    success: false
+  });
+});
+var simple_auth_default = router23;
+
+// server/routes/index.ts
+var router24 = Router23();
+router24.use("/api", auth_default);
+router24.use("/api", projects_default);
+router24.use("/api", orders_default);
+router24.use("/api", vendors_default);
+router24.use("/api", items_default);
+router24.use("/api", dashboard_default);
+router24.use("/api", companies_default);
+router24.use("/api", admin_default);
+router24.use("/api/excel-automation", excel_automation_default);
+router24.use("/api/po-template", po_template_real_default);
+router24.use("/api/reports", reports_default);
+router24.use("/api", import_export_default);
+router24.use("/api", email_history_default);
+router24.use("/api/excel-template", excel_template_default);
+router24.use("/api", orders_optimized_default);
+router24.use("/api", order_statuses_default);
+router24.use("/api", invoices_default);
+router24.use("/api", verification_logs_default);
+router24.use("/api", item_receipts_default);
+router24.use("/api", approvals_default);
+router24.use("/api", project_members_default);
+router24.use("/api", project_types_default);
+router24.use("/api", simple_auth_default);
+var routes_default = router24;
 
 // server/production.ts
 dotenv2.config();

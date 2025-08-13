@@ -26,6 +26,7 @@ import itemReceiptsRoutes from "./item-receipts";
 import approvalsRoutes from "./approvals";
 import projectMembersRoutes from "./project-members";
 import projectTypesRoutes from "./project-types";
+import simpleAuthRoutes from "./simple-auth";
 
 const router = Router();
 
@@ -52,5 +53,6 @@ router.use("/api", itemReceiptsRoutes);
 router.use("/api", approvalsRoutes);
 router.use("/api", projectMembersRoutes);
 router.use("/api", projectTypesRoutes);
+router.use("/api", simpleAuthRoutes);
 
 export default router;
