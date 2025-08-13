@@ -216,7 +216,7 @@
         "description": "현재 혼재되어 있는 bg-opacity- 구문법과 bg-*/opacity 신문법의 사용 현황 분석 및 통일 방안 수립",
         "details": "",
         "testStrategy": "",
-        "status": "deferred",
+        "status": "done",
         "dependencies": [],
         "priority": "medium",
         "subtasks": []
@@ -395,7 +395,7 @@
       "version": "1.0.0",
       "created": "2025-08-04T08:54:47.667Z",
       "description": "Tasks for master context",
-      "updated": "2025-08-13T12:29:50.170Z"
+      "updated": "2025-08-13T15:57:30.399Z"
     }
   }
 }

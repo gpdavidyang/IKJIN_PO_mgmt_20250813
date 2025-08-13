@@ -6,6 +6,7 @@
 import { useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { queryKeys } from "@/lib/query-optimization";
 
 export interface OptimizedOrderFilters {
   page?: number;
@@ -71,19 +72,10 @@ export interface OptimizedOrdersResponse {
 export function useOptimizedOrders(filters: OptimizedOrderFilters = {}) {
   const queryClient = useQueryClient();
   
-  // Create stable query key
+  // Create stable query key using optimized query key factory
   const queryKey = useMemo(() => {
-    // Remove empty/default values to improve cache hit rate
-    const cleanFilters = Object.fromEntries(
-      Object.entries(filters).filter(([_, value]) => 
-        value !== undefined && 
-        value !== '' && 
-        value !== 'all' &&
-        value !== null
-      )
-    );
-    
-    return ['orders-optimized', cleanFilters];
+    // Use the centralized query key factory for consistency
+    return queryKeys.orders.optimized(filters);
   }, [filters]);
 
   const query = useQuery({
@@ -124,12 +116,12 @@ export function useOptimizedOrders(filters: OptimizedOrderFilters = {}) {
     },
   });
 
-  // Prefetch next page for better UX
+  // Prefetch next page for better UX using consistent query keys
   const prefetchNextPage = () => {
     if (query.data && query.data.page < query.data.totalPages) {
       const nextPageFilters = { ...filters, page: query.data.page + 1 };
       queryClient.prefetchQuery({
-        queryKey: ['orders-optimized', nextPageFilters],
+        queryKey: queryKeys.orders.optimized(nextPageFilters),
         queryFn: () => apiRequest("GET", `/api/orders-optimized?${new URLSearchParams(nextPageFilters as any)}`),
         staleTime: 30 * 1000
       });
@@ -207,7 +199,7 @@ export function useOptimizedOrdersWithPrefetch(filters: OptimizedOrderFilters = 
   
   // Prefetch related data intelligently
   const prefetchRelatedData = () => {
-    // Prefetch metadata if not cached
+    // Prefetch metadata using consistent query keys
     queryClient.prefetchQuery({
       queryKey: ['orders-metadata'],
       queryFn: () => apiRequest("GET", "/api/orders-metadata"),
@@ -218,6 +210,12 @@ export function useOptimizedOrdersWithPrefetch(filters: OptimizedOrderFilters = 
     if (ordersQuery.hasNextPage) {
       ordersQuery.prefetchNextPage();
     }
+    
+    // Prefetch dashboard data for better navigation experience
+    queryClient.prefetchQuery({
+      queryKey: queryKeys.dashboard.unified(),
+      staleTime: 2 * 60 * 1000 // 2 minutes
+    });
   };
 
   return {

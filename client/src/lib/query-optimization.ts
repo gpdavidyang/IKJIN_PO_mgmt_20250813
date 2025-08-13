@@ -59,7 +59,7 @@ export const CACHE_CONFIGS = {
   },
 } as const;
 
-// Query key factory for consistent key generation
+// Query key factory for consistent key generation with normalization
 export const queryKeys = {
   // Authentication
   auth: {
@@ -74,10 +74,21 @@ export const queryKeys = {
     charts: (type: string, period?: string) => ['/api/dashboard/charts', type, period] as const,
   },
   
-  // Orders (using optimized endpoints)
+  // Orders (using optimized endpoints with normalized keys)
   orders: {
     all: () => ['/api/orders-optimized'] as const,
-    list: (filters?: any) => ['/api/orders-optimized', filters] as const,
+    list: (filters?: any) => {
+      // Normalize filters to improve cache hit rate
+      if (!filters) return ['/api/orders-optimized'] as const;
+      const normalizedFilters = normalizeFilters(filters);
+      return ['/api/orders-optimized', normalizedFilters] as const;
+    },
+    optimized: (filters?: any) => {
+      // Alias for backward compatibility - maps to same normalized key
+      if (!filters) return ['orders-optimized'] as const;
+      const normalizedFilters = normalizeFilters(filters);
+      return ['orders-optimized', normalizedFilters] as const;
+    },
     detail: (id: number) => ['/api/orders', id] as const, // Keep individual order details as is
     items: (orderId: number) => ['/api/orders', orderId, 'items'] as const,
     history: (orderId: number) => ['/api/orders', orderId, 'history'] as const,
@@ -116,6 +127,35 @@ export const queryKeys = {
     uiTerms: () => ['/api/ui-terms'] as const,
   },
 } as const;
+
+// Filter normalization function to improve cache hit rate
+function normalizeFilters(filters: any): any {
+  if (!filters || typeof filters !== 'object') return filters;
+  
+  // Create a clean copy with consistent ordering and normalized values
+  const normalized: any = {};
+  
+  // Sort keys for consistent ordering
+  const sortedKeys = Object.keys(filters).sort();
+  
+  for (const key of sortedKeys) {
+    const value = filters[key];
+    
+    // Skip empty, null, undefined, or default values
+    if (value === undefined || value === null || value === '' || value === 'all') {
+      continue;
+    }
+    
+    // Normalize number strings to numbers for consistent comparison
+    if (key === 'page' || key === 'limit' || key === 'vendorId' || key === 'projectId') {
+      normalized[key] = typeof value === 'string' ? parseInt(value, 10) || value : value;
+    } else {
+      normalized[key] = value;
+    }
+  }
+  
+  return Object.keys(normalized).length === 0 ? undefined : normalized;
+}
 
 // Enhanced query client with optimized defaults
 export function createOptimizedQueryClient(): QueryClient {
@@ -184,10 +224,13 @@ export function useSmartQuery<TData, TError = Error>(
   });
 }
 
-// Enhanced mutation hook with smart invalidation
+// Enhanced mutation hook with intelligent invalidation patterns
 export function useSmartMutation<TData, TError = Error, TVariables = void, TContext = unknown>(
   options: UseMutationOptions<TData, TError, TVariables, TContext> & {
     invalidateQueries?: readonly unknown[][];
+    invalidationStrategy?: 'precise' | 'broad' | 'smart';
+    mutationType?: 'create' | 'update' | 'delete' | 'status' | 'bulk';
+    entityType?: 'order' | 'vendor' | 'project' | 'item' | 'user';
     optimisticUpdate?: {
       queryKey: readonly unknown[];
       updater: (oldData: any, variables: TVariables) => any;
@@ -197,7 +240,38 @@ export function useSmartMutation<TData, TError = Error, TVariables = void, TCont
   }
 ) {
   const queryClient = useQueryClient();
-  const { invalidateQueries = [], optimisticUpdate, successMessage, errorMessage, ...mutationOptions } = options;
+  const { 
+    invalidateQueries = [], 
+    invalidationStrategy = 'smart',
+    mutationType = 'update',
+    entityType = 'order',
+    optimisticUpdate, 
+    successMessage, 
+    errorMessage, 
+    ...mutationOptions 
+  } = options;
+  
+  // Intelligent invalidation based on mutation type and entity
+  const getSmartInvalidationKeys = useCallback(() => {
+    const keys: readonly unknown[][] = [];
+    
+    if (entityType === 'order') {
+      // Always invalidate optimized orders
+      keys.push(queryKeys.orders.all());
+      keys.push(['orders-optimized']); // Backward compatibility
+      
+      // Invalidate dashboard for data changes
+      if (['create', 'delete', 'status'].includes(mutationType)) {
+        keys.push(queryKeys.dashboard.unified());
+        keys.push(queryKeys.dashboard.stats());
+      }
+    }
+    
+    // Add custom invalidation keys
+    keys.push(...invalidateQueries);
+    
+    return keys;
+  }, [entityType, mutationType, invalidateQueries]);
   
   return useMutation({
     ...mutationOptions,
@@ -217,9 +291,15 @@ export function useSmartMutation<TData, TError = Error, TVariables = void, TCont
       return mutationOptions.onMutate?.(variables);
     },
     onSuccess: (data, variables, context) => {
-      // Invalidate specified queries
-      invalidateQueries.forEach(queryKey => {
-        queryClient.invalidateQueries({ queryKey });
+      // Smart invalidation based on strategy
+      const invalidationKeys = invalidationStrategy === 'smart' ? getSmartInvalidationKeys() : invalidateQueries;
+      
+      invalidationKeys.forEach(queryKey => {
+        queryClient.invalidateQueries({ 
+          queryKey, 
+          exact: invalidationStrategy === 'precise',
+          refetchType: 'active' // Only refetch currently active queries for performance
+        });
       });
       
       // Show success message if provided
@@ -253,6 +333,9 @@ export function useSmartMutation<TData, TError = Error, TVariables = void, TCont
     },
     meta: {
       invalidateQueries,
+      invalidationStrategy,
+      mutationType,
+      entityType,
       successMessage,
       errorMessage,
       ...mutationOptions.meta,
@@ -388,9 +471,17 @@ export function useCacheWarming() {
   return { warmEssentialData, warmUserSpecificData };
 }
 
-// Enhanced query performance monitoring with optimization insights
+// Advanced query performance monitoring with real-time insights
 export function useQueryPerformanceMonitor() {
   const queryClient = useQueryClient();
+  const performanceRef = useRef({
+    cacheHits: 0,
+    cacheMisses: 0,
+    totalQueries: 0,
+    averageResponseTime: 0,
+    slowQueries: [] as Array<{ key: string; time: number }>,
+    lastReset: Date.now(),
+  });
   
   useEffect(() => {
     const cache = queryClient.getQueryCache();
@@ -399,9 +490,26 @@ export function useQueryPerformanceMonitor() {
       if (event?.type === 'queryAdded') {
         const query = event.query;
         const cacheType = query.meta?.cacheType || 'UNKNOWN';
-        console.log(`🔄 Query added [${cacheType}]: ${JSON.stringify(query.queryKey)}`);
+        performanceRef.current.totalQueries++;
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`🔄 Query added [${cacheType}]: ${JSON.stringify(query.queryKey)}`);
+        }
       } else if (event?.type === 'queryRemoved') {
-        console.log(`🗑️ Query removed: ${JSON.stringify(event.query.queryKey)}`);
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`🗑️ Query removed: ${JSON.stringify(event.query.queryKey)}`);
+        }
+      } else if (event?.type === 'queryUpdated') {
+        // Track cache hits vs misses
+        const query = event.query;
+        if (query.state.status === 'success' && !query.state.isFetching) {
+          const wasStale = query.isStale();
+          if (wasStale) {
+            performanceRef.current.cacheMisses++;
+          } else {
+            performanceRef.current.cacheHits++;
+          }
+        }
       }
     });
     
@@ -412,23 +520,44 @@ export function useQueryPerformanceMonitor() {
     const cache = queryClient.getQueryCache();
     const queries = cache.getAll();
     
-    // Group queries by cache type for optimization insights
+    // Enhanced stats with performance metrics
     const cacheTypeStats = queries.reduce((acc, query) => {
       const cacheType = query.meta?.cacheType || 'UNKNOWN';
       if (!acc[cacheType]) {
-        acc[cacheType] = { count: 0, stale: 0, error: 0 };
+        acc[cacheType] = { 
+          count: 0, 
+          stale: 0, 
+          error: 0, 
+          active: 0,
+          dataSize: 0 
+        };
       }
       acc[cacheType].count++;
       if (query.isStale()) acc[cacheType].stale++;
       if (query.state.status === 'error') acc[cacheType].error++;
+      if (query.getObserversCount() > 0) acc[cacheType].active++;
+      
+      try {
+        acc[cacheType].dataSize += query.state.data ? JSON.stringify(query.state.data).length : 0;
+      } catch {
+        // Ignore circular references
+      }
+      
       return acc;
-    }, {} as Record<string, { count: number; stale: number; error: number }>);
+    }, {} as Record<string, { count: number; stale: number; error: number; active: number; dataSize: number }>);
+    
+    const perf = performanceRef.current;
+    const cacheHitRate = perf.cacheHits + perf.cacheMisses > 0 
+      ? (perf.cacheHits / (perf.cacheHits + perf.cacheMisses)) * 100 
+      : 0;
     
     const stats = {
+      timestamp: new Date().toISOString(),
       totalQueries: queries.length,
       activeQueries: queries.filter(q => q.getObserversCount() > 0).length,
       staleQueries: queries.filter(q => q.isStale()).length,
       errorQueries: queries.filter(q => q.state.status === 'error').length,
+      loadingQueries: queries.filter(q => q.state.isFetching).length,
       cacheSize: queries.reduce((size, query) => {
         try {
           return size + (query.state.data ? JSON.stringify(query.state.data).length : 0);
@@ -437,17 +566,39 @@ export function useQueryPerformanceMonitor() {
         }
       }, 0),
       cacheTypeStats,
-      // Optimization insights
-      optimizationSuggestions: generateOptimizationSuggestions(queries),
+      performance: {
+        cacheHitRate: Math.round(cacheHitRate * 100) / 100,
+        cacheHits: perf.cacheHits,
+        cacheMisses: perf.cacheMisses,
+        totalRequests: perf.totalQueries,
+        uptime: Date.now() - perf.lastReset,
+      },
+      optimizationSuggestions: generateAdvancedOptimizationSuggestions(queries, cacheHitRate),
+      health: calculateCacheHealth(queries, cacheHitRate),
     };
     
     return stats;
   }, [queryClient]);
   
-  return { getQueryStats };
+  const resetPerformanceCounters = useCallback(() => {
+    performanceRef.current = {
+      cacheHits: 0,
+      cacheMisses: 0,
+      totalQueries: 0,
+      averageResponseTime: 0,
+      slowQueries: [],
+      lastReset: Date.now(),
+    };
+  }, []);
+  
+  return { 
+    getQueryStats, 
+    resetPerformanceCounters,
+    getCurrentPerformance: () => performanceRef.current 
+  };
 }
 
-// Generate optimization suggestions based on query patterns
+// Generate optimization suggestions based on query patterns (legacy)
 function generateOptimizationSuggestions(queries: any[]) {
   const suggestions: string[] = [];
   
@@ -467,4 +618,102 @@ function generateOptimizationSuggestions(queries: any[]) {
   }
   
   return suggestions;
+}
+
+// Advanced optimization suggestions with actionable insights
+function generateAdvancedOptimizationSuggestions(queries: any[], cacheHitRate: number): string[] {
+  const suggestions: string[] = [];
+  
+  // Cache hit rate analysis
+  if (cacheHitRate < 70) {
+    suggestions.push(`🎯 Cache hit rate is ${cacheHitRate.toFixed(1)}% - consider increasing staleTime for frequently accessed data`);
+  } else if (cacheHitRate > 95) {
+    suggestions.push(`✨ Excellent cache hit rate (${cacheHitRate.toFixed(1)}%) - queries are well optimized`);
+  }
+  
+  // Query pattern analysis
+  const staleQueries = queries.filter(q => q.isStale());
+  const staleRate = staleQueries.length / queries.length;
+  if (staleRate > 0.6) {
+    suggestions.push(`⏰ ${(staleRate * 100).toFixed(1)}% of queries are stale - review cache timing configuration`);
+  }
+  
+  // Error rate analysis
+  const errorQueries = queries.filter(q => q.state.status === 'error');
+  const errorRate = errorQueries.length / queries.length;
+  if (errorRate > 0.15) {
+    suggestions.push(`⚠️ High error rate (${(errorRate * 100).toFixed(1)}%) - investigate network issues or API problems`);
+  }
+  
+  // Active vs inactive queries
+  const activeQueries = queries.filter(q => q.getObserversCount() > 0);
+  const inactiveQueries = queries.filter(q => q.getObserversCount() === 0);
+  if (inactiveQueries.length > activeQueries.length * 2) {
+    suggestions.push(`🧹 ${inactiveQueries.length} inactive queries detected - consider reducing gcTime to free memory`);
+  }
+  
+  // Cache type optimization
+  const unknownCacheType = queries.filter(q => !q.meta?.cacheType);
+  if (unknownCacheType.length > 0) {
+    suggestions.push(`🔧 ${unknownCacheType.length} queries without cache type - use useSmartQuery for better optimization`);
+  }
+  
+  // Memory usage analysis
+  const totalCacheSize = queries.reduce((size, query) => {
+    try {
+      return size + (query.state.data ? JSON.stringify(query.state.data).length : 0);
+    } catch {
+      return size;
+    }
+  }, 0);
+  
+  if (totalCacheSize > 5 * 1024 * 1024) { // 5MB
+    suggestions.push(`💾 Cache size is ${(totalCacheSize / 1024 / 1024).toFixed(1)}MB - consider reducing gcTime for large datasets`);
+  }
+  
+  return suggestions;
+}
+
+// Calculate overall cache health score
+function calculateCacheHealth(queries: any[], cacheHitRate: number): {
+  score: number;
+  status: 'excellent' | 'good' | 'fair' | 'poor';
+  factors: Array<{ name: string; score: number; weight: number }>;
+} {
+  const factors = [
+    {
+      name: 'Cache Hit Rate',
+      score: Math.min(100, cacheHitRate),
+      weight: 0.4
+    },
+    {
+      name: 'Error Rate',
+      score: Math.max(0, 100 - (queries.filter(q => q.state.status === 'error').length / queries.length) * 100),
+      weight: 0.25
+    },
+    {
+      name: 'Stale Rate',
+      score: Math.max(0, 100 - (queries.filter(q => q.isStale()).length / queries.length) * 100),
+      weight: 0.2
+    },
+    {
+      name: 'Cache Type Coverage',
+      score: Math.max(0, 100 - (queries.filter(q => !q.meta?.cacheType).length / queries.length) * 100),
+      weight: 0.15
+    }
+  ];
+  
+  const totalScore = factors.reduce((sum, factor) => sum + (factor.score * factor.weight), 0);
+  
+  let status: 'excellent' | 'good' | 'fair' | 'poor';
+  if (totalScore >= 90) status = 'excellent';
+  else if (totalScore >= 75) status = 'good';
+  else if (totalScore >= 60) status = 'fair';
+  else status = 'poor';
+  
+  return {
+    score: Math.round(totalScore),
+    status,
+    factors
+  };
 }

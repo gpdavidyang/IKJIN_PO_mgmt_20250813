@@ -158,15 +158,13 @@ export function useOrderTemplates() {
   );
 }
 
-// Order mutations with optimistic updates
+// Order mutations with intelligent invalidation
 export function useCreateOrder() {
   return useSmartMutation({
     mutationFn: (orderData: Partial<PurchaseOrder>) => 
       apiRequest("POST", "/api/orders", orderData),
-    invalidateQueries: [
-      queryKeys.orders.all(),
-      queryKeys.dashboard.unified(),
-    ],
+    mutationType: 'create',
+    entityType: 'order',
     optimisticUpdate: {
       queryKey: queryKeys.orders.all(),
       updater: (oldData: any, variables) => {
@@ -189,10 +187,8 @@ export function useUpdateOrder() {
   return useSmartMutation({
     mutationFn: ({ id, data }: { id: number; data: Partial<PurchaseOrder> }) =>
       apiRequest("PUT", `/api/orders/${id}`, data),
-    invalidateQueries: [
-      queryKeys.orders.all(),
-      queryKeys.dashboard.unified(),
-    ],
+    mutationType: 'update',
+    entityType: 'order',
     successMessage: "발주서가 성공적으로 수정되었습니다.",
     errorMessage: "발주서 수정 중 오류가 발생했습니다.",
   });
@@ -201,10 +197,8 @@ export function useUpdateOrder() {
 export function useDeleteOrder() {
   return useSmartMutation({
     mutationFn: (id: number) => apiRequest("DELETE", `/api/orders/${id}`),
-    invalidateQueries: [
-      queryKeys.orders.all(),
-      queryKeys.dashboard.unified(),
-    ],
+    mutationType: 'delete',
+    entityType: 'order',
     optimisticUpdate: {
       queryKey: queryKeys.orders.all(),
       updater: (oldData: any, variables) => {

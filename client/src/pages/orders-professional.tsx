@@ -140,7 +140,9 @@ export default function OrdersProfessional() {
       await apiRequest("PUT", `/api/orders/${orderId}/status`, { status });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["orders-optimized"] });
+      // Optimized invalidation - use query key factory for consistency
+      queryClient.invalidateQueries({ queryKey: ["orders-optimized"], exact: false });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/unified"], exact: false });
       toast({
         title: "성공",
         description: "발주서 상태가 변경되었습니다.",
@@ -171,7 +173,9 @@ export default function OrdersProfessional() {
       await apiRequest("DELETE", `/api/orders/${orderId}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["orders-optimized"] });
+      // Optimized invalidation - broader scope for related data
+      queryClient.invalidateQueries({ queryKey: ["orders-optimized"], exact: false });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/unified"], exact: false });
       toast({
         title: "성공",
         description: "발주서가 삭제되었습니다.",
@@ -370,8 +374,8 @@ export default function OrdersProfessional() {
     if (order.emailStatus === 'sent') {
       return (
         <div className="flex items-center gap-1">
-          <Send className="h-3 w-3 text-blue-600" />
-          <span className="text-xs text-blue-600">발송됨</span>
+          <Send className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+          <span className="text-xs text-blue-600 dark:text-blue-400">발송됨</span>
         </div>
       );
     }
@@ -379,31 +383,31 @@ export default function OrdersProfessional() {
     if (order.emailStatus === 'opened') {
       return (
         <div className="flex items-center gap-1">
-          <Mail className="h-3 w-3 text-green-600" />
-          <span className="text-xs text-green-600">열람됨</span>
+          <Mail className="h-3 w-3 text-green-600 dark:text-green-400" />
+          <span className="text-xs text-green-600 dark:text-green-400">열람됨</span>
         </div>
       );
     }
 
     return (
-      <span className="text-xs text-gray-500">미발송</span>
+      <span className="text-xs text-gray-500 dark:text-gray-400">미발송</span>
     );
   };
 
-  // Status colors with dark mode support
+  // Status colors optimized for dark mode visibility
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-800/20 dark:text-yellow-300 dark:border-yellow-700';
-      case 'approved': return 'bg-green-100 text-green-800 border-green-200 dark:bg-green-800/20 dark:text-green-300 dark:border-green-700';
-      case 'sent': return 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-800/20 dark:text-blue-300 dark:border-blue-700';
-      case 'completed': return 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-800/20 dark:text-purple-300 dark:border-purple-700';
-      case 'rejected': return 'bg-red-100 text-red-800 border-red-200 dark:bg-red-800/20 dark:text-red-300 dark:border-red-700';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800/20 dark:text-gray-300 dark:border-gray-700';
+      case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-500/25 dark:text-yellow-200 dark:border-yellow-400/50';
+      case 'approved': return 'bg-green-100 text-green-800 border-green-300 dark:bg-green-500/25 dark:text-green-200 dark:border-green-400/50';
+      case 'sent': return 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-500/25 dark:text-blue-200 dark:border-blue-400/50';
+      case 'completed': return 'bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-500/25 dark:text-purple-200 dark:border-purple-400/50';
+      case 'rejected': return 'bg-red-100 text-red-800 border-red-300 dark:bg-red-500/25 dark:text-red-200 dark:border-red-400/50';
+      default: return 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-500/25 dark:text-gray-200 dark:border-gray-400/50';
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <div className="max-w-[1366px] mx-auto p-6">
         {/* Professional Header */}
         <div className="mb-8">
@@ -424,17 +428,17 @@ export default function OrdersProfessional() {
         </div>
 
         {/* Search & Filters Card */}
-        <Card className="mb-6 shadow-sm dark:bg-gray-800 dark:border-gray-700">
-          <CardContent className="p-6">
+        <Card className="mb-6 shadow-sm border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+          <CardContent className="p-6 dark:text-gray-100">
             {/* Main Search Bar */}
             <div className="mb-6">
               <div className="relative max-w-xl">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 h-5 w-5" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-400 h-5 w-5" />
                 <Input
                   placeholder="발주번호, 품목명으로 검색..."
                   value={filters.searchText}
                   onChange={(e) => handleFilterChange("searchText", e.target.value)}
-                  className="pl-10 h-11 text-sm border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900"
+                  className="pl-10 h-11 text-sm bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900"
                 />
               </div>
             </div>
@@ -442,27 +446,27 @@ export default function OrdersProfessional() {
             {/* Quick Filters */}
             <div className="flex flex-wrap gap-3 mb-4">
               <Select value={filters.status || "all"} onValueChange={(value) => handleFilterChange("status", value)}>
-                <SelectTrigger className="w-40 h-10 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                <SelectTrigger className="w-40 h-10 bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100">
                   <SelectValue placeholder="상태 선택" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">모든 상태</SelectItem>
-                  <SelectItem value="pending">승인 대기</SelectItem>
-                  <SelectItem value="approved">승인 완료</SelectItem>
-                  <SelectItem value="sent">발송 완료</SelectItem>
-                  <SelectItem value="completed">완료</SelectItem>
-                  <SelectItem value="rejected">반려</SelectItem>
+                <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100">
+                  <SelectItem value="all" className="dark:focus:bg-gray-700 dark:hover:bg-gray-700">모든 상태</SelectItem>
+                  <SelectItem value="pending" className="dark:focus:bg-gray-700 dark:hover:bg-gray-700">승인 대기</SelectItem>
+                  <SelectItem value="approved" className="dark:focus:bg-gray-700 dark:hover:bg-gray-700">승인 완료</SelectItem>
+                  <SelectItem value="sent" className="dark:focus:bg-gray-700 dark:hover:bg-gray-700">발송 완료</SelectItem>
+                  <SelectItem value="completed" className="dark:focus:bg-gray-700 dark:hover:bg-gray-700">완료</SelectItem>
+                  <SelectItem value="rejected" className="dark:focus:bg-gray-700 dark:hover:bg-gray-700">반려</SelectItem>
                 </SelectContent>
               </Select>
 
               <Select value={filters.projectId || "all"} onValueChange={(value) => handleFilterChange("projectId", value)}>
-                <SelectTrigger className="w-48 h-10 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                <SelectTrigger className="w-48 h-10 bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100">
                   <SelectValue placeholder="현장 선택" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">모든 현장</SelectItem>
+                <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100">
+                  <SelectItem value="all" className="dark:focus:bg-gray-700 dark:hover:bg-gray-700">모든 현장</SelectItem>
                   {projects?.map((project: any) => (
-                    <SelectItem key={project.id} value={project.id.toString()}>
+                    <SelectItem key={project.id} value={project.id.toString()} className="dark:focus:bg-gray-700 dark:hover:bg-gray-700">
                       {project.projectName}
                     </SelectItem>
                   ))}
@@ -470,13 +474,13 @@ export default function OrdersProfessional() {
               </Select>
 
               <Select value={filters.vendorId || "all"} onValueChange={(value) => handleFilterChange("vendorId", value)}>
-                <SelectTrigger className="w-48 h-10 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                <SelectTrigger className="w-48 h-10 bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100">
                   <SelectValue placeholder="거래처 선택" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">모든 거래처</SelectItem>
+                <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100">
+                  <SelectItem value="all" className="dark:focus:bg-gray-700 dark:hover:bg-gray-700">모든 거래처</SelectItem>
                   {vendors?.map((vendor: any) => (
-                    <SelectItem key={vendor.id} value={vendor.id.toString()}>
+                    <SelectItem key={vendor.id} value={vendor.id.toString()} className="dark:focus:bg-gray-700 dark:hover:bg-gray-700">
                       {vendor.name}
                     </SelectItem>
                   ))}
@@ -486,7 +490,7 @@ export default function OrdersProfessional() {
               <Button
                 variant="outline"
                 onClick={() => setIsFilterExpanded(!isFilterExpanded)}
-                className="h-10 px-4 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
+                className="h-10 px-4 bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-600"
               >
                 <Filter className="h-4 w-4 mr-2" />
                 고급 필터
@@ -511,7 +515,7 @@ export default function OrdersProfessional() {
                       page: 1,
                       limit: 50,
                     })}
-                    className="h-10"
+                    className="h-10 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100"
                   >
                     필터 초기화
                   </Button>
@@ -520,7 +524,7 @@ export default function OrdersProfessional() {
                   variant="outline"
                   onClick={() => exportMutation.mutate()}
                   disabled={exportMutation.isPending}
-                  className="h-10 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
+                  className="h-10 bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-600"
                 >
                   <Download className="h-4 w-4 mr-2" />
                   엑셀 다운로드
@@ -530,7 +534,7 @@ export default function OrdersProfessional() {
 
             {/* Advanced Filters */}
             {isFilterExpanded && (
-              <div className="pt-4 border-t border-gray-100 dark:border-gray-700">
+              <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div>
                     <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">발주일 범위</label>
@@ -539,14 +543,14 @@ export default function OrdersProfessional() {
                         type="date"
                         value={filters.startDate}
                         onChange={(e) => handleFilterChange("startDate", e.target.value)}
-                        className="h-10 text-sm"
+                        className="h-10 text-sm bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100"
                       />
-                      <span className="text-gray-400">~</span>
+                      <span className="text-gray-400 dark:text-gray-500">~</span>
                       <Input
                         type="date"
                         value={filters.endDate}
                         onChange={(e) => handleFilterChange("endDate", e.target.value)}
-                        className="h-10 text-sm"
+                        className="h-10 text-sm bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100"
                       />
                     </div>
                   </div>
@@ -559,15 +563,15 @@ export default function OrdersProfessional() {
                         placeholder="최소 금액"
                         value={filters.minAmount}
                         onChange={(e) => handleFilterChange("minAmount", e.target.value)}
-                        className="h-10 text-sm"
+                        className="h-10 text-sm bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
                       />
-                      <span className="text-gray-400">~</span>
+                      <span className="text-gray-400 dark:text-gray-500">~</span>
                       <Input
                         type="number"
                         placeholder="최대 금액"
                         value={filters.maxAmount}
                         onChange={(e) => handleFilterChange("maxAmount", e.target.value)}
-                        className="h-10 text-sm"
+                        className="h-10 text-sm bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
                       />
                     </div>
                   </div>
@@ -575,13 +579,13 @@ export default function OrdersProfessional() {
                   <div>
                     <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">작성자</label>
                     <Select value={filters.userId || "all"} onValueChange={(value) => handleFilterChange("userId", value)}>
-                      <SelectTrigger className="h-10">
+                      <SelectTrigger className="h-10 bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100">
                         <SelectValue placeholder="모든 작성자" />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">모든 작성자</SelectItem>
+                      <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100">
+                        <SelectItem value="all" className="dark:focus:bg-gray-700 dark:hover:bg-gray-700">모든 작성자</SelectItem>
                         {users?.map((user: any) => (
-                          <SelectItem key={user.id} value={user.id}>
+                          <SelectItem key={user.id} value={user.id} className="dark:focus:bg-gray-700 dark:hover:bg-gray-700">
                             {user.name || user.email}
                           </SelectItem>
                         ))}
@@ -595,15 +599,15 @@ export default function OrdersProfessional() {
         </Card>
 
         {/* Orders Table */}
-        <Card className="shadow-sm dark:bg-gray-800 dark:border-gray-700">
+        <Card className="shadow-sm bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full bg-white dark:bg-gray-800">
               <thead className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     <button
                       onClick={() => handleSort("orderNumber")}
-                      className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200"
+                      className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-100 transition-colors"
                     >
                       발주번호
                       <ChevronsUpDown className="h-3 w-3" />
@@ -612,7 +616,7 @@ export default function OrdersProfessional() {
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     <button
                       onClick={() => handleSort("vendorName")}
-                      className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200"
+                      className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-100 transition-colors"
                     >
                       거래처
                       <ChevronsUpDown className="h-3 w-3" />
@@ -663,35 +667,35 @@ export default function OrdersProfessional() {
                   <tr>
                     <td colSpan={8} className="px-6 py-12 text-center">
                       <div className="flex justify-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
                       </div>
                     </td>
                   </tr>
                 ) : ordersWithEmailStatus.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="px-6 py-12 text-center">
-                      <div className="text-gray-500">
-                        <FileText className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                      <div className="text-gray-500 dark:text-gray-400">
+                        <FileText className="h-12 w-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
                         <p className="text-sm">발주서가 없습니다.</p>
                       </div>
                     </td>
                   </tr>
                 ) : (
                   ordersWithEmailStatus.map((order: any) => (
-                    <tr key={order.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap">
+                    <tr key={order.id} className="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap bg-white dark:bg-gray-800">
                         <button
                           onClick={() => navigate(`/orders/${order.id}`)}
-                          className="text-sm font-medium text-blue-600 hover:text-blue-700"
+                          className="text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
                         >
                           {order.orderNumber}
                         </button>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-4 whitespace-nowrap bg-white dark:bg-gray-800">
                         {(order.vendorName || order.vendor?.name) && (order.vendor?.id || order.vendorId) ? (
                           <button
                             onClick={() => navigate(`/vendors/${order.vendor?.id || order.vendorId}`)}
-                            className="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline"
+                            className="text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:underline transition-colors"
                             title="거래처 상세 정보 보기"
                           >
                             {order.vendorName || order.vendor?.name}
@@ -703,11 +707,11 @@ export default function OrdersProfessional() {
                           <div className="text-xs text-gray-500 dark:text-gray-400">{order.vendor.email}</div>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-4 whitespace-nowrap bg-white dark:bg-gray-800">
                         {(order.projectName || order.project?.projectName) && (order.project?.id || order.projectId) ? (
                           <button
                             onClick={() => navigate(`/projects/${order.project?.id || order.projectId}`)}
-                            className="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline"
+                            className="text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:underline transition-colors"
                             title="현장 상세 정보 보기"
                           >
                             {order.projectName || order.project?.projectName}
@@ -719,28 +723,28 @@ export default function OrdersProfessional() {
                           <div className="text-xs text-gray-500 dark:text-gray-400">{order.project.projectCode}</div>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                      <td className="px-6 py-4 whitespace-nowrap bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100">
                         {new Date(order.orderDate).toLocaleDateString('ko-KR')}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-semibold text-blue-600">
+                      <td className="px-6 py-4 whitespace-nowrap bg-white dark:bg-gray-800">
+                        <div className="text-sm font-semibold text-blue-600 dark:text-blue-400">
                           {formatKoreanWon(order.totalAmount)}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-4 whitespace-nowrap bg-white dark:bg-gray-800">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(order.status)}`}>
                           {getStatusText(order.status)}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-4 whitespace-nowrap bg-white dark:bg-gray-800">
                         {renderEmailStatus(order)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <td className="px-6 py-4 whitespace-nowrap bg-white dark:bg-gray-800 text-center">
                         <div className="flex items-center justify-center gap-1">
                           {/* 상세보기 */}
                           <button
                             onClick={() => navigate(`/orders/${order.id}`)}
-                            className="p-1 text-blue-500 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-900/20 rounded transition-colors"
+                            className="p-1.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-900/20 rounded-md transition-all duration-200"
                             title="상세보기"
                           >
                             <Eye className="h-4 w-4" />
@@ -749,7 +753,7 @@ export default function OrdersProfessional() {
                           {/* 수정 */}
                           <button
                             onClick={() => navigate(`/orders/${order.id}/edit`)}
-                            className="p-1 text-green-500 hover:text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:text-green-300 dark:hover:bg-green-900/20 rounded transition-colors"
+                            className="p-1.5 text-green-500 hover:text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:text-green-300 dark:hover:bg-green-900/20 rounded-md transition-all duration-200"
                             title="수정"
                           >
                             <Edit className="h-4 w-4" />
@@ -758,18 +762,17 @@ export default function OrdersProfessional() {
                           {/* PDF 보기 */}
                           <button
                             onClick={() => handlePDFPreview(order)}
-                            className="p-1 text-orange-500 hover:text-orange-700 hover:bg-orange-50 dark:text-orange-400 dark:hover:text-orange-300 dark:hover:bg-orange-900/20 rounded transition-colors"
+                            className="p-1.5 text-orange-500 hover:text-orange-700 hover:bg-orange-50 dark:text-orange-400 dark:hover:text-orange-300 dark:hover:bg-orange-900/20 rounded-md transition-all duration-200"
                             title="PDF 보기"
                           >
                             <FileText className="h-4 w-4" />
                           </button>
                           
-                          {/* 이메일 - 항상 표시, 강제 스타일링 */}
+                          {/* 이메일 */}
                           <button
                             onClick={() => handleEmailSend(order)}
-                            className="p-1 text-purple-600 hover:text-purple-800 hover:bg-purple-50 dark:text-purple-400 dark:hover:text-purple-300 dark:hover:bg-purple-900/20 rounded transition-colors border border-purple-300 dark:border-purple-700"
-                            title="이메일 전송 (Debug)"
-                            style={{ backgroundColor: 'rgba(147, 51, 234, 0.1)' }}
+                            className="p-1.5 text-purple-500 hover:text-purple-700 hover:bg-purple-50 dark:text-purple-400 dark:hover:text-purple-300 dark:hover:bg-purple-900/20 rounded-md transition-all duration-200"
+                            title="이메일 전송"
                           >
                             <Mail className="h-4 w-4" />
                           </button>
