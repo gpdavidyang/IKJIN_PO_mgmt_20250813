@@ -13,7 +13,7 @@ import dashboardRoutes from "./dashboard";
 import companyRoutes from "./companies";
 import adminRoutes from "./admin";
 import excelAutomationRoutes from "./excel-automation";
-import poTemplateRoutes from "./po-template-real.js";
+import poTemplateRoutes from "./po-template-real";
 import reportRoutes from "./reports";
 import importExportRoutes from "./import-export";
 import emailHistoryRoutes from "./email-history";
