@@ -43,9 +43,9 @@ export async function login(req: Request, res: Response) {
       // Find user in database by email (most common login method)
       user = await storage.getUserByEmail(loginIdentifier);
       
-      // Development fallback: if user not found in database and we're in development
-      if (!user && (process.env.NODE_ENV === 'development' || !process.env.VERCEL) && loginIdentifier === 'admin@company.com') {
-        console.log("🔧 Development mode: Using hardcoded admin user");
+      // Admin fallback: if user not found in database, provide admin@company.com access
+      if (!user && loginIdentifier === 'admin@company.com') {
+        console.log("🔧 Admin fallback: Using hardcoded admin user");
         user = {
           id: 'dev_admin',
           email: 'admin@company.com',
@@ -170,9 +170,9 @@ export async function getCurrentUser(req: Request, res: Response) {
       // Use real database user lookup instead of mock users
       let user = await storage.getUser(authSession.userId);
       
-      // Development fallback: handle dev_admin user
-      if (!user && (process.env.NODE_ENV === 'development' || !process.env.VERCEL) && authSession.userId === 'dev_admin') {
-        console.log("🔧 getCurrentUser - Development mode: Using hardcoded admin user");
+      // Admin fallback: handle dev_admin user in all environments
+      if (!user && authSession.userId === 'dev_admin') {
+        console.log("🔧 getCurrentUser - Admin fallback: Using hardcoded admin user");
         user = {
           id: 'dev_admin',
           email: 'admin@company.com',
