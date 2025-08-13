@@ -38,7 +38,7 @@ export function useCurrentUser() {
   return useSmartQuery(
     queryKeys.auth.user(),
     {
-      queryFn: () => apiRequest("GET", "/api/auth/me"),
+      queryFn: () => apiRequest("GET", "/api/auth/user"),
       cacheType: "MASTER",
       backgroundSync: true,
     }

@@ -223,7 +223,7 @@ const CreateOrderUnifiedV2: React.FC = () => {
     
     // 인증 상태 확인
     try {
-      const authResponse = await fetch('/api/auth/me');
+      const authResponse = await fetch('/api/auth/user');
       console.log('🔐 인증 상태 확인:', authResponse.status);
       if (!authResponse.ok) {
         console.error('🔴 인증 실패 - 로그인 필요');

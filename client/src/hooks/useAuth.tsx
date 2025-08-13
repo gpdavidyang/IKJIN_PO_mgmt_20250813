@@ -1,9 +1,10 @@
-import { createContext, ReactNode, useContext } from "react";
+import { createContext, ReactNode, useContext, useCallback } from "react";
 import {
   useQuery,
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 
 type User = {
   id: string;
@@ -25,12 +26,14 @@ type AuthContextType = {
   error: Error | null;
   loginMutation: any;
   logoutMutation: any;
+  forceLogout: () => Promise<void>;
 };
 
 export const AuthContext = createContext<AuthContextType | null>(null);
 
 function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
+  const [, navigate] = useLocation();
 
   const {
     data: user,
@@ -55,10 +58,10 @@ function AuthProvider({ children }: { children: ReactNode }) {
       return userData;
     },
     retry: false,
-    staleTime: 0, // Always fresh
-    refetchOnWindowFocus: true,
+    staleTime: 1000 * 60 * 5, // 5 minutes - prevent excessive polling
+    refetchOnWindowFocus: false, // Disable window focus refetch to prevent 401 spam
     refetchOnMount: true,
-    refetchOnReconnect: true,
+    refetchOnReconnect: false, // Disable reconnect refetch during logout
     refetchInterval: false,
   });
 
@@ -86,24 +89,77 @@ function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  const forceLogout = useCallback(async () => {
+    console.log("🚪 Starting force logout process");
+    
+    try {
+      // First, immediately set query data to null to prevent further requests
+      queryClient.setQueryData(["/api/auth/user"], null);
+      
+      // Cancel any outgoing requests to prevent race conditions
+      await queryClient.cancelQueries({ queryKey: ["/api/auth/user"] });
+      
+      // Call the force logout endpoint for complete cleanup
+      const response = await fetch("/api/auth/force-logout", {
+        method: "POST",
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        console.warn("⚠️ Force logout API call failed, but continuing with client-side cleanup");
+      } else {
+        console.log("✅ Server logout successful");
+      }
+    } catch (error) {
+      console.warn("⚠️ Server logout failed, but continuing with client-side cleanup:", error);
+    }
+    
+    // Clear all React Query caches
+    queryClient.clear();
+    
+    // Force redirect to login page
+    navigate("/login");
+    
+    console.log("✅ Force logout completed");
+  }, [queryClient, navigate]);
+
   const logoutMutation = useMutation({
     mutationFn: async () => {
+      console.log("🚪 Starting logout process");
+      
+      // Immediately set user to null to prevent UI issues
+      queryClient.setQueryData(["/api/auth/user"], null);
+      
+      // Cancel any pending auth queries to prevent 401 errors
+      await queryClient.cancelQueries({ queryKey: ["/api/auth/user"] });
+      
       const response = await fetch("/api/auth/logout", {
         method: "POST",
         credentials: 'include',
       });
 
       if (!response.ok) {
+        console.warn("⚠️ Regular logout failed, attempting force logout");
         throw new Error("Logout failed");
       }
+      
+      console.log("✅ Regular logout successful");
+      return response.json();
     },
     onSuccess: () => {
-      queryClient.setQueryData(["/api/auth/user"], null);
+      console.log("🧹 Cleaning up after successful logout");
+      
+      // Clear all caches
       queryClient.clear();
+      
+      // Navigate to login
+      navigate("/login");
     },
-    onError: () => {
-      queryClient.setQueryData(["/api/auth/user"], null);
-      queryClient.clear();
+    onError: async (error) => {
+      console.log("❌ Regular logout failed, attempting force logout:", error);
+      
+      // If regular logout fails, try force logout
+      await forceLogout();
     },
   });
 
@@ -116,6 +172,7 @@ function AuthProvider({ children }: { children: ReactNode }) {
         error,
         loginMutation,
         logoutMutation,
+        forceLogout,
       }}
     >
       {children}

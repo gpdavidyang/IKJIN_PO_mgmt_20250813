@@ -215,10 +215,17 @@ export function Header() {
   
   const currentPage = getCurrentPage();
 
-  const { logoutMutation } = useAuth();
+  const { logoutMutation, forceLogout } = useAuth();
   
-  const handleLogout = () => {
-    logoutMutation.mutate();
+  const handleLogout = async () => {
+    try {
+      console.log("🚪 Logout button clicked");
+      logoutMutation.mutate();
+    } catch (error) {
+      console.error("❌ Logout error, attempting force logout:", error);
+      // If regular logout fails, try force logout
+      await forceLogout();
+    }
   };
 
 
@@ -328,9 +335,13 @@ export function Header() {
                 
                 <DropdownMenuSeparator />
                 
-                <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600">
+                <DropdownMenuItem 
+                  onClick={handleLogout} 
+                  className="cursor-pointer text-red-600"
+                  disabled={logoutMutation.isPending}
+                >
                   <LogOut className="mr-2 h-4 w-4" />
-                  로그아웃
+                  {logoutMutation.isPending ? "로그아웃 중..." : "로그아웃"}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

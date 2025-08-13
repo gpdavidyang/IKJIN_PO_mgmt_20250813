@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Logout Test</title>
+</head>
+<body>
+    <h1>Frontend Logout Test</h1>
+    <div id="status"></div>
+    <button id="testLogout">Test Logout</button>
+    <button id="checkAuth">Check Auth</button>
+    
+    <script>
+        const statusDiv = document.getElementById('status');
+        
+        function log(message) {
+            statusDiv.innerHTML += '<p>' + new Date().toLocaleTimeString() + ': ' + message + '</p>';
+        }
+        
+        document.getElementById('testLogout').onclick = async () => {
+            log('🚪 Starting logout test...');
+            
+            try {
+                // Test the logout endpoint
+                const response = await fetch('/api/auth/logout', {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    log('✅ Logout API call successful');
+                    const data = await response.json();
+                    log('📄 Response: ' + JSON.stringify(data));
+                } else {
+                    log('❌ Logout failed: ' + response.status);
+                }
+                
+                // Check auth status after logout
+                setTimeout(checkAuthStatus, 1000);
+                
+            } catch (error) {
+                log('❌ Error: ' + error.message);
+            }
+        };
+        
+        async function checkAuthStatus() {
+            try {
+                log('🔍 Checking auth status...');
+                const response = await fetch('/api/auth/user', {
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const user = await response.json();
+                    log('👤 Still authenticated: ' + user.name);
+                } else if (response.status === 401) {
+                    log('✅ Successfully logged out (401)');
+                } else {
+                    log('❓ Unexpected response: ' + response.status);
+                }
+            } catch (error) {
+                log('❌ Auth check error: ' + error.message);
+            }
+        }
+        
+        document.getElementById('checkAuth').onclick = checkAuthStatus;
+        
+        // Initial auth check
+        checkAuthStatus();
+    </script>
+</body>
+</html>

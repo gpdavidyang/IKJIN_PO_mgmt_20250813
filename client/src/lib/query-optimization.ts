@@ -63,7 +63,7 @@ export const CACHE_CONFIGS = {
 export const queryKeys = {
   // Authentication
   auth: {
-    user: () => ['/api/auth/me'] as const,
+    user: () => ['/api/auth/user'] as const,
     permissions: (userId: number) => ['/api/auth/permissions', userId] as const,
   },
   
