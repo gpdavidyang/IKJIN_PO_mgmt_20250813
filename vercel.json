@@ -10,7 +10,7 @@
       "use": "@vercel/node"
     },
     {
-      "src": "api/auth/login.js", 
+      "src": "api/auth/login-simple.js", 
       "use": "@vercel/node"
     },
     {
@@ -29,7 +29,7 @@
     },
     {
       "src": "/api/auth/login",
-      "dest": "/api/auth/login.js"
+      "dest": "/api/auth/login-simple.js"
     },
     {
       "src": "/api/test",
