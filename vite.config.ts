@@ -30,12 +30,13 @@ export default defineConfig({
     sourcemap: process.env.NODE_ENV === 'development',
     rollupOptions: {
       output: {
-        // Disable manual chunking to prevent React module issues
-        manualChunks: undefined,
+        // Simple file naming without manual chunking
         chunkFileNames: 'assets/js/[name]-[hash].js',
         entryFileNames: 'assets/js/[name]-[hash].js',
         assetFileNames: 'assets/[ext]/[name]-[hash].[ext]'
-      }
+      },
+      // Ensure React is treated as external dependency properly
+      external: [],
     },
     // Optimize bundle size
     minify: 'esbuild',
@@ -49,6 +50,7 @@ export default defineConfig({
     include: [
       'react',
       'react-dom',
+      'react/jsx-runtime',
       'react-hook-form',
       '@tanstack/react-query',
       '@tanstack/react-table',
@@ -62,6 +64,8 @@ export default defineConfig({
     exclude: [
       // Large dependencies that should be loaded dynamically
       '@replit/vite-plugin-cartographer'
-    ]
+    ],
+    // Force React to be included in pre-bundling
+    force: true
   },
 });
