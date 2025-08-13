@@ -2474,103 +2474,6 @@ var DatabaseStorage = class {
 var storage = new DatabaseStorage();
 
 // server/local-auth.ts
-async function login(req, res) {
-  try {
-    const { email, password, username } = req.body;
-    const loginIdentifier = email || username;
-    if (!loginIdentifier || !password) {
-      return res.status(400).json({ message: "Email/username and password are required" });
-    }
-    console.log("\u{1F510} Attempting login with identifier:", loginIdentifier);
-    const mockUsers = [
-      {
-        id: "admin",
-        email: "admin@company.com",
-        username: "admin",
-        name: "\uAD00\uB9AC\uC790",
-        role: "admin",
-        password: "admin123",
-        // In real system, this would be hashed
-        isActive: true,
-        position: "\uC2DC\uC2A4\uD15C\uAD00\uB9AC\uC790",
-        department: "IT\uD300"
-      },
-      {
-        id: "manager",
-        email: "manager@company.com",
-        username: "manager",
-        name: "\uAE40\uBD80\uC7A5",
-        role: "project_manager",
-        password: "manager123",
-        isActive: true,
-        position: "\uD504\uB85C\uC81D\uD2B8\uAD00\uB9AC\uC790",
-        department: "\uAC74\uC124\uC0AC\uC5C5\uBD80"
-      },
-      {
-        id: "user",
-        email: "user@company.com",
-        username: "user",
-        name: "\uC774\uAE30\uC0AC",
-        role: "field_worker",
-        password: "user123",
-        isActive: true,
-        position: "\uD604\uC7A5\uAE30\uC0AC",
-        department: "\uD604\uC7A5\uD300"
-      }
-    ];
-    const user = mockUsers.find(
-      (u) => u.email === loginIdentifier || u.username === loginIdentifier
-    );
-    if (!user) {
-      console.log("\u274C User not found:", loginIdentifier);
-      return res.status(401).json({ message: "Invalid credentials" });
-    }
-    if (!user.isActive) {
-      return res.status(401).json({ message: "Account is deactivated" });
-    }
-    if (password !== user.password) {
-      console.log("\u274C Invalid password for user:", loginIdentifier);
-      return res.status(401).json({ message: "Invalid credentials" });
-    }
-    console.log("\u2705 Mock authentication successful for user:", user.name);
-    try {
-      const authSession = req.session;
-      authSession.userId = user.id;
-      const sessionSavePromise = new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          console.log("\u26A0\uFE0F Session save timeout, proceeding without session persistence");
-          resolve();
-        }, 2e3);
-        req.session.save((err) => {
-          clearTimeout(timeout);
-          if (err) {
-            console.error("Session save error (non-fatal):", err);
-            resolve();
-          } else {
-            console.log("Session saved successfully for user:", user.id);
-            resolve();
-          }
-        });
-      });
-      await sessionSavePromise;
-      const { password: _, ...userWithoutPassword } = user;
-      res.json({
-        message: "Login successful",
-        user: userWithoutPassword
-      });
-    } catch (sessionError) {
-      console.error("Session handling error (non-fatal):", sessionError);
-      const { password: _, ...userWithoutPassword } = user;
-      res.json({
-        message: "Login successful (no session)",
-        user: userWithoutPassword
-      });
-    }
-  } catch (error) {
-    console.error("Login error:", error);
-    res.status(500).json({ message: "Login failed" });
-  }
-}
 function logout(req, res) {
   const authSession = req.session;
   authSession.userId = void 0;
@@ -2717,7 +2620,67 @@ router.post("/auth/login-simple", (req, res) => {
     res.status(500).json({ message: "Login failed", error: error.message });
   }
 });
-router.post("/auth/login", login);
+router.post("/auth/login-test", (req, res) => {
+  try {
+    const { username, password, email } = req.body;
+    const identifier = username || email;
+    console.log("\u{1F510} Test login attempt for:", identifier);
+    const users2 = [
+      { id: "admin", username: "admin", email: "admin@company.com", password: "admin123", name: "\uAD00\uB9AC\uC790", role: "admin" },
+      { id: "manager", username: "manager", email: "manager@company.com", password: "manager123", name: "\uAE40\uBD80\uC7A5", role: "project_manager" },
+      { id: "user", username: "user", email: "user@company.com", password: "user123", name: "\uC774\uAE30\uC0AC", role: "field_worker" }
+    ];
+    const user = users2.find((u) => u.username === identifier || u.email === identifier);
+    if (!user || user.password !== password) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+    const { password: _, ...userWithoutPassword } = user;
+    res.json({
+      message: "Login successful (test mode)",
+      user: userWithoutPassword
+    });
+  } catch (error) {
+    console.error("Test login error:", error);
+    res.status(500).json({ message: "Login failed", error: error.message });
+  }
+});
+router.post("/auth/login", (req, res) => {
+  try {
+    const { username, password, email } = req.body;
+    const identifier = username || email;
+    if (!identifier || !password) {
+      return res.status(400).json({ message: "Email/username and password are required" });
+    }
+    console.log("\u{1F510} Main login attempt for:", identifier);
+    const users2 = [
+      { id: "admin", username: "admin", email: "admin@company.com", password: "admin123", name: "\uAD00\uB9AC\uC790", role: "admin" },
+      { id: "manager", username: "manager", email: "manager@company.com", password: "manager123", name: "\uAE40\uBD80\uC7A5", role: "project_manager" },
+      { id: "user", username: "user", email: "user@company.com", password: "user123", name: "\uC774\uAE30\uC0AC", role: "field_worker" }
+    ];
+    const user = users2.find((u) => u.username === identifier || u.email === identifier);
+    if (!user || user.password !== password) {
+      console.log("\u274C Invalid credentials for:", identifier);
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+    console.log("\u2705 Login successful for user:", user.name);
+    try {
+      const authSession = req.session;
+      if (authSession) {
+        authSession.userId = user.id;
+      }
+    } catch (sessionErr) {
+      console.log("\u26A0\uFE0F Session setting failed (non-fatal):", sessionErr);
+    }
+    const { password: _, ...userWithoutPassword } = user;
+    res.json({
+      message: "Login successful",
+      user: userWithoutPassword
+    });
+  } catch (error) {
+    console.error("Main login error:", error);
+    res.status(500).json({ message: "Login failed", error: error?.message || "Unknown error" });
+  }
+});
 router.post("/auth/logout", logout);
 router.get("/logout", logout);
 router.get("/auth/user", getCurrentUser);
