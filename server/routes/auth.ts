@@ -11,6 +11,48 @@ import { OptimizedUserQueries } from "../utils/optimized-queries";
 
 const router = Router();
 
+// Debug endpoint 
+router.get('/auth/debug', (req, res) => {
+  res.json({ 
+    message: "Auth routes are working", 
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'unknown'
+  });
+});
+
+// Simple test login endpoint without sessions
+router.post('/auth/login-simple', (req, res) => {
+  try {
+    const { username, password, email } = req.body;
+    const identifier = username || email;
+    
+    console.log("🔐 Simple login attempt for:", identifier);
+    
+    // Mock users
+    const users = [
+      { id: "admin", username: "admin", email: "admin@company.com", password: "admin123", name: "관리자", role: "admin" },
+      { id: "manager", username: "manager", email: "manager@company.com", password: "manager123", name: "김부장", role: "project_manager" },
+      { id: "user", username: "user", email: "user@company.com", password: "user123", name: "이기사", role: "field_worker" }
+    ];
+    
+    const user = users.find(u => u.username === identifier || u.email === identifier);
+    
+    if (!user || user.password !== password) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+    
+    // Return user without password
+    const { password: _, ...userWithoutPassword } = user;
+    res.json({ 
+      message: "Login successful (simple mode)", 
+      user: userWithoutPassword 
+    });
+  } catch (error) {
+    console.error("Simple login error:", error);
+    res.status(500).json({ message: "Login failed", error: error.message });
+  }
+});
+
 // Authentication routes
 router.post('/auth/login', login);
 router.post('/auth/logout', logout);
