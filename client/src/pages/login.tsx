@@ -176,9 +176,9 @@ export default function LoginPage() {
           <p className="mb-3">기본 로그인 정보:</p>
           <div className="space-y-2">
             <div className="flex items-center justify-center gap-2">
-              <span>이메일: test@ikjin.co.kr</span>
+              <span>이메일: admin@company.com</span>
               <button
-                onClick={() => copyToClipboard('test@ikjin.co.kr', 'email')}
+                onClick={() => copyToClipboard('admin@company.com', 'email')}
                 className="p-1 hover:bg-gray-200 rounded transition-colors"
                 title="이메일 복사"
               >

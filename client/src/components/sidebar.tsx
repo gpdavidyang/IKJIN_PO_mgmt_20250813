@@ -39,19 +39,11 @@ const navigationSections = [
       { name: "대시보드", href: "/", icon: Home },
       { 
         name: "발주서 작성", 
-        href: "/create-order", 
+        href: "/create-order/unified-v2", // 직접 V2로 연결
         icon: Plus,
         highlight: true, // 주요 기능 강조
-        subItems: [
-          { name: "🚀 통합 워크플로우", href: "/create-order/unified", highlight: true },
-          { name: "🆕 통합 워크플로우 V2", href: "/create-order/unified-v2", highlight: true, badge: "NEW" },
-          { name: "표준 발주서", href: "/create-order/standard" },
-          { name: "엑셀 발주서", href: "/create-order/excel" },
-          // PRD 요구사항: 압출, 판넬, 부자재 발주서는 현재 UI에서 숨김 처리 (소스코드는 유지)
-          // { name: "압출 발주서", href: "/create-order/extrusion" },
-          // { name: "판넬 발주서", href: "/create-order/panel" },
-          // { name: "부자재 발주서", href: "/create-order/accessories" },
-        ]
+        // subItems 제거 - 더 이상 드롭다운 메뉴 없음
+        // 숨겨진 메뉴들: 통합워크플로우, 표준발주서, 엑셀발주서
       },
       { name: "발주서 관리", href: "/orders", icon: FileText },
       { name: "승인 관리", href: "/approvals", icon: CheckCircle },
