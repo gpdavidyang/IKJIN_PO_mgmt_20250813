@@ -11108,8 +11108,34 @@ async function initializeApp() {
     serveStatic(app);
   }
 }
+var isInitialized = false;
 if (process.env.VERCEL) {
-  initializeApp().catch(console.error);
+  console.log("\u{1F680} Vercel environment detected - initializing synchronously");
+  const pgSession = connectPgSimple(session);
+  app.use(session({
+    store: new pgSession({
+      conString: process.env.DATABASE_URL,
+      tableName: "app_sessions"
+    }),
+    secret: process.env.SESSION_SECRET || "default-secret-key",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: false,
+      httpOnly: true,
+      maxAge: 1e3 * 60 * 60 * 24 * 7
+    }
+  }));
+  app.use(routes_default);
+  app.use((err, _req, res, _next) => {
+    const status = err.status || err.statusCode || 500;
+    const message = err.message || "Internal Server Error";
+    console.error("Express error:", err);
+    res.status(status).json({ message });
+  });
+  serveStatic(app);
+  isInitialized = true;
+  console.log("\u2705 Vercel app initialized synchronously");
 } else {
   initializeApp().then(() => {
     log("App initialized successfully");

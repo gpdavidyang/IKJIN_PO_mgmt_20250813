@@ -106,12 +106,48 @@ async function initializeApp() {
   }
 }
 
-// Initialize for Vercel or local development
+// Initialize synchronously for Vercel
+let isInitialized = false;
+
+// For Vercel environment, we need to initialize everything synchronously
 if (process.env.VERCEL) {
-  // For Vercel, initialize synchronously but return the app immediately
-  initializeApp().catch(console.error);
+  console.log("🚀 Vercel environment detected - initializing synchronously");
+  
+  // Setup session middleware immediately
+  const pgSession = connectPgSimple(session);
+  app.use(session({
+    store: new pgSession({
+      conString: process.env.DATABASE_URL,
+      tableName: 'app_sessions'
+    }),
+    secret: process.env.SESSION_SECRET || 'default-secret-key',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: false,
+      httpOnly: true,
+      maxAge: 1000 * 60 * 60 * 24 * 7
+    }
+  }));
+
+  // Use modular routes
+  app.use(router);
+  
+  // Error handling middleware
+  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+    const status = err.status || err.statusCode || 500;
+    const message = err.message || "Internal Server Error";
+    console.error("Express error:", err);
+    res.status(status).json({ message });
+  });
+
+  // Setup static serving
+  serveStatic(app);
+  
+  isInitialized = true;
+  console.log("✅ Vercel app initialized synchronously");
 } else {
-  // For local development, wait for initialization
+  // For local development, use async initialization
   initializeApp().then(() => {
     log("App initialized successfully");
   }).catch(console.error);
