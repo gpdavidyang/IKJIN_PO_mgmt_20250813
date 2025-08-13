@@ -933,7 +933,6 @@ var init_db = __esm({
 import dotenv2 from "dotenv";
 import express2 from "express";
 import session from "express-session";
-import connectPgSimple from "connect-pg-simple";
 
 // server/routes/index.ts
 import { Router as Router22 } from "express";
@@ -12030,12 +12029,7 @@ app.use((req, res, next) => {
   next();
 });
 async function initializeProductionApp() {
-  const pgSession = connectPgSimple(session);
   app.use(session({
-    store: new pgSession({
-      conString: process.env.DATABASE_URL,
-      tableName: "app_sessions"
-    }),
     secret: process.env.SESSION_SECRET || "default-secret-key",
     resave: false,
     saveUninitialized: false,
@@ -12043,8 +12037,13 @@ async function initializeProductionApp() {
       secure: false,
       httpOnly: true,
       maxAge: 1e3 * 60 * 60 * 24 * 7
-    }
+    },
+    // Use memory store - sessions will not persist across serverless restarts
+    // but this prevents database connection errors
+    store: void 0
+    // Default memory store
   }));
+  console.log("\u26A0\uFE0F Using memory session store for serverless compatibility");
   app.use(routes_default);
   app.use((err, _req, res, _next) => {
     const status = err.status || err.statusCode || 500;
@@ -12057,12 +12056,7 @@ async function initializeProductionApp() {
 var isInitialized = false;
 if (process.env.VERCEL) {
   console.log("\u{1F680} Vercel environment detected - initializing production app");
-  const pgSession = connectPgSimple(session);
   app.use(session({
-    store: new pgSession({
-      conString: process.env.DATABASE_URL,
-      tableName: "app_sessions"
-    }),
     secret: process.env.SESSION_SECRET || "default-secret-key",
     resave: false,
     saveUninitialized: false,
@@ -12070,8 +12064,13 @@ if (process.env.VERCEL) {
       secure: false,
       httpOnly: true,
       maxAge: 1e3 * 60 * 60 * 24 * 7
-    }
+    },
+    // Use memory store - sessions will not persist across serverless restarts
+    // but this prevents database connection errors
+    store: void 0
+    // Default memory store
   }));
+  console.log("\u26A0\uFE0F Using memory session store for serverless compatibility");
   app.use(routes_default);
   app.use((err, _req, res, _next) => {
     const status = err.status || err.statusCode || 500;

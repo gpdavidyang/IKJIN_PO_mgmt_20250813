@@ -26,7 +26,6 @@ console.log("✨ Production server starting without static file serving");
 
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
-import connectPgSimple from "connect-pg-simple";
 import router from "./routes/index";
 
 // Create app instance
@@ -74,13 +73,9 @@ app.use((req, res, next) => {
 
 // Initialize app for production
 async function initializeProductionApp() {
-  // Setup session middleware
-  const pgSession = connectPgSimple(session);
+  // STABLE: Use memory store for sessions in serverless (for demo purposes)
+  // Note: In production, use Redis or external session store
   app.use(session({
-    store: new pgSession({
-      conString: process.env.DATABASE_URL,
-      tableName: 'app_sessions'
-    }),
     secret: process.env.SESSION_SECRET || 'default-secret-key',
     resave: false,
     saveUninitialized: false,
@@ -88,8 +83,12 @@ async function initializeProductionApp() {
       secure: false,
       httpOnly: true,
       maxAge: 1000 * 60 * 60 * 24 * 7
-    }
+    },
+    // Use memory store - sessions will not persist across serverless restarts
+    // but this prevents database connection errors
+    store: undefined // Default memory store
   }));
+  console.log("⚠️ Using memory session store for serverless compatibility");
 
   // Use modular routes
   app.use(router);
@@ -113,13 +112,9 @@ let isInitialized = false;
 if (process.env.VERCEL) {
   console.log("🚀 Vercel environment detected - initializing production app");
   
-  // Setup session middleware immediately
-  const pgSession = connectPgSimple(session);
+  // STABLE: Use memory store for sessions in serverless (for demo purposes)
+  // Note: In production, use Redis or external session store
   app.use(session({
-    store: new pgSession({
-      conString: process.env.DATABASE_URL,
-      tableName: 'app_sessions'
-    }),
     secret: process.env.SESSION_SECRET || 'default-secret-key',
     resave: false,
     saveUninitialized: false,
@@ -127,8 +122,12 @@ if (process.env.VERCEL) {
       secure: false,
       httpOnly: true,
       maxAge: 1000 * 60 * 60 * 24 * 7
-    }
+    },
+    // Use memory store - sessions will not persist across serverless restarts
+    // but this prevents database connection errors
+    store: undefined // Default memory store
   }));
+  console.log("⚠️ Using memory session store for serverless compatibility");
 
   // Use modular routes
   app.use(router);
