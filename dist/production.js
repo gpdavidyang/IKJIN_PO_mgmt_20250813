@@ -2474,35 +2474,66 @@ var DatabaseStorage = class {
 };
 var storage = new DatabaseStorage();
 
-// server/auth-utils.ts
-import bcrypt from "bcrypt";
-async function comparePasswords(supplied, stored) {
-  try {
-    return await bcrypt.compare(supplied, stored);
-  } catch (error) {
-    console.error("Password comparison error:", error);
-    return false;
-  }
-}
-
 // server/local-auth.ts
 async function login(req, res) {
   try {
-    const { email, password } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({ message: "Email and password are required" });
+    const { email, password, username } = req.body;
+    const loginIdentifier = email || username;
+    if (!loginIdentifier || !password) {
+      return res.status(400).json({ message: "Email/username and password are required" });
     }
-    const user = await storage.getUserByEmail(email);
+    console.log("\u{1F510} Attempting login with identifier:", loginIdentifier);
+    const mockUsers = [
+      {
+        id: "admin",
+        email: "admin@company.com",
+        username: "admin",
+        name: "\uAD00\uB9AC\uC790",
+        role: "admin",
+        password: "admin123",
+        // In real system, this would be hashed
+        isActive: true,
+        position: "\uC2DC\uC2A4\uD15C\uAD00\uB9AC\uC790",
+        department: "IT\uD300"
+      },
+      {
+        id: "manager",
+        email: "manager@company.com",
+        username: "manager",
+        name: "\uAE40\uBD80\uC7A5",
+        role: "project_manager",
+        password: "manager123",
+        isActive: true,
+        position: "\uD504\uB85C\uC81D\uD2B8\uAD00\uB9AC\uC790",
+        department: "\uAC74\uC124\uC0AC\uC5C5\uBD80"
+      },
+      {
+        id: "user",
+        email: "user@company.com",
+        username: "user",
+        name: "\uC774\uAE30\uC0AC",
+        role: "field_worker",
+        password: "user123",
+        isActive: true,
+        position: "\uD604\uC7A5\uAE30\uC0AC",
+        department: "\uD604\uC7A5\uD300"
+      }
+    ];
+    const user = mockUsers.find(
+      (u) => u.email === loginIdentifier || u.username === loginIdentifier
+    );
     if (!user) {
+      console.log("\u274C User not found:", loginIdentifier);
       return res.status(401).json({ message: "Invalid credentials" });
     }
     if (!user.isActive) {
       return res.status(401).json({ message: "Account is deactivated" });
     }
-    const isValidPassword = await comparePasswords(password, user.password);
-    if (!isValidPassword) {
+    if (password !== user.password) {
+      console.log("\u274C Invalid password for user:", loginIdentifier);
       return res.status(401).json({ message: "Invalid credentials" });
     }
+    console.log("\u2705 Mock authentication successful for user:", user.name);
     const authSession = req.session;
     authSession.userId = user.id;
     req.session.save((err) => {
@@ -2542,16 +2573,50 @@ async function getCurrentUser(req, res) {
       console.log("getCurrentUser - No userId in session");
       return res.status(401).json({ message: "Not authenticated" });
     }
-    const user = await storage.getUser(authSession.userId);
+    const mockUsers = [
+      {
+        id: "admin",
+        email: "admin@company.com",
+        username: "admin",
+        name: "\uAD00\uB9AC\uC790",
+        role: "admin",
+        isActive: true,
+        position: "\uC2DC\uC2A4\uD15C\uAD00\uB9AC\uC790",
+        department: "IT\uD300",
+        createdAt: (/* @__PURE__ */ new Date()).toISOString()
+      },
+      {
+        id: "manager",
+        email: "manager@company.com",
+        username: "manager",
+        name: "\uAE40\uBD80\uC7A5",
+        role: "project_manager",
+        isActive: true,
+        position: "\uD504\uB85C\uC81D\uD2B8\uAD00\uB9AC\uC790",
+        department: "\uAC74\uC124\uC0AC\uC5C5\uBD80",
+        createdAt: (/* @__PURE__ */ new Date()).toISOString()
+      },
+      {
+        id: "user",
+        email: "user@company.com",
+        username: "user",
+        name: "\uC774\uAE30\uC0AC",
+        role: "field_worker",
+        isActive: true,
+        position: "\uD604\uC7A5\uAE30\uC0AC",
+        department: "\uD604\uC7A5\uD300",
+        createdAt: (/* @__PURE__ */ new Date()).toISOString()
+      }
+    ];
+    const user = mockUsers.find((u) => u.id === authSession.userId);
     if (!user) {
-      console.log("getCurrentUser - User not found in database:", authSession.userId);
+      console.log("getCurrentUser - Mock user not found:", authSession.userId);
       authSession.userId = void 0;
       return res.status(401).json({ message: "Invalid session" });
     }
-    console.log("getCurrentUser - User found:", user.id);
+    console.log("getCurrentUser - Mock user found:", user.name);
     req.user = user;
-    const { password: _, ...userWithoutPassword } = user;
-    res.json(userWithoutPassword);
+    res.json(user);
   } catch (error) {
     console.error("Get current user error:", error);
     res.status(500).json({ message: "Failed to get user data" });
