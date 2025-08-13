@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { VendorForm } from "@/components/vendor-form";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useVendors } from "@/hooks/use-enhanced-queries";
 import { PageHeader } from "@/components/ui/page-header";
 import { formatDate } from "@/lib/utils";
 
@@ -25,8 +26,20 @@ export default function Vendors() {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
 
-  const { data: vendors, isLoading } = useQuery({
-    queryKey: ["/api/vendors"],
+  const { data: vendors, isLoading, error } = useVendors();
+
+  // 디버깅 로그 추가
+  console.log('🔍 거래처 목록 디버그:', {
+    isLoading,
+    error,
+    errorMessage: error?.message,
+    errorStack: error?.stack,
+    vendors: vendors?.length || 0,
+    vendorsType: typeof vendors,
+    isArray: Array.isArray(vendors),
+    firstVendor: vendors?.[0],
+    userAuthenticated: !!user,
+    userDetails: user ? { id: user.id, email: user.email, role: user.role } : null
   });
 
   // 검색 및 정렬 기능
@@ -298,6 +311,12 @@ export default function Vendors() {
                       {user?.role === "admin" && <TableCell></TableCell>}
                     </TableRow>
                   ))
+                ) : error ? (
+                  <TableRow>
+                    <TableCell colSpan={user?.role === "admin" ? 7 : 6} className="text-center py-6 text-sm text-red-500">
+                      오류: {error?.message || "거래처 데이터를 불러올 수 없습니다"}
+                    </TableCell>
+                  </TableRow>
                 ) : filteredVendors.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={user?.role === "admin" ? 7 : 6} className="text-center py-6 text-sm text-gray-500">

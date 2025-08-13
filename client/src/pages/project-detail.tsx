@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useLocation, Link } from "wouter";
-import { ArrowLeft, Building2, Calendar, MapPin, User, DollarSign, FileText, Edit, ShoppingCart, Plus, Eye, ChevronUp, ChevronDown, FolderOpen } from "lucide-react";
+import { ArrowLeft, Building2, Calendar, MapPin, User, DollarSign, FileText, Edit, ShoppingCart, Plus, Eye, ChevronUp, ChevronDown, FolderOpen, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { formatKoreanWon, formatDate } from "@/lib/utils";
 import type { Project } from "@shared/schema";
 
@@ -355,7 +356,7 @@ export default function ProjectDetail() {
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center text-lg font-semibold">
                 <ShoppingCart className="h-5 w-5 mr-2 text-blue-600" />
-                프로젝트 발주서 목록
+                현장 발주서 목록
                 {ordersData && (
                   <Badge variant="secondary" className="ml-2 text-xs">
                     {ordersData.totalCount || ordersData.orders?.length || 0}건
@@ -479,12 +480,89 @@ export default function ProjectDetail() {
                           {order.user?.name || order.user?.email || '-'}
                         </TableCell>
                         <TableCell className="text-xs py-1">
-                          <Link to={`/orders/${order.id}`}>
-                            <Button variant="outline" size="sm" className="h-6 text-xs px-2">
-                              <Eye className="h-3 w-3 mr-0.5" />
-                              보기
-                            </Button>
-                          </Link>
+                          <div className="flex items-center justify-center gap-1">
+                            {/* 상세 보기 */}
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 w-6 p-0 hover:bg-blue-50 hover:text-blue-600"
+                                    onClick={() => navigate(`/orders/${order.id}`)}
+                                  >
+                                    <Eye className="h-3 w-3" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>상세 보기</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+
+                            {/* 수정 */}
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 w-6 p-0 hover:bg-green-50 hover:text-green-600"
+                                    onClick={() => navigate(`/orders/${order.id}/edit`)}
+                                  >
+                                    <Edit className="h-3 w-3" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>수정</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+
+                            {/* PDF 보기 */}
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 w-6 p-0 hover:bg-orange-50 hover:text-orange-600"
+                                    onClick={() => {
+                                      // PDF 보기 기능 (향후 구현 예정)
+                                      console.log('PDF 보기:', order.id);
+                                    }}
+                                  >
+                                    <FileText className="h-3 w-3" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>PDF 보기</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+
+                            {/* 이메일 전송 */}
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 w-6 p-0 hover:bg-purple-50 hover:text-purple-600"
+                                    onClick={() => {
+                                      // 이메일 전송 기능 (향후 구현 예정)
+                                      console.log('이메일 전송:', order.id);
+                                    }}
+                                  >
+                                    <Mail className="h-3 w-3" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>이메일 전송</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
