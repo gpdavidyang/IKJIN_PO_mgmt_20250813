@@ -2693,15 +2693,14 @@ router.get("/auth/user", (req, res) => {
 });
 router.get("/auth/me", (req, res) => {
   try {
-    console.log("\u{1F464} Get me request");
-    if (currentUser) {
-      const { password: _, ...userWithoutPassword } = currentUser;
-      console.log("\u2705 Returning current user:", userWithoutPassword.name);
-      res.json(userWithoutPassword);
-    } else {
-      console.log("\u274C No current user (not authenticated)");
-      res.status(401).json({ message: "Not authenticated" });
-    }
+    console.log("\u{1F464} Get me request - LEGACY ENDPOINT");
+    console.log("\u{1F6AB} Legacy /auth/me endpoint called - returning null to stop polling");
+    res.status(401).json({
+      message: "Legacy endpoint - please use /api/auth/user",
+      user: null,
+      deprecated: true,
+      useInstead: "/api/auth/user"
+    });
   } catch (error) {
     console.error("Get me error:", error);
     res.status(500).json({ message: "Failed to get user data" });

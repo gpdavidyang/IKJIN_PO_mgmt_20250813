@@ -296,16 +296,16 @@ router.get('/auth/user', (req, res) => {
 
 router.get('/auth/me', (req, res) => {
   try {
-    console.log("👤 Get me request");
+    console.log("👤 Get me request - LEGACY ENDPOINT");
     
-    if (currentUser) {
-      const { password: _, ...userWithoutPassword } = currentUser;
-      console.log("✅ Returning current user:", userWithoutPassword.name);
-      res.json(userWithoutPassword);
-    } else {
-      console.log("❌ No current user (not authenticated)");
-      res.status(401).json({ message: "Not authenticated" });
-    }
+    // Always return null to stop the polling and force frontend to use proper authentication flow
+    console.log("🚫 Legacy /auth/me endpoint called - returning null to stop polling");
+    res.status(401).json({ 
+      message: "Legacy endpoint - please use /api/auth/user", 
+      user: null,
+      deprecated: true,
+      useInstead: "/api/auth/user"
+    });
   } catch (error) {
     console.error("Get me error:", error);
     res.status(500).json({ message: "Failed to get user data" });
