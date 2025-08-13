@@ -12,6 +12,9 @@ const router = Router();
 router.get("/companies", async (req, res) => {
   try {
     console.log("🏢 Fetching companies from database...");
+    console.log("🔍 DATABASE_URL status:", process.env.DATABASE_URL ? "set" : "missing");
+    console.log("🔍 DB object status:", typeof storage);
+    
     const companies = await storage.getCompanies();
     console.log(`✅ Successfully fetched ${companies.length} companies`);
     res.json(companies);
@@ -19,10 +22,13 @@ router.get("/companies", async (req, res) => {
     console.error("❌ Error fetching companies:", error);
     console.error("Error name:", error?.name);
     console.error("Error message:", error?.message);
+    console.error("Error code:", error?.code);
     console.error("Error stack:", error?.stack);
     res.status(500).json({ 
       message: "Failed to fetch companies",
-      error: process.env.NODE_ENV === 'development' ? error?.message : undefined
+      error: process.env.NODE_ENV === 'development' ? error?.message : undefined,
+      errorName: error?.name,
+      errorCode: error?.code
     });
   }
 });

@@ -9,6 +9,7 @@ console.log("🔍 Using DATABASE_URL:", DATABASE_URL?.split('@')[0] + '@[HIDDEN]
 import pkg from 'pg';
 const { Pool } = pkg;
 import { drizzle } from 'drizzle-orm/node-postgres';
+import { sql } from 'drizzle-orm';
 import * as schema from "@shared/schema";
 
 let db: any = null;
@@ -23,15 +24,23 @@ if (!DATABASE_URL) {
     const pool = new Pool({
       connectionString: DATABASE_URL,
       ssl: { rejectUnauthorized: false }, // Supabase requires SSL
-      max: 20, // Connection pool size
+      max: 5, // Reduced connection pool size for serverless
+      min: 1, // Minimum connections
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 10000,
+      acquireTimeoutMillis: 5000, // Timeout for acquiring connection
+    });
+    
+    // Test the connection
+    pool.on('error', (err) => {
+      console.error('💥 Database pool error:', err);
     });
     
     db = drizzle(pool, { schema });
     console.log("✅ Database connected successfully (PostgreSQL pool)");
   } catch (error) {
     console.error("❌ Database connection failed:", error instanceof Error ? error.message : String(error));
+    console.error("❌ Database error details:", error);
     process.exit(1);
   }
 }

@@ -1818,6 +1818,9 @@ export class DatabaseStorage implements IStorage {
   async getCompanies(): Promise<Company[]> {
     try {
       console.log("🔍 Storage: Executing getCompanies query...");
+      console.log("🔍 Storage: DB instance check:", typeof db, !!db);
+      console.log("🔍 Storage: Companies table check:", typeof companies);
+      
       const result = await db
         .select()
         .from(companies)
@@ -1827,6 +1830,9 @@ export class DatabaseStorage implements IStorage {
       return result;
     } catch (error) {
       console.error("💥 Storage: getCompanies failed:", error);
+      console.error("💥 Storage: Error name:", error?.name);
+      console.error("💥 Storage: Error code:", error?.code);
+      console.error("💥 Storage: Error message:", error?.message);
       throw error;
     }
   }

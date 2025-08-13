@@ -897,15 +897,23 @@ var init_db = __esm({
           connectionString: DATABASE_URL,
           ssl: { rejectUnauthorized: false },
           // Supabase requires SSL
-          max: 20,
-          // Connection pool size
+          max: 5,
+          // Reduced connection pool size for serverless
+          min: 1,
+          // Minimum connections
           idleTimeoutMillis: 3e4,
-          connectionTimeoutMillis: 1e4
+          connectionTimeoutMillis: 1e4,
+          acquireTimeoutMillis: 5e3
+          // Timeout for acquiring connection
+        });
+        pool.on("error", (err) => {
+          console.error("\u{1F4A5} Database pool error:", err);
         });
         db = drizzle(pool, { schema: schema_exports });
         console.log("\u2705 Database connected successfully (PostgreSQL pool)");
       } catch (error) {
         console.error("\u274C Database connection failed:", error instanceof Error ? error.message : String(error));
+        console.error("\u274C Database error details:", error);
         process.exit(1);
       }
     }
@@ -1841,11 +1849,16 @@ var DatabaseStorage = class {
   async getCompanies() {
     try {
       console.log("\u{1F50D} Storage: Executing getCompanies query...");
+      console.log("\u{1F50D} Storage: DB instance check:", typeof db, !!db);
+      console.log("\u{1F50D} Storage: Companies table check:", typeof companies);
       const result = await db.select().from(companies).where(eq(companies.isActive, true)).orderBy(asc(companies.companyName));
       console.log(`\u{1F50D} Storage: getCompanies returned ${result.length} companies`);
       return result;
     } catch (error) {
       console.error("\u{1F4A5} Storage: getCompanies failed:", error);
+      console.error("\u{1F4A5} Storage: Error name:", error?.name);
+      console.error("\u{1F4A5} Storage: Error code:", error?.code);
+      console.error("\u{1F4A5} Storage: Error message:", error?.message);
       throw error;
     }
   }
@@ -4264,6 +4277,8 @@ var router7 = Router7();
 router7.get("/companies", async (req, res) => {
   try {
     console.log("\u{1F3E2} Fetching companies from database...");
+    console.log("\u{1F50D} DATABASE_URL status:", process.env.DATABASE_URL ? "set" : "missing");
+    console.log("\u{1F50D} DB object status:", typeof storage);
     const companies3 = await storage.getCompanies();
     console.log(`\u2705 Successfully fetched ${companies3.length} companies`);
     res.json(companies3);
@@ -4271,10 +4286,13 @@ router7.get("/companies", async (req, res) => {
     console.error("\u274C Error fetching companies:", error);
     console.error("Error name:", error?.name);
     console.error("Error message:", error?.message);
+    console.error("Error code:", error?.code);
     console.error("Error stack:", error?.stack);
     res.status(500).json({
       message: "Failed to fetch companies",
-      error: process.env.NODE_ENV === "development" ? error?.message : void 0
+      error: process.env.NODE_ENV === "development" ? error?.message : void 0,
+      errorName: error?.name,
+      errorCode: error?.code
     });
   }
 });
