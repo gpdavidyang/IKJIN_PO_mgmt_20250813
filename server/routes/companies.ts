@@ -9,10 +9,25 @@ import { logoUpload } from "../utils/multer-config";
 
 const router = Router();
 
+// Debug endpoint to check environment
+router.get("/companies/debug", (req, res) => {
+  res.json({
+    databaseUrlSet: !!process.env.DATABASE_URL,
+    databaseUrlPreview: process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 20) + "..." : "not set",
+    nodeEnv: process.env.NODE_ENV,
+    allDbEnvVars: Object.keys(process.env).filter(key => key.includes('DATABASE')),
+    vercelEnv: process.env.VERCEL_ENV
+  });
+});
+
 router.get("/companies", async (req, res) => {
   try {
     console.log("🏢 Fetching companies from database...");
     console.log("🔍 DATABASE_URL status:", process.env.DATABASE_URL ? "set" : "missing");
+    if (process.env.DATABASE_URL) {
+      console.log("🔍 DATABASE_URL preview:", process.env.DATABASE_URL.substring(0, 20) + "...[TRUNCATED]");
+    }
+    console.log("🔍 All env vars:", Object.keys(process.env).filter(key => key.includes('DATABASE')));
     console.log("🔍 DB object status:", typeof storage);
     
     const companies = await storage.getCompanies();
@@ -28,7 +43,8 @@ router.get("/companies", async (req, res) => {
       message: "Failed to fetch companies",
       error: process.env.NODE_ENV === 'development' ? error?.message : undefined,
       errorName: error?.name,
-      errorCode: error?.code
+      errorCode: error?.code,
+      databaseUrlStatus: process.env.DATABASE_URL ? "set" : "missing"
     });
   }
 });

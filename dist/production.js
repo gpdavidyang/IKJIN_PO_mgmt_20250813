@@ -4274,10 +4274,23 @@ var dashboard_default = router6;
 import { Router as Router7 } from "express";
 init_schema();
 var router7 = Router7();
+router7.get("/companies/debug", (req, res) => {
+  res.json({
+    databaseUrlSet: !!process.env.DATABASE_URL,
+    databaseUrlPreview: process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 20) + "..." : "not set",
+    nodeEnv: process.env.NODE_ENV,
+    allDbEnvVars: Object.keys(process.env).filter((key) => key.includes("DATABASE")),
+    vercelEnv: process.env.VERCEL_ENV
+  });
+});
 router7.get("/companies", async (req, res) => {
   try {
     console.log("\u{1F3E2} Fetching companies from database...");
     console.log("\u{1F50D} DATABASE_URL status:", process.env.DATABASE_URL ? "set" : "missing");
+    if (process.env.DATABASE_URL) {
+      console.log("\u{1F50D} DATABASE_URL preview:", process.env.DATABASE_URL.substring(0, 20) + "...[TRUNCATED]");
+    }
+    console.log("\u{1F50D} All env vars:", Object.keys(process.env).filter((key) => key.includes("DATABASE")));
     console.log("\u{1F50D} DB object status:", typeof storage);
     const companies3 = await storage.getCompanies();
     console.log(`\u2705 Successfully fetched ${companies3.length} companies`);
@@ -4292,7 +4305,8 @@ router7.get("/companies", async (req, res) => {
       message: "Failed to fetch companies",
       error: process.env.NODE_ENV === "development" ? error?.message : void 0,
       errorName: error?.name,
-      errorCode: error?.code
+      errorCode: error?.code,
+      databaseUrlStatus: process.env.DATABASE_URL ? "set" : "missing"
     });
   }
 });
