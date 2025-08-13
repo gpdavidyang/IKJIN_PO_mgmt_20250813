@@ -2533,20 +2533,39 @@ async function login(req, res) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
     console.log("\u2705 Mock authentication successful for user:", user.name);
-    const authSession = req.session;
-    authSession.userId = user.id;
-    req.session.save((err) => {
-      if (err) {
-        console.error("Session save error:", err);
-        return res.status(500).json({ message: "Session save failed" });
-      }
-      console.log("Session saved successfully for user:", user.id);
+    try {
+      const authSession = req.session;
+      authSession.userId = user.id;
+      const sessionSavePromise = new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          console.log("\u26A0\uFE0F Session save timeout, proceeding without session persistence");
+          resolve();
+        }, 2e3);
+        req.session.save((err) => {
+          clearTimeout(timeout);
+          if (err) {
+            console.error("Session save error (non-fatal):", err);
+            resolve();
+          } else {
+            console.log("Session saved successfully for user:", user.id);
+            resolve();
+          }
+        });
+      });
+      await sessionSavePromise;
       const { password: _, ...userWithoutPassword } = user;
       res.json({
         message: "Login successful",
         user: userWithoutPassword
       });
-    });
+    } catch (sessionError) {
+      console.error("Session handling error (non-fatal):", sessionError);
+      const { password: _, ...userWithoutPassword } = user;
+      res.json({
+        message: "Login successful (no session)",
+        user: userWithoutPassword
+      });
+    }
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({ message: "Login failed" });
