@@ -152,12 +152,8 @@ export function Sidebar() {
                         item.highlight && "font-medium border border-primary/20 hover:border-primary/40"
                       )}
                       onClick={() => {
-                        if (item.subItems) {
-                          toggleExpanded(item.name);
-                        } else {
-                          navigate(item.href);
-                          setIsMobileMenuOpen(false);
-                        }
+                        navigate(item.href);
+                        setIsMobileMenuOpen(false);
                       }}
                       onMouseEnter={() => {
                         // Prefetch route data on hover for better UX
@@ -172,45 +168,7 @@ export function Sidebar() {
                       {item.highlight && (
                         <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
                       )}
-                      {item.subItems && (
-                        expandedItems.includes(item.name) ? 
-                          <ChevronDown className="h-4 w-4" /> : 
-                          <ChevronRight className="h-4 w-4" />
-                      )}
                     </Button>
-                    
-                    {/* Sub-items */}
-                    {item.subItems && expandedItems.includes(item.name) && (
-                      <div className="ml-6 mt-2 space-y-1 border-l border-sidebar-border pl-3">
-                        {item.subItems.map((subItem) => (
-                          <Button
-                            key={subItem.name}
-                            variant={isActive(subItem.href) ? "secondary" : "ghost"}
-                            className={cn(
-                              "w-full justify-start text-sm nav-item transition-all duration-200",
-                              isActive(subItem.href) && "active bg-sidebar-accent text-sidebar-accent-foreground",
-                              subItem.highlight && "font-medium text-primary hover:bg-primary/10"
-                            )}
-                            onClick={() => {
-                              navigate(subItem.href);
-                              setIsMobileMenuOpen(false);
-                            }}
-                          >
-                            <span className="flex items-center justify-between w-full">
-                              <span>
-                                {subItem.highlight && "⭐ "}
-                                {subItem.name}
-                              </span>
-                              {subItem.badge && (
-                                <span className="ml-2 px-2 py-0.5 text-xs font-semibold bg-blue-500 text-white rounded">
-                                  {subItem.badge}
-                                </span>
-                              )}
-                            </span>
-                          </Button>
-                        ))}
-                      </div>
-                    )}
                   </div>
                 );
               })}
