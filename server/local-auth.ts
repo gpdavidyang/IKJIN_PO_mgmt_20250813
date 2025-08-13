@@ -33,68 +33,35 @@ export async function login(req: Request, res: Response) {
       return res.status(400).json({ message: "Email/username and password are required" });
     }
 
-    // STABLE: Use mock authentication for consistent login functionality
+    // 🔴 SECURITY FIX: Use real database authentication instead of mock users
     console.log("🔐 Attempting login with identifier:", loginIdentifier);
     
-    // Mock users for reliable authentication
-    const mockUsers = [
-      {
-        id: "admin",
-        email: "admin@company.com",
-        username: "admin",
-        name: "관리자",
-        role: "admin",
-        password: "admin123", // In real system, this would be hashed
-        isActive: true,
-        position: "시스템관리자",
-        department: "IT팀"
-      },
-      {
-        id: "manager",
-        email: "manager@company.com", 
-        username: "manager",
-        name: "김부장",
-        role: "project_manager",
-        password: "manager123",
-        isActive: true,
-        position: "프로젝트관리자", 
-        department: "건설사업부"
-      },
-      {
-        id: "user",
-        email: "user@company.com",
-        username: "user", 
-        name: "이기사",
-        role: "field_worker",
-        password: "user123",
-        isActive: true,
-        position: "현장기사",
-        department: "현장팀"
+    try {
+      // Find user in database by email (most common login method)
+      const user = await storage.getUserByEmail(loginIdentifier);
+      
+      if (!user) {
+        console.log("❌ User not found in database:", loginIdentifier);
+        return res.status(401).json({ message: "Invalid credentials" });
       }
-    ];
 
-    // Find user by email or username
-    const user = mockUsers.find(u => 
-      u.email === loginIdentifier || 
-      u.username === loginIdentifier
-    );
-    
-    if (!user) {
-      console.log("❌ User not found:", loginIdentifier);
-      return res.status(401).json({ message: "Invalid credentials" });
+      if (!user.isActive) {
+        console.log("❌ User account deactivated:", loginIdentifier);
+        return res.status(401).json({ message: "Account is deactivated" });
+      }
+
+      // Verify password using proper password comparison
+      const isValidPassword = await comparePasswords(password, user.password);
+      if (!isValidPassword) {
+        console.log("❌ Invalid password for user:", loginIdentifier);
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+
+      console.log("✅ Database authentication successful for user:", user.name || user.email);
+    } catch (dbError) {
+      console.error("🔴 Database authentication error:", dbError);
+      return res.status(500).json({ message: "Authentication failed - database error" });
     }
-
-    if (!user.isActive) {
-      return res.status(401).json({ message: "Account is deactivated" });
-    }
-
-    // Simple password check for mock system
-    if (password !== user.password) {
-      console.log("❌ Invalid password for user:", loginIdentifier);
-      return res.status(401).json({ message: "Invalid credentials" });
-    }
-
-    console.log("✅ Mock authentication successful for user:", user.name);
 
     try {
       // Create session
@@ -169,66 +136,63 @@ export async function getCurrentUser(req: Request, res: Response) {
     console.log("getCurrentUser - Session ID:", req.sessionID);
     console.log("getCurrentUser - Session userId:", authSession.userId);
     
+    // 🔴 SECURITY FIX: Always require proper authentication
     if (!authSession.userId) {
-      console.log("getCurrentUser - No userId in session");
-      return res.status(401).json({ message: "Not authenticated" });
+      console.log("🔴 getCurrentUser - No userId in session");
+      return res.status(401).json({ 
+        message: "Not authenticated",
+        authenticated: false 
+      });
     }
 
-    // STABLE: Use mock data for consistent authentication
-    const mockUsers = [
-      {
-        id: "admin",
-        email: "admin@company.com",
-        username: "admin",
-        name: "관리자",
-        role: "admin",
-        isActive: true,
-        position: "시스템관리자",
-        department: "IT팀",
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: "manager",
-        email: "manager@company.com", 
-        username: "manager",
-        name: "김부장",
-        role: "project_manager",
-        isActive: true,
-        position: "프로젝트관리자", 
-        department: "건설사업부",
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: "user",
-        email: "user@company.com",
-        username: "user", 
-        name: "이기사",
-        role: "field_worker",
-        isActive: true,
-        position: "현장기사",
-        department: "현장팀",
-        createdAt: new Date().toISOString()
+    try {
+      // Use real database user lookup instead of mock users
+      const user = await storage.getUser(authSession.userId);
+      if (!user) {
+        console.log("🔴 getCurrentUser - Database user not found:", authSession.userId);
+        // Clear invalid session
+        authSession.userId = undefined;
+        return res.status(401).json({ 
+          message: "Invalid session - user not found",
+          authenticated: false
+        });
       }
-    ];
 
-    // Find user by session userId
-    const user = mockUsers.find(u => u.id === authSession.userId);
-    if (!user) {
-      console.log("getCurrentUser - Mock user not found:", authSession.userId);
+      if (!user.isActive) {
+        console.log("🔴 getCurrentUser - User account deactivated:", user.email);
+        authSession.userId = undefined;
+        return res.status(401).json({ 
+          message: "Account is deactivated",
+          authenticated: false
+        });
+      }
+
+      console.log("🟢 getCurrentUser - Database user found:", user.name || user.email);
+      
+      // Set user on request for compatibility
+      req.user = user as User;
+
+      // Return user data without password
+      const { password: _, ...userWithoutPassword } = user;
+      res.json({
+        ...userWithoutPassword,
+        authenticated: true
+      });
+    } catch (dbError) {
+      console.error("🔴 Database error in getCurrentUser:", dbError);
+      // Clear session on database errors
       authSession.userId = undefined;
-      return res.status(401).json({ message: "Invalid session" });
+      return res.status(401).json({ 
+        message: "Authentication failed - database error",
+        authenticated: false
+      });
     }
-
-    console.log("getCurrentUser - Mock user found:", user.name);
-    
-    // Set user on request for compatibility
-    req.user = user as User;
-
-    // Return user data
-    res.json(user);
   } catch (error) {
-    console.error("Get current user error:", error);
-    res.status(500).json({ message: "Failed to get user data" });
+    console.error("🔴 Get current user error:", error);
+    res.status(500).json({ 
+      message: "Failed to get user data",
+      authenticated: false
+    });
   }
 }
 
@@ -237,17 +201,8 @@ export async function getCurrentUser(req: Request, res: Response) {
  */
 export async function requireAuth(req: Request, res: Response, next: NextFunction) {
   try {
-    // 개발 환경에서 임시 인증 우회 (디버깅용)
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🟡 개발 환경 - 임시 사용자로 인증 우회');
-      // 임시로 기본 사용자 설정
-      const defaultUser = await storage.getUsers();
-      if (defaultUser.length > 0) {
-        req.user = defaultUser[0] as User;
-        console.log('🟡 임시 사용자 설정:', req.user.id);
-        return next();
-      }
-    }
+    // SECURITY FIX: Removed development authentication bypass
+    // This was a critical security vulnerability that allowed automatic login
     
     const authSession = req.session as AuthSession;
     

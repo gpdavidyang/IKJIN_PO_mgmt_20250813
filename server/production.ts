@@ -85,7 +85,8 @@ async function initializeProductionApp() {
       maxAge: 1000 * 60 * 60 * 24 * 7
     },
     // Use memory store - sessions will not persist across serverless restarts
-    // but this prevents database connection errors
+    // TODO: In production, use Redis or external session store for persistence
+    // For now, using memory store to prevent database connection errors
     store: undefined // Default memory store
   }));
   console.log("⚠️ Using memory session store for serverless compatibility");
@@ -124,7 +125,8 @@ if (process.env.VERCEL) {
       maxAge: 1000 * 60 * 60 * 24 * 7
     },
     // Use memory store - sessions will not persist across serverless restarts
-    // but this prevents database connection errors
+    // TODO: In production, use Redis or external session store for persistence
+    // For now, using memory store to prevent database connection errors
     store: undefined // Default memory store
   }));
   console.log("⚠️ Using memory session store for serverless compatibility");

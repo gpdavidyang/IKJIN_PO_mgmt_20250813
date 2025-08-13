@@ -86,112 +86,24 @@ router.post('/auth/login-test', (req, res) => {
   }
 });
 
-// Global user state (temporary solution for demo)
-let currentUser: any = null;
+// SECURITY FIX: Removed global user state - was a critical security vulnerability
+// Global state shared authentication across all users/sessions
 
-// Replace main login with working version
-router.post('/auth/login', (req, res) => {
-  try {
-    const { username, password, email } = req.body;
-    const identifier = username || email;
-    
-    if (!identifier || !password) {
-      return res.status(400).json({ message: "Email/username and password are required" });
-    }
-    
-    console.log("🔐 Main login attempt for:", identifier);
-    
-    // First, force clear any existing authentication state
-    currentUser = null;
-    if (req.session) {
-      (req.session as any).userId = undefined;
-      (req.session as any).user = undefined;
-    }
-    
-    // Mock users (same as test endpoint)
-    const users = [
-      { id: "admin", username: "admin", email: "admin@company.com", password: "admin123", name: "관리자", role: "admin" },
-      { id: "manager", username: "manager", email: "manager@company.com", password: "manager123", name: "김부장", role: "project_manager" },
-      { id: "user", username: "user", email: "user@company.com", password: "user123", name: "이기사", role: "field_worker" }
-    ];
-    
-    const user = users.find(u => u.username === identifier || u.email === identifier);
-    
-    if (!user || user.password !== password) {
-      console.log("❌ Invalid credentials for:", identifier);
-      return res.status(401).json({ message: "Invalid credentials" });
-    }
-    
-    console.log("✅ Login successful for user:", user.name);
-    
-    // Set global user state (temporary solution)
-    currentUser = { ...user };
-    
-    // Try to set session but don't fail if it doesn't work
-    try {
-      const authSession = req.session as any;
-      if (authSession) {
-        authSession.userId = user.id;
-        authSession.user = { ...user };
-      }
-    } catch (sessionErr) {
-      console.log("⚠️ Session setting failed (non-fatal):", sessionErr);
-    }
-    
-    console.log("🔄 State reset and new user logged in:", user.name);
-    
-    // Return user without password
-    const { password: _, ...userWithoutPassword } = user;
-    res.json({ 
-      message: "Login successful", 
-      user: userWithoutPassword 
-    });
-  } catch (error) {
-    console.error("Main login error:", error);
-    res.status(500).json({ message: "Login failed", error: error?.message || "Unknown error" });
-  }
-});
-// Simple logout function
-router.post('/auth/logout', (req, res) => {
-  try {
-    console.log("🚪 Logout request");
-    
-    // Clear global user state
-    currentUser = null;
-    
-    // Try to destroy session if it exists
-    try {
-      if (req.session) {
-        req.session.destroy((err) => {
-          if (err) {
-            console.log("⚠️ Session destroy failed (non-fatal):", err);
-          } else {
-            console.log("Session destroyed successfully");
-          }
-        });
-      }
-    } catch (sessionErr) {
-      console.log("⚠️ Session handling failed (non-fatal):", sessionErr);
-    }
-    
-    res.json({ 
-      message: "Logout successful",
-      success: true 
-    });
-  } catch (error) {
-    console.error("Logout error:", error);
-    res.status(500).json({ 
-      message: "Logout failed", 
-      error: error?.message || "Unknown error",
-      success: false 
-    });
-  }
-});
+// Use database-based authentication instead of mock users
+router.post('/auth/login', login);
+// Use database-based logout function
+router.post('/auth/logout', logout);
 
 router.get('/logout', (req, res) => {
-  // Handle GET logout (redirect after logout)
-  currentUser = null;
-  res.json({ message: "Logout successful" });
+  // Handle GET logout (redirect after logout) - SECURITY FIX: Remove global state
+  if (req.session) {
+    req.session.destroy(() => {
+      res.clearCookie('connect.sid');
+      res.json({ message: "Logout successful" });
+    });
+  } else {
+    res.json({ message: "Logout successful" });
+  }
 });
 
 // Force logout endpoint - completely clears all authentication state
@@ -199,8 +111,7 @@ router.post('/auth/force-logout', (req, res) => {
   try {
     console.log("🔴 Force logout request - clearing all authentication state");
     
-    // Clear global user state
-    currentUser = null;
+    // SECURITY FIX: Only clear session data, no global state
     
     // Clear session data if it exists
     try {
@@ -231,7 +142,6 @@ router.post('/auth/force-logout', (req, res) => {
       message: "Force logout successful - all authentication state cleared",
       success: true,
       cleared: {
-        globalState: true,
         session: true,
         cookies: true
       }
@@ -251,15 +161,16 @@ router.get('/auth/status', (req, res) => {
   try {
     console.log("🔍 Authentication status check");
     
+    const authSession = req.session as any;
     const status = {
-      globalUser: currentUser ? { 
-        id: currentUser.id, 
-        name: currentUser.name, 
-        role: currentUser.role 
-      } : null,
       sessionExists: !!req.session,
       sessionId: req.sessionID || null,
-      sessionUserId: req.session ? (req.session as any).userId : null,
+      sessionUserId: authSession?.userId || null,
+      sessionUser: authSession?.user ? {
+        id: authSession.user.id,
+        name: authSession.user.name,
+        role: authSession.user.role
+      } : null,
       cookies: req.headers.cookie ? req.headers.cookie.split('; ').length : 0,
       timestamp: new Date().toISOString()
     };
@@ -275,24 +186,8 @@ router.get('/auth/status', (req, res) => {
   }
 });
 
-// Simple getCurrentUser function
-router.get('/auth/user', (req, res) => {
-  try {
-    console.log("👤 Get current user request");
-    
-    if (currentUser) {
-      const { password: _, ...userWithoutPassword } = currentUser;
-      console.log("✅ Returning current user:", userWithoutPassword.name);
-      res.json(userWithoutPassword);
-    } else {
-      console.log("❌ No current user (not authenticated)");
-      res.status(401).json({ message: "Not authenticated" });
-    }
-  } catch (error) {
-    console.error("Get current user error:", error);
-    res.status(500).json({ message: "Failed to get user data" });
-  }
-});
+// SECURITY FIX: Use database-based authentication instead of mock session data
+router.get('/auth/user', getCurrentUser);
 
 router.get('/auth/me', (req, res) => {
   try {
@@ -343,12 +238,9 @@ router.get("/auth/permissions/:userId", async (req, res) => {
   }
 });
 
-// User management routes
-router.get("/users", async (req, res) => {
+// User management routes - SECURITY FIX: Require authentication
+router.get("/users", requireAuth, requireAdmin, async (req, res) => {
   try {
-    // Skip authentication check for development
-    // TODO: Re-enable proper authentication in production
-
     const users = await storage.getUsers();
     res.json(users);
   } catch (error) {
@@ -357,11 +249,8 @@ router.get("/users", async (req, res) => {
   }
 });
 
-router.post("/users", async (req, res) => {
+router.post("/users", requireAuth, requireAdmin, async (req, res) => {
   try {
-    // Skip authentication check for development
-    // TODO: Re-enable proper authentication in production
-
     const { email, name, phoneNumber, role } = req.body;
     
     // Let the storage layer generate standardized ID

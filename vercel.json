@@ -6,14 +6,6 @@
       "use": "@vercel/static"
     },
     {
-      "src": "api/auth/user-simple.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/auth/login-simple.js", 
-      "use": "@vercel/node"
-    },
-    {
       "src": "api/test.js",
       "use": "@vercel/node"
     },
@@ -23,14 +15,6 @@
     }
   ],
   "routes": [
-    {
-      "src": "/api/auth/user",
-      "dest": "/api/auth/user-simple.js"
-    },
-    {
-      "src": "/api/auth/login",
-      "dest": "/api/auth/login-simple.js"
-    },
     {
       "src": "/api/test",
       "dest": "/api/test.js"
@@ -55,6 +39,7 @@
   "env": {
     "DATABASE_URL": "postgresql://postgres.tbvugytmskxxyqfvqmup:gps110601ysw@db.tbvugytmskxxyqfvqmup.supabase.co:5432/postgres?sslmode=require&connect_timeout=60",
     "SESSION_SECRET": "your-secret-key-here",
-    "VERCEL": "1"
+    "VERCEL": "1",
+    "NODE_ENV": "production"
   }
 }

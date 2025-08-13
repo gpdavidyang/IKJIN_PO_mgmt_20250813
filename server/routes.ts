@@ -397,7 +397,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Dashboard stats
   app.get('/api/dashboard/stats', requireAuth, async (req: any, res) => {
     try {
-      const userId = process.env.NODE_ENV === 'development' ? 'test_admin_001' : req.user.id;
+      const userId = req.user.id; // 🔴 SECURITY FIX: Removed development authentication bypass
       const user = await storage.getUser(userId);
       
       // Admin can see all stats, orderers see only their own
@@ -1424,14 +1424,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/orders/:id', requireAuth, async (req: any, res) => {
     try {
-      const userId = process.env.NODE_ENV === 'development' ? 'test_admin_001' : req.user.id;
-      console.log('Development mode - using test admin user');
+      const userId = req.user.id; // 🔴 SECURITY FIX: Removed development authentication bypass
       let user = await storage.getUser(userId);
       
-      // In development mode, grant admin access
-      if (process.env.NODE_ENV === 'development' && user) {
-        user = { ...user, role: 'admin' };
-      }
+      // 🔴 SECURITY FIX: Removed development mode admin access bypass
       const id = parseInt(req.params.id);
       
       if (isNaN(id)) {
@@ -1452,10 +1448,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Order API - items type:', typeof order.items);
       console.log('Order API - items length:', order.items?.length);
 
-      // Check access permissions - skip in development mode
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🚀 Development mode - bypassing access control');
-      } else if (user?.role !== "admin" && order.userId !== user?.id) {
+      // 🔴 SECURITY FIX: Always check access permissions - no development mode bypass
+      if (user?.role !== "admin" && order.userId !== user?.id) {
         console.log('❌ Access denied - userId:', order.userId, 'user.id:', user?.id, 'user.role:', user?.role);
         return res.status(403).json({ message: "Access denied" });
       }
@@ -1594,7 +1588,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put('/api/orders/:id', requireAuth, async (req: any, res) => {
     try {
-      const userId = process.env.NODE_ENV === 'development' ? 'test_admin_001' : req.user.id;
+      const userId = req.user.id; // 🔴 SECURITY FIX: Removed development authentication bypass
       const user = await storage.getUser(userId);
       const id = parseInt(req.params.id);
       
@@ -1635,7 +1629,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch('/api/orders/:id', requireAuth, async (req: any, res) => {
     try {
-      const userId = process.env.NODE_ENV === 'development' ? 'test_admin_001' : req.user.id;
+      const userId = req.user.id; // 🔴 SECURITY FIX: Removed development authentication bypass
       const user = await storage.getUser(userId);
       const id = parseInt(req.params.id);
       
@@ -1688,7 +1682,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete('/api/orders/:id', requireAuth, async (req: any, res) => {
     try {
-      const userId = process.env.NODE_ENV === 'development' ? 'test_admin_001' : req.user.id;
+      const userId = req.user.id; // 🔴 SECURITY FIX: Removed development authentication bypass
       const user = await storage.getUser(userId);
       const id = parseInt(req.params.id);
       
@@ -1733,7 +1727,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/orders/:id/attachments', requireAuth, upload.array('files'), async (req: any, res) => {
     console.log('🎯🎯🎯 ATTACHMENTS ROUTE REACHED 🎯🎯🎯');
     try {
-      const userId = process.env.NODE_ENV === 'development' ? 'test_admin_001' : req.user.id;
+      const userId = req.user.id; // 🔴 SECURITY FIX: Removed development authentication bypass
       const user = await storage.getUser(userId);
       const orderId = parseInt(req.params.id);
       
@@ -1775,7 +1769,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Download attachment
   app.get('/api/attachments/:id', requireAuth, async (req: any, res) => {
     try {
-      const userId = process.env.NODE_ENV === 'development' ? 'test_admin_001' : req.user.id;
+      const userId = req.user.id; // 🔴 SECURITY FIX: Removed development authentication bypass
       const user = await storage.getUser(userId);
       const attachmentId = parseInt(req.params.id);
       
@@ -1817,7 +1811,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Generate PDF for order
   app.get('/api/orders/:id/pdf', requireAuth, async (req: any, res) => {
     try {
-      const userId = process.env.NODE_ENV === 'development' ? 'test_admin_001' : req.user.id;
+      const userId = req.user.id; // 🔴 SECURITY FIX: Removed development authentication bypass
       const user = await storage.getUser(userId);
       const id = parseInt(req.params.id);
       
@@ -2255,7 +2249,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/item-receipts", requireAuth, async (req: any, res) => {
     try {
-      const userId = process.env.NODE_ENV === 'development' ? 'test_admin_001' : req.user.id;
+      const userId = req.user.id; // 🔴 SECURITY FIX: Removed development authentication bypass
       if (!userId) {
         return res.status(401).json({ message: "User not authenticated" });
       }

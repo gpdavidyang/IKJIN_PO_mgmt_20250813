@@ -128,11 +128,8 @@ export async function setupAuth(app: Express) {
 }
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
-  // In development mode, bypass authentication for testing
-  if (process.env.NODE_ENV === 'development') {
-    console.log('Development mode - bypassing authentication');
-    return next();
-  }
+  // SECURITY FIX: Removed development authentication bypass
+  // This was allowing automatic authentication in development mode
 
   const user = req.user as any;
 

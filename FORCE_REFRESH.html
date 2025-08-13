@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🚨 브라우저 캐시 강제 초기화</title>
+    <meta charset="UTF-8">
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 40px; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container { 
+            max-width: 700px; 
+            margin: 0 auto; 
+            background: rgba(255,255,255,0.95); 
+            padding: 40px; 
+            border-radius: 12px; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            color: #333;
+        }
+        h1 { color: #e74c3c; margin-bottom: 30px; }
+        .alert { 
+            background: #f8d7da; 
+            color: #721c24; 
+            padding: 20px; 
+            border-radius: 8px; 
+            margin: 20px 0;
+            border: 2px solid #f5c6cb;
+        }
+        .success { 
+            background: #d4edda; 
+            color: #155724; 
+            border: 2px solid #c3e6cb;
+        }
+        button { 
+            padding: 15px 30px; 
+            font-size: 16px; 
+            margin: 10px; 
+            border: none; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+        button:hover { transform: translateY(-2px); }
+        .critical { background: #e74c3c; color: white; }
+        .warning { background: #f39c12; color: white; }
+        .info { background: #3498db; color: white; }
+        .success-btn { background: #27ae60; color: white; }
+        .step { 
+            background: #f8f9fa; 
+            padding: 20px; 
+            margin: 15px 0; 
+            border-radius: 8px; 
+            border-left: 4px solid #007bff;
+        }
+        .code { 
+            background: #2c3e50; 
+            color: #ecf0f1; 
+            padding: 15px; 
+            border-radius: 4px; 
+            font-family: 'Courier New', monospace; 
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚨 긴급: 브라우저 캐시 문제 해결</h1>
+        
+        <div class="alert">
+            <strong>⚠️ 현재 상황:</strong><br>
+            • 서버는 수정되었지만 브라우저가 옛날 파일을 사용 중<br>
+            • 시크릿 창에서도 자동 로그인되는 현상<br>
+            • 프론트엔드 JavaScript 캐시 문제
+        </div>
+        
+        <h2>🔧 즉시 해결 방법</h2>
+        
+        <div class="step">
+            <h3>방법 1: 개발자 도구 사용 (가장 확실함)</h3>
+            <ol>
+                <li><strong>F12</strong> 키를 눌러 개발자 도구 열기</li>
+                <li><strong>Network</strong> 탭 클릭</li>
+                <li><strong>"Disable cache"</strong> 체크박스 선택</li>
+                <li><strong>개발자 도구를 열어둔 채로</strong> 페이지 새로고침</li>
+            </ol>
+        </div>
+        
+        <div class="step">
+            <h3>방법 2: 강제 새로고침</h3>
+            <div class="code">
+                Windows: Ctrl + Shift + R<br>
+                Mac: Cmd + Shift + R<br>
+                또는: Ctrl + F5 (Windows)
+            </div>
+        </div>
+        
+        <div class="step">
+            <h3>방법 3: 브라우저 캐시 완전 삭제</h3>
+            <div class="code">
+                Windows: Ctrl + Shift + Delete<br>
+                Mac: Cmd + Shift + Delete<br>
+                → "캐시된 이미지 및 파일" 선택 → 삭제
+            </div>
+        </div>
+        
+        <div class="step">
+            <h3>방법 4: 자동 해결 버튼들</h3>
+            <button class="critical" onclick="hardRefresh()">🔄 강제 새로고침</button>
+            <button class="warning" onclick="clearCache()">🗑️ 캐시 삭제</button>
+            <button class="info" onclick="checkVersion()">🔍 버전 확인</button>
+            <button class="success-btn" onclick="testAuth()">🔐 인증 테스트</button>
+        </div>
+        
+        <div id="result"></div>
+        
+        <div class="alert success" style="margin-top: 30px;">
+            <strong>✅ 예상 결과:</strong><br>
+            캐시 정리 후에는 시크릿 창에서 로그인 페이지가 나타나야 정상입니다!
+        </div>
+    </div>
+
+    <script>
+        const result = document.getElementById('result');
+        
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `alert ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}:</strong> ${message}`;
+            result.appendChild(div);
+            result.scrollTop = result.scrollHeight;
+        }
+        
+        function hardRefresh() {
+            log('🔄 강제 새로고침 실행 중... 브라우저가 서버에서 최신 파일을 다운로드합니다.');
+            // Disable cache and reload
+            if (window.location.reload) {
+                window.location.reload(true);
+            } else {
+                window.location.href = window.location.href;
+            }
+        }
+        
+        async function clearCache() {
+            try {
+                if ('caches' in window) {
+                    const cacheNames = await caches.keys();
+                    await Promise.all(cacheNames.map(name => caches.delete(name)));
+                    log(`✅ ${cacheNames.length}개 Service Worker 캐시 삭제됨`, 'success');
+                }
+                
+                // Clear storage
+                localStorage.clear();
+                sessionStorage.clear();
+                log('✅ 로컬 스토리지 및 세션 스토리지 삭제됨', 'success');
+                
+                // Clear cookies
+                document.cookie.split(";").forEach(cookie => {
+                    const eqPos = cookie.indexOf("=");
+                    const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+                    document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+                });
+                log('✅ 쿠키 삭제됨', 'success');
+                
+                setTimeout(() => {
+                    log('🔄 3초 후 페이지를 새로고침합니다...', 'info');
+                    setTimeout(() => window.location.reload(true), 3000);
+                }, 1000);
+                
+            } catch (error) {
+                log(`❌ 캐시 삭제 중 오류: ${error.message}`, 'error');
+            }
+        }
+        
+        async function checkVersion() {
+            try {
+                const response = await fetch('/api/auth/status', {
+                    cache: 'no-cache',
+                    headers: { 'Cache-Control': 'no-cache' }
+                });
+                const data = await response.json();
+                
+                if (data.globalUser === null) {
+                    log('✅ 서버는 올바르게 수정됨 - 문제는 브라우저 캐시입니다!', 'success');
+                } else {
+                    log('❌ 서버 문제 감지됨', 'error');
+                }
+                
+                log(`📊 서버 상태: <pre>${JSON.stringify(data, null, 2)}</pre>`, 'info');
+            } catch (error) {
+                log(`❌ 서버 확인 실패: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testAuth() {
+            try {
+                const response = await fetch('/api/auth/user', {
+                    cache: 'no-cache',
+                    headers: { 'Cache-Control': 'no-cache' }
+                });
+                const data = await response.json();
+                
+                if (response.status === 401) {
+                    log('✅ 인증 테스트 통과 - 로그인이 필요합니다 (정상)', 'success');
+                } else {
+                    log('❌ 인증 우회 감지됨 - 여전히 문제가 있습니다', 'error');
+                }
+                
+                log(`🔐 인증 응답: <pre>${JSON.stringify(data, null, 2)}</pre>`, 'info');
+            } catch (error) {
+                log(`❌ 인증 테스트 실패: ${error.message}`, 'error');
+            }
+        }
+        
+        // Auto-run checks on page load
+        window.addEventListener('load', () => {
+            log('🚀 캐시 문제 해결 도구 준비됨', 'success');
+            log('💡 위의 버튼들을 순서대로 클릭하여 문제를 해결하세요', 'info');
+        });
+    </script>
+</body>
+</html>
