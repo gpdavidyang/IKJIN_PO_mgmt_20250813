@@ -4281,15 +4281,34 @@ var dashboard_default = router6;
 // server/routes/companies.ts
 import { Router as Router7 } from "express";
 init_schema();
+import { sql as sql5 } from "drizzle-orm";
 var router7 = Router7();
-router7.get("/companies/debug", (req, res) => {
-  res.json({
-    databaseUrlSet: !!process.env.DATABASE_URL,
-    databaseUrlPreview: process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 20) + "..." : "not set",
-    nodeEnv: process.env.NODE_ENV,
-    allDbEnvVars: Object.keys(process.env).filter((key) => key.includes("DATABASE")),
-    vercelEnv: process.env.VERCEL_ENV
-  });
+router7.get("/companies/debug", async (req, res) => {
+  try {
+    const { db: db2 } = await Promise.resolve().then(() => (init_db(), db_exports));
+    const basicTest = await db2.execute(sql5`SELECT 1 as test`);
+    res.json({
+      databaseUrlSet: !!process.env.DATABASE_URL,
+      databaseUrlPreview: process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 30) + "..." : "not set",
+      nodeEnv: process.env.NODE_ENV,
+      allDbEnvVars: Object.keys(process.env).filter((key) => key.includes("DATABASE")),
+      vercelEnv: process.env.VERCEL_ENV,
+      dbConnection: "success",
+      basicQueryResult: basicTest
+    });
+  } catch (error) {
+    res.status(500).json({
+      databaseUrlSet: !!process.env.DATABASE_URL,
+      databaseUrlPreview: process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 30) + "..." : "not set",
+      nodeEnv: process.env.NODE_ENV,
+      allDbEnvVars: Object.keys(process.env).filter((key) => key.includes("DATABASE")),
+      vercelEnv: process.env.VERCEL_ENV,
+      dbConnection: "failed",
+      error: error?.message,
+      errorCode: error?.code,
+      errorName: error?.name
+    });
+  }
 });
 router7.get("/companies", async (req, res) => {
   try {
@@ -5002,7 +5021,7 @@ var POTemplateProcessorMock = class {
 // server/utils/vendor-validation.ts
 init_db();
 init_schema();
-import { eq as eq5, sql as sql5 } from "drizzle-orm";
+import { eq as eq5, sql as sql6 } from "drizzle-orm";
 function levenshteinDistance(str1, str2) {
   const matrix = [];
   if (str1.length === 0) return str2.length;
@@ -5093,7 +5112,7 @@ async function validateVendorName(vendorName, vendorType = "\uAC70\uB798\uCC98")
     const quickTest = new Promise((_, reject) => {
       setTimeout(() => reject(new Error("Quick DB test timeout")), 1e4);
     });
-    const testQuery = db.select({ count: sql5`1` }).from(vendors).limit(1);
+    const testQuery = db.select({ count: sql6`1` }).from(vendors).limit(1);
     await Promise.race([testQuery, quickTest]);
     console.log(`\u2705 \uB370\uC774\uD130\uBCA0\uC774\uC2A4 \uC5F0\uACB0 \uD655\uC778\uB428`);
   } catch (quickTestError) {
@@ -5130,7 +5149,7 @@ async function validateVendorName(vendorName, vendorType = "\uAC70\uB798\uCC98")
         phone: vendors.phone,
         contactPerson: vendors.contactPerson,
         aliases: vendors.aliases
-      }).from(vendors).where(sql5`${vendors.aliases}::jsonb @> ${JSON.stringify([vendorName])}::jsonb`).limit(1);
+      }).from(vendors).where(sql6`${vendors.aliases}::jsonb @> ${JSON.stringify([vendorName])}::jsonb`).limit(1);
       const allVendorsQuery = db.select({
         id: vendors.id,
         name: vendors.name,
@@ -5235,7 +5254,7 @@ async function checkEmailConflict(vendorName, excelEmail) {
         email: vendors.email,
         aliases: vendors.aliases
       }).from(vendors).where(
-        sql5`${vendors.name} = ${vendorName} OR ${vendors.aliases}::jsonb @> ${JSON.stringify([vendorName])}::jsonb`
+        sql6`${vendors.name} = ${vendorName} OR ${vendors.aliases}::jsonb @> ${JSON.stringify([vendorName])}::jsonb`
       ).limit(1);
       dbVendor = await Promise.race([dbVendorQuery, dbTimeout]);
     } catch (dbError) {
@@ -9081,7 +9100,7 @@ var po_template_real_default = router10;
 import { Router as Router11 } from "express";
 init_db();
 init_schema();
-import { eq as eq8, sql as sql6, and as and5, gte as gte3, lte as lte3, inArray as inArray2 } from "drizzle-orm";
+import { eq as eq8, sql as sql7, and as and5, gte as gte3, lte as lte3, inArray as inArray2 } from "drizzle-orm";
 import * as XLSX6 from "xlsx";
 var formatKoreanWon = (amount) => {
   return `\u20A9${amount.toLocaleString("ko-KR")}`;
@@ -9091,19 +9110,19 @@ router11.get("/debug-data", async (req, res) => {
   try {
     console.log("Debug data endpoint called");
     const orderCount = await db.select({
-      count: sql6`count(*)`
+      count: sql7`count(*)`
     }).from(purchaseOrders);
     const itemCount = await db.select({
-      count: sql6`count(*)`
+      count: sql7`count(*)`
     }).from(purchaseOrderItems);
     const itemsWithCategories = await db.select({
-      count: sql6`count(*)`,
-      withMajor: sql6`count(${items.majorCategory})`,
-      withMiddle: sql6`count(${items.middleCategory})`,
-      withMinor: sql6`count(${items.minorCategory})`
+      count: sql7`count(*)`,
+      withMajor: sql7`count(${items.majorCategory})`,
+      withMiddle: sql7`count(${items.middleCategory})`,
+      withMinor: sql7`count(${items.minorCategory})`
     }).from(items);
     const vendorCount = await db.select({
-      count: sql6`count(*)`
+      count: sql7`count(*)`
     }).from(vendors);
     const sampleOrders = await db.select().from(purchaseOrders).limit(3);
     const sampleItems = await db.select().from(purchaseOrderItems).limit(3);
@@ -9577,32 +9596,32 @@ router11.get("/summary", requireAuth, async (req, res) => {
     const { startDate, endDate } = req.query;
     const dateFilters = parseDateFilters(startDate, endDate);
     const ordersSummary = await db.select({
-      totalOrders: sql6`count(*)`,
-      totalAmount: sql6`sum(${purchaseOrders.totalAmount})`,
-      avgAmount: sql6`avg(${purchaseOrders.totalAmount})`
+      totalOrders: sql7`count(*)`,
+      totalAmount: sql7`sum(${purchaseOrders.totalAmount})`,
+      avgAmount: sql7`avg(${purchaseOrders.totalAmount})`
     }).from(purchaseOrders).where(dateFilters.length > 0 ? and5(...dateFilters) : void 0);
     const statusBreakdown = await db.select({
       status: purchaseOrders.status,
-      count: sql6`count(*)`,
-      totalAmount: sql6`sum(${purchaseOrders.totalAmount})`
+      count: sql7`count(*)`,
+      totalAmount: sql7`sum(${purchaseOrders.totalAmount})`
     }).from(purchaseOrders).where(and5(...dateFilters)).groupBy(purchaseOrders.status);
     const topVendors = await db.select({
       vendorId: vendors.id,
       vendorName: vendors.name,
-      orderCount: sql6`count(${purchaseOrders.id})`,
-      totalAmount: sql6`sum(${purchaseOrders.totalAmount})`
-    }).from(purchaseOrders).innerJoin(vendors, eq8(purchaseOrders.vendorId, vendors.id)).where(and5(...dateFilters)).groupBy(vendors.id, vendors.name).orderBy(sql6`sum(${purchaseOrders.totalAmount}) desc`).limit(10);
+      orderCount: sql7`count(${purchaseOrders.id})`,
+      totalAmount: sql7`sum(${purchaseOrders.totalAmount})`
+    }).from(purchaseOrders).innerJoin(vendors, eq8(purchaseOrders.vendorId, vendors.id)).where(and5(...dateFilters)).groupBy(vendors.id, vendors.name).orderBy(sql7`sum(${purchaseOrders.totalAmount}) desc`).limit(10);
     const topProjects = await db.select({
       projectId: projects.id,
       projectName: projects.projectName,
-      orderCount: sql6`count(${purchaseOrders.id})`,
-      totalAmount: sql6`sum(${purchaseOrders.totalAmount})`
-    }).from(purchaseOrders).innerJoin(projects, eq8(purchaseOrders.projectId, projects.id)).where(and5(...dateFilters)).groupBy(projects.id, projects.projectName).orderBy(sql6`sum(${purchaseOrders.totalAmount}) desc`).limit(10);
+      orderCount: sql7`count(${purchaseOrders.id})`,
+      totalAmount: sql7`sum(${purchaseOrders.totalAmount})`
+    }).from(purchaseOrders).innerJoin(projects, eq8(purchaseOrders.projectId, projects.id)).where(and5(...dateFilters)).groupBy(projects.id, projects.projectName).orderBy(sql7`sum(${purchaseOrders.totalAmount}) desc`).limit(10);
     const monthlyTrend = await db.select({
-      month: sql6`to_char(${purchaseOrders.orderDate}, 'YYYY-MM')`,
-      orderCount: sql6`count(*)`,
-      totalAmount: sql6`sum(${purchaseOrders.totalAmount})`
-    }).from(purchaseOrders).where(and5(...dateFilters)).groupBy(sql6`to_char(${purchaseOrders.orderDate}, 'YYYY-MM')`).orderBy(sql6`to_char(${purchaseOrders.orderDate}, 'YYYY-MM')`);
+      month: sql7`to_char(${purchaseOrders.orderDate}, 'YYYY-MM')`,
+      orderCount: sql7`count(*)`,
+      totalAmount: sql7`sum(${purchaseOrders.totalAmount})`
+    }).from(purchaseOrders).where(and5(...dateFilters)).groupBy(sql7`to_char(${purchaseOrders.orderDate}, 'YYYY-MM')`).orderBy(sql7`to_char(${purchaseOrders.orderDate}, 'YYYY-MM')`);
     res.json({
       period: {
         startDate: startDate || "all",
@@ -10091,7 +10110,7 @@ var import_export_default = router12;
 init_db();
 init_schema();
 import { Router as Router13 } from "express";
-import { eq as eq10, desc as desc3, sql as sql7 } from "drizzle-orm";
+import { eq as eq10, desc as desc3, sql as sql8 } from "drizzle-orm";
 import { z as z2 } from "zod";
 var router13 = Router13();
 var createEmailHistorySchema = z2.object({
@@ -10189,7 +10208,7 @@ router13.get("/orders-email-status", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Unauthorized" });
     }
-    const emailStatusQuery = await db.execute(sql7`
+    const emailStatusQuery = await db.execute(sql8`
       WITH latest_emails AS (
         SELECT DISTINCT ON (order_id) 
           order_id,
@@ -10567,7 +10586,7 @@ import { Router as Router14 } from "express";
 // server/utils/optimized-orders-query.ts
 init_db();
 init_schema();
-import { eq as eq11, desc as desc4, asc as asc2, ilike as ilike3, and as and7, or as or3, between as between2, count as count3, sql as sql8, gte as gte4, lte as lte4 } from "drizzle-orm";
+import { eq as eq11, desc as desc4, asc as asc2, ilike as ilike3, and as and7, or as or3, between as between2, count as count3, sql as sql9, gte as gte4, lte as lte4 } from "drizzle-orm";
 var OptimizedOrdersService = class _OptimizedOrdersService {
   /**
    * 정렬 필드에 따른 ORDER BY 절 생성
@@ -10621,7 +10640,7 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
       whereConditions.push(eq11(purchaseOrders.userId, userId));
     }
     if (status && status !== "all" && status !== "") {
-      whereConditions.push(sql8`${purchaseOrders.status} = ${status}`);
+      whereConditions.push(sql9`${purchaseOrders.status} = ${status}`);
     }
     if (vendorId && vendorId !== "all") {
       whereConditions.push(eq11(purchaseOrders.vendorId, vendorId));
@@ -10738,7 +10757,7 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
     const result = await db.update(purchaseOrders).set({
       status,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(sql8`${purchaseOrders.id} = ANY(${orderIds})`).returning();
+    }).where(sql9`${purchaseOrders.id} = ANY(${orderIds})`).returning();
     return result;
   }
   /**
@@ -10750,8 +10769,8 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
     const stats = await db.select({
       status: purchaseOrders.status,
       count: count3(),
-      totalAmount: sql8`COALESCE(SUM(${purchaseOrders.totalAmount}), 0)`,
-      avgAmount: sql8`COALESCE(AVG(${purchaseOrders.totalAmount}), 0)`
+      totalAmount: sql9`COALESCE(SUM(${purchaseOrders.totalAmount}), 0)`,
+      avgAmount: sql9`COALESCE(AVG(${purchaseOrders.totalAmount}), 0)`
     }).from(purchaseOrders).where(whereClause).groupBy(purchaseOrders.status);
     return stats;
   }

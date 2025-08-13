@@ -6,18 +6,41 @@ import { Router } from "express";
 import { storage } from "../storage";
 import { insertCompanySchema } from "@shared/schema";
 import { logoUpload } from "../utils/multer-config";
+import { sql } from "drizzle-orm";
 
 const router = Router();
 
 // Debug endpoint to check environment
-router.get("/companies/debug", (req, res) => {
-  res.json({
-    databaseUrlSet: !!process.env.DATABASE_URL,
-    databaseUrlPreview: process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 20) + "..." : "not set",
-    nodeEnv: process.env.NODE_ENV,
-    allDbEnvVars: Object.keys(process.env).filter(key => key.includes('DATABASE')),
-    vercelEnv: process.env.VERCEL_ENV
-  });
+router.get("/companies/debug", async (req, res) => {
+  try {
+    // Import db here to test
+    const { db } = await import("../db");
+    
+    // Test basic query
+    const basicTest = await db.execute(sql`SELECT 1 as test`);
+    
+    res.json({
+      databaseUrlSet: !!process.env.DATABASE_URL,
+      databaseUrlPreview: process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 30) + "..." : "not set",
+      nodeEnv: process.env.NODE_ENV,
+      allDbEnvVars: Object.keys(process.env).filter(key => key.includes('DATABASE')),
+      vercelEnv: process.env.VERCEL_ENV,
+      dbConnection: "success",
+      basicQueryResult: basicTest
+    });
+  } catch (error) {
+    res.status(500).json({
+      databaseUrlSet: !!process.env.DATABASE_URL,
+      databaseUrlPreview: process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 30) + "..." : "not set",
+      nodeEnv: process.env.NODE_ENV,
+      allDbEnvVars: Object.keys(process.env).filter(key => key.includes('DATABASE')),
+      vercelEnv: process.env.VERCEL_ENV,
+      dbConnection: "failed",
+      error: error?.message,
+      errorCode: error?.code,
+      errorName: error?.name
+    });
+  }
 });
 
 router.get("/companies", async (req, res) => {
