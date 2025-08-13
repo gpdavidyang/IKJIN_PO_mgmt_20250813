@@ -4284,9 +4284,14 @@ init_schema();
 import { sql as sql5 } from "drizzle-orm";
 var router7 = Router7();
 router7.get("/companies/debug", async (req, res) => {
+  console.log("\u{1F50D} Debug endpoint called");
   try {
+    console.log("\u{1F50D} Attempting to import db module...");
     const { db: db2 } = await Promise.resolve().then(() => (init_db(), db_exports));
+    console.log("\u{1F50D} DB module imported successfully");
+    console.log("\u{1F50D} Attempting basic query...");
     const basicTest = await db2.execute(sql5`SELECT 1 as test`);
+    console.log("\u{1F50D} Basic query successful:", basicTest);
     res.json({
       databaseUrlSet: !!process.env.DATABASE_URL,
       databaseUrlPreview: process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 30) + "..." : "not set",
@@ -4297,7 +4302,9 @@ router7.get("/companies/debug", async (req, res) => {
       basicQueryResult: basicTest
     });
   } catch (error) {
-    res.status(500).json({
+    console.error("\u{1F50D} Debug endpoint error:", error);
+    res.json({
+      // Changed from res.status(500).json to res.json
       databaseUrlSet: !!process.env.DATABASE_URL,
       databaseUrlPreview: process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 30) + "..." : "not set",
       nodeEnv: process.env.NODE_ENV,
@@ -4306,7 +4313,9 @@ router7.get("/companies/debug", async (req, res) => {
       dbConnection: "failed",
       error: error?.message,
       errorCode: error?.code,
-      errorName: error?.name
+      errorName: error?.name,
+      stack: error?.stack?.substring(0, 500)
+      // Add first 500 chars of stack trace
     });
   }
 });

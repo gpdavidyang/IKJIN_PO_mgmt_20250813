@@ -12,12 +12,17 @@ const router = Router();
 
 // Debug endpoint to check environment
 router.get("/companies/debug", async (req, res) => {
+  console.log("🔍 Debug endpoint called");
   try {
+    console.log("🔍 Attempting to import db module...");
     // Import db here to test
     const { db } = await import("../db");
+    console.log("🔍 DB module imported successfully");
     
+    console.log("🔍 Attempting basic query...");
     // Test basic query
     const basicTest = await db.execute(sql`SELECT 1 as test`);
+    console.log("🔍 Basic query successful:", basicTest);
     
     res.json({
       databaseUrlSet: !!process.env.DATABASE_URL,
@@ -29,7 +34,8 @@ router.get("/companies/debug", async (req, res) => {
       basicQueryResult: basicTest
     });
   } catch (error) {
-    res.status(500).json({
+    console.error("🔍 Debug endpoint error:", error);
+    res.json({  // Changed from res.status(500).json to res.json
       databaseUrlSet: !!process.env.DATABASE_URL,
       databaseUrlPreview: process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 30) + "..." : "not set",
       nodeEnv: process.env.NODE_ENV,
@@ -38,7 +44,8 @@ router.get("/companies/debug", async (req, res) => {
       dbConnection: "failed",
       error: error?.message,
       errorCode: error?.code,
-      errorName: error?.name
+      errorName: error?.name,
+      stack: error?.stack?.substring(0, 500) // Add first 500 chars of stack trace
     });
   }
 });
