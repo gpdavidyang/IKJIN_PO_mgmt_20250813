@@ -30,99 +30,12 @@ export default defineConfig({
     sourcemap: process.env.NODE_ENV === 'development',
     rollupOptions: {
       output: {
-        manualChunks: (id) => {
-          // Core React ecosystem - keep together but separate
-          if (id.includes('react') || id.includes('react-dom')) {
-            return 'react-core';
-          }
-          
-          // Router and state management
-          if (id.includes('wouter') || id.includes('@tanstack/react-query')) {
-            return 'state-router';
-          }
-          
-          // UI component libraries
-          if (id.includes('@tanstack/react-table') || 
-              id.includes('react-hook-form') || 
-              id.includes('@hookform/resolvers') ||
-              id.includes('zod')) {
-            return 'ui-forms';
-          }
-          
-          // Charts and visualization (large libraries)
-          if (id.includes('recharts') || id.includes('d3')) {
-            return 'charts';
-          }
-          
-          // Icons - separate due to size
-          if (id.includes('lucide-react')) {
-            return 'icons';
-          }
-          
-          // Utilities - lightweight
-          if (id.includes('clsx') || 
-              id.includes('tailwind-merge') || 
-              id.includes('date-fns')) {
-            return 'utilities';
-          }
-          
-          // Excel processing (large dependency)
-          if (id.includes('xlsx') || 
-              id.includes('exceljs') ||
-              id.includes('excel-upload') ||
-              id.includes('excel-automation')) {
-            return 'excel-processing';
-          }
-          
-          // Orders-related components (main feature)
-          if (id.includes('/orders/') || 
-              id.includes('enhanced-orders-table') ||
-              id.includes('use-optimized-orders') ||
-              id.includes('orders-professional')) {
-            return 'orders-core';
-          }
-          
-          // Dashboard components
-          if (id.includes('/dashboard') || 
-              id.includes('dashboard-widgets') ||
-              id.includes('advanced-chart')) {
-            return 'dashboard';
-          }
-          
-          // Form components
-          if (id.includes('order-form') || 
-              id.includes('vendor-form') || 
-              id.includes('item-form')) {
-            return 'forms';
-          }
-          
-          // Admin and management
-          if (id.includes('/admin') || 
-              id.includes('user-management') ||
-              id.includes('category-management')) {
-            return 'admin';
-          }
-          
-          // Authentication
-          if (id.includes('auth') || id.includes('login')) {
-            return 'auth';
-          }
-          
-          // Large node_modules packages
-          if (id.includes('node_modules')) {
-            // Split large packages separately
-            if (id.includes('react-query')) return 'vendor-query';
-            if (id.includes('react-table')) return 'vendor-table';
-            if (id.includes('react-hook-form')) return 'vendor-forms';
-            if (id.includes('recharts')) return 'vendor-charts';
-            if (id.includes('date-fns')) return 'vendor-dates';
-            
-            // Group smaller vendor packages
-            return 'vendor-misc';
-          }
-          
-          // Default chunk for remaining code
-          return 'main';
+        manualChunks: {
+          // Keep React ecosystem together for proper dependency resolution
+          vendor: ['react', 'react-dom', 'wouter', '@tanstack/react-query'],
+          ui: ['@tanstack/react-table', 'react-hook-form', 'zod', 'lucide-react'],
+          charts: ['recharts'],
+          utils: ['clsx', 'tailwind-merge', 'date-fns']
         },
         chunkFileNames: (chunkInfo) => {
           const facadeModuleId = chunkInfo.facadeModuleId
