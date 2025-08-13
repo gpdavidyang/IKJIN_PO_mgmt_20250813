@@ -2744,7 +2744,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const testUser = {
         id: "test_admin_001",
-        email: "test@ikjin.co.kr",
+        email: "admin@company.com",
         password: hashedPassword,
         name: "테스트 관리자",
         role: "admin" as const,

@@ -391,8 +391,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.email, email));
-    return user;
+    console.log("🔍 Searching for user with email:", email);
+    try {
+      const result = await db.select().from(users).where(eq(users.email, email));
+      console.log("🔍 Database query result:", result);
+      const [user] = result;
+      console.log("🔍 Found user:", user ? `${user.email} (${user.role})` : 'null');
+      return user;
+    } catch (error) {
+      console.error("🚨 Database query error:", error);
+      throw error;
+    }
   }
 
   async updateUser(id: string, updates: Partial<Omit<User, 'id' | 'createdAt'>>): Promise<User> {
