@@ -64,7 +64,7 @@ const Projects = createNetworkAwareLazyComponent(() => DynamicFeatures.loadProje
 const ProjectDetail = createLazyComponent(() => DynamicFeatures.loadProjectDetail(), 'ProjectDetail');
 const ProjectEdit = createLazyComponent(() => import("@/pages/project-edit"), 'ProjectEdit');
 const UserDetail = createLazyComponent(() => import("@/pages/user-detail"), 'UserDetail');
-const Admin = createLazyComponent(() => DynamicFeatures.loadAdminPanel(), 'Admin');
+const Admin = createLazyComponent(() => import("@/pages/admin"), 'Admin');
 const Users = createLazyComponent(() => import("@/pages/users"), 'Users');
 const UserManagement = createLazyComponent(() => DynamicFeatures.loadUserManagement(), 'UserManagement');
 const Profile = createLazyComponent(() => import("@/pages/profile"), 'Profile');

@@ -1,13 +1,22 @@
-import { FileText, Package, Users, Clock, Building, Plus, AlertCircle, BarChart3, CheckCircle, TrendingUp, ShoppingCart, Activity, FolderTree, ChevronRight, DollarSign, ArrowUp, ArrowDown, Calendar, Eye, ChevronsUpDown } from "lucide-react";
+import { FileText, Package, Users, Clock, Building, Plus, AlertCircle, BarChart3, CheckCircle, TrendingUp, ShoppingCart, Activity, FolderTree, ChevronRight, DollarSign, ArrowUp, ArrowDown, Calendar, Eye, ChevronsUpDown, Send, Mail, Edit } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useDashboardData } from "@/hooks/use-enhanced-queries";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import React from "react";
 import { useTheme } from "@/components/ui/theme-provider";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { formatKoreanWon } from "@/lib/utils";
+import { getStatusText } from "@/lib/statusUtils";
+import { EmailSendDialog } from "@/components/email-send-dialog";
+import { EmailHistoryModal } from "@/components/email-history-modal";
+import { EmailService } from "@/services/emailService";
+import PDFPreviewModal from "@/components/workflow/preview/PDFPreviewModal";
+
+// Import modals
+import { MonthlyTrendModal } from "@/components/modals/monthly-trend-modal";
+import { StatusDistributionModal } from "@/components/modals/status-distribution-modal";
 
 // Import enhanced components
 import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
@@ -22,8 +31,131 @@ export default function DashboardProfessional() {
   const queryClient = useQueryClient();
   const { actualTheme } = useTheme();
 
+  // Modal states
+  const [isMonthlyTrendModalOpen, setIsMonthlyTrendModalOpen] = useState(false);
+  const [isStatusDistributionModalOpen, setIsStatusDistributionModalOpen] = useState(false);
+  
+  // Email dialog state
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  
+  // Email history modal state
+  const [emailHistoryModalOpen, setEmailHistoryModalOpen] = useState(false);
+  const [selectedOrderForHistory, setSelectedOrderForHistory] = useState<any>(null);
+  
+  // PDF preview modal state
+  const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
+  const [selectedOrderForPDF, setSelectedOrderForPDF] = useState<any>(null);
+
   // Check if dark mode is active - ensure we're getting the correct theme
   const isDarkMode = actualTheme === 'dark' && document.documentElement.classList.contains('dark');
+
+  // Helper functions for email and status rendering (from orders-professional.tsx)
+  const renderEmailStatus = (order: any) => {
+    if (!order.emailStatus || order.totalEmailsSent === 0) {
+      return (
+        <span className="text-xs" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>미발송</span>
+      );
+    }
+
+    if (order.emailStatus === 'sent') {
+      return (
+        <div className="flex items-center gap-1">
+          <Send className="h-3 w-3" style={{ color: isDarkMode ? '#60a5fa' : '#2563eb' }} />
+          <span className="text-xs" style={{ color: isDarkMode ? '#60a5fa' : '#2563eb' }}>발송됨</span>
+        </div>
+      );
+    }
+
+    if (order.emailStatus === 'opened') {
+      return (
+        <div className="flex items-center gap-1">
+          <Mail className="h-3 w-3" style={{ color: isDarkMode ? '#34d399' : '#059669' }} />
+          <span className="text-xs" style={{ color: isDarkMode ? '#34d399' : '#059669' }}>열람됨</span>
+        </div>
+      );
+    }
+
+    return (
+      <span className="text-xs" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>미발송</span>
+    );
+  };
+
+  const getStatusColor = (status: string) => {
+    if (isDarkMode) {
+      switch (status) {
+        case 'pending': return 'bg-yellow-900/30 text-yellow-300 border-yellow-600';
+        case 'approved': return 'bg-green-900/30 text-green-300 border-green-600';
+        case 'sent': return 'bg-blue-900/30 text-blue-300 border-blue-600';
+        case 'completed': return 'bg-purple-900/30 text-purple-300 border-purple-600';
+        case 'rejected': return 'bg-red-900/30 text-red-300 border-red-600';
+        default: return 'bg-gray-700 text-gray-300 border-gray-600';
+      }
+    } else {
+      switch (status) {
+        case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        case 'approved': return 'bg-green-100 text-green-800 border-green-200';
+        case 'sent': return 'bg-blue-100 text-blue-800 border-blue-200';
+        case 'completed': return 'bg-purple-100 text-purple-800 border-purple-200';
+        case 'rejected': return 'bg-red-100 text-red-800 border-red-200';
+        default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      }
+    }
+  };
+
+  // Email handlers (from orders-professional.tsx)
+  const handleEmailSend = (order: any) => {
+    const fullOrder = recentOrders.find((o: any) => o.id === order.id);
+    if (fullOrder) {
+      setSelectedOrder(fullOrder);
+      setEmailDialogOpen(true);
+    }
+  };
+
+  const handleSendEmail = async (emailData: any) => {
+    if (!selectedOrder) return;
+
+    try {
+      const orderData = {
+        orderNumber: selectedOrder.orderNumber,
+        vendorName: selectedOrder.vendor?.name || '',
+        orderDate: selectedOrder.orderDate,
+        totalAmount: selectedOrder.totalAmount,
+        siteName: selectedOrder.project?.projectName || selectedOrder.project?.name,
+        filePath: selectedOrder.filePath || ''
+      };
+
+      await EmailService.sendPurchaseOrderEmail(orderData, emailData);
+      
+      toast({
+        title: "이메일 발송 완료",
+        description: `${selectedOrder.vendor?.name}에게 발주서 ${selectedOrder.orderNumber}를 전송했습니다.`,
+      });
+    } catch (error) {
+      toast({
+        title: "이메일 발송 실패",
+        description: error instanceof Error ? error.message : "이메일 발송 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleViewEmailHistory = (order: any) => {
+    const fullOrder = recentOrders.find((o: any) => o.id === order.id);
+    if (fullOrder) {
+      setSelectedOrderForHistory(fullOrder);
+      setEmailHistoryModalOpen(true);
+    }
+  };
+
+  // PDF preview handler
+  const handlePDFPreview = (order: any) => {
+    const fullOrder = recentOrders.find((o: any) => o.id === order.id);
+    if (fullOrder) {
+      setSelectedOrderForPDF(fullOrder);
+      setPdfPreviewOpen(true);
+    }
+  };
 
   // Debug: Log theme state
   useEffect(() => {
@@ -60,6 +192,7 @@ export default function DashboardProfessional() {
   const statusStats = dashboardData?.statusStats || [];
   const projectStats = dashboardData?.projectStats || [];
   const categoryStats = dashboardData?.categoryStats || [];
+
 
   if (dashboardLoading) {
     return <DashboardSkeleton />;
@@ -268,7 +401,8 @@ export default function DashboardProfessional() {
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-semibold" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}>월별 발주 추이</h3>
               <button 
-                className="text-sm font-medium transition-colors"
+                onClick={() => setIsMonthlyTrendModalOpen(true)}
+                className="text-sm font-medium transition-colors hover:underline"
                 style={{ color: isDarkMode ? '#60a5fa' : '#2563eb' }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.color = isDarkMode ? '#3b82f6' : '#1d4ed8';
@@ -343,7 +477,8 @@ export default function DashboardProfessional() {
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-semibold" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}>발주 상태 분포</h3>
               <button 
-                className="text-sm font-medium transition-colors"
+                onClick={() => setIsStatusDistributionModalOpen(true)}
+                className="text-sm font-medium transition-colors hover:underline"
                 style={{ color: isDarkMode ? '#60a5fa' : '#2563eb' }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.color = isDarkMode ? '#3b82f6' : '#1d4ed8';
@@ -461,7 +596,15 @@ export default function DashboardProfessional() {
                     <button 
                       className={`flex items-center gap-1 transition-colors ${isDarkMode ? 'hover:text-gray-300' : 'hover:text-gray-700'}`}
                     >
-                      프로젝트
+                      현장
+                      <ChevronsUpDown className="h-3 w-3" />
+                    </button>
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>
+                    <button 
+                      className={`flex items-center gap-1 transition-colors ${isDarkMode ? 'hover:text-gray-300' : 'hover:text-gray-700'}`}
+                    >
+                      발주일
                       <ChevronsUpDown className="h-3 w-3" />
                     </button>
                   </th>
@@ -481,6 +624,7 @@ export default function DashboardProfessional() {
                       <ChevronsUpDown className="h-3 w-3" />
                     </button>
                   </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>이메일</th>
                   <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>액션</th>
                 </tr>
               </thead>
@@ -504,41 +648,10 @@ export default function DashboardProfessional() {
                       e.currentTarget.style.backgroundColor = 'transparent';
                     }}
                   >
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}>
-                      {order.orderNumber}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm" style={{ color: isDarkMode ? '#d1d5db' : '#374151' }}>
-                      {order.vendor?.name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm" style={{ color: isDarkMode ? '#d1d5db' : '#374151' }}>
-                      {order.project?.projectName}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold" style={{ color: isDarkMode ? '#60a5fa' : '#2563eb' }}>
-                      {formatKoreanWon(order.totalAmount)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span 
-                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                        style={{
-                          backgroundColor: order.status === 'pending' ? (isDarkMode ? 'rgba(180, 83, 9, 0.3)' : '#fef3c7') :
-                                         order.status === 'approved' ? (isDarkMode ? 'rgba(5, 150, 105, 0.3)' : '#d1fae5') :
-                                         order.status === 'sent' ? (isDarkMode ? 'rgba(30, 58, 138, 0.3)' : '#dbeafe') :
-                                         (isDarkMode ? '#374151' : '#f3f4f6'),
-                          color: order.status === 'pending' ? (isDarkMode ? '#fbbf24' : '#d97706') :
-                                order.status === 'approved' ? (isDarkMode ? '#34d399' : '#059669') :
-                                order.status === 'sent' ? (isDarkMode ? '#60a5fa' : '#2563eb') :
-                                (isDarkMode ? '#d1d5db' : '#374151')
-                        }}
-                      >
-                        {order.status === 'pending' ? '승인대기' :
-                         order.status === 'approved' ? '승인완료' :
-                         order.status === 'sent' ? '발송완료' : order.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button
                         onClick={() => navigate(`/orders/${order.id}`)}
-                        className="font-medium text-sm transition-colors"
+                        className="transition-colors hover:underline"
                         style={{ color: isDarkMode ? '#60a5fa' : '#2563eb' }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.color = isDarkMode ? '#3b82f6' : '#1d4ed8';
@@ -547,8 +660,154 @@ export default function DashboardProfessional() {
                           e.currentTarget.style.color = isDarkMode ? '#60a5fa' : '#2563eb';
                         }}
                       >
-                        상세보기
+                        {order.orderNumber}
                       </button>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {order.vendor?.id ? (
+                        <button
+                          onClick={() => navigate(`/vendors/${order.vendor.id}`)}
+                          className="text-sm font-medium transition-colors hover:underline"
+                          style={{ color: isDarkMode ? '#60a5fa' : '#2563eb' }}
+                          title="거래처 상세 정보 보기"
+                        >
+                          {order.vendor.name}
+                        </button>
+                      ) : (
+                        <div className="text-sm" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}>
+                          {order.vendor?.name || '-'}
+                        </div>
+                      )}
+                      {order.vendor?.email && (
+                        <div className="text-xs" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>
+                          {order.vendor.email}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {order.project?.id ? (
+                        <button
+                          onClick={() => navigate(`/projects/${order.project.id}`)}
+                          className="text-sm font-medium transition-colors hover:underline"
+                          style={{ color: isDarkMode ? '#60a5fa' : '#2563eb' }}
+                          title="현장 상세 정보 보기"
+                        >
+                          {order.project.projectName || order.project.name}
+                        </button>
+                      ) : (
+                        <div className="text-sm" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}>
+                          {order.project?.projectName || order.project?.name || '-'}
+                        </div>
+                      )}
+                      {order.project?.projectCode && (
+                        <div className="text-xs" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>
+                          {order.project.projectCode}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}>
+                      {order.orderDate ? new Date(order.orderDate).toLocaleDateString('ko-KR') : 
+                       order.createdAt ? new Date(order.createdAt).toLocaleDateString('ko-KR') : '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-semibold" style={{ color: isDarkMode ? '#60a5fa' : '#2563eb' }}>
+                        {formatKoreanWon(order.totalAmount)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(order.status)}`}>
+                        {getStatusText(order.status)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {renderEmailStatus(order)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        {/* 상세보기 */}
+                        <button
+                          onClick={() => navigate(`/orders/${order.id}`)}
+                          className="p-1 rounded transition-colors"
+                          style={{ 
+                            color: isDarkMode ? '#60a5fa' : '#2563eb',
+                            backgroundColor: 'transparent'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.color = isDarkMode ? '#3b82f6' : '#1d4ed8';
+                            e.currentTarget.style.backgroundColor = isDarkMode ? 'rgba(59, 130, 246, 0.1)' : 'rgba(37, 99, 235, 0.1)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.color = isDarkMode ? '#60a5fa' : '#2563eb';
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                          }}
+                          title="상세보기"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
+                        
+                        {/* 수정 */}
+                        <button
+                          onClick={() => navigate(`/orders/${order.id}/edit`)}
+                          className="p-1 rounded transition-colors"
+                          style={{ 
+                            color: isDarkMode ? '#34d399' : '#059669',
+                            backgroundColor: 'transparent'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.color = isDarkMode ? '#10b981' : '#047857';
+                            e.currentTarget.style.backgroundColor = isDarkMode ? 'rgba(16, 185, 129, 0.1)' : 'rgba(5, 150, 105, 0.1)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.color = isDarkMode ? '#34d399' : '#059669';
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                          }}
+                          title="수정"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        
+                        {/* PDF 보기 */}
+                        <button
+                          onClick={() => handlePDFPreview(order)}
+                          className="p-1 rounded transition-colors"
+                          style={{ 
+                            color: isDarkMode ? '#fb923c' : '#ea580c',
+                            backgroundColor: 'transparent'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.color = isDarkMode ? '#f97316' : '#c2410c';
+                            e.currentTarget.style.backgroundColor = isDarkMode ? 'rgba(249, 115, 22, 0.1)' : 'rgba(234, 88, 12, 0.1)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.color = isDarkMode ? '#fb923c' : '#ea580c';
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                          }}
+                          title="PDF 보기"
+                        >
+                          <FileText className="h-4 w-4" />
+                        </button>
+                        
+                        {/* 이메일 */}
+                        <button
+                          onClick={() => handleEmailSend(order)}
+                          className="p-1 rounded transition-colors"
+                          style={{ 
+                            color: isDarkMode ? '#a855f7' : '#7c3aed',
+                            backgroundColor: 'transparent'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.color = isDarkMode ? '#9333ea' : '#6d28d9';
+                            e.currentTarget.style.backgroundColor = isDarkMode ? 'rgba(147, 51, 234, 0.1)' : 'rgba(124, 58, 237, 0.1)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.color = isDarkMode ? '#a855f7' : '#7c3aed';
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                          }}
+                          title="이메일 전송"
+                        >
+                          <Mail className="h-4 w-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -639,6 +898,86 @@ export default function DashboardProfessional() {
             </div>
           </button>
         </div>
+
+        {/* Modals */}
+        <MonthlyTrendModal
+          isOpen={isMonthlyTrendModalOpen}
+          onClose={() => setIsMonthlyTrendModalOpen(false)}
+          monthlyStats={monthlyStats}
+          isDarkMode={isDarkMode}
+        />
+
+        <StatusDistributionModal
+          isOpen={isStatusDistributionModalOpen}
+          onClose={() => setIsStatusDistributionModalOpen(false)}
+          statusStats={statusStats}
+          isDarkMode={isDarkMode}
+        />
+
+        {/* Email Send Dialog */}
+        {selectedOrder && (
+          <EmailSendDialog
+            open={emailDialogOpen}
+            onOpenChange={setEmailDialogOpen}
+            orderData={{
+              orderNumber: selectedOrder.orderNumber,
+              vendorName: selectedOrder.vendor?.name || '',
+              vendorEmail: selectedOrder.vendor?.email,
+              orderDate: new Date(selectedOrder.orderDate || selectedOrder.createdAt).toLocaleDateString(),
+              totalAmount: selectedOrder.totalAmount,
+              siteName: selectedOrder.project?.projectName || selectedOrder.project?.name
+            }}
+            onSendEmail={handleSendEmail}
+          />
+        )}
+
+        {/* Email History Modal */}
+        {selectedOrderForHistory && (
+          <EmailHistoryModal
+            orderId={selectedOrderForHistory.id}
+            orderNumber={selectedOrderForHistory.orderNumber}
+            isOpen={emailHistoryModalOpen}
+            onClose={() => {
+              setEmailHistoryModalOpen(false);
+              setSelectedOrderForHistory(null);
+            }}
+          />
+        )}
+
+        {/* PDF Preview Modal */}
+        {selectedOrderForPDF && (
+          <PDFPreviewModal
+            orderData={{
+              id: selectedOrderForPDF.id,
+              orderNumber: selectedOrderForPDF.orderNumber,
+              projectName: selectedOrderForPDF.project?.projectName || selectedOrderForPDF.project?.name,
+              vendorName: selectedOrderForPDF.vendor?.name,
+              totalAmount: selectedOrderForPDF.totalAmount,
+              orderDate: selectedOrderForPDF.orderDate || selectedOrderForPDF.createdAt,
+              deliveryDate: selectedOrderForPDF.deliveryDate,
+              status: selectedOrderForPDF.status,
+              filePath: selectedOrderForPDF.filePath,
+              // Additional data that might be needed for PDF generation
+              items: selectedOrderForPDF.items || [],
+              notes: selectedOrderForPDF.notes || selectedOrderForPDF.remarks,
+              createdBy: selectedOrderForPDF.user?.name || selectedOrderForPDF.createdBy
+            }}
+            isOpen={pdfPreviewOpen}
+            onClose={() => {
+              setPdfPreviewOpen(false);
+              setSelectedOrderForPDF(null);
+            }}
+            onDownload={(pdfUrl) => {
+              // Custom download handler if needed
+              const link = document.createElement('a');
+              link.href = pdfUrl;
+              link.download = `발주서_${selectedOrderForPDF.orderNumber}.pdf`;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+            }}
+          />
+        )}
       </div>
     </div>
   );

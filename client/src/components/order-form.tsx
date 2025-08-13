@@ -16,6 +16,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { formatKoreanWon } from "@/lib/utils";
 import { ExcelLikeOrderForm } from "./excel-like-order-form";
+import { useTheme } from "@/components/ui/theme-provider";
 
 const orderItemSchema = z.object({
   itemId: z.number().min(1, "품목을 선택하세요"),
@@ -51,6 +52,8 @@ interface OrderFormProps {
 
 export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId }: OrderFormProps) {
   const { toast } = useToast();
+  const { theme } = useTheme();
+  const isDarkMode = theme === 'dark';
   const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(preselectedTemplateId || null);
   const [templates, setTemplates] = useState<any[]>([]);
   const [isLoadingTemplates, setIsLoadingTemplates] = useState(true);
@@ -645,14 +648,14 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
   return (
     <div className="compact-form space-y-3" key={`general-${selectedTemplateId}`}>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
-        <Card>
+        <Card className={`transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg">기본 정보</CardTitle>
+            <CardTitle className={`text-lg transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>기본 정보</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 pt-2">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <Label htmlFor="templateId">발주서 템플릿 *</Label>
+                <Label htmlFor="templateId" className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>발주서 템플릿 *</Label>
                 <Select 
                   onValueChange={(value) => {
                     const templateId = parseInt(value);
@@ -713,15 +716,15 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
                   </SelectContent>
                 </Select>
                 {errors.templateId && (
-                  <p className="text-red-500 text-sm mt-1">{errors.templateId.message}</p>
+                  <p className={`text-sm mt-1 transition-colors ${isDarkMode ? 'text-red-400' : 'text-red-500'}`}>{errors.templateId.message}</p>
                 )}
                 {templatesError && (
-                  <p className="text-yellow-600 text-sm mt-1">템플릿 API 연결 오류: 기본 템플릿 사용 중</p>
+                  <p className={`text-sm mt-1 transition-colors ${isDarkMode ? 'text-yellow-400' : 'text-yellow-600'}`}>템플릿 API 연결 오류: 기본 템플릿 사용 중</p>
                 )}
               </div>
               
               <div>
-                <Label htmlFor="projectId">현장 *</Label>
+                <Label htmlFor="projectId" className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>현장 *</Label>
                 <Select 
                   onValueChange={(value) => {
                     const projectId = parseInt(value);
@@ -750,12 +753,12 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
                   </SelectContent>
                 </Select>
                 {errors.projectId && (
-                  <p className="text-red-500 text-sm mt-1">{errors.projectId.message}</p>
+                  <p className={`text-sm mt-1 transition-colors ${isDarkMode ? 'text-red-400' : 'text-red-500'}`}>{errors.projectId.message}</p>
                 )}
               </div>
 
               <div>
-                <Label htmlFor="vendorId">거래처 *</Label>
+                <Label htmlFor="vendorId" className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>거래처 *</Label>
                 <Select onValueChange={(value) => {
                   const vendorId = parseInt(value);
                   setValue("vendorId", vendorId);
@@ -778,24 +781,24 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
                   </SelectContent>
                 </Select>
                 {errors.vendorId && (
-                  <p className="text-red-500 text-sm mt-1">{errors.vendorId.message}</p>
+                  <p className={`text-sm mt-1 transition-colors ${isDarkMode ? 'text-red-400' : 'text-red-500'}`}>{errors.vendorId.message}</p>
                 )}
               </div>
               
               <div>
-                <Label htmlFor="orderDate">발주서 작성일 *</Label>
+                <Label htmlFor="orderDate" className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>발주서 작성일 *</Label>
                 <Input
                   id="orderDate"
                   type="date"
                   {...register("orderDate")}
                 />
                 {errors.orderDate && (
-                  <p className="text-red-500 text-sm mt-1">{errors.orderDate.message}</p>
+                  <p className={`text-sm mt-1 transition-colors ${isDarkMode ? 'text-red-400' : 'text-red-500'}`}>{errors.orderDate.message}</p>
                 )}
               </div>
 
               <div>
-                <Label htmlFor="deliveryDate">납품 희망일</Label>
+                <Label htmlFor="deliveryDate" className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>납품 희망일</Label>
                 <Input
                   id="deliveryDate"
                   type="date"
@@ -807,39 +810,39 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
 
             {/* Selected Project and Vendor Information */}
             {(selectedProjectInfo || selectedVendorInfo) && (
-              <div className="mt-4 pt-4 border-t border-gray-200">
+              <div className={`mt-4 pt-4 border-t transition-colors ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Project Information */}
                   {selectedProjectInfo && (
-                    <div className="bg-blue-50 p-3 rounded-lg">
-                      <h4 className="font-medium text-blue-900 mb-2">현장 정보</h4>
+                    <div className={`p-3 rounded-lg transition-colors ${isDarkMode ? 'bg-blue-900/20 border border-blue-800' : 'bg-blue-50'}`}>
+                      <h4 className={`font-medium mb-2 transition-colors ${isDarkMode ? 'text-blue-300' : 'text-blue-900'}`}>현장 정보</h4>
                       <div className="space-y-1 text-sm">
                         <div>
-                          <span className="font-medium text-gray-600">현장명:</span>
-                          <span className="ml-2 text-gray-900">{selectedProjectInfo.projectName}</span>
+                          <span className={`font-medium transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>현장명:</span>
+                          <span className={`ml-2 transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{selectedProjectInfo.projectName}</span>
                         </div>
                         {selectedProjectInfo.location && (
                           <div>
-                            <span className="font-medium text-gray-600">주소:</span>
-                            <span className="ml-2 text-gray-900">{selectedProjectInfo.location}</span>
+                            <span className={`font-medium transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>주소:</span>
+                            <span className={`ml-2 transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{selectedProjectInfo.location}</span>
                           </div>
                         )}
                         {selectedProjectInfo.projectManager && (
                           <div>
-                            <span className="font-medium text-gray-600">현장 관리자:</span>
-                            <span className="ml-2 text-gray-900">{selectedProjectInfo.projectManager}</span>
+                            <span className={`font-medium transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>현장 관리자:</span>
+                            <span className={`ml-2 transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{selectedProjectInfo.projectManager}</span>
                           </div>
                         )}
                         {selectedProjectInfo.managerPhone && (
                           <div>
-                            <span className="font-medium text-gray-600">전화번호:</span>
-                            <span className="ml-2 text-gray-900">{selectedProjectInfo.managerPhone}</span>
+                            <span className={`font-medium transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>전화번호:</span>
+                            <span className={`ml-2 transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{selectedProjectInfo.managerPhone}</span>
                           </div>
                         )}
                         {selectedProjectInfo.managerEmail && (
                           <div>
-                            <span className="font-medium text-gray-600">이메일:</span>
-                            <span className="ml-2 text-gray-900">{selectedProjectInfo.managerEmail}</span>
+                            <span className={`font-medium transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>이메일:</span>
+                            <span className={`ml-2 transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{selectedProjectInfo.managerEmail}</span>
                           </div>
                         )}
                       </div>
@@ -848,35 +851,35 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
 
                   {/* Vendor Information */}
                   {selectedVendorInfo && (
-                    <div className="bg-green-50 p-3 rounded-lg">
-                      <h4 className="font-medium text-green-900 mb-2">거래처 정보</h4>
+                    <div className={`p-3 rounded-lg transition-colors ${isDarkMode ? 'bg-green-900/20 border border-green-800' : 'bg-green-50'}`}>
+                      <h4 className={`font-medium mb-2 transition-colors ${isDarkMode ? 'text-green-300' : 'text-green-900'}`}>거래처 정보</h4>
                       <div className="space-y-1 text-sm">
                         <div>
-                          <span className="font-medium text-gray-600">거래처명:</span>
-                          <span className="ml-2 text-gray-900">{selectedVendorInfo.name}</span>
+                          <span className={`font-medium transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>거래처명:</span>
+                          <span className={`ml-2 transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{selectedVendorInfo.name}</span>
                         </div>
                         {selectedVendorInfo.contactPerson && (
                           <div>
-                            <span className="font-medium text-gray-600">담당자:</span>
-                            <span className="ml-2 text-gray-900">{selectedVendorInfo.contactPerson}</span>
+                            <span className={`font-medium transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>담당자:</span>
+                            <span className={`ml-2 transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{selectedVendorInfo.contactPerson}</span>
                           </div>
                         )}
                         {selectedVendorInfo.phone && (
                           <div>
-                            <span className="font-medium text-gray-600">연락처:</span>
-                            <span className="ml-2 text-gray-900">{selectedVendorInfo.phone}</span>
+                            <span className={`font-medium transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>연락처:</span>
+                            <span className={`ml-2 transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{selectedVendorInfo.phone}</span>
                           </div>
                         )}
                         {selectedVendorInfo.email && (
                           <div>
-                            <span className="font-medium text-gray-600">이메일:</span>
-                            <span className="ml-2 text-gray-900">{selectedVendorInfo.email}</span>
+                            <span className={`font-medium transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>이메일:</span>
+                            <span className={`ml-2 transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{selectedVendorInfo.email}</span>
                           </div>
                         )}
                         {selectedVendorInfo.address && (
                           <div>
-                            <span className="font-medium text-gray-600">주소:</span>
-                            <span className="ml-2 text-gray-900">{selectedVendorInfo.address}</span>
+                            <span className={`font-medium transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>주소:</span>
+                            <span className={`ml-2 transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{selectedVendorInfo.address}</span>
                           </div>
                         )}
                       </div>
@@ -892,10 +895,10 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
         {/* Dynamic Custom Fields based on selected template */}
         {selectedTemplate && renderDynamicTemplateFields()}
 
-        <Card>
+        <Card className={`transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">발주 품목</CardTitle>
+              <CardTitle className={`text-lg transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>발주 품목</CardTitle>
               <Button type="button" variant="outline" size="sm" onClick={addOrderItem}>
                 <Plus className="h-4 w-4 mr-1" />
                 품목 추가
@@ -1008,7 +1011,7 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
                       </TableCell>
                       <TableCell className="py-1">
                         <Input
-                          className="h-8 bg-gray-50"
+                          className={`h-8 transition-colors ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}
                           readOnly
                           value={formatKoreanWon(calculateTotalAmount(item))}
                         />
@@ -1047,12 +1050,12 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
                     </TableRow>
                   ))}
                 </TableBody>
-                <tfoot className="bg-gray-50">
+                <tfoot className={`transition-colors ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
                   <TableRow>
-                    <TableCell colSpan={7} className="py-2 text-right font-medium">
+                    <TableCell colSpan={7} className={`py-2 text-right font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                       총 금액:
                     </TableCell>
-                    <TableCell className="py-2 font-bold text-lg">
+                    <TableCell className={`py-2 font-bold text-lg transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                       {formatKoreanWon(calculateGrandTotal())}
                     </TableCell>
                     <TableCell colSpan={3} className="py-2"></TableCell>
@@ -1061,20 +1064,20 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
               </Table>
             </div>
             {errors.items && (
-              <p className="text-red-500 text-sm mt-2">{errors.items.message}</p>
+              <p className={`text-sm mt-2 transition-colors ${isDarkMode ? 'text-red-400' : 'text-red-500'}`}>{errors.items.message}</p>
             )}
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className={`transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg">파일 첨부</CardTitle>
+            <CardTitle className={`text-lg transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>파일 첨부</CardTitle>
           </CardHeader>
           <CardContent className="pt-2">
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-3 text-center hover:border-primary/50 transition-colors">
-              <Upload className="mx-auto h-6 w-6 text-gray-400 mb-2" />
-              <p className="text-sm text-gray-600 mb-1">파일을 드래그하거나 클릭하여 업로드</p>
-              <p className="text-xs text-gray-500 mb-2">PDF, DWG, 이미지 파일 (최대 10MB)</p>
+            <div className={`border-2 border-dashed rounded-lg p-3 text-center hover:border-primary/50 transition-colors ${isDarkMode ? 'border-gray-600 hover:border-primary/70' : 'border-gray-300'}`}>
+              <Upload className={`mx-auto h-6 w-6 mb-2 transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+              <p className={`text-sm mb-1 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>파일을 드래그하거나 클릭하여 업로드</p>
+              <p className={`text-xs mb-2 transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>PDF, DWG, 이미지 파일 (최대 10MB)</p>
               <input
                 type="file"
                 multiple
@@ -1095,13 +1098,13 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
 
             {uploadedFiles.length > 0 && (
               <div className="mt-2 space-y-1">
-                <h4 className="text-sm font-medium text-gray-900">첨부된 파일</h4>
+                <h4 className={`text-sm font-medium transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>첨부된 파일</h4>
                 {uploadedFiles.map((file, index) => (
-                  <div key={index} className="flex items-center justify-between p-1 bg-gray-50 rounded text-xs">
+                  <div key={index} className={`flex items-center justify-between p-1 rounded text-xs transition-colors ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
                     <div className="flex items-center space-x-1">
-                      <FileText className="h-3 w-3 text-gray-400" />
-                      <span className="text-gray-700">{file.name}</span>
-                      <span className="text-gray-500">
+                      <FileText className={`h-3 w-3 transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                      <span className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{file.name}</span>
+                      <span className={`transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                         ({(file.size / 1024 / 1024).toFixed(2)} MB)
                       </span>
                     </div>
@@ -1121,9 +1124,9 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className={`transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg">특이사항</CardTitle>
+            <CardTitle className={`text-lg transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>특이사항</CardTitle>
           </CardHeader>
           <CardContent className="pt-2">
             <Textarea
@@ -1135,7 +1138,7 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
           </CardContent>
         </Card>
 
-        <div className="flex justify-end space-x-2 pt-3 border-t">
+        <div className={`flex justify-end space-x-2 pt-3 border-t transition-colors ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
           <Button
             type="button"
             variant="outline"

@@ -34,6 +34,7 @@ import { formatKoreanWon } from "@/lib/utils";
 import { apiRequest } from "@/lib/queryClient";
 import type { PurchaseOrder } from "@shared/schema";
 import { useLocation } from "wouter";
+import { useAuth } from "@/hooks/useAuth";
 
 interface ApprovalStats {
   pendingCount: number;
@@ -43,6 +44,8 @@ interface ApprovalStats {
 }
 
 export default function Approvals() {
+  const { user, isAuthenticated } = useAuth();
+  const [, navigate] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [viewMode, setViewMode] = useState<"table" | "card">("table");
@@ -176,7 +179,9 @@ export default function Approvals() {
   // 필터링 및 정렬된 데이터
   const filteredPendingApprovals = sortData(
     pendingApprovals?.filter(order => {
-      const matchesSearch = order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase());
+      if (!order) return false; // null/undefined 체크
+      const searchText = (order.orderNumber || '').toLowerCase();
+      const matchesSearch = searchTerm === '' || searchText.includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === "all" || order.status === statusFilter;
       return matchesSearch && matchesStatus;
     }) || []
@@ -184,11 +189,50 @@ export default function Approvals() {
 
   const filteredApprovalHistory = sortData(
     approvalHistory?.filter(order => {
-      const matchesSearch = order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase());
+      if (!order) return false; // null/undefined 체크
+      const searchText = (order.orderNumber || '').toLowerCase();
+      const matchesSearch = searchTerm === '' || searchText.includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === "all" || order.status === statusFilter;
       return matchesSearch && matchesStatus;
     }) || []
   );
+
+  // 승인 권한 체크
+  const canApprove = user && ["admin", "executive", "hq_management", "project_manager"].includes(user.role);
+  
+  // 권한이 없는 사용자는 접근 차단
+  if (!isAuthenticated || !user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Card className="p-8 text-center">
+          <Shield className="h-16 w-16 mx-auto text-gray-400 mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">로그인이 필요합니다</h2>
+          <p className="text-gray-600 mb-4">승인 관리 기능을 사용하려면 로그인해주세요.</p>
+          <Button onClick={() => navigate("/login")}>로그인하기</Button>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!canApprove) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Card className="p-8 text-center">
+          <Shield className="h-16 w-16 mx-auto text-red-400 mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">접근 권한이 없습니다</h2>
+          <p className="text-gray-600 mb-2">승인 관리 기능은 다음 역할의 사용자만 이용할 수 있습니다:</p>
+          <ul className="text-sm text-gray-500 mb-4">
+            <li>• 관리자 (admin)</li>
+            <li>• 임원 (executive)</li>
+            <li>• 본사 관리 (hq_management)</li>
+            <li>• 프로젝트 매니저 (project_manager)</li>
+          </ul>
+          <p className="text-xs text-gray-400 mb-4">현재 권한: {user.role}</p>
+          <Button variant="outline" onClick={() => navigate("/")}>홈으로 돌아가기</Button>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <TooltipProvider>
@@ -377,7 +421,7 @@ export default function Approvals() {
                             onClick={() => handleOrderClick(order.id)}
                             className="text-blue-600 hover:text-blue-800 hover:underline"
                           >
-                            {order.orderNumber}
+                            {order.orderNumber || '-'}
                           </button>
                         </TableCell>
                         <TableCell>프로젝트 ID: {order.projectId}</TableCell>
@@ -457,7 +501,7 @@ export default function Approvals() {
                             onClick={() => handleOrderClick(order.id)}
                             className="text-blue-600 hover:text-blue-800 hover:underline"
                           >
-                            {order.orderNumber}
+                            {order.orderNumber || '-'}
                           </button>
                         </h3>
                         {getStatusBadge(order.status)}
@@ -533,7 +577,7 @@ export default function Approvals() {
                             onClick={() => handleOrderClick(order.id)}
                             className="text-blue-600 hover:text-blue-800 hover:underline"
                           >
-                            {order.orderNumber}
+                            {order.orderNumber || '-'}
                           </button>
                         </TableCell>
                         <TableCell>프로젝트 ID: {order.projectId}</TableCell>
@@ -570,7 +614,7 @@ export default function Approvals() {
                             onClick={() => handleOrderClick(order.id)}
                             className="text-blue-600 hover:text-blue-800 hover:underline"
                           >
-                            {order.orderNumber}
+                            {order.orderNumber || '-'}
                           </button>
                         </h3>
                         {getStatusBadge(order.status)}

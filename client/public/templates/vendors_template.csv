@@ -1,0 +1,4 @@
+name,vendorCode,businessNumber,contactPerson,email,phone,address,businessType,aliases
+(주)대한철강,VEN001,1234567890,김철수,steel@daehan.co.kr,02-123-4567,"서울시 영등포구 문래동 123-45",철강재료 공급,"대한철강,(주)대한철강,대한스틸"
+서울레미콘(주),VEN002,2345678901,박레미,concrete@seoul.co.kr,02-234-5678,"경기도 고양시 일산동구 456-78",레미콘 제조,"서울레미콘,서울레미콘(주),Seoul RMC"
+한국목재산업,VEN003,3456789012,이목재,wood@korea.co.kr,031-345-6789,"경기도 파주시 파주읍 789-01",목재 및 합판,"한국목재,한국목재산업,(주)한국목재"

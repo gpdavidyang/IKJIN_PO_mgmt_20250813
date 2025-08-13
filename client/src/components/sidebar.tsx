@@ -142,6 +142,14 @@ export function Sidebar() {
                   return null;
                 }
                 
+                // 승인 관리 메뉴 권한 필터링
+                if (item.name === "승인 관리") {
+                  const canApprove = user && ["admin", "executive", "hq_management", "project_manager"].includes(user.role);
+                  if (!canApprove) {
+                    return null;
+                  }
+                }
+                
                 return (
                   <div key={item.name}>
                     <Button

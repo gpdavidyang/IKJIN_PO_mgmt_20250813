@@ -9,7 +9,7 @@ import { Input } from './ui/input';
 import { Download, Upload, FileDown, AlertCircle, CheckCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
-type EntityType = 'vendors' | 'items' | 'projects';
+type EntityType = 'vendors' | 'projects' | 'purchase_orders';
 type FormatType = 'excel' | 'csv';
 
 interface ImportResult {
@@ -29,8 +29,8 @@ export function ImportExportManager() {
 
   const entityLabels = {
     vendors: '거래처',
-    items: '품목',
-    projects: '프로젝트'
+    projects: '현장',
+    purchase_orders: '발주서'
   };
 
   const handleExport = async () => {
@@ -94,31 +94,6 @@ export function ImportExportManager() {
     }
   };
 
-  const downloadTemplate = async () => {
-    try {
-      const response = await fetch(`/api/template/${selectedEntity}?format=${selectedFormat}`, {
-        method: 'GET',
-        credentials: 'include'
-      });
-
-      if (!response.ok) {
-        throw new Error('Template download failed');
-      }
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${selectedEntity}_template.${selectedFormat === 'csv' ? 'csv' : 'xlsx'}`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch (err) {
-      setError('템플릿 다운로드 중 오류가 발생했습니다.');
-      console.error('Template download error:', err);
-    }
-  };
 
   return (
     <Card className="w-full max-w-4xl mx-auto shadow-sm">
@@ -145,8 +120,8 @@ export function ImportExportManager() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="vendors">거래처</SelectItem>
-                    <SelectItem value="items">품목</SelectItem>
-                    <SelectItem value="projects">프로젝트</SelectItem>
+                    <SelectItem value="projects">현장</SelectItem>
+                    <SelectItem value="purchase_orders">발주서</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -169,61 +144,96 @@ export function ImportExportManager() {
             </Button>
           </TabsContent>
 
-          <TabsContent value="import" className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>데이터 유형</Label>
-                <Select value={selectedEntity} onValueChange={(value) => setSelectedEntity(value as EntityType)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="vendors">거래처</SelectItem>
-                    <SelectItem value="items">품목</SelectItem>
-                    <SelectItem value="projects">프로젝트</SelectItem>
-                  </SelectContent>
-                </Select>
+          <TabsContent value="import" className="space-y-6">
+            {/* 단계 1: 데이터 유형 선택 */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 bg-blue-600 text-white text-sm font-medium rounded-full flex items-center justify-center">1</div>
+                <Label className="text-base font-medium">데이터 유형 선택</Label>
               </div>
-              <div className="space-y-2">
-                <Label>파일 형식</Label>
-                <Select value={selectedFormat} onValueChange={(value) => setSelectedFormat(value as FormatType)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="excel">Excel (.xlsx)</SelectItem>
-                    <SelectItem value="csv">CSV (.csv)</SelectItem>
-                  </SelectContent>
-                </Select>
+              <Select value={selectedEntity} onValueChange={(value) => setSelectedEntity(value as EntityType)}>
+                <SelectTrigger className="max-w-sm">
+                  <SelectValue placeholder="가져올 데이터 유형을 선택하세요" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="vendors">거래처</SelectItem>
+                  <SelectItem value="projects">현장</SelectItem>
+                  <SelectItem value="purchase_orders">발주서</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* 단계 2: 템플릿 안내 */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 bg-blue-600 text-white text-sm font-medium rounded-full flex items-center justify-center">2</div>
+                <Label className="text-base font-medium">템플릿 확인 및 데이터 준비</Label>
+              </div>
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <div className="space-y-2">
+                    <p className="text-sm text-amber-800 font-medium">
+                      {entityLabels[selectedEntity]} 데이터를 가져오기 전에 올바른 형식을 확인하세요
+                    </p>
+                    <div className="flex gap-2">
+                      <a 
+                        href={`/templates/${selectedEntity}_template.xlsx`} 
+                        download 
+                        className="inline-flex items-center gap-1 text-xs bg-amber-100 hover:bg-amber-200 text-amber-800 px-2 py-1 rounded transition-colors"
+                      >
+                        <FileDown className="h-3 w-3" />
+                        Excel 템플릿
+                      </a>
+                      <a 
+                        href={`/templates/${selectedEntity}_template.csv`} 
+                        download 
+                        className="inline-flex items-center gap-1 text-xs bg-amber-100 hover:bg-amber-200 text-amber-800 px-2 py-1 rounded transition-colors"
+                      >
+                        <FileDown className="h-3 w-3" />
+                        CSV 템플릿
+                      </a>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="import-file">파일 선택</Label>
-              <Input
-                id="import-file"
-                type="file"
-                accept={selectedFormat === 'excel' ? '.xlsx,.xls' : '.csv'}
-                onChange={(e) => setImportFile(e.target.files?.[0] || null)}
-              />
+            {/* 단계 3: 파일 업로드 */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 bg-blue-600 text-white text-sm font-medium rounded-full flex items-center justify-center">3</div>
+                <Label className="text-base font-medium">파일 업로드</Label>
+              </div>
+              <div className="max-w-md">
+                <Input
+                  type="file"
+                  accept=".xlsx,.xls,.csv"
+                  onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                  className="cursor-pointer"
+                />
+                {importFile && (
+                  <p className="text-sm text-green-600 mt-2 flex items-center gap-1">
+                    <CheckCircle className="h-4 w-4" />
+                    선택된 파일: {importFile.name}
+                  </p>
+                )}
+              </div>
             </div>
 
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                onClick={downloadTemplate}
-                className="flex-1"
-              >
-                <FileDown className="mr-2 h-4 w-4" />
-                템플릿 다운로드
-              </Button>
+            {/* 단계 4: 데이터 가져오기 */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 bg-blue-600 text-white text-sm font-medium rounded-full flex items-center justify-center">4</div>
+                <Label className="text-base font-medium">데이터 가져오기</Label>
+              </div>
               <Button 
                 onClick={handleImport} 
                 disabled={!importFile || importing}
-                className="flex-1"
+                className="bg-green-600 hover:bg-green-700 text-white px-8"
               >
                 <Upload className="mr-2 h-4 w-4" />
-                {importing ? '가져오는 중...' : '데이터 가져오기'}
+                {importing ? '가져오는 중...' : `${entityLabels[selectedEntity]} 데이터 가져오기`}
               </Button>
             </div>
 

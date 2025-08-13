@@ -14,7 +14,8 @@ import {
   MailOpen,
   MailX,
   Send,
-  Clock
+  Clock,
+  FileText
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -44,6 +45,8 @@ interface Order {
   lastSentAt?: string | null;
   totalEmailsSent?: number;
   openedAt?: string | null;
+  // Vendor ID for navigation
+  vendorId?: string | number | null;
 }
 
 interface EnhancedOrdersTableProps {
@@ -53,6 +56,7 @@ interface EnhancedOrdersTableProps {
   onDelete?: (orderId: string) => void;
   onEmailSend?: (order: Order) => void;
   onViewEmailHistory?: (order: Order) => void;
+  onViewPdf?: (order: Order) => void;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
   onSort?: (field: string) => void;
@@ -67,11 +71,20 @@ export function EnhancedOrdersTable({
   onDelete,
   onEmailSend,
   onViewEmailHistory,
+  onViewPdf,
   sortBy,
   sortOrder,
   onSort
 }: EnhancedOrdersTableProps) {
   const [location, navigate] = useLocation();
+  
+  // 디버깅: props 확인
+  console.log('🔍 EnhancedOrdersTable props:', {
+    ordersCount: orders.length,
+    onEmailSend: !!onEmailSend,
+    onViewPdf: !!onViewPdf,
+    onViewEmailHistory: !!onViewEmailHistory
+  });
 
   // Helper function to render email status
   const renderEmailStatus = (order: Order) => {
@@ -224,7 +237,29 @@ export function EnhancedOrdersTable({
       searchable: true,
       accessor: (row) => (
         <div className="text-gray-900 dark:text-gray-100">
-          {row.vendorName || "-"}
+          {row.vendorName && row.vendorId ? (
+            <div 
+              className="font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 cursor-pointer hover:underline"
+              onClick={(e) => {
+                e.stopPropagation();
+                try {
+                  if (typeof navigate === 'function') {
+                    navigate(`/vendors/${row.vendorId}`);
+                  } else {
+                    window.location.href = `/vendors/${row.vendorId}`;
+                  }
+                } catch (error) {
+                  console.error('Navigation error:', error);
+                  window.location.href = `/vendors/${row.vendorId}`;
+                }
+              }}
+              title="거래처 상세 정보 보기"
+            >
+              {row.vendorName}
+            </div>
+          ) : (
+            <span>{row.vendorName || "-"}</span>
+          )}
         </div>
       ),
     },
@@ -280,114 +315,117 @@ export function EnhancedOrdersTable({
     {
       key: "actions",
       header: "액션",
-      width: "200px",
+      width: "180px",
       align: "center",
       accessor: (row) => (
         <div className="flex items-center justify-center gap-1" onClick={(e) => e.stopPropagation()}>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0"
-            onClick={() => {
-              try {
-                if (typeof navigate === 'function') {
-                  navigate(`/orders/${row.id}`);
-                } else {
-                  window.location.href = `/orders/${row.id}`;
-                }
-              } catch (error) {
-                window.location.href = `/orders/${row.id}`;
-              }
-            }}
-            title="상세 보기"
-          >
-            <Eye className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0"
-            onClick={() => {
-              try {
-                if (typeof navigate === 'function') {
-                  navigate(`/orders/${row.id}/edit`);
-                } else {
-                  window.location.href = `/orders/${row.id}/edit`;
-                }
-              } catch (error) {
-                window.location.href = `/orders/${row.id}/edit`;
-              }
-            }}
-            title="수정"
-          >
-            <Edit className="h-4 w-4" />
-          </Button>
-          {onEmailSend && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0"
-              onClick={() => onEmailSend(row)}
-              title="이메일 전송"
-            >
-              <Mail className="h-4 w-4" />
-            </Button>
-          )}
-          {onDelete && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-              onClick={() => {
-                if (confirm("정말로 이 발주서를 삭제하시겠습니까?")) {
-                  onDelete(row.id);
-                }
-              }}
-              title="삭제"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          )}
-          {onStatusChange && (row.status === "draft" || row.status === "pending") && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+          {/* 상세 보기 */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-8 w-8 p-0"
+                  className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20"
+                  onClick={() => {
+                    try {
+                      if (typeof navigate === 'function') {
+                        navigate(`/orders/${row.id}`);
+                      } else {
+                        window.location.href = `/orders/${row.id}`;
+                      }
+                    } catch (error) {
+                      window.location.href = `/orders/${row.id}`;
+                    }
+                  }}
                 >
-                  <MoreVertical className="h-4 w-4" />
+                  <Eye className="h-4 w-4" />
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                {row.status === "draft" && (
-                  <DropdownMenuItem
-                    onClick={() => onStatusChange(row.id, "pending")}
-                    className="text-primary-600"
-                  >
-                    승인 요청
-                  </DropdownMenuItem>
-                )}
-                
-                {row.status === "pending" && (
-                  <>
-                    <DropdownMenuItem
-                      onClick={() => onStatusChange(row.id, "approved")}
-                      className="text-green-600"
-                    >
-                      승인
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => onStatusChange(row.id, "rejected")}
-                      className="text-red-600"
-                    >
-                      거절
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>상세 보기</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          {/* 수정 */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-900/20"
+                  onClick={() => {
+                    try {
+                      if (typeof navigate === 'function') {
+                        navigate(`/orders/${row.id}/edit`);
+                      } else {
+                        window.location.href = `/orders/${row.id}/edit`;
+                      }
+                    } catch (error) {
+                      window.location.href = `/orders/${row.id}/edit`;
+                    }
+                  }}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>수정</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          {/* PDF 보기 */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 hover:bg-orange-50 hover:text-orange-600 dark:hover:bg-orange-900/20"
+                  onClick={() => {
+                    if (onViewPdf) {
+                      onViewPdf(row);
+                    }
+                  }}
+                >
+                  <FileText className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>PDF 보기</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          {/* 이메일 - 강제 표시 및 디버깅 */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 hover:bg-purple-50 hover:text-purple-600 dark:hover:bg-purple-900/20 border border-purple-200"
+                  onClick={() => {
+                    console.log('🔍 이메일 버튼 클릭됨', { row, onEmailSend: !!onEmailSend });
+                    if (onEmailSend) {
+                      onEmailSend(row);
+                    } else {
+                      alert('이메일 전송 기능이 설정되지 않았습니다.');
+                    }
+                  }}
+                  style={{ backgroundColor: 'rgba(147, 51, 234, 0.1)' }}
+                >
+                  <Mail className="h-4 w-4 text-purple-600" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>이메일 전송 (Debug)</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       ),
     },

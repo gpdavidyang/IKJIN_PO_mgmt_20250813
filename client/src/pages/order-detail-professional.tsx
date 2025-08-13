@@ -11,6 +11,7 @@ import {
   Edit, 
   Send, 
   Check, 
+  CheckCircle,
   FileText, 
   Download, 
   Eye, 
@@ -34,6 +35,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { InvoiceManager } from "@/components/invoice-manager";
 import { ReceiptManager } from "@/components/receipt-manager";
 import { OrderPreviewSimple } from "@/components/order-preview-simple";
+import { EmailSendDialog } from "@/components/email-send-dialog";
 import { format } from "date-fns";
 import { formatKoreanWon } from "@/lib/utils";
 
@@ -43,6 +45,8 @@ export default function OrderDetailProfessional() {
   const [, navigate] = useLocation();
   const params = useParams();
   const [showPreview, setShowPreview] = useState(false);
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const orderId = parseInt(params.id);
 
   const { data: order, isLoading } = useQuery({
@@ -127,6 +131,49 @@ export default function OrderDetailProfessional() {
   const handleSend = () => {
     if (confirm("이 발주서를 거래처에 발송하시겠습니까?")) {
       sendMutation.mutate();
+    }
+  };
+
+  const handleSendEmail = async (emailData: any) => {
+    if (!order) return;
+
+    try {
+      const orderData = {
+        orderNumber: order.orderNumber,
+        vendorName: order.vendor?.name || order.vendorName || '',
+        orderDate: order.orderDate,
+        totalAmount: order.totalAmount,
+        siteName: order.project?.projectName || order.projectName || '',
+        filePath: order.filePath || ''
+      };
+
+      // EmailService를 import하고 사용 (기존 orders-professional.tsx에서 사용하는 방식과 동일)
+      const response = await fetch('/api/orders/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderData,
+          ...emailData,
+          orderId: order.id
+        })
+      });
+
+      if (response.ok) {
+        toast({
+          title: "이메일 발송 완료",
+          description: `${order.vendor?.name || order.vendorName}에게 발주서 ${order.orderNumber}를 전송했습니다.`,
+        });
+        setEmailDialogOpen(false);
+        setSelectedOrder(null);
+      } else {
+        throw new Error('이메일 발송 실패');
+      }
+    } catch (error) {
+      toast({
+        title: "이메일 발송 실패",
+        description: error instanceof Error ? error.message : "이메일 발송 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -236,7 +283,18 @@ export default function OrderDetailProfessional() {
                 className="flex items-center gap-2"
               >
                 <Eye className="h-4 w-4" />
-                미리보기
+                PDF 미리보기
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setSelectedOrder(order);
+                  setEmailDialogOpen(true);
+                }}
+                className="flex items-center gap-2"
+              >
+                <Mail className="h-4 w-4" />
+                이메일
               </Button>
             </div>
           </div>
@@ -310,7 +368,7 @@ export default function OrderDetailProfessional() {
                 <FileText className="h-5 w-5 text-gray-600" />
                 <h3 className="text-lg font-semibold text-gray-900">발주서 정보</h3>
               </div>
-              <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-gray-600">발주번호</p>
                   <p className="text-sm font-medium text-gray-900">{order.orderNumber}</p>
@@ -327,15 +385,37 @@ export default function OrderDetailProfessional() {
                     {order.deliveryDate ? format(new Date(order.deliveryDate), 'yyyy년 MM월 dd일') : "-"}
                   </p>
                 </div>
-                {order.notes && (
+                {order.templateId && (
                   <div>
-                    <p className="text-sm text-gray-600 mb-2">비고</p>
-                    <div className="p-3 bg-gray-50 rounded-lg text-sm text-gray-700">
-                      {order.notes}
-                    </div>
+                    <p className="text-sm text-gray-600">사용 템플릿</p>
+                    <p className="text-sm text-gray-900">
+                      Template ID: {order.templateId}
+                    </p>
+                  </div>
+                )}
+                <div>
+                  <p className="text-sm text-gray-600">작성일시</p>
+                  <p className="text-sm text-gray-900">
+                    {order.createdAt ? format(new Date(order.createdAt), 'yyyy년 MM월 dd일 HH:mm') : "-"}
+                  </p>
+                </div>
+                {order.updatedAt && order.updatedAt !== order.createdAt && (
+                  <div>
+                    <p className="text-sm text-gray-600">최종 수정일시</p>
+                    <p className="text-sm text-gray-900">
+                      {format(new Date(order.updatedAt), 'yyyy년 MM월 dd일 HH:mm')}
+                    </p>
                   </div>
                 )}
               </div>
+              {order.notes && (
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <p className="text-sm text-gray-600 mb-2">비고</p>
+                  <div className="p-3 bg-gray-50 rounded-lg text-sm text-gray-700">
+                    {order.notes}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -456,6 +536,135 @@ export default function OrderDetailProfessional() {
           )}
         </div>
 
+        {/* Approval Information */}
+        {(order.approvedBy || order.approvedAt || order.currentApproverRole) && (
+          <Card className="shadow-sm mb-8 bg-white border-blue-200">
+            <CardContent className="p-6 bg-blue-50/20">
+              <div className="flex items-center gap-2 mb-4">
+                <CheckCircle className="h-5 w-5 text-gray-600" />
+                <h3 className="text-lg font-semibold text-gray-900">승인 정보</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {order.approvedBy && (
+                  <div>
+                    <p className="text-sm text-gray-600">승인자</p>
+                    <p className="text-sm font-medium text-gray-900">{order.approvedBy}</p>
+                  </div>
+                )}
+                {order.approvedAt && (
+                  <div>
+                    <p className="text-sm text-gray-600">승인일시</p>
+                    <p className="text-sm text-gray-900">
+                      {format(new Date(order.approvedAt), 'yyyy년 MM월 dd일 HH:mm')}
+                    </p>
+                  </div>
+                )}
+                {order.currentApproverRole && (
+                  <div>
+                    <p className="text-sm text-gray-600">현재 승인 단계</p>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-gray-900">
+                        {order.currentApproverRole === 'admin' ? '관리자' :
+                         order.currentApproverRole === 'executive' ? '임원' :
+                         order.currentApproverRole === 'hq_management' ? '본부장' :
+                         order.currentApproverRole === 'project_manager' ? '프로젝트매니저' :
+                         order.currentApproverRole}
+                      </span>
+                      {order.approvalLevel && (
+                        <span className="text-xs text-gray-500">
+                          (Level {order.approvalLevel})
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Category Summary */}
+        {order.items?.some((item: any) => item.majorCategory || item.middleCategory || item.minorCategory) && (
+          <Card className="shadow-sm mb-6 bg-white border-blue-200">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <TrendingUp className="h-5 w-5 text-gray-600" />
+                <h3 className="text-lg font-semibold text-gray-900">품목 분류 요약</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* 대분류별 집계 */}
+                {(() => {
+                  const majorCategories = order.items?.reduce((acc: any, item: any) => {
+                    if (item.majorCategory) {
+                      acc[item.majorCategory] = (acc[item.majorCategory] || 0) + 1;
+                    }
+                    return acc;
+                  }, {});
+                  return Object.keys(majorCategories || {}).length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-700 mb-2">대분류</p>
+                      <div className="space-y-1">
+                        {Object.entries(majorCategories || {}).map(([category, count]) => (
+                          <div key={category} className="flex justify-between items-center text-sm">
+                            <span className="text-gray-600">{category}</span>
+                            <span className="text-blue-600 font-medium">{count}개</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+                
+                {/* 중분류별 집계 */}
+                {(() => {
+                  const middleCategories = order.items?.reduce((acc: any, item: any) => {
+                    if (item.middleCategory) {
+                      acc[item.middleCategory] = (acc[item.middleCategory] || 0) + 1;
+                    }
+                    return acc;
+                  }, {});
+                  return Object.keys(middleCategories || {}).length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-700 mb-2">중분류</p>
+                      <div className="space-y-1">
+                        {Object.entries(middleCategories || {}).map(([category, count]) => (
+                          <div key={category} className="flex justify-between items-center text-sm">
+                            <span className="text-gray-600">{category}</span>
+                            <span className="text-blue-600 font-medium">{count}개</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+                
+                {/* 소분류별 집계 */}
+                {(() => {
+                  const minorCategories = order.items?.reduce((acc: any, item: any) => {
+                    if (item.minorCategory) {
+                      acc[item.minorCategory] = (acc[item.minorCategory] || 0) + 1;
+                    }
+                    return acc;
+                  }, {});
+                  return Object.keys(minorCategories || {}).length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-700 mb-2">소분류</p>
+                      <div className="space-y-1">
+                        {Object.entries(minorCategories || {}).map(([category, count]) => (
+                          <div key={category} className="flex justify-between items-center text-sm">
+                            <span className="text-gray-600">{category}</span>
+                            <span className="text-blue-600 font-medium">{count}개</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Items Section */}
         <Card className="shadow-sm mb-8 bg-white border-blue-200">
           <CardContent className="p-6">
@@ -477,37 +686,59 @@ export default function OrderDetailProfessional() {
               <table className="w-full">
                 <thead className="bg-blue-50 border-b border-blue-200">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">품목명</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">규격</th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">수량</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">단가</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">금액</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">비고</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">품목명</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">대분류</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">중분류</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">소분류</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">규격</th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">수량</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">단위</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">단가</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">금액</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">비고</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {order.items?.map((item: any, index: number) => (
                     <tr key={index} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-4 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">{item.itemName}</div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-700">
+                          {item.majorCategory || "-"}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-700">
+                          {item.middleCategory || "-"}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-700">
+                          {item.minorCategory || "-"}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700">
                         {item.specification || "-"}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <td className="px-4 py-4 whitespace-nowrap text-center">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                           {typeof item.quantity === 'number' ? item.quantity.toLocaleString() : item.quantity || "-"}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-gray-900">
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700">
+                        {item.unit || "EA"}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium text-gray-900">
                         {formatKoreanWon(item.unitPrice)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
+                      <td className="px-4 py-4 whitespace-nowrap text-right">
                         <span className="text-sm font-semibold text-blue-600">
                           {formatKoreanWon(item.totalAmount)}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700">
                         {item.notes || "-"}
                       </td>
                     </tr>
@@ -515,10 +746,10 @@ export default function OrderDetailProfessional() {
                 </tbody>
                 <tfoot className="bg-blue-50">
                   <tr>
-                    <td colSpan={4} className="px-6 py-4 text-right text-sm font-medium text-gray-900">
+                    <td colSpan={8} className="px-4 py-4 text-right text-sm font-medium text-gray-900">
                       총 발주금액
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-4 py-4 text-right">
                       <span className="text-lg font-bold text-blue-600">
                         {formatKoreanWon(order.totalAmount)}
                       </span>
@@ -627,6 +858,26 @@ export default function OrderDetailProfessional() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Email Send Dialog */}
+        {order && (
+          <EmailSendDialog
+            open={emailDialogOpen}
+            onOpenChange={(open) => {
+              setEmailDialogOpen(open);
+              if (!open) setSelectedOrder(null);
+            }}
+            orderData={{
+              orderNumber: order.orderNumber,
+              vendorName: order.vendor?.name || order.vendorName || '',
+              vendorEmail: order.vendor?.email,
+              orderDate: order.orderDate ? new Date(order.orderDate).toLocaleDateString() : '',
+              totalAmount: order.totalAmount,
+              siteName: order.project?.projectName || order.projectName || ''
+            }}
+            onSendEmail={handleSendEmail}
+          />
+        )}
       </div>
     </div>
   );

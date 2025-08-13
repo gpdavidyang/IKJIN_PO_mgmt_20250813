@@ -3,11 +3,12 @@
  */
 
 import { Router } from "express";
+import { requireAuth, requireRole } from "../local-auth";
 
 const router = Router();
 
-// Get approval history
-router.get("/approvals/history", async (req, res) => {
+// Get approval history - 승인 권한이 있는 사용자만 접근 가능
+router.get("/approvals/history", requireAuth, requireRole(["admin", "executive", "hq_management", "project_manager"]), async (req, res) => {
   try {
     console.log("📋 Fetching approval history (using reliable mock data)...");
     
@@ -62,8 +63,8 @@ router.get("/approvals/history", async (req, res) => {
   }
 });
 
-// Get pending approvals
-router.get("/approvals/pending", async (req, res) => {
+// Get pending approvals - 승인 권한이 있는 사용자만 접근 가능
+router.get("/approvals/pending", requireAuth, requireRole(["admin", "executive", "hq_management", "project_manager"]), async (req, res) => {
   try {
     console.log("⏳ Fetching pending approvals (using reliable mock data)...");
     
@@ -110,8 +111,8 @@ router.get("/approvals/pending", async (req, res) => {
   }
 });
 
-// Get approval statistics
-router.get("/approvals/stats", async (req, res) => {
+// Get approval statistics - 승인 권한이 있는 사용자만 접근 가능
+router.get("/approvals/stats", requireAuth, requireRole(["admin", "executive", "hq_management", "project_manager"]), async (req, res) => {
   try {
     console.log("📊 Fetching approval stats (using reliable mock data)...");
     
@@ -146,21 +147,25 @@ router.get("/approvals/stats", async (req, res) => {
   }
 });
 
-// Process approval (approve/reject)
-router.post("/approvals/:id/process", async (req, res) => {
+// Process approval (approve/reject) - 승인 권한이 있는 사용자만 접근 가능
+router.post("/approvals/:id/process", requireAuth, requireRole(["admin", "executive", "hq_management", "project_manager"]), async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     const { action, comments } = req.body;
+    const user = req.user!; // requireAuth 미들웨어에서 보장됨
     
-    console.log(`📋 Processing approval ${id} with action: ${action} (using reliable mock data)...`);
+    console.log(`📋 Processing approval ${id} with action: ${action} by ${user.name} (${user.role})`);
     
-    // STABLE: Use mock data for consistent API functionality
+    // 권한별 승인 한도 체크 (실제 구현 시 필요)
+    // TODO: approvalAuthorities 테이블에서 사용자 역할별 승인 한도 확인
+    
+    // STABLE: Use mock data for consistent API functionality (실제 구현 시에는 DB 업데이트)
     const mockApprovalResult = {
       id: id,
       orderId: id,
       action: action, // 'approve' or 'reject'
-      approver: "현재사용자", // In real app, get from auth
-      approverRole: "project_manager",
+      approver: user.name || user.email,
+      approverRole: user.role,
       approvalDate: new Date().toISOString(),
       comments: comments || "",
       status: action === 'approve' ? 'approved' : 'rejected',

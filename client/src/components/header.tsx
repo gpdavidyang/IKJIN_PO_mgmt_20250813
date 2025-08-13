@@ -33,11 +33,11 @@ const pageConfig = {
     actions: [] 
   },
   "/create-order/unified-v2": { 
-    title: "통합 워크플로우 V2", 
+    title: "발주서 작성", 
     section: "핵심 업무",
     breadcrumb: [
       { label: "발주서 작성", href: "/create-order" },
-      { label: "통합 워크플로우 V2", href: "/create-order/unified-v2" }
+      { label: "발주서 작성", href: "/create-order/unified-v2" }
     ],
     actions: [] 
   },

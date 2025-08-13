@@ -25,10 +25,12 @@ export default function OrderEdit() {
   console.log('OrderEdit orderId:', orderId, typeof orderId);
 
   const [formData, setFormData] = useState({
+    projectId: "",
     vendorId: "",
     orderDate: "",
     deliveryDate: "",
     notes: "",
+    templateId: "",
     items: [] as any[],
   });
 
@@ -54,6 +56,26 @@ export default function OrderEdit() {
     queryFn: () => apiRequest("GET", "/api/vendors"),
   });
 
+  // Fetch projects
+  const { data: projects } = useQuery({
+    queryKey: ["/api/projects"],
+    queryFn: () => apiRequest("GET", "/api/projects"),
+  });
+
+  // Fetch categories
+  const { data: categoriesData } = useQuery({
+    queryKey: ["/api/categories"],
+    queryFn: () => apiRequest("GET", "/api/categories"),
+  });
+
+  const categories = categoriesData?.categories || [];
+  const flatCategories = categoriesData?.flatCategories || [];
+
+  // Debug category data
+  console.log('Categories data:', categoriesData);
+  console.log('Categories (hierarchical):', categories);
+  console.log('Flat categories:', flatCategories);
+
   // Fetch items
   const { data: itemsData } = useQuery({
     queryKey: ["/api/items"],
@@ -64,7 +86,7 @@ export default function OrderEdit() {
 
   useEffect(() => {
     if (order && items.length > 0) {
-      // Map existing order items to include proper itemId based on itemName
+      // Map existing order items to include proper itemId based on itemName and add category fields
       const mappedItems = (order.items || []).map((item: any) => {
         // Try multiple matching strategies
         let matchingItem = null;
@@ -95,23 +117,31 @@ export default function OrderEdit() {
           unitPrice: parseFloat(item.unitPrice) || 0,
           specification: item.specification || "",
           notes: item.notes || "",
+          unit: item.unit || "EA",
+          majorCategory: item.majorCategory || "",
+          middleCategory: item.middleCategory || "",
+          minorCategory: item.minorCategory || "",
         };
       });
 
       setFormData({
+        projectId: order.projectId?.toString() || "",
         vendorId: order.vendorId?.toString() || "",
         orderDate: order.orderDate ? new Date(order.orderDate).toISOString().split('T')[0] : "",
         deliveryDate: order.deliveryDate ? new Date(order.deliveryDate).toISOString().split('T')[0] : "",
         notes: order.notes || "",
+        templateId: order.templateId?.toString() || "",
         items: mappedItems,
       });
     } else if (order && items.length === 0) {
       // If items haven't loaded yet, set basic form data without items
       setFormData({
+        projectId: order.projectId?.toString() || "",
         vendorId: order.vendorId?.toString() || "",
         orderDate: order.orderDate ? new Date(order.orderDate).toISOString().split('T')[0] : "",
         deliveryDate: order.deliveryDate ? new Date(order.deliveryDate).toISOString().split('T')[0] : "",
         notes: order.notes || "",
+        templateId: order.templateId?.toString() || "",
         items: order.items || [],
       });
     }
@@ -163,10 +193,12 @@ export default function OrderEdit() {
     }
 
     const submitData = {
+      projectId: formData.projectId ? parseInt(formData.projectId) : null,
       vendorId: parseInt(formData.vendorId),
       orderDate: new Date(formData.orderDate),
       deliveryDate: formData.deliveryDate ? new Date(formData.deliveryDate) : null,
       notes: formData.notes,
+      templateId: formData.templateId ? parseInt(formData.templateId) : null,
       items: formData.items.map(item => ({
         itemId: item.itemId,
         itemName: item.itemName,
@@ -174,6 +206,10 @@ export default function OrderEdit() {
         unitPrice: Number(item.unitPrice),
         specification: item.specification || "",
         notes: item.notes || "",
+        unit: item.unit || "EA",
+        majorCategory: item.majorCategory || "",
+        middleCategory: item.middleCategory || "",
+        minorCategory: item.minorCategory || "",
       })),
     };
 
@@ -190,6 +226,10 @@ export default function OrderEdit() {
         unitPrice: 0,
         specification: "",
         notes: "",
+        unit: "EA",
+        majorCategory: "",
+        middleCategory: "",
+        minorCategory: "",
       }],
     }));
   };
@@ -218,6 +258,69 @@ export default function OrderEdit() {
       updateItem(index, "unitPrice", selectedItem.unitPrice || 0);
       updateItem(index, "specification", selectedItem.specification || "");
     }
+  };
+
+  // Category selection helpers
+  const getMajorCategories = () => {
+    const result = categories || [];
+    console.log('getMajorCategories result:', result);
+    return result;
+  };
+
+  const getMiddleCategories = (majorCategoryId: string) => {
+    if (!majorCategoryId) return [];
+    const majorCategory = flatCategories.find(cat => 
+      cat.categoryType === 'major' && cat.categoryName === majorCategoryId
+    );
+    if (!majorCategory) return [];
+    return flatCategories.filter(cat => 
+      cat.categoryType === 'middle' && cat.parentId === majorCategory.id
+    );
+  };
+
+  const getMinorCategories = (middleCategoryId: string) => {
+    if (!middleCategoryId) return [];
+    const middleCategory = flatCategories.find(cat => 
+      cat.categoryType === 'middle' && cat.categoryName === middleCategoryId
+    );
+    if (!middleCategory) return [];
+    return flatCategories.filter(cat => 
+      cat.categoryType === 'minor' && cat.parentId === middleCategory.id
+    );
+  };
+
+  const handleCategoryChange = (index: number, categoryType: 'major' | 'middle' | 'minor', value: string) => {
+    console.log(`Category change: index=${index}, type=${categoryType}, value=${value}`);
+    const updates: any = {};
+    
+    // Convert "none" to empty string
+    const actualValue = value === "none" ? "" : value;
+    console.log(`Actual value after conversion: ${actualValue}`);
+    
+    if (categoryType === 'major') {
+      updates.majorCategory = actualValue;
+      updates.middleCategory = ""; // Reset dependent categories
+      updates.minorCategory = "";
+    } else if (categoryType === 'middle') {
+      updates.middleCategory = actualValue;
+      updates.minorCategory = ""; // Reset dependent categories
+    } else if (categoryType === 'minor') {
+      updates.minorCategory = actualValue;
+    }
+
+    console.log(`Updates to apply:`, updates);
+
+    // Update multiple fields at once
+    setFormData(prev => {
+      const newItems = prev.items.map((item, i) => 
+        i === index ? { ...item, ...updates } : item
+      );
+      console.log(`Updated item ${index}:`, newItems[index]);
+      return {
+        ...prev,
+        items: newItems,
+      };
+    });
   };
 
   if (orderLoading) {
@@ -285,12 +388,55 @@ export default function OrderEdit() {
       </div>
 
       <form onSubmit={handleSubmit}>
+        {/* Order Information Summary */}
+        {order && (
+          <Card className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+            <CardContent className="p-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <h3 className="text-sm font-medium text-blue-600">발주서 번호</h3>
+                  <p className="text-lg font-semibold text-blue-900">{order.orderNumber || 'N/A'}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-blue-600">현재 상태</h3>
+                  <p className="text-lg font-semibold text-blue-900">{order.status || 'N/A'}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-blue-600">생성일시</h3>
+                  <p className="text-lg font-semibold text-blue-900">
+                    {order.createdAt ? new Date(order.createdAt).toLocaleString('ko-KR') : 'N/A'}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <Card className="mb-6">
           <CardHeader>
             <CardTitle>기본 정보</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="project">프로젝트</Label>
+                <Select
+                  value={formData.projectId}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, projectId: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="프로젝트를 선택하세요" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {projects?.map((project: any) => (
+                      <SelectItem key={project.id} value={project.id.toString()}>
+                        {project.projectName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="vendor">거래처 *</Label>
                 <Select
@@ -365,7 +511,11 @@ export default function OrderEdit() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>품목명 *</TableHead>
+                    <TableHead>대분류</TableHead>
+                    <TableHead>중분류</TableHead>
+                    <TableHead>소분류</TableHead>
                     <TableHead>수량 *</TableHead>
+                    <TableHead>단위</TableHead>
                     <TableHead>단가</TableHead>
                     <TableHead>규격</TableHead>
                     <TableHead>비고</TableHead>
@@ -394,12 +544,81 @@ export default function OrderEdit() {
                         </Select>
                       </TableCell>
                       <TableCell>
+                        <Select
+                          value={item.majorCategory || "none"}
+                          onValueChange={(value) => {
+                            console.log(`Select onValueChange triggered: ${value}`);
+                            handleCategoryChange(index, "major", value);
+                          }}
+                        >
+                          <SelectTrigger className="min-w-[120px]">
+                            <SelectValue placeholder="대분류 선택" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">선택 해제</SelectItem>
+                            {getMajorCategories().map((category: any) => {
+                              console.log('Rendering major category:', category);
+                              return (
+                                <SelectItem key={category.id} value={category.categoryName}>
+                                  {category.categoryName}
+                                </SelectItem>
+                              );
+                            })}
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell>
+                        <Select
+                          value={item.middleCategory || "none"}
+                          onValueChange={(value) => handleCategoryChange(index, "middle", value)}
+                          disabled={!item.majorCategory}
+                        >
+                          <SelectTrigger className="min-w-[120px]">
+                            <SelectValue placeholder={item.majorCategory ? "중분류 선택" : "대분류 먼저 선택"} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">선택 해제</SelectItem>
+                            {getMiddleCategories(item.majorCategory || "").map((category: any) => (
+                              <SelectItem key={category.id} value={category.categoryName}>
+                                {category.categoryName}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell>
+                        <Select
+                          value={item.minorCategory || "none"}
+                          onValueChange={(value) => handleCategoryChange(index, "minor", value)}
+                          disabled={!item.middleCategory}
+                        >
+                          <SelectTrigger className="min-w-[120px]">
+                            <SelectValue placeholder={item.middleCategory ? "소분류 선택" : "중분류 먼저 선택"} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">선택 해제</SelectItem>
+                            {getMinorCategories(item.middleCategory || "").map((category: any) => (
+                              <SelectItem key={category.id} value={category.categoryName}>
+                                {category.categoryName}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell>
                         <Input
                           type="number"
                           value={item.quantity}
                           onChange={(e) => updateItem(index, "quantity", Number(e.target.value))}
                           min="1"
                           required
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          value={item.unit || ""}
+                          onChange={(e) => updateItem(index, "unit", e.target.value)}
+                          placeholder="단위"
                         />
                       </TableCell>
                       <TableCell>
@@ -443,19 +662,34 @@ export default function OrderEdit() {
               </Table>
             )}
             
-            {/* Total Amount Display */}
+            {/* Items Summary */}
             {formData.items.length > 0 && (
-              <div className="mt-4 pt-4 border-t mx-6 mb-6">
-                <div className="flex justify-end">
-                  <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-                    <div className="text-right">
-                      <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">총 합계 금액</div>
-                      <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                        ₩{formData.items.reduce((total, item) => {
-                          const itemTotal = (item.quantity || 0) * (item.unitPrice || 0);
-                          return total + itemTotal;
-                        }, 0).toLocaleString()}
-                      </div>
+              <div className="mt-6 space-y-4">
+                {/* Category Summary */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <div className="text-sm text-blue-600 mb-1">총 품목 수</div>
+                    <div className="text-xl font-bold text-blue-700">{formData.items.length}개</div>
+                  </div>
+                  <div className="bg-green-50 p-4 rounded-lg">
+                    <div className="text-sm text-green-600 mb-1">총 수량</div>
+                    <div className="text-xl font-bold text-green-700">
+                      {formData.items.reduce((total, item) => total + (Number(item.quantity) || 0), 0)}
+                    </div>
+                  </div>
+                  <div className="bg-purple-50 p-4 rounded-lg">
+                    <div className="text-sm text-purple-600 mb-1">대분류 수</div>
+                    <div className="text-xl font-bold text-purple-700">
+                      {new Set(formData.items.map(item => item.majorCategory).filter(cat => cat)).size}개
+                    </div>
+                  </div>
+                  <div className="bg-orange-50 p-4 rounded-lg">
+                    <div className="text-sm text-orange-600 mb-1">총 합계 금액</div>
+                    <div className="text-xl font-bold text-orange-700">
+                      ₩{formData.items.reduce((total, item) => {
+                        const itemTotal = (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0);
+                        return total + itemTotal;
+                      }, 0).toLocaleString()}
                     </div>
                   </div>
                 </div>

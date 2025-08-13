@@ -284,6 +284,24 @@ export default function Orders() {
     }
   };
 
+  // PDF view handler
+  const handleViewPdf = (order: any) => {
+    const fullOrder = orders.find((o: any) => o.id === order.id);
+    if (fullOrder) {
+      if (fullOrder.filePath) {
+        // 파일 경로가 있는 경우 PDF 다운로드/보기
+        window.open(`/api/orders/${fullOrder.id}/download`, '_blank');
+      } else {
+        // 파일이 없는 경우 PDF 생성 요청
+        toast({
+          title: "PDF 생성 중",
+          description: "발주서 PDF를 생성하고 있습니다. 잠시 후 다시 시도해주세요.",
+        });
+        // TODO: PDF 생성 API 호출 후 다운로드
+      }
+    }
+  };
+
   const orders = ordersData?.orders || [];
   
   // Merge email status data with orders
@@ -342,13 +360,6 @@ export default function Orders() {
               >
                 <Download className="h-4 w-4 mr-2" />
                 {exportMutation.isPending ? "내보내는 중..." : "엑셀 다운로드"}
-              </Button>
-              <Button 
-                onClick={() => navigate("/create-order/unified")}
-                className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm px-4 py-2"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                새 발주서
               </Button>
             </div>
           </div>
@@ -612,6 +623,7 @@ export default function Orders() {
             const mappedOrder = {
               ...order,
               vendorName: order.vendor?.name || order.vendorName,
+              vendorId: order.vendor?.id || order.vendorId,
               projectName: order.project?.projectName || order.projectName,
               userName: order.user?.name || order.userName,
             };
@@ -623,6 +635,7 @@ export default function Orders() {
           onDelete={(orderId) => deleteOrderMutation.mutate(orderId)}
           onEmailSend={handleEmailSend}
           onViewEmailHistory={handleViewEmailHistory}
+          onViewPdf={handleViewPdf}
           sortBy={filters.sortBy}
           sortOrder={filters.sortOrder}
           onSort={handleSort}

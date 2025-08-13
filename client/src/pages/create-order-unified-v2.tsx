@@ -253,7 +253,7 @@ const CreateOrderUnifiedV2: React.FC = () => {
       formData.append('projectId', '1'); // 임시 프로젝트 ID
       formData.append('vendorId', '1'); // 임시 거래처 ID  
       formData.append('deliveryDate', orderData.deliveryDate || new Date().toISOString());
-      formData.append('notes', orderData.notes || `통합 워크플로우 V2로 생성된 발주서 - ${orderData.orderNumber}`);
+      formData.append('notes', orderData.notes || `발주서 작성으로 생성된 발주서 - ${orderData.orderNumber}`);
       
       // 품목 데이터 매핑 - API가 기대하는 형식으로 변환
       const mappedItems = (orderData.items || []).map((item: any) => ({
@@ -270,7 +270,7 @@ const CreateOrderUnifiedV2: React.FC = () => {
         projectId: '1',
         vendorId: '1',
         deliveryDate: orderData.deliveryDate || new Date().toISOString(),
-        notes: orderData.notes || `통합 워크플로우 V2로 생성된 발주서 - ${orderData.orderNumber}`,
+        notes: orderData.notes || `발주서 작성으로 생성된 발주서 - ${orderData.orderNumber}`,
         items: mappedItems
       });
       
@@ -385,7 +385,7 @@ const CreateOrderUnifiedV2: React.FC = () => {
         <div className="px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">발주서 작성 V2</h1>
+              <h1 className="text-2xl font-bold text-gray-900">발주서 작성</h1>
               <p className="text-sm text-gray-600 mt-1">한 화면에서 모든 작업을 완료하세요</p>
             </div>
             <div className="flex items-center gap-3">
@@ -409,6 +409,44 @@ const CreateOrderUnifiedV2: React.FC = () => {
 
       {/* 메인 컨텐츠 */}
       <div className="container mx-auto px-6 py-6">
+        {/* 사용팁 및 템플릿 다운로드 */}
+        {!activeMethod && (
+          <div className="mb-8">
+            <Alert className="mb-6 max-w-4xl mx-auto">
+              <Info className="h-4 w-4" />
+              <AlertDescription>
+                <div className="space-y-2">
+                  <div className="font-medium">📋 사용팁</div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="font-medium text-blue-600">엑셀 파일 업로드:</span> 대량 발주서, 반복 업무, 자동화 처리에 적합 (50건+ 권장)
+                    </div>
+                    <div>
+                      <span className="font-medium text-green-600">직접 입력:</span> 소량 발주서, 세밀한 조정, 즉시 처리에 적합 (10건 이하 권장)
+                    </div>
+                  </div>
+                  <div className="pt-2 border-t">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                      onClick={() => {
+                        const link = document.createElement('a');
+                        link.href = '/PO_Excel_Template.xlsx';
+                        link.download = 'PO_Excel_Template.xlsx';
+                        link.click();
+                      }}
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      엑셀 템플릿 다운로드
+                    </Button>
+                  </div>
+                </div>
+              </AlertDescription>
+            </Alert>
+          </div>
+        )}
+
         {/* 방법 선택 (처음에만 표시) */}
         {!activeMethod && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 max-w-4xl mx-auto">
@@ -419,7 +457,13 @@ const CreateOrderUnifiedV2: React.FC = () => {
               <CardContent className="p-8 text-center">
                 <Upload className="w-16 h-16 mx-auto mb-4 text-blue-600" />
                 <h3 className="text-xl font-semibold mb-2">엑셀 파일 업로드</h3>
-                <p className="text-gray-600">기존 엑셀 파일을 업로드하여 빠르게 작성</p>
+                <p className="text-gray-600 mb-4">기존 엑셀 파일을 업로드하여 빠르게 작성</p>
+                <div className="text-xs text-gray-500 space-y-1">
+                  <div>✅ 대량 처리 (50건+)</div>
+                  <div>✅ 자동화 워크플로우</div>
+                  <div>✅ 거래처 자동 매칭</div>
+                  <div>✅ 이메일 자동 발송</div>
+                </div>
               </CardContent>
             </Card>
 
@@ -430,7 +474,13 @@ const CreateOrderUnifiedV2: React.FC = () => {
               <CardContent className="p-8 text-center">
                 <FileText className="w-16 h-16 mx-auto mb-4 text-green-600" />
                 <h3 className="text-xl font-semibold mb-2">직접 입력</h3>
-                <p className="text-gray-600">폼을 통해 직접 정보 입력</p>
+                <p className="text-gray-600 mb-4">폼을 통해 직접 정보 입력</p>
+                <div className="text-xs text-gray-500 space-y-1">
+                  <div>✅ 소량 처리 (10건 이하)</div>
+                  <div>✅ 즉시 처리</div>
+                  <div>✅ 실시간 검증</div>
+                  <div>✅ 세밀한 조정</div>
+                </div>
               </CardContent>
             </Card>
           </div>

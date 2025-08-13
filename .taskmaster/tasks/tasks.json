@@ -106,7 +106,7 @@
         "description": "로그인, 로그아웃, 세션 관리에 대한 단위 테스트 작성",
         "details": "",
         "testStrategy": "",
-        "status": "deferred",
+        "status": "done",
         "dependencies": [],
         "priority": "high",
         "subtasks": []
@@ -395,7 +395,7 @@
       "version": "1.0.0",
       "created": "2025-08-04T08:54:47.667Z",
       "description": "Tasks for master context",
-      "updated": "2025-08-05T17:58:02.018Z"
+      "updated": "2025-08-13T12:29:50.170Z"
     }
   }
 }

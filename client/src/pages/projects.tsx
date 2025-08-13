@@ -777,7 +777,7 @@ export default function Projects() {
                   name="projectManagerId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>프로젝트 매니저</FormLabel>
+                      <FormLabel>현장 관리자</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>

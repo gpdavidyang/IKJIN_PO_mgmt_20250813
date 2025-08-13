@@ -15,6 +15,7 @@ import { getStatusText } from "@/lib/statusUtils";
 import { EmailSendDialog } from "@/components/email-send-dialog";
 import { EmailService } from "@/services/emailService";
 import { EmailHistoryModal } from "@/components/email-history-modal";
+import PDFPreviewModal from "@/components/workflow/preview/PDFPreviewModal";
 import { formatKoreanWon } from "@/lib/utils";
 
 export default function OrdersProfessional() {
@@ -47,6 +48,10 @@ export default function OrdersProfessional() {
   // Email history modal state
   const [emailHistoryModalOpen, setEmailHistoryModalOpen] = useState(false);
   const [selectedOrderForHistory, setSelectedOrderForHistory] = useState<any>(null);
+
+  // PDF preview modal state
+  const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
+  const [selectedOrderForPDF, setSelectedOrderForPDF] = useState<any>(null);
 
   // Initialize filters based on URL parameters
   useEffect(() => {
@@ -297,6 +302,15 @@ export default function OrdersProfessional() {
     }
   };
 
+  // PDF preview handler
+  const handlePDFPreview = (order: any) => {
+    const fullOrder = orders.find((o: any) => o.id === order.id);
+    if (fullOrder) {
+      setSelectedOrderForPDF(fullOrder);
+      setPdfPreviewOpen(true);
+    }
+  };
+
   // Download handler
   const handleDownloadOrder = async (orderId: string) => {
     try {
@@ -349,7 +363,7 @@ export default function OrdersProfessional() {
   const renderEmailStatus = (order: any) => {
     if (!order.emailStatus || order.totalEmailsSent === 0) {
       return (
-        <span className="text-xs text-gray-500">미발송</span>
+        <span className="text-xs text-gray-500 dark:text-gray-400">미발송</span>
       );
     }
 
@@ -376,27 +390,27 @@ export default function OrdersProfessional() {
     );
   };
 
-  // Status colors
+  // Status colors with dark mode support
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'approved': return 'bg-green-100 text-green-800 border-green-200';
-      case 'sent': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'completed': return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'rejected': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-800/20 dark:text-yellow-300 dark:border-yellow-700';
+      case 'approved': return 'bg-green-100 text-green-800 border-green-200 dark:bg-green-800/20 dark:text-green-300 dark:border-green-700';
+      case 'sent': return 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-800/20 dark:text-blue-300 dark:border-blue-700';
+      case 'completed': return 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-800/20 dark:text-purple-300 dark:border-purple-700';
+      case 'rejected': return 'bg-red-100 text-red-800 border-red-200 dark:bg-red-800/20 dark:text-red-300 dark:border-red-700';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800/20 dark:text-gray-300 dark:border-gray-700';
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="max-w-[1366px] mx-auto p-6">
         {/* Professional Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">발주서 관리</h1>
-              <p className="text-sm text-gray-500 mt-1">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">발주서 관리</h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                 {filters.vendorId ? 
                   `${vendors?.find((v: any) => v.id.toString() === filters.vendorId)?.name || ''} 거래처 발주서` :
                   '전체 발주서를 조회하고 관리하세요'
@@ -404,29 +418,23 @@ export default function OrdersProfessional() {
               </p>
             </div>
             <div className="flex items-center gap-4">
-              <Button 
-                onClick={() => navigate("/create-order")}
-                className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 shadow-sm"
-              >
-                <Plus className="h-4 w-4" />
-                새 발주서 작성
-              </Button>
+              {/* 새 발주서 작성 버튼 제거됨 */}
             </div>
           </div>
         </div>
 
         {/* Search & Filters Card */}
-        <Card className="mb-6 shadow-sm">
+        <Card className="mb-6 shadow-sm dark:bg-gray-800 dark:border-gray-700">
           <CardContent className="p-6">
             {/* Main Search Bar */}
             <div className="mb-6">
               <div className="relative max-w-xl">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 h-5 w-5" />
                 <Input
                   placeholder="발주번호, 품목명으로 검색..."
                   value={filters.searchText}
                   onChange={(e) => handleFilterChange("searchText", e.target.value)}
-                  className="pl-10 h-11 text-sm border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  className="pl-10 h-11 text-sm border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900"
                 />
               </div>
             </div>
@@ -434,7 +442,7 @@ export default function OrdersProfessional() {
             {/* Quick Filters */}
             <div className="flex flex-wrap gap-3 mb-4">
               <Select value={filters.status || "all"} onValueChange={(value) => handleFilterChange("status", value)}>
-                <SelectTrigger className="w-40 h-10 border-gray-200">
+                <SelectTrigger className="w-40 h-10 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
                   <SelectValue placeholder="상태 선택" />
                 </SelectTrigger>
                 <SelectContent>
@@ -448,11 +456,11 @@ export default function OrdersProfessional() {
               </Select>
 
               <Select value={filters.projectId || "all"} onValueChange={(value) => handleFilterChange("projectId", value)}>
-                <SelectTrigger className="w-48 h-10 border-gray-200">
-                  <SelectValue placeholder="프로젝트 선택" />
+                <SelectTrigger className="w-48 h-10 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                  <SelectValue placeholder="현장 선택" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">모든 프로젝트</SelectItem>
+                  <SelectItem value="all">모든 현장</SelectItem>
                   {projects?.map((project: any) => (
                     <SelectItem key={project.id} value={project.id.toString()}>
                       {project.projectName}
@@ -462,7 +470,7 @@ export default function OrdersProfessional() {
               </Select>
 
               <Select value={filters.vendorId || "all"} onValueChange={(value) => handleFilterChange("vendorId", value)}>
-                <SelectTrigger className="w-48 h-10 border-gray-200">
+                <SelectTrigger className="w-48 h-10 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
                   <SelectValue placeholder="거래처 선택" />
                 </SelectTrigger>
                 <SelectContent>
@@ -478,7 +486,7 @@ export default function OrdersProfessional() {
               <Button
                 variant="outline"
                 onClick={() => setIsFilterExpanded(!isFilterExpanded)}
-                className="h-10 px-4 border-gray-200"
+                className="h-10 px-4 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
               >
                 <Filter className="h-4 w-4 mr-2" />
                 고급 필터
@@ -512,7 +520,7 @@ export default function OrdersProfessional() {
                   variant="outline"
                   onClick={() => exportMutation.mutate()}
                   disabled={exportMutation.isPending}
-                  className="h-10 border-gray-200"
+                  className="h-10 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
                 >
                   <Download className="h-4 w-4 mr-2" />
                   엑셀 다운로드
@@ -522,10 +530,10 @@ export default function OrdersProfessional() {
 
             {/* Advanced Filters */}
             {isFilterExpanded && (
-              <div className="pt-4 border-t border-gray-100">
+              <div className="pt-4 border-t border-gray-100 dark:border-gray-700">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-gray-700 mb-1 block">발주일 범위</label>
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">발주일 범위</label>
                     <div className="flex items-center gap-2">
                       <Input
                         type="date"
@@ -544,7 +552,7 @@ export default function OrdersProfessional() {
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium text-gray-700 mb-1 block">금액 범위</label>
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">금액 범위</label>
                     <div className="flex items-center gap-2">
                       <Input
                         type="number"
@@ -565,7 +573,7 @@ export default function OrdersProfessional() {
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium text-gray-700 mb-1 block">작성자</label>
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">작성자</label>
                     <Select value={filters.userId || "all"} onValueChange={(value) => handleFilterChange("userId", value)}>
                       <SelectTrigger className="h-10">
                         <SelectValue placeholder="모든 작성자" />
@@ -587,70 +595,70 @@ export default function OrdersProfessional() {
         </Card>
 
         {/* Orders Table */}
-        <Card className="shadow-sm">
+        <Card className="shadow-sm dark:bg-gray-800 dark:border-gray-700">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     <button
                       onClick={() => handleSort("orderNumber")}
-                      className="flex items-center gap-1 hover:text-gray-700"
+                      className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200"
                     >
                       발주번호
                       <ChevronsUpDown className="h-3 w-3" />
                     </button>
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     <button
                       onClick={() => handleSort("vendorName")}
-                      className="flex items-center gap-1 hover:text-gray-700"
+                      className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200"
                     >
                       거래처
                       <ChevronsUpDown className="h-3 w-3" />
                     </button>
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     <button
                       onClick={() => handleSort("projectName")}
-                      className="flex items-center gap-1 hover:text-gray-700"
+                      className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200"
                     >
-                      프로젝트
+                      현장
                       <ChevronsUpDown className="h-3 w-3" />
                     </button>
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     <button
                       onClick={() => handleSort("orderDate")}
-                      className="flex items-center gap-1 hover:text-gray-700"
+                      className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200"
                     >
                       발주일
                       <ChevronsUpDown className="h-3 w-3" />
                     </button>
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     <button
                       onClick={() => handleSort("totalAmount")}
-                      className="flex items-center gap-1 hover:text-gray-700"
+                      className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200"
                     >
                       금액
                       <ChevronsUpDown className="h-3 w-3" />
                     </button>
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     <button
                       onClick={() => handleSort("status")}
-                      className="flex items-center gap-1 hover:text-gray-700"
+                      className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200"
                     >
                       상태
                       <ChevronsUpDown className="h-3 w-3" />
                     </button>
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">이메일</th>
-                  <th className="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">액션</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">이메일</th>
+                  <th className="px-6 py-4 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">액션</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {ordersLoading ? (
                   <tr>
                     <td colSpan={8} className="px-6 py-12 text-center">
@@ -670,7 +678,7 @@ export default function OrdersProfessional() {
                   </tr>
                 ) : (
                   ordersWithEmailStatus.map((order: any) => (
-                    <tr key={order.id} className="hover:bg-gray-50 transition-colors">
+                    <tr key={order.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <button
                           onClick={() => navigate(`/orders/${order.id}`)}
@@ -680,18 +688,38 @@ export default function OrdersProfessional() {
                         </button>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{order.vendorName || order.vendor?.name || '-'}</div>
+                        {(order.vendorName || order.vendor?.name) && (order.vendor?.id || order.vendorId) ? (
+                          <button
+                            onClick={() => navigate(`/vendors/${order.vendor?.id || order.vendorId}`)}
+                            className="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline"
+                            title="거래처 상세 정보 보기"
+                          >
+                            {order.vendorName || order.vendor?.name}
+                          </button>
+                        ) : (
+                          <div className="text-sm text-gray-900 dark:text-gray-100">{order.vendorName || order.vendor?.name || '-'}</div>
+                        )}
                         {order.vendor?.email && (
-                          <div className="text-xs text-gray-500">{order.vendor.email}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">{order.vendor.email}</div>
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{order.projectName || order.project?.projectName || '-'}</div>
+                        {(order.projectName || order.project?.projectName) && (order.project?.id || order.projectId) ? (
+                          <button
+                            onClick={() => navigate(`/projects/${order.project?.id || order.projectId}`)}
+                            className="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline"
+                            title="현장 상세 정보 보기"
+                          >
+                            {order.projectName || order.project?.projectName}
+                          </button>
+                        ) : (
+                          <div className="text-sm text-gray-900 dark:text-gray-100">{order.projectName || order.project?.projectName || '-'}</div>
+                        )}
                         {order.project?.projectCode && (
-                          <div className="text-xs text-gray-500">{order.project.projectCode}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">{order.project.projectCode}</div>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                         {new Date(order.orderDate).toLocaleDateString('ko-KR')}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -708,41 +736,43 @@ export default function OrdersProfessional() {
                         {renderEmailStatus(order)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <div className="flex items-center justify-center gap-2">
+                        <div className="flex items-center justify-center gap-1">
+                          {/* 상세보기 */}
                           <button
                             onClick={() => navigate(`/orders/${order.id}`)}
-                            className="text-gray-400 hover:text-blue-600 transition-colors"
+                            className="p-1 text-blue-500 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-900/20 rounded transition-colors"
                             title="상세보기"
                           >
-                            <Eye className="h-5 w-5" />
+                            <Eye className="h-4 w-4" />
                           </button>
-                          {user?.role === 'admin' && (
-                            <>
-                              <button
-                                onClick={() => navigate(`/orders/${order.id}/edit`)}
-                                className="text-gray-400 hover:text-blue-600 transition-colors"
-                                title="수정"
-                              >
-                                <Edit className="h-5 w-5" />
-                              </button>
-                              {order.status === 'approved' && (
-                                <button
-                                  onClick={() => handleEmailSend(order)}
-                                  className="text-gray-400 hover:text-green-600 transition-colors"
-                                  title="이메일 발송"
-                                >
-                                  <Mail className="h-5 w-5" />
-                                </button>
-                              )}
-                              <button
-                                onClick={() => handleDownloadOrder(order.id)}
-                                className="text-gray-400 hover:text-purple-600 transition-colors"
-                                title="다운로드"
-                              >
-                                <Download className="h-5 w-5" />
-                              </button>
-                            </>
-                          )}
+                          
+                          {/* 수정 */}
+                          <button
+                            onClick={() => navigate(`/orders/${order.id}/edit`)}
+                            className="p-1 text-green-500 hover:text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:text-green-300 dark:hover:bg-green-900/20 rounded transition-colors"
+                            title="수정"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </button>
+                          
+                          {/* PDF 보기 */}
+                          <button
+                            onClick={() => handlePDFPreview(order)}
+                            className="p-1 text-orange-500 hover:text-orange-700 hover:bg-orange-50 dark:text-orange-400 dark:hover:text-orange-300 dark:hover:bg-orange-900/20 rounded transition-colors"
+                            title="PDF 보기"
+                          >
+                            <FileText className="h-4 w-4" />
+                          </button>
+                          
+                          {/* 이메일 - 항상 표시, 강제 스타일링 */}
+                          <button
+                            onClick={() => handleEmailSend(order)}
+                            className="p-1 text-purple-600 hover:text-purple-800 hover:bg-purple-50 dark:text-purple-400 dark:hover:text-purple-300 dark:hover:bg-purple-900/20 rounded transition-colors border border-purple-300 dark:border-purple-700"
+                            title="이메일 전송 (Debug)"
+                            style={{ backgroundColor: 'rgba(147, 51, 234, 0.1)' }}
+                          >
+                            <Mail className="h-4 w-4" />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -779,6 +809,46 @@ export default function OrdersProfessional() {
             onClose={() => {
               setEmailHistoryModalOpen(false);
               setSelectedOrderForHistory(null);
+            }}
+          />
+        )}
+
+        {/* PDF Preview Modal */}
+        {selectedOrderForPDF && (
+          <PDFPreviewModal
+            orderData={{
+              id: selectedOrderForPDF.id,
+              orderNumber: selectedOrderForPDF.orderNumber,
+              projectName: selectedOrderForPDF.projectName || selectedOrderForPDF.project?.projectName,
+              vendorName: selectedOrderForPDF.vendorName || selectedOrderForPDF.vendor?.name,
+              totalAmount: selectedOrderForPDF.totalAmount,
+              orderDate: selectedOrderForPDF.orderDate,
+              deliveryDate: selectedOrderForPDF.deliveryDate,
+              status: selectedOrderForPDF.status,
+              filePath: selectedOrderForPDF.filePath,
+              // Additional data that might be needed for PDF generation
+              items: selectedOrderForPDF.items || [],
+              notes: selectedOrderForPDF.notes || selectedOrderForPDF.remarks,
+              createdBy: selectedOrderForPDF.user?.name || selectedOrderForPDF.createdBy
+            }}
+            isOpen={pdfPreviewOpen}
+            onClose={() => {
+              setPdfPreviewOpen(false);
+              setSelectedOrderForPDF(null);
+            }}
+            onDownload={(pdfUrl) => {
+              // Custom download handler if needed
+              const link = document.createElement('a');
+              link.href = pdfUrl;
+              link.download = `발주서_${selectedOrderForPDF.orderNumber}.pdf`;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              
+              toast({
+                title: "PDF 다운로드 완료",
+                description: `발주서 ${selectedOrderForPDF.orderNumber}의 PDF가 다운로드되었습니다.`,
+              });
             }}
           />
         )}

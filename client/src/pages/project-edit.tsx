@@ -118,13 +118,13 @@ export default function ProjectEdit() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
       queryClient.invalidateQueries({ queryKey: ["/api/projects", id] });
-      toast({ description: "프로젝트가 성공적으로 수정되었습니다." });
+      toast({ description: "현장이 성공적으로 수정되었습니다." });
       navigate(`/projects/${id}`);
     },
     onError: (error: any) => {
       toast({ 
         variant: "destructive", 
-        description: error.message || "프로젝트 수정 중 오류가 발생했습니다." 
+        description: error.message || "현장 수정 중 오류가 발생했습니다." 
       });
     },
   });
@@ -167,8 +167,8 @@ export default function ProjectEdit() {
     return (
       <div className="p-6">
         <div className="text-center">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">프로젝트를 찾을 수 없습니다</h2>
-          <p className="text-gray-600 mb-4">요청하신 프로젝트가 존재하지 않거나 삭제되었습니다.</p>
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">현장을 찾을 수 없습니다</h2>
+          <p className="text-gray-600 mb-4">요청하신 현장이 존재하지 않거나 삭제되었습니다.</p>
           <Button onClick={() => navigate("/projects")}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             목록으로
@@ -182,13 +182,13 @@ export default function ProjectEdit() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-[1366px] mx-auto p-6 space-y-6">
       <PageHeader
-        title="프로젝트 수정"
-        description={`${project.projectName} 프로젝트 정보를 수정합니다`}
+        title="현장 수정"
+        description={`${project.projectName} 현장 정보를 수정합니다`}
       />
 
       <Card className="max-w-4xl shadow-sm">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold">프로젝트 정보</CardTitle>
+          <CardTitle className="text-lg font-semibold">현장 정보</CardTitle>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -199,9 +199,9 @@ export default function ProjectEdit() {
                   name="projectName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>프로젝트명 *</FormLabel>
+                      <FormLabel>현장명 *</FormLabel>
                       <FormControl>
-                        <Input placeholder="프로젝트명을 입력하세요" {...field} />
+                        <Input placeholder="현장명을 입력하세요" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -213,9 +213,9 @@ export default function ProjectEdit() {
                   name="projectCode"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>프로젝트 코드</FormLabel>
+                      <FormLabel>현장 코드</FormLabel>
                       <FormControl>
-                        <Input placeholder="프로젝트 코드를 입력하세요" {...field} />
+                        <Input placeholder="현장 코드를 입력하세요" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -241,11 +241,11 @@ export default function ProjectEdit() {
                   name="projectType"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>프로젝트 유형</FormLabel>
+                      <FormLabel>현장 유형</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="프로젝트 유형을 선택하세요" />
+                            <SelectValue placeholder="현장 유형을 선택하세요" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -268,7 +268,7 @@ export default function ProjectEdit() {
                     <FormItem>
                       <FormLabel>위치</FormLabel>
                       <FormControl>
-                        <Input placeholder="프로젝트 위치를 입력하세요" {...field} />
+                        <Input placeholder="현장 위치를 입력하세요" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -305,11 +305,11 @@ export default function ProjectEdit() {
                   name="projectManagerId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>프로젝트 매니저</FormLabel>
+                      <FormLabel>현장 관리자</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="프로젝트 매니저를 선택하세요" />
+                            <SelectValue placeholder="현장 관리자를 선택하세요" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -502,7 +502,7 @@ export default function ProjectEdit() {
                     <FormLabel>설명</FormLabel>
                     <FormControl>
                       <Textarea 
-                        placeholder="프로젝트 설명을 입력하세요"
+                        placeholder="현장 설명을 입력하세요"
                         className="min-h-[100px]"
                         {...field} 
                       />

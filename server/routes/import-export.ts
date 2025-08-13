@@ -108,6 +108,31 @@ router.post('/import/projects', requireAuth, upload.single('file'), async (req, 
   }
 });
 
+// Import purchase orders
+router.post('/import/purchase_orders', requireAuth, upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    const fileType = getFileType(req.file.filename);
+    const result = await ImportExportService.importPurchaseOrders(req.file.path, fileType);
+
+    // Clean up uploaded file
+    fs.unlinkSync(req.file.path);
+
+    res.json({
+      message: 'Purchase order import completed',
+      imported: result.imported,
+      errors: result.errors,
+      totalRows: result.imported + result.errors.length
+    });
+  } catch (error) {
+    console.error('Error importing purchase orders:', error);
+    res.status(500).json({ error: 'Failed to import purchase orders' });
+  }
+});
+
 // Export vendors
 router.get('/export/vendors', requireAuth, async (req, res) => {
   try {
@@ -171,13 +196,34 @@ router.get('/export/projects', requireAuth, async (req, res) => {
   }
 });
 
+// Export purchase orders
+router.get('/export/purchase_orders', requireAuth, async (req, res) => {
+  try {
+    const format = (req.query.format as string || 'excel') as 'excel' | 'csv';
+    const buffer = await ImportExportService.exportPurchaseOrders(format);
+
+    const filename = `purchase_orders_${new Date().toISOString().split('T')[0]}.${format === 'csv' ? 'csv' : 'xlsx'}`;
+    const contentType = format === 'csv' 
+      ? 'text/csv; charset=utf-8' 
+      : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Length', buffer.length);
+    res.send(buffer);
+  } catch (error) {
+    console.error('Error exporting purchase orders:', error);
+    res.status(500).json({ error: 'Failed to export purchase orders' });
+  }
+});
+
 // Download import template
 router.get('/template/:entity', requireAuth, async (req, res) => {
   try {
-    const entity = req.params.entity as 'vendors' | 'items' | 'projects';
+    const entity = req.params.entity as 'vendors' | 'items' | 'projects' | 'purchase_orders';
     const format = (req.query.format as string || 'excel') as 'excel' | 'csv';
 
-    if (!['vendors', 'items', 'projects'].includes(entity)) {
+    if (!['vendors', 'items', 'projects', 'purchase_orders'].includes(entity)) {
       return res.status(400).json({ error: 'Invalid entity type' });
     }
 

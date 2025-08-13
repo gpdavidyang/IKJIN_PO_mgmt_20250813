@@ -1008,8 +1008,17 @@ var DatabaseStorage = class {
     return await db.select().from(users).orderBy(asc(users.createdAt));
   }
   async getUserByEmail(email) {
-    const [user] = await db.select().from(users).where(eq(users.email, email));
-    return user;
+    console.log("\u{1F50D} Searching for user with email:", email);
+    try {
+      const result = await db.select().from(users).where(eq(users.email, email));
+      console.log("\u{1F50D} Database query result:", result);
+      const [user] = result;
+      console.log("\u{1F50D} Found user:", user ? `${user.email} (${user.role})` : "null");
+      return user;
+    } catch (error) {
+      console.error("\u{1F6A8} Database query error:", error);
+      throw error;
+    }
   }
   async updateUser(id, updates) {
     const [user] = await db.update(users).set({ ...updates, updatedAt: /* @__PURE__ */ new Date() }).where(eq(users.id, id)).returning();
@@ -2473,7 +2482,183 @@ var DatabaseStorage = class {
 };
 var storage = new DatabaseStorage();
 
+// server/auth-utils.ts
+import bcrypt from "bcrypt";
+async function comparePasswords(supplied, stored) {
+  try {
+    return await bcrypt.compare(supplied, stored);
+  } catch (error) {
+    console.error("Password comparison error:", error);
+    return false;
+  }
+}
+
 // server/local-auth.ts
+async function login(req, res) {
+  try {
+    const { email, password, username } = req.body;
+    const loginIdentifier = email || username;
+    if (!loginIdentifier || !password) {
+      return res.status(400).json({ message: "Email/username and password are required" });
+    }
+    console.log("\u{1F510} Attempting login with identifier:", loginIdentifier);
+    let user;
+    try {
+      user = await storage.getUserByEmail(loginIdentifier);
+      if (!user && loginIdentifier === "admin@company.com") {
+        console.log("\u{1F527} Admin fallback: Using hardcoded admin user");
+        user = {
+          id: "dev_admin",
+          email: "admin@company.com",
+          name: "Dev Administrator",
+          password: "$2b$10$RbLrxzWq3TQEx6UTrnRwCeWwOai9N0QzdeJxg8iUp71jGS8kKgwjC",
+          // admin123
+          role: "admin",
+          phoneNumber: null,
+          profileImageUrl: null,
+          position: null,
+          isActive: true,
+          createdAt: /* @__PURE__ */ new Date(),
+          updatedAt: /* @__PURE__ */ new Date()
+        };
+      }
+      if (!user) {
+        console.log("\u274C User not found in database:", loginIdentifier);
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+      if (!user.isActive) {
+        console.log("\u274C User account deactivated:", loginIdentifier);
+        return res.status(401).json({ message: "Account is deactivated" });
+      }
+      const isValidPassword = await comparePasswords(password, user.password);
+      if (!isValidPassword) {
+        console.log("\u274C Invalid password for user:", loginIdentifier);
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+      console.log("\u2705 Database authentication successful for user:", user.name || user.email);
+    } catch (dbError) {
+      console.error("\u{1F534} Database authentication error:", dbError);
+      return res.status(500).json({ message: "Authentication failed - database error" });
+    }
+    try {
+      const authSession = req.session;
+      authSession.userId = user.id;
+      const sessionSavePromise = new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          console.log("\u26A0\uFE0F Session save timeout, proceeding without session persistence");
+          resolve();
+        }, 2e3);
+        req.session.save((err) => {
+          clearTimeout(timeout);
+          if (err) {
+            console.error("Session save error (non-fatal):", err);
+            resolve();
+          } else {
+            console.log("Session saved successfully for user:", user.id);
+            resolve();
+          }
+        });
+      });
+      await sessionSavePromise;
+      const { password: _, ...userWithoutPassword } = user;
+      res.json({
+        message: "Login successful",
+        user: userWithoutPassword
+      });
+    } catch (sessionError) {
+      console.error("Session handling error (non-fatal):", sessionError);
+      const { password: _, ...userWithoutPassword } = user;
+      res.json({
+        message: "Login successful (no session)",
+        user: userWithoutPassword
+      });
+    }
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(500).json({ message: "Login failed" });
+  }
+}
+function logout(req, res) {
+  const authSession = req.session;
+  authSession.userId = void 0;
+  req.session.destroy((err) => {
+    if (err) {
+      console.error("Session destruction error:", err);
+      return res.status(500).json({ message: "Logout failed" });
+    }
+    res.json({ message: "Logout successful" });
+  });
+}
+async function getCurrentUser(req, res) {
+  try {
+    const authSession = req.session;
+    console.log("getCurrentUser - Session ID:", req.sessionID);
+    console.log("getCurrentUser - Session userId:", authSession.userId);
+    if (!authSession.userId) {
+      console.log("\u{1F534} getCurrentUser - No userId in session");
+      return res.status(401).json({
+        message: "Not authenticated",
+        authenticated: false
+      });
+    }
+    try {
+      let user = await storage.getUser(authSession.userId);
+      if (!user && authSession.userId === "dev_admin") {
+        console.log("\u{1F527} getCurrentUser - Admin fallback: Using hardcoded admin user");
+        user = {
+          id: "dev_admin",
+          email: "admin@company.com",
+          name: "Dev Administrator",
+          password: "$2b$10$RbLrxzWq3TQEx6UTrnRwCeWwOai9N0QzdeJxg8iUp71jGS8kKgwjC",
+          // admin123
+          role: "admin",
+          phoneNumber: null,
+          profileImageUrl: null,
+          position: null,
+          isActive: true,
+          createdAt: /* @__PURE__ */ new Date(),
+          updatedAt: /* @__PURE__ */ new Date()
+        };
+      }
+      if (!user) {
+        console.log("\u{1F534} getCurrentUser - Database user not found:", authSession.userId);
+        authSession.userId = void 0;
+        return res.status(401).json({
+          message: "Invalid session - user not found",
+          authenticated: false
+        });
+      }
+      if (!user.isActive) {
+        console.log("\u{1F534} getCurrentUser - User account deactivated:", user.email);
+        authSession.userId = void 0;
+        return res.status(401).json({
+          message: "Account is deactivated",
+          authenticated: false
+        });
+      }
+      console.log("\u{1F7E2} getCurrentUser - Database user found:", user.name || user.email);
+      req.user = user;
+      const { password: _, ...userWithoutPassword } = user;
+      res.json({
+        ...userWithoutPassword,
+        authenticated: true
+      });
+    } catch (dbError) {
+      console.error("\u{1F534} Database error in getCurrentUser:", dbError);
+      authSession.userId = void 0;
+      return res.status(401).json({
+        message: "Authentication failed - database error",
+        authenticated: false
+      });
+    }
+  } catch (error) {
+    console.error("\u{1F534} Get current user error:", error);
+    res.status(500).json({
+      message: "Failed to get user data",
+      authenticated: false
+    });
+  }
+}
 async function requireAuth(req, res, next) {
   try {
     const authSession = req.session;
@@ -2566,100 +2751,8 @@ router.post("/auth/login-test", (req, res) => {
     res.status(500).json({ message: "Login failed", error: error.message });
   }
 });
-router.post("/auth/login", async (req, res) => {
-  try {
-    const { username, password, email } = req.body;
-    const identifier = username || email;
-    if (!identifier || !password) {
-      return res.status(400).json({ message: "Email/username and password are required" });
-    }
-    console.log("\u{1F510} Main login attempt for:", identifier);
-    if (req.session) {
-      req.session.userId = void 0;
-      req.session.user = void 0;
-    }
-    const users2 = [
-      { id: "admin", username: "admin", email: "admin@company.com", password: "admin123", name: "\uAD00\uB9AC\uC790", role: "admin" },
-      { id: "manager", username: "manager", email: "manager@company.com", password: "manager123", name: "\uAE40\uBD80\uC7A5", role: "project_manager" },
-      { id: "user", username: "user", email: "user@company.com", password: "user123", name: "\uC774\uAE30\uC0AC", role: "field_worker" }
-    ];
-    const user = users2.find((u) => u.username === identifier || u.email === identifier);
-    if (!user || user.password !== password) {
-      console.log("\u274C Invalid credentials for:", identifier);
-      return res.status(401).json({ message: "Invalid credentials" });
-    }
-    console.log("\u2705 Login successful for user:", user.name);
-    try {
-      const authSession = req.session;
-      if (authSession) {
-        authSession.userId = user.id;
-        authSession.user = { ...user };
-        const sessionSavePromise = new Promise((resolve, reject) => {
-          req.session.save((err) => {
-            if (err) {
-              console.error("Session save error:", err);
-              reject(err);
-            } else {
-              console.log("Session saved successfully for user:", user.id);
-              resolve();
-            }
-          });
-        });
-        await sessionSavePromise;
-      } else {
-        throw new Error("Session not available");
-      }
-    } catch (sessionErr) {
-      console.error("Session setting failed:", sessionErr);
-      return res.status(500).json({ message: "Login failed - session error" });
-    }
-    console.log("\u{1F504} State reset and new user logged in:", user.name);
-    const { password: _, ...userWithoutPassword } = user;
-    res.json({
-      message: "Login successful",
-      user: userWithoutPassword
-    });
-  } catch (error) {
-    console.error("Main login error:", error);
-    res.status(500).json({ message: "Login failed", error: error?.message || "Unknown error" });
-  }
-});
-router.post("/auth/logout", (req, res) => {
-  try {
-    console.log("\u{1F6AA} Logout request");
-    if (req.session) {
-      req.session.destroy((err) => {
-        if (err) {
-          console.error("Session destroy failed:", err);
-          return res.status(500).json({
-            message: "Logout failed",
-            error: "Session destruction error",
-            success: false
-          });
-        } else {
-          console.log("Session destroyed successfully");
-          res.clearCookie("connect.sid");
-          res.json({
-            message: "Logout successful",
-            success: true
-          });
-        }
-      });
-    } else {
-      res.json({
-        message: "Logout successful (no session)",
-        success: true
-      });
-    }
-  } catch (error) {
-    console.error("Logout error:", error);
-    res.status(500).json({
-      message: "Logout failed",
-      error: error?.message || "Unknown error",
-      success: false
-    });
-  }
-});
+router.post("/auth/login", login);
+router.post("/auth/logout", logout);
 router.get("/logout", (req, res) => {
   if (req.session) {
     req.session.destroy(() => {
@@ -2734,27 +2827,7 @@ router.get("/auth/status", (req, res) => {
     });
   }
 });
-router.get("/auth/user", (req, res) => {
-  try {
-    console.log("\u{1F464} Get current user request - Session ID:", req.sessionID);
-    const authSession = req.session;
-    if (!authSession || !authSession.userId) {
-      console.log("\u274C No valid session (not authenticated)");
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-    const user = authSession.user;
-    if (!user) {
-      console.log("\u274C No user data in session");
-      return res.status(401).json({ message: "Invalid session" });
-    }
-    const { password: _, ...userWithoutPassword } = user;
-    console.log("\u2705 Returning session user:", userWithoutPassword.name);
-    res.json(userWithoutPassword);
-  } catch (error) {
-    console.error("Get current user error:", error);
-    res.status(500).json({ message: "Failed to get user data" });
-  }
-});
+router.get("/auth/user", getCurrentUser);
 router.get("/auth/me", (req, res) => {
   try {
     console.log("\u{1F464} Get me request - LEGACY ENDPOINT");

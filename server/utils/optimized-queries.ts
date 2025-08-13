@@ -184,6 +184,7 @@ export class OptimizedDashboardQueries {
         .orderBy(desc(purchaseOrders.createdAt))
         .limit(10);
       
+
       // Transform to nested structure for backward compatibility
       const recentOrders = recentOrdersRaw.map(order => ({
         id: order.id,
@@ -197,9 +198,11 @@ export class OptimizedDashboardQueries {
         } : null,
         project: order.projectId ? {
           id: order.projectId,
-          name: order.projectName
+          name: order.projectName,
+          projectName: order.projectName // Add backward compatibility
         } : null
       }));
+
 
       // Get monthly statistics (last 12 months) with proper chronological sorting
       const monthlyStatsRaw = await db
