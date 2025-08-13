@@ -1,9 +1,22 @@
 // Simple standalone login handler for Vercel
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-import { users } from '../../shared/schema.ts';
 import { eq } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
+
+// Database schema definition
+import { pgTable, text, boolean, timestamp, varchar } from 'drizzle-orm/pg-core';
+
+const users = pgTable('users', {
+  id: text('id').primaryKey(),
+  email: varchar('email', { length: 255 }).notNull().unique(),
+  password: text('password').notNull(),
+  fullName: text('full_name').notNull(),
+  role: text('role').notNull(),
+  isActive: boolean('is_active').default(true),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow()
+});
 
 // Database connection
 const connectionString = process.env.DATABASE_URL || "postgresql://postgres.tbvugytmskxxyqfvqmup:gps110601ysw@db.tbvugytmskxxyqfvqmup.supabase.co:5432/postgres?sslmode=require&connect_timeout=60";

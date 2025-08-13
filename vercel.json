@@ -6,7 +6,7 @@
       "use": "@vercel/static"
     },
     {
-      "src": "api/auth/user.js",
+      "src": "api/auth/user-simple.js",
       "use": "@vercel/node"
     },
     {
@@ -25,7 +25,7 @@
   "routes": [
     {
       "src": "/api/auth/user",
-      "dest": "/api/auth/user.js"
+      "dest": "/api/auth/user-simple.js"
     },
     {
       "src": "/api/auth/login",
