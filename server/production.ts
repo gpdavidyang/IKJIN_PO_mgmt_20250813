@@ -3,18 +3,24 @@ dotenv.config();
 
 // 환경변수 확인 및 Supabase 연결 설정
 const originalDatabaseUrl = process.env.DATABASE_URL;
-if (originalDatabaseUrl) {
-  console.log("🔍 Original DATABASE_URL:", originalDatabaseUrl.split('@')[0] + '@[HIDDEN]');
-  
-  // Fix incorrect hostname in DATABASE_URL
-  if (originalDatabaseUrl.includes('db.tbvugytmskxxyqfvqmup.supabase.co')) {
-    console.log("🔧 Fixing incorrect hostname in DATABASE_URL");
-    process.env.DATABASE_URL = originalDatabaseUrl.replace('db.tbvugytmskxxyqfvqmup.supabase.co', 'tbvugytmskxxyqfvqmup.supabase.co');
-    console.log("🔧 Fixed DATABASE_URL:", process.env.DATABASE_URL.split('@')[0] + '@[HIDDEN]');
-  }
+console.log("🔍 Original DATABASE_URL:", originalDatabaseUrl ? originalDatabaseUrl.split('@')[0] + '@[HIDDEN]' : 'not set');
+
+// Force use correct Supabase pooler URL for serverless
+const correctPoolerUrl = "postgresql://postgres.tbvugytmskxxyqfvqmup:gps110601ysw@aws-0-ap-northeast-2.pooler.supabase.com:5432/postgres";
+
+if (originalDatabaseUrl && (
+  originalDatabaseUrl.includes('db.tbvugytmskxxyqfvqmup.supabase.co') || 
+  originalDatabaseUrl.includes('tbvugytmskxxyqfvqmup.supabase.co:5432')
+)) {
+  console.log("🔧 Using corrected Supabase pooler URL for serverless");
+  process.env.DATABASE_URL = correctPoolerUrl;
+  console.log("🔧 Set DATABASE_URL to pooler:", process.env.DATABASE_URL.split('@')[0] + '@[HIDDEN]');
+} else if (!originalDatabaseUrl) {
+  console.log("🔧 No DATABASE_URL set, using default Supabase pooler");
+  process.env.DATABASE_URL = correctPoolerUrl;
+  console.log("🔧 Set DATABASE_URL to pooler:", process.env.DATABASE_URL.split('@')[0] + '@[HIDDEN]');
 } else {
-  console.error("❌ DATABASE_URL environment variable not set");
-  process.exit(1);
+  console.log("🔧 Using existing DATABASE_URL:", originalDatabaseUrl.split('@')[0] + '@[HIDDEN]');
 }
 console.log("✨ Production server starting without static file serving");
 

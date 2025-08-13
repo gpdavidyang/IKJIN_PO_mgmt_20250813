@@ -11051,16 +11051,18 @@ var routes_default = router16;
 // server/production.ts
 dotenv2.config();
 var originalDatabaseUrl = process.env.DATABASE_URL;
-if (originalDatabaseUrl) {
-  console.log("\u{1F50D} Original DATABASE_URL:", originalDatabaseUrl.split("@")[0] + "@[HIDDEN]");
-  if (originalDatabaseUrl.includes("db.tbvugytmskxxyqfvqmup.supabase.co")) {
-    console.log("\u{1F527} Fixing incorrect hostname in DATABASE_URL");
-    process.env.DATABASE_URL = originalDatabaseUrl.replace("db.tbvugytmskxxyqfvqmup.supabase.co", "tbvugytmskxxyqfvqmup.supabase.co");
-    console.log("\u{1F527} Fixed DATABASE_URL:", process.env.DATABASE_URL.split("@")[0] + "@[HIDDEN]");
-  }
+console.log("\u{1F50D} Original DATABASE_URL:", originalDatabaseUrl ? originalDatabaseUrl.split("@")[0] + "@[HIDDEN]" : "not set");
+var correctPoolerUrl = "postgresql://postgres.tbvugytmskxxyqfvqmup:gps110601ysw@aws-0-ap-northeast-2.pooler.supabase.com:5432/postgres";
+if (originalDatabaseUrl && (originalDatabaseUrl.includes("db.tbvugytmskxxyqfvqmup.supabase.co") || originalDatabaseUrl.includes("tbvugytmskxxyqfvqmup.supabase.co:5432"))) {
+  console.log("\u{1F527} Using corrected Supabase pooler URL for serverless");
+  process.env.DATABASE_URL = correctPoolerUrl;
+  console.log("\u{1F527} Set DATABASE_URL to pooler:", process.env.DATABASE_URL.split("@")[0] + "@[HIDDEN]");
+} else if (!originalDatabaseUrl) {
+  console.log("\u{1F527} No DATABASE_URL set, using default Supabase pooler");
+  process.env.DATABASE_URL = correctPoolerUrl;
+  console.log("\u{1F527} Set DATABASE_URL to pooler:", process.env.DATABASE_URL.split("@")[0] + "@[HIDDEN]");
 } else {
-  console.error("\u274C DATABASE_URL environment variable not set");
-  process.exit(1);
+  console.log("\u{1F527} Using existing DATABASE_URL:", originalDatabaseUrl.split("@")[0] + "@[HIDDEN]");
 }
 console.log("\u2728 Production server starting without static file serving");
 var app = express2();
