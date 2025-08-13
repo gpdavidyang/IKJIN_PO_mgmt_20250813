@@ -6,8 +6,6 @@ process.env.DATABASE_URL = process.env.DATABASE_URL || "postgresql://postgres.tb
 console.log("🔧 Force-set DATABASE_URL:", process.env.DATABASE_URL.split('@')[0] + '@[HIDDEN]');
 
 import express, { type Request, Response, NextFunction } from "express";
-import path from "path";
-import fs from "fs";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import router from "./routes/index";
@@ -53,16 +51,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Production static serving
-function serveStatic(app: express.Express) {
-  const distPath = path.resolve(import.meta.dirname, "public");
-  if (!fs.existsSync(distPath)) {
-    throw new Error(
-      `Could not find the build directory: ${distPath}, make sure to build the client first`,
-    );
-  }
-  app.use(express.static(distPath));
-}
+// Static file serving handled by Vercel - no need for Express static middleware
 
 // Initialize app for production
 async function initializeProductionApp() {
@@ -94,8 +83,8 @@ async function initializeProductionApp() {
     res.status(status).json({ message });
   });
 
-  // Setup static serving
-  serveStatic(app);
+  // Skip static serving in Vercel - handled by vercel.json
+  console.log("⚠️ Skipping static file serving in Vercel environment");
 }
 
 // Initialize synchronously for Vercel
@@ -133,8 +122,8 @@ if (process.env.VERCEL) {
     res.status(status).json({ message });
   });
 
-  // Setup static serving
-  serveStatic(app);
+  // Skip static serving in Vercel - handled by vercel.json
+  console.log("⚠️ Skipping static file serving in Vercel environment");
   
   isInitialized = true;
   console.log("✅ Production app initialized for Vercel");

@@ -915,8 +915,6 @@ var init_db = __esm({
 // server/production.ts
 import dotenv2 from "dotenv";
 import express2 from "express";
-import path12 from "path";
-import fs15 from "fs";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 
@@ -10901,7 +10899,7 @@ app.use(express2.urlencoded({ extended: false }));
 app.use("/attached_assets", express2.static("attached_assets"));
 app.use((req, res, next) => {
   const start = Date.now();
-  const path13 = req.path;
+  const path12 = req.path;
   let capturedJsonResponse = void 0;
   const originalResJson = res.json;
   res.json = function(bodyJson, ...args) {
@@ -10910,8 +10908,8 @@ app.use((req, res, next) => {
   };
   res.on("finish", () => {
     const duration = Date.now() - start;
-    if (path13.startsWith("/api")) {
-      let logLine = `${req.method} ${path13} ${res.statusCode} in ${duration}ms`;
+    if (path12.startsWith("/api")) {
+      let logLine = `${req.method} ${path12} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }
@@ -10923,15 +10921,6 @@ app.use((req, res, next) => {
   });
   next();
 });
-function serveStatic(app2) {
-  const distPath = path12.resolve(import.meta.dirname, "public");
-  if (!fs15.existsSync(distPath)) {
-    throw new Error(
-      `Could not find the build directory: ${distPath}, make sure to build the client first`
-    );
-  }
-  app2.use(express2.static(distPath));
-}
 async function initializeProductionApp() {
   const pgSession = connectPgSimple(session);
   app.use(session({
@@ -10955,7 +10944,7 @@ async function initializeProductionApp() {
     console.error("Express error:", err);
     res.status(status).json({ message });
   });
-  serveStatic(app);
+  console.log("\u26A0\uFE0F Skipping static file serving in Vercel environment");
 }
 var isInitialized = false;
 if (process.env.VERCEL) {
@@ -10982,7 +10971,7 @@ if (process.env.VERCEL) {
     console.error("Express error:", err);
     res.status(status).json({ message });
   });
-  serveStatic(app);
+  console.log("\u26A0\uFE0F Skipping static file serving in Vercel environment");
   isInitialized = true;
   console.log("\u2705 Production app initialized for Vercel");
 } else {
