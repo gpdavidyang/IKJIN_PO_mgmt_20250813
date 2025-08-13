@@ -10941,8 +10941,11 @@ var routes_default = router16;
 
 // server/production.ts
 dotenv2.config();
-process.env.DATABASE_URL = process.env.DATABASE_URL || "postgresql://postgres.tbvugytmskxxyqfvqmup:gps110601ysw@db.tbvugytmskxxyqfvqmup.supabase.co:5432/postgres?sslmode=require&connect_timeout=60";
-console.log("\u{1F527} Force-set DATABASE_URL:", process.env.DATABASE_URL.split("@")[0] + "@[HIDDEN]");
+if (!process.env.DATABASE_URL) {
+  console.error("\u274C DATABASE_URL environment variable not set in Vercel");
+} else {
+  console.log("\u{1F527} Using Vercel DATABASE_URL:", process.env.DATABASE_URL.split("@")[0] + "@[HIDDEN]");
+}
 console.log("\u2728 Production server starting without static file serving");
 var app = express2();
 app.use(express2.json());
