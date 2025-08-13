@@ -16,8 +16,8 @@ async function getApp() {
         DATABASE_URL: process.env.DATABASE_URL ? 'set' : 'not set'
       });
       
-      console.log('=== Importing Express App ===');
-      const importResult = await import('../dist/index.js');
+      console.log('=== Importing Express App from Production Build ===');
+      const importResult = await import('../dist/production.js');
       console.log('Import result keys:', Object.keys(importResult));
       console.log('Default export type:', typeof importResult.default);
       
