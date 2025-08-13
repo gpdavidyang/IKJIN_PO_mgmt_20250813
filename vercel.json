@@ -16,6 +16,14 @@
       "dest": "/api/[...all].js"
     },
     {
+      "src": "/assets/(.*)",
+      "dest": "dist/public/assets/$1"
+    },
+    {
+      "src": "/(.*\\.(js|css|png|jpg|svg|ico|woff|woff2))",
+      "dest": "dist/public/$1"
+    },
+    {
       "src": "/(.*)",
       "dest": "dist/public/index.html"
     }
