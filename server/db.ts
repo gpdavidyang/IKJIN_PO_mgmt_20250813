@@ -2,8 +2,24 @@ import dotenv from "dotenv";
 dotenv.config();
 
 // 환경변수에서 DATABASE_URL 읽기 - .env 파일의 올바른 pooler 주소 사용
-const DATABASE_URL = process.env.DATABASE_URL;
-console.log("🔍 Using DATABASE_URL:", DATABASE_URL?.split('@')[0] + '@[HIDDEN]');
+let DATABASE_URL = process.env.DATABASE_URL;
+console.log("🔍 Original DATABASE_URL:", DATABASE_URL?.split('@')[0] + '@[HIDDEN]');
+
+// Force correct Supabase pooler URL for serverless environments
+const correctPoolerUrl = "postgresql://postgres.tbvugytmskxxyqfvqmup:gps110601ysw@aws-0-ap-northeast-2.pooler.supabase.com:5432/postgres";
+
+if (DATABASE_URL && (
+  DATABASE_URL.includes('db.tbvugytmskxxyqfvqmup.supabase.co') || 
+  DATABASE_URL.includes('tbvugytmskxxyqfvqmup.supabase.co:5432')
+)) {
+  console.log("🔧 Fixing incorrect hostname to use pooler URL");
+  DATABASE_URL = correctPoolerUrl;
+} else if (!DATABASE_URL) {
+  console.log("🔧 No DATABASE_URL set, using default Supabase pooler");
+  DATABASE_URL = correctPoolerUrl;
+}
+
+console.log("🔍 Final DATABASE_URL:", DATABASE_URL?.split('@')[0] + '@[HIDDEN]');
 
 // Use standard postgres driver for better Supabase compatibility
 import pkg from 'pg';
