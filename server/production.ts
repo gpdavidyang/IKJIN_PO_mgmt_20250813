@@ -2,14 +2,12 @@ import dotenv from "dotenv";
 dotenv.config();
 
 // 환경변수 확인 및 Supabase 연결 설정
-const originalDatabaseUrl = process.env.DATABASE_URL;
-if (originalDatabaseUrl) {
-  console.log("🔍 Original Vercel DATABASE_URL:", originalDatabaseUrl.split('@')[0] + '@[HIDDEN]');
+if (!process.env.DATABASE_URL) {
+  console.error("❌ DATABASE_URL environment variable not set in Vercel");
+  process.exit(1);
+} else {
+  console.log("🔧 Using Vercel DATABASE_URL:", process.env.DATABASE_URL.split('@')[0] + '@[HIDDEN]');
 }
-
-// ENOTFOUND 오류 해결을 위해 강제로 Supabase pooler URL 사용
-process.env.DATABASE_URL = "postgresql://postgres.tbvugytmskxxyqfvqmup:gps110601ysw@aws-0-ap-northeast-2.pooler.supabase.com:5432/postgres";
-console.log("🔧 Force using Supabase pooler URL for DNS issue resolution");
 console.log("✨ Production server starting without static file serving");
 
 import express, { type Request, Response, NextFunction } from "express";
