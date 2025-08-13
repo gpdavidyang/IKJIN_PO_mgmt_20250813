@@ -1079,7 +1079,15 @@ var DatabaseStorage = class {
   }
   // Vendor operations
   async getVendors() {
-    return await db.select().from(vendors).where(eq(vendors.isActive, true)).orderBy(asc(vendors.name));
+    try {
+      console.log("\u{1F50D} Storage: Executing getVendors query...");
+      const result = await db.select().from(vendors).where(eq(vendors.isActive, true)).orderBy(asc(vendors.name));
+      console.log(`\u{1F50D} Storage: getVendors returned ${result.length} vendors`);
+      return result;
+    } catch (error) {
+      console.error("\u{1F4A5} Storage: getVendors failed:", error);
+      throw error;
+    }
   }
   async getVendor(id) {
     const [vendor] = await db.select().from(vendors).where(eq(vendors.id, id));
@@ -1831,7 +1839,15 @@ var DatabaseStorage = class {
   }
   // Company operations
   async getCompanies() {
-    return await db.select().from(companies).where(eq(companies.isActive, true)).orderBy(asc(companies.companyName));
+    try {
+      console.log("\u{1F50D} Storage: Executing getCompanies query...");
+      const result = await db.select().from(companies).where(eq(companies.isActive, true)).orderBy(asc(companies.companyName));
+      console.log(`\u{1F50D} Storage: getCompanies returned ${result.length} companies`);
+      return result;
+    } catch (error) {
+      console.error("\u{1F4A5} Storage: getCompanies failed:", error);
+      throw error;
+    }
   }
   async getCompany(id) {
     const [company] = await db.select().from(companies).where(and(eq(companies.id, id), eq(companies.isActive, true)));
@@ -3965,11 +3981,19 @@ import { Router as Router4 } from "express";
 var router4 = Router4();
 router4.get("/vendors", async (req, res) => {
   try {
+    console.log("\u{1F3EA} Fetching vendors from database...");
     const vendors2 = await storage.getVendors();
+    console.log(`\u2705 Successfully fetched ${vendors2.length} vendors`);
     res.json(vendors2);
   } catch (error) {
-    console.error("Error fetching vendors:", error);
-    res.status(500).json({ message: "Failed to fetch vendors" });
+    console.error("\u274C Error fetching vendors:", error);
+    console.error("Error name:", error?.name);
+    console.error("Error message:", error?.message);
+    console.error("Error stack:", error?.stack);
+    res.status(500).json({
+      message: "Failed to fetch vendors",
+      error: process.env.NODE_ENV === "development" ? error?.message : void 0
+    });
   }
 });
 router4.get("/vendors/:id", requireAuth, async (req, res) => {
@@ -4239,11 +4263,19 @@ init_schema();
 var router7 = Router7();
 router7.get("/companies", async (req, res) => {
   try {
+    console.log("\u{1F3E2} Fetching companies from database...");
     const companies3 = await storage.getCompanies();
+    console.log(`\u2705 Successfully fetched ${companies3.length} companies`);
     res.json(companies3);
   } catch (error) {
-    console.error("Error fetching companies:", error);
-    res.status(500).json({ message: "Failed to fetch companies" });
+    console.error("\u274C Error fetching companies:", error);
+    console.error("Error name:", error?.name);
+    console.error("Error message:", error?.message);
+    console.error("Error stack:", error?.stack);
+    res.status(500).json({
+      message: "Failed to fetch companies",
+      error: process.env.NODE_ENV === "development" ? error?.message : void 0
+    });
   }
 });
 router7.post("/companies", logoUpload.single("logo"), async (req, res) => {

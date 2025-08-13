@@ -12,11 +12,19 @@ const router = Router();
 // Vendor routes - Mock 데이터 제거하고 실제 데이터베이스만 사용
 router.get("/vendors", async (req, res) => {
   try {
+    console.log("🏪 Fetching vendors from database...");
     const vendors = await storage.getVendors();
+    console.log(`✅ Successfully fetched ${vendors.length} vendors`);
     res.json(vendors);
   } catch (error) {
-    console.error("Error fetching vendors:", error);
-    res.status(500).json({ message: "Failed to fetch vendors" });
+    console.error("❌ Error fetching vendors:", error);
+    console.error("Error name:", error?.name);
+    console.error("Error message:", error?.message);
+    console.error("Error stack:", error?.stack);
+    res.status(500).json({ 
+      message: "Failed to fetch vendors",
+      error: process.env.NODE_ENV === 'development' ? error?.message : undefined
+    });
   }
 });
 

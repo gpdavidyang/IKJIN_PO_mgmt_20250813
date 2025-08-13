@@ -556,7 +556,15 @@ export class DatabaseStorage implements IStorage {
 
   // Vendor operations
   async getVendors(): Promise<Vendor[]> {
-    return await db.select().from(vendors).where(eq(vendors.isActive, true)).orderBy(asc(vendors.name));
+    try {
+      console.log("🔍 Storage: Executing getVendors query...");
+      const result = await db.select().from(vendors).where(eq(vendors.isActive, true)).orderBy(asc(vendors.name));
+      console.log(`🔍 Storage: getVendors returned ${result.length} vendors`);
+      return result;
+    } catch (error) {
+      console.error("💥 Storage: getVendors failed:", error);
+      throw error;
+    }
   }
 
   async getVendor(id: number): Promise<Vendor | undefined> {
@@ -1808,11 +1816,19 @@ export class DatabaseStorage implements IStorage {
 
   // Company operations
   async getCompanies(): Promise<Company[]> {
-    return await db
-      .select()
-      .from(companies)
-      .where(eq(companies.isActive, true))
-      .orderBy(asc(companies.companyName));
+    try {
+      console.log("🔍 Storage: Executing getCompanies query...");
+      const result = await db
+        .select()
+        .from(companies)
+        .where(eq(companies.isActive, true))
+        .orderBy(asc(companies.companyName));
+      console.log(`🔍 Storage: getCompanies returned ${result.length} companies`);
+      return result;
+    } catch (error) {
+      console.error("💥 Storage: getCompanies failed:", error);
+      throw error;
+    }
   }
 
   async getCompany(id: number): Promise<Company | undefined> {
