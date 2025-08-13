@@ -53,42 +53,30 @@ router.get("/companies/debug", async (req, res) => {
 router.get("/companies", async (req, res) => {
   try {
     console.log("🏢 Fetching companies from database...");
+    console.log("🔍 DATABASE_URL status:", process.env.DATABASE_URL ? "set" : "missing");
+    if (process.env.DATABASE_URL) {
+      console.log("🔍 DATABASE_URL preview:", process.env.DATABASE_URL.substring(0, 20) + "...[TRUNCATED]");
+    }
+    console.log("🔍 All env vars:", Object.keys(process.env).filter(key => key.includes('DATABASE')));
+    console.log("🔍 DB object status:", typeof storage);
     
-    // TEMPORARY: Return mock data until DB connection is fixed
-    const mockCompanies = [
-      {
-        id: 1,
-        companyName: "테스트 회사 1",
-        businessNumber: "123-45-67890",
-        address: "서울시 강남구 테헤란로 123",
-        contactPerson: "홍길동",
-        phone: "02-1234-5678",
-        email: "test1@company.com",
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      },
-      {
-        id: 2,
-        companyName: "테스트 회사 2",
-        businessNumber: "987-65-43210",
-        address: "서울시 서초구 강남대로 456",
-        contactPerson: "김철수",
-        phone: "02-9876-5432",
-        email: "test2@company.com",
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }
-    ];
-    
-    console.log(`✅ Returning mock companies data (${mockCompanies.length} companies)`);
-    res.json(mockCompanies);
+    const companies = await storage.getCompanies();
+    console.log(`✅ Successfully fetched ${companies.length} companies`);
+    res.json(companies);
   } catch (error) {
-    console.error("❌ Error fetching companies:", error);
+    console.error("💥 Error fetching companies:", error);
+    console.error("💥 Error name:", error?.name);
+    console.error("💥 Error code:", error?.code);
+    console.error("💥 Error message:", error?.message);
+    console.error("💥 Error stack:", error?.stack?.substring(0, 500));
+    
+    // Enhanced error logging with more details
     res.status(500).json({ 
       message: "Failed to fetch companies",
-      error: process.env.NODE_ENV === 'development' ? error?.message : undefined
+      error: process.env.NODE_ENV === 'development' ? error?.message : undefined,
+      errorName: error?.name,
+      errorCode: error?.code,
+      databaseUrlStatus: process.env.DATABASE_URL ? "set" : "missing"
     });
   }
 });

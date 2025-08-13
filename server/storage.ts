@@ -712,6 +712,28 @@ export class DatabaseStorage implements IStorage {
     page?: number;
     limit?: number;
   } = {}): Promise<{ items: Item[], total: number }> {
+    try {
+      console.log("🔍 Storage: Executing getItems query...");
+      console.log("🔍 Storage: DB instance check:", typeof db, !!db);
+      console.log("🔍 Storage: Items table check:", typeof items);
+      console.log("🔍 Storage: Filters:", filters);
+      
+      // Test basic connection first
+      console.log("🔍 Storage: Testing basic query first...");
+      const testResult = await db.execute(sql`SELECT 1 as test`);
+      console.log("🔍 Storage: Basic query test result:", testResult);
+      
+      // Test items table exists
+      console.log("🔍 Storage: Testing items table exists...");
+      const tableCheck = await db.execute(sql`SELECT COUNT(*) FROM items`);
+      console.log("🔍 Storage: Items table count:", tableCheck);
+    } catch (error) {
+      console.error("💥 Storage: getItems pre-check failed:", error);
+      console.error("💥 Storage: Error name:", error?.name);
+      console.error("💥 Storage: Error code:", error?.code);
+      console.error("💥 Storage: Error message:", error?.message);
+      throw error;
+    }
     const {
       category,
       searchText,
@@ -2414,13 +2436,35 @@ export class DatabaseStorage implements IStorage {
   // Item Categories Management
   async getItemCategories(): Promise<ItemCategory[]> {
     try {
-      return await db
+      console.log("🔍 Storage: Executing getItemCategories query...");
+      console.log("🔍 Storage: DB instance check:", typeof db, !!db);
+      console.log("🔍 Storage: ItemCategories table check:", typeof itemCategories);
+      
+      // Test basic connection first
+      console.log("🔍 Storage: Testing basic query first...");
+      const testResult = await db.execute(sql`SELECT 1 as test`);
+      console.log("🔍 Storage: Basic query test result:", testResult);
+      
+      // Test itemCategories table exists
+      console.log("🔍 Storage: Testing itemCategories table exists...");
+      const tableCheck = await db.execute(sql`SELECT COUNT(*) FROM item_categories`);
+      console.log("🔍 Storage: ItemCategories table count:", tableCheck);
+      
+      // Try simplified query first
+      console.log("🔍 Storage: Trying simplified itemCategories query...");
+      const result = await db
         .select()
         .from(itemCategories)
         .where(eq(itemCategories.isActive, true))
         .orderBy(itemCategories.categoryType, itemCategories.displayOrder);
+      console.log(`🔍 Storage: getItemCategories returned ${result.length} categories`);
+      return result;
     } catch (error) {
-      console.error('Error getting item categories:', error);
+      console.error("💥 Storage: getItemCategories failed:", error);
+      console.error("💥 Storage: Error name:", error?.name);
+      console.error("💥 Storage: Error code:", error?.code);
+      console.error("💥 Storage: Error message:", error?.message);
+      console.error("💥 Storage: Error stack:", error?.stack);
       throw error;
     }
   }
