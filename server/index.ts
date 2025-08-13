@@ -6,7 +6,7 @@ process.env.DATABASE_URL = process.env.DATABASE_URL || "postgresql://postgres.tb
 console.log("🔧 Force-set DATABASE_URL:", process.env.DATABASE_URL.split('@')[0] + '@[HIDDEN]');
 
 import express, { type Request, Response, NextFunction } from "express";
-import { setupVite, serveStatic, log } from "./vite";
+import { serveStatic, log } from "./vite";
 import { migratePasswords } from "./migrate-passwords";
 import { createServer } from "http";
 import session from "express-session";
@@ -92,6 +92,8 @@ async function initializeApp() {
   // Setup static serving based on environment
   if (app.get("env") === "development") {
     const server = createServer(app);
+    // Dynamically import setupVite only in development
+    const { setupVite } = await import("./vite");
     await setupVite(app, server);
     
     // Start server only if not in Vercel environment
