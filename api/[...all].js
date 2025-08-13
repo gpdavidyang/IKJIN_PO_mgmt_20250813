@@ -4,30 +4,64 @@ let isInitialized = false;
 
 async function getApp() {
   if (!isInitialized) {
-    console.log('Initializing Express app for Vercel...');
-    
-    // Set Vercel environment variable before importing
-    process.env.VERCEL = '1';
-    process.env.NODE_ENV = 'production';
-    
-    // Import and wait for initialization
-    const { default: expressApp } = await import('../dist/index.js');
-    
-    // Give the app time to initialize
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    app = expressApp;
-    isInitialized = true;
-    console.log('Express app initialized successfully');
+    try {
+      console.log('=== Initializing Express App for Vercel ===');
+      
+      // Set Vercel environment variable before importing
+      process.env.VERCEL = '1';
+      process.env.NODE_ENV = 'production';
+      console.log('Environment variables set:', {
+        VERCEL: process.env.VERCEL,
+        NODE_ENV: process.env.NODE_ENV,
+        DATABASE_URL: process.env.DATABASE_URL ? 'set' : 'not set'
+      });
+      
+      console.log('=== Importing Express App ===');
+      const importResult = await import('../dist/index.js');
+      console.log('Import result keys:', Object.keys(importResult));
+      console.log('Default export type:', typeof importResult.default);
+      
+      const expressApp = importResult.default;
+      
+      if (!expressApp) {
+        throw new Error('Express app is null or undefined after import');
+      }
+      
+      console.log('=== Waiting for App Initialization ===');
+      // Give the app time to initialize
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      app = expressApp;
+      isInitialized = true;
+      console.log('=== Express App Initialized Successfully ===');
+      console.log('App type:', typeof app);
+      console.log('App is function:', typeof app === 'function');
+      
+    } catch (error) {
+      console.error('=== Express App Initialization Failed ===');
+      console.error('Error name:', error.name);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+      throw error;
+    }
   }
+  
+  console.log('=== Returning Cached App ===');
+  console.log('App type:', typeof app);
   return app;
 }
 
 export default async function handler(req, res) {
   try {
-    console.log('API request:', req.method, req.url);
+    console.log('=== API Request ===');
+    console.log('Method:', req.method);
+    console.log('URL:', req.url);
+    console.log('Headers:', JSON.stringify(req.headers, null, 2));
     
+    console.log('=== Getting Express App ===');
     const expressApp = await getApp();
+    console.log('Express app type:', typeof expressApp);
+    console.log('Express app keys:', Object.keys(expressApp || {}));
     
     // Add some headers
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -35,16 +69,25 @@ export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     
     if (req.method === 'OPTIONS') {
+      console.log('=== OPTIONS Request - Returning ===');
       return res.status(200).end();
     }
     
+    console.log('=== Calling Express App ===');
     return expressApp(req, res);
   } catch (error) {
-    console.error('API handler error:', error);
+    console.error('=== API Handler Error ===');
+    console.error('Error name:', error.name);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    console.error('Error cause:', error.cause);
+    
     res.status(500).json({ 
       message: 'Internal server error',
       error: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      errorName: error.name,
+      stack: error.stack,
+      timestamp: new Date().toISOString()
     });
   }
 }
