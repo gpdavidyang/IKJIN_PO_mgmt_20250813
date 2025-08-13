@@ -8,169 +8,6 @@ var __export = (target, all) => {
     __defProp(target, name, { get: all[name], enumerable: true });
 };
 
-// vite.config.ts
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-import path from "path";
-import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
-var vite_config_default;
-var init_vite_config = __esm({
-  async "vite.config.ts"() {
-    "use strict";
-    vite_config_default = defineConfig({
-      plugins: [
-        react(),
-        runtimeErrorOverlay(),
-        ...process.env.NODE_ENV !== "production" && process.env.REPL_ID !== void 0 ? [
-          await import("@replit/vite-plugin-cartographer").then(
-            (m) => m.cartographer()
-          )
-        ] : []
-      ],
-      resolve: {
-        alias: {
-          "@": path.resolve(import.meta.dirname, "client", "src"),
-          "@shared": path.resolve(import.meta.dirname, "shared"),
-          "@assets": path.resolve(import.meta.dirname, "attached_assets")
-        }
-      },
-      root: path.resolve(import.meta.dirname, "client"),
-      build: {
-        outDir: path.resolve(import.meta.dirname, "dist/public"),
-        emptyOutDir: true,
-        sourcemap: process.env.NODE_ENV === "development",
-        rollupOptions: {
-          output: {
-            // Simple file naming without manual chunking
-            chunkFileNames: "assets/js/[name]-[hash].js",
-            entryFileNames: "assets/js/[name]-[hash].js",
-            assetFileNames: "assets/[ext]/[name]-[hash].[ext]"
-          },
-          // Ensure React is treated as external dependency properly
-          external: []
-        },
-        // Optimize bundle size
-        minify: "esbuild",
-        target: "es2020",
-        cssCodeSplit: true,
-        reportCompressedSize: false,
-        // Disable to speed up build
-        chunkSizeWarningLimit: 1e3
-        // Increase limit since we're not chunking
-      },
-      // Performance optimizations
-      optimizeDeps: {
-        include: [
-          "react",
-          "react-dom",
-          "react/jsx-runtime",
-          "react-hook-form",
-          "@tanstack/react-query",
-          "@tanstack/react-table",
-          "wouter",
-          "zod",
-          "clsx",
-          "tailwind-merge",
-          "recharts",
-          "lucide-react"
-        ],
-        exclude: [
-          // Large dependencies that should be loaded dynamically
-          "@replit/vite-plugin-cartographer"
-        ],
-        // Force React to be included in pre-bundling
-        force: true
-      }
-    });
-  }
-});
-
-// server/vite.ts
-var vite_exports = {};
-__export(vite_exports, {
-  log: () => log,
-  serveStatic: () => serveStatic,
-  setupVite: () => setupVite
-});
-import express from "express";
-import fs from "fs";
-import path2 from "path";
-import { createServer as createViteServer, createLogger } from "vite";
-import { nanoid } from "nanoid";
-function log(message, source = "express") {
-  const formattedTime = (/* @__PURE__ */ new Date()).toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true
-  });
-  console.log(`${formattedTime} [${source}] ${message}`);
-}
-async function setupVite(app2, server) {
-  const serverOptions = {
-    middlewareMode: true,
-    hmr: { server }
-  };
-  const vite = await createViteServer({
-    ...vite_config_default,
-    configFile: false,
-    customLogger: {
-      ...viteLogger,
-      error: (msg, options) => {
-        viteLogger.error(msg, options);
-        process.exit(1);
-      }
-    },
-    server: serverOptions,
-    appType: "custom"
-  });
-  app2.use(vite.middlewares);
-  app2.use("*", async (req, res, next) => {
-    const url = req.originalUrl;
-    if (url.startsWith("/api/")) {
-      return next();
-    }
-    try {
-      const clientTemplate = path2.resolve(
-        import.meta.dirname,
-        "..",
-        "client",
-        "index.html"
-      );
-      let template = await fs.promises.readFile(clientTemplate, "utf-8");
-      template = template.replace(
-        `src="/src/main.tsx"`,
-        `src="/src/main.tsx?v=${nanoid()}"`
-      );
-      const page = await vite.transformIndexHtml(url, template);
-      res.status(200).set({ "Content-Type": "text/html" }).end(page);
-    } catch (e) {
-      vite.ssrFixStacktrace(e);
-      next(e);
-    }
-  });
-}
-function serveStatic(app2) {
-  const distPath = path2.resolve(import.meta.dirname, "public");
-  if (!fs.existsSync(distPath)) {
-    throw new Error(
-      `Could not find the build directory: ${distPath}, make sure to build the client first`
-    );
-  }
-  app2.use(express.static(distPath));
-  app2.use("*", (_req, res) => {
-    res.sendFile(path2.resolve(distPath, "index.html"));
-  });
-}
-var viteLogger;
-var init_vite = __esm({
-  async "server/vite.ts"() {
-    "use strict";
-    await init_vite_config();
-    viteLogger = createLogger();
-  }
-});
-
 // shared/schema.ts
 var schema_exports = {};
 __export(schema_exports, {
@@ -1075,10 +912,191 @@ var init_db = __esm({
   }
 });
 
-// server/index.ts
-await init_vite();
-import dotenv2 from "dotenv";
+// vite.config.ts
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import path13 from "path";
+import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
+var vite_config_default;
+var init_vite_config = __esm({
+  async "vite.config.ts"() {
+    "use strict";
+    vite_config_default = defineConfig({
+      plugins: [
+        react(),
+        runtimeErrorOverlay(),
+        ...process.env.NODE_ENV !== "production" && process.env.REPL_ID !== void 0 ? [
+          await import("@replit/vite-plugin-cartographer").then(
+            (m) => m.cartographer()
+          )
+        ] : []
+      ],
+      resolve: {
+        alias: {
+          "@": path13.resolve(import.meta.dirname, "client", "src"),
+          "@shared": path13.resolve(import.meta.dirname, "shared"),
+          "@assets": path13.resolve(import.meta.dirname, "attached_assets")
+        }
+      },
+      root: path13.resolve(import.meta.dirname, "client"),
+      build: {
+        outDir: path13.resolve(import.meta.dirname, "dist/public"),
+        emptyOutDir: true,
+        sourcemap: process.env.NODE_ENV === "development",
+        rollupOptions: {
+          output: {
+            // Simple file naming without manual chunking
+            chunkFileNames: "assets/js/[name]-[hash].js",
+            entryFileNames: "assets/js/[name]-[hash].js",
+            assetFileNames: "assets/[ext]/[name]-[hash].[ext]"
+          },
+          // Ensure React is treated as external dependency properly
+          external: []
+        },
+        // Optimize bundle size
+        minify: "esbuild",
+        target: "es2020",
+        cssCodeSplit: true,
+        reportCompressedSize: false,
+        // Disable to speed up build
+        chunkSizeWarningLimit: 1e3
+        // Increase limit since we're not chunking
+      },
+      // Performance optimizations
+      optimizeDeps: {
+        include: [
+          "react",
+          "react-dom",
+          "react/jsx-runtime",
+          "react-hook-form",
+          "@tanstack/react-query",
+          "@tanstack/react-table",
+          "wouter",
+          "zod",
+          "clsx",
+          "tailwind-merge",
+          "recharts",
+          "lucide-react"
+        ],
+        exclude: [
+          // Large dependencies that should be loaded dynamically
+          "@replit/vite-plugin-cartographer"
+        ],
+        // Force React to be included in pre-bundling
+        force: true
+      }
+    });
+  }
+});
+
+// server/vite.ts
+var vite_exports = {};
+__export(vite_exports, {
+  log: () => log2,
+  serveStatic: () => serveStatic2,
+  setupVite: () => setupVite
+});
 import express3 from "express";
+import fs16 from "fs";
+import path14 from "path";
+import { createServer as createViteServer, createLogger } from "vite";
+import { nanoid } from "nanoid";
+function log2(message, source = "express") {
+  const formattedTime = (/* @__PURE__ */ new Date()).toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true
+  });
+  console.log(`${formattedTime} [${source}] ${message}`);
+}
+async function setupVite(app2, server) {
+  const serverOptions = {
+    middlewareMode: true,
+    hmr: { server }
+  };
+  const vite = await createViteServer({
+    ...vite_config_default,
+    configFile: false,
+    customLogger: {
+      ...viteLogger,
+      error: (msg, options) => {
+        viteLogger.error(msg, options);
+        process.exit(1);
+      }
+    },
+    server: serverOptions,
+    appType: "custom"
+  });
+  app2.use(vite.middlewares);
+  app2.use("*", async (req, res, next) => {
+    const url = req.originalUrl;
+    if (url.startsWith("/api/")) {
+      return next();
+    }
+    try {
+      const clientTemplate = path14.resolve(
+        import.meta.dirname,
+        "..",
+        "client",
+        "index.html"
+      );
+      let template = await fs16.promises.readFile(clientTemplate, "utf-8");
+      template = template.replace(
+        `src="/src/main.tsx"`,
+        `src="/src/main.tsx?v=${nanoid()}"`
+      );
+      const page = await vite.transformIndexHtml(url, template);
+      res.status(200).set({ "Content-Type": "text/html" }).end(page);
+    } catch (e) {
+      vite.ssrFixStacktrace(e);
+      next(e);
+    }
+  });
+}
+function serveStatic2(app2) {
+  const distPath = path14.resolve(import.meta.dirname, "public");
+  if (!fs16.existsSync(distPath)) {
+    throw new Error(
+      `Could not find the build directory: ${distPath}, make sure to build the client first`
+    );
+  }
+  app2.use(express3.static(distPath));
+  app2.use("*", (_req, res) => {
+    res.sendFile(path14.resolve(distPath, "index.html"));
+  });
+}
+var viteLogger;
+var init_vite = __esm({
+  async "server/vite.ts"() {
+    "use strict";
+    await init_vite_config();
+    viteLogger = createLogger();
+  }
+});
+
+// server/index.ts
+import dotenv2 from "dotenv";
+import express4 from "express";
+
+// server/static.ts
+import express from "express";
+import fs from "fs";
+import path from "path";
+function serveStatic(app2) {
+  const distPath = path.resolve(import.meta.dirname, "public");
+  if (!fs.existsSync(distPath)) {
+    throw new Error(
+      `Could not find the build directory: ${distPath}, make sure to build the client first`
+    );
+  }
+  app2.use(express.static(distPath));
+}
+function log(message) {
+  console.log(message);
+}
+
+// server/index.ts
 import { createServer } from "http";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
@@ -1945,8 +1963,8 @@ var DatabaseStorage = class {
     return await db.select().from(verificationLogs).orderBy(desc(verificationLogs.createdAt));
   }
   async createVerificationLog(logData) {
-    const [log2] = await db.insert(verificationLogs).values(logData).returning();
-    return log2;
+    const [log3] = await db.insert(verificationLogs).values(logData).returning();
+    return log3;
   }
   // UI terms operations
   async getUiTerms(category) {
@@ -3313,7 +3331,7 @@ import { Router as Router3 } from "express";
 
 // server/utils/multer-config.ts
 import multer from "multer";
-import path3 from "path";
+import path2 from "path";
 import fs2 from "fs";
 
 // server/utils/korean-filename.ts
@@ -3407,7 +3425,7 @@ function fixCorruptedKoreanFilename(filename) {
 }
 
 // server/utils/multer-config.ts
-var uploadDir = path3.join(process.cwd(), "uploads");
+var uploadDir = path2.join(process.cwd(), "uploads");
 if (!fs2.existsSync(uploadDir)) {
   fs2.mkdirSync(uploadDir, { recursive: true });
 }
@@ -3629,7 +3647,7 @@ var OrderService = class {
 
 // server/routes/orders.ts
 import fs3 from "fs";
-import path4 from "path";
+import path3 from "path";
 var router3 = Router3();
 router3.get("/orders", async (req, res) => {
   try {
@@ -3861,8 +3879,8 @@ router3.post("/orders/generate-pdf", requireAuth, async (req, res) => {
     if (!fs3.existsSync(tempDir)) {
       fs3.mkdirSync(tempDir, { recursive: true });
     }
-    const tempHtmlPath = path4.join(tempDir, `order-${timestamp2}.html`);
-    const tempPdfPath = path4.join(tempDir, `order-${timestamp2}.pdf`);
+    const tempHtmlPath = path3.join(tempDir, `order-${timestamp2}.html`);
+    const tempPdfPath = path3.join(tempDir, `order-${timestamp2}.pdf`);
     try {
       const orderHtml = `
 <!DOCTYPE html>
@@ -4085,7 +4103,7 @@ router3.get("/orders/download-pdf/:timestamp", (req, res) => {
   try {
     const { timestamp: timestamp2 } = req.params;
     const { download } = req.query;
-    const pdfPath = path4.join(process.cwd(), "uploads/temp-pdf", `order-${timestamp2}.pdf`);
+    const pdfPath = path3.join(process.cwd(), "uploads/temp-pdf", `order-${timestamp2}.pdf`);
     console.log(`\u{1F4C4} PDF \uB2E4\uC6B4\uB85C\uB4DC \uC694\uCCAD: ${pdfPath}`);
     console.log(`\u{1F4C4} \uD30C\uC77C \uC874\uC7AC \uC5EC\uBD80: ${fs3.existsSync(pdfPath)}`);
     if (fs3.existsSync(pdfPath)) {
@@ -4601,7 +4619,7 @@ var admin_default = router8;
 // server/routes/excel-automation.ts
 import { Router as Router9 } from "express";
 import multer2 from "multer";
-import path8 from "path";
+import path7 from "path";
 import fs9 from "fs";
 
 // server/utils/po-template-processor-mock.ts
@@ -5440,7 +5458,7 @@ async function validateMultipleVendors(vendorData) {
 
 // server/utils/po-email-service.ts
 import nodemailer from "nodemailer";
-import path6 from "path";
+import path5 from "path";
 import fs7 from "fs";
 
 // server/utils/excel-to-pdf.ts
@@ -5667,11 +5685,11 @@ async function convertExcelToPdf(excelPath, outputPath, sheetsOnly) {
 // server/utils/excel-to-pdf-converter.ts
 import puppeteer2 from "puppeteer";
 import ExcelJS from "exceljs";
-import path5 from "path";
+import path4 from "path";
 import fs5 from "fs";
 import { fileURLToPath } from "url";
 var __filename = fileURLToPath(import.meta.url);
-var __dirname2 = path5.dirname(__filename);
+var __dirname2 = path4.dirname(__filename);
 var ExcelToPDFConverter = class {
   /**
    * Excel 파일을 PDF로 변환
@@ -5688,7 +5706,7 @@ var ExcelToPDFConverter = class {
       }
       const pdfPath = outputPath || excelPath.replace(/\.(xlsx?|xlsm)$/i, ".pdf");
       console.log(`\u{1F4C4} PDF \uCD9C\uB825 \uACBD\uB85C: ${pdfPath}`);
-      const outputDir = path5.dirname(pdfPath);
+      const outputDir = path4.dirname(pdfPath);
       if (!fs5.existsSync(outputDir)) {
         fs5.mkdirSync(outputDir, { recursive: true });
         console.log(`\u{1F4C1} \uCD9C\uB825 \uB514\uB809\uD1A0\uB9AC \uC0DD\uC131: ${outputDir}`);
@@ -5930,7 +5948,7 @@ var ExcelToPDFConverter = class {
 `;
       for (let i = 0; i < excelPaths.length; i++) {
         const excelPath = excelPaths[i];
-        const fileName = path5.basename(excelPath, path5.extname(excelPath));
+        const fileName = path4.basename(excelPath, path4.extname(excelPath));
         const workbook = new ExcelJS.Workbook();
         await workbook.xlsx.readFile(excelPath);
         combinedHTML += `<div class="file-section">`;
@@ -6294,8 +6312,8 @@ var POEmailService = class {
   async sendPOWithOriginalFormat(originalFilePath, emailOptions) {
     try {
       const timestamp2 = Date.now();
-      const uploadsDir = path6.join(__dirname, "../../uploads");
-      const processedPath = path6.join(uploadsDir, `po-advanced-format-${timestamp2}.xlsx`);
+      const uploadsDir = path5.join(__dirname, "../../uploads");
+      const processedPath = path5.join(uploadsDir, `po-advanced-format-${timestamp2}.xlsx`);
       const removeResult = await removeAllInputSheets(
         originalFilePath,
         processedPath
@@ -6309,7 +6327,7 @@ var POEmailService = class {
       console.log(`\u{1F4C4} \uACE0\uAE09 \uD615\uC2DD \uBCF4\uC874 \uD30C\uC77C \uC0DD\uC131: ${processedPath}`);
       console.log(`\u{1F3AF} Input \uC2DC\uD2B8 \uC81C\uAC70 \uC644\uB8CC`);
       console.log(`\u{1F4CB} \uB0A8\uC740 \uC2DC\uD2B8: ${removeResult.remainingSheets.join(", ")}`);
-      const pdfPath = path6.join(uploadsDir, `po-advanced-format-${timestamp2}.pdf`);
+      const pdfPath = path5.join(uploadsDir, `po-advanced-format-${timestamp2}.pdf`);
       let pdfResult = { success: false, error: "" };
       try {
         await ExcelToPDFConverter.convertExcelToPDF(processedPath, pdfPath);
@@ -6375,8 +6393,8 @@ var POEmailService = class {
   async sendPOWithAttachments(originalFilePath, emailOptions) {
     try {
       const timestamp2 = Date.now();
-      const uploadsDir = path6.join(__dirname, "../../uploads");
-      const extractedPath = path6.join(uploadsDir, `po-sheets-${timestamp2}.xlsx`);
+      const uploadsDir = path5.join(__dirname, "../../uploads");
+      const extractedPath = path5.join(uploadsDir, `po-sheets-${timestamp2}.xlsx`);
       const extractResult = POTemplateProcessor.extractSheetsToFile(
         originalFilePath,
         extractedPath,
@@ -6389,7 +6407,7 @@ var POEmailService = class {
           error: `\uC2DC\uD2B8 \uCD94\uCD9C \uC2E4\uD328: ${extractResultData.error}`
         };
       }
-      const pdfPath = path6.join(uploadsDir, `po-sheets-${timestamp2}.pdf`);
+      const pdfPath = path5.join(uploadsDir, `po-sheets-${timestamp2}.pdf`);
       const pdfResult = await convertExcelToPdf(extractedPath, pdfPath, ["\uAC11\uC9C0", "\uC744\uC9C0"]);
       if (!pdfResult.success) {
         return {
@@ -6656,7 +6674,7 @@ var POEmailService = class {
 
 // server/utils/excel-automation-service.ts
 import fs8 from "fs";
-import path7 from "path";
+import path6 from "path";
 var ExcelAutomationService = class {
   /**
    * 1단계: Excel 파일 업로드 및 파싱, DB 저장
@@ -6808,8 +6826,8 @@ var ExcelAutomationService = class {
         new Set(vendorValidation.validVendors.map((v) => v.email))
       ).filter((email) => email && email.trim());
       const timestamp2 = Date.now();
-      const processedPath = path7.join(
-        path7.dirname(filePath),
+      const processedPath = path6.join(
+        path6.dirname(filePath),
         `processed-${timestamp2}.xlsx`
       );
       await removeAllInputSheets(filePath, processedPath);
@@ -6827,11 +6845,11 @@ var ExcelAutomationService = class {
       const pdfStats = pdfConversionSuccess && fs8.existsSync(pdfPath) ? fs8.statSync(pdfPath) : null;
       const emailPreview = {
         recipients,
-        subject: `\uBC1C\uC8FC\uC11C - ${path7.basename(filePath, path7.extname(filePath))} (${(/* @__PURE__ */ new Date()).toLocaleDateString("ko-KR")})`,
+        subject: `\uBC1C\uC8FC\uC11C - ${path6.basename(filePath, path6.extname(filePath))} (${(/* @__PURE__ */ new Date()).toLocaleDateString("ko-KR")})`,
         attachmentInfo: {
-          originalFile: path7.basename(filePath),
-          processedFile: path7.basename(processedPath),
-          processedPdfFile: pdfStats ? path7.basename(pdfPath) : void 0,
+          originalFile: path6.basename(filePath),
+          processedFile: path6.basename(processedPath),
+          processedPdfFile: pdfStats ? path6.basename(pdfPath) : void 0,
           fileSize: stats.size,
           pdfFileSize: pdfStats ? pdfStats.size : void 0
         },
@@ -6940,8 +6958,8 @@ var ExcelAutomationService = class {
         new Set(selectedVendors.map((v) => v.selectedVendorEmail))
       ).filter((email) => email && email.trim());
       const timestamp2 = Date.now();
-      const processedPath = path7.join(
-        path7.dirname(filePath),
+      const processedPath = path6.join(
+        path6.dirname(filePath),
         `processed-${timestamp2}.xlsx`
       );
       await removeAllInputSheets(filePath, processedPath);
@@ -6959,11 +6977,11 @@ var ExcelAutomationService = class {
       const pdfStats = pdfConversionSuccess && fs8.existsSync(pdfPath) ? fs8.statSync(pdfPath) : null;
       return {
         recipients,
-        subject: `\uBC1C\uC8FC\uC11C - ${path7.basename(filePath, path7.extname(filePath))} (${(/* @__PURE__ */ new Date()).toLocaleDateString("ko-KR")})`,
+        subject: `\uBC1C\uC8FC\uC11C - ${path6.basename(filePath, path6.extname(filePath))} (${(/* @__PURE__ */ new Date()).toLocaleDateString("ko-KR")})`,
         attachmentInfo: {
-          originalFile: path7.basename(filePath),
-          processedFile: path7.basename(processedPath),
-          processedPdfFile: pdfStats ? path7.basename(pdfPath) : void 0,
+          originalFile: path6.basename(filePath),
+          processedFile: path6.basename(processedPath),
+          processedPdfFile: pdfStats ? path6.basename(pdfPath) : void 0,
           fileSize: stats.size,
           pdfFileSize: pdfStats ? pdfStats.size : void 0
         },
@@ -7180,7 +7198,7 @@ router9.post("/validate-vendors", requireAuth, async (req, res) => {
 router9.get("/download/:filename", requireAuth, (req, res) => {
   try {
     const filename = req.params.filename;
-    const filePath = path8.join("uploads", filename);
+    const filePath = path7.join("uploads", filename);
     if (!fs9.existsSync(filePath)) {
       return res.status(404).json({
         success: false,
@@ -7249,17 +7267,17 @@ var excel_automation_default = router9;
 // server/routes/po-template-real.ts
 import { Router as Router10 } from "express";
 import multer3 from "multer";
-import path12 from "path";
+import path11 from "path";
 import fs13 from "fs";
 import { fileURLToPath as fileURLToPath3 } from "url";
 
 // server/utils/po-email-service-mock.ts
 import nodemailer2 from "nodemailer";
-import path9 from "path";
+import path8 from "path";
 import fs10 from "fs";
 import { fileURLToPath as fileURLToPath2 } from "url";
 var __filename2 = fileURLToPath2(import.meta.url);
-var __dirname3 = path9.dirname(__filename2);
+var __dirname3 = path8.dirname(__filename2);
 var POEmailServiceMock = class {
   constructor() {
     this.transporter = null;
@@ -7285,8 +7303,8 @@ var POEmailServiceMock = class {
   async sendPOWithAttachments(originalFilePath, emailOptions) {
     try {
       const timestamp2 = Date.now();
-      const uploadsDir = path9.join(__dirname3, "../../uploads");
-      const extractedPath = path9.join(uploadsDir, `po-sheets-${timestamp2}.xlsx`);
+      const uploadsDir = path8.join(__dirname3, "../../uploads");
+      const extractedPath = path8.join(uploadsDir, `po-sheets-${timestamp2}.xlsx`);
       const extractResult = POTemplateProcessorMock.extractSheetsToFile(
         originalFilePath,
         extractedPath,
@@ -7299,7 +7317,7 @@ var POEmailServiceMock = class {
           error: `\uC2DC\uD2B8 \uCD94\uCD9C \uC2E4\uD328: ${extractResultData.error}`
         };
       }
-      const pdfPath = path9.join(uploadsDir, `po-sheets-${timestamp2}.pdf`);
+      const pdfPath = path8.join(uploadsDir, `po-sheets-${timestamp2}.pdf`);
       const pdfResult = await this.createDummyPDF(pdfPath);
       if (!pdfResult.success) {
         return {
@@ -7407,11 +7425,11 @@ var POEmailServiceMock = class {
     console.log("  \uC81C\uBAA9:", options.subject);
     console.log("  \uCCA8\uBD80\uD30C\uC77C:", options.attachments?.length || 0, "\uAC1C");
     console.log("  \uBC1C\uC1A1 \uC2DC\uAC04:", mockLog.timestamp);
-    const logDir = path9.join(__dirname3, "../../logs");
+    const logDir = path8.join(__dirname3, "../../logs");
     if (!fs10.existsSync(logDir)) {
       fs10.mkdirSync(logDir, { recursive: true });
     }
-    const logFile = path9.join(logDir, `mock-email-${Date.now()}.json`);
+    const logFile = path8.join(logDir, `mock-email-${Date.now()}.json`);
     fs10.writeFileSync(logFile, JSON.stringify(mockLog, null, 2));
     return {
       success: true,
@@ -7701,7 +7719,7 @@ startxref
       try {
         if (fs10.existsSync(filePath)) {
           fs10.unlinkSync(filePath);
-          console.log(`\u2705 \uC784\uC2DC \uD30C\uC77C \uC815\uB9AC: ${path9.basename(filePath)}`);
+          console.log(`\u2705 \uC784\uC2DC \uD30C\uC77C \uC815\uB9AC: ${path8.basename(filePath)}`);
         }
       } catch (error) {
         console.error(`\u274C \uD30C\uC77C \uC815\uB9AC \uC2E4\uD328: ${filePath}`, error);
@@ -7737,7 +7755,7 @@ startxref
 
 // server/utils/excel-to-pdf-mock.ts
 import XLSX4 from "xlsx";
-import path10 from "path";
+import path9 from "path";
 import fs11 from "fs";
 var ExcelToPdfConverterMock = class {
   /**
@@ -7879,7 +7897,7 @@ startxref
 589
 %%EOF`;
       fs11.writeFileSync(pdfPath, pdfContent);
-      console.log(`\u{1F4C4} Mock PDF \uC0DD\uC131 \uC644\uB8CC: ${path10.basename(pdfPath)}`);
+      console.log(`\u{1F4C4} Mock PDF \uC0DD\uC131 \uC644\uB8CC: ${path9.basename(pdfPath)}`);
       return { success: true };
     } catch (error) {
       return {
@@ -8044,7 +8062,7 @@ async function convertExcelToPdfMock(excelPath, outputPath, sheetsOnly) {
 // server/utils/po-template-validator.ts
 import XLSX5 from "xlsx";
 import fs12 from "fs";
-import path11 from "path";
+import path10 from "path";
 var POTemplateValidator = class {
   static {
     this.REQUIRED_COLUMNS = [
@@ -8166,7 +8184,7 @@ var POTemplateValidator = class {
         result.errors.push("\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.");
         return result;
       }
-      const ext = path11.extname(filePath).toLowerCase();
+      const ext = path10.extname(filePath).toLowerCase();
       if (![".xlsx", ".xlsm", ".xls"].includes(ext)) {
         result.isValid = false;
         result.errors.push("\uC9C0\uC6D0\uD558\uC9C0 \uC54A\uB294 \uD30C\uC77C \uD615\uC2DD\uC785\uB2C8\uB2E4. Excel \uD30C\uC77C(.xlsx, .xlsm, .xls)\uB9CC \uC9C0\uC6D0\uB429\uB2C8\uB2E4.");
@@ -8441,10 +8459,10 @@ router10.get("/test", (req, res) => {
   res.json({ message: "PO Template router is working!", timestamp: /* @__PURE__ */ new Date() });
 });
 var __filename3 = fileURLToPath3(import.meta.url);
-var __dirname4 = path12.dirname(__filename3);
+var __dirname4 = path11.dirname(__filename3);
 var storage3 = multer3.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir2 = path12.join(__dirname4, "../../uploads");
+    const uploadDir2 = path11.join(__dirname4, "../../uploads");
     if (!fs13.existsSync(uploadDir2)) {
       fs13.mkdirSync(uploadDir2, { recursive: true });
     }
@@ -8453,8 +8471,8 @@ var storage3 = multer3.diskStorage({
   filename: (req, file, cb) => {
     const timestamp2 = Date.now();
     const originalName = Buffer.from(file.originalname, "latin1").toString("utf8");
-    const extension = path12.extname(originalName);
-    const basename = path12.basename(originalName, extension);
+    const extension = path11.extname(originalName);
+    const basename = path11.basename(originalName, extension);
     cb(null, `${timestamp2}-${basename}${extension}`);
   }
 });
@@ -8736,8 +8754,8 @@ router10.post("/extract-sheets", requireAuth2, async (req, res) => {
       return res.status(400).json({ error: "\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4." });
     }
     const timestamp2 = Date.now();
-    const extractedPath = path12.join(
-      path12.dirname(filePath),
+    const extractedPath = path11.join(
+      path11.dirname(filePath),
       `extracted-${timestamp2}.xlsx`
     );
     const extractResult = await POTemplateProcessorMock.extractSheetsToFile(
@@ -8907,8 +8925,8 @@ router10.post("/convert-to-pdf", requireAuth2, async (req, res) => {
       return res.status(400).json({ error: "\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4." });
     }
     const timestamp2 = Date.now();
-    const pdfPath = outputPath || path12.join(
-      path12.dirname(filePath),
+    const pdfPath = outputPath || path11.join(
+      path11.dirname(filePath),
       `po-sheets-${timestamp2}.pdf`
     );
     const pdfResult = await convertExcelToPdfMock(filePath, pdfPath, ["\uAC11\uC9C0", "\uC744\uC9C0"]);
@@ -8984,8 +9002,8 @@ router10.post("/process-complete", requireAuth2, upload3.single("file"), async (
     results.saving = saveResult;
     console.log("\u{1F4CB} 4\uB2E8\uACC4: \uAC11\uC9C0/\uC744\uC9C0 \uC2DC\uD2B8 \uCD94\uCD9C");
     const timestamp2 = Date.now();
-    const extractedPath = path12.join(
-      path12.dirname(filePath),
+    const extractedPath = path11.join(
+      path11.dirname(filePath),
       `extracted-${timestamp2}.xlsx`
     );
     const extractResult = await POTemplateProcessorMock.extractSheetsToFile(
@@ -8996,8 +9014,8 @@ router10.post("/process-complete", requireAuth2, upload3.single("file"), async (
     results.extraction = extractResult;
     if (generatePDF) {
       console.log("\u{1F4C4} 5\uB2E8\uACC4: PDF \uBCC0\uD658");
-      const pdfPath = path12.join(
-        path12.dirname(filePath),
+      const pdfPath = path11.join(
+        path11.dirname(filePath),
         `po-sheets-${timestamp2}.pdf`
       );
       const pdfResult = await convertExcelToPdfMock(extractedPath, pdfPath);
@@ -10032,7 +10050,7 @@ var ImportExportService = class {
 // server/routes/import-export.ts
 import multer4 from "multer";
 import fs15 from "fs";
-import path13 from "path";
+import path12 from "path";
 var upload4 = multer4({
   dest: "uploads/",
   limits: {
@@ -10054,7 +10072,7 @@ var upload4 = multer4({
 });
 var router12 = Router12();
 var getFileType = (filename) => {
-  const ext = path13.extname(filename).toLowerCase();
+  const ext = path12.extname(filename).toLowerCase();
   return ext === ".csv" ? "csv" : "excel";
 };
 router12.post("/import/vendors", requireAuth, upload4.single("file"), async (req, res) => {
@@ -11058,13 +11076,13 @@ var routes_default = router16;
 dotenv2.config();
 process.env.DATABASE_URL = process.env.DATABASE_URL || "postgresql://postgres.tbvugytmskxxyqfvqmup:gps110601ysw@db.tbvugytmskxxyqfvqmup.supabase.co:5432/postgres?sslmode=require&connect_timeout=60";
 console.log("\u{1F527} Force-set DATABASE_URL:", process.env.DATABASE_URL.split("@")[0] + "@[HIDDEN]");
-var app = express3();
-app.use(express3.json());
-app.use(express3.urlencoded({ extended: false }));
-app.use("/attached_assets", express3.static("attached_assets"));
+var app = express4();
+app.use(express4.json());
+app.use(express4.urlencoded({ extended: false }));
+app.use("/attached_assets", express4.static("attached_assets"));
 app.use((req, res, next) => {
   const start = Date.now();
-  const path14 = req.path;
+  const path15 = req.path;
   let capturedJsonResponse = void 0;
   const originalResJson = res.json;
   res.json = function(bodyJson, ...args) {
@@ -11073,8 +11091,8 @@ app.use((req, res, next) => {
   };
   res.on("finish", () => {
     const duration = Date.now() - start;
-    if (path14.startsWith("/api")) {
-      let logLine = `${req.method} ${path14} ${res.statusCode} in ${duration}ms`;
+    if (path15.startsWith("/api")) {
+      let logLine = `${req.method} ${path15} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }

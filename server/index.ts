@@ -6,7 +6,7 @@ process.env.DATABASE_URL = process.env.DATABASE_URL || "postgresql://postgres.tb
 console.log("🔧 Force-set DATABASE_URL:", process.env.DATABASE_URL.split('@')[0] + '@[HIDDEN]');
 
 import express, { type Request, Response, NextFunction } from "express";
-import { serveStatic, log } from "./vite";
+import { serveStatic, log } from "./static";
 import { migratePasswords } from "./migrate-passwords";
 import { createServer } from "http";
 import session from "express-session";
