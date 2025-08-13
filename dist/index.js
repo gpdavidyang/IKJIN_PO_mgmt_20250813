@@ -11070,7 +11070,7 @@ app.use((req, res, next) => {
   });
   next();
 });
-(async () => {
+async function initializeApp() {
   const pgSession = connectPgSimple(session);
   app.use(session({
     store: new pgSession({
@@ -11089,7 +11089,6 @@ app.use((req, res, next) => {
     }
   }));
   app.use(routes_default);
-  const server = createServer(app);
   app.use((err, _req, res, _next) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
@@ -11097,17 +11096,25 @@ app.use((req, res, next) => {
     throw err;
   });
   if (app.get("env") === "development") {
+    const server = createServer(app);
     await setupVite(app, server);
+    if (!process.env.VERCEL) {
+      const port = process.env.PORT || 5e3;
+      server.listen(port, "0.0.0.0", () => {
+        log(`serving on port ${port}`);
+      });
+    }
   } else {
     serveStatic(app);
   }
-  if (!process.env.VERCEL) {
-    const port = process.env.PORT || 5e3;
-    server.listen(port, "0.0.0.0", () => {
-      log(`serving on port ${port}`);
-    });
-  }
-})();
+}
+if (process.env.VERCEL) {
+  initializeApp().catch(console.error);
+} else {
+  initializeApp().then(() => {
+    log("App initialized successfully");
+  }).catch(console.error);
+}
 var index_default = app;
 export {
   index_default as default

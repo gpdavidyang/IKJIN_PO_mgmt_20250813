@@ -14,13 +14,17 @@ import connectPgSimple from "connect-pg-simple";
 import router from "./routes/index";
 import { requireAuth } from "./local-auth";
 
+// Create app instance
 const app = express();
+
+// Basic middleware setup
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // Serve attached assets statically
 app.use('/attached_assets', express.static('attached_assets'));
 
+// Request logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
@@ -51,7 +55,8 @@ app.use((req, res, next) => {
   next();
 });
 
-(async () => {
+// Initialize app configuration
+async function initializeApp() {
   // Temporarily skip password migration due to connection issues
   // await migratePasswords();
   
@@ -75,8 +80,7 @@ app.use((req, res, next) => {
   // Use modular routes
   app.use(router);
   
-  const server = createServer(app);
-
+  // Error handling middleware
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
@@ -85,24 +89,33 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
+  // Setup static serving based on environment
   if (app.get("env") === "development") {
+    const server = createServer(app);
     await setupVite(app, server);
+    
+    // Start server only if not in Vercel environment
+    if (!process.env.VERCEL) {
+      const port = process.env.PORT || 5000;
+      server.listen(port, "0.0.0.0", () => {
+        log(`serving on port ${port}`);
+      });
+    }
   } else {
     serveStatic(app);
   }
+}
 
-  // Start server only if not in Vercel environment
-  if (!process.env.VERCEL) {
-    // Serve the app on configurable port for local development
-    const port = process.env.PORT || 5000;
-    server.listen(port, "0.0.0.0", () => {
-      log(`serving on port ${port}`);
-    });
-  }
-})();
+// Initialize for Vercel or local development
+if (process.env.VERCEL) {
+  // For Vercel, initialize synchronously but return the app immediately
+  initializeApp().catch(console.error);
+} else {
+  // For local development, wait for initialization
+  initializeApp().then(() => {
+    log("App initialized successfully");
+  }).catch(console.error);
+}
 
 // Export for Vercel serverless
 export default app;
