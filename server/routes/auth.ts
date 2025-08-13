@@ -101,6 +101,13 @@ router.post('/auth/login', (req, res) => {
     
     console.log("🔐 Main login attempt for:", identifier);
     
+    // First, force clear any existing authentication state
+    currentUser = null;
+    if (req.session) {
+      (req.session as any).userId = undefined;
+      (req.session as any).user = undefined;
+    }
+    
     // Mock users (same as test endpoint)
     const users = [
       { id: "admin", username: "admin", email: "admin@company.com", password: "admin123", name: "관리자", role: "admin" },
@@ -125,10 +132,13 @@ router.post('/auth/login', (req, res) => {
       const authSession = req.session as any;
       if (authSession) {
         authSession.userId = user.id;
+        authSession.user = { ...user };
       }
     } catch (sessionErr) {
       console.log("⚠️ Session setting failed (non-fatal):", sessionErr);
     }
+    
+    console.log("🔄 State reset and new user logged in:", user.name);
     
     // Return user without password
     const { password: _, ...userWithoutPassword } = user;
@@ -182,6 +192,87 @@ router.get('/logout', (req, res) => {
   // Handle GET logout (redirect after logout)
   currentUser = null;
   res.json({ message: "Logout successful" });
+});
+
+// Force logout endpoint - completely clears all authentication state
+router.post('/auth/force-logout', (req, res) => {
+  try {
+    console.log("🔴 Force logout request - clearing all authentication state");
+    
+    // Clear global user state
+    currentUser = null;
+    
+    // Clear session data if it exists
+    try {
+      if (req.session) {
+        req.session.userId = undefined;
+        req.session.user = undefined;
+        
+        // Destroy session completely
+        req.session.destroy((err) => {
+          if (err) {
+            console.log("⚠️ Force session destroy failed (non-fatal):", err);
+          } else {
+            console.log("✅ Session completely destroyed in force logout");
+          }
+        });
+      }
+    } catch (sessionErr) {
+      console.log("⚠️ Session clearing failed (non-fatal):", sessionErr);
+    }
+    
+    // Clear any cookies
+    res.clearCookie('connect.sid');
+    res.clearCookie('sessionId');
+    
+    console.log("✅ Force logout completed - all authentication state cleared");
+    
+    res.json({ 
+      message: "Force logout successful - all authentication state cleared",
+      success: true,
+      cleared: {
+        globalState: true,
+        session: true,
+        cookies: true
+      }
+    });
+  } catch (error) {
+    console.error("Force logout error:", error);
+    res.status(500).json({ 
+      message: "Force logout failed", 
+      error: error?.message || "Unknown error",
+      success: false 
+    });
+  }
+});
+
+// Authentication status debug endpoint
+router.get('/auth/status', (req, res) => {
+  try {
+    console.log("🔍 Authentication status check");
+    
+    const status = {
+      globalUser: currentUser ? { 
+        id: currentUser.id, 
+        name: currentUser.name, 
+        role: currentUser.role 
+      } : null,
+      sessionExists: !!req.session,
+      sessionId: req.sessionID || null,
+      sessionUserId: req.session ? (req.session as any).userId : null,
+      cookies: req.headers.cookie ? req.headers.cookie.split('; ').length : 0,
+      timestamp: new Date().toISOString()
+    };
+    
+    console.log("📊 Current auth status:", status);
+    res.json(status);
+  } catch (error) {
+    console.error("Status check error:", error);
+    res.status(500).json({ 
+      message: "Status check failed", 
+      error: error?.message || "Unknown error" 
+    });
+  }
 });
 
 // Simple getCurrentUser function

@@ -935,7 +935,7 @@ import express2 from "express";
 import session from "express-session";
 
 // server/routes/index.ts
-import { Router as Router23 } from "express";
+import { Router as Router24 } from "express";
 
 // server/routes/auth.ts
 import { Router } from "express";
@@ -2539,6 +2539,11 @@ router.post("/auth/login", (req, res) => {
       return res.status(400).json({ message: "Email/username and password are required" });
     }
     console.log("\u{1F510} Main login attempt for:", identifier);
+    currentUser = null;
+    if (req.session) {
+      req.session.userId = void 0;
+      req.session.user = void 0;
+    }
     const users2 = [
       { id: "admin", username: "admin", email: "admin@company.com", password: "admin123", name: "\uAD00\uB9AC\uC790", role: "admin" },
       { id: "manager", username: "manager", email: "manager@company.com", password: "manager123", name: "\uAE40\uBD80\uC7A5", role: "project_manager" },
@@ -2555,10 +2560,12 @@ router.post("/auth/login", (req, res) => {
       const authSession = req.session;
       if (authSession) {
         authSession.userId = user.id;
+        authSession.user = { ...user };
       }
     } catch (sessionErr) {
       console.log("\u26A0\uFE0F Session setting failed (non-fatal):", sessionErr);
     }
+    console.log("\u{1F504} State reset and new user logged in:", user.name);
     const { password: _, ...userWithoutPassword } = user;
     res.json({
       message: "Login successful",
@@ -2602,6 +2609,71 @@ router.post("/auth/logout", (req, res) => {
 router.get("/logout", (req, res) => {
   currentUser = null;
   res.json({ message: "Logout successful" });
+});
+router.post("/auth/force-logout", (req, res) => {
+  try {
+    console.log("\u{1F534} Force logout request - clearing all authentication state");
+    currentUser = null;
+    try {
+      if (req.session) {
+        req.session.userId = void 0;
+        req.session.user = void 0;
+        req.session.destroy((err) => {
+          if (err) {
+            console.log("\u26A0\uFE0F Force session destroy failed (non-fatal):", err);
+          } else {
+            console.log("\u2705 Session completely destroyed in force logout");
+          }
+        });
+      }
+    } catch (sessionErr) {
+      console.log("\u26A0\uFE0F Session clearing failed (non-fatal):", sessionErr);
+    }
+    res.clearCookie("connect.sid");
+    res.clearCookie("sessionId");
+    console.log("\u2705 Force logout completed - all authentication state cleared");
+    res.json({
+      message: "Force logout successful - all authentication state cleared",
+      success: true,
+      cleared: {
+        globalState: true,
+        session: true,
+        cookies: true
+      }
+    });
+  } catch (error) {
+    console.error("Force logout error:", error);
+    res.status(500).json({
+      message: "Force logout failed",
+      error: error?.message || "Unknown error",
+      success: false
+    });
+  }
+});
+router.get("/auth/status", (req, res) => {
+  try {
+    console.log("\u{1F50D} Authentication status check");
+    const status = {
+      globalUser: currentUser ? {
+        id: currentUser.id,
+        name: currentUser.name,
+        role: currentUser.role
+      } : null,
+      sessionExists: !!req.session,
+      sessionId: req.sessionID || null,
+      sessionUserId: req.session ? req.session.userId : null,
+      cookies: req.headers.cookie ? req.headers.cookie.split("; ").length : 0,
+      timestamp: (/* @__PURE__ */ new Date()).toISOString()
+    };
+    console.log("\u{1F4CA} Current auth status:", status);
+    res.json(status);
+  } catch (error) {
+    console.error("Status check error:", error);
+    res.status(500).json({
+      message: "Status check failed",
+      error: error?.message || "Unknown error"
+    });
+  }
 });
 router.get("/auth/user", (req, res) => {
   try {
@@ -12073,32 +12145,175 @@ router23.get("/simple-auth/me", (req, res) => {
 });
 var simple_auth_default = router23;
 
-// server/routes/index.ts
+// server/routes/test-accounts.ts
+import { Router as Router23 } from "express";
 var router24 = Router23();
-router24.use("/api", auth_default);
-router24.use("/api", projects_default);
-router24.use("/api", orders_default);
-router24.use("/api", vendors_default);
-router24.use("/api", items_default);
-router24.use("/api", dashboard_default);
-router24.use("/api", companies_default);
-router24.use("/api", admin_default);
-router24.use("/api/excel-automation", excel_automation_default);
-router24.use("/api/po-template", po_template_real_default);
-router24.use("/api/reports", reports_default);
-router24.use("/api", import_export_default);
-router24.use("/api", email_history_default);
-router24.use("/api/excel-template", excel_template_default);
-router24.use("/api", orders_optimized_default);
-router24.use("/api", order_statuses_default);
-router24.use("/api", invoices_default);
-router24.use("/api", verification_logs_default);
-router24.use("/api", item_receipts_default);
-router24.use("/api", approvals_default);
-router24.use("/api", project_members_default);
-router24.use("/api", project_types_default);
-router24.use("/api", simple_auth_default);
-var routes_default = router24;
+var testUsers = [
+  {
+    id: "admin",
+    username: "admin",
+    email: "admin@company.com",
+    password: "admin123",
+    name: "\uAD00\uB9AC\uC790",
+    role: "admin",
+    description: "\uC2DC\uC2A4\uD15C \uAD00\uB9AC\uC790 - \uBAA8\uB4E0 \uAD8C\uD55C",
+    features: ["\uC0AC\uC6A9\uC790 \uAD00\uB9AC", "\uC2DC\uC2A4\uD15C \uC124\uC815", "\uBAA8\uB4E0 \uB370\uC774\uD130 \uC811\uADFC"]
+  },
+  {
+    id: "manager",
+    username: "manager",
+    email: "manager@company.com",
+    password: "manager123",
+    name: "\uAE40\uBD80\uC7A5",
+    role: "project_manager",
+    description: "\uD504\uB85C\uC81D\uD2B8 \uAD00\uB9AC\uC790 - \uBC1C\uC8FC \uC2B9\uC778 \uAD8C\uD55C",
+    features: ["\uBC1C\uC8FC\uC11C \uC2B9\uC778", "\uD504\uB85C\uC81D\uD2B8 \uAD00\uB9AC", "\uB9AC\uD3EC\uD2B8 \uC870\uD68C"]
+  },
+  {
+    id: "user",
+    username: "user",
+    email: "user@company.com",
+    password: "user123",
+    name: "\uC774\uAE30\uC0AC",
+    role: "field_worker",
+    description: "\uD604\uC7A5 \uC791\uC5C5\uC790 - \uBC1C\uC8FC\uC11C \uC791\uC131 \uAD8C\uD55C",
+    features: ["\uBC1C\uC8FC\uC11C \uC791\uC131", "\uD504\uB85C\uC81D\uD2B8 \uC870\uD68C", "\uAE30\uBCF8 \uAE30\uB2A5"]
+  }
+];
+router24.get("/test-accounts", (req, res) => {
+  try {
+    console.log("\u{1F4CB} Fetching available test accounts");
+    const accountsInfo = testUsers.map((user) => ({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      description: user.description,
+      features: user.features
+    }));
+    console.log(`\u2705 Returning ${accountsInfo.length} test accounts`);
+    res.json({
+      accounts: accountsInfo,
+      instructions: {
+        login: "Use POST /api/auth/login with username/email and password",
+        forceLogout: "Use POST /api/auth/force-logout to clear all auth state",
+        quickLogin: "Use POST /api/test-accounts/quick-login with just the account ID"
+      }
+    });
+  } catch (error) {
+    console.error("\u274C Error fetching test accounts:", error);
+    res.status(500).json({
+      message: "Failed to fetch test accounts",
+      error: error?.message
+    });
+  }
+});
+router24.post("/test-accounts/quick-login", (req, res) => {
+  try {
+    const { accountId } = req.body;
+    if (!accountId) {
+      return res.status(400).json({
+        message: "Account ID is required",
+        availableAccounts: testUsers.map((u) => ({ id: u.id, name: u.name, role: u.role }))
+      });
+    }
+    console.log("\u26A1 Quick login request for account:", accountId);
+    const user = testUsers.find((u) => u.id === accountId);
+    if (!user) {
+      return res.status(404).json({
+        message: "Test account not found",
+        availableAccounts: testUsers.map((u) => ({ id: u.id, name: u.name, role: u.role }))
+      });
+    }
+    console.log("\u2705 Quick login successful for:", user.name);
+    const { password: _, ...userWithoutPassword } = user;
+    res.json({
+      message: `Quick login credentials for ${user.name}`,
+      user: userWithoutPassword,
+      loginCredentials: {
+        username: user.username,
+        email: user.email,
+        password: user.password
+      },
+      instructions: "Use these credentials with POST /api/auth/login"
+    });
+  } catch (error) {
+    console.error("\u274C Quick login error:", error);
+    res.status(500).json({
+      message: "Quick login failed",
+      error: error?.message
+    });
+  }
+});
+router24.post("/test-accounts/switch-to", (req, res) => {
+  try {
+    const { accountId } = req.body;
+    if (!accountId) {
+      return res.status(400).json({
+        message: "Account ID is required",
+        availableAccounts: testUsers.map((u) => ({ id: u.id, name: u.name, role: u.role }))
+      });
+    }
+    console.log("\u{1F504} Account switch request to:", accountId);
+    const user = testUsers.find((u) => u.id === accountId);
+    if (!user) {
+      return res.status(404).json({
+        message: "Test account not found",
+        availableAccounts: testUsers.map((u) => ({ id: u.id, name: u.name, role: u.role }))
+      });
+    }
+    console.log("\u2705 Account switch prepared for:", user.name);
+    const { password: _, ...userWithoutPassword } = user;
+    res.json({
+      message: `Ready to switch to ${user.name}`,
+      targetUser: userWithoutPassword,
+      instructions: {
+        step1: "Call POST /api/auth/force-logout first",
+        step2: `Then call POST /api/auth/login with username: "${user.username}" and password: "${user.password}"`
+      },
+      autoLoginData: {
+        username: user.username,
+        password: user.password
+      }
+    });
+  } catch (error) {
+    console.error("\u274C Account switch error:", error);
+    res.status(500).json({
+      message: "Account switch failed",
+      error: error?.message
+    });
+  }
+});
+var test_accounts_default = router24;
+
+// server/routes/index.ts
+var router25 = Router24();
+router25.use("/api", auth_default);
+router25.use("/api", projects_default);
+router25.use("/api", orders_default);
+router25.use("/api", vendors_default);
+router25.use("/api", items_default);
+router25.use("/api", dashboard_default);
+router25.use("/api", companies_default);
+router25.use("/api", admin_default);
+router25.use("/api/excel-automation", excel_automation_default);
+router25.use("/api/po-template", po_template_real_default);
+router25.use("/api/reports", reports_default);
+router25.use("/api", import_export_default);
+router25.use("/api", email_history_default);
+router25.use("/api/excel-template", excel_template_default);
+router25.use("/api", orders_optimized_default);
+router25.use("/api", order_statuses_default);
+router25.use("/api", invoices_default);
+router25.use("/api", verification_logs_default);
+router25.use("/api", item_receipts_default);
+router25.use("/api", approvals_default);
+router25.use("/api", project_members_default);
+router25.use("/api", project_types_default);
+router25.use("/api", simple_auth_default);
+router25.use("/api", test_accounts_default);
+var routes_default = router25;
 
 // server/production.ts
 dotenv2.config();

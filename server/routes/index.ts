@@ -27,6 +27,7 @@ import approvalsRoutes from "./approvals";
 import projectMembersRoutes from "./project-members";
 import projectTypesRoutes from "./project-types";
 import simpleAuthRoutes from "./simple-auth";
+import testAccountsRoutes from "./test-accounts";
 
 const router = Router();
 
@@ -54,5 +55,6 @@ router.use("/api", approvalsRoutes);
 router.use("/api", projectMembersRoutes);
 router.use("/api", projectTypesRoutes);
 router.use("/api", simpleAuthRoutes);
+router.use("/api", testAccountsRoutes);
 
 export default router;
