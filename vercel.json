@@ -2,8 +2,12 @@
   "version": 2,
   "builds": [
     {
-      "src": "dist/public/**/*",
+      "src": "dist/public/**",
       "use": "@vercel/static"
+    },
+    {
+      "src": "api/[...all].js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
@@ -15,15 +19,5 @@
       "src": "/(.*)",
       "dest": "dist/public/index.html"
     }
-  ],
-  "functions": {
-    "api/[...all].js": {
-      "runtime": "nodejs20.x",
-      "maxDuration": 30
-    }
-  },
-  "env": {
-    "NODE_ENV": "production",
-    "VERCEL": "1"
-  }
+  ]
 }

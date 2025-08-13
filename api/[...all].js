@@ -1,4 +1,6 @@
 // Vercel serverless function to handle all API routes
-import app from '../dist/index.js';
+import { default as app } from '../dist/index.js';
 
-export default app;
+export default function handler(req, res) {
+  return app(req, res);
+}
