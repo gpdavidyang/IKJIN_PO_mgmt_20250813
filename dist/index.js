@@ -951,81 +951,29 @@ var vite_config_default = defineConfig({
     sourcemap: process.env.NODE_ENV === "development",
     rollupOptions: {
       output: {
-        manualChunks: (id) => {
-          if (id.includes("react") || id.includes("react-dom")) {
-            return "react-core";
-          }
-          if (id.includes("wouter") || id.includes("@tanstack/react-query")) {
-            return "state-router";
-          }
-          if (id.includes("@tanstack/react-table") || id.includes("react-hook-form") || id.includes("@hookform/resolvers") || id.includes("zod")) {
-            return "ui-forms";
-          }
-          if (id.includes("recharts") || id.includes("d3")) {
-            return "charts";
-          }
-          if (id.includes("lucide-react")) {
-            return "icons";
-          }
-          if (id.includes("clsx") || id.includes("tailwind-merge") || id.includes("date-fns")) {
-            return "utilities";
-          }
-          if (id.includes("xlsx") || id.includes("exceljs") || id.includes("excel-upload") || id.includes("excel-automation")) {
-            return "excel-processing";
-          }
-          if (id.includes("/orders/") || id.includes("enhanced-orders-table") || id.includes("use-optimized-orders") || id.includes("orders-professional")) {
-            return "orders-core";
-          }
-          if (id.includes("/dashboard") || id.includes("dashboard-widgets") || id.includes("advanced-chart")) {
-            return "dashboard";
-          }
-          if (id.includes("order-form") || id.includes("vendor-form") || id.includes("item-form")) {
-            return "forms";
-          }
-          if (id.includes("/admin") || id.includes("user-management") || id.includes("category-management")) {
-            return "admin";
-          }
-          if (id.includes("auth") || id.includes("login")) {
-            return "auth";
-          }
-          if (id.includes("node_modules")) {
-            if (id.includes("react-query")) return "vendor-query";
-            if (id.includes("react-table")) return "vendor-table";
-            if (id.includes("react-hook-form")) return "vendor-forms";
-            if (id.includes("recharts")) return "vendor-charts";
-            if (id.includes("date-fns")) return "vendor-dates";
-            return "vendor-misc";
-          }
-          return "main";
-        },
-        chunkFileNames: (chunkInfo) => {
-          const facadeModuleId = chunkInfo.facadeModuleId ? chunkInfo.facadeModuleId.split("/").pop()?.replace(/\.\w+$/, "") || "chunk" : "chunk";
-          return `assets/js/${facadeModuleId}-[hash].js`;
-        },
+        // Simple file naming without manual chunking
+        chunkFileNames: "assets/js/[name]-[hash].js",
         entryFileNames: "assets/js/[name]-[hash].js",
         assetFileNames: "assets/[ext]/[name]-[hash].[ext]"
-      }
+      },
+      // Ensure React is treated as external dependency properly
+      external: []
     },
     // Optimize bundle size
     minify: "esbuild",
     target: "es2020",
     cssCodeSplit: true,
-    reportCompressedSize: true,
-    // Enable for performance monitoring
-    chunkSizeWarningLimit: 500,
-    // Lower threshold to catch large chunks
-    // Enable tree shaking
-    treeshake: {
-      moduleSideEffects: false,
-      propertyReadSideEffects: false,
-      unknownGlobalSideEffects: false
-    }
+    reportCompressedSize: false,
+    // Disable to speed up build
+    chunkSizeWarningLimit: 1e3
+    // Increase limit since we're not chunking
   },
   // Performance optimizations
   optimizeDeps: {
     include: [
       "react",
       "react-dom",
+      "react/jsx-runtime",
       "react-hook-form",
       "@tanstack/react-query",
       "@tanstack/react-table",
@@ -1039,7 +987,9 @@ var vite_config_default = defineConfig({
     exclude: [
       // Large dependencies that should be loaded dynamically
       "@replit/vite-plugin-cartographer"
-    ]
+    ],
+    // Force React to be included in pre-bundling
+    force: true
   }
 });
 
@@ -11151,8 +11101,14 @@ app.use((req, res, next) => {
   } else {
     serveStatic(app);
   }
-  const port = process.env.PORT || 5e3;
-  server.listen(port, "0.0.0.0", () => {
-    log(`serving on port ${port}`);
-  });
+  if (!process.env.VERCEL) {
+    const port = process.env.PORT || 5e3;
+    server.listen(port, "0.0.0.0", () => {
+      log(`serving on port ${port}`);
+    });
+  }
 })();
+var index_default = app;
+export {
+  index_default as default
+};
