@@ -10963,13 +10963,12 @@ var routes_default = router16;
 
 // server/production.ts
 dotenv2.config();
-if (!process.env.DATABASE_URL) {
-  console.error("\u274C DATABASE_URL environment variable not set in Vercel");
-  process.env.DATABASE_URL = "postgresql://postgres.tbvugytmskxxyqfvqmup:gps110601ysw@aws-0-ap-northeast-2.pooler.supabase.com:5432/postgres";
-  console.log("\u{1F527} Using fallback Supabase pooler URL");
-} else {
-  console.log("\u{1F527} Using Vercel DATABASE_URL:", process.env.DATABASE_URL.split("@")[0] + "@[HIDDEN]");
+var originalDatabaseUrl = process.env.DATABASE_URL;
+if (originalDatabaseUrl) {
+  console.log("\u{1F50D} Original Vercel DATABASE_URL:", originalDatabaseUrl.split("@")[0] + "@[HIDDEN]");
 }
+process.env.DATABASE_URL = "postgresql://postgres.tbvugytmskxxyqfvqmup:gps110601ysw@aws-0-ap-northeast-2.pooler.supabase.com:5432/postgres";
+console.log("\u{1F527} Force using Supabase pooler URL for DNS issue resolution");
 console.log("\u2728 Production server starting without static file serving");
 var app = express2();
 app.use(express2.json());
