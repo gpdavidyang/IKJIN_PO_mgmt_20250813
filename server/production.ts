@@ -1,9 +1,12 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-// 환경변수 확인 (Vercel 환경변수 사용)
+// 환경변수 확인 및 Supabase 연결 설정
 if (!process.env.DATABASE_URL) {
   console.error("❌ DATABASE_URL environment variable not set in Vercel");
+  // Fallback to Supabase pooler URL for serverless
+  process.env.DATABASE_URL = "postgresql://postgres.tbvugytmskxxyqfvqmup:gps110601ysw@aws-0-ap-northeast-2.pooler.supabase.com:5432/postgres";
+  console.log("🔧 Using fallback Supabase pooler URL");
 } else {
   console.log("🔧 Using Vercel DATABASE_URL:", process.env.DATABASE_URL.split('@')[0] + '@[HIDDEN]');
 }
