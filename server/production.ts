@@ -4,6 +4,7 @@ dotenv.config();
 // 환경변수 강제 오버라이드 - Direct Connection 사용
 process.env.DATABASE_URL = process.env.DATABASE_URL || "postgresql://postgres.tbvugytmskxxyqfvqmup:gps110601ysw@db.tbvugytmskxxyqfvqmup.supabase.co:5432/postgres?sslmode=require&connect_timeout=60";
 console.log("🔧 Force-set DATABASE_URL:", process.env.DATABASE_URL.split('@')[0] + '@[HIDDEN]');
+console.log("✨ Production server starting without static file serving");
 
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
