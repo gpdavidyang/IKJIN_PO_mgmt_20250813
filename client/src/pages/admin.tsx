@@ -1314,6 +1314,7 @@ export default function Admin() {
           </DialogContent>
         </Dialog>
       )}
+      </div>
     </div>
   );
 }

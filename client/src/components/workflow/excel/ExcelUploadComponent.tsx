@@ -32,6 +32,7 @@ interface UploadResponse {
     orders: any[];
   };
   error?: string;
+  extractedPath?: string;
 }
 
 interface ParsedOrder {
@@ -110,7 +111,7 @@ const ExcelUploadComponent: React.FC<ExcelUploadComponentProps> = ({
     ));
   };
 
-  const submitSelectedOrder = (orders: ParsedOrder[], index: number, uploadData: UploadResponse) => {
+  const submitSelectedOrder = (orders: ParsedOrder[], index: number, uploadData: UploadResponse, extractedPath?: string) => {
     const selectedOrder = orders[index];
     if (!selectedOrder) {
       console.error('선택된 발주서가 없습니다.');
@@ -148,6 +149,10 @@ const ExcelUploadComponent: React.FC<ExcelUploadComponentProps> = ({
       type: 'excel',
       excelFileName: uploadData.data?.fileName,
       filePath: uploadData.data?.filePath,
+      
+      // 처리된 Excel 파일 (Input 시트 제거된 파일) - 중요!
+      processedExcelUrl: extractedPath ? `/api/po-template/download/${extractedPath.split('/').pop()}` : undefined,
+      processedExcelPath: extractedPath,
       
       // 여러 발주서가 있는 경우 전체 목록도 포함
       allOrders: orders,
@@ -221,11 +226,14 @@ const ExcelUploadComponent: React.FC<ExcelUploadComponentProps> = ({
       });
 
       const extractData = await extractResponse.json();
+      let extractedPath: string | undefined;
       
       if (!extractResponse.ok) {
         updateProcessingStep('extract', 'error', extractData.error || '시트 추출 실패');
       } else {
         updateProcessingStep('extract', 'completed', `${extractData.data.extractedSheets.join(', ')} 시트 추출 완료`);
+        extractedPath = extractData.data?.extractedPath;
+        console.log('Extracted file path:', extractedPath);
       }
 
       setUploadResult(uploadData);
@@ -233,9 +241,11 @@ const ExcelUploadComponent: React.FC<ExcelUploadComponentProps> = ({
       // 여러 발주서가 있는 경우 선택 UI 표시
       if (uploadData.data.orders.length > 1) {
         setShowOrderSelection(true);
+        // Store the extracted path for later use in order selection
+        setUploadResult({...uploadData, extractedPath});
       } else {
         // 발주서가 하나뿐인 경우 바로 전달
-        submitSelectedOrder(uploadData.data.orders, 0, uploadData);
+        submitSelectedOrder(uploadData.data.orders, 0, uploadData, extractedPath);
       }
       
     } catch (error) {
@@ -571,7 +581,7 @@ const ExcelUploadComponent: React.FC<ExcelUploadComponentProps> = ({
               
               <div className="flex gap-3 pt-4">
                 <Button
-                  onClick={() => submitSelectedOrder(uploadResult.data.orders, selectedOrderIndex, uploadResult)}
+                  onClick={() => submitSelectedOrder(uploadResult.data.orders, selectedOrderIndex, uploadResult, uploadResult.extractedPath)}
                   className="flex-1"
                   disabled={disabled}
                 >

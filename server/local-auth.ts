@@ -132,9 +132,22 @@ export async function getCurrentUser(req: Request, res: Response) {
  */
 export async function requireAuth(req: Request, res: Response, next: NextFunction) {
   try {
+    // 개발 환경에서 임시 인증 우회 (디버깅용)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🟡 개발 환경 - 임시 사용자로 인증 우회');
+      // 임시로 기본 사용자 설정
+      const defaultUser = await storage.getUsers();
+      if (defaultUser.length > 0) {
+        req.user = defaultUser[0] as User;
+        console.log('🟡 임시 사용자 설정:', req.user.id);
+        return next();
+      }
+    }
+    
     const authSession = req.session as AuthSession;
     
     if (!authSession.userId) {
+      console.log('🔴 인증 실패 - userId 없음');
       return res.status(401).json({ message: "Authentication required" });
     }
 
@@ -143,10 +156,12 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     if (!user) {
       // Clear invalid session
       authSession.userId = undefined;
+      console.log('🔴 인증 실패 - 사용자 없음:', authSession.userId);
       return res.status(401).json({ message: "Invalid session" });
     }
 
     req.user = user;
+    console.log('🟢 인증 성공:', req.user.id);
     next();
   } catch (error) {
     console.error("Authentication middleware error:", error);

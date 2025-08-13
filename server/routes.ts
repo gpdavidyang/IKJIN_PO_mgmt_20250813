@@ -82,8 +82,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
-  // Serve uploaded files statically
-  app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+  // Serve uploaded files statically with proper headers for PDFs
+  app.use('/uploads', express.static(path.join(process.cwd(), 'uploads'), {
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('.pdf')) {
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', 'inline');
+        // Allow CORS for PDF preview
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET');
+      }
+    }
+  }));
 
   // Local authentication routes
   app.post('/api/auth/login', login);

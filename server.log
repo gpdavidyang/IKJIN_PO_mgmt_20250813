@@ -214,3 +214,519 @@ Database error in getUiTerms: error: column "id" does not exist
 9:05:06 AM [vite] hmr update /src/components/workflow/excel/ExcelUploadComponent.tsx, /src/index.css?v=sIrDNQuwPrNAX3ik2GukX
 9:05:26 AM [vite] hmr update /src/components/workflow/excel/ExcelUploadComponent.tsx, /src/index.css?v=sIrDNQuwPrNAX3ik2GukX
 9:06:07 AM [vite] hmr update /src/components/workflow/excel/ExcelUploadComponent.tsx, /src/index.css?v=sIrDNQuwPrNAX3ik2GukX
+getCurrentUser - Session ID: Rw5d6OeIMKNf2JPo_XNMlHCwGni6Jo4Y
+getCurrentUser - Session userId: test_admin_001
+getCurrentUser - User found: test_admin_001
+9:20:05 AM [express] GET /api/auth/user 304 in 776ms :: {"id":"test_admin_001","email":"test@ikjin.c…
+9:20:05 AM [express] GET /api/companies 304 in 252ms :: [{"id":1,"companyName":"(주)익진엔지니어링","busines…
+getCurrentUser - Session ID: Rw5d6OeIMKNf2JPo_XNMlHCwGni6Jo4Y
+getCurrentUser - Session userId: test_admin_001
+getCurrentUser - User found: test_admin_001
+9:20:05 AM [express] GET /api/positions 304 in 508ms :: [{"id":1,"name":"현장소장","code":"site_manager"…
+9:20:05 AM [express] GET /api/auth/me 304 in 592ms :: {"id":"test_admin_001","email":"test@ikjin.co.…
+Database error in getUiTerms: error: column "id" does not exist
+    at /Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async <anonymous> (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/src/node-postgres/session.ts:104:19)
+    at async DatabaseStorage.getUiTerms (/Users/davidyang/workspace/20250713_PO_Mgmt/server/storage.ts:1724:14)
+    at async <anonymous> (/Users/davidyang/workspace/20250713_PO_Mgmt/server/routes/admin.ts:28:19) {
+  length: 101,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '8',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '3716',
+  routine: 'errorMissingColumn'
+}
+9:20:06 AM [express] GET /api/items/categories 304 in 760ms :: [{"id":6,"categoryType":"major","cate…
+9:20:06 AM [express] GET /api/ui-terms 304 in 767ms :: []
+9:20:06 AM [express] GET /api/auth/permissions/test_admin_001 304 in 253ms :: {"userId":"test_admin_…
+getCurrentUser - Session ID: Rw5d6OeIMKNf2JPo_XNMlHCwGni6Jo4Y
+getCurrentUser - Session userId: test_admin_001
+getCurrentUser - User found: test_admin_001
+9:22:35 AM [express] GET /api/auth/user 304 in 867ms :: {"id":"test_admin_001","email":"test@ikjin.c…
+getCurrentUser - Session ID: Rw5d6OeIMKNf2JPo_XNMlHCwGni6Jo4Y
+getCurrentUser - Session userId: test_admin_001
+getCurrentUser - User found: test_admin_001
+9:22:52 AM [express] GET /api/auth/user 304 in 1082ms :: {"id":"test_admin_001","email":"test@ikjin.…
+9:23:02 AM [express] GET /api/vendors 304 in 343ms :: [{"id":3,"name":"(주)대한알루미늄압출","vendorCode":nul…
+9:23:07 AM [express] POST /api/po-template/upload 200 in 221ms :: {"success":true,"message":"파일 파싱 완…
+🔥🔥🔥 /save 엔드포인트 호출됨 - 새로운 디버깅 코드 적용됨
+📋 최종 발주번호: PO-20250805-이노에-699 (원본: PO-20250805-이노에-699)
+📅 발주일자 디버깅: orderData.orderDate="2025-08-05", type=string
+📅 납기일자 디버깅: orderData.dueDate="", type=string
+🔥🔥🔥 날짜 변환 함수 시작 - 새 코드 실행됨
+🔥📅 parseDate 입력값: "2025-08-05", type=string, isEmpty=false
+🔥📅 parseDate 결과: "2025-08-05" -> 2025-08-05T00:00:00.000Z (valid: true)
+🔥📅 parseDate 입력값: "", type=string, isEmpty=true
+🔥📅 parseDate 결과: null (빈 문자열)
+📅 최종 저장할 날짜들: {
+  orderDate: 2025-08-05T00:00:00.000Z,
+  deliveryDate: null,
+  orderDateISO: '2025-08-05T00:00:00.000Z',
+  deliveryDateISO: null
+}
+📅 DB에 저장된 발주서: {
+  id: 118,
+  orderNumber: 'PO-20250805-이노에-699',
+  orderDate: '2025-08-05',
+  deliveryDate: null
+}
+📋 최종 발주번호: PO-20240805-울트라-502 (원본: PO-20240805-울트라-502)
+📅 발주일자 디버깅: orderData.orderDate="2024-08-05", type=string
+📅 납기일자 디버깅: orderData.dueDate="", type=string
+🔥🔥🔥 날짜 변환 함수 시작 - 새 코드 실행됨
+🔥📅 parseDate 입력값: "2024-08-05", type=string, isEmpty=false
+🔥📅 parseDate 결과: "2024-08-05" -> 2024-08-05T00:00:00.000Z (valid: true)
+🔥📅 parseDate 입력값: "", type=string, isEmpty=true
+🔥📅 parseDate 결과: null (빈 문자열)
+📅 최종 저장할 날짜들: {
+  orderDate: 2024-08-05T00:00:00.000Z,
+  deliveryDate: null,
+  orderDateISO: '2024-08-05T00:00:00.000Z',
+  deliveryDateISO: null
+}
+📅 DB에 저장된 발주서: {
+  id: 119,
+  orderNumber: 'PO-20240805-울트라-502',
+  orderDate: '2024-08-05',
+  deliveryDate: null
+}
+📋 최종 발주번호: PO-20240805-더골창-967 (원본: PO-20240805-더골창-967)
+📅 발주일자 디버깅: orderData.orderDate="2024-08-05", type=string
+📅 납기일자 디버깅: orderData.dueDate="", type=string
+🔥🔥🔥 날짜 변환 함수 시작 - 새 코드 실행됨
+🔥📅 parseDate 입력값: "2024-08-05", type=string, isEmpty=false
+🔥📅 parseDate 결과: "2024-08-05" -> 2024-08-05T00:00:00.000Z (valid: true)
+🔥📅 parseDate 입력값: "", type=string, isEmpty=true
+🔥📅 parseDate 결과: null (빈 문자열)
+📅 최종 저장할 날짜들: {
+  orderDate: 2024-08-05T00:00:00.000Z,
+  deliveryDate: null,
+  orderDateISO: '2024-08-05T00:00:00.000Z',
+  deliveryDateISO: null
+}
+📅 DB에 저장된 발주서: {
+  id: 120,
+  orderNumber: 'PO-20240805-더골창-967',
+  orderDate: '2024-08-05',
+  deliveryDate: null
+}
+9:23:08 AM [express] POST /api/po-template/save 200 in 1414ms :: {"success":true,"message":"실제 DB 저장…
+🔍 [EXECUTION PATH]
+   API: /api/po-template/extract-sheets
+   실제 호출: POTemplateProcessorMock.extractSheetsToFile
+   시간: 2025-08-06T00:23:08.561Z
+   ===============================
+🔧 [ENTRY] POTemplateProcessorMock.extractSheetsToFile
+   시간: 2025-08-06T00:23:08.561Z
+   파라미터: {
+  "sourcePath": "/Users/davidyang/workspace/20250713_PO_Mgmt/uploads/1754439786931-PO_Excel_InputSheet_Template_updated.xlsx",
+  "targetPath": "/Users/davidyang/workspace/20250713_PO_Mgmt/uploads/extracted-1754439788561.xlsx",
+  "sheetNames": [
+    "갑지",
+    "을지"
+  ]
+}
+   ===============================
+🔧 Input 시트 완전 제거 시작: /Users/davidyang/workspace/20250713_PO_Mgmt/uploads/1754439786931-PO_Excel_InputSheet_Template_updated.xlsx -> /Users/davidyang/workspace/20250713_PO_Mgmt/uploads/extracted-1754439788561.xlsx
+📋 발견된 모든 시트: Input
+🎯 제거할 Input 시트들: Input
+📋 보존할 시트들: 
+🔍 매핑 확인: Input -> sheet1.xml
+🗑️ [Content_Types].xml에서 제거: /xl/worksheets/sheet1.xml
+🗑️ 관계 제거: rId1
+🗑️ 파일 제거: xl/worksheets/sheet1.xml
+✅ Input 시트 완전 제거 완료: /Users/davidyang/workspace/20250713_PO_Mgmt/uploads/extracted-1754439788561.xlsx
+📊 제거된 시트: Input
+📊 보존된 시트: 
+✅ [EXIT] POTemplateProcessorMock.extractSheetsToFile
+   시간: 2025-08-06T00:23:08.585Z
+   결과: {
+  "success": true,
+  "extractedSheets": []
+}
+   ===============================
+9:23:08 AM [express] POST /api/po-template/extract-sheets 200 in 196ms :: {"success":true,"message":…
+9:24:03 AM [express] POST /api/po-template/upload 200 in 567ms :: {"success":true,"message":"파일 파싱 완…
+🔥🔥🔥 /save 엔드포인트 호출됨 - 새로운 디버깅 코드 적용됨
+📋 최종 발주번호: PO-20250805-이노에-684 (원본: PO-20250805-이노에-684)
+📅 발주일자 디버깅: orderData.orderDate="2025-08-05", type=string
+📅 납기일자 디버깅: orderData.dueDate="", type=string
+🔥🔥🔥 날짜 변환 함수 시작 - 새 코드 실행됨
+🔥📅 parseDate 입력값: "2025-08-05", type=string, isEmpty=false
+🔥📅 parseDate 결과: "2025-08-05" -> 2025-08-05T00:00:00.000Z (valid: true)
+🔥📅 parseDate 입력값: "", type=string, isEmpty=true
+🔥📅 parseDate 결과: null (빈 문자열)
+📅 최종 저장할 날짜들: {
+  orderDate: 2025-08-05T00:00:00.000Z,
+  deliveryDate: null,
+  orderDateISO: '2025-08-05T00:00:00.000Z',
+  deliveryDateISO: null
+}
+📅 DB에 저장된 발주서: {
+  id: 121,
+  orderNumber: 'PO-20250805-이노에-684',
+  orderDate: '2025-08-05',
+  deliveryDate: null
+}
+📋 최종 발주번호: PO-20240805-울트라-317 (원본: PO-20240805-울트라-317)
+📅 발주일자 디버깅: orderData.orderDate="2024-08-05", type=string
+📅 납기일자 디버깅: orderData.dueDate="", type=string
+🔥🔥🔥 날짜 변환 함수 시작 - 새 코드 실행됨
+🔥📅 parseDate 입력값: "2024-08-05", type=string, isEmpty=false
+🔥📅 parseDate 결과: "2024-08-05" -> 2024-08-05T00:00:00.000Z (valid: true)
+🔥📅 parseDate 입력값: "", type=string, isEmpty=true
+🔥📅 parseDate 결과: null (빈 문자열)
+📅 최종 저장할 날짜들: {
+  orderDate: 2024-08-05T00:00:00.000Z,
+  deliveryDate: null,
+  orderDateISO: '2024-08-05T00:00:00.000Z',
+  deliveryDateISO: null
+}
+📅 DB에 저장된 발주서: {
+  id: 122,
+  orderNumber: 'PO-20240805-울트라-317',
+  orderDate: '2024-08-05',
+  deliveryDate: null
+}
+📋 최종 발주번호: PO-20240805-더골창-949 (원본: PO-20240805-더골창-949)
+📅 발주일자 디버깅: orderData.orderDate="2024-08-05", type=string
+📅 납기일자 디버깅: orderData.dueDate="", type=string
+🔥🔥🔥 날짜 변환 함수 시작 - 새 코드 실행됨
+🔥📅 parseDate 입력값: "2024-08-05", type=string, isEmpty=false
+🔥📅 parseDate 결과: "2024-08-05" -> 2024-08-05T00:00:00.000Z (valid: true)
+🔥📅 parseDate 입력값: "", type=string, isEmpty=true
+🔥📅 parseDate 결과: null (빈 문자열)
+📅 최종 저장할 날짜들: {
+  orderDate: 2024-08-05T00:00:00.000Z,
+  deliveryDate: null,
+  orderDateISO: '2024-08-05T00:00:00.000Z',
+  deliveryDateISO: null
+}
+📅 DB에 저장된 발주서: {
+  id: 123,
+  orderNumber: 'PO-20240805-더골창-949',
+  orderDate: '2024-08-05',
+  deliveryDate: null
+}
+9:24:05 AM [express] POST /api/po-template/save 200 in 1921ms :: {"success":true,"message":"실제 DB 저장…
+🔍 [EXECUTION PATH]
+   API: /api/po-template/extract-sheets
+   실제 호출: POTemplateProcessorMock.extractSheetsToFile
+   시간: 2025-08-06T00:24:05.726Z
+   ===============================
+🔧 [ENTRY] POTemplateProcessorMock.extractSheetsToFile
+   시간: 2025-08-06T00:24:05.726Z
+   파라미터: {
+  "sourcePath": "/Users/davidyang/workspace/20250713_PO_Mgmt/uploads/1754439843616-PO_Excel_InputSheet_Template_updated.xlsx",
+  "targetPath": "/Users/davidyang/workspace/20250713_PO_Mgmt/uploads/extracted-1754439845726.xlsx",
+  "sheetNames": [
+    "갑지",
+    "을지"
+  ]
+}
+   ===============================
+🔧 Input 시트 완전 제거 시작: /Users/davidyang/workspace/20250713_PO_Mgmt/uploads/1754439843616-PO_Excel_InputSheet_Template_updated.xlsx -> /Users/davidyang/workspace/20250713_PO_Mgmt/uploads/extracted-1754439845726.xlsx
+📋 발견된 모든 시트: Input
+🎯 제거할 Input 시트들: Input
+📋 보존할 시트들: 
+🔍 매핑 확인: Input -> sheet1.xml
+🗑️ [Content_Types].xml에서 제거: /xl/worksheets/sheet1.xml
+🗑️ 관계 제거: rId1
+🗑️ 파일 제거: xl/worksheets/sheet1.xml
+✅ Input 시트 완전 제거 완료: /Users/davidyang/workspace/20250713_PO_Mgmt/uploads/extracted-1754439845726.xlsx
+📊 제거된 시트: Input
+📊 보존된 시트: 
+✅ [EXIT] POTemplateProcessorMock.extractSheetsToFile
+   시간: 2025-08-06T00:24:05.741Z
+   결과: {
+  "success": true,
+  "extractedSheets": []
+}
+   ===============================
+9:24:05 AM [express] POST /api/po-template/extract-sheets 200 in 179ms :: {"success":true,"message":…
+getCurrentUser - Session ID: Rw5d6OeIMKNf2JPo_XNMlHCwGni6Jo4Y
+getCurrentUser - Session userId: test_admin_001
+getCurrentUser - User found: test_admin_001
+9:24:35 AM [express] GET /api/auth/user 304 in 257ms :: {"id":"test_admin_001","email":"test@ikjin.c…
+getCurrentUser - Session ID: Rw5d6OeIMKNf2JPo_XNMlHCwGni6Jo4Y
+getCurrentUser - Session userId: test_admin_001
+getCurrentUser - User found: test_admin_001
+9:24:35 AM [express] GET /api/positions 304 in 161ms :: [{"id":1,"name":"현장소장","code":"site_manager"…
+🔍 Starting getUnifiedDashboardData query...
+9:24:35 AM [express] GET /api/auth/me 304 in 250ms :: {"id":"test_admin_001","email":"test@ikjin.co.…
+📊 Order stats query result: Result {
+  command: 'SELECT',
+  rowCount: 1,
+  oid: null,
+  rows: [ { totalOrders: '95', totalAmount: '1966468089.51' } ],
+  fields: [
+    Field {
+      name: 'totalOrders',
+      tableID: 0,
+      columnID: 0,
+      dataTypeID: 20,
+      dataTypeSize: 8,
+      dataTypeModifier: -1,
+      format: 'text'
+    },
+    Field {
+      name: 'totalAmount',
+      tableID: 0,
+      columnID: 0,
+      dataTypeID: 1700,
+      dataTypeSize: -1,
+      dataTypeModifier: -1,
+      format: 'text'
+    }
+  ],
+  _parsers: [ [Function: parseBigInteger], [Function: noParse] ],
+  _types: { getTypeParser: [Function: getTypeParser] },
+  RowCtor: null,
+  rowAsArray: false,
+  _prebuiltEmptyResultObject: { totalOrders: null, totalAmount: null }
+}
+Database error in getUiTerms: error: column "id" does not exist
+    at /Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async <anonymous> (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/src/node-postgres/session.ts:104:19)
+    at async DatabaseStorage.getUiTerms (/Users/davidyang/workspace/20250713_PO_Mgmt/server/storage.ts:1724:14)
+    at async <anonymous> (/Users/davidyang/workspace/20250713_PO_Mgmt/server/routes/admin.ts:28:19) {
+  length: 101,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '8',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '3716',
+  routine: 'errorMissingColumn'
+}
+9:24:36 AM [express] GET /api/ui-terms 304 in 712ms :: []
+9:24:36 AM [express] GET /api/items/categories 304 in 719ms :: [{"id":6,"categoryType":"major","cate…
+9:24:36 AM [express] GET /api/companies 304 in 736ms :: [{"id":1,"companyName":"(주)익진엔지니어링","busines…
+✅ Dashboard data compiled successfully: { totalOrders: 95, activeProjects: 11 }
+9:24:36 AM [express] GET /api/auth/permissions/test_admin_001 304 in 739ms :: {"userId":"test_admin_…
+9:24:36 AM [express] GET /api/dashboard/unified 200 in 907ms :: {"statistics":{"totalOrders":95,"tot…
+🚀 Optimized orders request: {
+  filters: { page: 1, limit: 20, sortOrder: 'desc' },
+  timestamp: '2025-08-06T00:24:39.468Z'
+}
+✅ Optimized orders response: {
+  ordersCount: 20,
+  total: 95,
+  page: 1,
+  totalPages: 5,
+  vendorsCount: 51,
+  projectsCount: 11
+}
+9:24:39 AM [express] GET /api/projects/active 304 in 258ms :: [{"id":17,"projectName":"(주)익진","proje…
+9:24:39 AM [express] GET /api/vendors 304 in 337ms :: [{"id":3,"name":"(주)대한알루미늄압출","vendorCode":nul…
+9:24:39 AM [express] GET /api/orders-optimized 200 in 340ms :: {"orders":[{"id":123,"orderNumber":"P…
+9:24:50 AM [express] POST /api/po-template/upload 200 in 195ms :: {"success":true,"message":"파일 파싱 완…
+🔥🔥🔥 /save 엔드포인트 호출됨 - 새로운 디버깅 코드 적용됨
+📋 최종 발주번호: PO-20250805-이노에-989 (원본: PO-20250805-이노에-989)
+📅 발주일자 디버깅: orderData.orderDate="2025-08-05", type=string
+📅 납기일자 디버깅: orderData.dueDate="", type=string
+🔥🔥🔥 날짜 변환 함수 시작 - 새 코드 실행됨
+🔥📅 parseDate 입력값: "2025-08-05", type=string, isEmpty=false
+🔥📅 parseDate 결과: "2025-08-05" -> 2025-08-05T00:00:00.000Z (valid: true)
+🔥📅 parseDate 입력값: "", type=string, isEmpty=true
+🔥📅 parseDate 결과: null (빈 문자열)
+📅 최종 저장할 날짜들: {
+  orderDate: 2025-08-05T00:00:00.000Z,
+  deliveryDate: null,
+  orderDateISO: '2025-08-05T00:00:00.000Z',
+  deliveryDateISO: null
+}
+📅 DB에 저장된 발주서: {
+  id: 124,
+  orderNumber: 'PO-20250805-이노에-989',
+  orderDate: '2025-08-05',
+  deliveryDate: null
+}
+📋 최종 발주번호: PO-20240805-울트라-573 (원본: PO-20240805-울트라-573)
+📅 발주일자 디버깅: orderData.orderDate="2024-08-05", type=string
+📅 납기일자 디버깅: orderData.dueDate="", type=string
+🔥🔥🔥 날짜 변환 함수 시작 - 새 코드 실행됨
+🔥📅 parseDate 입력값: "2024-08-05", type=string, isEmpty=false
+🔥📅 parseDate 결과: "2024-08-05" -> 2024-08-05T00:00:00.000Z (valid: true)
+🔥📅 parseDate 입력값: "", type=string, isEmpty=true
+🔥📅 parseDate 결과: null (빈 문자열)
+📅 최종 저장할 날짜들: {
+  orderDate: 2024-08-05T00:00:00.000Z,
+  deliveryDate: null,
+  orderDateISO: '2024-08-05T00:00:00.000Z',
+  deliveryDateISO: null
+}
+📅 DB에 저장된 발주서: {
+  id: 125,
+  orderNumber: 'PO-20240805-울트라-573',
+  orderDate: '2024-08-05',
+  deliveryDate: null
+}
+📋 최종 발주번호: PO-20240805-더골창-987 (원본: PO-20240805-더골창-987)
+📅 발주일자 디버깅: orderData.orderDate="2024-08-05", type=string
+📅 납기일자 디버깅: orderData.dueDate="", type=string
+🔥🔥🔥 날짜 변환 함수 시작 - 새 코드 실행됨
+🔥📅 parseDate 입력값: "2024-08-05", type=string, isEmpty=false
+🔥📅 parseDate 결과: "2024-08-05" -> 2024-08-05T00:00:00.000Z (valid: true)
+🔥📅 parseDate 입력값: "", type=string, isEmpty=true
+🔥📅 parseDate 결과: null (빈 문자열)
+📅 최종 저장할 날짜들: {
+  orderDate: 2024-08-05T00:00:00.000Z,
+  deliveryDate: null,
+  orderDateISO: '2024-08-05T00:00:00.000Z',
+  deliveryDateISO: null
+}
+📅 DB에 저장된 발주서: {
+  id: 126,
+  orderNumber: 'PO-20240805-더골창-987',
+  orderDate: '2024-08-05',
+  deliveryDate: null
+}
+9:24:52 AM [express] POST /api/po-template/save 200 in 1427ms :: {"success":true,"message":"실제 DB 저장…
+🔍 [EXECUTION PATH]
+   API: /api/po-template/extract-sheets
+   실제 호출: POTemplateProcessorMock.extractSheetsToFile
+   시간: 2025-08-06T00:24:52.151Z
+   ===============================
+🔧 [ENTRY] POTemplateProcessorMock.extractSheetsToFile
+   시간: 2025-08-06T00:24:52.152Z
+   파라미터: {
+  "sourcePath": "/Users/davidyang/workspace/20250713_PO_Mgmt/uploads/1754439890526-PO_Excel_InputSheet_Template_updated.xlsx",
+  "targetPath": "/Users/davidyang/workspace/20250713_PO_Mgmt/uploads/extracted-1754439892151.xlsx",
+  "sheetNames": [
+    "갑지",
+    "을지"
+  ]
+}
+   ===============================
+🔧 Input 시트 완전 제거 시작: /Users/davidyang/workspace/20250713_PO_Mgmt/uploads/1754439890526-PO_Excel_InputSheet_Template_updated.xlsx -> /Users/davidyang/workspace/20250713_PO_Mgmt/uploads/extracted-1754439892151.xlsx
+📋 발견된 모든 시트: Input
+🎯 제거할 Input 시트들: Input
+📋 보존할 시트들: 
+🔍 매핑 확인: Input -> sheet1.xml
+🗑️ [Content_Types].xml에서 제거: /xl/worksheets/sheet1.xml
+🗑️ 관계 제거: rId1
+🗑️ 파일 제거: xl/worksheets/sheet1.xml
+✅ Input 시트 완전 제거 완료: /Users/davidyang/workspace/20250713_PO_Mgmt/uploads/extracted-1754439892151.xlsx
+📊 제거된 시트: Input
+📊 보존된 시트: 
+✅ [EXIT] POTemplateProcessorMock.extractSheetsToFile
+   시간: 2025-08-06T00:24:52.163Z
+   결과: {
+  "success": true,
+  "extractedSheets": []
+}
+   ===============================
+9:24:52 AM [express] POST /api/po-template/extract-sheets 200 in 183ms :: {"success":true,"message":…
+getCurrentUser - Session ID: Rw5d6OeIMKNf2JPo_XNMlHCwGni6Jo4Y
+getCurrentUser - Session userId: test_admin_001
+getCurrentUser - User found: test_admin_001
+9:25:33 AM [express] GET /api/auth/user 304 in 751ms :: {"id":"test_admin_001","email":"test@ikjin.c…
+getCurrentUser - Session ID: Rw5d6OeIMKNf2JPo_XNMlHCwGni6Jo4Y
+getCurrentUser - Session userId: test_admin_001
+9:25:33 AM [express] GET /api/positions 304 in 167ms :: [{"id":1,"name":"현장소장","code":"site_manager"…
+9:25:33 AM [express] GET /api/companies 304 in 244ms :: [{"id":1,"companyName":"(주)익진엔지니어링","busines…
+🔍 Starting getUnifiedDashboardData query...
+📊 Order stats query result: Result {
+  command: 'SELECT',
+  rowCount: 1,
+  oid: null,
+  rows: [ { totalOrders: '98', totalAmount: '1992821424.37' } ],
+  fields: [
+    Field {
+      name: 'totalOrders',
+      tableID: 0,
+      columnID: 0,
+      dataTypeID: 20,
+      dataTypeSize: 8,
+      dataTypeModifier: -1,
+      format: 'text'
+    },
+    Field {
+      name: 'totalAmount',
+      tableID: 0,
+      columnID: 0,
+      dataTypeID: 1700,
+      dataTypeSize: -1,
+      dataTypeModifier: -1,
+      format: 'text'
+    }
+  ],
+  _parsers: [ [Function: parseBigInteger], [Function: noParse] ],
+  _types: { getTypeParser: [Function: getTypeParser] },
+  RowCtor: null,
+  rowAsArray: false,
+  _prebuiltEmptyResultObject: { totalOrders: null, totalAmount: null }
+}
+getCurrentUser - User found: test_admin_001
+Database error in getUiTerms: error: column "id" does not exist
+    at /Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async <anonymous> (/Users/davidyang/workspace/20250713_PO_Mgmt/node_modules/src/node-postgres/session.ts:104:19)
+    at async DatabaseStorage.getUiTerms (/Users/davidyang/workspace/20250713_PO_Mgmt/server/storage.ts:1724:14)
+    at async <anonymous> (/Users/davidyang/workspace/20250713_PO_Mgmt/server/routes/admin.ts:28:19) {
+  length: 101,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '8',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '3716',
+  routine: 'errorMissingColumn'
+}
+9:25:34 AM [express] GET /api/ui-terms 304 in 721ms :: []
+9:25:34 AM [express] GET /api/auth/me 304 in 723ms :: {"id":"test_admin_001","email":"test@ikjin.co.…
+9:25:34 AM [express] GET /api/items/categories 304 in 774ms :: [{"id":6,"categoryType":"major","cate…
+9:25:34 AM [express] GET /api/auth/permissions/test_admin_001 304 in 272ms :: {"userId":"test_admin_…
+✅ Dashboard data compiled successfully: { totalOrders: 98, activeProjects: 11 }
+9:25:34 AM [express] GET /api/dashboard/unified 200 in 917ms :: {"statistics":{"totalOrders":98,"tot…
+9:25:37 AM [express] GET /api/projects 304 in 252ms :: [{"id":18,"projectName":"이노에너지","projectCode"…
+9:25:38 AM [express] GET /api/vendors 304 in 331ms :: [{"id":3,"name":"(주)대한알루미늄압출","vendorCode":nul…
+9:25:38 AM [express] GET /api/projects 304 in 253ms :: [{"id":18,"projectName":"이노에너지","projectCode"…
+🚀 Optimized orders request: {
+  filters: { page: 1, limit: 20, sortOrder: 'desc' },
+  timestamp: '2025-08-06T00:25:38.330Z'
+}
+9:25:38 AM [express] GET /api/vendors 304 in 328ms :: [{"id":3,"name":"(주)대한알루미늄압출","vendorCode":nul…
+9:25:38 AM [express] GET /api/projects/active 304 in 735ms :: [{"id":17,"projectName":"(주)익진","proje…
+✅ Optimized orders response: {
+  ordersCount: 20,
+  total: 98,
+  page: 1,
+  totalPages: 5,
+  vendorsCount: 51,
+  projectsCount: 11
+}
+🐌 Slow query detected: orders-optimized took 675.13ms
+9:25:39 AM [express] GET /api/orders-optimized 200 in 839ms :: {"orders":[{"id":126,"orderNumber":"P…

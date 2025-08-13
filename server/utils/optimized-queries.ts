@@ -165,20 +165,41 @@ export class OptimizedDashboardQueries {
       );
       const vendorStats = vendorResult.rows[0] || { activeVendors: 0 };
 
-      // Get recent orders
-      const recentOrders = await db
+      // Get recent orders with vendor and project information
+      const recentOrdersRaw = await db
         .select({
           id: purchaseOrders.id,
           orderNumber: purchaseOrders.orderNumber,
           status: purchaseOrders.status,
           totalAmount: purchaseOrders.totalAmount,
           createdAt: purchaseOrders.createdAt,
-          vendorName: vendors.name
+          vendorId: vendors.id,
+          vendorName: vendors.name,
+          projectId: projects.id,
+          projectName: projects.projectName
         })
         .from(purchaseOrders)
         .leftJoin(vendors, eq(purchaseOrders.vendorId, vendors.id))
+        .leftJoin(projects, eq(purchaseOrders.projectId, projects.id))
         .orderBy(desc(purchaseOrders.createdAt))
         .limit(10);
+      
+      // Transform to nested structure for backward compatibility
+      const recentOrders = recentOrdersRaw.map(order => ({
+        id: order.id,
+        orderNumber: order.orderNumber,
+        status: order.status,
+        totalAmount: order.totalAmount,
+        createdAt: order.createdAt,
+        vendor: order.vendorId ? {
+          id: order.vendorId,
+          name: order.vendorName
+        } : null,
+        project: order.projectId ? {
+          id: order.projectId,
+          name: order.projectName
+        } : null
+      }));
 
       // Get monthly statistics (last 12 months) with proper chronological sorting
       const monthlyStatsRaw = await db

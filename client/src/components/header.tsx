@@ -1,4 +1,4 @@
-import { Bell, LogOut, User, Settings, Home, ChevronRight } from "lucide-react";
+import { Bell, LogOut, User, Settings, Home, ChevronRight, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +29,15 @@ const pageConfig = {
     breadcrumb: [
       { label: "발주서 작성", href: "/create-order" },
       { label: "통합 워크플로우", href: "/create-order/unified" }
+    ],
+    actions: [] 
+  },
+  "/create-order/unified-v2": { 
+    title: "통합 워크플로우 V2", 
+    section: "핵심 업무",
+    breadcrumb: [
+      { label: "발주서 작성", href: "/create-order" },
+      { label: "통합 워크플로우 V2", href: "/create-order/unified-v2" }
     ],
     actions: [] 
   },
