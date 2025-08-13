@@ -30,19 +30,9 @@ export default defineConfig({
     sourcemap: process.env.NODE_ENV === 'development',
     rollupOptions: {
       output: {
-        manualChunks: {
-          // Keep React ecosystem together for proper dependency resolution
-          vendor: ['react', 'react-dom', 'wouter', '@tanstack/react-query'],
-          ui: ['@tanstack/react-table', 'react-hook-form', 'zod', 'lucide-react'],
-          charts: ['recharts'],
-          utils: ['clsx', 'tailwind-merge', 'date-fns']
-        },
-        chunkFileNames: (chunkInfo) => {
-          const facadeModuleId = chunkInfo.facadeModuleId
-            ? chunkInfo.facadeModuleId.split('/').pop()?.replace(/\.\w+$/, '') || 'chunk'
-            : 'chunk';
-          return `assets/js/${facadeModuleId}-[hash].js`;
-        },
+        // Disable manual chunking to prevent React module issues
+        manualChunks: undefined,
+        chunkFileNames: 'assets/js/[name]-[hash].js',
         entryFileNames: 'assets/js/[name]-[hash].js',
         assetFileNames: 'assets/[ext]/[name]-[hash].[ext]'
       }
@@ -51,14 +41,8 @@ export default defineConfig({
     minify: 'esbuild',
     target: 'es2020',
     cssCodeSplit: true,
-    reportCompressedSize: true, // Enable for performance monitoring
-    chunkSizeWarningLimit: 500, // Lower threshold to catch large chunks
-    // Enable tree shaking
-    treeshake: {
-      moduleSideEffects: false,
-      propertyReadSideEffects: false,
-      unknownGlobalSideEffects: false
-    }
+    reportCompressedSize: false, // Disable to speed up build
+    chunkSizeWarningLimit: 1000, // Increase limit since we're not chunking
   },
   // Performance optimizations
   optimizeDeps: {
