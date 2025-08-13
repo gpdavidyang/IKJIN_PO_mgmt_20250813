@@ -2473,120 +2473,6 @@ var DatabaseStorage = class {
 };
 var storage = new DatabaseStorage();
 
-// server/local-auth.ts
-function logout(req, res) {
-  const authSession = req.session;
-  authSession.userId = void 0;
-  req.session.destroy((err) => {
-    if (err) {
-      console.error("Session destruction error:", err);
-      return res.status(500).json({ message: "Logout failed" });
-    }
-    res.json({ message: "Logout successful" });
-  });
-}
-async function getCurrentUser(req, res) {
-  try {
-    const authSession = req.session;
-    console.log("getCurrentUser - Session ID:", req.sessionID);
-    console.log("getCurrentUser - Session userId:", authSession.userId);
-    if (!authSession.userId) {
-      console.log("getCurrentUser - No userId in session");
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-    const mockUsers2 = [
-      {
-        id: "admin",
-        email: "admin@company.com",
-        username: "admin",
-        name: "\uAD00\uB9AC\uC790",
-        role: "admin",
-        isActive: true,
-        position: "\uC2DC\uC2A4\uD15C\uAD00\uB9AC\uC790",
-        department: "IT\uD300",
-        createdAt: (/* @__PURE__ */ new Date()).toISOString()
-      },
-      {
-        id: "manager",
-        email: "manager@company.com",
-        username: "manager",
-        name: "\uAE40\uBD80\uC7A5",
-        role: "project_manager",
-        isActive: true,
-        position: "\uD504\uB85C\uC81D\uD2B8\uAD00\uB9AC\uC790",
-        department: "\uAC74\uC124\uC0AC\uC5C5\uBD80",
-        createdAt: (/* @__PURE__ */ new Date()).toISOString()
-      },
-      {
-        id: "user",
-        email: "user@company.com",
-        username: "user",
-        name: "\uC774\uAE30\uC0AC",
-        role: "field_worker",
-        isActive: true,
-        position: "\uD604\uC7A5\uAE30\uC0AC",
-        department: "\uD604\uC7A5\uD300",
-        createdAt: (/* @__PURE__ */ new Date()).toISOString()
-      }
-    ];
-    const user = mockUsers2.find((u) => u.id === authSession.userId);
-    if (!user) {
-      console.log("getCurrentUser - Mock user not found:", authSession.userId);
-      authSession.userId = void 0;
-      return res.status(401).json({ message: "Invalid session" });
-    }
-    console.log("getCurrentUser - Mock user found:", user.name);
-    req.user = user;
-    res.json(user);
-  } catch (error) {
-    console.error("Get current user error:", error);
-    res.status(500).json({ message: "Failed to get user data" });
-  }
-}
-async function requireAuth(req, res, next) {
-  try {
-    if (process.env.NODE_ENV === "development") {
-      console.log("\u{1F7E1} \uAC1C\uBC1C \uD658\uACBD - \uC784\uC2DC \uC0AC\uC6A9\uC790\uB85C \uC778\uC99D \uC6B0\uD68C");
-      const defaultUser = await storage.getUsers();
-      if (defaultUser.length > 0) {
-        req.user = defaultUser[0];
-        console.log("\u{1F7E1} \uC784\uC2DC \uC0AC\uC6A9\uC790 \uC124\uC815:", req.user.id);
-        return next();
-      }
-    }
-    const authSession = req.session;
-    if (!authSession.userId) {
-      console.log("\u{1F534} \uC778\uC99D \uC2E4\uD328 - userId \uC5C6\uC74C");
-      return res.status(401).json({ message: "Authentication required" });
-    }
-    const user = await storage.getUser(authSession.userId);
-    if (!user) {
-      authSession.userId = void 0;
-      console.log("\u{1F534} \uC778\uC99D \uC2E4\uD328 - \uC0AC\uC6A9\uC790 \uC5C6\uC74C:", authSession.userId);
-      return res.status(401).json({ message: "Invalid session" });
-    }
-    req.user = user;
-    console.log("\u{1F7E2} \uC778\uC99D \uC131\uACF5:", req.user.id);
-    next();
-  } catch (error) {
-    console.error("Authentication middleware error:", error);
-    res.status(500).json({ message: "Authentication failed" });
-  }
-}
-function requireRole(roles) {
-  return (req, res, next) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Authentication required" });
-    }
-    if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ message: "Insufficient permissions" });
-    }
-    next();
-  };
-}
-var requireAdmin = requireRole(["admin"]);
-var requireOrderManager = requireRole(["admin", "order_manager"]);
-
 // server/routes/auth.ts
 var router = Router();
 router.get("/auth/debug", (req, res) => {
@@ -2644,6 +2530,7 @@ router.post("/auth/login-test", (req, res) => {
     res.status(500).json({ message: "Login failed", error: error.message });
   }
 });
+var currentUser = null;
 router.post("/auth/login", (req, res) => {
   try {
     const { username, password, email } = req.body;
@@ -2663,6 +2550,7 @@ router.post("/auth/login", (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
     console.log("\u2705 Login successful for user:", user.name);
+    currentUser = { ...user };
     try {
       const authSession = req.session;
       if (authSession) {
@@ -2681,10 +2569,72 @@ router.post("/auth/login", (req, res) => {
     res.status(500).json({ message: "Login failed", error: error?.message || "Unknown error" });
   }
 });
-router.post("/auth/logout", logout);
-router.get("/logout", logout);
-router.get("/auth/user", getCurrentUser);
-router.get("/auth/me", getCurrentUser);
+router.post("/auth/logout", (req, res) => {
+  try {
+    console.log("\u{1F6AA} Logout request");
+    currentUser = null;
+    try {
+      if (req.session) {
+        req.session.destroy((err) => {
+          if (err) {
+            console.log("\u26A0\uFE0F Session destroy failed (non-fatal):", err);
+          } else {
+            console.log("Session destroyed successfully");
+          }
+        });
+      }
+    } catch (sessionErr) {
+      console.log("\u26A0\uFE0F Session handling failed (non-fatal):", sessionErr);
+    }
+    res.json({
+      message: "Logout successful",
+      success: true
+    });
+  } catch (error) {
+    console.error("Logout error:", error);
+    res.status(500).json({
+      message: "Logout failed",
+      error: error?.message || "Unknown error",
+      success: false
+    });
+  }
+});
+router.get("/logout", (req, res) => {
+  currentUser = null;
+  res.json({ message: "Logout successful" });
+});
+router.get("/auth/user", (req, res) => {
+  try {
+    console.log("\u{1F464} Get current user request");
+    if (currentUser) {
+      const { password: _, ...userWithoutPassword } = currentUser;
+      console.log("\u2705 Returning current user:", userWithoutPassword.name);
+      res.json(userWithoutPassword);
+    } else {
+      console.log("\u274C No current user (not authenticated)");
+      res.status(401).json({ message: "Not authenticated" });
+    }
+  } catch (error) {
+    console.error("Get current user error:", error);
+    res.status(500).json({ message: "Failed to get user data" });
+  }
+});
+router.get("/auth/me", (req, res) => {
+  try {
+    console.log("\u{1F464} Get me request");
+    if (currentUser) {
+      const { password: _, ...userWithoutPassword } = currentUser;
+      console.log("\u2705 Returning current user:", userWithoutPassword.name);
+      res.json(userWithoutPassword);
+    } else {
+      console.log("\u274C No current user (not authenticated)");
+      res.status(401).json({ message: "Not authenticated" });
+    }
+  } catch (error) {
+    console.error("Get me error:", error);
+    res.status(500).json({ message: "Failed to get user data" });
+  }
+});
 router.get("/auth/permissions/:userId", async (req, res) => {
   try {
     const userId = req.params.userId;
@@ -2740,8 +2690,8 @@ router.patch("/users/:id", async (req, res) => {
   try {
     const id = req.params.id;
     const updates = req.body;
-    const currentUser = await storage.getUser(id);
-    if (!currentUser) {
+    const currentUser2 = await storage.getUser(id);
+    if (!currentUser2) {
       return res.status(404).json({ message: "User not found" });
     }
     const updatedUser = await storage.updateUser(id, updates);
@@ -2755,8 +2705,8 @@ router.put("/users/:id", async (req, res) => {
   try {
     const id = req.params.id;
     const updates = req.body;
-    const currentUser = await storage.getUser(id);
-    if (!currentUser) {
+    const currentUser2 = await storage.getUser(id);
+    if (!currentUser2) {
       return res.status(404).json({ message: "User not found" });
     }
     const updatedUser = await storage.updateUser(id, updates);
@@ -2799,6 +2749,53 @@ var auth_default = router;
 
 // server/routes/projects.ts
 import { Router as Router2 } from "express";
+
+// server/local-auth.ts
+async function requireAuth(req, res, next) {
+  try {
+    if (process.env.NODE_ENV === "development") {
+      console.log("\u{1F7E1} \uAC1C\uBC1C \uD658\uACBD - \uC784\uC2DC \uC0AC\uC6A9\uC790\uB85C \uC778\uC99D \uC6B0\uD68C");
+      const defaultUser = await storage.getUsers();
+      if (defaultUser.length > 0) {
+        req.user = defaultUser[0];
+        console.log("\u{1F7E1} \uC784\uC2DC \uC0AC\uC6A9\uC790 \uC124\uC815:", req.user.id);
+        return next();
+      }
+    }
+    const authSession = req.session;
+    if (!authSession.userId) {
+      console.log("\u{1F534} \uC778\uC99D \uC2E4\uD328 - userId \uC5C6\uC74C");
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    const user = await storage.getUser(authSession.userId);
+    if (!user) {
+      authSession.userId = void 0;
+      console.log("\u{1F534} \uC778\uC99D \uC2E4\uD328 - \uC0AC\uC6A9\uC790 \uC5C6\uC74C:", authSession.userId);
+      return res.status(401).json({ message: "Invalid session" });
+    }
+    req.user = user;
+    console.log("\u{1F7E2} \uC778\uC99D \uC131\uACF5:", req.user.id);
+    next();
+  } catch (error) {
+    console.error("Authentication middleware error:", error);
+    res.status(500).json({ message: "Authentication failed" });
+  }
+}
+function requireRole(roles) {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({ message: "Insufficient permissions" });
+    }
+    next();
+  };
+}
+var requireAdmin = requireRole(["admin"]);
+var requireOrderManager = requireRole(["admin", "order_manager"]);
+
+// server/routes/projects.ts
 init_schema();
 
 // server/utils/optimized-queries.ts

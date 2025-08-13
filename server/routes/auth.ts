@@ -86,6 +86,9 @@ router.post('/auth/login-test', (req, res) => {
   }
 });
 
+// Global user state (temporary solution for demo)
+let currentUser: any = null;
+
 // Replace main login with working version
 router.post('/auth/login', (req, res) => {
   try {
@@ -114,6 +117,9 @@ router.post('/auth/login', (req, res) => {
     
     console.log("✅ Login successful for user:", user.name);
     
+    // Set global user state (temporary solution)
+    currentUser = { ...user };
+    
     // Try to set session but don't fail if it doesn't work
     try {
       const authSession = req.session as any;
@@ -135,10 +141,85 @@ router.post('/auth/login', (req, res) => {
     res.status(500).json({ message: "Login failed", error: error?.message || "Unknown error" });
   }
 });
-router.post('/auth/logout', logout);
-router.get('/logout', logout); // Support both GET and POST for logout
-router.get('/auth/user', getCurrentUser);
-router.get('/auth/me', getCurrentUser); // Alias for /auth/user
+// Simple logout function
+router.post('/auth/logout', (req, res) => {
+  try {
+    console.log("🚪 Logout request");
+    
+    // Clear global user state
+    currentUser = null;
+    
+    // Try to destroy session if it exists
+    try {
+      if (req.session) {
+        req.session.destroy((err) => {
+          if (err) {
+            console.log("⚠️ Session destroy failed (non-fatal):", err);
+          } else {
+            console.log("Session destroyed successfully");
+          }
+        });
+      }
+    } catch (sessionErr) {
+      console.log("⚠️ Session handling failed (non-fatal):", sessionErr);
+    }
+    
+    res.json({ 
+      message: "Logout successful",
+      success: true 
+    });
+  } catch (error) {
+    console.error("Logout error:", error);
+    res.status(500).json({ 
+      message: "Logout failed", 
+      error: error?.message || "Unknown error",
+      success: false 
+    });
+  }
+});
+
+router.get('/logout', (req, res) => {
+  // Handle GET logout (redirect after logout)
+  currentUser = null;
+  res.json({ message: "Logout successful" });
+});
+
+// Simple getCurrentUser function
+router.get('/auth/user', (req, res) => {
+  try {
+    console.log("👤 Get current user request");
+    
+    if (currentUser) {
+      const { password: _, ...userWithoutPassword } = currentUser;
+      console.log("✅ Returning current user:", userWithoutPassword.name);
+      res.json(userWithoutPassword);
+    } else {
+      console.log("❌ No current user (not authenticated)");
+      res.status(401).json({ message: "Not authenticated" });
+    }
+  } catch (error) {
+    console.error("Get current user error:", error);
+    res.status(500).json({ message: "Failed to get user data" });
+  }
+});
+
+router.get('/auth/me', (req, res) => {
+  try {
+    console.log("👤 Get me request");
+    
+    if (currentUser) {
+      const { password: _, ...userWithoutPassword } = currentUser;
+      console.log("✅ Returning current user:", userWithoutPassword.name);
+      res.json(userWithoutPassword);
+    } else {
+      console.log("❌ No current user (not authenticated)");
+      res.status(401).json({ message: "Not authenticated" });
+    }
+  } catch (error) {
+    console.error("Get me error:", error);
+    res.status(500).json({ message: "Failed to get user data" });
+  }
+});
 
 // Permission check endpoint
 router.get("/auth/permissions/:userId", async (req, res) => {
