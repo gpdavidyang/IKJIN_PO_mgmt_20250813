@@ -404,27 +404,29 @@ const WorkflowContent: React.FC<UnifiedOrderWorkflowProps> = ({
           )}
         </div>
 
-        {/* 메인 콘텐츠 영역 - 전체 화면 활용 */}
+        {/* 메인 콘텐츠 영역 - UI Standards 1366px 최대 너비 적용 */}
         <div className="flex-1 overflow-auto flex flex-col">
           <div className="flex-1 p-6">
-            <Card className="h-full shadow-sm">
-              <CardContent className="h-full p-6 flex flex-col">
-                {/* 단계 제목 - 최소화 */}
-                <div className="flex-shrink-0 mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    {currentStepInfo?.title}
-                  </h2>
-                  <p className="text-gray-600 mt-1">
-                    {currentStepInfo?.description}
-                  </p>
-                </div>
+            <div className="max-w-[1366px] mx-auto">
+              <Card className="h-full shadow-sm">
+                <CardContent className="h-full p-6 flex flex-col">
+                  {/* 단계 제목 - 최소화 */}
+                  <div className="flex-shrink-0 mb-6">
+                    <h2 className="text-2xl font-bold text-gray-900">
+                      {currentStepInfo?.title}
+                    </h2>
+                    <p className="text-gray-600 mt-1">
+                      {currentStepInfo?.description}
+                    </p>
+                  </div>
 
-                {/* 현재 단계 콘텐츠 - 전체 높이 활용 */}
-                <div className="flex-1 overflow-auto">
-                  {renderCurrentStep()}
-                </div>
-              </CardContent>
-            </Card>
+                  {/* 현재 단계 콘텐츠 - 전체 높이 활용 */}
+                  <div className="flex-1 overflow-auto">
+                    {renderCurrentStep()}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
           
           {/* 도움말 섹션 - 하단 고정 */}

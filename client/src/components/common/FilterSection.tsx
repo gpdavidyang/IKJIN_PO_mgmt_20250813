@@ -176,7 +176,7 @@ export function FilterSection({
 
   if (!isCollapsible) {
     return (
-      <div className="bg-white p-6 rounded-lg border">
+      <div className="bg-background p-6 rounded-lg border border-border transition-all duration-200 hover:shadow-md">
         <FilterContent />
       </div>
     );
@@ -184,20 +184,26 @@ export function FilterSection({
 
   return (
     <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
-      <div className="bg-white rounded-lg border">
+      <div className="bg-background rounded-lg border border-border transition-all duration-200 hover:shadow-md">
         <CollapsibleTrigger asChild>
           <Button 
             variant="ghost" 
-            className="w-full justify-between p-6 h-auto text-left hover:bg-gray-50"
+            className="w-full justify-between p-6 h-auto text-left hover:bg-accent/50 transition-all duration-200 focus:ring-2 focus:ring-primary/20"
+            aria-label={isExpanded ? "필터 닫기" : "필터 열기"}
+            aria-expanded={isExpanded}
           >
             <div className="flex items-center gap-2">
-              <Filter className="h-5 w-5 text-blue-600" />
-              <span className="text-lg font-semibold text-gray-900">필터</span>
+              <Filter className="h-5 w-5 text-primary transition-transform duration-200 hover:scale-110" />
+              <span className="text-lg font-semibold text-foreground transition-colors duration-200">필터</span>
             </div>
-            {isExpanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+            {isExpanded ? (
+              <ChevronUp className="h-5 w-5 transition-transform duration-200" />
+            ) : (
+              <ChevronDown className="h-5 w-5 transition-transform duration-200" />
+            )}
           </Button>
         </CollapsibleTrigger>
-        <CollapsibleContent>
+        <CollapsibleContent className="animate-in slide-in-from-top-2 duration-200">
           <div className="px-6 pb-6">
             <FilterContent />
           </div>

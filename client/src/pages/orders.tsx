@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Download, Filter, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
+import { Plus, Search, Download, Filter, ChevronUp, ChevronDown, ChevronsUpDown, ShoppingCart } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useOrders, useVendors, useProjects, useUsers } from "@/hooks/use-enhanced-queries";
@@ -17,11 +16,14 @@ import { EmailSendDialog } from "@/components/email-send-dialog";
 import { EmailService } from "@/services/emailService";
 import { EnhancedOrdersTable } from "@/components/orders/enhanced-orders-table";
 import { EmailHistoryModal } from "@/components/email-history-modal";
+import { useTheme } from "@/components/ui/theme-provider";
 
 export default function Orders() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [location, navigate] = useLocation();
+  const { theme } = useTheme();
+  const isDarkMode = theme === 'dark';
 
   const [filters, setFilters] = useState({
     status: "",
@@ -325,75 +327,81 @@ export default function Orders() {
   console.log('🔍 Orders Page - filters:', filters);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-[1366px] mx-auto p-6">
-        {/* Professional Header - 표준화된 구조 */}
-        <div className="mb-8">
-          <div className="flex justify-between items-center mb-4">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">발주서 관리</h1>
-              {filters.vendorId && filters.vendorId !== "" ? (
-                <p className="text-sm text-blue-600 dark:text-blue-400 font-medium mt-1">
-                  {Array.isArray(vendors) ? vendors.find((v: any) => v.id.toString() === filters.vendorId)?.name : "거래처"} 거래처 발주서
-                </p>
-              ) : (
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">전체 발주서를 조회하고 관리하세요</p>
-              )}
-            </div>
-            <div className="flex items-center gap-3">
-              {filters.vendorId && filters.vendorId !== "" && (
+    <div className={`min-h-screen transition-colors ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+      <div className="max-w-[1366px] mx-auto p-6 space-y-6">
+        {/* Page Header */}
+        <div className={`shadow-sm rounded-lg border transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+          <div className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-lg transition-colors ${isDarkMode ? 'bg-blue-900/20' : 'bg-blue-50'}`}>
+                  <ShoppingCart className={`h-6 w-6 transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                </div>
+                <div>
+                  <h1 className={`text-2xl font-bold transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>발주서 관리</h1>
+                  {filters.vendorId && filters.vendorId !== "" ? (
+                    <p className={`text-sm font-medium mt-1 transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                      {Array.isArray(vendors) ? vendors.find((v: any) => v.id.toString() === filters.vendorId)?.name : "거래처"} 거래처 발주서
+                    </p>
+                  ) : (
+                    <p className={`text-sm mt-1 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>전체 발주서를 조회하고 관리하세요</p>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                {filters.vendorId && filters.vendorId !== "" && (
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleFilterChange("vendorId", "")}
+                    className={`transition-colors ${isDarkMode ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                  >
+                    전체 발주서 보기
+                  </Button>
+                )}
                 <Button 
-                  variant="outline" 
+                  onClick={() => exportMutation.mutate()}
+                  disabled={exportMutation.isPending}
+                  variant="outline"
                   size="sm"
-                  onClick={() => handleFilterChange("vendorId", "")}
-                  className="shadow-sm border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800"
+                  className={`transition-colors ${isDarkMode ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
                 >
-                  전체 발주서 보기
+                  <Download className="h-4 w-4 mr-2" />
+                  {exportMutation.isPending ? "내보내는 중..." : "엑셀 다운로드"}
                 </Button>
-              )}
-              <Button 
-                onClick={() => exportMutation.mutate()}
-                disabled={exportMutation.isPending}
-                variant="outline"
-                size="sm"
-                className="shadow-sm border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                {exportMutation.isPending ? "내보내는 중..." : "엑셀 다운로드"}
-              </Button>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Search & Filters - Professional Style */}
-        <div className="mb-6">
-          <Card className="rounded-xl shadow-sm border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-            <CardContent className="p-6">
+        {/* Search & Filters */}
+        <div className={`shadow-sm rounded-lg border transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+          <div className="p-6">
           {/* Always Visible: Search and Project Filter */}
           <div className="space-y-3 mb-3">
             <div className="flex flex-col xl:flex-row xl:items-end gap-3">
               {/* Search Section */}
               <div className="flex-1">
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-2">검색</label>
+                <label className={`text-sm font-medium block mb-2 transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>검색</label>
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
                   <Input
                     placeholder="발주번호, 거래처명으로 검색..."
                     value={filters.searchText}
                     onChange={(e) => handleFilterChange("searchText", e.target.value)}
-                    className={`pl-10 h-11 text-sm rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 ${filters.searchText ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-400" : ""}`}
+                    className={`pl-10 h-11 text-sm rounded-lg transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'} ${filters.searchText ? `${isDarkMode ? 'border-blue-400 bg-blue-900/20' : 'border-blue-500 bg-blue-50'}` : ""}`}
                   />
                 </div>
               </div>
 
               {/* Project Filter */}
               <div className="w-full xl:w-72">
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-2">현장</label>
+                <label className={`text-sm font-medium block mb-2 transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>현장</label>
                 <Select value={filters.projectId || "all"} onValueChange={(value) => handleFilterChange("projectId", value)}>
-                  <SelectTrigger className={`h-11 text-sm rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 ${filters.projectId && filters.projectId !== "" ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-400" : ""}`}>
+                  <SelectTrigger className={`h-11 text-sm rounded-lg transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'} ${filters.projectId && filters.projectId !== "" ? `${isDarkMode ? 'border-blue-400 bg-blue-900/20' : 'border-blue-500 bg-blue-50'}` : ""}`}>
                     <SelectValue placeholder="모든 현장" />
                   </SelectTrigger>
-                  <SelectContent className="dark:bg-gray-800 dark:border-gray-600">
+                  <SelectContent className={`transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
                     <SelectItem value="all">모든 현장</SelectItem>
                     {(projects as any[])?.map((project: any) => (
                       <SelectItem key={project.id} value={project.id.toString()}>
@@ -409,7 +417,7 @@ export default function Orders() {
                 <Button
                   variant="outline"
                   onClick={() => setIsFilterExpanded(!isFilterExpanded)}
-                  className="flex items-center gap-2 h-11 text-sm px-4 rounded-lg border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-gray-200"
+                  className={`flex items-center gap-2 h-11 text-sm px-4 rounded-lg transition-colors ${isDarkMode ? 'border-gray-600 text-gray-200 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
                   size="sm"
                 >
                   <Filter className="h-4 w-4" />
@@ -426,27 +434,27 @@ export default function Orders() {
 
           {/* Collapsible Filter Section */}
           {isFilterExpanded && (
-            <div className="border-t border-gray-200 dark:border-gray-600 pt-6 mt-4">
+            <div className={`border-t pt-6 mt-4 transition-colors ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}>
               <div className="space-y-6">
                 {/* Amount Range */}
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                   <div className="space-y-2 xl:col-span-2">
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">금액 범위</label>
+                    <label className={`text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>금액 범위</label>
                     <div className="flex items-center gap-3">
                       <Input
                         type="number"
                         placeholder="최소금액"
                         value={filters.minAmount}
                         onChange={(e) => handleFilterChange("minAmount", e.target.value)}
-                        className={`h-11 text-sm rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 ${filters.minAmount ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-400" : ""}`}
+                        className={`h-11 text-sm rounded-lg transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'} ${filters.minAmount ? `${isDarkMode ? 'border-blue-400 bg-blue-900/20' : 'border-blue-500 bg-blue-50'}` : ""}`}
                       />
-                      <span className="text-gray-400 dark:text-gray-500 text-sm">~</span>
+                      <span className={`text-sm transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>~</span>
                       <Input
                         type="number"
                         placeholder="최대금액"
                         value={filters.maxAmount}
                         onChange={(e) => handleFilterChange("maxAmount", e.target.value)}
-                        className={`h-11 text-sm rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 ${filters.maxAmount ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-400" : ""}`}
+                        className={`h-11 text-sm rounded-lg transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'} ${filters.maxAmount ? `${isDarkMode ? 'border-blue-400 bg-blue-900/20' : 'border-blue-500 bg-blue-50'}` : ""}`}
                       />
                     </div>
                   </div>
@@ -455,31 +463,31 @@ export default function Orders() {
                 {/* Date Range, Vendor, Status */}
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">발주일 범위</label>
+                    <label className={`text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>발주일 범위</label>
                     <div className="flex items-center gap-3">
                       <Input
                         type="date"
                         value={filters.startDate}
                         onChange={(e) => handleFilterChange("startDate", e.target.value)}
-                        className={`h-11 text-sm rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 ${filters.startDate ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-400" : ""}`}
+                        className={`h-11 text-sm rounded-lg transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'} ${filters.startDate ? `${isDarkMode ? 'border-blue-400 bg-blue-900/20' : 'border-blue-500 bg-blue-50'}` : ""}`}
                       />
-                      <span className="text-gray-400 dark:text-gray-500 text-sm">~</span>
+                      <span className={`text-sm transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>~</span>
                       <Input
                         type="date"
                         value={filters.endDate}
                         onChange={(e) => handleFilterChange("endDate", e.target.value)}
-                        className={`h-11 text-sm rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 ${filters.endDate ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-400" : ""}`}
+                        className={`h-11 text-sm rounded-lg transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'} ${filters.endDate ? `${isDarkMode ? 'border-blue-400 bg-blue-900/20' : 'border-blue-500 bg-blue-50'}` : ""}`}
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">거래처</label>
+                    <label className={`text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>거래처</label>
                     <Select value={filters.vendorId || "all"} onValueChange={(value) => handleFilterChange("vendorId", value)}>
-                      <SelectTrigger className={`h-11 text-sm rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 ${filters.vendorId && filters.vendorId !== "" ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-400" : ""}`}>
+                      <SelectTrigger className={`h-11 text-sm rounded-lg transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'} ${filters.vendorId && filters.vendorId !== "" ? `${isDarkMode ? 'border-blue-400 bg-blue-900/20' : 'border-blue-500 bg-blue-50'}` : ""}`}>
                         <SelectValue placeholder="모든 거래처" />
                       </SelectTrigger>
-                      <SelectContent className="dark:bg-gray-800 dark:border-gray-600">
+                      <SelectContent className={`transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
                         <SelectItem value="all">모든 거래처</SelectItem>
                         {Array.isArray(vendors) ? vendors.map((vendor: any) => (
                           <SelectItem key={vendor.id} value={vendor.id.toString()}>
@@ -491,12 +499,12 @@ export default function Orders() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">발주 상태</label>
+                    <label className={`text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>발주 상태</label>
                     <Select value={filters.status || "all"} onValueChange={(value) => handleFilterChange("status", value)}>
-                      <SelectTrigger className={`h-11 text-sm rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 ${filters.status && filters.status !== "" ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-400" : ""}`}>
+                      <SelectTrigger className={`h-11 text-sm rounded-lg transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'} ${filters.status && filters.status !== "" ? `${isDarkMode ? 'border-blue-400 bg-blue-900/20' : 'border-blue-500 bg-blue-50'}` : ""}`}>
                         <SelectValue placeholder="모든 상태" />
                       </SelectTrigger>
-                      <SelectContent className="dark:bg-gray-800 dark:border-gray-600">
+                      <SelectContent className={`transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
                         <SelectItem value="all">모든 상태</SelectItem>
                         <SelectItem value="draft">{getStatusText("draft")}</SelectItem>
                         <SelectItem value="pending">{getStatusText("pending")}</SelectItem>
@@ -512,12 +520,12 @@ export default function Orders() {
                 {/* User Filter */}
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">작성자</label>
+                    <label className={`text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>작성자</label>
                     <Select value={filters.userId || "all"} onValueChange={(value) => handleFilterChange("userId", value)}>
-                      <SelectTrigger className={`h-11 text-sm rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 ${filters.userId && filters.userId !== "" ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-400" : ""}`}>
+                      <SelectTrigger className={`h-11 text-sm rounded-lg transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'} ${filters.userId && filters.userId !== "" ? `${isDarkMode ? 'border-blue-400 bg-blue-900/20' : 'border-blue-500 bg-blue-50'}` : ""}`}>
                         <SelectValue placeholder="모든 작성자" />
                       </SelectTrigger>
-                      <SelectContent className="dark:bg-gray-800 dark:border-gray-600">
+                      <SelectContent className={`transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
                         <SelectItem value="all">모든 작성자</SelectItem>
                         {Array.isArray(users) ? users.map((user: any) => (
                           <SelectItem key={user.id} value={user.id}>
@@ -533,21 +541,21 @@ export default function Orders() {
           )}
 
           {/* Active Filters & Actions - Professional Style */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 mt-4 border-t border-gray-200 dark:border-gray-600">
+          <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 mt-4 border-t transition-colors ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}>
             {/* Active Filters Display */}
             <div className="flex flex-wrap items-center gap-2">
               {(filters.projectId !== "" || filters.vendorId !== "" || filters.userId !== "" || 
                 filters.status !== "" || filters.startDate || filters.endDate || 
                 filters.minAmount || filters.maxAmount || filters.searchText) && (
                 <>
-                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400">적용된 필터:</span>
+                  <span className={`text-xs font-medium transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>적용된 필터:</span>
                   
                   {filters.searchText && (
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700">
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs border transition-colors ${isDarkMode ? 'bg-blue-900/20 text-blue-300 border-blue-700' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
                       검색: "{filters.searchText}"
                       <button
                         onClick={() => handleFilterChange("searchText", "")}
-                        className="ml-2 hover:bg-blue-100 dark:hover:bg-blue-800 rounded-full w-4 h-4 flex items-center justify-center text-blue-600 dark:text-blue-400 transition-colors"
+                        className={`ml-2 rounded-full w-4 h-4 flex items-center justify-center transition-colors ${isDarkMode ? 'hover:bg-blue-800 text-blue-400' : 'hover:bg-blue-100 text-blue-600'}`}
                       >
                         ×
                       </button>
@@ -555,11 +563,11 @@ export default function Orders() {
                   )}
                   
                   {filters.projectId && filters.projectId !== "all" && (
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600">
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs border transition-colors ${isDarkMode ? 'bg-gray-800 text-gray-300 border-gray-600' : 'bg-gray-50 text-gray-700 border-gray-200'}`}>
                       현장: {Array.isArray(projects) ? projects.find((p: any) => p.id.toString() === filters.projectId)?.projectName || "선택된 현장" : "선택된 현장"}
                       <button
                         onClick={() => handleFilterChange("projectId", "all")}
-                        className="ml-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full w-4 h-4 flex items-center justify-center text-gray-600 dark:text-gray-400 transition-colors"
+                        className={`ml-2 rounded-full w-4 h-4 flex items-center justify-center transition-colors ${isDarkMode ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-600'}`}
                       >
                         ×
                       </button>
@@ -594,7 +602,7 @@ export default function Orders() {
                       sortOrder: "desc" as "asc" | "desc",
                     });
                   }}
-                  className="h-9 text-sm px-4 rounded-lg border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800"
+                  className={`h-9 text-sm px-4 rounded-lg transition-colors ${isDarkMode ? 'border-gray-600 hover:bg-gray-800' : 'border-gray-300 hover:bg-gray-50'}`}
                 >
                   필터 초기화
                 </Button>
@@ -604,20 +612,18 @@ export default function Orders() {
                 size="sm"
                 onClick={() => exportMutation.mutate()}
                 disabled={exportMutation.isPending}
-                className="h-9 text-sm px-4 rounded-lg border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800"
+                className={`h-9 text-sm px-4 rounded-lg transition-colors ${isDarkMode ? 'border-gray-600 hover:bg-gray-800' : 'border-gray-300 hover:bg-gray-50'}`}
               >
                 <Download className="h-4 w-4 mr-2" />
                 {exportMutation.isPending ? "내보내는 중..." : "엑셀 다운로드"}
               </Button>
             </div>
           </div>
-        </CardContent>
-        </Card>
-      </div>
+          </div>
+        </div>
 
-      {/* Enhanced Orders Table - Professional Style */}
-      <div className="mt-6">
-        <Card className="rounded-xl shadow-sm border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+      {/* Enhanced Orders Table */}
+      <div className={`shadow-sm rounded-lg border transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
         <EnhancedOrdersTable
           orders={ordersWithEmailStatus.map((order: any) => {
             const mappedOrder = {
@@ -640,7 +646,6 @@ export default function Orders() {
           sortOrder={filters.sortOrder}
           onSort={handleSort}
         />
-        </Card>
       </div>
 
       {/* Email Send Dialog */}

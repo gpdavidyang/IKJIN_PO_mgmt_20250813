@@ -125,4 +125,63 @@ router.delete("/vendors/:id", requireAuth, async (req: any, res) => {
   }
 });
 
+// Vendor validation endpoint
+router.post("/vendors/validate", async (req, res) => {
+  try {
+    const { vendorName } = req.body;
+    
+    if (!vendorName) {
+      return res.status(400).json({ 
+        isValid: false, 
+        error: 'Vendor name is required' 
+      });
+    }
+
+    console.log(`🔍 Validating vendor: ${vendorName}`);
+    
+    // 거래처 이름으로 검색 (대소문자 구분 없이)
+    const vendors = await storage.getVendors();
+    const matchedVendor = vendors.find(vendor => 
+      vendor.name.toLowerCase().includes(vendorName.toLowerCase()) ||
+      vendorName.toLowerCase().includes(vendor.name.toLowerCase())
+    );
+    
+    if (matchedVendor) {
+      console.log(`✅ Vendor found: ${matchedVendor.name}`);
+      res.json({
+        isValid: true,
+        vendorId: matchedVendor.id,
+        vendorName: matchedVendor.name,
+        vendorEmail: matchedVendor.email,
+        contactPerson: matchedVendor.contactPerson,
+        phone: matchedVendor.phone
+      });
+    } else {
+      console.log(`⚠️ Vendor not found: ${vendorName}`);
+      res.json({
+        isValid: false,
+        message: '등록되지 않은 거래처입니다.',
+        suggestions: vendors
+          .filter(vendor => 
+            vendor.name.toLowerCase().includes(vendorName.toLowerCase().substring(0, 2)) ||
+            vendorName.toLowerCase().substring(0, 2).includes(vendor.name.toLowerCase().substring(0, 2))
+          )
+          .slice(0, 5)
+          .map(vendor => ({
+            id: vendor.id,
+            name: vendor.name,
+            email: vendor.email
+          }))
+      });
+    }
+  } catch (error) {
+    console.error('❌ Error validating vendor:', error);
+    res.status(500).json({ 
+      isValid: false,
+      error: 'Failed to validate vendor',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 export default router;

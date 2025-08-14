@@ -1,0 +1,11 @@
+# Task ID: 12
+# Title: 발주서 워크플로우 단위 테스트
+# Status: deferred
+# Dependencies: None
+# Priority: high
+# Description: 발주서 생성, 승인, 상태 변경에 대한 단위 테스트 작성
+# Details:
+
+
+# Test Strategy:
+

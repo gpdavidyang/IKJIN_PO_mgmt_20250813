@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2, Users } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -12,12 +12,15 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 import { PageHeader } from "@/components/ui/page-header";
 import { formatDate } from "@/lib/formatters";
 import { useLocation } from "wouter";
+import { useTheme } from "@/components/ui/theme-provider";
 
 export default function UsersManagement() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
+  const { theme } = useTheme();
+  const isDarkMode = theme === 'dark';
 
   // Redirect to home if not authenticated
   useEffect(() => {
@@ -95,32 +98,50 @@ export default function UsersManagement() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <PageHeader title="사용자 관리" />
+    <div className={`min-h-screen transition-colors ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+      <div className="max-w-[1366px] mx-auto p-6 space-y-6">
+        {/* Page Header */}
+        <div className={`bg-white shadow-sm rounded-lg border transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+          <div className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-lg transition-colors ${isDarkMode ? 'bg-blue-900/20' : 'bg-blue-50'}`}>
+                  <Users className={`h-6 w-6 transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                </div>
+                <div>
+                  <h1 className={`text-2xl font-bold transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>사용자 관리</h1>
+                  <p className={`text-sm mt-1 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                    시스템 사용자를 관리합니다
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-      {/* Compact Table View */}
-      <Card>
-        <CardContent className="p-0">
+        {/* Users Table */}
+        <div className={`shadow-sm rounded-lg border overflow-hidden transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+          <div className="p-0">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="border-b bg-gray-50/50">
-                  <TableHead className="px-3 py-1.5 text-xs font-semibold text-gray-700">
+                <TableRow className={`border-b transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50/50 border-gray-200'}`}>
+                  <TableHead className={`px-3 py-1.5 text-xs font-semibold transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                     사용자명
                   </TableHead>
-                  <TableHead className="px-3 py-1.5 text-xs font-semibold text-gray-700">
+                  <TableHead className={`px-3 py-1.5 text-xs font-semibold transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                     이메일
                   </TableHead>
-                  <TableHead className="px-3 py-1.5 text-xs font-semibold text-gray-700">
+                  <TableHead className={`px-3 py-1.5 text-xs font-semibold transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                     역할
                   </TableHead>
-                  <TableHead className="px-3 py-1.5 text-xs font-semibold text-gray-700">
+                  <TableHead className={`px-3 py-1.5 text-xs font-semibold transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                     연락처
                   </TableHead>
-                  <TableHead className="px-3 py-1.5 text-xs font-semibold text-gray-700">
+                  <TableHead className={`px-3 py-1.5 text-xs font-semibold transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                     가입일
                   </TableHead>
-                  <TableHead className="px-3 py-1.5 text-xs font-semibold text-gray-700 w-[100px]">
+                  <TableHead className={`px-3 py-1.5 text-xs font-semibold transition-colors w-[100px] ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                     작업
                   </TableHead>
                 </TableRow>
@@ -128,42 +149,42 @@ export default function UsersManagement() {
               <TableBody>
                 {usersLoading ? (
                   [...Array(5)].map((_, i) => (
-                    <TableRow key={i} className="border-b">
+                    <TableRow key={i} className={`border-b transition-colors ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}>
                       <TableCell className="px-3 py-1.5">
-                        <div className="h-3 bg-gray-200 rounded animate-pulse"></div>
+                        <div className={`h-3 rounded animate-pulse transition-colors ${isDarkMode ? 'bg-gray-600' : 'bg-gray-200'}`}></div>
                       </TableCell>
                       <TableCell className="px-3 py-1.5">
-                        <div className="h-3 bg-gray-200 rounded animate-pulse w-3/4"></div>
+                        <div className={`h-3 rounded animate-pulse w-3/4 transition-colors ${isDarkMode ? 'bg-gray-600' : 'bg-gray-200'}`}></div>
                       </TableCell>
                       <TableCell className="px-3 py-1.5">
-                        <div className="h-3 bg-gray-200 rounded animate-pulse w-1/2"></div>
+                        <div className={`h-3 rounded animate-pulse w-1/2 transition-colors ${isDarkMode ? 'bg-gray-600' : 'bg-gray-200'}`}></div>
                       </TableCell>
                       <TableCell className="px-3 py-1.5">
-                        <div className="h-3 bg-gray-200 rounded animate-pulse w-2/3"></div>
+                        <div className={`h-3 rounded animate-pulse w-2/3 transition-colors ${isDarkMode ? 'bg-gray-600' : 'bg-gray-200'}`}></div>
                       </TableCell>
                       <TableCell className="px-3 py-1.5">
-                        <div className="h-3 bg-gray-200 rounded animate-pulse w-2/3"></div>
+                        <div className={`h-3 rounded animate-pulse w-2/3 transition-colors ${isDarkMode ? 'bg-gray-600' : 'bg-gray-200'}`}></div>
                       </TableCell>
                       <TableCell className="px-3 py-1.5">
-                        <div className="h-3 bg-gray-200 rounded animate-pulse w-16"></div>
+                        <div className={`h-3 rounded animate-pulse w-16 transition-colors ${isDarkMode ? 'bg-gray-600' : 'bg-gray-200'}`}></div>
                       </TableCell>
                     </TableRow>
                   ))
                 ) : users && users.length > 0 ? (
                   users.map((user) => (
-                    <TableRow key={user.id} className="border-b hover:bg-gray-50/50">
+                    <TableRow key={user.id} className={`border-b transition-colors ${isDarkMode ? 'border-gray-600 hover:bg-gray-700' : 'border-gray-200 hover:bg-gray-50/50'}`}>
                       <TableCell className="px-3 py-1.5">
                         <button 
                           className="text-left"
                           onClick={() => {}}
                         >
-                          <div className="text-xs font-medium text-blue-600 hover:text-blue-800">
+                          <div className={`text-xs font-medium transition-colors ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'}`}>
                             {user.name || `사용자 ${user.id}`}
                           </div>
                         </button>
                       </TableCell>
                       <TableCell className="px-3 py-1.5">
-                        <div className="text-xs text-gray-600">
+                        <div className={`text-xs transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                           {user.email}
                         </div>
                       </TableCell>
@@ -176,12 +197,12 @@ export default function UsersManagement() {
                         </Badge>
                       </TableCell>
                       <TableCell className="px-3 py-1.5">
-                        <div className="text-xs text-gray-600">
+                        <div className={`text-xs transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                           {user.phoneNumber || '-'}
                         </div>
                       </TableCell>
                       <TableCell className="px-3 py-1.5">
-                        <div className="text-xs text-gray-600">
+                        <div className={`text-xs transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                           {user.createdAt ? formatDate(user.createdAt) : '-'}
                         </div>
                       </TableCell>
@@ -190,7 +211,7 @@ export default function UsersManagement() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-6 w-6 p-0 text-blue-600 hover:bg-blue-50"
+                            className={`h-6 w-6 p-0 transition-colors ${isDarkMode ? 'text-blue-400 hover:bg-blue-900/20' : 'text-blue-600 hover:bg-blue-50'}`}
                             onClick={() => {}}
                             title="수정"
                           >
@@ -199,7 +220,7 @@ export default function UsersManagement() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-6 w-6 p-0 text-red-600 hover:bg-red-50"
+                            className={`h-6 w-6 p-0 transition-colors ${isDarkMode ? 'text-red-400 hover:bg-red-900/20' : 'text-red-600 hover:bg-red-50'}`}
                             onClick={() => {}}
                             title="삭제"
                           >
@@ -211,7 +232,7 @@ export default function UsersManagement() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={6} className="py-8 text-center text-gray-500 text-xs">
+                    <TableCell colSpan={6} className={`py-8 text-center text-xs transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                       등록된 사용자가 없습니다
                     </TableCell>
                   </TableRow>
@@ -219,39 +240,40 @@ export default function UsersManagement() {
               </TableBody>
             </Table>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Information Card */}
-      <Card>
-        <CardContent className="p-4">
-          <h3 className="text-sm font-semibold mb-3">사용자 역할 안내</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div className="p-3 bg-red-50 rounded-lg border border-red-200">
-              <div className="flex items-center space-x-2 mb-2">
-                <Badge variant="destructive" className="text-xs">관리자</Badge>
-              </div>
-              <ul className="text-xs text-gray-700 space-y-1">
-                <li>• 모든 발주서 조회 및 승인</li>
-                <li>• 거래처 관리 (추가, 수정, 삭제)</li>
-                <li>• 사용자 권한 관리</li>
-                <li>• 시스템 통계 및 분석</li>
-              </ul>
-            </div>
-            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-              <div className="flex items-center space-x-2 mb-2">
-                <Badge variant="default" className="text-xs">발주담당자</Badge>
-              </div>
-              <ul className="text-xs text-gray-700 space-y-1">
-                <li>• 발주서 작성 및 관리</li>
-                <li>• 자신의 발주서만 조회</li>
-                <li>• 거래처 정보 조회</li>
-                <li>• 개인 대시보드 접근</li>
-              </ul>
-            </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+
+        {/* Information Card */}
+        <Card className={`shadow-sm transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+          <CardContent className="p-4">
+            <h3 className={`text-sm font-semibold mb-3 transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>사용자 역할 안내</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className={`p-3 rounded-lg border transition-colors ${isDarkMode ? 'bg-red-900/20 border-red-800' : 'bg-red-50 border-red-200'}`}>
+                <div className="flex items-center space-x-2 mb-2">
+                  <Badge variant="destructive" className="text-xs">관리자</Badge>
+                </div>
+                <ul className={`text-xs space-y-1 transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  <li>• 모든 발주서 조회 및 승인</li>
+                  <li>• 거래처 관리 (추가, 수정, 삭제)</li>
+                  <li>• 사용자 권한 관리</li>
+                  <li>• 시스템 통계 및 분석</li>
+                </ul>
+              </div>
+              <div className={`p-3 rounded-lg border transition-colors ${isDarkMode ? 'bg-blue-900/20 border-blue-800' : 'bg-blue-50 border-blue-200'}`}>
+                <div className="flex items-center space-x-2 mb-2">
+                  <Badge variant="default" className="text-xs">발주담당자</Badge>
+                </div>
+                <ul className={`text-xs space-y-1 transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  <li>• 발주서 작성 및 관리</li>
+                  <li>• 자신의 발주서만 조회</li>
+                  <li>• 거래처 정보 조회</li>
+                  <li>• 개인 대시보드 접근</li>
+                </ul>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

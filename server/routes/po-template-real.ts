@@ -12,8 +12,6 @@ import { POTemplateValidator } from '../utils/po-template-validator.js';
 import { db } from '../db.js';
 import { purchaseOrders, purchaseOrderItems, vendors, projects } from '@shared/schema';
 import { eq } from 'drizzle-orm';
-import { requireAuth } from '../local-auth.js';
-
 const router = Router();
 
 // 테스트용 엔드포인트
@@ -64,8 +62,8 @@ const upload = multer({
   }
 });
 
-// 인증 미들웨어
-const requireAuth = (req: any, res: any, next: any) => {
+// 간단한 인증 미들웨어 (개발용)
+const simpleAuth = (req: any, res: any, next: any) => {
   req.user = { id: 'test_admin_001' };
   next();
 };
@@ -73,7 +71,7 @@ const requireAuth = (req: any, res: any, next: any) => {
 /**
  * 실제 DB 연결 상태 확인
  */
-router.get('/db-status', requireAuth, async (req: any, res) => {
+router.get('/db-status', simpleAuth, async (req: any, res) => {
   try {
     if (!db) {
       return res.json({
@@ -107,7 +105,7 @@ router.get('/db-status', requireAuth, async (req: any, res) => {
 /**
  * PO Template 파일 업로드 및 파싱 (유효성 검사 포함)
  */
-router.post('/upload', requireAuth, upload.single('file'), async (req: any, res) => {
+router.post('/upload', simpleAuth, upload.single('file'), async (req: any, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: '파일이 업로드되지 않았습니다.' });
@@ -170,7 +168,7 @@ router.post('/upload', requireAuth, upload.single('file'), async (req: any, res)
 /**
  * 실제 DB 또는 Mock DB에 저장
  */
-router.post('/save', requireAuth, async (req: any, res) => {
+router.post('/save', simpleAuth, async (req: any, res) => {
   console.log('🔥🔥🔥 /save 엔드포인트 호출됨 - 새로운 디버깅 코드 적용됨');
   try {
     const { orders } = req.body;
@@ -376,7 +374,7 @@ router.post('/save', requireAuth, async (req: any, res) => {
 /**
  * 갑지/을지 시트 추출
  */
-router.post('/extract-sheets', requireAuth, async (req: any, res) => {
+router.post('/extract-sheets', simpleAuth, async (req: any, res) => {
   DebugLogger.logExecutionPath('/api/po-template/extract-sheets', 'POTemplateProcessorMock.extractSheetsToFile');
   
   try {
@@ -430,7 +428,7 @@ router.post('/extract-sheets', requireAuth, async (req: any, res) => {
 /**
  * DB 통계 조회 (실제 DB 우선, 실패시 Mock DB)
  */
-router.get('/db-stats', requireAuth, async (req: any, res) => {
+router.get('/db-stats', simpleAuth, async (req: any, res) => {
   try {
     if (db) {
       try {
@@ -463,18 +461,15 @@ router.get('/db-stats', requireAuth, async (req: any, res) => {
         console.error('실제 DB 통계 조회 실패, Mock DB로 폴백:', dbError);
         
         // Mock DB로 폴백
-        const stats = MockDB.getStats();
-        const allData = MockDB.getAllData();
-        
         res.json({
           success: true,
           data: {
-            stats,
+            stats: { vendors: 0, projects: 0, purchaseOrders: 0, purchaseOrderItems: 0 },
             sampleData: {
-              recentVendors: allData.vendors.slice(-3),
-              recentProjects: allData.projects.slice(-3),
-              recentOrders: allData.purchaseOrders.slice(-3),
-              recentItems: allData.purchaseOrderItems.slice(-3)
+              recentVendors: [],
+              recentProjects: [],
+              recentOrders: [],
+              recentItems: []
             },
             usingMockDB: true,
             dbError: dbError instanceof Error ? dbError.message : 'Unknown error'
@@ -482,19 +477,16 @@ router.get('/db-stats', requireAuth, async (req: any, res) => {
         });
       }
     } else {
-      // DB 연결이 없는 경우 Mock DB 사용
-      const stats = MockDB.getStats();
-      const allData = MockDB.getAllData();
-      
+      // DB 연결이 없는 경우 빈 데이터 반환
       res.json({
         success: true,
         data: {
-          stats,
+          stats: { vendors: 0, projects: 0, purchaseOrders: 0, purchaseOrderItems: 0 },
           sampleData: {
-            recentVendors: allData.vendors.slice(-3),
-            recentProjects: allData.projects.slice(-3),
-            recentOrders: allData.purchaseOrders.slice(-3),
-            recentItems: allData.purchaseOrderItems.slice(-3)
+            recentVendors: [],
+            recentProjects: [],
+            recentOrders: [],
+            recentItems: []
           },
           usingMockDB: true
         }
@@ -513,7 +505,7 @@ router.get('/db-stats', requireAuth, async (req: any, res) => {
 /**
  * 이메일 발송 (갑지/을지 시트 Excel + PDF 첨부)
  */
-router.post('/send-email', requireAuth, async (req: any, res) => {
+router.post('/send-email', simpleAuth, async (req: any, res) => {
   try {
     const { 
       filePath, 
@@ -588,7 +580,7 @@ router.post('/send-email', requireAuth, async (req: any, res) => {
 /**
  * PDF 변환 (갑지/을지 시트만)
  */
-router.post('/convert-to-pdf', requireAuth, async (req: any, res) => {
+router.post('/convert-to-pdf', simpleAuth, async (req: any, res) => {
   try {
     const { filePath, outputPath } = req.body;
     
@@ -638,7 +630,7 @@ router.post('/convert-to-pdf', requireAuth, async (req: any, res) => {
 /**
  * 통합 처리 (업로드 → 파싱 → 검증 → 저장 → 추출 → 이메일)
  */
-router.post('/process-complete', requireAuth, upload.single('file'), async (req: any, res) => {
+router.post('/process-complete', simpleAuth, upload.single('file'), async (req: any, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: '파일이 업로드되지 않았습니다.' });
@@ -779,7 +771,7 @@ router.post('/process-complete', requireAuth, upload.single('file'), async (req:
 /**
  * 이메일 연결 테스트
  */
-router.get('/test-email', requireAuth, async (req: any, res) => {
+router.get('/test-email', simpleAuth, async (req: any, res) => {
   try {
     const emailService = new POEmailServiceMock();
     const testResult = await emailService.testConnection();
@@ -803,16 +795,14 @@ router.get('/test-email', requireAuth, async (req: any, res) => {
 });
 
 /**
- * Mock DB 초기화
+ * DB 초기화 (개발용)
  */
-router.post('/reset-db', requireAuth, (req: any, res) => {
+router.post('/reset-db', simpleAuth, (req: any, res) => {
   try {
-    MockDB.clear();
-    
     res.json({
       success: true,
-      message: 'Mock DB 초기화 완료',
-      data: MockDB.getStats()
+      message: 'DB 초기화 요청 처리됨 (Mock DB 없음)',
+      data: { vendors: 0, projects: 0, purchaseOrders: 0, purchaseOrderItems: 0 }
     });
     
   } catch (error) {

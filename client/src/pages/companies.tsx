@@ -15,6 +15,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Building, Plus, Edit, Trash2, Phone, Mail, MapPin } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { useTheme } from "@/components/ui/theme-provider";
 
 const companySchema = z.object({
   companyName: z.string().min(1, "회사명은 필수입니다"),
@@ -51,6 +52,8 @@ export default function CompaniesPage() {
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { theme } = useTheme();
+  const isDarkMode = theme === 'dark';
 
   const form = useForm<CompanyFormData>({
     resolver: zodResolver(companySchema),
@@ -147,39 +150,49 @@ export default function CompaniesPage() {
   };
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Page Header */}
-      <div>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Building className="h-6 w-6 text-blue-600" />
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">회사 정보 관리</h1>
-              <p className="text-sm text-gray-600 mt-1">
-                발주사 회사 정보를 관리합니다
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <Badge variant="outline" className="text-sm">
-              총 {companies?.length || 0}개
-            </Badge>
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button onClick={() => setEditingCompany(null)} className="bg-blue-600 hover:bg-blue-700 text-white">
-                  <Plus className="h-4 w-4 mr-2" />
-                  회사 추가
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>
-                {editingCompany ? "회사 정보 수정" : "새 회사 등록"}
-              </DialogTitle>
-              <DialogDescription>
-                회사 정보를 입력하세요. 필수 항목은 회사명입니다.
-              </DialogDescription>
-            </DialogHeader>
+    <div className={`min-h-screen transition-colors ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+      <div className="max-w-[1366px] mx-auto p-6 space-y-6">
+        {/* Page Header */}
+        <div className={`bg-white shadow-sm rounded-lg border transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+          <div className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-lg transition-colors ${isDarkMode ? 'bg-blue-900/20' : 'bg-blue-50'}`}>
+                  <Building className={`h-6 w-6 transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                </div>
+                <div>
+                  <h1 className={`text-2xl font-bold transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>회사 정보 관리</h1>
+                  <p className={`text-sm mt-1 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                    발주사 회사 정보를 관리합니다
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <Badge 
+                  variant="outline" 
+                  className={`text-sm transition-colors ${isDarkMode ? 'border-gray-600 text-gray-300' : 'border-gray-300 text-gray-700'}`}
+                >
+                  총 {companies?.length || 0}개
+                </Badge>
+                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button 
+                      onClick={() => setEditingCompany(null)} 
+                      className={`shadow-md hover:shadow-lg transition-all duration-200 ${isDarkMode ? 'bg-blue-600 hover:bg-blue-500 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      회사 추가
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className={`max-w-2xl transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+                    <DialogHeader>
+                      <DialogTitle className={`transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                        {editingCompany ? "회사 정보 수정" : "새 회사 등록"}
+                      </DialogTitle>
+                      <DialogDescription className={`transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        회사 정보를 입력하세요. 필수 항목은 회사명입니다.
+                      </DialogDescription>
+                    </DialogHeader>
 
             <Form {...form}>
               <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
@@ -189,9 +202,13 @@ export default function CompaniesPage() {
                     name="companyName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>회사명 *</FormLabel>
+                        <FormLabel className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>회사명 *</FormLabel>
                         <FormControl>
-                          <Input placeholder="(주)익진엔지니어링" {...field} />
+                          <Input 
+                            placeholder="(주)익진엔지니어링" 
+                            className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}
+                            {...field} 
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -202,9 +219,13 @@ export default function CompaniesPage() {
                     name="businessNumber"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>사업자등록번호</FormLabel>
+                        <FormLabel className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>사업자등록번호</FormLabel>
                         <FormControl>
-                          <Input placeholder="123-45-67890" {...field} />
+                          <Input 
+                            placeholder="123-45-67890" 
+                            className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}
+                            {...field} 
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -321,64 +342,64 @@ export default function CompaniesPage() {
         </div>
       </div>
 
-      {/* Companies Table */}
-      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-        {isLoading ? (
-          <div className="text-center py-8">데이터를 불러오는 중...</div>
-        ) : companies.length === 0 ? (
-          <div className="text-center py-8 text-gray-600">
-            등록된 회사가 없습니다
-          </div>
+        {/* Companies Table */}
+        <div className={`shadow-sm rounded-lg border overflow-hidden transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+          {isLoading ? (
+            <div className={`text-center py-8 transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>데이터를 불러오는 중...</div>
+          ) : companies.length === 0 ? (
+            <div className={`text-center py-8 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              등록된 회사가 없습니다
+            </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-900">회사명</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-900">사업자등록번호</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-900">연락처</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-900">주소</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-900">대표자</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-900">상태</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-900">작업</th>
+              <thead className={`transition-colors ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                <tr className={`border-b transition-colors ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}>
+                  <th className={`text-left py-3 px-4 text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>회사명</th>
+                  <th className={`text-left py-3 px-4 text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>사업자등록번호</th>
+                  <th className={`text-left py-3 px-4 text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>연락처</th>
+                  <th className={`text-left py-3 px-4 text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>주소</th>
+                  <th className={`text-left py-3 px-4 text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>대표자</th>
+                  <th className={`text-left py-3 px-4 text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>상태</th>
+                  <th className={`text-left py-3 px-4 text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>작업</th>
                 </tr>
               </thead>
               <tbody>
                 {companies.map((company: Company) => (
-                  <tr key={company.id} className="border-b border-gray-200 hover:bg-gray-50">
-                    <td className="py-3 px-4 text-sm font-medium text-gray-900">
+                  <tr key={company.id} className={`border-b transition-colors ${isDarkMode ? 'border-gray-600 hover:bg-gray-700' : 'border-gray-200 hover:bg-gray-50'}`}>
+                    <td className={`py-3 px-4 text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>
                       {company.companyName}
                     </td>
-                    <td className="py-3 px-4 text-sm text-gray-600">
+                    <td className={`py-3 px-4 text-sm transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                       {company.businessNumber || "-"}
                     </td>
-                    <td className="py-3 px-4 text-sm text-gray-600">
+                    <td className={`py-3 px-4 text-sm transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                       <div className="space-y-1">
                         {company.phone && (
                           <div className="flex items-center gap-1">
-                            <Phone className="h-3 w-3" />
+                            <Phone className={`h-3 w-3 transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
                             {company.phone}
                           </div>
                         )}
                         {company.email && (
                           <div className="flex items-center gap-1">
-                            <Mail className="h-3 w-3" />
+                            <Mail className={`h-3 w-3 transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
                             {company.email}
                           </div>
                         )}
                       </div>
                     </td>
-                    <td className="py-3 px-4 text-sm text-gray-600">
+                    <td className={`py-3 px-4 text-sm transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                       {company.address ? (
                         <div className="flex items-start gap-1 max-w-[200px]">
-                          <MapPin className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                          <MapPin className={`h-3 w-3 mt-0.5 flex-shrink-0 transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
                           <span className="truncate">{company.address}</span>
                         </div>
                       ) : (
                         "-"
                       )}
                     </td>
-                    <td className="py-3 px-4 text-sm text-gray-600">
+                    <td className={`py-3 px-4 text-sm transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                       {company.representative || "-"}
                     </td>
                     <td className="py-3 px-4 text-sm">
@@ -392,7 +413,7 @@ export default function CompaniesPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleEdit(company)}
-                          className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50"
+                          className={`h-8 w-8 p-0 transition-colors ${isDarkMode ? 'text-blue-400 hover:bg-blue-900/20' : 'text-blue-600 hover:bg-blue-50'}`}
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -400,7 +421,7 @@ export default function CompaniesPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleDelete(company.id)}
-                          className="h-8 w-8 p-0 text-red-600 hover:bg-red-50"
+                          className={`h-8 w-8 p-0 transition-colors ${isDarkMode ? 'text-red-400 hover:bg-red-900/20' : 'text-red-600 hover:bg-red-50'}`}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -411,7 +432,8 @@ export default function CompaniesPage() {
               </tbody>
             </table>
           </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

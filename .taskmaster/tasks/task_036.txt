@@ -1,0 +1,73 @@
+# Task ID: 36
+# Title: 다크 모드 완성도 개선
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: 전체 화면의 다크 모드 미적용 또는 부분 적용 상태를 체계적으로 개선하여 일관된 사용자 경험을 제공
+# Details:
+
+
+# Test Strategy:
+
+
+# Subtasks:
+## 1. 로그인 페이지 다크 모드 적용 [pending]
+### Dependencies: None
+### Description: 사용자 진입점인 로그인 페이지에 다크 모드 적용 - useTheme 훅 추가, 배경/폼/버튼 다크 테마 스타일링
+### Details:
+
+
+## 2. 대시보드 다크 모드 적용 [pending]
+### Dependencies: None
+### Description: 메인 대시보드 화면에 다크 모드 적용 - Card, Chart, 통계 위젯들 다크 테마 적용
+### Details:
+
+
+## 3. 거래처 관리 다크 모드 적용 [pending]
+### Dependencies: None
+### Description: 거래처 관리 화면에 다크 모드 적용 - 테이블, 검색 필터, 폼 다크 테마 적용
+### Details:
+
+
+## 4. 현장 관리 다크 모드 적용 [pending]
+### Dependencies: None
+### Description: 현장(프로젝트) 관리 화면에 다크 모드 적용 - 테이블, 폼, 필터 다크 테마 적용
+### Details:
+
+
+## 5. 품목 관리 다크 모드 적용 [pending]
+### Dependencies: None
+### Description: 품목 관리 화면에 다크 모드 적용 - 테이블, 카테고리 필터, 폼 다크 테마 적용
+### Details:
+
+
+## 6. 사용자 관리 다크 모드 적용 [pending]
+### Dependencies: None
+### Description: 사용자 관리 화면에 다크 모드 적용 - 사용자 테이블, 권한 설정 폼 다크 테마 적용
+### Details:
+
+
+## 7. 템플릿 관리 다크 모드 적용 [pending]
+### Dependencies: None
+### Description: 템플릿 관리 화면에 다크 모드 적용 - 복잡한 폼 구조, 동적 필드들 다크 테마 적용
+### Details:
+
+
+## 8. 보고서 화면 다크 모드 적용 [pending]
+### Dependencies: None
+### Description: 보고서 화면에 다크 모드 적용 - 차트, 테이블, 필터 컴포넌트들 다크 테마 적용
+### Details:
+
+
+## 9. Excel 자동화 마법사 다크 모드 완성 [pending]
+### Dependencies: None
+### Description: 부분 구현된 Excel 자동화 마법사의 다크 모드 완성도 개선 - 누락된 Card, Step 컴포넌트 다크 테마 적용
+### Details:
+
+
+## 10. 발주서 상세 다크 모드 완성 [pending]
+### Dependencies: None
+### Description: 부분 구현된 발주서 상세 화면의 다크 모드 완성도 개선 - 일부 섹션의 배경색/텍스트 색상 미적용 부분 수정
+### Details:
+
+

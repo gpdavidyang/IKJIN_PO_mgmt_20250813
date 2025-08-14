@@ -28,10 +28,10 @@ export default function Dashboard() {
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const queryClient = useQueryClient();
-  const { actualTheme } = useTheme();
+  const { theme } = useTheme();
   
   // Dark mode detection
-  const isDarkMode = actualTheme === 'dark';
+  const isDarkMode = theme === 'dark';
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -183,34 +183,27 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="p-2 min-h-screen" style={{ backgroundColor: isDarkMode ? '#111827' : '#f9fafb' }}>
+    <div className={`p-2 min-h-screen transition-colors ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+      <div className="max-w-[1366px] mx-auto">
       {/* Ultra-Compact TOSS Header */}
       <div className="flex justify-between items-center mb-2">
         <div>
-          <h1 className="text-sm font-semibold" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}>대시보드</h1>
+          <h1 className={`text-sm font-semibold transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>대시보드</h1>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={refreshStats}
             disabled={realtimeLoading}
-            className="text-xs flex items-center gap-1 px-1 py-0.5 rounded transition-colors"
-            style={{ 
-              color: isDarkMode ? '#9ca3af' : '#6b7280',
-              backgroundColor: 'transparent'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = isDarkMode ? '#d1d5db' : '#374151';
-              e.currentTarget.style.backgroundColor = isDarkMode ? '#374151' : '#f3f4f6';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = isDarkMode ? '#9ca3af' : '#6b7280';
-              e.currentTarget.style.backgroundColor = 'transparent';
-            }}
+            className={`text-xs flex items-center gap-1 px-1 py-0.5 rounded transition-colors ${
+              isDarkMode 
+                ? 'text-gray-400 hover:text-gray-300 hover:bg-gray-700' 
+                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+            }`}
           >
             <Activity className={`h-3 w-3 ${realtimeLoading ? 'animate-spin' : ''}`} />
             {realtimeLoading ? '업데이트' : '새로고침'}
           </button>
-          <span className="text-xs" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>
+          <span className={`text-xs transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
             {new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
           </span>
         </div>
@@ -220,134 +213,120 @@ export default function Dashboard() {
       <div className="grid grid-cols-6 gap-1 mb-2">
         {/* Pending Orders */}
         <div 
-          className="rounded border p-2 hover:shadow-sm transition-all cursor-pointer" 
-          style={{ 
-            backgroundColor: isDarkMode ? 'rgba(30, 58, 138, 0.2)' : 'rgba(239, 246, 255, 0.3)',
-            borderColor: isDarkMode ? '#1e40af' : '#93c5fd'
-          }}
+          className={`rounded border p-2 hover:shadow-sm transition-all cursor-pointer ${
+            isDarkMode 
+              ? 'bg-blue-900/20 border-blue-700 hover:bg-blue-900/30' 
+              : 'bg-blue-50/30 border-blue-300 hover:bg-blue-50/50'
+          }`}
           onClick={() => navigate('/orders?status=pending')}
         >
           <div className="flex items-center justify-between">
-            <div 
-              className="w-6 h-6 rounded-full flex items-center justify-center"
-              style={{ backgroundColor: isDarkMode ? 'rgba(180, 83, 9, 0.3)' : '#fef3c7' }}
-            >
-              <Clock className="h-3 w-3" style={{ color: isDarkMode ? '#fbbf24' : '#d97706' }} />
+            <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+              isDarkMode ? 'bg-amber-900/30' : 'bg-amber-100'
+            }`}>
+              <Clock className={`h-3 w-3 ${isDarkMode ? 'text-amber-400' : 'text-amber-600'}`} />
             </div>
             <div className="text-right">
-              <div className="text-lg font-bold" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}>{stats.pendingOrders || 0}</div>
-              <div className="text-xs" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>승인대기</div>
+              <div className={`text-lg font-bold transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{stats.pendingOrders || 0}</div>
+              <div className={`text-xs transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>승인대기</div>
             </div>
           </div>
         </div>
 
         {/* Urgent Orders */}
         <div 
-          className="rounded border p-2 hover:shadow-sm transition-all cursor-pointer" 
-          style={{ 
-            backgroundColor: isDarkMode ? 'rgba(30, 58, 138, 0.2)' : 'rgba(239, 246, 255, 0.3)',
-            borderColor: isDarkMode ? '#1e40af' : '#93c5fd'
-          }}
+          className={`rounded border p-2 hover:shadow-sm transition-all cursor-pointer ${
+            isDarkMode 
+              ? 'bg-blue-900/20 border-blue-700 hover:bg-blue-900/30' 
+              : 'bg-blue-50/30 border-blue-300 hover:bg-blue-50/50'
+          }`}
           onClick={() => navigate('/orders?filter=urgent')}
         >
           <div className="flex items-center justify-between">
-            <div 
-              className="w-6 h-6 rounded-full flex items-center justify-center"
-              style={{ backgroundColor: isDarkMode ? 'rgba(127, 29, 29, 0.3)' : '#fecaca' }}
-            >
-              <AlertCircle className="h-3 w-3" style={{ color: isDarkMode ? '#f87171' : '#dc2626' }} />
+            <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+              isDarkMode ? 'bg-red-900/30' : 'bg-red-100'
+            }`}>
+              <AlertCircle className={`h-3 w-3 ${isDarkMode ? 'text-red-400' : 'text-red-600'}`} />
             </div>
             <div className="text-right">
-              <div className="text-lg font-bold" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}>{stats.urgentOrders || 0}</div>
-              <div className="text-xs" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>긴급발주</div>
+              <div className={`text-lg font-bold transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{stats.urgentOrders || 0}</div>
+              <div className={`text-xs transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>긴급발주</div>
             </div>
           </div>
         </div>
 
         {/* Total Orders */}
-        <div 
-          className="rounded border p-2"
-          style={{ 
-            backgroundColor: isDarkMode ? 'rgba(30, 58, 138, 0.2)' : 'rgba(239, 246, 255, 0.3)',
-            borderColor: isDarkMode ? '#1e40af' : '#93c5fd'
-          }}
-        >
+        <div className={`rounded border p-2 transition-colors ${
+          isDarkMode 
+            ? 'bg-blue-900/20 border-blue-700' 
+            : 'bg-blue-50/30 border-blue-300'
+        }`}>
           <div className="flex items-center justify-between">
-            <div 
-              className="w-6 h-6 rounded-full flex items-center justify-center"
-              style={{ backgroundColor: isDarkMode ? 'rgba(30, 58, 138, 0.3)' : '#dbeafe' }}
-            >
-              <FileText className="h-3 w-3" style={{ color: isDarkMode ? '#60a5fa' : '#2563eb' }} />
+            <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+              isDarkMode ? 'bg-blue-800/30' : 'bg-blue-100'
+            }`}>
+              <FileText className={`h-3 w-3 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
             </div>
             <div className="text-right">
-              <div className="text-lg font-bold" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}>{stats.totalOrders || 0}</div>
-              <div className="text-xs" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>총발주서</div>
+              <div className={`text-lg font-bold transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{stats.totalOrders || 0}</div>
+              <div className={`text-xs transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>총발주서</div>
             </div>
           </div>
         </div>
 
         {/* Total Amount */}
-        <div 
-          className="rounded border p-2"
-          style={{ 
-            backgroundColor: isDarkMode ? 'rgba(30, 58, 138, 0.2)' : 'rgba(239, 246, 255, 0.3)',
-            borderColor: isDarkMode ? '#1e40af' : '#93c5fd'
-          }}
-        >
+        <div className={`rounded border p-2 transition-colors ${
+          isDarkMode 
+            ? 'bg-blue-900/20 border-blue-700' 
+            : 'bg-blue-50/30 border-blue-300'
+        }`}>
           <div className="flex items-center justify-between">
-            <div 
-              className="w-6 h-6 rounded-full flex items-center justify-center"
-              style={{ backgroundColor: isDarkMode ? 'rgba(5, 150, 105, 0.3)' : '#d1fae5' }}
-            >
-              <DollarSign className="h-3 w-3" style={{ color: isDarkMode ? '#34d399' : '#059669' }} />
+            <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+              isDarkMode ? 'bg-emerald-900/30' : 'bg-emerald-100'
+            }`}>
+              <DollarSign className={`h-3 w-3 ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}`} />
             </div>
             <div className="text-right">
-              <div className="text-sm font-bold" style={{ color: isDarkMode ? '#60a5fa' : '#2563eb' }}>{formatKoreanWon(stats.totalAmount || 0).replace('₩', '').replace(',000,000', 'M')}</div>
-              <div className="text-xs" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>총금액</div>
+              <div className={`text-sm font-bold transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>{formatKoreanWon(stats.totalAmount || 0).replace('₩', '').replace(',000,000', 'M')}</div>
+              <div className={`text-xs transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>총금액</div>
             </div>
           </div>
         </div>
 
         {/* Active Projects */}
-        <div 
-          className="rounded border p-2"
-          style={{ 
-            backgroundColor: isDarkMode ? 'rgba(30, 58, 138, 0.2)' : 'rgba(239, 246, 255, 0.3)',
-            borderColor: isDarkMode ? '#1e40af' : '#93c5fd'
-          }}
-        >
+        <div className={`rounded border p-2 transition-colors ${
+          isDarkMode 
+            ? 'bg-blue-900/20 border-blue-700' 
+            : 'bg-blue-50/30 border-blue-300'
+        }`}>
           <div className="flex items-center justify-between">
-            <div 
-              className="w-6 h-6 rounded-full flex items-center justify-center"
-              style={{ backgroundColor: isDarkMode ? 'rgba(107, 33, 168, 0.3)' : '#ede9fe' }}
-            >
-              <Building className="h-3 w-3" style={{ color: isDarkMode ? '#a855f7' : '#7c3aed' }} />
+            <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+              isDarkMode ? 'bg-purple-900/30' : 'bg-purple-100'
+            }`}>
+              <Building className={`h-3 w-3 ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`} />
             </div>
             <div className="text-right">
-              <div className="text-lg font-bold" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}>{stats.activeProjects || 0}</div>
-              <div className="text-xs" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>활성현장</div>
+              <div className={`text-lg font-bold transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{stats.activeProjects || 0}</div>
+              <div className={`text-xs transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>활성현장</div>
             </div>
           </div>
         </div>
 
         {/* Active Vendors */}
-        <div 
-          className="rounded border p-2"
-          style={{ 
-            backgroundColor: isDarkMode ? 'rgba(30, 58, 138, 0.2)' : 'rgba(239, 246, 255, 0.3)',
-            borderColor: isDarkMode ? '#1e40af' : '#93c5fd'
-          }}
-        >
+        <div className={`rounded border p-2 transition-colors ${
+          isDarkMode 
+            ? 'bg-blue-900/20 border-blue-700' 
+            : 'bg-blue-50/30 border-blue-300'
+        }`}>
           <div className="flex items-center justify-between">
-            <div 
-              className="w-6 h-6 rounded-full flex items-center justify-center"
-              style={{ backgroundColor: isDarkMode ? 'rgba(67, 56, 202, 0.3)' : '#e0e7ff' }}
-            >
-              <Users className="h-3 w-3" style={{ color: isDarkMode ? '#818cf8' : '#4f46e5' }} />
+            <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+              isDarkMode ? 'bg-indigo-900/30' : 'bg-indigo-100'
+            }`}>
+              <Users className={`h-3 w-3 ${isDarkMode ? 'text-indigo-400' : 'text-indigo-600'}`} />
             </div>
             <div className="text-right">
-              <div className="text-lg font-bold" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}>{stats.activeVendors || 0}</div>
-              <div className="text-xs" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>활성거래처</div>
+              <div className={`text-lg font-bold transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{stats.activeVendors || 0}</div>
+              <div className={`text-xs transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>활성거래처</div>
             </div>
           </div>
         </div>
@@ -365,16 +344,14 @@ export default function Dashboard() {
             }));
             
             return (
-              <div 
-                className="rounded border p-2"
-                style={{ 
-                  backgroundColor: isDarkMode ? '#1f2937' : '#ffffff',
-                  borderColor: isDarkMode ? '#374151' : '#93c5fd'
-                }}
-              >
+              <div className={`rounded border p-2 transition-colors ${
+                isDarkMode 
+                  ? 'bg-gray-800 border-gray-600' 
+                  : 'bg-white border-blue-300'
+              }`}>
                 <div className="flex items-center gap-1 mb-2">
-                  <TrendingUp className="h-3 w-3" style={{ color: isDarkMode ? '#9ca3af' : '#4b5563' }} />
-                  <h3 className="text-xs font-semibold" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}>월별 발주 통계</h3>
+                  <TrendingUp className={`h-3 w-3 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`} />
+                  <h3 className={`text-xs font-semibold transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>월별 발주 통계</h3>
                 </div>
                 <div className="h-[140px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
@@ -390,20 +367,18 @@ export default function Dashboard() {
               </div>
             );
           })() : (
-            <div 
-              className="rounded border p-2"
-              style={{ 
-                backgroundColor: isDarkMode ? '#1f2937' : '#ffffff',
-                borderColor: isDarkMode ? '#374151' : '#93c5fd'
-              }}
-            >
+            <div className={`rounded border p-2 transition-colors ${
+              isDarkMode 
+                ? 'bg-gray-800 border-gray-600' 
+                : 'bg-white border-blue-300'
+            }`}>
               <div className="flex items-center gap-1 mb-2">
-                <TrendingUp className="h-3 w-3" style={{ color: isDarkMode ? '#9ca3af' : '#4b5563' }} />
-                <h3 className="text-xs font-semibold" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}>월별 발주 통계</h3>
+                <TrendingUp className={`h-3 w-3 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`} />
+                <h3 className={`text-xs font-semibold transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>월별 발주 통계</h3>
               </div>
-              <div className="h-[140px] flex items-center justify-center" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>
+              <div className={`h-[140px] flex items-center justify-center transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                 <div className="text-center">
-                  <BarChart3 className="h-6 w-6 mx-auto mb-1" style={{ color: isDarkMode ? '#4b5563' : '#d1d5db' }} />
+                  <BarChart3 className={`h-6 w-6 mx-auto mb-1 transition-colors ${isDarkMode ? 'text-gray-600' : 'text-gray-300'}`} />
                   <p className="text-xs">데이터 준비 중...</p>
                 </div>
               </div>
@@ -411,16 +386,14 @@ export default function Dashboard() {
           )}
 
           {/* Status Distribution - Pie Chart */}
-          <div 
-            className="rounded border p-2"
-            style={{ 
-              backgroundColor: isDarkMode ? '#1f2937' : '#ffffff',
-              borderColor: isDarkMode ? '#374151' : '#93c5fd'
-            }}
-          >
+          <div className={`rounded border p-2 transition-colors ${
+            isDarkMode 
+              ? 'bg-gray-800 border-gray-600' 
+              : 'bg-white border-blue-300'
+          }`}>
             <div className="flex items-center gap-1 mb-2">
-              <Package className="h-3 w-3" style={{ color: isDarkMode ? '#9ca3af' : '#4b5563' }} />
-              <h3 className="text-xs font-semibold" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}>발주상태분포</h3>
+              <Package className={`h-3 w-3 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`} />
+              <h3 className={`text-xs font-semibold transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>발주상태분포</h3>
             </div>
             {!isAnyLoading && statusStats && Array.isArray(statusStats) && statusStats.length > 0 ? (
               <div className="h-[140px] w-full">
@@ -455,9 +428,9 @@ export default function Dashboard() {
                 />
               </div>
             ) : (
-              <div className="h-[140px] flex items-center justify-center" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>
+              <div className={`h-[140px] flex items-center justify-center transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                 <div className="text-center">
-                  <Package className="h-6 w-6 mx-auto mb-1" style={{ color: isDarkMode ? '#4b5563' : '#d1d5db' }} />
+                  <Package className={`h-6 w-6 mx-auto mb-1 transition-colors ${isDarkMode ? 'text-gray-600' : 'text-gray-300'}`} />
                   <p className="text-xs">데이터 준비 중...</p>
                 </div>
               </div>
@@ -466,19 +439,17 @@ export default function Dashboard() {
         </div>
 
         {/* Center Column: Project Stats List */}
-        <div 
-          className="rounded border p-2"
-          style={{ 
-            backgroundColor: isDarkMode ? '#1f2937' : '#ffffff',
-            borderColor: isDarkMode ? '#374151' : '#e5e7eb'
-          }}
-        >
+        <div className={`rounded border p-2 transition-colors ${
+          isDarkMode 
+            ? 'bg-gray-800 border-gray-600' 
+            : 'bg-white border-gray-200'
+        }`}>
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-1">
-              <Building className="h-3 w-3" style={{ color: isDarkMode ? '#9ca3af' : '#4b5563' }} />
-              <h3 className="text-xs font-semibold" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}>현장별 발주 현황</h3>
+              <Building className={`h-3 w-3 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`} />
+              <h3 className={`text-xs font-semibold transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>현장별 발주 현황</h3>
             </div>
-            <span className="text-xs" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>상위 10개</span>
+            <span className={`text-xs transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>상위 10개</span>
           </div>
           <div className="h-[260px] overflow-y-auto">
             {!isAnyLoading && projectStats && Array.isArray(projectStats) && projectStats.length > 0 ? (
@@ -486,27 +457,22 @@ export default function Dashboard() {
                 {projectStats.slice(0, 10).map((project: any, index: number) => (
                   <div 
                     key={index} 
-                    className="flex items-center justify-between p-1.5 rounded cursor-pointer transition-colors"
-                    style={{ backgroundColor: 'transparent' }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = isDarkMode ? '#374151' : '#f9fafb';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = 'transparent';
-                    }}
+                    className={`flex items-center justify-between p-1.5 rounded cursor-pointer transition-colors ${
+                      isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
+                    }`}
                     onClick={() => navigate(`/projects/${project.id}`)}
                   >
                     <div className="flex items-center gap-2 min-w-0 flex-1">
-                      <span className="text-xs font-medium w-4 text-center" style={{ color: isDarkMode ? '#9ca3af' : '#4b5563' }}>{index + 1}</span>
+                      <span className={`text-xs font-medium w-4 text-center transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{index + 1}</span>
                       <div className="min-w-0 flex-1">
-                        <div className="text-xs font-medium truncate" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }} title={project.projectName}>
+                        <div className={`text-xs font-medium truncate transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`} title={project.projectName}>
                           {project.projectName}
                         </div>
-                        <div className="text-xs" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>{project.orderCount}건</div>
+                        <div className={`text-xs transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{project.orderCount}건</div>
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-xs font-semibold" style={{ color: isDarkMode ? '#60a5fa' : '#2563eb' }}>
+                      <div className={`text-xs font-semibold transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
                         {formatKoreanWon(project.totalAmount || 0).replace('₩', '').replace(',000,000', 'M')}
                       </div>
                     </div>
@@ -514,9 +480,9 @@ export default function Dashboard() {
                 ))}
               </div>
             ) : (
-              <div className="h-[240px] flex items-center justify-center" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>
+              <div className={`h-[240px] flex items-center justify-center transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                 <div className="text-center">
-                  <Building className="h-6 w-6 mx-auto mb-1" style={{ color: isDarkMode ? '#4b5563' : '#d1d5db' }} />
+                  <Building className={`h-6 w-6 mx-auto mb-1 transition-colors ${isDarkMode ? 'text-gray-600' : 'text-gray-300'}`} />
                   <p className="text-xs">데이터 준비 중...</p>
                 </div>
               </div>
@@ -527,28 +493,23 @@ export default function Dashboard() {
         {/* Right Column: Recent Activity + Category Stats */}
         <div className="space-y-1">
           {/* Recent Orders - Ultra Compact */}
-          <div 
-            className="rounded border p-2"
-            style={{ 
-              backgroundColor: isDarkMode ? '#1f2937' : '#ffffff',
-              borderColor: isDarkMode ? '#374151' : '#e5e7eb'
-            }}
-          >
+          <div className={`rounded border p-2 transition-colors ${
+            isDarkMode 
+              ? 'bg-gray-800 border-gray-600' 
+              : 'bg-white border-gray-200'
+          }`}>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-1">
-                <Clock className="h-3 w-3" style={{ color: isDarkMode ? '#9ca3af' : '#4b5563' }} />
-                <h3 className="text-xs font-semibold" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}>최근 발주서</h3>
+                <Clock className={`h-3 w-3 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`} />
+                <h3 className={`text-xs font-semibold transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>최근 발주서</h3>
               </div>
               <button 
                 onClick={() => navigate('/orders')}
-                className="text-xs font-medium transition-colors"
-                style={{ color: isDarkMode ? '#60a5fa' : '#2563eb' }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = isDarkMode ? '#3b82f6' : '#1d4ed8';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = isDarkMode ? '#60a5fa' : '#2563eb';
-                }}
+                className={`text-xs font-medium transition-colors ${
+                  isDarkMode 
+                    ? 'text-blue-400 hover:text-blue-300' 
+                    : 'text-blue-600 hover:text-blue-800'
+                }`}
               >
                 전체보기
               </button>
@@ -559,22 +520,17 @@ export default function Dashboard() {
                   {recentOrders.slice(0, 6).map((order: any, index: number) => (
                     <div 
                       key={index}
-                      className="flex items-center justify-between p-1 rounded cursor-pointer transition-colors"
-                      style={{ backgroundColor: 'transparent' }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = isDarkMode ? '#374151' : '#f9fafb';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = 'transparent';
-                      }}
+                      className={`flex items-center justify-between p-1 rounded cursor-pointer transition-colors ${
+                        isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
+                      }`}
                       onClick={() => navigate(`/orders/${order.id}`)}
                     >
                       <div className="min-w-0 flex-1">
-                        <div className="text-xs font-medium truncate" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}>{order.orderNumber}</div>
-                        <div className="text-xs" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>{order.vendor?.name}</div>
+                        <div className={`text-xs font-medium truncate transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{order.orderNumber}</div>
+                        <div className={`text-xs transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{order.vendor?.name}</div>
                       </div>
                       <div className="text-right">
-                        <div className="text-xs font-semibold" style={{ color: isDarkMode ? '#60a5fa' : '#2563eb' }}>
+                        <div className={`text-xs font-semibold transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
                           {formatKoreanWon(order.totalAmount || 0).replace('₩', '').replace(',000,000', 'M')}
                         </div>
                       </div>
@@ -582,9 +538,9 @@ export default function Dashboard() {
                   ))}
                 </div>
               ) : (
-                <div className="h-[100px] flex items-center justify-center" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>
+                <div className={`h-[100px] flex items-center justify-center transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                   <div className="text-center">
-                    <Clock className="h-6 w-6 mx-auto mb-1" style={{ color: isDarkMode ? '#4b5563' : '#d1d5db' }} />
+                    <Clock className={`h-6 w-6 mx-auto mb-1 transition-colors ${isDarkMode ? 'text-gray-600' : 'text-gray-300'}`} />
                     <p className="text-xs">데이터 준비 중...</p>
                   </div>
                 </div>
@@ -593,28 +549,23 @@ export default function Dashboard() {
           </div>
 
           {/* Category Summary - Ultra Compact */}
-          <div 
-            className="rounded border p-2"
-            style={{ 
-              backgroundColor: isDarkMode ? '#1f2937' : '#ffffff',
-              borderColor: isDarkMode ? '#374151' : '#e5e7eb'
-            }}
-          >
+          <div className={`rounded border p-2 transition-colors ${
+            isDarkMode 
+              ? 'bg-gray-800 border-gray-600' 
+              : 'bg-white border-gray-200'
+          }`}>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-1">
-                <FolderTree className="h-3 w-3" style={{ color: isDarkMode ? '#9ca3af' : '#4b5563' }} />
-                <h3 className="text-xs font-semibold" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}>품목 분류</h3>
+                <FolderTree className={`h-3 w-3 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`} />
+                <h3 className={`text-xs font-semibold transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>품목 분류</h3>
               </div>
               <button 
                 onClick={() => navigate('/category-management')}
-                className="text-xs font-medium transition-colors"
-                style={{ color: isDarkMode ? '#60a5fa' : '#2563eb' }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = isDarkMode ? '#3b82f6' : '#1d4ed8';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = isDarkMode ? '#60a5fa' : '#2563eb';
-                }}
+                className={`text-xs font-medium transition-colors ${
+                  isDarkMode 
+                    ? 'text-blue-400 hover:text-blue-300' 
+                    : 'text-blue-600 hover:text-blue-800'
+                }`}
               >
                 관리
               </button>
@@ -628,35 +579,30 @@ export default function Dashboard() {
                     .map((category: any, index: number) => (
                       <div 
                         key={index} 
-                        className="flex items-center justify-between p-1 rounded transition-colors"
-                        style={{ backgroundColor: 'transparent' }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = isDarkMode ? '#374151' : '#f9fafb';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = 'transparent';
-                        }}
+                        className={`flex items-center justify-between p-1 rounded cursor-pointer transition-colors ${ 
+                          isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
+                        }`}
                       >
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1">
-                            <span className="text-xs font-medium" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}>
+                            <span className={`text-xs font-medium transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
                               {category.majorCategory}
                             </span>
                             {category.middleCategory !== '미분류' && (
                               <>
-                                <ChevronRight className="h-2 w-2" style={{ color: isDarkMode ? '#6b7280' : '#9ca3af' }} />
-                                <span className="text-xs truncate" style={{ color: isDarkMode ? '#9ca3af' : '#4b5563' }}>
+                                <ChevronRight className={`h-2 w-2 transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                                <span className={`text-xs truncate transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                                   {category.middleCategory}
                                 </span>
                               </>
                             )}
                           </div>
-                          <div className="text-xs" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>
+                          <div className={`text-xs transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                             {category.orderCount}건
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-xs font-semibold" style={{ color: isDarkMode ? '#60a5fa' : '#2563eb' }}>
+                          <div className={`text-xs font-semibold transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
                             {formatKoreanWon(category.totalAmount).replace('₩', '').replace(',000,000', 'M')}
                           </div>
                         </div>
@@ -664,9 +610,9 @@ export default function Dashboard() {
                     ))}
                 </div>
               ) : (
-                <div className="h-[100px] flex items-center justify-center" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>
+                <div className={`h-[100px] flex items-center justify-center transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                   <div className="text-center">
-                    <FolderTree className="h-6 w-6 mx-auto mb-1" style={{ color: isDarkMode ? '#4b5563' : '#d1d5db' }} />
+                    <FolderTree className={`h-6 w-6 mx-auto mb-1 transition-colors ${isDarkMode ? 'text-gray-600' : 'text-gray-300'}`} />
                     <p className="text-xs">데이터 준비 중...</p>
                   </div>
                 </div>
@@ -676,6 +622,7 @@ export default function Dashboard() {
         </div>
       </div>
 
+      </div>
     </div>
   );
 }

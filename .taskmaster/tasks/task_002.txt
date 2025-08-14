@@ -1,0 +1,15 @@
+# Task ID: 2
+# Title: [Phase 2] Status Badge 및 Filter Tag 개선
+# Status: done
+# Dependencies: None
+# Priority: medium
+# Description: 일관된 status badge 시스템과 interactive filter tag 구현
+# Details:
+- Icon이 포함된 일관된 status badge 시스템 디자인
+- 제거 기능이 있는 interactive filter tag 생성
+- 색상 코드화된 status indicator 구현
+- Status 변경을 위한 animation transition 추가
+- Compound filter display 생성
+
+# Test Strategy:
+

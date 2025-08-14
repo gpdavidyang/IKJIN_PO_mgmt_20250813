@@ -63,6 +63,7 @@ export const projectTypeEnum = pgEnum("project_type", ["commercial", "residentia
 export const invoiceStatusEnum = pgEnum("invoice_status", ["pending", "verified", "paid"]);
 export const itemReceiptStatusEnum = pgEnum("item_receipt_status", ["pending", "approved", "rejected"]);
 export const verificationActionEnum = pgEnum("verification_action", ["invoice_uploaded", "item_verified", "quality_checked"]);
+export const approvalStepStatusEnum = pgEnum("approval_step_status", ["pending", "approved", "rejected", "skipped"]);
 
 // Approval authority settings table for role-based amount limits
 export const approvalAuthorities = pgTable("approval_authorities", {
@@ -918,6 +919,48 @@ export const approvalWorkflowSettings = pgTable("approval_workflow_settings", {
   activeIdx: index("idx_approval_workflow_active").on(table.isActive),
 }));
 
+// Approval step templates table for defining step sequences
+export const approvalStepTemplates = pgTable("approval_step_templates", {
+  id: serial("id").primaryKey(),
+  templateName: varchar("template_name", { length: 100 }).notNull(),
+  companyId: integer("company_id").references(() => companies.id),
+  stepOrder: integer("step_order").notNull(),
+  requiredRole: userRoleEnum("required_role").notNull(),
+  minAmount: decimal("min_amount", { precision: 15, scale: 2 }).default('0'),
+  maxAmount: decimal("max_amount", { precision: 15, scale: 2 }),
+  isOptional: boolean("is_optional").default(false),
+  canSkip: boolean("can_skip").default(false), // can be skipped by higher authority
+  description: text("description"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().$onUpdate(() => new Date()),
+}, (table) => ({
+  templateCompanyIdx: index("idx_approval_step_template_company").on(table.companyId),
+  templateOrderIdx: index("idx_approval_step_order").on(table.templateName, table.stepOrder),
+}));
+
+// Approval step instances table for tracking actual approval steps for each order
+export const approvalStepInstances = pgTable("approval_step_instances", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id").references(() => purchaseOrders.id).notNull(),
+  templateId: integer("template_id").references(() => approvalStepTemplates.id),
+  stepOrder: integer("step_order").notNull(),
+  requiredRole: userRoleEnum("required_role").notNull(),
+  assignedUserId: varchar("assigned_user_id", { length: 255 }).references(() => users.id),
+  status: approvalStepStatusEnum("status").default("pending"),
+  approvedBy: varchar("approved_by", { length: 255 }).references(() => users.id),
+  approvedAt: timestamp("approved_at"),
+  rejectionReason: text("rejection_reason"),
+  comments: text("comments"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().$onUpdate(() => new Date()),
+}, (table) => ({
+  orderIdx: index("idx_approval_step_instance_order").on(table.orderId),
+  statusIdx: index("idx_approval_step_instance_status").on(table.status),
+  assignedUserIdx: index("idx_approval_step_instance_user").on(table.assignedUserId),
+}));
+
 // Approval workflow settings types
 export const insertApprovalWorkflowSettingsSchema = createInsertSchema(approvalWorkflowSettings).omit({
   id: true,
@@ -926,3 +969,21 @@ export const insertApprovalWorkflowSettingsSchema = createInsertSchema(approvalW
 });
 export type ApprovalWorkflowSettings = typeof approvalWorkflowSettings.$inferSelect;
 export type InsertApprovalWorkflowSettings = z.infer<typeof insertApprovalWorkflowSettingsSchema>;
+
+// Approval step templates types
+export const insertApprovalStepTemplateSchema = createInsertSchema(approvalStepTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type ApprovalStepTemplate = typeof approvalStepTemplates.$inferSelect;
+export type InsertApprovalStepTemplate = z.infer<typeof insertApprovalStepTemplateSchema>;
+
+// Approval step instances types
+export const insertApprovalStepInstanceSchema = createInsertSchema(approvalStepInstances).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type ApprovalStepInstance = typeof approvalStepInstances.$inferSelect;
+export type InsertApprovalStepInstance = z.infer<typeof insertApprovalStepInstanceSchema>;

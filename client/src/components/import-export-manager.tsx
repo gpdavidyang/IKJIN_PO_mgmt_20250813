@@ -8,6 +8,7 @@ import { Label } from './ui/label';
 import { Input } from './ui/input';
 import { Download, Upload, FileDown, AlertCircle, CheckCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useTheme } from './ui/theme-provider';
 
 type EntityType = 'vendors' | 'projects' | 'purchase_orders';
 type FormatType = 'excel' | 'csv';
@@ -20,6 +21,8 @@ interface ImportResult {
 
 export function ImportExportManager() {
   const { user } = useAuth();
+  const { theme } = useTheme();
+  const isDarkMode = theme === 'dark';
   const [selectedEntity, setSelectedEntity] = useState<EntityType>('vendors');
   const [selectedFormat, setSelectedFormat] = useState<FormatType>('excel');
   const [importFile, setImportFile] = useState<File | null>(null);
@@ -96,24 +99,24 @@ export function ImportExportManager() {
 
 
   return (
-    <Card className="w-full max-w-4xl mx-auto shadow-sm">
+    <Card className={`w-full max-w-4xl mx-auto shadow-sm transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
       <CardHeader>
-        <CardTitle>데이터 가져오기/내보내기</CardTitle>
-        <CardDescription>
+        <CardTitle className={`transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>데이터 가져오기/내보내기</CardTitle>
+        <CardDescription className={`transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
           엑셀 또는 CSV 파일을 사용하여 데이터를 일괄로 가져오거나 내보낼 수 있습니다.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="export" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="export">내보내기</TabsTrigger>
-            <TabsTrigger value="import">가져오기</TabsTrigger>
+          <TabsList className={`grid w-full grid-cols-2 transition-colors ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+            <TabsTrigger value="export" className={`transition-colors ${isDarkMode ? 'data-[state=active]:bg-gray-600 data-[state=active]:text-white' : 'data-[state=active]:bg-white data-[state=active]:text-gray-900'}`}>내보내기</TabsTrigger>
+            <TabsTrigger value="import" className={`transition-colors ${isDarkMode ? 'data-[state=active]:bg-gray-600 data-[state=active]:text-white' : 'data-[state=active]:bg-white data-[state=active]:text-gray-900'}`}>가져오기</TabsTrigger>
           </TabsList>
 
           <TabsContent value="export" className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>데이터 유형</Label>
+                <Label className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>데이터 유형</Label>
                 <Select value={selectedEntity} onValueChange={(value) => setSelectedEntity(value as EntityType)}>
                   <SelectTrigger>
                     <SelectValue />
@@ -126,7 +129,7 @@ export function ImportExportManager() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>파일 형식</Label>
+                <Label className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>파일 형식</Label>
                 <Select value={selectedFormat} onValueChange={(value) => setSelectedFormat(value as FormatType)}>
                   <SelectTrigger>
                     <SelectValue />
@@ -149,7 +152,7 @@ export function ImportExportManager() {
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6 bg-blue-600 text-white text-sm font-medium rounded-full flex items-center justify-center">1</div>
-                <Label className="text-base font-medium">데이터 유형 선택</Label>
+                <Label className={`text-base font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>데이터 유형 선택</Label>
               </div>
               <Select value={selectedEntity} onValueChange={(value) => setSelectedEntity(value as EntityType)}>
                 <SelectTrigger className="max-w-sm">
@@ -167,20 +170,24 @@ export function ImportExportManager() {
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6 bg-blue-600 text-white text-sm font-medium rounded-full flex items-center justify-center">2</div>
-                <Label className="text-base font-medium">템플릿 확인 및 데이터 준비</Label>
+                <Label className={`text-base font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>템플릿 확인 및 데이터 준비</Label>
               </div>
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+              <div className={`border rounded-lg p-4 transition-colors ${isDarkMode ? 'bg-amber-900/20 border-amber-800' : 'bg-amber-50 border-amber-200'}`}>
                 <div className="flex items-start gap-3">
-                  <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <AlertCircle className={`h-5 w-5 flex-shrink-0 mt-0.5 transition-colors ${isDarkMode ? 'text-amber-400' : 'text-amber-600'}`} />
                   <div className="space-y-2">
-                    <p className="text-sm text-amber-800 font-medium">
+                    <p className={`text-sm font-medium transition-colors ${isDarkMode ? 'text-amber-200' : 'text-amber-800'}`}>
                       {entityLabels[selectedEntity]} 데이터를 가져오기 전에 올바른 형식을 확인하세요
                     </p>
                     <div className="flex gap-2">
                       <a 
                         href={`/templates/${selectedEntity}_template.xlsx`} 
                         download 
-                        className="inline-flex items-center gap-1 text-xs bg-amber-100 hover:bg-amber-200 text-amber-800 px-2 py-1 rounded transition-colors"
+                        className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded transition-colors ${
+                          isDarkMode 
+                            ? 'bg-amber-800/20 hover:bg-amber-700/30 text-amber-300' 
+                            : 'bg-amber-100 hover:bg-amber-200 text-amber-800'
+                        }`}
                       >
                         <FileDown className="h-3 w-3" />
                         Excel 템플릿
@@ -188,7 +195,11 @@ export function ImportExportManager() {
                       <a 
                         href={`/templates/${selectedEntity}_template.csv`} 
                         download 
-                        className="inline-flex items-center gap-1 text-xs bg-amber-100 hover:bg-amber-200 text-amber-800 px-2 py-1 rounded transition-colors"
+                        className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded transition-colors ${
+                          isDarkMode 
+                            ? 'bg-amber-800/20 hover:bg-amber-700/30 text-amber-300' 
+                            : 'bg-amber-100 hover:bg-amber-200 text-amber-800'
+                        }`}
                       >
                         <FileDown className="h-3 w-3" />
                         CSV 템플릿
@@ -203,7 +214,7 @@ export function ImportExportManager() {
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6 bg-blue-600 text-white text-sm font-medium rounded-full flex items-center justify-center">3</div>
-                <Label className="text-base font-medium">파일 업로드</Label>
+                <Label className={`text-base font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>파일 업로드</Label>
               </div>
               <div className="max-w-md">
                 <Input
@@ -213,7 +224,7 @@ export function ImportExportManager() {
                   className="cursor-pointer"
                 />
                 {importFile && (
-                  <p className="text-sm text-green-600 mt-2 flex items-center gap-1">
+                  <p className={`text-sm mt-2 flex items-center gap-1 transition-colors ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
                     <CheckCircle className="h-4 w-4" />
                     선택된 파일: {importFile.name}
                   </p>
@@ -225,7 +236,7 @@ export function ImportExportManager() {
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6 bg-blue-600 text-white text-sm font-medium rounded-full flex items-center justify-center">4</div>
-                <Label className="text-base font-medium">데이터 가져오기</Label>
+                <Label className={`text-base font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>데이터 가져오기</Label>
               </div>
               <Button 
                 onClick={handleImport} 
@@ -238,21 +249,25 @@ export function ImportExportManager() {
             </div>
 
             {importResult && (
-              <Alert className={importResult.errors.length > 0 ? 'border-yellow-500' : 'border-green-500'}>
+              <Alert className={`transition-colors ${
+                importResult.errors.length > 0 
+                  ? (isDarkMode ? 'border-yellow-600 bg-yellow-900/20' : 'border-yellow-500') 
+                  : (isDarkMode ? 'border-green-600 bg-green-900/20' : 'border-green-500')
+              }`}>
                 <CheckCircle className="h-4 w-4" />
-                <AlertDescription>
+                <AlertDescription className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                   <div className="space-y-2">
                     <p>
                       전체 {importResult.totalRows}개 중 {importResult.imported}개 가져오기 완료
                     </p>
                     {importResult.errors.length > 0 && (
                       <details>
-                        <summary className="cursor-pointer text-sm text-muted-foreground">
+                        <summary className={`cursor-pointer text-sm transition-colors ${isDarkMode ? 'text-gray-400' : 'text-muted-foreground'}`}>
                           {importResult.errors.length}개 오류 (클릭하여 자세히 보기)
                         </summary>
                         <div className="mt-2 space-y-1 text-sm">
                           {importResult.errors.map((error, index) => (
-                            <div key={index} className="text-red-600">
+                            <div key={index} className={`transition-colors ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>
                               행 {error.row}: {error.error}
                             </div>
                           ))}
@@ -267,9 +282,9 @@ export function ImportExportManager() {
         </Tabs>
 
         {error && (
-          <Alert variant="destructive" className="mt-4">
+          <Alert variant="destructive" className={`mt-4 transition-colors ${isDarkMode ? 'bg-red-900/20 border-red-800' : 'border-red-500'}`}>
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
+            <AlertDescription className={`transition-colors ${isDarkMode ? 'text-red-200' : 'text-red-700'}`}>{error}</AlertDescription>
           </Alert>
         )}
       </CardContent>

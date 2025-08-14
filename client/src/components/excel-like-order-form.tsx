@@ -465,7 +465,7 @@ export function ExcelLikeOrderForm({ orderId, onSuccess, onCancel, preselectedTe
   }
 
   return (
-    <div className="compact-form space-y-6">
+    <div className="max-w-[1366px] mx-auto compact-form space-y-6">
       {/* Add CSS for table styling and alignment */}
       <style>{`
         .total-row {

@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Search, Filter, ChevronUp, ChevronDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface FilterField {
   key: string;
@@ -87,32 +88,38 @@ export function FilterSection({
   };
 
   return (
-    <Card>
+    <Card className="transition-shadow duration-200 hover:shadow-md">
       <CardContent className="p-4">
         {/* Always Visible Section */}
         <div className="space-y-4 mb-4">
           <div className="flex flex-col xl:flex-row xl:items-end gap-4">
             {/* Search Section */}
             <div className="flex-1">
-              <label className="text-sm font-medium text-gray-700 block mb-2">검색</label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <label className="text-sm font-medium text-foreground block mb-2 transition-colors duration-200">검색</label>
+              <div className="relative group">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4 transition-colors duration-200 group-hover:text-foreground" />
                 <Input
                   placeholder="검색어를 입력하세요..."
                   value={searchValue}
                   onChange={(e) => onSearchChange(e.target.value)}
-                  className={`pl-10 h-10 ${searchValue ? "border-blue-500 bg-blue-50" : ""}`}
+                  className={cn(
+                    "pl-10 h-10 transition-all duration-200",
+                    searchValue ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "",
+                    "hover:border-primary/50 focus:ring-2 focus:ring-primary/20"
+                  )}
                   onKeyPress={(e) => {
                     if (e.key === 'Enter') {
                       onSearchChange(searchValue);
                     }
                   }}
+                  aria-label="검색어 입력"
                 />
                 {searchValue && (
                   <button
                     onClick={() => onSearchChange("")}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-primary/20 rounded-full w-5 h-5 flex items-center justify-center"
                     title="검색어 지우기"
+                    aria-label="검색어 지우기"
                   >
                     ×
                   </button>
@@ -123,7 +130,7 @@ export function FilterSection({
             {/* Primary Filters */}
             {primaryFilters.map((field) => (
               <div key={field.key} className="w-full xl:w-80">
-                <label className="text-sm font-medium text-gray-700 block mb-2">{field.label}</label>
+                <label className="text-sm font-medium text-foreground block mb-2 transition-colors duration-200">{field.label}</label>
                 {renderFilterField(field)}
               </div>
             ))}
@@ -134,14 +141,16 @@ export function FilterSection({
                 <Button
                   variant="outline"
                   onClick={() => setIsExpanded(!isExpanded)}
-                  className="flex items-center gap-2 h-10 px-4"
+                  className="flex items-center gap-2 h-10 px-4 transition-all duration-200 hover:scale-105 active:scale-95 hover:bg-accent/50 focus:ring-2 focus:ring-primary/20"
+                  aria-label={isExpanded ? "상세 필터 닫기" : "상세 필터 열기"}
+                  aria-expanded={isExpanded}
                 >
-                  <Filter className="h-4 w-4" />
+                  <Filter className="h-4 w-4 transition-transform duration-200" />
                   상세 필터
                   {isExpanded ? (
-                    <ChevronUp className="h-4 w-4" />
+                    <ChevronUp className="h-4 w-4 transition-transform duration-200" />
                   ) : (
-                    <ChevronDown className="h-4 w-4" />
+                    <ChevronDown className="h-4 w-4 transition-transform duration-200" />
                   )}
                 </Button>
               </div>

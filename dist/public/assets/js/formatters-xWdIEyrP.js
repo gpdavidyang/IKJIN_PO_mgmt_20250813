@@ -1,0 +1,1 @@
+const r=t=>{const o=typeof t=="string"?parseFloat(t):t;return isNaN(o)?"₩0":`₩${o.toLocaleString("ko-KR")}`},e=t=>(typeof t=="string"?new Date(t):t).toLocaleDateString("ko-KR",{year:"numeric",month:"2-digit",day:"2-digit"});export{e as a,r as f};

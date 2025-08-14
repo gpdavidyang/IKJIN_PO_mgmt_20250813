@@ -1,0 +1,11 @@
+# Task ID: 31
+# Title: UI 표준화 적용 - Phase 1 (핵심 화면)
+# Status: in-progress
+# Dependencies: None
+# Priority: high
+# Description: 새로운 UI/UX 원칙을 주요 업무 화면들에 적용. 최대 너비 1366px, 파란색 계열 색상 체계, 배경색 계층화, 그림자 효과, 호버 효과, 테이블 헤더 정렬 기능 등을 포함. 발주서 관리(orders.tsx), 대시보드(dashboard-professional.tsx), 발주서 상세/생성 화면들 총 15개 화면 업데이트
+# Details:
+
+
+# Test Strategy:
+

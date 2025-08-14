@@ -1,0 +1,11 @@
+# Task ID: 33
+# Title: UI 표준화 적용 - Phase 3 (보조 기능)
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: 관리자 설정, 보고서, 템플릿 관리 등 보조 기능 화면들에 UI 표준 적용. 통일된 카드 스타일, 폼 레이아웃, 버튼 스타일 적용. 총 8개 화면 업데이트
+# Details:
+
+
+# Test Strategy:
+

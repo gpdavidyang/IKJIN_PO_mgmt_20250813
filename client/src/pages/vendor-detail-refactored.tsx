@@ -13,6 +13,7 @@ import { formatKoreanWon } from "@/lib/utils";
 import { getStatusText, getStatusColor } from "@/lib/statusUtils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useState, useEffect } from "react";
+import { useTheme } from "@/components/ui/theme-provider";
 
 import type { Vendor } from "@shared/schema";
 
@@ -24,6 +25,8 @@ export default function VendorDetailRefactored({ params }: VendorDetailProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const { theme } = useTheme();
+  const isDarkMode = theme === 'dark';
   const vendorId = parseInt(params.id);
   
   const { isEditing, startEdit, cancelEdit } = useEditMode();
@@ -114,11 +117,33 @@ export default function VendorDetailRefactored({ params }: VendorDetailProps) {
   };
 
   if (vendorLoading) {
-    return <div className="p-6">로딩 중...</div>;
+    return (
+      <div className={`min-h-screen transition-colors ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+        <div className="max-w-[1366px] mx-auto p-6">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div className={`animate-spin rounded-full h-8 w-8 border-b-2 mx-auto mb-4 transition-colors ${isDarkMode ? 'border-blue-400' : 'border-blue-600'}`}></div>
+              <p className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>거래처 정보를 불러오는 중...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (!vendor) {
-    return <div className="p-6">거래처를 찾을 수 없습니다.</div>;
+    return (
+      <div className={`min-h-screen transition-colors ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+        <div className="max-w-[1366px] mx-auto p-6">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <h2 className={`text-xl font-semibold mb-2 transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>거래처를 찾을 수 없습니다</h2>
+              <p className={`mb-4 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>요청하신 거래처가 존재하지 않거나 삭제되었습니다.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const orders = vendorOrdersData?.orders || [];
@@ -264,15 +289,15 @@ export default function VendorDetailRefactored({ params }: VendorDetailProps) {
         <DetailSection title="최근 발주서" className="mt-6">
           <div className="space-y-2">
             {orders.slice(0, 5).map((order) => (
-              <div key={order.id} className="flex items-center justify-between p-3 border rounded-lg">
+              <div key={order.id} className={`flex items-center justify-between p-3 border rounded-lg transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-700/50' : 'border-gray-200 bg-gray-50/50'}`}>
                 <div className="flex-1">
-                  <div className="font-medium">{order.orderNumber}</div>
-                  <div className="text-sm text-gray-600">
+                  <div className={`font-medium transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{order.orderNumber}</div>
+                  <div className={`text-sm transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                     {order.projectName} • {new Date(order.createdAt).toLocaleDateString()}
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <div className="text-blue-600 font-semibold">
+                  <div className={`font-semibold transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
                     {formatKoreanWon(order.totalAmount)}
                   </div>
                   <Badge 
@@ -285,7 +310,7 @@ export default function VendorDetailRefactored({ params }: VendorDetailProps) {
               </div>
             ))}
             {orders.length > 5 && (
-              <div className="text-center text-sm text-gray-500">
+              <div className={`text-center text-sm transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
                 {orders.length - 5}건 더 있음
               </div>
             )}
@@ -296,21 +321,21 @@ export default function VendorDetailRefactored({ params }: VendorDetailProps) {
       {/* 삭제 확인 다이얼로그 */}
       {showConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg max-w-md">
-            <h3 className="text-lg font-semibold mb-2">거래처 삭제</h3>
-            <p className="text-gray-600 mb-4">
+          <div className={`p-6 rounded-lg max-w-md shadow-lg transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+            <h3 className={`text-lg font-semibold mb-2 transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>거래처 삭제</h3>
+            <p className={`mb-4 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
               이 거래처를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
             </p>
             <div className="flex justify-end space-x-2">
               <button
                 onClick={cancelDelete}
-                className="px-4 py-2 text-gray-600 border rounded hover:bg-gray-50"
+                className={`px-4 py-2 border rounded transition-colors ${isDarkMode ? 'text-gray-300 border-gray-600 hover:bg-gray-700' : 'text-gray-600 border-gray-300 hover:bg-gray-50'}`}
               >
                 취소
               </button>
               <button
                 onClick={confirmDelete}
-                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 shadow-md hover:shadow-lg transition-all duration-200"
               >
                 삭제
               </button>

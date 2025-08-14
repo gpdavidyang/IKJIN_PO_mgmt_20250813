@@ -1,0 +1,11 @@
+# Task ID: 15
+# Title: E2E 테스트 구현
+# Status: in-progress
+# Dependencies: None
+# Priority: medium
+# Description: 로그인, 발주서 생성, 승인 등 핵심 사용자 워크플로우에 대한 E2E 테스트 작성
+# Details:
+
+
+# Test Strategy:
+

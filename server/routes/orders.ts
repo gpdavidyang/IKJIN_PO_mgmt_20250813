@@ -12,11 +12,16 @@ import { decodeKoreanFilename } from "../utils/korean-filename";
 import { OrderService } from "../services/order-service";
 import { OptimizedOrderQueries, OptimizedDashboardQueries } from "../utils/optimized-queries";
 import { ExcelToPDFConverter } from "../utils/excel-to-pdf-converter";
+import { POEmailService } from "../utils/po-email-service";
+import ApprovalRoutingService from "../services/approval-routing-service";
 import fs from "fs";
 import path from "path";
 import { z } from "zod";
 
 const router = Router();
+
+// Email service instance
+const emailService = new POEmailService();
 
 // Get all orders with filters and pagination
 router.get("/orders", async (req, res) => {
@@ -157,7 +162,54 @@ router.post("/orders", requireAuth, upload.array('attachments'), async (req, res
       }
     }
 
-    res.status(201).json(order);
+    // Set up approval process using the new approval routing service
+    try {
+      const approvalContext = {
+        orderId: order.id,
+        orderAmount: totalAmount,
+        companyId: 1, // Default company ID, should be dynamic based on user's company
+        currentUserId: userId,
+        currentUserRole: req.user?.role || 'field_worker',
+        priority: req.body.priority || 'medium'
+      };
+
+      const approvalRoute = await ApprovalRoutingService.determineApprovalRoute(approvalContext);
+      console.log("🔧🔧🔧 ORDERS.TS - Approval route determined:", approvalRoute);
+
+      if (approvalRoute.approvalMode === 'staged') {
+        // Create approval step instances for staged approval
+        const approvalInstances = await ApprovalRoutingService.createApprovalInstances(
+          order.id, 
+          approvalContext
+        );
+        console.log("🔧🔧🔧 ORDERS.TS - Created approval instances:", approvalInstances);
+      }
+
+      // Add approval route info to response
+      const orderWithApproval = {
+        ...order,
+        approvalRoute: {
+          mode: approvalRoute.approvalMode,
+          canDirectApprove: approvalRoute.canDirectApprove,
+          reasoning: approvalRoute.reasoning,
+          stepsCount: approvalRoute.stagedApprovalSteps?.length || 0
+        }
+      };
+
+      res.status(201).json(orderWithApproval);
+    } catch (approvalError) {
+      console.error("🔧🔧🔧 ORDERS.TS - Error setting up approval process:", approvalError);
+      // Still return the order even if approval setup fails
+      res.status(201).json({
+        ...order,
+        approvalRoute: {
+          mode: 'direct',
+          canDirectApprove: false,
+          reasoning: '승인 프로세스 설정 중 오류가 발생하여 기본 설정을 사용합니다.',
+          stepsCount: 0
+        }
+      });
+    }
   } catch (error) {
     console.error("🔧🔧🔧 ORDERS.TS - Error creating order:", error);
     res.status(500).json({ message: "Failed to create order" });
@@ -213,21 +265,81 @@ router.delete("/orders/:id", requireAuth, async (req, res) => {
   }
 });
 
-// Order approval workflow
+// Order approval workflow - Enhanced with step-based approval
 router.post("/orders/:id/approve", requireAuth, async (req, res) => {
   try {
     const orderId = parseInt(req.params.id, 10);
     const userId = req.user?.id;
+    const { comments, stepInstanceId } = req.body;
     
     if (!userId) {
       return res.status(401).json({ message: "User not authenticated" });
     }
 
-    const result = await OrderService.approveOrder(orderId, userId);
-    res.json(result);
+    // Check if this is a step-based approval
+    if (stepInstanceId) {
+      // Update the specific approval step
+      const response = await fetch(`http://localhost:3000/api/approval-settings/step-instances/${stepInstanceId}`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Cookie': req.headers.cookie || ''
+        },
+        body: JSON.stringify({
+          status: 'approved',
+          comments
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update approval step');
+      }
+
+      // Check if all approval steps are complete
+      const isComplete = await ApprovalRoutingService.isApprovalComplete(orderId);
+      
+      if (isComplete) {
+        // All steps approved - approve the order
+        const result = await OrderService.approveOrder(orderId, userId);
+        res.json({ 
+          ...result, 
+          approvalComplete: true,
+          message: "모든 승인 단계가 완료되어 주문이 승인되었습니다."
+        });
+      } else {
+        // Get next step info
+        const nextStep = await ApprovalRoutingService.getNextApprovalStep(orderId);
+        const progress = await ApprovalRoutingService.getApprovalProgress(orderId);
+        
+        res.json({
+          success: true,
+          approvalComplete: false,
+          nextStep,
+          progress,
+          message: `승인 단계가 완료되었습니다. (${progress.progressPercentage}% 완료)`
+        });
+      }
+    } else {
+      // Direct approval (legacy)
+      const result = await OrderService.approveOrder(orderId, userId);
+      res.json(result);
+    }
   } catch (error) {
     console.error("Error approving order:", error);
     res.status(500).json({ message: "Failed to approve order" });
+  }
+});
+
+// Get approval progress for an order
+router.get("/orders/:id/approval-progress", requireAuth, async (req, res) => {
+  try {
+    const orderId = parseInt(req.params.id, 10);
+    
+    const progress = await ApprovalRoutingService.getApprovalProgress(orderId);
+    res.json(progress);
+  } catch (error) {
+    console.error("Error getting approval progress:", error);
+    res.status(500).json({ message: "Failed to get approval progress" });
   }
 });
 
@@ -877,6 +989,276 @@ router.get("/orders/download-pdf/:timestamp", (req, res) => {
       success: false,
       error: "PDF 다운로드 중 오류가 발생했습니다.",
       details: error instanceof Error ? error.message : "알 수 없는 오류"
+    });
+  }
+});
+
+// 이메일 발송 (PDF만)
+router.post("/orders/send-email", requireAuth, async (req, res) => {
+  try {
+    const { orderData, pdfUrl, recipients, emailSettings } = req.body;
+    
+    console.log('📧 이메일 발송 요청:', { orderData, pdfUrl, recipients, emailSettings });
+    
+    if (!recipients || recipients.length === 0) {
+      return res.status(400).json({ error: '수신자가 필요합니다.' });
+    }
+
+    // 기본 이메일 발송 (PDF 첨부)
+    const emailOptions = {
+      to: recipients,
+      cc: emailSettings?.cc,
+      subject: emailSettings?.subject || `발주서 - ${orderData.orderNumber || ''}`,
+      orderNumber: orderData.orderNumber,
+      vendorName: orderData.vendorName,
+      totalAmount: orderData.totalAmount,
+      additionalMessage: emailSettings?.message
+    };
+
+    // PDF 파일이 있으면 첨부
+    let attachments = [];
+    if (pdfUrl) {
+      const pdfPath = path.join(__dirname, '../../', pdfUrl.replace(/^\//, ''));
+      if (fs.existsSync(pdfPath)) {
+        attachments.push({
+          filename: `발주서_${orderData.orderNumber || Date.now()}.pdf`,
+          path: pdfPath,
+          contentType: 'application/pdf'
+        });
+      }
+    }
+
+    // EmailService의 generateEmailContent를 위한 별도 메서드 생성
+    const generateEmailContent = (options: any): string => {
+      const formatCurrency = (amount: number) => {
+        return new Intl.NumberFormat('ko-KR', {
+          style: 'currency',
+          currency: 'KRW'
+        }).format(amount);
+      };
+
+      const formatDate = (dateString: string) => {
+        try {
+          const date = new Date(dateString);
+          return date.toLocaleDateString('ko-KR', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          });
+        } catch {
+          return dateString;
+        }
+      };
+
+      return `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="UTF-8">
+            <style>
+              body {
+                font-family: 'Malgun Gothic', Arial, sans-serif;
+                line-height: 1.6;
+                color: #333;
+                max-width: 600px;
+                margin: 0 auto;
+                padding: 20px;
+              }
+              
+              .header {
+                background-color: #007bff;
+                color: white;
+                padding: 20px;
+                border-radius: 8px 8px 0 0;
+                text-align: center;
+              }
+              
+              .content {
+                background-color: #f8f9fa;
+                padding: 30px;
+                border-radius: 0 0 8px 8px;
+              }
+              
+              .info-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 20px 0;
+              }
+              
+              .info-table th,
+              .info-table td {
+                border: 1px solid #ddd;
+                padding: 12px;
+                text-align: left;
+              }
+              
+              .info-table th {
+                background-color: #e9ecef;
+                font-weight: bold;
+                width: 30%;
+              }
+              
+              .attachments {
+                background-color: #e7f3ff;
+                padding: 15px;
+                border-radius: 5px;
+                margin: 20px 0;
+              }
+              
+              .footer {
+                margin-top: 30px;
+                padding-top: 20px;
+                border-top: 1px solid #ddd;
+                font-size: 12px;
+                color: #666;
+                text-align: center;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <h1>📋 발주서 송부</h1>
+              <p>구매 발주 관리 시스템</p>
+            </div>
+            
+            <div class="content">
+              <p>안녕하세요,</p>
+              <p>발주서를 송부드립니다. 첨부된 파일을 확인하여 주시기 바랍니다.</p>
+              
+              ${options.orderNumber ? `
+                <table class="info-table">
+                  <tr>
+                    <th>발주번호</th>
+                    <td>${options.orderNumber}</td>
+                  </tr>
+                  ${options.vendorName ? `
+                    <tr>
+                      <th>거래처명</th>
+                      <td>${options.vendorName}</td>
+                    </tr>
+                  ` : ''}
+                  ${options.totalAmount ? `
+                    <tr>
+                      <th>총 금액</th>
+                      <td><strong>${formatCurrency(options.totalAmount)}</strong></td>
+                    </tr>
+                  ` : ''}
+                </table>
+              ` : ''}
+              
+              <div class="attachments">
+                <h3>📎 첨부파일</h3>
+                <ul>
+                  <li>발주서.pdf (PDF 파일)</li>
+                </ul>
+              </div>
+              
+              ${options.additionalMessage ? `
+                <div style="background-color: #fff3cd; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                  <h3>📝 추가 안내사항</h3>
+                  <p>${options.additionalMessage}</p>
+                </div>
+              ` : ''}
+              
+              <p>
+                발주서 검토 후 확인 회신 부탁드립니다.<br>
+                문의사항이 있으시면 언제든지 연락주시기 바랍니다.
+              </p>
+              
+              <p>감사합니다.</p>
+            </div>
+            
+            <div class="footer">
+              <p>
+                이 메일은 구매 발주 관리 시스템에서 자동으로 발송되었습니다.<br>
+                발송 시간: ${new Date().toLocaleString('ko-KR')}
+              </p>
+            </div>
+          </body>
+        </html>
+      `;
+    };
+
+    const result = await emailService.sendEmail({
+      to: emailOptions.to,
+      cc: emailOptions.cc,
+      subject: emailOptions.subject,
+      html: generateEmailContent(emailOptions),
+      attachments
+    });
+
+    if (result.success) {
+      console.log('📧 이메일 발송 성공');
+      res.json({ success: true, messageId: result.messageId });
+    } else {
+      console.error('📧 이메일 발송 실패:', result.error);
+      res.status(500).json({ error: result.error });
+    }
+
+  } catch (error) {
+    console.error('이메일 발송 오류:', error);
+    res.status(500).json({ 
+      error: '이메일 발송 실패',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// 엑셀 파일과 함께 이메일 발송
+router.post("/orders/send-email-with-excel", requireAuth, async (req, res) => {
+  try {
+    const { emailSettings, excelFilePath, orderData } = req.body;
+    
+    console.log('📧 엑셀 파일 이메일 발송 요청:', { emailSettings, excelFilePath });
+    
+    if (!emailSettings.to) {
+      return res.status(400).json({ error: '수신자가 필요합니다.' });
+    }
+
+    if (!excelFilePath) {
+      return res.status(400).json({ error: '엑셀 파일 경로가 필요합니다.' });
+    }
+
+    // 엑셀 파일 경로를 절대 경로로 변환
+    const absoluteExcelPath = excelFilePath.startsWith('http') 
+      ? excelFilePath.replace(/^https?:\/\/[^\/]+/, '') 
+      : excelFilePath;
+    
+    const localExcelPath = path.join(__dirname, '../../', absoluteExcelPath.replace(/^\//, ''));
+    
+    console.log('📧 엑셀 파일 경로:', localExcelPath);
+    
+    if (!fs.existsSync(localExcelPath)) {
+      return res.status(400).json({ error: '엑셀 파일을 찾을 수 없습니다.' });
+    }
+
+    // POEmailService를 사용하여 원본 형식 유지 이메일 발송
+    const result = await emailService.sendPOWithOriginalFormat(
+      localExcelPath,
+      {
+        to: emailSettings.to,
+        cc: emailSettings.cc,
+        subject: emailSettings.subject,
+        orderNumber: emailSettings.orderNumber,
+        vendorName: emailSettings.vendorName,
+        totalAmount: emailSettings.totalAmount,
+        additionalMessage: emailSettings.message
+      }
+    );
+
+    if (result.success) {
+      console.log('📧 엑셀 이메일 발송 성공');
+      res.json({ success: true, messageId: result.messageId });
+    } else {
+      console.error('📧 엑셀 이메일 발송 실패:', result.error);
+      res.status(500).json({ error: result.error });
+    }
+
+  } catch (error) {
+    console.error('엑셀 이메일 발송 오류:', error);
+    res.status(500).json({ 
+      error: '엑셀 이메일 발송 실패',
+      details: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 });

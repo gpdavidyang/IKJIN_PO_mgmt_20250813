@@ -73,25 +73,27 @@ export function StatusBadge({
       className={cn(
         statusBadgeVariants({ variant, size, pulse, interactive }),
         animate && "transition-all duration-200",
+        "group relative",
         className
       )}
       {...props}
     >
-      {Icon && <Icon className="h-3 w-3" />}
-      <span>{children}</span>
+      {Icon && <Icon className="h-3 w-3 transition-transform duration-200 group-hover:scale-110" />}
+      <span className="transition-colors duration-200">{children}</span>
       {onRemove && (
         <button
           onClick={(e) => {
             e.stopPropagation();
             onRemove();
           }}
-          className="ml-1 -mr-1 hover:bg-black/10 dark:hover:bg-white/10 rounded-full p-0.5 transition-colors"
+          className="ml-1 -mr-1 hover:bg-black/10 dark:hover:bg-white/10 rounded-full p-0.5 transition-all duration-200 hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-current/20"
+          aria-label="뱃지 제거"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 16 16"
             fill="currentColor"
-            className="h-3 w-3"
+            className="h-3 w-3 transition-transform duration-200"
           >
             <path d="M5.28 4.22a.75.75 0 00-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 101.06 1.06L8 9.06l2.72 2.72a.75.75 0 101.06-1.06L9.06 8l2.72-2.72a.75.75 0 00-1.06-1.06L8 6.94 5.28 4.22z" />
           </svg>

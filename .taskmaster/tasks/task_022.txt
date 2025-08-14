@@ -1,0 +1,11 @@
+# Task ID: 22
+# Title: Tailwind CSS 스타일 가이드 문서화
+# Status: pending
+# Dependencies: None
+# Priority: low
+# Description: 프로젝트 전용 Tailwind CSS 사용 가이드라인 및 베스트 프랙티스 문서 작성
+# Details:
+
+
+# Test Strategy:
+

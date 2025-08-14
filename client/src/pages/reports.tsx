@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+import { useTheme } from "@/components/ui/theme-provider";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +41,8 @@ export default function Reports() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const { theme } = useTheme();
+  const isDarkMode = theme === 'dark';
 
   // 리포트 타입 상태
   const [reportType, setReportType] = useState<'orders' | 'category' | 'project' | 'vendor'>('orders');
@@ -436,22 +439,22 @@ export default function Reports() {
 
   if (isLoading) {
     return (
-      <div className="p-6 space-y-6">
-        <div className="animate-pulse text-lg">로딩 중...</div>
+      <div className={`p-6 space-y-6 transition-colors ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+        <div className={`animate-pulse text-lg transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>로딩 중...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className={`min-h-screen transition-colors ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
       <div className="max-w-[1366px] mx-auto p-6 space-y-6">
       {/* 페이지 헤더 - UI Standards 적용 */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <BarChart3 className="h-6 w-6 text-blue-600" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">보고서 및 분석</h1>
-            <p className="text-sm text-gray-600">발주 현황 및 통계를 확인하고 보고서를 생성하세요</p>
+            <h1 className={`text-2xl font-bold transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>보고서 및 분석</h1>
+            <p className={`text-sm transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>발주 현황 및 통계를 확인하고 보고서를 생성하세요</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -467,45 +470,53 @@ export default function Reports() {
       </div>
 
       {/* 리포트 타입 선택 탭 */}
-      <Card className="shadow-sm">
-        <div className="border-b">
+      <Card className={`shadow-sm transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+        <div className={`border-b transition-colors ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}>
           <nav className="-mb-px flex">
             <button
               onClick={() => setReportType('orders')}
-              className={`py-2 px-6 text-sm font-medium border-b-2 ${
+              className={`py-2 px-6 text-sm font-medium border-b-2 transition-colors ${
                 reportType === 'orders'
                   ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  : isDarkMode 
+                    ? 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-500' 
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
               발주 내역 검색
             </button>
             <button
               onClick={() => setReportType('category')}
-              className={`py-2 px-6 text-sm font-medium border-b-2 ${
+              className={`py-2 px-6 text-sm font-medium border-b-2 transition-colors ${
                 reportType === 'category'
                   ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  : isDarkMode 
+                    ? 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-500' 
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
               분류별 보고서
             </button>
             <button
               onClick={() => setReportType('project')}
-              className={`py-2 px-6 text-sm font-medium border-b-2 ${
+              className={`py-2 px-6 text-sm font-medium border-b-2 transition-colors ${
                 reportType === 'project'
                   ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  : isDarkMode 
+                    ? 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-500' 
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
               현장별 보고서
             </button>
             <button
               onClick={() => setReportType('vendor')}
-              className={`py-2 px-6 text-sm font-medium border-b-2 ${
+              className={`py-2 px-6 text-sm font-medium border-b-2 transition-colors ${
                 reportType === 'vendor'
                   ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  : isDarkMode 
+                    ? 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-500' 
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
               거래처별 보고서
@@ -515,9 +526,9 @@ export default function Reports() {
       </Card>
 
       {/* 필터 섹션 - UI Standards 적용 */}
-      <Card className="shadow-sm">
+      <Card className={`shadow-sm transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg font-semibold flex items-center gap-2 text-gray-900">
+          <CardTitle className={`text-lg font-semibold flex items-center gap-2 transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
             <Filter className="h-5 w-5 text-blue-600" />
             필터 조건
           </CardTitle>
@@ -528,20 +539,22 @@ export default function Reports() {
             {(reportType === 'orders' || reportType === 'category' || reportType === 'project' || reportType === 'vendor') && (
               <>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">시작일</label>
+                  <label className={`text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>시작일</label>
                   <Input 
                     type="date"
                     value={filters.startDate}
                     onChange={(e) => setFilters(prev => ({ ...prev, startDate: e.target.value }))}
+                    className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">종료일</label>
+                  <label className={`text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>종료일</label>
                   <Input 
                     type="date"
                     value={filters.endDate}
                     onChange={(e) => setFilters(prev => ({ ...prev, endDate: e.target.value }))}
+                    className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}
                   />
                 </div>
               </>
@@ -550,15 +563,15 @@ export default function Reports() {
             {/* Category type selector for category report */}
             {reportType === 'category' && (
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">분류 유형</label>
+                <label className={`text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>분류 유형</label>
                 <Select 
                   value={categoryType} 
                   onValueChange={(value: 'major' | 'middle' | 'minor') => setCategoryType(value)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
                     <SelectItem value="major">대분류</SelectItem>
                     <SelectItem value="middle">중분류</SelectItem>
                     <SelectItem value="minor">소분류</SelectItem>
@@ -571,15 +584,15 @@ export default function Reports() {
             {reportType === 'orders' && (
               <>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">연도</label>
+                  <label className={`text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>연도</label>
                   <Select 
                     value={filters.year} 
                     onValueChange={(value) => setFilters(prev => ({ ...prev, year: value }))}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}>
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
                       <SelectItem value="all">전체 연도</SelectItem>
                       <SelectItem value="2025">2025년</SelectItem>
                       <SelectItem value="2024">2024년</SelectItem>
@@ -589,15 +602,15 @@ export default function Reports() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">거래처</label>
+                  <label className={`text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>거래처</label>
                   <Select 
                     value={filters.vendorId} 
                     onValueChange={(value) => setFilters(prev => ({ ...prev, vendorId: value }))}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}>
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
                       <SelectItem value="all">전체 거래처</SelectItem>
                       {Array.isArray(vendors) && vendors.map((vendor: any) => (
                         <SelectItem key={vendor.id} value={vendor.id.toString()}>
@@ -609,15 +622,15 @@ export default function Reports() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">발주 상태</label>
+                  <label className={`text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>발주 상태</label>
                   <Select 
                     value={filters.status} 
                     onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}>
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
                       <SelectItem value="all">전체 상태</SelectItem>
                       <SelectItem value="draft">임시 저장</SelectItem>
                       <SelectItem value="pending">승인 대기</SelectItem>
@@ -630,15 +643,15 @@ export default function Reports() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">발주 템플릿</label>
+                  <label className={`text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>발주 템플릿</label>
                   <Select 
                     value={filters.templateId} 
                     onValueChange={(value) => setFilters(prev => ({ ...prev, templateId: value }))}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}>
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
                       <SelectItem value="all">전체 템플릿</SelectItem>
                       {Array.isArray(templates) && templates.map((template: any) => (
                         <SelectItem key={template.id} value={template.id.toString()}>
@@ -650,15 +663,15 @@ export default function Reports() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">금액 범위</label>
+                  <label className={`text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>금액 범위</label>
                   <Select 
                     value={filters.amountRange} 
                     onValueChange={(value) => setFilters(prev => ({ ...prev, amountRange: value }))}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}>
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
                       <SelectItem value="all">전체 금액</SelectItem>
                       <SelectItem value="0-100000">10만원 이하</SelectItem>
                       <SelectItem value="100000-500000">10만원 ~ 50만원</SelectItem>
@@ -670,15 +683,15 @@ export default function Reports() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">담당자</label>
+                  <label className={`text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>담당자</label>
                   <Select 
                     value={filters.userId} 
                     onValueChange={(value) => setFilters(prev => ({ ...prev, userId: value }))}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}>
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
                       <SelectItem value="all">전체 담당자</SelectItem>
                       {Array.isArray(users) && users.map((user: any) => (
                         <SelectItem key={user.id} value={user.id}>
@@ -694,49 +707,49 @@ export default function Reports() {
           
           {/* 활성 필터 표시 */}
           {activeFilters && Object.values(activeFilters).some(value => value !== 'all' && value !== '') && (
-            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+            <div className={`mt-4 p-3 rounded-lg transition-colors ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
               <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-600">
+                <div className={`text-sm transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                   <span className="font-medium">적용된 필터: </span>
                   {activeFilters.year !== new Date().getFullYear().toString() && (
-                    <span className="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs mr-2">
+                    <span className={`inline-block px-2 py-1 rounded text-xs mr-2 transition-colors ${isDarkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-800'}`}>
                       연도: {activeFilters.year}년
                     </span>
                   )}
                   {activeFilters.startDate && (
-                    <span className="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs mr-2">
+                    <span className={`inline-block px-2 py-1 rounded text-xs mr-2 transition-colors ${isDarkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-800'}`}>
                       시작일: {activeFilters.startDate}
                     </span>
                   )}
                   {activeFilters.endDate && (
-                    <span className="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs mr-2">
+                    <span className={`inline-block px-2 py-1 rounded text-xs mr-2 transition-colors ${isDarkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-800'}`}>
                       종료일: {activeFilters.endDate}
                     </span>
                   )}
                   {activeFilters.vendorId !== 'all' && (
-                    <span className="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs mr-2">
+                    <span className={`inline-block px-2 py-1 rounded text-xs mr-2 transition-colors ${isDarkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-800'}`}>
                       거래처 필터링
                     </span>
                   )}
                   {activeFilters.status !== 'all' && (
-                    <span className="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs mr-2">
+                    <span className={`inline-block px-2 py-1 rounded text-xs mr-2 transition-colors ${isDarkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-800'}`}>
                       상태: {activeFilters.status === 'pending' ? '승인 대기' : 
                             activeFilters.status === 'approved' ? '승인 완료' :
                             activeFilters.status === 'completed' ? '발주 완료' : '반려'}
                     </span>
                   )}
                   {activeFilters.templateId !== 'all' && (
-                    <span className="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs mr-2">
+                    <span className={`inline-block px-2 py-1 rounded text-xs mr-2 transition-colors ${isDarkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-800'}`}>
                       템플릿 필터링
                     </span>
                   )}
                   {activeFilters.amountRange !== 'all' && (
-                    <span className="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs mr-2">
+                    <span className={`inline-block px-2 py-1 rounded text-xs mr-2 transition-colors ${isDarkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-800'}`}>
                       금액 범위 필터링
                     </span>
                   )}
                   {activeFilters.userId !== 'all' && (
-                    <span className="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs mr-2">
+                    <span className={`inline-block px-2 py-1 rounded text-xs mr-2 transition-colors ${isDarkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-800'}`}>
                       담당자 필터링
                     </span>
                   )}
@@ -801,18 +814,18 @@ export default function Reports() {
       </Card>
 
       {/* 검색 결과 리스트 - UI Standards 적용 */}
-      <Card className="shadow-sm">
+      <Card className={`shadow-sm transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-lg font-semibold flex items-center gap-2 text-gray-900">
+              <CardTitle className={`text-lg font-semibold flex items-center gap-2 transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                 <Search className="h-5 w-5 text-blue-600" />
                 {reportType === 'orders' ? '검색 결과' : 
                  reportType === 'category' ? '분류별 보고서 결과' :
                  reportType === 'project' ? '현장별 보고서 결과' :
                  '거래처별 보고서 결과'}
               </CardTitle>
-              <p className="text-sm text-gray-600 mt-1">
+              <p className={`text-sm transition-colors mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                 {reportType === 'orders' ? (
                   processingLoading ? "데이터 로딩 중..." : 
                   processingReport && processingReport.orders ? 
@@ -850,8 +863,8 @@ export default function Reports() {
         <CardContent>
           {!activeFilters ? (
             <div className="text-center py-16">
-              <div className="text-gray-500 text-lg mb-2">검색 조건을 설정하고 검색 버튼을 클릭하세요</div>
-              <div className="text-gray-400 text-sm">효율적인 성능을 위해 검색 필터를 먼저 설정해주세요</div>
+              <div className={`text-lg mb-2 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>검색 조건을 설정하고 검색 버튼을 클릭하세요</div>
+              <div className={`text-sm transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>효율적인 성능을 위해 검색 필터를 먼저 설정해주세요</div>
             </div>
           ) : (
             <>
@@ -859,7 +872,7 @@ export default function Reports() {
               {reportType === 'orders' && (
                 processingLoading ? (
                   <div className="text-center py-8">
-                    <div className="text-gray-500">데이터를 불러오는 중...</div>
+                    <div className={`transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>데이터를 불러오는 중...</div>
                   </div>
                 ) : processingReport && Array.isArray(processingReport.orders) && processingReport.orders.length > 0 ? (
             <div className="space-y-4">
@@ -884,17 +897,17 @@ export default function Reports() {
                     
                     return (
                       <>
-                        <div className="bg-gray-50 p-2 rounded-lg text-center">
-                          <div className="text-2xl font-bold text-gray-700">{processingReport.orders.length}</div>
-                          <div className="text-sm text-gray-600">총 발주</div>
+                        <div className={`p-2 rounded-lg text-center transition-colors ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                          <div className={`text-2xl font-bold transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{processingReport.orders.length}</div>
+                          <div className={`text-sm transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>총 발주</div>
                         </div>
-                        <div className="bg-blue-50 p-2 rounded-lg text-center">
-                          <div className="text-2xl font-bold text-blue-600 font-semibold">{formatKoreanWon(Math.floor(totalAmount))}</div>
-                          <div className="text-sm text-blue-600">총 발주금액</div>
+                        <div className={`p-2 rounded-lg text-center transition-colors ${isDarkMode ? 'bg-blue-900/30' : 'bg-blue-50'}`}>
+                          <div className={`text-2xl font-bold font-semibold transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>{formatKoreanWon(Math.floor(totalAmount))}</div>
+                          <div className={`text-sm transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>총 발주금액</div>
                         </div>
-                        <div className="bg-purple-50 p-2 rounded-lg text-center">
-                          <div className="text-2xl font-bold text-blue-600 font-semibold">{formatKoreanWon(Math.floor(averageAmount))}</div>
-                          <div className="text-sm text-purple-600">평균 발주금액</div>
+                        <div className={`p-2 rounded-lg text-center transition-colors ${isDarkMode ? 'bg-purple-900/30' : 'bg-purple-50'}`}>
+                          <div className={`text-2xl font-bold font-semibold transition-colors ${isDarkMode ? 'text-purple-400' : 'text-blue-600'}`}>{formatKoreanWon(Math.floor(averageAmount))}</div>
+                          <div className={`text-sm transition-colors ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`}>평균 발주금액</div>
                         </div>
                       </>
                     );
@@ -911,21 +924,21 @@ export default function Reports() {
                     
                     return (
                       <>
-                        <div className="bg-yellow-50 p-2 rounded-lg text-center">
-                          <div className="text-2xl font-bold text-yellow-700">{statusCounts.pending || 0}</div>
-                          <div className="text-sm text-yellow-600">승인 대기</div>
+                        <div className={`p-2 rounded-lg text-center transition-colors ${isDarkMode ? 'bg-yellow-900/30' : 'bg-yellow-50'}`}>
+                          <div className={`text-2xl font-bold transition-colors ${isDarkMode ? 'text-yellow-400' : 'text-yellow-700'}`}>{statusCounts.pending || 0}</div>
+                          <div className={`text-sm transition-colors ${isDarkMode ? 'text-yellow-400' : 'text-yellow-600'}`}>승인 대기</div>
                         </div>
-                        <div className="bg-blue-50 p-2 rounded-lg text-center">
-                          <div className="text-2xl font-bold text-blue-700">{statusCounts.approved || 0}</div>
-                          <div className="text-sm text-blue-600">승인 완료</div>
+                        <div className={`p-2 rounded-lg text-center transition-colors ${isDarkMode ? 'bg-blue-900/30' : 'bg-blue-50'}`}>
+                          <div className={`text-2xl font-bold transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-700'}`}>{statusCounts.approved || 0}</div>
+                          <div className={`text-sm transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>승인 완료</div>
                         </div>
-                        <div className="bg-green-50 p-2 rounded-lg text-center">
-                          <div className="text-2xl font-bold text-green-700">{statusCounts.completed || 0}</div>
-                          <div className="text-sm text-green-600">발주 완료</div>
+                        <div className={`p-2 rounded-lg text-center transition-colors ${isDarkMode ? 'bg-green-900/30' : 'bg-green-50'}`}>
+                          <div className={`text-2xl font-bold transition-colors ${isDarkMode ? 'text-green-400' : 'text-green-700'}`}>{statusCounts.completed || 0}</div>
+                          <div className={`text-sm transition-colors ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>발주 완료</div>
                         </div>
-                        <div className="bg-red-50 p-2 rounded-lg text-center">
-                          <div className="text-2xl font-bold text-red-700">{statusCounts.rejected || 0}</div>
-                          <div className="text-sm text-red-600">반려</div>
+                        <div className={`p-2 rounded-lg text-center transition-colors ${isDarkMode ? 'bg-red-900/30' : 'bg-red-50'}`}>
+                          <div className={`text-2xl font-bold transition-colors ${isDarkMode ? 'text-red-400' : 'text-red-700'}`}>{statusCounts.rejected || 0}</div>
+                          <div className={`text-sm transition-colors ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>반려</div>
                         </div>
                       </>
                     );
@@ -937,8 +950,8 @@ export default function Reports() {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-gray-200 bg-gray-50">
-                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-900">
+                    <tr className={`border-b transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'}`}>
+                      <th className={`text-left py-3 px-4 text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
                         <input 
                           type="checkbox" 
                           className="rounded"
@@ -952,7 +965,11 @@ export default function Reports() {
                         />
                       </th>
                       <th 
-                        className="text-left py-3 px-4 text-sm font-medium text-gray-900 cursor-pointer hover:bg-gray-100 select-none"
+                        className={`text-left py-3 px-4 text-sm font-medium cursor-pointer select-none transition-colors ${
+                          isDarkMode 
+                            ? 'text-gray-300 hover:bg-gray-600' 
+                            : 'text-gray-900 hover:bg-gray-100'
+                        }`}
                         onClick={() => handleSort('orderNumber')}
                       >
                         <div className="flex items-center gap-1">
@@ -961,7 +978,11 @@ export default function Reports() {
                         </div>
                       </th>
                       <th 
-                        className="text-left py-3 px-4 text-sm font-medium text-gray-900 cursor-pointer hover:bg-gray-100 select-none"
+                        className={`text-left py-3 px-4 text-sm font-medium cursor-pointer select-none transition-colors ${
+                          isDarkMode 
+                            ? 'text-gray-300 hover:bg-gray-600' 
+                            : 'text-gray-900 hover:bg-gray-100'
+                        }`}
                         onClick={() => handleSort('vendor')}
                       >
                         <div className="flex items-center gap-1">
@@ -969,11 +990,15 @@ export default function Reports() {
                           {getSortIcon('vendor')}
                         </div>
                       </th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-900">
+                      <th className={`text-left py-3 px-4 text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
                         주요 품목 계층
                       </th>
                       <th 
-                        className="text-left py-3 px-4 text-sm font-medium text-gray-900 cursor-pointer hover:bg-gray-100 select-none"
+                        className={`text-left py-3 px-4 text-sm font-medium cursor-pointer select-none transition-colors ${
+                          isDarkMode 
+                            ? 'text-gray-300 hover:bg-gray-600' 
+                            : 'text-gray-900 hover:bg-gray-100'
+                        }`}
                         onClick={() => handleSort('orderDate')}
                       >
                         <div className="flex items-center gap-1">
@@ -982,7 +1007,11 @@ export default function Reports() {
                         </div>
                       </th>
                       <th 
-                        className="text-left py-3 px-4 text-sm font-medium text-gray-900 cursor-pointer hover:bg-gray-100 select-none"
+                        className={`text-left py-3 px-4 text-sm font-medium cursor-pointer select-none transition-colors ${
+                          isDarkMode 
+                            ? 'text-gray-300 hover:bg-gray-600' 
+                            : 'text-gray-900 hover:bg-gray-100'
+                        }`}
                         onClick={() => handleSort('totalAmount')}
                       >
                         <div className="flex items-center gap-1">
@@ -991,7 +1020,11 @@ export default function Reports() {
                         </div>
                       </th>
                       <th 
-                        className="text-left py-3 px-4 text-sm font-medium text-gray-900 cursor-pointer hover:bg-gray-100 select-none"
+                        className={`text-left py-3 px-4 text-sm font-medium cursor-pointer select-none transition-colors ${
+                          isDarkMode 
+                            ? 'text-gray-300 hover:bg-gray-600' 
+                            : 'text-gray-900 hover:bg-gray-100'
+                        }`}
                         onClick={() => handleSort('templateName')}
                       >
                         <div className="flex items-center gap-1">
@@ -1000,7 +1033,11 @@ export default function Reports() {
                         </div>
                       </th>
                       <th 
-                        className="text-left py-3 px-4 text-sm font-medium text-gray-900 cursor-pointer hover:bg-gray-100 select-none"
+                        className={`text-left py-3 px-4 text-sm font-medium cursor-pointer select-none transition-colors ${
+                          isDarkMode 
+                            ? 'text-gray-300 hover:bg-gray-600' 
+                            : 'text-gray-900 hover:bg-gray-100'
+                        }`}
                         onClick={() => handleSort('status')}
                       >
                         <div className="flex items-center gap-1">
@@ -1009,7 +1046,11 @@ export default function Reports() {
                         </div>
                       </th>
                       <th 
-                        className="text-left py-3 px-4 text-sm font-medium text-gray-900 cursor-pointer hover:bg-gray-100 select-none"
+                        className={`text-left py-3 px-4 text-sm font-medium cursor-pointer select-none transition-colors ${
+                          isDarkMode 
+                            ? 'text-gray-300 hover:bg-gray-600' 
+                            : 'text-gray-900 hover:bg-gray-100'
+                        }`}
                         onClick={() => handleSort('user')}
                       >
                         <div className="flex items-center gap-1">
@@ -1021,7 +1062,11 @@ export default function Reports() {
                   </thead>
                   <tbody>
                     {getSortedData(processingReport.orders).map((order: any) => (
-                      <tr key={order.id} className="hover:bg-gray-50 border-b border-gray-200">
+                      <tr key={order.id} className={`border-b transition-colors ${
+                        isDarkMode 
+                          ? 'hover:bg-gray-700 border-gray-600' 
+                          : 'hover:bg-gray-50 border-gray-200'
+                      }`}>
                         <td className="py-3 px-4">
                           <input 
                             type="checkbox" 
@@ -1033,7 +1078,11 @@ export default function Reports() {
                         <td className="py-3 px-4 text-sm">
                           <button
                             onClick={() => setLocation(`/order-preview/${order.id}`)}
-                            className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+                            className={`transition-colors hover:underline cursor-pointer ${
+                              isDarkMode 
+                                ? 'text-blue-400 hover:text-blue-300' 
+                                : 'text-blue-600 hover:text-blue-800'
+                            }`}
                           >
                             {order.orderNumber}
                           </button>
@@ -1042,7 +1091,11 @@ export default function Reports() {
                           {order.vendor ? (
                             <button
                               onClick={() => setLocation(`/vendors/${order.vendor.id}`)}
-                              className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+                              className={`transition-colors hover:underline cursor-pointer ${
+                                isDarkMode 
+                                  ? 'text-blue-400 hover:text-blue-300' 
+                                  : 'text-blue-600 hover:text-blue-800'
+                              }`}
                             >
                               {order.vendor.name}
                             </button>
@@ -1053,43 +1106,57 @@ export default function Reports() {
                             <div className="space-y-1">
                               {order.items.slice(0, 2).map((item: any, index: number) => (
                                 <div key={index} className="text-xs">
-                                  <span className="font-medium text-blue-600">
+                                  <span className={`font-medium transition-colors ${
+                                    isDarkMode ? 'text-blue-400' : 'text-blue-600'
+                                  }`}>
                                     {item.majorCategory || '미분류'}
                                   </span>
                                   {item.middleCategory && (
-                                    <span className="text-gray-500"> &gt; {item.middleCategory}</span>
+                                    <span className={`transition-colors ${
+                                      isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                                    }`}> &gt; {item.middleCategory}</span>
                                   )}
                                   {item.minorCategory && (
-                                    <span className="text-gray-400"> &gt; {item.minorCategory}</span>
+                                    <span className={`transition-colors ${
+                                      isDarkMode ? 'text-gray-500' : 'text-gray-400'
+                                    }`}> &gt; {item.minorCategory}</span>
                                   )}
                                 </div>
                               ))}
                               {order.items.length > 2 && (
-                                <div className="text-xs text-gray-500">
+                                <div className={`text-xs transition-colors ${
+                                  isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                                }`}>
                                   외 {order.items.length - 2}개 품목
                                 </div>
                               )}
                             </div>
                           ) : '-'}
                         </td>
-                        <td className="py-3 px-4 text-sm">
+                        <td className={`py-3 px-4 text-sm transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
                           {order.orderDate ? new Date(order.orderDate).toLocaleDateString('ko-KR') : '-'}
                         </td>
-                        <td className="py-3 px-4 text-sm">
+                        <td className={`py-3 px-4 text-sm font-semibold transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
                           {order.totalAmount ? formatKoreanWon(Math.floor(order.totalAmount)) : '-'}
                         </td>
-                        <td className="py-3 px-4 text-sm">
+                        <td className={`py-3 px-4 text-sm transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
                           {order.templateName || '-'}
                         </td>
                         <td className="py-3 px-4 text-sm">
                           <span className={`px-2 py-1 rounded-full text-xs ${
-                            order.status === 'draft' ? 'bg-gray-100 text-gray-800' :
-                            order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                            order.status === 'approved' ? 'bg-blue-100 text-blue-800' :
-                            order.status === 'sent' ? 'bg-purple-100 text-purple-800' :
-                            order.status === 'completed' ? 'bg-green-100 text-green-800' :
-                            order.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                            'bg-gray-100 text-gray-800'
+                            order.status === 'draft' 
+                              ? isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-800'
+                              : order.status === 'pending' 
+                                ? isDarkMode ? 'bg-yellow-900/30 text-yellow-400' : 'bg-yellow-100 text-yellow-800'
+                                : order.status === 'approved' 
+                                  ? isDarkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-800'
+                                  : order.status === 'sent' 
+                                    ? isDarkMode ? 'bg-purple-900/30 text-purple-400' : 'bg-purple-100 text-purple-800'
+                                    : order.status === 'completed' 
+                                      ? isDarkMode ? 'bg-green-900/30 text-green-400' : 'bg-green-100 text-green-800'
+                                      : order.status === 'rejected' 
+                                        ? isDarkMode ? 'bg-red-900/30 text-red-400' : 'bg-red-100 text-red-800'
+                                        : isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-800'
                           }`}>
                             {order.status === 'draft' ? '임시 저장' :
                              order.status === 'pending' ? '승인 대기' :
@@ -1100,7 +1167,7 @@ export default function Reports() {
                              order.status}
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-sm">
+                        <td className={`py-3 px-4 text-sm transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
                           {order.user ? `${order.user.lastName || ''} ${order.user.firstName || ''}`.trim() : '-'}
                         </td>
                       </tr>
@@ -1115,18 +1182,18 @@ export default function Reports() {
                       const averageAmount = processingReport.orders.length > 0 ? totalAmount / processingReport.orders.length : 0;
                       
                       return (
-                        <tr className="bg-gray-100 font-medium">
-                          <td className="border border-gray-200 px-3 py-2 text-sm"></td>
-                          <td className="border border-gray-200 px-3 py-2 text-sm font-medium">합계</td>
-                          <td className="border border-gray-200 px-3 py-2 text-sm"></td>
-                          <td className="border border-gray-200 px-3 py-2 text-sm"></td>
-                          <td className="border border-gray-200 px-3 py-2 text-sm"></td>
-                          <td className="border border-gray-200 px-3 py-2 text-sm">
-                            <span className="font-bold text-blue-600 font-semibold">{formatKoreanWon(Math.floor(totalAmount))}</span>
+                        <tr className={`font-medium transition-colors ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                          <td className={`border px-3 py-2 text-sm transition-colors ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}></td>
+                          <td className={`border px-3 py-2 text-sm font-medium transition-colors ${isDarkMode ? 'border-gray-600 text-gray-300' : 'border-gray-200'}`}>합계</td>
+                          <td className={`border px-3 py-2 text-sm transition-colors ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}></td>
+                          <td className={`border px-3 py-2 text-sm transition-colors ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}></td>
+                          <td className={`border px-3 py-2 text-sm transition-colors ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}></td>
+                          <td className={`border px-3 py-2 text-sm transition-colors ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}>
+                            <span className={`font-bold font-semibold transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>{formatKoreanWon(Math.floor(totalAmount))}</span>
                           </td>
-                          <td className="border border-gray-200 px-3 py-2 text-sm"></td>
-                          <td className="border border-gray-200 px-3 py-2 text-sm"></td>
-                          <td className="border border-gray-200 px-3 py-2 text-sm"></td>
+                          <td className={`border px-3 py-2 text-sm transition-colors ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}></td>
+                          <td className={`border px-3 py-2 text-sm transition-colors ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}></td>
+                          <td className={`border px-3 py-2 text-sm transition-colors ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}></td>
                         </tr>
                       );
                     })()}
@@ -1138,18 +1205,18 @@ export default function Reports() {
                       const averageAmount = processingReport.orders.length > 0 ? totalAmount / processingReport.orders.length : 0;
                       
                       return (
-                        <tr className="bg-gray-50 font-medium">
-                          <td className="border border-gray-200 px-3 py-2 text-sm"></td>
-                          <td className="border border-gray-200 px-3 py-2 text-sm font-medium">평균</td>
-                          <td className="border border-gray-200 px-3 py-2 text-sm"></td>
-                          <td className="border border-gray-200 px-3 py-2 text-sm"></td>
-                          <td className="border border-gray-200 px-3 py-2 text-sm"></td>
-                          <td className="border border-gray-200 px-3 py-2 text-sm">
-                            <span className="font-bold text-blue-600 font-semibold">{formatKoreanWon(Math.floor(averageAmount))}</span>
+                        <tr className={`font-medium transition-colors ${isDarkMode ? 'bg-gray-600' : 'bg-gray-50'}`}>
+                          <td className={`border px-3 py-2 text-sm transition-colors ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}></td>
+                          <td className={`border px-3 py-2 text-sm font-medium transition-colors ${isDarkMode ? 'border-gray-600 text-gray-300' : 'border-gray-200'}`}>평균</td>
+                          <td className={`border px-3 py-2 text-sm transition-colors ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}></td>
+                          <td className={`border px-3 py-2 text-sm transition-colors ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}></td>
+                          <td className={`border px-3 py-2 text-sm transition-colors ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}></td>
+                          <td className={`border px-3 py-2 text-sm transition-colors ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}>
+                            <span className={`font-bold font-semibold transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>{formatKoreanWon(Math.floor(averageAmount))}</span>
                           </td>
-                          <td className="border border-gray-200 px-3 py-2 text-sm"></td>
-                          <td className="border border-gray-200 px-3 py-2 text-sm"></td>
-                          <td className="border border-gray-200 px-3 py-2 text-sm"></td>
+                          <td className={`border px-3 py-2 text-sm transition-colors ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}></td>
+                          <td className={`border px-3 py-2 text-sm transition-colors ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}></td>
+                          <td className={`border px-3 py-2 text-sm transition-colors ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}></td>
                         </tr>
                       );
                     })()}
@@ -1159,8 +1226,8 @@ export default function Reports() {
             </div>
                 ) : (
                   <div className="text-center py-8">
-                    <div className="text-gray-500">검색 조건에 맞는 데이터가 없습니다.</div>
-                    <p className="text-sm text-gray-400 mt-2">필터 조건을 변경하여 다시 검색해보세요.</p>
+                    <div className={`transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>검색 조건에 맞는 데이터가 없습니다.</div>
+                    <p className={`text-sm mt-2 transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>필터 조건을 변경하여 다시 검색해보세요.</p>
                   </div>
                 )
               )}
@@ -1169,26 +1236,26 @@ export default function Reports() {
               {reportType === 'category' && (
                 categoryReport ? (
                 <div className="space-y-4">
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h3 className="text-lg font-semibold mb-2">
+                  <div className={`p-4 rounded-lg transition-colors ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                    <h3 className={`text-lg font-semibold mb-2 transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                       {categoryType === 'major' ? '대분류별' : categoryType === 'middle' ? '중분류별' : '소분류별'} 발주 보고서
                     </h3>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                       <div>
-                        <span className="text-gray-600">총 분류 수:</span>
-                        <span className="ml-2 font-medium">{categoryReport.summary?.totalCategories || 0}</span>
+                        <span className={`transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>총 분류 수:</span>
+                        <span className={`ml-2 font-medium transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{categoryReport.summary?.totalCategories || 0}</span>
                       </div>
                       <div>
-                        <span className="text-gray-600">총 발주 수:</span>
-                        <span className="ml-2 font-medium">{categoryReport.summary?.totalOrders || 0}</span>
+                        <span className={`transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>총 발주 수:</span>
+                        <span className={`ml-2 font-medium transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{categoryReport.summary?.totalOrders || 0}</span>
                       </div>
                       <div>
-                        <span className="text-gray-600">총 품목 수:</span>
-                        <span className="ml-2 font-medium">{categoryReport.summary?.totalItems || 0}</span>
+                        <span className={`transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>총 품목 수:</span>
+                        <span className={`ml-2 font-medium transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{categoryReport.summary?.totalItems || 0}</span>
                       </div>
                       <div>
-                        <span className="text-gray-600">총 금액:</span>
-                        <span className="ml-2 font-medium">{formatKoreanWon(Math.floor(categoryReport.summary?.totalAmount || 0))}</span>
+                        <span className={`transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>총 금액:</span>
+                        <span className={`ml-2 font-medium transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{formatKoreanWon(Math.floor(categoryReport.summary?.totalAmount || 0))}</span>
                       </div>
                     </div>
                   </div>
@@ -1196,51 +1263,55 @@ export default function Reports() {
                   <div className="overflow-x-auto">
                     <table className="w-full border-collapse">
                       <thead>
-                        <tr className="bg-gray-50 border-b">
-                          <th className="text-left py-3 px-4 font-medium">분류 계층</th>
-                          <th className="text-right py-3 px-4 font-medium">발주 수</th>
-                          <th className="text-right py-3 px-4 font-medium">품목 수</th>
-                          <th className="text-right py-3 px-4 font-medium">총 수량</th>
-                          <th className="text-right py-3 px-4 font-medium">총 금액</th>
-                          <th className="text-right py-3 px-4 font-medium">평균 금액</th>
-                          <th className="text-left py-3 px-4 font-medium">주요 품목</th>
+                        <tr className={`border-b transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'}`}>
+                          <th className={`text-left py-3 px-4 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>분류 계층</th>
+                          <th className={`text-right py-3 px-4 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>발주 수</th>
+                          <th className={`text-right py-3 px-4 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>품목 수</th>
+                          <th className={`text-right py-3 px-4 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>총 수량</th>
+                          <th className={`text-right py-3 px-4 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>총 금액</th>
+                          <th className={`text-right py-3 px-4 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>평균 금액</th>
+                          <th className={`text-left py-3 px-4 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>주요 품목</th>
                         </tr>
                       </thead>
                       <tbody>
                         {categoryReport.data?.map((item: any, index: number) => (
-                          <tr key={index} className="border-b hover:bg-gray-50">
+                          <tr key={index} className={`border-b transition-colors ${
+                            isDarkMode 
+                              ? 'border-gray-600 hover:bg-gray-700' 
+                              : 'border-gray-200 hover:bg-gray-50'
+                          }`}>
                             <td className="py-3 px-4">
                               <div className="text-sm">
-                                <div className="font-medium text-gray-900">{item.category}</div>
+                                <div className={`font-medium transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{item.category}</div>
                                 {item.hierarchyPath && item.hierarchyPath !== item.category && (
-                                  <div className="text-xs text-gray-500 mt-1">{item.hierarchyPath}</div>
+                                  <div className={`text-xs mt-1 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{item.hierarchyPath}</div>
                                 )}
                               </div>
                             </td>
-                            <td className="py-3 px-4 text-right">{item.orderCount}</td>
-                            <td className="py-3 px-4 text-right">{item.itemCount}</td>
-                            <td className="py-3 px-4 text-right">{item.totalQuantity?.toLocaleString()}</td>
-                            <td className="py-3 px-4 text-right font-medium">{formatKoreanWon(Math.floor(item.totalAmount))}</td>
-                            <td className="py-3 px-4 text-right">{formatKoreanWon(Math.floor(item.averageAmount))}</td>
+                            <td className={`py-3 px-4 text-right transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>{item.orderCount}</td>
+                            <td className={`py-3 px-4 text-right transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>{item.itemCount}</td>
+                            <td className={`py-3 px-4 text-right transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>{item.totalQuantity?.toLocaleString()}</td>
+                            <td className={`py-3 px-4 text-right font-medium transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>{formatKoreanWon(Math.floor(item.totalAmount))}</td>
+                            <td className={`py-3 px-4 text-right transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>{formatKoreanWon(Math.floor(item.averageAmount))}</td>
                             <td className="py-3 px-4">
                               {item.topItems && item.topItems.length > 0 ? (
                                 <div className="space-y-1">
                                   {item.topItems.slice(0, 3).map((topItem: any, itemIndex: number) => (
                                     <div key={itemIndex} className="text-xs">
-                                      <span className="font-medium text-blue-600">{topItem.itemName}</span>
-                                      <span className="text-gray-500 ml-1">
+                                      <span className={`font-medium transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>{topItem.itemName}</span>
+                                      <span className={`ml-1 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                                         ({topItem.quantity}개, {formatKoreanWon(Math.floor(topItem.amount))})
                                       </span>
                                     </div>
                                   ))}
                                   {item.topItems.length > 3 && (
-                                    <div className="text-xs text-gray-400">
+                                    <div className={`text-xs transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
                                       외 {item.topItems.length - 3}개 품목
                                     </div>
                                   )}
                                 </div>
                               ) : (
-                                <span className="text-xs text-gray-400">-</span>
+                                <span className={`text-xs transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>-</span>
                               )}
                             </td>
                           </tr>
@@ -1251,8 +1322,8 @@ export default function Reports() {
                 </div>
                 ) : (
                   <div className="text-center py-8">
-                    <div className="text-gray-500">분류별 보고서 데이터를 불러오는 중이거나 데이터가 없습니다.</div>
-                    <p className="text-sm text-gray-400 mt-2">필터 조건을 변경하여 다시 검색해보세요.</p>
+                    <div className={`transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>분류별 보고서 데이터를 불러오는 중이거나 데이터가 없습니다.</div>
+                    <p className={`text-sm mt-2 transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>필터 조건을 변경하여 다시 검색해보세요.</p>
                   </div>
                 )
               )}
@@ -1260,24 +1331,24 @@ export default function Reports() {
               {/* Project Report View */}
               {reportType === 'project' && projectReport && (
                 <div className="space-y-4">
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h3 className="text-lg font-semibold mb-2">현장별 발주 보고서</h3>
+                  <div className={`p-4 rounded-lg transition-colors ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                    <h3 className={`text-lg font-semibold mb-2 transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>현장별 발주 보고서</h3>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                       <div>
-                        <span className="text-gray-600">총 프로젝트 수:</span>
-                        <span className="ml-2 font-medium">{projectReport.summary?.totalProjects || 0}</span>
+                        <span className={`transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>총 프로젝트 수:</span>
+                        <span className={`ml-2 font-medium transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{projectReport.summary?.totalProjects || 0}</span>
                       </div>
                       <div>
-                        <span className="text-gray-600">총 발주 수:</span>
-                        <span className="ml-2 font-medium">{projectReport.summary?.totalOrders || 0}</span>
+                        <span className={`transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>총 발주 수:</span>
+                        <span className={`ml-2 font-medium transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{projectReport.summary?.totalOrders || 0}</span>
                       </div>
                       <div>
-                        <span className="text-gray-600">총 금액:</span>
-                        <span className="ml-2 font-medium">{formatKoreanWon(Math.floor(projectReport.summary?.totalAmount || 0))}</span>
+                        <span className={`transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>총 금액:</span>
+                        <span className={`ml-2 font-medium transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{formatKoreanWon(Math.floor(projectReport.summary?.totalAmount || 0))}</span>
                       </div>
                       <div>
-                        <span className="text-gray-600">프로젝트당 평균:</span>
-                        <span className="ml-2 font-medium">{formatKoreanWon(Math.floor(projectReport.summary?.averagePerProject || 0))}</span>
+                        <span className={`transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>프로젝트당 평균:</span>
+                        <span className={`ml-2 font-medium transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{formatKoreanWon(Math.floor(projectReport.summary?.averagePerProject || 0))}</span>
                       </div>
                     </div>
                   </div>
@@ -1285,35 +1356,41 @@ export default function Reports() {
                   <div className="overflow-x-auto">
                     <table className="w-full border-collapse">
                       <thead>
-                        <tr className="bg-gray-50 border-b">
-                          <th className="text-left py-3 px-4 font-medium">프로젝트명</th>
-                          <th className="text-left py-3 px-4 font-medium">프로젝트 코드</th>
-                          <th className="text-left py-3 px-4 font-medium">상태</th>
-                          <th className="text-right py-3 px-4 font-medium">발주 수</th>
-                          <th className="text-right py-3 px-4 font-medium">거래처 수</th>
-                          <th className="text-right py-3 px-4 font-medium">총 금액</th>
-                          <th className="text-right py-3 px-4 font-medium">평균 금액</th>
+                        <tr className={`border-b transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'}`}>
+                          <th className={`text-left py-3 px-4 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>프로젝트명</th>
+                          <th className={`text-left py-3 px-4 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>프로젝트 코드</th>
+                          <th className={`text-left py-3 px-4 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>상태</th>
+                          <th className={`text-right py-3 px-4 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>발주 수</th>
+                          <th className={`text-right py-3 px-4 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>거래처 수</th>
+                          <th className={`text-right py-3 px-4 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>총 금액</th>
+                          <th className={`text-right py-3 px-4 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>평균 금액</th>
                         </tr>
                       </thead>
                       <tbody>
                         {projectReport.data?.map((item: any) => (
-                          <tr key={item.projectId} className="border-b hover:bg-gray-50">
-                            <td className="py-3 px-4">{item.projectName}</td>
-                            <td className="py-3 px-4">{item.projectCode}</td>
+                          <tr key={item.projectId} className={`border-b transition-colors ${
+                            isDarkMode 
+                              ? 'border-gray-600 hover:bg-gray-700' 
+                              : 'border-gray-200 hover:bg-gray-50'
+                          }`}>
+                            <td className={`py-3 px-4 transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{item.projectName}</td>
+                            <td className={`py-3 px-4 transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>{item.projectCode}</td>
                             <td className="py-3 px-4">
                               <span className={`px-2 py-1 rounded-full text-xs ${
-                                item.projectStatus === 'active' ? 'bg-green-100 text-green-800' :
-                                item.projectStatus === 'completed' ? 'bg-blue-100 text-blue-800' :
-                                'bg-gray-100 text-gray-800'
+                                item.projectStatus === 'active' 
+                                  ? isDarkMode ? 'bg-green-900/30 text-green-400' : 'bg-green-100 text-green-800'
+                                  : item.projectStatus === 'completed' 
+                                    ? isDarkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-800'
+                                    : isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-800'
                               }`}>
                                 {item.projectStatus === 'active' ? '진행중' :
                                  item.projectStatus === 'completed' ? '완료' : '대기'}
                               </span>
                             </td>
-                            <td className="py-3 px-4 text-right">{item.orderCount}</td>
-                            <td className="py-3 px-4 text-right">{item.vendorCount}</td>
-                            <td className="py-3 px-4 text-right font-medium">{formatKoreanWon(Math.floor(item.totalAmount))}</td>
-                            <td className="py-3 px-4 text-right">{formatKoreanWon(Math.floor(item.averageOrderAmount))}</td>
+                            <td className={`py-3 px-4 text-right transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>{item.orderCount}</td>
+                            <td className={`py-3 px-4 text-right transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>{item.vendorCount}</td>
+                            <td className={`py-3 px-4 text-right font-medium transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>{formatKoreanWon(Math.floor(item.totalAmount))}</td>
+                            <td className={`py-3 px-4 text-right transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>{formatKoreanWon(Math.floor(item.averageOrderAmount))}</td>
                           </tr>
                         ))}
                       </tbody>

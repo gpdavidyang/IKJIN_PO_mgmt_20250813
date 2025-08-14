@@ -454,85 +454,636 @@ const PDFPreviewModal: React.FC<PDFPreviewModalProps> = ({
       
       <Tabs defaultValue="preview" className="h-full flex flex-col">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="preview">미리보기</TabsTrigger>
-          <TabsTrigger value="details">발주서 정보</TabsTrigger>
+          <TabsTrigger value="preview">발주서 미리보기</TabsTrigger>
+          <TabsTrigger value="pdf">PDF 생성</TabsTrigger>
         </TabsList>
         
         <TabsContent value="preview" className="flex-1 overflow-auto">
+          {/* order-preview.tsx와 동일한 레이아웃 적용 */}
+          <div className="order-preview-container bg-white" style={{
+            fontFamily: '"Noto Sans KR", "Malgun Gothic", sans-serif',
+            fontSize: '11px',
+            lineHeight: '1.3',
+            color: '#000',
+            backgroundColor: '#fff',
+            width: '210mm',
+            minHeight: '297mm',
+            padding: '10mm',
+            margin: '0 auto',
+            boxShadow: '0 0 10px rgba(0,0,0,0.1)'
+          }}>
+            {/* Header */}
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center', 
+              borderBottom: '2px solid #333', 
+              paddingBottom: '8px', 
+              marginBottom: '15px' 
+            }}>
+              <h1 style={{ 
+                margin: '0', 
+                fontSize: '18px', 
+                fontWeight: 'bold', 
+                color: '#333' 
+              }}>
+                발주서 Purchase Order
+              </h1>
+              <div style={{ 
+                fontSize: '10px', 
+                color: '#666' 
+              }}>
+                발주번호: {orderData?.orderNumber || 'PO-TEMP-001'}
+              </div>
+            </div>
+            
+            {/* Info grid */}
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: '1fr 1fr', 
+              gap: '20px', 
+              marginBottom: '20px' 
+            }}>
+              <div>
+                <h3 style={{ 
+                  fontSize: '12px', 
+                  fontWeight: 'bold', 
+                  margin: '0 0 8px 0', 
+                  backgroundColor: '#f5f5f5', 
+                  padding: '4px 8px', 
+                  border: '1px solid #ddd' 
+                }}>
+                  거래처 정보
+                </h3>
+                <div style={{ display: 'flex', marginBottom: '4px' }}>
+                  <span style={{ fontWeight: 'bold', width: '80px', flexShrink: '0' }}>회사명:</span>
+                  <span style={{ flex: '1' }}>{orderData?.vendorName || orderData?.vendor?.name || '-'}</span>
+                </div>
+                <div style={{ display: 'flex', marginBottom: '4px' }}>
+                  <span style={{ fontWeight: 'bold', width: '80px', flexShrink: '0' }}>사업자번호:</span>
+                  <span style={{ flex: '1' }}>{orderData?.vendor?.businessNumber || '-'}</span>
+                </div>
+                <div style={{ display: 'flex', marginBottom: '4px' }}>
+                  <span style={{ fontWeight: 'bold', width: '80px', flexShrink: '0' }}>연락처:</span>
+                  <span style={{ flex: '1' }}>{orderData?.vendor?.phone || '-'}</span>
+                </div>
+                <div style={{ display: 'flex', marginBottom: '4px' }}>
+                  <span style={{ fontWeight: 'bold', width: '80px', flexShrink: '0' }}>이메일:</span>
+                  <span style={{ flex: '1' }}>{orderData?.vendor?.email || '-'}</span>
+                </div>
+                <div style={{ display: 'flex', marginBottom: '4px' }}>
+                  <span style={{ fontWeight: 'bold', width: '80px', flexShrink: '0' }}>주소:</span>
+                  <span style={{ flex: '1' }}>{orderData?.vendor?.address || '-'}</span>
+                </div>
+              </div>
+              
+              <div>
+                <h3 style={{ 
+                  fontSize: '12px', 
+                  fontWeight: 'bold', 
+                  margin: '0 0 8px 0', 
+                  backgroundColor: '#f5f5f5', 
+                  padding: '4px 8px', 
+                  border: '1px solid #ddd' 
+                }}>
+                  발주 정보
+                </h3>
+                <div style={{ display: 'flex', marginBottom: '4px' }}>
+                  <span style={{ fontWeight: 'bold', width: '80px', flexShrink: '0' }}>발주일자:</span>
+                  <span style={{ flex: '1' }}>{orderData?.orderDate ? new Date(orderData.orderDate).toLocaleDateString('ko-KR') : new Date().toLocaleDateString('ko-KR')}</span>
+                </div>
+                <div style={{ display: 'flex', marginBottom: '4px' }}>
+                  <span style={{ fontWeight: 'bold', width: '80px', flexShrink: '0' }}>납품희망일:</span>
+                  <span style={{ flex: '1' }}>{orderData?.deliveryDate || orderData?.dueDate ? new Date(orderData.deliveryDate || orderData.dueDate).toLocaleDateString('ko-KR') : '-'}</span>
+                </div>
+                <div style={{ display: 'flex', marginBottom: '4px' }}>
+                  <span style={{ fontWeight: 'bold', width: '80px', flexShrink: '0' }}>발주자:</span>
+                  <span style={{ flex: '1' }}>{orderData?.createdBy || orderData?.user?.name || '시스템'}</span>
+                </div>
+                <div style={{ display: 'flex', marginBottom: '4px' }}>
+                  <span style={{ fontWeight: 'bold', width: '80px', flexShrink: '0' }}>상태:</span>
+                  <span style={{ flex: '1' }}>
+                    {orderData?.status === 'pending' ? '대기' : 
+                     orderData?.status === 'approved' ? '승인' : 
+                     orderData?.status === 'sent' ? '발송' : orderData?.status || '임시'}
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Items table */}
+            <h3 style={{ 
+              fontSize: '12px', 
+              fontWeight: 'bold', 
+              margin: '0 0 8px 0', 
+              backgroundColor: '#f5f5f5', 
+              padding: '4px 8px', 
+              border: '1px solid #ddd' 
+            }}>
+              발주 품목
+            </h3>
+            <table style={{ 
+              width: '100%', 
+              borderCollapse: 'collapse', 
+              marginBottom: '15px' 
+            }}>
+              <thead>
+                <tr>
+                  <th style={{ 
+                    border: '1px solid #ddd', 
+                    padding: '6px', 
+                    textAlign: 'left', 
+                    fontSize: '10px',
+                    backgroundColor: '#f5f5f5', 
+                    fontWeight: 'bold' 
+                  }}>
+                    품목명
+                  </th>
+                  <th style={{ 
+                    border: '1px solid #ddd', 
+                    padding: '6px', 
+                    textAlign: 'left', 
+                    fontSize: '10px',
+                    backgroundColor: '#f5f5f5', 
+                    fontWeight: 'bold' 
+                  }}>
+                    규격
+                  </th>
+                  <th style={{ 
+                    border: '1px solid #ddd', 
+                    padding: '6px', 
+                    textAlign: 'right', 
+                    fontSize: '10px',
+                    backgroundColor: '#f5f5f5', 
+                    fontWeight: 'bold' 
+                  }}>
+                    수량
+                  </th>
+                  <th style={{ 
+                    border: '1px solid #ddd', 
+                    padding: '6px', 
+                    textAlign: 'right', 
+                    fontSize: '10px',
+                    backgroundColor: '#f5f5f5', 
+                    fontWeight: 'bold' 
+                  }}>
+                    단가
+                  </th>
+                  <th style={{ 
+                    border: '1px solid #ddd', 
+                    padding: '6px', 
+                    textAlign: 'right', 
+                    fontSize: '10px',
+                    backgroundColor: '#f5f5f5', 
+                    fontWeight: 'bold' 
+                  }}>
+                    금액
+                  </th>
+                  <th style={{ 
+                    border: '1px solid #ddd', 
+                    padding: '6px', 
+                    textAlign: 'left', 
+                    fontSize: '10px',
+                    backgroundColor: '#f5f5f5', 
+                    fontWeight: 'bold' 
+                  }}>
+                    비고
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {(orderData?.items || []).map((item: any, index: number) => (
+                  <tr key={index}>
+                    <td style={{ 
+                      border: '1px solid #ddd', 
+                      padding: '6px', 
+                      textAlign: 'left', 
+                      fontSize: '10px' 
+                    }}>
+                      {item.itemName || item.name}
+                    </td>
+                    <td style={{ 
+                      border: '1px solid #ddd', 
+                      padding: '6px', 
+                      textAlign: 'left', 
+                      fontSize: '10px' 
+                    }}>
+                      {item.specification || '-'}
+                    </td>
+                    <td style={{ 
+                      border: '1px solid #ddd', 
+                      padding: '6px', 
+                      textAlign: 'right', 
+                      fontSize: '10px' 
+                    }}>
+                      {Number(item.quantity).toLocaleString('ko-KR')}
+                    </td>
+                    <td style={{ 
+                      border: '1px solid #ddd', 
+                      padding: '6px', 
+                      textAlign: 'right', 
+                      fontSize: '10px' 
+                    }}>
+                      ₩{Number(item.unitPrice).toLocaleString('ko-KR')}
+                    </td>
+                    <td style={{ 
+                      border: '1px solid #ddd', 
+                      padding: '6px', 
+                      textAlign: 'right', 
+                      fontSize: '10px' 
+                    }}>
+                      ₩{(Number(item.quantity) * Number(item.unitPrice)).toLocaleString('ko-KR')}
+                    </td>
+                    <td style={{ 
+                      border: '1px solid #ddd', 
+                      padding: '6px', 
+                      textAlign: 'left', 
+                      fontSize: '10px' 
+                    }}>
+                      {item.notes || '-'}
+                    </td>
+                  </tr>
+                ))}
+                {(!orderData?.items || orderData.items.length === 0) && (
+                  <tr>
+                    <td colSpan={6} style={{ 
+                      border: '1px solid #ddd', 
+                      padding: '20px', 
+                      textAlign: 'center', 
+                      fontSize: '10px',
+                      color: '#666'
+                    }}>
+                      품목 정보가 없습니다
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <th style={{ 
+                    border: '1px solid #ddd', 
+                    padding: '6px', 
+                    textAlign: 'left', 
+                    fontSize: '10px',
+                    backgroundColor: '#f5f5f5', 
+                    fontWeight: 'bold' 
+                  }} colSpan={4}>
+                    총 금액
+                  </th>
+                  <th style={{ 
+                    border: '1px solid #ddd', 
+                    padding: '6px', 
+                    textAlign: 'right', 
+                    fontSize: '10px',
+                    backgroundColor: '#f5f5f5', 
+                    fontWeight: 'bold' 
+                  }}>
+                    ₩{Number(orderData?.totalAmount || 0).toLocaleString('ko-KR')}
+                  </th>
+                  <th style={{ 
+                    border: '1px solid #ddd', 
+                    padding: '6px', 
+                    backgroundColor: '#f5f5f5' 
+                  }}></th>
+                </tr>
+              </tfoot>
+            </table>
+            
+            {/* Notes */}
+            {(orderData?.notes || orderData?.remarks) && (
+              <div style={{ 
+                marginTop: '15px', 
+                padding: '8px', 
+                border: '1px solid #ddd', 
+                backgroundColor: '#f9f9f9' 
+              }}>
+                <strong>특이사항:</strong><br />
+                {orderData.notes || orderData.remarks}
+              </div>
+            )}
+            
+            {/* Print controls */}
+            <div className="no-print mt-6 flex justify-center space-x-4">
+              <Button onClick={handlePrint} className="bg-blue-600 hover:bg-blue-700">
+                <Printer className="h-4 w-4 mr-2" />
+                인쇄
+              </Button>
+              <Button onClick={handleDownload} variant="outline">
+                <Download className="h-4 w-4 mr-2" />
+                PDF 다운로드
+              </Button>
+            </div>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="pdf" className="flex-1 overflow-auto">
           {renderPDFViewer()}
         </TabsContent>
         
         <TabsContent value="details" className="flex-1 overflow-auto">
-          <Card>
-            <CardHeader>
-              <CardTitle>발주서 상세 정보</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {orderData ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="font-medium text-gray-600">발주서 번호:</span>
-                    <p className="mt-1">{orderData.orderNumber || 'PO-TEMP-001'}</p>
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-600">프로젝트:</span>
-                    <p className="mt-1">{orderData.projectName || orderData.project?.name || '프로젝트 미지정'}</p>
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-600">거래처:</span>
-                    <p className="mt-1">{orderData.vendorName || orderData.vendor?.name || '거래처 미지정'}</p>
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-600">총 금액:</span>
-                    <p className="mt-1">
-                      {orderData.totalAmount ? `₩${orderData.totalAmount.toLocaleString()}` : '₩0'}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-600">품목 수:</span>
-                    <p className="mt-1">{orderData.totalItems || orderData.items?.length || 0}개</p>
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-600">작성 방식:</span>
-                    <p className="mt-1">{orderData.type === 'excel' ? 'Excel 업로드' : orderData.creationMethod === 'excel' ? 'Excel 업로드' : '표준 입력'}</p>
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-600">발주일자:</span>
-                    <p className="mt-1">{orderData.orderDate ? new Date(orderData.orderDate).toLocaleDateString('ko-KR') : new Date().toLocaleDateString('ko-KR')}</p>
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-600">납기일자:</span>
-                    <p className="mt-1">{orderData.deliveryDate || orderData.dueDate ? new Date(orderData.deliveryDate || orderData.dueDate).toLocaleDateString('ko-KR') : '미지정'}</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  <p>발주서 데이터가 없습니다.</p>
-                  <p className="text-sm mt-2">발주서를 먼저 생성해주세요.</p>
-                </div>
-              )}
-              
-              <Separator />
-              
+          {/* order-preview.tsx와 동일한 레이아웃 적용 */}
+          <div className="order-preview-container bg-white" style={{
+            fontFamily: '"Noto Sans KR", "Malgun Gothic", sans-serif',
+            fontSize: '11px',
+            lineHeight: '1.3',
+            color: '#000',
+            backgroundColor: '#fff',
+            width: '210mm',
+            minHeight: '297mm',
+            padding: '10mm',
+            margin: '0 auto',
+            boxShadow: '0 0 10px rgba(0,0,0,0.1)'
+          }}>
+            {/* Header */}
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center', 
+              borderBottom: '2px solid #333', 
+              paddingBottom: '8px', 
+              marginBottom: '15px' 
+            }}>
+              <h1 style={{ 
+                margin: '0', 
+                fontSize: '18px', 
+                fontWeight: 'bold', 
+                color: '#333' 
+              }}>
+                발주서 Purchase Order
+              </h1>
+              <div style={{ 
+                fontSize: '10px', 
+                color: '#666' 
+              }}>
+                발주번호: {orderData?.orderNumber || 'PO-TEMP-001'}
+              </div>
+            </div>
+            
+            {/* Info grid */}
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: '1fr 1fr', 
+              gap: '20px', 
+              marginBottom: '20px' 
+            }}>
               <div>
-                <h4 className="font-medium text-gray-900 mb-3">PDF 생성 옵션</h4>
-                <div className="space-y-2 text-sm text-gray-600">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    워터마크 포함
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    A4 크기
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    세로 방향
-                  </div>
+                <h3 style={{ 
+                  fontSize: '12px', 
+                  fontWeight: 'bold', 
+                  margin: '0 0 8px 0', 
+                  backgroundColor: '#f5f5f5', 
+                  padding: '4px 8px', 
+                  border: '1px solid #ddd' 
+                }}>
+                  거래처 정보
+                </h3>
+                <div style={{ display: 'flex', marginBottom: '4px' }}>
+                  <span style={{ fontWeight: 'bold', width: '80px', flexShrink: '0' }}>회사명:</span>
+                  <span style={{ flex: '1' }}>{orderData?.vendorName || orderData?.vendor?.name || '-'}</span>
+                </div>
+                <div style={{ display: 'flex', marginBottom: '4px' }}>
+                  <span style={{ fontWeight: 'bold', width: '80px', flexShrink: '0' }}>사업자번호:</span>
+                  <span style={{ flex: '1' }}>{orderData?.vendor?.businessNumber || '-'}</span>
+                </div>
+                <div style={{ display: 'flex', marginBottom: '4px' }}>
+                  <span style={{ fontWeight: 'bold', width: '80px', flexShrink: '0' }}>연락처:</span>
+                  <span style={{ flex: '1' }}>{orderData?.vendor?.phone || '-'}</span>
+                </div>
+                <div style={{ display: 'flex', marginBottom: '4px' }}>
+                  <span style={{ fontWeight: 'bold', width: '80px', flexShrink: '0' }}>이메일:</span>
+                  <span style={{ flex: '1' }}>{orderData?.vendor?.email || '-'}</span>
+                </div>
+                <div style={{ display: 'flex', marginBottom: '4px' }}>
+                  <span style={{ fontWeight: 'bold', width: '80px', flexShrink: '0' }}>주소:</span>
+                  <span style={{ flex: '1' }}>{orderData?.vendor?.address || '-'}</span>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+              
+              <div>
+                <h3 style={{ 
+                  fontSize: '12px', 
+                  fontWeight: 'bold', 
+                  margin: '0 0 8px 0', 
+                  backgroundColor: '#f5f5f5', 
+                  padding: '4px 8px', 
+                  border: '1px solid #ddd' 
+                }}>
+                  발주 정보
+                </h3>
+                <div style={{ display: 'flex', marginBottom: '4px' }}>
+                  <span style={{ fontWeight: 'bold', width: '80px', flexShrink: '0' }}>발주일자:</span>
+                  <span style={{ flex: '1' }}>{orderData?.orderDate ? new Date(orderData.orderDate).toLocaleDateString('ko-KR') : new Date().toLocaleDateString('ko-KR')}</span>
+                </div>
+                <div style={{ display: 'flex', marginBottom: '4px' }}>
+                  <span style={{ fontWeight: 'bold', width: '80px', flexShrink: '0' }}>납품희망일:</span>
+                  <span style={{ flex: '1' }}>{orderData?.deliveryDate || orderData?.dueDate ? new Date(orderData.deliveryDate || orderData.dueDate).toLocaleDateString('ko-KR') : '-'}</span>
+                </div>
+                <div style={{ display: 'flex', marginBottom: '4px' }}>
+                  <span style={{ fontWeight: 'bold', width: '80px', flexShrink: '0' }}>발주자:</span>
+                  <span style={{ flex: '1' }}>{orderData?.createdBy || orderData?.user?.name || '시스템'}</span>
+                </div>
+                <div style={{ display: 'flex', marginBottom: '4px' }}>
+                  <span style={{ fontWeight: 'bold', width: '80px', flexShrink: '0' }}>상태:</span>
+                  <span style={{ flex: '1' }}>
+                    {orderData?.status === 'pending' ? '대기' : 
+                     orderData?.status === 'approved' ? '승인' : 
+                     orderData?.status === 'sent' ? '발송' : orderData?.status || '임시'}
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Items table */}
+            <h3 style={{ 
+              fontSize: '12px', 
+              fontWeight: 'bold', 
+              margin: '0 0 8px 0', 
+              backgroundColor: '#f5f5f5', 
+              padding: '4px 8px', 
+              border: '1px solid #ddd' 
+            }}>
+              발주 품목
+            </h3>
+            <table style={{ 
+              width: '100%', 
+              borderCollapse: 'collapse', 
+              marginBottom: '15px' 
+            }}>
+              <thead>
+                <tr>
+                  <th style={{ 
+                    border: '1px solid #ddd', 
+                    padding: '6px', 
+                    textAlign: 'left', 
+                    fontSize: '10px',
+                    backgroundColor: '#f5f5f5', 
+                    fontWeight: 'bold' 
+                  }}>
+                    품목명
+                  </th>
+                  <th style={{ 
+                    border: '1px solid #ddd', 
+                    padding: '6px', 
+                    textAlign: 'left', 
+                    fontSize: '10px',
+                    backgroundColor: '#f5f5f5', 
+                    fontWeight: 'bold' 
+                  }}>
+                    규격
+                  </th>
+                  <th style={{ 
+                    border: '1px solid #ddd', 
+                    padding: '6px', 
+                    textAlign: 'right', 
+                    fontSize: '10px',
+                    backgroundColor: '#f5f5f5', 
+                    fontWeight: 'bold' 
+                  }}>
+                    수량
+                  </th>
+                  <th style={{ 
+                    border: '1px solid #ddd', 
+                    padding: '6px', 
+                    textAlign: 'right', 
+                    fontSize: '10px',
+                    backgroundColor: '#f5f5f5', 
+                    fontWeight: 'bold' 
+                  }}>
+                    단가
+                  </th>
+                  <th style={{ 
+                    border: '1px solid #ddd', 
+                    padding: '6px', 
+                    textAlign: 'right', 
+                    fontSize: '10px',
+                    backgroundColor: '#f5f5f5', 
+                    fontWeight: 'bold' 
+                  }}>
+                    금액
+                  </th>
+                  <th style={{ 
+                    border: '1px solid #ddd', 
+                    padding: '6px', 
+                    textAlign: 'left', 
+                    fontSize: '10px',
+                    backgroundColor: '#f5f5f5', 
+                    fontWeight: 'bold' 
+                  }}>
+                    비고
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {(orderData?.items || []).map((item: any, index: number) => (
+                  <tr key={index}>
+                    <td style={{ 
+                      border: '1px solid #ddd', 
+                      padding: '6px', 
+                      textAlign: 'left', 
+                      fontSize: '10px' 
+                    }}>
+                      {item.itemName || item.name}
+                    </td>
+                    <td style={{ 
+                      border: '1px solid #ddd', 
+                      padding: '6px', 
+                      textAlign: 'left', 
+                      fontSize: '10px' 
+                    }}>
+                      {item.specification || '-'}
+                    </td>
+                    <td style={{ 
+                      border: '1px solid #ddd', 
+                      padding: '6px', 
+                      textAlign: 'right', 
+                      fontSize: '10px' 
+                    }}>
+                      {Number(item.quantity).toLocaleString('ko-KR')}
+                    </td>
+                    <td style={{ 
+                      border: '1px solid #ddd', 
+                      padding: '6px', 
+                      textAlign: 'right', 
+                      fontSize: '10px' 
+                    }}>
+                      ₩{Number(item.unitPrice).toLocaleString('ko-KR')}
+                    </td>
+                    <td style={{ 
+                      border: '1px solid #ddd', 
+                      padding: '6px', 
+                      textAlign: 'right', 
+                      fontSize: '10px' 
+                    }}>
+                      ₩{(Number(item.quantity) * Number(item.unitPrice)).toLocaleString('ko-KR')}
+                    </td>
+                    <td style={{ 
+                      border: '1px solid #ddd', 
+                      padding: '6px', 
+                      textAlign: 'left', 
+                      fontSize: '10px' 
+                    }}>
+                      {item.notes || '-'}
+                    </td>
+                  </tr>
+                ))}
+                {(!orderData?.items || orderData.items.length === 0) && (
+                  <tr>
+                    <td colSpan={6} style={{ 
+                      border: '1px solid #ddd', 
+                      padding: '20px', 
+                      textAlign: 'center', 
+                      fontSize: '10px',
+                      color: '#666'
+                    }}>
+                      품목 정보가 없습니다
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <th style={{ 
+                    border: '1px solid #ddd', 
+                    padding: '6px', 
+                    textAlign: 'left', 
+                    fontSize: '10px',
+                    backgroundColor: '#f5f5f5', 
+                    fontWeight: 'bold' 
+                  }} colSpan={4}>
+                    총 금액
+                  </th>
+                  <th style={{ 
+                    border: '1px solid #ddd', 
+                    padding: '6px', 
+                    textAlign: 'right', 
+                    fontSize: '10px',
+                    backgroundColor: '#f5f5f5', 
+                    fontWeight: 'bold' 
+                  }}>
+                    ₩{Number(orderData?.totalAmount || 0).toLocaleString('ko-KR')}
+                  </th>
+                  <th style={{ 
+                    border: '1px solid #ddd', 
+                    padding: '6px', 
+                    backgroundColor: '#f5f5f5' 
+                  }}></th>
+                </tr>
+              </tfoot>
+            </table>
+            
+            {/* Notes */}
+            {(orderData?.notes || orderData?.remarks) && (
+              <div style={{ 
+                marginTop: '15px', 
+                padding: '8px', 
+                border: '1px solid #ddd', 
+                backgroundColor: '#f9f9f9' 
+              }}>
+                <strong>특이사항:</strong><br />
+                {orderData.notes || orderData.remarks}
+              </div>
+            )}
+          </div>
         </TabsContent>
       </Tabs>
     </DialogContent>

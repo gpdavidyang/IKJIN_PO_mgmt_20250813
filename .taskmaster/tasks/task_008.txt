@@ -1,0 +1,15 @@
+# Task ID: 8
+# Title: [Phase 4] 사용자 경험 개선
+# Status: done
+# Dependencies: None
+# Priority: high
+# Description: 키보드 네비게이션, 로딩 상태, 에러 처리 등 전반적인 UX 개선
+# Details:
+- 키보드 네비게이션 개선
+- 로딩 상태와 스켈레톤 스크린 구현
+- 에러 처리와 사용자 피드백 개선
+- 긴 폼을 위한 자동 저장 기능
+- 다단계 폼을 위한 진행 표시기
+
+# Test Strategy:
+

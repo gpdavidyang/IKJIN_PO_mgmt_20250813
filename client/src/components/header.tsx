@@ -231,21 +231,32 @@ export function Header() {
 
 
   return (
-    <header className="bg-background shadow-sm border-b border-border relative z-10">
+    <header className="bg-background/95 backdrop-blur-sm shadow-sm border-b border-border/50 relative z-10 transition-all duration-200">
       <div className="flex items-center justify-between px-4 py-4">
         <div className="flex items-center space-x-4">
           <div>
-            <h1 className="text-xl font-semibold text-foreground">{currentPage.title}</h1>
-            <nav className="flex items-center space-x-1 text-sm text-muted-foreground">
+            <h1 className="text-xl font-semibold text-foreground transition-colors duration-200">{currentPage.title}</h1>
+            <nav className="flex items-center space-x-1 text-sm text-muted-foreground" role="navigation" aria-label="페이지 경로">
               {currentPage.breadcrumb.map((item, index) => (
                 <div key={index} className="flex items-center">
-                  {index > 0 && <ChevronRight className="h-3 w-3 mx-1 text-muted-foreground/50" />}
+                  {index > 0 && (
+                    <ChevronRight 
+                      className="h-3 w-3 mx-1 text-muted-foreground/50 transition-colors duration-200" 
+                      aria-hidden="true" 
+                    />
+                  )}
                   {index === currentPage.breadcrumb.length - 1 ? (
-                    <span className="text-foreground font-medium">{item.label}</span>
+                    <span 
+                      className="text-foreground font-medium transition-colors duration-200"
+                      aria-current="page"
+                    >
+                      {item.label}
+                    </span>
                   ) : (
                     <Link 
                       href={item.href}
-                      className="hover:text-foreground transition-colors duration-200 cursor-pointer"
+                      className="hover:text-foreground hover:scale-105 focus:text-foreground focus:scale-105 transition-all duration-200 cursor-pointer rounded-sm px-1 py-0.5 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                      aria-label={`${item.label}로 이동`}
                     >
                       {item.label}
                     </Link>
@@ -257,17 +268,17 @@ export function Header() {
           
           {/* 페이지별 액션 버튼 */}
           {currentPage.actions && currentPage.actions.length > 0 && (
-            <div className="flex items-center space-x-2 ml-8">
+            <div className="hidden sm:flex items-center space-x-2 ml-8">
               {currentPage.actions.map((action, index) => (
                 <Button
                   key={index}
                   asChild
                   size="sm"
                   variant="outline"
-                  className="text-xs"
+                  className="text-xs hover:scale-105 active:scale-95 transition-all duration-200 border-primary/20 hover:border-primary/40 hover:bg-primary/5 focus:ring-2 focus:ring-primary/20"
                 >
-                  <Link href={action.href}>
-                    <Plus className="h-3 w-3 mr-1" />
+                  <Link href={action.href} aria-label={`${action.label} 페이지로 이동`}>
+                    <Plus className="h-3 w-3 mr-1 transition-transform duration-200 group-hover:rotate-90" />
                     {action.label}
                   </Link>
                 </Button>
@@ -276,41 +287,49 @@ export function Header() {
           )}
         </div>
         
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-3">
           <ThemeToggle size="sm" />
           
-          <Button variant="ghost" size="sm" className="relative">
-            <Bell className="h-5 w-5" />
-            <Badge className="absolute -top-1 -right-1 h-2 w-2 p-0 bg-red-500" />
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="relative hover:scale-110 active:scale-95 transition-all duration-200 hover:bg-accent/50 focus:ring-2 focus:ring-primary/20" 
+            aria-label="알림"
+          >
+            <Bell className="h-5 w-5 transition-transform duration-200 hover:animate-pulse" />
+            <Badge className="absolute -top-1 -right-1 h-2 w-2 p-0 bg-red-500 animate-pulse" />
           </Button>
           
           <div className="flex items-center space-x-3">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <div className="flex items-center space-x-3 cursor-pointer hover:bg-accent rounded-lg p-2 transition-colors">
+                <button 
+                  className="flex items-center space-x-3 cursor-pointer hover:bg-accent rounded-lg p-2 transition-all duration-200 hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  aria-label="사용자 메뉴 열기"
+                >
                   <div className="text-right hidden md:block">
-                    <div className="text-sm font-medium text-foreground">
+                    <div className="text-sm font-medium text-foreground transition-colors duration-200">
                       {getUserDisplayName(user as any)}
                     </div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-xs text-muted-foreground transition-colors duration-200">
                       {getRoleText((user as any)?.role || "")}
                     </div>
                   </div>
                   
-                  <Avatar>
-                    <AvatarFallback className="bg-primary text-primary-foreground">
+                  <Avatar className="ring-2 ring-transparent hover:ring-primary/20 transition-all duration-200">
+                    <AvatarFallback className="bg-primary text-primary-foreground transition-colors duration-200">
                       {getUserInitials(user as any)}
                     </AvatarFallback>
                   </Avatar>
-                </div>
+                </button>
               </DropdownMenuTrigger>
               
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>사용자 정보</DropdownMenuLabel>
+              <DropdownMenuContent align="end" className="w-56 animate-in slide-in-from-top-2 duration-200">
+                <DropdownMenuLabel className="text-foreground">사용자 정보</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 
-                <div className="px-2 py-2">
-                  <div className="text-sm font-medium">
+                <div className="px-2 py-2 bg-muted/20 rounded-md mx-2 mb-2">
+                  <div className="text-sm font-medium text-foreground">
                     {getUserDisplayName(user as any)}
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
@@ -326,9 +345,9 @@ export function Header() {
                 
                 <DropdownMenuSeparator />
                 
-                <DropdownMenuItem asChild className="cursor-pointer">
-                  <Link href="/profile">
-                    <User className="mr-2 h-4 w-4" />
+                <DropdownMenuItem asChild className="cursor-pointer hover:bg-accent/50 focus:bg-accent/50 transition-colors duration-200">
+                  <Link href="/profile" className="flex items-center">
+                    <User className="mr-2 h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
                     프로필 설정
                   </Link>
                 </DropdownMenuItem>
@@ -337,10 +356,11 @@ export function Header() {
                 
                 <DropdownMenuItem 
                   onClick={handleLogout} 
-                  className="cursor-pointer text-red-600"
+                  className="cursor-pointer text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 focus:bg-red-50 dark:focus:bg-red-950/20 transition-colors duration-200"
                   disabled={logoutMutation.isPending}
+                  aria-label={logoutMutation.isPending ? "로그아웃 처리 중" : "로그아웃"}
                 >
-                  <LogOut className="mr-2 h-4 w-4" />
+                  <LogOut className="mr-2 h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
                   {logoutMutation.isPending ? "로그아웃 중..." : "로그아웃"}
                 </DropdownMenuItem>
               </DropdownMenuContent>

@@ -1,0 +1,15 @@
+# Task ID: 28
+# Title: 대시보드 통계에 품목 계층별 분석 추가
+# Status: done
+# Dependencies: None
+# Priority: medium
+# Description: 대시보드에 품목 대분류/중분류/소분류별 발주 통계 시각화 구현
+# Details:
+- getCategoryOrderStats 메소드 구현
+- 통합 대시보드 API에 카테고리 통계 추가
+- 대시보드 UI에 품목 계층별 분석 섹션 추가
+- 파이 차트로 대분류별 분포 표시
+- 금액별 상위 품목 계층 리스트 표시
+
+# Test Strategy:
+

@@ -148,7 +148,7 @@ const PostProcessingPipeline: React.FC<PostProcessingPipelineProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-[1366px] mx-auto space-y-6">
       {/* 향상된 헤더 */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
         <div className="flex items-start justify-between mb-6">

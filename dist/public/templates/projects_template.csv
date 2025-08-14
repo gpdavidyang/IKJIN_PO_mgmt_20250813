@@ -1,0 +1,4 @@
+projectName,projectCode,clientName,projectType,location,startDate,endDate,status,totalBudget,projectManagerId,orderManagerId,description
+아파트 신축공사,APT2025001,대한건설(주),residential,서울시 강남구 역삼동 123-45,2025-01-01,2025-12-31,active,5000000000,pm001,om001,20층 아파트 신축 프로젝트
+오피스텔 건설,OFC2025001,서울개발(주),commercial,서울시 서초구 서초동 678-90,2025-02-01,2025-11-30,planning,3000000000,pm002,om002,15층 오피스텔 건설 프로젝트
+공장 신축공사,FAC2025001,산업개발(주),industrial,경기도 안산시 단원구 123-45,2025-03-01,2026-02-28,active,8000000000,pm003,om003,제조업 생산시설 신축

@@ -1,0 +1,19 @@
+# Task ID: 29
+# Title: Excel 파일의 PDF 변환 및 첨부 기능
+# Status: pending
+# Dependencies: 13
+# Priority: high
+# Description: PRD FR-014, FR-016 요구사항 구현: 엑셀 파일을 PDF로 변환하여 보존 및 이메일 첨부
+# Details:
+PRD에서 명시된 중요 요구사항:
+- FR-014: "엑셀 파일과 함께 엑셀파일을 PDF화 한 파일도 보존해야 함"
+- FR-016: "처리된 Excel 파일을 PDF화 한 파일도 첨부"
+
+구현 필요 사항:
+1. Excel 파일을 PDF로 변환하는 유틸리티 함수
+2. 발주서 처리 시 PDF 파일 생성 및 저장
+3. 이메일 발송 시 PDF 파일 첨부
+4. PDF 파일 관리 (임시 파일 정리 등)
+
+# Test Strategy:
+

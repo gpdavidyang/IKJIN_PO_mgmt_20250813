@@ -3,6 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import { convertExcelToPdf } from './excel-to-pdf';
 import { ExcelToPDFConverter } from './excel-to-pdf-converter';
+import { EnhancedExcelToPDFConverter } from './enhanced-excel-to-pdf';
 import { POTemplateProcessor } from './po-template-processor';
 import { removeAllInputSheets } from './excel-input-sheet-remover';
 
@@ -78,17 +79,37 @@ export class POEmailService {
       let pdfResult: { success: boolean; pdfPath?: string; error?: string } = { success: false, error: '' };
       
       try {
-        // 새로운 Excel to PDF 변환기 사용
-        await ExcelToPDFConverter.convertExcelToPDF(processedPath, pdfPath);
-        pdfResult.success = true;
-        console.log(`✅ PDF 변환 성공: ${pdfPath}`);
+        // Enhanced PDF 변환기 우선 사용 (PRD 요구사항 완벽 구현)
+        const enhancedResult = await EnhancedExcelToPDFConverter.convertExcelToPDF(processedPath, {
+          outputPath: pdfPath,
+          quality: 'high',
+          orientation: 'landscape',
+          excludeSheets: ['Input', 'Settings'],
+          watermark: `발주서 - ${emailOptions.orderNumber || ''}`
+        });
+
+        if (enhancedResult.success) {
+          pdfResult.success = true;
+          console.log(`✅ Enhanced PDF 변환 성공: ${pdfPath} (${Math.round(enhancedResult.stats!.fileSize / 1024)}KB)`);
+        } else {
+          throw new Error(enhancedResult.error || 'Enhanced PDF 변환 실패');
+        }
       } catch (error) {
+        console.warn(`⚠️ Enhanced PDF 변환 실패, 기존 변환기로 fallback: ${error}`);
+        
         // 실패 시 기존 변환기로 fallback
         try {
-          pdfResult = await convertExcelToPdf(processedPath, pdfPath, removeResult.remainingSheets);
+          await ExcelToPDFConverter.convertExcelToPDF(processedPath, pdfPath);
+          pdfResult.success = true;
+          console.log(`✅ 기존 PDF 변환기로 성공: ${pdfPath}`);
         } catch (fallbackError) {
-          pdfResult.error = `PDF 변환 실패: ${error}`;
-          console.warn(`⚠️ PDF 변환 실패: ${pdfResult.error}, Excel 파일만 첨부합니다.`);
+          // 마지막 fallback
+          try {
+            pdfResult = await convertExcelToPdf(processedPath, pdfPath, removeResult.remainingSheets);
+          } catch (finalError) {
+            pdfResult.error = `모든 PDF 변환 실패: ${finalError}`;
+            console.warn(`⚠️ PDF 변환 완전 실패: ${pdfResult.error}, Excel 파일만 첨부합니다.`);
+          }
         }
       }
 

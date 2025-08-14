@@ -1,0 +1,15 @@
+# Task ID: 24
+# Title: 엑셀 발주서 템플릿 컬럼 구조 변경 (세액/합계 필드 제거)
+# Status: done
+# Dependencies: None
+# Priority: high
+# Description: Input 시트 헤더에서 '세액'과 '합계' 필드를 제거하여 13개 컬럼에서 12개 컬럼으로 변경
+# Details:
+주요 변경사항:
+1. Excel 헤더 구조: A:M (13개) → A:L (12개)
+2. 제거되는 필드: totalAmount (합계), taxAmount (세액)  
+3. totalAmount는 quantity * unitPrice로 항상 계산
+4. 영향받는 파일: excel-parser.ts, simple-excel-parser.ts, po-template-processor.ts 등
+
+# Test Strategy:
+

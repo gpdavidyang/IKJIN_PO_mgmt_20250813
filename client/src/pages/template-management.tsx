@@ -13,6 +13,7 @@ import { Plus, Edit, Copy, Trash2, FileSpreadsheet, Grid3X3, Settings, LayoutGri
 import { Switch } from '@/components/ui/switch';
 import { apiRequest } from '@/lib/queryClient';
 import { useTermValue } from '@/hooks/use-ui-terms';
+import { useTheme } from '@/components/ui/theme-provider';
 
 // Remove compact styles since we're using standard UI
 
@@ -29,6 +30,8 @@ interface Template {
 export default function TemplateManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { theme } = useTheme();
+  const isDarkMode = theme === 'dark';
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [showBuilder, setShowBuilder] = useState(false);
@@ -262,7 +265,7 @@ export default function TemplateManagement() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className={`min-h-screen transition-colors ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
       <div className="max-w-[1366px] mx-auto p-6 space-y-6">
         {/* Page Header */}
         <div className="mb-6">
@@ -270,8 +273,8 @@ export default function TemplateManagement() {
             <div className="flex items-center gap-3">
               <Layers className="h-5 w-5 text-blue-600" />
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">템플릿 관리</h1>
-                <p className="text-sm text-gray-600 mt-1">
+                <h1 className={`text-2xl font-bold transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>템플릿 관리</h1>
+                <p className={`text-sm mt-1 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                   발주서 템플릿을 생성하고 관리합니다
                 </p>
               </div>
@@ -289,20 +292,20 @@ export default function TemplateManagement() {
       </div>
 
       {/* Filter Section */}
-      <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6 shadow-sm">
+      <div className={`rounded-lg p-4 mb-6 shadow-sm transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border`}>
         <div className="flex items-center justify-between">
           <div className="flex-1 max-w-md">
             <Input
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="템플릿 이름으로 검색..."
-              className="h-10"
+              className={`h-10 transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder:text-gray-400' : 'bg-white border-gray-300'}`}
             />
           </div>
           
           <div className="flex items-center gap-6">
             {/* Statistics */}
-            <div className="flex items-center gap-4 text-sm text-gray-600">
+            <div className={`flex items-center gap-4 text-sm transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
               <div className="flex items-center gap-1">
                 <FileSpreadsheet className="w-4 h-4 text-blue-600" />
                 <span>시트 {templates.filter((t: Template) => getTemplateCategory(t.templateType) === 'sheet').length}</span>
@@ -318,7 +321,7 @@ export default function TemplateManagement() {
             </div>
 
             {/* View Toggle - Standardized */}
-            <div className="flex items-center bg-gray-100 rounded-lg p-1">
+            <div className={`flex items-center rounded-lg p-1 transition-colors ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
               <Button
                 variant={viewMode === 'list' ? 'default' : 'ghost'}
                 size="sm"
@@ -346,18 +349,18 @@ export default function TemplateManagement() {
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {isLoading ? (
             Array.from({ length: 6 }).map((_, index) => (
-              <Card key={index} className="animate-pulse shadow-sm">
+              <Card key={index} className={`animate-pulse shadow-sm transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
                 <CardContent className="p-4">
-                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                  <div className="h-3 bg-gray-200 rounded w-1/2 mb-3"></div>
-                  <div className="h-2 bg-gray-200 rounded w-full mb-2"></div>
-                  <div className="h-2 bg-gray-200 rounded w-2/3"></div>
+                  <div className={`h-4 rounded w-3/4 mb-2 ${isDarkMode ? 'bg-gray-600' : 'bg-gray-200'}`}></div>
+                  <div className={`h-3 rounded w-1/2 mb-3 ${isDarkMode ? 'bg-gray-600' : 'bg-gray-200'}`}></div>
+                  <div className={`h-2 rounded w-full mb-2 ${isDarkMode ? 'bg-gray-600' : 'bg-gray-200'}`}></div>
+                  <div className={`h-2 rounded w-2/3 ${isDarkMode ? 'bg-gray-600' : 'bg-gray-200'}`}></div>
                 </CardContent>
               </Card>
             ))
           ) : filteredTemplates.length === 0 ? (
             <div className="col-span-full text-center py-12">
-              <div className="text-gray-600">
+              <div className={`transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                 {searchTerm ? '검색 결과가 없습니다' : '등록된 템플릿이 없습니다'}
               </div>
               {!searchTerm && (
@@ -374,12 +377,16 @@ export default function TemplateManagement() {
             </div>
           ) : (
             filteredTemplates.map((template: Template) => (
-              <Card key={template.id} className="p-4 hover:shadow-md transition-shadow shadow-sm">
+              <Card key={template.id} className={`p-4 hover:shadow-md transition-shadow shadow-sm ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
                 <div className="space-y-3">
                   {/* Header Section - Standardized */}
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-gray-900 cursor-pointer hover:text-blue-600 truncate" 
+                      <h3 className={`font-semibold cursor-pointer truncate transition-colors ${
+                        isDarkMode 
+                          ? 'text-gray-100 hover:text-blue-400' 
+                          : 'text-gray-900 hover:text-blue-600'
+                      }`}
                           onClick={() => handleEditTemplate(template)}>
                         {template.templateName}
                       </h3>
@@ -394,17 +401,17 @@ export default function TemplateManagement() {
 
                   {/* Content Section - Standardized */}
                   <div className="space-y-2 mb-3">
-                    <div className="flex items-center text-sm text-gray-600 gap-2">
+                    <div className={`flex items-center text-sm gap-2 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                       <Calendar className="h-4 w-4" />
                       <span className="font-medium">생성:</span>
                       <span>{new Date(template.createdAt).toLocaleDateString('ko-KR')}</span>
                     </div>
-                    <div className="flex items-center text-sm text-gray-600 gap-2">
+                    <div className={`flex items-center text-sm gap-2 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                       <Clock className="h-4 w-4" />
                       <span className="font-medium">수정:</span>
                       <span>{new Date(template.updatedAt).toLocaleDateString('ko-KR')}</span>
                     </div>
-                    <div className="flex items-center text-sm text-gray-600 gap-2">
+                    <div className={`flex items-center text-sm gap-2 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                       <Hash className="h-4 w-4" />
                       <span className="font-medium">구성:</span>
                       {template.templateType === 'handsontable' && template.fieldsConfig?.handsontable ? (
@@ -416,7 +423,7 @@ export default function TemplateManagement() {
                           필드 {template.fieldsConfig.fields.length || 0}개
                         </span>
                       ) : (
-                        <span className="text-gray-500">
+                        <span className={`transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                           기본 템플릿
                         </span>
                       )}
@@ -424,13 +431,17 @@ export default function TemplateManagement() {
                   </div>
                   
                   {/* Action Buttons - Standardized */}
-                  <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                  <div className={`flex items-center justify-between pt-3 border-t transition-colors ${isDarkMode ? 'border-gray-600' : 'border-gray-100'}`}>
                     <div className="flex items-center -space-x-1">
                       <Button
                         onClick={() => handleEditTemplate(template)}
                         variant="ghost"
                         size="sm"
-                        className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                        className={`h-8 w-8 p-0 transition-colors ${
+                          isDarkMode 
+                            ? 'text-blue-400 hover:text-blue-300 hover:bg-blue-900/20' 
+                            : 'text-blue-600 hover:text-blue-700 hover:bg-blue-50'
+                        }`}
                         title="수정"
                       >
                         <Edit className="h-3 w-3" />
@@ -439,7 +450,11 @@ export default function TemplateManagement() {
                         onClick={() => handleCopyTemplate(template)}
                         variant="ghost"
                         size="sm"
-                        className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                        className={`h-8 w-8 p-0 transition-colors ${
+                          isDarkMode 
+                            ? 'text-blue-400 hover:text-blue-300 hover:bg-blue-900/20' 
+                            : 'text-blue-600 hover:text-blue-700 hover:bg-blue-50'
+                        }`}
                         title="복사"
                       >
                         <Copy className="h-3 w-3" />
@@ -449,17 +464,21 @@ export default function TemplateManagement() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            className={`h-8 w-8 p-0 transition-colors ${
+                              isDarkMode 
+                                ? 'text-red-400 hover:text-red-300 hover:bg-red-900/20' 
+                                : 'text-red-600 hover:text-red-700 hover:bg-red-50'
+                            }`}
                             disabled={deleteTemplateMutation.isPending}
                             title="삭제"
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>
                         </AlertDialogTrigger>
-                        <AlertDialogContent>
+                        <AlertDialogContent className={`transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>템플릿 삭제</AlertDialogTitle>
-                            <AlertDialogDescription>
+                            <AlertDialogTitle className={`transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>템플릿 삭제</AlertDialogTitle>
+                            <AlertDialogDescription className={`transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                               '{template.templateName}' 템플릿을 정말 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
@@ -476,7 +495,7 @@ export default function TemplateManagement() {
                       </AlertDialog>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-600">
+                      <span className={`text-sm transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                         {template.isActive ? '활성' : '비활성'}
                       </span>
                       <Switch
@@ -493,51 +512,51 @@ export default function TemplateManagement() {
           )}
         </div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+        <div className={`rounded-lg overflow-hidden shadow-sm transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border`}>
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-900">타입</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-900">템플릿명</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-900">생성일</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-900">수정일</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-900">구성</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-900">상태</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-900">액션</th>
+              <thead className={`transition-colors ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                <tr className={`border-b transition-colors ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}>
+                  <th className={`text-left py-3 px-4 text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>타입</th>
+                  <th className={`text-left py-3 px-4 text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>템플릿명</th>
+                  <th className={`text-left py-3 px-4 text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>생성일</th>
+                  <th className={`text-left py-3 px-4 text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>수정일</th>
+                  <th className={`text-left py-3 px-4 text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>구성</th>
+                  <th className={`text-left py-3 px-4 text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>상태</th>
+                  <th className={`text-left py-3 px-4 text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>액션</th>
                 </tr>
               </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className={`divide-y transition-colors ${isDarkMode ? 'divide-gray-600' : 'divide-gray-200'}`}>
                   {isLoading ? (
                     Array.from({ length: 6 }).map((_, index) => (
                       <tr key={index} className="animate-pulse">
                         <td className="py-2 px-4">
-                          <div className="h-4 bg-gray-200 rounded w-16"></div>
+                          <div className={`h-4 rounded w-16 ${isDarkMode ? 'bg-gray-600' : 'bg-gray-200'}`}></div>
                         </td>
                         <td className="py-2 px-4">
-                          <div className="h-4 bg-gray-200 rounded w-32"></div>
+                          <div className={`h-4 rounded w-32 ${isDarkMode ? 'bg-gray-600' : 'bg-gray-200'}`}></div>
                         </td>
                         <td className="py-2 px-4">
-                          <div className="h-4 bg-gray-200 rounded w-20"></div>
+                          <div className={`h-4 rounded w-20 ${isDarkMode ? 'bg-gray-600' : 'bg-gray-200'}`}></div>
                         </td>
                         <td className="py-2 px-4">
-                          <div className="h-4 bg-gray-200 rounded w-20"></div>
+                          <div className={`h-4 rounded w-20 ${isDarkMode ? 'bg-gray-600' : 'bg-gray-200'}`}></div>
                         </td>
                         <td className="py-2 px-4">
-                          <div className="h-4 bg-gray-200 rounded w-16"></div>
+                          <div className={`h-4 rounded w-16 ${isDarkMode ? 'bg-gray-600' : 'bg-gray-200'}`}></div>
                         </td>
                         <td className="py-2 px-4">
-                          <div className="h-4 bg-gray-200 rounded w-12"></div>
+                          <div className={`h-4 rounded w-12 ${isDarkMode ? 'bg-gray-600' : 'bg-gray-200'}`}></div>
                         </td>
                         <td className="py-2 px-4">
-                          <div className="h-4 bg-gray-200 rounded w-20"></div>
+                          <div className={`h-4 rounded w-20 ${isDarkMode ? 'bg-gray-600' : 'bg-gray-200'}`}></div>
                         </td>
                       </tr>
                     ))
                   ) : filteredTemplates.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="text-center py-12">
-                        <div className="text-gray-600">
+                        <div className={`transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                           {searchTerm ? '검색 결과가 없습니다' : '등록된 템플릿이 없습니다'}
                         </div>
                         {!searchTerm && (
@@ -555,7 +574,7 @@ export default function TemplateManagement() {
                     </tr>
                   ) : (
                     filteredTemplates.map((template: Template) => (
-                      <tr key={template.id} className="hover:bg-gray-50">
+                      <tr key={template.id} className={`transition-colors ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}>
                         <td className="py-2 px-4">
                           <Badge 
                             variant="secondary" 
@@ -567,33 +586,37 @@ export default function TemplateManagement() {
                         <td className="py-2 px-4">
                           <button 
                             onClick={() => handleEditTemplate(template)}
-                            className="text-sm font-medium text-blue-600 hover:text-blue-800 text-left"
+                            className={`text-sm font-medium text-left transition-colors ${
+                              isDarkMode 
+                                ? 'text-blue-400 hover:text-blue-300' 
+                                : 'text-blue-600 hover:text-blue-800'
+                            }`}
                           >
                             {template.templateName}
                           </button>
                         </td>
-                        <td className="py-2 px-4 text-sm text-gray-600">
+                        <td className={`py-2 px-4 text-sm transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                           {new Date(template.createdAt).toLocaleDateString('ko-KR')}
                         </td>
-                        <td className="py-2 px-4 text-sm text-gray-600">
+                        <td className={`py-2 px-4 text-sm transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                           {new Date(template.updatedAt).toLocaleDateString('ko-KR')}
                         </td>
                         <td className="py-2 px-4 text-sm">
                           {template.templateType === 'handsontable' && template.fieldsConfig?.handsontable ? (
-                            <span className="text-blue-600">
+                            <span className={`transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
                               컬럼 {template.fieldsConfig.handsontable.columns?.length || 0}개
                             </span>
                           ) : template.fieldsConfig?.fields ? (
-                            <span className="text-green-600">
+                            <span className={`transition-colors ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
                               필드 {template.fieldsConfig.fields.length || 0}개
                             </span>
                           ) : (
-                            <span className="text-gray-500">기본</span>
+                            <span className={`transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>기본</span>
                           )}
                         </td>
                         <td className="py-2 px-4">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-600">
+                            <span className={`text-sm transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                               {template.isActive ? '활성' : '비활성'}
                             </span>
                             <Switch
@@ -610,7 +633,11 @@ export default function TemplateManagement() {
                               onClick={() => handleEditTemplate(template)}
                               variant="ghost"
                               size="sm"
-                              className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50"
+                              className={`h-8 w-8 p-0 transition-colors ${
+                                isDarkMode 
+                                  ? 'text-blue-400 hover:text-blue-300 hover:bg-blue-900/20' 
+                                  : 'text-blue-600 hover:bg-blue-50'
+                              }`}
                               title="수정"
                             >
                               <Edit className="w-4 h-4" />
@@ -619,7 +646,11 @@ export default function TemplateManagement() {
                               onClick={() => handleCopyTemplate(template)}
                               variant="ghost"
                               size="sm"
-                              className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50"
+                              className={`h-8 w-8 p-0 transition-colors ${
+                                isDarkMode 
+                                  ? 'text-blue-400 hover:text-blue-300 hover:bg-blue-900/20' 
+                                  : 'text-blue-600 hover:bg-blue-50'
+                              }`}
                               title="복사"
                             >
                               <Copy className="w-4 h-4" />
@@ -629,17 +660,21 @@ export default function TemplateManagement() {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className="h-8 w-8 p-0 text-red-600 hover:bg-red-50"
+                                  className={`h-8 w-8 p-0 transition-colors ${
+                                    isDarkMode 
+                                      ? 'text-red-400 hover:text-red-300 hover:bg-red-900/20' 
+                                      : 'text-red-600 hover:bg-red-50'
+                                  }`}
                                   disabled={deleteTemplateMutation.isPending}
                                   title="삭제"
                                 >
                                   <Trash2 className="w-4 h-4" />
                                 </Button>
                               </AlertDialogTrigger>
-                              <AlertDialogContent>
+                              <AlertDialogContent className={`transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
                                 <AlertDialogHeader>
-                                  <AlertDialogTitle>템플릿 삭제</AlertDialogTitle>
-                                  <AlertDialogDescription>
+                                  <AlertDialogTitle className={`transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>템플릿 삭제</AlertDialogTitle>
+                                  <AlertDialogDescription className={`transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                                     '{template.templateName}' 템플릿을 정말 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>

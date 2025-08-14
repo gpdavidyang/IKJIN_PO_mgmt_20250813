@@ -18,6 +18,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
 import type { User } from "@shared/schema";
 import { RoleDisplay, RoleSelectOptions } from "@/components/role-display";
+import { useTheme } from "@/components/ui/theme-provider";
 
 // Frontend User type with guaranteed id and role
 type FrontendUser = {
@@ -47,6 +48,8 @@ export default function UserManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, navigate] = useLocation();
+  const { theme } = useTheme();
+  const isDarkMode = theme === 'dark';
   
   const [searchText, setSearchText] = useState("");
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
@@ -211,10 +214,10 @@ export default function UserManagement() {
   // Show loading state while checking authentication
   if (isLoading) {
     return (
-      <div className="container mx-auto py-8">
+      <div className={`container mx-auto py-8 transition-colors ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-muted-foreground">사용자 정보를 확인하고 있습니다...</p>
+          <p className={`transition-colors ${isDarkMode ? 'text-gray-400' : 'text-muted-foreground'}`}>사용자 정보를 확인하고 있습니다...</p>
         </div>
       </div>
     );
@@ -223,11 +226,11 @@ export default function UserManagement() {
   // Check if user is authenticated and has admin role
   if (!currentUser) {
     return (
-      <div className="container mx-auto py-8">
+      <div className={`container mx-auto py-8 transition-colors ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
         <div className="text-center">
-          <UserX className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-          <h2 className="text-2xl font-bold mb-2">로그인이 필요합니다</h2>
-          <p className="text-muted-foreground">사용자 관리 기능을 사용하려면 먼저 로그인하세요.</p>
+          <UserX className={`mx-auto h-12 w-12 mb-4 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-muted-foreground'}`} />
+          <h2 className={`text-2xl font-bold mb-2 transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>로그인이 필요합니다</h2>
+          <p className={`transition-colors ${isDarkMode ? 'text-gray-400' : 'text-muted-foreground'}`}>사용자 관리 기능을 사용하려면 먼저 로그인하세요.</p>
           <Button 
             onClick={() => navigate('/login')} 
             className="mt-4"
@@ -254,19 +257,19 @@ export default function UserManagement() {
   
   if (!allowAccess) {
     return (
-      <div className="container mx-auto py-8">
+      <div className={`container mx-auto py-8 transition-colors ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
         <div className="text-center">
-          <UserX className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-          <h2 className="text-2xl font-bold mb-2">접근 권한이 없습니다</h2>
-          <p className="text-muted-foreground">사용자 관리 기능은 관리자만 사용할 수 있습니다.</p>
-          <p className="text-sm text-muted-foreground mt-2">현재 권한: <RoleDisplay role={userRole || 'user'} /></p>
+          <UserX className={`mx-auto h-12 w-12 mb-4 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-muted-foreground'}`} />
+          <h2 className={`text-2xl font-bold mb-2 transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>접근 권한이 없습니다</h2>
+          <p className={`transition-colors ${isDarkMode ? 'text-gray-400' : 'text-muted-foreground'}`}>사용자 관리 기능은 관리자만 사용할 수 있습니다.</p>
+          <p className={`text-sm mt-2 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-muted-foreground'}`}>현재 권한: <RoleDisplay role={userRole || 'user'} /></p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className={`min-h-screen transition-colors ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
       <div className="max-w-[1366px] mx-auto p-6 space-y-6">
       {/* Page Header */}
       <div className="mb-6">
@@ -274,8 +277,8 @@ export default function UserManagement() {
           <div className="flex items-center gap-3">
             <Users className="h-6 w-6 text-blue-600" />
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">사용자 관리</h1>
-              <p className="text-sm text-gray-600 mt-1">
+              <h1 className={`text-2xl font-bold transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>사용자 관리</h1>
+              <p className={`text-sm mt-1 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                 시스템 사용자를 관리하고 권한을 설정합니다
               </p>
             </div>
@@ -299,7 +302,7 @@ export default function UserManagement() {
           placeholder="이메일, 이름, 직책으로 검색..."
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
-          className="h-7 text-xs max-w-xs"
+          className={`h-7 text-xs max-w-xs transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder:text-gray-400' : 'bg-white border-gray-300'}`}
         />
         <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && setViewMode(value as 'grid' | 'list')}>
           <ToggleGroupItem value="list" aria-label="목록 보기" className="h-7 px-2">
@@ -311,24 +314,24 @@ export default function UserManagement() {
         </ToggleGroup>
       </div>
       {/* Users Content */}
-      <Card className="shadow-sm">
+      <Card className={`shadow-sm transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
         <CardContent className="p-0">
           {isLoading ? (
             <div className="space-y-1 p-2">
               {[...Array(6)].map((_, i) => (
                 <div key={i} className="flex items-center justify-between py-1 px-2 animate-pulse">
                   <div className="flex-1">
-                    <div className="h-3 bg-gray-200 rounded w-1/4 mb-1"></div>
-                    <div className="h-2 bg-gray-200 rounded w-1/3"></div>
+                    <div className={`h-3 rounded w-1/4 mb-1 ${isDarkMode ? 'bg-gray-600' : 'bg-gray-200'}`}></div>
+                    <div className={`h-2 rounded w-1/3 ${isDarkMode ? 'bg-gray-600' : 'bg-gray-200'}`}></div>
                   </div>
-                  <div className="h-3 bg-gray-200 rounded w-16"></div>
+                  <div className={`h-3 rounded w-16 ${isDarkMode ? 'bg-gray-600' : 'bg-gray-200'}`}></div>
                 </div>
               ))}
             </div>
           ) : filteredUsers.length === 0 ? (
             <div className="text-center py-6">
-              <Users className="mx-auto h-8 w-8 text-gray-400 mb-2" />
-              <p className="text-xs text-gray-500 mb-2">
+              <Users className={`mx-auto h-8 w-8 mb-2 transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+              <p className={`text-xs mb-2 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                 {searchText ? "검색 조건에 맞는 사용자가 없습니다." : "등록된 사용자가 없습니다."}
               </p>
               {!searchText && (
@@ -343,7 +346,7 @@ export default function UserManagement() {
               {viewMode === 'list' ? (
                 <div className="divide-y">
                   {/* Header */}
-                  <div className="grid grid-cols-12 gap-2 px-2 py-1 bg-gray-50 text-xs font-medium text-gray-600">
+                  <div className={`grid grid-cols-12 gap-2 px-2 py-1 text-xs font-medium transition-colors ${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-50 text-gray-600'}`}>
                     <div className="col-span-2">사용자명</div>
                     <div className="col-span-3">이메일</div>
                     <div className="col-span-2">전화번호</div>
@@ -354,22 +357,22 @@ export default function UserManagement() {
                   
                   {/* User Rows */}
                   {filteredUsers.map((user: any) => (
-                    <div key={user.id} className="grid grid-cols-12 gap-2 px-2 py-1 hover:bg-gray-50 transition-colors text-xs">
+                    <div key={user.id} className={`grid grid-cols-12 gap-2 px-2 py-1 transition-colors text-xs ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}>
                       <div className="col-span-2 flex items-center">
-                        <span className="font-medium text-gray-900 truncate">
+                        <span className={`font-medium truncate transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
                           {getUserDisplayName(user)}
                         </span>
                       </div>
                       <div className="col-span-3 flex items-center">
-                        <span className="text-gray-600 truncate">{user.email}</span>
+                        <span className={`truncate transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>{user.email}</span>
                       </div>
                       <div className="col-span-2 flex items-center">
-                        <span className="text-gray-600 truncate">
+                        <span className={`truncate transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                           {user.phoneNumber || '-'}
                         </span>
                       </div>
                       <div className="col-span-2 flex items-center">
-                        <span className="text-gray-600 truncate">
+                        <span className={`truncate transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                           {getPositionName(user.positionId)}
                         </span>
                       </div>
@@ -384,14 +387,14 @@ export default function UserManagement() {
                       <div className="col-span-1 flex items-center justify-center gap-1">
                         <button
                           onClick={() => handleEdit(user)}
-                          className="inline-flex items-center justify-center w-5 h-5 rounded hover:bg-gray-100 text-gray-600"
+                          className={`inline-flex items-center justify-center w-5 h-5 rounded transition-colors ${isDarkMode ? 'hover:bg-gray-600 text-gray-400' : 'hover:bg-gray-100 text-gray-600'}`}
                           title="수정"
                         >
                           <Edit className="h-3 w-3" />
                         </button>
                         <button
                           onClick={() => handleDelete(user)}
-                          className="inline-flex items-center justify-center w-5 h-5 rounded hover:bg-red-100 text-red-600"
+                          className={`inline-flex items-center justify-center w-5 h-5 rounded text-red-600 transition-colors ${isDarkMode ? 'hover:bg-red-900/20' : 'hover:bg-red-100'}`}
                           title="삭제"
                         >
                           <Trash2 className="h-3 w-3" />
@@ -403,25 +406,25 @@ export default function UserManagement() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2 p-2">
                   {filteredUsers.map((user: any) => (
-                    <Card key={user.id} className="p-3 hover:shadow-md transition-shadow shadow-sm">
+                    <Card key={user.id} className={`p-3 hover:shadow-md transition-shadow shadow-sm ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1">
-                          <h4 className="font-medium text-sm text-gray-900 truncate">
+                          <h4 className={`font-medium text-sm truncate transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
                             {getUserDisplayName(user)}
                           </h4>
-                          <p className="text-xs text-gray-600 truncate">{user.email}</p>
+                          <p className={`text-xs truncate transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>{user.email}</p>
                         </div>
                         <div className="flex gap-1 ml-2">
                           <button
                             onClick={() => handleEdit(user)}
-                            className="inline-flex items-center justify-center w-6 h-6 rounded hover:bg-gray-100 text-gray-600"
+                            className={`inline-flex items-center justify-center w-6 h-6 rounded transition-colors ${isDarkMode ? 'hover:bg-gray-600 text-gray-400' : 'hover:bg-gray-100 text-gray-600'}`}
                             title="수정"
                           >
                             <Edit className="h-3 w-3" />
                           </button>
                           <button
                             onClick={() => handleDelete(user)}
-                            className="inline-flex items-center justify-center w-6 h-6 rounded hover:bg-red-100 text-red-600"
+                            className={`inline-flex items-center justify-center w-6 h-6 rounded text-red-600 transition-colors ${isDarkMode ? 'hover:bg-red-900/20' : 'hover:bg-red-100'}`}
                             title="삭제"
                           >
                             <Trash2 className="h-3 w-3" />
@@ -430,15 +433,15 @@ export default function UserManagement() {
                       </div>
                       <div className="space-y-1">
                         <div className="flex justify-between text-xs">
-                          <span className="text-gray-500">전화번호:</span>
-                          <span className="text-gray-700">{user.phoneNumber || '-'}</span>
+                          <span className={`transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>전화번호:</span>
+                          <span className={`transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>{user.phoneNumber || '-'}</span>
                         </div>
                         <div className="flex justify-between text-xs">
-                          <span className="text-gray-500">직함:</span>
-                          <span className="text-gray-700">{getPositionName(user.positionId)}</span>
+                          <span className={`transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>직함:</span>
+                          <span className={`transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>{getPositionName(user.positionId)}</span>
                         </div>
                         <div className="flex justify-between text-xs items-center">
-                          <span className="text-gray-500">권한:</span>
+                          <span className={`transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>권한:</span>
                           <Badge 
                             variant={getRoleBadgeVariant((user as any).role || "user")}
                             className="text-xs px-1 py-0"
@@ -457,9 +460,9 @@ export default function UserManagement() {
       </Card>
       {/* Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className={`max-w-md transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className={`transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
               {editingUser ? "사용자 수정" : "새 사용자 추가"}
             </DialogTitle>
           </DialogHeader>
@@ -470,12 +473,13 @@ export default function UserManagement() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>이메일 *</FormLabel>
+                    <FormLabel className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>이메일 *</FormLabel>
                     <FormControl>
                       <Input 
                         placeholder="user@company.com" 
                         {...field} 
                         disabled={!!editingUser}
+                        className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder:text-gray-400' : 'bg-white border-gray-300'}`}
                       />
                     </FormControl>
                     <FormMessage />
@@ -487,9 +491,13 @@ export default function UserManagement() {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>사용자명</FormLabel>
+                    <FormLabel className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>사용자명</FormLabel>
                     <FormControl>
-                      <Input placeholder="홍길동" {...field} />
+                      <Input 
+                        placeholder="홍길동" 
+                        {...field} 
+                        className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder:text-gray-400' : 'bg-white border-gray-300'}`}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -500,14 +508,14 @@ export default function UserManagement() {
                 name="positionId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>직책</FormLabel>
+                    <FormLabel className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>직책</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}>
                           <SelectValue placeholder="직책을 선택하세요" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
+                      <SelectContent className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
                         <SelectItem value="none">직책 없음</SelectItem>
                         {positions.map((position: any) => (
                           <SelectItem key={position.id} value={String(position.id)}>
@@ -525,9 +533,13 @@ export default function UserManagement() {
                 name="phoneNumber"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>연락처</FormLabel>
+                    <FormLabel className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>연락처</FormLabel>
                     <FormControl>
-                      <Input placeholder="010-1234-5678" {...field} />
+                      <Input 
+                        placeholder="010-1234-5678" 
+                        {...field} 
+                        className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder:text-gray-400' : 'bg-white border-gray-300'}`}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -538,14 +550,14 @@ export default function UserManagement() {
                 name="role"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>역할 *</FormLabel>
+                    <FormLabel className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>역할 *</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}>
                           <SelectValue placeholder="역할을 선택하세요" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
+                      <SelectContent className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
                         <RoleSelectOptions>
                           {(options) => options.map((option) => (
                             <SelectItem key={option.value} value={option.value}>

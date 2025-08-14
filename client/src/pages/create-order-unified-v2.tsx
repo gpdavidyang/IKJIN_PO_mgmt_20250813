@@ -322,6 +322,158 @@ const CreateOrderUnifiedV2: React.FC = () => {
     }
   };
 
+  const handleCreateOrderWithEmail = async (emailSettings: any) => {
+    console.log('📧 발주서 생성 및 이메일 발송 시작:', { orderData, emailSettings });
+    
+    if (!orderData.orderNumber || !orderData.vendorName || !orderData.projectName || !orderData.items?.length) {
+      toast({
+        title: '생성 불가',
+        description: '필수 정보를 모두 입력해주세요.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setProcessingStatus(prev => ({ ...prev, order: 'processing', email: 'processing' }));
+    
+    try {
+      // 1. 먼저 발주서 생성
+      console.log('🟢 Step 1: 발주서 생성');
+      const formData = new FormData();
+      formData.append('projectId', '1');
+      formData.append('vendorId', '1');
+      formData.append('deliveryDate', orderData.deliveryDate || new Date().toISOString());
+      formData.append('notes', orderData.notes || `발주서 작성으로 생성된 발주서 - ${orderData.orderNumber}`);
+      
+      const mappedItems = (orderData.items || []).map((item: any) => ({
+        itemName: item.name || item.itemName || '',
+        quantity: parseFloat(item.quantity || '0'),
+        unitPrice: parseFloat(item.unitPrice || '0'),
+        unit: item.unit || 'EA',
+        totalAmount: parseFloat(item.quantity || '0') * parseFloat(item.unitPrice || '0')
+      }));
+      
+      formData.append('items', JSON.stringify(mappedItems));
+      
+      const orderResponse = await fetch('/api/orders', {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (!orderResponse.ok) {
+        throw new Error('발주서 생성 실패');
+      }
+      
+      const createdOrder = await orderResponse.json();
+      console.log('🟢 발주서 생성 완료:', createdOrder);
+      setProcessingStatus(prev => ({ ...prev, order: 'completed' }));
+      
+      // 2. 이메일 발송 (처리된 엑셀 파일이 있는 경우에만)
+      console.log('📧 Step 2: 이메일 발송');
+      if (orderData.processedExcelUrl) {
+        try {
+          const emailResponse = await fetch('/api/orders/send-email-with-excel', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              emailSettings: {
+                to: emailSettings.to,
+                cc: emailSettings.cc || '',
+                subject: emailSettings.subject,
+                message: emailSettings.message,
+                orderNumber: orderData.orderNumber,
+                vendorName: orderData.vendorName,
+                totalAmount: orderData.totalAmount
+              },
+              excelFilePath: orderData.processedExcelUrl,
+              orderData: orderData
+            })
+          });
+          
+          if (emailResponse.ok) {
+            console.log('📧 이메일 발송 성공');
+            setProcessingStatus(prev => ({ ...prev, email: 'completed' }));
+            
+            toast({
+              title: '생성 및 발송 완료',
+              description: `발주서가 생성되고 이메일이 발송되었습니다. (${createdOrder.orderNumber || orderData.orderNumber})`
+            });
+          } else {
+            throw new Error('이메일 발송 실패');
+          }
+        } catch (emailError) {
+          console.error('📧 이메일 발송 실패:', emailError);
+          setProcessingStatus(prev => ({ ...prev, email: 'error' }));
+          
+          toast({
+            title: '부분 완료',
+            description: '발주서는 생성되었으나 이메일 발송에 실패했습니다.',
+            variant: 'destructive'
+          });
+        }
+      } else {
+        // PDF만으로 이메일 발송
+        try {
+          const emailResponse = await fetch('/api/orders/send-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              orderData: {
+                ...orderData,
+                vendorEmail: emailSettings.to
+              },
+              pdfUrl: pdfUrl,
+              recipients: [emailSettings.to],
+              emailSettings: {
+                subject: emailSettings.subject,
+                message: emailSettings.message,
+                cc: emailSettings.cc
+              }
+            })
+          });
+          
+          if (emailResponse.ok) {
+            console.log('📧 PDF 이메일 발송 성공');
+            setProcessingStatus(prev => ({ ...prev, email: 'completed' }));
+            
+            toast({
+              title: '생성 및 발송 완료',
+              description: `발주서가 생성되고 PDF 이메일이 발송되었습니다.`
+            });
+          } else {
+            throw new Error('PDF 이메일 발송 실패');
+          }
+        } catch (emailError) {
+          console.error('📧 PDF 이메일 발송 실패:', emailError);
+          setProcessingStatus(prev => ({ ...prev, email: 'error' }));
+          
+          toast({
+            title: '부분 완료',
+            description: '발주서는 생성되었으나 이메일 발송에 실패했습니다.',
+            variant: 'destructive'
+          });
+        }
+      }
+      
+      // 로컬 스토리지 정리
+      localStorage.removeItem('draftOrder');
+      
+      // 3초 후 발주서 관리 페이지로 리다이렉트
+      setTimeout(() => {
+        window.location.href = '/orders';
+      }, 3000);
+      
+    } catch (error) {
+      console.error('🔴 발주서 생성 및 이메일 발송 실패:', error);
+      setProcessingStatus(prev => ({ ...prev, order: 'error', email: 'error' }));
+      toast({
+        title: '실패',
+        description: error instanceof Error ? error.message : '발주서 생성 및 이메일 발송 중 오류가 발생했습니다.',
+        variant: 'destructive'
+      });
+    }
+  };
+
   const handleSendEmail = async () => {
     if (!orderData.vendorEmail) {
       toast({
@@ -536,6 +688,7 @@ const CreateOrderUnifiedV2: React.FC = () => {
             onSave={handleAutoSave}
             onSend={handleSendEmail}
             onCreateOrder={handleCreateOrder}
+            onCreateOrderWithEmail={handleCreateOrderWithEmail}
             onDownload={() => {
               if (pdfUrl) {
                 // 다운로드 모드로 PDF 열기

@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { LogIn, Building2, Eye, EyeOff, Copy, Check } from "lucide-react";
 import { useLocation } from "wouter";
+import { useTheme } from "@/components/ui/theme-provider";
 
 const loginSchema = z.object({
   email: z.string().email("유효한 이메일을 입력해주세요"),
@@ -24,6 +25,8 @@ export default function LoginPage() {
   const [, setLocation] = useLocation();
   const [showPassword, setShowPassword] = useState(false);
   const [copiedItem, setCopiedItem] = useState<string | null>(null);
+  const { theme } = useTheme();
+  const isDarkMode = theme === 'dark';
 
   // 복사 함수
   const copyToClipboard = async (text: string, type: 'email' | 'password') => {
@@ -80,23 +83,23 @@ export default function LoginPage() {
   const isLoading = loginMutation.isPending;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className={`min-h-screen flex items-center justify-center px-4 transition-colors ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-lg mb-4">
-            <Building2 className="h-8 w-8 text-blue-600" />
+          <div className={`inline-flex items-center justify-center w-16 h-16 rounded-lg mb-4 transition-colors ${isDarkMode ? 'bg-blue-900/20' : 'bg-blue-100'}`}>
+            <Building2 className={`h-8 w-8 transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+          <h1 className={`text-2xl font-bold mb-2 transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
             발주 관리 시스템
           </h1>
-          <p className="text-gray-600">
+          <p className={`transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
             계정에 로그인하여 시스템을 이용하세요
           </p>
         </div>
 
-        <Card>
+        <Card className={`transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
           <CardHeader>
-            <CardTitle className="text-center">로그인</CardTitle>
+            <CardTitle className={`text-center transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>로그인</CardTitle>
           </CardHeader>
           <CardContent>
             <Form {...form}>
@@ -106,11 +109,12 @@ export default function LoginPage() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>이메일</FormLabel>
+                      <FormLabel className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>이메일</FormLabel>
                       <FormControl>
                         <Input
                           type="email"
                           placeholder="이메일을 입력하세요"
+                          className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder:text-gray-400' : 'bg-white border-gray-300'}`}
                           {...field}
                         />
                       </FormControl>
@@ -123,25 +127,26 @@ export default function LoginPage() {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>비밀번호</FormLabel>
+                      <FormLabel className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>비밀번호</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Input
                             type={showPassword ? "text" : "password"}
                             placeholder="비밀번호를 입력하세요"
+                            className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder:text-gray-400' : 'bg-white border-gray-300'}`}
                             {...field}
                           />
                           <Button
                             type="button"
                             variant="ghost"
                             size="sm"
-                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                            className={`absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent transition-colors ${isDarkMode ? 'hover:bg-gray-600/20' : 'hover:bg-transparent'}`}
                             onClick={() => setShowPassword(!showPassword)}
                           >
                             {showPassword ? (
-                              <EyeOff className="h-4 w-4 text-gray-500" />
+                              <EyeOff className={`h-4 w-4 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
                             ) : (
-                              <Eye className="h-4 w-4 text-gray-500" />
+                              <Eye className={`h-4 w-4 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
                             )}
                           </Button>
                         </div>
@@ -172,20 +177,20 @@ export default function LoginPage() {
           </CardContent>
         </Card>
 
-        <div className="mt-8 text-center text-sm text-gray-600">
+        <div className={`mt-8 text-center text-sm transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
           <p className="mb-3">기본 로그인 정보:</p>
           <div className="space-y-2">
             <div className="flex items-center justify-center gap-2">
               <span>이메일: admin@company.com</span>
               <button
                 onClick={() => copyToClipboard('admin@company.com', 'email')}
-                className="p-1 hover:bg-gray-200 rounded transition-colors"
+                className={`p-1 rounded transition-colors ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-200'}`}
                 title="이메일 복사"
               >
                 {copiedItem === 'email' ? (
-                  <Check className="h-3 w-3 text-green-600" />
+                  <Check className={`h-3 w-3 transition-colors ${isDarkMode ? 'text-green-400' : 'text-green-600'}`} />
                 ) : (
-                  <Copy className="h-3 w-3 text-gray-500 hover:text-gray-700" />
+                  <Copy className={`h-3 w-3 transition-colors ${isDarkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'}`} />
                 )}
               </button>
             </div>
@@ -193,13 +198,13 @@ export default function LoginPage() {
               <span>비밀번호: admin123</span>
               <button
                 onClick={() => copyToClipboard('admin123', 'password')}
-                className="p-1 hover:bg-gray-200 rounded transition-colors"
+                className={`p-1 rounded transition-colors ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-200'}`}
                 title="비밀번호 복사"
               >
                 {copiedItem === 'password' ? (
-                  <Check className="h-3 w-3 text-green-600" />
+                  <Check className={`h-3 w-3 transition-colors ${isDarkMode ? 'text-green-400' : 'text-green-600'}`} />
                 ) : (
-                  <Copy className="h-3 w-3 text-gray-500 hover:text-gray-700" />
+                  <Copy className={`h-3 w-3 transition-colors ${isDarkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'}`} />
                 )}
               </button>
             </div>

@@ -1,0 +1,11 @@
+# Task ID: 21
+# Title: CSS 문법 변환 스크립트 개발
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: bg-color bg-opacity-* 구문법을 bg-color/opacity 신문법으로 자동 변환하는 스크립트 및 ESLint 규칙 작성
+# Details:
+
+
+# Test Strategy:
+

@@ -935,7 +935,7 @@ import express2 from "express";
 import session from "express-session";
 
 // server/routes/index.ts
-import { Router as Router24 } from "express";
+import { Router as Router25 } from "express";
 
 // server/routes/auth.ts
 import { Router } from "express";
@@ -3184,7 +3184,9 @@ var OptimizedDashboardQueries = class {
         } : null,
         project: order.projectId ? {
           id: order.projectId,
-          name: order.projectName
+          name: order.projectName,
+          projectName: order.projectName
+          // Add backward compatibility
         } : null
       }));
       const monthlyStatsRaw = await db.select({
@@ -3996,7 +3998,44 @@ router3.get("/orders/stats", async (req, res) => {
     res.status(500).json({ message: "Failed to fetch order statistics" });
   }
 });
-router3.post("/orders/generate-pdf", requireAuth, async (req, res) => {
+router3.post("/orders/test-pdf", async (req, res) => {
+  try {
+    const testOrderData = {
+      orderNumber: "PO-TEST-001",
+      projectName: "\uD14C\uC2A4\uD2B8 \uD504\uB85C\uC81D\uD2B8",
+      vendorName: "\uD14C\uC2A4\uD2B8 \uAC70\uB798\uCC98",
+      totalAmount: 1e6,
+      items: [
+        {
+          name: "\uD14C\uC2A4\uD2B8 \uD488\uBAA9 1",
+          quantity: 10,
+          unit: "EA",
+          unitPrice: 5e4
+        },
+        {
+          name: "\uD14C\uC2A4\uD2B8 \uD488\uBAA9 2",
+          quantity: 5,
+          unit: "SET",
+          unitPrice: 1e5
+        }
+      ],
+      notes: "\uD14C\uC2A4\uD2B8\uC6A9 \uBC1C\uC8FC\uC11C\uC785\uB2C8\uB2E4.",
+      orderDate: (/* @__PURE__ */ new Date()).toISOString(),
+      createdBy: "\uD14C\uC2A4\uD2B8 \uC0AC\uC6A9\uC790"
+    };
+    console.log("\u{1F9EA} PDF \uD14C\uC2A4\uD2B8 \uC2DC\uC791:", testOrderData.orderNumber);
+    req.body = { orderData: testOrderData, options: {} };
+    return await generatePDFLogic(req, res);
+  } catch (error) {
+    console.error("\u{1F9EA} PDF \uD14C\uC2A4\uD2B8 \uC624\uB958:", error);
+    res.status(500).json({
+      success: false,
+      error: "PDF \uD14C\uC2A4\uD2B8 \uC2E4\uD328",
+      details: error instanceof Error ? error.message : "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"
+    });
+  }
+});
+async function generatePDFLogic(req, res) {
   try {
     const { orderData, options = {} } = req.body;
     if (!orderData) {
@@ -4005,26 +4044,52 @@ router3.post("/orders/generate-pdf", requireAuth, async (req, res) => {
         error: "\uBC1C\uC8FC\uC11C \uB370\uC774\uD130\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4."
       });
     }
+    const requiredFields = ["orderNumber", "projectName", "vendorName"];
+    const missingFields = requiredFields.filter((field) => !orderData[field]);
+    if (missingFields.length > 0) {
+      console.log(`\u26A0\uFE0F PDF \uC0DD\uC131 \uACBD\uACE0: \uD544\uC218 \uD544\uB4DC \uB204\uB77D - ${missingFields.join(", ")}`);
+    }
     console.log(`\u{1F4C4} PDF \uC0DD\uC131 \uC694\uCCAD: \uBC1C\uC8FC\uC11C ${orderData.orderNumber || "N/A"}`);
+    console.log("\u{1F4C4} PDF \uC0DD\uC131 \uB370\uC774\uD130:", JSON.stringify(orderData, null, 2));
     const timestamp2 = Date.now();
-    const tempDir = "uploads/temp-pdf";
+    const tempDir = path2.join(process.cwd(), "uploads/temp-pdf");
     if (!fs2.existsSync(tempDir)) {
       fs2.mkdirSync(tempDir, { recursive: true });
+      console.log(`\u{1F4C1} \uC784\uC2DC \uB514\uB809\uD1A0\uB9AC \uC0DD\uC131: ${tempDir}`);
     }
     const tempHtmlPath = path2.join(tempDir, `order-${timestamp2}.html`);
     const tempPdfPath = path2.join(tempDir, `order-${timestamp2}.pdf`);
+    console.log(`\u{1F4C4} \uC784\uC2DC \uD30C\uC77C \uACBD\uB85C - HTML: ${tempHtmlPath}, PDF: ${tempPdfPath}`);
     try {
+      const safeOrderData = {
+        orderNumber: orderData.orderNumber || "PO-TEMP-001",
+        projectName: orderData.projectName || "\uD504\uB85C\uC81D\uD2B8 \uBBF8\uC9C0\uC815",
+        vendorName: orderData.vendorName || "\uAC70\uB798\uCC98 \uBBF8\uC9C0\uC815",
+        totalAmount: Number(orderData.totalAmount) || 0,
+        items: Array.isArray(orderData.items) ? orderData.items : [],
+        notes: orderData.notes || "",
+        orderDate: orderData.orderDate || (/* @__PURE__ */ new Date()).toISOString(),
+        deliveryDate: orderData.deliveryDate || null,
+        createdBy: orderData.createdBy || "\uC2DC\uC2A4\uD15C"
+      };
       const orderHtml = `
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>\uBC1C\uC8FC\uC11C - ${orderData.orderNumber || "\uBBF8\uC0DD\uC131"}</title>
+  <title>\uBC1C\uC8FC\uC11C - ${safeOrderData.orderNumber}</title>
   <style>
+    @page {
+      size: A4;
+      margin: 20mm 15mm;
+    }
     body {
-      font-family: 'Malgun Gothic', sans-serif;
-      margin: 20px;
+      font-family: 'Noto Sans KR', 'Malgun Gothic', '\uB9D1\uC740 \uACE0\uB515', sans-serif;
+      margin: 0;
+      padding: 0;
       line-height: 1.6;
+      color: #333;
+      font-size: 12px;
     }
     .header {
       text-align: center;
@@ -4036,58 +4101,116 @@ router3.post("/orders/generate-pdf", requireAuth, async (req, res) => {
       color: #1F2937;
       margin: 0;
       font-size: 28px;
+      font-weight: bold;
+    }
+    .header .subtitle {
+      margin: 8px 0 0 0;
+      color: #6B7280;
+      font-size: 14px;
     }
     .info-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 20px;
+      gap: 15px;
       margin-bottom: 30px;
     }
     .info-item {
-      padding: 10px;
+      padding: 12px;
       border: 1px solid #E5E7EB;
-      border-radius: 8px;
+      border-radius: 6px;
       background-color: #F9FAFB;
     }
     .info-label {
       font-weight: bold;
       color: #374151;
       margin-bottom: 5px;
+      font-size: 11px;
     }
     .info-value {
       color: #1F2937;
+      font-size: 13px;
+      word-break: break-all;
+    }
+    .section-title {
+      color: #374151;
+      border-bottom: 1px solid #D1D5DB;
+      padding-bottom: 8px;
+      margin: 25px 0 15px 0;
+      font-size: 16px;
+      font-weight: bold;
     }
     .items-table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 20px;
+      margin-top: 15px;
+      font-size: 11px;
     }
-    .items-table th, .items-table td {
+    .items-table th,
+    .items-table td {
       border: 1px solid #D1D5DB;
-      padding: 12px;
+      padding: 8px;
       text-align: left;
     }
     .items-table th {
       background-color: #F3F4F6;
       font-weight: bold;
       color: #374151;
+      text-align: center;
     }
     .items-table tbody tr:nth-child(even) {
       background-color: #F9FAFB;
     }
+    .items-table .number-cell {
+      text-align: center;
+    }
+    .items-table .amount-cell {
+      text-align: right;
+    }
     .total-row {
       background-color: #EEF2FF !important;
       font-weight: bold;
+    }
+    .notes-section {
+      margin-top: 30px;
+      padding: 15px;
+      background-color: #F3F4F6;
+      border-radius: 6px;
+    }
+    .notes-title {
+      margin-top: 0;
+      color: #374151;
+      font-size: 14px;
+      font-weight: bold;
+    }
+    .notes-content {
+      margin: 8px 0 0 0;
+      color: #6B7280;
+      line-height: 1.5;
+    }
+    .footer {
+      margin-top: 40px;
+      text-align: center;
+      color: #9CA3AF;
+      font-size: 10px;
+      border-top: 1px solid #E5E7EB;
+      padding-top: 15px;
     }
     .watermark {
       position: fixed;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%) rotate(-45deg);
-      font-size: 60px;
-      color: rgba(59, 130, 246, 0.1);
+      font-size: 80px;
+      color: rgba(59, 130, 246, 0.08);
       z-index: -1;
       pointer-events: none;
+      font-weight: bold;
+    }
+    .empty-state {
+      text-align: center;
+      color: #6B7280;
+      font-style: italic;
+      padding: 20px;
     }
   </style>
 </head>
@@ -4096,29 +4219,39 @@ router3.post("/orders/generate-pdf", requireAuth, async (req, res) => {
   
   <div class="header">
     <h1>\uAD6C\uB9E4 \uBC1C\uC8FC\uC11C</h1>
-    <p style="margin: 5px 0; color: #6B7280;">Purchase Order</p>
+    <p class="subtitle">Purchase Order</p>
   </div>
 
   <div class="info-grid">
     <div class="info-item">
       <div class="info-label">\uBC1C\uC8FC\uC11C \uBC88\uD638</div>
-      <div class="info-value">${orderData.orderNumber || "\uBBF8\uC0DD\uC131"}</div>
+      <div class="info-value">${safeOrderData.orderNumber}</div>
     </div>
     <div class="info-item">
       <div class="info-label">\uBC1C\uC8FC\uC77C\uC790</div>
-      <div class="info-value">${(/* @__PURE__ */ new Date()).toLocaleDateString("ko-KR")}</div>
+      <div class="info-value">${new Date(safeOrderData.orderDate).toLocaleDateString("ko-KR")}</div>
     </div>
     <div class="info-item">
       <div class="info-label">\uD504\uB85C\uC81D\uD2B8</div>
-      <div class="info-value">${orderData.projectName || "\uBBF8\uC9C0\uC815"}</div>
+      <div class="info-value">${safeOrderData.projectName}</div>
     </div>
     <div class="info-item">
       <div class="info-label">\uAC70\uB798\uCC98</div>
-      <div class="info-value">${orderData.vendorName || "\uBBF8\uC9C0\uC815"}</div>
+      <div class="info-value">${safeOrderData.vendorName}</div>
+    </div>
+    ${safeOrderData.deliveryDate ? `
+    <div class="info-item">
+      <div class="info-label">\uB0A9\uAE30\uC77C\uC790</div>
+      <div class="info-value">${new Date(safeOrderData.deliveryDate).toLocaleDateString("ko-KR")}</div>
+    </div>
+    ` : ""}
+    <div class="info-item">
+      <div class="info-label">\uC791\uC131\uC790</div>
+      <div class="info-value">${safeOrderData.createdBy}</div>
     </div>
   </div>
 
-  <h3 style="color: #374151; border-bottom: 1px solid #D1D5DB; padding-bottom: 10px;">\uBC1C\uC8FC \uD488\uBAA9</h3>
+  <h3 class="section-title">\uBC1C\uC8FC \uD488\uBAA9</h3>
   
   <table class="items-table">
     <thead>
@@ -4132,89 +4265,136 @@ router3.post("/orders/generate-pdf", requireAuth, async (req, res) => {
       </tr>
     </thead>
     <tbody>
-      ${orderData.items?.map((item, index2) => `
-        <tr>
-          <td style="text-align: center;">${index2 + 1}</td>
-          <td>${item.name || "\uD488\uBAA9\uBA85 \uC5C6\uC74C"}</td>
-          <td style="text-align: right;">${item.quantity || 0}</td>
-          <td style="text-align: center;">${item.unit || "EA"}</td>
-          <td style="text-align: right;">\u20A9${(item.unitPrice || 0).toLocaleString()}</td>
-          <td style="text-align: right;">\u20A9${((item.quantity || 0) * (item.unitPrice || 0)).toLocaleString()}</td>
-        </tr>
-      `).join("") || '<tr><td colspan="6" style="text-align: center; color: #6B7280;">\uD488\uBAA9 \uC815\uBCF4 \uC5C6\uC74C</td></tr>'}
+      ${safeOrderData.items.length > 0 ? safeOrderData.items.map((item, index2) => `
+          <tr>
+            <td class="number-cell">${index2 + 1}</td>
+            <td>${item.name || item.itemName || "\uD488\uBAA9\uBA85 \uC5C6\uC74C"}</td>
+            <td class="amount-cell">${(item.quantity || 0).toLocaleString()}</td>
+            <td class="number-cell">${item.unit || "EA"}</td>
+            <td class="amount-cell">\u20A9${(item.unitPrice || 0).toLocaleString()}</td>
+            <td class="amount-cell">\u20A9${((item.quantity || 0) * (item.unitPrice || 0)).toLocaleString()}</td>
+          </tr>
+        `).join("") : '<tr><td colspan="6" class="empty-state">\uD488\uBAA9 \uC815\uBCF4\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.</td></tr>'}
       <tr class="total-row">
-        <td colspan="5" style="text-align: right; font-weight: bold;">\uCD1D \uAE08\uC561</td>
-        <td style="text-align: right; font-weight: bold;">\u20A9${(orderData.totalAmount || 0).toLocaleString()}</td>
+        <td colspan="5" class="amount-cell" style="font-weight: bold;">\uCD1D \uAE08\uC561</td>
+        <td class="amount-cell" style="font-weight: bold;">\u20A9${safeOrderData.totalAmount.toLocaleString()}</td>
       </tr>
     </tbody>
   </table>
 
-  <div style="margin-top: 40px; padding: 20px; background-color: #F3F4F6; border-radius: 8px;">
-    <h4 style="margin-top: 0; color: #374151;">\uBE44\uACE0</h4>
-    <p style="margin: 0; color: #6B7280;">
-      ${orderData.notes || "\uD2B9\uC774\uC0AC\uD56D \uC5C6\uC74C"}
-    </p>
+  ${safeOrderData.notes ? `
+  <div class="notes-section">
+    <h4 class="notes-title">\uBE44\uACE0</h4>
+    <div class="notes-content">${safeOrderData.notes}</div>
   </div>
+  ` : ""}
 
-  <div style="margin-top: 30px; text-align: center; color: #9CA3AF; font-size: 12px;">
-    \uC774 \uBB38\uC11C\uB294 \uC2DC\uC2A4\uD15C\uC5D0\uC11C \uC790\uB3D9 \uC0DD\uC131\uB418\uC5C8\uC2B5\uB2C8\uB2E4. (\uC0DD\uC131\uC77C: ${(/* @__PURE__ */ new Date()).toLocaleString("ko-KR")})
+  <div class="footer">
+    \uC774 \uBB38\uC11C\uB294 \uC2DC\uC2A4\uD15C\uC5D0\uC11C \uC790\uB3D9 \uC0DD\uC131\uB418\uC5C8\uC2B5\uB2C8\uB2E4.<br>
+    \uC0DD\uC131\uC77C\uC2DC: ${(/* @__PURE__ */ new Date()).toLocaleString("ko-KR")} | \uBB38\uC11C ID: ${timestamp2}
   </div>
 </body>
 </html>
       `;
-      fs2.writeFileSync(tempHtmlPath, orderHtml, "utf8");
-      const puppeteer3 = await import("puppeteer");
-      const browser = await puppeteer3.default.launch({
-        headless: "new",
-        args: [
-          "--no-sandbox",
-          "--disable-setuid-sandbox",
-          "--disable-dev-shm-usage",
-          "--disable-accelerated-2d-canvas",
-          "--no-first-run",
-          "--no-zygote",
-          "--single-process",
-          "--disable-gpu"
-        ]
-      });
-      const page = await browser.newPage();
-      await page.setContent(orderHtml, {
-        waitUntil: "networkidle0",
-        timeout: 3e4
-      });
-      await page.pdf({
-        path: tempPdfPath,
-        format: "A4",
-        landscape: false,
-        printBackground: true,
-        margin: {
-          top: "20mm",
-          bottom: "20mm",
-          left: "15mm",
-          right: "15mm"
+      try {
+        fs2.writeFileSync(tempHtmlPath, orderHtml, "utf8");
+        console.log(`\u2705 HTML \uD30C\uC77C \uC0DD\uC131 \uC644\uB8CC: ${tempHtmlPath}`);
+      } catch (writeError) {
+        throw new Error(`HTML \uD30C\uC77C \uC0DD\uC131 \uC2E4\uD328: ${writeError.message}`);
+      }
+      let browser = null;
+      try {
+        console.log("\u{1F680} Puppeteer \uBE0C\uB77C\uC6B0\uC800 \uC2DC\uC791...");
+        const puppeteer3 = await import("puppeteer");
+        browser = await puppeteer3.default.launch({
+          headless: "new",
+          args: [
+            "--no-sandbox",
+            "--disable-setuid-sandbox",
+            "--disable-dev-shm-usage",
+            "--disable-accelerated-2d-canvas",
+            "--no-first-run",
+            "--no-zygote",
+            "--disable-gpu",
+            "--disable-background-timer-throttling",
+            "--disable-backgrounding-occluded-windows",
+            "--disable-renderer-backgrounding"
+          ],
+          timeout: 6e4
+          // 1 minute timeout
+        });
+        const page = await browser.newPage();
+        await page.setViewport({ width: 1200, height: 1600 });
+        await page.emulateMediaType("print");
+        console.log("\u{1F4C4} HTML \uCF58\uD150\uCE20 \uB85C\uB529...");
+        await page.setContent(orderHtml, {
+          waitUntil: ["networkidle0", "domcontentloaded"],
+          timeout: 3e4
+        });
+        console.log("\u{1F4C4} PDF \uC0DD\uC131 \uC911...");
+        await page.pdf({
+          path: tempPdfPath,
+          format: "A4",
+          landscape: false,
+          printBackground: true,
+          preferCSSPageSize: true,
+          margin: {
+            top: "20mm",
+            bottom: "20mm",
+            left: "15mm",
+            right: "15mm"
+          }
+        });
+        console.log("\u2705 PDF \uC0DD\uC131 \uC644\uB8CC");
+      } catch (puppeteerError) {
+        console.error("\u274C Puppeteer \uC624\uB958:", puppeteerError);
+        throw new Error(`PDF \uC0DD\uC131 \uC2E4\uD328: ${puppeteerError.message}`);
+      } finally {
+        if (browser) {
+          await browser.close();
+          console.log("\u{1F512} Puppeteer \uBE0C\uB77C\uC6B0\uC800 \uC885\uB8CC");
         }
-      });
-      await browser.close();
+      }
       if (!fs2.existsSync(tempPdfPath)) {
         throw new Error("PDF \uD30C\uC77C\uC774 \uC0DD\uC131\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4.");
       }
+      const stats = fs2.statSync(tempPdfPath);
+      if (stats.size === 0) {
+        throw new Error("PDF \uD30C\uC77C\uC774 \uBE44\uC5B4\uC788\uC2B5\uB2C8\uB2E4.");
+      }
+      console.log(`\u{1F4CA} PDF \uD30C\uC77C \uD06C\uAE30: ${(stats.size / 1024).toFixed(2)} KB`);
       const pdfUrl = `/api/orders/download-pdf/${timestamp2}`;
       console.log(`\u2705 PDF \uC0DD\uC131 \uC644\uB8CC: ${pdfUrl}`);
-      if (fs2.existsSync(tempHtmlPath)) {
-        fs2.unlinkSync(tempHtmlPath);
+      try {
+        if (fs2.existsSync(tempHtmlPath)) {
+          fs2.unlinkSync(tempHtmlPath);
+        }
+      } catch (cleanupError) {
+        console.warn("\u26A0\uFE0F HTML \uD30C\uC77C \uC815\uB9AC \uC2E4\uD328:", cleanupError.message);
       }
+      setTimeout(() => {
+        try {
+          if (fs2.existsSync(tempPdfPath)) {
+            fs2.unlinkSync(tempPdfPath);
+            console.log(`\u{1F5D1}\uFE0F \uC784\uC2DC PDF \uD30C\uC77C \uC815\uB9AC \uC644\uB8CC: ${tempPdfPath}`);
+          }
+        } catch (cleanupError) {
+          console.warn("\u26A0\uFE0F PDF \uD30C\uC77C \uC815\uB9AC \uC2E4\uD328:", cleanupError.message);
+        }
+      }, 60 * 60 * 1e3);
       res.json({
         success: true,
         pdfUrl,
-        message: "PDF\uAC00 \uC131\uACF5\uC801\uC73C\uB85C \uC0DD\uC131\uB418\uC5C8\uC2B5\uB2C8\uB2E4."
+        message: "PDF\uAC00 \uC131\uACF5\uC801\uC73C\uB85C \uC0DD\uC131\uB418\uC5C8\uC2B5\uB2C8\uB2E4.",
+        fileSize: stats.size
       });
     } catch (conversionError) {
-      console.error("PDF \uBCC0\uD658 \uC624\uB958:", conversionError);
+      console.error("\u274C PDF \uBCC0\uD658 \uC624\uB958:", conversionError);
       try {
         if (fs2.existsSync(tempHtmlPath)) fs2.unlinkSync(tempHtmlPath);
         if (fs2.existsSync(tempPdfPath)) fs2.unlinkSync(tempPdfPath);
       } catch (cleanupError) {
-        console.error("\uC784\uC2DC \uD30C\uC77C \uC815\uB9AC \uC2E4\uD328:", cleanupError);
+        console.warn("\u26A0\uFE0F \uC784\uC2DC \uD30C\uC77C \uC815\uB9AC \uC2E4\uD328:", cleanupError.message);
       }
       res.status(500).json({
         success: false,
@@ -4223,14 +4403,24 @@ router3.post("/orders/generate-pdf", requireAuth, async (req, res) => {
       });
     }
   } catch (error) {
-    console.error("PDF \uC0DD\uC131 API \uC624\uB958:", error);
+    console.error("\u274C PDF \uC0DD\uC131 API \uC624\uB958:", error);
     res.status(500).json({
       success: false,
-      error: "PDF \uC0DD\uC131 \uC5D0\uB7EC\uAC00 \uBC1C\uC0DD \uD568",
+      error: "PDF \uC0DD\uC131\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.",
       details: error instanceof Error ? error.message : "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"
     });
   }
+}
+router3.post("/orders/generate-pdf", requireAuth, async (req, res) => {
+  return await generatePDFLogic(req, res);
 });
+if (process.env.NODE_ENV === "development") {
+  console.log("\u{1F9EA} Development mode: PDF test endpoint available at /api/orders/test-pdf");
+} else {
+  router3.all("/orders/test-pdf", (req, res) => {
+    res.status(404).json({ error: "Test endpoint not available in production" });
+  });
+}
 router3.get("/orders/download-pdf/:timestamp", (req, res) => {
   try {
     const { timestamp: timestamp2 } = req.params;
@@ -4238,38 +4428,77 @@ router3.get("/orders/download-pdf/:timestamp", (req, res) => {
     const pdfPath = path2.join(process.cwd(), "uploads/temp-pdf", `order-${timestamp2}.pdf`);
     console.log(`\u{1F4C4} PDF \uB2E4\uC6B4\uB85C\uB4DC \uC694\uCCAD: ${pdfPath}`);
     console.log(`\u{1F4C4} \uD30C\uC77C \uC874\uC7AC \uC5EC\uBD80: ${fs2.existsSync(pdfPath)}`);
+    console.log(`\u{1F4C4} \uB2E4\uC6B4\uB85C\uB4DC \uBAA8\uB4DC: ${download}`);
     if (fs2.existsSync(pdfPath)) {
-      res.setHeader("Access-Control-Allow-Origin", "*");
-      res.setHeader("Access-Control-Allow-Methods", "GET");
-      res.setHeader("X-Frame-Options", "SAMEORIGIN");
-      if (download === "true") {
-        res.download(pdfPath, `\uBC1C\uC8FC\uC11C_${timestamp2}.pdf`);
-      } else {
+      try {
         const stat = fs2.statSync(pdfPath);
-        res.setHeader("Content-Type", "application/pdf");
-        res.setHeader("Content-Disposition", `inline; filename*=UTF-8''${encodeURIComponent("\uBC1C\uC8FC\uC11C.pdf")}`);
-        res.setHeader("Content-Length", stat.size.toString());
-        res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-        const pdfStream = fs2.createReadStream(pdfPath);
-        pdfStream.on("error", (error) => {
-          console.error("PDF \uC2A4\uD2B8\uB9BC \uC624\uB958:", error);
-          if (!res.headersSent) {
-            res.status(500).json({ error: "PDF \uC77D\uAE30 \uC2E4\uD328" });
-          }
+        console.log(`\u{1F4CA} PDF \uD30C\uC77C \uC815\uBCF4: \uD06C\uAE30 ${(stat.size / 1024).toFixed(2)} KB`);
+        res.setHeader("Access-Control-Allow-Origin", "*");
+        res.setHeader("Access-Control-Allow-Methods", "GET");
+        res.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+        res.setHeader("X-Frame-Options", "SAMEORIGIN");
+        if (download === "true") {
+          console.log("\u{1F4E5} \uB2E4\uC6B4\uB85C\uB4DC \uBAA8\uB4DC\uB85C PDF \uC81C\uACF5");
+          res.setHeader("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent("\uBC1C\uC8FC\uC11C.pdf")}`);
+          res.setHeader("Content-Type", "application/pdf");
+          res.setHeader("Content-Length", stat.size.toString());
+          const downloadStream = fs2.createReadStream(pdfPath);
+          downloadStream.on("error", (error) => {
+            console.error("\u274C PDF \uB2E4\uC6B4\uB85C\uB4DC \uC2A4\uD2B8\uB9BC \uC624\uB958:", error);
+            if (!res.headersSent) {
+              res.status(500).json({ error: "PDF \uC77D\uAE30 \uC2E4\uD328" });
+            }
+          });
+          downloadStream.pipe(res);
+        } else {
+          console.log("\u{1F441}\uFE0F \uBBF8\uB9AC\uBCF4\uAE30 \uBAA8\uB4DC\uB85C PDF \uC81C\uACF5");
+          res.setHeader("Content-Type", "application/pdf");
+          res.setHeader("Content-Disposition", `inline; filename*=UTF-8''${encodeURIComponent("\uBC1C\uC8FC\uC11C.pdf")}`);
+          res.setHeader("Content-Length", stat.size.toString());
+          res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+          res.setHeader("Pragma", "no-cache");
+          res.setHeader("Expires", "0");
+          const pdfStream = fs2.createReadStream(pdfPath);
+          pdfStream.on("error", (error) => {
+            console.error("\u274C PDF \uC2A4\uD2B8\uB9BC \uC624\uB958:", error);
+            if (!res.headersSent) {
+              res.status(500).json({
+                success: false,
+                error: "PDF \uC77D\uAE30 \uC2E4\uD328",
+                details: error.message
+              });
+            }
+          });
+          pdfStream.on("open", () => {
+            console.log("\u2705 PDF \uC2A4\uD2B8\uB9BC \uC2DC\uC791");
+          });
+          pdfStream.on("end", () => {
+            console.log("\u2705 PDF \uC2A4\uD2B8\uB9BC \uC644\uB8CC");
+          });
+          pdfStream.pipe(res);
+        }
+      } catch (statError) {
+        console.error("\u274C PDF \uD30C\uC77C \uC0C1\uD0DC \uD655\uC778 \uC624\uB958:", statError);
+        res.status(500).json({
+          success: false,
+          error: "PDF \uD30C\uC77C \uC815\uBCF4\uB97C \uC77D\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.",
+          details: statError.message
         });
-        pdfStream.pipe(res);
       }
     } else {
+      console.warn(`\u26A0\uFE0F PDF \uD30C\uC77C \uC5C6\uC74C: ${pdfPath}`);
       res.status(404).json({
         success: false,
-        error: "PDF \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
+        error: "PDF \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.",
+        details: "\uD30C\uC77C\uC774 \uC0AD\uC81C\uB418\uC5C8\uAC70\uB098 \uC0DD\uC131\uB418\uC9C0 \uC54A\uC558\uC744 \uC218 \uC788\uC2B5\uB2C8\uB2E4."
       });
     }
   } catch (error) {
-    console.error("PDF \uB2E4\uC6B4\uB85C\uB4DC \uC624\uB958:", error);
+    console.error("\u274C PDF \uB2E4\uC6B4\uB85C\uB4DC \uC624\uB958:", error);
     res.status(500).json({
       success: false,
-      error: "PDF \uB2E4\uC6B4\uB85C\uB4DC \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4."
+      error: "PDF \uB2E4\uC6B4\uB85C\uB4DC \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4.",
+      details: error instanceof Error ? error.message : "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"
     });
   }
 });
@@ -8784,11 +9013,11 @@ var upload3 = multer3({
     // 10MB
   }
 });
-var requireAuth2 = (req, res, next) => {
+var simpleAuth = (req, res, next) => {
   req.user = { id: "test_admin_001" };
   next();
 };
-router10.get("/db-status", requireAuth2, async (req, res) => {
+router10.get("/db-status", simpleAuth, async (req, res) => {
   try {
     if (!db) {
       return res.json({
@@ -8814,7 +9043,7 @@ router10.get("/db-status", requireAuth2, async (req, res) => {
     });
   }
 });
-router10.post("/upload", requireAuth2, upload3.single("file"), async (req, res) => {
+router10.post("/upload", simpleAuth, upload3.single("file"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: "\uD30C\uC77C\uC774 \uC5C5\uB85C\uB4DC\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4." });
@@ -8861,7 +9090,7 @@ router10.post("/upload", requireAuth2, upload3.single("file"), async (req, res) 
     });
   }
 });
-router10.post("/save", requireAuth2, async (req, res) => {
+router10.post("/save", simpleAuth, async (req, res) => {
   console.log("\u{1F525}\u{1F525}\u{1F525} /save \uC5D4\uB4DC\uD3EC\uC778\uD2B8 \uD638\uCD9C\uB428 - \uC0C8\uB85C\uC6B4 \uB514\uBC84\uAE45 \uCF54\uB4DC \uC801\uC6A9\uB428");
   try {
     const { orders } = req.body;
@@ -9027,7 +9256,7 @@ router10.post("/save", requireAuth2, async (req, res) => {
     });
   }
 });
-router10.post("/extract-sheets", requireAuth2, async (req, res) => {
+router10.post("/extract-sheets", simpleAuth, async (req, res) => {
   DebugLogger.logExecutionPath("/api/po-template/extract-sheets", "POTemplateProcessorMock.extractSheetsToFile");
   try {
     const { filePath, sheetNames = ["\uAC11\uC9C0", "\uC744\uC9C0"] } = req.body;
@@ -9069,7 +9298,7 @@ router10.post("/extract-sheets", requireAuth2, async (req, res) => {
     });
   }
 });
-router10.get("/db-stats", requireAuth2, async (req, res) => {
+router10.get("/db-stats", simpleAuth, async (req, res) => {
   try {
     if (db) {
       try {
@@ -9097,17 +9326,15 @@ router10.get("/db-stats", requireAuth2, async (req, res) => {
         });
       } catch (dbError) {
         console.error("\uC2E4\uC81C DB \uD1B5\uACC4 \uC870\uD68C \uC2E4\uD328, Mock DB\uB85C \uD3F4\uBC31:", dbError);
-        const stats = MockDB.getStats();
-        const allData = MockDB.getAllData();
         res.json({
           success: true,
           data: {
-            stats,
+            stats: { vendors: 0, projects: 0, purchaseOrders: 0, purchaseOrderItems: 0 },
             sampleData: {
-              recentVendors: allData.vendors.slice(-3),
-              recentProjects: allData.projects.slice(-3),
-              recentOrders: allData.purchaseOrders.slice(-3),
-              recentItems: allData.purchaseOrderItems.slice(-3)
+              recentVendors: [],
+              recentProjects: [],
+              recentOrders: [],
+              recentItems: []
             },
             usingMockDB: true,
             dbError: dbError instanceof Error ? dbError.message : "Unknown error"
@@ -9115,17 +9342,15 @@ router10.get("/db-stats", requireAuth2, async (req, res) => {
         });
       }
     } else {
-      const stats = MockDB.getStats();
-      const allData = MockDB.getAllData();
       res.json({
         success: true,
         data: {
-          stats,
+          stats: { vendors: 0, projects: 0, purchaseOrders: 0, purchaseOrderItems: 0 },
           sampleData: {
-            recentVendors: allData.vendors.slice(-3),
-            recentProjects: allData.projects.slice(-3),
-            recentOrders: allData.purchaseOrders.slice(-3),
-            recentItems: allData.purchaseOrderItems.slice(-3)
+            recentVendors: [],
+            recentProjects: [],
+            recentOrders: [],
+            recentItems: []
           },
           usingMockDB: true
         }
@@ -9139,7 +9364,7 @@ router10.get("/db-stats", requireAuth2, async (req, res) => {
     });
   }
 });
-router10.post("/send-email", requireAuth2, async (req, res) => {
+router10.post("/send-email", simpleAuth, async (req, res) => {
   try {
     const {
       filePath,
@@ -9199,7 +9424,7 @@ router10.post("/send-email", requireAuth2, async (req, res) => {
     });
   }
 });
-router10.post("/convert-to-pdf", requireAuth2, async (req, res) => {
+router10.post("/convert-to-pdf", simpleAuth, async (req, res) => {
   try {
     const { filePath, outputPath } = req.body;
     if (!filePath) {
@@ -9237,7 +9462,7 @@ router10.post("/convert-to-pdf", requireAuth2, async (req, res) => {
     });
   }
 });
-router10.post("/process-complete", requireAuth2, upload3.single("file"), async (req, res) => {
+router10.post("/process-complete", simpleAuth, upload3.single("file"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: "\uD30C\uC77C\uC774 \uC5C5\uB85C\uB4DC\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4." });
@@ -9349,7 +9574,7 @@ router10.post("/process-complete", requireAuth2, upload3.single("file"), async (
     });
   }
 });
-router10.get("/test-email", requireAuth2, async (req, res) => {
+router10.get("/test-email", simpleAuth, async (req, res) => {
   try {
     const emailService = new POEmailServiceMock();
     const testResult = await emailService.testConnection();
@@ -9369,13 +9594,12 @@ router10.get("/test-email", requireAuth2, async (req, res) => {
     });
   }
 });
-router10.post("/reset-db", requireAuth2, (req, res) => {
+router10.post("/reset-db", simpleAuth, (req, res) => {
   try {
-    MockDB.clear();
     res.json({
       success: true,
-      message: "Mock DB \uCD08\uAE30\uD654 \uC644\uB8CC",
-      data: MockDB.getStats()
+      message: "DB \uCD08\uAE30\uD654 \uC694\uCCAD \uCC98\uB9AC\uB428 (Mock DB \uC5C6\uC74C)",
+      data: { vendors: 0, projects: 0, purchaseOrders: 0, purchaseOrderItems: 0 }
     });
   } catch (error) {
     console.error("DB \uCD08\uAE30\uD654 \uC624\uB958:", error);
@@ -10177,6 +10401,123 @@ var ImportExportService = class {
       throw new Error(`Failed to import projects: ${error.message}`);
     }
   }
+  // Purchase Order Import Methods
+  static async importPurchaseOrders(filePath, fileType) {
+    try {
+      const data = fileType === "excel" ? this.parseExcelFile(filePath) : await this.parseCSVFile(filePath);
+      let imported = 0;
+      const errors = [];
+      const orderGroups = /* @__PURE__ */ new Map();
+      for (const row of data) {
+        const orderNumber = row["\uBC1C\uC8FC\uBC88\uD638"] || row["orderNumber"] || "";
+        if (!orderNumber) {
+          errors.push({ row: imported + errors.length + 1, error: "Missing order number", data: row });
+          continue;
+        }
+        if (!orderGroups.has(orderNumber)) {
+          orderGroups.set(orderNumber, []);
+        }
+        orderGroups.get(orderNumber).push(row);
+      }
+      for (const [orderNumber, orderRows] of orderGroups) {
+        try {
+          const firstRow = orderRows[0];
+          const orderData = {
+            orderNumber,
+            projectId: parseInt(firstRow["\uD604\uC7A5ID"] || firstRow["projectId"]) || null,
+            vendorId: parseInt(firstRow["\uAC70\uB798\uCC98ID"] || firstRow["vendorId"]) || null,
+            orderDate: this.parseDate(firstRow["\uBC1C\uC8FC\uC77C\uC790"] || firstRow["orderDate"]) || /* @__PURE__ */ new Date(),
+            deliveryDate: this.parseDate(firstRow["\uB0A9\uAE30\uC77C\uC790"] || firstRow["deliveryDate"]) || null,
+            status: "pending",
+            totalAmount: 0,
+            userId: "system",
+            // 시스템에서 가져온 경우 기본값
+            notes: firstRow["\uBE44\uACE0"] || firstRow["notes"] || ""
+          };
+          if (!orderData.projectId) {
+            errors.push({ row: imported + errors.length + 1, error: "Missing or invalid project ID", data: firstRow });
+            continue;
+          }
+          let totalAmount = 0;
+          const orderItems = [];
+          for (const [index2, row] of orderRows.entries()) {
+            try {
+              const itemData = {
+                itemName: row["\uD488\uBAA9\uBA85"] || row["itemName"] || "",
+                specification: row["\uADDC\uACA9"] || row["specification"] || "",
+                unit: row["\uB2E8\uC704"] || row["unit"] || "",
+                quantity: parseFloat(row["\uC218\uB7C9"] || row["quantity"]) || 0,
+                unitPrice: parseFloat(row["\uB2E8\uAC00"] || row["unitPrice"]) || 0,
+                totalAmount: parseFloat(row["\uCD1D\uAE08\uC561"] || row["totalAmount"]) || 0,
+                majorCategory: row["\uB300\uBD84\uB958"] || row["majorCategory"] || "",
+                middleCategory: row["\uC911\uBD84\uB958"] || row["middleCategory"] || "",
+                minorCategory: row["\uC18C\uBD84\uB958"] || row["minorCategory"] || "",
+                notes: row["\uD488\uBAA9\uBE44\uACE0"] || row["itemNotes"] || ""
+              };
+              if (!itemData.itemName || itemData.quantity <= 0 || itemData.unitPrice < 0) {
+                errors.push({
+                  row: imported + errors.length + 1,
+                  error: `Invalid item data in row ${index2 + 1} for order ${orderNumber}`,
+                  data: row
+                });
+                continue;
+              }
+              if (itemData.totalAmount === 0) {
+                itemData.totalAmount = itemData.quantity * itemData.unitPrice;
+              }
+              totalAmount += itemData.totalAmount;
+              orderItems.push(itemData);
+            } catch (error) {
+              errors.push({
+                row: imported + errors.length + 1,
+                error: `Error processing item in order ${orderNumber}: ${error.message}`,
+                data: row
+              });
+            }
+          }
+          if (orderItems.length === 0) {
+            errors.push({ row: imported + errors.length + 1, error: `No valid items for order ${orderNumber}`, data: firstRow });
+            continue;
+          }
+          orderData.totalAmount = totalAmount;
+          const [insertedOrder] = await db.insert(purchaseOrders).values(orderData).returning({ id: purchaseOrders.id });
+          for (const itemData of orderItems) {
+            await db.insert(purchaseOrderItems).values({
+              orderId: insertedOrder.id,
+              ...itemData
+            });
+          }
+          imported++;
+        } catch (error) {
+          errors.push({ row: imported + errors.length + 1, error: `Error creating order ${orderNumber}: ${error.message}`, data: orderRows[0] });
+        }
+      }
+      return { imported, errors };
+    } catch (error) {
+      throw new Error(`Failed to import purchase orders: ${error.message}`);
+    }
+  }
+  // Helper method to parse dates
+  static parseDate(dateStr) {
+    if (!dateStr) return null;
+    if (dateStr instanceof Date) return dateStr;
+    const formats = [
+      /^\d{4}-\d{2}-\d{2}$/,
+      // YYYY-MM-DD
+      /^\d{4}\/\d{2}\/\d{2}$/,
+      // YYYY/MM/DD
+      /^\d{2}\/\d{2}\/\d{4}$/,
+      // MM/DD/YYYY
+      /^\d{2}-\d{2}-\d{4}$/
+      // MM-DD-YYYY
+    ];
+    const str = dateStr.toString().trim();
+    if (formats.some((format) => format.test(str))) {
+      const parsed = new Date(str);
+      return isNaN(parsed.getTime()) ? null : parsed;
+    }
+    return null;
+  }
   // Export Methods
   static async exportVendors(format) {
     const vendorData = await db.select().from(vendors).where(eq9(vendors.isActive, true));
@@ -10272,6 +10613,67 @@ var ImportExportService = class {
       return Buffer.from(csv, "utf8");
     }
   }
+  static async exportPurchaseOrders(format) {
+    const orderData = await db.select({
+      orderId: purchaseOrders.id,
+      orderNumber: purchaseOrders.orderNumber,
+      projectId: purchaseOrders.projectId,
+      vendorId: purchaseOrders.vendorId,
+      orderDate: purchaseOrders.orderDate,
+      deliveryDate: purchaseOrders.deliveryDate,
+      status: purchaseOrders.status,
+      notes: purchaseOrders.notes,
+      itemName: purchaseOrderItems.itemName,
+      specification: purchaseOrderItems.specification,
+      unit: purchaseOrderItems.unit,
+      quantity: purchaseOrderItems.quantity,
+      unitPrice: purchaseOrderItems.unitPrice,
+      totalAmount: purchaseOrderItems.totalAmount,
+      majorCategory: purchaseOrderItems.majorCategory,
+      middleCategory: purchaseOrderItems.middleCategory,
+      minorCategory: purchaseOrderItems.minorCategory,
+      itemNotes: purchaseOrderItems.notes
+    }).from(purchaseOrders).leftJoin(purchaseOrderItems, eq9(purchaseOrders.id, purchaseOrderItems.orderId)).where(eq9(purchaseOrders.isActive, true));
+    const statusMap = {
+      "pending": "\uB300\uAE30",
+      "approved": "\uC2B9\uC778",
+      "sent": "\uBC1C\uC1A1",
+      "received": "\uC218\uC2E0\uD655\uC778",
+      "delivered": "\uB0A9\uD488\uC644\uB8CC",
+      "cancelled": "\uCDE8\uC18C"
+    };
+    const exportData = orderData.map((order) => ({
+      "\uBC1C\uC8FC\uBC88\uD638": order.orderNumber,
+      "\uD604\uC7A5ID": order.projectId,
+      "\uAC70\uB798\uCC98ID": order.vendorId || "",
+      "\uBC1C\uC8FC\uC77C\uC790": order.orderDate?.toISOString().split("T")[0] || "",
+      "\uB0A9\uAE30\uC77C\uC790": order.deliveryDate?.toISOString().split("T")[0] || "",
+      "\uC0C1\uD0DC": statusMap[order.status] || order.status,
+      "\uD488\uBAA9\uBA85": order.itemName || "",
+      "\uADDC\uACA9": order.specification || "",
+      "\uB2E8\uC704": order.unit || "",
+      "\uC218\uB7C9": order.quantity || 0,
+      "\uB2E8\uAC00": order.unitPrice || 0,
+      "\uCD1D\uAE08\uC561": order.totalAmount || 0,
+      "\uB300\uBD84\uB958": order.majorCategory || "",
+      "\uC911\uBD84\uB958": order.middleCategory || "",
+      "\uC18C\uBD84\uB958": order.minorCategory || "",
+      "\uBE44\uACE0": order.notes || "",
+      "\uD488\uBAA9\uBE44\uACE0": order.itemNotes || ""
+    }));
+    if (format === "excel") {
+      const ws = XLSX7.utils.json_to_sheet(exportData);
+      const wb = XLSX7.utils.book_new();
+      XLSX7.utils.book_append_sheet(wb, ws, "\uBC1C\uC8FC\uC11C\uBAA9\uB85D");
+      return Buffer.from(XLSX7.write(wb, { bookType: "xlsx", type: "buffer" }));
+    } else {
+      const csv = Papa.unparse(exportData, {
+        header: true,
+        encoding: "utf8"
+      });
+      return Buffer.from(csv, "utf8");
+    }
+  }
   // Generate sample template files
   static generateImportTemplate(entity, format) {
     const templates = {
@@ -10312,6 +10714,25 @@ var ImportExportService = class {
           "\uC0C1\uD0DC": "\uC9C4\uD589\uC911",
           "\uC608\uC0B0": "50000000000",
           "\uC124\uBA85": "20\uCE35 \uADDC\uBAA8 \uC624\uD53C\uC2A4\uBE4C\uB529 \uC2E0\uCD95\uACF5\uC0AC"
+        }
+      ],
+      purchase_orders: [
+        {
+          "\uBC1C\uC8FC\uBC88\uD638": "PO20250101001",
+          "\uD604\uC7A5ID": "1",
+          "\uAC70\uB798\uCC98ID": "1",
+          "\uBC1C\uC8FC\uC77C\uC790": "2025-01-01",
+          "\uB0A9\uAE30\uC77C\uC790": "2025-01-15",
+          "\uD488\uBAA9\uBA85": "\uCCA0\uADFC",
+          "\uADDC\uACA9": "D16",
+          "\uB2E8\uC704": "\uD1A4",
+          "\uC218\uB7C9": 10,
+          "\uB2E8\uAC00": 15e5,
+          "\uCD1D\uAE08\uC561": 15e6,
+          "\uB300\uBD84\uB958": "\uCCA0\uAC15\uC7AC\uB8CC",
+          "\uC911\uBD84\uB958": "\uCCA0\uADFC",
+          "\uC18C\uBD84\uB958": "\uC774\uD615\uCCA0\uADFC",
+          "\uBE44\uACE0": "\uD604\uC7A5 \uC9C1\uB0A9"
         }
       ]
     };
@@ -10416,6 +10837,25 @@ router12.post("/import/projects", requireAuth, upload4.single("file"), async (re
     res.status(500).json({ error: "Failed to import projects" });
   }
 });
+router12.post("/import/purchase_orders", requireAuth, upload4.single("file"), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+    const fileType = getFileType(req.file.filename);
+    const result = await ImportExportService.importPurchaseOrders(req.file.path, fileType);
+    fs14.unlinkSync(req.file.path);
+    res.json({
+      message: "Purchase order import completed",
+      imported: result.imported,
+      errors: result.errors,
+      totalRows: result.imported + result.errors.length
+    });
+  } catch (error) {
+    console.error("Error importing purchase orders:", error);
+    res.status(500).json({ error: "Failed to import purchase orders" });
+  }
+});
 router12.get("/export/vendors", requireAuth, async (req, res) => {
   try {
     const format = req.query.format || "excel";
@@ -10461,11 +10901,26 @@ router12.get("/export/projects", requireAuth, async (req, res) => {
     res.status(500).json({ error: "Failed to export projects" });
   }
 });
+router12.get("/export/purchase_orders", requireAuth, async (req, res) => {
+  try {
+    const format = req.query.format || "excel";
+    const buffer = await ImportExportService.exportPurchaseOrders(format);
+    const filename = `purchase_orders_${(/* @__PURE__ */ new Date()).toISOString().split("T")[0]}.${format === "csv" ? "csv" : "xlsx"}`;
+    const contentType = format === "csv" ? "text/csv; charset=utf-8" : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+    res.setHeader("Content-Type", contentType);
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.setHeader("Content-Length", buffer.length);
+    res.send(buffer);
+  } catch (error) {
+    console.error("Error exporting purchase orders:", error);
+    res.status(500).json({ error: "Failed to export purchase orders" });
+  }
+});
 router12.get("/template/:entity", requireAuth, async (req, res) => {
   try {
     const entity = req.params.entity;
     const format = req.query.format || "excel";
-    if (!["vendors", "items", "projects"].includes(entity)) {
+    if (!["vendors", "items", "projects", "purchase_orders"].includes(entity)) {
       return res.status(400).json({ error: "Invalid entity type" });
     }
     const buffer = ImportExportService.generateImportTemplate(entity, format);
@@ -11643,7 +12098,7 @@ var item_receipts_default = router19;
 // server/routes/approvals.ts
 import { Router as Router19 } from "express";
 var router20 = Router19();
-router20.get("/approvals/history", async (req, res) => {
+router20.get("/approvals/history", requireAuth, requireRole(["admin", "executive", "hq_management", "project_manager"]), async (req, res) => {
   try {
     console.log("\u{1F4CB} Fetching approval history (using reliable mock data)...");
     const mockApprovalHistory = [
@@ -11694,7 +12149,7 @@ router20.get("/approvals/history", async (req, res) => {
     });
   }
 });
-router20.get("/approvals/pending", async (req, res) => {
+router20.get("/approvals/pending", requireAuth, requireRole(["admin", "executive", "hq_management", "project_manager"]), async (req, res) => {
   try {
     console.log("\u23F3 Fetching pending approvals (using reliable mock data)...");
     const mockPendingApprovals = [
@@ -11737,7 +12192,7 @@ router20.get("/approvals/pending", async (req, res) => {
     });
   }
 });
-router20.get("/approvals/stats", async (req, res) => {
+router20.get("/approvals/stats", requireAuth, requireRole(["admin", "executive", "hq_management", "project_manager"]), async (req, res) => {
   try {
     console.log("\u{1F4CA} Fetching approval stats (using reliable mock data)...");
     const mockApprovalStats = {
@@ -11770,19 +12225,19 @@ router20.get("/approvals/stats", async (req, res) => {
     });
   }
 });
-router20.post("/approvals/:id/process", async (req, res) => {
+router20.post("/approvals/:id/process", requireAuth, requireRole(["admin", "executive", "hq_management", "project_manager"]), async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     const { action, comments } = req.body;
-    console.log(`\u{1F4CB} Processing approval ${id} with action: ${action} (using reliable mock data)...`);
+    const user = req.user;
+    console.log(`\u{1F4CB} Processing approval ${id} with action: ${action} by ${user.name} (${user.role})`);
     const mockApprovalResult = {
       id,
       orderId: id,
       action,
       // 'approve' or 'reject'
-      approver: "\uD604\uC7AC\uC0AC\uC6A9\uC790",
-      // In real app, get from auth
-      approverRole: "project_manager",
+      approver: user.name || user.email,
+      approverRole: user.role,
       approvalDate: (/* @__PURE__ */ new Date()).toISOString(),
       comments: comments || "",
       status: action === "approve" ? "approved" : "rejected",
@@ -12376,33 +12831,179 @@ router24.post("/test-accounts/switch-to", (req, res) => {
 });
 var test_accounts_default = router24;
 
-// server/routes/index.ts
+// server/routes/categories.ts
+init_db();
+init_schema();
+import { Router as Router24 } from "express";
+import { eq as eq12, and as and8 } from "drizzle-orm";
 var router25 = Router24();
-router25.use("/api", auth_default);
-router25.use("/api", projects_default);
-router25.use("/api", orders_default);
-router25.use("/api", vendors_default);
-router25.use("/api", items_default);
-router25.use("/api", dashboard_default);
-router25.use("/api", companies_default);
-router25.use("/api", admin_default);
-router25.use("/api/excel-automation", excel_automation_default);
-router25.use("/api/po-template", po_template_real_default);
-router25.use("/api/reports", reports_default);
-router25.use("/api", import_export_default);
-router25.use("/api", email_history_default);
-router25.use("/api/excel-template", excel_template_default);
-router25.use("/api", orders_optimized_default);
-router25.use("/api", order_statuses_default);
-router25.use("/api", invoices_default);
-router25.use("/api", verification_logs_default);
-router25.use("/api", item_receipts_default);
-router25.use("/api", approvals_default);
-router25.use("/api", project_members_default);
-router25.use("/api", project_types_default);
-router25.use("/api", simple_auth_default);
-router25.use("/api", test_accounts_default);
-var routes_default = router25;
+router25.get("/", async (req, res) => {
+  try {
+    console.log("\u{1F4CB} Fetching all categories...");
+    const categories = await db.select().from(itemCategories).where(eq12(itemCategories.isActive, true)).orderBy(itemCategories.displayOrder, itemCategories.categoryName);
+    const majorCategories = categories.filter((c) => c.categoryType === "major");
+    const middleCategories = categories.filter((c) => c.categoryType === "middle");
+    const minorCategories = categories.filter((c) => c.categoryType === "minor");
+    const hierarchicalData = majorCategories.map((major) => ({
+      ...major,
+      children: middleCategories.filter((middle) => middle.parentId === major.id).map((middle) => ({
+        ...middle,
+        children: minorCategories.filter((minor) => minor.parentId === middle.id)
+      }))
+    }));
+    res.json({
+      success: true,
+      categories: hierarchicalData,
+      flatCategories: categories
+    });
+  } catch (error) {
+    console.error("\u274C Error fetching categories:", error);
+    res.status(500).json({
+      success: false,
+      message: "\uCE74\uD14C\uACE0\uB9AC \uC870\uD68C \uC2E4\uD328",
+      error: error.message
+    });
+  }
+});
+router25.get("/:type", async (req, res) => {
+  try {
+    const { type } = req.params;
+    const { parentId } = req.query;
+    console.log(`\u{1F4CB} Fetching ${type} categories...`);
+    let query = db.select().from(itemCategories).where(and8(
+      eq12(itemCategories.categoryType, type),
+      eq12(itemCategories.isActive, true)
+    ));
+    if (parentId) {
+      query = query.where(eq12(itemCategories.parentId, parseInt(parentId)));
+    }
+    const categories = await query.orderBy(itemCategories.displayOrder, itemCategories.categoryName);
+    res.json({
+      success: true,
+      categories
+    });
+  } catch (error) {
+    console.error(`\u274C Error fetching ${req.params.type} categories:`, error);
+    res.status(500).json({
+      success: false,
+      message: "\uCE74\uD14C\uACE0\uB9AC \uC870\uD68C \uC2E4\uD328",
+      error: error.message
+    });
+  }
+});
+router25.post("/", async (req, res) => {
+  try {
+    const { categoryType, categoryName, parentId, displayOrder } = req.body;
+    console.log("\u2795 Creating new category:", { categoryType, categoryName, parentId });
+    const newCategory = await db.insert(itemCategories).values({
+      categoryType,
+      categoryName,
+      parentId: parentId || null,
+      displayOrder: displayOrder || 0,
+      isActive: true
+    }).returning();
+    res.status(201).json({
+      success: true,
+      category: newCategory[0],
+      message: "\uCE74\uD14C\uACE0\uB9AC\uAC00 \uC0DD\uC131\uB418\uC5C8\uC2B5\uB2C8\uB2E4."
+    });
+  } catch (error) {
+    console.error("\u274C Error creating category:", error);
+    res.status(500).json({
+      success: false,
+      message: "\uCE74\uD14C\uACE0\uB9AC \uC0DD\uC131 \uC2E4\uD328",
+      error: error.message
+    });
+  }
+});
+router25.put("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { categoryName, displayOrder, isActive } = req.body;
+    console.log(`\u{1F527} Updating category ${id}...`);
+    const updatedCategory = await db.update(itemCategories).set({
+      categoryName,
+      displayOrder,
+      isActive,
+      updatedAt: /* @__PURE__ */ new Date()
+    }).where(eq12(itemCategories.id, parseInt(id))).returning();
+    if (updatedCategory.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "\uCE74\uD14C\uACE0\uB9AC\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
+      });
+    }
+    res.json({
+      success: true,
+      category: updatedCategory[0],
+      message: "\uCE74\uD14C\uACE0\uB9AC\uAC00 \uC218\uC815\uB418\uC5C8\uC2B5\uB2C8\uB2E4."
+    });
+  } catch (error) {
+    console.error("\u274C Error updating category:", error);
+    res.status(500).json({
+      success: false,
+      message: "\uCE74\uD14C\uACE0\uB9AC \uC218\uC815 \uC2E4\uD328",
+      error: error.message
+    });
+  }
+});
+router25.delete("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log(`\u{1F5D1}\uFE0F Deactivating category ${id}...`);
+    const updatedCategory = await db.update(itemCategories).set({
+      isActive: false,
+      updatedAt: /* @__PURE__ */ new Date()
+    }).where(eq12(itemCategories.id, parseInt(id))).returning();
+    if (updatedCategory.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "\uCE74\uD14C\uACE0\uB9AC\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
+      });
+    }
+    res.json({
+      success: true,
+      message: "\uCE74\uD14C\uACE0\uB9AC\uAC00 \uC0AD\uC81C\uB418\uC5C8\uC2B5\uB2C8\uB2E4."
+    });
+  } catch (error) {
+    console.error("\u274C Error deleting category:", error);
+    res.status(500).json({
+      success: false,
+      message: "\uCE74\uD14C\uACE0\uB9AC \uC0AD\uC81C \uC2E4\uD328",
+      error: error.message
+    });
+  }
+});
+var categories_default = router25;
+
+// server/routes/index.ts
+var router26 = Router25();
+router26.use("/api", auth_default);
+router26.use("/api", projects_default);
+router26.use("/api", orders_default);
+router26.use("/api", vendors_default);
+router26.use("/api", items_default);
+router26.use("/api", dashboard_default);
+router26.use("/api", companies_default);
+router26.use("/api", admin_default);
+router26.use("/api/excel-automation", excel_automation_default);
+router26.use("/api/po-template", po_template_real_default);
+router26.use("/api/reports", reports_default);
+router26.use("/api", import_export_default);
+router26.use("/api", email_history_default);
+router26.use("/api/excel-template", excel_template_default);
+router26.use("/api", orders_optimized_default);
+router26.use("/api", order_statuses_default);
+router26.use("/api", invoices_default);
+router26.use("/api", verification_logs_default);
+router26.use("/api", item_receipts_default);
+router26.use("/api", approvals_default);
+router26.use("/api", project_members_default);
+router26.use("/api", project_types_default);
+router26.use("/api", simple_auth_default);
+router26.use("/api", test_accounts_default);
+router26.use("/api/categories", categories_default);
+var routes_default = router26;
 
 // server/production.ts
 dotenv2.config();

@@ -1,0 +1,11 @@
+# Task ID: 11
+# Title: 거래처 관리 단위 테스트
+# Status: done
+# Dependencies: None
+# Priority: high
+# Description: 거래처 CRUD 작업 및 유효성 검사에 대한 단위 테스트 작성
+# Details:
+
+
+# Test Strategy:
+

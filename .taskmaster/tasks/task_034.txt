@@ -1,0 +1,11 @@
+# Task ID: 34
+# Title: UI 표준화 적용 - Phase 4 (특수 기능)
+# Status: pending
+# Dependencies: None
+# Priority: low
+# Description: 엑셀 자동화, 특수 발주서 유형, 가져오기/내보내기 등 특수 기능 화면들과 로그인, 랜딩, 404 페이지 등 기타 페이지들에 UI 표준 적용. 총 12개 화면 업데이트
+# Details:
+
+
+# Test Strategy:
+

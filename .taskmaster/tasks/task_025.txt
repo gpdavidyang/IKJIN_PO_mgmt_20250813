@@ -1,0 +1,11 @@
+# Task ID: 25
+# Title: 품목 계층 구조 DB 스키마 개선
+# Status: done
+# Dependencies: None
+# Priority: high
+# Description: purchaseOrderItems 테이블에 품목 계층 필드 추가
+# Details:
+purchaseOrderItems 테이블에 major_category, middle_category, minor_category 필드 추가 및 인덱스 생성
+
+# Test Strategy:
+

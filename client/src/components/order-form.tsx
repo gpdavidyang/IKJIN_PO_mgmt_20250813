@@ -522,9 +522,9 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
       if (fieldSections.length === 0) return null;
 
       return fieldSections.map((section) => (
-        <Card key={section.key} className="mb-4">
+        <Card key={section.key} className={`mb-4 transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg">{section.name}</CardTitle>
+            <CardTitle className={`text-lg transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{section.name}</CardTitle>
           </CardHeader>
           <CardContent className="pt-2">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -559,11 +559,12 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
     
     return (
       <div key={fieldKey}>
-        <Label htmlFor={fieldKey}>{fieldLabel}</Label>
+        <Label htmlFor={fieldKey} className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{fieldLabel}</Label>
         <Input
           id={fieldKey}
           type={fieldType}
           placeholder={`${fieldLabel}을 입력하세요`}
+          className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}
           onChange={(e) => {
             const customFields = watch('customFields') || {};
             setValue('customFields', {
@@ -646,7 +647,7 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
   }
 
   return (
-    <div className="compact-form space-y-3" key={`general-${selectedTemplateId}`}>
+    <div className={`max-w-[1366px] mx-auto compact-form space-y-3 pb-20 transition-colors ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`} key={`general-${selectedTemplateId}`}>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
         <Card className={`transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
           <CardHeader className="pb-2">
@@ -695,10 +696,10 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
                   disabled={isLoadingTemplates}
                   value={selectedTemplateId?.toString() || ""}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}>
                     <SelectValue placeholder={isLoadingTemplates ? "로딩 중..." : "템플릿을 선택하세요"} />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className={`transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
                     {templates && templates.length > 0 ? (
                       templates.map((template: any) => {
                         console.log('Rendering template:', template);
@@ -737,10 +738,10 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
                     }
                   }}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}>
                     <SelectValue placeholder="현장을 선택하세요" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className={`transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
                     {isLoadingProjects ? (
                       <SelectItem value="loading" disabled>로딩 중...</SelectItem>
                     ) : (projectsData as any[])?.map((project: any) => (
@@ -769,10 +770,10 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
                     setSelectedVendorInfo(selectedVendor);
                   }
                 }}>
-                  <SelectTrigger>
+                  <SelectTrigger className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}>
                     <SelectValue placeholder="거래처를 선택하세요" />
                   </SelectTrigger>
-                  <SelectContent className="z-[100] dropdown-high-priority" style={{ position: 'fixed', zIndex: 9999 }}>
+                  <SelectContent className={`z-[100] dropdown-high-priority transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`} style={{ position: 'fixed', zIndex: 9999 }}>
                     {vendors?.map((vendor: any) => (
                       <SelectItem key={vendor.id} value={vendor.id.toString()}>
                         {vendor.name}
@@ -790,6 +791,7 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
                 <Input
                   id="orderDate"
                   type="date"
+                  className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}
                   {...register("orderDate")}
                 />
                 {errors.orderDate && (
@@ -802,6 +804,7 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
                 <Input
                   id="deliveryDate"
                   type="date"
+                  className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}
                   {...register("deliveryDate")}
                 />
               </div>
@@ -932,10 +935,10 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
                             value={item.itemId ? item.itemId.toString() : ""}
                             onValueChange={(value) => handleItemSelect(index, parseInt(value))}
                           >
-                            <SelectTrigger className="h-8">
+                            <SelectTrigger className={`h-8 transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}>
                               <SelectValue placeholder="품목을 선택하세요" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className={`transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
                               {itemsData?.map((dbItem: any) => (
                                 <SelectItem key={dbItem.id} value={dbItem.id.toString()}>
                                   {dbItem.name}
@@ -947,7 +950,7 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
                       </TableCell>
                       <TableCell className="py-1">
                         <Input
-                          className="h-8"
+                          className={`h-8 transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}
                           placeholder="규격"
                           value={item.specification}
                           onChange={(e) => updateOrderItem(index, "specification", e.target.value)}
@@ -955,7 +958,7 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
                       </TableCell>
                       <TableCell className="py-1">
                         <Input
-                          className="h-8"
+                          className={`h-8 transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}
                           placeholder="대분류"
                           value={item.majorCategory}
                           onChange={(e) => updateOrderItem(index, "majorCategory", e.target.value)}
@@ -963,7 +966,7 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
                       </TableCell>
                       <TableCell className="py-1">
                         <Input
-                          className="h-8"
+                          className={`h-8 transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}
                           placeholder="중분류"
                           value={item.middleCategory}
                           onChange={(e) => updateOrderItem(index, "middleCategory", e.target.value)}
@@ -971,7 +974,7 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
                       </TableCell>
                       <TableCell className="py-1">
                         <Input
-                          className="h-8"
+                          className={`h-8 transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}
                           placeholder="소분류"
                           value={item.minorCategory}
                           onChange={(e) => updateOrderItem(index, "minorCategory", e.target.value)}
@@ -979,7 +982,7 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
                       </TableCell>
                       <TableCell className="py-1">
                         <Input
-                          className="h-8"
+                          className={`h-8 transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}
                           type="number"
                           placeholder="수량"
                           value={item.quantity || ""}
@@ -988,7 +991,7 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
                       </TableCell>
                       <TableCell className="py-1">
                         <Input
-                          className="h-8"
+                          className={`h-8 transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}
                           type="text"
                           placeholder="₩0"
                           value={unitPriceDisplayValues[index] || formatCurrencyInput(item.unitPrice)}
@@ -1018,7 +1021,7 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
                       </TableCell>
                       <TableCell className="py-1">
                         <Input
-                          className="h-8"
+                          className={`h-8 transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}
                           placeholder="비고"
                           value={item.notes}
                           onChange={(e) => updateOrderItem(index, "notes", e.target.value)}
@@ -1133,31 +1136,51 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
               {...register("notes")}
               placeholder="발주 관련 특이사항이나 요청사항을 입력하세요"
               rows={3}
-              className="text-sm"
+              className={`text-sm transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}
             />
           </CardContent>
         </Card>
 
-        <div className={`flex justify-end space-x-2 pt-3 border-t transition-colors ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={onCancel}
-          >
-            취소
-          </Button>
-          <Button
-            type="submit"
-            size="sm"
-            disabled={createOrderMutation.isPending || updateOrderMutation.isPending}
-          >
-            {createOrderMutation.isPending || updateOrderMutation.isPending
-              ? "저장 중..."
-              : orderId
-              ? "수정"
-              : "발주서 제출"}
-          </Button>
+        {/* 하단 고정 버튼 영역 */}
+        <div className="sticky bottom-0 z-10 mt-6">
+          <div className={`p-4 border-t shadow-lg transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+            <div className="max-w-[1366px] mx-auto flex flex-col sm:flex-row justify-end gap-3">
+              {/* 모바일에서는 세로 배치, 데스크톱에서는 가로 배치 */}
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full sm:w-auto"
+                onClick={onCancel}
+              >
+                취소
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                className="w-full sm:w-auto"
+                onClick={() => {
+                  // 임시 저장 로직 - 나중에 구현 가능
+                  toast({
+                    title: "임시 저장",
+                    description: "임시 저장 기능은 추후 구현 예정입니다.",
+                  });
+                }}
+              >
+                임시 저장
+              </Button>
+              <Button
+                type="submit"
+                className="w-full sm:w-auto"
+                disabled={createOrderMutation.isPending || updateOrderMutation.isPending}
+              >
+                {createOrderMutation.isPending || updateOrderMutation.isPending
+                  ? "저장 중..."
+                  : orderId
+                  ? "수정"
+                  : "발주서 제출"}
+              </Button>
+            </div>
+          </div>
         </div>
       </form>
     </div>

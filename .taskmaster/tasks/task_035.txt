@@ -1,0 +1,11 @@
+# Task ID: 35
+# Title: 공통 컴포넌트 UI 표준화
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: Header, Sidebar, FilterSection, StatusBadge, LoadingStates 등 공통 컴포넌트들에 새로운 UI 표준 적용. 일관된 스타일링과 인터랙션 효과 구현
+# Details:
+
+
+# Test Strategy:
+

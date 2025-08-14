@@ -4,7 +4,6 @@ import { useLocation } from "wouter";
 import { Plus, Building2, Calendar, MapPin, User, DollarSign, Search, ChevronUp, ChevronDown, Edit, Trash2, List, Grid, FolderOpen, Check, ChevronsUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -19,6 +18,7 @@ import { formatDate, formatKoreanWon, parseKoreanWon, cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
 import { PageHeader } from "@/components/ui/page-header";
+import { useTheme } from "@/components/ui/theme-provider";
 import type { Project } from "@shared/schema";
 
 const getStatusVariant = (status: string) => {
@@ -44,6 +44,8 @@ const getStatusLabel = (status: string) => {
 export default function Projects() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { theme } = useTheme();
+  const isDarkMode = theme === 'dark';
   
   // 디버깅용 로그
   console.log('🔍 Projects page - Current user:', user);
@@ -330,83 +332,101 @@ export default function Projects() {
   }, [filteredProjects, sortField, sortDirection]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-[1366px] mx-auto p-6">
-        {/* Page Header - 표준화된 구조 */}
-        <div className="mb-6">
-          <div className="flex justify-between items-center mb-2">
-            <h1 className="text-2xl font-bold text-gray-900">현장 관리</h1>
-            <Button 
-              onClick={handleAdd} 
-              className="px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              현장 추가
-            </Button>
+    <div className={`min-h-screen transition-colors ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+      <div className="max-w-[1366px] mx-auto p-6 space-y-6">
+        {/* Page Header */}
+        <div className={`shadow-sm rounded-lg border transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+          <div className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-lg transition-colors ${isDarkMode ? 'bg-blue-900/20' : 'bg-blue-50'}`}>
+                  <FolderOpen className={`h-6 w-6 transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                </div>
+                <div>
+                  <h1 className={`text-2xl font-bold transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>현장 관리</h1>
+                  <p className={`text-sm mt-1 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>프로젝트 현장을 조회하고 관리하세요</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <Badge 
+                  variant="outline" 
+                  className={`text-sm transition-colors ${isDarkMode ? 'border-gray-600 text-gray-300' : 'border-gray-300 text-gray-700'}`}
+                >
+                  총 {filteredProjects.length}개
+                </Badge>
+                {user?.role && ["admin", "hq_management", "project_manager"].includes(user.role) && (
+                  <Button 
+                    onClick={handleAdd} 
+                    className={`shadow-md hover:shadow-lg transition-all duration-200 ${isDarkMode ? 'bg-blue-600 hover:bg-blue-500 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    현장 추가
+                  </Button>
+                )}
+              </div>
+            </div>
           </div>
-          <p className="text-sm text-gray-600">프로젝트 현장을 조회하고 관리하세요</p>
         </div>
 
         {/* Search Section */}
-        <div className="mb-6">
-          <Card className="shadow-sm">
-            <CardContent className="p-6">
-          <div className="flex flex-col xl:flex-row xl:items-end gap-3">
-            {/* Search Section */}
-            <div className="flex-1">
-              <label className="text-xs font-medium text-gray-700 block mb-1">검색</label>
-              <div className="relative">
-                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  placeholder="현장명, 고객사명으로 검색..."
-                  value={searchText}
-                  onChange={(e) => setSearchText(e.target.value)}
-                  className={`pl-8 h-10 text-sm ${searchText ? "border-blue-500 bg-blue-50" : ""}`}
-                />
+        <div className={`shadow-sm rounded-lg border transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+          <div className="p-6">
+            <div className="flex flex-col xl:flex-row xl:items-end gap-3">
+              {/* Search Section */}
+              <div className="flex-1">
+                <label className={`text-sm font-medium block mb-2 transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>검색</label>
+                <div className="relative">
+                  <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                  <Input
+                    placeholder="현장명, 고객사명으로 검색..."
+                    value={searchText}
+                    onChange={(e) => setSearchText(e.target.value)}
+                    className={`pl-10 h-11 text-sm rounded-lg transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'} ${searchText ? `${isDarkMode ? 'border-blue-400 bg-blue-900/20' : 'border-blue-500 bg-blue-50'}` : ""}`}
+                  />
+                </div>
               </div>
-            </div>
 
-            {/* View Mode & Count */}
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-600">
-                {filteredProjects.length}개 현장
-              </span>
-              <div className="flex items-center bg-gray-100 rounded-lg p-1">
-                <Button
-                  variant={viewMode === 'table' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('table')}
-                  className="h-8 w-8 p-0"
-                  title="목록 보기"
-                >
-                  <List className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant={viewMode === 'card' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('card')}
-                  className="h-8 w-8 p-0"
-                  title="카드 보기"
-                >
-                  <Grid className="h-4 w-4" />
-                </Button>
+              {/* View Mode */}
+              <div className="flex items-center gap-3">
+                <div className={`flex items-center rounded-lg p-1 transition-colors ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                  <Button
+                    variant={viewMode === 'table' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('table')}
+                    className="h-8 w-8 p-0"
+                    title="목록 보기"
+                  >
+                    <List className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant={viewMode === 'card' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('card')}
+                    className="h-8 w-8 p-0"
+                    title="카드 보기"
+                  >
+                    <Grid className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
-            </CardContent>
-          </Card>
         </div>
 
-      {/* Projects View */}
-      {viewMode === 'table' ? (
-        <Card className="shadow-sm">
-          <CardContent className="p-0">
+        {/* Projects Table View */}
+        {viewMode === 'table' ? (
+          <div className={`shadow-sm rounded-lg border transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+            <div className="p-0">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="border-b border-gray-200">
+                  <TableRow className={`border-b transition-colors ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}>
                     <TableHead 
-                      className="px-6 py-3 text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-50 select-none"
+                      className={`px-6 py-3 text-sm font-medium cursor-pointer select-none transition-colors ${
+                        isDarkMode 
+                          ? 'text-gray-400 hover:bg-gray-700' 
+                          : 'text-gray-600 hover:bg-gray-50'
+                      }`}
                       onClick={() => handleSort("projectName")}
                     >
                       <div className="flex items-center space-x-1">
@@ -415,7 +435,11 @@ export default function Projects() {
                       </div>
                     </TableHead>
                     <TableHead 
-                      className="px-6 py-3 text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-50 select-none"
+                      className={`px-6 py-3 text-sm font-medium cursor-pointer select-none transition-colors ${
+                        isDarkMode 
+                          ? 'text-gray-400 hover:bg-gray-700' 
+                          : 'text-gray-600 hover:bg-gray-50'
+                      }`}
                       onClick={() => handleSort("clientName")}
                     >
                       <div className="flex items-center space-x-1">
@@ -424,7 +448,11 @@ export default function Projects() {
                       </div>
                     </TableHead>
                     <TableHead 
-                      className="px-6 py-3 text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-50 select-none"
+                      className={`px-6 py-3 text-sm font-medium cursor-pointer select-none transition-colors ${
+                        isDarkMode 
+                          ? 'text-gray-400 hover:bg-gray-700' 
+                          : 'text-gray-600 hover:bg-gray-50'
+                      }`}
                       onClick={() => handleSort("status")}
                     >
                       <div className="flex items-center space-x-1">
@@ -433,7 +461,11 @@ export default function Projects() {
                       </div>
                     </TableHead>
                     <TableHead 
-                      className="px-6 py-3 text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-50 select-none"
+                      className={`px-6 py-3 text-sm font-medium cursor-pointer select-none transition-colors ${
+                        isDarkMode 
+                          ? 'text-gray-400 hover:bg-gray-700' 
+                          : 'text-gray-600 hover:bg-gray-50'
+                      }`}
                       onClick={() => handleSort("location")}
                     >
                       <div className="flex items-center space-x-1">
@@ -442,7 +474,11 @@ export default function Projects() {
                       </div>
                     </TableHead>
                     <TableHead 
-                      className="px-6 py-3 text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-50 select-none"
+                      className={`px-6 py-3 text-sm font-medium cursor-pointer select-none transition-colors ${
+                        isDarkMode 
+                          ? 'text-gray-400 hover:bg-gray-700' 
+                          : 'text-gray-600 hover:bg-gray-50'
+                      }`}
                       onClick={() => handleSort("totalBudget")}
                     >
                       <div className="flex items-center space-x-1">
@@ -451,7 +487,11 @@ export default function Projects() {
                       </div>
                     </TableHead>
                     <TableHead 
-                      className="px-6 py-3 text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-50 select-none"
+                      className={`px-6 py-3 text-sm font-medium cursor-pointer select-none transition-colors ${
+                        isDarkMode 
+                          ? 'text-gray-400 hover:bg-gray-700' 
+                          : 'text-gray-600 hover:bg-gray-50'
+                      }`}
                       onClick={() => handleSort("startDate")}
                     >
                       <div className="flex items-center space-x-1">
@@ -459,7 +499,7 @@ export default function Projects() {
                         {getSortIcon("startDate")}
                       </div>
                     </TableHead>
-                    <TableHead className="px-6 py-3 text-sm font-medium text-gray-600 text-right">
+                    <TableHead className={`px-6 py-3 text-sm font-medium text-right transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                       관리
                     </TableHead>
                 </TableRow>
@@ -468,40 +508,44 @@ export default function Projects() {
                 {isLoading ? (
                   [...Array(5)].map((_, i) => (
                     <TableRow key={i}>
-                      <TableCell><div className="h-3 bg-gray-200 rounded animate-pulse"></div></TableCell>
-                      <TableCell><div className="h-3 bg-gray-200 rounded animate-pulse"></div></TableCell>
-                      <TableCell><div className="h-3 bg-gray-200 rounded animate-pulse"></div></TableCell>
-                      <TableCell><div className="h-3 bg-gray-200 rounded animate-pulse"></div></TableCell>
-                      <TableCell><div className="h-3 bg-gray-200 rounded animate-pulse"></div></TableCell>
-                      <TableCell><div className="h-3 bg-gray-200 rounded animate-pulse"></div></TableCell>
+                      <TableCell><div className={`h-3 rounded animate-pulse ${isDarkMode ? 'bg-gray-600' : 'bg-gray-200'}`}></div></TableCell>
+                      <TableCell><div className={`h-3 rounded animate-pulse ${isDarkMode ? 'bg-gray-600' : 'bg-gray-200'}`}></div></TableCell>
+                      <TableCell><div className={`h-3 rounded animate-pulse ${isDarkMode ? 'bg-gray-600' : 'bg-gray-200'}`}></div></TableCell>
+                      <TableCell><div className={`h-3 rounded animate-pulse ${isDarkMode ? 'bg-gray-600' : 'bg-gray-200'}`}></div></TableCell>
+                      <TableCell><div className={`h-3 rounded animate-pulse ${isDarkMode ? 'bg-gray-600' : 'bg-gray-200'}`}></div></TableCell>
+                      <TableCell><div className={`h-3 rounded animate-pulse ${isDarkMode ? 'bg-gray-600' : 'bg-gray-200'}`}></div></TableCell>
                       <TableCell></TableCell>
                     </TableRow>
                   ))
                 ) : sortedProjects.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-6 text-xs text-gray-500">
+                    <TableCell colSpan={7} className={`text-center py-6 text-xs transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                       {searchText ? "검색 결과가 없습니다" : "등록된 현장이 없습니다"}
                     </TableCell>
                   </TableRow>
                 ) : (
                   sortedProjects.map((project: any) => (
-                    <TableRow key={project.id} className="hover:bg-gray-50 border-b border-gray-100">
+                    <TableRow key={project.id} className={`border-b transition-colors ${isDarkMode ? 'hover:bg-gray-700 border-gray-600' : 'hover:bg-gray-50 border-gray-100'}`}>
                       <TableCell className="py-4 px-6">
                         <div>
                           <div 
-                            className="text-sm font-medium text-blue-600 cursor-pointer hover:text-blue-700 overflow-hidden text-ellipsis whitespace-nowrap"
+                            className={`text-sm font-medium cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap transition-colors ${
+                              isDarkMode 
+                                ? 'text-blue-400 hover:text-blue-300' 
+                                : 'text-blue-600 hover:text-blue-700'
+                            }`}
                             onClick={() => navigate(`/projects/${project.id}`)}
                             title={project.projectName}
                           >
                             {project.projectName}
                           </div>
-                          <div className="text-sm text-gray-500">
+                          <div className={`text-sm transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                             {project.projectCode || '-'}
                           </div>
                         </div>
                       </TableCell>
                       <TableCell className="py-4 px-6">
-                        <div className="text-sm text-gray-900">
+                        <div className={`text-sm transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
                           {project.clientName || '-'}
                         </div>
                       </TableCell>
@@ -511,17 +555,17 @@ export default function Projects() {
                         </Badge>
                       </TableCell>
                       <TableCell className="py-4 px-6">
-                        <div className="text-sm text-gray-900">
+                        <div className={`text-sm transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
                           {project.location || '-'}
                         </div>
                       </TableCell>
                       <TableCell className="py-4 px-6">
-                        <div className="text-sm font-medium text-blue-600">
+                        <div className={`text-sm font-medium transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
                           {project.totalBudget ? formatKoreanWon(project.totalBudget) : '-'}
                         </div>
                       </TableCell>
                       <TableCell className="py-4 px-6">
-                        <div className="text-sm text-gray-900">
+                        <div className={`text-sm transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
                           {project.startDate ? formatDate(project.startDate) : '-'}
                         </div>
                       </TableCell>
@@ -531,7 +575,11 @@ export default function Projects() {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleEdit(project)}
-                            className="h-6 w-6 p-0 text-blue-600 hover:text-blue-700"
+                            className={`h-6 w-6 p-0 transition-colors ${
+                              isDarkMode 
+                                ? 'text-blue-400 hover:text-blue-300' 
+                                : 'text-blue-600 hover:text-blue-700'
+                            }`}
                             title="수정"
                           >
                             <Edit className="h-3 w-3" />
@@ -540,7 +588,11 @@ export default function Projects() {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleDelete(project.id)}
-                            className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                            className={`h-6 w-6 p-0 transition-colors ${
+                              isDarkMode 
+                                ? 'text-red-400 hover:text-red-300' 
+                                : 'text-red-600 hover:text-red-700'
+                            }`}
                             title="삭제"
                           >
                             <Trash2 className="h-3 w-3" />
@@ -553,37 +605,48 @@ export default function Projects() {
               </TableBody>
               </Table>
             </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-2">
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-2">
           {isLoading ? (
             [...Array(6)].map((_, i) => (
-              <Card key={i} className="shadow-sm">
-                <CardContent className="p-3">
+              <div key={i} className={`shadow-sm rounded-lg border transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+                <div className="p-3">
                   <div className="space-y-2">
-                    <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
-                    <div className="h-3 bg-gray-200 rounded animate-pulse w-3/4"></div>
-                    <div className="h-3 bg-gray-200 rounded animate-pulse w-1/2"></div>
+                    <div className={`h-4 rounded animate-pulse ${isDarkMode ? 'bg-gray-600' : 'bg-gray-200'}`}></div>
+                    <div className={`h-3 rounded animate-pulse w-3/4 ${isDarkMode ? 'bg-gray-600' : 'bg-gray-200'}`}></div>
+                    <div className={`h-3 rounded animate-pulse w-1/2 ${isDarkMode ? 'bg-gray-600' : 'bg-gray-200'}`}></div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))
+          ) : filteredProjects.length === 0 ? (
+            <div className="col-span-full text-center py-8">
+              <FolderOpen className={`mx-auto h-8 w-8 transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+              <p className={`text-xs mt-2 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>등록된 현장이 없습니다.</p>
+            </div>
           ) : (
             filteredProjects.map((project: Project) => (
-              <Card key={project.id} className="p-3 hover:shadow-md transition-shadow shadow-sm">
+              <div key={project.id} className={`p-3 hover:shadow-md transition-shadow shadow-sm rounded-lg border ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
                 {/* TOSS-style Card Header */}
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                      <FolderOpen className="h-4 w-4 text-blue-600" />
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                      isDarkMode ? 'bg-blue-900/30' : 'bg-blue-100'
+                    }`}>
+                      <FolderOpen className={`h-4 w-4 transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
                     </div>
                     <div>
-                      <h3 className="text-sm font-semibold text-gray-900 cursor-pointer hover:text-blue-600" onClick={() => navigate(`/projects/${project.id}`)}>
+                      <h3 className={`text-sm font-semibold cursor-pointer transition-colors ${
+                        isDarkMode 
+                          ? 'text-gray-100 hover:text-blue-400' 
+                          : 'text-gray-900 hover:text-blue-600'
+                      }`} onClick={() => navigate(`/projects/${project.id}`)}>
                         {project.projectName}
                       </h3>
                       {project.projectCode && (
-                        <span className="text-xs text-gray-500">
+                        <span className={`text-xs transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                           {project.projectCode}
                         </span>
                       )}
@@ -596,28 +659,28 @@ export default function Projects() {
                 
                 {/* TOSS-style Content Section */}
                 <div className="space-y-2 mb-3">
-                  <div className="flex items-center text-xs text-gray-600 gap-2">
-                    <Building2 className="h-3 w-3 text-gray-400" />
+                  <div className={`flex items-center text-xs gap-2 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                    <Building2 className={`h-3 w-3 transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
                     <span className="font-medium">고객사:</span>
                     <span className="ml-1">{project.clientName || '-'}</span>
                   </div>
                   {project.location && (
-                    <div className="flex items-center text-xs text-gray-600 gap-2">
-                      <MapPin className="h-3 w-3 text-gray-400" />
+                    <div className={`flex items-center text-xs gap-2 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      <MapPin className={`h-3 w-3 transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
                       <span className="font-medium">위치:</span>
                       <span className="ml-1">{project.location}</span>
                     </div>
                   )}
                   {project.totalBudget && (
-                    <div className="flex items-center text-xs text-gray-600 gap-2">
-                      <DollarSign className="h-3 w-3 text-gray-400" />
+                    <div className={`flex items-center text-xs gap-2 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      <DollarSign className={`h-3 w-3 transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
                       <span className="font-medium">예산:</span>
-                      <span className="ml-1 font-medium text-blue-600">{formatKoreanWon(project.totalBudget)}</span>
+                      <span className={`ml-1 font-medium transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>{formatKoreanWon(project.totalBudget)}</span>
                     </div>
                   )}
                   {project.startDate && (
-                    <div className="flex items-center text-xs text-gray-600 gap-2">
-                      <Calendar className="h-3 w-3 text-gray-400" />
+                    <div className={`flex items-center text-xs gap-2 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      <Calendar className={`h-3 w-3 transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
                       <span className="font-medium">시작일:</span>
                       <span className="ml-1">{formatDate(project.startDate)}</span>
                     </div>
@@ -625,12 +688,16 @@ export default function Projects() {
                 </div>
                 
                 {/* TOSS-style Admin Actions */}
-                <div className="flex items-center justify-end gap-2 pt-2 border-t">
+                <div className={`flex items-center justify-end gap-2 pt-2 border-t transition-colors ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => handleEdit(project)}
-                    className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700"
+                    className={`h-8 w-8 p-0 transition-colors ${
+                      isDarkMode 
+                        ? 'text-blue-400 hover:text-blue-300' 
+                        : 'text-blue-600 hover:text-blue-700'
+                    }`}
                     title="수정"
                   >
                     <Edit className="h-3 w-3" />
@@ -639,23 +706,27 @@ export default function Projects() {
                     variant="ghost"
                     size="sm"
                     onClick={() => handleDelete(project.id)}
-                    className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                    className={`h-8 w-8 p-0 transition-colors ${
+                      isDarkMode 
+                        ? 'text-red-400 hover:text-red-300' 
+                        : 'text-red-600 hover:text-red-700'
+                    }`}
                     title="삭제"
                   >
                     <Trash2 className="h-3 w-3" />
                   </Button>
                 </div>
-              </Card>
+              </div>
             ))
           )}
-        </div>
-      )}
+          </div>
+        )}
 
-      {/* Project Form Dialog */}
+        {/* Project Form Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className={`max-w-2xl max-h-[90vh] overflow-y-auto transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className={`transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
               {editingProject ? "현장 수정" : "새 현장 추가"}
             </DialogTitle>
           </DialogHeader>
@@ -667,9 +738,9 @@ export default function Projects() {
                   name="projectName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>현장명 *</FormLabel>
+                      <FormLabel className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>현장명 *</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input {...field} className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder:text-gray-400' : 'bg-white border-gray-300'}`} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -680,9 +751,9 @@ export default function Projects() {
                   name="projectCode"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>현장 코드</FormLabel>
+                      <FormLabel className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>현장 코드</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input {...field} className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder:text-gray-400' : 'bg-white border-gray-300'}`} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -696,9 +767,9 @@ export default function Projects() {
                   name="clientName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>고객사</FormLabel>
+                      <FormLabel className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>고객사</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input {...field} className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder:text-gray-400' : 'bg-white border-gray-300'}`} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -709,14 +780,14 @@ export default function Projects() {
                   name="projectType"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>현장 유형</FormLabel>
+                      <FormLabel className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>현장 유형</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}>
                             <SelectValue placeholder="현장 유형을 선택하세요" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent>
+                        <SelectContent className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
                           <SelectItem value="아파트">아파트</SelectItem>
                           <SelectItem value="오피스텔">오피스텔</SelectItem>
                           <SelectItem value="단독주택">단독주택</SelectItem>
@@ -739,9 +810,9 @@ export default function Projects() {
                 name="location"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>위치</FormLabel>
+                    <FormLabel className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>위치</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input {...field} className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder:text-gray-400' : 'bg-white border-gray-300'}`} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -754,14 +825,14 @@ export default function Projects() {
                   name="status"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>상태</FormLabel>
+                      <FormLabel className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>상태</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}>
                             <SelectValue />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent>
+                        <SelectContent className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
                           <SelectItem value="active">진행중</SelectItem>
                           <SelectItem value="completed">완료</SelectItem>
                           <SelectItem value="on_hold">보류</SelectItem>
@@ -777,14 +848,14 @@ export default function Projects() {
                   name="projectManagerId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>현장 관리자</FormLabel>
+                      <FormLabel className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>현장 관리자</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}>
                             <SelectValue placeholder="선택하세요" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent>
+                        <SelectContent className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
                           {users.map((user) => (
                             <SelectItem key={user.id} value={user.id}>
                               {user.name}
@@ -801,7 +872,7 @@ export default function Projects() {
                   name="orderManagerIds"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>발주 관리자 (복수 선택 가능)</FormLabel>
+                      <FormLabel className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>발주 관리자 (복수 선택 가능)</FormLabel>
                       <FormControl>
                         <Popover open={openOrderManagerSelect} onOpenChange={setOpenOrderManagerSelect}>
                           <PopoverTrigger asChild>
@@ -809,7 +880,7 @@ export default function Projects() {
                               variant="outline"
                               role="combobox"
                               aria-expanded={openOrderManagerSelect}
-                              className="w-full justify-between"
+                              className={`w-full justify-between transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}
                             >
                               {!field.value || field.value.length === 0 ? (
                                 "발주 관리자를 선택하세요"
@@ -833,10 +904,10 @@ export default function Projects() {
                               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-full p-0">
-                            <Command>
-                              <CommandInput placeholder="담당자 검색..." />
-                              <CommandEmpty>담당자를 찾을 수 없습니다.</CommandEmpty>
+                          <PopoverContent className={`w-full p-0 transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
+                            <Command className={`transition-colors ${isDarkMode ? 'bg-gray-700' : 'bg-white'}`}>
+                              <CommandInput placeholder="담당자 검색..." className={`transition-colors ${isDarkMode ? 'bg-gray-700 text-gray-100' : 'bg-white'}`} />
+                              <CommandEmpty className={`transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>담당자를 찾을 수 없습니다.</CommandEmpty>
                               <CommandGroup>
                                 {users.map((user) => (
                                   <CommandItem
@@ -908,9 +979,9 @@ export default function Projects() {
                   name="startDate"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>시작일</FormLabel>
+                      <FormLabel className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>시작일</FormLabel>
                       <FormControl>
-                        <Input type="date" {...field} />
+                        <Input type="date" {...field} className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -921,9 +992,9 @@ export default function Projects() {
                   name="endDate"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>종료일</FormLabel>
+                      <FormLabel className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>종료일</FormLabel>
                       <FormControl>
-                        <Input type="date" {...field} />
+                        <Input type="date" {...field} className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -934,7 +1005,7 @@ export default function Projects() {
                   name="totalBudget"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>총 예산</FormLabel>
+                      <FormLabel className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>총 예산</FormLabel>
                       <FormControl>
                         <Input 
                           type="text" 
@@ -947,6 +1018,7 @@ export default function Projects() {
                           onBlur={field.onBlur}
                           name={field.name}
                           ref={field.ref}
+                          className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder:text-gray-400' : 'bg-white border-gray-300'}`}
                         />
                       </FormControl>
                       <FormMessage />
@@ -960,9 +1032,9 @@ export default function Projects() {
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>설명</FormLabel>
+                    <FormLabel className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>설명</FormLabel>
                     <FormControl>
-                      <Textarea {...field} rows={3} />
+                      <Textarea {...field} rows={3} className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder:text-gray-400' : 'bg-white border-gray-300'}`} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

@@ -1,0 +1,11 @@
+# Task ID: 20
+# Title: Tailwind CSS 문법 일관성 분석 및 개선
+# Status: done
+# Dependencies: None
+# Priority: medium
+# Description: 현재 혼재되어 있는 bg-opacity- 구문법과 bg-*/opacity 신문법의 사용 현황 분석 및 통일 방안 수립
+# Details:
+
+
+# Test Strategy:
+

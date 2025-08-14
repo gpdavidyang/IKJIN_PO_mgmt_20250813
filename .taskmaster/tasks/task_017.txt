@@ -1,0 +1,11 @@
+# Task ID: 17
+# Title: React Query 캐싱 최적화
+# Status: in-progress
+# Dependencies: None
+# Priority: high
+# Description: React Query 캐싱 및 무효화 전략 최적화
+# Details:
+
+
+# Test Strategy:
+

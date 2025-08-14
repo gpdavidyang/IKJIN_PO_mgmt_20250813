@@ -363,7 +363,7 @@ export default function OrderEdit() {
   }
 
   return (
-    <div className="p-6">
+    <div className="max-w-[1366px] mx-auto p-6">
       {/* Page Header */}
       <div className="mb-6">
         <div className="flex items-center justify-between">

@@ -25,6 +25,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Company, User } from "@shared/schema";
 import { formatKoreanWon } from "@/lib/formatters";
 import { ApprovalWorkflowSettings } from "@/components/admin/approval-workflow-settings";
+import { ApprovalSettingsManager } from "@/components/admin/ApprovalSettingsManager";
 
 interface Terminology {
   id: number;
@@ -957,78 +958,9 @@ export default function Admin() {
           </Card>
         </TabsContent>
 
-        {/* 승인 권한 설정 탭 */}
+        {/* 승인 설정 탭 */}
         <TabsContent value="approval" className="mt-2">
-          <Card className="shadow-sm">
-            <CardHeader className="pb-1">
-              <CardTitle className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-1">
-                  <UserCheck className="h-4 w-4" />
-                  <span>승인 권한 설정</span>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsAddingApproval(true)}
-                  className="gap-1 h-6 px-2 text-xs"
-                >
-                  <Plus className="h-3 w-3" />
-                  권한 추가
-                </Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-1">
-              <div className="space-y-2">
-                <div className="text-xs text-gray-600 mb-3">
-                  각 역할별 승인 권한 한도를 설정하여 발주서 승인 프로세스를 관리합니다.
-                </div>
-                
-                {isLoadingApprovals ? (
-                  <div className="text-center py-4 text-xs text-gray-500">로딩 중...</div>
-                ) : approvalAuthorities.length === 0 ? (
-                  <div className="text-center py-4 text-xs text-gray-500">설정된 승인 권한이 없습니다.</div>
-                ) : (
-                  <div className="space-y-1">
-                    {approvalAuthorities.map((approval) => (
-                      <div key={approval.id} className="flex items-center justify-between p-2 border rounded-md">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-xs">
-                              <RoleDisplay role={approval.role} />
-                            </span>
-                            <span className="text-blue-600 font-semibold text-xs">
-                              {formatKoreanWon(parseInt(approval.maxAmount))}
-                            </span>
-                          </div>
-                          {approval.description && (
-                            <div className="text-xs text-gray-500 mt-1">{approval.description}</div>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditApproval(approval)}
-                            className="h-6 w-6 p-0 hover:bg-blue-50"
-                          >
-                            <Edit className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => deleteApprovalMutation.mutate(approval.id)}
-                            className="h-6 w-6 p-0 hover:bg-red-50"
-                          >
-                            <Trash2 className="h-3 w-3 text-red-500" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          <ApprovalSettingsManager companyId={1} />
         </TabsContent>
 
         {/* 워크플로우 설정 탭 */}

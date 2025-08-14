@@ -1,0 +1,11 @@
+# Task ID: 23
+# Title: PostCSS 및 Tailwind 설정 최적화
+# Status: pending
+# Dependencies: None
+# Priority: low
+# Description: PostCSS 설정 및 Tailwind JIT 모드 최적화, CSS 컴파일 성능 개선
+# Details:
+
+
+# Test Strategy:
+

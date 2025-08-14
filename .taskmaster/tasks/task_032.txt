@@ -1,0 +1,11 @@
+# Task ID: 32
+# Title: UI 표준화 적용 - Phase 2 (관리 화면)
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: 거래처, 프로젝트, 품목, 사용자 관리 화면들에 새로운 UI 표준 적용. 카드뷰/테이블뷰 토글, 필터 섹션 개선, 액션 버튼 표준화, 호버 효과 통일. 총 15개 관리 화면 업데이트
+# Details:
+
+
+# Test Strategy:
+

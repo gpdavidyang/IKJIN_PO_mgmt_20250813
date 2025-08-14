@@ -32,7 +32,7 @@ export default function CreateOrder() {
 
   return (
     <div className={`min-h-screen transition-colors ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
-      <div className="max-w-[1366px] mx-auto p-6 space-y-6">
+      <div className="max-w-[1366px] mx-auto p-6 space-y-6 pb-20">
         {/* Page Header */}
         <div className="mb-6">
           <div className="flex items-center gap-3">

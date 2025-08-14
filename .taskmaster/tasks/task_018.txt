@@ -1,0 +1,11 @@
+# Task ID: 18
+# Title: 서비스 워커 및 오프라인 기능
+# Status: done
+# Dependencies: None
+# Priority: low
+# Description: 캐싱 및 오프라인 기능을 위한 서비스 워커 구현
+# Details:
+
+
+# Test Strategy:
+

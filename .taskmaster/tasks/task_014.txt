@@ -1,0 +1,11 @@
+# Task ID: 14
+# Title: API 엔드포인트 통합 테스트
+# Status: in-progress
+# Dependencies: None
+# Priority: medium
+# Description: 인증, 발주서, 거래처, 대시보드 API 엔드포인트에 대한 통합 테스트 작성
+# Details:
+
+
+# Test Strategy:
+

@@ -211,7 +211,23 @@ router.get('/auth/me', (req, res) => {
 router.get("/auth/permissions/:userId", async (req, res) => {
   try {
     const userId = req.params.userId;
-    const user = await storage.getUser(userId);
+    let user = await storage.getUser(userId);
+    
+    // Handle dev_admin fallback (string ID)
+    if (!user && userId === 'dev_admin') {
+      user = {
+        id: 'dev_admin',
+        email: 'admin@company.com',
+        name: 'Dev Administrator',
+        role: 'admin' as const,
+        phoneNumber: null,
+        profileImageUrl: null,
+        position: null,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+    }
     
     if (!user) {
       return res.status(404).json({ message: "User not found" });

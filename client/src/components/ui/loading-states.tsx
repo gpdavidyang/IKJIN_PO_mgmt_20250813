@@ -35,9 +35,9 @@ export function LoadingSpinner({
   return (
     <div className={cn("flex items-center justify-center", className)}>
       <div className="flex flex-col items-center space-y-2">
-        <Loader2 className={cn("animate-spin text-primary-600", sizes[size])} />
+        <Loader2 className={cn("animate-spin text-primary transition-colors duration-200", sizes[size])} />
         {text && (
-          <p className="text-sm text-gray-600 animate-pulse">{text}</p>
+          <p className="text-sm text-muted-foreground animate-pulse transition-colors duration-200">{text}</p>
         )}
       </div>
     </div>
@@ -59,22 +59,22 @@ export function LoadingOverlay({
   if (!isVisible) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <Card className="w-full max-w-sm mx-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in-0 duration-200">
+      <Card className="w-full max-w-sm mx-4 animate-in slide-in-from-bottom-4 duration-300">
         <CardContent className="pt-6">
           <div className="text-center space-y-4">
             <LoadingSpinner size="lg" />
             <div className="space-y-2">
-              <p className="font-medium">{message}</p>
+              <p className="font-medium text-foreground transition-colors duration-200">{message}</p>
               {showProgress && progress !== undefined && (
                 <div className="space-y-1">
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="w-full bg-muted rounded-full h-2">
                     <div 
-                      className="bg-primary-600 h-2 rounded-full transition-all duration-300"
+                      className="bg-primary h-2 rounded-full transition-all duration-300 ease-out"
                       style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
                     />
                   </div>
-                  <p className="text-xs text-gray-500">{Math.round(progress)}%</p>
+                  <p className="text-xs text-muted-foreground transition-colors duration-200">{Math.round(progress)}%</p>
                 </div>
               )}
             </div>

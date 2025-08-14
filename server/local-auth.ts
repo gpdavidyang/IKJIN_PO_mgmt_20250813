@@ -252,7 +252,26 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     }
 
     // Get user from database - Mock 데이터 완전 제거
-    const user = await storage.getUser(authSession.userId);
+    let user = await storage.getUser(authSession.userId);
+    
+    // Admin fallback: handle dev_admin user in all environments
+    if (!user && authSession.userId === 'dev_admin') {
+      console.log("🔧 Admin fallback: Using hardcoded dev_admin user in requireAuth");
+      user = {
+        id: 'dev_admin',
+        email: 'admin@company.com',
+        name: 'Dev Administrator',
+        password: '$2b$10$RbLrxzWq3TQEx6UTrnRwCeWwOai9N0QzdeJxg8iUp71jGS8kKgwjC', // admin123
+        role: 'admin' as const,
+        phoneNumber: null,
+        profileImageUrl: null,
+        position: null,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+    }
+    
     if (!user) {
       // Clear invalid session
       authSession.userId = undefined;
