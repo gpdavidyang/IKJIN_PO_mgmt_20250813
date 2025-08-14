@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
+import { useTheme } from '@/components/ui/theme-provider';
 import { 
   Upload, 
   FileText, 
@@ -76,6 +77,8 @@ interface AutomationData {
 }
 
 export function ExcelAutomationWizard() {
+  const { theme } = useTheme();
+  const isDarkMode = theme === 'dark';
   const [currentStep, setCurrentStep] = useState(0);
   const [processingSteps, setProcessingSteps] = useState<ProcessingStep[]>([
     {
@@ -286,9 +289,9 @@ export function ExcelAutomationWizard() {
       case 'error':
         return <XCircle className="h-5 w-5 text-red-500" />;
       case 'processing':
-        return <div className="h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />;
+        return <div className={`h-5 w-5 border-2 border-t-transparent rounded-full animate-spin transition-colors ${isDarkMode ? 'border-blue-400' : 'border-blue-500'}`} />;
       default:
-        return <div className="h-5 w-5 border-2 border-gray-300 rounded-full" />;
+        return <div className={`h-5 w-5 border-2 rounded-full transition-colors ${isDarkMode ? 'border-gray-600' : 'border-gray-300'}`} />;
     }
   };
 
@@ -296,13 +299,13 @@ export function ExcelAutomationWizard() {
   if (currentStep === 0 && !automationData) {
     return (
       <div className="space-y-6">
-        <Card>
+        <Card className={`transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className={`flex items-center gap-2 transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
               <Upload className="h-5 w-5" />
               Excel 발주서 자동화 처리
             </CardTitle>
-            <CardDescription>
+            <CardDescription className={`transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
               Excel 파일을 업로드하면 발주서 데이터 저장부터 이메일 발송까지 자동으로 처리됩니다
             </CardDescription>
           </CardHeader>
@@ -311,25 +314,25 @@ export function ExcelAutomationWizard() {
               {...getRootProps()}
               className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
                 isDragActive 
-                  ? 'border-blue-500 bg-blue-50' 
-                  : 'border-gray-300 hover:border-gray-400'
+                  ? (isDarkMode ? 'border-blue-400 bg-blue-900/20' : 'border-blue-500 bg-blue-50')
+                  : (isDarkMode ? 'border-gray-600 hover:border-gray-500' : 'border-gray-300 hover:border-gray-400')
               } ${isProcessing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
             >
               <input {...getInputProps()} />
-              <FileText className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+              <FileText className={`h-12 w-12 mx-auto mb-4 transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
               {isDragActive ? (
-                <p className="text-blue-600">파일을 여기에 놓으세요...</p>
+                <p className={`transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>파일을 여기에 놓으세요...</p>
               ) : (
                 <div>
-                  <p className="text-lg mb-2">Excel 파일을 드래그하거나 클릭하여 업로드</p>
-                  <p className="text-sm text-gray-500">.xlsx, .xlsm, .xls 파일 지원 (최대 10MB)</p>
+                  <p className={`text-lg mb-2 transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>Excel 파일을 드래그하거나 클릭하여 업로드</p>
+                  <p className={`text-sm transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>.xlsx, .xlsm, .xls 파일 지원 (최대 10MB)</p>
                 </div>
               )}
             </div>
 
             {isProcessing && (
               <div className="mt-6 space-y-4">
-                <div className="flex items-center justify-between text-sm">
+                <div className={`flex items-center justify-between text-sm transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                   <span>처리 진행 상황</span>
                   <span>{processingSteps.filter(s => s.status === 'completed').length} / {processingSteps.length}</span>
                 </div>
@@ -340,11 +343,11 @@ export function ExcelAutomationWizard() {
 
                 <div className="space-y-2">
                   {processingSteps.map((step) => (
-                    <div key={step.id} className="flex items-center gap-3 p-2 rounded">
+                    <div key={step.id} className={`flex items-center gap-3 p-2 rounded transition-colors ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}>
                       {renderStepIcon(step.status)}
                       <div className="flex-1">
-                        <div className="font-medium">{step.title}</div>
-                        <div className="text-sm text-gray-500">{step.description}</div>
+                        <div className={`font-medium transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{step.title}</div>
+                        <div className={`text-sm transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{step.description}</div>
                       </div>
                     </div>
                   ))}
@@ -414,30 +417,30 @@ export function ExcelAutomationWizard() {
   if (currentStep === 1 && automationData) {
     return (
       <div className="space-y-6">
-        <Card>
+        <Card className={`transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className={`flex items-center gap-2 transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
               <Mail className="h-5 w-5" />
               이메일 발송 미리보기
             </CardTitle>
-            <CardDescription>
+            <CardDescription className={`transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
               발송할 이메일 내용을 확인하고 전송하세요
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* 처리 결과 요약 */}
             <div className="grid grid-cols-3 gap-4">
-              <div className="text-center p-4 bg-green-50 rounded-lg">
-                <div className="text-2xl font-bold text-green-600">{automationData.savedOrders}</div>
-                <div className="text-sm text-green-600">저장된 발주서</div>
+              <div className={`text-center p-4 rounded-lg transition-colors ${isDarkMode ? 'bg-green-900/20' : 'bg-green-50'}`}>
+                <div className={`text-2xl font-bold transition-colors ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>{automationData.savedOrders}</div>
+                <div className={`text-sm transition-colors ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>저장된 발주서</div>
               </div>
-              <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <div className="text-2xl font-bold text-blue-600">{automationData.vendorValidation.validVendors.length}</div>
-                <div className="text-sm text-blue-600">확인된 거래처</div>
+              <div className={`text-center p-4 rounded-lg transition-colors ${isDarkMode ? 'bg-blue-900/20' : 'bg-blue-50'}`}>
+                <div className={`text-2xl font-bold transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>{automationData.vendorValidation.validVendors.length}</div>
+                <div className={`text-sm transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>확인된 거래처</div>
               </div>
-              <div className="text-center p-4 bg-purple-50 rounded-lg">
-                <div className="text-2xl font-bold text-purple-600">{automationData.emailPreview.recipients.length}</div>
-                <div className="text-sm text-purple-600">이메일 수신자</div>
+              <div className={`text-center p-4 rounded-lg transition-colors ${isDarkMode ? 'bg-purple-900/20' : 'bg-purple-50'}`}>
+                <div className={`text-2xl font-bold transition-colors ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`}>{automationData.emailPreview.recipients.length}</div>
+                <div className={`text-sm transition-colors ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`}>이메일 수신자</div>
               </div>
             </div>
 
@@ -446,7 +449,7 @@ export function ExcelAutomationWizard() {
             {/* 이메일 정보 */}
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-gray-700">수신자</label>
+                <label className={`text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>수신자</label>
                 <div className="mt-1 flex flex-wrap gap-2">
                   {automationData.emailPreview.recipients.map((email, index) => (
                     <Badge key={index} variant="secondary">{email}</Badge>
@@ -455,26 +458,26 @@ export function ExcelAutomationWizard() {
               </div>
 
               <div>
-                <label className="text-sm font-medium text-gray-700">제목</label>
-                <div className="mt-1 p-2 bg-gray-50 rounded border">
+                <label className={`text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>제목</label>
+                <div className={`mt-1 p-2 rounded border transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-gray-50 border-gray-200'}`}>
                   {automationData.emailPreview.subject}
                 </div>
               </div>
 
               <div>
-                <label className="text-sm font-medium text-gray-700">첨부파일</label>
+                <label className={`text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>첨부파일</label>
                 <div className="mt-1 space-y-2">
-                  <div className="p-2 bg-gray-50 rounded border flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-blue-500" />
-                    <span className="flex-1">{automationData.emailPreview.attachmentInfo.processedFile}</span>
+                  <div className={`p-2 rounded border flex items-center gap-2 transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'}`}>
+                    <FileText className={`h-4 w-4 transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-500'}`} />
+                    <span className={`flex-1 transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{automationData.emailPreview.attachmentInfo.processedFile}</span>
                     <Badge variant="outline">
                       {formatFileSize(automationData.emailPreview.attachmentInfo.fileSize)}
                     </Badge>
                   </div>
                   {automationData.emailPreview.attachmentInfo.processedPdfFile && (
-                    <div className="p-2 bg-gray-50 rounded border flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-red-500" />
-                      <span className="flex-1">{automationData.emailPreview.attachmentInfo.processedPdfFile}</span>
+                    <div className={`p-2 rounded border flex items-center gap-2 transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'}`}>
+                      <FileText className={`h-4 w-4 transition-colors ${isDarkMode ? 'text-red-400' : 'text-red-500'}`} />
+                      <span className={`flex-1 transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{automationData.emailPreview.attachmentInfo.processedPdfFile}</span>
                       <Badge variant="outline">
                         {formatFileSize(automationData.emailPreview.attachmentInfo.pdfFileSize || 0)}
                       </Badge>
@@ -540,9 +543,9 @@ export function ExcelAutomationWizard() {
   if (currentStep === 2 && emailResults) {
     return (
       <div className="space-y-6">
-        <Card>
+        <Card className={`transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className={`flex items-center gap-2 transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
               {emailResults.success ? (
                 <CheckCircle2 className="h-5 w-5 text-green-500" />
               ) : (
@@ -550,7 +553,7 @@ export function ExcelAutomationWizard() {
               )}
               이메일 발송 결과
             </CardTitle>
-            <CardDescription>
+            <CardDescription className={`transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
               {emailResults.success 
                 ? `모든 이메일이 성공적으로 발송되었습니다 (${emailResults.sentEmails}개)`
                 : `일부 이메일 발송에 실패했습니다 (성공: ${emailResults.sentEmails}개, 실패: ${emailResults.failedEmails.length}개)`
@@ -563,8 +566,10 @@ export function ExcelAutomationWizard() {
               {emailResults.emailResults.map((result: any, index: number) => (
                 <div 
                   key={index}
-                  className={`flex items-center justify-between p-3 rounded border ${
-                    result.status === 'sent' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+                  className={`flex items-center justify-between p-3 rounded border transition-colors ${
+                    result.status === 'sent' 
+                      ? (isDarkMode ? 'bg-green-900/20 border-green-700' : 'bg-green-50 border-green-200')
+                      : (isDarkMode ? 'bg-red-900/20 border-red-700' : 'bg-red-50 border-red-200')
                   }`}
                 >
                   <div className="flex items-center gap-2">
@@ -573,7 +578,7 @@ export function ExcelAutomationWizard() {
                     ) : (
                       <XCircle className="h-4 w-4 text-red-500" />
                     )}
-                    <span>{result.email}</span>
+                    <span className={`transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{result.email}</span>
                   </div>
                   <div className="text-sm">
                     {result.status === 'sent' ? (
@@ -589,12 +594,12 @@ export function ExcelAutomationWizard() {
             {/* 실패한 이메일 상세 */}
             {emailResults.failedEmails.length > 0 && (
               <div>
-                <h4 className="font-medium text-red-600 mb-2">발송 실패 상세</h4>
+                <h4 className={`font-medium mb-2 transition-colors ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>발송 실패 상세</h4>
                 <div className="space-y-2">
                   {emailResults.failedEmails.map((failed: any, index: number) => (
-                    <div key={index} className="p-2 bg-red-50 rounded border border-red-200">
-                      <div className="font-medium">{failed.email}</div>
-                      <div className="text-sm text-red-600">{failed.error}</div>
+                    <div key={index} className={`p-2 rounded border transition-colors ${isDarkMode ? 'bg-red-900/20 border-red-700' : 'bg-red-50 border-red-200'}`}>
+                      <div className={`font-medium transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{failed.email}</div>
+                      <div className={`text-sm transition-colors ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>{failed.error}</div>
                     </div>
                   ))}
                 </div>

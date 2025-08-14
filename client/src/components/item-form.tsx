@@ -7,10 +7,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { apiRequest } from "@/lib/queryClient";
 import { insertItemSchema } from "@shared/schema";
 import type { Item, InsertItem } from "@shared/schema";
 import { z } from "zod";
+import { useTheme } from "@/components/ui/theme-provider";
 
 const itemFormSchema = insertItemSchema.extend({
   standardPrice: z.string().optional().transform((val) => val && val !== "" ? val : undefined)
@@ -19,12 +21,15 @@ const itemFormSchema = insertItemSchema.extend({
 type ItemFormData = z.infer<typeof itemFormSchema>;
 
 interface ItemFormProps {
+  isOpen: boolean;
   item?: Item | null;
+  onClose: () => void;
   onSuccess: () => void;
-  onCancel: () => void;
 }
 
-export function ItemForm({ item, onSuccess, onCancel }: ItemFormProps) {
+export function ItemForm({ isOpen, item, onClose, onSuccess }: ItemFormProps) {
+  const { theme } = useTheme();
+  const isDarkMode = theme === 'dark';
   const form = useForm<ItemFormData>({
     resolver: zodResolver(itemFormSchema),
     defaultValues: {
@@ -38,6 +43,11 @@ export function ItemForm({ item, onSuccess, onCancel }: ItemFormProps) {
     },
   });
 
+  const handleSuccess = () => {
+    onSuccess();
+    onClose();
+  };
+
   const createMutation = useMutation({
     mutationFn: async (data: ItemFormData) => {
       const payload: InsertItem = {
@@ -46,7 +56,7 @@ export function ItemForm({ item, onSuccess, onCancel }: ItemFormProps) {
       };
       return await apiRequest("POST", "/api/items", payload);
     },
-    onSuccess,
+    onSuccess: handleSuccess,
   });
 
   const updateMutation = useMutation({
@@ -63,7 +73,7 @@ export function ItemForm({ item, onSuccess, onCancel }: ItemFormProps) {
       if (!response.ok) throw new Error('Failed to update item');
       return response.json();
     },
-    onSuccess,
+    onSuccess: handleSuccess,
   });
 
   const onSubmit = (data: ItemFormData) => {
@@ -80,17 +90,24 @@ export function ItemForm({ item, onSuccess, onCancel }: ItemFormProps) {
   const units = ["개", "박스", "세트", "kg", "g", "L", "mL", "m", "cm", "mm", "㎡", "㎥", "시간", "일"];
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className={`max-w-2xl max-h-[90vh] overflow-y-auto transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+        <DialogHeader>
+          <DialogTitle className={`transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+            {item ? "품목 수정" : "새 품목 추가"}
+          </DialogTitle>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>품목명 *</FormLabel>
+                <FormLabel className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>품목명 *</FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder="품목명을 입력하세요" />
+                  <Input {...field} placeholder="품목명을 입력하세요" className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder:text-gray-400' : 'bg-white border-gray-300'}`} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -102,14 +119,14 @@ export function ItemForm({ item, onSuccess, onCancel }: ItemFormProps) {
             name="category"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>카테고리</FormLabel>
+                <FormLabel className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>카테고리</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value || ""}>
                   <FormControl>
-                    <SelectTrigger>
+                    <SelectTrigger className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}>
                       <SelectValue placeholder="카테고리를 선택하세요" />
                     </SelectTrigger>
                   </FormControl>
-                  <SelectContent>
+                  <SelectContent className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
                     {categories.map((category) => (
                       <SelectItem key={category} value={category}>
                         {category}
@@ -127,14 +144,14 @@ export function ItemForm({ item, onSuccess, onCancel }: ItemFormProps) {
             name="unit"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>단위 *</FormLabel>
+                <FormLabel className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>단위 *</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value || ""}>
                   <FormControl>
-                    <SelectTrigger>
+                    <SelectTrigger className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}>
                       <SelectValue placeholder="단위를 선택하세요" />
                     </SelectTrigger>
                   </FormControl>
-                  <SelectContent>
+                  <SelectContent className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
                     {units.map((unit) => (
                       <SelectItem key={unit} value={unit}>
                         {unit}
@@ -152,13 +169,14 @@ export function ItemForm({ item, onSuccess, onCancel }: ItemFormProps) {
             name="standardPrice"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>표준단가</FormLabel>
+                <FormLabel className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>표준단가</FormLabel>
                 <FormControl>
                   <Input 
                     {...field} 
                     type="number" 
                     step="0.01" 
                     placeholder="0.00" 
+                    className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder:text-gray-400' : 'bg-white border-gray-300'}`}
                   />
                 </FormControl>
                 <FormMessage />
@@ -172,13 +190,14 @@ export function ItemForm({ item, onSuccess, onCancel }: ItemFormProps) {
           name="specification"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>규격</FormLabel>
+              <FormLabel className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>규격</FormLabel>
               <FormControl>
                 <Textarea
                   {...field}
                   value={field.value || ""}
                   placeholder="품목의 상세 규격을 입력하세요"
                   rows={3}
+                  className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder:text-gray-400' : 'bg-white border-gray-300'}`}
                 />
               </FormControl>
               <FormMessage />
@@ -191,13 +210,14 @@ export function ItemForm({ item, onSuccess, onCancel }: ItemFormProps) {
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>설명</FormLabel>
+              <FormLabel className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>설명</FormLabel>
               <FormControl>
                 <Textarea
                   {...field}
                   value={field.value || ""}
                   placeholder="품목에 대한 추가 설명을 입력하세요"
                   rows={3}
+                  className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder:text-gray-400' : 'bg-white border-gray-300'}`}
                 />
               </FormControl>
               <FormMessage />
@@ -209,10 +229,10 @@ export function ItemForm({ item, onSuccess, onCancel }: ItemFormProps) {
           control={form.control}
           name="isActive"
           render={({ field }) => (
-            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+            <FormItem className={`flex flex-row items-center justify-between rounded-lg border p-4 transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-700/50' : 'border-gray-200 bg-gray-50'}`}>
               <div className="space-y-0.5">
-                <FormLabel className="text-base">활성 상태</FormLabel>
-                <div className="text-sm text-muted-foreground">
+                <FormLabel className={`text-base transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>활성 상태</FormLabel>
+                <div className={`text-sm transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                   품목을 활성화하여 발주에서 사용할 수 있도록 합니다
                 </div>
               </div>
@@ -226,27 +246,29 @@ export function ItemForm({ item, onSuccess, onCancel }: ItemFormProps) {
           )}
         />
 
-        <div className="flex justify-end space-x-2 pt-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onCancel}
-            disabled={isPending}
-          >
-            취소
-          </Button>
-          <Button type="submit" disabled={isPending}>
-            {isPending ? (
-              <>
-                <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                {item ? "수정 중..." : "생성 중..."}
-              </>
-            ) : (
-              item ? "수정" : "생성"
-            )}
-          </Button>
-        </div>
-      </form>
-    </Form>
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                disabled={isPending}
+              >
+                취소
+              </Button>
+              <Button type="submit" disabled={isPending}>
+                {isPending ? (
+                  <>
+                    <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    {item ? "수정 중..." : "생성 중..."}
+                  </>
+                ) : (
+                  item ? "수정" : "생성"
+                )}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
   );
 }

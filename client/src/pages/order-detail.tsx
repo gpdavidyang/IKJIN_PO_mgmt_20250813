@@ -103,24 +103,34 @@ export default function OrderDetail() {
     const statusObj = orderStatuses?.find((s: any) => s.code === status);
     const statusLabel = statusObj ? statusObj.name : status;
     
-    // TOSS-style status colors - minimal semantic colors only
+    // Status colors with dark mode support
     const getStatusStyles = (status: string) => {
       switch (status) {
         case "pending_approval":
-          return "bg-yellow-100 text-yellow-800 border-yellow-200";
+          return isDarkMode 
+            ? "bg-yellow-900/20 text-yellow-400 border-yellow-700" 
+            : "bg-yellow-100 text-yellow-800 border-yellow-200";
         case "approved":
-          return "bg-green-100 text-green-800 border-green-200";
+          return isDarkMode 
+            ? "bg-green-900/20 text-green-400 border-green-700" 
+            : "bg-green-100 text-green-800 border-green-200";
         case "sent":
-          return "bg-blue-100 text-blue-800 border-blue-200";
+          return isDarkMode 
+            ? "bg-blue-900/20 text-blue-400 border-blue-700" 
+            : "bg-blue-100 text-blue-800 border-blue-200";
         case "rejected":
-          return "bg-red-100 text-red-800 border-red-200";
+          return isDarkMode 
+            ? "bg-red-900/20 text-red-400 border-red-700" 
+            : "bg-red-100 text-red-800 border-red-200";
         default:
-          return "bg-gray-100 text-gray-800 border-gray-200";
+          return isDarkMode 
+            ? "bg-gray-700 text-gray-300 border-gray-600" 
+            : "bg-gray-100 text-gray-800 border-gray-200";
       }
     };
     
     return (
-      <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium border ${getStatusStyles(status)}`}>
+      <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium border transition-colors ${getStatusStyles(status)}`}>
         {statusLabel}
       </span>
     );
@@ -692,14 +702,14 @@ export default function OrderDetail() {
 
         {/* TOSS-style Compact PDF Preview Modal */}
         <Dialog open={showPreview} onOpenChange={setShowPreview}>
-          <DialogContent className="max-w-[1366px] max-h-[90vh] overflow-y-auto">
+          <DialogContent className={`max-w-[1366px] max-h-[90vh] overflow-y-auto transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
             <DialogHeader>
               <DialogTitle className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Eye className="h-4 w-4 text-gray-600" />
+                  <Eye className={`h-4 w-4 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`} />
                   <div>
-                    <span className="text-sm font-semibold text-gray-900">발주서 미리보기</span>
-                    <span className="text-xs text-gray-500 block">{order?.orderNumber}</span>
+                    <span className={`text-sm font-semibold transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>발주서 미리보기</span>
+                    <span className={`text-xs block transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{order?.orderNumber}</span>
                   </div>
                 </div>
                 <div className="flex space-x-1">
@@ -730,7 +740,7 @@ export default function OrderDetail() {
                         printWindow.print();
                       }
                     }}
-                    className="h-8 px-2 text-xs"
+                    className={`h-8 px-2 text-xs transition-colors ${isDarkMode ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
                   >
                     <Printer className="h-4 w-4 mr-1" />
                     PDF 출력

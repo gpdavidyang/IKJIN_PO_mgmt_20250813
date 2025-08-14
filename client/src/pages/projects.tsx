@@ -949,7 +949,7 @@ export default function Projects() {
                                 <Badge 
                                   key={managerId} 
                                   variant="outline" 
-                                  className="text-xs bg-blue-50 text-blue-700 border-blue-200"
+                                  className={`text-xs transition-colors ${isDarkMode ? 'bg-blue-900/20 text-blue-400 border-blue-600' : 'bg-blue-50 text-blue-700 border-blue-200'}`}
                                 >
                                   {user?.name || managerId}
                                   <button

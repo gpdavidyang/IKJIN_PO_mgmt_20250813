@@ -4,6 +4,8 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { PageHeader } from '@/components/ui/page-header';
+import { useTheme } from '@/components/ui/theme-provider';
 
 interface ParseResult {
   success: boolean;
@@ -74,6 +76,8 @@ interface ParseResult {
 }
 
 export default function ExcelAutomationTest() {
+  const { theme } = useTheme();
+  const isDarkMode = theme === 'dark';
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ParseResult | null>(null);
@@ -261,16 +265,15 @@ export default function ExcelAutomationTest() {
   };
 
   return (
-    <div className="container mx-auto p-6 max-w-[1366px]">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">엑셀 템플릿 자동화 테스트</h1>
-        <p className="text-muted-foreground">
-          Input 시트의 A:P 열을 파싱하여 JSON으로 변환하는 기능을 테스트합니다.
-        </p>
-      </div>
+    <div className={`min-h-screen transition-colors ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+      <div className="max-w-[1366px] mx-auto p-6 space-y-6">
+        <PageHeader
+          title="엑셀 템플릿 자동화 테스트"
+          description="Input 시트의 A:P 열을 파싱하여 JSON으로 변환하는 기능을 테스트합니다."
+        />
 
-      {/* 파일 업로드 섹션 */}
-      <Card className="mb-6">
+        {/* 파일 업로드 섹션 */}
+        <Card>
         <CardHeader>
           <CardTitle>1단계: 엑셀 파일 업로드</CardTitle>
           <CardDescription>
@@ -337,11 +340,11 @@ export default function ExcelAutomationTest() {
             </div>
           )}
         </CardContent>
-      </Card>
+        </Card>
 
-      {/* 결과 표시 섹션 */}
-      {result && (
-        <Card>
+        {/* 결과 표시 섹션 */}
+        {result && (
+          <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               파싱 결과
@@ -402,28 +405,28 @@ export default function ExcelAutomationTest() {
                     <div className="font-medium text-lg">🔍 거래처 검증 결과 (Phase 2)</div>
                     
                     {/* 거래처 검증 통계 */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-blue-50 rounded-lg">
+                    <div className={`grid grid-cols-1 md:grid-cols-4 gap-4 p-4 rounded-lg transition-colors ${isDarkMode ? 'bg-blue-900/20 border border-blue-800' : 'bg-blue-50'}`}>
                       <div>
                         <div className="text-sm font-medium">거래처 검증</div>
-                        <div className="text-lg text-blue-600">
+                        <div className={`text-lg transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
                           {result.data.vendorValidation.vendorValidations.filter(v => v.exists).length} / {result.data.vendorValidation.vendorValidations.length}
                         </div>
                       </div>
                       <div>
                         <div className="text-sm font-medium">납품처 검증</div>
-                        <div className="text-lg text-blue-600">
+                        <div className={`text-lg transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
                           {result.data.vendorValidation.deliveryValidations.filter(v => v.exists).length} / {result.data.vendorValidation.deliveryValidations.length}
                         </div>
                       </div>
                       <div>
                         <div className="text-sm font-medium">이메일 충돌</div>
-                        <div className="text-lg text-red-600">
+                        <div className={`text-lg transition-colors ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>
                           {result.data.vendorValidation.emailConflicts.filter(e => e.type === 'conflict').length}개
                         </div>
                       </div>
                       <div>
                         <div className="text-sm font-medium">추천 업체</div>
-                        <div className="text-lg text-green-600">
+                        <div className={`text-lg transition-colors ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
                           {result.data.vendorValidation.vendorValidations.reduce((sum, v) => sum + v.suggestions.length, 0)}개
                         </div>
                       </div>
@@ -459,7 +462,7 @@ export default function ExcelAutomationTest() {
                                 )}
                               </div>
                               {vendor.exactMatch && (
-                                <div className="text-sm text-green-700 mb-2">
+                                <div className={`text-sm mb-2 transition-colors ${isDarkMode ? 'text-green-400' : 'text-green-700'}`}>
                                   📍 매칭: {vendor.exactMatch.name} (담당자: {vendor.exactMatch.contactPerson})
                                 </div>
                               )}
@@ -467,10 +470,10 @@ export default function ExcelAutomationTest() {
                                 <div className="text-sm">
                                   <div className="font-medium mb-1">💡 유사 업체 추천:</div>
                                   {vendor.suggestions.slice(0, 3).map((suggestion, idx) => (
-                                    <div key={idx} className="text-xs text-gray-600 ml-2">
+                                    <div key={idx} className={`text-xs ml-2 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                                       • {suggestion.name} (유사도: {(suggestion.similarity * 100).toFixed(1)}%)
                                       {suggestion.phone === '02-0000-0000' && (
-                                        <span className="text-orange-500 ml-1">[샘플]</span>
+                                        <span className={`ml-1 transition-colors ${isDarkMode ? 'text-orange-400' : 'text-orange-500'}`}>[샘플]</span>
                                       )}
                                     </div>
                                   ))}
@@ -520,8 +523,9 @@ export default function ExcelAutomationTest() {
               </Alert>
             )}
           </CardContent>
-        </Card>
-      )}
+          </Card>
+        )}
+      </div>
     </div>
   );
 }
