@@ -428,8 +428,8 @@ export default function OrdersProfessional() {
         </div>
 
         {/* Search & Filters Card */}
-        <Card className="mb-6 shadow-sm border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-          <CardContent className="p-6 dark:text-gray-100">
+        <Card className="mb-6 shadow-sm border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+          <CardContent className="p-6 dark:text-gray-100" style={{ color: 'var(--card-foreground)' }}>
             {/* Main Search Bar */}
             <div className="mb-6">
               <div className="relative max-w-xl">
@@ -439,6 +439,7 @@ export default function OrdersProfessional() {
                   value={filters.searchText}
                   onChange={(e) => handleFilterChange("searchText", e.target.value)}
                   className="pl-10 h-11 text-sm bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900"
+                  style={{ backgroundColor: 'var(--input)', color: 'var(--foreground)', borderColor: 'var(--border)' }}
                 />
               </div>
             </div>
@@ -446,7 +447,10 @@ export default function OrdersProfessional() {
             {/* Quick Filters */}
             <div className="flex flex-wrap gap-3 mb-4">
               <Select value={filters.status || "all"} onValueChange={(value) => handleFilterChange("status", value)}>
-                <SelectTrigger className="w-40 h-10 bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100">
+                <SelectTrigger 
+                  className="w-40 h-10 bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100"
+                  style={{ backgroundColor: 'var(--secondary)', color: 'var(--secondary-foreground)', borderColor: 'var(--border)' }}
+                >
                   <SelectValue placeholder="상태 선택" />
                 </SelectTrigger>
                 <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100">
@@ -460,7 +464,10 @@ export default function OrdersProfessional() {
               </Select>
 
               <Select value={filters.projectId || "all"} onValueChange={(value) => handleFilterChange("projectId", value)}>
-                <SelectTrigger className="w-48 h-10 bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100">
+                <SelectTrigger 
+                  className="w-48 h-10 bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100"
+                  style={{ backgroundColor: 'var(--secondary)', color: 'var(--secondary-foreground)', borderColor: 'var(--border)' }}
+                >
                   <SelectValue placeholder="현장 선택" />
                 </SelectTrigger>
                 <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100">
@@ -474,7 +481,10 @@ export default function OrdersProfessional() {
               </Select>
 
               <Select value={filters.vendorId || "all"} onValueChange={(value) => handleFilterChange("vendorId", value)}>
-                <SelectTrigger className="w-48 h-10 bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100">
+                <SelectTrigger 
+                  className="w-48 h-10 bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100"
+                  style={{ backgroundColor: 'var(--secondary)', color: 'var(--secondary-foreground)', borderColor: 'var(--border)' }}
+                >
                   <SelectValue placeholder="거래처 선택" />
                 </SelectTrigger>
                 <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100">
@@ -544,6 +554,7 @@ export default function OrdersProfessional() {
                         value={filters.startDate}
                         onChange={(e) => handleFilterChange("startDate", e.target.value)}
                         className="h-10 text-sm bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100"
+                        style={{ backgroundColor: 'var(--input)', color: 'var(--foreground)', borderColor: 'var(--border)' }}
                       />
                       <span className="text-gray-400 dark:text-gray-500">~</span>
                       <Input
@@ -551,6 +562,7 @@ export default function OrdersProfessional() {
                         value={filters.endDate}
                         onChange={(e) => handleFilterChange("endDate", e.target.value)}
                         className="h-10 text-sm bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100"
+                        style={{ backgroundColor: 'var(--input)', color: 'var(--foreground)', borderColor: 'var(--border)' }}
                       />
                     </div>
                   </div>
@@ -564,6 +576,7 @@ export default function OrdersProfessional() {
                         value={filters.minAmount}
                         onChange={(e) => handleFilterChange("minAmount", e.target.value)}
                         className="h-10 text-sm bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
+                        style={{ backgroundColor: 'var(--input)', color: 'var(--foreground)', borderColor: 'var(--border)' }}
                       />
                       <span className="text-gray-400 dark:text-gray-500">~</span>
                       <Input
@@ -572,6 +585,7 @@ export default function OrdersProfessional() {
                         value={filters.maxAmount}
                         onChange={(e) => handleFilterChange("maxAmount", e.target.value)}
                         className="h-10 text-sm bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
+                        style={{ backgroundColor: 'var(--input)', color: 'var(--foreground)', borderColor: 'var(--border)' }}
                       />
                     </div>
                   </div>
@@ -579,7 +593,10 @@ export default function OrdersProfessional() {
                   <div>
                     <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">작성자</label>
                     <Select value={filters.userId || "all"} onValueChange={(value) => handleFilterChange("userId", value)}>
-                      <SelectTrigger className="h-10 bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100">
+                      <SelectTrigger 
+                        className="h-10 bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100"
+                        style={{ backgroundColor: 'var(--secondary)', color: 'var(--secondary-foreground)', borderColor: 'var(--border)' }}
+                      >
                         <SelectValue placeholder="모든 작성자" />
                       </SelectTrigger>
                       <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100">
@@ -600,8 +617,8 @@ export default function OrdersProfessional() {
 
         {/* Orders Table */}
         <Card className="shadow-sm bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-          <div className="overflow-x-auto">
-            <table className="w-full bg-white dark:bg-gray-800">
+          <div className="overflow-x-auto" style={{ backgroundColor: 'var(--card)' }}>
+            <table className="w-full" style={{ backgroundColor: 'var(--card)' }}>
               <thead className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -662,7 +679,7 @@ export default function OrdersProfessional() {
                   <th className="px-6 py-4 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">액션</th>
                 </tr>
               </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700" style={{ backgroundColor: 'var(--card)' }}>
                 {ordersLoading ? (
                   <tr>
                     <td colSpan={8} className="px-6 py-12 text-center">
@@ -682,7 +699,7 @@ export default function OrdersProfessional() {
                   </tr>
                 ) : (
                   ordersWithEmailStatus.map((order: any) => (
-                    <tr key={order.id} className="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                    <tr key={order.id} className="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors" style={{ backgroundColor: 'var(--card)' }}>
                       <td className="px-6 py-4 whitespace-nowrap bg-white dark:bg-gray-800">
                         <button
                           onClick={() => navigate(`/orders/${order.id}`)}

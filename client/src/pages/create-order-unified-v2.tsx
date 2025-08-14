@@ -491,20 +491,6 @@ const CreateOrderUnifiedV2: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* 왼쪽: 입력 영역 */}
             <div className="space-y-6">
-              {/* 방법 변경 버튼 */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  if (window.confirm('방법을 변경하시겠습니까? 입력한 내용은 저장됩니다.')) {
-                    handleAutoSave();
-                    setActiveMethod(null);
-                  }
-                }}
-              >
-                다른 방법으로 변경
-              </Button>
-
               {/* 입력 컴포넌트 */}
               <Card>
                 <CardContent className="p-6">
