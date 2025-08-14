@@ -17,7 +17,7 @@ interface ThemeProviderState {
 }
 
 const initialState: ThemeProviderState = {
-  theme: "system",
+  theme: "light",
   setTheme: () => null,
   actualTheme: "light",
 };
@@ -26,14 +26,20 @@ const ThemeProviderContext = React.createContext<ThemeProviderState>(initialStat
 
 export function ThemeProvider({
   children,
-  defaultTheme = "system",
+  defaultTheme = "light",
   storageKey = "po-management-theme",
-  enableSystem = true,
+  enableSystem = false,
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = React.useState<Theme>(
-    () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
-  );
+  const [theme, setTheme] = React.useState<Theme>(() => {
+    const stored = localStorage.getItem(storageKey) as Theme;
+    // 기존에 시스템 설정이 저장되어 있다면 light mode로 변경
+    if (stored === "system") {
+      localStorage.setItem(storageKey, "light");
+      return "light";
+    }
+    return stored || defaultTheme;
+  });
 
   const [actualTheme, setActualTheme] = React.useState<"light" | "dark">("light");
 
@@ -44,11 +50,9 @@ export function ThemeProvider({
 
     let effectiveTheme: "light" | "dark";
 
-    if (theme === "system" && enableSystem) {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
-        ? "dark"
-        : "light";
-      effectiveTheme = systemTheme;
+    // 시스템 설정을 무시하고 항상 light/dark만 사용
+    if (theme === "system") {
+      effectiveTheme = "light"; // 시스템 설정이어도 기본값은 light
     } else {
       effectiveTheme = theme as "light" | "dark";
     }
@@ -57,23 +61,11 @@ export function ThemeProvider({
     setActualTheme(effectiveTheme);
   }, [theme, enableSystem]);
 
-  // Listen for system theme changes
-  React.useEffect(() => {
-    if (theme !== "system" || !enableSystem) return;
-
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    
-    const handleChange = () => {
-      const systemTheme = mediaQuery.matches ? "dark" : "light";
-      const root = window.document.documentElement;
-      root.classList.remove("light", "dark");
-      root.classList.add(systemTheme);
-      setActualTheme(systemTheme);
-    };
-
-    mediaQuery.addEventListener("change", handleChange);
-    return () => mediaQuery.removeEventListener("change", handleChange);
-  }, [theme, enableSystem]);
+  // 시스템 테마 변경 감지를 비활성화 (항상 수동 설정만 사용)
+  // React.useEffect(() => {
+  //   if (theme !== "system" || !enableSystem) return;
+  //   ...
+  // }, [theme, enableSystem]);
 
   const value = React.useMemo(
     () => ({
@@ -170,7 +162,6 @@ export function ThemeToggle({
         >
           <option value="light">라이트 모드</option>
           <option value="dark">다크 모드</option>
-          <option value="system">시스템 설정</option>
         </select>
         <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
           <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

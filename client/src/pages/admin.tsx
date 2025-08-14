@@ -17,6 +17,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { SafeUserDelete } from "@/components/safe-user-delete";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { useTheme } from "@/components/ui/theme-provider";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -90,6 +91,8 @@ export default function Admin() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const { theme } = useTheme();
+  const isDarkMode = theme === 'dark';
   const [isEditingCompany, setIsEditingCompany] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [activeTab, setActiveTab] = useState("company");
@@ -432,18 +435,28 @@ export default function Admin() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className={`min-h-screen transition-colors ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
       <div className="max-w-[1366px] mx-auto p-6 space-y-6">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Shield className="h-5 w-5 text-blue-600" />
-            시스템 관리
-          </h1>
-          <p className="text-sm text-gray-600">사용자 및 시스템 설정을 관리하세요</p>
+        {/* Page Header */}
+        <div className={`shadow-sm rounded-lg border transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+          <div className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-lg transition-colors ${isDarkMode ? 'bg-blue-900/20' : 'bg-blue-50'}`}>
+                  <Shield className={`h-6 w-6 transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                </div>
+                <div>
+                  <h1 className={`text-2xl font-bold transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>시스템 관리</h1>
+                  <p className={`text-sm mt-1 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>사용자 및 시스템 설정을 관리하세요</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+      <div className={`shadow-sm rounded-lg border transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className={`grid w-full grid-cols-5 transition-colors ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
           <TabsTrigger value="company" className="flex items-center gap-2 text-sm">
             <Building className="h-4 w-4" />
             회사 정보
@@ -468,11 +481,11 @@ export default function Admin() {
 
         {/* 회사 정보 탭 */}
         <TabsContent value="company" className="mt-2">
-          <Card className="shadow-sm">
+          <Card className={`shadow-sm transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
             <CardHeader className="pb-1">
-              <CardTitle className="flex items-center justify-between text-sm">
+              <CardTitle className={`flex items-center justify-between text-sm transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
                 <div className="flex items-center gap-1">
-                  <Building className="h-4 w-4" />
+                  <Building className={`h-4 w-4 transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
                   <span>회사 정보</span>
                 </div>
                 {!isEditingCompany && (
@@ -498,9 +511,9 @@ export default function Admin() {
                         name="companyName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-xs">회사명</FormLabel>
+                            <FormLabel className={`text-xs transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>회사명</FormLabel>
                             <FormControl>
-                              <Input {...field} className="h-7 text-xs" />
+                              <Input {...field} className={`h-7 text-xs transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`} />
                             </FormControl>
                             <FormMessage className="text-xs" />
                           </FormItem>
@@ -511,9 +524,9 @@ export default function Admin() {
                         name="businessNumber"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-xs">사업자등록번호</FormLabel>
+                            <FormLabel className={`text-xs transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>사업자등록번호</FormLabel>
                             <FormControl>
-                              <Input {...field} className="h-7 text-xs" />
+                              <Input {...field} className={`h-7 text-xs transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`} />
                             </FormControl>
                             <FormMessage className="text-xs" />
                           </FormItem>
@@ -524,9 +537,9 @@ export default function Admin() {
                         name="representative"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-xs">대표자</FormLabel>
+                            <FormLabel className={`text-xs transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>대표자</FormLabel>
                             <FormControl>
-                              <Input {...field} className="h-7 text-xs" />
+                              <Input {...field} className={`h-7 text-xs transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`} />
                             </FormControl>
                             <FormMessage className="text-xs" />
                           </FormItem>
@@ -537,9 +550,9 @@ export default function Admin() {
                         name="phone"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-xs">전화번호</FormLabel>
+                            <FormLabel className={`text-xs transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>전화번호</FormLabel>
                             <FormControl>
-                              <Input {...field} className="h-7 text-xs" />
+                              <Input {...field} className={`h-7 text-xs transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`} />
                             </FormControl>
                             <FormMessage className="text-xs" />
                           </FormItem>
@@ -550,9 +563,9 @@ export default function Admin() {
                         name="address"
                         render={({ field }) => (
                           <FormItem className="col-span-2">
-                            <FormLabel className="text-xs">주소</FormLabel>
+                            <FormLabel className={`text-xs transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>주소</FormLabel>
                             <FormControl>
-                              <Input {...field} className="h-7 text-xs" />
+                              <Input {...field} className={`h-7 text-xs transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`} />
                             </FormControl>
                             <FormMessage className="text-xs" />
                           </FormItem>
@@ -586,29 +599,29 @@ export default function Admin() {
                 <div className="space-y-3">
                   {primaryCompany ? (
                     <div className="grid grid-cols-2 gap-3 text-xs">
-                      <div className="flex items-center gap-2 p-2 bg-gray-50 rounded">
-                        <span className="font-medium text-gray-500 min-w-[60px]">회사명:</span>
-                        <span className="text-gray-900">{primaryCompany.companyName}</span>
+                      <div className={`flex items-center gap-2 p-2 rounded transition-colors ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                        <span className={`font-medium min-w-[60px] transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>회사명:</span>
+                        <span className={`transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{primaryCompany.companyName}</span>
                       </div>
-                      <div className="flex items-center gap-2 p-2 bg-gray-50 rounded">
-                        <span className="font-medium text-gray-500 min-w-[80px]">사업자번호:</span>
-                        <span className="text-gray-900">{primaryCompany.businessNumber}</span>
+                      <div className={`flex items-center gap-2 p-2 rounded transition-colors ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                        <span className={`font-medium min-w-[80px] transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>사업자번호:</span>
+                        <span className={`transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{primaryCompany.businessNumber}</span>
                       </div>
-                      <div className="flex items-center gap-2 p-2 bg-gray-50 rounded">
-                        <span className="font-medium text-gray-500 min-w-[60px]">대표자:</span>
-                        <span className="text-gray-900">{primaryCompany.representative}</span>
+                      <div className={`flex items-center gap-2 p-2 rounded transition-colors ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                        <span className={`font-medium min-w-[60px] transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>대표자:</span>
+                        <span className={`transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{primaryCompany.representative}</span>
                       </div>
-                      <div className="flex items-center gap-2 p-2 bg-gray-50 rounded">
-                        <span className="font-medium text-gray-500 min-w-[60px]">전화번호:</span>
-                        <span className="text-gray-900">{primaryCompany.phone}</span>
+                      <div className={`flex items-center gap-2 p-2 rounded transition-colors ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                        <span className={`font-medium min-w-[60px] transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>전화번호:</span>
+                        <span className={`transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{primaryCompany.phone}</span>
                       </div>
-                      <div className="flex items-center gap-2 p-2 bg-gray-50 rounded col-span-2">
-                        <span className="font-medium text-gray-500 min-w-[40px]">주소:</span>
-                        <span className="text-gray-900">{primaryCompany.address}</span>
+                      <div className={`flex items-center gap-2 p-2 rounded col-span-2 transition-colors ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                        <span className={`font-medium min-w-[40px] transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>주소:</span>
+                        <span className={`transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{primaryCompany.address}</span>
                       </div>
                     </div>
                   ) : (
-                    <div className="text-xs text-center py-4 text-gray-500">회사 정보가 없습니다. 추가해주세요.</div>
+                    <div className={`text-xs text-center py-4 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>회사 정보가 없습니다. 추가해주세요.</div>
                   )}
                 </div>
               )}
@@ -618,15 +631,15 @@ export default function Admin() {
 
         {/* 사용자 관리 탭 */}
         <TabsContent value="users" className="mt-2">
-          <Card className="shadow-sm">
+          <Card className={`shadow-sm transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
             <CardHeader className="pb-1">
-              <CardTitle className="flex items-center justify-between text-sm">
+              <CardTitle className={`flex items-center justify-between text-sm transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
                 <div className="flex items-center gap-1">
-                  <Users className="h-4 w-4" />
+                  <Users className={`h-4 w-4 transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
                   <span>사용자 관리</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="flex items-center bg-gray-100 rounded p-1">
+                  <div className={`flex items-center rounded p-1 transition-colors ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
                     <Button
                       variant={userViewMode === 'list' ? 'default' : 'ghost'}
                       size="sm"
@@ -662,24 +675,28 @@ export default function Admin() {
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <div className="relative flex-1">
-                    <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400" />
+                    <Search className={`absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
                     <Input
                       placeholder="사용자 검색..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="h-7 text-xs pl-7"
+                      className={`h-7 text-xs pl-7 transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}
                     />
                   </div>
                 </div>
                 
                 {isLoadingUsers ? (
-                  <div className="text-xs text-center py-4">사용자 정보를 불러오는 중...</div>
+                  <div className={`text-xs text-center py-4 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>사용자 정보를 불러오는 중...</div>
                 ) : userViewMode === 'list' ? (
                   <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead 
-                          className="px-3 py-3 text-xs cursor-pointer hover:bg-gray-50"
+                          className={`px-3 py-3 text-xs cursor-pointer transition-colors ${
+                            isDarkMode 
+                              ? 'text-gray-400 hover:bg-gray-700' 
+                              : 'text-gray-600 hover:bg-gray-50'
+                          }`}
                           onClick={() => handleUserSort('name')}
                         >
                           <div className="flex items-center gap-1">
@@ -687,15 +704,15 @@ export default function Admin() {
                             {getSortIcon('name', userSortField, userSortDirection)}
                           </div>
                         </TableHead>
-                        <TableHead className="px-3 py-3 text-xs">역할</TableHead>
-                        <TableHead className="px-3 py-3 text-xs">연락처</TableHead>
-                        <TableHead className="px-3 py-3 text-xs">상태</TableHead>
-                        <TableHead className="px-3 py-3 text-xs text-center">작업</TableHead>
+                        <TableHead className={`px-3 py-3 text-xs transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>역할</TableHead>
+                        <TableHead className={`px-3 py-3 text-xs transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>연락처</TableHead>
+                        <TableHead className={`px-3 py-3 text-xs transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>상태</TableHead>
+                        <TableHead className={`px-3 py-3 text-xs text-center transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>작업</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filteredUsers.map((user) => (
-                        <TableRow key={user.id} className="hover:bg-gray-50">
+                        <TableRow key={user.id} className={`transition-colors ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}>
                           <TableCell className="px-3 py-3">
                             <div className="flex items-center gap-2">
                               <Avatar className="h-6 w-6">
@@ -704,15 +721,15 @@ export default function Admin() {
                                 </AvatarFallback>
                               </Avatar>
                               <div>
-                                <div className="font-medium text-xs text-gray-900">{user.name}</div>
-                                <div className="text-xs text-gray-500">{user.email}</div>
+                                <div className={`font-medium text-xs transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{user.name}</div>
+                                <div className={`text-xs transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{user.email}</div>
                               </div>
                             </div>
                           </TableCell>
                           <TableCell className="px-3 py-3">
                             <RoleDisplay role={user.role} />
                           </TableCell>
-                          <TableCell className="px-3 py-3 text-xs">{user.phoneNumber}</TableCell>
+                          <TableCell className={`px-3 py-3 text-xs transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>{user.phoneNumber}</TableCell>
                           <TableCell className="px-3 py-3">
                             <Switch
                               checked={user.isActive ?? true}
@@ -728,7 +745,11 @@ export default function Admin() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => setEditingUser(user)}
-                                className="h-6 w-6 p-0"
+                                className={`h-6 w-6 p-0 transition-colors ${
+                                  isDarkMode 
+                                    ? 'text-blue-400 hover:text-blue-300' 
+                                    : 'text-blue-600 hover:text-blue-700'
+                                }`}
                                 title="수정"
                               >
                                 <Edit className="h-3 w-3" />
@@ -743,7 +764,11 @@ export default function Admin() {
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                                    className={`h-6 w-6 p-0 transition-colors ${
+                                      isDarkMode 
+                                        ? 'text-red-400 hover:text-red-300' 
+                                        : 'text-red-600 hover:text-red-700'
+                                    }`}
                                     title="삭제"
                                   >
                                     <Trash2 className="h-3 w-3" />
@@ -759,7 +784,7 @@ export default function Admin() {
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                     {filteredUsers.map((user) => (
-                      <Card key={user.id} className="p-3 shadow-sm">
+                      <Card key={user.id} className={`p-3 shadow-sm transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
                         <div className="flex items-center gap-3 mb-3">
                           <Avatar className="h-8 w-8">
                             <AvatarFallback className="text-sm">
@@ -767,29 +792,29 @@ export default function Admin() {
                             </AvatarFallback>
                           </Avatar>
                           <div className="flex-1">
-                            <div className="font-medium text-sm text-gray-900">{user.name}</div>
+                            <div className={`font-medium text-sm transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{user.name}</div>
                             <RoleDisplay role={user.role} />
                           </div>
                         </div>
                         
                         <div className="space-y-2 text-xs">
                           <div className="flex items-center gap-2">
-                            <Mail className="h-3 w-3 text-gray-400" />
-                            <span className="text-gray-600">{user.email}</span>
+                            <Mail className={`h-3 w-3 transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                            <span className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>{user.email}</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Phone className="h-3 w-3 text-gray-400" />
-                            <span className="text-gray-600">{user.phoneNumber}</span>
+                            <Phone className={`h-3 w-3 transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                            <span className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>{user.phoneNumber}</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Calendar className="h-3 w-3 text-gray-400" />
-                            <span className="text-gray-600">
+                            <Calendar className={`h-3 w-3 transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                            <span className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                               {new Date(user.createdAt).toLocaleDateString('ko-KR')}
                             </span>
                           </div>
                         </div>
                         
-                        <div className="flex items-center justify-between mt-3 pt-3 border-t">
+                        <div className={`flex items-center justify-between mt-3 pt-3 border-t transition-colors ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}>
                           <Switch
                             checked={user.isActive ?? true}
                             onCheckedChange={(checked) => 
@@ -802,10 +827,14 @@ export default function Admin() {
                               variant="ghost"
                               size="sm"
                               onClick={() => setEditingUser(user)}
-                              className="h-8 w-8 p-0 hover:bg-blue-50"
+                              className={`h-8 w-8 p-0 transition-colors ${
+                                isDarkMode 
+                                  ? 'text-blue-400 hover:text-blue-300 hover:bg-blue-900/20' 
+                                  : 'text-blue-600 hover:text-blue-700 hover:bg-blue-50'
+                              }`}
                               title="수정"
                             >
-                              <Edit className="h-4 w-4 text-blue-600" />
+                              <Edit className="h-4 w-4" />
                             </Button>
                             <SafeUserDelete
                               user={user}
@@ -817,10 +846,14 @@ export default function Admin() {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className="h-8 w-8 p-0 hover:bg-red-50"
+                                  className={`h-8 w-8 p-0 transition-colors ${
+                                    isDarkMode 
+                                      ? 'hover:bg-red-900/20' 
+                                      : 'hover:bg-red-50'
+                                  }`}
                                   title="삭제"
                                 >
-                                  <Trash2 className="h-4 w-4 text-red-600" />
+                                  <Trash2 className={`h-4 w-4 transition-colors ${isDarkMode ? 'text-red-400' : 'text-red-600'}`} />
                                 </Button>
                               }
                             />
@@ -831,7 +864,7 @@ export default function Admin() {
                   </div>
                 )}
                 
-                <div className="text-xs text-gray-500 pt-1">
+                <div className={`text-xs pt-1 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                   총 {users.length}명의 사용자가 등록되어 있습니다.
                 </div>
               </div>
@@ -841,11 +874,11 @@ export default function Admin() {
 
         {/* 용어집 관리 탭 */}
         <TabsContent value="terminology" className="mt-2">
-          <Card className="shadow-sm">
+          <Card className={`shadow-sm transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
             <CardHeader className="pb-1">
-              <CardTitle className="flex items-center justify-between text-sm">
+              <CardTitle className={`flex items-center justify-between text-sm transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
                 <div className="flex items-center gap-1">
-                  <FileText className="h-4 w-4" />
+                  <FileText className={`h-4 w-4 transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
                   <span>용어집 관리</span>
                 </div>
                 <Button
@@ -863,21 +896,25 @@ export default function Admin() {
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <div className="relative flex-1">
-                    <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400" />
+                    <Search className={`absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
                     <Input
                       placeholder="용어 검색..."
                       value={termSearchTerm}
                       onChange={(e) => setTermSearchTerm(e.target.value)}
-                      className="h-7 text-xs pl-7"
+                      className={`h-7 text-xs pl-7 transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}
                     />
                   </div>
                 </div>
                 
                 {isLoadingTerminology ? (
-                  <div className="text-xs text-center py-4">용어 정보를 불러오는 중...</div>
+                  <div className={`text-xs text-center py-4 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>용어 정보를 불러오는 중...</div>
                 ) : (
-                  <div className="border rounded-md overflow-hidden">
-                    <div className="grid grid-cols-12 gap-2 px-2 py-1 bg-gray-50 text-xs font-medium text-gray-600 border-b">
+                  <div className={`border rounded-md overflow-hidden transition-colors ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}>
+                    <div className={`grid grid-cols-12 gap-2 px-2 py-1 text-xs font-medium border-b transition-colors ${
+                      isDarkMode 
+                        ? 'bg-gray-700 text-gray-300 border-gray-600' 
+                        : 'bg-gray-50 text-gray-600 border-gray-200'
+                    }`}>
                       <div className="col-span-2">용어 키</div>
                       <div className="col-span-3">용어 값</div>
                       <div className="col-span-2">카테고리</div>
@@ -887,17 +924,21 @@ export default function Admin() {
                     </div>
                     
                     {filteredTerminology.map((term) => (
-                      <div key={term.id} className="grid grid-cols-12 gap-2 px-2 py-2 text-xs hover:bg-gray-50 border-b last:border-b-0">
-                        <div className="col-span-2 font-medium text-gray-900 truncate">
+                      <div key={term.id} className={`grid grid-cols-12 gap-2 px-2 py-2 text-xs border-b last:border-b-0 transition-colors ${
+                        isDarkMode 
+                          ? 'hover:bg-gray-700 border-gray-600' 
+                          : 'hover:bg-gray-50 border-gray-100'
+                      }`}>
+                        <div className={`col-span-2 font-medium truncate transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
                           {term.termKey}
                         </div>
-                        <div className="col-span-3 text-gray-600 truncate">
+                        <div className={`col-span-3 truncate transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                           {term.termValue}
                         </div>
-                        <div className="col-span-2 text-gray-600 truncate">
+                        <div className={`col-span-2 truncate transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                           {term.category}
                         </div>
-                        <div className="col-span-3 text-gray-600 truncate">
+                        <div className={`col-span-3 truncate transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                           {term.description || '-'}
                         </div>
                         <div className="col-span-1">
@@ -910,7 +951,11 @@ export default function Admin() {
                             variant="ghost"
                             size="sm"
                             onClick={() => setEditingTerm(term)}
-                            className="h-5 w-5 p-0"
+                            className={`h-5 w-5 p-0 transition-colors ${
+                              isDarkMode 
+                                ? 'text-blue-400 hover:text-blue-300' 
+                                : 'text-blue-600 hover:text-blue-700'
+                            }`}
                             title="수정"
                           >
                             <Edit className="h-3 w-3" />
@@ -920,7 +965,11 @@ export default function Admin() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-5 w-5 p-0 text-red-600 hover:text-red-700"
+                                className={`h-5 w-5 p-0 transition-colors ${
+                                  isDarkMode 
+                                    ? 'text-red-400 hover:text-red-300' 
+                                    : 'text-red-600 hover:text-red-700'
+                                }`}
                                 title="삭제"
                               >
                                 <Trash2 className="h-3 w-3" />
@@ -950,7 +999,7 @@ export default function Admin() {
                   </div>
                 )}
                 
-                <div className="text-xs text-gray-500 pt-1">
+                <div className={`text-xs pt-1 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                   총 {terminology.length}개의 용어가 등록되어 있습니다.
                 </div>
               </div>
@@ -967,7 +1016,8 @@ export default function Admin() {
         <TabsContent value="workflow" className="mt-2">
           <ApprovalWorkflowSettings />
         </TabsContent>
-      </Tabs>
+        </Tabs>
+      </div>
 
       {/* User Add/Edit Dialog */}
       {(isAddingUser || editingUser) && (
