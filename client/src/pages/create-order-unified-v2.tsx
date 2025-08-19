@@ -21,6 +21,7 @@ import {
   Plus
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 // 컴포넌트들
 import ExcelUploadZone from '@/components/workflow-v2/ExcelUploadZone';
@@ -50,6 +51,7 @@ interface ProcessingStatus {
 
 const CreateOrderUnifiedV2: React.FC = () => {
   const { toast } = useToast();
+  const { user, isAuthenticated } = useAuth();
   const [activeMethod, setActiveMethod] = useState<'excel' | 'direct' | null>(null);
   const [orderData, setOrderData] = useState<OrderData>({});
   const [processingStatus, setProcessingStatus] = useState<ProcessingStatus>({
@@ -287,27 +289,22 @@ const CreateOrderUnifiedV2: React.FC = () => {
 
     setProcessingStatus(prev => ({ ...prev, order: 'processing' }));
     
-    // 인증 상태 확인
-    try {
-      const authResponse = await fetch('/api/auth/user');
-      console.log('🔐 인증 상태 확인:', authResponse.status);
-      if (!authResponse.ok) {
-        console.error('🔴 인증 실패 - 로그인 필요');
-        toast({
-          title: '인증 필요',
-          description: '로그인이 필요합니다. 로그인 페이지로 이동합니다.',
-          variant: 'destructive'
-        });
-        setTimeout(() => {
-          window.location.href = '/login';
-        }, 2000);
-        return;
-      }
-      const userData = await authResponse.json();
-      console.log('🔐 현재 사용자:', userData);
-    } catch (authError) {
-      console.error('🔴 인증 확인 실패:', authError);
+    // 인증 상태 확인 (useAuth 훅 사용)
+    if (!isAuthenticated || !user) {
+      console.error('🔴 인증 실패 - 로그인 필요');
+      toast({
+        title: '인증 필요',
+        description: '로그인이 필요합니다. 로그인 페이지로 이동합니다.',
+        variant: 'destructive'
+      });
+      setProcessingStatus(prev => ({ ...prev, order: 'error' }));
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 2000);
+      return;
     }
+    
+    console.log('🔐 현재 사용자:', user);
     
     try {
       console.log('🟢 발주서 생성 시작:', orderData);
