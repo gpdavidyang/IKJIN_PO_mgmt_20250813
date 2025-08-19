@@ -87,6 +87,37 @@ const DirectInputForm: React.FC<DirectInputFormProps> = ({ initialData = {}, onC
     }
   });
 
+  // initialData가 변경될 때 formData 업데이트
+  useEffect(() => {
+    if (initialData && Object.keys(initialData).length > 0) {
+      console.log('📝 DirectInputForm: initialData 변경 감지', initialData);
+      setFormData({
+        orderNumber: initialData.orderNumber || `PO-${new Date().getTime()}`,
+        orderDate: initialData.orderDate ? new Date(initialData.orderDate) : new Date(),
+        deliveryDate: initialData.deliveryDate ? new Date(initialData.deliveryDate) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        projectId: initialData.projectId || '',
+        projectName: initialData.projectName || '',
+        vendorId: initialData.vendorId || '',
+        vendorName: initialData.vendorName || '',
+        vendorEmail: initialData.vendorEmail || '',
+        items: initialData.items || [{ 
+          itemName: '', 
+          specification: '', 
+          unit: 'EA',
+          quantity: 1, 
+          unitPrice: 0, 
+          totalAmount: 0,
+          majorCategory: '',
+          middleCategory: '',
+          minorCategory: '',
+          notes: ''
+        }],
+        notes: initialData.notes || '',
+        totalAmount: initialData.totalAmount || 0
+      });
+    }
+  }, [initialData]);
+
   // 폼 데이터 변경 시 상위 컴포넌트에 전달
   useEffect(() => {
     onChange(formData);

@@ -194,10 +194,43 @@ const CreateOrderUnifiedV2: React.FC = () => {
     // 이전 작업 이력 확인
     const savedDraft = localStorage.getItem('draftOrder');
     if (savedDraft) {
-      const draft = JSON.parse(savedDraft);
-      if (window.confirm('저장된 임시 작업이 있습니다. 불러오시겠습니까?')) {
-        setOrderData(draft);
+      try {
+        const draft = JSON.parse(savedDraft);
+        console.log('📋 임시저장 데이터 발견:', draft);
+        
+        if (window.confirm('저장된 임시 작업이 있습니다. 불러오시겠습니까?')) {
+          console.log('✅ 사용자 확인: 임시저장 데이터 로드 시작');
+          
+          // 상태 업데이트를 더 확실하게 처리
+          setOrderData(prev => {
+            console.log('🔄 이전 orderData:', prev);
+            console.log('🔄 새로운 orderData:', draft);
+            return { ...draft };
+          });
+          
+          // 자동 저장 상태 리셋
+          setHasUnsavedChanges(false);
+          
+          toast({
+            title: '임시저장 불러오기 완료',
+            description: `발주번호 ${draft.orderNumber || '미정'}의 임시 작업을 불러왔습니다.`
+          });
+        } else {
+          console.log('❌ 사용자 취소: 임시저장 데이터 로드 취소');
+          // 사용자가 취소하면 임시 데이터 삭제
+          localStorage.removeItem('draftOrder');
+        }
+      } catch (error) {
+        console.error('❌ 임시저장 데이터 파싱 오류:', error);
+        localStorage.removeItem('draftOrder'); // 손상된 데이터 제거
+        toast({
+          title: '임시저장 불러오기 실패',
+          description: '저장된 데이터가 손상되어 삭제되었습니다.',
+          variant: 'destructive'
+        });
       }
+    } else {
+      console.log('📋 임시저장 데이터 없음');
     }
   };
 
