@@ -188,7 +188,16 @@ export function Sidebar() {
                         isCollapsed ? "justify-center px-2" : "justify-start"
                       )}
                       onClick={() => {
-                        navigate(item.href);
+                        console.log(`🧭 사이드바 네비게이션: ${item.name} -> ${item.href}`);
+                        console.log(`🧭 현재 위치: ${location}`);
+                        
+                        // 동일한 경로라도 강제로 네비게이션하여 페이지 새로고침 효과
+                        if (location === item.href) {
+                          console.log('🔄 동일한 경로로 네비게이션 - 페이지 리로드');
+                          window.location.href = item.href;
+                        } else {
+                          navigate(item.href);
+                        }
                         setIsMobileMenuOpen(false);
                       }}
                       onMouseEnter={() => {

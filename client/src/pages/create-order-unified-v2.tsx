@@ -61,6 +61,42 @@ const CreateOrderUnifiedV2: React.FC = () => {
   const [isAutoSaving, setIsAutoSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
+  // 페이지 초기화 함수
+  const resetPageState = useCallback(() => {
+    console.log('🔄 발주서 작성 페이지 초기화');
+    setActiveMethod(null);
+    setOrderData({});
+    setProcessingStatus({
+      pdf: 'idle',
+      vendor: 'idle',
+      email: 'idle',
+      order: 'idle'
+    });
+    setPdfUrl(null);
+    setIsAutoSaving(false);
+    setHasUnsavedChanges(false);
+    // 로컬 스토리지의 임시 데이터도 정리
+    localStorage.removeItem('draftOrder');
+  }, []);
+
+  // 페이지 로드 시 초기화 (사이드바에서 같은 페이지 클릭 시에도 동작)
+  useEffect(() => {
+    const handlePageReset = () => {
+      console.log('🎯 페이지 포커스 감지 - 상태 확인');
+      // 현재 활성 상태라면 초기화
+      if (activeMethod !== null) {
+        resetPageState();
+      }
+    };
+
+    // 페이지가 포커스를 받을 때 초기화
+    window.addEventListener('focus', handlePageReset);
+    
+    return () => {
+      window.removeEventListener('focus', handlePageReset);
+    };
+  }, [activeMethod, resetPageState]);
+
   // 자동 저장
   useEffect(() => {
     if (hasUnsavedChanges && orderData.orderNumber) {
@@ -551,6 +587,27 @@ const CreateOrderUnifiedV2: React.FC = () => {
               <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">한 화면에서 모든 작업을 완료하세요</p>
             </div>
             <div className="flex items-center gap-3">
+              {/* 새로 작성 버튼 - 작업 중일 때만 표시 */}
+              {activeMethod && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (window.confirm('현재 작업 중인 내용이 모두 삭제됩니다. 새로 작성하시겠습니까?')) {
+                      resetPageState();
+                      toast({
+                        title: '새로 작성',
+                        description: '발주서 작성 화면이 초기화되었습니다.'
+                      });
+                    }
+                  }}
+                  className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  새로 작성
+                </Button>
+              )}
+              
               {isAutoSaving && (
                 <Badge variant="secondary" className="animate-pulse">
                   <Loader2 className="w-3 h-3 mr-1 animate-spin" />
