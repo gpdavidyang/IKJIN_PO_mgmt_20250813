@@ -994,6 +994,529 @@ var init_db = __esm({
   }
 });
 
+// server/utils/excel-input-sheet-remover.ts
+import JSZip from "jszip";
+import fs4 from "fs";
+import { DOMParser, XMLSerializer } from "xmldom";
+async function removeAllInputSheets(sourcePath, targetPath) {
+  try {
+    console.log(`\u{1F527} Input \uC2DC\uD2B8 \uC644\uC804 \uC81C\uAC70 \uC2DC\uC791: ${sourcePath} -> ${targetPath}`);
+    const data = fs4.readFileSync(sourcePath);
+    const zip = new JSZip();
+    const zipData = await zip.loadAsync(data);
+    const parser = new DOMParser();
+    const serializer = new XMLSerializer();
+    const workbookXml = zipData.files["xl/workbook.xml"];
+    if (!workbookXml) {
+      throw new Error("workbook.xml\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.");
+    }
+    const workbookContent = await workbookXml.async("string");
+    const workbookDoc = parser.parseFromString(workbookContent, "text/xml");
+    const sheets = [];
+    const sheetElements = workbookDoc.getElementsByTagName("sheet");
+    for (let i = 0; i < sheetElements.length; i++) {
+      const sheet = sheetElements[i];
+      sheets.push({
+        name: sheet.getAttribute("name") || "",
+        sheetId: sheet.getAttribute("sheetId") || "",
+        rId: sheet.getAttribute("r:id") || "",
+        element: sheet
+      });
+    }
+    console.log(`\u{1F4CB} \uBC1C\uACAC\uB41C \uBAA8\uB4E0 \uC2DC\uD2B8: ${sheets.map((s) => s.name).join(", ")}`);
+    const inputSheets = sheets.filter((s) => s.name.startsWith("Input"));
+    const remainingSheetNames = sheets.filter((s) => !s.name.startsWith("Input")).map((s) => s.name);
+    console.log(`\u{1F3AF} \uC81C\uAC70\uD560 Input \uC2DC\uD2B8\uB4E4: ${inputSheets.map((s) => s.name).join(", ")}`);
+    console.log(`\u{1F4CB} \uBCF4\uC874\uD560 \uC2DC\uD2B8\uB4E4: ${remainingSheetNames.join(", ")}`);
+    if (inputSheets.length === 0) {
+      console.log(`\u26A0\uFE0F Input\uC73C\uB85C \uC2DC\uC791\uD558\uB294 \uC2DC\uD2B8\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.`);
+      fs4.copyFileSync(sourcePath, targetPath);
+      return {
+        success: true,
+        removedSheets: [],
+        remainingSheets: remainingSheetNames,
+        originalFormat: true,
+        processedFilePath: targetPath
+      };
+    }
+    const relsPath = "xl/_rels/workbook.xml.rels";
+    const relsFile = zipData.files[relsPath];
+    const filesToRemove = [];
+    if (relsFile) {
+      const relsContent = await relsFile.async("string");
+      const relsDoc = parser.parseFromString(relsContent, "text/xml");
+      const relationships = relsDoc.getElementsByTagName("Relationship");
+      for (const inputSheet of inputSheets) {
+        for (let i = 0; i < relationships.length; i++) {
+          const rel = relationships[i];
+          if (rel.getAttribute("Id") === inputSheet.rId) {
+            const target = rel.getAttribute("Target") || "";
+            const actualSheetFile = target.replace("worksheets/", "");
+            filesToRemove.push(`xl/worksheets/${actualSheetFile}`);
+            filesToRemove.push(`xl/worksheets/_rels/${actualSheetFile.replace(".xml", ".xml.rels")}`);
+            console.log(`\u{1F50D} \uB9E4\uD551 \uD655\uC778: ${inputSheet.name} -> ${actualSheetFile}`);
+            break;
+          }
+        }
+      }
+    }
+    const contentTypesPath = "[Content_Types].xml";
+    const contentTypesFile = zipData.files[contentTypesPath];
+    if (contentTypesFile) {
+      const contentTypesContent = await contentTypesFile.async("string");
+      const contentTypesDoc = parser.parseFromString(contentTypesContent, "text/xml");
+      const overrides = contentTypesDoc.getElementsByTagName("Override");
+      for (const fileToRemove of filesToRemove) {
+        if (fileToRemove.endsWith(".xml")) {
+          const sheetPartName = `/${fileToRemove}`;
+          for (let i = overrides.length - 1; i >= 0; i--) {
+            const override = overrides[i];
+            if (override.getAttribute("PartName") === sheetPartName) {
+              override.parentNode?.removeChild(override);
+              console.log(`\u{1F5D1}\uFE0F [Content_Types].xml\uC5D0\uC11C \uC81C\uAC70: ${sheetPartName}`);
+              break;
+            }
+          }
+        }
+      }
+      const updatedContentTypesXml = serializer.serializeToString(contentTypesDoc);
+      zipData.file(contentTypesPath, updatedContentTypesXml);
+    }
+    for (const inputSheet of inputSheets) {
+      inputSheet.element.parentNode?.removeChild(inputSheet.element);
+    }
+    const remainingSheetElements = workbookDoc.getElementsByTagName("sheet");
+    for (let i = 0; i < remainingSheetElements.length; i++) {
+      const sheet = remainingSheetElements[i];
+      const newSheetId = (i + 1).toString();
+      sheet.setAttribute("sheetId", newSheetId);
+    }
+    const updatedWorkbookXml = serializer.serializeToString(workbookDoc);
+    zipData.file("xl/workbook.xml", updatedWorkbookXml);
+    if (relsFile) {
+      const relsContent = await relsFile.async("string");
+      const relsDoc = parser.parseFromString(relsContent, "text/xml");
+      const relationships = relsDoc.getElementsByTagName("Relationship");
+      for (const inputSheet of inputSheets) {
+        for (let i = relationships.length - 1; i >= 0; i--) {
+          const rel = relationships[i];
+          if (rel.getAttribute("Id") === inputSheet.rId) {
+            rel.parentNode?.removeChild(rel);
+            console.log(`\u{1F5D1}\uFE0F \uAD00\uACC4 \uC81C\uAC70: ${inputSheet.rId}`);
+            break;
+          }
+        }
+      }
+      const updatedRelsXml = serializer.serializeToString(relsDoc);
+      zipData.file(relsPath, updatedRelsXml);
+    }
+    for (const filePath of filesToRemove) {
+      if (zipData.files[filePath]) {
+        zipData.remove(filePath);
+        console.log(`\u{1F5D1}\uFE0F \uD30C\uC77C \uC81C\uAC70: ${filePath}`);
+      }
+    }
+    const result = await zipData.generateAsync({
+      type: "nodebuffer",
+      compression: "DEFLATE",
+      compressionOptions: { level: 6 }
+    });
+    fs4.writeFileSync(targetPath, result);
+    console.log(`\u2705 Input \uC2DC\uD2B8 \uC644\uC804 \uC81C\uAC70 \uC644\uB8CC: ${targetPath}`);
+    console.log(`\u{1F4CA} \uC81C\uAC70\uB41C \uC2DC\uD2B8: ${inputSheets.map((s) => s.name).join(", ")}`);
+    console.log(`\u{1F4CA} \uBCF4\uC874\uB41C \uC2DC\uD2B8: ${remainingSheetNames.join(", ")}`);
+    return {
+      success: true,
+      removedSheets: inputSheets.map((s) => s.name),
+      remainingSheets: remainingSheetNames,
+      originalFormat: true,
+      processedFilePath: targetPath
+    };
+  } catch (error) {
+    console.error(`\u274C Input \uC2DC\uD2B8 \uC81C\uAC70 \uC2E4\uD328:`, error);
+    if (fs4.existsSync(targetPath)) {
+      fs4.unlinkSync(targetPath);
+    }
+    return {
+      success: false,
+      removedSheets: [],
+      remainingSheets: [],
+      originalFormat: false,
+      error: error instanceof Error ? error.message : "Unknown error"
+    };
+  }
+}
+var init_excel_input_sheet_remover = __esm({
+  "server/utils/excel-input-sheet-remover.ts"() {
+    "use strict";
+  }
+});
+
+// server/utils/debug-logger.ts
+var DebugLogger;
+var init_debug_logger = __esm({
+  "server/utils/debug-logger.ts"() {
+    "use strict";
+    DebugLogger = class {
+      static {
+        this.isDebugMode = process.env.NODE_ENV === "development";
+      }
+      static logFunctionEntry(functionName, params = {}) {
+        if (!this.isDebugMode) return;
+        console.log(`\u{1F527} [ENTRY] ${functionName}`);
+        console.log(`   \uC2DC\uAC04: ${(/* @__PURE__ */ new Date()).toISOString()}`);
+        if (Object.keys(params).length > 0) {
+          console.log(`   \uD30C\uB77C\uBBF8\uD130:`, JSON.stringify(params, null, 2));
+        }
+        console.log(`   ===============================`);
+      }
+      static logFunctionExit(functionName, result = {}) {
+        if (!this.isDebugMode) return;
+        console.log(`\u2705 [EXIT] ${functionName}`);
+        console.log(`   \uC2DC\uAC04: ${(/* @__PURE__ */ new Date()).toISOString()}`);
+        if (Object.keys(result).length > 0) {
+          console.log(`   \uACB0\uACFC:`, JSON.stringify(result, null, 2));
+        }
+        console.log(`   ===============================`);
+      }
+      static logError(functionName, error) {
+        console.error(`\u274C [ERROR] ${functionName}`);
+        console.error(`   \uC2DC\uAC04: ${(/* @__PURE__ */ new Date()).toISOString()}`);
+        console.error(`   \uC624\uB958:`, error);
+        console.error(`   ===============================`);
+      }
+      static logExecutionPath(apiEndpoint, actualFunction) {
+        if (!this.isDebugMode) return;
+        console.log(`\u{1F50D} [EXECUTION PATH]`);
+        console.log(`   API: ${apiEndpoint}`);
+        console.log(`   \uC2E4\uC81C \uD638\uCD9C: ${actualFunction}`);
+        console.log(`   \uC2DC\uAC04: ${(/* @__PURE__ */ new Date()).toISOString()}`);
+        console.log(`   ===============================`);
+      }
+    };
+  }
+});
+
+// server/utils/po-template-processor-mock.ts
+var po_template_processor_mock_exports = {};
+__export(po_template_processor_mock_exports, {
+  POTemplateProcessorMock: () => POTemplateProcessorMock
+});
+import XLSX3 from "xlsx";
+import { eq as eq6 } from "drizzle-orm";
+var POTemplateProcessorMock;
+var init_po_template_processor_mock = __esm({
+  "server/utils/po-template-processor-mock.ts"() {
+    "use strict";
+    init_excel_input_sheet_remover();
+    init_db();
+    init_schema();
+    init_debug_logger();
+    POTemplateProcessorMock = class {
+      /**
+       * Excel 파일에서 Input 시트를 파싱하여 발주서 데이터 추출
+       */
+      static parseInputSheet(filePath) {
+        try {
+          const workbook = XLSX3.readFile(filePath);
+          if (!workbook.SheetNames.includes("Input")) {
+            return {
+              success: false,
+              totalOrders: 0,
+              totalItems: 0,
+              orders: [],
+              error: "Input \uC2DC\uD2B8\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
+            };
+          }
+          const worksheet = workbook.Sheets["Input"];
+          const data = XLSX3.utils.sheet_to_json(worksheet, { header: 1 });
+          const rows = data.slice(1);
+          const ordersByNumber = /* @__PURE__ */ new Map();
+          for (const row of rows) {
+            if (!row || row.length === 0 || !row[0] && !row[2] && !row[10]) continue;
+            while (row.length < 16) {
+              row.push("");
+            }
+            const orderDate = this.formatDate(row[0]) || (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
+            const dueDate = this.formatDate(row[1]) || "";
+            const vendorName = String(row[2] || "").trim();
+            const vendorEmail = String(row[3] || "").trim();
+            const deliveryName = String(row[4] || "").trim();
+            const deliveryEmail = String(row[5] || "").trim();
+            const siteName = String(row[6] || "").trim();
+            const categoryLv1 = String(row[7] || "").trim();
+            const categoryLv2 = String(row[8] || "").trim();
+            const categoryLv3 = String(row[9] || "").trim();
+            const itemName = String(row[10] || "").trim();
+            const specification = String(row[11] || "-").trim();
+            const quantity = this.safeNumber(row[12]);
+            const unitPrice = this.safeNumber(row[13]);
+            const totalAmount = this.safeNumber(row[14]);
+            const notes = String(row[15] || "").trim();
+            const orderNumber = this.generateOrderNumber(orderDate, vendorName);
+            const supplyAmount = Math.round(totalAmount / 1.1);
+            const taxAmount = totalAmount - supplyAmount;
+            if (!ordersByNumber.has(orderNumber)) {
+              ordersByNumber.set(orderNumber, {
+                orderNumber,
+                orderDate,
+                siteName,
+                dueDate,
+                vendorName,
+                // 첫 번째 행의 거래처명 사용
+                totalAmount: 0,
+                items: []
+              });
+            }
+            const order = ordersByNumber.get(orderNumber);
+            if (itemName) {
+              const item = {
+                itemName,
+                specification,
+                quantity,
+                unitPrice,
+                supplyAmount,
+                taxAmount,
+                totalAmount,
+                categoryLv1,
+                categoryLv2,
+                categoryLv3,
+                vendorName,
+                deliveryName,
+                notes
+              };
+              order.items.push(item);
+              order.totalAmount += totalAmount;
+            }
+          }
+          const orders = Array.from(ordersByNumber.values());
+          return {
+            success: true,
+            totalOrders: orders.length,
+            totalItems: orders.reduce((sum2, order) => sum2 + order.items.length, 0),
+            orders
+          };
+        } catch (error) {
+          return {
+            success: false,
+            totalOrders: 0,
+            totalItems: 0,
+            orders: [],
+            error: error instanceof Error ? error.message : "Unknown error"
+          };
+        }
+      }
+      /**
+       * 파싱된 발주서 데이터를 Mock DB에 저장
+       */
+      static async saveToDatabase(orders, userId) {
+        console.log(`\u{1F50D} [DB] saveToDatabase \uC2DC\uC791: ${orders.length}\uAC1C \uBC1C\uC8FC\uC11C, \uC0AC\uC6A9\uC790 ID: ${userId}`);
+        try {
+          let savedOrders = 0;
+          console.log(`\u{1F50D} [DB] \uD2B8\uB79C\uC7AD\uC158 \uC2DC\uC791`);
+          await db.transaction(async (tx) => {
+            console.log(`\u{1F50D} [DB] \uD2B8\uB79C\uC7AD\uC158 \uB0B4\uBD80 \uC9C4\uC785 \uC131\uACF5`);
+            for (const orderData of orders) {
+              console.log(`\u{1F50D} [DB] \uBC1C\uC8FC\uC11C \uCC98\uB9AC \uC911: ${orderData.orderNumber}, \uAC70\uB798\uCC98: ${orderData.vendorName}`);
+              console.log(`\u{1F50D} [DB] \uAC70\uB798\uCC98 \uC870\uD68C: ${orderData.vendorName}`);
+              let vendor = await tx.select().from(vendors).where(eq6(vendors.name, orderData.vendorName)).limit(1);
+              let vendorId;
+              if (vendor.length === 0) {
+                console.log(`\u{1F50D} [DB] \uAC70\uB798\uCC98 \uC0DD\uC131: ${orderData.vendorName}`);
+                const newVendor = await tx.insert(vendors).values({
+                  name: orderData.vendorName,
+                  contactPerson: "Unknown",
+                  email: "noemail@example.com",
+                  phone: null,
+                  isActive: true
+                }).returning({ id: vendors.id });
+                vendorId = newVendor[0].id;
+                console.log(`\u2705 [DB] \uAC70\uB798\uCC98 \uC0DD\uC131\uB428: ID ${vendorId}`);
+              } else {
+                vendorId = vendor[0].id;
+                console.log(`\u2705 [DB] \uAC70\uB798\uCC98 \uAE30\uC874 \uBC1C\uACAC: ID ${vendorId}`);
+              }
+              console.log(`\u{1F50D} [DB] \uD504\uB85C\uC81D\uD2B8 \uC870\uD68C: ${orderData.siteName}`);
+              let project = await tx.select().from(projects).where(eq6(projects.projectName, orderData.siteName)).limit(1);
+              let projectId;
+              if (project.length === 0) {
+                console.log(`\u{1F50D} [DB] \uD504\uB85C\uC81D\uD2B8 \uC0DD\uC131: ${orderData.siteName}`);
+                const newProject = await tx.insert(projects).values({
+                  projectName: orderData.siteName,
+                  projectCode: `AUTO-${Date.now()}`,
+                  description: "",
+                  startDate: (/* @__PURE__ */ new Date()).toISOString().split("T")[0],
+                  endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1e3).toISOString().split("T")[0],
+                  // 1년 후
+                  isActive: true,
+                  projectManagerId: null,
+                  orderManagerId: null
+                }).returning({ id: projects.id });
+                projectId = newProject[0].id;
+                console.log(`\u2705 [DB] \uD504\uB85C\uC81D\uD2B8 \uC0DD\uC131\uB428: ID ${projectId}`);
+              } else {
+                projectId = project[0].id;
+                console.log(`\u2705 [DB] \uD504\uB85C\uC81D\uD2B8 \uAE30\uC874 \uBC1C\uACAC: ID ${projectId}`);
+              }
+              const newOrder = await tx.insert(purchaseOrders).values({
+                orderNumber: orderData.orderNumber,
+                projectId,
+                vendorId,
+                userId,
+                orderDate: orderData.orderDate,
+                deliveryDate: orderData.dueDate,
+                totalAmount: orderData.totalAmount,
+                notes: `PO Template\uC5D0\uC11C \uC790\uB3D9 \uC0DD\uC131\uB428`
+              }).returning({ id: purchaseOrders.id });
+              const orderId = newOrder[0].id;
+              for (const item of orderData.items) {
+                await tx.insert(purchaseOrderItems).values({
+                  orderId,
+                  itemName: item.itemName,
+                  specification: item.specification || "",
+                  quantity: item.quantity,
+                  unitPrice: item.unitPrice,
+                  totalAmount: item.totalAmount,
+                  // 카테고리 필드를 올바른 컬럼에 저장
+                  majorCategory: item.categoryLv1 || null,
+                  middleCategory: item.categoryLv2 || null,
+                  minorCategory: item.categoryLv3 || null,
+                  notes: item.notes || null
+                });
+              }
+              savedOrders++;
+            }
+          });
+          return {
+            success: true,
+            savedOrders
+          };
+        } catch (error) {
+          return {
+            success: false,
+            savedOrders: 0,
+            error: error instanceof Error ? error.message : "Unknown error"
+          };
+        }
+      }
+      /**
+       * 특정 시트들을 별도 파일로 추출 - 완전한 ZIP 구조 처리로 100% 서식 보존
+       */
+      static async extractSheetsToFile(sourcePath, targetPath, sheetNames = ["\uAC11\uC9C0", "\uC744\uC9C0"]) {
+        DebugLogger.logFunctionEntry("POTemplateProcessorMock.extractSheetsToFile", {
+          sourcePath,
+          targetPath,
+          sheetNames
+        });
+        try {
+          const result = await removeAllInputSheets(sourcePath, targetPath);
+          if (result.success) {
+            const returnValue = {
+              success: true,
+              extractedSheets: result.remainingSheets
+            };
+            DebugLogger.logFunctionExit("POTemplateProcessorMock.extractSheetsToFile", returnValue);
+            return returnValue;
+          } else {
+            console.error(`\u274C \uC644\uC804\uD55C \uC11C\uC2DD \uBCF4\uC874 \uCD94\uCD9C \uC2E4\uD328: ${result.error}`);
+            console.log(`\u{1F504} \uD3F4\uBC31: \uAE30\uBCF8 XLSX \uB77C\uC774\uBE0C\uB7EC\uB9AC\uB85C \uC2DC\uB3C4`);
+            const workbook = XLSX3.readFile(sourcePath);
+            const newWorkbook = XLSX3.utils.book_new();
+            const extractedSheets = [];
+            for (const sheetName of sheetNames) {
+              if (workbook.SheetNames.includes(sheetName)) {
+                const worksheet = workbook.Sheets[sheetName];
+                XLSX3.utils.book_append_sheet(newWorkbook, worksheet, sheetName);
+                extractedSheets.push(sheetName);
+              }
+            }
+            if (extractedSheets.length > 0) {
+              XLSX3.writeFile(newWorkbook, targetPath);
+            }
+            return {
+              success: true,
+              extractedSheets
+            };
+          }
+        } catch (error) {
+          console.error(`\u274C \uC2DC\uD2B8 \uCD94\uCD9C \uC644\uC804 \uC2E4\uD328:`, error);
+          return {
+            success: false,
+            extractedSheets: [],
+            error: error instanceof Error ? error.message : "Unknown error"
+          };
+        }
+      }
+      /**
+       * 유틸리티 메서드들
+       */
+      static formatDate(dateValue) {
+        if (!dateValue) return "";
+        try {
+          if (dateValue instanceof Date) {
+            return dateValue.toISOString().split("T")[0];
+          }
+          if (typeof dateValue === "number") {
+            const date2 = new Date((dateValue - 25569) * 86400 * 1e3);
+            return date2.toISOString().split("T")[0];
+          }
+          if (typeof dateValue === "string") {
+            let dateStr = dateValue.trim();
+            if (/^\d{4}\.\d{1,2}\.\d{1,2}$/.test(dateStr)) {
+              dateStr = dateStr.replace(/\./g, "-");
+            }
+            const date2 = new Date(dateStr);
+            if (!isNaN(date2.getTime())) {
+              return date2.toISOString().split("T")[0];
+            }
+          }
+          return String(dateValue);
+        } catch {
+          return String(dateValue);
+        }
+      }
+      static safeNumber(value) {
+        if (typeof value === "number") return value;
+        if (typeof value === "string") {
+          const cleaned = value.replace(/[,\s]/g, "");
+          const parsed = parseFloat(cleaned);
+          return isNaN(parsed) ? 0 : parsed;
+        }
+        return 0;
+      }
+      /**
+       * 발주번호 생성 (PO-YYYYMMDD-VENDOR-XXX 형식)
+       */
+      static generateOrderNumber(orderDate, vendorName) {
+        const date2 = orderDate ? orderDate.replace(/-/g, "") : (/* @__PURE__ */ new Date()).toISOString().split("T")[0].replace(/-/g, "");
+        const vendorCode = vendorName ? vendorName.substring(0, 3).toUpperCase() : "UNK";
+        const random = Math.floor(Math.random() * 1e3).toString().padStart(3, "0");
+        return `PO-${date2}-${vendorCode}-${random}`;
+      }
+      /**
+       * 기본 납기일자 생성 (발주일 + 7일)
+       */
+      static getDefaultDueDate(orderDateValue) {
+        try {
+          const orderDate = this.formatDate(orderDateValue);
+          if (!orderDate) {
+            const date3 = /* @__PURE__ */ new Date();
+            date3.setDate(date3.getDate() + 7);
+            return date3.toISOString().split("T")[0];
+          }
+          const date2 = new Date(orderDate);
+          date2.setDate(date2.getDate() + 7);
+          return date2.toISOString().split("T")[0];
+        } catch {
+          const date2 = /* @__PURE__ */ new Date();
+          date2.setDate(date2.getDate() + 7);
+          return date2.toISOString().split("T")[0];
+        }
+      }
+    };
+  }
+});
+
 // server/production.ts
 import dotenv2 from "dotenv";
 import express2 from "express";
@@ -4863,165 +5386,11 @@ var EnhancedExcelToPDFConverter = class {
 // server/utils/po-template-processor.ts
 init_db();
 init_schema();
+init_excel_input_sheet_remover();
 import { eq as eq3 } from "drizzle-orm";
 import * as XLSX2 from "xlsx";
 import { v4 as uuidv4 } from "uuid";
 import fs5 from "fs";
-
-// server/utils/excel-input-sheet-remover.ts
-import JSZip from "jszip";
-import fs4 from "fs";
-import { DOMParser, XMLSerializer } from "xmldom";
-async function removeAllInputSheets(sourcePath, targetPath) {
-  try {
-    console.log(`\u{1F527} Input \uC2DC\uD2B8 \uC644\uC804 \uC81C\uAC70 \uC2DC\uC791: ${sourcePath} -> ${targetPath}`);
-    const data = fs4.readFileSync(sourcePath);
-    const zip = new JSZip();
-    const zipData = await zip.loadAsync(data);
-    const parser = new DOMParser();
-    const serializer = new XMLSerializer();
-    const workbookXml = zipData.files["xl/workbook.xml"];
-    if (!workbookXml) {
-      throw new Error("workbook.xml\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.");
-    }
-    const workbookContent = await workbookXml.async("string");
-    const workbookDoc = parser.parseFromString(workbookContent, "text/xml");
-    const sheets = [];
-    const sheetElements = workbookDoc.getElementsByTagName("sheet");
-    for (let i = 0; i < sheetElements.length; i++) {
-      const sheet = sheetElements[i];
-      sheets.push({
-        name: sheet.getAttribute("name") || "",
-        sheetId: sheet.getAttribute("sheetId") || "",
-        rId: sheet.getAttribute("r:id") || "",
-        element: sheet
-      });
-    }
-    console.log(`\u{1F4CB} \uBC1C\uACAC\uB41C \uBAA8\uB4E0 \uC2DC\uD2B8: ${sheets.map((s) => s.name).join(", ")}`);
-    const inputSheets = sheets.filter((s) => s.name.startsWith("Input"));
-    const remainingSheetNames = sheets.filter((s) => !s.name.startsWith("Input")).map((s) => s.name);
-    console.log(`\u{1F3AF} \uC81C\uAC70\uD560 Input \uC2DC\uD2B8\uB4E4: ${inputSheets.map((s) => s.name).join(", ")}`);
-    console.log(`\u{1F4CB} \uBCF4\uC874\uD560 \uC2DC\uD2B8\uB4E4: ${remainingSheetNames.join(", ")}`);
-    if (inputSheets.length === 0) {
-      console.log(`\u26A0\uFE0F Input\uC73C\uB85C \uC2DC\uC791\uD558\uB294 \uC2DC\uD2B8\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.`);
-      fs4.copyFileSync(sourcePath, targetPath);
-      return {
-        success: true,
-        removedSheets: [],
-        remainingSheets: remainingSheetNames,
-        originalFormat: true,
-        processedFilePath: targetPath
-      };
-    }
-    const relsPath = "xl/_rels/workbook.xml.rels";
-    const relsFile = zipData.files[relsPath];
-    const filesToRemove = [];
-    if (relsFile) {
-      const relsContent = await relsFile.async("string");
-      const relsDoc = parser.parseFromString(relsContent, "text/xml");
-      const relationships = relsDoc.getElementsByTagName("Relationship");
-      for (const inputSheet of inputSheets) {
-        for (let i = 0; i < relationships.length; i++) {
-          const rel = relationships[i];
-          if (rel.getAttribute("Id") === inputSheet.rId) {
-            const target = rel.getAttribute("Target") || "";
-            const actualSheetFile = target.replace("worksheets/", "");
-            filesToRemove.push(`xl/worksheets/${actualSheetFile}`);
-            filesToRemove.push(`xl/worksheets/_rels/${actualSheetFile.replace(".xml", ".xml.rels")}`);
-            console.log(`\u{1F50D} \uB9E4\uD551 \uD655\uC778: ${inputSheet.name} -> ${actualSheetFile}`);
-            break;
-          }
-        }
-      }
-    }
-    const contentTypesPath = "[Content_Types].xml";
-    const contentTypesFile = zipData.files[contentTypesPath];
-    if (contentTypesFile) {
-      const contentTypesContent = await contentTypesFile.async("string");
-      const contentTypesDoc = parser.parseFromString(contentTypesContent, "text/xml");
-      const overrides = contentTypesDoc.getElementsByTagName("Override");
-      for (const fileToRemove of filesToRemove) {
-        if (fileToRemove.endsWith(".xml")) {
-          const sheetPartName = `/${fileToRemove}`;
-          for (let i = overrides.length - 1; i >= 0; i--) {
-            const override = overrides[i];
-            if (override.getAttribute("PartName") === sheetPartName) {
-              override.parentNode?.removeChild(override);
-              console.log(`\u{1F5D1}\uFE0F [Content_Types].xml\uC5D0\uC11C \uC81C\uAC70: ${sheetPartName}`);
-              break;
-            }
-          }
-        }
-      }
-      const updatedContentTypesXml = serializer.serializeToString(contentTypesDoc);
-      zipData.file(contentTypesPath, updatedContentTypesXml);
-    }
-    for (const inputSheet of inputSheets) {
-      inputSheet.element.parentNode?.removeChild(inputSheet.element);
-    }
-    const remainingSheetElements = workbookDoc.getElementsByTagName("sheet");
-    for (let i = 0; i < remainingSheetElements.length; i++) {
-      const sheet = remainingSheetElements[i];
-      const newSheetId = (i + 1).toString();
-      sheet.setAttribute("sheetId", newSheetId);
-    }
-    const updatedWorkbookXml = serializer.serializeToString(workbookDoc);
-    zipData.file("xl/workbook.xml", updatedWorkbookXml);
-    if (relsFile) {
-      const relsContent = await relsFile.async("string");
-      const relsDoc = parser.parseFromString(relsContent, "text/xml");
-      const relationships = relsDoc.getElementsByTagName("Relationship");
-      for (const inputSheet of inputSheets) {
-        for (let i = relationships.length - 1; i >= 0; i--) {
-          const rel = relationships[i];
-          if (rel.getAttribute("Id") === inputSheet.rId) {
-            rel.parentNode?.removeChild(rel);
-            console.log(`\u{1F5D1}\uFE0F \uAD00\uACC4 \uC81C\uAC70: ${inputSheet.rId}`);
-            break;
-          }
-        }
-      }
-      const updatedRelsXml = serializer.serializeToString(relsDoc);
-      zipData.file(relsPath, updatedRelsXml);
-    }
-    for (const filePath of filesToRemove) {
-      if (zipData.files[filePath]) {
-        zipData.remove(filePath);
-        console.log(`\u{1F5D1}\uFE0F \uD30C\uC77C \uC81C\uAC70: ${filePath}`);
-      }
-    }
-    const result = await zipData.generateAsync({
-      type: "nodebuffer",
-      compression: "DEFLATE",
-      compressionOptions: { level: 6 }
-    });
-    fs4.writeFileSync(targetPath, result);
-    console.log(`\u2705 Input \uC2DC\uD2B8 \uC644\uC804 \uC81C\uAC70 \uC644\uB8CC: ${targetPath}`);
-    console.log(`\u{1F4CA} \uC81C\uAC70\uB41C \uC2DC\uD2B8: ${inputSheets.map((s) => s.name).join(", ")}`);
-    console.log(`\u{1F4CA} \uBCF4\uC874\uB41C \uC2DC\uD2B8: ${remainingSheetNames.join(", ")}`);
-    return {
-      success: true,
-      removedSheets: inputSheets.map((s) => s.name),
-      remainingSheets: remainingSheetNames,
-      originalFormat: true,
-      processedFilePath: targetPath
-    };
-  } catch (error) {
-    console.error(`\u274C Input \uC2DC\uD2B8 \uC81C\uAC70 \uC2E4\uD328:`, error);
-    if (fs4.existsSync(targetPath)) {
-      fs4.unlinkSync(targetPath);
-    }
-    return {
-      success: false,
-      removedSheets: [],
-      remainingSheets: [],
-      originalFormat: false,
-      error: error instanceof Error ? error.message : "Unknown error"
-    };
-  }
-}
-
-// server/utils/po-template-processor.ts
 var POTemplateProcessor = class _POTemplateProcessor {
   /**
    * Excel 파일에서 Input 시트를 파싱하여 발주서 데이터 추출
@@ -5319,6 +5688,7 @@ var POTemplateProcessor = class _POTemplateProcessor {
 };
 
 // server/utils/po-email-service.ts
+init_excel_input_sheet_remover();
 var __filename2 = fileURLToPath2(import.meta.url);
 var __dirname2 = dirname(__filename2);
 var POEmailService = class {
@@ -7751,355 +8121,7 @@ import fs9 from "fs";
 // server/utils/excel-automation-service.ts
 init_db();
 init_schema();
-
-// server/utils/po-template-processor-mock.ts
-import XLSX3 from "xlsx";
-init_db();
-init_schema();
-import { eq as eq6 } from "drizzle-orm";
-
-// server/utils/debug-logger.ts
-var DebugLogger = class {
-  static {
-    this.isDebugMode = process.env.NODE_ENV === "development";
-  }
-  static logFunctionEntry(functionName, params = {}) {
-    if (!this.isDebugMode) return;
-    console.log(`\u{1F527} [ENTRY] ${functionName}`);
-    console.log(`   \uC2DC\uAC04: ${(/* @__PURE__ */ new Date()).toISOString()}`);
-    if (Object.keys(params).length > 0) {
-      console.log(`   \uD30C\uB77C\uBBF8\uD130:`, JSON.stringify(params, null, 2));
-    }
-    console.log(`   ===============================`);
-  }
-  static logFunctionExit(functionName, result = {}) {
-    if (!this.isDebugMode) return;
-    console.log(`\u2705 [EXIT] ${functionName}`);
-    console.log(`   \uC2DC\uAC04: ${(/* @__PURE__ */ new Date()).toISOString()}`);
-    if (Object.keys(result).length > 0) {
-      console.log(`   \uACB0\uACFC:`, JSON.stringify(result, null, 2));
-    }
-    console.log(`   ===============================`);
-  }
-  static logError(functionName, error) {
-    console.error(`\u274C [ERROR] ${functionName}`);
-    console.error(`   \uC2DC\uAC04: ${(/* @__PURE__ */ new Date()).toISOString()}`);
-    console.error(`   \uC624\uB958:`, error);
-    console.error(`   ===============================`);
-  }
-  static logExecutionPath(apiEndpoint, actualFunction) {
-    if (!this.isDebugMode) return;
-    console.log(`\u{1F50D} [EXECUTION PATH]`);
-    console.log(`   API: ${apiEndpoint}`);
-    console.log(`   \uC2E4\uC81C \uD638\uCD9C: ${actualFunction}`);
-    console.log(`   \uC2DC\uAC04: ${(/* @__PURE__ */ new Date()).toISOString()}`);
-    console.log(`   ===============================`);
-  }
-};
-
-// server/utils/po-template-processor-mock.ts
-var POTemplateProcessorMock = class {
-  /**
-   * Excel 파일에서 Input 시트를 파싱하여 발주서 데이터 추출
-   */
-  static parseInputSheet(filePath) {
-    try {
-      const workbook = XLSX3.readFile(filePath);
-      if (!workbook.SheetNames.includes("Input")) {
-        return {
-          success: false,
-          totalOrders: 0,
-          totalItems: 0,
-          orders: [],
-          error: "Input \uC2DC\uD2B8\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
-        };
-      }
-      const worksheet = workbook.Sheets["Input"];
-      const data = XLSX3.utils.sheet_to_json(worksheet, { header: 1 });
-      const rows = data.slice(1);
-      const ordersByNumber = /* @__PURE__ */ new Map();
-      for (const row of rows) {
-        if (!row || row.length === 0 || !row[0] && !row[2] && !row[10]) continue;
-        while (row.length < 16) {
-          row.push("");
-        }
-        const orderDate = this.formatDate(row[0]) || (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
-        const dueDate = this.formatDate(row[1]) || "";
-        const vendorName = String(row[2] || "").trim();
-        const vendorEmail = String(row[3] || "").trim();
-        const deliveryName = String(row[4] || "").trim();
-        const deliveryEmail = String(row[5] || "").trim();
-        const siteName = String(row[6] || "").trim();
-        const categoryLv1 = String(row[7] || "").trim();
-        const categoryLv2 = String(row[8] || "").trim();
-        const categoryLv3 = String(row[9] || "").trim();
-        const itemName = String(row[10] || "").trim();
-        const specification = String(row[11] || "-").trim();
-        const quantity = this.safeNumber(row[12]);
-        const unitPrice = this.safeNumber(row[13]);
-        const totalAmount = this.safeNumber(row[14]);
-        const notes = String(row[15] || "").trim();
-        const orderNumber = this.generateOrderNumber(orderDate, vendorName);
-        const supplyAmount = Math.round(totalAmount / 1.1);
-        const taxAmount = totalAmount - supplyAmount;
-        if (!ordersByNumber.has(orderNumber)) {
-          ordersByNumber.set(orderNumber, {
-            orderNumber,
-            orderDate,
-            siteName,
-            dueDate,
-            vendorName,
-            // 첫 번째 행의 거래처명 사용
-            totalAmount: 0,
-            items: []
-          });
-        }
-        const order = ordersByNumber.get(orderNumber);
-        if (itemName) {
-          const item = {
-            itemName,
-            specification,
-            quantity,
-            unitPrice,
-            supplyAmount,
-            taxAmount,
-            totalAmount,
-            categoryLv1,
-            categoryLv2,
-            categoryLv3,
-            vendorName,
-            deliveryName,
-            notes
-          };
-          order.items.push(item);
-          order.totalAmount += totalAmount;
-        }
-      }
-      const orders = Array.from(ordersByNumber.values());
-      return {
-        success: true,
-        totalOrders: orders.length,
-        totalItems: orders.reduce((sum2, order) => sum2 + order.items.length, 0),
-        orders
-      };
-    } catch (error) {
-      return {
-        success: false,
-        totalOrders: 0,
-        totalItems: 0,
-        orders: [],
-        error: error instanceof Error ? error.message : "Unknown error"
-      };
-    }
-  }
-  /**
-   * 파싱된 발주서 데이터를 Mock DB에 저장
-   */
-  static async saveToDatabase(orders, userId) {
-    console.log(`\u{1F50D} [DB] saveToDatabase \uC2DC\uC791: ${orders.length}\uAC1C \uBC1C\uC8FC\uC11C, \uC0AC\uC6A9\uC790 ID: ${userId}`);
-    try {
-      let savedOrders = 0;
-      console.log(`\u{1F50D} [DB] \uD2B8\uB79C\uC7AD\uC158 \uC2DC\uC791`);
-      await db.transaction(async (tx) => {
-        console.log(`\u{1F50D} [DB] \uD2B8\uB79C\uC7AD\uC158 \uB0B4\uBD80 \uC9C4\uC785 \uC131\uACF5`);
-        for (const orderData of orders) {
-          console.log(`\u{1F50D} [DB] \uBC1C\uC8FC\uC11C \uCC98\uB9AC \uC911: ${orderData.orderNumber}, \uAC70\uB798\uCC98: ${orderData.vendorName}`);
-          console.log(`\u{1F50D} [DB] \uAC70\uB798\uCC98 \uC870\uD68C: ${orderData.vendorName}`);
-          let vendor = await tx.select().from(vendors).where(eq6(vendors.name, orderData.vendorName)).limit(1);
-          let vendorId;
-          if (vendor.length === 0) {
-            console.log(`\u{1F50D} [DB] \uAC70\uB798\uCC98 \uC0DD\uC131: ${orderData.vendorName}`);
-            const newVendor = await tx.insert(vendors).values({
-              name: orderData.vendorName,
-              contactPerson: "Unknown",
-              email: "noemail@example.com",
-              phone: null,
-              isActive: true
-            }).returning({ id: vendors.id });
-            vendorId = newVendor[0].id;
-            console.log(`\u2705 [DB] \uAC70\uB798\uCC98 \uC0DD\uC131\uB428: ID ${vendorId}`);
-          } else {
-            vendorId = vendor[0].id;
-            console.log(`\u2705 [DB] \uAC70\uB798\uCC98 \uAE30\uC874 \uBC1C\uACAC: ID ${vendorId}`);
-          }
-          console.log(`\u{1F50D} [DB] \uD504\uB85C\uC81D\uD2B8 \uC870\uD68C: ${orderData.siteName}`);
-          let project = await tx.select().from(projects).where(eq6(projects.projectName, orderData.siteName)).limit(1);
-          let projectId;
-          if (project.length === 0) {
-            console.log(`\u{1F50D} [DB] \uD504\uB85C\uC81D\uD2B8 \uC0DD\uC131: ${orderData.siteName}`);
-            const newProject = await tx.insert(projects).values({
-              projectName: orderData.siteName,
-              projectCode: `AUTO-${Date.now()}`,
-              description: "",
-              startDate: (/* @__PURE__ */ new Date()).toISOString().split("T")[0],
-              endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1e3).toISOString().split("T")[0],
-              // 1년 후
-              isActive: true,
-              projectManagerId: null,
-              orderManagerId: null
-            }).returning({ id: projects.id });
-            projectId = newProject[0].id;
-            console.log(`\u2705 [DB] \uD504\uB85C\uC81D\uD2B8 \uC0DD\uC131\uB428: ID ${projectId}`);
-          } else {
-            projectId = project[0].id;
-            console.log(`\u2705 [DB] \uD504\uB85C\uC81D\uD2B8 \uAE30\uC874 \uBC1C\uACAC: ID ${projectId}`);
-          }
-          const newOrder = await tx.insert(purchaseOrders).values({
-            orderNumber: orderData.orderNumber,
-            projectId,
-            vendorId,
-            userId,
-            orderDate: orderData.orderDate,
-            deliveryDate: orderData.dueDate,
-            totalAmount: orderData.totalAmount,
-            notes: `PO Template\uC5D0\uC11C \uC790\uB3D9 \uC0DD\uC131\uB428`
-          }).returning({ id: purchaseOrders.id });
-          const orderId = newOrder[0].id;
-          for (const item of orderData.items) {
-            await tx.insert(purchaseOrderItems).values({
-              orderId,
-              itemName: item.itemName,
-              specification: item.specification || "",
-              quantity: item.quantity,
-              unitPrice: item.unitPrice,
-              totalAmount: item.totalAmount,
-              // 카테고리 필드를 올바른 컬럼에 저장
-              majorCategory: item.categoryLv1 || null,
-              middleCategory: item.categoryLv2 || null,
-              minorCategory: item.categoryLv3 || null,
-              notes: item.notes || null
-            });
-          }
-          savedOrders++;
-        }
-      });
-      return {
-        success: true,
-        savedOrders
-      };
-    } catch (error) {
-      return {
-        success: false,
-        savedOrders: 0,
-        error: error instanceof Error ? error.message : "Unknown error"
-      };
-    }
-  }
-  /**
-   * 특정 시트들을 별도 파일로 추출 - 완전한 ZIP 구조 처리로 100% 서식 보존
-   */
-  static async extractSheetsToFile(sourcePath, targetPath, sheetNames = ["\uAC11\uC9C0", "\uC744\uC9C0"]) {
-    DebugLogger.logFunctionEntry("POTemplateProcessorMock.extractSheetsToFile", {
-      sourcePath,
-      targetPath,
-      sheetNames
-    });
-    try {
-      const result = await removeAllInputSheets(sourcePath, targetPath);
-      if (result.success) {
-        const returnValue = {
-          success: true,
-          extractedSheets: result.remainingSheets
-        };
-        DebugLogger.logFunctionExit("POTemplateProcessorMock.extractSheetsToFile", returnValue);
-        return returnValue;
-      } else {
-        console.error(`\u274C \uC644\uC804\uD55C \uC11C\uC2DD \uBCF4\uC874 \uCD94\uCD9C \uC2E4\uD328: ${result.error}`);
-        console.log(`\u{1F504} \uD3F4\uBC31: \uAE30\uBCF8 XLSX \uB77C\uC774\uBE0C\uB7EC\uB9AC\uB85C \uC2DC\uB3C4`);
-        const workbook = XLSX3.readFile(sourcePath);
-        const newWorkbook = XLSX3.utils.book_new();
-        const extractedSheets = [];
-        for (const sheetName of sheetNames) {
-          if (workbook.SheetNames.includes(sheetName)) {
-            const worksheet = workbook.Sheets[sheetName];
-            XLSX3.utils.book_append_sheet(newWorkbook, worksheet, sheetName);
-            extractedSheets.push(sheetName);
-          }
-        }
-        if (extractedSheets.length > 0) {
-          XLSX3.writeFile(newWorkbook, targetPath);
-        }
-        return {
-          success: true,
-          extractedSheets
-        };
-      }
-    } catch (error) {
-      console.error(`\u274C \uC2DC\uD2B8 \uCD94\uCD9C \uC644\uC804 \uC2E4\uD328:`, error);
-      return {
-        success: false,
-        extractedSheets: [],
-        error: error instanceof Error ? error.message : "Unknown error"
-      };
-    }
-  }
-  /**
-   * 유틸리티 메서드들
-   */
-  static formatDate(dateValue) {
-    if (!dateValue) return "";
-    try {
-      if (dateValue instanceof Date) {
-        return dateValue.toISOString().split("T")[0];
-      }
-      if (typeof dateValue === "number") {
-        const date2 = new Date((dateValue - 25569) * 86400 * 1e3);
-        return date2.toISOString().split("T")[0];
-      }
-      if (typeof dateValue === "string") {
-        let dateStr = dateValue.trim();
-        if (/^\d{4}\.\d{1,2}\.\d{1,2}$/.test(dateStr)) {
-          dateStr = dateStr.replace(/\./g, "-");
-        }
-        const date2 = new Date(dateStr);
-        if (!isNaN(date2.getTime())) {
-          return date2.toISOString().split("T")[0];
-        }
-      }
-      return String(dateValue);
-    } catch {
-      return String(dateValue);
-    }
-  }
-  static safeNumber(value) {
-    if (typeof value === "number") return value;
-    if (typeof value === "string") {
-      const cleaned = value.replace(/[,\s]/g, "");
-      const parsed = parseFloat(cleaned);
-      return isNaN(parsed) ? 0 : parsed;
-    }
-    return 0;
-  }
-  /**
-   * 발주번호 생성 (PO-YYYYMMDD-VENDOR-XXX 형식)
-   */
-  static generateOrderNumber(orderDate, vendorName) {
-    const date2 = orderDate ? orderDate.replace(/-/g, "") : (/* @__PURE__ */ new Date()).toISOString().split("T")[0].replace(/-/g, "");
-    const vendorCode = vendorName ? vendorName.substring(0, 3).toUpperCase() : "UNK";
-    const random = Math.floor(Math.random() * 1e3).toString().padStart(3, "0");
-    return `PO-${date2}-${vendorCode}-${random}`;
-  }
-  /**
-   * 기본 납기일자 생성 (발주일 + 7일)
-   */
-  static getDefaultDueDate(orderDateValue) {
-    try {
-      const orderDate = this.formatDate(orderDateValue);
-      if (!orderDate) {
-        const date3 = /* @__PURE__ */ new Date();
-        date3.setDate(date3.getDate() + 7);
-        return date3.toISOString().split("T")[0];
-      }
-      const date2 = new Date(orderDate);
-      date2.setDate(date2.getDate() + 7);
-      return date2.toISOString().split("T")[0];
-    } catch {
-      const date2 = /* @__PURE__ */ new Date();
-      date2.setDate(date2.getDate() + 7);
-      return date2.toISOString().split("T")[0];
-    }
-  }
-};
+init_po_template_processor_mock();
 
 // server/utils/vendor-validation.ts
 init_db();
@@ -8448,6 +8470,8 @@ async function validateMultipleVendors(vendorData) {
 }
 
 // server/utils/excel-automation-service.ts
+init_excel_input_sheet_remover();
+init_debug_logger();
 import fs8 from "fs";
 import path6 from "path";
 var ExcelAutomationService = class {
@@ -8836,6 +8860,7 @@ var ExcelAutomationService = class {
 };
 
 // server/routes/excel-automation.ts
+init_debug_logger();
 var router9 = Router9();
 var storage2 = multer2.diskStorage({
   destination: (req, file, cb) => {
@@ -9112,6 +9137,75 @@ router9.get("/download/:filename", requireAuth, (req, res) => {
     });
   }
 });
+router9.post("/debug-upload", requireAuth, upload2.single("file"), async (req, res) => {
+  console.log(`\u{1F41B} [DEBUG] Excel automation debug request received`);
+  let step = 0;
+  const startTime = Date.now();
+  try {
+    step = 1;
+    console.log(`\u{1F41B} [DEBUG] Step ${step}: Request validation`);
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        error: "\uD30C\uC77C\uC774 \uC5C5\uB85C\uB4DC\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4.",
+        step,
+        duration: Date.now() - startTime
+      });
+    }
+    step = 2;
+    console.log(`\u{1F41B} [DEBUG] Step ${step}: Database connection test`);
+    const { db: db2 } = await Promise.resolve().then(() => (init_db(), db_exports));
+    const { purchaseOrders: purchaseOrders3 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
+    await db2.select().from(purchaseOrders3).limit(1);
+    console.log(`\u{1F41B} [DEBUG] Step ${step} PASSED: DB connection OK`);
+    step = 3;
+    console.log(`\u{1F41B} [DEBUG] Step ${step}: File path check`);
+    const filePath = req.file.path;
+    const fs16 = await import("fs");
+    if (!fs16.existsSync(filePath)) {
+      return res.status(400).json({
+        success: false,
+        error: "\uC5C5\uB85C\uB4DC\uB41C \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.",
+        step,
+        duration: Date.now() - startTime
+      });
+    }
+    console.log(`\u{1F41B} [DEBUG] Step ${step} PASSED: File exists at ${filePath}`);
+    step = 4;
+    console.log(`\u{1F41B} [DEBUG] Step ${step}: Excel parsing test`);
+    const { POTemplateProcessorMock: POTemplateProcessorMock2 } = await Promise.resolve().then(() => (init_po_template_processor_mock(), po_template_processor_mock_exports));
+    const parseResult = POTemplateProcessorMock2.parseInputSheet(filePath);
+    if (!parseResult.success) {
+      return res.status(400).json({
+        success: false,
+        error: `Excel \uD30C\uC2F1 \uC2E4\uD328: ${parseResult.error}`,
+        step,
+        duration: Date.now() - startTime
+      });
+    }
+    console.log(`\u{1F41B} [DEBUG] Step ${step} PASSED: Excel parsing OK - ${parseResult.totalOrders} orders`);
+    return res.json({
+      success: true,
+      message: "\uB514\uBC84\uADF8 \uD14C\uC2A4\uD2B8 \uC644\uB8CC",
+      step,
+      duration: Date.now() - startTime,
+      data: {
+        fileName: req.file.originalname,
+        fileSize: req.file.size,
+        parsedOrders: parseResult.totalOrders,
+        parsedItems: parseResult.totalItems
+      }
+    });
+  } catch (error) {
+    console.error(`\u{1F41B} [DEBUG] Error at step ${step}:`, error);
+    return res.status(500).json({
+      success: false,
+      error: `Step ${step}\uC5D0\uC11C \uC624\uB958 \uBC1C\uC0DD: ${error instanceof Error ? error.message : "Unknown error"}`,
+      step,
+      duration: Date.now() - startTime
+    });
+  }
+});
 router9.delete("/cleanup", requireAuth, async (req, res) => {
   try {
     const { filePaths } = req.body;
@@ -9155,6 +9249,8 @@ router9.delete("/cleanup", requireAuth, async (req, res) => {
 var excel_automation_default = router9;
 
 // server/routes/po-template-real.ts
+init_po_template_processor_mock();
+init_debug_logger();
 import { Router as Router10 } from "express";
 import multer3 from "multer";
 import path11 from "path";
@@ -9162,6 +9258,7 @@ import fs13 from "fs";
 import { fileURLToPath as fileURLToPath5 } from "url";
 
 // server/utils/po-email-service-mock.ts
+init_po_template_processor_mock();
 import nodemailer2 from "nodemailer";
 import path8 from "path";
 import fs10 from "fs";

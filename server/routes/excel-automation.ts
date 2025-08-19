@@ -364,6 +364,92 @@ router.get('/download/:filename', requireAuth, (req: any, res) => {
 });
 
 /**
+ * 디버그용 단계별 처리 테스트
+ * POST /api/excel-automation/debug-upload
+ */
+router.post('/debug-upload', requireAuth, upload.single('file'), async (req: any, res) => {
+  console.log(`🐛 [DEBUG] Excel automation debug request received`);
+  
+  let step = 0;
+  const startTime = Date.now();
+  
+  try {
+    step = 1;
+    console.log(`🐛 [DEBUG] Step ${step}: Request validation`);
+    
+    if (!req.file) {
+      return res.status(400).json({ 
+        success: false,
+        error: '파일이 업로드되지 않았습니다.',
+        step,
+        duration: Date.now() - startTime
+      });
+    }
+
+    step = 2;
+    console.log(`🐛 [DEBUG] Step ${step}: Database connection test`);
+    
+    // DB 연결 테스트 - 이 부분에서 멈출 수 있음
+    const { db } = await import('../db');
+    const { purchaseOrders } = await import('@shared/schema');
+    await db.select().from(purchaseOrders).limit(1);
+    console.log(`🐛 [DEBUG] Step ${step} PASSED: DB connection OK`);
+
+    step = 3;
+    console.log(`🐛 [DEBUG] Step ${step}: File path check`);
+    const filePath = req.file.path;
+    const fs = await import('fs');
+    if (!fs.existsSync(filePath)) {
+      return res.status(400).json({
+        success: false,
+        error: '업로드된 파일을 찾을 수 없습니다.',
+        step,
+        duration: Date.now() - startTime
+      });
+    }
+    console.log(`🐛 [DEBUG] Step ${step} PASSED: File exists at ${filePath}`);
+
+    step = 4;
+    console.log(`🐛 [DEBUG] Step ${step}: Excel parsing test`);
+    const { POTemplateProcessorMock } = await import('../utils/po-template-processor-mock');
+    const parseResult = POTemplateProcessorMock.parseInputSheet(filePath);
+    
+    if (!parseResult.success) {
+      return res.status(400).json({
+        success: false,
+        error: `Excel 파싱 실패: ${parseResult.error}`,
+        step,
+        duration: Date.now() - startTime
+      });
+    }
+    console.log(`🐛 [DEBUG] Step ${step} PASSED: Excel parsing OK - ${parseResult.totalOrders} orders`);
+
+    // 성공 응답
+    return res.json({
+      success: true,
+      message: '디버그 테스트 완료',
+      step,
+      duration: Date.now() - startTime,
+      data: {
+        fileName: req.file.originalname,
+        fileSize: req.file.size,
+        parsedOrders: parseResult.totalOrders,
+        parsedItems: parseResult.totalItems
+      }
+    });
+
+  } catch (error) {
+    console.error(`🐛 [DEBUG] Error at step ${step}:`, error);
+    return res.status(500).json({
+      success: false,
+      error: `Step ${step}에서 오류 발생: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      step,
+      duration: Date.now() - startTime
+    });
+  }
+});
+
+/**
  * 임시 파일 정리
  * DELETE /api/excel-automation/cleanup
  */
