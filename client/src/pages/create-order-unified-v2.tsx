@@ -141,6 +141,7 @@ const CreateOrderUnifiedV2: React.FC = () => {
       const response = await fetch('/api/orders/generate-pdf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // 인증 쿠키 포함
         body: JSON.stringify({ orderData: pdfOrderData })
       });
       
