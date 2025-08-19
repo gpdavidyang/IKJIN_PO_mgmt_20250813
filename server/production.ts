@@ -113,12 +113,11 @@ async function initializeProductionApp() {
       saveUninitialized: false,
       name: 'connect.sid', // Explicit session cookie name
       cookie: {
-        secure: process.env.NODE_ENV === 'production',
+        secure: true, // MUST be true for sameSite: 'none'
         httpOnly: true,
         maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-        sameSite: 'lax', // Always use 'lax' for better compatibility
-        // Remove domain restriction for better cookie support
-        // domain: process.env.NODE_ENV === 'production' ? '.vercel.app' : undefined
+        sameSite: 'none', // CRITICAL: Required for cross-origin with credentials
+        // No domain restriction
       }
     }));
     console.log("✅ PostgreSQL session store initialized with settings:", {
@@ -134,10 +133,12 @@ async function initializeProductionApp() {
       secret: process.env.SESSION_SECRET || 'default-secret-key',
       resave: false,
       saveUninitialized: false,
+      name: 'connect.sid',
       cookie: {
-        secure: process.env.NODE_ENV === 'production',
+        secure: true, // MUST be true for production HTTPS
         httpOnly: true,
-        maxAge: 1000 * 60 * 60 * 24 * 7
+        maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+        sameSite: 'none', // Required for cross-origin requests
       }
     }));
   }
@@ -192,12 +193,11 @@ if (process.env.VERCEL) {
       saveUninitialized: false,
       name: 'connect.sid', // Explicit session cookie name
       cookie: {
-        secure: process.env.NODE_ENV === 'production',
+        secure: true, // MUST be true for sameSite: 'none'
         httpOnly: true,
         maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-        sameSite: 'lax', // Always use 'lax' for better compatibility
-        // Remove domain restriction for better cookie support
-        // domain: process.env.NODE_ENV === 'production' ? '.vercel.app' : undefined
+        sameSite: 'none', // CRITICAL: Required for cross-origin with credentials
+        // No domain restriction
       }
     }));
     console.log("✅ PostgreSQL session store initialized with settings:", {
@@ -213,10 +213,12 @@ if (process.env.VERCEL) {
       secret: process.env.SESSION_SECRET || 'default-secret-key',
       resave: false,
       saveUninitialized: false,
+      name: 'connect.sid',
       cookie: {
-        secure: process.env.NODE_ENV === 'production',
+        secure: true, // MUST be true for production HTTPS
         httpOnly: true,
-        maxAge: 1000 * 60 * 60 * 24 * 7
+        maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+        sameSite: 'none', // Required for cross-origin requests
       }
     }));
   }
