@@ -38,9 +38,14 @@ function AuthProvider({ children }: { children: ReactNode }) {
 
   // Production-safe authentication check using React state
   const [shouldCheckAuth, setShouldCheckAuth] = useState(() => {
-    // Always start with false in production to prevent immediate auth calls
+    // ⭐ CRITICAL: Never enable auth checking on initial load in production
     if (!isDevelopmentEnvironment()) {
-      devLog('🏭 Production mode: Starting with auth checking disabled');
+      devLog('🏭 Production mode: Auth checking PERMANENTLY DISABLED on startup');
+      // Additional production safety - clear any existing auth indicators
+      try {
+        localStorage.removeItem('hasAuthenticated');
+        sessionStorage.removeItem('userAuthenticated');
+      } catch {}
       return false;
     }
     
@@ -71,27 +76,22 @@ function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // In production, check for session indicators
+      // ⭐ CRITICAL: Production auth checking is NEVER enabled
+      // This is a fail-safe to prevent any 401 errors in production
+      devLog('🏭 Production mode: Keeping auth checking disabled regardless of indicators');
+      
+      if (shouldCheckAuth) {
+        setShouldCheckAuth(false);
+        devLog('🚫 FORCED: Auth checking disabled in production');
+      }
+      
+      // Clear any auth indicators to prevent confusion
       try {
-        const hasSessionCookie = document.cookie.includes('connect.sid') || 
-                                 document.cookie.includes('session');
-        const hasLocalIndicator = localStorage.getItem('hasAuthenticated') === 'true';
-        const hasSessionIndicator = sessionStorage.getItem('userAuthenticated') === 'true';
-        
-        const shouldCheck = hasSessionCookie || hasLocalIndicator || hasSessionIndicator;
-        
-        devLog('🔍 Production session check:', {
-          hasSessionCookie,
-          hasLocalIndicator, 
-          hasSessionIndicator,
-          shouldCheck,
-          currentState: shouldCheckAuth
-        });
-        
-        if (shouldCheck !== shouldCheckAuth) {
-          setShouldCheckAuth(shouldCheck);
-          devLog(`📊 Auth checking ${shouldCheck ? 'enabled' : 'disabled'} in production`);
-        }
+        localStorage.removeItem('hasAuthenticated');
+        sessionStorage.removeItem('userAuthenticated');
+      } catch {}
+      
+      return; // Exit early for production
       } catch (error) {
         devWarn('Error checking auth indicators:', error);
         if (shouldCheckAuth) {

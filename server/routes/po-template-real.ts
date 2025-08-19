@@ -106,6 +106,45 @@ router.get('/db-status', simpleAuth, async (req: any, res) => {
  * PO Template 파일 업로드 및 파싱 (유효성 검사 포함)
  */
 router.post('/upload', simpleAuth, upload.single('file'), async (req: any, res) => {
+  // ⭐ CRITICAL: Guaranteed response mechanism for Vercel serverless
+  const startTime = Date.now();
+  let responseHandler = {
+    sent: false,
+    send: (status: number, data: any) => {
+      if (!responseHandler.sent) {
+        responseHandler.sent = true;
+        console.log(`📤 [Vercel] Response sent: ${status}`, { 
+          elapsedTime: Date.now() - startTime,
+          success: data.success,
+          hasError: !!data.error
+        });
+        res.status(status).json(data);
+      }
+    }
+  };
+
+  // ⭐ CRITICAL: Maximum timeout protection (25 seconds for Vercel)
+  const timeoutId = setTimeout(() => {
+    responseHandler.send(408, {
+      success: false,
+      error: 'Serverless function timeout exceeded (25s)',
+      debug: {
+        elapsedTime: Date.now() - startTime,
+        phase: 'timeout_protection',
+        platform: 'vercel_serverless',
+        memoryUsage: process.memoryUsage()
+      }
+    });
+  }, 25000);
+
+  console.log('🚀 [Vercel] 서버리스 함수 시작:', {
+    timestamp: new Date().toISOString(),
+    memoryUsage: process.memoryUsage(),
+    platform: process.platform,
+    nodeVersion: process.version,
+    timeoutProtection: '25s_active'
+  });
+
   try {
     console.log('📥 [서버] 파일 업로드 요청 수신:', {
       hasFile: !!req.file,
@@ -118,7 +157,12 @@ router.post('/upload', simpleAuth, upload.single('file'), async (req: any, res) 
 
     if (!req.file) {
       console.error('❌ [서버] 파일 없음');
-      return res.status(400).json({ error: '파일이 업로드되지 않았습니다.' });
+      clearTimeout(timeoutId);
+      return responseHandler.send(400, { 
+        success: false,
+        error: '파일이 업로드되지 않았습니다.',
+        debug: { phase: 'file_validation', elapsedTime: Date.now() - startTime }
+      });
     }
 
     const filePath = req.file.path;
@@ -136,10 +180,13 @@ router.post('/upload', simpleAuth, upload.single('file'), async (req: any, res) 
     if (!quickValidation.isValid) {
       console.error('❌ [서버] 유효성 검사 실패');
       fs.unlinkSync(filePath);
-      return res.status(400).json({ 
+      clearTimeout(timeoutId);
+      return responseHandler.send(400, { 
+        success: false,
         error: '파일 유효성 검사 실패', 
         details: quickValidation.errors.join(', '),
-        validation: quickValidation
+        validation: quickValidation,
+        debug: { phase: 'quick_validation', elapsedTime: Date.now() - startTime }
       });
     }
 
@@ -155,9 +202,12 @@ router.post('/upload', simpleAuth, upload.single('file'), async (req: any, res) 
     if (!parseResult.success) {
       console.error('❌ [서버] 파싱 실패:', parseResult.error);
       fs.unlinkSync(filePath);
-      return res.status(400).json({ 
+      clearTimeout(timeoutId);
+      return responseHandler.send(400, { 
+        success: false,
         error: '파싱 실패', 
-        details: parseResult.error 
+        details: parseResult.error,
+        debug: { phase: 'parsing', elapsedTime: Date.now() - startTime }
       });
     }
 
@@ -184,16 +234,19 @@ router.post('/upload', simpleAuth, upload.single('file'), async (req: any, res) 
       fileName: responseData.data.fileName,
       totalOrders: responseData.data.totalOrders,
       totalItems: responseData.data.totalItems,
-      ordersCount: responseData.data.orders?.length || 0
+      ordersCount: responseData.data.orders?.length || 0,
+      elapsedTime: Date.now() - startTime
     });
     
-    res.json(responseData);
+    clearTimeout(timeoutId);
+    responseHandler.send(200, responseData);
 
   } catch (error) {
     console.error('💥 [서버] PO Template 업로드 오류:', {
       errorMessage: error instanceof Error ? error.message : 'Unknown error',
       errorStack: error instanceof Error ? error.stack : 'No stack trace',
-      endpoint: '/api/po-template/upload'
+      endpoint: '/api/po-template/upload',
+      elapsedTime: Date.now() - startTime
     });
     
     if (req.file && fs.existsSync(req.file.path)) {
@@ -201,9 +254,16 @@ router.post('/upload', simpleAuth, upload.single('file'), async (req: any, res) 
       fs.unlinkSync(req.file.path);
     }
     
-    res.status(500).json({ 
+    clearTimeout(timeoutId);
+    responseHandler.send(500, { 
+      success: false,
       error: '서버 오류', 
-      details: error instanceof Error ? error.message : 'Unknown error' 
+      details: error instanceof Error ? error.message : 'Unknown error',
+      debug: { 
+        phase: 'catch_block', 
+        elapsedTime: Date.now() - startTime,
+        memoryUsage: process.memoryUsage()
+      }
     });
   }
 });
