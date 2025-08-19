@@ -76,12 +76,11 @@ export default function Profile() {
       return response;
     },
     onSuccess: (updatedUser) => {
-      // Invalidate and refetch user data
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-      queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
-      
-      // Update local state with the server response
+      // Update query cache directly with the server response
       if (updatedUser && typeof updatedUser === 'object') {
+        queryClient.setQueryData(["/api/auth/user"], updatedUser);
+        
+        // Update local state with the server response
         setProfileData(prev => ({
           ...prev,
           name: (updatedUser as any).name || prev.name

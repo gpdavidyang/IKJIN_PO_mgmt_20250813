@@ -84,8 +84,13 @@ function AuthProvider({ children }: { children: ReactNode }) {
       return await response.json();
     },
     onSuccess: (user: User) => {
+      // Set the user data directly without invalidating to prevent immediate 401 calls
       queryClient.setQueryData(["/api/auth/user"], user);
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      console.log('✅ Login successful, user data set:', user);
+      
+      // Clear any other queries to ensure fresh data on next access
+      queryClient.removeQueries({ queryKey: ["/api/auth/user"], exact: false });
+      queryClient.setQueryData(["/api/auth/user"], user); // Ensure user data remains set
     },
   });
 
