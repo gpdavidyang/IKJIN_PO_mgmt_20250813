@@ -14923,8 +14923,10 @@ async function initializeProductionApp() {
         tableName: "app_sessions",
         // Serverless-specific settings
         createTableIfMissing: true,
-        // Reduce connection pool for serverless
         schemaName: "public",
+        // Connection pool settings for serverless
+        pruneSessionInterval: 60 * 15,
+        // Prune expired sessions every 15 minutes
         // Error handling for session store
         errorLog: (error) => {
           console.error("\u{1F534} PostgreSQL session store error:", error);
@@ -14933,15 +14935,25 @@ async function initializeProductionApp() {
       secret: process.env.SESSION_SECRET || "default-secret-key",
       resave: false,
       saveUninitialized: false,
+      name: "connect.sid",
+      // Explicit session cookie name
       cookie: {
         secure: process.env.NODE_ENV === "production",
         httpOnly: true,
         maxAge: 1e3 * 60 * 60 * 24 * 7,
         // 7 days
-        sameSite: process.env.NODE_ENV === "production" ? "lax" : "lax",
-        domain: process.env.NODE_ENV === "production" ? ".vercel.app" : void 0
+        sameSite: "lax"
+        // Always use 'lax' for better compatibility
+        // Remove domain restriction for better cookie support
+        // domain: process.env.NODE_ENV === 'production' ? '.vercel.app' : undefined
       }
     }));
+    console.log("\u2705 PostgreSQL session store initialized with settings:", {
+      tableName: "app_sessions",
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: "7 days"
+    });
     console.log("\u2705 Using PostgreSQL session store for serverless persistence");
   } catch (sessionError) {
     console.error("\u{1F534} Failed to initialize PostgreSQL session store, using memory fallback:", sessionError);
@@ -14978,8 +14990,10 @@ if (process.env.VERCEL) {
         tableName: "app_sessions",
         // Serverless-specific settings
         createTableIfMissing: true,
-        // Reduce connection pool for serverless
         schemaName: "public",
+        // Connection pool settings for serverless
+        pruneSessionInterval: 60 * 15,
+        // Prune expired sessions every 15 minutes
         // Error handling for session store
         errorLog: (error) => {
           console.error("\u{1F534} PostgreSQL session store error:", error);
@@ -14988,15 +15002,25 @@ if (process.env.VERCEL) {
       secret: process.env.SESSION_SECRET || "default-secret-key",
       resave: false,
       saveUninitialized: false,
+      name: "connect.sid",
+      // Explicit session cookie name
       cookie: {
         secure: process.env.NODE_ENV === "production",
         httpOnly: true,
         maxAge: 1e3 * 60 * 60 * 24 * 7,
         // 7 days
-        sameSite: process.env.NODE_ENV === "production" ? "lax" : "lax",
-        domain: process.env.NODE_ENV === "production" ? ".vercel.app" : void 0
+        sameSite: "lax"
+        // Always use 'lax' for better compatibility
+        // Remove domain restriction for better cookie support
+        // domain: process.env.NODE_ENV === 'production' ? '.vercel.app' : undefined
       }
     }));
+    console.log("\u2705 PostgreSQL session store initialized with settings:", {
+      tableName: "app_sessions",
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: "7 days"
+    });
     console.log("\u2705 Using PostgreSQL session store for serverless persistence");
   } catch (sessionError) {
     console.error("\u{1F534} Failed to initialize PostgreSQL session store, using memory fallback:", sessionError);

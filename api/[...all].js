@@ -63,21 +63,33 @@ export default async function handler(req, res) {
     console.log('Express app type:', typeof expressApp);
     console.log('Express app keys:', Object.keys(expressApp || {}));
     
-    // CORS headers for production - allow credentials
+    // PRODUCTION FIX: Proper CORS headers for session cookies
     const origin = req.headers.origin;
     const allowedOrigins = [
       'https://ikjin-po-mgmt-20250813-dno9.vercel.app',
-      'https://ikjin-po-mgmt-20250813-dn.vercel.app',
+      'https://ikjin-po-mgmt-20250813-dn.vercel.app', 
       'http://localhost:3000',
       'http://localhost:5000'
     ];
     
-    if (!origin || allowedOrigins.includes(origin)) {
-      res.setHeader('Access-Control-Allow-Origin', origin || 'https://ikjin-po-mgmt-20250813-dno9.vercel.app');
+    console.log('🌐 Request origin:', origin);
+    console.log('📋 Allowed origins:', allowedOrigins);
+    
+    // CRITICAL: Set specific origin for cookie support (never use wildcard with credentials)
+    if (origin && allowedOrigins.includes(origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      console.log('✅ CORS origin set to:', origin);
+    } else if (!origin) {
+      // For same-origin requests from production domain
+      res.setHeader('Access-Control-Allow-Origin', 'https://ikjin-po-mgmt-20250813-dno9.vercel.app');
+      console.log('✅ CORS origin set to default production domain');
     }
+    
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Max-Age', '86400'); // Cache preflight for 24 hours
+    console.log('🔐 CORS credentials enabled for session cookies');
     
     if (req.method === 'OPTIONS') {
       console.log('=== OPTIONS Request - Returning ===');
