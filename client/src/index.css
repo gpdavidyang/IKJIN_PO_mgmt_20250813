@@ -555,9 +555,22 @@
     @apply border-border;
   }
 
+  html {
+    /* 페이지 로드 시 깜빡임 방지 */
+    transition: none !important;
+  }
+
+  html.dark {
+    /* 다크 모드 즉시 적용 */
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+
   body {
     @apply font-sans antialiased bg-background text-foreground;
     font-family: 'Inter', sans-serif;
+    /* 테마 전환 시 부드러운 애니메이션 */
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
   
   /* Apply sidebar color tokens as Tailwind utilities */
@@ -613,6 +626,32 @@
   
   table tr:hover {
     @apply bg-slate-800/50;
+  }
+
+  /* 모든 기본 컴포넌트에 다크 모드 적용 */
+  .card,
+  [data-testid="card"],
+  .bg-card {
+    @apply !bg-slate-800 !border-slate-700;
+  }
+
+  /* 입력 필드 다크 모드 */
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea,
+  select {
+    @apply !bg-slate-900 !border-slate-600 !text-slate-100 placeholder:!text-slate-400;
+  }
+
+  /* 버튼 다크 모드 */
+  button:not(.btn-primary):not(.btn-success):not(.btn-danger):not(.btn-warning) {
+    @apply !bg-slate-800 !border-slate-600 !text-slate-100 hover:!bg-slate-700;
+  }
+
+  /* 드롭다운 및 모달 */
+  [data-radix-select-content],
+  [data-radix-dialog-content],
+  [data-radix-popover-content] {
+    @apply !bg-slate-800 !border-slate-700 !text-slate-100;
   }
   
   /* Force table background colors in dark mode */
@@ -689,67 +728,78 @@
     background-color: rgb(31 41 55) !important;
   }
 
-  /* FINAL OVERRIDE: Dark mode table styles with highest specificity */
-  .dark table[class*="table"] tbody tr,
-  .dark .table-wrapper-custom table tbody tr,
-  .dark .enhanced-table table tbody tr,
-  .dark div[class*="table"] table tbody tr {
+  /* ULTIMATE DARK MODE TABLE OVERRIDE - Maximum Specificity */
+  [data-theme="dark"] .dark-table-container table,
+  html.dark .dark-table-container table,
+  .dark .dark-table-container table {
     background-color: rgb(31 41 55) !important;
     color: rgb(241 245 249) !important;
     forced-color-adjust: none !important;
   }
 
-  .dark table[class*="table"] tbody tr:nth-child(even),
-  .dark .table-wrapper-custom table tbody tr:nth-child(even),
-  .dark .enhanced-table table tbody tr:nth-child(even),
-  .dark div[class*="table"] table tbody tr:nth-child(even) {
-    background-color: rgba(55 65 81, 0.7) !important;
-    forced-color-adjust: none !important;
-  }
-
-  .dark table[class*="table"] tbody tr:hover,
-  .dark .table-wrapper-custom table tbody tr:hover,
-  .dark .enhanced-table table tbody tr:hover,
-  .dark div[class*="table"] table tbody tr:hover {
-    background-color: rgb(55 65 81) !important;
-    forced-color-adjust: none !important;
-  }
-
-  .dark table[class*="table"] thead,
-  .dark .table-wrapper-custom table thead,
-  .dark .enhanced-table table thead,
-  .dark div[class*="table"] table thead {
-    background-color: rgb(55 65 81) !important;
-    forced-color-adjust: none !important;
-  }
-
-  .dark table[class*="table"],
-  .dark .table-wrapper-custom table,
-  .dark .enhanced-table table,
-  .dark div[class*="table"] table {
+  [data-theme="dark"] .dark-table-container table tbody,
+  html.dark .dark-table-container table tbody,
+  .dark .dark-table-container table tbody {
     background-color: rgb(31 41 55) !important;
     forced-color-adjust: none !important;
   }
 
-  /* Emergency override for ALL table elements */
-  html.dark table,
-  html.dark tbody,
-  html.dark tr {
+  [data-theme="dark"] .dark-table-container table tbody tr,
+  html.dark .dark-table-container table tbody tr,
+  .dark .dark-table-container table tbody tr {
     background-color: rgb(31 41 55) !important;
+    color: rgb(241 245 249) !important;
     forced-color-adjust: none !important;
   }
 
-  html.dark table tbody tr:nth-child(even) {
+  [data-theme="dark"] .dark-table-container table tbody tr:nth-child(even),
+  html.dark .dark-table-container table tbody tr:nth-child(even),
+  .dark .dark-table-container table tbody tr:nth-child(even) {
     background-color: rgba(55 65 81, 0.7) !important;
     forced-color-adjust: none !important;
   }
 
-  html.dark table tbody tr:hover {
+  [data-theme="dark"] .dark-table-container table tbody tr:hover,
+  html.dark .dark-table-container table tbody tr:hover,
+  .dark .dark-table-container table tbody tr:hover {
     background-color: rgb(55 65 81) !important;
     forced-color-adjust: none !important;
   }
 
-  html.dark table thead {
+  [data-theme="dark"] .dark-table-container table thead,
+  html.dark .dark-table-container table thead,
+  .dark .dark-table-container table thead {
+    background-color: rgb(55 65 81) !important;
+    color: rgb(241 245 249) !important;
+    forced-color-adjust: none !important;
+  }
+
+  [data-theme="dark"] .dark-table-container .table-wrapper-custom,
+  html.dark .dark-table-container .table-wrapper-custom,
+  .dark .dark-table-container .table-wrapper-custom {
+    background-color: rgb(31 41 55) !important;
+    forced-color-adjust: none !important;
+  }
+
+  /* Additional Emergency Overrides */
+  html.dark table:not(.no-dark-override),
+  html.dark tbody:not(.no-dark-override),
+  html.dark tr:not(.no-dark-override) {
+    background-color: rgb(31 41 55) !important;
+    forced-color-adjust: none !important;
+  }
+
+  html.dark table:not(.no-dark-override) tbody tr:nth-child(even) {
+    background-color: rgba(55 65 81, 0.7) !important;
+    forced-color-adjust: none !important;
+  }
+
+  html.dark table:not(.no-dark-override) tbody tr:hover {
+    background-color: rgb(55 65 81) !important;
+    forced-color-adjust: none !important;
+  }
+
+  html.dark table:not(.no-dark-override) thead {
     background-color: rgb(55 65 81) !important;
     forced-color-adjust: none !important;
   }

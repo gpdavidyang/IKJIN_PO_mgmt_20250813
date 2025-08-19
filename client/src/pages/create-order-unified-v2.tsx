@@ -80,23 +80,8 @@ const CreateOrderUnifiedV2: React.FC = () => {
     localStorage.removeItem('draftOrder');
   }, []);
 
-  // 페이지 로드 시 초기화 (사이드바에서 같은 페이지 클릭 시에도 동작)
-  useEffect(() => {
-    const handlePageReset = () => {
-      console.log('🎯 페이지 포커스 감지 - 상태 확인');
-      // 현재 활성 상태라면 초기화
-      if (activeMethod !== null) {
-        resetPageState();
-      }
-    };
-
-    // 페이지가 포커스를 받을 때 초기화
-    window.addEventListener('focus', handlePageReset);
-    
-    return () => {
-      window.removeEventListener('focus', handlePageReset);
-    };
-  }, [activeMethod, resetPageState]);
+  // 사이드바에서 같은 페이지 클릭 시 초기화 로직 제거
+  // - 파일 업로드 후 페이지 포커스로 인한 의도치 않은 초기화 방지
 
   // 자동 저장
   useEffect(() => {
@@ -234,15 +219,26 @@ const CreateOrderUnifiedV2: React.FC = () => {
     }
   };
 
-  const handleDataUpdate = (data: Partial<OrderData>) => {
-    setOrderData(prev => ({ ...prev, ...data }));
+  const handleDataUpdate = useCallback((data: Partial<OrderData>) => {
+    setOrderData(prev => {
+      // 데이터가 실제로 변경되었는지 확인
+      const hasRealChange = Object.keys(data).some(key => 
+        JSON.stringify(data[key as keyof OrderData]) !== JSON.stringify(prev[key as keyof OrderData])
+      );
+      
+      if (!hasRealChange) {
+        return prev; // 변경이 없으면 기존 객체 반환
+      }
+      
+      return { ...prev, ...data };
+    });
     setHasUnsavedChanges(true);
     
     // 거래처 정보 자동 확인
     if (data.vendorName && data.vendorName !== orderData.vendorName) {
       validateVendor(data.vendorName);
     }
-  };
+  }, [orderData.vendorName]);
 
   const handleProcessedFileReady = (fileInfo: { url: string; name: string }) => {
     setOrderData(prev => ({ 
@@ -322,6 +318,7 @@ const CreateOrderUnifiedV2: React.FC = () => {
       // 기본 필드들
       formData.append('projectId', '1'); // 임시 프로젝트 ID
       formData.append('vendorId', '1'); // 임시 거래처 ID  
+      formData.append('orderDate', orderData.orderDate || new Date().toISOString());
       formData.append('deliveryDate', orderData.deliveryDate || new Date().toISOString());
       formData.append('notes', orderData.notes || `발주서 작성으로 생성된 발주서 - ${orderData.orderNumber}`);
       
@@ -344,6 +341,7 @@ const CreateOrderUnifiedV2: React.FC = () => {
       console.log('🟢 발주서 생성 요청 데이터:', {
         projectId: '1',
         vendorId: '1',
+        orderDate: orderData.orderDate || new Date().toISOString(),
         deliveryDate: orderData.deliveryDate || new Date().toISOString(),
         notes: orderData.notes || `발주서 작성으로 생성된 발주서 - ${orderData.orderNumber}`,
         items: mappedItems
@@ -363,16 +361,14 @@ const CreateOrderUnifiedV2: React.FC = () => {
         
         toast({
           title: '생성 완료',
-          description: `발주서가 성공적으로 생성되었습니다. (${createdOrder.orderNumber || orderData.orderNumber})`
+          description: `발주서가 성공적으로 생성되었습니다. (${createdOrder.orderNumber || orderData.orderNumber}) 계속해서 다른 품목으로 발주서를 생성하실 수 있습니다.`,
+          duration: 5000
         });
         
-        // 로컬 스토리지 정리
-        localStorage.removeItem('draftOrder');
+        // 로컬 스토리지 정리는 하지 않음 - 연속 발주서 생성을 위해 Excel 데이터 유지
+        // localStorage.removeItem('draftOrder');
         
-        // 3초 후 발주서 관리 페이지로 리다이렉트
-        setTimeout(() => {
-          window.location.href = '/orders';
-        }, 3000);
+        // 페이지 이동 제거 - 현재 화면 유지하여 연속 발주서 생성 가능
       } else {
         const errorText = await response.text();
         console.error('🔴 발주서 생성 실패 응답:', response.status, errorText);
@@ -417,6 +413,7 @@ const CreateOrderUnifiedV2: React.FC = () => {
       const formData = new FormData();
       formData.append('projectId', '1');
       formData.append('vendorId', '1');
+      formData.append('orderDate', orderData.orderDate || new Date().toISOString());
       formData.append('deliveryDate', orderData.deliveryDate || new Date().toISOString());
       formData.append('notes', orderData.notes || `발주서 작성으로 생성된 발주서 - ${orderData.orderNumber}`);
       
@@ -450,8 +447,12 @@ const CreateOrderUnifiedV2: React.FC = () => {
       
       // 2. 이메일 발송 (처리된 엑셀 파일이 있는 경우에만)
       console.log('📧 Step 2: 이메일 발송');
+      console.log('🔍 processedExcelUrl 확인:', orderData.processedExcelUrl);
+      console.log('🔍 이메일 설정 확인:', emailSettings);
+      
       if (orderData.processedExcelUrl) {
         try {
+          console.log('📤 Excel 이메일 요청 시작...');
           const emailResponse = await fetch('/api/orders/send-email-with-excel', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -476,13 +477,20 @@ const CreateOrderUnifiedV2: React.FC = () => {
             
             toast({
               title: '생성 및 발송 완료',
-              description: `발주서가 생성되고 이메일이 발송되었습니다. (${createdOrder.orderNumber || orderData.orderNumber})`
+              description: `발주서가 생성되고 이메일이 발송되었습니다. (${createdOrder.orderNumber || orderData.orderNumber}) 계속해서 다른 품목으로 발주서를 생성하실 수 있습니다.`,
+              duration: 5000
             });
           } else {
-            throw new Error('이메일 발송 실패');
+            const errorText = await emailResponse.text();
+            console.error('📧 Excel 이메일 발송 HTTP 오류:', emailResponse.status, errorText);
+            throw new Error(`Excel 이메일 발송 실패 (${emailResponse.status}): ${errorText}`);
           }
         } catch (emailError) {
-          console.error('📧 이메일 발송 실패:', emailError);
+          console.error('📧 Excel 이메일 발송 실패 상세:', {
+            error: emailError,
+            message: emailError instanceof Error ? emailError.message : 'Unknown error',
+            stack: emailError instanceof Error ? emailError.stack : 'No stack'
+          });
           setProcessingStatus(prev => ({ ...prev, email: 'error' }));
           
           toast({
@@ -494,6 +502,7 @@ const CreateOrderUnifiedV2: React.FC = () => {
       } else {
         // PDF만으로 이메일 발송
         try {
+          console.log('📤 PDF 이메일 요청 시작...');
           const emailResponse = await fetch('/api/orders/send-email', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -503,7 +512,7 @@ const CreateOrderUnifiedV2: React.FC = () => {
                 vendorEmail: emailSettings.to
               },
               pdfUrl: pdfUrl,
-              recipients: [emailSettings.to],
+              recipients: emailSettings.to,
               emailSettings: {
                 subject: emailSettings.subject,
                 message: emailSettings.message,
@@ -518,13 +527,20 @@ const CreateOrderUnifiedV2: React.FC = () => {
             
             toast({
               title: '생성 및 발송 완료',
-              description: `발주서가 생성되고 PDF 이메일이 발송되었습니다.`
+              description: `발주서가 생성되고 PDF 이메일이 발송되었습니다. 계속해서 다른 품목으로 발주서를 생성하실 수 있습니다.`,
+              duration: 5000
             });
           } else {
-            throw new Error('PDF 이메일 발송 실패');
+            const errorText = await emailResponse.text();
+            console.error('📧 PDF 이메일 발송 HTTP 오류:', emailResponse.status, errorText);
+            throw new Error(`PDF 이메일 발송 실패 (${emailResponse.status}): ${errorText}`);
           }
         } catch (emailError) {
-          console.error('📧 PDF 이메일 발송 실패:', emailError);
+          console.error('📧 PDF 이메일 발송 실패 상세:', {
+            error: emailError,
+            message: emailError instanceof Error ? emailError.message : 'Unknown error',
+            stack: emailError instanceof Error ? emailError.stack : 'No stack'
+          });
           setProcessingStatus(prev => ({ ...prev, email: 'error' }));
           
           toast({
@@ -535,13 +551,10 @@ const CreateOrderUnifiedV2: React.FC = () => {
         }
       }
       
-      // 로컬 스토리지 정리
-      localStorage.removeItem('draftOrder');
+      // 로컬 스토리지 정리는 하지 않음 - 연속 발주서 생성을 위해 Excel 데이터 유지
+      // localStorage.removeItem('draftOrder');
       
-      // 3초 후 발주서 관리 페이지로 리다이렉트
-      setTimeout(() => {
-        window.location.href = '/orders';
-      }, 3000);
+      // 페이지 이동 제거 - 현재 화면 유지하여 연속 발주서 생성 가능
       
     } catch (error) {
       console.error('🔴 발주서 생성 및 이메일 발송 실패:', error);
@@ -581,16 +594,14 @@ const CreateOrderUnifiedV2: React.FC = () => {
         setProcessingStatus(prev => ({ ...prev, email: 'completed' }));
         toast({
           title: '발송 완료',
-          description: '발주서가 성공적으로 발송되었습니다.'
+          description: '발주서가 성공적으로 발송되었습니다. 계속해서 다른 품목으로 발주서를 생성하실 수 있습니다.',
+          duration: 5000
         });
         
-        // 로컬 스토리지 정리
-        localStorage.removeItem('draftOrder');
+        // 로컬 스토리지 정리는 하지 않음 - 연속 발주서 생성을 위해 Excel 데이터 유지
+        // localStorage.removeItem('draftOrder');
         
-        // 3초 후 리다이렉트
-        setTimeout(() => {
-          window.location.href = '/orders';
-        }, 3000);
+        // 페이지 이동 제거 - 현재 화면 유지하여 연속 발주서 생성 가능
       } else {
         throw new Error('이메일 발송 실패');
       }

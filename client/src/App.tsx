@@ -14,8 +14,6 @@ import { AccessibilityProvider, AccessibilityToolbar } from "@/components/access
 import { ContrastProvider } from "@/components/accessibility/high-contrast";
 import { FocusProvider } from "@/components/accessibility/focus-management";
 import "@/styles/accessibility.css";
-// Theme imports
-import { ThemeProvider } from "@/components/ui/theme-provider";
 // Performance monitoring
 import { usePerformanceMonitor, useBundleAnalytics, usePageLoadMetrics } from "@/hooks/use-performance";
 import { DashboardSkeleton } from "@/components/common/LazyWrapper";
@@ -165,7 +163,7 @@ function Layout() {
   }, [pageMetrics]);
   
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gray-50">
       <div className="hidden">
         <AccessibilityToolbar />
       </div>
@@ -484,20 +482,18 @@ function App() {
   
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="system" enableSystem>
-        <AuthProvider>
-          <AccessibilityProvider>
-            <ContrastProvider>
-              <FocusProvider>
-                <TooltipProvider>
-                  <Toaster />
-                  <Router />
-                </TooltipProvider>
-              </FocusProvider>
-            </ContrastProvider>
-          </AccessibilityProvider>
-        </AuthProvider>
-      </ThemeProvider>
+      <AuthProvider>
+        <AccessibilityProvider>
+          <ContrastProvider>
+            <FocusProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Router />
+              </TooltipProvider>
+            </FocusProvider>
+          </ContrastProvider>
+        </AccessibilityProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

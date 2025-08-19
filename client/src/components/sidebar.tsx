@@ -115,22 +115,22 @@ export function Sidebar() {
   };
 
   const SidebarContent = () => (
-    <>
-      <div className="flex items-center h-16 px-4 bg-sidebar-primary transition-colors duration-200">
+    <div className="h-full bg-white flex flex-col">
+      <div className="flex items-center h-16 px-4 bg-blue-600 transition-colors duration-200">
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center space-x-3">
-            <div className="h-8 w-8 bg-sidebar-primary-foreground rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110 hover:rotate-3">
-              <ClipboardList className="h-5 w-5 text-sidebar-primary transition-transform duration-200" />
+            <div className="h-8 w-8 bg-white rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110 hover:rotate-3">
+              <ClipboardList className="h-5 w-5 text-blue-600 transition-transform duration-200" />
             </div>
             {!isCollapsed && (
-              <span className="text-xl font-bold text-sidebar-primary-foreground transition-colors duration-200">발주시스템</span>
+              <span className="text-xl font-bold text-white transition-colors duration-200">발주시스템</span>
             )}
           </div>
           <Button
             variant="ghost"
             size="sm"
             onClick={toggleSidebar}
-            className="text-sidebar-primary-foreground hover:bg-sidebar-primary-foreground/10 transition-all duration-200"
+            className="text-white hover:bg-white/10 transition-all duration-200"
             aria-label={isCollapsed ? "사이드바 펼치기" : "사이드바 접기"}
           >
             {isCollapsed ? (
@@ -145,7 +145,7 @@ export function Sidebar() {
 
       
       <nav className={cn(
-        "mt-6 space-y-6 transition-all duration-200", 
+        "flex-1 mt-6 space-y-6 transition-all duration-200 bg-gray-50 overflow-y-auto", 
         isCollapsed ? "px-2" : "px-4"
       )} role="navigation" aria-label="메인 네비게이션">
         {navigationSections.map((section, sectionIndex) => (
@@ -153,7 +153,7 @@ export function Sidebar() {
             {/* 섹션 제목 */}
             {!isCollapsed && (
               <div className="px-2 mb-3">
-                <h3 className="text-xs font-semibold text-sidebar-muted-foreground uppercase tracking-wider transition-colors duration-200">
+                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider transition-colors duration-200">
                   {section.title}
                 </h3>
               </div>
@@ -182,9 +182,9 @@ export function Sidebar() {
                       className={cn(
                         "w-full nav-item transition-all duration-200 group",
                         "hover:scale-[1.02] active:scale-[0.98] hover:shadow-sm",
-                        isActive(item.href) && "active bg-sidebar-accent text-sidebar-accent-foreground shadow-sm",
-                        item.highlight && "font-medium border border-primary/20 hover:border-primary/40 hover:bg-primary/5",
-                        !isActive(item.href) && "hover:bg-sidebar-accent/50",
+                        isActive(item.href) && "active bg-blue-100 text-blue-700 shadow-sm",
+                        item.highlight && "font-medium border border-blue-200 hover:border-blue-400 hover:bg-blue-50",
+                        !isActive(item.href) && "hover:bg-gray-100 text-gray-700",
                         isCollapsed ? "justify-center px-2" : "justify-start"
                       )}
                       onClick={() => {
@@ -232,7 +232,7 @@ export function Sidebar() {
             {/* 섹션 구분선 (마지막 섹션 제외) */}
             {sectionIndex < navigationSections.length - 1 && (
               <div className={cn("pt-4", isCollapsed && "pt-2")}>
-                <div className="border-t border-sidebar-border transition-colors duration-200"></div>
+                <div className="border-t border-gray-200 transition-colors duration-200"></div>
               </div>
             )}
           </div>
@@ -263,7 +263,7 @@ export function Sidebar() {
           </>
         )}
       </nav>
-    </>
+    </div>
   );
 
   return (
@@ -287,7 +287,7 @@ export function Sidebar() {
 
       {/* Desktop sidebar (iPad Pro and up) - Collapsible */}
       <div className={cn(
-        "hidden xl:fixed xl:inset-y-0 xl:left-0 xl:z-50 xl:block xl:bg-sidebar-background/95 xl:backdrop-blur-sm xl:shadow-lg transition-all duration-300 border-r border-sidebar-border/50",
+        "hidden xl:fixed xl:inset-y-0 xl:left-0 xl:z-50 xl:block bg-white xl:shadow-lg transition-all duration-300 border-r border-gray-200",
         isCollapsed ? "xl:w-16" : "xl:w-64"
       )}>
         <SidebarContent />
@@ -297,11 +297,11 @@ export function Sidebar() {
       {isMobileMenuOpen && (
         <div className="xl:hidden fixed inset-0 z-40">
           <div 
-            className="fixed inset-0 bg-black/50 dark:bg-black/70 animate-in fade-in-0 duration-200" 
+            className="fixed inset-0 bg-black/50 animate-in fade-in-0 duration-200" 
             onClick={() => setIsMobileMenuOpen(false)}
             aria-label="메뉴 배경 클릭으로 닫기"
           />
-          <div className="fixed inset-y-0 left-0 z-50 w-64 bg-sidebar-background/95 backdrop-blur-sm shadow-xl transform transition-transform duration-300 ease-in-out border-r border-sidebar-border/50 animate-in slide-in-from-left-0">
+          <div className="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-xl transform transition-transform duration-300 ease-in-out border-r border-gray-200 animate-in slide-in-from-left-0">
             <SidebarContent />
           </div>
         </div>

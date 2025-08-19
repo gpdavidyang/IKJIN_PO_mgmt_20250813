@@ -3,6 +3,23 @@ import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Loader2 } from 'luci
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import CategoryMappingModal from './CategoryMappingModal';
+
+interface CategoryMappingItem {
+  itemName: string;
+  rowIndex: number;
+  originalCategories: {
+    major?: string;
+    middle?: string;
+    minor?: string;
+  };
+  mappingResult: any;
+  userSelection?: {
+    majorId?: number;
+    middleId?: number;
+    minorId?: number;
+  };
+}
 
 interface ExcelUploadZoneProps {
   onDataExtracted: (data: any) => void;
@@ -17,6 +34,11 @@ const ExcelUploadZone: React.FC<ExcelUploadZoneProps> = ({ onDataExtracted, onPr
   const [errorMessage, setErrorMessage] = useState('');
   const [parsedOrders, setParsedOrders] = useState<any[]>([]);
   const [selectedOrderIndex, setSelectedOrderIndex] = useState(0);
+  
+  // Category mapping states
+  const [showCategoryMapping, setShowCategoryMapping] = useState(false);
+  const [categoryMappingItems, setCategoryMappingItems] = useState<CategoryMappingItem[]>([]);
+  const [pendingOrderData, setPendingOrderData] = useState<any>(null);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -146,7 +168,8 @@ const ExcelUploadZone: React.FC<ExcelUploadZoneProps> = ({ onDataExtracted, onPr
             }))
           };
           
-          onDataExtracted(mappedData);
+          // Validate categories before proceeding
+          await validateCategories(mappedData);
         }
       } else {
         throw new Error(result.error || '데이터 추출 실패');
@@ -159,27 +182,170 @@ const ExcelUploadZone: React.FC<ExcelUploadZoneProps> = ({ onDataExtracted, onPr
     }
   };
 
+  // Category validation function
+  const validateCategories = async (orderData: any): Promise<void> => {
+    console.log('🔍 분류 매핑 검증 시작:', orderData);
+    console.log('🔍 첫 번째 아이템 상세:', orderData.items?.[0]);
+    
+    if (!orderData.items || orderData.items.length === 0) {
+      // No items to validate, proceed directly
+      onDataExtracted(orderData);
+      return;
+    }
+    
+    try {
+      // Prepare category validation requests
+      const categoryRequests = orderData.items.map((item: any) => ({
+        majorCategory: item.majorCategory || item.categoryLv1 || item.대분류,
+        middleCategory: item.middleCategory || item.categoryLv2 || item.중분류,
+        minorCategory: item.minorCategory || item.categoryLv3 || item.소분류
+      }));
+      
+      console.log('🔍 분류 검증 요청 데이터:', categoryRequests);
+      
+      // Call batch validation API
+      const response = await fetch('/api/categories/validate-mapping-batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ categories: categoryRequests })
+      });
+      
+      if (!response.ok) {
+        throw new Error('분류 검증 API 호출 실패');
+      }
+      
+      const result = await response.json();
+      console.log('🔍 분류 검증 결과:', result);
+      
+      // Check if there are any mapping issues
+      const problemItems = result.results.filter((r: any) => 
+        r.status === 'no_match' || r.status === 'partial_match' || r.status === 'invalid_hierarchy'
+      );
+      
+      if (problemItems.length > 0) {
+        console.log(`⚠️ ${problemItems.length}개 품목에 분류 매핑 문제 발견`);
+        
+        // Prepare category mapping items for the modal
+        const mappingItems: CategoryMappingItem[] = [];
+        
+        result.results.forEach((mappingResult: any, index: number) => {
+          if (mappingResult.status === 'no_match' || mappingResult.status === 'partial_match' || mappingResult.status === 'invalid_hierarchy') {
+            const originalItem = orderData.items[index];
+            
+            mappingItems.push({
+              itemName: originalItem.itemName || originalItem.name || `품목 ${index + 1}`,
+              rowIndex: index,
+              originalCategories: {
+                major: mappingResult.excel.major,
+                middle: mappingResult.excel.middle,
+                minor: mappingResult.excel.minor
+              },
+              mappingResult: mappingResult
+            });
+          }
+        });
+        
+        // Store pending order data and show mapping modal
+        setPendingOrderData(orderData);
+        setCategoryMappingItems(mappingItems);
+        setShowCategoryMapping(true);
+      } else {
+        console.log('✅ 모든 분류가 성공적으로 매핑됨');
+        
+        // Ensure category fields are properly mapped in orderData before extraction
+        const updatedOrderData = { ...orderData };
+        updatedOrderData.items = orderData.items.map((item: any) => ({
+          ...item,
+          majorCategory: item.majorCategory || item.categoryLv1 || item.대분류 || '',
+          middleCategory: item.middleCategory || item.categoryLv2 || item.중분류 || '',
+          minorCategory: item.minorCategory || item.categoryLv3 || item.소분류 || ''
+        }));
+        
+        console.log('🔧 카테고리 필드 매핑 완료:', updatedOrderData.items[0]);
+        
+        // All categories mapped successfully, proceed with order
+        onDataExtracted(updatedOrderData);
+      }
+    } catch (error) {
+      console.error('❌ 분류 검증 실패:', error);
+      // If validation fails, show a warning but proceed
+      console.warn('분류 검증에 실패했지만 계속 진행합니다.');
+      
+      // Apply category mapping even if validation fails
+      const updatedOrderData = { ...orderData };
+      updatedOrderData.items = orderData.items.map((item: any) => ({
+        ...item,
+        majorCategory: item.majorCategory || item.categoryLv1 || item.대분류 || '',
+        middleCategory: item.middleCategory || item.categoryLv2 || item.중분류 || '',
+        minorCategory: item.minorCategory || item.categoryLv3 || item.소분류 || ''
+      }));
+      
+      console.log('🔧 카테고리 필드 매핑 완료 (검증 실패 시):', updatedOrderData.items[0]);
+      
+      onDataExtracted(updatedOrderData);
+    }
+  };
+
+  const handleCategoryMappingComplete = async (mappedItems: CategoryMappingItem[]) => {
+    console.log('🔧 사용자 분류 매핑 적용:', mappedItems);
+    
+    if (!pendingOrderData) {
+      console.error('❌ 대기 중인 발주서 데이터가 없습니다.');
+      return;
+    }
+    
+    // Apply user mappings to the order items
+    const updatedOrderData = { ...pendingOrderData };
+    
+    mappedItems.forEach((mappingItem) => {
+      const itemIndex = updatedOrderData.items.findIndex((item: any) => 
+        (item.itemName || item.name) === mappingItem.itemName
+      );
+      
+      if (itemIndex !== -1 && mappingItem.userSelection) {
+        const item = updatedOrderData.items[itemIndex];
+        
+        // Update category information based on user selection
+        if (mappingItem.userSelection.majorId) {
+          item.majorCategoryId = mappingItem.userSelection.majorId;
+        }
+        if (mappingItem.userSelection.middleId) {
+          item.middleCategoryId = mappingItem.userSelection.middleId;
+        }
+        if (mappingItem.userSelection.minorId) {
+          item.minorCategoryId = mappingItem.userSelection.minorId;
+        }
+      }
+    });
+    
+    // Close modal and proceed with updated data
+    setShowCategoryMapping(false);
+    setCategoryMappingItems([]);
+    setPendingOrderData(null);
+    
+    console.log('✅ 분류 매핑이 적용된 발주서 데이터:', updatedOrderData);
+    onDataExtracted(updatedOrderData);
+  };
+
   const handleOrderSelect = async () => {
     if (parsedOrders[selectedOrderIndex] && uploadedFile) {
       const selectedOrder = parsedOrders[selectedOrderIndex];
       
-      // 처리된 Excel 파일 정보 전달은 이미 processFile에서 처리되었으므로 제거
-      // (중복 호출을 피하기 위해)
-      
       // Map fields for V2 workflow compatibility
       const mappedData = {
         ...selectedOrder,
-        projectName: selectedOrder.siteName || selectedOrder.projectName, // Map siteName to projectName
+        projectName: selectedOrder.siteName || selectedOrder.projectName,
         orderDate: selectedOrder.orderDate,
         deliveryDate: selectedOrder.dueDate || selectedOrder.deliveryDate,
         items: (selectedOrder.items || []).map((item: any) => ({
           ...item,
-          name: item.itemName || item.name, // Map itemName to name for PDF generation
+          name: item.itemName || item.name,
           unit: item.unit || 'EA'
         }))
       };
       
-      onDataExtracted(mappedData);
+      // Validate categories before proceeding
+      await validateCategories(mappedData);
     }
   };
 
@@ -344,6 +510,17 @@ const ExcelUploadZone: React.FC<ExcelUploadZoneProps> = ({ onDataExtracted, onPr
         </div>
       )}
 
+      {/* Category Mapping Modal */}
+      <CategoryMappingModal
+        isOpen={showCategoryMapping}
+        onClose={() => {
+          setShowCategoryMapping(false);
+          setCategoryMappingItems([]);
+          setPendingOrderData(null);
+        }}
+        mappingItems={categoryMappingItems}
+        onApplyMappings={handleCategoryMappingComplete}
+      />
     </div>
   );
 };

@@ -439,14 +439,14 @@ export default function Reports() {
 
   if (isLoading) {
     return (
-      <div className={`p-6 space-y-6 transition-colors ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
-        <div className={`animate-pulse text-lg transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>로딩 중...</div>
+      <div className="p-6 space-y-6" style={{ backgroundColor: isDarkMode ? '#111827' : '#f9fafb' }}>
+        <div className="animate-pulse text-lg" style={{ color: isDarkMode ? '#d1d5db' : '#374151' }}>로딩 중...</div>
       </div>
     );
   }
 
   return (
-    <div className={`min-h-screen transition-colors ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+    <div className="min-h-screen" style={{ backgroundColor: isDarkMode ? '#111827' : '#f9fafb' }}>
       <div className="max-w-[1366px] mx-auto p-6 space-y-6">
       {/* 페이지 헤더 - UI Standards 적용 */}
       <div className="flex items-center justify-between">

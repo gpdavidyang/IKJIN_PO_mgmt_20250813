@@ -719,6 +719,10 @@ export const insertPurchaseOrderSchema = createInsertSchema(purchaseOrders).omit
     unitPrice: z.number().positive(),
     totalAmount: z.number().positive(),
     notes: z.string().nullable().optional(),
+    // Category fields (added to fix category data loss)
+    majorCategory: z.string().nullable().optional(),
+    middleCategory: z.string().nullable().optional(),
+    minorCategory: z.string().nullable().optional(),
   })),
 });
 

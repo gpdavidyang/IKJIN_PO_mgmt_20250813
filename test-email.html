@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>이메일 발송 테스트</title>
+    <style>
+        body { font-family: 'Malgun Gothic', sans-serif; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        button { padding: 10px 20px; margin: 10px; border: none; border-radius: 5px; cursor: pointer; }
+        .test-btn { background-color: #007bff; color: white; }
+        .result { margin: 20px 0; padding: 15px; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        input { padding: 8px; margin: 5px; width: 300px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 네이버 SMTP 테스트</h1>
+        
+        <div class="info result">
+            <strong>📋 현재 설정:</strong><br>
+            • SMTP 호스트: smtp.naver.com<br>
+            • SMTP 포트: 587<br>
+            • 사용자: david1611@naver.com<br>
+            • 비밀번호: ******* (설정됨)
+        </div>
+
+        <h3>📧 테스트 이메일 발송</h3>
+        <div>
+            <label>수신자 이메일:</label><br>
+            <input type="email" id="testEmail" value="davidswyang@gmail.com" placeholder="수신자 이메일">
+            <button class="test-btn" onclick="sendTestEmail()">테스트 이메일 발송</button>
+        </div>
+
+        <h3>🔗 SMTP 연결 테스트</h3>
+        <button class="test-btn" onclick="testConnection()">연결 테스트</button>
+
+        <div id="result"></div>
+    </div>
+
+    <script>
+        function showResult(message, type = 'info') {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `<div class="${type} result">${message}</div>`;
+        }
+
+        async function testConnection() {
+            showResult('🔍 연결 테스트 중...', 'info');
+            
+            try {
+                // 실제로는 백엔드가 필요하지만, 프론트엔드에서 간접 테스트
+                const response = await fetch('/api/auth/user');
+                if (response.ok) {
+                    showResult('✅ 서버 연결 확인됨. 이제 실제 이메일 발송을 테스트해보세요.', 'success');
+                } else {
+                    showResult('❌ 서버 연결 실패. 개발 서버가 실행 중인지 확인하세요.', 'error');
+                }
+            } catch (error) {
+                showResult(`❌ 연결 테스트 실패: ${error.message}`, 'error');
+            }
+        }
+
+        async function sendTestEmail() {
+            const email = document.getElementById('testEmail').value;
+            if (!email) {
+                showResult('❌ 수신자 이메일을 입력하세요.', 'error');
+                return;
+            }
+
+            showResult('📧 테스트 이메일 발송 중...', 'info');
+
+            try {
+                // 실제 발주서 생성 API를 사용하여 이메일 발송 테스트
+                const testOrderData = {
+                    orderNumber: 'EMAIL-TEST-001',
+                    projectName: '이메일 테스트 프로젝트',
+                    vendorName: '테스트 거래처',
+                    vendorEmail: email,
+                    totalAmount: 1000000,
+                    items: [{
+                        name: '테스트 품목',
+                        specification: '테스트용',
+                        quantity: 1,
+                        unitPrice: 1000000,
+                        unit: 'EA'
+                    }]
+                };
+
+                // send-email API 직접 호출
+                const response = await fetch('/api/orders/send-email', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        orderData: testOrderData,
+                        pdfUrl: null,
+                        recipients: [email]
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showResult(`✅ 테스트 이메일 발송 성공!<br>
+                        📧 수신자: ${email}<br>
+                        🆔 메시지 ID: ${result.messageId || 'N/A'}<br>
+                        🎉 네이버 SMTP가 정상 작동합니다!`, 'success');
+                } else {
+                    showResult(`❌ 이메일 발송 실패:<br>${result.error || result.message}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ 이메일 발송 중 오류: ${error.message}<br>
+                    💡 가능한 원인:<br>
+                    • 네이버 계정 인증 정보 오류<br>
+                    • 2단계 인증 미설정<br>
+                    • IMAP/POP3 설정 비활성화`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

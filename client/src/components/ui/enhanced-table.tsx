@@ -59,44 +59,144 @@ export function EnhancedTable<T>({
   stickyHeader = false,
   maxHeight,
 }: EnhancedTableProps<T>) {
-  const { theme } = useTheme();
-  const isDarkMode = theme === 'dark';
+  const { theme, actualTheme } = useTheme();
+  
+  // Use actualTheme for more accurate dark mode detection
+  const isDarkMode = actualTheme === 'dark' || theme === 'dark' || document.documentElement.classList.contains('dark');
   
   // Force re-render when theme changes to apply styles
   const tableKey = `table-${isDarkMode ? 'dark' : 'light'}-${Date.now()}`;
   
-  // Force style application on mount and theme change
+  // Enhanced dark mode style enforcement
   React.useEffect(() => {
-    if (isDarkMode) {
-      // Apply styles with a slight delay to ensure DOM is ready
-      const timer = setTimeout(() => {
-        const tableElements = document.querySelectorAll('.dark-table-container table');
-        tableElements.forEach((table) => {
-          (table as HTMLElement).style.setProperty('background-color', 'rgb(31 41 55)', 'important');
-          
-          const tbody = table.querySelector('tbody');
-          if (tbody) {
-            (tbody as HTMLElement).style.setProperty('background-color', 'rgb(31 41 55)', 'important');
-            const rows = tbody.querySelectorAll('tr');
-            rows.forEach((row, index) => {
-              if (index % 2 === 0) {
-                (row as HTMLElement).style.setProperty('background-color', 'rgb(31 41 55)', 'important');
-              } else {
-                (row as HTMLElement).style.setProperty('background-color', 'rgba(55 65 81, 0.7)', 'important');
-              }
-            });
-          }
-          
-          const thead = table.querySelector('thead');
-          if (thead) {
-            (thead as HTMLElement).style.setProperty('background-color', 'rgb(55 65 81)', 'important');
-          }
-        });
-      }, 50);
+    const enforceTableStyles = () => {
+      const isDark = actualTheme === 'dark' || theme === 'dark' || document.documentElement.classList.contains('dark');
       
-      return () => clearTimeout(timer);
-    }
-  }, [isDarkMode, data]);
+      if (isDark) {
+        // Create a more specific style element
+        const existingStyle = document.getElementById('enhanced-table-dark-override');
+        if (existingStyle) {
+          existingStyle.remove();
+        }
+        
+        const style = document.createElement('style');
+        style.id = 'enhanced-table-dark-override';
+        style.textContent = `
+          /* ULTIMATE TABLE DARK MODE OVERRIDE */
+          .dark-table-container table,
+          [data-theme="dark"] .dark-table-container table,
+          html.dark .dark-table-container table {
+            background-color: rgb(31 41 55) !important;
+            color: rgb(241 245 249) !important;
+            forced-color-adjust: none !important;
+          }
+          
+          .dark-table-container table tbody,
+          [data-theme="dark"] .dark-table-container table tbody,
+          html.dark .dark-table-container table tbody {
+            background-color: rgb(31 41 55) !important;
+            forced-color-adjust: none !important;
+          }
+          
+          .dark-table-container table tbody tr,
+          [data-theme="dark"] .dark-table-container table tbody tr,
+          html.dark .dark-table-container table tbody tr {
+            background-color: rgb(31 41 55) !important;
+            color: rgb(241 245 249) !important;
+            forced-color-adjust: none !important;
+          }
+          
+          .dark-table-container table tbody tr:nth-child(even),
+          [data-theme="dark"] .dark-table-container table tbody tr:nth-child(even),
+          html.dark .dark-table-container table tbody tr:nth-child(even) {
+            background-color: rgba(55 65 81, 0.7) !important;
+            forced-color-adjust: none !important;
+          }
+          
+          .dark-table-container table tbody tr:hover,
+          [data-theme="dark"] .dark-table-container table tbody tr:hover,
+          html.dark .dark-table-container table tbody tr:hover {
+            background-color: rgb(55 65 81) !important;
+            forced-color-adjust: none !important;
+          }
+          
+          .dark-table-container table thead,
+          [data-theme="dark"] .dark-table-container table thead,
+          html.dark .dark-table-container table thead {
+            background-color: rgb(55 65 81) !important;
+            forced-color-adjust: none !important;
+          }
+          
+          .dark-table-container .table-wrapper-custom,
+          [data-theme="dark"] .dark-table-container .table-wrapper-custom,
+          html.dark .dark-table-container .table-wrapper-custom {
+            background-color: rgb(31 41 55) !important;
+            forced-color-adjust: none !important;
+          }
+        `;
+        document.head.appendChild(style);
+        
+        // Also directly apply styles to existing elements
+        const applyDirectStyles = () => {
+          const tableElements = document.querySelectorAll('.dark-table-container table');
+          tableElements.forEach((table) => {
+            (table as HTMLElement).style.setProperty('background-color', 'rgb(31 41 55)', 'important');
+            (table as HTMLElement).style.setProperty('forced-color-adjust', 'none', 'important');
+            
+            const tbody = table.querySelector('tbody');
+            if (tbody) {
+              (tbody as HTMLElement).style.setProperty('background-color', 'rgb(31 41 55)', 'important');
+              const rows = tbody.querySelectorAll('tr');
+              rows.forEach((row, index) => {
+                if (index % 2 === 0) {
+                  (row as HTMLElement).style.setProperty('background-color', 'rgb(31 41 55)', 'important');
+                } else {
+                  (row as HTMLElement).style.setProperty('background-color', 'rgba(55 65 81, 0.7)', 'important');
+                }
+                (row as HTMLElement).style.setProperty('forced-color-adjust', 'none', 'important');
+              });
+            }
+            
+            const thead = table.querySelector('thead');
+            if (thead) {
+              (thead as HTMLElement).style.setProperty('background-color', 'rgb(55 65 81)', 'important');
+            }
+            
+            const wrapper = table.closest('.table-wrapper-custom');
+            if (wrapper) {
+              (wrapper as HTMLElement).style.setProperty('background-color', 'rgb(31 41 55)', 'important');
+            }
+          });
+        };
+        
+        // Apply immediately
+        applyDirectStyles();
+        
+        // Apply again after a small delay to ensure DOM is ready
+        setTimeout(applyDirectStyles, 100);
+        
+        // Set up observer to catch dynamically added elements
+        const observer = new MutationObserver(() => {
+          applyDirectStyles();
+        });
+        
+        observer.observe(document.body, {
+          childList: true,
+          subtree: true
+        });
+        
+        return () => {
+          observer.disconnect();
+          const style = document.getElementById('enhanced-table-dark-override');
+          if (style) {
+            style.remove();
+          }
+        };
+      }
+    };
+    
+    return enforceTableStyles();
+  }, [theme, actualTheme, data]);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [sortColumn, setSortColumn] = React.useState<string | null>(null);
   const [sortDirection, setSortDirection] = React.useState<SortDirection>(null);
@@ -192,7 +292,14 @@ export function EnhancedTable<T>({
   }
 
   return (
-    <div className={cn("w-full dark-table-container", className)}>
+    <div 
+      className={cn("w-full dark-table-container", className)}
+      data-theme={isDarkMode ? 'dark' : 'light'}
+      style={{
+        backgroundColor: isDarkMode ? 'rgb(31 41 55)' : 'white',
+        forcedColorAdjust: 'none'
+      }}
+    >
       {/* Search bar */}
       {searchable && (
         <div className="mb-4">
@@ -219,16 +326,20 @@ export function EnhancedTable<T>({
         )}
         style={{ 
           maxHeight,
-          backgroundColor: isDarkMode ? 'rgb(31 41 55) !important' : 'white !important',
+          backgroundColor: isDarkMode ? 'rgb(31 41 55)' : 'white',
           forcedColorAdjust: 'none'
         }}
+        data-dark-table={isDarkMode}
       >
         <table 
-          className="w-full table-custom-dark" 
+          key={tableKey}
+          className={cn("w-full table-custom-dark", isDarkMode && "dark-table-forced")}
           style={{
-            backgroundColor: isDarkMode ? 'rgb(31 41 55) !important' : 'white !important',
+            backgroundColor: isDarkMode ? 'rgb(31 41 55)' : 'white',
+            color: isDarkMode ? 'rgb(241 245 249)' : 'rgb(17 24 39)',
             forcedColorAdjust: 'none'
           }}
+          data-theme={isDarkMode ? 'dark' : 'light'}
         >
           <thead 
             className={cn(
@@ -237,7 +348,7 @@ export function EnhancedTable<T>({
               stickyHeader && "sticky top-0 z-10"
             )}
             style={{
-              backgroundColor: isDarkMode ? 'rgb(55 65 81) !important' : 'rgb(249 250 251) !important',
+              backgroundColor: isDarkMode ? 'rgb(55 65 81)' : 'rgb(249 250 251)',
               forcedColorAdjust: 'none'
             }}
           >
@@ -274,7 +385,7 @@ export function EnhancedTable<T>({
               "divide-gray-200 dark:divide-gray-700"
             )}
             style={{
-              backgroundColor: isDarkMode ? 'rgb(31 41 55) !important' : 'white !important',
+              backgroundColor: isDarkMode ? 'rgb(31 41 55)' : 'white',
               forcedColorAdjust: 'none'
             }}
           >
@@ -284,7 +395,8 @@ export function EnhancedTable<T>({
                   colSpan={columns.length} 
                   className="px-4 py-8 text-center text-gray-500 dark:text-gray-400 td-custom-empty"
                   style={{
-                    backgroundColor: isDarkMode ? 'rgb(31 41 55) !important' : 'white !important',
+                    backgroundColor: isDarkMode ? 'rgb(31 41 55)' : 'white',
+                    color: isDarkMode ? 'rgb(156 163 175)' : 'rgb(107 114 128)',
                     forcedColorAdjust: 'none'
                   }}
                 >

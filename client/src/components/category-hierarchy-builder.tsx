@@ -165,60 +165,69 @@ function EnhancedCategoryNode({
 
   // Native HTML5 drag and drop handlers
   const handleDragStart = (e: React.DragEvent) => {
+    console.log('Drag started for:', node.categoryName);
     setIsDragging(true);
     
-    // Set drag data
-    e.dataTransfer.setData('application/json', JSON.stringify({
+    // Set multiple data formats for better browser compatibility
+    const dragData = {
       id: node.id,
-      node: node
-    }));
+      categoryName: node.categoryName,
+      categoryType: node.categoryType,
+      parentId: node.parentId,
+      displayOrder: node.displayOrder,
+      node: {
+        id: node.id,
+        categoryName: node.categoryName,
+        categoryType: node.categoryType,
+        parentId: node.parentId,
+        displayOrder: node.displayOrder,
+        isActive: node.isActive
+      }
+    };
+    
+    e.dataTransfer.setData('application/json', JSON.stringify(dragData));
+    e.dataTransfer.setData('text/plain', `category-${node.id}`);
     e.dataTransfer.effectAllowed = 'move';
     
     // Create custom drag image for better visual feedback
     if (nodeRef.current) {
       const dragImage = nodeRef.current.cloneNode(true) as HTMLElement;
-      dragImage.style.transform = 'rotate(5deg)';
-      dragImage.style.opacity = '0.8';
+      dragImage.style.transform = 'rotate(2deg)';
+      dragImage.style.opacity = '0.9';
       dragImage.style.backgroundColor = '#3b82f6';
       dragImage.style.color = 'white';
       dragImage.style.borderRadius = '8px';
       dragImage.style.padding = '8px';
       dragImage.style.position = 'absolute';
       dragImage.style.top = '-1000px';
+      dragImage.style.left = '-1000px';
       dragImage.style.pointerEvents = 'none';
+      dragImage.style.maxWidth = '250px';
+      dragImage.style.zIndex = '9999';
       
       document.body.appendChild(dragImage);
-      e.dataTransfer.setDragImage(dragImage, 0, 0);
+      e.dataTransfer.setDragImage(dragImage, 20, 20);
       
       // Clean up drag image after a short delay
       setTimeout(() => {
         if (document.body.contains(dragImage)) {
           document.body.removeChild(dragImage);
         }
-      }, 0);
+      }, 100);
     }
   };
 
   const handleDragEnd = () => {
+    console.log('Drag ended for:', node.categoryName);
     setIsDragging(false);
     setDraggedOver(null);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     
-    // Check if we can accept this drop
-    try {
-      const dragData = JSON.parse(e.dataTransfer.getData('application/json') || '{}');
-      if (dragData.node && dragData.node.id === node.id) {
-        // Can't drop on self
-        e.dataTransfer.dropEffect = 'none';
-        return;
-      }
-    } catch (error) {
-      // Data might not be available during dragover in some browsers
-    }
-    
+    // Set drop effect first
     e.dataTransfer.dropEffect = 'move';
 
     if (nodeRef.current) {
@@ -226,28 +235,57 @@ function EnhancedCategoryNode({
       const y = e.clientY - rect.top;
       const height = rect.height;
 
+      // More precise position detection
       if (y < height * 0.25) {
         setDraggedOver('before');
       } else if (y > height * 0.75) {
         setDraggedOver('after');
       } else {
-        setDraggedOver(CATEGORY_CONFIGS[node.categoryType].canHaveChildren ? 'inside' : 'after');
+        // Check if node can have children for 'inside' drop
+        if (CATEGORY_CONFIGS[node.categoryType].canHaveChildren) {
+          setDraggedOver('inside');
+        } else {
+          // If can't have children, determine before/after based on middle position
+          setDraggedOver(y < height * 0.5 ? 'before' : 'after');
+        }
       }
     }
   };
 
-  const handleDragLeave = () => {
-    setDraggedOver(null);
+  const handleDragLeave = (e: React.DragEvent) => {
+    // Only reset draggedOver if we're actually leaving the element
+    // This prevents flickering during dragover events on child elements
+    if (nodeRef.current && !nodeRef.current.contains(e.relatedTarget as Node)) {
+      setDraggedOver(null);
+    }
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    
+    const currentDraggedOver = draggedOver;
     setDraggedOver(null);
 
     try {
       const dragData = JSON.parse(e.dataTransfer.getData('application/json'));
-      if (dragData.node && dragData.node.id !== node.id && draggedOver) {
-        onMove(dragData.node, node, draggedOver);
+      console.log('Drop data:', dragData, 'Target:', node, 'Position:', currentDraggedOver);
+      
+      if (dragData.node && dragData.node.id !== node.id && currentDraggedOver) {
+        // Additional validation
+        if (dragData.node.id === node.id) {
+          console.log('Cannot drop on self');
+          return;
+        }
+        
+        // Check for valid drop position
+        if (currentDraggedOver === 'inside' && !CATEGORY_CONFIGS[node.categoryType].canHaveChildren) {
+          console.log('Target cannot have children');
+          return;
+        }
+        
+        console.log('Executing move:', dragData.node.categoryName, currentDraggedOver, node.categoryName);
+        onMove(dragData.node, node, currentDraggedOver);
       }
     } catch (error) {
       console.error('Error parsing drag data:', error);
@@ -354,6 +392,7 @@ function EnhancedCategoryNode({
             {/* Category Name */}
             <span className="flex-1 font-medium text-gray-900">
               {highlightText(node.categoryName, searchTerm)}
+              {isDragging && <span className="ml-2 text-xs text-blue-600">(드래그 중)</span>}
             </span>
 
             {/* Status Indicators */}
@@ -568,12 +607,15 @@ export default function CategoryHierarchyBuilder() {
   const updateCategoryMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: any }) => apiRequest('PUT', `/api/item-categories/${id}`, data),
     onSuccess: (data) => {
+      // Force refetch to ensure UI is updated immediately
       queryClient.invalidateQueries({ queryKey: ['/api/item-categories'] });
+      queryClient.refetchQueries({ queryKey: ['/api/item-categories'] });
       setEditingNode(null);
-      addToHistory('Updated category: ' + data.categoryName);
-      toast({ title: "분류 수정 완료", description: "분류가 수정되었습니다." });
+      addToHistory('Updated category: ' + (data.categoryName || 'Unknown'));
+      console.log('Category updated successfully:', data);
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Category update error:', error);
       toast({ title: "오류", description: "분류 수정 중 오류가 발생했습니다.", variant: "destructive" });
     }
   });
@@ -695,14 +737,35 @@ export default function CategoryHierarchyBuilder() {
     setIsAddDialogOpen(true);
   }, []);
 
+  // Helper function to check if a node is descendant of another
+  const isDescendant = useCallback((potentialChild: TreeNode, potentialParent: TreeNode): boolean => {
+    if (potentialChild.parentId === potentialParent.id) {
+      return true;
+    }
+    if (potentialChild.parentId === null) {
+      return false;
+    }
+    const parent = categories.find((cat: ItemCategory) => cat.id === potentialChild.parentId);
+    if (!parent) {
+      return false;
+    }
+    return isDescendant(parent as TreeNode, potentialParent);
+  }, [categories]);
+
   const handleMove = useCallback(async (draggedNode: TreeNode, targetNode: TreeNode, position: 'before' | 'after' | 'inside') => {
-    if (isDragOperationInProgress) return; // Prevent multiple concurrent operations
+    if (isDragOperationInProgress) {
+      console.log('Drag operation already in progress, skipping...');
+      return;
+    }
     
+    console.log(`Starting move operation: ${draggedNode.categoryName} ${position} ${targetNode.categoryName}`);
     setIsDragOperationInProgress(true);
+    
     try {
       let newParentId: number | null = null;
       let newDisplayOrder: number = 0;
 
+      // Validate the move first
       if (position === 'inside') {
         // Moving inside target node (as child)
         if (!CATEGORY_CONFIGS[targetNode.categoryType].canHaveChildren) {
@@ -726,92 +789,59 @@ export default function CategoryHierarchyBuilder() {
 
         newParentId = targetNode.id;
         newDisplayOrder = targetNode.children.length; // Add to end of children
+        
+        console.log(`Moving as child: parentId=${newParentId}, displayOrder=${newDisplayOrder}`);
       } else {
         // Moving before/after target node (as sibling)
         newParentId = targetNode.parentId;
         
         // Find siblings and calculate new display order
         const siblings = categories.filter((cat: ItemCategory) => cat.parentId === newParentId);
-        const targetIndex = siblings.findIndex((cat: ItemCategory) => cat.id === targetNode.id);
+        console.log(`Found ${siblings.length} siblings at level ${newParentId}`);
         
         if (position === 'before') {
           newDisplayOrder = targetNode.displayOrder;
-          // Update display orders of siblings after the insertion point
-          const siblingUpdates = siblings
-            .filter((cat: ItemCategory) => cat.displayOrder >= newDisplayOrder && cat.id !== draggedNode.id)
-            .map((cat: ItemCategory) => ({
-              id: cat.id,
-              displayOrder: cat.displayOrder + 1
-            }));
-          
-          // Update siblings first
-          for (const update of siblingUpdates) {
-            await updateCategoryMutation.mutateAsync({
-              id: update.id,
-              data: { displayOrder: update.displayOrder }
-            });
-          }
+          console.log(`Moving before: displayOrder=${newDisplayOrder}`);
         } else { // after
           newDisplayOrder = targetNode.displayOrder + 1;
-          // Update display orders of siblings after the insertion point
-          const siblingUpdates = siblings
-            .filter((cat: ItemCategory) => cat.displayOrder > targetNode.displayOrder && cat.id !== draggedNode.id)
-            .map((cat: ItemCategory) => ({
-              id: cat.id,
-              displayOrder: cat.displayOrder + 1
-            }));
-          
-          // Update siblings first
-          for (const update of siblingUpdates) {
-            await updateCategoryMutation.mutateAsync({
-              id: update.id,
-              data: { displayOrder: update.displayOrder }
-            });
-          }
+          console.log(`Moving after: displayOrder=${newDisplayOrder}`);
         }
       }
 
       // Update the dragged node with new parent and display order
+      const updateData = {
+        parentId: newParentId,
+        displayOrder: newDisplayOrder
+      };
+      
+      console.log('Updating dragged node with data:', updateData);
+      
       await updateCategoryMutation.mutateAsync({
         id: draggedNode.id,
-        data: {
-          parentId: newParentId,
-          displayOrder: newDisplayOrder
-        }
+        data: updateData
       });
 
       addToHistory(`Moved "${draggedNode.categoryName}" ${position} "${targetNode.categoryName}"`);
+      
       toast({ 
         title: "이동 완료", 
-        description: `"${draggedNode.categoryName}"가 성공적으로 이동되었습니다.` 
+        description: `"${draggedNode.categoryName}"가 "${targetNode.categoryName}" ${position === 'inside' ? '하위로' : position === 'before' ? '앞으로' : '뒤로'} 이동되었습니다.` 
       });
+
+      console.log('Move operation completed successfully');
 
     } catch (error) {
       console.error('Error moving category:', error);
       toast({ 
         title: "이동 실패", 
-        description: "분류 이동 중 오류가 발생했습니다.", 
+        description: "분류 이동 중 오류가 발생했습니다. 콘솔을 확인해주세요.", 
         variant: "destructive" 
       });
     } finally {
       setIsDragOperationInProgress(false);
+      console.log('Move operation finished');
     }
-  }, [categories, updateCategoryMutation, addToHistory, toast, isDragOperationInProgress]);
-
-  // Helper function to check if a node is descendant of another
-  const isDescendant = useCallback((potentialChild: TreeNode, potentialParent: TreeNode): boolean => {
-    if (potentialChild.parentId === potentialParent.id) {
-      return true;
-    }
-    if (potentialChild.parentId === null) {
-      return false;
-    }
-    const parent = categories.find((cat: ItemCategory) => cat.id === potentialChild.parentId);
-    if (!parent) {
-      return false;
-    }
-    return isDescendant(parent as TreeNode, potentialParent);
-  }, [categories]);
+  }, [categories, updateCategoryMutation, addToHistory, toast, isDragOperationInProgress, isDescendant]);
 
   const handleDelete = useCallback((node: TreeNode) => {
     if (confirm(`"${node.categoryName}" 분류를 삭제하시겠습니까?`)) {

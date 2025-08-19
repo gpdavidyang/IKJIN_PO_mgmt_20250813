@@ -6,7 +6,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation, Link } from "wouter";
 import { getUserInitials, getUserDisplayName, getRoleText } from "@/lib/statusUtils";
-import { ThemeToggle } from "@/components/ui/theme-provider";
 
 // 개선된 페이지 설정 - 섹션별 그룹화와 액션 정보 포함
 const pageConfig = {
@@ -288,8 +287,6 @@ export function Header() {
         </div>
         
         <div className="flex items-center space-x-3">
-          <ThemeToggle size="sm" />
-          
           <Button 
             variant="ghost" 
             size="sm" 

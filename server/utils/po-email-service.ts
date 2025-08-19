@@ -1,6 +1,12 @@
 import nodemailer from 'nodemailer';
 import path from 'path';
 import fs from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+// ES 모듈에서 __dirname 대체
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 import { convertExcelToPdf } from './excel-to-pdf';
 import { ExcelToPDFConverter } from './excel-to-pdf-converter';
 import { EnhancedExcelToPDFConverter } from './enhanced-excel-to-pdf';
@@ -273,6 +279,18 @@ export class POEmailService {
     attachments?: EmailAttachment[];
   }): Promise<{ success: boolean; messageId?: string; error?: string }> {
     try {
+      console.log('🔍 POEmailService.sendEmail 호출됨:', {
+        to: options.to,
+        cc: options.cc,
+        subject: options.subject,
+        attachmentsCount: options.attachments?.length || 0,
+        smtpConfig: {
+          host: process.env.SMTP_HOST || 'smtp.naver.com',
+          port: parseInt(process.env.SMTP_PORT || '587'),
+          user: process.env.SMTP_USER
+        }
+      });
+
       const info = await this.transporter.sendMail({
         from: `"발주 시스템" <${process.env.SMTP_USER}>`,
         to: Array.isArray(options.to) ? options.to.join(', ') : options.to,
@@ -288,12 +306,16 @@ export class POEmailService {
         }))
       });
 
+      console.log('✅ POEmailService.sendEmail 성공:', info.messageId);
+      
       return {
         success: true,
         messageId: info.messageId
       };
 
     } catch (error) {
+      console.error('❌ POEmailService.sendEmail 실패:', error);
+      
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'

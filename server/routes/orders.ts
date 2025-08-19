@@ -16,7 +16,12 @@ import { POEmailService } from "../utils/po-email-service";
 import ApprovalRoutingService from "../services/approval-routing-service";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 import { z } from "zod";
+
+// ES 모듈에서 __dirname 대체
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const router = Router();
 
@@ -124,7 +129,7 @@ router.post("/orders", requireAuth, upload.array('attachments'), async (req, res
       vendorId: req.body.vendorId ? parseInt(req.body.vendorId) : null,
       templateId: req.body.templateId ? parseInt(req.body.templateId) : null,
       userId,
-      orderDate: new Date(),
+      orderDate: req.body.orderDate ? new Date(req.body.orderDate) : new Date(),
       deliveryDate: req.body.deliveryDate ? new Date(req.body.deliveryDate) : null,
       totalAmount,
       notes: req.body.notes || null,
@@ -994,6 +999,7 @@ router.get("/orders/download-pdf/:timestamp", (req, res) => {
 });
 
 // 이메일 발송 (PDF만)
+
 router.post("/orders/send-email", requireAuth, async (req, res) => {
   try {
     const { orderData, pdfUrl, recipients, emailSettings } = req.body;
@@ -1179,6 +1185,13 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
       `;
     };
 
+    console.log('📧 sendEmail 호출 전 옵션:', {
+      to: emailOptions.to,
+      cc: emailOptions.cc,
+      subject: emailOptions.subject,
+      attachmentsCount: attachments.length
+    });
+
     const result = await emailService.sendEmail({
       to: emailOptions.to,
       cc: emailOptions.cc,
@@ -1186,6 +1199,8 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
       html: generateEmailContent(emailOptions),
       attachments
     });
+
+    console.log('📧 sendEmail 결과:', result);
 
     if (result.success) {
       console.log('📧 이메일 발송 성공');
@@ -1259,6 +1274,93 @@ router.post("/orders/send-email-with-excel", requireAuth, async (req, res) => {
     res.status(500).json({ 
       error: '엑셀 이메일 발송 실패',
       details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// 임시 이메일 테스트 엔드포인트 (인증 불필요)
+router.post("/test-email-smtp", async (req, res) => {
+  try {
+    console.log('🔍 SMTP 테스트 시작...');
+    console.log('🔧 SMTP 설정:', {
+      host: process.env.SMTP_HOST,
+      port: process.env.SMTP_PORT,
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS ? '***설정됨***' : '❌ 설정안됨'
+    });
+
+    const { testEmail } = req.body;
+    const recipientEmail = testEmail || 'davidswyang@gmail.com';
+
+    // 테스트 발주서 데이터
+    const testOrderData = {
+      orderNumber: 'SMTP-TEST-001',
+      projectName: '네이버 SMTP 테스트',
+      vendorName: 'System Test',
+      location: 'Test Environment',
+      orderDate: new Date().toLocaleDateString('ko-KR'),
+      deliveryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('ko-KR'),
+      totalAmount: 999999,
+      userName: 'System Tester',
+      userPhone: '010-0000-0000'
+    };
+
+    // 임시 더미 파일 생성 (Excel 첨부용)
+    const fs = require('fs');
+    const path = require('path');
+    const testExcelPath = path.join(__dirname, '../../uploads/smtp-test.txt');
+    fs.writeFileSync(testExcelPath, 'SMTP Test File - ' + new Date().toISOString());
+
+    const result = await emailService.sendPurchaseOrderEmail({
+      orderData: testOrderData,
+      excelFilePath: testExcelPath,
+      recipients: [recipientEmail],
+      cc: [],
+      userId: 'system-test',
+      orderId: 9999
+    });
+
+    // 임시 파일 삭제
+    try {
+      fs.unlinkSync(testExcelPath);
+    } catch (e) {
+      console.warn('임시 파일 삭제 실패:', e.message);
+    }
+
+    if (result.success) {
+      console.log('✅ SMTP 테스트 성공!');
+      res.json({
+        success: true,
+        message: '✅ 네이버 SMTP 테스트 성공!',
+        messageId: result.messageId,
+        acceptedRecipients: result.acceptedRecipients,
+        rejectedRecipients: result.rejectedRecipients,
+        testEmail: recipientEmail,
+        smtp: {
+          host: process.env.SMTP_HOST,
+          port: process.env.SMTP_PORT,
+          user: process.env.SMTP_USER
+        }
+      });
+    } else {
+      console.error('❌ SMTP 테스트 실패');
+      res.status(500).json({
+        success: false,
+        message: '❌ SMTP 테스트 실패',
+        error: '이메일 발송 실패'
+      });
+    }
+
+  } catch (error) {
+    console.error('❌ SMTP 테스트 오류:', error);
+    res.status(500).json({
+      success: false,
+      message: '❌ SMTP 테스트 오류',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      details: {
+        code: error.code,
+        response: error.response
+      }
     });
   }
 });

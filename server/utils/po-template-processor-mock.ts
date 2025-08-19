@@ -229,7 +229,11 @@ export class POTemplateProcessorMock {
               quantity: item.quantity,
               unitPrice: item.unitPrice,
               totalAmount: item.totalAmount,
-              notes: `${item.categoryLv1 || ''} ${item.categoryLv2 || ''} ${item.categoryLv3 || ''}`.trim() || null
+              // 카테고리 필드를 올바른 컬럼에 저장
+              majorCategory: item.categoryLv1 || null,
+              middleCategory: item.categoryLv2 || null,
+              minorCategory: item.categoryLv3 || null,
+              notes: item.notes || null
             });
           }
 

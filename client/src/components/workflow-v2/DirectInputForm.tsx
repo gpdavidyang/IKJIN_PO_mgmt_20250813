@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -87,47 +87,76 @@ const DirectInputForm: React.FC<DirectInputFormProps> = ({ initialData = {}, onC
     }
   });
 
-  // initialData가 변경될 때 formData 업데이트
+  // 이전 initialData를 추적하기 위한 ref
+  const prevInitialDataRef = useRef<any>({});
+  const isInitialLoadRef = useRef(true);
+
+  // initialData가 변경될 때 formData 업데이트 (무한 루프 방지)
   useEffect(() => {
     if (initialData && Object.keys(initialData).length > 0) {
-      console.log('📝 DirectInputForm: initialData 변경 감지', initialData);
-      setFormData({
-        orderNumber: initialData.orderNumber || `PO-${new Date().getTime()}`,
-        orderDate: initialData.orderDate ? new Date(initialData.orderDate) : new Date(),
-        deliveryDate: initialData.deliveryDate ? new Date(initialData.deliveryDate) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        projectId: initialData.projectId || '',
-        projectName: initialData.projectName || '',
-        vendorId: initialData.vendorId || '',
-        vendorName: initialData.vendorName || '',
-        vendorEmail: initialData.vendorEmail || '',
-        items: initialData.items || [{ 
-          itemName: '', 
-          specification: '', 
-          unit: 'EA',
-          quantity: 1, 
-          unitPrice: 0, 
-          totalAmount: 0,
-          majorCategory: '',
-          middleCategory: '',
-          minorCategory: '',
-          notes: ''
-        }],
-        notes: initialData.notes || '',
-        totalAmount: initialData.totalAmount || 0
-      });
+      const prevData = prevInitialDataRef.current;
+      
+      // 실제로 의미있는 변경사항이 있는지 확인
+      const hasSignificantChange = 
+        isInitialLoadRef.current || // 최초 로드
+        initialData.orderNumber !== prevData.orderNumber ||
+        initialData.projectName !== prevData.projectName ||
+        initialData.vendorName !== prevData.vendorName ||
+        initialData.items?.length !== prevData.items?.length;
+      
+      if (hasSignificantChange) {
+        console.log('📝 DirectInputForm: initialData 유의미한 변경 감지', { 
+          isInitialLoad: isInitialLoadRef.current,
+          orderNumber: initialData.orderNumber 
+        });
+        
+        setFormData({
+          orderNumber: initialData.orderNumber || `PO-${new Date().getTime()}`,
+          orderDate: initialData.orderDate ? new Date(initialData.orderDate) : new Date(),
+          deliveryDate: initialData.deliveryDate ? new Date(initialData.deliveryDate) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          projectId: initialData.projectId || '',
+          projectName: initialData.projectName || '',
+          vendorId: initialData.vendorId || '',
+          vendorName: initialData.vendorName || '',
+          vendorEmail: initialData.vendorEmail || '',
+          items: initialData.items || [{ 
+            itemName: '', 
+            specification: '', 
+            unit: 'EA',
+            quantity: 1, 
+            unitPrice: 0, 
+            totalAmount: 0,
+            majorCategory: '',
+            middleCategory: '',
+            minorCategory: '',
+            notes: ''
+          }],
+          notes: initialData.notes || '',
+          totalAmount: initialData.totalAmount || 0
+        });
+        
+        prevInitialDataRef.current = initialData;
+        isInitialLoadRef.current = false;
+      }
     }
   }, [initialData]);
-
-  // 폼 데이터 변경 시 상위 컴포넌트에 전달
-  useEffect(() => {
-    onChange(formData);
-  }, [formData]);
 
   // 총액 계산
   useEffect(() => {
     const total = formData.items.reduce((sum, item) => sum + (item.totalAmount || 0), 0);
-    setFormData(prev => ({ ...prev, totalAmount: total }));
+    if (total !== formData.totalAmount) {
+      setFormData(prev => ({ ...prev, totalAmount: total }));
+    }
   }, [formData.items]);
+
+  // 상위 컴포넌트에 데이터 전달 (debounce 적용, onChange 참조 제거)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onChange(formData);
+    }, 100); // 100ms 디바운스로 과도한 호출 방지
+    
+    return () => clearTimeout(timer);
+  }, [formData.orderNumber, formData.projectName, formData.vendorName, formData.vendorEmail, formData.totalAmount, formData.items.length]);
 
   const handleFieldChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));

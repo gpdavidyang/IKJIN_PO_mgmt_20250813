@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Save, Send, Download, Loader2, FileText, Mail, Plus, X, Paperclip } from 'lucide-react';
+import { Save, Send, Download, Loader2, FileText, Mail, Plus, X, Paperclip, List } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/contexts/SidebarContext';
 
@@ -53,6 +53,20 @@ const ActionBar: React.FC<ActionBarProps> = ({
   // 임시 입력값들
   const [newToEmail, setNewToEmail] = useState('');
   const [newCcEmail, setNewCcEmail] = useState('');
+
+  // orderData 변경 시 이메일 설정 업데이트
+  useEffect(() => {
+    const vendorEmail = orderData.vendorEmail || '';
+    const newToEmails = vendorEmail ? [vendorEmail] : [];
+    
+    console.log('🔍 orderData 변경 감지:', { vendorEmail, newToEmails });
+    
+    setEmailSettings(prev => ({
+      ...prev,
+      to: newToEmails,
+      subject: `발주서 - ${orderData.orderNumber || ''} (${new Date().toLocaleDateString('ko-KR')})`
+    }));
+  }, [orderData.vendorEmail, orderData.orderNumber]);
 
   // 이메일 관련 헬퍼 함수들
   const addToEmail = () => {
@@ -246,6 +260,18 @@ const ActionBar: React.FC<ActionBarProps> = ({
                   )}
                 </>
               )}
+            </Button>
+            
+            {/* 발주서 관리 페이지 이동 버튼 */}
+            <Button
+              variant="ghost"
+              onClick={() => window.location.href = '/orders'}
+              disabled={isProcessing}
+              size="sm"
+              className="text-xs px-3 py-2 h-8 text-muted-foreground hover:text-foreground"
+            >
+              <List className="w-3 h-3 mr-1" />
+              발주서 관리
             </Button>
           </div>
         </div>
@@ -514,6 +540,11 @@ const ActionBar: React.FC<ActionBarProps> = ({
               발주서 생성
             </Button>
           </DialogFooter>
+          
+          {/* 디버깅 정보 */}
+          <div className="mt-2 p-2 bg-gray-100 text-xs text-gray-600 rounded">
+            🔍 Debug: to.length={emailSettings.to.length}, subject="{emailSettings.subject}", disabled={emailSettings.to.length === 0 || !emailSettings.subject}
+          </div>
         </DialogContent>
       </Dialog>
     </div>

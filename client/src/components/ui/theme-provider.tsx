@@ -28,20 +28,26 @@ export function ThemeProvider({
   children,
   defaultTheme = "light",
   storageKey = "po-management-theme",
-  enableSystem = false,
+  enableSystem = true,
   ...props
 }: ThemeProviderProps) {
   const [theme, setTheme] = React.useState<Theme>(() => {
     const stored = localStorage.getItem(storageKey) as Theme;
-    // 기존에 시스템 설정이 저장되어 있다면 light mode로 변경
-    if (stored === "system") {
-      localStorage.setItem(storageKey, "light");
-      return "light";
-    }
     return stored || defaultTheme;
   });
 
-  const [actualTheme, setActualTheme] = React.useState<"light" | "dark">("light");
+  const [actualTheme, setActualTheme] = React.useState<"light" | "dark">(() => {
+    // 초기 actualTheme 계산 - 안전한 브라우저 환경 체크
+    if (typeof window === "undefined") return "light";
+    
+    const stored = localStorage.getItem(storageKey) as Theme;
+    const currentTheme = stored || defaultTheme;
+    
+    if (currentTheme === "system" && enableSystem) {
+      return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    }
+    return currentTheme === "dark" ? "dark" : "light";
+  });
 
   React.useEffect(() => {
     const root = window.document.documentElement;
@@ -50,9 +56,8 @@ export function ThemeProvider({
 
     let effectiveTheme: "light" | "dark";
 
-    // 시스템 설정을 무시하고 항상 light/dark만 사용
-    if (theme === "system") {
-      effectiveTheme = "light"; // 시스템 설정이어도 기본값은 light
+    if (theme === "system" && enableSystem) {
+      effectiveTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
     } else {
       effectiveTheme = theme as "light" | "dark";
     }
@@ -61,11 +66,24 @@ export function ThemeProvider({
     setActualTheme(effectiveTheme);
   }, [theme, enableSystem]);
 
-  // 시스템 테마 변경 감지를 비활성화 (항상 수동 설정만 사용)
-  // React.useEffect(() => {
-  //   if (theme !== "system" || !enableSystem) return;
-  //   ...
-  // }, [theme, enableSystem]);
+  // 시스템 테마 변경 감지 활성화
+  React.useEffect(() => {
+    if (theme !== "system" || !enableSystem) return;
+
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    
+    const handleChange = (e: MediaQueryListEvent) => {
+      const root = window.document.documentElement;
+      root.classList.remove("light", "dark");
+      
+      const newTheme = e.matches ? "dark" : "light";
+      root.classList.add(newTheme);
+      setActualTheme(newTheme);
+    };
+
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, [theme, enableSystem]);
 
   const value = React.useMemo(
     () => ({

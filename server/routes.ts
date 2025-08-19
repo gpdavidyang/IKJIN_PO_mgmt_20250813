@@ -3361,6 +3361,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Excel 자동화 라우트 등록
     const excelAutomationRouter = await import('./routes/excel-automation');
     app.use('/api/excel-automation', excelAutomationRouter.default);
+
+    // 이메일 테스트 라우트 등록
+    const emailTestRouter = await import('./routes/email-test');
+    app.use('/api/email-test', emailTestRouter.default);
   } catch (error) {
     console.error('PO Template 라우터 로드 실패:', error);
   }

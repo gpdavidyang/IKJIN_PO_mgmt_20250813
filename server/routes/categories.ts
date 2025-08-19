@@ -7,6 +7,7 @@ import { Router } from "express";
 import { eq, and } from "drizzle-orm";
 import { db } from "../db";
 import { itemCategories } from "@shared/schema";
+import { validateCategoryMapping, validateCategoriesBatch, CategoryValidationRequest } from "../utils/category-mapping-validator";
 
 const router = Router();
 
@@ -198,6 +199,82 @@ router.delete("/:id", async (req, res) => {
     res.status(500).json({ 
       success: false, 
       message: "카테고리 삭제 실패", 
+      error: error.message 
+    });
+  }
+});
+
+/**
+ * 엑셀 분류 매핑 검증 (단일)
+ * POST /api/categories/validate-mapping
+ */
+router.post("/validate-mapping", async (req, res) => {
+  try {
+    const { majorCategory, middleCategory, minorCategory } = req.body;
+    
+    console.log("🔍 분류 매핑 검증 요청:", { majorCategory, middleCategory, minorCategory });
+    
+    const result = await validateCategoryMapping({
+      majorCategory,
+      middleCategory,
+      minorCategory
+    });
+    
+    res.json({
+      success: true,
+      result
+    });
+  } catch (error) {
+    console.error("❌ Error validating category mapping:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "분류 매핑 검증 실패", 
+      error: error.message 
+    });
+  }
+});
+
+/**
+ * 엑셀 분류 매핑 검증 (배치)
+ * POST /api/categories/validate-mapping-batch
+ */
+router.post("/validate-mapping-batch", async (req, res) => {
+  try {
+    const { categories } = req.body;
+    
+    if (!Array.isArray(categories)) {
+      return res.status(400).json({
+        success: false,
+        message: "categories 필드는 배열이어야 합니다."
+      });
+    }
+    
+    console.log(`🔍 배치 분류 매핑 검증 요청 (${categories.length}개 항목)`);
+    
+    const results = await validateCategoriesBatch(categories);
+    
+    // 결과 통계 계산
+    const stats = {
+      total: results.length,
+      exactMatch: results.filter(r => r.status === 'exact_match').length,
+      partialMatch: results.filter(r => r.status === 'partial_match').length,
+      noMatch: results.filter(r => r.status === 'no_match').length,
+      invalidHierarchy: results.filter(r => r.status === 'invalid_hierarchy').length,
+      averageConfidence: Math.round(
+        results.reduce((sum, r) => sum + r.confidence, 0) / results.length
+      )
+    };
+    
+    res.json({
+      success: true,
+      results,
+      stats
+    });
+  } catch (error) {
+    console.error("❌ Error validating category mapping batch:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "배치 분류 매핑 검증 실패", 
       error: error.message 
     });
   }

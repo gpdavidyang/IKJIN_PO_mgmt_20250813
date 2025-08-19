@@ -435,7 +435,7 @@ export default function Admin() {
   };
 
   return (
-    <div className={`min-h-screen transition-colors ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+    <div className="min-h-screen" style={{ backgroundColor: isDarkMode ? '#111827' : '#f9fafb' }}>
       <div className="max-w-[1366px] mx-auto p-6 space-y-6">
         {/* Page Header */}
         <div className={`shadow-sm rounded-lg border transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>

@@ -575,6 +575,9 @@ export default function OrderDetail() {
                 <TableHeader>
                   <TableRow className={`border-b transition-colors ${isDarkMode ? 'border-gray-600' : 'border-blue-100'}`}>
                     <TableHead className={`text-xs py-2 px-2 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>품목명</TableHead>
+                    <TableHead className={`text-xs py-2 px-2 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>대분류</TableHead>
+                    <TableHead className={`text-xs py-2 px-2 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>중분류</TableHead>
+                    <TableHead className={`text-xs py-2 px-2 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>소분류</TableHead>
                     <TableHead className={`text-xs py-2 px-2 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>규격</TableHead>
                     <TableHead className={`text-xs text-center py-2 px-2 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>수량</TableHead>
                     <TableHead className={`text-xs text-right py-2 px-2 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>단가</TableHead>
@@ -598,6 +601,15 @@ export default function OrderDetail() {
                             )}
                           </div>
                         </div>
+                      </TableCell>
+                      <TableCell className={`py-2 px-2 text-xs transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                        {item.majorCategory && item.majorCategory.trim() ? item.majorCategory : "-"}
+                      </TableCell>
+                      <TableCell className={`py-2 px-2 text-xs transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                        {item.middleCategory && item.middleCategory.trim() ? item.middleCategory : "-"}
+                      </TableCell>
+                      <TableCell className={`py-2 px-2 text-xs transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                        {item.minorCategory && item.minorCategory.trim() ? item.minorCategory : "-"}
                       </TableCell>
                       <TableCell className={`py-2 px-2 text-xs transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                         {item.specification || "-"}
