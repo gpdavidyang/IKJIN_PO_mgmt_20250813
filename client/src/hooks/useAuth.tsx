@@ -5,7 +5,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { isDevelopment, isProduction, isServerless } from "@/utils/environment";
+import { isDevelopmentEnvironment, devLog, devWarn } from "@/utils/environment";
 
 type User = {
   id: string;
@@ -39,24 +39,39 @@ function AuthProvider({ children }: { children: ReactNode }) {
   // Production-safe authentication check using React state
   const [shouldCheckAuth, setShouldCheckAuth] = useState(() => {
     // Always start with false in production to prevent immediate auth calls
-    if (isProduction()) {
+    if (!isDevelopmentEnvironment()) {
+      devLog('🏭 Production mode: Starting with auth checking disabled');
       return false;
     }
     
-    // In development, check session indicators
+    // In development, always enable but still check session indicators for logging
     try {
-      return document.cookie.includes('connect.sid') || 
-             document.cookie.includes('session') ||
-             localStorage.getItem('hasAuthenticated') === 'true' ||
-             sessionStorage.getItem('userAuthenticated') === 'true';
+      const hasSession = document.cookie.includes('connect.sid') || 
+                        document.cookie.includes('session') ||
+                        localStorage.getItem('hasAuthenticated') === 'true' ||
+                        sessionStorage.getItem('userAuthenticated') === 'true';
+      
+      devLog('🔧 Development mode: Auth checking enabled', { hasSession });
+      return true; // Always return true in development
     } catch {
-      return false;
+      devWarn('🔧 Development mode: Error checking session, defaulting to enabled');
+      return true; // Always return true in development even on error
     }
   });
 
-  // Effect to update shouldCheckAuth based on session indicators
+  // Dynamic session monitoring effect
   useEffect(() => {
     const checkAuthIndicators = () => {
+      // In development, always keep auth checking enabled
+      if (isDevelopmentEnvironment()) {
+        if (!shouldCheckAuth) {
+          setShouldCheckAuth(true);
+          devLog('🔧 Development mode: Ensuring auth checking remains enabled');
+        }
+        return;
+      }
+
+      // In production, check for session indicators
       try {
         const hasSessionCookie = document.cookie.includes('connect.sid') || 
                                  document.cookie.includes('session');
@@ -64,19 +79,35 @@ function AuthProvider({ children }: { children: ReactNode }) {
         const hasSessionIndicator = sessionStorage.getItem('userAuthenticated') === 'true';
         
         const shouldCheck = hasSessionCookie || hasLocalIndicator || hasSessionIndicator;
-        setShouldCheckAuth(shouldCheck);
+        
+        devLog('🔍 Production session check:', {
+          hasSessionCookie,
+          hasLocalIndicator, 
+          hasSessionIndicator,
+          shouldCheck,
+          currentState: shouldCheckAuth
+        });
+        
+        if (shouldCheck !== shouldCheckAuth) {
+          setShouldCheckAuth(shouldCheck);
+          devLog(`📊 Auth checking ${shouldCheck ? 'enabled' : 'disabled'} in production`);
+        }
       } catch (error) {
-        console.warn('Error checking auth indicators:', error);
-        setShouldCheckAuth(false);
+        devWarn('Error checking auth indicators:', error);
+        if (shouldCheckAuth) {
+          setShouldCheckAuth(false);
+          devLog('🚫 Auth checking disabled due to error');
+        }
       }
     };
 
-    // Initial check
+    // Initial check after component mount
     checkAuthIndicators();
 
-    // Listen for storage changes
+    // Listen for storage changes (login/logout in other tabs)
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'hasAuthenticated' || e.key === 'userAuthenticated') {
+        devLog('🔄 Storage change detected, rechecking auth indicators');
         checkAuthIndicators();
       }
     };
@@ -145,9 +176,7 @@ function AuthProvider({ children }: { children: ReactNode }) {
         
         // Silently handle network errors that might indicate auth issues
         if (fetchError.name === 'TypeError' && fetchError.message.includes('Failed to fetch')) {
-          if (isDevelopment()) {
-            console.warn('🌐 Network error during auth check, treating as unauthenticated');
-          }
+          devWarn('🌐 Network error during auth check, treating as unauthenticated');
           return null;
         }
         
@@ -190,14 +219,17 @@ function AuthProvider({ children }: { children: ReactNode }) {
     onSuccess: (user: User) => {
       // Set the user data directly without invalidating to prevent immediate 401 calls
       queryClient.setQueryData(["/api/auth/user"], user);
-      console.log('✅ Login successful, user data set:', user);
+      devLog('✅ Login successful, user data set:', user);
       
       // Set authentication indicators for future sessions
       localStorage.setItem('hasAuthenticated', 'true');
       sessionStorage.setItem('userAuthenticated', 'true');
       
-      // Trigger auth check update to enable future queries
-      setShouldCheckAuth(true);
+      // Enable auth checking after successful login (especially important in production)
+      if (!shouldCheckAuth) {
+        setShouldCheckAuth(true);
+        devLog('🔓 Auth checking enabled after successful login');
+      }
       
       // Clear any other queries to ensure fresh data on next access
       queryClient.removeQueries({ queryKey: ["/api/auth/user"], exact: false });
@@ -215,7 +247,12 @@ function AuthProvider({ children }: { children: ReactNode }) {
       // Clear authentication indicators immediately
       localStorage.removeItem('hasAuthenticated');
       sessionStorage.removeItem('userAuthenticated');
-      setShouldCheckAuth(false);
+      
+      // Disable auth checking on logout (especially important in production)
+      if (shouldCheckAuth && !isDevelopmentEnvironment()) {
+        setShouldCheckAuth(false);
+        devLog('🔒 Auth checking disabled after logout');
+      }
       
       // Cancel any outgoing requests to prevent race conditions
       await queryClient.cancelQueries({ queryKey: ["/api/auth/user"] });
@@ -254,7 +291,12 @@ function AuthProvider({ children }: { children: ReactNode }) {
       // Clear authentication indicators immediately
       localStorage.removeItem('hasAuthenticated');
       sessionStorage.removeItem('userAuthenticated');
-      setShouldCheckAuth(false);
+      
+      // Disable auth checking on logout (especially important in production)
+      if (shouldCheckAuth && !isDevelopmentEnvironment()) {
+        setShouldCheckAuth(false);
+        devLog('🔒 Auth checking disabled after logout');
+      }
       
       // Cancel any pending auth queries to prevent 401 errors
       await queryClient.cancelQueries({ queryKey: ["/api/auth/user"] });

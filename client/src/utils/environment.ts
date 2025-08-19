@@ -1,62 +1,97 @@
 /**
- * Environment detection utilities that work reliably in all build scenarios
+ * Bundle-safe environment detection utilities
+ * 
+ * Vite's production builds may optimize away process.env checks,
+ * so we use multiple detection methods for reliability.
  */
 
 /**
- * Determines if we're running in development mode using multiple fallback methods
- * This is more reliable than process.env checks which may be optimized away by bundlers
+ * Detect if we're running in development environment
+ * Uses multiple methods to avoid bundle optimization issues
  */
-export function isDevelopment(): boolean {
-  // Method 1: Check for Vite dev server indicators
-  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-    return true;
+export function isDevelopmentEnvironment(): boolean {
+  // Method 1: Check for development indicators that bundlers won't optimize
+  if (typeof window !== 'undefined') {
+    // Check hostname patterns
+    const hostname = window.location.hostname;
+    if (hostname === 'localhost' || 
+        hostname === '127.0.0.1' || 
+        hostname.includes('local') ||
+        hostname.includes('.local') ||
+        /:\d+$/.test(window.location.host)) { // Has port number
+      return true;
+    }
+    
+    // Check for development-specific globals
+    if ((window as any).__VITE_DEV__ || 
+        (window as any).module?.hot ||
+        (window as any).__DEV__) {
+      return true;
+    }
+    
+    // Check URL patterns for development servers
+    const url = window.location.href;
+    if (url.includes('localhost') || 
+        url.includes('127.0.0.1') ||
+        url.includes(':3000') ||
+        url.includes(':5173') ||
+        url.includes(':4173')) {
+      return true;
+    }
   }
-
-  // Method 2: Check for common development ports
-  if (typeof window !== 'undefined' && /^(localhost|127\.0\.0\.1):(3000|5173|8080|4000)/.test(window.location.host)) {
-    return true;
-  }
-
-  // Method 3: Check for development-specific globals
-  if (typeof window !== 'undefined' && '__VITE_DEV__' in window) {
-    return true;
-  }
-
-  // Method 4: Check for HMR indicators
-  if (typeof module !== 'undefined' && module.hot) {
-    return true;
-  }
-
-  // Method 5: Check process.env as fallback (may be optimized away)
+  
+  // Method 2: Try process.env (may be optimized away but still try)
   try {
-    return process.env?.NODE_ENV === 'development';
+    return process.env.NODE_ENV === 'development';
   } catch {
-    return false;
+    // Ignore if process is not defined
   }
+  
+  // Method 3: Check for development-only modules/features
+  try {
+    // In development, import.meta.hot should be available
+    if (import.meta.hot) {
+      return true;
+    }
+  } catch {
+    // Ignore if import.meta is not available
+  }
+  
+  // Default to production for safety
+  return false;
 }
 
 /**
- * Determines if we're running in production mode
+ * Detect if we're running in production environment
  */
-export function isProduction(): boolean {
-  return !isDevelopment();
+export function isProductionEnvironment(): boolean {
+  return !isDevelopmentEnvironment();
 }
 
 /**
- * Get environment name with fallback detection
+ * Get current environment string
  */
 export function getEnvironment(): 'development' | 'production' {
-  return isDevelopment() ? 'development' : 'production';
+  return isDevelopmentEnvironment() ? 'development' : 'production';
 }
 
 /**
- * Check if we're running in a serverless environment (Vercel, Netlify, etc.)
+ * Safe console logging that respects environment
  */
-export function isServerless(): boolean {
-  if (typeof window === 'undefined') return false;
-  
-  return window.location.hostname.includes('vercel.app') ||
-         window.location.hostname.includes('netlify.app') ||
-         window.location.hostname.includes('heroku.com') ||
-         window.location.hostname.includes('railway.app');
+export function devLog(message: string, ...args: any[]) {
+  if (isDevelopmentEnvironment()) {
+    console.log(`[DEV] ${message}`, ...args);
+  }
+}
+
+export function devWarn(message: string, ...args: any[]) {
+  if (isDevelopmentEnvironment()) {
+    console.warn(`[DEV] ${message}`, ...args);
+  }
+}
+
+export function devError(message: string, ...args: any[]) {
+  if (isDevelopmentEnvironment()) {
+    console.error(`[DEV] ${message}`, ...args);
+  }
 }

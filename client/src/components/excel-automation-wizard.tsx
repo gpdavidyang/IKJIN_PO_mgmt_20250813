@@ -145,12 +145,22 @@ export function ExcelAutomationWizard() {
 
       // Handle authentication errors
       if (response.status === 401) {
-        throw new Error('로그인이 필요합니다. 페이지를 새로고침하고 다시 로그인해주세요.');
+        setError('인증이 만료되었습니다. 페이지를 새로고침하고 다시 로그인해주세요.');
+        return;
       }
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`서버 오류 (${response.status}): ${errorText || response.statusText}`);
+        let errorMessage = `서버 오류 (${response.status})`;
+        
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.error || errorData.message || errorMessage;
+        } catch {
+          errorMessage = errorText || errorMessage;
+        }
+        
+        throw new Error(errorMessage);
       }
 
       const result = await response.json();
@@ -222,7 +232,8 @@ export function ExcelAutomationWizard() {
       });
 
       if (response.status === 401) {
-        throw new Error('로그인이 필요합니다. 페이지를 새로고침하고 다시 로그인해주세요.');
+        setError('인증이 만료되었습니다. 페이지를 새로고침하고 다시 로그인해주세요.');
+        return;
       }
 
       if (!response.ok) {
@@ -274,7 +285,8 @@ export function ExcelAutomationWizard() {
       });
 
       if (response.status === 401) {
-        throw new Error('로그인이 필요합니다. 페이지를 새로고침하고 다시 로그인해주세요.');
+        setError('인증이 만료되었습니다. 페이지를 새로고침하고 다시 로그인해주세요.');
+        return;
       }
 
       if (!response.ok) {
