@@ -1,5 +1,11 @@
 var __defProp = Object.defineProperty;
 var __getOwnPropNames = Object.getOwnPropertyNames;
+var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
+  get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
+}) : x)(function(x) {
+  if (typeof require !== "undefined") return require.apply(this, arguments);
+  throw Error('Dynamic require of "' + x + '" is not supported');
+});
 var __esm = (fn, res) => function __init() {
   return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
 };
@@ -758,7 +764,11 @@ var init_schema = __esm({
         quantity: z.number().positive(),
         unitPrice: z.number().positive(),
         totalAmount: z.number().positive(),
-        notes: z.string().nullable().optional()
+        notes: z.string().nullable().optional(),
+        // Category fields (added to fix category data loss)
+        majorCategory: z.string().nullable().optional(),
+        middleCategory: z.string().nullable().optional(),
+        minorCategory: z.string().nullable().optional()
       }))
     });
     insertPurchaseOrderItemSchema = createInsertSchema(purchaseOrderItems).omit({
@@ -2647,8 +2657,12 @@ function logout(req, res) {
 async function getCurrentUser(req, res) {
   try {
     const authSession = req.session;
-    console.log("getCurrentUser - Session ID:", req.sessionID);
-    console.log("getCurrentUser - Session userId:", authSession.userId);
+    console.log("\u{1F50D} getCurrentUser - Session ID:", req.sessionID);
+    console.log("\u{1F50D} getCurrentUser - Session userId:", authSession.userId);
+    console.log("\u{1F50D} getCurrentUser - Session exists:", !!req.session);
+    console.log("\u{1F50D} getCurrentUser - Cookie header:", req.headers.cookie);
+    console.log("\u{1F50D} getCurrentUser - Environment:", process.env.NODE_ENV);
+    console.log("\u{1F50D} getCurrentUser - Vercel:", !!process.env.VERCEL);
     if (!authSession.userId) {
       console.log("\u{1F534} getCurrentUser - No userId in session");
       return res.status(401).json({
@@ -2774,6 +2788,41 @@ router.get("/auth/debug", (req, res) => {
     timestamp: (/* @__PURE__ */ new Date()).toISOString(),
     environment: process.env.NODE_ENV || "unknown"
   });
+});
+router.get("/auth/debug-prod", (req, res) => {
+  try {
+    const authSession = req.session;
+    console.log("\u{1F50D} Production auth debug:", {
+      sessionExists: !!req.session,
+      sessionId: req.sessionID,
+      sessionUserId: authSession?.userId,
+      cookies: req.headers.cookie,
+      origin: req.get("Origin"),
+      userAgent: req.get("User-Agent"),
+      secure: req.secure,
+      protocol: req.protocol,
+      host: req.get("host")
+    });
+    res.json({
+      environment: process.env.NODE_ENV,
+      sessionExists: !!req.session,
+      sessionId: req.sessionID || null,
+      sessionUserId: authSession?.userId || null,
+      hasSessionCookie: req.headers.cookie?.includes("connect.sid") || false,
+      cookieHeader: req.headers.cookie || null,
+      origin: req.get("Origin") || null,
+      secure: req.secure,
+      protocol: req.protocol,
+      host: req.get("host"),
+      timestamp: (/* @__PURE__ */ new Date()).toISOString()
+    });
+  } catch (error) {
+    console.error("Production auth debug error:", error);
+    res.status(500).json({
+      error: "Debug failed",
+      message: error?.message || "Unknown error"
+    });
+  }
 });
 router.post("/auth/login-simple", (req, res) => {
   try {
@@ -3869,6 +3918,8 @@ var OrderService = class {
 import nodemailer from "nodemailer";
 import path4 from "path";
 import fs6 from "fs";
+import { fileURLToPath as fileURLToPath2 } from "url";
+import { dirname } from "path";
 
 // server/utils/excel-to-pdf.ts
 import * as XLSX from "xlsx";
@@ -4098,7 +4149,7 @@ import path2 from "path";
 import fs2 from "fs";
 import { fileURLToPath } from "url";
 var __filename = fileURLToPath(import.meta.url);
-var __dirname2 = path2.dirname(__filename);
+var __dirname = path2.dirname(__filename);
 var ExcelToPDFConverter = class {
   /**
    * Excel 파일을 PDF로 변환
@@ -5268,6 +5319,8 @@ var POTemplateProcessor = class _POTemplateProcessor {
 };
 
 // server/utils/po-email-service.ts
+var __filename2 = fileURLToPath2(import.meta.url);
+var __dirname2 = dirname(__filename2);
 var POEmailService = class {
   constructor() {
     this.transporter = nodemailer.createTransport({
@@ -5291,7 +5344,7 @@ var POEmailService = class {
   async sendPOWithOriginalFormat(originalFilePath, emailOptions) {
     try {
       const timestamp2 = Date.now();
-      const uploadsDir = path4.join(__dirname, "../../uploads");
+      const uploadsDir = path4.join(__dirname2, "../../uploads");
       const processedPath = path4.join(uploadsDir, `po-advanced-format-${timestamp2}.xlsx`);
       const removeResult = await removeAllInputSheets(
         originalFilePath,
@@ -5389,7 +5442,7 @@ var POEmailService = class {
   async sendPOWithAttachments(originalFilePath, emailOptions) {
     try {
       const timestamp2 = Date.now();
-      const uploadsDir = path4.join(__dirname, "../../uploads");
+      const uploadsDir = path4.join(__dirname2, "../../uploads");
       const extractedPath = path4.join(uploadsDir, `po-sheets-${timestamp2}.xlsx`);
       const extractResult = POTemplateProcessor.extractSheetsToFile(
         originalFilePath,
@@ -5449,6 +5502,17 @@ var POEmailService = class {
    */
   async sendEmail(options) {
     try {
+      console.log("\u{1F50D} POEmailService.sendEmail \uD638\uCD9C\uB428:", {
+        to: options.to,
+        cc: options.cc,
+        subject: options.subject,
+        attachmentsCount: options.attachments?.length || 0,
+        smtpConfig: {
+          host: process.env.SMTP_HOST || "smtp.naver.com",
+          port: parseInt(process.env.SMTP_PORT || "587"),
+          user: process.env.SMTP_USER
+        }
+      });
       const info = await this.transporter.sendMail({
         from: `"\uBC1C\uC8FC \uC2DC\uC2A4\uD15C" <${process.env.SMTP_USER}>`,
         to: Array.isArray(options.to) ? options.to.join(", ") : options.to,
@@ -5463,11 +5527,13 @@ var POEmailService = class {
           contentType: att.contentType
         }))
       });
+      console.log("\u2705 POEmailService.sendEmail \uC131\uACF5:", info.messageId);
       return {
         success: true,
         messageId: info.messageId
       };
     } catch (error) {
+      console.error("\u274C POEmailService.sendEmail \uC2E4\uD328:", error);
       return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error"
@@ -5870,6 +5936,9 @@ var approval_routing_service_default = ApprovalRoutingService;
 // server/routes/orders.ts
 import fs7 from "fs";
 import path5 from "path";
+import { fileURLToPath as fileURLToPath3 } from "url";
+var __filename3 = fileURLToPath3(import.meta.url);
+var __dirname3 = path5.dirname(__filename3);
 var router3 = Router3();
 var emailService = new POEmailService();
 router3.get("/orders", async (req, res) => {
@@ -5946,7 +6015,7 @@ router3.post("/orders", requireAuth, upload.array("attachments"), async (req, re
       vendorId: req.body.vendorId ? parseInt(req.body.vendorId) : null,
       templateId: req.body.templateId ? parseInt(req.body.templateId) : null,
       userId,
-      orderDate: /* @__PURE__ */ new Date(),
+      orderDate: req.body.orderDate ? new Date(req.body.orderDate) : /* @__PURE__ */ new Date(),
       deliveryDate: req.body.deliveryDate ? new Date(req.body.deliveryDate) : null,
       totalAmount,
       notes: req.body.notes || null,
@@ -6696,7 +6765,7 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
     };
     let attachments2 = [];
     if (pdfUrl) {
-      const pdfPath = path5.join(__dirname, "../../", pdfUrl.replace(/^\//, ""));
+      const pdfPath = path5.join(__dirname3, "../../", pdfUrl.replace(/^\//, ""));
       if (fs7.existsSync(pdfPath)) {
         attachments2.push({
           filename: `\uBC1C\uC8FC\uC11C_${orderData.orderNumber || Date.now()}.pdf`,
@@ -6852,6 +6921,12 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
         </html>
       `;
     };
+    console.log("\u{1F4E7} sendEmail \uD638\uCD9C \uC804 \uC635\uC158:", {
+      to: emailOptions.to,
+      cc: emailOptions.cc,
+      subject: emailOptions.subject,
+      attachmentsCount: attachments2.length
+    });
     const result = await emailService.sendEmail({
       to: emailOptions.to,
       cc: emailOptions.cc,
@@ -6859,6 +6934,7 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
       html: generateEmailContent(emailOptions),
       attachments: attachments2
     });
+    console.log("\u{1F4E7} sendEmail \uACB0\uACFC:", result);
     if (result.success) {
       console.log("\u{1F4E7} \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC131\uACF5");
       res.json({ success: true, messageId: result.messageId });
@@ -6885,7 +6961,7 @@ router3.post("/orders/send-email-with-excel", requireAuth, async (req, res) => {
       return res.status(400).json({ error: "\uC5D1\uC140 \uD30C\uC77C \uACBD\uB85C\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4." });
     }
     const absoluteExcelPath = excelFilePath.startsWith("http") ? excelFilePath.replace(/^https?:\/\/[^\/]+/, "") : excelFilePath;
-    const localExcelPath = path5.join(__dirname, "../../", absoluteExcelPath.replace(/^\//, ""));
+    const localExcelPath = path5.join(__dirname3, "../../", absoluteExcelPath.replace(/^\//, ""));
     console.log("\u{1F4E7} \uC5D1\uC140 \uD30C\uC77C \uACBD\uB85C:", localExcelPath);
     if (!fs7.existsSync(localExcelPath)) {
       return res.status(400).json({ error: "\uC5D1\uC140 \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4." });
@@ -6914,6 +6990,81 @@ router3.post("/orders/send-email-with-excel", requireAuth, async (req, res) => {
     res.status(500).json({
       error: "\uC5D1\uC140 \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC2E4\uD328",
       details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+router3.post("/test-email-smtp", async (req, res) => {
+  try {
+    console.log("\u{1F50D} SMTP \uD14C\uC2A4\uD2B8 \uC2DC\uC791...");
+    console.log("\u{1F527} SMTP \uC124\uC815:", {
+      host: process.env.SMTP_HOST,
+      port: process.env.SMTP_PORT,
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS ? "***\uC124\uC815\uB428***" : "\u274C \uC124\uC815\uC548\uB428"
+    });
+    const { testEmail } = req.body;
+    const recipientEmail = testEmail || "davidswyang@gmail.com";
+    const testOrderData = {
+      orderNumber: "SMTP-TEST-001",
+      projectName: "\uB124\uC774\uBC84 SMTP \uD14C\uC2A4\uD2B8",
+      vendorName: "System Test",
+      location: "Test Environment",
+      orderDate: (/* @__PURE__ */ new Date()).toLocaleDateString("ko-KR"),
+      deliveryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1e3).toLocaleDateString("ko-KR"),
+      totalAmount: 999999,
+      userName: "System Tester",
+      userPhone: "010-0000-0000"
+    };
+    const fs16 = __require("fs");
+    const path13 = __require("path");
+    const testExcelPath = path13.join(__dirname3, "../../uploads/smtp-test.txt");
+    fs16.writeFileSync(testExcelPath, "SMTP Test File - " + (/* @__PURE__ */ new Date()).toISOString());
+    const result = await emailService.sendPurchaseOrderEmail({
+      orderData: testOrderData,
+      excelFilePath: testExcelPath,
+      recipients: [recipientEmail],
+      cc: [],
+      userId: "system-test",
+      orderId: 9999
+    });
+    try {
+      fs16.unlinkSync(testExcelPath);
+    } catch (e) {
+      console.warn("\uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328:", e.message);
+    }
+    if (result.success) {
+      console.log("\u2705 SMTP \uD14C\uC2A4\uD2B8 \uC131\uACF5!");
+      res.json({
+        success: true,
+        message: "\u2705 \uB124\uC774\uBC84 SMTP \uD14C\uC2A4\uD2B8 \uC131\uACF5!",
+        messageId: result.messageId,
+        acceptedRecipients: result.acceptedRecipients,
+        rejectedRecipients: result.rejectedRecipients,
+        testEmail: recipientEmail,
+        smtp: {
+          host: process.env.SMTP_HOST,
+          port: process.env.SMTP_PORT,
+          user: process.env.SMTP_USER
+        }
+      });
+    } else {
+      console.error("\u274C SMTP \uD14C\uC2A4\uD2B8 \uC2E4\uD328");
+      res.status(500).json({
+        success: false,
+        message: "\u274C SMTP \uD14C\uC2A4\uD2B8 \uC2E4\uD328",
+        error: "\uC774\uBA54\uC77C \uBC1C\uC1A1 \uC2E4\uD328"
+      });
+    }
+  } catch (error) {
+    console.error("\u274C SMTP \uD14C\uC2A4\uD2B8 \uC624\uB958:", error);
+    res.status(500).json({
+      success: false,
+      message: "\u274C SMTP \uD14C\uC2A4\uD2B8 \uC624\uB958",
+      error: error instanceof Error ? error.message : "Unknown error",
+      details: {
+        code: error.code,
+        response: error.response
+      }
     });
   }
 });
@@ -7796,7 +7947,11 @@ var POTemplateProcessorMock = class {
               quantity: item.quantity,
               unitPrice: item.unitPrice,
               totalAmount: item.totalAmount,
-              notes: `${item.categoryLv1 || ""} ${item.categoryLv2 || ""} ${item.categoryLv3 || ""}`.trim() || null
+              // 카테고리 필드를 올바른 컬럼에 저장
+              majorCategory: item.categoryLv1 || null,
+              middleCategory: item.categoryLv2 || null,
+              minorCategory: item.categoryLv3 || null,
+              notes: item.notes || null
             });
           }
           savedOrders++;
@@ -8907,15 +9062,15 @@ import { Router as Router10 } from "express";
 import multer3 from "multer";
 import path11 from "path";
 import fs13 from "fs";
-import { fileURLToPath as fileURLToPath3 } from "url";
+import { fileURLToPath as fileURLToPath5 } from "url";
 
 // server/utils/po-email-service-mock.ts
 import nodemailer2 from "nodemailer";
 import path8 from "path";
 import fs10 from "fs";
-import { fileURLToPath as fileURLToPath2 } from "url";
-var __filename2 = fileURLToPath2(import.meta.url);
-var __dirname3 = path8.dirname(__filename2);
+import { fileURLToPath as fileURLToPath4 } from "url";
+var __filename4 = fileURLToPath4(import.meta.url);
+var __dirname4 = path8.dirname(__filename4);
 var POEmailServiceMock = class {
   constructor() {
     this.transporter = null;
@@ -8941,7 +9096,7 @@ var POEmailServiceMock = class {
   async sendPOWithAttachments(originalFilePath, emailOptions) {
     try {
       const timestamp2 = Date.now();
-      const uploadsDir = path8.join(__dirname3, "../../uploads");
+      const uploadsDir = path8.join(__dirname4, "../../uploads");
       const extractedPath = path8.join(uploadsDir, `po-sheets-${timestamp2}.xlsx`);
       const extractResult = POTemplateProcessorMock.extractSheetsToFile(
         originalFilePath,
@@ -9063,7 +9218,7 @@ var POEmailServiceMock = class {
     console.log("  \uC81C\uBAA9:", options.subject);
     console.log("  \uCCA8\uBD80\uD30C\uC77C:", options.attachments?.length || 0, "\uAC1C");
     console.log("  \uBC1C\uC1A1 \uC2DC\uAC04:", mockLog.timestamp);
-    const logDir = path8.join(__dirname3, "../../logs");
+    const logDir = path8.join(__dirname4, "../../logs");
     if (!fs10.existsSync(logDir)) {
       fs10.mkdirSync(logDir, { recursive: true });
     }
@@ -10096,11 +10251,11 @@ var router10 = Router10();
 router10.get("/test", (req, res) => {
   res.json({ message: "PO Template router is working!", timestamp: /* @__PURE__ */ new Date() });
 });
-var __filename3 = fileURLToPath3(import.meta.url);
-var __dirname4 = path11.dirname(__filename3);
+var __filename5 = fileURLToPath5(import.meta.url);
+var __dirname5 = path11.dirname(__filename5);
 var storage3 = multer3.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir2 = path11.join(__dirname4, "../../uploads");
+    const uploadDir2 = path11.join(__dirname5, "../../uploads");
     if (!fs13.existsSync(uploadDir2)) {
       fs13.mkdirSync(uploadDir2, { recursive: true });
     }
@@ -13960,12 +14115,225 @@ var test_accounts_default = router24;
 init_db();
 init_schema();
 import { Router as Router24 } from "express";
-import { eq as eq13, and as and9 } from "drizzle-orm";
+import { eq as eq14, and as and10 } from "drizzle-orm";
+
+// server/utils/category-mapping-validator.ts
+init_db();
+init_schema();
+import { eq as eq13 } from "drizzle-orm";
+async function validateCategoryMapping(request) {
+  console.log("\u{1F50D} \uBD84\uB958 \uB9E4\uD551 \uAC80\uC99D \uC2DC\uC791:", request);
+  const result = {
+    excel: {
+      major: request.majorCategory?.trim(),
+      middle: request.middleCategory?.trim(),
+      minor: request.minorCategory?.trim()
+    },
+    db: {},
+    status: "no_match",
+    suggestions: [],
+    confidence: 0
+  };
+  try {
+    const allCategories = await db.select().from(itemCategories).where(eq13(itemCategories.isActive, true));
+    const majorCategories = allCategories.filter((c) => c.categoryType === "major");
+    const middleCategories = allCategories.filter((c) => c.categoryType === "middle");
+    const minorCategories = allCategories.filter((c) => c.categoryType === "minor");
+    let mappedMajor = null;
+    if (result.excel.major) {
+      mappedMajor = await findBestCategoryMatch(
+        result.excel.major,
+        majorCategories
+      );
+      if (mappedMajor.bestMatch) {
+        result.db.majorId = mappedMajor.bestMatch.id;
+        result.db.majorName = mappedMajor.bestMatch.categoryName;
+      }
+      result.suggestions.push(...mappedMajor.suggestions);
+    }
+    let mappedMiddle = null;
+    if (result.excel.middle && mappedMajor?.bestMatch) {
+      const filteredMiddle = middleCategories.filter(
+        (c) => c.parentId === mappedMajor.bestMatch.id
+      );
+      mappedMiddle = await findBestCategoryMatch(
+        result.excel.middle,
+        filteredMiddle
+      );
+      if (mappedMiddle.bestMatch) {
+        result.db.middleId = mappedMiddle.bestMatch.id;
+        result.db.middleName = mappedMiddle.bestMatch.categoryName;
+      }
+      result.suggestions.push(...mappedMiddle.suggestions);
+    } else if (result.excel.middle && !mappedMajor?.bestMatch) {
+      mappedMiddle = await findBestCategoryMatch(
+        result.excel.middle,
+        middleCategories
+      );
+      result.suggestions.push(...mappedMiddle.suggestions);
+    }
+    let mappedMinor = null;
+    if (result.excel.minor && mappedMiddle?.bestMatch) {
+      const filteredMinor = minorCategories.filter(
+        (c) => c.parentId === mappedMiddle.bestMatch.id
+      );
+      mappedMinor = await findBestCategoryMatch(
+        result.excel.minor,
+        filteredMinor
+      );
+      if (mappedMinor.bestMatch) {
+        result.db.minorId = mappedMinor.bestMatch.id;
+        result.db.minorName = mappedMinor.bestMatch.categoryName;
+      }
+      result.suggestions.push(...mappedMinor.suggestions);
+    } else if (result.excel.minor && !mappedMiddle?.bestMatch) {
+      mappedMinor = await findBestCategoryMatch(
+        result.excel.minor,
+        minorCategories
+      );
+      result.suggestions.push(...mappedMinor.suggestions);
+    }
+    result.status = calculateMappingStatus(result, mappedMajor, mappedMiddle, mappedMinor);
+    result.confidence = calculateConfidence(result, mappedMajor, mappedMiddle, mappedMinor);
+    console.log("\u2705 \uBD84\uB958 \uB9E4\uD551 \uAC80\uC99D \uC644\uB8CC:", {
+      status: result.status,
+      confidence: result.confidence,
+      suggestions: result.suggestions.length
+    });
+    return result;
+  } catch (error) {
+    console.error("\u274C \uBD84\uB958 \uB9E4\uD551 \uAC80\uC99D \uC624\uB958:", error);
+    throw new Error(`\uBD84\uB958 \uB9E4\uD551 \uAC80\uC99D \uC2E4\uD328: ${error.message}`);
+  }
+}
+async function findBestCategoryMatch(excelCategory, dbCategories) {
+  const suggestions = [];
+  let bestMatch = null;
+  let highestSimilarity = 0;
+  for (const dbCategory of dbCategories) {
+    const similarity = calculateStringSimilarity(
+      excelCategory.toLowerCase(),
+      dbCategory.categoryName.toLowerCase()
+    );
+    suggestions.push({
+      id: dbCategory.id,
+      name: dbCategory.categoryName,
+      type: dbCategory.categoryType,
+      similarity: Math.round(similarity * 100),
+      parentId: dbCategory.parentId
+    });
+    if (similarity > 0.8 && similarity > highestSimilarity) {
+      highestSimilarity = similarity;
+      bestMatch = dbCategory;
+    }
+  }
+  suggestions.sort((a, b) => b.similarity - a.similarity);
+  return {
+    bestMatch,
+    suggestions: suggestions.slice(0, 5)
+  };
+}
+function calculateStringSimilarity(str1, str2) {
+  const matrix = [];
+  const n = str1.length;
+  const m = str2.length;
+  if (n === 0) return m === 0 ? 1 : 0;
+  if (m === 0) return 0;
+  for (let i = 0; i <= n; i++) {
+    matrix[i] = [i];
+  }
+  for (let j = 0; j <= m; j++) {
+    matrix[0][j] = j;
+  }
+  for (let i = 1; i <= n; i++) {
+    for (let j = 1; j <= m; j++) {
+      const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
+      matrix[i][j] = Math.min(
+        matrix[i - 1][j] + 1,
+        // 삭제
+        matrix[i][j - 1] + 1,
+        // 삽입
+        matrix[i - 1][j - 1] + cost
+        // 치환
+      );
+    }
+  }
+  const distance = matrix[n][m];
+  const maxLength = Math.max(n, m);
+  return maxLength === 0 ? 1 : (maxLength - distance) / maxLength;
+}
+function calculateMappingStatus(result, mappedMajor, mappedMiddle, mappedMinor) {
+  const hasExcelMajor = !!result.excel.major;
+  const hasExcelMiddle = !!result.excel.middle;
+  const hasExcelMinor = !!result.excel.minor;
+  const hasDbMajor = !!result.db.majorId;
+  const hasDbMiddle = !!result.db.middleId;
+  const hasDbMinor = !!result.db.minorId;
+  if (hasExcelMajor && hasDbMajor && (!hasExcelMiddle || hasDbMiddle) && (!hasExcelMinor || hasDbMinor)) {
+    return "exact_match";
+  }
+  if (hasDbMajor || hasDbMiddle || hasDbMinor) {
+    return "partial_match";
+  }
+  return "no_match";
+}
+function calculateConfidence(result, mappedMajor, mappedMiddle, mappedMinor) {
+  let totalWeight = 0;
+  let matchedWeight = 0;
+  if (result.excel.major) {
+    totalWeight += 40;
+    if (mappedMajor?.bestMatch) {
+      const majorSimilarity = mappedMajor.suggestions?.[0]?.similarity || 0;
+      matchedWeight += 40 * majorSimilarity / 100;
+    }
+  }
+  if (result.excel.middle) {
+    totalWeight += 35;
+    if (mappedMiddle?.bestMatch) {
+      const middleSimilarity = mappedMiddle.suggestions?.[0]?.similarity || 0;
+      matchedWeight += 35 * middleSimilarity / 100;
+    }
+  }
+  if (result.excel.minor) {
+    totalWeight += 25;
+    if (mappedMinor?.bestMatch) {
+      const minorSimilarity = mappedMinor.suggestions?.[0]?.similarity || 0;
+      matchedWeight += 25 * minorSimilarity / 100;
+    }
+  }
+  return totalWeight === 0 ? 0 : Math.round(matchedWeight / totalWeight * 100);
+}
+async function validateCategoriesBatch(requests) {
+  console.log(`\u{1F50D} \uBC30\uCE58 \uBD84\uB958 \uAC80\uC99D \uC2DC\uC791 (${requests.length}\uAC1C \uD488\uBAA9)`);
+  const results = [];
+  for (let i = 0; i < requests.length; i++) {
+    try {
+      const result = await validateCategoryMapping(requests[i]);
+      results.push(result);
+      if ((i + 1) % 10 === 0) {
+        console.log(`\u{1F4CA} \uC9C4\uD589\uB960: ${i + 1}/${requests.length}`);
+      }
+    } catch (error) {
+      console.error(`\u274C \uD488\uBAA9 ${i + 1} \uAC80\uC99D \uC2E4\uD328:`, error);
+      results.push({
+        excel: requests[i],
+        db: {},
+        status: "no_match",
+        suggestions: [],
+        confidence: 0
+      });
+    }
+  }
+  console.log("\u2705 \uBC30\uCE58 \uBD84\uB958 \uAC80\uC99D \uC644\uB8CC");
+  return results;
+}
+
+// server/routes/categories.ts
 var router25 = Router24();
 router25.get("/", async (req, res) => {
   try {
     console.log("\u{1F4CB} Fetching all categories...");
-    const categories = await db.select().from(itemCategories).where(eq13(itemCategories.isActive, true)).orderBy(itemCategories.displayOrder, itemCategories.categoryName);
+    const categories = await db.select().from(itemCategories).where(eq14(itemCategories.isActive, true)).orderBy(itemCategories.displayOrder, itemCategories.categoryName);
     const majorCategories = categories.filter((c) => c.categoryType === "major");
     const middleCategories = categories.filter((c) => c.categoryType === "middle");
     const minorCategories = categories.filter((c) => c.categoryType === "minor");
@@ -13995,12 +14363,12 @@ router25.get("/:type", async (req, res) => {
     const { type } = req.params;
     const { parentId } = req.query;
     console.log(`\u{1F4CB} Fetching ${type} categories...`);
-    let query = db.select().from(itemCategories).where(and9(
-      eq13(itemCategories.categoryType, type),
-      eq13(itemCategories.isActive, true)
+    let query = db.select().from(itemCategories).where(and10(
+      eq14(itemCategories.categoryType, type),
+      eq14(itemCategories.isActive, true)
     ));
     if (parentId) {
-      query = query.where(eq13(itemCategories.parentId, parseInt(parentId)));
+      query = query.where(eq14(itemCategories.parentId, parseInt(parentId)));
     }
     const categories = await query.orderBy(itemCategories.displayOrder, itemCategories.categoryName);
     res.json({
@@ -14051,7 +14419,7 @@ router25.put("/:id", async (req, res) => {
       displayOrder,
       isActive,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq13(itemCategories.id, parseInt(id))).returning();
+    }).where(eq14(itemCategories.id, parseInt(id))).returning();
     if (updatedCategory.length === 0) {
       return res.status(404).json({
         success: false,
@@ -14079,7 +14447,7 @@ router25.delete("/:id", async (req, res) => {
     const updatedCategory = await db.update(itemCategories).set({
       isActive: false,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq13(itemCategories.id, parseInt(id))).returning();
+    }).where(eq14(itemCategories.id, parseInt(id))).returning();
     if (updatedCategory.length === 0) {
       return res.status(404).json({
         success: false,
@@ -14099,13 +14467,70 @@ router25.delete("/:id", async (req, res) => {
     });
   }
 });
+router25.post("/validate-mapping", async (req, res) => {
+  try {
+    const { majorCategory, middleCategory, minorCategory } = req.body;
+    console.log("\u{1F50D} \uBD84\uB958 \uB9E4\uD551 \uAC80\uC99D \uC694\uCCAD:", { majorCategory, middleCategory, minorCategory });
+    const result = await validateCategoryMapping({
+      majorCategory,
+      middleCategory,
+      minorCategory
+    });
+    res.json({
+      success: true,
+      result
+    });
+  } catch (error) {
+    console.error("\u274C Error validating category mapping:", error);
+    res.status(500).json({
+      success: false,
+      message: "\uBD84\uB958 \uB9E4\uD551 \uAC80\uC99D \uC2E4\uD328",
+      error: error.message
+    });
+  }
+});
+router25.post("/validate-mapping-batch", async (req, res) => {
+  try {
+    const { categories } = req.body;
+    if (!Array.isArray(categories)) {
+      return res.status(400).json({
+        success: false,
+        message: "categories \uD544\uB4DC\uB294 \uBC30\uC5F4\uC774\uC5B4\uC57C \uD569\uB2C8\uB2E4."
+      });
+    }
+    console.log(`\u{1F50D} \uBC30\uCE58 \uBD84\uB958 \uB9E4\uD551 \uAC80\uC99D \uC694\uCCAD (${categories.length}\uAC1C \uD56D\uBAA9)`);
+    const results = await validateCategoriesBatch(categories);
+    const stats = {
+      total: results.length,
+      exactMatch: results.filter((r) => r.status === "exact_match").length,
+      partialMatch: results.filter((r) => r.status === "partial_match").length,
+      noMatch: results.filter((r) => r.status === "no_match").length,
+      invalidHierarchy: results.filter((r) => r.status === "invalid_hierarchy").length,
+      averageConfidence: Math.round(
+        results.reduce((sum2, r) => sum2 + r.confidence, 0) / results.length
+      )
+    };
+    res.json({
+      success: true,
+      results,
+      stats
+    });
+  } catch (error) {
+    console.error("\u274C Error validating category mapping batch:", error);
+    res.status(500).json({
+      success: false,
+      message: "\uBC30\uCE58 \uBD84\uB958 \uB9E4\uD551 \uAC80\uC99D \uC2E4\uD328",
+      error: error.message
+    });
+  }
+});
 var categories_default = router25;
 
 // server/routes/approval-settings.ts
 init_db();
 init_schema();
 import { Router as Router25 } from "express";
-import { eq as eq14, and as and10, desc as desc6, asc as asc4 } from "drizzle-orm";
+import { eq as eq15, and as and11, desc as desc6, asc as asc4 } from "drizzle-orm";
 import { z as z4 } from "zod";
 var router26 = Router25();
 router26.get("/workflow-settings/:companyId", async (req, res) => {
@@ -14115,9 +14540,9 @@ router26.get("/workflow-settings/:companyId", async (req, res) => {
     }
     const { companyId } = req.params;
     const settings = await db.select().from(approvalWorkflowSettings).where(
-      and10(
-        eq14(approvalWorkflowSettings.companyId, parseInt(companyId)),
-        eq14(approvalWorkflowSettings.isActive, true)
+      and11(
+        eq15(approvalWorkflowSettings.companyId, parseInt(companyId)),
+        eq15(approvalWorkflowSettings.isActive, true)
       )
     ).orderBy(desc6(approvalWorkflowSettings.createdAt)).limit(1);
     return res.json({
@@ -14144,9 +14569,9 @@ router26.post("/workflow-settings", async (req, res) => {
       createdBy: req.user.id
     });
     const existingSettings = await db.select().from(approvalWorkflowSettings).where(
-      and10(
-        eq14(approvalWorkflowSettings.companyId, validatedData.companyId),
-        eq14(approvalWorkflowSettings.isActive, true)
+      and11(
+        eq15(approvalWorkflowSettings.companyId, validatedData.companyId),
+        eq15(approvalWorkflowSettings.isActive, true)
       )
     ).limit(1);
     let result;
@@ -14154,7 +14579,7 @@ router26.post("/workflow-settings", async (req, res) => {
       result = await db.update(approvalWorkflowSettings).set({
         ...validatedData,
         updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq14(approvalWorkflowSettings.id, existingSettings[0].id)).returning();
+      }).where(eq15(approvalWorkflowSettings.id, existingSettings[0].id)).returning();
     } else {
       result = await db.insert(approvalWorkflowSettings).values(validatedData).returning();
     }
@@ -14183,17 +14608,17 @@ router26.get("/step-templates/:companyId", async (req, res) => {
     const { companyId } = req.params;
     const { templateName } = req.query;
     let query = db.select().from(approvalStepTemplates).where(
-      and10(
-        eq14(approvalStepTemplates.companyId, parseInt(companyId)),
-        eq14(approvalStepTemplates.isActive, true)
+      and11(
+        eq15(approvalStepTemplates.companyId, parseInt(companyId)),
+        eq15(approvalStepTemplates.isActive, true)
       )
     );
     if (templateName) {
       query = query.where(
-        and10(
-          eq14(approvalStepTemplates.companyId, parseInt(companyId)),
-          eq14(approvalStepTemplates.isActive, true),
-          eq14(approvalStepTemplates.templateName, templateName)
+        and11(
+          eq15(approvalStepTemplates.companyId, parseInt(companyId)),
+          eq15(approvalStepTemplates.isActive, true),
+          eq15(approvalStepTemplates.templateName, templateName)
         )
       );
     }
@@ -14252,7 +14677,7 @@ router26.put("/step-templates/:id", async (req, res) => {
     const result = await db.update(approvalStepTemplates).set({
       ...validatedData,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq14(approvalStepTemplates.id, parseInt(id))).returning();
+    }).where(eq15(approvalStepTemplates.id, parseInt(id))).returning();
     if (result.length === 0) {
       return res.status(404).json({ error: "\uC2B9\uC778 \uB2E8\uACC4 \uD15C\uD50C\uB9BF\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
     }
@@ -14285,7 +14710,7 @@ router26.delete("/step-templates/:id", async (req, res) => {
     const result = await db.update(approvalStepTemplates).set({
       isActive: false,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq14(approvalStepTemplates.id, parseInt(id))).returning();
+    }).where(eq15(approvalStepTemplates.id, parseInt(id))).returning();
     if (result.length === 0) {
       return res.status(404).json({ error: "\uC2B9\uC778 \uB2E8\uACC4 \uD15C\uD50C\uB9BF\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
     }
@@ -14307,9 +14732,9 @@ router26.get("/step-instances/:orderId", async (req, res) => {
     }
     const { orderId } = req.params;
     const instances = await db.select().from(approvalStepInstances).where(
-      and10(
-        eq14(approvalStepInstances.orderId, parseInt(orderId)),
-        eq14(approvalStepInstances.isActive, true)
+      and11(
+        eq15(approvalStepInstances.orderId, parseInt(orderId)),
+        eq15(approvalStepInstances.isActive, true)
       )
     ).orderBy(asc4(approvalStepInstances.stepOrder));
     return res.json({
@@ -14335,10 +14760,10 @@ router26.post("/step-instances", async (req, res) => {
       });
     }
     const templates = await db.select().from(approvalStepTemplates).where(
-      and10(
-        eq14(approvalStepTemplates.companyId, companyId),
-        eq14(approvalStepTemplates.templateName, templateName),
-        eq14(approvalStepTemplates.isActive, true)
+      and11(
+        eq15(approvalStepTemplates.companyId, companyId),
+        eq15(approvalStepTemplates.templateName, templateName),
+        eq15(approvalStepTemplates.isActive, true)
       )
     ).orderBy(asc4(approvalStepTemplates.stepOrder));
     if (templates.length === 0) {
@@ -14385,7 +14810,7 @@ router26.put("/step-instances/:id", async (req, res) => {
     };
     if (comments) updateData.comments = comments;
     if (rejectionReason) updateData.rejectionReason = rejectionReason;
-    const result = await db.update(approvalStepInstances).set(updateData).where(eq14(approvalStepInstances.id, parseInt(id))).returning();
+    const result = await db.update(approvalStepInstances).set(updateData).where(eq15(approvalStepInstances.id, parseInt(id))).returning();
     if (result.length === 0) {
       return res.status(404).json({ error: "\uC2B9\uC778 \uB2E8\uACC4 \uC778\uC2A4\uD134\uC2A4\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
     }
@@ -14449,6 +14874,17 @@ if (originalDatabaseUrl && (originalDatabaseUrl.includes("db.tbvugytmskxxyqfvqmu
   console.log("\u{1F527} Using existing DATABASE_URL:", originalDatabaseUrl.split("@")[0] + "@[HIDDEN]");
 }
 console.log("\u2728 Production server starting without static file serving");
+var sessionErrorHandler = (err, req, res, next) => {
+  if (err && err.code === "ECONNREFUSED") {
+    console.error("\u{1F534} Database connection failed for sessions, falling back to memory store");
+    next();
+  } else if (err) {
+    console.error("\u{1F534} Session error:", err);
+    next();
+  } else {
+    next();
+  }
+};
 var app = express2();
 app.use(express2.json());
 app.use(express2.urlencoded({ extended: false }));
@@ -14478,22 +14914,49 @@ app.use((req, res, next) => {
   next();
 });
 async function initializeProductionApp() {
-  app.use(session({
-    secret: process.env.SESSION_SECRET || "default-secret-key",
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: false,
-      httpOnly: true,
-      maxAge: 1e3 * 60 * 60 * 24 * 7
-    },
-    // Use memory store - sessions will not persist across serverless restarts
-    // TODO: In production, use Redis or external session store for persistence
-    // For now, using memory store to prevent database connection errors
-    store: void 0
-    // Default memory store
-  }));
-  console.log("\u26A0\uFE0F Using memory session store for serverless compatibility");
+  try {
+    const connectPgSimple = (await import("connect-pg-simple")).default;
+    const pgSession = connectPgSimple(session);
+    app.use(session({
+      store: new pgSession({
+        conString: process.env.DATABASE_URL,
+        tableName: "app_sessions",
+        // Serverless-specific settings
+        createTableIfMissing: true,
+        // Reduce connection pool for serverless
+        schemaName: "public",
+        // Error handling for session store
+        errorLog: (error) => {
+          console.error("\u{1F534} PostgreSQL session store error:", error);
+        }
+      }),
+      secret: process.env.SESSION_SECRET || "default-secret-key",
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        secure: process.env.NODE_ENV === "production",
+        httpOnly: true,
+        maxAge: 1e3 * 60 * 60 * 24 * 7,
+        // 7 days
+        sameSite: process.env.NODE_ENV === "production" ? "lax" : "lax",
+        domain: process.env.NODE_ENV === "production" ? ".vercel.app" : void 0
+      }
+    }));
+    console.log("\u2705 Using PostgreSQL session store for serverless persistence");
+  } catch (sessionError) {
+    console.error("\u{1F534} Failed to initialize PostgreSQL session store, using memory fallback:", sessionError);
+    app.use(session({
+      secret: process.env.SESSION_SECRET || "default-secret-key",
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        secure: process.env.NODE_ENV === "production",
+        httpOnly: true,
+        maxAge: 1e3 * 60 * 60 * 24 * 7
+      }
+    }));
+  }
+  app.use(sessionErrorHandler);
   app.use(routes_default);
   app.use((err, _req, res, _next) => {
     const status = err.status || err.statusCode || 500;
@@ -14506,22 +14969,49 @@ async function initializeProductionApp() {
 var isInitialized = false;
 if (process.env.VERCEL) {
   console.log("\u{1F680} Vercel environment detected - initializing production app");
-  app.use(session({
-    secret: process.env.SESSION_SECRET || "default-secret-key",
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: false,
-      httpOnly: true,
-      maxAge: 1e3 * 60 * 60 * 24 * 7
-    },
-    // Use memory store - sessions will not persist across serverless restarts
-    // TODO: In production, use Redis or external session store for persistence
-    // For now, using memory store to prevent database connection errors
-    store: void 0
-    // Default memory store
-  }));
-  console.log("\u26A0\uFE0F Using memory session store for serverless compatibility");
+  try {
+    const connectPgSimple = __require("connect-pg-simple");
+    const pgSession = connectPgSimple(session);
+    app.use(session({
+      store: new pgSession({
+        conString: process.env.DATABASE_URL,
+        tableName: "app_sessions",
+        // Serverless-specific settings
+        createTableIfMissing: true,
+        // Reduce connection pool for serverless
+        schemaName: "public",
+        // Error handling for session store
+        errorLog: (error) => {
+          console.error("\u{1F534} PostgreSQL session store error:", error);
+        }
+      }),
+      secret: process.env.SESSION_SECRET || "default-secret-key",
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        secure: process.env.NODE_ENV === "production",
+        httpOnly: true,
+        maxAge: 1e3 * 60 * 60 * 24 * 7,
+        // 7 days
+        sameSite: process.env.NODE_ENV === "production" ? "lax" : "lax",
+        domain: process.env.NODE_ENV === "production" ? ".vercel.app" : void 0
+      }
+    }));
+    console.log("\u2705 Using PostgreSQL session store for serverless persistence");
+  } catch (sessionError) {
+    console.error("\u{1F534} Failed to initialize PostgreSQL session store, using memory fallback:", sessionError);
+    app.use(session({
+      secret: process.env.SESSION_SECRET || "default-secret-key",
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        secure: process.env.NODE_ENV === "production",
+        httpOnly: true,
+        maxAge: 1e3 * 60 * 60 * 24 * 7
+      }
+    }));
+  }
+  app.use(sessionErrorHandler);
   app.use(routes_default);
   app.use((err, _req, res, _next) => {
     const status = err.status || err.statusCode || 500;

@@ -28,6 +28,21 @@ import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import router from "./routes/index";
 
+// Session error handler middleware
+const sessionErrorHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
+  if (err && err.code === 'ECONNREFUSED') {
+    console.error("🔴 Database connection failed for sessions, falling back to memory store");
+    // Continue without failing the request
+    next();
+  } else if (err) {
+    console.error("🔴 Session error:", err);
+    // Continue without failing the request
+    next();
+  } else {
+    next();
+  }
+};
+
 // Create app instance
 const app = express();
 
@@ -73,23 +88,53 @@ app.use((req, res, next) => {
 
 // Initialize app for production
 async function initializeProductionApp() {
-  // STABLE: Use memory store for sessions in serverless (for demo purposes)
-  // Note: In production, use Redis or external session store
-  app.use(session({
-    secret: process.env.SESSION_SECRET || 'default-secret-key',
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: false,
-      httpOnly: true,
-      maxAge: 1000 * 60 * 60 * 24 * 7
-    },
-    // Use memory store - sessions will not persist across serverless restarts
-    // TODO: In production, use Redis or external session store for persistence
-    // For now, using memory store to prevent database connection errors
-    store: undefined // Default memory store
-  }));
-  console.log("⚠️ Using memory session store for serverless compatibility");
+  // CRITICAL FIX: Use PostgreSQL session store for serverless persistence
+  // Import connect-pg-simple here to avoid module resolution issues
+  try {
+    const connectPgSimple = (await import('connect-pg-simple')).default;
+    const pgSession = connectPgSimple(session);
+    
+    app.use(session({
+      store: new pgSession({
+        conString: process.env.DATABASE_URL,
+        tableName: 'app_sessions',
+        // Serverless-specific settings
+        createTableIfMissing: true,
+        // Reduce connection pool for serverless
+        schemaName: 'public',
+        // Error handling for session store
+        errorLog: (error) => {
+          console.error("🔴 PostgreSQL session store error:", error);
+        }
+      }),
+      secret: process.env.SESSION_SECRET || 'default-secret-key',
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        secure: process.env.NODE_ENV === 'production',
+        httpOnly: true,
+        maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+        sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'lax',
+        domain: process.env.NODE_ENV === 'production' ? '.vercel.app' : undefined
+      }
+    }));
+    console.log("✅ Using PostgreSQL session store for serverless persistence");
+  } catch (sessionError) {
+    console.error("🔴 Failed to initialize PostgreSQL session store, using memory fallback:", sessionError);
+    app.use(session({
+      secret: process.env.SESSION_SECRET || 'default-secret-key',
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        secure: process.env.NODE_ENV === 'production',
+        httpOnly: true,
+        maxAge: 1000 * 60 * 60 * 24 * 7
+      }
+    }));
+  }
+  
+  // Add session error handler
+  app.use(sessionErrorHandler);
 
   // Use modular routes
   app.use(router);
@@ -113,23 +158,53 @@ let isInitialized = false;
 if (process.env.VERCEL) {
   console.log("🚀 Vercel environment detected - initializing production app");
   
-  // STABLE: Use memory store for sessions in serverless (for demo purposes)
-  // Note: In production, use Redis or external session store
-  app.use(session({
-    secret: process.env.SESSION_SECRET || 'default-secret-key',
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: false,
-      httpOnly: true,
-      maxAge: 1000 * 60 * 60 * 24 * 7
-    },
-    // Use memory store - sessions will not persist across serverless restarts
-    // TODO: In production, use Redis or external session store for persistence
-    // For now, using memory store to prevent database connection errors
-    store: undefined // Default memory store
-  }));
-  console.log("⚠️ Using memory session store for serverless compatibility");
+  // CRITICAL FIX: Use PostgreSQL session store for serverless persistence
+  // Import connect-pg-simple synchronously with error handling
+  try {
+    const connectPgSimple = require('connect-pg-simple');
+    const pgSession = connectPgSimple(session);
+    
+    app.use(session({
+      store: new pgSession({
+        conString: process.env.DATABASE_URL,
+        tableName: 'app_sessions',
+        // Serverless-specific settings
+        createTableIfMissing: true,
+        // Reduce connection pool for serverless
+        schemaName: 'public',
+        // Error handling for session store
+        errorLog: (error) => {
+          console.error("🔴 PostgreSQL session store error:", error);
+        }
+      }),
+      secret: process.env.SESSION_SECRET || 'default-secret-key',
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        secure: process.env.NODE_ENV === 'production',
+        httpOnly: true,
+        maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+        sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'lax',
+        domain: process.env.NODE_ENV === 'production' ? '.vercel.app' : undefined
+      }
+    }));
+    console.log("✅ Using PostgreSQL session store for serverless persistence");
+  } catch (sessionError) {
+    console.error("🔴 Failed to initialize PostgreSQL session store, using memory fallback:", sessionError);
+    app.use(session({
+      secret: process.env.SESSION_SECRET || 'default-secret-key',
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        secure: process.env.NODE_ENV === 'production',
+        httpOnly: true,
+        maxAge: 1000 * 60 * 60 * 24 * 7
+      }
+    }));
+  }
+  
+  // Add session error handler
+  app.use(sessionErrorHandler);
 
   // Use modular routes
   app.use(router);

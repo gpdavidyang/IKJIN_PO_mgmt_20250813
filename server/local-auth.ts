@@ -154,8 +154,12 @@ export function logout(req: Request, res: Response) {
 export async function getCurrentUser(req: Request, res: Response) {
   try {
     const authSession = req.session as AuthSession;
-    console.log("getCurrentUser - Session ID:", req.sessionID);
-    console.log("getCurrentUser - Session userId:", authSession.userId);
+    console.log("🔍 getCurrentUser - Session ID:", req.sessionID);
+    console.log("🔍 getCurrentUser - Session userId:", authSession.userId);
+    console.log("🔍 getCurrentUser - Session exists:", !!req.session);
+    console.log("🔍 getCurrentUser - Cookie header:", req.headers.cookie);
+    console.log("🔍 getCurrentUser - Environment:", process.env.NODE_ENV);
+    console.log("🔍 getCurrentUser - Vercel:", !!process.env.VERCEL);
     
     // 🔴 SECURITY FIX: Always require proper authentication
     if (!authSession.userId) {

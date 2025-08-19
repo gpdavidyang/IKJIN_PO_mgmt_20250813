@@ -63,10 +63,21 @@ export default async function handler(req, res) {
     console.log('Express app type:', typeof expressApp);
     console.log('Express app keys:', Object.keys(expressApp || {}));
     
-    // Add some headers
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    // CORS headers for production - allow credentials
+    const origin = req.headers.origin;
+    const allowedOrigins = [
+      'https://ikjin-po-mgmt-20250813-dno9.vercel.app',
+      'https://ikjin-po-mgmt-20250813-dn.vercel.app',
+      'http://localhost:3000',
+      'http://localhost:5000'
+    ];
+    
+    if (!origin || allowedOrigins.includes(origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin || 'https://ikjin-po-mgmt-20250813-dno9.vercel.app');
+    }
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
     
     if (req.method === 'OPTIONS') {
       console.log('=== OPTIONS Request - Returning ===');
