@@ -258,10 +258,15 @@ const CreateOrderUnifiedV2: React.FC = () => {
       // 품목 데이터 매핑 - API가 기대하는 형식으로 변환
       const mappedItems = (orderData.items || []).map((item: any) => ({
         itemName: item.name || item.itemName || '',
+        specification: item.specification || '',
+        unit: item.unit || 'EA',
         quantity: parseFloat(item.quantity || '0'),
         unitPrice: parseFloat(item.unitPrice || '0'),
-        unit: item.unit || 'EA',
-        totalAmount: parseFloat(item.quantity || '0') * parseFloat(item.unitPrice || '0')
+        totalAmount: parseFloat(item.quantity || '0') * parseFloat(item.unitPrice || '0'),
+        majorCategory: item.majorCategory || '',
+        middleCategory: item.middleCategory || '',
+        minorCategory: item.minorCategory || '',
+        notes: item.notes || ''
       }));
       
       formData.append('items', JSON.stringify(mappedItems));
@@ -347,10 +352,15 @@ const CreateOrderUnifiedV2: React.FC = () => {
       
       const mappedItems = (orderData.items || []).map((item: any) => ({
         itemName: item.name || item.itemName || '',
+        specification: item.specification || '',
+        unit: item.unit || 'EA',
         quantity: parseFloat(item.quantity || '0'),
         unitPrice: parseFloat(item.unitPrice || '0'),
-        unit: item.unit || 'EA',
-        totalAmount: parseFloat(item.quantity || '0') * parseFloat(item.unitPrice || '0')
+        totalAmount: parseFloat(item.quantity || '0') * parseFloat(item.unitPrice || '0'),
+        majorCategory: item.majorCategory || '',
+        middleCategory: item.middleCategory || '',
+        minorCategory: item.minorCategory || '',
+        notes: item.notes || ''
       }));
       
       formData.append('items', JSON.stringify(mappedItems));
