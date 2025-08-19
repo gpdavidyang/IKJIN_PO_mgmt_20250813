@@ -35,6 +35,20 @@ function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [, navigate] = useLocation();
 
+  // Smart authentication check - only query when there are session indicators
+  const shouldCheckAuth = (() => {
+    // In development, always check
+    if (process.env.NODE_ENV === 'development') {
+      return true;
+    }
+    
+    // In production, only check if there are session indicators
+    return document.cookie.includes('connect.sid') || 
+           document.cookie.includes('session') ||
+           localStorage.getItem('hasAuthenticated') === 'true' ||
+           sessionStorage.getItem('userAuthenticated') === 'true';
+  })();
+
   const {
     data: user,
     error,
@@ -49,6 +63,9 @@ function AuthProvider({ children }: { children: ReactNode }) {
         
         // Silently handle 401 errors - user is not authenticated
         if (response.status === 401) {
+          // Clear authentication indicators on 401
+          localStorage.removeItem('hasAuthenticated');
+          sessionStorage.removeItem('userAuthenticated');
           return null;
         }
         
@@ -65,8 +82,17 @@ function AuthProvider({ children }: { children: ReactNode }) {
         if (process.env.NODE_ENV === 'development') {
           console.log('🔍 useAuth - Fetched user data:', userData);
         }
+        
+        // Set authentication indicators on successful auth
+        localStorage.setItem('hasAuthenticated', 'true');
+        sessionStorage.setItem('userAuthenticated', 'true');
+        
         return userData;
       } catch (fetchError: any) {
+        // Clear authentication indicators on network errors
+        localStorage.removeItem('hasAuthenticated');
+        sessionStorage.removeItem('userAuthenticated');
+        
         // Silently handle network errors that might indicate auth issues
         if (fetchError.name === 'TypeError' && fetchError.message.includes('Failed to fetch')) {
           if (process.env.NODE_ENV === 'development') {
@@ -79,10 +105,11 @@ function AuthProvider({ children }: { children: ReactNode }) {
         throw fetchError;
       }
     },
+    enabled: shouldCheckAuth, // Only run query when session indicators are present
     retry: false, // Never retry auth queries to prevent 401 spam
     staleTime: 1000 * 60 * 5, // 5 minutes - prevent excessive polling
     refetchOnWindowFocus: false, // Disable window focus refetch to prevent 401 spam
-    refetchOnMount: true,
+    refetchOnMount: false, // Prevent automatic refetch on mount
     refetchOnReconnect: false, // Disable reconnect refetch during logout
     refetchInterval: false, // No automatic polling for auth
     // Add meta for query identification in DevTools
@@ -115,6 +142,10 @@ function AuthProvider({ children }: { children: ReactNode }) {
       queryClient.setQueryData(["/api/auth/user"], user);
       console.log('✅ Login successful, user data set:', user);
       
+      // Set authentication indicators for future sessions
+      localStorage.setItem('hasAuthenticated', 'true');
+      sessionStorage.setItem('userAuthenticated', 'true');
+      
       // Clear any other queries to ensure fresh data on next access
       queryClient.removeQueries({ queryKey: ["/api/auth/user"], exact: false });
       queryClient.setQueryData(["/api/auth/user"], user); // Ensure user data remains set
@@ -127,6 +158,10 @@ function AuthProvider({ children }: { children: ReactNode }) {
     try {
       // First, immediately set query data to null to prevent further requests
       queryClient.setQueryData(["/api/auth/user"], null);
+      
+      // Clear authentication indicators immediately
+      localStorage.removeItem('hasAuthenticated');
+      sessionStorage.removeItem('userAuthenticated');
       
       // Cancel any outgoing requests to prevent race conditions
       await queryClient.cancelQueries({ queryKey: ["/api/auth/user"] });
@@ -161,6 +196,10 @@ function AuthProvider({ children }: { children: ReactNode }) {
       
       // Immediately set user to null to prevent UI issues
       queryClient.setQueryData(["/api/auth/user"], null);
+      
+      // Clear authentication indicators immediately
+      localStorage.removeItem('hasAuthenticated');
+      sessionStorage.removeItem('userAuthenticated');
       
       // Cancel any pending auth queries to prevent 401 errors
       await queryClient.cancelQueries({ queryKey: ["/api/auth/user"] });

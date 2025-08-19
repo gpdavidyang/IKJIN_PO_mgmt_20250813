@@ -96,6 +96,9 @@ queryClient.setDefaultOptions({
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
     refetchOnWindowFocus: false, // Prevent excessive refetching
+    // Production-specific optimizations for auth queries
+    refetchOnMount: process.env.NODE_ENV === 'development',
+    refetchOnReconnect: false,
     // Global error handling to suppress 401s in production
     onError: (error: any) => {
       // Only log non-auth errors in production
