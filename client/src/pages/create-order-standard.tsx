@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -95,10 +96,8 @@ export default function CreateStandardOrder() {
     select: (data) => data?.filter((project: Project) => project.isActive) || []
   });
 
-  // Fetch current user info
-  const { data: currentUser } = useQuery<DatabaseUser>({
-    queryKey: ["/api/auth/user"],
-  });
+  // Use auth hook instead of direct query
+  const { user: currentUser } = useAuth();
 
   // Fetch users for receiver and manager selection
   const { data: users = [] } = useQuery<DatabaseUser[]>({

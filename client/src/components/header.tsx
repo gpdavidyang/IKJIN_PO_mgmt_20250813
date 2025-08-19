@@ -230,7 +230,7 @@ export function Header() {
 
 
   return (
-    <header className="bg-background/95 backdrop-blur-sm shadow-sm border-b border-border/50 relative z-10 transition-all duration-200">
+    <header className="bg-background/95 backdrop-blur-sm shadow-sm border-b border-border/50 relative z-[9998] transition-all duration-200">
       <div className="flex items-center justify-between px-4 py-4">
         <div className="flex items-center space-x-4">
           <div>

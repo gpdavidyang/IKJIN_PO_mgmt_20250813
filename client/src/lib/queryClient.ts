@@ -59,9 +59,18 @@ export const getQueryFn: <T>(options: {
 // Use the optimized query client with enhanced defaults
 export const queryClient = createOptimizedQueryClient();
 
-// Override the default query function
+// Override the default query function with auth-friendly defaults
 queryClient.setDefaultOptions({
   queries: {
-    queryFn: getQueryFn({ on401: "throw" }),
+    queryFn: getQueryFn({ on401: "returnNull" }), // Return null for 401 instead of throwing
+    retry: (failureCount, error: any) => {
+      // Don't retry 401, 403, or 404 errors
+      if (error?.message?.includes('401') || error?.message?.includes('403') || error?.message?.includes('404')) {
+        return false;
+      }
+      return failureCount < 3;
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    refetchOnWindowFocus: false, // Prevent excessive refetching
   },
 });

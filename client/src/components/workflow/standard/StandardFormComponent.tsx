@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -102,10 +103,8 @@ const StandardFormComponent: React.FC<StandardFormComponentProps> = ({
     select: (data) => data?.filter((project: Project) => project.isActive) || []
   });
 
-  // Fetch current user info
-  const { data: currentUser } = useQuery<DatabaseUser>({
-    queryKey: ["/api/auth/user"],
-  });
+  // Use auth hook instead of direct query
+  const { user: currentUser } = useAuth();
 
   // Fetch users for receiver and manager selection
   const { data: users = [] } = useQuery<DatabaseUser[]>({

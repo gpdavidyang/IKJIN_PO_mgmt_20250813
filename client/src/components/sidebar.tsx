@@ -269,7 +269,7 @@ export function Sidebar() {
   return (
     <>
       {/* Mobile/Tablet menu button */}
-      <div className="xl:hidden fixed top-4 left-4 z-50">
+      <div className="xl:hidden fixed top-4 left-4 z-[9999]">
         <Button
           variant="outline"
           size="sm"
@@ -295,13 +295,13 @@ export function Sidebar() {
 
       {/* Mobile/Tablet sidebar */}
       {isMobileMenuOpen && (
-        <div className="xl:hidden fixed inset-0 z-40">
+        <div className="xl:hidden fixed inset-0 z-[9999]">
           <div 
-            className="fixed inset-0 bg-black/50 animate-in fade-in-0 duration-200" 
+            className="fixed inset-0 bg-black/20 animate-in fade-in-0 duration-200" 
             onClick={() => setIsMobileMenuOpen(false)}
             aria-label="메뉴 배경 클릭으로 닫기"
           />
-          <div className="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-xl transform transition-transform duration-300 ease-in-out border-r border-gray-200 animate-in slide-in-from-left-0">
+          <div className="fixed inset-y-0 left-0 z-[10000] w-64 bg-white shadow-xl transform transition-transform duration-300 ease-in-out border-r border-gray-200 animate-in slide-in-from-left-0">
             <SidebarContent />
           </div>
         </div>
