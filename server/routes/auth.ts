@@ -20,6 +20,44 @@ router.get('/auth/debug', (req, res) => {
   });
 });
 
+// Production authentication debug endpoint
+router.get('/auth/debug-prod', (req, res) => {
+  try {
+    const authSession = req.session as any;
+    console.log('🔍 Production auth debug:', {
+      sessionExists: !!req.session,
+      sessionId: req.sessionID,
+      sessionUserId: authSession?.userId,
+      cookies: req.headers.cookie,
+      origin: req.get('Origin'),
+      userAgent: req.get('User-Agent'),
+      secure: req.secure,
+      protocol: req.protocol,
+      host: req.get('host')
+    });
+    
+    res.json({
+      environment: process.env.NODE_ENV,
+      sessionExists: !!req.session,
+      sessionId: req.sessionID || null,
+      sessionUserId: authSession?.userId || null,
+      hasSessionCookie: req.headers.cookie?.includes('connect.sid') || false,
+      cookieHeader: req.headers.cookie || null,
+      origin: req.get('Origin') || null,
+      secure: req.secure,
+      protocol: req.protocol,
+      host: req.get('host'),
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Production auth debug error:', error);
+    res.status(500).json({ 
+      error: 'Debug failed',
+      message: error?.message || 'Unknown error'
+    });
+  }
+});
+
 // Simple test login endpoint without sessions
 router.post('/auth/login-simple', (req, res) => {
   try {

@@ -17,6 +17,33 @@ import { requireAuth } from "./local-auth";
 // Create app instance
 const app = express();
 
+// CORS middleware for production
+app.use((req, res, next) => {
+  const origin = req.get('Origin');
+  
+  // Allow specific origins in production
+  const allowedOrigins = [
+    'https://ikjin-po-mgmt-20250813-dno9.vercel.app',
+    'https://ikjin-po-mgmt-20250813-dn.vercel.app',
+    'http://localhost:3000',
+    'http://localhost:5000'
+  ];
+  
+  if (!origin || allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin || '*');
+  }
+  
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  
+  next();
+});
+
 // Basic middleware setup
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -71,9 +98,11 @@ async function initializeApp() {
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: false, // Set to true in production with HTTPS
+      secure: process.env.NODE_ENV === 'production', // Enable secure cookies in production
       httpOnly: true,
-      maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+      sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'lax', // Use 'lax' for better compatibility
+      domain: process.env.NODE_ENV === 'production' ? '.vercel.app' : undefined // Shared domain for Vercel
     }
   }));
 
@@ -126,9 +155,11 @@ if (process.env.VERCEL) {
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: false,
+      secure: process.env.NODE_ENV === 'production', // Enable secure cookies in production
       httpOnly: true,
-      maxAge: 1000 * 60 * 60 * 24 * 7
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+      sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'lax', // Use 'lax' for better compatibility
+      domain: process.env.NODE_ENV === 'production' ? '.vercel.app' : undefined // Shared domain for Vercel
     }
   }));
 
