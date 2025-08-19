@@ -77,13 +77,13 @@ const DirectInputForm: React.FC<DirectInputFormProps> = ({ initialData = {}, onC
     queryKey: ['categories'],
     queryFn: async () => {
       console.log('🔍 카테고리 목록 조회 시작');
-      const response = await fetch('/api/categories');
+      const response = await fetch('/api/item-categories');
       if (!response.ok) {
         throw new Error('카테고리 목록 조회 실패');
       }
       const data = await response.json();
-      console.log('✅ 카테고리 목록 조회 성공:', data.categories?.length, '개');
-      return data;
+      console.log('✅ 카테고리 목록 조회 성공:', data?.length, '개');
+      return { categories: data }; // 기존 형식과 맞추기 위해 wrapper 추가
     }
   });
 
@@ -168,18 +168,27 @@ const DirectInputForm: React.FC<DirectInputFormProps> = ({ initialData = {}, onC
   };
 
   const getMiddleCategories = (majorCategoryName: string) => {
+    // 선택된 대분류에 해당하는 중분류들 찾기
     const majorCategory = categories?.categories?.find((cat: any) => 
       cat.categoryType === 'major' && cat.categoryName === majorCategoryName
     );
-    return majorCategory?.children?.filter((cat: any) => cat.categoryType === 'middle') || [];
+    if (!majorCategory) return [];
+    
+    return categories?.categories?.filter((cat: any) => 
+      cat.categoryType === 'middle' && cat.parentId === majorCategory.id
+    ) || [];
   };
 
   const getMinorCategories = (middleCategoryName: string) => {
-    const allMiddleCategories = categories?.categories?.flatMap((major: any) => major.children) || [];
-    const middleCategory = allMiddleCategories.find((cat: any) => 
+    // 선택된 중분류에 해당하는 소분류들 찾기
+    const middleCategory = categories?.categories?.find((cat: any) => 
       cat.categoryType === 'middle' && cat.categoryName === middleCategoryName
     );
-    return middleCategory?.children?.filter((cat: any) => cat.categoryType === 'minor') || [];
+    if (!middleCategory) return [];
+    
+    return categories?.categories?.filter((cat: any) => 
+      cat.categoryType === 'minor' && cat.parentId === middleCategory.id
+    ) || [];
   };
 
   const handleCategoryChange = (index: number, categoryType: 'major' | 'middle' | 'minor', categoryId: string) => {
