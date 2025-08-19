@@ -13,21 +13,31 @@ interface SidebarProviderProps {
 }
 
 export function SidebarProvider({ children }: SidebarProviderProps) {
-  // Always keep sidebar expanded
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  // Enable sidebar collapse functionality with localStorage persistence
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    try {
+      const saved = localStorage.getItem('sidebar-collapsed');
+      return saved ? JSON.parse(saved) : false;
+    } catch {
+      return false;
+    }
+  });
 
-  // Remove localStorage logic since we're always expanded
+  // Save state to localStorage whenever it changes
   useEffect(() => {
-    // Clear any existing collapsed state from localStorage
-    localStorage.removeItem('sidebar-collapsed');
-  }, []);
+    try {
+      localStorage.setItem('sidebar-collapsed', JSON.stringify(isCollapsed));
+    } catch {
+      // Handle localStorage errors gracefully
+    }
+  }, [isCollapsed]);
 
   const toggleSidebar = () => {
-    // Do nothing - sidebar is always expanded
+    setIsCollapsed(prev => !prev);
   };
 
   return (
-    <SidebarContext.Provider value={{ isCollapsed: false, setIsCollapsed, toggleSidebar }}>
+    <SidebarContext.Provider value={{ isCollapsed, setIsCollapsed, toggleSidebar }}>
       {children}
     </SidebarContext.Provider>
   );

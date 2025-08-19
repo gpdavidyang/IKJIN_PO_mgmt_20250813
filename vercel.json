@@ -28,7 +28,15 @@
       "dest": "dist/public/assets/$1"
     },
     {
-      "src": "/(.*\\.(js|css|png|jpg|svg|ico|woff|woff2))",
+      "src": "/PO_Excel_Template\\.xlsx",
+      "dest": "dist/public/PO_Excel_Template.xlsx",
+      "headers": {
+        "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "Content-Disposition": "attachment; filename=\"PO_Excel_Template.xlsx\""
+      }
+    },
+    {
+      "src": "/(.*\\.(js|css|png|jpg|svg|ico|woff|woff2|xlsx))",
       "dest": "dist/public/$1"
     },
     {

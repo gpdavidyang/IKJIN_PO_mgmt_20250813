@@ -23,7 +23,9 @@ import {
   CheckCircle,
   Upload,
   FileDown,
-  FolderTree
+  FolderTree,
+  PanelLeftClose,
+  PanelLeftOpen
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSidebar } from "@/contexts/SidebarContext";
@@ -80,6 +82,7 @@ export function Sidebar() {
   const [location, navigate] = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const { isCollapsed, toggleSidebar } = useSidebar();
 
   // Query optimization hooks
   const { prefetchForRoute } = useQueryOptimization();
@@ -114,28 +117,50 @@ export function Sidebar() {
   const SidebarContent = () => (
     <>
       <div className="flex items-center h-16 px-4 bg-sidebar-primary transition-colors duration-200">
-        <div className="flex items-center space-x-3">
-          <div className="h-8 w-8 bg-sidebar-primary-foreground rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110 hover:rotate-3">
-            <ClipboardList className="h-5 w-5 text-sidebar-primary transition-transform duration-200" />
+        <div className="flex items-center justify-between w-full">
+          <div className="flex items-center space-x-3">
+            <div className="h-8 w-8 bg-sidebar-primary-foreground rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110 hover:rotate-3">
+              <ClipboardList className="h-5 w-5 text-sidebar-primary transition-transform duration-200" />
+            </div>
+            {!isCollapsed && (
+              <span className="text-xl font-bold text-sidebar-primary-foreground transition-colors duration-200">발주시스템</span>
+            )}
           </div>
-          <span className="text-xl font-bold text-sidebar-primary-foreground transition-colors duration-200">발주시스템</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={toggleSidebar}
+            className="text-sidebar-primary-foreground hover:bg-sidebar-primary-foreground/10 transition-all duration-200"
+            aria-label={isCollapsed ? "사이드바 펼치기" : "사이드바 접기"}
+          >
+            {isCollapsed ? (
+              <PanelLeftOpen className="h-4 w-4" />
+            ) : (
+              <PanelLeftClose className="h-4 w-4" />
+            )}
+          </Button>
         </div>
       </div>
 
 
       
-      <nav className="mt-6 px-4 space-y-6" role="navigation" aria-label="메인 네비게이션">
+      <nav className={cn(
+        "mt-6 space-y-6 transition-all duration-200", 
+        isCollapsed ? "px-2" : "px-4"
+      )} role="navigation" aria-label="메인 네비게이션">
         {navigationSections.map((section, sectionIndex) => (
-          <div key={section.title}>
+          <div key={section.title} className={cn(isCollapsed && "space-y-1")}>
             {/* 섹션 제목 */}
-            <div className="px-2 mb-3">
-              <h3 className="text-xs font-semibold text-sidebar-muted-foreground uppercase tracking-wider transition-colors duration-200">
-                {section.title}
-              </h3>
-            </div>
+            {!isCollapsed && (
+              <div className="px-2 mb-3">
+                <h3 className="text-xs font-semibold text-sidebar-muted-foreground uppercase tracking-wider transition-colors duration-200">
+                  {section.title}
+                </h3>
+              </div>
+            )}
             
             {/* 섹션 메뉴 아이템들 */}
-            <div className="space-y-1">
+            <div className={cn("space-y-1", isCollapsed && "space-y-0.5")}>
               {section.items.map((item) => {
                 // 관리자 전용 메뉴 필터링
                 if (item.adminOnly && (user as any)?.role !== "admin") {
@@ -155,11 +180,12 @@ export function Sidebar() {
                     <Button
                       variant={isActive(item.href) ? "secondary" : "ghost"}
                       className={cn(
-                        "w-full nav-item justify-start transition-all duration-200 group",
+                        "w-full nav-item transition-all duration-200 group",
                         "hover:scale-[1.02] active:scale-[0.98] hover:shadow-sm",
                         isActive(item.href) && "active bg-sidebar-accent text-sidebar-accent-foreground shadow-sm",
                         item.highlight && "font-medium border border-primary/20 hover:border-primary/40 hover:bg-primary/5",
-                        !isActive(item.href) && "hover:bg-sidebar-accent/50"
+                        !isActive(item.href) && "hover:bg-sidebar-accent/50",
+                        isCollapsed ? "justify-center px-2" : "justify-start"
                       )}
                       onClick={() => {
                         navigate(item.href);
@@ -171,16 +197,22 @@ export function Sidebar() {
                       }}
                       aria-label={`${item.name} 페이지로 이동`}
                       aria-current={isActive(item.href) ? "page" : undefined}
+                      title={isCollapsed ? item.name : undefined}
                     >
                       <item.icon className={cn(
-                        "h-4 w-4 mr-3 transition-all duration-200",
+                        "h-4 w-4 transition-all duration-200",
                         "group-hover:scale-110 group-active:scale-95",
                         item.highlight && "text-primary",
-                        isActive(item.href) && "scale-110"
+                        isActive(item.href) && "scale-110",
+                        !isCollapsed && "mr-3"
                       )} />
-                      <span className="flex-1 text-left transition-colors duration-200">{item.name}</span>
-                      {item.highlight && (
-                        <div className="w-2 h-2 bg-primary rounded-full animate-pulse transition-all duration-200 group-hover:scale-125" />
+                      {!isCollapsed && (
+                        <>
+                          <span className="flex-1 text-left transition-colors duration-200">{item.name}</span>
+                          {item.highlight && (
+                            <div className="w-2 h-2 bg-primary rounded-full animate-pulse transition-all duration-200 group-hover:scale-125" />
+                          )}
+                        </>
                       )}
                     </Button>
                   </div>
@@ -190,7 +222,7 @@ export function Sidebar() {
             
             {/* 섹션 구분선 (마지막 섹션 제외) */}
             {sectionIndex < navigationSections.length - 1 && (
-              <div className="pt-4">
+              <div className={cn("pt-4", isCollapsed && "pt-2")}>
                 <div className="border-t border-sidebar-border transition-colors duration-200"></div>
               </div>
             )}
@@ -201,7 +233,7 @@ export function Sidebar() {
           <>
             
             {/* Company Logo Section - Admin Only */}
-            {company?.logoUrl && (
+            {company?.logoUrl && !isCollapsed && (
               <div className="mt-4 px-0">
                 <div className="flex justify-center">
                   <div className="transition-all duration-200 hover:scale-105 hover:shadow-md rounded-lg p-2">
@@ -244,8 +276,11 @@ export function Sidebar() {
         </Button>
       </div>
 
-      {/* Desktop sidebar (iPad Pro and up) - Always expanded */}
-      <div className="hidden xl:fixed xl:inset-y-0 xl:left-0 xl:z-50 xl:block xl:w-64 xl:bg-sidebar-background/95 xl:backdrop-blur-sm xl:shadow-lg transition-all duration-300 border-r border-sidebar-border/50">
+      {/* Desktop sidebar (iPad Pro and up) - Collapsible */}
+      <div className={cn(
+        "hidden xl:fixed xl:inset-y-0 xl:left-0 xl:z-50 xl:block xl:bg-sidebar-background/95 xl:backdrop-blur-sm xl:shadow-lg transition-all duration-300 border-r border-sidebar-border/50",
+        isCollapsed ? "xl:w-16" : "xl:w-64"
+      )}>
         <SidebarContent />
       </div>
 

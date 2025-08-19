@@ -127,6 +127,7 @@ function FormLoadingFallback() {
 
 function Layout() {
   const [location] = useLocation();
+  const { isCollapsed } = useSidebar();
   
   // Performance monitoring
   usePerformanceMonitor('Layout');
@@ -169,7 +170,10 @@ function Layout() {
         <AccessibilityToolbar />
       </div>
       <Sidebar />
-      <div className="transition-all duration-300 sidebar-transition xl:ml-64">
+      <div className={cn(
+        "transition-all duration-300 sidebar-transition",
+        isCollapsed ? "xl:ml-16" : "xl:ml-64"
+      )}>
         <Header />
         <main id="main-content">
           <Suspense fallback={<DashboardLoadingFallback />}>

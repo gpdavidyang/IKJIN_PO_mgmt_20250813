@@ -26,26 +26,64 @@ const DirectInputForm: React.FC<DirectInputFormProps> = ({ initialData = {}, onC
     vendorId: initialData.vendorId || '',
     vendorName: initialData.vendorName || '',
     vendorEmail: initialData.vendorEmail || '',
-    items: initialData.items || [{ itemName: '', specification: '', quantity: 1, unitPrice: 0, totalAmount: 0 }],
+    items: initialData.items || [{ 
+      itemName: '', 
+      specification: '', 
+      unit: 'EA',
+      quantity: 1, 
+      unitPrice: 0, 
+      totalAmount: 0,
+      majorCategory: '',
+      middleCategory: '',
+      minorCategory: '',
+      notes: ''
+    }],
     notes: initialData.notes || '',
     totalAmount: initialData.totalAmount || 0
   });
 
   // 프로젝트 목록 조회
-  const { data: projects } = useQuery({
+  const { data: projects, isLoading: projectsLoading, error: projectsError } = useQuery({
     queryKey: ['projects'],
     queryFn: async () => {
+      console.log('🔍 프로젝트 목록 조회 시작');
       const response = await fetch('/api/projects');
-      return response.json();
+      if (!response.ok) {
+        throw new Error('프로젝트 목록 조회 실패');
+      }
+      const data = await response.json();
+      console.log('✅ 프로젝트 목록 조회 성공:', data.length, '개');
+      return data;
     }
   });
 
   // 거래처 목록 조회
-  const { data: vendors } = useQuery({
+  const { data: vendors, isLoading: vendorsLoading, error: vendorsError } = useQuery({
     queryKey: ['vendors'],
     queryFn: async () => {
+      console.log('🔍 거래처 목록 조회 시작');
       const response = await fetch('/api/vendors');
-      return response.json();
+      if (!response.ok) {
+        throw new Error('거래처 목록 조회 실패');
+      }
+      const data = await response.json();
+      console.log('✅ 거래처 목록 조회 성공:', data.length, '개');
+      return data;
+    }
+  });
+
+  // 카테고리 목록 조회
+  const { data: categories, isLoading: categoriesLoading, error: categoriesError } = useQuery({
+    queryKey: ['categories'],
+    queryFn: async () => {
+      console.log('🔍 카테고리 목록 조회 시작');
+      const response = await fetch('/api/categories');
+      if (!response.ok) {
+        throw new Error('카테고리 목록 조회 실패');
+      }
+      const data = await response.json();
+      console.log('✅ 카테고리 목록 조회 성공:', data.categories?.length, '개');
+      return data;
     }
   });
 
@@ -65,18 +103,18 @@ const DirectInputForm: React.FC<DirectInputFormProps> = ({ initialData = {}, onC
   };
 
   const handleProjectChange = (projectId: string) => {
-    const project = projects?.find((p: any) => p.id === projectId);
+    const project = projects?.find((p: any) => p.id.toString() === projectId);
     if (project) {
       setFormData(prev => ({
         ...prev,
         projectId,
-        projectName: project.name
+        projectName: project.projectName
       }));
     }
   };
 
   const handleVendorChange = (vendorId: string) => {
-    const vendor = vendors?.find((v: any) => v.id === vendorId);
+    const vendor = vendors?.find((v: any) => v.id.toString() === vendorId);
     if (vendor) {
       setFormData(prev => ({
         ...prev,
@@ -102,7 +140,18 @@ const DirectInputForm: React.FC<DirectInputFormProps> = ({ initialData = {}, onC
   const addItem = () => {
     setFormData(prev => ({
       ...prev,
-      items: [...prev.items, { itemName: '', specification: '', quantity: 1, unitPrice: 0, totalAmount: 0 }]
+      items: [...prev.items, { 
+        itemName: '', 
+        specification: '', 
+        unit: 'EA',
+        quantity: 1, 
+        unitPrice: 0, 
+        totalAmount: 0,
+        majorCategory: '',
+        middleCategory: '',
+        minorCategory: '',
+        notes: ''
+      }]
     }));
   };
 
@@ -111,6 +160,47 @@ const DirectInputForm: React.FC<DirectInputFormProps> = ({ initialData = {}, onC
       const newItems = formData.items.filter((_, i) => i !== index);
       setFormData(prev => ({ ...prev, items: newItems }));
     }
+  };
+
+  // 카테고리 관련 헬퍼 함수들
+  const getMajorCategories = () => {
+    return categories?.categories?.filter((cat: any) => cat.categoryType === 'major') || [];
+  };
+
+  const getMiddleCategories = (majorCategoryName: string) => {
+    const majorCategory = categories?.categories?.find((cat: any) => 
+      cat.categoryType === 'major' && cat.categoryName === majorCategoryName
+    );
+    return majorCategory?.children?.filter((cat: any) => cat.categoryType === 'middle') || [];
+  };
+
+  const getMinorCategories = (middleCategoryName: string) => {
+    const allMiddleCategories = categories?.categories?.flatMap((major: any) => major.children) || [];
+    const middleCategory = allMiddleCategories.find((cat: any) => 
+      cat.categoryType === 'middle' && cat.categoryName === middleCategoryName
+    );
+    return middleCategory?.children?.filter((cat: any) => cat.categoryType === 'minor') || [];
+  };
+
+  const handleCategoryChange = (index: number, categoryType: 'major' | 'middle' | 'minor', categoryId: string) => {
+    const newItems = [...formData.items];
+    const item = newItems[index];
+    
+    if (categoryType === 'major') {
+      const category = getMajorCategories().find((cat: any) => cat.id.toString() === categoryId);
+      item.majorCategory = category?.categoryName || '';
+      item.middleCategory = ''; // 대분류 변경 시 중분류, 소분류 초기화
+      item.minorCategory = '';
+    } else if (categoryType === 'middle') {
+      const category = getMiddleCategories(item.majorCategory).find((cat: any) => cat.id.toString() === categoryId);
+      item.middleCategory = category?.categoryName || '';
+      item.minorCategory = ''; // 중분류 변경 시 소분류 초기화
+    } else if (categoryType === 'minor') {
+      const category = getMinorCategories(item.middleCategory).find((cat: any) => cat.id.toString() === categoryId);
+      item.minorCategory = category?.categoryName || '';
+    }
+    
+    setFormData(prev => ({ ...prev, items: newItems }));
   };
 
   return (
@@ -153,15 +243,25 @@ const DirectInputForm: React.FC<DirectInputFormProps> = ({ initialData = {}, onC
 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label>프로젝트</Label>
+            <Label>현장</Label>
             <Select value={formData.projectId} onValueChange={handleProjectChange}>
               <SelectTrigger>
-                <SelectValue placeholder="프로젝트 선택" />
+                <SelectValue placeholder={
+                  projectsLoading ? "로딩 중..." : 
+                  projectsError ? "로딩 실패" : 
+                  "현장 선택"
+                } />
               </SelectTrigger>
               <SelectContent>
+                {projectsLoading && (
+                  <SelectItem value="loading" disabled>로딩 중...</SelectItem>
+                )}
+                {projectsError && (
+                  <SelectItem value="error" disabled>데이터 로딩 실패</SelectItem>
+                )}
                 {projects?.map((project: any) => (
-                  <SelectItem key={project.id} value={project.id}>
-                    {project.name}
+                  <SelectItem key={project.id} value={project.id.toString()}>
+                    {project.projectName}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -199,11 +299,21 @@ const DirectInputForm: React.FC<DirectInputFormProps> = ({ initialData = {}, onC
             <Label>거래처</Label>
             <Select value={formData.vendorId} onValueChange={handleVendorChange}>
               <SelectTrigger>
-                <SelectValue placeholder="거래처 선택" />
+                <SelectValue placeholder={
+                  vendorsLoading ? "로딩 중..." : 
+                  vendorsError ? "로딩 실패" : 
+                  "거래처 선택"
+                } />
               </SelectTrigger>
               <SelectContent>
+                {vendorsLoading && (
+                  <SelectItem value="loading" disabled>로딩 중...</SelectItem>
+                )}
+                {vendorsError && (
+                  <SelectItem value="error" disabled>데이터 로딩 실패</SelectItem>
+                )}
                 {vendors?.map((vendor: any) => (
-                  <SelectItem key={vendor.id} value={vendor.id}>
+                  <SelectItem key={vendor.id} value={vendor.id.toString()}>
                     {vendor.name}
                   </SelectItem>
                 ))}
@@ -234,64 +344,178 @@ const DirectInputForm: React.FC<DirectInputFormProps> = ({ initialData = {}, onC
           </Button>
         </div>
         
-        <div className="space-y-3">
+        <div className="space-y-4">
           {formData.items.map((item, index) => (
-            <div key={index} className="grid grid-cols-12 gap-3 items-end p-3 border rounded-lg">
-              <div className="col-span-3 space-y-2">
-                <Label>품목명</Label>
-                <Input
-                  value={item.itemName}
-                  onChange={(e) => handleItemChange(index, 'itemName', e.target.value)}
-                  placeholder="품목명"
-                />
-              </div>
-              
-              <div className="col-span-3 space-y-2">
-                <Label>규격</Label>
-                <Input
-                  value={item.specification}
-                  onChange={(e) => handleItemChange(index, 'specification', e.target.value)}
-                  placeholder="규격"
-                />
-              </div>
-              
-              <div className="col-span-2 space-y-2">
-                <Label>수량</Label>
-                <Input
-                  type="number"
-                  value={item.quantity}
-                  onChange={(e) => handleItemChange(index, 'quantity', Number(e.target.value))}
-                  min="1"
-                />
-              </div>
-              
-              <div className="col-span-2 space-y-2">
-                <Label>단가</Label>
-                <Input
-                  type="number"
-                  value={item.unitPrice}
-                  onChange={(e) => handleItemChange(index, 'unitPrice', Number(e.target.value))}
-                  min="0"
-                />
-              </div>
-              
-              <div className="col-span-1 space-y-2">
-                <Label>금액</Label>
-                <div className="text-sm font-medium py-2">
-                  {item.totalAmount.toLocaleString()}원
+            <div key={index} className="p-4 border rounded-lg space-y-4">
+              {/* 품목 기본 정보 */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>품목명</Label>
+                  <Input
+                    value={item.itemName}
+                    onChange={(e) => handleItemChange(index, 'itemName', e.target.value)}
+                    placeholder="품목명을 입력하세요"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>규격</Label>
+                  <Input
+                    value={item.specification}
+                    onChange={(e) => handleItemChange(index, 'specification', e.target.value)}
+                    placeholder="규격을 입력하세요"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>단위</Label>
+                  <Select value={item.unit} onValueChange={(value) => handleItemChange(index, 'unit', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="단위 선택" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="EA">EA</SelectItem>
+                      <SelectItem value="M">M</SelectItem>
+                      <SelectItem value="M2">M²</SelectItem>
+                      <SelectItem value="M3">M³</SelectItem>
+                      <SelectItem value="KG">KG</SelectItem>
+                      <SelectItem value="TON">TON</SelectItem>
+                      <SelectItem value="SET">SET</SelectItem>
+                      <SelectItem value="BOX">BOX</SelectItem>
+                      <SelectItem value="ROLL">ROLL</SelectItem>
+                      <SelectItem value="L">L</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
-              
-              <div className="col-span-1">
-                <Button
-                  onClick={() => removeItem(index)}
-                  size="sm"
-                  variant="ghost"
-                  className="text-red-600 hover:text-red-700"
-                  disabled={formData.items.length === 1}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
+
+              {/* 카테고리 선택 */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>대분류</Label>
+                  <Select 
+                    value={item.majorCategory ? getMajorCategories().find(cat => cat.categoryName === item.majorCategory)?.id.toString() : ''}
+                    onValueChange={(value) => handleCategoryChange(index, 'major', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={
+                        categoriesLoading ? "로딩 중..." : 
+                        categoriesError ? "로딩 실패" : 
+                        "대분류 선택"
+                      } />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categoriesLoading && (
+                        <SelectItem value="loading" disabled>로딩 중...</SelectItem>
+                      )}
+                      {categoriesError && (
+                        <SelectItem value="error" disabled>데이터 로딩 실패</SelectItem>
+                      )}
+                      {getMajorCategories().map((category: any) => (
+                        <SelectItem key={category.id} value={category.id.toString()}>
+                          {category.categoryName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>중분류</Label>
+                  <Select 
+                    value={item.middleCategory ? getMiddleCategories(item.majorCategory).find(cat => cat.categoryName === item.middleCategory)?.id.toString() : ''}
+                    onValueChange={(value) => handleCategoryChange(index, 'middle', value)}
+                    disabled={!item.majorCategory}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={!item.majorCategory ? "대분류를 먼저 선택하세요" : "중분류 선택"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {getMiddleCategories(item.majorCategory).map((category: any) => (
+                        <SelectItem key={category.id} value={category.id.toString()}>
+                          {category.categoryName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>소분류</Label>
+                  <Select 
+                    value={item.minorCategory ? getMinorCategories(item.middleCategory).find(cat => cat.categoryName === item.minorCategory)?.id.toString() : ''}
+                    onValueChange={(value) => handleCategoryChange(index, 'minor', value)}
+                    disabled={!item.middleCategory}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={!item.middleCategory ? "중분류를 먼저 선택하세요" : "소분류 선택"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {getMinorCategories(item.middleCategory).map((category: any) => (
+                        <SelectItem key={category.id} value={category.id.toString()}>
+                          {category.categoryName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* 수량, 단가, 금액 */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="space-y-2">
+                  <Label>수량</Label>
+                  <Input
+                    type="number"
+                    value={item.quantity}
+                    onChange={(e) => handleItemChange(index, 'quantity', Number(e.target.value))}
+                    min="1"
+                    step="0.01"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>단가</Label>
+                  <Input
+                    type="number"
+                    value={item.unitPrice}
+                    onChange={(e) => handleItemChange(index, 'unitPrice', Number(e.target.value))}
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>금액</Label>
+                  <div className="px-3 py-2 bg-gray-50 border rounded-md text-sm font-medium">
+                    {item.totalAmount.toLocaleString()}원
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>작업</Label>
+                  <Button
+                    onClick={() => removeItem(index)}
+                    size="sm"
+                    variant="outline"
+                    className="w-full text-red-600 border-red-200 hover:bg-red-50"
+                    disabled={formData.items.length === 1}
+                  >
+                    <Trash2 className="w-4 h-4 mr-1" />
+                    삭제
+                  </Button>
+                </div>
+              </div>
+
+              {/* 품목별 비고 */}
+              <div className="space-y-2">
+                <Label>품목 비고</Label>
+                <Textarea
+                  value={item.notes}
+                  onChange={(e) => handleItemChange(index, 'notes', e.target.value)}
+                  placeholder="이 품목에 대한 특별 요청사항이나 참고사항을 입력하세요"
+                  rows={2}
+                />
               </div>
             </div>
           ))}

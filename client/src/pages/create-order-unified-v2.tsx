@@ -538,7 +538,7 @@ const CreateOrderUnifiedV2: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">발주서 작성</h1>
-              <p className="text-sm text-gray-600 mt-1">한 화면에서 모든 작업을 완료하세요</p>
+              <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">한 화면에서 모든 작업을 완료하세요</p>
             </div>
             <div className="flex items-center gap-3">
               {isAutoSaving && (
@@ -582,11 +582,31 @@ const CreateOrderUnifiedV2: React.FC = () => {
                       variant="outline" 
                       size="sm" 
                       className="text-blue-600 border-blue-200 hover:bg-blue-50"
-                      onClick={() => {
-                        const link = document.createElement('a');
-                        link.href = '/PO_Excel_Template.xlsx';
-                        link.download = 'PO_Excel_Template.xlsx';
-                        link.click();
+                      onClick={async () => {
+                        try {
+                          // 파일 존재 여부 확인 후 다운로드
+                          const response = await fetch('/PO_Excel_Template.xlsx');
+                          if (response.ok) {
+                            const blob = await response.blob();
+                            const url = URL.createObjectURL(blob);
+                            const link = document.createElement('a');
+                            link.href = url;
+                            link.download = 'PO_Excel_Template.xlsx';
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            URL.revokeObjectURL(url);
+                          } else {
+                            throw new Error('파일을 찾을 수 없습니다');
+                          }
+                        } catch (error) {
+                          console.error('엑셀 템플릿 다운로드 실패:', error);
+                          toast({
+                            title: '다운로드 실패',
+                            description: '엑셀 템플릿 다운로드에 실패했습니다.',
+                            variant: 'destructive'
+                          });
+                        }
                       }}
                     >
                       <Download className="h-4 w-4 mr-2" />
