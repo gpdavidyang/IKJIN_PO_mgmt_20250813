@@ -112,6 +112,7 @@ const ExcelUploadZone: React.FC<ExcelUploadZoneProps> = ({ onDataExtracted, onPr
     try {
       const response = await fetch('/api/po-template/upload', {
         method: 'POST',
+        credentials: 'include', // 인증 쿠키 포함
         body: formData
       });
       
@@ -153,6 +154,7 @@ const ExcelUploadZone: React.FC<ExcelUploadZoneProps> = ({ onDataExtracted, onPr
           const extractResponse = await fetch('/api/po-template/extract-sheets', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include', // 인증 쿠키 포함
             body: JSON.stringify({
               filePath: result.data.filePath,
               sheetNames: ['갑지', '을지'] // Input 시트를 제거하고 다른 시트들을 유지
@@ -265,6 +267,7 @@ const ExcelUploadZone: React.FC<ExcelUploadZoneProps> = ({ onDataExtracted, onPr
       const response = await fetch('/api/categories/validate-mapping-batch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // 인증 쿠키 포함
         body: JSON.stringify({ categories: categoryRequests })
       });
       

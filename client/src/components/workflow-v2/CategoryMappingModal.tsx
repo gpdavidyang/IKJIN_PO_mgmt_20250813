@@ -101,7 +101,9 @@ const CategoryMappingModal: React.FC<CategoryMappingModalProps> = ({
   const loadAllCategories = async () => {
     setIsLoadingCategories(true);
     try {
-      const response = await fetch('/api/categories');
+      const response = await fetch('/api/categories', {
+        credentials: 'include' // 인증 쿠키 포함
+      });
       if (response.ok) {
         const result = await response.json();
         const flatCategories = result.flatCategories || [];

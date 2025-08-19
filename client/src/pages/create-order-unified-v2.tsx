@@ -258,6 +258,7 @@ const CreateOrderUnifiedV2: React.FC = () => {
       const response = await fetch('/api/vendors/validate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // 인증 쿠키 포함
         body: JSON.stringify({ vendorName })
       });
       
@@ -347,6 +348,7 @@ const CreateOrderUnifiedV2: React.FC = () => {
       
       const response = await fetch('/api/orders', {
         method: 'POST',
+        credentials: 'include', // 인증 쿠키 포함
         body: formData
       });
       
@@ -432,6 +434,7 @@ const CreateOrderUnifiedV2: React.FC = () => {
       
       const orderResponse = await fetch('/api/orders', {
         method: 'POST',
+        credentials: 'include', // 인증 쿠키 포함
         body: formData
       });
       
@@ -454,6 +457,7 @@ const CreateOrderUnifiedV2: React.FC = () => {
           const emailResponse = await fetch('/api/orders/send-email-with-excel', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include', // 인증 쿠키 포함
             body: JSON.stringify({
               emailSettings: {
                 to: emailSettings.to,
@@ -504,6 +508,7 @@ const CreateOrderUnifiedV2: React.FC = () => {
           const emailResponse = await fetch('/api/orders/send-email', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include', // 인증 쿠키 포함
             body: JSON.stringify({
               orderData: {
                 ...orderData,
@@ -581,6 +586,7 @@ const CreateOrderUnifiedV2: React.FC = () => {
       const response = await fetch('/api/orders/send-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // 인증 쿠키 포함
         body: JSON.stringify({
           orderData,
           pdfUrl: pdfUrl || null, // PDF가 없어도 발송 가능

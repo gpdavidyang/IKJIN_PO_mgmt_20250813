@@ -47,7 +47,9 @@ const DirectInputForm: React.FC<DirectInputFormProps> = ({ initialData = {}, onC
     queryKey: ['projects'],
     queryFn: async () => {
       console.log('🔍 프로젝트 목록 조회 시작');
-      const response = await fetch('/api/projects');
+      const response = await fetch('/api/projects', {
+        credentials: 'include' // 인증 쿠키 포함
+      });
       if (!response.ok) {
         throw new Error('프로젝트 목록 조회 실패');
       }
@@ -62,7 +64,9 @@ const DirectInputForm: React.FC<DirectInputFormProps> = ({ initialData = {}, onC
     queryKey: ['vendors'],
     queryFn: async () => {
       console.log('🔍 거래처 목록 조회 시작');
-      const response = await fetch('/api/vendors');
+      const response = await fetch('/api/vendors', {
+        credentials: 'include' // 인증 쿠키 포함
+      });
       if (!response.ok) {
         throw new Error('거래처 목록 조회 실패');
       }
@@ -77,7 +81,9 @@ const DirectInputForm: React.FC<DirectInputFormProps> = ({ initialData = {}, onC
     queryKey: ['categories'],
     queryFn: async () => {
       console.log('🔍 카테고리 목록 조회 시작');
-      const response = await fetch('/api/item-categories');
+      const response = await fetch('/api/item-categories', {
+        credentials: 'include' // 인증 쿠키 포함
+      });
       if (!response.ok) {
         throw new Error('카테고리 목록 조회 실패');
       }
