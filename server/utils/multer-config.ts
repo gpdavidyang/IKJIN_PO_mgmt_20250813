@@ -7,9 +7,13 @@ import path from "path";
 import fs from "fs";
 import { decodeKoreanFilename } from "./korean-filename";
 
-// Configure upload directory
-const uploadDir = path.join(process.cwd(), "uploads");
-if (!fs.existsSync(uploadDir)) {
+// Configure upload directory - Vercel serverless support
+const uploadDir = process.env.VERCEL 
+  ? '/tmp'  // Vercel serverless only allows /tmp for write access
+  : path.join(process.cwd(), "uploads");
+
+// Only create directory if not in Vercel (as /tmp already exists)
+if (!process.env.VERCEL && !fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 

@@ -89,16 +89,11 @@ function AuthProvider({ children }: { children: ReactNode }) {
       try {
         localStorage.removeItem('hasAuthenticated');
         sessionStorage.removeItem('userAuthenticated');
-      } catch {}
+      } catch (e) {
+        // Silently ignore storage errors
+      }
       
       return; // Exit early for production
-      } catch (error) {
-        devWarn('Error checking auth indicators:', error);
-        if (shouldCheckAuth) {
-          setShouldCheckAuth(false);
-          devLog('🚫 Auth checking disabled due to error');
-        }
-      }
     };
 
     // Initial check after component mount

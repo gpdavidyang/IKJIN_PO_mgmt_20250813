@@ -3694,8 +3694,8 @@ function fixCorruptedKoreanFilename(filename) {
 }
 
 // server/utils/multer-config.ts
-var uploadDir = path.join(process.cwd(), "uploads");
-if (!fs.existsSync(uploadDir)) {
+var uploadDir = process.env.VERCEL ? "/tmp" : path.join(process.cwd(), "uploads");
+if (!process.env.VERCEL && !fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 var createMulterConfig = (prefix = "FILE") => {
@@ -7076,9 +7076,9 @@ var router4 = Router4();
 router4.get("/vendors", async (req, res) => {
   try {
     console.log("\u{1F3EA} Fetching vendors from database...");
-    const vendors2 = await storage.getVendors();
-    console.log(`\u2705 Successfully fetched ${vendors2.length} vendors`);
-    res.json(vendors2);
+    const vendors3 = await storage.getVendors();
+    console.log(`\u2705 Successfully fetched ${vendors3.length} vendors`);
+    res.json(vendors3);
   } catch (error) {
     console.error("\u274C Error fetching vendors:", error);
     console.error("Error name:", error?.name);
@@ -7179,8 +7179,8 @@ router4.post("/vendors/validate", async (req, res) => {
       });
     }
     console.log(`\u{1F50D} Validating vendor: ${vendorName}`);
-    const vendors2 = await storage.getVendors();
-    const matchedVendor = vendors2.find(
+    const vendors3 = await storage.getVendors();
+    const matchedVendor = vendors3.find(
       (vendor) => vendor.name.toLowerCase().includes(vendorName.toLowerCase()) || vendorName.toLowerCase().includes(vendor.name.toLowerCase())
     );
     if (matchedVendor) {
@@ -7198,7 +7198,7 @@ router4.post("/vendors/validate", async (req, res) => {
       res.json({
         isValid: false,
         message: "\uB4F1\uB85D\uB418\uC9C0 \uC54A\uC740 \uAC70\uB798\uCC98\uC785\uB2C8\uB2E4.",
-        suggestions: vendors2.filter(
+        suggestions: vendors3.filter(
           (vendor) => vendor.name.toLowerCase().includes(vendorName.toLowerCase().substring(0, 2)) || vendorName.toLowerCase().substring(0, 2).includes(vendor.name.toLowerCase().substring(0, 2))
         ).slice(0, 5).map((vendor) => ({
           id: vendor.id,
@@ -7748,6 +7748,10 @@ import multer2 from "multer";
 import path7 from "path";
 import fs9 from "fs";
 
+// server/utils/excel-automation-service.ts
+init_db();
+init_schema();
+
 // server/utils/po-template-processor-mock.ts
 import XLSX3 from "xlsx";
 init_db();
@@ -7892,13 +7896,19 @@ var POTemplateProcessorMock = class {
    * 파싱된 발주서 데이터를 Mock DB에 저장
    */
   static async saveToDatabase(orders, userId) {
+    console.log(`\u{1F50D} [DB] saveToDatabase \uC2DC\uC791: ${orders.length}\uAC1C \uBC1C\uC8FC\uC11C, \uC0AC\uC6A9\uC790 ID: ${userId}`);
     try {
       let savedOrders = 0;
+      console.log(`\u{1F50D} [DB] \uD2B8\uB79C\uC7AD\uC158 \uC2DC\uC791`);
       await db.transaction(async (tx) => {
+        console.log(`\u{1F50D} [DB] \uD2B8\uB79C\uC7AD\uC158 \uB0B4\uBD80 \uC9C4\uC785 \uC131\uACF5`);
         for (const orderData of orders) {
+          console.log(`\u{1F50D} [DB] \uBC1C\uC8FC\uC11C \uCC98\uB9AC \uC911: ${orderData.orderNumber}, \uAC70\uB798\uCC98: ${orderData.vendorName}`);
+          console.log(`\u{1F50D} [DB] \uAC70\uB798\uCC98 \uC870\uD68C: ${orderData.vendorName}`);
           let vendor = await tx.select().from(vendors).where(eq6(vendors.name, orderData.vendorName)).limit(1);
           let vendorId;
           if (vendor.length === 0) {
+            console.log(`\u{1F50D} [DB] \uAC70\uB798\uCC98 \uC0DD\uC131: ${orderData.vendorName}`);
             const newVendor = await tx.insert(vendors).values({
               name: orderData.vendorName,
               contactPerson: "Unknown",
@@ -7907,12 +7917,16 @@ var POTemplateProcessorMock = class {
               isActive: true
             }).returning({ id: vendors.id });
             vendorId = newVendor[0].id;
+            console.log(`\u2705 [DB] \uAC70\uB798\uCC98 \uC0DD\uC131\uB428: ID ${vendorId}`);
           } else {
             vendorId = vendor[0].id;
+            console.log(`\u2705 [DB] \uAC70\uB798\uCC98 \uAE30\uC874 \uBC1C\uACAC: ID ${vendorId}`);
           }
+          console.log(`\u{1F50D} [DB] \uD504\uB85C\uC81D\uD2B8 \uC870\uD68C: ${orderData.siteName}`);
           let project = await tx.select().from(projects).where(eq6(projects.projectName, orderData.siteName)).limit(1);
           let projectId;
           if (project.length === 0) {
+            console.log(`\u{1F50D} [DB] \uD504\uB85C\uC81D\uD2B8 \uC0DD\uC131: ${orderData.siteName}`);
             const newProject = await tx.insert(projects).values({
               projectName: orderData.siteName,
               projectCode: `AUTO-${Date.now()}`,
@@ -7925,8 +7939,10 @@ var POTemplateProcessorMock = class {
               orderManagerId: null
             }).returning({ id: projects.id });
             projectId = newProject[0].id;
+            console.log(`\u2705 [DB] \uD504\uB85C\uC81D\uD2B8 \uC0DD\uC131\uB428: ID ${projectId}`);
           } else {
             projectId = project[0].id;
+            console.log(`\u2705 [DB] \uD504\uB85C\uC81D\uD2B8 \uAE30\uC874 \uBC1C\uACAC: ID ${projectId}`);
           }
           const newOrder = await tx.insert(purchaseOrders).values({
             orderNumber: orderData.orderNumber,
@@ -8443,26 +8459,47 @@ var ExcelAutomationService = class {
       filePath,
       userId
     });
+    console.log(`\u{1F50D} [DEBUG] Excel \uC790\uB3D9\uD654 \uD504\uB85C\uC138\uC2A4 \uC2DC\uC791 - \uD30C\uC77C: ${filePath}`);
     try {
+      console.log(`\u{1F50D} [DEBUG] 0\uB2E8\uACC4: DB \uC5F0\uACB0 \uD14C\uC2A4\uD2B8 \uC2DC\uC791`);
+      try {
+        await db.select().from(purchaseOrders).limit(1);
+        console.log(`\u2705 [DEBUG] DB \uC5F0\uACB0 \uC131\uACF5`);
+      } catch (dbError) {
+        console.error(`\u274C [DEBUG] DB \uC5F0\uACB0 \uC2E4\uD328:`, dbError);
+        throw new Error(`\uB370\uC774\uD130\uBCA0\uC774\uC2A4 \uC5F0\uACB0 \uC2E4\uD328: ${dbError instanceof Error ? dbError.message : "Unknown DB error"}`);
+      }
+      console.log(`\u{1F50D} [DEBUG] 1\uB2E8\uACC4: Excel \uD30C\uC77C \uD30C\uC2F1 \uC2DC\uC791`);
       const parseResult = POTemplateProcessorMock.parseInputSheet(filePath);
+      console.log(`\u{1F50D} [DEBUG] 1\uB2E8\uACC4 \uC644\uB8CC: ${parseResult.success ? "\uC131\uACF5" : "\uC2E4\uD328"}`);
       if (!parseResult.success) {
+        console.log(`\u274C [DEBUG] Excel \uD30C\uC2F1 \uC2E4\uD328: ${parseResult.error}`);
         return {
           success: false,
           error: `Excel \uD30C\uC2F1 \uC2E4\uD328: ${parseResult.error}`
         };
       }
+      console.log(`\u2705 [DEBUG] Excel \uD30C\uC2F1 \uC131\uACF5: ${parseResult.totalOrders}\uAC1C \uBC1C\uC8FC\uC11C, ${parseResult.totalItems}\uAC1C \uC544\uC774\uD15C`);
+      console.log(`\u{1F50D} [DEBUG] 2\uB2E8\uACC4: DB \uC800\uC7A5 \uC2DC\uC791`);
       const saveResult = await POTemplateProcessorMock.saveToDatabase(
         parseResult.orders || [],
         userId
       );
+      console.log(`\u{1F50D} [DEBUG] 2\uB2E8\uACC4 \uC644\uB8CC: ${saveResult.success ? "\uC131\uACF5" : "\uC2E4\uD328"}`);
       if (!saveResult.success) {
+        console.log(`\u274C [DEBUG] DB \uC800\uC7A5 \uC2E4\uD328: ${saveResult.error}`);
         return {
           success: false,
           error: `DB \uC800\uC7A5 \uC2E4\uD328: ${saveResult.error}`
         };
       }
+      console.log(`\u2705 [DEBUG] DB \uC800\uC7A5 \uC131\uACF5: ${saveResult.savedOrders}\uAC1C \uBC1C\uC8FC\uC11C \uC800\uC7A5\uB428`);
+      console.log(`\u{1F50D} [DEBUG] 3\uB2E8\uACC4: \uAC70\uB798\uCC98 \uAC80\uC99D \uC2DC\uC791`);
       const vendorValidation = await this.validateVendorsFromExcel(filePath);
+      console.log(`\u{1F50D} [DEBUG] 3\uB2E8\uACC4 \uC644\uB8CC: \uC720\uD6A8 \uAC70\uB798\uCC98 ${vendorValidation.validVendors.length}\uAC1C, \uBB34\uD6A8 \uAC70\uB798\uCC98 ${vendorValidation.invalidVendors.length}\uAC1C`);
+      console.log(`\u{1F50D} [DEBUG] 4\uB2E8\uACC4: \uC774\uBA54\uC77C \uBBF8\uB9AC\uBCF4\uAE30 \uC0DD\uC131 \uC2DC\uC791`);
       const emailPreview = await this.generateEmailPreview(filePath, vendorValidation);
+      console.log(`\u{1F50D} [DEBUG] 4\uB2E8\uACC4 \uC644\uB8CC: \uC218\uC2E0\uC790 ${emailPreview.recipients.length}\uBA85`);
       const result = {
         success: true,
         data: {
@@ -8471,9 +8508,11 @@ var ExcelAutomationService = class {
           emailPreview
         }
       };
+      console.log(`\u2705 [DEBUG] \uC804\uCCB4 \uD504\uB85C\uC138\uC2A4 \uC131\uACF5 \uC644\uB8CC`);
       DebugLogger.logFunctionExit("ExcelAutomationService.processExcelUpload", result);
       return result;
     } catch (error) {
+      console.log(`\u{1F4A5} [DEBUG] \uC804\uCCB4 \uD504\uB85C\uC138\uC2A4 \uC2E4\uD328: ${error instanceof Error ? error.message : "Unknown error"}`);
       DebugLogger.logError("ExcelAutomationService.processExcelUpload", error);
       return {
         success: false,
@@ -8800,8 +8839,8 @@ var ExcelAutomationService = class {
 var router9 = Router9();
 var storage2 = multer2.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir2 = "uploads";
-    if (!fs9.existsSync(uploadDir2)) {
+    const uploadDir2 = process.env.VERCEL ? "/tmp" : "uploads";
+    if (!process.env.VERCEL && !fs9.existsSync(uploadDir2)) {
       fs9.mkdirSync(uploadDir2, { recursive: true });
     }
     cb(null, uploadDir2);
@@ -8837,9 +8876,29 @@ var upload2 = multer2({
   }
 });
 router9.post("/upload-and-process", requireAuth, upload2.single("file"), async (req, res) => {
+  console.log(`\u{1F680} [API] Excel automation request received`);
   DebugLogger.logExecutionPath("/api/excel-automation/upload-and-process", "ExcelAutomationService.processExcelUpload");
+  const timeoutDuration = process.env.VERCEL ? 55e3 : 12e4;
+  let responseHandled = false;
+  const timeoutHandler = setTimeout(() => {
+    if (!responseHandled) {
+      console.log(`\u23F1\uFE0F [API] Processing timeout reached (${timeoutDuration}ms)`);
+      responseHandled = true;
+      res.status(202).json({
+        success: false,
+        error: "\uCC98\uB9AC \uC2DC\uAC04\uC774 \uCD08\uACFC\uB418\uC5C8\uC2B5\uB2C8\uB2E4. \uD30C\uC77C\uC774 \uB108\uBB34 \uD06C\uAC70\uB098 \uBCF5\uC7A1\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4.",
+        code: "TIMEOUT",
+        message: "\uB354 \uC791\uC740 \uD30C\uC77C\uB85C \uB2E4\uC2DC \uC2DC\uB3C4\uD558\uAC70\uB098 \uD30C\uC77C\uC744 \uB098\uB204\uC5B4 \uC5C5\uB85C\uB4DC\uD574\uC8FC\uC138\uC694."
+      });
+    }
+  }, timeoutDuration);
   try {
+    console.log(`\u{1F50D} [API] Request file:`, req.file ? "Present" : "Missing");
+    console.log(`\u{1F50D} [API] Request user:`, req.user ? `ID: ${req.user.id}` : "Missing");
     if (!req.file) {
+      console.log(`\u274C [API] No file uploaded`);
+      clearTimeout(timeoutHandler);
+      responseHandled = true;
       return res.status(400).json({
         success: false,
         error: "\uD30C\uC77C\uC774 \uC5C5\uB85C\uB4DC\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4."
@@ -8848,39 +8907,77 @@ router9.post("/upload-and-process", requireAuth, upload2.single("file"), async (
     const filePath = req.file.path;
     const userId = req.user?.id;
     if (!userId) {
+      console.log(`\u274C [API] User not authenticated`);
+      clearTimeout(timeoutHandler);
+      responseHandled = true;
       return res.status(401).json({
         success: false,
         error: "\uC0AC\uC6A9\uC790 \uC778\uC99D\uC774 \uD544\uC694\uD569\uB2C8\uB2E4."
       });
     }
-    console.log(`\u{1F4C1} Excel \uC790\uB3D9\uD654 \uCC98\uB9AC \uC2DC\uC791: ${filePath}`);
+    console.log(`\u{1F4C1} [API] Excel \uC790\uB3D9\uD654 \uCC98\uB9AC \uC2DC\uC791: ${filePath}, \uC0AC\uC6A9\uC790: ${userId}, \uD30C\uC77C\uD06C\uAE30: ${req.file.size}bytes`);
+    console.log(`\u{1F504} [API] ExcelAutomationService.processExcelUpload \uD638\uCD9C \uC2DC\uC791`);
     const result = await ExcelAutomationService.processExcelUpload(filePath, userId);
+    console.log(`\u2705 [API] ExcelAutomationService.processExcelUpload \uC644\uB8CC:`, result.success ? "\uC131\uACF5" : "\uC2E4\uD328");
     if (!result.success) {
       if (fs9.existsSync(filePath)) {
         fs9.unlinkSync(filePath);
       }
-      return res.status(400).json(result);
-    }
-    res.json({
-      success: true,
-      message: "Excel \uD30C\uC77C \uCC98\uB9AC \uC644\uB8CC",
-      data: {
-        ...result.data,
-        filePath,
-        fileName: req.file.originalname,
-        fileSize: req.file.size
+      clearTimeout(timeoutHandler);
+      if (!responseHandled) {
+        responseHandled = true;
+        return res.status(400).json(result);
       }
-    });
+      return;
+    }
+    clearTimeout(timeoutHandler);
+    if (!responseHandled) {
+      responseHandled = true;
+      res.json({
+        success: true,
+        message: "Excel \uD30C\uC77C \uCC98\uB9AC \uC644\uB8CC",
+        data: {
+          ...result.data,
+          filePath,
+          fileName: req.file.originalname,
+          fileSize: req.file.size
+        }
+      });
+    }
   } catch (error) {
-    console.error("Excel \uC790\uB3D9\uD654 \uCC98\uB9AC \uC624\uB958:", error);
+    clearTimeout(timeoutHandler);
+    console.error("\u274C [API] Excel \uC790\uB3D9\uD654 \uCC98\uB9AC \uC624\uB958:", error);
     if (req.file?.path && fs9.existsSync(req.file.path)) {
+      console.log(`\u{1F5D1}\uFE0F [API] \uC624\uB958\uB85C \uC778\uD55C \uC784\uC2DC \uD30C\uC77C \uC815\uB9AC: ${req.file.path}`);
       fs9.unlinkSync(req.file.path);
     }
-    res.status(500).json({
-      success: false,
-      error: "\uC11C\uBC84 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4.",
-      details: error instanceof Error ? error.message : "Unknown error"
-    });
+    let errorMessage = "\uC11C\uBC84 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4.";
+    let statusCode = 500;
+    if (error instanceof Error) {
+      if (error.message.includes("Database") || error.message.includes("connection")) {
+        errorMessage = "\uB370\uC774\uD130\uBCA0\uC774\uC2A4 \uC5F0\uACB0 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4.";
+        statusCode = 503;
+      } else if (error.message.includes("timeout")) {
+        errorMessage = "\uCC98\uB9AC \uC2DC\uAC04\uC774 \uCD08\uACFC\uB418\uC5C8\uC2B5\uB2C8\uB2E4. \uD30C\uC77C \uD06C\uAE30\uB97C \uD655\uC778\uD574\uC8FC\uC138\uC694.";
+        statusCode = 408;
+      } else if (error.message.includes("memory") || error.message.includes("Memory")) {
+        errorMessage = "\uBA54\uBAA8\uB9AC \uBD80\uC871\uC73C\uB85C \uCC98\uB9AC\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4. \uB354 \uC791\uC740 \uD30C\uC77C\uB85C \uC2DC\uB3C4\uD574\uC8FC\uC138\uC694.";
+        statusCode = 413;
+      } else if (error.message.includes("parse") || error.message.includes("Excel")) {
+        errorMessage = "Excel \uD30C\uC77C \uD615\uC2DD\uC5D0 \uC624\uB958\uAC00 \uC788\uC2B5\uB2C8\uB2E4. \uD15C\uD50C\uB9BF\uC744 \uD655\uC778\uD574\uC8FC\uC138\uC694.";
+        statusCode = 422;
+      }
+    }
+    console.error(`\u274C [API] \uCD5C\uC885 \uC751\uB2F5: ${statusCode} - ${errorMessage}`);
+    if (!responseHandled) {
+      responseHandled = true;
+      res.status(statusCode).json({
+        success: false,
+        error: errorMessage,
+        details: error instanceof Error ? error.message : "Unknown error",
+        timestamp: (/* @__PURE__ */ new Date()).toISOString()
+      });
+    }
   }
 });
 router9.post("/update-email-preview", requireAuth, async (req, res) => {
@@ -10324,30 +10421,101 @@ router10.get("/db-status", simpleAuth, async (req, res) => {
   }
 });
 router10.post("/upload", simpleAuth, upload3.single("file"), async (req, res) => {
+  const startTime = Date.now();
+  let responseHandler = {
+    sent: false,
+    send: (status, data) => {
+      if (!responseHandler.sent) {
+        responseHandler.sent = true;
+        console.log(`\u{1F4E4} [Vercel] Response sent: ${status}`, {
+          elapsedTime: Date.now() - startTime,
+          success: data.success,
+          hasError: !!data.error
+        });
+        res.status(status).json(data);
+      }
+    }
+  };
+  const timeoutId = setTimeout(() => {
+    responseHandler.send(408, {
+      success: false,
+      error: "Serverless function timeout exceeded (25s)",
+      debug: {
+        elapsedTime: Date.now() - startTime,
+        phase: "timeout_protection",
+        platform: "vercel_serverless",
+        memoryUsage: process.memoryUsage()
+      }
+    });
+  }, 25e3);
+  console.log("\u{1F680} [Vercel] \uC11C\uBC84\uB9AC\uC2A4 \uD568\uC218 \uC2DC\uC791:", {
+    timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+    memoryUsage: process.memoryUsage(),
+    platform: process.platform,
+    nodeVersion: process.version,
+    timeoutProtection: "25s_active"
+  });
   try {
+    console.log("\u{1F4E5} [\uC11C\uBC84] \uD30C\uC77C \uC5C5\uB85C\uB4DC \uC694\uCCAD \uC218\uC2E0:", {
+      hasFile: !!req.file,
+      originalname: req.file?.originalname,
+      filename: req.file?.filename,
+      size: req.file?.size,
+      mimetype: req.file?.mimetype,
+      endpoint: "/api/po-template/upload"
+    });
     if (!req.file) {
-      return res.status(400).json({ error: "\uD30C\uC77C\uC774 \uC5C5\uB85C\uB4DC\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4." });
+      console.error("\u274C [\uC11C\uBC84] \uD30C\uC77C \uC5C6\uC74C");
+      clearTimeout(timeoutId);
+      return responseHandler.send(400, {
+        success: false,
+        error: "\uD30C\uC77C\uC774 \uC5C5\uB85C\uB4DC\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4.",
+        debug: { phase: "file_validation", elapsedTime: Date.now() - startTime }
+      });
     }
     const filePath = req.file.path;
+    console.log("\u{1F4C2} [\uC11C\uBC84] \uD30C\uC77C \uACBD\uB85C:", { filePath });
+    console.log("\u{1F50D} [\uC11C\uBC84] \uC720\uD6A8\uC131 \uAC80\uC0AC \uC2DC\uC791");
     const quickValidation = await POTemplateValidator.quickValidate(filePath);
+    console.log("\u{1F4CB} [\uC11C\uBC84] \uC720\uD6A8\uC131 \uAC80\uC0AC \uACB0\uACFC:", {
+      isValid: quickValidation.isValid,
+      errorCount: quickValidation.errors.length,
+      errors: quickValidation.errors
+    });
     if (!quickValidation.isValid) {
+      console.error("\u274C [\uC11C\uBC84] \uC720\uD6A8\uC131 \uAC80\uC0AC \uC2E4\uD328");
       fs13.unlinkSync(filePath);
-      return res.status(400).json({
+      clearTimeout(timeoutId);
+      return responseHandler.send(400, {
+        success: false,
         error: "\uD30C\uC77C \uC720\uD6A8\uC131 \uAC80\uC0AC \uC2E4\uD328",
         details: quickValidation.errors.join(", "),
-        validation: quickValidation
+        validation: quickValidation,
+        debug: { phase: "quick_validation", elapsedTime: Date.now() - startTime }
       });
     }
+    console.log("\u2699\uFE0F [\uC11C\uBC84] Input \uC2DC\uD2B8 \uD30C\uC2F1 \uC2DC\uC791");
     const parseResult = POTemplateProcessorMock.parseInputSheet(filePath);
+    console.log("\u{1F4CA} [\uC11C\uBC84] \uD30C\uC2F1 \uACB0\uACFC:", {
+      success: parseResult.success,
+      hasData: !!parseResult.data,
+      ordersCount: parseResult.data?.orders?.length || 0
+    });
     if (!parseResult.success) {
+      console.error("\u274C [\uC11C\uBC84] \uD30C\uC2F1 \uC2E4\uD328:", parseResult.error);
       fs13.unlinkSync(filePath);
-      return res.status(400).json({
+      clearTimeout(timeoutId);
+      return responseHandler.send(400, {
+        success: false,
         error: "\uD30C\uC2F1 \uC2E4\uD328",
-        details: parseResult.error
+        details: parseResult.error,
+        debug: { phase: "parsing", elapsedTime: Date.now() - startTime }
       });
     }
+    console.log("\u{1F50D} [\uC11C\uBC84] \uC0C1\uC138 \uC720\uD6A8\uC131 \uAC80\uC0AC \uC2DC\uC791");
     const detailedValidation = await POTemplateValidator.validatePOTemplateFile(filePath);
-    res.json({
+    console.log("\u{1F4CB} [\uC11C\uBC84] \uC0C1\uC138 \uC720\uD6A8\uC131 \uAC80\uC0AC \uC644\uB8CC");
+    const responseData = {
       success: true,
       message: "\uD30C\uC77C \uD30C\uC2F1 \uC644\uB8CC",
       data: {
@@ -10358,15 +10526,38 @@ router10.post("/upload", simpleAuth, upload3.single("file"), async (req, res) =>
         orders: parseResult.orders,
         validation: detailedValidation
       }
+    };
+    console.log("\u2705 [\uC11C\uBC84] \uC131\uACF5 \uC751\uB2F5 \uC804\uC1A1:", {
+      success: responseData.success,
+      fileName: responseData.data.fileName,
+      totalOrders: responseData.data.totalOrders,
+      totalItems: responseData.data.totalItems,
+      ordersCount: responseData.data.orders?.length || 0,
+      elapsedTime: Date.now() - startTime
     });
+    clearTimeout(timeoutId);
+    responseHandler.send(200, responseData);
   } catch (error) {
-    console.error("PO Template \uC5C5\uB85C\uB4DC \uC624\uB958:", error);
+    console.error("\u{1F4A5} [\uC11C\uBC84] PO Template \uC5C5\uB85C\uB4DC \uC624\uB958:", {
+      errorMessage: error instanceof Error ? error.message : "Unknown error",
+      errorStack: error instanceof Error ? error.stack : "No stack trace",
+      endpoint: "/api/po-template/upload",
+      elapsedTime: Date.now() - startTime
+    });
     if (req.file && fs13.existsSync(req.file.path)) {
+      console.log("\u{1F5D1}\uFE0F [\uC11C\uBC84] \uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C:", req.file.path);
       fs13.unlinkSync(req.file.path);
     }
-    res.status(500).json({
+    clearTimeout(timeoutId);
+    responseHandler.send(500, {
+      success: false,
       error: "\uC11C\uBC84 \uC624\uB958",
-      details: error instanceof Error ? error.message : "Unknown error"
+      details: error instanceof Error ? error.message : "Unknown error",
+      debug: {
+        phase: "catch_block",
+        elapsedTime: Date.now() - startTime,
+        memoryUsage: process.memoryUsage()
+      }
     });
   }
 });

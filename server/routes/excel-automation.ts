@@ -15,11 +15,12 @@ import { requireAuth } from '../local-auth.js';
 
 const router = Router();
 
-// 파일 업로드 설정
+// 파일 업로드 설정 - Vercel serverless 환경 지원
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir = 'uploads';
-    if (!fs.existsSync(uploadDir)) {
+    // Vercel 환경에서는 /tmp 디렉토리만 쓰기 가능
+    const uploadDir = process.env.VERCEL ? '/tmp' : 'uploads';
+    if (!process.env.VERCEL && !fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
     cb(null, uploadDir);
@@ -60,12 +61,31 @@ router.post('/upload-and-process', requireAuth, upload.single('file'), async (re
   console.log(`🚀 [API] Excel automation request received`);
   DebugLogger.logExecutionPath('/api/excel-automation/upload-and-process', 'ExcelAutomationService.processExcelUpload');
   
+  // Vercel timeout 방지를 위한 응답 보장 (55초 타임아웃 설정)
+  const timeoutDuration = process.env.VERCEL ? 55000 : 120000; // Vercel: 55초, 로컬: 120초
+  let responseHandled = false;
+  
+  const timeoutHandler = setTimeout(() => {
+    if (!responseHandled) {
+      console.log(`⏱️ [API] Processing timeout reached (${timeoutDuration}ms)`);
+      responseHandled = true;
+      res.status(202).json({
+        success: false,
+        error: '처리 시간이 초과되었습니다. 파일이 너무 크거나 복잡할 수 있습니다.',
+        code: 'TIMEOUT',
+        message: '더 작은 파일로 다시 시도하거나 파일을 나누어 업로드해주세요.'
+      });
+    }
+  }, timeoutDuration);
+  
   try {
     console.log(`🔍 [API] Request file:`, req.file ? 'Present' : 'Missing');
     console.log(`🔍 [API] Request user:`, req.user ? `ID: ${req.user.id}` : 'Missing');
     
     if (!req.file) {
       console.log(`❌ [API] No file uploaded`);
+      clearTimeout(timeoutHandler);
+      responseHandled = true;
       return res.status(400).json({ 
         success: false,
         error: '파일이 업로드되지 않았습니다.' 
@@ -77,6 +97,8 @@ router.post('/upload-and-process', requireAuth, upload.single('file'), async (re
 
     if (!userId) {
       console.log(`❌ [API] User not authenticated`);
+      clearTimeout(timeoutHandler);
+      responseHandled = true;
       return res.status(401).json({
         success: false,
         error: '사용자 인증이 필요합니다.'
@@ -96,22 +118,32 @@ router.post('/upload-and-process', requireAuth, upload.single('file'), async (re
         fs.unlinkSync(filePath);
       }
       
-      return res.status(400).json(result);
+      clearTimeout(timeoutHandler);
+      if (!responseHandled) {
+        responseHandled = true;
+        return res.status(400).json(result);
+      }
+      return;
     }
 
     // 성공 응답
-    res.json({
-      success: true,
-      message: 'Excel 파일 처리 완료',
-      data: {
-        ...result.data,
-        filePath,
-        fileName: req.file.originalname,
-        fileSize: req.file.size
-      }
-    });
+    clearTimeout(timeoutHandler);
+    if (!responseHandled) {
+      responseHandled = true;
+      res.json({
+        success: true,
+        message: 'Excel 파일 처리 완료',
+        data: {
+          ...result.data,
+          filePath,
+          fileName: req.file.originalname,
+          fileSize: req.file.size
+        }
+      });
+    }
 
   } catch (error) {
+    clearTimeout(timeoutHandler);
     console.error('❌ [API] Excel 자동화 처리 오류:', error);
     
     // 오류 시 업로드된 파일 정리
@@ -142,12 +174,15 @@ router.post('/upload-and-process', requireAuth, upload.single('file'), async (re
     
     console.error(`❌ [API] 최종 응답: ${statusCode} - ${errorMessage}`);
     
-    res.status(statusCode).json({
-      success: false,
-      error: errorMessage,
-      details: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString()
-    });
+    if (!responseHandled) {
+      responseHandled = true;
+      res.status(statusCode).json({
+        success: false,
+        error: errorMessage,
+        details: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString()
+      });
+    }
   }
 });
 

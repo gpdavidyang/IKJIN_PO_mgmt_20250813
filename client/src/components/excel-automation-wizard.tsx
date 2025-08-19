@@ -144,7 +144,7 @@ export function ExcelAutomationWizard() {
       });
 
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 45000); // 45초 타임아웃
+      const timeoutId = setTimeout(() => controller.abort(), 58000); // 58초 타임아웃 (서버 55초 + 여유 3초)
 
       const response = await fetch('/api/excel-automation/upload-and-process', {
         method: 'POST',
@@ -211,7 +211,7 @@ export function ExcelAutomationWizard() {
         if (error.message.includes('Failed to fetch')) {
           errorMessage = '서버 연결에 실패했습니다. 네트워크 상태를 확인해주세요.';
         } else if (error.message.includes('timeout') || error.name === 'AbortError') {
-          errorMessage = '요청 시간이 초과되었습니다 (45초). 파일 크기를 확인하고 다시 시도해주세요.';
+          errorMessage = '요청 시간이 초과되었습니다. 파일 크기를 줄이거나 나누어서 업로드해주세요.';
         } else if (error.message.includes('500')) {
           errorMessage = '서버 내부 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
         } else if (error.message.includes('413')) {
