@@ -42,27 +42,54 @@ function AuthProvider({ children }: { children: ReactNode }) {
   } = useQuery<User | null>({
     queryKey: ["/api/auth/user"],
     queryFn: async () => {
-      const response = await fetch("/api/auth/user", {
-        credentials: 'include',
-      });
-      
-      if (!response.ok) {
+      try {
+        const response = await fetch("/api/auth/user", {
+          credentials: 'include',
+        });
+        
+        // Silently handle 401 errors - user is not authenticated
         if (response.status === 401) {
           return null;
         }
-        throw new Error("Failed to get user");
+        
+        // Handle other HTTP errors
+        if (!response.ok) {
+          // Don't log auth errors to console in production
+          if (process.env.NODE_ENV === 'development') {
+            console.warn(`Auth query failed with status ${response.status}:`, response.statusText);
+          }
+          throw new Error(`Authentication check failed: ${response.status}`);
+        }
+        
+        const userData = await response.json();
+        if (process.env.NODE_ENV === 'development') {
+          console.log('🔍 useAuth - Fetched user data:', userData);
+        }
+        return userData;
+      } catch (fetchError: any) {
+        // Silently handle network errors that might indicate auth issues
+        if (fetchError.name === 'TypeError' && fetchError.message.includes('Failed to fetch')) {
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('🌐 Network error during auth check, treating as unauthenticated');
+          }
+          return null;
+        }
+        
+        // Re-throw other errors for proper error handling
+        throw fetchError;
       }
-      
-      const userData = await response.json();
-      console.log('🔍 useAuth - Fetched user data:', userData);
-      return userData;
     },
-    retry: false,
+    retry: false, // Never retry auth queries to prevent 401 spam
     staleTime: 1000 * 60 * 5, // 5 minutes - prevent excessive polling
     refetchOnWindowFocus: false, // Disable window focus refetch to prevent 401 spam
     refetchOnMount: true,
     refetchOnReconnect: false, // Disable reconnect refetch during logout
-    refetchInterval: false,
+    refetchInterval: false, // No automatic polling for auth
+    // Add meta for query identification in DevTools
+    meta: {
+      cacheType: 'MASTER',
+      isAuthQuery: true,
+    },
   });
 
   const loginMutation = useMutation({
