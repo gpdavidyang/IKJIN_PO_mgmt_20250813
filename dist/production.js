@@ -10449,8 +10449,8 @@ var __filename5 = fileURLToPath5(import.meta.url);
 var __dirname5 = path11.dirname(__filename5);
 var storage3 = multer3.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir2 = path11.join(__dirname5, "../../uploads");
-    if (!fs13.existsSync(uploadDir2)) {
+    const uploadDir2 = process.env.VERCEL ? "/tmp" : path11.join(__dirname5, "../../uploads");
+    if (!process.env.VERCEL && !fs13.existsSync(uploadDir2)) {
       fs13.mkdirSync(uploadDir2, { recursive: true });
     }
     cb(null, uploadDir2);
@@ -10533,18 +10533,20 @@ router10.post("/upload", simpleAuth, upload3.single("file"), async (req, res) =>
       }
     }
   };
+  const timeoutDuration = process.env.VERCEL ? 55e3 : 12e4;
   const timeoutId = setTimeout(() => {
     responseHandler.send(408, {
       success: false,
-      error: "Serverless function timeout exceeded (25s)",
+      error: `\uC11C\uBC84\uB9AC\uC2A4 \uD568\uC218 \uCC98\uB9AC \uC2DC\uAC04 \uCD08\uACFC (${timeoutDuration / 1e3}\uCD08). \uD30C\uC77C\uC774 \uB108\uBB34 \uD06C\uAC70\uB098 \uBCF5\uC7A1\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4.`,
       debug: {
         elapsedTime: Date.now() - startTime,
         phase: "timeout_protection",
-        platform: "vercel_serverless",
-        memoryUsage: process.memoryUsage()
+        platform: process.env.VERCEL ? "vercel_serverless" : "local",
+        memoryUsage: process.memoryUsage(),
+        suggestion: "\uB354 \uC791\uC740 \uD30C\uC77C\uB85C \uB098\uB204\uC5B4 \uC5C5\uB85C\uB4DC\uD558\uAC70\uB098 \uD30C\uC77C \uD06C\uAE30\uB97C \uC904\uC5EC\uC8FC\uC138\uC694."
       }
     });
-  }, 25e3);
+  }, timeoutDuration);
   console.log("\u{1F680} [Vercel] \uC11C\uBC84\uB9AC\uC2A4 \uD568\uC218 \uC2DC\uC791:", {
     timestamp: (/* @__PURE__ */ new Date()).toISOString(),
     memoryUsage: process.memoryUsage(),

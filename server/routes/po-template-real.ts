@@ -23,11 +23,12 @@ router.get('/test', (req, res) => {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// 파일 업로드 설정
+// 파일 업로드 설정 - Vercel serverless 환경 지원
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir = path.join(__dirname, '../../uploads');
-    if (!fs.existsSync(uploadDir)) {
+    // Vercel 환경에서는 /tmp 디렉토리만 쓰기 가능
+    const uploadDir = process.env.VERCEL ? '/tmp' : path.join(__dirname, '../../uploads');
+    if (!process.env.VERCEL && !fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
     cb(null, uploadDir);
@@ -123,19 +124,21 @@ router.post('/upload', simpleAuth, upload.single('file'), async (req: any, res) 
     }
   };
 
-  // ⭐ CRITICAL: Maximum timeout protection (25 seconds for Vercel)
+  // ⭐ CRITICAL: Maximum timeout protection (Vercel 60s limit with 55s safety margin)
+  const timeoutDuration = process.env.VERCEL ? 55000 : 120000; // Vercel: 55초, 로컬: 120초
   const timeoutId = setTimeout(() => {
     responseHandler.send(408, {
       success: false,
-      error: 'Serverless function timeout exceeded (25s)',
+      error: `서버리스 함수 처리 시간 초과 (${timeoutDuration/1000}초). 파일이 너무 크거나 복잡할 수 있습니다.`,
       debug: {
         elapsedTime: Date.now() - startTime,
         phase: 'timeout_protection',
-        platform: 'vercel_serverless',
-        memoryUsage: process.memoryUsage()
+        platform: process.env.VERCEL ? 'vercel_serverless' : 'local',
+        memoryUsage: process.memoryUsage(),
+        suggestion: '더 작은 파일로 나누어 업로드하거나 파일 크기를 줄여주세요.'
       }
     });
-  }, 25000);
+  }, timeoutDuration);
 
   console.log('🚀 [Vercel] 서버리스 함수 시작:', {
     timestamp: new Date().toISOString(),

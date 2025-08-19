@@ -1,19 +1,5 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "dist/public/**",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "api/test.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/[...all].js",
-      "use": "@vercel/node"
-    }
-  ],
   "routes": [
     {
       "src": "/api/test",
