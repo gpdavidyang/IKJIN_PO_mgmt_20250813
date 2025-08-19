@@ -527,7 +527,7 @@ const DirectInputForm: React.FC<DirectInputFormProps> = ({ initialData = {}, onC
                 
                 <div className="space-y-2">
                   <Label>금액</Label>
-                  <div className="px-3 py-2 bg-gray-50 border rounded-md text-sm font-medium">
+                  <div className="px-3 py-2 bg-muted border rounded-md text-sm font-medium text-foreground">
                     {item.totalAmount.toLocaleString()}원
                   </div>
                 </div>
@@ -561,8 +561,8 @@ const DirectInputForm: React.FC<DirectInputFormProps> = ({ initialData = {}, onC
           ))}
         </div>
 
-        <div className="flex justify-end p-3 bg-gray-50 rounded-lg">
-          <div className="text-lg font-semibold">
+        <div className="flex justify-end p-3 bg-muted rounded-lg">
+          <div className="text-lg font-semibold text-foreground">
             총액: {formData.totalAmount.toLocaleString()}원
           </div>
         </div>

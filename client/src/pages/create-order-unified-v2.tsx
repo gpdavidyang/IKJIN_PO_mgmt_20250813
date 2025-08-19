@@ -611,14 +611,14 @@ const CreateOrderUnifiedV2: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* 헤더 */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-40">
+      <div className="bg-background border-b border-border sticky top-0 z-40">
         <div className="px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">발주서 작성</h1>
-              <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">한 화면에서 모든 작업을 완료하세요</p>
+              <h1 className="text-2xl font-bold text-foreground">발주서 작성</h1>
+              <p className="text-sm text-muted-foreground mt-1">한 화면에서 모든 작업을 완료하세요</p>
             </div>
             <div className="flex items-center gap-3">
               {/* 새로 작성 버튼 - 작업 중일 때만 표시 */}
@@ -635,7 +635,7 @@ const CreateOrderUnifiedV2: React.FC = () => {
                       });
                     }
                   }}
-                  className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                  className="text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950"
                 >
                   <Plus className="w-4 h-4 mr-1" />
                   새로 작성
@@ -661,7 +661,7 @@ const CreateOrderUnifiedV2: React.FC = () => {
       </div>
 
       {/* 메인 컨텐츠 */}
-      <div className="container mx-auto px-6 py-6">
+      <div className="container mx-auto px-6 py-6" style={{ paddingBottom: '120px' }}>
         {/* 사용팁 및 템플릿 다운로드 */}
         {!activeMethod && (
           <div className="mb-8">
@@ -672,17 +672,17 @@ const CreateOrderUnifiedV2: React.FC = () => {
                   <div className="font-medium">📋 사용팁</div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <div>
-                      <span className="font-medium text-blue-600">엑셀 파일 업로드:</span> 대량 발주서, 반복 업무, 자동화 처리에 적합 (50건+ 권장)
+                      <span className="font-medium text-blue-600 dark:text-blue-400">엑셀 파일 업로드:</span> 대량 발주서, 반복 업무, 자동화 처리에 적합 (50건+ 권장)
                     </div>
                     <div>
-                      <span className="font-medium text-green-600">직접 입력:</span> 소량 발주서, 세밀한 조정, 즉시 처리에 적합 (10건 이하 권장)
+                      <span className="font-medium text-green-600 dark:text-green-400">직접 입력:</span> 소량 발주서, 세밀한 조정, 즉시 처리에 적합 (10건 이하 권장)
                     </div>
                   </div>
                   <div className="pt-2 border-t">
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                      className="text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950"
                       onClick={async () => {
                         try {
                           // 파일 존재 여부 확인 후 다운로드
@@ -724,14 +724,14 @@ const CreateOrderUnifiedV2: React.FC = () => {
         {!activeMethod && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 max-w-4xl mx-auto">
             <Card 
-              className="cursor-pointer hover:shadow-lg transition-shadow border-2 hover:border-blue-500"
+              className="cursor-pointer hover:shadow-lg transition-shadow border-2 hover:border-blue-500 dark:hover:border-blue-400"
               onClick={() => handleMethodSelect('excel')}
             >
               <CardContent className="p-8 text-center">
-                <Upload className="w-16 h-16 mx-auto mb-4 text-blue-600" />
-                <h3 className="text-xl font-semibold mb-2">엑셀 파일 업로드</h3>
-                <p className="text-gray-600 mb-4">기존 엑셀 파일을 업로드하여 빠르게 작성</p>
-                <div className="text-xs text-gray-500 space-y-1">
+                <Upload className="w-16 h-16 mx-auto mb-4 text-blue-600 dark:text-blue-400" />
+                <h3 className="text-xl font-semibold mb-2 text-foreground">엑셀 파일 업로드</h3>
+                <p className="text-muted-foreground mb-4">기존 엑셀 파일을 업로드하여 빠르게 작성</p>
+                <div className="text-xs text-muted-foreground space-y-1">
                   <div>✅ 대량 처리 (50건+)</div>
                   <div>✅ 자동화 워크플로우</div>
                   <div>✅ 거래처 자동 매칭</div>
@@ -741,14 +741,14 @@ const CreateOrderUnifiedV2: React.FC = () => {
             </Card>
 
             <Card 
-              className="cursor-pointer hover:shadow-lg transition-shadow border-2 hover:border-green-500"
+              className="cursor-pointer hover:shadow-lg transition-shadow border-2 hover:border-green-500 dark:hover:border-green-400 bg-card"
               onClick={() => handleMethodSelect('direct')}
             >
               <CardContent className="p-8 text-center">
-                <FileText className="w-16 h-16 mx-auto mb-4 text-green-600" />
-                <h3 className="text-xl font-semibold mb-2">직접 입력</h3>
-                <p className="text-gray-600 mb-4">폼을 통해 직접 정보 입력</p>
-                <div className="text-xs text-gray-500 space-y-1">
+                <FileText className="w-16 h-16 mx-auto mb-4 text-green-600 dark:text-green-400" />
+                <h3 className="text-xl font-semibold mb-2 text-foreground">직접 입력</h3>
+                <p className="text-muted-foreground mb-4">폼을 통해 직접 정보 입력</p>
+                <div className="text-xs text-muted-foreground space-y-1">
                   <div>✅ 소량 처리 (10건 이하)</div>
                   <div>✅ 즉시 처리</div>
                   <div>✅ 실시간 검증</div>

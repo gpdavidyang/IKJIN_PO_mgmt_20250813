@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { EnhancedTableSkeleton } from "./enhanced-table-skeleton";
+import { useTheme } from "@/components/ui/theme-provider";
 
 export interface Column<T> {
   key: keyof T | string;
@@ -58,6 +59,8 @@ export function EnhancedTable<T>({
   stickyHeader = false,
   maxHeight,
 }: EnhancedTableProps<T>) {
+  const { theme } = useTheme();
+  const isDarkMode = theme === 'dark';
   const [searchQuery, setSearchQuery] = React.useState("");
   const [sortColumn, setSortColumn] = React.useState<string | null>(null);
   const [sortDirection, setSortDirection] = React.useState<SortDirection>(null);
@@ -137,9 +140,9 @@ export function EnhancedTable<T>({
       return <ChevronsUpDown className="h-4 w-4 text-gray-400 dark:text-gray-500" />;
     }
     if (sortDirection === "asc") {
-      return <ChevronUp className="h-4 w-4 text-primary-600 dark:text-primary-400" />;
+      return <ChevronUp className="h-4 w-4 text-blue-600 dark:text-blue-400" />;
     }
-    return <ChevronDown className="h-4 w-4 text-primary-600 dark:text-primary-400" />;
+    return <ChevronDown className="h-4 w-4 text-blue-600 dark:text-blue-400" />;
   };
 
   if (isLoading) {
@@ -166,7 +169,7 @@ export function EnhancedTable<T>({
                 setSearchQuery(e.target.value);
                 setCurrentPage(1);
               }}
-              className="pl-10 bg-white dark:bg-slate-950 border-gray-200 dark:border-slate-600 focus:border-primary-500 focus:ring-primary-500 dark:text-white dark:placeholder:text-slate-400"
+              className="pl-10 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
             />
           </div>
         </div>
@@ -175,25 +178,32 @@ export function EnhancedTable<T>({
       {/* Table */}
       <div 
         className={cn(
-          "border border-gray-200 dark:border-slate-700 rounded-lg overflow-hidden bg-white dark:bg-slate-900",
+          "border rounded-lg overflow-hidden transition-colors",
+          "border-gray-200 dark:border-gray-700",
+          "bg-white dark:bg-gray-800",
           maxHeight && "overflow-y-auto"
         )}
         style={{ maxHeight }}
       >
         <table className="w-full">
-          <thead className={cn(
-            "bg-gray-50 dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700",
-            stickyHeader && "sticky top-0 z-10"
-          )}>
+          <thead 
+            className={cn(
+              "border-b transition-colors",
+              "border-gray-200 dark:border-gray-600",
+              "bg-gray-50 dark:bg-gray-700",
+              stickyHeader && "sticky top-0 z-10"
+            )}
+          >
             <tr>
               {columns.map((column) => (
                 <th
                   key={String(column.key)}
                   className={cn(
-                    "px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider",
+                    "px-4 py-3 text-left text-xs font-medium uppercase tracking-wider transition-colors",
+                    "text-gray-600 dark:text-gray-300",
                     column.align === "center" && "text-center",
                     column.align === "right" && "text-right",
-                    column.sortable !== false && "cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors",
+                    column.sortable !== false && "cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors",
                     column.className
                   )}
                   style={{ width: column.width }}
@@ -211,12 +221,18 @@ export function EnhancedTable<T>({
               ))}
             </tr>
           </thead>
-          <tbody className="bg-white dark:bg-slate-900 divide-y divide-gray-200 dark:divide-slate-700">
+          <tbody 
+            className={cn(
+              "divide-y transition-colors",
+              "divide-gray-200 dark:divide-gray-700",
+              "bg-white dark:bg-gray-800"
+            )}
+          >
             {paginatedData.length === 0 ? (
               <tr>
                 <td 
                   colSpan={columns.length} 
-                  className="px-4 py-8 text-center text-gray-500 dark:text-gray-400"
+                  className="px-4 py-8 text-center text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800"
                 >
                   <div className="flex flex-col items-center">
                     <Search className="h-12 w-12 text-gray-300 dark:text-gray-600 mb-3" />
@@ -229,9 +245,11 @@ export function EnhancedTable<T>({
                 <tr
                   key={rowKey(row)}
                   className={cn(
-                    "hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors",
-                    onRowClick && "cursor-pointer",
-                    index % 2 === 1 && "bg-gray-50/50 dark:bg-slate-800/50"
+                    "transition-colors",
+                    "hover:bg-gray-50 dark:hover:bg-gray-700",
+                    "bg-white dark:bg-gray-800",
+                    index % 2 === 1 && "bg-gray-50 dark:bg-gray-700/50",
+                    onRowClick && "cursor-pointer"
                   )}
                   onClick={() => onRowClick?.(row)}
                 >
@@ -239,7 +257,8 @@ export function EnhancedTable<T>({
                     <td
                       key={String(column.key)}
                       className={cn(
-                        "px-4 py-3 text-sm text-gray-900 dark:text-gray-100",
+                        "px-4 py-3 text-sm transition-colors",
+                        "text-gray-900 dark:text-gray-100",
                         column.align === "center" && "text-center",
                         column.align === "right" && "text-right",
                         column.className
@@ -271,12 +290,16 @@ export function EnhancedTable<T>({
                 setCurrentPage(1);
               }}
             >
-              <SelectTrigger className="w-20 h-8">
+              <SelectTrigger className="w-20 h-8 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600">
                 {pageSizeOptions.map((size) => (
-                  <SelectItem key={size} value={String(size)}>
+                  <SelectItem 
+                    key={size} 
+                    value={String(size)}
+                    className="text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
                     {size}
                   </SelectItem>
                 ))}
@@ -290,7 +313,7 @@ export function EnhancedTable<T>({
               size="sm"
               onClick={() => setCurrentPage(1)}
               disabled={currentPage === 1}
-              className="h-8 px-2"
+              className="h-8 px-2 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
             >
               처음
             </Button>
@@ -299,7 +322,7 @@ export function EnhancedTable<T>({
               size="sm"
               onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
               disabled={currentPage === 1}
-              className="h-8 px-2"
+              className="h-8 px-2 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
             >
               이전
             </Button>
@@ -323,7 +346,12 @@ export function EnhancedTable<T>({
                     variant={currentPage === pageNumber ? "default" : "outline"}
                     size="sm"
                     onClick={() => setCurrentPage(pageNumber)}
-                    className="h-8 w-8 p-0"
+                    className={cn(
+                      "h-8 w-8 p-0",
+                      currentPage === pageNumber 
+                        ? "bg-blue-600 dark:bg-blue-500 text-white dark:text-white border-blue-600 dark:border-blue-500"
+                        : "bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
+                    )}
                   >
                     {pageNumber}
                   </Button>
@@ -336,7 +364,7 @@ export function EnhancedTable<T>({
               size="sm"
               onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
               disabled={currentPage === totalPages}
-              className="h-8 px-2"
+              className="h-8 px-2 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
             >
               다음
             </Button>
@@ -345,7 +373,7 @@ export function EnhancedTable<T>({
               size="sm"
               onClick={() => setCurrentPage(totalPages)}
               disabled={currentPage === totalPages}
-              className="h-8 px-2"
+              className="h-8 px-2 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
             >
               마지막
             </Button>

@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Save, Send, Download, Loader2, FileText, Mail, Plus, X, Paperclip } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useSidebar } from '@/contexts/SidebarContext';
 
 interface ActionBarProps {
   orderData: any;
@@ -34,6 +35,7 @@ const ActionBar: React.FC<ActionBarProps> = ({
   onCreateOrder,
   onCreateOrderWithEmail
 }) => {
+  const { isCollapsed } = useSidebar();
   const [sendEmailAfterCreate, setSendEmailAfterCreate] = useState(true);
   const [showEmailSettings, setShowEmailSettings] = useState(false);
   const [emailSettings, setEmailSettings] = useState({
@@ -139,80 +141,53 @@ const ActionBar: React.FC<ActionBarProps> = ({
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-30">
-      <div className="container mx-auto px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+    <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border shadow-lg z-30">
+      <div className={cn(
+        "container mx-auto px-6 py-4 transition-all duration-300",
+        isCollapsed ? "xl:ml-16" : "xl:ml-64"
+      )}>
+        <div className="flex flex-col gap-3 items-center">
+          {/* 상단: 이메일 발송 옵션 */}
+          <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-lg text-sm">
+            <Checkbox
+              id="send-email"
+              checked={sendEmailAfterCreate}
+              onCheckedChange={(checked) => setSendEmailAfterCreate(!!checked)}
+              className="h-4 w-4"
+            />
+            <label htmlFor="send-email" className="font-medium cursor-pointer text-foreground whitespace-nowrap text-xs">
+              발주서 생성 후 이메일 자동 발송
+            </label>
+            {isProcessing && (
+              <div className="flex items-center gap-1 ml-2 text-xs text-muted-foreground">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                처리 중
+              </div>
+            )}
+          </div>
+          
+          {/* 하단: 모든 버튼들을 중앙에 집중 */}
+          <div className="flex items-center justify-center gap-2 flex-wrap">
             <Button
               variant="outline"
               onClick={onSave}
               disabled={isProcessing}
+              size="sm"
+              className="text-xs px-3 py-2 h-8"
             >
-              <Save className="w-4 h-4 mr-2" />
-              임시 저장
+              <Save className="w-3 h-3 mr-1" />
+              임시저장
             </Button>
-            
             
             <Button
               variant="outline"
               onClick={onDownload}
               disabled={!pdfUrl || processingStatus.pdf !== 'completed'}
+              size="sm"
+              className="text-xs px-3 py-2 h-8"
             >
-              <Download className="w-4 h-4 mr-2" />
+              <Download className="w-3 h-3 mr-1" />
               다운로드
-            </Button>
-          </div>
-          
-          <div className="flex items-center gap-4">
-            {/* 이메일 발송 옵션 */}
-            <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg">
-              <Checkbox
-                id="send-email"
-                checked={sendEmailAfterCreate}
-                onCheckedChange={(checked) => setSendEmailAfterCreate(!!checked)}
-              />
-              <label htmlFor="send-email" className="text-sm font-medium cursor-pointer">
-                발주서 생성 후 이메일 자동 발송
-              </label>
-            </div>
-            
-            {isProcessing && (
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                처리 중...
-              </div>
-            )}
-            
-            {/* 통합 발주서 생성 버튼 */}
-            <Button
-              variant="default"
-              onClick={handleCreateOrderClick}
-              disabled={!canCreateOrder || processingStatus.order === 'processing'}
-              className={cn(
-                "min-w-[160px]",
-                canCreateOrder ? (sendEmailAfterCreate ? "bg-blue-600 hover:bg-blue-700" : "bg-green-600 hover:bg-green-700") : ""
-              )}
-            >
-              {processingStatus.order === 'processing' ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  {sendEmailAfterCreate ? '생성 및 발송 중...' : '생성 중...'}
-                </>
-              ) : (
-                <>
-                  {sendEmailAfterCreate ? (
-                    <>
-                      <Mail className="w-4 h-4 mr-2" />
-                      발주서 생성
-                    </>
-                  ) : (
-                    <>
-                      <FileText className="w-4 h-4 mr-2" />
-                      발주서 생성
-                    </>
-                  )}
-                </>
-              )}
             </Button>
             
             {/* 별도 이메일 발송 버튼 (발주서 생성 후) */}
@@ -220,35 +195,69 @@ const ActionBar: React.FC<ActionBarProps> = ({
               <Button
                 onClick={onSend}
                 disabled={!canSend || processingStatus.email === 'processing'}
+                size="sm"
                 className={cn(
-                  "min-w-[120px]",
-                  canSend ? "bg-blue-600 hover:bg-blue-700" : ""
+                  "text-xs px-3 py-2 h-8",
+                  canSend ? "bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700" : ""
                 )}
               >
                 {processingStatus.email === 'processing' ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    발송 중...
+                    <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                    발송중
                   </>
                 ) : (
                   <>
-                    <Send className="w-4 h-4 mr-2" />
+                    <Send className="w-3 h-3 mr-1" />
                     이메일 발송
                   </>
                 )}
               </Button>
             )}
+            
+            {/* 통합 발주서 생성 버튼 */}
+            <Button
+              variant="default"
+              onClick={handleCreateOrderClick}
+              disabled={!canCreateOrder || processingStatus.order === 'processing'}
+              size="sm"
+              className={cn(
+                "text-xs px-4 py-2 h-8 font-medium",
+                canCreateOrder ? (sendEmailAfterCreate ? "bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700" : "bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700") : ""
+              )}
+            >
+              {processingStatus.order === 'processing' ? (
+                <>
+                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                  {sendEmailAfterCreate ? '생성 및 발송 중' : '생성 중'}
+                </>
+              ) : (
+                <>
+                  {sendEmailAfterCreate ? (
+                    <>
+                      <Mail className="w-3 h-3 mr-1" />
+                      발주서 생성 및 발송
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="w-3 h-3 mr-1" />
+                      발주서 생성
+                    </>
+                  )}
+                </>
+              )}
+            </Button>
           </div>
         </div>
         
         {/* 진행 상태 표시 */}
-        <div className="mt-3 flex items-center gap-6 text-xs text-gray-600">
+        <div className="mt-3 flex items-center justify-center gap-6 text-xs text-muted-foreground">
           <div className="flex items-center gap-2">
             <div className={cn(
               "w-2 h-2 rounded-full",
               processingStatus.pdf === 'completed' ? "bg-green-500" :
               processingStatus.pdf === 'processing' ? "bg-blue-500 animate-pulse" :
-              processingStatus.pdf === 'error' ? "bg-red-500" : "bg-gray-300"
+              processingStatus.pdf === 'error' ? "bg-red-500" : "bg-muted-foreground"
             )} />
             PDF 생성
           </div>
@@ -257,7 +266,7 @@ const ActionBar: React.FC<ActionBarProps> = ({
               "w-2 h-2 rounded-full",
               processingStatus.vendor === 'completed' ? "bg-green-500" :
               processingStatus.vendor === 'processing' ? "bg-blue-500 animate-pulse" :
-              processingStatus.vendor === 'error' ? "bg-red-500" : "bg-gray-300"
+              processingStatus.vendor === 'error' ? "bg-red-500" : "bg-muted-foreground"
             )} />
             거래처 확인
           </div>
@@ -266,7 +275,7 @@ const ActionBar: React.FC<ActionBarProps> = ({
               "w-2 h-2 rounded-full",
               processingStatus.order === 'completed' ? "bg-green-500" :
               processingStatus.order === 'processing' ? "bg-blue-500 animate-pulse" :
-              processingStatus.order === 'error' ? "bg-red-500" : "bg-gray-300"
+              processingStatus.order === 'error' ? "bg-red-500" : "bg-muted-foreground"
             )} />
             발주서 생성
           </div>
@@ -275,7 +284,7 @@ const ActionBar: React.FC<ActionBarProps> = ({
               "w-2 h-2 rounded-full",
               processingStatus.email === 'completed' ? "bg-green-500" :
               processingStatus.email === 'processing' ? "bg-blue-500 animate-pulse" :
-              processingStatus.email === 'error' ? "bg-red-500" : "bg-gray-300"
+              processingStatus.email === 'error' ? "bg-red-500" : "bg-muted-foreground"
             )} />
             이메일 준비
           </div>
@@ -296,14 +305,14 @@ const ActionBar: React.FC<ActionBarProps> = ({
               <div className="mt-2 space-y-2">
                 {/* 추가된 이메일 목록 */}
                 {emailSettings.to.map((email, index) => (
-                  <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded-md">
-                    <span className="flex-1 text-sm">{email}</span>
+                  <div key={index} className="flex items-center gap-2 p-2 bg-muted rounded-md">
+                    <span className="flex-1 text-sm text-foreground">{email}</span>
                     <Button
                       type="button"
                       variant="ghost"
                       size="sm"
                       onClick={() => removeToEmail(email)}
-                      className="h-6 w-6 p-0 hover:bg-red-100"
+                      className="h-6 w-6 p-0 hover:bg-red-100 dark:hover:bg-red-900"
                     >
                       <X className="h-3 w-3" />
                     </Button>
@@ -338,14 +347,14 @@ const ActionBar: React.FC<ActionBarProps> = ({
               <div className="mt-2 space-y-2">
                 {/* 추가된 참조 이메일 목록 */}
                 {emailSettings.cc.map((email, index) => (
-                  <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded-md">
-                    <span className="flex-1 text-sm">{email}</span>
+                  <div key={index} className="flex items-center gap-2 p-2 bg-muted rounded-md">
+                    <span className="flex-1 text-sm text-foreground">{email}</span>
                     <Button
                       type="button"
                       variant="ghost"
                       size="sm"
                       onClick={() => removeCcEmail(email)}
-                      className="h-6 w-6 p-0 hover:bg-red-100"
+                      className="h-6 w-6 p-0 hover:bg-red-100 dark:hover:bg-red-900"
                     >
                       <X className="h-3 w-3" />
                     </Button>
@@ -461,10 +470,10 @@ const ActionBar: React.FC<ActionBarProps> = ({
                   {emailSettings.attachments.additionalFiles.length > 0 && (
                     <div className="space-y-1">
                       {emailSettings.attachments.additionalFiles.map((file, index) => (
-                        <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded-md">
-                          <Paperclip className="h-3 w-3 text-gray-400" />
-                          <span className="flex-1 text-sm">{file.name}</span>
-                          <span className="text-xs text-gray-500">
+                        <div key={index} className="flex items-center gap-2 p-2 bg-muted rounded-md">
+                          <Paperclip className="h-3 w-3 text-muted-foreground" />
+                          <span className="flex-1 text-sm text-foreground">{file.name}</span>
+                          <span className="text-xs text-muted-foreground">
                             {(file.size / 1024).toFixed(1)} KB
                           </span>
                           <Button
@@ -472,7 +481,7 @@ const ActionBar: React.FC<ActionBarProps> = ({
                             variant="ghost"
                             size="sm"
                             onClick={() => removeAdditionalFile(index)}
-                            className="h-6 w-6 p-0 hover:bg-red-100"
+                            className="h-6 w-6 p-0 hover:bg-red-100 dark:hover:bg-red-900"
                           >
                             <X className="h-3 w-3" />
                           </Button>
@@ -484,7 +493,7 @@ const ActionBar: React.FC<ActionBarProps> = ({
               </div>
             </div>
 
-            <div className="text-xs text-gray-500 bg-blue-50 p-2 rounded">
+            <div className="text-xs text-muted-foreground bg-blue-50 dark:bg-blue-950 p-2 rounded">
               📎 선택한 첨부파일이 이메일과 함께 발송됩니다.
             </div>
           </div>

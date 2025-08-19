@@ -93,7 +93,7 @@ export function EnhancedOrdersTable({
       return (
         <Badge 
           variant="outline" 
-          className={`text-gray-500 ${handleClick ? 'cursor-pointer hover:bg-gray-100' : ''}`}
+          className={`text-muted-foreground ${handleClick ? 'cursor-pointer hover:bg-muted' : ''}`}
           onClick={handleClick}
         >
           <Mail className="h-3 w-3 mr-1" />

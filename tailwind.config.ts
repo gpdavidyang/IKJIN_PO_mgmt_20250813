@@ -97,6 +97,7 @@ export default {
           500: "var(--color-gray-500)",
           600: "var(--color-gray-600)",
           700: "var(--color-gray-700)",
+          750: "#374151", // 다크 모드 테이블 줄무늬용 추가
           800: "var(--color-gray-800)",
           900: "var(--color-gray-900)",
         },
