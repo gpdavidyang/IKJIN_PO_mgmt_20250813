@@ -61,6 +61,42 @@ export function EnhancedTable<T>({
 }: EnhancedTableProps<T>) {
   const { theme } = useTheme();
   const isDarkMode = theme === 'dark';
+  
+  // Force re-render when theme changes to apply styles
+  const tableKey = `table-${isDarkMode ? 'dark' : 'light'}-${Date.now()}`;
+  
+  // Force style application on mount and theme change
+  React.useEffect(() => {
+    if (isDarkMode) {
+      // Apply styles with a slight delay to ensure DOM is ready
+      const timer = setTimeout(() => {
+        const tableElements = document.querySelectorAll('.dark-table-container table');
+        tableElements.forEach((table) => {
+          (table as HTMLElement).style.setProperty('background-color', 'rgb(31 41 55)', 'important');
+          
+          const tbody = table.querySelector('tbody');
+          if (tbody) {
+            (tbody as HTMLElement).style.setProperty('background-color', 'rgb(31 41 55)', 'important');
+            const rows = tbody.querySelectorAll('tr');
+            rows.forEach((row, index) => {
+              if (index % 2 === 0) {
+                (row as HTMLElement).style.setProperty('background-color', 'rgb(31 41 55)', 'important');
+              } else {
+                (row as HTMLElement).style.setProperty('background-color', 'rgba(55 65 81, 0.7)', 'important');
+              }
+            });
+          }
+          
+          const thead = table.querySelector('thead');
+          if (thead) {
+            (thead as HTMLElement).style.setProperty('background-color', 'rgb(55 65 81)', 'important');
+          }
+        });
+      }, 50);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isDarkMode, data]);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [sortColumn, setSortColumn] = React.useState<string | null>(null);
   const [sortDirection, setSortDirection] = React.useState<SortDirection>(null);
@@ -156,7 +192,7 @@ export function EnhancedTable<T>({
   }
 
   return (
-    <div className={cn("w-full", className)}>
+    <div className={cn("w-full dark-table-container", className)}>
       {/* Search bar */}
       {searchable && (
         <div className="mb-4">
@@ -178,21 +214,32 @@ export function EnhancedTable<T>({
       {/* Table */}
       <div 
         className={cn(
-          "border rounded-lg overflow-hidden transition-colors",
-          "border-gray-200 dark:border-gray-700",
-          "bg-white dark:bg-gray-800",
-          maxHeight && "overflow-y-auto"
+          "border rounded-lg overflow-hidden transition-colors table-wrapper-custom",
+          "border-gray-200 dark:border-gray-700"
         )}
-        style={{ maxHeight }}
+        style={{ 
+          maxHeight,
+          backgroundColor: isDarkMode ? 'rgb(31 41 55) !important' : 'white !important',
+          forcedColorAdjust: 'none'
+        }}
       >
-        <table className="w-full">
+        <table 
+          className="w-full table-custom-dark" 
+          style={{
+            backgroundColor: isDarkMode ? 'rgb(31 41 55) !important' : 'white !important',
+            forcedColorAdjust: 'none'
+          }}
+        >
           <thead 
             className={cn(
-              "border-b transition-colors",
+              "border-b transition-colors thead-custom",
               "border-gray-200 dark:border-gray-600",
-              "bg-gray-50 dark:bg-gray-700",
               stickyHeader && "sticky top-0 z-10"
             )}
+            style={{
+              backgroundColor: isDarkMode ? 'rgb(55 65 81) !important' : 'rgb(249 250 251) !important',
+              forcedColorAdjust: 'none'
+            }}
           >
             <tr>
               {columns.map((column) => (
@@ -223,16 +270,23 @@ export function EnhancedTable<T>({
           </thead>
           <tbody 
             className={cn(
-              "divide-y transition-colors",
-              "divide-gray-200 dark:divide-gray-700",
-              "bg-white dark:bg-gray-800"
+              "divide-y transition-colors tbody-custom",
+              "divide-gray-200 dark:divide-gray-700"
             )}
+            style={{
+              backgroundColor: isDarkMode ? 'rgb(31 41 55) !important' : 'white !important',
+              forcedColorAdjust: 'none'
+            }}
           >
             {paginatedData.length === 0 ? (
               <tr>
                 <td 
                   colSpan={columns.length} 
-                  className="px-4 py-8 text-center text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800"
+                  className="px-4 py-8 text-center text-gray-500 dark:text-gray-400 td-custom-empty"
+                  style={{
+                    backgroundColor: isDarkMode ? 'rgb(31 41 55) !important' : 'white !important',
+                    forcedColorAdjust: 'none'
+                  }}
                 >
                   <div className="flex flex-col items-center">
                     <Search className="h-12 w-12 text-gray-300 dark:text-gray-600 mb-3" />
@@ -245,24 +299,46 @@ export function EnhancedTable<T>({
                 <tr
                   key={rowKey(row)}
                   className={cn(
-                    "transition-colors",
-                    "hover:bg-gray-50 dark:hover:bg-gray-700",
-                    "bg-white dark:bg-gray-800",
-                    index % 2 === 1 && "bg-gray-50 dark:bg-gray-700/50",
+                    "transition-colors tr-custom-row",
                     onRowClick && "cursor-pointer"
                   )}
+                  style={{
+                    backgroundColor: isDarkMode 
+                      ? (index % 2 === 0 ? 'rgb(31 41 55) !important' : 'rgba(55 65 81, 0.7) !important')
+                      : (index % 2 === 0 ? 'white !important' : 'rgb(249 250 251) !important'),
+                    forcedColorAdjust: 'none',
+                    transition: 'background-color 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (isDarkMode) {
+                      e.currentTarget.style.backgroundColor = 'rgb(55 65 81) !important';
+                    } else {
+                      e.currentTarget.style.backgroundColor = 'rgb(243 244 246) !important';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (isDarkMode) {
+                      e.currentTarget.style.backgroundColor = index % 2 === 0 ? 'rgb(31 41 55) !important' : 'rgba(55 65 81, 0.7) !important';
+                    } else {
+                      e.currentTarget.style.backgroundColor = index % 2 === 0 ? 'white !important' : 'rgb(249 250 251) !important';
+                    }
+                  }}
                   onClick={() => onRowClick?.(row)}
                 >
                   {columns.map((column) => (
                     <td
                       key={String(column.key)}
                       className={cn(
-                        "px-4 py-3 text-sm transition-colors",
+                        "px-4 py-3 text-sm transition-colors td-custom",
                         "text-gray-900 dark:text-gray-100",
                         column.align === "center" && "text-center",
                         column.align === "right" && "text-right",
                         column.className
                       )}
+                      style={{
+                        backgroundColor: 'transparent !important',
+                        forcedColorAdjust: 'none'
+                      }}
                     >
                       {column.accessor 
                         ? column.accessor(row) 

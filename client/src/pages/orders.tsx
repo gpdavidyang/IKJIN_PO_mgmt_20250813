@@ -25,6 +25,139 @@ export default function Orders() {
   const { theme } = useTheme();
   const isDarkMode = theme === 'dark';
 
+  // Force dark mode table styles using useEffect with maximum priority
+  useEffect(() => {
+    if (isDarkMode) {
+      // Remove any existing style
+      const existingStyle = document.getElementById('force-dark-table-styles');
+      if (existingStyle) {
+        document.head.removeChild(existingStyle);
+      }
+
+      const style = document.createElement('style');
+      style.id = 'force-dark-table-styles';
+      style.textContent = `
+        /* Emergency CSS override with highest specificity */
+        html.dark table,
+        html.dark table tbody,
+        html.dark table tbody tr,
+        body.dark table tbody tr,
+        .dark table tbody tr {
+          background-color: rgb(31 41 55) !important;
+          color: rgb(241 245 249) !important;
+        }
+        
+        html.dark table tbody tr:nth-child(even),
+        body.dark table tbody tr:nth-child(even),
+        .dark table tbody tr:nth-child(even) {
+          background-color: rgba(55 65 81, 0.7) !important;
+        }
+        
+        html.dark table tbody tr:hover,
+        body.dark table tbody tr:hover,
+        .dark table tbody tr:hover {
+          background-color: rgb(55 65 81) !important;
+        }
+        
+        html.dark table thead,
+        body.dark table thead,
+        .dark table thead {
+          background-color: rgb(55 65 81) !important;
+        }
+        
+        html.dark table,
+        body.dark table,
+        .dark table {
+          background-color: rgb(31 41 55) !important;
+        }
+        
+        html.dark .table-wrapper-custom,
+        html.dark .table-custom-dark,
+        html.dark .tbody-custom,
+        body.dark .table-wrapper-custom,
+        body.dark .table-custom-dark,
+        body.dark .tbody-custom,
+        .dark .table-wrapper-custom,
+        .dark .table-custom-dark,
+        .dark .tbody-custom {
+          background-color: rgb(31 41 55) !important;
+        }
+      `;
+      document.head.appendChild(style);
+      
+      // Force apply styles to existing table elements
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          if (mutation.type === 'childList') {
+            const tables = document.querySelectorAll('table');
+            tables.forEach((table) => {
+              table.style.setProperty('background-color', 'rgb(31 41 55)', 'important');
+              
+              const tbody = table.querySelector('tbody');
+              if (tbody) {
+                tbody.style.setProperty('background-color', 'rgb(31 41 55)', 'important');
+                
+                const rows = tbody.querySelectorAll('tr');
+                rows.forEach((row, index) => {
+                  if (index % 2 === 0) {
+                    row.style.setProperty('background-color', 'rgb(31 41 55)', 'important');
+                  } else {
+                    row.style.setProperty('background-color', 'rgba(55 65 81, 0.7)', 'important');
+                  }
+                });
+              }
+              
+              const thead = table.querySelector('thead');
+              if (thead) {
+                thead.style.setProperty('background-color', 'rgb(55 65 81)', 'important');
+              }
+            });
+          }
+        });
+      });
+      
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true
+      });
+      
+      // Initial application
+      setTimeout(() => {
+        const tables = document.querySelectorAll('table');
+        tables.forEach((table) => {
+          table.style.setProperty('background-color', 'rgb(31 41 55)', 'important');
+          
+          const tbody = table.querySelector('tbody');
+          if (tbody) {
+            tbody.style.setProperty('background-color', 'rgb(31 41 55)', 'important');
+            
+            const rows = tbody.querySelectorAll('tr');
+            rows.forEach((row, index) => {
+              if (index % 2 === 0) {
+                row.style.setProperty('background-color', 'rgb(31 41 55)', 'important');
+              } else {
+                row.style.setProperty('background-color', 'rgba(55 65 81, 0.7)', 'important');
+              }
+            });
+          }
+          
+          const thead = table.querySelector('thead');
+          if (thead) {
+            thead.style.setProperty('background-color', 'rgb(55 65 81)', 'important');
+          }
+        });
+      }, 100);
+      
+      return () => {
+        observer.disconnect();
+        const styleElement = document.getElementById('force-dark-table-styles');
+        if (styleElement) {
+          document.head.removeChild(styleElement);
+        }
+      };
+    }
+  }, [isDarkMode]);
+
   const [filters, setFilters] = useState({
     status: "",
     vendorId: "",

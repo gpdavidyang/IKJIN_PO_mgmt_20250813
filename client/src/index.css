@@ -615,6 +615,145 @@
     @apply bg-slate-800/50;
   }
   
+  /* Force table background colors in dark mode */
+  table tbody tr:nth-child(even) {
+    background-color: rgb(31 41 55) !important; /* gray-800 */
+  }
+  
+  table tbody tr:nth-child(odd) {
+    background-color: rgba(55 65 81, 0.5) !important; /* gray-700/50 */
+  }
+  
+  /* CRITICAL: Force all table elements to have proper dark mode background */
+  table tbody tr {
+    background-color: rgb(31 41 55) !important;
+  }
+  
+  table tbody tr:hover {
+    background-color: rgb(55 65 81) !important; /* gray-700 */
+  }
+  
+  table thead {
+    background-color: rgb(55 65 81) !important; /* gray-700 */
+  }
+  
+  table {
+    background-color: rgb(31 41 55) !important; /* gray-800 */
+  }
+  
+  /* Enhanced table container */
+  .dark table,
+  .dark tbody,
+  .dark thead {
+    background-color: rgb(31 41 55) !important;
+  }
+
+  /* Ultra-specific CSS targeting for enhanced-table component */
+  .dark .dark-table-container .table-wrapper-custom {
+    background-color: rgb(31 41 55) !important;
+  }
+
+  .dark .dark-table-container .table-custom-dark {
+    background-color: rgb(31 41 55) !important;
+  }
+
+  .dark .dark-table-container .table-custom-dark * {
+    background-color: inherit !important;
+  }
+
+  .dark .dark-table-container .tbody-custom {
+    background-color: rgb(31 41 55) !important;
+  }
+
+  .dark .dark-table-container .tr-custom-row {
+    background-color: rgb(31 41 55) !important;
+  }
+
+  .dark .dark-table-container .tr-custom-row:nth-child(even) {
+    background-color: rgba(55 65 81, 0.7) !important;
+  }
+
+  .dark .dark-table-container .tr-custom-row:hover {
+    background-color: rgb(55 65 81) !important;
+  }
+
+  .dark .dark-table-container .thead-custom {
+    background-color: rgb(55 65 81) !important;
+  }
+
+  .dark .dark-table-container .td-custom {
+    background-color: transparent !important;
+  }
+
+  .dark .dark-table-container .td-custom-empty {
+    background-color: rgb(31 41 55) !important;
+  }
+
+  /* FINAL OVERRIDE: Dark mode table styles with highest specificity */
+  .dark table[class*="table"] tbody tr,
+  .dark .table-wrapper-custom table tbody tr,
+  .dark .enhanced-table table tbody tr,
+  .dark div[class*="table"] table tbody tr {
+    background-color: rgb(31 41 55) !important;
+    color: rgb(241 245 249) !important;
+    forced-color-adjust: none !important;
+  }
+
+  .dark table[class*="table"] tbody tr:nth-child(even),
+  .dark .table-wrapper-custom table tbody tr:nth-child(even),
+  .dark .enhanced-table table tbody tr:nth-child(even),
+  .dark div[class*="table"] table tbody tr:nth-child(even) {
+    background-color: rgba(55 65 81, 0.7) !important;
+    forced-color-adjust: none !important;
+  }
+
+  .dark table[class*="table"] tbody tr:hover,
+  .dark .table-wrapper-custom table tbody tr:hover,
+  .dark .enhanced-table table tbody tr:hover,
+  .dark div[class*="table"] table tbody tr:hover {
+    background-color: rgb(55 65 81) !important;
+    forced-color-adjust: none !important;
+  }
+
+  .dark table[class*="table"] thead,
+  .dark .table-wrapper-custom table thead,
+  .dark .enhanced-table table thead,
+  .dark div[class*="table"] table thead {
+    background-color: rgb(55 65 81) !important;
+    forced-color-adjust: none !important;
+  }
+
+  .dark table[class*="table"],
+  .dark .table-wrapper-custom table,
+  .dark .enhanced-table table,
+  .dark div[class*="table"] table {
+    background-color: rgb(31 41 55) !important;
+    forced-color-adjust: none !important;
+  }
+
+  /* Emergency override for ALL table elements */
+  html.dark table,
+  html.dark tbody,
+  html.dark tr {
+    background-color: rgb(31 41 55) !important;
+    forced-color-adjust: none !important;
+  }
+
+  html.dark table tbody tr:nth-child(even) {
+    background-color: rgba(55 65 81, 0.7) !important;
+    forced-color-adjust: none !important;
+  }
+
+  html.dark table tbody tr:hover {
+    background-color: rgb(55 65 81) !important;
+    forced-color-adjust: none !important;
+  }
+
+  html.dark table thead {
+    background-color: rgb(55 65 81) !important;
+    forced-color-adjust: none !important;
+  }
+  
   /* Enhanced form inputs with much better contrast */
   input:not([type="checkbox"]):not([type="radio"]), 
   select, 
