@@ -33,14 +33,25 @@ import type {
   User 
 } from "@shared/order-types";
 
-// Authentication hooks
+// Authentication hooks - DEPRECATED: Use useAuth instead
 export function useCurrentUser() {
   return useSmartQuery(
     queryKeys.auth.user(),
     {
-      queryFn: () => apiRequest("GET", "/api/auth/user"),
+      queryFn: async () => {
+        try {
+          return await apiRequest("GET", "/api/auth/user");
+        } catch (error: any) {
+          // Handle 401 gracefully - user is not authenticated
+          if (error.message?.includes('401')) {
+            return null;
+          }
+          throw error;
+        }
+      },
       cacheType: "MASTER",
       backgroundSync: true,
+      retry: false, // Don't retry auth failures
     }
   );
 }
