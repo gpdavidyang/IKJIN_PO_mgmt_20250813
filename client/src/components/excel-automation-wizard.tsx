@@ -137,10 +137,26 @@ export function ExcelAutomationWizard() {
       const formData = new FormData();
       formData.append('file', file);
 
+      console.log('📤 [클라이언트] 파일 업로드 시작:', {
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type
+      });
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 45000); // 45초 타임아웃
+
       const response = await fetch('/api/excel-automation/upload-and-process', {
         method: 'POST',
         body: formData,
         credentials: 'include', // 인증 쿠키 포함
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+      console.log('📥 [클라이언트] 서버 응답 수신:', {
+        status: response.status,
+        ok: response.ok
       });
 
       // Handle authentication errors
@@ -184,8 +200,29 @@ export function ExcelAutomationWizard() {
       }
 
     } catch (error) {
-      console.error('자동화 처리 오류:', error);
-      setError(error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다');
+      console.error('📋 [클라이언트] 자동화 처리 오류:', error);
+      
+      // 더 자세한 에러 정보 제공
+      let errorMessage = '알 수 없는 오류가 발생했습니다';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        
+        // 네트워크 및 처리 오류 감지
+        if (error.message.includes('Failed to fetch')) {
+          errorMessage = '서버 연결에 실패했습니다. 네트워크 상태를 확인해주세요.';
+        } else if (error.message.includes('timeout') || error.name === 'AbortError') {
+          errorMessage = '요청 시간이 초과되었습니다 (45초). 파일 크기를 확인하고 다시 시도해주세요.';
+        } else if (error.message.includes('500')) {
+          errorMessage = '서버 내부 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+        } else if (error.message.includes('413')) {
+          errorMessage = '파일 크기가 너무 큽니다 (최대 10MB). 더 작은 파일로 시도해주세요.';
+        } else if (error.message.includes('422')) {
+          errorMessage = '파일 형식이 올바르지 않습니다. Excel 파일(.xlsx, .xlsm, .xls)만 업로드 가능합니다.';
+        }
+      }
+      
+      console.error('📋 [클라이언트] 최종 에러 메시지:', errorMessage);
+      setError(errorMessage);
       updateStepStatus('upload', 'error');
     } finally {
       setIsProcessing(false);

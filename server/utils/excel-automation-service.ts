@@ -91,35 +91,60 @@ export class ExcelAutomationService {
       userId
     });
 
+    console.log(`🔍 [DEBUG] Excel 자동화 프로세스 시작 - 파일: ${filePath}`);
+
     try {
+      // 0. 데이터베이스 연결 테스트
+      console.log(`🔍 [DEBUG] 0단계: DB 연결 테스트 시작`);
+      try {
+        await db.select().from(purchaseOrders).limit(1);
+        console.log(`✅ [DEBUG] DB 연결 성공`);
+      } catch (dbError) {
+        console.error(`❌ [DEBUG] DB 연결 실패:`, dbError);
+        throw new Error(`데이터베이스 연결 실패: ${dbError instanceof Error ? dbError.message : 'Unknown DB error'}`);
+      }
       // 1. Excel 파일 파싱
+      console.log(`🔍 [DEBUG] 1단계: Excel 파일 파싱 시작`);
       const parseResult = POTemplateProcessorMock.parseInputSheet(filePath);
+      console.log(`🔍 [DEBUG] 1단계 완료: ${parseResult.success ? '성공' : '실패'}`);
       
       if (!parseResult.success) {
+        console.log(`❌ [DEBUG] Excel 파싱 실패: ${parseResult.error}`);
         return {
           success: false,
           error: `Excel 파싱 실패: ${parseResult.error}`
         };
       }
 
+      console.log(`✅ [DEBUG] Excel 파싱 성공: ${parseResult.totalOrders}개 발주서, ${parseResult.totalItems}개 아이템`);
+
       // 2. DB에 발주서 데이터 저장
+      console.log(`🔍 [DEBUG] 2단계: DB 저장 시작`);
       const saveResult = await POTemplateProcessorMock.saveToDatabase(
         parseResult.orders || [],
         userId
       );
+      console.log(`🔍 [DEBUG] 2단계 완료: ${saveResult.success ? '성공' : '실패'}`);
 
       if (!saveResult.success) {
+        console.log(`❌ [DEBUG] DB 저장 실패: ${saveResult.error}`);
         return {
           success: false,
           error: `DB 저장 실패: ${saveResult.error}`
         };
       }
 
+      console.log(`✅ [DEBUG] DB 저장 성공: ${saveResult.savedOrders}개 발주서 저장됨`);
+
       // 3. 거래처명 검증 및 이메일 추출
+      console.log(`🔍 [DEBUG] 3단계: 거래처 검증 시작`);
       const vendorValidation = await this.validateVendorsFromExcel(filePath);
+      console.log(`🔍 [DEBUG] 3단계 완료: 유효 거래처 ${vendorValidation.validVendors.length}개, 무효 거래처 ${vendorValidation.invalidVendors.length}개`);
       
       // 4. 이메일 미리보기 생성
+      console.log(`🔍 [DEBUG] 4단계: 이메일 미리보기 생성 시작`);
       const emailPreview = await this.generateEmailPreview(filePath, vendorValidation);
+      console.log(`🔍 [DEBUG] 4단계 완료: 수신자 ${emailPreview.recipients.length}명`);
 
       const result = {
         success: true,
@@ -130,10 +155,12 @@ export class ExcelAutomationService {
         }
       };
 
+      console.log(`✅ [DEBUG] 전체 프로세스 성공 완료`);
       DebugLogger.logFunctionExit('ExcelAutomationService.processExcelUpload', result);
       return result;
 
     } catch (error) {
+      console.log(`💥 [DEBUG] 전체 프로세스 실패: ${error instanceof Error ? error.message : 'Unknown error'}`);
       DebugLogger.logError('ExcelAutomationService.processExcelUpload', error);
       return {
         success: false,

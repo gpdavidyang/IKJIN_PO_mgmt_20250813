@@ -57,10 +57,15 @@ const upload = multer({
  * POST /api/excel-automation/upload-and-process
  */
 router.post('/upload-and-process', requireAuth, upload.single('file'), async (req: any, res) => {
+  console.log(`🚀 [API] Excel automation request received`);
   DebugLogger.logExecutionPath('/api/excel-automation/upload-and-process', 'ExcelAutomationService.processExcelUpload');
   
   try {
+    console.log(`🔍 [API] Request file:`, req.file ? 'Present' : 'Missing');
+    console.log(`🔍 [API] Request user:`, req.user ? `ID: ${req.user.id}` : 'Missing');
+    
     if (!req.file) {
+      console.log(`❌ [API] No file uploaded`);
       return res.status(400).json({ 
         success: false,
         error: '파일이 업로드되지 않았습니다.' 
@@ -71,16 +76,19 @@ router.post('/upload-and-process', requireAuth, upload.single('file'), async (re
     const userId = req.user?.id;
 
     if (!userId) {
+      console.log(`❌ [API] User not authenticated`);
       return res.status(401).json({
         success: false,
         error: '사용자 인증이 필요합니다.'
       });
     }
 
-    console.log(`📁 Excel 자동화 처리 시작: ${filePath}`);
+    console.log(`📁 [API] Excel 자동화 처리 시작: ${filePath}, 사용자: ${userId}, 파일크기: ${req.file.size}bytes`);
 
     // 통합 자동화 프로세스 실행
+    console.log(`🔄 [API] ExcelAutomationService.processExcelUpload 호출 시작`);
     const result = await ExcelAutomationService.processExcelUpload(filePath, userId);
+    console.log(`✅ [API] ExcelAutomationService.processExcelUpload 완료:`, result.success ? '성공' : '실패');
 
     if (!result.success) {
       // 실패 시 업로드된 파일 정리
@@ -104,17 +112,41 @@ router.post('/upload-and-process', requireAuth, upload.single('file'), async (re
     });
 
   } catch (error) {
-    console.error('Excel 자동화 처리 오류:', error);
+    console.error('❌ [API] Excel 자동화 처리 오류:', error);
     
     // 오류 시 업로드된 파일 정리
     if (req.file?.path && fs.existsSync(req.file.path)) {
+      console.log(`🗑️ [API] 오류로 인한 임시 파일 정리: ${req.file.path}`);
       fs.unlinkSync(req.file.path);
     }
     
-    res.status(500).json({
+    // 더 구체적인 에러 메시지 제공
+    let errorMessage = '서버 오류가 발생했습니다.';
+    let statusCode = 500;
+    
+    if (error instanceof Error) {
+      if (error.message.includes('Database') || error.message.includes('connection')) {
+        errorMessage = '데이터베이스 연결 오류가 발생했습니다.';
+        statusCode = 503;
+      } else if (error.message.includes('timeout')) {
+        errorMessage = '처리 시간이 초과되었습니다. 파일 크기를 확인해주세요.';
+        statusCode = 408;
+      } else if (error.message.includes('memory') || error.message.includes('Memory')) {
+        errorMessage = '메모리 부족으로 처리할 수 없습니다. 더 작은 파일로 시도해주세요.';
+        statusCode = 413;
+      } else if (error.message.includes('parse') || error.message.includes('Excel')) {
+        errorMessage = 'Excel 파일 형식에 오류가 있습니다. 템플릿을 확인해주세요.';
+        statusCode = 422;
+      }
+    }
+    
+    console.error(`❌ [API] 최종 응답: ${statusCode} - ${errorMessage}`);
+    
+    res.status(statusCode).json({
       success: false,
-      error: '서버 오류가 발생했습니다.',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      error: errorMessage,
+      details: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString()
     });
   }
 });

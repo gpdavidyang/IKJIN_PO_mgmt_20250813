@@ -166,15 +166,23 @@ export class POTemplateProcessorMock {
     orders: POTemplateOrder[],
     userId: string
   ): Promise<{ success: boolean; savedOrders: number; error?: string }> {
+    console.log(`🔍 [DB] saveToDatabase 시작: ${orders.length}개 발주서, 사용자 ID: ${userId}`);
+    
     try {
       let savedOrders = 0;
 
+      console.log(`🔍 [DB] 트랜잭션 시작`);
       await db.transaction(async (tx: PgTransaction<any, any, any>) => {
+        console.log(`🔍 [DB] 트랜잭션 내부 진입 성공`);
+        
         for (const orderData of orders) {
+          console.log(`🔍 [DB] 발주서 처리 중: ${orderData.orderNumber}, 거래처: ${orderData.vendorName}`);
           // 1. 거래처 조회 또는 생성
+          console.log(`🔍 [DB] 거래처 조회: ${orderData.vendorName}`);
           let vendor = await tx.select().from(vendors).where(eq(vendors.name, orderData.vendorName)).limit(1);
           let vendorId: number;
           if (vendor.length === 0) {
+            console.log(`🔍 [DB] 거래처 생성: ${orderData.vendorName}`);
             const newVendor = await tx.insert(vendors).values({
               name: orderData.vendorName,
               contactPerson: 'Unknown',
@@ -183,14 +191,18 @@ export class POTemplateProcessorMock {
               isActive: true
             }).returning({ id: vendors.id });
             vendorId = newVendor[0].id;
+            console.log(`✅ [DB] 거래처 생성됨: ID ${vendorId}`);
           } else {
             vendorId = vendor[0].id;
+            console.log(`✅ [DB] 거래처 기존 발견: ID ${vendorId}`);
           }
           
           // 2. 프로젝트 조회 또는 생성
+          console.log(`🔍 [DB] 프로젝트 조회: ${orderData.siteName}`);
           let project = await tx.select().from(projects).where(eq(projects.projectName, orderData.siteName)).limit(1);
           let projectId: number;
           if (project.length === 0) {
+            console.log(`🔍 [DB] 프로젝트 생성: ${orderData.siteName}`);
             const newProject = await tx.insert(projects).values({
               projectName: orderData.siteName,
               projectCode: `AUTO-${Date.now()}`,
@@ -202,8 +214,10 @@ export class POTemplateProcessorMock {
               orderManagerId: null
             }).returning({ id: projects.id });
             projectId = newProject[0].id;
+            console.log(`✅ [DB] 프로젝트 생성됨: ID ${projectId}`);
           } else {
             projectId = project[0].id;
+            console.log(`✅ [DB] 프로젝트 기존 발견: ID ${projectId}`);
           }
           
           // 3. 발주서 생성
