@@ -14,6 +14,7 @@ import {
   queryKeys,
   CACHE_CONFIGS 
 } from "@/lib/query-optimization";
+import { useAuth } from "@/hooks/useAuth";
 
 // Re-export commonly used hooks and utilities for use in other components
 export { 
@@ -420,7 +421,7 @@ export function useQueryOptimization() {
 
 // Hook for warming up essential caches on app start
 export function useAppInitialization() {
-  const { data: user } = useCurrentUser();
+  const { user } = useAuth(); // Use useAuth instead of useCurrentUser to prevent 401 calls
   
   // Prefetch essential static data only (projects/vendors come via optimized endpoints)
   usePositions();

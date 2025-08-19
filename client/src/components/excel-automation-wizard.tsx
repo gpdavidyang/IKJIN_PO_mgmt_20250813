@@ -140,6 +140,7 @@ export function ExcelAutomationWizard() {
       const response = await fetch('/api/excel-automation/upload-and-process', {
         method: 'POST',
         body: formData,
+        credentials: 'include', // 인증 쿠키 포함
       });
 
       const result = await response.json();
@@ -203,6 +204,7 @@ export function ExcelAutomationWizard() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // 인증 쿠키 포함
         body: JSON.stringify({
           filePath: automationData.filePath,
           selectedVendors: selections
@@ -240,6 +242,7 @@ export function ExcelAutomationWizard() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // 인증 쿠키 포함
         body: JSON.stringify({
           processedFilePath: `uploads/${automationData.emailPreview.attachmentInfo.processedFile}`,
           recipients: automationData.emailPreview.recipients,
@@ -618,6 +621,7 @@ export function ExcelAutomationWizard() {
                   fetch('/api/excel-automation/cleanup', {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include', // 인증 쿠키 포함
                     body: JSON.stringify({
                       filePaths: [
                         automationData?.filePath,
