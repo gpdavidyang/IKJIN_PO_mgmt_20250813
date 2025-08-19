@@ -143,6 +143,16 @@ export function ExcelAutomationWizard() {
         credentials: 'include', // 인증 쿠키 포함
       });
 
+      // Handle authentication errors
+      if (response.status === 401) {
+        throw new Error('로그인이 필요합니다. 페이지를 새로고침하고 다시 로그인해주세요.');
+      }
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`서버 오류 (${response.status}): ${errorText || response.statusText}`);
+      }
+
       const result = await response.json();
 
       if (!result.success) {
@@ -211,6 +221,15 @@ export function ExcelAutomationWizard() {
         }),
       });
 
+      if (response.status === 401) {
+        throw new Error('로그인이 필요합니다. 페이지를 새로고침하고 다시 로그인해주세요.');
+      }
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`서버 오류 (${response.status}): ${errorText || response.statusText}`);
+      }
+
       const result = await response.json();
 
       if (result.success) {
@@ -253,6 +272,15 @@ export function ExcelAutomationWizard() {
           }
         }),
       });
+
+      if (response.status === 401) {
+        throw new Error('로그인이 필요합니다. 페이지를 새로고침하고 다시 로그인해주세요.');
+      }
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`서버 오류 (${response.status}): ${errorText || response.statusText}`);
+      }
 
       const result = await response.json();
 

@@ -1,5 +1,6 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import { createOptimizedQueryClient } from "./query-optimization";
+import { isDevelopment, isProduction } from "@/utils/environment";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -97,12 +98,12 @@ queryClient.setDefaultOptions({
     staleTime: 1000 * 60 * 5, // 5 minutes
     refetchOnWindowFocus: false, // Prevent excessive refetching
     // Production-specific optimizations for auth queries
-    refetchOnMount: process.env.NODE_ENV === 'development',
+    refetchOnMount: isDevelopment(),
     refetchOnReconnect: false,
     // Global error handling to suppress 401s in production
     onError: (error: any) => {
       // Only log non-auth errors in production
-      if (process.env.NODE_ENV === 'production') {
+      if (isProduction()) {
         // Suppress 401 errors from console logs
         if (error?.message?.includes('401') || error?.status === 401) {
           return;
@@ -110,7 +111,7 @@ queryClient.setDefaultOptions({
       }
       
       // Log other errors normally
-      if (process.env.NODE_ENV === 'development') {
+      if (isDevelopment()) {
         console.warn('Query error:', error);
       }
     },

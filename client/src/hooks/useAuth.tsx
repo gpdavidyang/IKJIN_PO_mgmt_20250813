@@ -1,10 +1,11 @@
-import { createContext, ReactNode, useContext, useCallback } from "react";
+import { createContext, ReactNode, useContext, useCallback, useState, useEffect } from "react";
 import {
   useQuery,
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
 import { useLocation } from "wouter";
+import { isDevelopment, isProduction, isServerless } from "@/utils/environment";
 
 type User = {
   id: string;
@@ -35,19 +36,61 @@ function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [, navigate] = useLocation();
 
-  // Smart authentication check - only query when there are session indicators
-  const shouldCheckAuth = (() => {
-    // In development, always check
-    if (process.env.NODE_ENV === 'development') {
-      return true;
+  // Production-safe authentication check using React state
+  const [shouldCheckAuth, setShouldCheckAuth] = useState(() => {
+    // Always start with false in production to prevent immediate auth calls
+    if (isProduction()) {
+      return false;
     }
     
-    // In production, only check if there are session indicators
-    return document.cookie.includes('connect.sid') || 
-           document.cookie.includes('session') ||
-           localStorage.getItem('hasAuthenticated') === 'true' ||
-           sessionStorage.getItem('userAuthenticated') === 'true';
-  })();
+    // In development, check session indicators
+    try {
+      return document.cookie.includes('connect.sid') || 
+             document.cookie.includes('session') ||
+             localStorage.getItem('hasAuthenticated') === 'true' ||
+             sessionStorage.getItem('userAuthenticated') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  // Effect to update shouldCheckAuth based on session indicators
+  useEffect(() => {
+    const checkAuthIndicators = () => {
+      try {
+        const hasSessionCookie = document.cookie.includes('connect.sid') || 
+                                 document.cookie.includes('session');
+        const hasLocalIndicator = localStorage.getItem('hasAuthenticated') === 'true';
+        const hasSessionIndicator = sessionStorage.getItem('userAuthenticated') === 'true';
+        
+        const shouldCheck = hasSessionCookie || hasLocalIndicator || hasSessionIndicator;
+        setShouldCheckAuth(shouldCheck);
+      } catch (error) {
+        console.warn('Error checking auth indicators:', error);
+        setShouldCheckAuth(false);
+      }
+    };
+
+    // Initial check
+    checkAuthIndicators();
+
+    // Listen for storage changes
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'hasAuthenticated' || e.key === 'userAuthenticated') {
+        checkAuthIndicators();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Check periodically for cookie changes (since there's no cookie change event)
+    const interval = setInterval(checkAuthIndicators, 5000);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, []);
 
   const {
     data: user,
@@ -72,15 +115,22 @@ function AuthProvider({ children }: { children: ReactNode }) {
         // Handle other HTTP errors
         if (!response.ok) {
           // Don't log auth errors to console in production
-          if (process.env.NODE_ENV === 'development') {
+          if (isDevelopment()) {
             console.warn(`Auth query failed with status ${response.status}:`, response.statusText);
           }
           throw new Error(`Authentication check failed: ${response.status}`);
         }
         
         const userData = await response.json();
-        if (process.env.NODE_ENV === 'development') {
+        if (isDevelopment()) {
           console.log('🔍 useAuth - Fetched user data:', userData);
+          console.log('🌍 Environment:', { isDev: isDevelopment(), isProd: isProduction(), isServerless: isServerless() });
+          console.log('🔑 Auth indicators:', {
+            hasSessionCookie: document.cookie.includes('connect.sid') || document.cookie.includes('session'),
+            hasLocalAuth: localStorage.getItem('hasAuthenticated') === 'true',
+            hasSessionAuth: sessionStorage.getItem('userAuthenticated') === 'true',
+            shouldCheckAuth
+          });
         }
         
         // Set authentication indicators on successful auth
@@ -95,7 +145,7 @@ function AuthProvider({ children }: { children: ReactNode }) {
         
         // Silently handle network errors that might indicate auth issues
         if (fetchError.name === 'TypeError' && fetchError.message.includes('Failed to fetch')) {
-          if (process.env.NODE_ENV === 'development') {
+          if (isDevelopment()) {
             console.warn('🌐 Network error during auth check, treating as unauthenticated');
           }
           return null;
@@ -146,6 +196,9 @@ function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('hasAuthenticated', 'true');
       sessionStorage.setItem('userAuthenticated', 'true');
       
+      // Trigger auth check update to enable future queries
+      setShouldCheckAuth(true);
+      
       // Clear any other queries to ensure fresh data on next access
       queryClient.removeQueries({ queryKey: ["/api/auth/user"], exact: false });
       queryClient.setQueryData(["/api/auth/user"], user); // Ensure user data remains set
@@ -162,6 +215,7 @@ function AuthProvider({ children }: { children: ReactNode }) {
       // Clear authentication indicators immediately
       localStorage.removeItem('hasAuthenticated');
       sessionStorage.removeItem('userAuthenticated');
+      setShouldCheckAuth(false);
       
       // Cancel any outgoing requests to prevent race conditions
       await queryClient.cancelQueries({ queryKey: ["/api/auth/user"] });
@@ -200,6 +254,7 @@ function AuthProvider({ children }: { children: ReactNode }) {
       // Clear authentication indicators immediately
       localStorage.removeItem('hasAuthenticated');
       sessionStorage.removeItem('userAuthenticated');
+      setShouldCheckAuth(false);
       
       // Cancel any pending auth queries to prevent 401 errors
       await queryClient.cancelQueries({ queryKey: ["/api/auth/user"] });
