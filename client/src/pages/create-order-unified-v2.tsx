@@ -17,7 +17,8 @@ import {
   AlertCircle,
   Info,
   Loader2,
-  ArrowRight
+  ArrowRight,
+  Plus
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
