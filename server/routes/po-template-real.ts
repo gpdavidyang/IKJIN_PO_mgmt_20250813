@@ -107,15 +107,34 @@ router.get('/db-status', simpleAuth, async (req: any, res) => {
  */
 router.post('/upload', simpleAuth, upload.single('file'), async (req: any, res) => {
   try {
+    console.log('📥 [서버] 파일 업로드 요청 수신:', {
+      hasFile: !!req.file,
+      originalname: req.file?.originalname,
+      filename: req.file?.filename,
+      size: req.file?.size,
+      mimetype: req.file?.mimetype,
+      endpoint: '/api/po-template/upload'
+    });
+
     if (!req.file) {
+      console.error('❌ [서버] 파일 없음');
       return res.status(400).json({ error: '파일이 업로드되지 않았습니다.' });
     }
 
     const filePath = req.file.path;
+    console.log('📂 [서버] 파일 경로:', { filePath });
     
     // 1. 빠른 유효성 검사
+    console.log('🔍 [서버] 유효성 검사 시작');
     const quickValidation = await POTemplateValidator.quickValidate(filePath);
+    console.log('📋 [서버] 유효성 검사 결과:', {
+      isValid: quickValidation.isValid,
+      errorCount: quickValidation.errors.length,
+      errors: quickValidation.errors
+    });
+    
     if (!quickValidation.isValid) {
+      console.error('❌ [서버] 유효성 검사 실패');
       fs.unlinkSync(filePath);
       return res.status(400).json({ 
         error: '파일 유효성 검사 실패', 
@@ -125,9 +144,16 @@ router.post('/upload', simpleAuth, upload.single('file'), async (req: any, res) 
     }
 
     // 2. Input 시트 파싱
+    console.log('⚙️ [서버] Input 시트 파싱 시작');
     const parseResult = POTemplateProcessorMock.parseInputSheet(filePath);
+    console.log('📊 [서버] 파싱 결과:', {
+      success: parseResult.success,
+      hasData: !!parseResult.data,
+      ordersCount: parseResult.data?.orders?.length || 0
+    });
     
     if (!parseResult.success) {
+      console.error('❌ [서버] 파싱 실패:', parseResult.error);
       fs.unlinkSync(filePath);
       return res.status(400).json({ 
         error: '파싱 실패', 
@@ -136,9 +162,11 @@ router.post('/upload', simpleAuth, upload.single('file'), async (req: any, res) 
     }
 
     // 3. 상세 유효성 검사
+    console.log('🔍 [서버] 상세 유효성 검사 시작');
     const detailedValidation = await POTemplateValidator.validatePOTemplateFile(filePath);
+    console.log('📋 [서버] 상세 유효성 검사 완료');
     
-    res.json({
+    const responseData = {
       success: true,
       message: '파일 파싱 완료',
       data: {
@@ -149,12 +177,27 @@ router.post('/upload', simpleAuth, upload.single('file'), async (req: any, res) 
         orders: parseResult.orders,
         validation: detailedValidation
       }
+    };
+    
+    console.log('✅ [서버] 성공 응답 전송:', {
+      success: responseData.success,
+      fileName: responseData.data.fileName,
+      totalOrders: responseData.data.totalOrders,
+      totalItems: responseData.data.totalItems,
+      ordersCount: responseData.data.orders?.length || 0
     });
+    
+    res.json(responseData);
 
   } catch (error) {
-    console.error('PO Template 업로드 오류:', error);
+    console.error('💥 [서버] PO Template 업로드 오류:', {
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      errorStack: error instanceof Error ? error.stack : 'No stack trace',
+      endpoint: '/api/po-template/upload'
+    });
     
     if (req.file && fs.existsSync(req.file.path)) {
+      console.log('🗑️ [서버] 임시 파일 삭제:', req.file.path);
       fs.unlinkSync(req.file.path);
     }
     

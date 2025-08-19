@@ -55,14 +55,22 @@ const ExcelUploadZone: React.FC<ExcelUploadZoneProps> = ({ onDataExtracted, onPr
     setIsDragging(false);
     
     const files = Array.from(e.dataTransfer.files);
+    console.log('🎯 [클라이언트] 드래그 드롭 파일:', {
+      filesCount: files.length,
+      fileDetails: files.map(f => ({ name: f.name, type: f.type, size: f.size })),
+      component: 'ExcelUploadZone'
+    });
+    
     const excelFile = files.find(file => 
       file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
       file.name.endsWith('.xlsx')
     );
     
     if (excelFile) {
+      console.log('✅ [클라이언트] Excel 파일 감지됨:', { fileName: excelFile.name });
       processFile(excelFile);
     } else {
+      console.error('❌ [클라이언트] Excel 파일이 아님:', { files: files.map(f => f.name) });
       setErrorMessage('엑셀 파일(.xlsx)만 업로드 가능합니다.');
       setUploadStatus('error');
     }
@@ -70,6 +78,14 @@ const ExcelUploadZone: React.FC<ExcelUploadZoneProps> = ({ onDataExtracted, onPr
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    console.log('📁 [클라이언트] 파일 선택:', {
+      hasFile: !!file,
+      fileName: file?.name,
+      fileSize: file?.size,
+      fileType: file?.type,
+      component: 'ExcelUploadZone'
+    });
+    
     if (file) {
       processFile(file);
     }
@@ -81,6 +97,15 @@ const ExcelUploadZone: React.FC<ExcelUploadZoneProps> = ({ onDataExtracted, onPr
     setUploadStatus('processing');
     setErrorMessage('');
     
+    // Enhanced debug logging
+    console.log('📤 [클라이언트] 파일 업로드 시작:', {
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type,
+      lastModified: new Date(file.lastModified).toISOString(),
+      component: 'ExcelUploadZone'
+    });
+    
     const formData = new FormData();
     formData.append('file', file);
     
@@ -90,11 +115,34 @@ const ExcelUploadZone: React.FC<ExcelUploadZoneProps> = ({ onDataExtracted, onPr
         body: formData
       });
       
+      // Enhanced response logging
+      console.log('📥 [클라이언트] 서버 응답 수신:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+        url: response.url,
+        headers: Object.fromEntries(response.headers.entries())
+      });
+      
       if (!response.ok) {
+        console.error('❌ [클라이언트] HTTP 에러:', {
+          status: response.status,
+          statusText: response.statusText,
+          component: 'ExcelUploadZone'
+        });
         throw new Error('파일 업로드 실패');
       }
       
       const result = await response.json();
+      
+      // Enhanced result logging
+      console.log('📋 [클라이언트] 응답 데이터 처리:', {
+        success: result.success,
+        ordersCount: result.data?.orders?.length || 0,
+        hasError: !!result.error,
+        errorMessage: result.error,
+        component: 'ExcelUploadZone'
+      });
       
       if (result.success && result.data.orders.length > 0) {
         setParsedOrders(result.data.orders);
@@ -175,9 +223,19 @@ const ExcelUploadZone: React.FC<ExcelUploadZoneProps> = ({ onDataExtracted, onPr
         throw new Error(result.error || '데이터 추출 실패');
       }
     } catch (error: any) {
+      console.error('💥 [클라이언트] 파일 처리 오류:', {
+        errorMessage: error.message,
+        errorStack: error.stack,
+        errorName: error.name,
+        component: 'ExcelUploadZone'
+      });
       setErrorMessage(error.message || '파일 처리 중 오류가 발생했습니다.');
       setUploadStatus('error');
     } finally {
+      console.log('🏁 [클라이언트] 파일 처리 완료:', {
+        component: 'ExcelUploadZone',
+        finalStatus: uploadStatus
+      });
       setIsProcessing(false);
     }
   };
