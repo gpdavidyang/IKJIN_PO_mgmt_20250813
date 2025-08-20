@@ -199,10 +199,21 @@ async function findBestCategoryMatch(
   // 유사도 순으로 정렬
   suggestions.sort((a, b) => b.similarity - a.similarity);
 
-  // 상위 5개만 반환
+  // 중복 이름 제거 (동일한 이름의 경우 첫 번째만 유지)
+  const uniqueSuggestions: CategorySuggestion[] = [];
+  const seenNames = new Set<string>();
+  
+  for (const suggestion of suggestions) {
+    if (!seenNames.has(suggestion.name)) {
+      seenNames.add(suggestion.name);
+      uniqueSuggestions.push(suggestion);
+    }
+  }
+
+  // 상위 5개만 반환 (중복 제거 후)
   return {
     bestMatch,
-    suggestions: suggestions.slice(0, 5)
+    suggestions: uniqueSuggestions.slice(0, 5)
   };
 }
 

@@ -202,12 +202,25 @@ const CategoryMappingModal: React.FC<CategoryMappingModalProps> = ({
     } else if (type === 'middle') {
       allOptions = getAvailableMiddleCategories(parentId);
     } else if (type === 'minor') {
+      // 소분류의 경우 parentId가 없으면 suggestions만 표시 (중복 방지)
+      if (!parentId) {
+        console.log('🔍 소분류: parentId 없음, suggestions만 표시:', suggestions);
+        return suggestions.map((s: any) => ({ ...s, isSuggestion: true }));
+      }
       allOptions = getAvailableMinorCategories(parentId);
     }
     
     // Create a combined list with suggestions first (with similarity info), then other options
     const suggestionIds = suggestions.map((s: any) => s.id);
     const otherOptions = allOptions.filter(opt => !suggestionIds.includes(opt.id));
+    
+    console.log('🔍 getCombinedOptions:', {
+      type,
+      parentId,
+      suggestionsCount: suggestions.length,
+      allOptionsCount: allOptions.length,
+      otherOptionsCount: otherOptions.length
+    });
     
     return [
       ...suggestions.map((s: any) => ({ ...s, isSuggestion: true })),
