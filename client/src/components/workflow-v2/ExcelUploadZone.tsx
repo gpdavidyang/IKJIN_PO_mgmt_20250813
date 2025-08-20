@@ -255,6 +255,7 @@ const ExcelUploadZone: React.FC<ExcelUploadZoneProps> = ({ onDataExtracted, onPr
     
     try {
       // Debug: 파싱된 데이터 구조 확인
+      console.log('🔍 DEBUG: 전체 발주서 데이터:', orderData);
       console.log('🔍 DEBUG: 첫 번째 아이템의 모든 필드:', Object.keys(orderData.items[0]));
       console.log('🔍 DEBUG: 첫 번째 아이템 분류 관련 필드들:', {
         majorCategory: orderData.items[0].majorCategory,

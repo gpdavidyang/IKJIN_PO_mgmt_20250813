@@ -91,10 +91,21 @@ export class POTemplateProcessorMock {
         const supplyAmount = this.safeNumber(row[10]); // K열: 공급가액
         const taxAmount = this.safeNumber(row[11]); // L열: 부가세
         const totalAmount = this.safeNumber(row[12]); // M열: 합계
-        const categoryLv1 = String(row[13] || '').trim(); // N열: 대분류
-        const categoryLv2 = String(row[14] || '').trim(); // O열: 중분류
-        const categoryLv3 = String(row[15] || '').trim(); // P열: 소분류
+        const categoryLv1 = String(row[13] || '').trim(); // N열: 대분류 (인덱스 13)
+        const categoryLv2 = String(row[14] || '').trim(); // O열: 중분류 (인덱스 14)
+        const categoryLv3 = String(row[15] || '').trim(); // P열: 소분류 (인덱스 15)
         const notes = String(row[16] || '').trim(); // Q열: 비고
+        
+        // 디버깅: 분류 값 확인
+        console.log('🔍 [파싱] 분류 값 확인:', {
+          row길이: row.length,
+          categoryLv1: `"${categoryLv1}" (인덱스 13)`,
+          categoryLv2: `"${categoryLv2}" (인덱스 14)`,
+          categoryLv3: `"${categoryLv3}" (인덱스 15)`,
+          row13값: row[13],
+          row14값: row[14],
+          row15값: row[15]
+        });
         
         // 거래처 관련 정보 (Excel에는 없지만 기본값 설정)
         const vendorEmail = ''; // Excel에 없음
