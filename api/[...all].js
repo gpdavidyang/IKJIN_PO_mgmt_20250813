@@ -67,7 +67,8 @@ export default async function handler(req, res) {
     const origin = req.headers.origin;
     const allowedOrigins = [
       'https://ikjin-po-mgmt-20250813-dno9.vercel.app',
-      'https://ikjin-po-mgmt-20250813-dn.vercel.app', 
+      'https://ikjin-po-mgmt-20250813-dn.vercel.app',
+      'https://ikjin-po-mgmt-20250813-iy2mbnl01-davidswyang-3963s-projects.vercel.app',
       'http://localhost:3000',
       'http://localhost:5000'
     ];
@@ -81,8 +82,8 @@ export default async function handler(req, res) {
       console.log('✅ CORS origin set to:', origin);
     } else if (!origin) {
       // For same-origin requests from production domain
-      res.setHeader('Access-Control-Allow-Origin', 'https://ikjin-po-mgmt-20250813-dno9.vercel.app');
-      console.log('✅ CORS origin set to default production domain');
+      res.setHeader('Access-Control-Allow-Origin', 'https://ikjin-po-mgmt-20250813-iy2mbnl01-davidswyang-3963s-projects.vercel.app');
+      console.log('✅ CORS origin set to current production domain');
     }
     
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
