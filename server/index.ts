@@ -29,7 +29,12 @@ app.use((req, res, next) => {
     'http://localhost:5000'
   ];
   
-  if (!origin || allowedOrigins.includes(origin)) {
+  // Check if origin matches allowed origins or Vercel deployment pattern
+  const isAllowedOrigin = !origin || 
+    allowedOrigins.includes(origin) ||
+    /^https:\/\/ikjin-po-mgmt-20250813-[a-z0-9]+-davidswyang-3963s-projects\.vercel\.app$/.test(origin);
+  
+  if (isAllowedOrigin) {
     res.setHeader('Access-Control-Allow-Origin', origin || '*');
   }
   
