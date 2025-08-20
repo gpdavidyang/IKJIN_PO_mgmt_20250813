@@ -254,6 +254,20 @@ const ExcelUploadZone: React.FC<ExcelUploadZoneProps> = ({ onDataExtracted, onPr
     }
     
     try {
+      // Debug: 파싱된 데이터 구조 확인
+      console.log('🔍 DEBUG: 첫 번째 아이템의 모든 필드:', Object.keys(orderData.items[0]));
+      console.log('🔍 DEBUG: 첫 번째 아이템 분류 관련 필드들:', {
+        majorCategory: orderData.items[0].majorCategory,
+        middleCategory: orderData.items[0].middleCategory,
+        minorCategory: orderData.items[0].minorCategory,
+        categoryLv1: orderData.items[0].categoryLv1,
+        categoryLv2: orderData.items[0].categoryLv2,
+        categoryLv3: orderData.items[0].categoryLv3,
+        대분류: orderData.items[0].대분류,
+        중분류: orderData.items[0].중분류,
+        소분류: orderData.items[0].소분류
+      });
+
       // Prepare category validation requests
       const categoryRequests = orderData.items.map((item: any) => ({
         majorCategory: item.majorCategory || item.categoryLv1 || item.대분류,
