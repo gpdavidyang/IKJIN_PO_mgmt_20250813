@@ -106,8 +106,8 @@ async function initializeApp() {
       secure: process.env.NODE_ENV === 'production', // Enable secure cookies in production
       httpOnly: true,
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-      sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'lax', // Use 'lax' for better compatibility
-      domain: process.env.NODE_ENV === 'production' ? '.vercel.app' : undefined // Shared domain for Vercel
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Use 'none' for cross-origin in production
+      domain: undefined // Let browser handle domain automatically
     }
   }));
 
@@ -163,8 +163,8 @@ if (process.env.VERCEL) {
       secure: process.env.NODE_ENV === 'production', // Enable secure cookies in production
       httpOnly: true,
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-      sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'lax', // Use 'lax' for better compatibility
-      domain: process.env.NODE_ENV === 'production' ? '.vercel.app' : undefined // Shared domain for Vercel
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Use 'none' for cross-origin in production
+      domain: undefined // Let browser handle domain automatically
     }
   }));
 
