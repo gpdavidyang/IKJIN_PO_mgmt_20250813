@@ -68,7 +68,6 @@ export default async function handler(req, res) {
     const allowedOrigins = [
       'https://ikjin-po-mgmt-20250813-dno9.vercel.app',
       'https://ikjin-po-mgmt-20250813-dn.vercel.app',
-      'https://ikjin-po-mgmt-20250813-iy2mbnl01-davidswyang-3963s-projects.vercel.app',
       'http://localhost:3000',
       'http://localhost:5000'
     ];
@@ -76,14 +75,20 @@ export default async function handler(req, res) {
     console.log('🌐 Request origin:', origin);
     console.log('📋 Allowed origins:', allowedOrigins);
     
-    // CRITICAL: Set specific origin for cookie support (never use wildcard with credentials)
-    if (origin && allowedOrigins.includes(origin)) {
+    // CRITICAL: Allow all Vercel deployments for this project + specific allowed origins
+    const isAllowedOrigin = origin && (
+      allowedOrigins.includes(origin) ||
+      // Allow all Vercel deployments for this project
+      /^https:\/\/ikjin-po-mgmt-20250813-[a-z0-9]+-davidswyang-3963s-projects\.vercel\.app$/.test(origin)
+    );
+    
+    if (isAllowedOrigin) {
       res.setHeader('Access-Control-Allow-Origin', origin);
       console.log('✅ CORS origin set to:', origin);
     } else if (!origin) {
-      // For same-origin requests from production domain
-      res.setHeader('Access-Control-Allow-Origin', 'https://ikjin-po-mgmt-20250813-iy2mbnl01-davidswyang-3963s-projects.vercel.app');
-      console.log('✅ CORS origin set to current production domain');
+      // For same-origin requests from production domain - use latest deployment pattern
+      res.setHeader('Access-Control-Allow-Origin', 'https://ikjin-po-mgmt-20250813-k0md981k3-davidswyang-3963s-projects.vercel.app');
+      console.log('✅ CORS origin set to latest production domain');
     }
     
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
