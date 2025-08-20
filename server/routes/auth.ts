@@ -20,6 +20,17 @@ router.get('/auth/debug', (req, res) => {
   });
 });
 
+// Simple test endpoint without any authentication
+router.get('/test/ping', (req, res) => {
+  res.json({ 
+    message: "Server is alive", 
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'unknown',
+    vercel: process.env.VERCEL || 'false',
+    origin: req.get('Origin') || 'none'
+  });
+});
+
 // Production authentication debug endpoint
 router.get('/auth/debug-prod', (req, res) => {
   try {
