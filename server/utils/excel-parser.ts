@@ -1,7 +1,7 @@
 import * as XLSX from 'xlsx';
 import { z } from 'zod';
 
-// Excel Input Sheet 컬럼 정의 (A:P 열) - 실제 Excel 구조에 맞춘 정의
+// Excel Input Sheet 컬럼 정의 (A:Q 열) - 실제 Excel 구조에 맞춘 정의
 const ExcelRowSchema = z.object({
   vendorName: z.string(), // A열: 거래처명
   projectName: z.string(), // B열: 현장명
@@ -19,6 +19,7 @@ const ExcelRowSchema = z.object({
   majorCategory: z.string().optional(), // N열: 대분류
   middleCategory: z.string().optional(), // O열: 중분류
   minorCategory: z.string().optional(), // P열: 소분류
+  notes: z.string().optional(), // Q열: 비고
 });
 
 export type ExcelParsedRow = z.infer<typeof ExcelRowSchema>;
@@ -97,10 +98,10 @@ export function parseExcelInputSheet(buffer: Buffer): PurchaseOrderMapping[] {
       end: { row: fullRange.e.r, col: fullRange.e.c }
     });
 
-    // A:P 범위의 데이터만 추출 (2행부터) - 실제 Excel 구조에 맞춰 수정
+    // A:Q 범위의 데이터만 추출 (2행부터) - 실제 Excel 구조에 맞춰 수정
     const range = {
       s: { c: 0, r: 1 }, // A2부터 시작
-      e: { c: 15, r: fullRange.e.r } // P열까지, 마지막 행까지
+      e: { c: 16, r: fullRange.e.r } // Q열까지, 마지막 행까지
     };
     
     console.log('파싱 범위:', range);
@@ -123,7 +124,8 @@ export function parseExcelInputSheet(buffer: Buffer): PurchaseOrderMapping[] {
       'totalAmount',    // M열: 합계
       'majorCategory',  // N열: 대분류
       'middleCategory', // O열: 중분류
-      'minorCategory'   // P열: 소분류
+      'minorCategory',  // P열: 소분류
+      'notes'           // Q열: 비고
     ];
     
     console.log('헤더 배열:', headers);
@@ -249,7 +251,7 @@ export function parseExcelInputSheet(buffer: Buffer): PurchaseOrderMapping[] {
           orderDate,
           deliveryDate,
           totalAmount,
-          notes: undefined, // Excel에는 notes 컬럼이 없음
+          notes: row.notes?.trim() || undefined,
           
           // 원본 데이터
           vendorName: row.vendorName?.trim() || '',
