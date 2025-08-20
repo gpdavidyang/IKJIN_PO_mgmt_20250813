@@ -132,7 +132,17 @@ export default function Orders() {
       await apiRequest("PUT", `/api/orders/${orderId}/status`, { status });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      // 모든 orders 관련 쿼리 무효화 - 와일드카드 패턴 사용
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const queryKey = query.queryKey as string[];
+          return queryKey.some(key => 
+            key === '/api/orders-optimized' || 
+            key === 'orders-optimized' ||
+            (typeof key === 'string' && key.includes('orders'))
+          );
+        }
+      });
       toast({
         title: "성공",
         description: "발주서 상태가 변경되었습니다.",
@@ -163,7 +173,17 @@ export default function Orders() {
       await apiRequest("DELETE", `/api/orders/${orderId}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      // 모든 orders 관련 쿼리 무효화 - 와일드카드 패턴 사용
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const queryKey = query.queryKey as string[];
+          return queryKey.some(key => 
+            key === '/api/orders-optimized' || 
+            key === 'orders-optimized' ||
+            (typeof key === 'string' && key.includes('orders'))
+          );
+        }
+      });
       toast({
         title: "성공",
         description: "발주서가 삭제되었습니다.",
@@ -196,8 +216,30 @@ export default function Orders() {
         orderIds: orderIds.map(id => parseInt(id, 10))
       });
     },
-    onSuccess: (data, orderIds) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+    onSuccess: async (data, orderIds) => {
+      // 모든 orders 관련 쿼리 무효화 - 와일드카드 패턴 사용
+      await queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const queryKey = query.queryKey as string[];
+          return queryKey.some(key => 
+            key === '/api/orders-optimized' || 
+            key === 'orders-optimized' ||
+            (typeof key === 'string' && key.includes('orders'))
+          );
+        }
+      });
+      
+      // 강제로 데이터 새로고침
+      await queryClient.refetchQueries({ 
+        predicate: (query) => {
+          const queryKey = query.queryKey as string[];
+          return queryKey.some(key => 
+            key === '/api/orders-optimized' || 
+            key === 'orders-optimized'
+          );
+        }
+      });
+      
       toast({
         title: "성공",
         description: `${orderIds.length}개의 발주서가 삭제되었습니다.`,
