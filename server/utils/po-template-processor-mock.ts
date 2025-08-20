@@ -17,6 +17,10 @@ export interface POTemplateItem {
   categoryLv1: string;
   categoryLv2: string;
   categoryLv3: string;
+  // 클라이언트 호환성을 위한 필드
+  majorCategory?: string;
+  middleCategory?: string;
+  minorCategory?: string;
   vendorName: string;
   deliveryName: string;
   notes: string;
@@ -71,10 +75,22 @@ export class POTemplateProcessorMock {
         // 빈 행이거나 필수 데이터가 없는 경우 건너뛰기
         if (!row || row.length === 0 || (!row[0] && !row[2] && !row[10])) continue;
         
-        // 컬럼 수가 부족한 경우 빈 값으로 채우기
-        while (row.length < 16) {
+        // 컬럼 수가 부족한 경우 빈 값으로 채우기 (Q열까지 포함하여 17개)
+        while (row.length < 17) {
           row.push('');
         }
+        
+        // 디버깅: 원본 row 데이터 확인
+        console.log('🔍 [파싱] 원본 row 데이터:', {
+          row길이: row.length,
+          모든값: row,
+          H열_인덱스7: row[7],
+          I열_인덱스8: row[8],
+          J열_인덱스9: row[9],
+          N열_인덱스13: row[13],
+          O열_인덱스14: row[14],
+          P열_인덱스15: row[15]
+        });
         
         // Input 시트의 실제 컬럼 매핑 (A:P)
         // 실제 Excel 파일 구조에 맞춘 컬럼 매핑
@@ -145,6 +161,10 @@ export class POTemplateProcessorMock {
             categoryLv1,
             categoryLv2,
             categoryLv3,
+            // 클라이언트 호환성을 위한 필드 추가
+            majorCategory: categoryLv1,
+            middleCategory: categoryLv2,
+            minorCategory: categoryLv3,
             vendorName,
             deliveryName,
             notes
