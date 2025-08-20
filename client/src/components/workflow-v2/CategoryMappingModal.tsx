@@ -514,6 +514,29 @@ const CategoryMappingModal: React.FC<CategoryMappingModalProps> = ({
           </Alert>
         )}
 
+        {/* 분류 불일치 안내 메시지 */}
+        {currentItem && (currentItem.mappingResult.status === 'no_match' || currentItem.mappingResult.status === 'partial_match') && (
+          <Alert className="mb-6 border-orange-200 bg-orange-50">
+            <AlertTriangle className="h-4 w-4 text-orange-600" />
+            <AlertDescription>
+              <div className="font-medium mb-2 text-orange-800">📋 분류 매핑 안내</div>
+              <div className="text-sm text-orange-700 space-y-2">
+                <p>
+                  엑셀 파일의 분류가 시스템 분류와 정확히 일치하지 않습니다.
+                </p>
+                <div className="bg-orange-100 p-3 rounded-lg">
+                  <p className="font-medium mb-1">📞 분류 등록 요청 방법:</p>
+                  <ul className="text-xs space-y-1 ml-4">
+                    <li>• 시스템 관리자에게 새로운 분류 등록을 요청하세요</li>
+                    <li>• 엑셀 분류명: {currentItem.originalCategories.major} {'>'} {currentItem.originalCategories.middle} {'>'} {currentItem.originalCategories.minor}</li>
+                    <li>• 임시로 유사한 기존 분류를 선택하여 진행할 수 있습니다</li>
+                  </ul>
+                </div>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+
         <DialogFooter className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Button
