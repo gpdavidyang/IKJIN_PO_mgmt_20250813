@@ -24,7 +24,7 @@ export const STATUS_CONFIGS = {
   // Purchase Order Status
   order: {
     draft: {
-      label: "초안",
+      label: "임시저장",
       variant: "default" as const,
       icon: FileText,
       pulse: false,

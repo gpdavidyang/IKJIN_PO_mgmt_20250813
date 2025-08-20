@@ -38,7 +38,11 @@ export function BulkDeleteDialog({
     onConfirm();
   };
 
-  const totalAmount = selectedOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+  const totalAmount = selectedOrders.reduce((sum, order) => {
+    const amount = Number(order.totalAmount) || 0;
+    console.log('💰 Processing order amount:', { orderId: order.id, orderNumber: order.orderNumber, totalAmount: order.totalAmount, parsed: amount });
+    return sum + amount;
+  }, 0);
   const formatKoreanWon = (amount: number) => {
     return new Intl.NumberFormat('ko-KR', {
       style: 'currency',

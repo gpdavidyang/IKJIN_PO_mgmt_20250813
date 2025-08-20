@@ -246,58 +246,45 @@ router.put("/orders/:id", requireAuth, async (req, res) => {
   }
 });
 
-// Delete order
-router.delete("/orders/:id", requireAuth, async (req, res) => {
+// Bulk delete orders (Admin only) - Must come BEFORE /orders/:id to avoid route collision
+router.delete("/orders/bulk", requireAuth, requireAdmin, async (req, res) => {
   try {
-    const orderId = parseInt(req.params.id, 10);
-    
-    // Check if user can delete this order
-    const order = await storage.getPurchaseOrder(orderId);
-    if (!order) {
-      return res.status(404).json({ message: "Order not found" });
-    }
-
-    // Only draft orders can be deleted
-    if (order.status !== 'draft') {
-      return res.status(403).json({ message: "Cannot delete submitted orders" });
-    }
-
-    await storage.deletePurchaseOrder(orderId);
-    res.json({ message: "Order deleted successfully" });
-  } catch (error) {
-    console.error("Error deleting order:", error);
-    res.status(500).json({ message: "Failed to delete order" });
-  }
-});
-
-// Bulk delete orders (Admin only)
-router.delete("/orders/bulk", requireAdmin, async (req, res) => {
-  try {
+    console.log('🗑️ Bulk delete request received:', { body: req.body, orderIds: req.body.orderIds });
     const { orderIds } = req.body;
     
     if (!orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
+      console.log('❌ Invalid orderIds:', { orderIds, isArray: Array.isArray(orderIds), length: orderIds?.length });
       return res.status(400).json({ message: "Order IDs array is required" });
     }
 
     // Validate that all IDs are numbers
+    console.log('📊 Parsing order IDs:', orderIds);
     const numericOrderIds = orderIds.map(id => {
+      console.log('🔍 Processing ID:', id, 'type:', typeof id);
       const numericId = parseInt(id, 10);
+      console.log('🔍 Parsed ID:', numericId, 'isNaN:', isNaN(numericId));
       if (isNaN(numericId)) {
+        console.log('❌ Invalid order ID detected:', id);
         throw new Error(`Invalid order ID: ${id}`);
       }
       return numericId;
     });
 
     // Check if all orders exist and get their current status
+    console.log('🔍 Looking up orders for IDs:', numericOrderIds);
     const orders = await Promise.all(
       numericOrderIds.map(async (orderId) => {
+        console.log('🔍 Looking up order ID:', orderId);
         const order = await storage.getPurchaseOrder(orderId);
         if (!order) {
+          console.log('❌ Order not found:', orderId);
           throw new Error(`Order with ID ${orderId} not found`);
         }
+        console.log('✅ Found order:', { id: order.id, orderNumber: order.orderNumber, status: order.status });
         return order;
       })
     );
+    console.log('📋 All orders found:', orders.map(o => ({ id: o.id, orderNumber: o.orderNumber, status: o.status })));
 
     // Check if any orders cannot be deleted (only draft orders can be deleted)
     const nonDraftOrders = orders.filter(order => order.status !== 'draft');
@@ -314,11 +301,14 @@ router.delete("/orders/bulk", requireAdmin, async (req, res) => {
     }
 
     // Delete all orders
-    const deletePromises = numericOrderIds.map(orderId => 
-      storage.deletePurchaseOrder(orderId)
-    );
+    console.log('🗑️ Starting deletion of orders:', numericOrderIds);
+    const deletePromises = numericOrderIds.map(orderId => {
+      console.log('🗑️ Deleting order ID:', orderId);
+      return storage.deletePurchaseOrder(orderId);
+    });
     
     await Promise.all(deletePromises);
+    console.log('✅ All orders deleted successfully');
 
     res.json({ 
       message: `Successfully deleted ${numericOrderIds.length} order(s)`,
@@ -339,6 +329,30 @@ router.delete("/orders/bulk", requireAdmin, async (req, res) => {
     }
     
     res.status(500).json({ message: "Failed to bulk delete orders" });
+  }
+});
+
+// Delete single order - Must come AFTER /orders/bulk to avoid route collision
+router.delete("/orders/:id", requireAuth, async (req, res) => {
+  try {
+    const orderId = parseInt(req.params.id, 10);
+    
+    // Check if user can delete this order
+    const order = await storage.getPurchaseOrder(orderId);
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    // Only draft orders can be deleted
+    if (order.status !== 'draft') {
+      return res.status(403).json({ message: "Cannot delete submitted orders" });
+    }
+
+    await storage.deletePurchaseOrder(orderId);
+    res.json({ message: "Order deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting order:", error);
+    res.status(500).json({ message: "Failed to delete order" });
   }
 });
 

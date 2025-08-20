@@ -191,6 +191,7 @@ export default function Orders() {
 
   const bulkDeleteOrdersMutation = useMutation({
     mutationFn: async (orderIds: string[]) => {
+      console.log('🗑️ Bulk delete request:', { orderIds, parsedIds: orderIds.map(id => parseInt(id, 10)) });
       await apiRequest("DELETE", "/api/orders/bulk", { 
         orderIds: orderIds.map(id => parseInt(id, 10))
       });

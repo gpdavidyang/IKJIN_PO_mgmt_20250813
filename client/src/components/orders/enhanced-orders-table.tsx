@@ -145,8 +145,11 @@ export function EnhancedOrdersTable({
     onViewEmailHistory: !!onViewEmailHistory,
     onBulkDelete: !!onBulkDelete,
     isAdmin,
+    userRole: user?.role,
+    userDetails: user ? { id: user.id, name: user.name, email: user.email } : null,
     selectedOrderIds,
-    draftOrdersCount: draftOrders.length
+    draftOrdersCount: draftOrders.length,
+    conditionCheck: isAdmin && onBulkDelete
   });
 
   // Helper function to render email status
@@ -238,24 +241,22 @@ export function EnhancedOrdersTable({
     ...(isAdmin && onBulkDelete ? [{
       key: "select" as keyof Order,
       header: (
-        <div className="flex items-center">
+        <div className="flex items-center justify-center">
           <Checkbox
             checked={allDraftOrdersSelected}
             onCheckedChange={handleSelectAll}
             disabled={draftOrders.length === 0}
-            className="ml-2"
             aria-label="모든 발주서 선택"
           />
         </div>
       ),
-      width: "50px",
+      width: "40px",
       accessor: (row: Order) => (
-        <div className="flex items-center" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
           <Checkbox
             checked={selectedOrderIds.includes(row.id)}
             onCheckedChange={(checked) => handleSelectOrder(row.id, checked as boolean)}
             disabled={row.status !== 'draft'} // Only draft orders can be selected for deletion
-            className="ml-2"
             aria-label={`발주서 ${row.orderNumber} 선택`}
           />
         </div>
@@ -266,7 +267,7 @@ export function EnhancedOrdersTable({
       header: "발주 번호",
       sortable: true,
       searchable: true,
-      width: "150px",
+      width: "130px",
       accessor: (row) => (
         <div 
           className="font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 cursor-pointer"
@@ -292,7 +293,7 @@ export function EnhancedOrdersTable({
       key: "status",
       header: "상태",
       sortable: true,
-      width: "140px",
+      width: "100px",
       accessor: (row) => (
         <SmartStatusBadge
           type="order"
@@ -306,7 +307,7 @@ export function EnhancedOrdersTable({
       key: "emailStatus",
       header: "이메일",
       sortable: true,
-      width: "120px",
+      width: "90px",
       accessor: (row) => renderEmailStatus(row),
     },
     {
@@ -314,6 +315,7 @@ export function EnhancedOrdersTable({
       header: "프로젝트",
       sortable: true,
       searchable: true,
+      width: "160px",
       accessor: (row) => (
         <div className="text-gray-900 dark:text-gray-100">
           {row.projectName || "-"}
@@ -325,6 +327,7 @@ export function EnhancedOrdersTable({
       header: "거래처",
       sortable: true,
       searchable: true,
+      width: "140px",
       accessor: (row) => (
         <div className="text-gray-900 dark:text-gray-100">
           {row.vendorName && row.vendorId ? (
@@ -358,7 +361,7 @@ export function EnhancedOrdersTable({
       header: "금액",
       sortable: true,
       align: "right",
-      width: "150px",
+      width: "120px",
       accessor: (row) => (
         <div className="font-medium text-gray-900 dark:text-gray-100">
           {formatKoreanWon(row.totalAmount)}
@@ -369,7 +372,7 @@ export function EnhancedOrdersTable({
       key: "orderDate",
       header: "발주일",
       sortable: true,
-      width: "120px",
+      width: "100px",
       accessor: (row) => (
         <div className="text-gray-600 dark:text-gray-400 text-sm">
           {format(new Date(row.orderDate), "yyyy.MM.dd", { locale: ko })}
@@ -380,7 +383,7 @@ export function EnhancedOrdersTable({
       key: "deliveryDate",
       header: "납품예정일",
       sortable: true,
-      width: "120px",
+      width: "110px",
       accessor: (row) => (
         <div className="text-gray-600 dark:text-gray-400 text-sm">
           {row.deliveryDate 
@@ -395,7 +398,7 @@ export function EnhancedOrdersTable({
       header: "요청자",
       sortable: true,
       searchable: true,
-      width: "100px",
+      width: "120px",
       accessor: (row) => (
         <div className="text-gray-600 dark:text-gray-400 text-sm">
           {row.userName || "-"}
@@ -405,7 +408,7 @@ export function EnhancedOrdersTable({
     {
       key: "actions",
       header: "액션",
-      width: "180px",
+      width: "160px",
       align: "center",
       accessor: (row) => (
         <div className="flex items-center justify-center gap-1" onClick={(e) => e.stopPropagation()}>
