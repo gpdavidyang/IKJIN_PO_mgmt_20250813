@@ -77,29 +77,34 @@ export class POTemplateProcessorMock {
         }
         
         // Input 시트의 실제 컬럼 매핑 (A:P)
-        const orderDate = this.formatDate(row[0]) || new Date().toISOString().split('T')[0]; // A열: 발주일자
-        const dueDate = this.formatDate(row[1]) || ''; // B열: 납기일자 (없으면 빈 값)
-        const vendorName = String(row[2] || '').trim(); // C열: 거래처명
-        const vendorEmail = String(row[3] || '').trim(); // D열: 거래처 이메일
-        const deliveryName = String(row[4] || '').trim(); // E열: 납품처명 (없으면 빈 값)
-        const deliveryEmail = String(row[5] || '').trim(); // F열: 납품처 이메일 (없으면 빈 값)
-        const siteName = String(row[6] || '').trim(); // G열: 프로젝트명
-        const categoryLv1 = String(row[7] || '').trim(); // H열: 대분류
-        const categoryLv2 = String(row[8] || '').trim(); // I열: 중분류
-        const categoryLv3 = String(row[9] || '').trim(); // J열: 소분류
-        const itemName = String(row[10] || '').trim(); // K열: 품목명
-        const specification = String(row[11] || '-').trim(); // L열: 규격 (없으면 '-')
-        const quantity = this.safeNumber(row[12]); // M열: 수량
-        const unitPrice = this.safeNumber(row[13]); // N열: 단가
-        const totalAmount = this.safeNumber(row[14]); // O열: 총금액
-        const notes = String(row[15] || '').trim(); // P열: 비고
+        // 실제 Excel 파일 구조에 맞춘 컬럼 매핑
+        const vendorName = String(row[0] || '').trim(); // A열: 거래처명
+        const siteName = String(row[1] || '').trim(); // B열: 현장명
+        const orderDate = this.formatDate(row[2]) || new Date().toISOString().split('T')[0]; // C열: 발주일
+        const dueDate = this.formatDate(row[3]) || ''; // D열: 납기일
+        const excelOrderNumber = String(row[4] || '').trim(); // E열: 발주번호
+        const itemName = String(row[5] || '').trim(); // F열: 품목
+        const specification = String(row[6] || '-').trim(); // G열: 규격
+        const quantity = this.safeNumber(row[7]); // H열: 수량
+        const unit = String(row[8] || '').trim(); // I열: 단위
+        const unitPrice = this.safeNumber(row[9]); // J열: 단가
+        const supplyAmount = this.safeNumber(row[10]); // K열: 공급가액
+        const taxAmount = this.safeNumber(row[11]); // L열: 부가세
+        const totalAmount = this.safeNumber(row[12]); // M열: 합계
+        const categoryLv1 = String(row[13] || '').trim(); // N열: 대분류
+        const categoryLv2 = String(row[14] || '').trim(); // O열: 중분류
+        const categoryLv3 = String(row[15] || '').trim(); // P열: 소분류
+        const notes = String(row[16] || '').trim(); // Q열: 비고
         
-        // 발주번호 생성 (발주일자 + 거래처명 기반)
-        const orderNumber = this.generateOrderNumber(orderDate, vendorName);
+        // 거래처 관련 정보 (Excel에는 없지만 기본값 설정)
+        const vendorEmail = ''; // Excel에 없음
+        const deliveryName = vendorName; // 거래처명을 납품처명으로 사용
+        const deliveryEmail = ''; // Excel에 없음
         
-        // 세액과 공급가액 계산
-        const supplyAmount = Math.round(totalAmount / 1.1); // 부가세 제외
-        const taxAmount = totalAmount - supplyAmount;
+        // 발주번호 생성 (Excel에서 가져온 것이 있으면 사용, 없으면 생성)
+        const orderNumber = excelOrderNumber || this.generateOrderNumber(orderDate, vendorName);
+        
+        // Excel에서 읽어온 값들을 그대로 사용 (K, L, M열에서 이미 계산된 값)
 
         // 발주서 정보 생성 또는 업데이트
         if (!ordersByNumber.has(orderNumber)) {
