@@ -66,7 +66,7 @@ const navigationSections = [
     items: [
       { name: "보고서 및 분석", href: "/reports", icon: BarChart3 },
       { name: "가져오기/내보내기", href: "/import-export", icon: FileDown },
-      { name: "템플릿 관리", href: "/templates", icon: FileSpreadsheet },
+      { name: "템플릿 관리", href: "/templates", icon: FileSpreadsheet, adminOnly: true },
     ]
   },
   {

@@ -23,6 +23,7 @@ import { QueryDevTools, useQueryDevTools } from "@/components/dev/query-devtools
 
 // Critical components (loaded immediately)
 import NotFound from "@/pages/not-found";
+import { ProtectedRoute, AdminRoute } from "@/components/ProtectedRoute";
 
 // Import dynamic loading utilities
 import {
@@ -376,24 +377,32 @@ function Layout() {
                 </Suspense>
               </Route>
               <Route path="/templates/edit/:id">
-                <Suspense fallback={<FormLoadingFallback />}>
-                  <TemplateEdit />
-                </Suspense>
+                <AdminRoute>
+                  <Suspense fallback={<FormLoadingFallback />}>
+                    <TemplateEdit />
+                  </Suspense>
+                </AdminRoute>
               </Route>
               <Route path="/templates/new">
-                <Suspense fallback={<FormLoadingFallback />}>
-                  <TemplateEdit />
-                </Suspense>
+                <AdminRoute>
+                  <Suspense fallback={<FormLoadingFallback />}>
+                    <TemplateEdit />
+                  </Suspense>
+                </AdminRoute>
               </Route>
               <Route path="/templates">
-                <Suspense fallback={<PageLoadingFallback />}>
-                  <TemplateManagement />
-                </Suspense>
+                <AdminRoute>
+                  <Suspense fallback={<PageLoadingFallback />}>
+                    <TemplateManagement />
+                  </Suspense>
+                </AdminRoute>
               </Route>
               <Route path="/template-management">
-                <Suspense fallback={<PageLoadingFallback />}>
-                  <TemplateManagement />
-                </Suspense>
+                <AdminRoute>
+                  <Suspense fallback={<PageLoadingFallback />}>
+                    <TemplateManagement />
+                  </Suspense>
+                </AdminRoute>
               </Route>
               <Route path="/positions">
                 <Suspense fallback={<PageLoadingFallback />}>
