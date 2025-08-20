@@ -69,6 +69,7 @@ export default async function handler(req, res) {
       'https://ikjin-po-mgmt-20250813-dno9.vercel.app',
       'https://ikjin-po-mgmt-20250813-dn.vercel.app',
       'https://ikjin-po-mgmt-20250813-d749jr3tc-davidswyang-3963s-projects.vercel.app',
+      'https://ikjin-po-mgmt-20250813-bgcndtpdr-davidswyang-3963s-projects.vercel.app',
       'http://localhost:3000',
       'http://localhost:5000'
     ];
