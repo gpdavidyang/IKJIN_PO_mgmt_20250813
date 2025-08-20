@@ -34,6 +34,7 @@ export function isDevelopmentEnvironment(): boolean {
     if (url.includes('localhost') || 
         url.includes('127.0.0.1') ||
         url.includes(':3000') ||
+        url.includes(':3001') ||
         url.includes(':5173') ||
         url.includes(':4173')) {
       return true;

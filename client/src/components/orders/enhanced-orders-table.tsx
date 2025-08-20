@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useCallback } from "react";
 import { useLocation } from "wouter";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
@@ -27,6 +27,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useAuth } from "@/hooks/useAuth";
+import { BulkDeleteDialog } from "./bulk-delete-dialog";
 
 interface Order {
   id: string;
@@ -52,8 +55,10 @@ interface Order {
 interface EnhancedOrdersTableProps {
   orders: Order[];
   isLoading?: boolean;
+  isBulkDeleting?: boolean;
   onStatusChange?: (orderId: string, newStatus: string) => void;
   onDelete?: (orderId: string) => void;
+  onBulkDelete?: (orderIds: string[]) => void;
   onEmailSend?: (order: Order) => void;
   onViewEmailHistory?: (order: Order) => void;
   onViewPdf?: (order: Order) => void;
@@ -67,8 +72,10 @@ interface EnhancedOrdersTableProps {
 export function EnhancedOrdersTable({ 
   orders, 
   isLoading = false,
+  isBulkDeleting = false,
   onStatusChange,
   onDelete,
+  onBulkDelete,
   onEmailSend,
   onViewEmailHistory,
   onViewPdf,
@@ -77,13 +84,69 @@ export function EnhancedOrdersTable({
   onSort
 }: EnhancedOrdersTableProps) {
   const [location, navigate] = useLocation();
+  const { user } = useAuth();
+  
+  // Multi-select state
+  const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
+  
+  // Dialog state
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+  
+  // Check if user is admin (only admins can use bulk delete)
+  const isAdmin = user?.role === 'admin';
+  
+  // Helper functions for multi-select
+  const handleSelectOrder = useCallback((orderId: string, checked: boolean) => {
+    setSelectedOrderIds(prev => {
+      if (checked) {
+        return [...prev, orderId];
+      } else {
+        return prev.filter(id => id !== orderId);
+      }
+    });
+  }, []);
+  
+  const handleSelectAll = useCallback((checked: boolean) => {
+    if (checked) {
+      // Only select draft orders (only they can be deleted)
+      const draftOrderIds = orders
+        .filter(order => order.status === 'draft')
+        .map(order => order.id);
+      setSelectedOrderIds(draftOrderIds);
+    } else {
+      setSelectedOrderIds([]);
+    }
+  }, [orders]);
+  
+  const handleBulkDelete = useCallback(() => {
+    if (selectedOrderIds.length > 0) {
+      setBulkDeleteDialogOpen(true);
+    }
+  }, [selectedOrderIds]);
+  
+  const handleConfirmBulkDelete = useCallback(() => {
+    if (onBulkDelete && selectedOrderIds.length > 0) {
+      onBulkDelete(selectedOrderIds);
+      setSelectedOrderIds([]); // Clear selection after delete
+      setBulkDeleteDialogOpen(false);
+    }
+  }, [onBulkDelete, selectedOrderIds]);
+  
+  // Get draft orders for selection (only draft orders can be deleted)
+  const draftOrders = orders.filter(order => order.status === 'draft');
+  const allDraftOrdersSelected = draftOrders.length > 0 && draftOrders.every(order => selectedOrderIds.includes(order.id));
+  const someDraftOrdersSelected = draftOrders.some(order => selectedOrderIds.includes(order.id));
   
   // 디버깅: props 확인
   console.log('🔍 EnhancedOrdersTable props:', {
     ordersCount: orders.length,
     onEmailSend: !!onEmailSend,
     onViewPdf: !!onViewPdf,
-    onViewEmailHistory: !!onViewEmailHistory
+    onViewEmailHistory: !!onViewEmailHistory,
+    onBulkDelete: !!onBulkDelete,
+    isAdmin,
+    selectedOrderIds,
+    draftOrdersCount: draftOrders.length
   });
 
   // Helper function to render email status
@@ -171,6 +234,33 @@ export function EnhancedOrdersTable({
   };
 
   const columns: Column<Order>[] = [
+    // Multi-select checkbox column (only for admins)
+    ...(isAdmin && onBulkDelete ? [{
+      key: "select" as keyof Order,
+      header: (
+        <div className="flex items-center">
+          <Checkbox
+            checked={allDraftOrdersSelected}
+            onCheckedChange={handleSelectAll}
+            disabled={draftOrders.length === 0}
+            className="ml-2"
+            aria-label="모든 발주서 선택"
+          />
+        </div>
+      ),
+      width: "50px",
+      accessor: (row: Order) => (
+        <div className="flex items-center" onClick={(e) => e.stopPropagation()}>
+          <Checkbox
+            checked={selectedOrderIds.includes(row.id)}
+            onCheckedChange={(checked) => handleSelectOrder(row.id, checked as boolean)}
+            disabled={row.status !== 'draft'} // Only draft orders can be selected for deletion
+            className="ml-2"
+            aria-label={`발주서 ${row.orderNumber} 선택`}
+          />
+        </div>
+      ),
+    }] : []),
     {
       key: "orderNumber",
       header: "발주 번호",
@@ -432,31 +522,76 @@ export function EnhancedOrdersTable({
   ];
 
   return (
-    <EnhancedTable
-      data={orders}
-      columns={columns}
-      searchable
-      searchPlaceholder="발주 번호, 프로젝트, 거래처, 요청자로 검색..."
-      showPagination
-      pageSize={20}
-      pageSizeOptions={[10, 20, 50, 100]}
-      onRowClick={(row) => {
-        try {
-          if (typeof navigate === 'function') {
-            navigate(`/orders/${row.id}`);
-          } else {
+    <div className="space-y-4">
+      {/* Bulk Action Bar - Only show for admins when orders are selected */}
+      {isAdmin && onBulkDelete && selectedOrderIds.length > 0 && (
+        <div className="flex items-center justify-between p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg">
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+              {selectedOrderIds.length}개의 발주서가 선택됨
+            </span>
+            <Badge variant="outline" className="text-blue-600 border-blue-300">
+              임시저장 상태만 삭제 가능
+            </Badge>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSelectedOrderIds([])}
+              className="text-gray-600 dark:text-gray-400"
+            >
+              선택 해제
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleBulkDelete}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              선택된 발주서 삭제
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Enhanced Table */}
+      <EnhancedTable
+        data={orders}
+        columns={columns}
+        searchable
+        searchPlaceholder="발주 번호, 프로젝트, 거래처, 요청자로 검색..."
+        showPagination
+        pageSize={20}
+        pageSizeOptions={[10, 20, 50, 100]}
+        onRowClick={(row) => {
+          try {
+            if (typeof navigate === 'function') {
+              navigate(`/orders/${row.id}`);
+            } else {
+              window.location.href = `/orders/${row.id}`;
+            }
+          } catch (error) {
             window.location.href = `/orders/${row.id}`;
           }
-        } catch (error) {
-          window.location.href = `/orders/${row.id}`;
-        }
-      }}
-      rowKey={(row) => row.id}
-      emptyMessage="등록된 발주서가 없습니다"
-      isLoading={isLoading}
-      stickyHeader
-      maxHeight="calc(100vh - 300px)"
-      className="shadow-sm"
-    />
+        }}
+        rowKey={(row) => row.id}
+        emptyMessage="등록된 발주서가 없습니다"
+        isLoading={isLoading}
+        stickyHeader
+        maxHeight="calc(100vh - 300px)"
+        className="shadow-sm"
+      />
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <BulkDeleteDialog
+        open={bulkDeleteDialogOpen}
+        onOpenChange={setBulkDeleteDialogOpen}
+        selectedOrders={orders.filter(order => selectedOrderIds.includes(order.id))}
+        onConfirm={handleConfirmBulkDelete}
+        isLoading={isBulkDeleting}
+      />
+    </div>
   );
 }

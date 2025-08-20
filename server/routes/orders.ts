@@ -270,6 +270,78 @@ router.delete("/orders/:id", requireAuth, async (req, res) => {
   }
 });
 
+// Bulk delete orders (Admin only)
+router.delete("/orders/bulk", requireAdmin, async (req, res) => {
+  try {
+    const { orderIds } = req.body;
+    
+    if (!orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
+      return res.status(400).json({ message: "Order IDs array is required" });
+    }
+
+    // Validate that all IDs are numbers
+    const numericOrderIds = orderIds.map(id => {
+      const numericId = parseInt(id, 10);
+      if (isNaN(numericId)) {
+        throw new Error(`Invalid order ID: ${id}`);
+      }
+      return numericId;
+    });
+
+    // Check if all orders exist and get their current status
+    const orders = await Promise.all(
+      numericOrderIds.map(async (orderId) => {
+        const order = await storage.getPurchaseOrder(orderId);
+        if (!order) {
+          throw new Error(`Order with ID ${orderId} not found`);
+        }
+        return order;
+      })
+    );
+
+    // Check if any orders cannot be deleted (only draft orders can be deleted)
+    const nonDraftOrders = orders.filter(order => order.status !== 'draft');
+    if (nonDraftOrders.length > 0) {
+      const nonDraftOrderNumbers = nonDraftOrders.map(order => order.orderNumber).join(', ');
+      return res.status(403).json({ 
+        message: `Cannot delete non-draft orders: ${nonDraftOrderNumbers}. Only draft orders can be deleted.`,
+        nonDeletableOrders: nonDraftOrders.map(order => ({
+          id: order.id,
+          orderNumber: order.orderNumber,
+          status: order.status
+        }))
+      });
+    }
+
+    // Delete all orders
+    const deletePromises = numericOrderIds.map(orderId => 
+      storage.deletePurchaseOrder(orderId)
+    );
+    
+    await Promise.all(deletePromises);
+
+    res.json({ 
+      message: `Successfully deleted ${numericOrderIds.length} order(s)`,
+      deletedOrderIds: numericOrderIds,
+      deletedCount: numericOrderIds.length
+    });
+  } catch (error) {
+    console.error("Error bulk deleting orders:", error);
+    
+    if (error instanceof Error) {
+      // Handle specific error cases
+      if (error.message.includes("not found")) {
+        return res.status(404).json({ message: error.message });
+      }
+      if (error.message.includes("Invalid order ID")) {
+        return res.status(400).json({ message: error.message });
+      }
+    }
+    
+    res.status(500).json({ message: "Failed to bulk delete orders" });
+  }
+});
+
 // Order approval workflow - Enhanced with step-based approval
 router.post("/orders/:id/approve", requireAuth, async (req, res) => {
   try {

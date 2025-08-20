@@ -189,6 +189,51 @@ export default function Orders() {
     },
   });
 
+  const bulkDeleteOrdersMutation = useMutation({
+    mutationFn: async (orderIds: string[]) => {
+      await apiRequest("DELETE", "/api/orders/bulk", { 
+        orderIds: orderIds.map(id => parseInt(id, 10))
+      });
+    },
+    onSuccess: (data, orderIds) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      toast({
+        title: "성공",
+        description: `${orderIds.length}개의 발주서가 삭제되었습니다.`,
+      });
+    },
+    onError: (error: any) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          navigate("/login");
+        }, 500);
+        return;
+      }
+      
+      // Handle specific bulk delete errors
+      if (error?.response?.data?.nonDeletableOrders) {
+        const nonDeletableOrders = error.response.data.nonDeletableOrders;
+        const orderNumbers = nonDeletableOrders.map((order: any) => order.orderNumber).join(', ');
+        toast({
+          title: "일부 발주서 삭제 불가",
+          description: `다음 발주서들은 임시저장 상태가 아니어서 삭제할 수 없습니다: ${orderNumbers}`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "오류",
+          description: error?.response?.data?.message || "발주서 일괄 삭제에 실패했습니다.",
+          variant: "destructive",
+        });
+      }
+    },
+  });
+
   const exportMutation = useMutation({
     mutationFn: async () => {
       const params = new URLSearchParams();
@@ -312,6 +357,11 @@ export default function Orders() {
         // TODO: PDF 생성 API 호출 후 다운로드
       }
     }
+  };
+
+  // Bulk delete handler
+  const handleBulkDelete = (orderIds: string[]) => {
+    bulkDeleteOrdersMutation.mutate(orderIds);
   };
 
   const orders = ordersData?.orders || [];
@@ -647,8 +697,10 @@ export default function Orders() {
             return mappedOrder;
           })}
           isLoading={ordersLoading}
+          isBulkDeleting={bulkDeleteOrdersMutation.isPending}
           onStatusChange={(orderId, newStatus) => statusChangeMutation.mutate({ orderId, status: newStatus })}
           onDelete={(orderId) => deleteOrderMutation.mutate(orderId)}
+          onBulkDelete={handleBulkDelete}
           onEmailSend={handleEmailSend}
           onViewEmailHistory={handleViewEmailHistory}
           onViewPdf={handleViewPdf}
