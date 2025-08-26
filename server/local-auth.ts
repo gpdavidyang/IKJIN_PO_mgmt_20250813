@@ -88,6 +88,13 @@ export async function login(req: Request, res: Response) {
       // Create session
       const authSession = req.session as AuthSession;
       authSession.userId = user.id;
+      
+      console.log("🔧 Session before save:", {
+        sessionId: req.sessionID,
+        userId: authSession.userId,
+        sessionExists: !!req.session,
+        sessionData: req.session
+      });
 
       // Save session with timeout and fallback
       const sessionSavePromise = new Promise<void>((resolve, reject) => {
@@ -99,10 +106,16 @@ export async function login(req: Request, res: Response) {
         req.session.save((err) => {
           clearTimeout(timeout);
           if (err) {
-            console.error("Session save error (non-fatal):", err);
+            console.error("❌ Session save error:", err);
             resolve(); // Don't fail login due to session issues
           } else {
-            console.log("Session saved successfully for user:", user.id);
+            console.log("✅ Session saved successfully for user:", user.id);
+            console.log("🔧 Session after save:", {
+              sessionId: req.sessionID,
+              userId: authSession.userId,
+              sessionExists: !!req.session,
+              sessionData: req.session
+            });
             resolve();
           }
         });

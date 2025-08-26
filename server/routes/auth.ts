@@ -143,6 +143,68 @@ router.post('/auth/login', login);
 // Use database-based logout function
 router.post('/auth/logout', logout);
 
+// Profile update endpoint
+router.patch('/auth/profile', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    const { name } = req.body;
+    if (!name) {
+      return res.status(400).json({ message: "Name is required" });
+    }
+
+    // Update user in database
+    const updatedUser = await storage.updateUser(userId, { name });
+    
+    // Return updated user data without password
+    const { password: _, ...userWithoutPassword } = updatedUser;
+    res.json(userWithoutPassword);
+  } catch (error) {
+    console.error("Profile update error:", error);
+    res.status(500).json({ message: "Failed to update profile" });
+  }
+});
+
+// Change password endpoint
+router.patch('/auth/change-password', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: "Current and new passwords are required" });
+    }
+
+    // Get current user
+    const user = await storage.getUser(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Verify current password
+    const bcrypt = await import('bcrypt');
+    const isValidPassword = await bcrypt.compare(currentPassword, user.password);
+    if (!isValidPassword) {
+      return res.status(401).json({ message: "Current password is incorrect" });
+    }
+
+    // Hash new password and update
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await storage.updateUser(userId, { password: hashedPassword });
+    
+    res.json({ message: "Password changed successfully" });
+  } catch (error) {
+    console.error("Password change error:", error);
+    res.status(500).json({ message: "Failed to change password" });
+  }
+});
+
 router.get('/logout', (req, res) => {
   // Handle GET logout (redirect after logout) - SECURITY FIX: Remove global state
   if (req.session) {
