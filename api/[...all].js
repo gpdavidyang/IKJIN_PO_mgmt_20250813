@@ -88,9 +88,9 @@ export default async function handler(req, res) {
       res.setHeader('Access-Control-Allow-Origin', origin);
       console.log('✅ CORS origin set to:', origin);
     } else if (!origin) {
-      // For same-origin requests from production domain - use latest deployment pattern
-      res.setHeader('Access-Control-Allow-Origin', 'https://ikjin-po-mgmt-20250813-k0md981k3-davidswyang-3963s-projects.vercel.app');
-      console.log('✅ CORS origin set to latest production domain');
+      // For same-origin requests from production domain - use main deployment
+      res.setHeader('Access-Control-Allow-Origin', 'https://ikjin-po-mgmt-20250813-dno9.vercel.app');
+      console.log('✅ CORS origin set to main production domain');
     }
     
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');

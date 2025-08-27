@@ -22,11 +22,11 @@
       }
     },
     {
-      "src": "/(.*\\.(js|css|png|jpg|svg|ico|woff|woff2|xlsx))",
+      "src": "/(.*\\.(js|css|png|jpg|svg|ico|woff|woff2|xlsx|json))",
       "dest": "dist/public/$1"
     },
     {
-      "src": "/(.*)",
+      "src": "/(create-order/simple|create-order/.*|orders.*|vendors.*|items.*|projects.*|dashboard.*|admin.*|users.*|profile.*|reports.*|.*)",
       "dest": "dist/public/index.html"
     }
   ],
