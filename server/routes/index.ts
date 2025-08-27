@@ -31,6 +31,7 @@ import testAccountsRoutes from "./test-accounts";
 import categoryRoutes from "./categories";
 import approvalSettingsRoutes from "./approval-settings";
 import ordersSimpleRoutes from "./orders-simple";
+import positionsRoutes from "./positions";
 
 const router = Router();
 
@@ -62,5 +63,6 @@ router.use("/api", testAccountsRoutes);
 router.use("/api/categories", categoryRoutes);
 router.use("/api/approval-settings", approvalSettingsRoutes);
 router.use("/api/orders", ordersSimpleRoutes);
+router.use("/api", positionsRoutes);
 
 export default router;

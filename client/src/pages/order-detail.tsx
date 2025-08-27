@@ -69,6 +69,7 @@ export default function OrderDetail() {
         description: "발주서가 성공적으로 승인되었습니다.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/orders/${orderId}`] });
     },
     onError: (error) => {
       toast({
@@ -89,6 +90,7 @@ export default function OrderDetail() {
         description: "발주서가 성공적으로 발송되었습니다.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/orders/${orderId}`] });
     },
     onError: (error) => {
       toast({

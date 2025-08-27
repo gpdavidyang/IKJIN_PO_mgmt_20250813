@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { db } from '../db';
 import { purchaseOrders, purchaseOrderItems, attachments, orderHistory, users, projects, vendors } from '@shared/schema';
 import { eq, and, desc } from 'drizzle-orm';
+import { requireAuth } from '../local-auth';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs/promises';
@@ -70,10 +71,7 @@ const OrderDataSchema = z.object({
 });
 
 // Bulk create orders without validation
-router.post('/bulk-create-simple', upload.single('excelFile'), async (req, res) => {
-  if (!req.isAuthenticated() || !req.user) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
+router.post('/bulk-create-simple', requireAuth, upload.single('excelFile'), async (req, res) => {
 
   try {
     const ordersData = JSON.parse(req.body.orders);
@@ -290,10 +288,7 @@ router.post('/bulk-create-simple', upload.single('excelFile'), async (req, res) 
 });
 
 // Get simple upload history
-router.get('/simple-upload-history', async (req, res) => {
-  if (!req.isAuthenticated() || !req.user) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
+router.get('/simple-upload-history', requireAuth, async (req, res) => {
 
   try {
     const history = await db
