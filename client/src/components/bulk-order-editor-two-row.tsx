@@ -19,6 +19,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
+import { EmailComposeModal } from '@/components/email-compose-modal';
 
 interface OrderItem {
   itemName?: string;
@@ -61,6 +62,8 @@ export function BulkOrderEditorTwoRow({ orders, onOrderUpdate, onOrderRemove, on
     orders.reduce((acc, _, index) => ({ ...acc, [index]: true }), {})
   );
   const [savingIndex, setSavingIndex] = useState<number | null>(null);
+  const [savedOrderData, setSavedOrderData] = useState<any>(null);
+  const [showEmailModal, setShowEmailModal] = useState(false);
 
   // Individual order save mutation
   const saveIndividualOrder = useMutation({
@@ -90,13 +93,26 @@ export function BulkOrderEditorTwoRow({ orders, onOrderUpdate, onOrderRemove, on
       return response.json();
     },
     onSuccess: (data, variables) => {
-      toast({
-        title: "발주서 생성 완료",
-        description: `발주서가 성공적으로 생성되었습니다. ${variables.sendEmail ? '이메일이 발송되었습니다.' : ''}`,
-      });
-      
-      // Remove the saved order from the list
-      onOrderRemove(variables.index);
+      if (variables.sendEmail) {
+        // 이메일 발송 옵션이 선택된 경우 이메일 모달 표시
+        setSavedOrderData({ 
+          ...data, 
+          originalOrder: variables.order,
+          originalIndex: variables.index 
+        });
+        setShowEmailModal(true);
+        toast({
+          title: "발주서 생성 완료",
+          description: "발주서가 생성되었습니다. 이메일을 작성해주세요.",
+        });
+      } else {
+        // 이메일 발송 없이 완료
+        toast({
+          title: "발주서 생성 완료",
+          description: "발주서가 성공적으로 생성되었습니다. 생성된 발주서는 발주서 관리 화면에서 확인할 수 있습니다.",
+        });
+        onOrderRemove(variables.index);
+      }
     },
     onError: (error) => {
       toast({
@@ -229,6 +245,91 @@ export function BulkOrderEditorTwoRow({ orders, onOrderUpdate, onOrderRemove, on
         </span>
       </div>
     );
+  };
+
+  const handleEmailSend = async (emailData: any) => {
+    try {
+      // 이메일 발송 API 호출
+      const response = await fetch('/api/orders/send-email-simple', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          to: emailData.to,
+          cc: emailData.cc,
+          subject: emailData.subject,
+          body: emailData.body,
+          orderData: {
+            orderId: savedOrderData?.orderId || savedOrderData?.orderIds?.[0],
+            orderNumber: savedOrderData?.orderNumber,
+            projectName: savedOrderData?.projectName,
+            vendorName: savedOrderData?.vendorName,
+            location: savedOrderData?.location,
+            orderDate: savedOrderData?.orderDate,
+            deliveryDate: savedOrderData?.deliveryDate,
+            totalAmount: savedOrderData?.totalAmount,
+            excelFilePath: savedOrderData?.excelFilePath
+          },
+          attachPdf: emailData.attachPdf,
+          attachExcel: emailData.attachExcel
+        })
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        if (result.message && result.message.includes('개발 모드')) {
+          // 개발 환경에서 SMTP 설정이 없는 경우
+          toast({
+            title: "이메일 테스트 모드",
+            description: "SMTP 설정이 없어 실제 이메일은 발송되지 않았습니다. 발주서는 정상적으로 생성되었습니다.",
+            variant: "default"
+          });
+        } else {
+          // 실제 이메일 발송 성공
+          toast({
+            title: "이메일 발송 완료",
+            description: "발주서와 이메일이 성공적으로 발송되었습니다.",
+          });
+        }
+      } else {
+        toast({
+          title: "이메일 발송 실패",
+          description: result.error || "이메일은 발송되지 않았지만 발주서는 생성되었습니다.",
+          variant: "destructive"
+        });
+      }
+      
+      // 성공/실패 여부와 관계없이 발주서는 생성되었으므로 목록에서 제거
+      if (savedOrderData?.originalIndex !== undefined) {
+        onOrderRemove(savedOrderData.originalIndex);
+      }
+      
+    } catch (error) {
+      console.error('이메일 발송 오류:', error);
+      toast({
+        title: "이메일 발송 실패",
+        description: "네트워크 오류가 발생했습니다. 발주서는 정상적으로 생성되었습니다.",
+        variant: "destructive"
+      });
+      
+      // 에러가 나도 발주서는 생성되었으므로 목록에서 제거
+      if (savedOrderData?.originalIndex !== undefined) {
+        onOrderRemove(savedOrderData.originalIndex);
+      }
+    } finally {
+      setShowEmailModal(false);
+      setSavedOrderData(null);
+    }
+  };
+
+  const handleEmailModalClose = () => {
+    setShowEmailModal(false);
+    // 이메일 모달을 닫은 경우에도 발주서는 이미 생성되었으므로 목록에서 제거
+    if (savedOrderData?.originalIndex !== undefined) {
+      onOrderRemove(savedOrderData.originalIndex);
+    }
+    setSavedOrderData(null);
   };
 
   return (
@@ -478,6 +579,28 @@ export function BulkOrderEditorTwoRow({ orders, onOrderUpdate, onOrderRemove, on
         <div className="text-center py-12 text-gray-500">
           업로드된 발주서가 없습니다.
         </div>
+      )}
+
+      {/* 이메일 작성 모달 */}
+      {showEmailModal && savedOrderData && (
+        <EmailComposeModal
+          isOpen={showEmailModal}
+          onClose={handleEmailModalClose}
+          onSend={handleEmailSend}
+          orderData={savedOrderData?.originalOrder || savedOrderData}
+          initialTo={[
+            {
+              email: savedOrderData?.originalOrder?.vendorEmail || '',
+              name: savedOrderData?.originalOrder?.vendorName || ''
+            }
+          ]}
+          initialCc={savedOrderData?.originalOrder?.deliveryEmail ? [
+            {
+              email: savedOrderData?.originalOrder?.deliveryEmail,
+              name: savedOrderData?.originalOrder?.deliveryPlace || ''
+            }
+          ] : []}
+        />
       )}
     </div>
   );

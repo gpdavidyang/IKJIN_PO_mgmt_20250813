@@ -73,6 +73,7 @@ const TemplateManagement = createNetworkAwareLazyComponent(() => DynamicFeatures
 const TemplateEdit = createLazyComponent(() => import("@/pages/template-edit"), 'TemplateEdit');
 const Positions = createLazyComponent(() => import("@/pages/positions"), 'Positions');
 const Approvals = createLazyComponent(() => import("@/pages/approvals"), 'Approvals');
+const ApprovalAuthorities = createLazyComponent(() => import("@/pages/approval-authorities"), 'ApprovalAuthorities');
 const ExcelAutomationTest = createLazyComponent(() => import("@/pages/excel-automation-test"), 'ExcelAutomationTest');
 const ImportExport = createLazyComponent(() => import("@/pages/import-export"), 'ImportExport');
 const AccessibilityExample = createLazyComponent(
@@ -420,6 +421,11 @@ function Layout() {
                   <Approvals />
                 </Suspense>
               </Route>
+              <AdminRoute path="/approval-authorities">
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <ApprovalAuthorities />
+                </Suspense>
+              </AdminRoute>
               <Route path="/excel-automation-test">
                 <Suspense fallback={<PageLoadingFallback />}>
                   <ExcelAutomationTest />

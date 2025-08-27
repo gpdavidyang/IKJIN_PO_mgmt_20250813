@@ -149,8 +149,8 @@ export default function CreateOrderSimple() {
       setUploadProgress(100);
       
       toast({
-        title: "파일 파싱 완료",
-        description: `${groupedOrders.length}개의 발주서가 생성되었습니다.`,
+        title: "엑셀 파일 로딩 완료",
+        description: `발주서 생성을 위해 ${groupedOrders.length}개의 데이터가 성공적으로 로드되었습니다. 각 항목을 확인하고 수정한 후 '모두 저장' 버튼을 클릭하세요.`,
       });
     } catch (error) {
       console.error('Excel parsing error:', error);
@@ -192,8 +192,8 @@ export default function CreateOrderSimple() {
     const newOrders = editedOrders.filter((_, i) => i !== index);
     setEditedOrders(newOrders);
     toast({
-      title: "발주서 제거됨",
-      description: "선택한 발주서가 목록에서 제거되었습니다.",
+      title: "발주서 생성 완료",
+      description: "성공적으로 발주서가 생성되어 작성 목록에서 제거되었습니다. 생성된 발주서는 발주서 관리 화면에서 확인할 수 있습니다.",
     });
   };
 

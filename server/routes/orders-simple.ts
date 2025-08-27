@@ -72,6 +72,14 @@ const OrderDataSchema = z.object({
 
 // Bulk create orders without validation
 router.post('/bulk-create-simple', requireAuth, upload.single('excelFile'), async (req, res) => {
+  console.log('📥 /bulk-create-simple - Received file:', req.file);
+  console.log('📥 /bulk-create-simple - File details:', {
+    originalname: req.file?.originalname,
+    filename: req.file?.filename,
+    mimetype: req.file?.mimetype,
+    size: req.file?.size,
+    path: req.file?.path
+  });
 
   try {
     const ordersData = JSON.parse(req.body.orders);
@@ -220,18 +228,34 @@ router.post('/bulk-create-simple', requireAuth, upload.single('excelFile'), asyn
           }
         }
 
-        // Save file attachment if provided
+        // Save file attachment if provided (attach to all orders from the same upload)
         if (req.file) {
-          await db.insert(attachments).values({
+          console.log(`📎 Saving Excel file attachment for order ${newOrder.orderNumber}:`, {
             orderId: newOrder.id,
             originalName: req.file.originalname,
             storedName: req.file.filename,
             filePath: req.file.path,
             fileSize: req.file.size,
             mimeType: req.file.mimetype,
-            uploadedBy: req.user.id,
-            uploadedAt: new Date()
+            uploadedBy: req.user.id
           });
+          
+          try {
+            const [savedAttachment] = await db.insert(attachments).values({
+              orderId: newOrder.id,
+              originalName: req.file.originalname,
+              storedName: req.file.filename,
+              filePath: req.file.path,
+              fileSize: req.file.size,
+              mimeType: req.file.mimetype,
+              uploadedBy: req.user.id,
+              uploadedAt: new Date()
+            }).returning();
+            
+            console.log(`✅ Excel file attachment saved with ID ${savedAttachment.id} for order ${newOrder.orderNumber}`);
+          } catch (attachmentError) {
+            console.error(`❌ Failed to save Excel attachment for order ${newOrder.orderNumber}:`, attachmentError);
+          }
         }
 
         // Create history entry

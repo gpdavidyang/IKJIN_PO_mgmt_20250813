@@ -247,6 +247,44 @@ export default function Approvals() {
             </div>
           </div>
 
+          {/* 안내 섹션 */}
+          <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <BookOpen className="h-5 w-5 text-blue-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-sm font-semibold text-blue-900 mb-2">승인 관리 화면 사용법</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-800">
+                    <div>
+                      <p className="font-medium mb-1">• 승인 대기 탭:</p>
+                      <ul className="text-xs space-y-0.5 ml-3">
+                        <li>- 승인 대기 중인 발주서를 확인하고 처리</li>
+                        <li>- ✓ 버튼으로 승인, ✗ 버튼으로 반려</li>
+                        <li>- 👁 버튼으로 발주서 상세 내용 확인</li>
+                        <li>- 3일 이상 대기 시 '지연' 표시</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <p className="font-medium mb-1">• 승인 내역 탭:</p>
+                      <ul className="text-xs space-y-0.5 ml-3">
+                        <li>- 승인/반려 처리된 발주서 이력 조회</li>
+                        <li>- 처리 결과 및 날짜 확인 가능</li>
+                        <li>- 필터 기능으로 상태별 검색 지원</li>
+                        <li>- 테이블/카드 형태 보기 모드 선택</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <div className="mt-3 p-2 bg-blue-100/50 rounded text-xs text-blue-700">
+                    <strong>💡 Tip:</strong> 발주번호를 클릭하면 발주서 상세 페이지로 이동하여 
+                    모든 첨부서류와 상세 내용을 확인할 수 있습니다. 승인 전 반드시 내용을 검토하세요.
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
         {/* 통계 카드 - UI Standards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card className="shadow-sm">

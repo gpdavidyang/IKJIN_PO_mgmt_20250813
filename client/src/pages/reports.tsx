@@ -73,12 +73,34 @@ export default function Reports() {
 
   const [activeFilters, setActiveFilters] = useState<typeof filters | null>(null);
 
-  // 선택된 항목 상태
+  // 정렬 상태 (현장별 보고서용)
+  const [projectSortConfig, setProjectSortConfig] = useState<{
+    key: string;
+    direction: 'asc' | 'desc';
+  } | null>(null);
+
+  // 정렬 상태 (거래처별 보고서용)
+  const [vendorSortConfig, setVendorSortConfig] = useState<{
+    key: string;
+    direction: 'asc' | 'desc';
+  } | null>(null);
+
+  // 선택된 항목 상태 (발주 내역용)
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
+  
+  // 선택된 항목 상태 (분류별 보고서용)
+  const [selectedCategoryItems, setSelectedCategoryItems] = useState<Set<string>>(new Set());
+  
+  // 선택된 항목 상태 (현장별 보고서용)
+  const [selectedProjectItems, setSelectedProjectItems] = useState<Set<number>>(new Set());
+  
+  // 선택된 항목 상태 (거래처별 보고서용)
+  const [selectedVendorItems, setSelectedVendorItems] = useState<Set<number>>(new Set());
 
   // 보고서 생성 모달 상태
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [previewOrders, setPreviewOrders] = useState<any[]>([]);
   const [reportConfig, setReportConfig] = useState({
     title: '',
     includeCharts: {
@@ -95,12 +117,7 @@ export default function Reports() {
     },
     summary: '',
     insights: '',
-    comments: '',
-    outputOptions: {
-      includePdf: true,
-      includeExcel: false,
-      sendEmail: false
-    }
+    comments: ''
   });
 
   // 정렬 상태
@@ -108,6 +125,102 @@ export default function Reports() {
     key: string;
     direction: 'asc' | 'desc';
   } | null>(null);
+
+  // 현장별 보고서 정렬 함수
+  const handleProjectSort = (key: string) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (projectSortConfig && projectSortConfig.key === key && projectSortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setProjectSortConfig({ key, direction });
+  };
+
+  // 현장별 보고서 정렬된 데이터 가져오기
+  const getSortedProjectData = (data: any[]) => {
+    if (!projectSortConfig || !data) return data;
+    
+    return [...data].sort((a, b) => {
+      let aValue = a[projectSortConfig.key];
+      let bValue = b[projectSortConfig.key];
+      
+      // 숫자 필드 처리
+      if (['orderCount', 'vendorCount', 'totalAmount', 'averageOrderAmount'].includes(projectSortConfig.key)) {
+        aValue = Number(aValue) || 0;
+        bValue = Number(bValue) || 0;
+      }
+      // 문자열 필드 처리 
+      else if (['projectName', 'projectCode', 'projectStatus'].includes(projectSortConfig.key)) {
+        aValue = String(aValue || '').toLowerCase();
+        bValue = String(bValue || '').toLowerCase();
+      }
+      
+      if (aValue < bValue) {
+        return projectSortConfig.direction === 'asc' ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return projectSortConfig.direction === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+  };
+
+  // 정렬 아이콘 렌더링 함수
+  const renderProjectSortIcon = (key: string) => {
+    if (!projectSortConfig || projectSortConfig.key !== key) {
+      return <ArrowUpDown className="h-4 w-4 text-gray-400" />;
+    }
+    return projectSortConfig.direction === 'asc' 
+      ? <ArrowUp className="h-4 w-4 text-blue-600" />
+      : <ArrowDown className="h-4 w-4 text-blue-600" />;
+  };
+
+  // 거래처별 보고서 정렬 함수
+  const handleVendorSort = (key: string) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (vendorSortConfig && vendorSortConfig.key === key && vendorSortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setVendorSortConfig({ key, direction });
+  };
+
+  // 거래처별 보고서 정렬된 데이터 가져오기
+  const getSortedVendorData = (data: any[]) => {
+    if (!vendorSortConfig || !data) return data;
+    
+    return [...data].sort((a, b) => {
+      let aValue = a[vendorSortConfig.key];
+      let bValue = b[vendorSortConfig.key];
+      
+      // 숫자 필드 처리
+      if (['orderCount', 'projectCount', 'totalAmount', 'averageOrderAmount'].includes(vendorSortConfig.key)) {
+        aValue = Number(aValue) || 0;
+        bValue = Number(bValue) || 0;
+      }
+      // 문자열 필드 처리 
+      else if (['vendorName', 'vendorCode', 'businessNumber'].includes(vendorSortConfig.key)) {
+        aValue = String(aValue || '').toLowerCase();
+        bValue = String(bValue || '').toLowerCase();
+      }
+      
+      if (aValue < bValue) {
+        return vendorSortConfig.direction === 'asc' ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return vendorSortConfig.direction === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+  };
+
+  // 거래처별 보고서 정렬 아이콘 렌더링 함수
+  const renderVendorSortIcon = (key: string) => {
+    if (!vendorSortConfig || vendorSortConfig.key !== key) {
+      return <ArrowUpDown className="h-4 w-4 text-gray-400" />;
+    }
+    return vendorSortConfig.direction === 'asc' 
+      ? <ArrowUp className="h-4 w-4 text-blue-600" />
+      : <ArrowDown className="h-4 w-4 text-blue-600" />;
+  };
 
   // 정렬 함수
   const handleSort = (key: string) => {
@@ -247,6 +360,10 @@ export default function Reports() {
 
   const handleGenerateReport = async () => {
     try {
+      // 선택된 발주 데이터 설정
+      const selectedOrders = processingReport?.orders?.filter((order: any) => selectedItems.has(order.id)) || [];
+      setPreviewOrders(selectedOrders);
+      
       setIsReportModalOpen(false);
       setShowPreview(true);
     } catch (error) {
@@ -256,6 +373,150 @@ export default function Reports() {
         variant: "destructive",
       });
     }
+  };
+
+  // 분류별 보고서 생성 함수
+  const handleCategoryReportGeneration = () => {
+    const selectedCategories = categoryReport?.data?.filter((item: any, index: number) => 
+      selectedCategoryItems.has(index)) || [];
+    const defaultTitle = `분류별 분석 보고서 (${selectedCategories.length}개 분류) - ${new Date().toLocaleDateString('ko-KR')}`;
+    
+    // 분류 데이터를 발주 형태로 변환
+    const transformedOrders = selectedCategories.map((category: any, index: number) => ({
+      id: `category_${index}`,
+      orderDate: new Date().toISOString(),
+      vendor: { name: '다양한 거래처' },
+      vendorName: '다양한 거래처',
+      totalAmount: category.totalAmount || 0,
+      status: 'completed',
+      items: [{
+        itemName: category.category,
+        quantity: category.totalQuantity || 0
+      }]
+    }));
+    
+    setReportConfig(prev => ({
+      ...prev,
+      title: defaultTitle,
+      summary: generateCategorySummary(selectedCategories)
+    }));
+    
+    setPreviewOrders(transformedOrders);
+    setIsReportModalOpen(true);
+  };
+
+  // 현장별 보고서 생성 함수  
+  const handleProjectReportGeneration = () => {
+    const selectedProjects = projectReport?.data?.filter((item: any) => 
+      selectedProjectItems.has(item.projectId)) || [];
+    const defaultTitle = `현장별 분석 보고서 (${selectedProjects.length}개 현장) - ${new Date().toLocaleDateString('ko-KR')}`;
+    
+    // 현장 데이터를 발주 형태로 변환
+    const transformedOrders = selectedProjects.map((project: any) => ({
+      id: `project_${project.projectId}`,
+      orderDate: new Date().toISOString(),
+      vendor: { name: '다양한 거래처' },
+      vendorName: '다양한 거래처',
+      totalAmount: project.totalAmount || 0,
+      status: project.projectStatus || 'active',
+      items: [{
+        itemName: `${project.projectName} 관련 품목`,
+        quantity: project.orderCount || 0
+      }]
+    }));
+    
+    setReportConfig(prev => ({
+      ...prev,
+      title: defaultTitle,
+      summary: generateProjectSummary(selectedProjects)
+    }));
+    
+    setPreviewOrders(transformedOrders);
+    setIsReportModalOpen(true);
+  };
+
+  // 거래처별 보고서 생성 함수
+  const handleVendorReportGeneration = () => {
+    const selectedVendors = vendorReport?.data?.filter((item: any) => 
+      selectedVendorItems.has(item.vendorId)) || [];
+    const defaultTitle = `거래처별 분석 보고서 (${selectedVendors.length}개 거래처) - ${new Date().toLocaleDateString('ko-KR')}`;
+    
+    // 거래처 데이터를 발주 형태로 변환 (거래처별 분석에 핵심!)
+    const transformedOrders = selectedVendors.map((vendor: any) => ({
+      id: `vendor_${vendor.vendorId}`,
+      orderDate: new Date().toISOString(),
+      vendor: { name: vendor.vendorName },
+      vendorName: vendor.vendorName,
+      totalAmount: vendor.totalAmount || 0,
+      status: 'completed',
+      items: [{
+        itemName: `${vendor.vendorName} 발주 품목`,
+        quantity: vendor.orderCount || 0
+      }]
+    }));
+    
+    setReportConfig(prev => ({
+      ...prev,
+      title: defaultTitle,
+      summary: generateVendorSummary(selectedVendors)
+    }));
+    
+    setPreviewOrders(transformedOrders);
+    setIsReportModalOpen(true);
+  };
+
+  // 분류별 보고서 요약 생성
+  const generateCategorySummary = (categories: any[]) => {
+    if (categories.length === 0) return '';
+    
+    const totalAmount = categories.reduce((sum, item) => sum + (parseFloat(item.totalAmount) || 0), 0);
+    const totalItems = categories.reduce((sum, item) => sum + (parseInt(item.itemCount) || 0), 0);
+    const totalOrders = categories.reduce((sum, item) => sum + (parseInt(item.orderCount) || 0), 0);
+    
+    const topCategory = categories.reduce((max, item) => 
+      (parseFloat(item.totalAmount) || 0) > (parseFloat(max.totalAmount) || 0) ? item : max);
+      
+    return `총 ${categories.length}개 분류 분석 결과:
+• 총 발주 금액: ₩${Math.floor(totalAmount).toLocaleString()}
+• 총 품목 수: ${totalItems.toLocaleString()}개
+• 총 발주 수: ${totalOrders.toLocaleString()}건
+• 최대 금액 분류: ${topCategory.category} (₩${Math.floor(topCategory.totalAmount).toLocaleString()})`;
+  };
+
+  // 현장별 보고서 요약 생성
+  const generateProjectSummary = (projects: any[]) => {
+    if (projects.length === 0) return '';
+    
+    const totalAmount = projects.reduce((sum, item) => sum + (parseFloat(item.totalAmount) || 0), 0);
+    const totalVendors = projects.reduce((sum, item) => sum + (parseInt(item.vendorCount) || 0), 0);
+    const totalOrders = projects.reduce((sum, item) => sum + (parseInt(item.orderCount) || 0), 0);
+    
+    const topProject = projects.reduce((max, item) => 
+      (parseFloat(item.totalAmount) || 0) > (parseFloat(max.totalAmount) || 0) ? item : max);
+      
+    return `총 ${projects.length}개 현장 분석 결과:
+• 총 발주 금액: ₩${Math.floor(totalAmount).toLocaleString()}
+• 총 거래처 수: ${totalVendors.toLocaleString()}개
+• 총 발주 수: ${totalOrders.toLocaleString()}건
+• 최대 금액 현장: ${topProject.projectName} (₩${Math.floor(topProject.totalAmount).toLocaleString()})`;
+  };
+
+  // 거래처별 보고서 요약 생성
+  const generateVendorSummary = (vendors: any[]) => {
+    if (vendors.length === 0) return '';
+    
+    const totalAmount = vendors.reduce((sum, item) => sum + (parseFloat(item.totalAmount) || 0), 0);
+    const totalProjects = vendors.reduce((sum, item) => sum + (parseInt(item.projectCount) || 0), 0);
+    const totalOrders = vendors.reduce((sum, item) => sum + (parseInt(item.orderCount) || 0), 0);
+    
+    const topVendor = vendors.reduce((max, item) => 
+      (parseFloat(item.totalAmount) || 0) > (parseFloat(max.totalAmount) || 0) ? item : max);
+      
+    return `총 ${vendors.length}개 거래처 분석 결과:
+• 총 발주 금액: ₩${Math.floor(totalAmount).toLocaleString()}
+• 총 프로젝트 수: ${totalProjects.toLocaleString()}개
+• 총 발주 수: ${totalOrders.toLocaleString()}건
+• 최대 금액 거래처: ${topVendor.vendorName} (₩${Math.floor(topVendor.totalAmount).toLocaleString()})`;
   };
 
   // 페이지 보호 - 인증되지 않은 사용자 처리
@@ -279,11 +540,11 @@ export default function Reports() {
     enabled: isAuthenticated,
   });
 
-  // 발주 템플릿 목록
-  const { data: templates } = useQuery({
-    queryKey: ["/api/order-templates"],
-    enabled: isAuthenticated,
-  });
+  // 발주 템플릿 목록 - 현재 사용하지 않음
+  // const { data: templates } = useQuery({
+  //   queryKey: ["/api/order-templates"],
+  //   enabled: isAuthenticated,
+  // });
 
   // 사용자 목록
   const { data: users } = useQuery({
@@ -301,7 +562,8 @@ export default function Reports() {
       
       const params = new URLSearchParams();
       
-      if (activeFilters.year) {
+      // Only add year if it's not 'all'
+      if (activeFilters.year && activeFilters.year !== 'all') {
         params.append('year', activeFilters.year);
       }
       if (activeFilters.startDate) {
@@ -653,7 +915,8 @@ export default function Reports() {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
+                {/* 발주 템플릿 필터 - 현재 비활성화 */}
+                {/* <div className="space-y-2">
                   <label className={`text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>발주 템플릿</label>
                   <Select 
                     value={filters.templateId} 
@@ -664,14 +927,9 @@ export default function Reports() {
                     </SelectTrigger>
                     <SelectContent className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
                       <SelectItem value="all">전체 템플릿</SelectItem>
-                      {Array.isArray(templates) && templates.map((template: any) => (
-                        <SelectItem key={template.id} value={template.id.toString()}>
-                          {template.templateName}
-                        </SelectItem>
-                      ))}
                     </SelectContent>
                   </Select>
-                </div>
+                </div> */}
 
                 <div className="space-y-2">
                   <label className={`text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>금액 범위</label>
@@ -711,6 +969,17 @@ export default function Reports() {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className={`text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>검색어</label>
+                  <Input 
+                    type="text"
+                    placeholder="발주번호, 거래처명, 현장명, 메모로 검색..."
+                    value={filters.search}
+                    onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                    className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400' : 'bg-white border-gray-300 placeholder-gray-500'}`}
+                  />
                 </div>
               </>
             )}
@@ -764,6 +1033,11 @@ export default function Reports() {
                       담당자 필터링
                     </span>
                   )}
+                  {activeFilters.search && (
+                    <span className={`inline-block px-2 py-1 rounded text-xs mr-2 transition-colors ${isDarkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-800'}`}>
+                      검색어: "{activeFilters.search}"
+                    </span>
+                  )}
                 </div>
                 <Button 
                   variant="outline" 
@@ -777,7 +1051,10 @@ export default function Reports() {
                       status: 'all',
                       templateId: 'all',
                       amountRange: 'all',
-                      userId: 'all'
+                      userId: 'all',
+                      search: '',
+                      month: 'all',
+                      projectId: 'all'
                     };
                     setFilters(resetFilters);
                     setActiveFilters(resetFilters);
@@ -1002,7 +1279,7 @@ export default function Reports() {
                         </div>
                       </th>
                       <th className={`text-left py-3 px-4 text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
-                        주요 품목 계층
+                        품목
                       </th>
                       <th 
                         className={`text-left py-3 px-4 text-sm font-medium cursor-pointer select-none transition-colors ${
@@ -1028,19 +1305,6 @@ export default function Reports() {
                         <div className="flex items-center gap-1">
                           총금액
                           {getSortIcon('totalAmount')}
-                        </div>
-                      </th>
-                      <th 
-                        className={`text-left py-3 px-4 text-sm font-medium cursor-pointer select-none transition-colors ${
-                          isDarkMode 
-                            ? 'text-gray-300 hover:bg-gray-600' 
-                            : 'text-gray-900 hover:bg-gray-100'
-                        }`}
-                        onClick={() => handleSort('templateName')}
-                      >
-                        <div className="flex items-center gap-1">
-                          발주 템플릿
-                          {getSortIcon('templateName')}
                         </div>
                       </th>
                       <th 
@@ -1099,16 +1363,16 @@ export default function Reports() {
                           </button>
                         </td>
                         <td className="py-3 px-4 text-sm">
-                          {order.vendor ? (
+                          {order.vendorName ? (
                             <button
-                              onClick={() => setLocation(`/vendors/${order.vendor.id}`)}
+                              onClick={() => setLocation(`/vendors/${order.vendorId}`)}
                               className={`transition-colors hover:underline cursor-pointer ${
                                 isDarkMode 
                                   ? 'text-blue-400 hover:text-blue-300' 
                                   : 'text-blue-600 hover:text-blue-800'
                               }`}
                             >
-                              {order.vendor.name}
+                              {order.vendorName}
                             </button>
                           ) : '-'}
                         </td>
@@ -1117,21 +1381,28 @@ export default function Reports() {
                             <div className="space-y-1">
                               {order.items.slice(0, 2).map((item: any, index: number) => (
                                 <div key={index} className="text-xs">
-                                  <span className={`font-medium transition-colors ${
-                                    isDarkMode ? 'text-blue-400' : 'text-blue-600'
+                                  <div className={`font-medium transition-colors ${
+                                    isDarkMode ? 'text-gray-200' : 'text-gray-900'
                                   }`}>
-                                    {item.majorCategory || '미분류'}
-                                  </span>
-                                  {item.middleCategory && (
-                                    <span className={`transition-colors ${
-                                      isDarkMode ? 'text-gray-400' : 'text-gray-500'
-                                    }`}> &gt; {item.middleCategory}</span>
-                                  )}
-                                  {item.minorCategory && (
-                                    <span className={`transition-colors ${
-                                      isDarkMode ? 'text-gray-500' : 'text-gray-400'
-                                    }`}> &gt; {item.minorCategory}</span>
-                                  )}
+                                    {item.itemName || item.name || '품목명 없음'}
+                                  </div>
+                                  <div className="text-xs mt-1">
+                                    <span className={`font-medium transition-colors ${
+                                      isDarkMode ? 'text-blue-400' : 'text-blue-600'
+                                    }`}>
+                                      {item.majorCategory || '미분류'}
+                                    </span>
+                                    {item.middleCategory && (
+                                      <span className={`transition-colors ${
+                                        isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                                      }`}> &gt; {item.middleCategory}</span>
+                                    )}
+                                    {item.minorCategory && (
+                                      <span className={`transition-colors ${
+                                        isDarkMode ? 'text-gray-500' : 'text-gray-400'
+                                      }`}> &gt; {item.minorCategory}</span>
+                                    )}
+                                  </div>
                                 </div>
                               ))}
                               {order.items.length > 2 && (
@@ -1149,9 +1420,6 @@ export default function Reports() {
                         </td>
                         <td className={`py-3 px-4 text-sm font-semibold transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
                           {order.totalAmount ? formatKoreanWon(Math.floor(order.totalAmount)) : '-'}
-                        </td>
-                        <td className={`py-3 px-4 text-sm transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
-                          {order.templateName || '-'}
                         </td>
                         <td className="py-3 px-4 text-sm">
                           <span className={`px-2 py-1 rounded-full text-xs ${
@@ -1179,7 +1447,7 @@ export default function Reports() {
                           </span>
                         </td>
                         <td className={`py-3 px-4 text-sm transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
-                          {order.user ? `${order.user.lastName || ''} ${order.user.firstName || ''}`.trim() : '-'}
+                          {order.userName || (order.userLastName || order.userFirstName ? `${order.userLastName || ''} ${order.userFirstName || ''}`.trim() : '-')}
                         </td>
                       </tr>
                     ))}
@@ -1275,6 +1543,18 @@ export default function Reports() {
                     <table className="w-full border-collapse">
                       <thead>
                         <tr className={`border-b transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'}`}>
+                          <th className={`py-3 px-4 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
+                            <Checkbox 
+                              checked={categoryReport?.data?.length > 0 && categoryReport.data.every((_: any, index: number) => selectedCategoryItems.has(index))}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setSelectedCategoryItems(new Set(categoryReport?.data?.map((_: any, index: number) => index) || []));
+                                } else {
+                                  setSelectedCategoryItems(new Set());
+                                }
+                              }}
+                            />
+                          </th>
                           <th className={`text-left py-3 px-4 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>분류 계층</th>
                           <th className={`text-right py-3 px-4 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>발주 수</th>
                           <th className={`text-right py-3 px-4 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>품목 수</th>
@@ -1291,6 +1571,20 @@ export default function Reports() {
                               ? 'border-gray-600 hover:bg-gray-700' 
                               : 'border-gray-200 hover:bg-gray-50'
                           }`}>
+                            <td className="py-3 px-4">
+                              <Checkbox 
+                                checked={selectedCategoryItems.has(index)}
+                                onCheckedChange={(checked) => {
+                                  const newSelected = new Set(selectedCategoryItems);
+                                  if (checked) {
+                                    newSelected.add(index);
+                                  } else {
+                                    newSelected.delete(index);
+                                  }
+                                  setSelectedCategoryItems(newSelected);
+                                }}
+                              />
+                            </td>
                             <td className="py-3 px-4">
                               <div className="text-sm">
                                 <div className={`font-medium transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{item.category}</div>
@@ -1342,25 +1636,83 @@ export default function Reports() {
               {/* Project Report View */}
               {reportType === 'project' && projectReport && (
                 <div className="space-y-4">
-                  <div className={`p-4 rounded-lg transition-colors ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-                    <h3 className={`text-lg font-semibold mb-2 transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>현장별 발주 보고서</h3>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                      <div>
-                        <span className={`transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>총 프로젝트 수:</span>
-                        <span className={`ml-2 font-medium transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{projectReport.summary?.totalProjects || 0}</span>
+                  {/* 요약 통계 - 발주 내역 검색과 동일한 스타일 */}
+                  <div className="space-y-4 mb-6">
+                    <h3 className={`text-lg font-semibold mb-4 transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>현장별 발주 보고서</h3>
+                    
+                    {/* 첫 번째 줄 - 기본 통계 */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div className={`p-3 rounded-lg text-center transition-colors ${isDarkMode ? 'bg-blue-900/30' : 'bg-blue-50'}`}>
+                        <div className={`text-2xl font-bold transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                          {projectReport.summary?.totalProjects || 0}
+                        </div>
+                        <div className={`text-sm transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>총 프로젝트</div>
                       </div>
-                      <div>
-                        <span className={`transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>총 발주 수:</span>
-                        <span className={`ml-2 font-medium transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{projectReport.summary?.totalOrders || 0}</span>
+                      <div className={`p-3 rounded-lg text-center transition-colors ${isDarkMode ? 'bg-green-900/30' : 'bg-green-50'}`}>
+                        <div className={`text-2xl font-bold transition-colors ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
+                          {projectReport.summary?.totalOrders || 0}
+                        </div>
+                        <div className={`text-sm transition-colors ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>총 발주 수</div>
                       </div>
-                      <div>
-                        <span className={`transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>총 금액:</span>
-                        <span className={`ml-2 font-medium transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{formatKoreanWon(Math.floor(projectReport.summary?.totalAmount || 0))}</span>
+                      <div className={`p-3 rounded-lg text-center transition-colors ${isDarkMode ? 'bg-purple-900/30' : 'bg-purple-50'}`}>
+                        <div className={`text-2xl font-bold transition-colors ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`}>
+                          {formatKoreanWon(Math.floor(projectReport.summary?.totalAmount || 0))}
+                        </div>
+                        <div className={`text-sm transition-colors ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`}>총 발주금액</div>
                       </div>
-                      <div>
-                        <span className={`transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>프로젝트당 평균:</span>
-                        <span className={`ml-2 font-medium transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{formatKoreanWon(Math.floor(projectReport.summary?.averagePerProject || 0))}</span>
+                      <div className={`p-3 rounded-lg text-center transition-colors ${isDarkMode ? 'bg-orange-900/30' : 'bg-orange-50'}`}>
+                        <div className={`text-2xl font-bold transition-colors ${isDarkMode ? 'text-orange-400' : 'text-orange-600'}`}>
+                          {formatKoreanWon(Math.floor(projectReport.summary?.averagePerProject || 0))}
+                        </div>
+                        <div className={`text-sm transition-colors ${isDarkMode ? 'text-orange-400' : 'text-orange-600'}`}>현장당 평균</div>
                       </div>
+                    </div>
+
+                    {/* 두 번째 줄 - 추가 통계 */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {(() => {
+                        // 프로젝트 상태별 통계 계산
+                        const statusCounts = projectReport.data?.reduce((acc: any, project: any) => {
+                          acc[project.projectStatus] = (acc[project.projectStatus] || 0) + 1;
+                          return acc;
+                        }, {}) || {};
+
+                        const totalVendors = projectReport.data?.reduce((sum: number, project: any) => 
+                          sum + (project.vendorCount || 0), 0) || 0;
+
+                        const avgOrdersPerProject = projectReport.summary?.totalProjects > 0 
+                          ? Math.round((projectReport.summary?.totalOrders || 0) / projectReport.summary.totalProjects)
+                          : 0;
+
+                        return (
+                          <>
+                            <div className={`p-3 rounded-lg text-center transition-colors ${isDarkMode ? 'bg-green-900/30' : 'bg-green-50'}`}>
+                              <div className={`text-2xl font-bold transition-colors ${isDarkMode ? 'text-green-400' : 'text-green-700'}`}>
+                                {statusCounts.active || 0}
+                              </div>
+                              <div className={`text-sm transition-colors ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>진행중</div>
+                            </div>
+                            <div className={`p-3 rounded-lg text-center transition-colors ${isDarkMode ? 'bg-blue-900/30' : 'bg-blue-50'}`}>
+                              <div className={`text-2xl font-bold transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-700'}`}>
+                                {statusCounts.completed || 0}
+                              </div>
+                              <div className={`text-sm transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>완료</div>
+                            </div>
+                            <div className={`p-3 rounded-lg text-center transition-colors ${isDarkMode ? 'bg-indigo-900/30' : 'bg-indigo-50'}`}>
+                              <div className={`text-2xl font-bold transition-colors ${isDarkMode ? 'text-indigo-400' : 'text-indigo-700'}`}>
+                                {totalVendors}
+                              </div>
+                              <div className={`text-sm transition-colors ${isDarkMode ? 'text-indigo-400' : 'text-indigo-600'}`}>총 거래처</div>
+                            </div>
+                            <div className={`p-3 rounded-lg text-center transition-colors ${isDarkMode ? 'bg-teal-900/30' : 'bg-teal-50'}`}>
+                              <div className={`text-2xl font-bold transition-colors ${isDarkMode ? 'text-teal-400' : 'text-teal-700'}`}>
+                                {avgOrdersPerProject}
+                              </div>
+                              <div className={`text-sm transition-colors ${isDarkMode ? 'text-teal-400' : 'text-teal-600'}`}>현장당 발주</div>
+                            </div>
+                          </>
+                        );
+                      })()}
                     </div>
                   </div>
 
@@ -1368,22 +1720,104 @@ export default function Reports() {
                     <table className="w-full border-collapse">
                       <thead>
                         <tr className={`border-b transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'}`}>
-                          <th className={`text-left py-3 px-4 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>프로젝트명</th>
-                          <th className={`text-left py-3 px-4 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>프로젝트 코드</th>
-                          <th className={`text-left py-3 px-4 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>상태</th>
-                          <th className={`text-right py-3 px-4 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>발주 수</th>
-                          <th className={`text-right py-3 px-4 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>거래처 수</th>
-                          <th className={`text-right py-3 px-4 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>총 금액</th>
-                          <th className={`text-right py-3 px-4 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>평균 금액</th>
+                          <th className={`py-3 px-4 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
+                            <Checkbox 
+                              checked={projectReport?.data?.length > 0 && projectReport.data.every((item: any) => selectedProjectItems.has(item.projectId))}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setSelectedProjectItems(new Set(projectReport?.data?.map((item: any) => item.projectId) || []));
+                                } else {
+                                  setSelectedProjectItems(new Set());
+                                }
+                              }}
+                            />
+                          </th>
+                          <th 
+                            className={`text-left py-3 px-4 font-medium transition-colors cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 select-none ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}
+                            onClick={() => handleProjectSort('projectName')}
+                          >
+                            <div className="flex items-center gap-2">
+                              <span>현장명</span>
+                              {renderProjectSortIcon('projectName')}
+                            </div>
+                          </th>
+                          <th 
+                            className={`text-left py-3 px-4 font-medium transition-colors cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 select-none ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}
+                            onClick={() => handleProjectSort('projectCode')}
+                          >
+                            <div className="flex items-center gap-2">
+                              <span>현장 코드</span>
+                              {renderProjectSortIcon('projectCode')}
+                            </div>
+                          </th>
+                          <th 
+                            className={`text-left py-3 px-4 font-medium transition-colors cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 select-none ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}
+                            onClick={() => handleProjectSort('projectStatus')}
+                          >
+                            <div className="flex items-center gap-2">
+                              <span>상태</span>
+                              {renderProjectSortIcon('projectStatus')}
+                            </div>
+                          </th>
+                          <th 
+                            className={`text-right py-3 px-4 font-medium transition-colors cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 select-none ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}
+                            onClick={() => handleProjectSort('orderCount')}
+                          >
+                            <div className="flex items-center justify-end gap-2">
+                              <span>발주 수</span>
+                              {renderProjectSortIcon('orderCount')}
+                            </div>
+                          </th>
+                          <th 
+                            className={`text-right py-3 px-4 font-medium transition-colors cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 select-none ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}
+                            onClick={() => handleProjectSort('vendorCount')}
+                          >
+                            <div className="flex items-center justify-end gap-2">
+                              <span>거래처 수</span>
+                              {renderProjectSortIcon('vendorCount')}
+                            </div>
+                          </th>
+                          <th 
+                            className={`text-right py-3 px-4 font-medium transition-colors cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 select-none ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}
+                            onClick={() => handleProjectSort('totalAmount')}
+                          >
+                            <div className="flex items-center justify-end gap-2">
+                              <span>총 금액</span>
+                              {renderProjectSortIcon('totalAmount')}
+                            </div>
+                          </th>
+                          <th 
+                            className={`text-right py-3 px-4 font-medium transition-colors cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 select-none ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}
+                            onClick={() => handleProjectSort('averageOrderAmount')}
+                          >
+                            <div className="flex items-center justify-end gap-2">
+                              <span>평균 금액</span>
+                              {renderProjectSortIcon('averageOrderAmount')}
+                            </div>
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
-                        {projectReport.data?.map((item: any) => (
+                        {getSortedProjectData(projectReport.data || [])?.map((item: any) => (
                           <tr key={item.projectId} className={`border-b transition-colors ${
                             isDarkMode 
                               ? 'border-gray-600 hover:bg-gray-700' 
                               : 'border-gray-200 hover:bg-gray-50'
                           }`}>
+                            <td className="py-3 px-4">
+                              <Checkbox 
+                                checked={selectedProjectItems.has(item.projectId)}
+                                onCheckedChange={(checked) => {
+                                  const newSelected = new Set(selectedProjectItems);
+                                  if (checked) {
+                                    newSelected.add(item.projectId);
+                                  } else {
+                                    newSelected.delete(item.projectId);
+                                  }
+                                  setSelectedProjectItems(newSelected);
+                                }}
+                              />
+                            </td>
                             <td className={`py-3 px-4 transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{item.projectName}</td>
                             <td className={`py-3 px-4 transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>{item.projectCode}</td>
                             <td className="py-3 px-4">
@@ -1414,44 +1848,213 @@ export default function Reports() {
               {reportType === 'vendor' && (
                 vendorReport ? (
                 <div className="space-y-4">
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h3 className="text-lg font-semibold mb-2">거래처별 발주 보고서</h3>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                      <div>
-                        <span className="text-gray-600">총 거래처 수:</span>
-                        <span className="ml-2 font-medium">{vendorReport.summary?.totalVendors || 0}</span>
+                  {/* 요약 통계 - 발주 내역 검색과 동일한 스타일 */}
+                  <div className="space-y-4 mb-6">
+                    <h3 className={`text-lg font-semibold mb-4 transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>거래처별 발주 보고서</h3>
+                    
+                    {/* 첫 번째 줄 - 기본 통계 */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div className={`p-3 rounded-lg text-center transition-colors ${isDarkMode ? 'bg-emerald-900/30' : 'bg-emerald-50'}`}>
+                        <div className={`text-2xl font-bold transition-colors ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                          {vendorReport.summary?.totalVendors || 0}
+                        </div>
+                        <div className={`text-sm transition-colors ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>총 거래처</div>
                       </div>
-                      <div>
-                        <span className="text-gray-600">총 발주 수:</span>
-                        <span className="ml-2 font-medium">{vendorReport.summary?.totalOrders || 0}</span>
+                      <div className={`p-3 rounded-lg text-center transition-colors ${isDarkMode ? 'bg-cyan-900/30' : 'bg-cyan-50'}`}>
+                        <div className={`text-2xl font-bold transition-colors ${isDarkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>
+                          {vendorReport.summary?.totalOrders || 0}
+                        </div>
+                        <div className={`text-sm transition-colors ${isDarkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>총 발주 수</div>
                       </div>
-                      <div>
-                        <span className="text-gray-600">총 금액:</span>
-                        <span className="ml-2 font-medium">{formatKoreanWon(Math.floor(vendorReport.summary?.totalAmount || 0))}</span>
+                      <div className={`p-3 rounded-lg text-center transition-colors ${isDarkMode ? 'bg-rose-900/30' : 'bg-rose-50'}`}>
+                        <div className={`text-2xl font-bold transition-colors ${isDarkMode ? 'text-rose-400' : 'text-rose-600'}`}>
+                          {formatKoreanWon(Math.floor(vendorReport.summary?.totalAmount || 0))}
+                        </div>
+                        <div className={`text-sm transition-colors ${isDarkMode ? 'text-rose-400' : 'text-rose-600'}`}>총 발주금액</div>
                       </div>
-                      <div>
-                        <span className="text-gray-600">거래처당 평균:</span>
-                        <span className="ml-2 font-medium">{formatKoreanWon(Math.floor(vendorReport.summary?.averagePerVendor || 0))}</span>
+                      <div className={`p-3 rounded-lg text-center transition-colors ${isDarkMode ? 'bg-amber-900/30' : 'bg-amber-50'}`}>
+                        <div className={`text-2xl font-bold transition-colors ${isDarkMode ? 'text-amber-400' : 'text-amber-600'}`}>
+                          {formatKoreanWon(Math.floor(vendorReport.summary?.averagePerVendor || 0))}
+                        </div>
+                        <div className={`text-sm transition-colors ${isDarkMode ? 'text-amber-400' : 'text-amber-600'}`}>거래처당 평균</div>
                       </div>
+                    </div>
+
+                    {/* 두 번째 줄 - 추가 통계 */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {(() => {
+                        const totalProjects = vendorReport.data?.reduce((sum: number, vendor: any) => 
+                          sum + (vendor.projectCount || 0), 0) || 0;
+
+                        const avgOrdersPerVendor = vendorReport.summary?.totalVendors > 0 
+                          ? Math.round((vendorReport.summary?.totalOrders || 0) / vendorReport.summary.totalVendors)
+                          : 0;
+
+                        const maxOrderVendor = vendorReport.data?.reduce((max: any, vendor: any) => 
+                          vendor.orderCount > (max?.orderCount || 0) ? vendor : max, null);
+
+                        const avgAmountPerOrder = vendorReport.summary?.totalOrders > 0 
+                          ? (vendorReport.summary?.totalAmount || 0) / vendorReport.summary.totalOrders
+                          : 0;
+
+                        return (
+                          <>
+                            <div className={`p-3 rounded-lg text-center transition-colors ${isDarkMode ? 'bg-violet-900/30' : 'bg-violet-50'}`}>
+                              <div className={`text-2xl font-bold transition-colors ${isDarkMode ? 'text-violet-400' : 'text-violet-700'}`}>
+                                {totalProjects}
+                              </div>
+                              <div className={`text-sm transition-colors ${isDarkMode ? 'text-violet-400' : 'text-violet-600'}`}>총 프로젝트</div>
+                            </div>
+                            <div className={`p-3 rounded-lg text-center transition-colors ${isDarkMode ? 'bg-sky-900/30' : 'bg-sky-50'}`}>
+                              <div className={`text-2xl font-bold transition-colors ${isDarkMode ? 'text-sky-400' : 'text-sky-700'}`}>
+                                {avgOrdersPerVendor}
+                              </div>
+                              <div className={`text-sm transition-colors ${isDarkMode ? 'text-sky-400' : 'text-sky-600'}`}>거래처당 발주</div>
+                            </div>
+                            <div className={`p-3 rounded-lg text-center transition-colors ${isDarkMode ? 'bg-lime-900/30' : 'bg-lime-50'}`}>
+                              <div className={`text-2xl font-bold transition-colors ${isDarkMode ? 'text-lime-400' : 'text-lime-700'}`}>
+                                {maxOrderVendor?.orderCount || 0}
+                              </div>
+                              <div className={`text-sm transition-colors ${isDarkMode ? 'text-lime-400' : 'text-lime-600'}`}>최다 발주</div>
+                            </div>
+                            <div className={`p-3 rounded-lg text-center transition-colors ${isDarkMode ? 'bg-pink-900/30' : 'bg-pink-50'}`}>
+                              <div className={`text-2xl font-bold transition-colors ${isDarkMode ? 'text-pink-400' : 'text-pink-700'}`}>
+                                {formatKoreanWon(Math.floor(avgAmountPerOrder))}
+                              </div>
+                              <div className={`text-sm transition-colors ${isDarkMode ? 'text-pink-400' : 'text-pink-600'}`}>평균 발주액</div>
+                            </div>
+                          </>
+                        );
+                      })()}
                     </div>
                   </div>
 
                   <div className="overflow-x-auto">
                     <table className="w-full border-collapse">
                       <thead>
-                        <tr className="bg-gray-50 border-b">
-                          <th className="text-left py-3 px-4 font-medium">거래처명</th>
-                          <th className="text-left py-3 px-4 font-medium">거래처 코드</th>
-                          <th className="text-left py-3 px-4 font-medium">사업자번호</th>
-                          <th className="text-right py-3 px-4 font-medium">발주 수</th>
-                          <th className="text-right py-3 px-4 font-medium">프로젝트 수</th>
-                          <th className="text-right py-3 px-4 font-medium">총 금액</th>
-                          <th className="text-right py-3 px-4 font-medium">평균 금액</th>
+                        <tr className={`border-b transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'}`}>
+                          <th className={`py-3 px-4 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
+                            <Checkbox 
+                              checked={vendorReport?.data?.length > 0 && vendorReport.data.every((item: any) => selectedVendorItems.has(item.vendorId))}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setSelectedVendorItems(new Set(vendorReport?.data?.map((item: any) => item.vendorId) || []));
+                                } else {
+                                  setSelectedVendorItems(new Set());
+                                }
+                              }}
+                            />
+                          </th>
+                          <th 
+                            className={`text-left py-3 px-4 font-medium cursor-pointer select-none transition-colors ${
+                              isDarkMode 
+                                ? 'text-gray-300 hover:bg-gray-600' 
+                                : 'text-gray-900 hover:bg-gray-100'
+                            }`}
+                            onClick={() => handleVendorSort('vendorName')}
+                          >
+                            <div className="flex items-center gap-1">
+                              거래처명
+                              {renderVendorSortIcon('vendorName')}
+                            </div>
+                          </th>
+                          <th 
+                            className={`text-left py-3 px-4 font-medium cursor-pointer select-none transition-colors ${
+                              isDarkMode 
+                                ? 'text-gray-300 hover:bg-gray-600' 
+                                : 'text-gray-900 hover:bg-gray-100'
+                            }`}
+                            onClick={() => handleVendorSort('vendorCode')}
+                          >
+                            <div className="flex items-center gap-1">
+                              거래처 코드
+                              {renderVendorSortIcon('vendorCode')}
+                            </div>
+                          </th>
+                          <th 
+                            className={`text-left py-3 px-4 font-medium cursor-pointer select-none transition-colors ${
+                              isDarkMode 
+                                ? 'text-gray-300 hover:bg-gray-600' 
+                                : 'text-gray-900 hover:bg-gray-100'
+                            }`}
+                            onClick={() => handleVendorSort('businessNumber')}
+                          >
+                            <div className="flex items-center gap-1">
+                              사업자번호
+                              {renderVendorSortIcon('businessNumber')}
+                            </div>
+                          </th>
+                          <th 
+                            className={`text-right py-3 px-4 font-medium cursor-pointer select-none transition-colors ${
+                              isDarkMode 
+                                ? 'text-gray-300 hover:bg-gray-600' 
+                                : 'text-gray-900 hover:bg-gray-100'
+                            }`}
+                            onClick={() => handleVendorSort('orderCount')}
+                          >
+                            <div className="flex items-center justify-end gap-1">
+                              발주 수
+                              {renderVendorSortIcon('orderCount')}
+                            </div>
+                          </th>
+                          <th 
+                            className={`text-right py-3 px-4 font-medium cursor-pointer select-none transition-colors ${
+                              isDarkMode 
+                                ? 'text-gray-300 hover:bg-gray-600' 
+                                : 'text-gray-900 hover:bg-gray-100'
+                            }`}
+                            onClick={() => handleVendorSort('projectCount')}
+                          >
+                            <div className="flex items-center justify-end gap-1">
+                              프로젝트 수
+                              {renderVendorSortIcon('projectCount')}
+                            </div>
+                          </th>
+                          <th 
+                            className={`text-right py-3 px-4 font-medium cursor-pointer select-none transition-colors ${
+                              isDarkMode 
+                                ? 'text-gray-300 hover:bg-gray-600' 
+                                : 'text-gray-900 hover:bg-gray-100'
+                            }`}
+                            onClick={() => handleVendorSort('totalAmount')}
+                          >
+                            <div className="flex items-center justify-end gap-1">
+                              총 금액
+                              {renderVendorSortIcon('totalAmount')}
+                            </div>
+                          </th>
+                          <th 
+                            className={`text-right py-3 px-4 font-medium cursor-pointer select-none transition-colors ${
+                              isDarkMode 
+                                ? 'text-gray-300 hover:bg-gray-600' 
+                                : 'text-gray-900 hover:bg-gray-100'
+                            }`}
+                            onClick={() => handleVendorSort('averageOrderAmount')}
+                          >
+                            <div className="flex items-center justify-end gap-1">
+                              평균 금액
+                              {renderVendorSortIcon('averageOrderAmount')}
+                            </div>
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
-                        {vendorReport.data?.map((item: any) => (
+                        {getSortedVendorData(vendorReport.data || [])?.map((item: any) => (
                           <tr key={item.vendorId} className="border-b hover:bg-gray-50">
+                            <td className="py-3 px-4">
+                              <Checkbox 
+                                checked={selectedVendorItems.has(item.vendorId)}
+                                onCheckedChange={(checked) => {
+                                  const newSelected = new Set(selectedVendorItems);
+                                  if (checked) {
+                                    newSelected.add(item.vendorId);
+                                  } else {
+                                    newSelected.delete(item.vendorId);
+                                  }
+                                  setSelectedVendorItems(newSelected);
+                                }}
+                              />
+                            </td>
                             <td className="py-3 px-4">{item.vendorName}</td>
                             <td className="py-3 px-4">{item.vendorCode}</td>
                             <td className="py-3 px-4">{item.businessNumber}</td>
@@ -1736,55 +2339,6 @@ export default function Reports() {
               </div>
             </div>
 
-            {/* 출력 옵션 */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium flex items-center gap-2">
-                <Download className="h-5 w-5" />
-                출력 옵션
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="includePdf"
-                    checked={reportConfig.outputOptions.includePdf}
-                    onCheckedChange={(checked) => 
-                      setReportConfig(prev => ({
-                        ...prev,
-                        outputOptions: { ...prev.outputOptions, includePdf: !!checked }
-                      }))
-                    }
-                  />
-                  <Label htmlFor="includePdf">PDF 다운로드</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="includeExcel"
-                    checked={reportConfig.outputOptions.includeExcel}
-                    onCheckedChange={(checked) => 
-                      setReportConfig(prev => ({
-                        ...prev,
-                        outputOptions: { ...prev.outputOptions, includeExcel: !!checked }
-                      }))
-                    }
-                  />
-                  <Label htmlFor="includeExcel">Excel 데이터 첨부</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="sendEmail"
-                    checked={reportConfig.outputOptions.sendEmail}
-                    onCheckedChange={(checked) => 
-                      setReportConfig(prev => ({
-                        ...prev,
-                        outputOptions: { ...prev.outputOptions, sendEmail: !!checked }
-                      }))
-                    }
-                  />
-                  <Label htmlFor="sendEmail">이메일 전송</Label>
-                </div>
-              </div>
-            </div>
-
             {/* 액션 버튼 */}
             <div className="flex justify-end space-x-2 pt-4 border-t">
               <Button
@@ -1809,7 +2363,7 @@ export default function Reports() {
       {showPreview && (
         <ReportPreview
           config={reportConfig}
-          orders={processingReport?.orders?.filter((order: any) => selectedItems.has(order.id)) || []}
+          orders={previewOrders}
           onClose={() => setShowPreview(false)}
         />
       )}

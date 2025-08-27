@@ -12,39 +12,8 @@ router.get("/invoices", async (req, res) => {
     const { orderId } = req.query;
     console.log(`💰 Fetching invoices for order ${orderId} (using reliable mock data)...`);
     
-    // STABLE: Use mock data for consistent API functionality
-    const mockInvoices = orderId ? [
-      {
-        id: 1,
-        orderId: parseInt(orderId as string),
-        invoiceNumber: "INV-2025-001",
-        issueDate: "2025-01-15",
-        dueDate: "2025-02-15",
-        amount: 5500000,
-        tax: 550000,
-        totalAmount: 6050000,
-        status: "issued",
-        vendorName: "삼성건설",
-        description: "철근 D16 및 시멘트 공급",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      },
-      {
-        id: 2,
-        orderId: parseInt(orderId as string),
-        invoiceNumber: "INV-2025-002",
-        issueDate: "2025-01-20",
-        dueDate: "2025-02-20",
-        amount: 2400000,
-        tax: 240000,
-        totalAmount: 2640000,
-        status: "paid",
-        vendorName: "삼성건설",
-        description: "전기자재 공급",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }
-    ] : [];
+    // Return empty array instead of mock data
+    const mockInvoices = [];
     
     console.log(`✅ Successfully returning ${mockInvoices.length} invoices (mock data)`);
     res.json(mockInvoices);

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        button { margin: 10px 0; padding: 10px 20px; cursor: pointer; }
+        pre { background: #f4f4f4; padding: 10px; overflow: auto; }
+        .error { color: red; }
+        .success { color: green; }
+    </style>
+</head>
+<body>
+    <h1>발주 내역 검색 API 테스트</h1>
+    
+    <button onclick="testDebugData()">Debug Data 확인</button>
+    <button onclick="testDebugProcessing()">Debug Processing 확인</button>
+    <button onclick="testProcessingAll()">전체 데이터 조회 (인증 없이)</button>
+    <button onclick="testProcessingWithAuth()">전체 데이터 조회 (인증 포함)</button>
+    
+    <div id="result"></div>
+    
+    <script>
+        const resultDiv = document.getElementById('result');
+        
+        async function testDebugData() {
+            try {
+                const response = await fetch('/api/reports/debug-data');
+                const data = await response.json();
+                resultDiv.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                resultDiv.innerHTML = '<div class="error">Error: ' + error.message + '</div>';
+            }
+        }
+        
+        async function testDebugProcessing() {
+            try {
+                const response = await fetch('/api/reports/debug-processing');
+                const data = await response.json();
+                resultDiv.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                resultDiv.innerHTML = '<div class="error">Error: ' + error.message + '</div>';
+            }
+        }
+        
+        async function testProcessingAll() {
+            try {
+                const params = new URLSearchParams({
+                    limit: '100'
+                });
+                const response = await fetch('/api/reports/processing?' + params.toString());
+                const data = await response.json();
+                resultDiv.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                resultDiv.innerHTML = '<div class="error">Error: ' + error.message + '</div>';
+            }
+        }
+        
+        async function testProcessingWithAuth() {
+            try {
+                const params = new URLSearchParams({
+                    limit: '100'
+                });
+                const response = await fetch('/api/reports/processing?' + params.toString(), {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                resultDiv.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                resultDiv.innerHTML = '<div class="error">Error: ' + error.message + '</div>';
+            }
+        }
+    </script>
+</body>
+</html>

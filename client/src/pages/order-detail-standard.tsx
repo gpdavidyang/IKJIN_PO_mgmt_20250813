@@ -11,6 +11,7 @@ import { ArrowLeft, Edit, Send, Check, FileText, Download, Eye, Printer, Package
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { format } from "date-fns";
 import { formatKoreanWon } from "@/lib/utils";
+import { ExcelUploadFileInfo } from "@/components/excel-upload-file-info";
 
 export default function OrderDetailStandard() {
   const { user } = useAuth();
@@ -451,6 +452,7 @@ export default function OrderDetailStandard() {
                     <p><strong>발주번호:</strong> {order.orderNumber}</p>
                     <p><strong>발주일:</strong> {order.orderDate ? format(new Date(order.orderDate), 'yyyy-MM-dd') : '-'}</p>
                     <p><strong>납기일:</strong> {order.deliveryDate ? format(new Date(order.deliveryDate), 'yyyy-MM-dd') : '-'}</p>
+                    <p className="text-xs text-gray-500"><strong>시스템 등록:</strong> {order.createdAt ? format(new Date(order.createdAt), 'yyyy-MM-dd HH:mm') : '-'}</p>
                   </div>
                 </div>
                 
@@ -501,6 +503,25 @@ export default function OrderDetailStandard() {
                   <p className="text-sm border border-gray-300 p-4 rounded">{order.notes}</p>
                 </div>
               )}
+
+              {/* Excel Upload File Info */}
+              {order.attachments && order.attachments.length > 0 && (() => {
+                const excelFiles = order.attachments.filter((attachment: any) => 
+                  attachment.mimeType?.includes('excel') || 
+                  attachment.mimeType?.includes('spreadsheet') ||
+                  attachment.originalName?.toLowerCase().endsWith('.xlsx') ||
+                  attachment.originalName?.toLowerCase().endsWith('.xls')
+                );
+                
+                if (excelFiles.length > 0) {
+                  return (
+                    <div className="mb-8 no-print">
+                      <ExcelUploadFileInfo attachments={order.attachments} orderId={order.id} />
+                    </div>
+                  );
+                }
+                return null;
+              })()}
 
               <div className="mt-16 text-center">
                 <div className="inline-block">

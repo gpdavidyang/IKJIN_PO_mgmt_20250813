@@ -182,7 +182,8 @@ export default function Admin() {
 
   // Load company data into form
   useEffect(() => {
-    if (primaryCompany) {
+    if (primaryCompany && !isEditingCompany) {
+      console.log('🔄 Resetting company form with data:', primaryCompany);
       companyForm.reset({
         companyName: primaryCompany.companyName || "",
         businessNumber: primaryCompany.businessNumber || "",
@@ -194,7 +195,7 @@ export default function Admin() {
         representative: primaryCompany.representative || "",
       });
     }
-  }, [primaryCompany, companyForm]);
+  }, [primaryCompany, companyForm, isEditingCompany]);
 
   // Load user data into form when editing
   useEffect(() => {
@@ -259,18 +260,27 @@ export default function Admin() {
   // Mutations
   const saveCompanyMutation = useMutation({
     mutationFn: (data: CompanyFormData) => {
+      console.log('🚀 Saving company data:', data);
       if (primaryCompany) {
+        console.log('📝 Updating existing company ID:', primaryCompany.id);
         return apiRequest("PUT", `/api/companies/${primaryCompany.id}`, data);
       } else {
+        console.log('➕ Creating new company');
         return apiRequest("POST", "/api/companies", data);
       }
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
+      console.log('✅ Company save successful:', result);
       toast({ title: "성공", description: "회사 정보가 저장되었습니다." });
-      queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
+      // Exit edit mode first, then invalidate queries
       setIsEditingCompany(false);
+      // Add small delay before invalidating queries to ensure state update
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
+      }, 100);
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('❌ Company save failed:', error);
       toast({ title: "오류", description: "회사 정보 저장에 실패했습니다.", variant: "destructive" });
     },
   });
@@ -471,7 +481,7 @@ export default function Admin() {
           </TabsTrigger>
           <TabsTrigger value="workflow" className="flex items-center gap-2 text-sm">
             <Settings2 className="h-4 w-4" />
-            워크플로우
+            승인 워크플로우
           </TabsTrigger>
           <TabsTrigger value="terminology" className="flex items-center gap-2 text-sm">
             <FileText className="h-4 w-4" />
@@ -492,7 +502,10 @@ export default function Admin() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setIsEditingCompany(true)}
+                    onClick={() => {
+                      console.log('✏️ Starting company edit mode');
+                      setIsEditingCompany(true);
+                    }}
                     className="gap-1 h-6 px-2 text-xs"
                   >
                     <Edit className="h-3 w-3" />

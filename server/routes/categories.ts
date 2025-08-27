@@ -118,6 +118,58 @@ router.get("/", async (req, res) => {
 });
 
 /**
+ * 실제 발주에 사용된 카테고리만 조회 (분류별 보고서용)
+ * GET /api/categories/used-in-orders
+ */
+router.get("/used-in-orders", async (req, res) => {
+  try {
+    console.log("📋 Fetching categories used in purchase orders...");
+    
+    // Get unique category combinations from purchase order items only
+    const categoriesFromOrders = await db
+      .select({
+        majorCategory: purchaseOrderItems.majorCategory,
+        middleCategory: purchaseOrderItems.middleCategory,
+        minorCategory: purchaseOrderItems.minorCategory,
+      })
+      .from(purchaseOrderItems)
+      .groupBy(
+        purchaseOrderItems.majorCategory,
+        purchaseOrderItems.middleCategory,
+        purchaseOrderItems.minorCategory
+      );
+
+    // Debug: log raw data
+    console.log(`Raw categories from orders: ${JSON.stringify(categoriesFromOrders.slice(0, 5))}`);
+    
+    // Include null values for better debugging, sort by major category
+    const filteredCategories = categoriesFromOrders
+      .sort((a, b) => {
+        // Sort by major, then middle, then minor (null values last)
+        const majorA = a.majorCategory || 'zzz_null';
+        const majorB = b.majorCategory || 'zzz_null';
+        if (majorA !== majorB) {
+          return majorA.localeCompare(majorB);
+        }
+        const middleA = a.middleCategory || 'zzz_null';
+        const middleB = b.middleCategory || 'zzz_null';
+        if (middleA !== middleB) {
+          return middleA.localeCompare(middleB);
+        }
+        const minorA = a.minorCategory || 'zzz_null';
+        const minorB = b.minorCategory || 'zzz_null';
+        return minorA.localeCompare(minorB);
+      });
+
+    console.log(`Found ${filteredCategories.length} categories used in orders`);
+    res.json(filteredCategories);
+  } catch (error) {
+    console.error("Error fetching used categories:", error);
+    res.status(500).json({ error: "Failed to fetch used categories" });
+  }
+});
+
+/**
  * 특정 타입의 카테고리만 조회
  * GET /api/categories/:type (major, middle, minor)
  */

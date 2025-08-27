@@ -1,4 +1,5 @@
 import { Bell, LogOut, User, Settings, Home, ChevronRight, Plus } from "lucide-react";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -287,15 +288,7 @@ export function Header() {
         </div>
         
         <div className="flex items-center space-x-3">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="relative hover:scale-110 active:scale-95 transition-all duration-200 hover:bg-accent/50 focus:ring-2 focus:ring-primary/20" 
-            aria-label="알림"
-          >
-            <Bell className="h-5 w-5 transition-transform duration-200 hover:animate-pulse" />
-            <Badge className="absolute -top-1 -right-1 h-2 w-2 p-0 bg-red-500 animate-pulse" />
-          </Button>
+          <NotificationBell />
           
           <div className="flex items-center space-x-3">
             <DropdownMenu>

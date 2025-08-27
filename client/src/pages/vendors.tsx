@@ -161,15 +161,13 @@ export default function Vendors() {
                 <Badge variant="outline" className="text-sm border-gray-300 text-gray-700">
                   총 {filteredVendors.length}개
                 </Badge>
-                {user?.role === "admin" && (
-                  <Button 
-                    onClick={handleAddVendor} 
-                    className="shadow-md hover:shadow-lg transition-all duration-200 bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    거래처 추가
-                  </Button>
-                )}
+                <Button 
+                  onClick={handleAddVendor} 
+                  className="shadow-md hover:shadow-lg transition-all duration-200 bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  거래처 추가
+                </Button>
               </div>
             </div>
           </div>
@@ -281,11 +279,9 @@ export default function Vendors() {
                           {getSortIcon("createdAt")}
                         </div>
                       </TableHead>
-                      {user?.role === "admin" && (
-                        <TableHead className="px-6 py-3 text-sm font-medium text-right text-gray-600">
-                          관리
-                        </TableHead>
-                      )}
+                      <TableHead className="px-6 py-3 text-sm font-medium text-right text-gray-600">
+                        관리
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -298,18 +294,18 @@ export default function Vendors() {
                           <TableCell><div className="h-3 rounded animate-pulse bg-gray-200"></div></TableCell>
                           <TableCell><div className="h-3 rounded animate-pulse bg-gray-200"></div></TableCell>
                           <TableCell><div className="h-3 rounded animate-pulse bg-gray-200"></div></TableCell>
-                          {user?.role === "admin" && <TableCell></TableCell>}
+                          <TableCell></TableCell>
                         </TableRow>
                       ))
                     ) : error ? (
                       <TableRow>
-                        <TableCell colSpan={user?.role === "admin" ? 7 : 6} className="text-center py-6 text-sm text-red-500">
+                        <TableCell colSpan={7} className="text-center py-6 text-sm text-red-500">
                           오류: {error?.message || "거래처 데이터를 불러올 수 없습니다"}
                         </TableCell>
                       </TableRow>
                     ) : filteredVendors.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={user?.role === "admin" ? 7 : 6} className="text-center py-6 text-sm text-gray-500">
+                        <TableCell colSpan={7} className="text-center py-6 text-sm text-gray-500">
                           {searchQuery ? "검색 결과가 없습니다" : "등록된 거래처가 없습니다"}
                         </TableCell>
                       </TableRow>
@@ -354,30 +350,28 @@ export default function Vendors() {
                               {formatDate(vendor.createdAt)}
                             </div>
                           </TableCell>
-                          {user?.role === "admin" && (
-                            <TableCell className="py-4 px-6">
-                              <div className="flex items-center justify-end gap-1">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleEditVendor(vendor)}
-                                  className="h-6 w-6 p-0 text-blue-600 hover:text-blue-700"
-                                  title="수정"
-                                >
-                                  <Edit className="h-3 w-3" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleDeleteVendor(vendor.id)}
-                                  className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
-                                  title="삭제"
-                                >
-                                  <Trash2 className="h-3 w-3" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          )}
+                          <TableCell className="py-4 px-6">
+                            <div className="flex items-center justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditVendor(vendor)}
+                                className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                title="수정"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteVendor(vendor.id)}
+                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                title="삭제"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
                         </TableRow>
                       ))
                     )}
@@ -460,28 +454,26 @@ export default function Vendors() {
                     <span>등록일: {formatDate(vendor.createdAt)}</span>
                   </div>
                   
-                  {user?.role === "admin" && (
-                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-200">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEditVendor(vendor)}
-                        className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700"
-                        title="수정"
-                      >
-                        <Edit className="h-3 w-3" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteVendor(vendor.id)}
-                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                        title="삭제"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  )}
+                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-200">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEditVendor(vendor)}
+                      className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                      title="수정"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteVendor(vendor.id)}
+                      className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                      title="삭제"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               ))
             )}

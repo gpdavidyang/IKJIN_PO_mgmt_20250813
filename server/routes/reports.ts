@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { requireAuth } from "../local-auth";
 import { db } from "../db";
-import { purchaseOrders, purchaseOrderItems, vendors, projects, items, itemCategories } from "@shared/schema";
+import { purchaseOrders, purchaseOrderItems, vendors, projects, items, itemCategories, users } from "@shared/schema";
 import { eq, sql, and, gte, lte, inArray } from "drizzle-orm";
 import * as XLSX from 'xlsx';
 
@@ -81,6 +81,52 @@ router.get("/debug-data", async (req, res) => {
   } catch (error) {
     console.error("Debug data error:", error);
     res.status(500).json({ error: "Debug failed" });
+  }
+});
+
+// Debug endpoint for processing report (no auth for debugging)
+router.get("/debug-processing", async (req, res) => {
+  try {
+    console.log("Debug processing endpoint called");
+    
+    // Get all orders without any filters
+    const allOrders = await db
+      .select({
+        id: purchaseOrders.id,
+        orderNumber: purchaseOrders.orderNumber,
+        orderDate: purchaseOrders.orderDate,
+        status: purchaseOrders.status,
+        totalAmount: purchaseOrders.totalAmount,
+      })
+      .from(purchaseOrders)
+      .limit(10);
+    
+    // Get orders with joins (same as processing endpoint)
+    const ordersWithJoins = await db
+      .select({
+        id: purchaseOrders.id,
+        orderNumber: purchaseOrders.orderNumber,
+        orderDate: purchaseOrders.orderDate,
+        status: purchaseOrders.status,
+        totalAmount: purchaseOrders.totalAmount,
+        projectName: projects.projectName,
+        vendorName: vendors.name,
+      })
+      .from(purchaseOrders)
+      .leftJoin(projects, eq(purchaseOrders.projectId, projects.id))
+      .leftJoin(vendors, eq(purchaseOrders.vendorId, vendors.id))
+      .limit(10);
+    
+    res.json({
+      totalOrders: allOrders.length,
+      ordersWithoutJoins: allOrders,
+      ordersWithJoins: ordersWithJoins,
+      message: "Debug data fetched successfully"
+    });
+    
+  } catch (error) {
+    console.error("Debug processing error:", error);
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -248,7 +294,6 @@ router.get("/by-category", async (req, res) => {
     reportData.sort((a, b) => b.totalAmount - a.totalAmount);
 
     res.json({
-      categoryType,
       period: {
         startDate: startDate || 'all',
         endDate: endDate || 'all'
@@ -559,6 +604,7 @@ router.get("/export-excel", requireAuth, async (req, res) => {
   try {
     const { type, startDate, endDate, categoryType } = req.query;
     
+    
     let reportData: any;
     let sheetName: string;
     
@@ -593,6 +639,27 @@ router.get("/export-excel", requireAuth, async (req, res) => {
         sheetName = '거래처별 보고서';
         break;
         
+      case 'processing':
+        // Build query params for processing report
+        const processingParams = new URLSearchParams();
+        if (startDate) processingParams.append('startDate', startDate as string);
+        if (endDate) processingParams.append('endDate', endDate as string);
+        processingParams.append('limit', '1000'); // Export all data
+        
+        const processingResponse = await fetch(`${req.protocol}://${req.get('host')}/api/reports/processing?${processingParams.toString()}`, {
+          headers: {
+            'Cookie': req.headers.cookie || ''
+          }
+        });
+        
+        if (!processingResponse.ok) {
+          throw new Error(`Processing API error: ${processingResponse.status}`);
+        }
+        
+        reportData = await processingResponse.json();
+        sheetName = '발주 내역 검색';
+        break;
+        
       default:
         return res.status(400).json({ error: "Invalid report type" });
     }
@@ -603,27 +670,43 @@ router.get("/export-excel", requireAuth, async (req, res) => {
     // Add summary sheet
     const summaryData = [
       ['보고서 유형', sheetName],
-      ['기간', `${reportData.period.startDate} ~ ${reportData.period.endDate}`],
       ['생성일시', new Date().toLocaleString('ko-KR')],
       [],
       ['요약 정보'],
     ];
     
-    Object.entries(reportData.summary).forEach(([key, value]) => {
-      const label = key === 'totalCategories' ? '총 분류 수' :
-                   key === 'totalProjects' ? '총 프로젝트 수' :
-                   key === 'totalVendors' ? '총 거래처 수' :
-                   key === 'totalOrders' ? '총 발주 수' :
-                   key === 'totalItems' ? '총 품목 수' :
-                   key === 'totalAmount' ? '총 금액' :
-                   key === 'averagePerProject' ? '프로젝트당 평균' :
-                   key === 'averagePerVendor' ? '거래처당 평균' : key;
-      
-      const formattedValue = key.includes('Amount') || key.includes('average') ? 
-        formatKoreanWon(Math.floor(value as number)) : value;
-      
-      summaryData.push([label, formattedValue]);
-    });
+    // Add period info if available
+    if (reportData.period) {
+      summaryData.splice(2, 0, ['기간', `${reportData.period.startDate} ~ ${reportData.period.endDate}`]);
+    }
+    
+    // Add summary info if available
+    if (reportData.summary) {
+      Object.entries(reportData.summary).forEach(([key, value]) => {
+        const label = key === 'totalCategories' ? '총 분류 수' :
+                     key === 'totalProjects' ? '총 프로젝트 수' :
+                     key === 'totalVendors' ? '총 거래처 수' :
+                     key === 'totalOrders' ? '총 발주 수' :
+                     key === 'totalItems' ? '총 품목 수' :
+                     key === 'totalAmount' ? '총 금액' :
+                     key === 'averagePerProject' ? '프로젝트당 평균' :
+                     key === 'averagePerVendor' ? '거래처당 평균' : key;
+        
+        const formattedValue = key.includes('Amount') || key.includes('average') ? 
+          formatKoreanWon(Math.floor(value as number)) : value;
+        
+        summaryData.push([label, formattedValue]);
+      });
+    } else if (type === 'processing' && reportData.total !== undefined) {
+      // For processing reports, add basic summary info
+      summaryData.push(['총 발주 수', reportData.total]);
+      if (reportData.summary?.totalOrders) {
+        summaryData.push(['검색된 발주 수', reportData.summary.totalOrders]);
+      }
+      if (reportData.summary?.totalAmount) {
+        summaryData.push(['총 금액', formatKoreanWon(Math.floor(reportData.summary.totalAmount))]);
+      }
+    }
     
     const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
     XLSX.utils.book_append_sheet(wb, summarySheet, '요약');
@@ -675,6 +758,32 @@ router.get("/export-excel", requireAuth, async (req, res) => {
           formatKoreanWon(Math.floor(item.averageOrderAmount))
         ]);
       });
+    } else if (type === 'processing') {
+      detailData = [
+        ['발주번호', '발주일자', '프로젝트명', '거래처명', '총 금액', '상태', '생성일시']
+      ];
+      
+      if (reportData.orders && Array.isArray(reportData.orders)) {
+        reportData.orders.forEach((order: any) => {
+          const statusText = order.status === 'draft' ? '임시 저장' :
+                            order.status === 'pending' ? '승인 대기' :
+                            order.status === 'approved' ? '진행 중' :
+                            order.status === 'sent' ? '발송됨' :
+                            order.status === 'completed' ? '완료' :
+                            order.status === 'rejected' ? '반려' :
+                            order.status;
+          
+          detailData.push([
+            order.orderNumber || '-',
+            order.orderDate || '-',
+            order.projectName || '-',
+            order.vendorName || '-',
+            order.totalAmount ? formatKoreanWon(Math.floor(order.totalAmount)) : '-',
+            statusText,
+            order.createdAt ? new Date(order.createdAt).toLocaleString('ko-KR') : '-'
+          ]);
+        });
+      }
     }
     
     const detailSheet = XLSX.utils.aoa_to_sheet(detailData);
@@ -685,7 +794,18 @@ router.get("/export-excel", requireAuth, async (req, res) => {
     
     // Set response headers
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', `attachment; filename="${sheetName}_${new Date().toISOString().slice(0, 10)}.xlsx"`);
+    
+    // Use ASCII-safe filename to avoid header encoding issues
+    const safeFileName = type === 'processing' ? 'order_processing_report' :
+                        type === 'category' ? 'category_report' :
+                        type === 'project' ? 'project_report' :
+                        type === 'vendor' ? 'vendor_report' : 'report';
+    
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const filename = `${safeFileName}_${dateStr}.xlsx`;
+    
+    
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.setHeader('Content-Length', buffer.length);
     
     res.send(buffer);
@@ -693,6 +813,38 @@ router.get("/export-excel", requireAuth, async (req, res) => {
   } catch (error) {
     console.error("Error exporting Excel:", error);
     res.status(500).json({ error: "Failed to export Excel" });
+  }
+});
+
+// Test endpoint for processing report (no auth)
+router.get("/processing-test", async (req, res) => {
+  try {
+    console.log("Processing test endpoint called");
+    
+    // Simple query without filters
+    const orders = await db
+      .select({
+        id: purchaseOrders.id,
+        orderNumber: purchaseOrders.orderNumber,
+        orderDate: purchaseOrders.orderDate,
+        status: purchaseOrders.status,
+        totalAmount: purchaseOrders.totalAmount,
+      })
+      .from(purchaseOrders)
+      .limit(5);
+    
+    res.json({
+      success: true,
+      count: orders.length,
+      orders: orders,
+      message: "Test endpoint working"
+    });
+  } catch (error) {
+    console.error("Processing test error:", error);
+    res.status(500).json({ 
+      error: error.message,
+      stack: error.stack
+    });
   }
 });
 
@@ -767,36 +919,13 @@ router.get("/processing", requireAuth, async (req, res) => {
 
     console.log(`Processing report filters count: ${filters.length}`);
 
-    // Get orders with full details
+    // Get orders with basic details first
     let ordersQuery = db
-      .select({
-        id: purchaseOrders.id,
-        orderNumber: purchaseOrders.orderNumber,
-        orderDate: purchaseOrders.orderDate,
-        status: purchaseOrders.status,
-        totalAmount: purchaseOrders.totalAmount,
-        urgency: purchaseOrders.urgency,
-        deliveryLocation: purchaseOrders.deliveryLocation,
-        specialNotes: purchaseOrders.specialNotes,
-        createdAt: purchaseOrders.createdAt,
-        updatedAt: purchaseOrders.updatedAt,
-        
-        // Project information
-        projectId: projects.id,
-        projectName: projects.projectName,
-        projectCode: projects.projectCode,
-        
-        // Vendor information
-        vendorId: vendors.id,
-        vendorName: vendors.name,
-        vendorCode: vendors.vendorCode,
-        
-        // User information
-        userId: purchaseOrders.userId,
-      })
+      .select()
       .from(purchaseOrders)
       .leftJoin(projects, eq(purchaseOrders.projectId, projects.id))
-      .leftJoin(vendors, eq(purchaseOrders.vendorId, vendors.id));
+      .leftJoin(vendors, eq(purchaseOrders.vendorId, vendors.id))
+      .leftJoin(users, eq(purchaseOrders.userId, users.id));
 
     if (filters.length > 0) {
       ordersQuery = ordersQuery.where(and(...filters));
@@ -808,8 +937,7 @@ router.get("/processing", requireAuth, async (req, res) => {
         ${purchaseOrders.orderNumber} ILIKE ${`%${search}%`} OR
         ${vendors.name} ILIKE ${`%${search}%`} OR
         ${projects.projectName} ILIKE ${`%${search}%`} OR
-        ${purchaseOrders.deliveryLocation} ILIKE ${`%${search}%`} OR
-        ${purchaseOrders.specialNotes} ILIKE ${`%${search}%`}
+        ${purchaseOrders.notes} ILIKE ${`%${search}%`}
       )`;
       if (filters.length > 0) {
         ordersQuery = ordersQuery.where(and(and(...filters), searchFilter));
@@ -823,8 +951,9 @@ router.get("/processing", requireAuth, async (req, res) => {
     const limitNum = parseInt(limit as string);
     const offset = (pageNum - 1) * limitNum;
 
+    // Apply orderBy, offset, and limit
     ordersQuery = ordersQuery
-      .orderBy(purchaseOrders.orderDate, purchaseOrders.id)
+      .orderBy(purchaseOrders.orderDate)
       .offset(offset)
       .limit(limitNum);
 
@@ -832,9 +961,51 @@ router.get("/processing", requireAuth, async (req, res) => {
 
     console.log(`Processing report found ${orders.length} orders`);
 
-    // Get order items for each order
+    // Debug: Log first order structure
     if (orders.length > 0) {
-      const orderIds = orders.map(o => o.id);
+      console.log("Debug: First order structure:", {
+        purchaseOrders: orders[0].purchase_orders ? 'exists' : 'null',
+        users: orders[0].users ? 'exists' : 'null',
+        vendors: orders[0].vendors ? 'exists' : 'null',
+        projects: orders[0].projects ? 'exists' : 'null'
+      });
+    }
+
+    // Transform joined data to flat structure
+    const flatOrders = orders.map(row => ({
+      // Order data
+      id: row.purchase_orders?.id,
+      orderNumber: row.purchase_orders?.orderNumber,
+      orderDate: row.purchase_orders?.orderDate,
+      status: row.purchase_orders?.status,
+      totalAmount: row.purchase_orders?.totalAmount,
+      deliveryDate: row.purchase_orders?.deliveryDate,
+      notes: row.purchase_orders?.notes,
+      createdAt: row.purchase_orders?.createdAt,
+      updatedAt: row.purchase_orders?.updatedAt,
+      userId: row.purchase_orders?.userId,
+      
+      // Project data
+      projectId: row.projects?.id,
+      projectName: row.projects?.projectName,
+      projectCode: row.projects?.projectCode,
+      
+      // Vendor data
+      vendorId: row.vendors?.id,
+      vendorName: row.vendors?.name,
+      vendorCode: row.vendors?.vendorCode,
+      
+      // User data
+      userName: row.users?.name,
+      userFirstName: row.users?.firstName,
+      userLastName: row.users?.lastName,
+    })).filter(order => order.id); // Filter out any null orders
+
+    console.log(`Processing report found ${flatOrders.length} orders after flattening`);
+
+    // Get order items for each order
+    if (flatOrders.length > 0) {
+      const orderIds = flatOrders.map(o => o.id);
       const orderItems = await db
         .select({
           orderId: purchaseOrderItems.orderId,
@@ -854,7 +1025,7 @@ router.get("/processing", requireAuth, async (req, res) => {
         .where(inArray(purchaseOrderItems.orderId, orderIds));
 
       // Attach items to orders
-      const ordersWithItems = orders.map(order => ({
+      const ordersWithItems = flatOrders.map(order => ({
         ...order,
         items: orderItems.filter(item => item.orderId === order.id)
       }));
@@ -875,8 +1046,7 @@ router.get("/processing", requireAuth, async (req, res) => {
           ${purchaseOrders.orderNumber} ILIKE ${`%${search}%`} OR
           ${vendors.name} ILIKE ${`%${search}%`} OR
           ${projects.projectName} ILIKE ${`%${search}%`} OR
-          ${purchaseOrders.deliveryLocation} ILIKE ${`%${search}%`} OR
-          ${purchaseOrders.specialNotes} ILIKE ${`%${search}%`}
+          ${purchaseOrders.notes} ILIKE ${`%${search}%`}
         )`;
         if (filters.length > 0) {
           countQuery = countQuery.where(and(and(...filters), searchFilter));
@@ -896,7 +1066,7 @@ router.get("/processing", requireAuth, async (req, res) => {
         totalPages: Math.ceil(total / limitNum),
         summary: {
           totalOrders: ordersWithItems.length,
-          totalAmount: ordersWithItems.reduce((sum, order) => sum + parseFloat(order.totalAmount), 0),
+          totalAmount: ordersWithItems.reduce((sum, order) => sum + parseFloat(order.totalAmount || 0), 0),
         }
       });
     } else {

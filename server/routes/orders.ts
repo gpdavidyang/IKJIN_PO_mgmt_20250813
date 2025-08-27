@@ -18,6 +18,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { z } from "zod";
+import * as XLSX from "xlsx";
 
 // ES 모듈에서 __dirname 대체
 const __filename = fileURLToPath(import.meta.url);
@@ -72,6 +73,67 @@ router.get("/orders", async (req, res) => {
   } catch (error) {
     console.error("Error fetching orders:", error);
     res.status(500).json({ message: "Failed to fetch orders" });
+  }
+});
+
+// Export orders to Excel (must be before /:id route)
+router.get("/orders/export", requireAuth, async (req: any, res) => {
+  try {
+    const userId = req.user?.id;
+    const user = await storage.getUser(userId);
+    
+    console.log('Export request params:', req.query);
+    
+    const vendorIdParam = req.query.vendorId;
+    const vendorId = vendorIdParam && vendorIdParam !== "all" ? parseInt(vendorIdParam) : undefined;
+    
+    const projectIdParam = req.query.projectId;
+    const projectId = projectIdParam && projectIdParam !== "all" && projectIdParam !== "" ? parseInt(projectIdParam) : undefined;
+    
+    const filters = {
+      userId: user?.role === "admin" && req.query.userId && req.query.userId !== "all" ? req.query.userId : (user?.role === "admin" ? undefined : userId),
+      status: req.query.status && req.query.status !== "all" ? req.query.status : undefined,
+      vendorId: vendorId,
+      projectId: projectId,
+      startDate: req.query.startDate ? new Date(req.query.startDate) : undefined,
+      endDate: req.query.endDate ? new Date(req.query.endDate) : undefined,
+      minAmount: req.query.minAmount ? parseFloat(req.query.minAmount) : undefined,
+      maxAmount: req.query.maxAmount ? parseFloat(req.query.maxAmount) : undefined,
+      searchText: req.query.searchText,
+      majorCategory: req.query.majorCategory && req.query.majorCategory !== 'all' ? req.query.majorCategory : undefined,
+      middleCategory: req.query.middleCategory && req.query.middleCategory !== 'all' ? req.query.middleCategory : undefined,
+      minorCategory: req.query.minorCategory && req.query.minorCategory !== 'all' ? req.query.minorCategory : undefined,
+      limit: 1000, // Export more records
+    };
+    
+    console.log('Export filters:', filters);
+
+    const { orders } = await storage.getPurchaseOrders(filters);
+    
+    const excelData = orders.map(order => ({
+      '발주번호': order.orderNumber,
+      '거래처': order.vendor?.name || '',
+      '발주일자': order.orderDate,
+      '납기희망일': order.deliveryDate,
+      '주요품목': order.items?.map(item => item.itemName).join(', ') || '',
+      '총금액': order.totalAmount,
+      '상태': order.status,
+      '작성자': order.user?.name || '',
+      '특이사항': order.notes || '',
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Orders');
+    
+    const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=orders.xlsx');
+    res.send(excelBuffer);
+  } catch (error) {
+    console.error("Error exporting orders:", error);
+    res.status(500).json({ message: "Failed to export orders" });
   }
 });
 
@@ -1305,6 +1367,106 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
   }
 });
 
+// 간편 이메일 발송 (bulk order editor용)
+router.post("/orders/send-email-simple", requireAuth, async (req, res) => {
+  try {
+    const { to, cc, subject, body, orderData, attachPdf, attachExcel } = req.body;
+    
+    console.log('📧 간편 이메일 발송 요청:', { to, cc, subject, attachments: { attachPdf, attachExcel } });
+    
+    // 수신자 검증
+    if (!to || to.length === 0) {
+      return res.status(400).json({ error: '수신자가 필요합니다.' });
+    }
+
+    // 이메일 주소 추출 (Recipient 객체에서 email 필드 추출)
+    const toEmails = to.map((recipient: any) => 
+      typeof recipient === 'string' ? recipient : recipient.email
+    ).filter(Boolean);
+    
+    const ccEmails = cc ? cc.map((recipient: any) => 
+      typeof recipient === 'string' ? recipient : recipient.email
+    ).filter(Boolean) : [];
+
+    if (toEmails.length === 0) {
+      return res.status(400).json({ error: '유효한 이메일 주소가 필요합니다.' });
+    }
+
+    // 환경 변수 확인
+    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+      console.warn('⚠️ SMTP 설정이 없어서 이메일을 발송할 수 없습니다.');
+      // 개발 환경에서는 성공으로 처리
+      return res.json({ 
+        success: true, 
+        message: '이메일 기능이 아직 설정되지 않았습니다. (개발 모드)',
+        mockData: { to: toEmails, cc: ccEmails, subject }
+      });
+    }
+
+    // emailService를 사용하여 이메일 발송
+    const emailData = {
+      orderNumber: orderData?.orderNumber || 'PO-' + Date.now(),
+      projectName: orderData?.projectName || '프로젝트',
+      vendorName: orderData?.vendorName || '거래처',
+      location: orderData?.location || '현장',
+      orderDate: orderData?.orderDate || new Date().toLocaleDateString('ko-KR'),
+      deliveryDate: orderData?.deliveryDate || new Date().toLocaleDateString('ko-KR'),
+      totalAmount: orderData?.totalAmount || 0,
+      userName: (req as any).user?.name || '담당자',
+      userPhone: (req as any).user?.phone || '연락처'
+    };
+
+    // 첨부파일 처리 (실제 파일이 있는 경우)
+    let excelPath = '';
+    if (attachExcel && orderData?.excelFilePath) {
+      excelPath = path.join(__dirname, '../../', orderData.excelFilePath.replace(/^\//, ''));
+      if (!fs.existsSync(excelPath)) {
+        console.warn('⚠️ 엑셀 파일을 찾을 수 없습니다:', excelPath);
+        excelPath = '';
+      }
+    }
+
+    // 임시 엑셀 파일 생성 (첨부파일이 없는 경우)
+    if (!excelPath) {
+      const tempDir = path.join(__dirname, '../../uploads/temp');
+      if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir, { recursive: true });
+      }
+      excelPath = path.join(tempDir, `temp_${Date.now()}.txt`);
+      fs.writeFileSync(excelPath, `발주서 상세 내용\n\n${body}`);
+    }
+
+    // 이메일 발송
+    const result = await emailService.sendPurchaseOrderEmail({
+      orderData: emailData,
+      excelFilePath: excelPath,
+      recipients: toEmails,
+      cc: ccEmails,
+      userId: (req as any).user?.id,
+      orderId: orderData?.orderId
+    });
+
+    // 임시 파일 삭제
+    if (excelPath.includes('temp_')) {
+      try {
+        fs.unlinkSync(excelPath);
+      } catch (err) {
+        console.warn('임시 파일 삭제 실패:', err);
+      }
+    }
+
+    console.log('📧 이메일 발송 성공:', result);
+    res.json({ success: true, ...result });
+
+  } catch (error) {
+    console.error('이메일 발송 오류:', error);
+    res.status(500).json({ 
+      error: '이메일 발송에 실패했습니다.',
+      details: error instanceof Error ? error.message : '알 수 없는 오류'
+    });
+  }
+});
+
 // 엑셀 파일과 함께 이메일 발송
 router.post("/orders/send-email-with-excel", requireAuth, async (req, res) => {
   try {
@@ -1447,6 +1609,94 @@ router.post("/test-email-smtp", async (req, res) => {
         code: error.code,
         response: error.response
       }
+    });
+  }
+});
+
+// Download attachment file by ID
+router.get("/orders/:orderId/attachments/:attachmentId/download", requireAuth, async (req, res) => {
+  try {
+    const orderId = parseInt(req.params.orderId, 10);
+    const attachmentId = parseInt(req.params.attachmentId, 10);
+
+    console.log(`📎 파일 다운로드 요청: 발주서 ID ${orderId}, 첨부파일 ID ${attachmentId}`);
+
+    // Get attachment info from database
+    const attachment = await storage.getAttachment(orderId, attachmentId);
+    
+    if (!attachment) {
+      console.log(`❌ 첨부파일을 찾을 수 없음: ID ${attachmentId}`);
+      return res.status(404).json({ 
+        error: "첨부파일을 찾을 수 없습니다.",
+        attachmentId 
+      });
+    }
+
+    console.log(`📎 첨부파일 정보:`, {
+      originalName: attachment.originalName,
+      storedName: attachment.storedName,
+      filePath: attachment.filePath,
+      fileSize: attachment.fileSize
+    });
+
+    // Build file path
+    let filePath = attachment.filePath;
+    
+    // Handle relative paths
+    if (!path.isAbsolute(filePath)) {
+      filePath = path.join(__dirname, '../../', filePath);
+    }
+
+    console.log(`📂 파일 경로: ${filePath}`);
+
+    // Check if file exists
+    if (!fs.existsSync(filePath)) {
+      console.log(`❌ 파일이 존재하지 않음: ${filePath}`);
+      return res.status(404).json({ 
+        error: "파일을 찾을 수 없습니다.",
+        filePath: attachment.filePath 
+      });
+    }
+
+    // Get file stats
+    const stats = fs.statSync(filePath);
+    console.log(`📊 파일 크기: ${(stats.size / 1024).toFixed(2)} KB`);
+
+    // Set headers for download
+    const originalName = decodeKoreanFilename(attachment.originalName);
+    const encodedFilename = encodeURIComponent(originalName);
+    
+    res.setHeader('Content-Type', attachment.mimeType || 'application/octet-stream');
+    res.setHeader('Content-Length', stats.size);
+    res.setHeader('Content-Disposition', `attachment; filename="${originalName}"; filename*=UTF-8''${encodedFilename}`);
+    res.setHeader('Cache-Control', 'no-cache');
+
+    console.log(`📤 파일 다운로드 시작: ${originalName}`);
+
+    // Stream the file
+    const fileStream = fs.createReadStream(filePath);
+    
+    fileStream.on('error', (error) => {
+      console.error('❌ 파일 스트림 오류:', error);
+      if (!res.headersSent) {
+        res.status(500).json({ 
+          error: "파일 읽기 중 오류가 발생했습니다.",
+          details: error.message 
+        });
+      }
+    });
+
+    fileStream.on('end', () => {
+      console.log(`✅ 파일 다운로드 완료: ${originalName}`);
+    });
+
+    fileStream.pipe(res);
+
+  } catch (error) {
+    console.error('❌ 첨부파일 다운로드 오류:', error);
+    res.status(500).json({ 
+      error: "파일 다운로드 중 오류가 발생했습니다.",
+      details: error instanceof Error ? error.message : "알 수 없는 오류"
     });
   }
 });

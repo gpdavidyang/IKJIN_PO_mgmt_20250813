@@ -30,6 +30,8 @@ import simpleAuthRoutes from "./simple-auth";
 import testAccountsRoutes from "./test-accounts";
 import categoryRoutes from "./categories";
 import approvalSettingsRoutes from "./approval-settings";
+import approvalAuthoritiesRoutes from "./approval-authorities";
+import notificationsRoutes from "./notifications";
 import ordersSimpleRoutes from "./orders-simple";
 import positionsRoutes from "./positions";
 
@@ -62,6 +64,8 @@ router.use("/api", simpleAuthRoutes);
 router.use("/api", testAccountsRoutes);
 router.use("/api/categories", categoryRoutes);
 router.use("/api/approval-settings", approvalSettingsRoutes);
+router.use("/api", approvalAuthoritiesRoutes);
+router.use("/api", notificationsRoutes);
 router.use("/api/orders", ordersSimpleRoutes);
 router.use("/api", positionsRoutes);
 

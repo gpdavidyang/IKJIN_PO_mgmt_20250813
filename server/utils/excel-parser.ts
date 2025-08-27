@@ -1,25 +1,24 @@
 import * as XLSX from 'xlsx';
 import { z } from 'zod';
 
-// Excel Input Sheet 컬럼 정의 (A:Q 열) - 실제 Excel 구조에 맞춘 정의
+// Excel Input Sheet 컬럼 정의 (A:P 열) - 실제 Excel 템플릿 구조에 맞춘 정의
 const ExcelRowSchema = z.object({
-  vendorName: z.string(), // A열: 거래처명
-  projectName: z.string(), // B열: 현장명
-  orderDate: z.string(), // C열: 발주일
-  deliveryDate: z.string(), // D열: 납기일
-  orderNumber: z.string(), // E열: 발주번호
-  itemName: z.string(), // F열: 품목
-  specification: z.string().optional(), // G열: 규격
-  quantity: z.number(), // H열: 수량
-  unit: z.string().optional(), // I열: 단위
-  unitPrice: z.number(), // J열: 단가
-  supplyAmount: z.number().optional(), // K열: 공급가액
-  vatAmount: z.number().optional(), // L열: 부가세
-  totalAmount: z.number(), // M열: 합계
-  majorCategory: z.string().optional(), // N열: 대분류
-  middleCategory: z.string().optional(), // O열: 중분류
-  minorCategory: z.string().optional(), // P열: 소분류
-  notes: z.string().optional(), // Q열: 비고
+  orderDate: z.string(), // A열: 발주일자
+  deliveryDate: z.string().optional(), // B열: 납기일자
+  vendorName: z.string(), // C열: 거래처명
+  vendorEmail: z.string().optional(), // D열: 거래처 이메일
+  deliveryName: z.string().optional(), // E열: 납품처명
+  deliveryEmail: z.string().optional(), // F열: 납품처 이메일
+  projectName: z.string(), // G열: 프로젝트명
+  majorCategory: z.string().optional(), // H열: 대분류
+  middleCategory: z.string().optional(), // I열: 중분류
+  minorCategory: z.string().optional(), // J열: 소분류
+  itemName: z.string(), // K열: 품목명
+  specification: z.string().optional(), // L열: 규격
+  quantity: z.number(), // M열: 수량
+  unitPrice: z.number(), // N열: 단가
+  totalAmount: z.number(), // O열: 총금액
+  notes: z.string().optional(), // P열: 비고
 });
 
 export type ExcelParsedRow = z.infer<typeof ExcelRowSchema>;
@@ -98,34 +97,33 @@ export function parseExcelInputSheet(buffer: Buffer): PurchaseOrderMapping[] {
       end: { row: fullRange.e.r, col: fullRange.e.c }
     });
 
-    // A:Q 범위의 데이터만 추출 (2행부터) - 실제 Excel 구조에 맞춰 수정
+    // A:P 범위의 데이터만 추출 (2행부터) - 실제 Excel 템플릿에 맞춰 수정
     const range = {
       s: { c: 0, r: 1 }, // A2부터 시작
-      e: { c: 16, r: fullRange.e.r } // Q열까지, 마지막 행까지
+      e: { c: 15, r: fullRange.e.r } // P열까지, 마지막 행까지
     };
     
     console.log('파싱 범위:', range);
 
-    // 수동으로 데이터 추출 - 실제 Excel 컬럼 순서에 맞춘 헤더 매핑
+    // 수동으로 데이터 추출 - 실제 Excel 템플릿 컬럼 순서에 맞춘 헤더 매핑
     const jsonData: any[] = [];
     const headers = [
-      'vendorName',     // A열: 거래처명
-      'projectName',    // B열: 현장명  
-      'orderDate',      // C열: 발주일
-      'deliveryDate',   // D열: 납기일
-      'orderNumber',    // E열: 발주번호
-      'itemName',       // F열: 품목
-      'specification',  // G열: 규격
-      'quantity',       // H열: 수량
-      'unit',           // I열: 단위
-      'unitPrice',      // J열: 단가
-      'supplyAmount',   // K열: 공급가액
-      'vatAmount',      // L열: 부가세
-      'totalAmount',    // M열: 합계
-      'majorCategory',  // N열: 대분류
-      'middleCategory', // O열: 중분류
-      'minorCategory',  // P열: 소분류
-      'notes'           // Q열: 비고
+      'orderDate',      // A열: 발주일자
+      'deliveryDate',   // B열: 납기일자
+      'vendorName',     // C열: 거래처명
+      'vendorEmail',    // D열: 거래처 이메일
+      'deliveryName',   // E열: 납품처명
+      'deliveryEmail',  // F열: 납품처 이메일
+      'projectName',    // G열: 프로젝트명
+      'majorCategory',  // H열: 대분류
+      'middleCategory', // I열: 중분류
+      'minorCategory',  // J열: 소분류
+      'itemName',       // K열: 품목명
+      'specification',  // L열: 규격
+      'quantity',       // M열: 수량
+      'unitPrice',      // N열: 단가
+      'totalAmount',    // O열: 총금액
+      'notes'           // P열: 비고
     ];
     
     console.log('헤더 배열:', headers);
@@ -166,8 +164,8 @@ export function parseExcelInputSheet(buffer: Buffer): PurchaseOrderMapping[] {
       console.log(`행 ${rowNum + 1} 데이터:`, row);
       console.log(`행 ${rowNum + 1} hasData:`, hasData);
       
-      // 최소한 필수 필드가 있는 경우만 추가
-      if (hasData && (row.vendorName || row.projectName || row.itemName)) {
+      // 최소한 필수 필드가 있는 경우만 추가 (orderDate, vendorName, projectName, itemName 중 하나라도)
+      if (hasData && (row.orderDate || row.vendorName || row.projectName || row.itemName)) {
         jsonData.push(row);
         console.log(`행 ${rowNum + 1} 추가됨`);
       } else {
@@ -197,7 +195,7 @@ export function parseExcelInputSheet(buffer: Buffer): PurchaseOrderMapping[] {
       }
       
       // 빈 행 스킵
-      if (!row.orderDate && !row.vendorName && !row.projectName) {
+      if (!row.orderDate && !row.vendorName && !row.projectName && !row.itemName) {
         console.log(`행 ${i + 1}: 빈 행 스킵`);
         continue;
       }
@@ -237,15 +235,12 @@ export function parseExcelInputSheet(buffer: Buffer): PurchaseOrderMapping[] {
           parseNumber(row.totalAmount, '총금액') : 
           (quantity * unitPrice);
         
-        // 발주번호 생성 (임시 - 실제로는 DB에서 생성)
-        const orderNumber = generateOrderNumber(orderDate);
-        
-        // 발주번호 생성 (Excel에서 가져온 것이 있으면 사용, 없으면 생성)
-        const finalOrderNumber = row.orderNumber?.trim() || orderNumber;
+        // 발주번호 생성 (자동 생성)
+        const generatedOrderNumber = generateOrderNumber(orderDate);
         
         // 매핑 객체 생성
         const mappedData: PurchaseOrderMapping = {
-          orderNumber: finalOrderNumber,
+          orderNumber: generatedOrderNumber,
           projectId: 0, // 프로젝트명으로 조회 후 설정
           userId: '', // 업로드한 사용자 ID로 설정
           orderDate,
@@ -255,9 +250,9 @@ export function parseExcelInputSheet(buffer: Buffer): PurchaseOrderMapping[] {
           
           // 원본 데이터
           vendorName: row.vendorName?.trim() || '',
-          vendorEmail: undefined, // Excel에는 vendorEmail 컬럼이 없음
-          deliveryName: row.vendorName?.trim() || '', // 거래처명을 납품처명으로도 사용
-          deliveryEmail: undefined, // Excel에는 deliveryEmail 컬럼이 없음
+          vendorEmail: row.vendorEmail?.trim() || undefined,
+          deliveryName: row.deliveryName?.trim() || row.vendorName?.trim() || '',
+          deliveryEmail: row.deliveryEmail?.trim() || undefined,
           projectName: row.projectName?.trim() || '',
           majorCategory: row.majorCategory?.trim() || undefined,
           middleCategory: row.middleCategory?.trim() || undefined,

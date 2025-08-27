@@ -43,6 +43,9 @@ interface Order {
   userName: string | null;
   approvalLevel: number | null;
   currentApproverRole: string | null;
+  // 시스템 날짜 정보
+  createdAt: string;
+  updatedAt?: string | null;
   // Email status fields
   emailStatus?: string | null;
   lastSentAt?: string | null;
@@ -162,7 +165,6 @@ export function EnhancedOrdersTable({
           className={`text-muted-foreground ${handleClick ? 'cursor-pointer hover:bg-muted' : ''}`}
           onClick={handleClick}
         >
-          <Mail className="h-3 w-3 mr-1" />
           미발송
         </Badge>
       );
@@ -202,7 +204,6 @@ export function EnhancedOrdersTable({
     };
 
     const config = emailStatusConfig[order.emailStatus as keyof typeof emailStatusConfig] || emailStatusConfig.sent;
-    const Icon = config.icon;
 
     return (
       <TooltipProvider>
@@ -213,7 +214,6 @@ export function EnhancedOrdersTable({
               className={`${config.className} ${handleClick ? 'cursor-pointer hover:opacity-80' : ''}`}
               onClick={handleClick}
             >
-              <Icon className="h-3 w-3 mr-1" />
               {config.label}
               {order.totalEmailsSent && order.totalEmailsSent > 1 && (
                 <span className="ml-1">({order.totalEmailsSent})</span>
@@ -298,6 +298,7 @@ export function EnhancedOrdersTable({
         <SmartStatusBadge
           type="order"
           status={row.status}
+          showIcon={false}
           showTooltip
           animated
         />
@@ -312,7 +313,7 @@ export function EnhancedOrdersTable({
     },
     {
       key: "projectName",
-      header: "프로젝트",
+      header: "현장",
       sortable: true,
       searchable: true,
       width: "160px",
@@ -380,8 +381,19 @@ export function EnhancedOrdersTable({
       ),
     },
     {
+      key: "createdAt",
+      header: "등록일",
+      sortable: true,
+      width: "130px",
+      accessor: (row) => (
+        <div className="text-gray-500 dark:text-gray-500 text-xs">
+          {format(new Date(row.createdAt), "yyyy.MM.dd HH:mm", { locale: ko })}
+        </div>
+      ),
+    },
+    {
       key: "deliveryDate",
-      header: "납품예정일",
+      header: "납기일",
       sortable: true,
       width: "110px",
       accessor: (row) => (

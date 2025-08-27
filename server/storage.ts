@@ -1099,7 +1099,7 @@ export class DatabaseStorage implements IStorage {
       .from(attachments)
       .where(eq(attachments.orderId, id));
 
-    // console.log('Debug: Attachments found:', orderAttachments);
+    console.log(`📎 Storage - Attachments found for order ID ${id}:`, orderAttachments);
 
     const result = {
       ...order.purchase_orders,
@@ -2708,6 +2708,58 @@ export class DatabaseStorage implements IStorage {
       }));
     } catch (error) {
       console.error('Error getting category order stats:', error);
+      return [];
+    }
+  }
+
+  // Attachment methods
+  async getAttachment(orderId: number, attachmentId: number): Promise<Attachment | undefined> {
+    try {
+      const [attachment] = await db
+        .select({
+          id: attachments.id,
+          orderId: attachments.orderId,
+          originalName: attachments.originalName,
+          storedName: attachments.storedName,
+          filePath: attachments.filePath,
+          fileSize: attachments.fileSize,
+          mimeType: attachments.mimeType,
+          uploadedBy: attachments.uploadedBy,
+          uploadedAt: attachments.uploadedAt,
+        })
+        .from(attachments)
+        .where(
+          and(
+            eq(attachments.id, attachmentId),
+            eq(attachments.orderId, orderId)
+          )
+        );
+      
+      return attachment || undefined;
+    } catch (error) {
+      console.error('Error getting attachment:', error);
+      return undefined;
+    }
+  }
+
+  async getOrderAttachments(orderId: number): Promise<Attachment[]> {
+    try {
+      return await db
+        .select({
+          id: attachments.id,
+          orderId: attachments.orderId,
+          originalName: attachments.originalName,
+          storedName: attachments.storedName,
+          filePath: attachments.filePath,
+          fileSize: attachments.fileSize,
+          mimeType: attachments.mimeType,
+          uploadedBy: attachments.uploadedBy,
+          uploadedAt: attachments.uploadedAt,
+        })
+        .from(attachments)
+        .where(eq(attachments.orderId, orderId));
+    } catch (error) {
+      console.error('Error getting order attachments:', error);
       return [];
     }
   }

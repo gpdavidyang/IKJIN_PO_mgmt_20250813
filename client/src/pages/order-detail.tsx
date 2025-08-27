@@ -32,6 +32,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { InvoiceManager } from "@/components/invoice-manager";
 import { ReceiptManager } from "@/components/receipt-manager";
 import { OrderPreviewSimple } from "@/components/order-preview-simple";
+import { ExcelUploadFileInfo } from "@/components/excel-upload-file-info";
 import { format } from "date-fns";
 import { formatKoreanWon } from "@/lib/utils";
 import { useTheme } from "@/components/ui/theme-provider";
@@ -45,6 +46,19 @@ export default function OrderDetail() {
   const { theme } = useTheme();
   const isDarkMode = theme === 'dark';
   const orderId = parseInt(params.id);
+
+  // Parse delivery information from notes
+  const parseDeliveryInfo = (notes: string | null) => {
+    if (!notes) return { deliveryPlace: null, deliveryEmail: null };
+    
+    const deliveryPlaceMatch = notes.match(/납품처:\s*([^\n]+)/);
+    const deliveryEmailMatch = notes.match(/납품처 이메일:\s*([^\n]+)/);
+    
+    return {
+      deliveryPlace: deliveryPlaceMatch ? deliveryPlaceMatch[1].trim() : null,
+      deliveryEmail: deliveryEmailMatch ? deliveryEmailMatch[1].trim() : null,
+    };
+  };
 
   const { data: order, isLoading } = useQuery({
     queryKey: [`/api/orders/${orderId}`],
@@ -294,73 +308,69 @@ export default function OrderDetail() {
       </div>
 
       {/* Main Content */}
-      <div className="px-6 py-6 space-y-6">
+      <div className="px-6 py-4 space-y-4">
 
         {/* Overview Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {/* Status Card */}
           <div className={`shadow-sm rounded-lg border transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-            <div className="p-4 space-y-2">
-            <div className="flex items-center justify-between">
+            <div className="p-3">
+              <span className={`text-xs block mb-1 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>진행 상태</span>
               <div>
-                <span className={`text-xs block transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>진행 상태</span>
-                <div className="mt-1">
-                  {getStatusBadge(order.status)}
-                </div>
+                {getStatusBadge(order.status)}
               </div>
-            </div>
             </div>
           </div>
 
           {/* Amount Card */}
           <div className={`shadow-sm rounded-lg border transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-            <div className="p-4 space-y-2">
-              <div className="flex items-center justify-between">
+            <div className="p-3">
+              <div className="flex items-start justify-between">
                 <div>
-                  <span className={`text-sm block transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>발주 금액</span>
+                  <span className={`text-xs block mb-1 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>발주 금액</span>
                   <span className={`text-lg font-bold transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
                     {formatKoreanWon(order.totalAmount)}
                   </span>
                 </div>
-                <DollarSign className={`h-5 w-5 transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                <DollarSign className={`h-4 w-4 mt-0.5 transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
               </div>
             </div>
           </div>
 
           {/* Items Count Card */}
           <div className={`shadow-sm rounded-lg border transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-            <div className="p-4 space-y-2">
-              <div className="flex items-center justify-between">
+            <div className="p-3">
+              <div className="flex items-start justify-between">
                 <div>
-                  <span className={`text-sm block transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>품목 수</span>
+                  <span className={`text-xs block mb-1 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>품목 수</span>
                   <span className={`text-lg font-bold transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{order.items?.length || 0}개</span>
                 </div>
-                <Package className={`h-5 w-5 transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                <Package className={`h-4 w-4 mt-0.5 transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
               </div>
             </div>
           </div>
 
           {/* Delivery Date Card */}
           <div className={`shadow-sm rounded-lg border transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-            <div className="p-4 space-y-2">
-              <div className="flex items-center justify-between">
+            <div className="p-3">
+              <div className="flex items-start justify-between">
                 <div>
-                  <span className={`text-sm block transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>납기일</span>
+                  <span className={`text-xs block mb-1 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>납기일</span>
                   <span className={`text-lg font-bold transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                     {order.deliveryDate ? format(new Date(order.deliveryDate), 'MM.dd') : "미정"}
                   </span>
                 </div>
-                <Calendar className={`h-5 w-5 transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                <Calendar className={`h-4 w-4 mt-0.5 transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
               </div>
             </div>
           </div>
         </div>
 
         {/* Information Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Order Details */}
           <div className={`shadow-sm rounded-lg border transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-            <div className={`p-6 border-b transition-colors ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+            <div className={`p-4 border-b transition-colors ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
               <div className="flex items-center">
                 <div className={`p-2 rounded-lg mr-3 transition-colors ${isDarkMode ? 'bg-blue-900/20' : 'bg-blue-50'}`}>
                   <FileText className={`h-5 w-5 transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
@@ -368,8 +378,8 @@ export default function OrderDetail() {
                 <h3 className={`text-lg font-semibold transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>발주서 정보</h3>
               </div>
             </div>
-            <div className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="p-4 space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className={`block transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>발주번호</span>
                   <span className={`font-semibold transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{order.orderNumber}</span>
@@ -378,6 +388,12 @@ export default function OrderDetail() {
                   <span className={`block transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>발주일</span>
                   <span className={`transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>
                     {order.orderDate ? format(new Date(order.orderDate), 'yyyy.MM.dd') : "-"}
+                  </span>
+                </div>
+                <div>
+                  <span className={`block text-xs transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>시스템 등록일</span>
+                  <span className={`text-xs transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                    {order.createdAt ? format(new Date(order.createdAt), 'yyyy.MM.dd HH:mm') : "-"}
                   </span>
                 </div>
                 <div>
@@ -402,6 +418,40 @@ export default function OrderDetail() {
                 </div>
               </div>
               
+              {/* Delivery Information */}
+              {(() => {
+                const deliveryInfo = parseDeliveryInfo(order.notes);
+                return (deliveryInfo.deliveryPlace || deliveryInfo.deliveryEmail) ? (
+                  <div className={`pt-3 mt-3 border-t transition-colors ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                    <span className={`text-sm block mb-2 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>납품처 정보</span>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      {deliveryInfo.deliveryPlace && (
+                        <div>
+                          <span className={`block transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>납품처명</span>
+                          <div className="flex items-center gap-1">
+                            <MapPin className={`h-4 w-4 transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                            <span className={`transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>
+                              {deliveryInfo.deliveryPlace}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                      {deliveryInfo.deliveryEmail && (
+                        <div>
+                          <span className={`block transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>납품처 이메일</span>
+                          <div className="flex items-center gap-1">
+                            <Mail className={`h-4 w-4 transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                            <span className={`transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>
+                              {deliveryInfo.deliveryEmail}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : null;
+              })()}
+              
               {order.notes && (
                 <div className={`pt-4 border-t transition-colors ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
                   <span className={`text-sm block mb-2 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>비고</span>
@@ -416,7 +466,7 @@ export default function OrderDetail() {
           {/* Vendor Information */}
           {order.vendor && (
             <div className={`shadow-sm rounded-lg border transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-              <div className={`p-6 border-b transition-colors ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+              <div className={`p-4 border-b transition-colors ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
                 <div className="flex items-center">
                   <div className={`p-2 rounded-lg mr-3 transition-colors ${isDarkMode ? 'bg-blue-900/20' : 'bg-blue-50'}`}>
                     <Building2 className={`h-5 w-5 transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
@@ -424,7 +474,7 @@ export default function OrderDetail() {
                   <h3 className={`text-lg font-semibold transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>거래처 정보</h3>
                 </div>
               </div>
-              <div className="p-6 space-y-4">
+              <div className="p-4 space-y-3">
                 <div className="space-y-2">
                   <div>
                     <span className={`text-xs block transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>업체명</span>
@@ -489,7 +539,7 @@ export default function OrderDetail() {
           {/* Project Information */}
           {order.project && (
             <div className={`shadow-sm rounded-lg border transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-              <div className={`p-6 border-b transition-colors ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+              <div className={`p-4 border-b transition-colors ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
                 <div className="flex items-center">
                   <div className={`p-2 rounded-lg mr-3 transition-colors ${isDarkMode ? 'bg-blue-900/20' : 'bg-blue-50'}`}>
                     <Building2 className={`h-5 w-5 transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
@@ -497,7 +547,7 @@ export default function OrderDetail() {
                   <h3 className={`text-lg font-semibold transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>현장 정보</h3>
                 </div>
               </div>
-              <div className="p-6 space-y-4">
+              <div className="p-4 space-y-3">
                 <div className="space-y-2">
                   <div>
                     <span className={`text-xs block transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>현장명</span>
@@ -552,7 +602,7 @@ export default function OrderDetail() {
 
         {/* Items Section */}
         <div className={`shadow-sm rounded-lg border transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-          <div className={`p-6 border-b transition-colors ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+          <div className={`p-4 border-b transition-colors ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <div className={`p-2 rounded-lg mr-3 transition-colors ${isDarkMode ? 'bg-blue-900/20' : 'bg-blue-50'}`}>
@@ -576,15 +626,15 @@ export default function OrderDetail() {
               <Table>
                 <TableHeader>
                   <TableRow className={`border-b transition-colors ${isDarkMode ? 'border-gray-600' : 'border-blue-100'}`}>
-                    <TableHead className={`text-xs py-2 px-2 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>품목명</TableHead>
-                    <TableHead className={`text-xs py-2 px-2 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>대분류</TableHead>
-                    <TableHead className={`text-xs py-2 px-2 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>중분류</TableHead>
-                    <TableHead className={`text-xs py-2 px-2 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>소분류</TableHead>
-                    <TableHead className={`text-xs py-2 px-2 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>규격</TableHead>
+                    <TableHead className={`text-xs py-1.5 px-2 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>품목명</TableHead>
+                    <TableHead className={`text-xs py-1.5 px-2 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>대분류</TableHead>
+                    <TableHead className={`text-xs py-1.5 px-2 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>중분류</TableHead>
+                    <TableHead className={`text-xs py-1.5 px-2 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>소분류</TableHead>
+                    <TableHead className={`text-xs py-1.5 px-2 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>규격</TableHead>
                     <TableHead className={`text-xs text-center py-2 px-2 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>수량</TableHead>
                     <TableHead className={`text-xs text-right py-2 px-2 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>단가</TableHead>
                     <TableHead className={`text-xs text-right py-2 px-2 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>금액</TableHead>
-                    <TableHead className={`text-xs py-2 px-2 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>비고</TableHead>
+                    <TableHead className={`text-xs py-1.5 px-2 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>비고</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -593,7 +643,7 @@ export default function OrderDetail() {
                       key={index} 
                       className={`border-b transition-colors ${isDarkMode ? 'border-gray-600 hover:bg-gray-700/30' : 'border-blue-100 hover:bg-blue-50/30'}`}
                     >
-                      <TableCell className="py-2 px-2">
+                      <TableCell className="py-1.5 px-2">
                         <div className="flex items-center gap-1">
                           <Package className={`h-3 w-3 flex-shrink-0 transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
                           <div>
@@ -655,8 +705,13 @@ export default function OrderDetail() {
         </div>
 
 
+        {/* Excel Upload File Info - Always render if attachments exist */}
+        {order?.attachments && order.attachments.length > 0 && (
+          <ExcelUploadFileInfo attachments={order.attachments} orderId={orderId} />
+        )}
+
         {/* TOSS-style Compact Management Section */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
           {/* Invoice Management */}
           <div>
             <InvoiceManager orderId={orderId} />
@@ -670,49 +725,87 @@ export default function OrderDetail() {
           )}
         </div>
 
-        {/* Attachments */}
-        {order.attachments && order.attachments.length > 0 && (
-          <div className={`shadow-sm rounded-lg border transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-            <div className={`p-6 border-b transition-colors ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-              <div className="flex items-center">
-                <div className={`p-2 rounded-lg mr-3 transition-colors ${isDarkMode ? 'bg-blue-900/20' : 'bg-blue-50'}`}>
-                  <Archive className={`h-5 w-5 transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
-                </div>
-                <div>
-                  <h3 className={`text-lg font-semibold transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>첨부파일</h3>
-                  <span className={`text-sm transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>총 {order.attachments.length}개 파일</span>
-                </div>
-              </div>
-            </div>
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {order.attachments.map((attachment: any) => (
-                  <div key={attachment.id} className={`flex items-center justify-between p-3 border rounded-lg transition-all ${isDarkMode ? 'border-gray-600 hover:border-gray-500 hover:bg-gray-700' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'}`}>
-                    <div className="flex items-center gap-2 min-w-0 flex-1">
-                      <FileText className={`h-4 w-4 transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
-                      <div className="min-w-0 flex-1">
-                        <span className={`text-xs font-medium truncate block transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`} title={attachment.filename}>
-                          {attachment.filename}
-                        </span>
-                        <span className={`text-xs transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                          첨부파일
-                        </span>
-                      </div>
-                    </div>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className={`ml-2 flex-shrink-0 h-7 px-2 text-xs transition-colors ${isDarkMode ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
-                    >
-                      <Download className="h-3 w-3 mr-1" />
-                      다운로드
-                    </Button>
+        {/* Other Attachments (non-Excel files) */}
+        {order.attachments && order.attachments.length > 0 && (() => {
+          // Filter out Excel files to show only other attachments
+          const otherFiles = order.attachments.filter((attachment: any) => 
+            !attachment.mimeType?.includes('excel') && 
+            !attachment.mimeType?.includes('spreadsheet') &&
+            !attachment.originalName?.toLowerCase().endsWith('.xlsx') &&
+            !attachment.originalName?.toLowerCase().endsWith('.xls')
+          );
+
+          if (otherFiles.length === 0) return null;
+
+          return (
+            <div className={`shadow-sm rounded-lg border transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+              <div className={`p-6 border-b transition-colors ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                <div className="flex items-center">
+                  <div className={`p-2 rounded-lg mr-3 transition-colors ${isDarkMode ? 'bg-blue-900/20' : 'bg-blue-50'}`}>
+                    <Archive className={`h-5 w-5 transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
                   </div>
-                ))}
+                  <div>
+                    <h3 className={`text-lg font-semibold transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>기타 첨부파일</h3>
+                    <span className={`text-sm transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>총 {otherFiles.length}개 파일</span>
+                  </div>
+                </div>
+              </div>
+              <div className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {otherFiles.map((attachment: any) => (
+                    <div key={attachment.id} className={`flex items-center justify-between p-3 border rounded-lg transition-all ${isDarkMode ? 'border-gray-600 hover:border-gray-500 hover:bg-gray-700' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'}`}>
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <FileText className={`h-4 w-4 transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                        <div className="min-w-0 flex-1">
+                          <span className={`text-xs font-medium truncate block transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`} title={attachment.originalName || attachment.filename}>
+                            {attachment.originalName || attachment.filename}
+                          </span>
+                          <span className={`text-xs transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                            첨부파일
+                          </span>
+                        </div>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className={`ml-2 flex-shrink-0 h-7 px-2 text-xs transition-colors ${isDarkMode ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                        onClick={async () => {
+                          try {
+                            const response = await fetch(`/api/orders/${orderId}/attachments/${attachment.id}/download`, {
+                              method: 'GET',
+                              headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                              },
+                            });
+
+                            if (!response.ok) {
+                              throw new Error('파일 다운로드에 실패했습니다');
+                            }
+
+                            const blob = await response.blob();
+                            const url = window.URL.createObjectURL(blob);
+                            const link = document.createElement('a');
+                            link.href = url;
+                            link.download = attachment.originalName || attachment.filename;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            window.URL.revokeObjectURL(url);
+                          } catch (error) {
+                            console.error('Download error:', error);
+                          }
+                        }}
+                      >
+                        <Download className="h-3 w-3 mr-1" />
+                        다운로드
+                      </Button>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* TOSS-style Compact PDF Preview Modal */}
         <Dialog open={showPreview} onOpenChange={setShowPreview}>

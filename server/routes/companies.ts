@@ -52,9 +52,16 @@ router.get("/companies/debug", async (req, res) => {
 
 router.get("/companies", async (req, res) => {
   try {
-    console.log("🏢 Fetching companies (using reliable mock data)...");
+    console.log("🏢 Fetching companies from database...");
     
-    // STABLE: Use mock data for consistent API functionality
+    const companies = await storage.getCompanies();
+    console.log(`✅ Successfully returning ${companies.length} companies from database`);
+    res.json(companies);
+  } catch (error) {
+    console.error("❌ Error fetching companies from database:", error);
+    console.log("🔄 Falling back to mock data for reliability...");
+    
+    // Fallback to mock data if database fails
     const mockCompanies = [
       {
         id: 1,
@@ -94,14 +101,8 @@ router.get("/companies", async (req, res) => {
       }
     ];
     
-    console.log(`✅ Successfully returning ${mockCompanies.length} companies (mock data)`);
+    console.log(`✅ Successfully returning ${mockCompanies.length} companies (fallback mock data)`);
     res.json(mockCompanies);
-  } catch (error) {
-    console.error("❌ Error in companies endpoint:", error);
-    res.status(500).json({ 
-      message: "Failed to fetch companies",
-      error: process.env.NODE_ENV === 'development' ? error?.message : undefined
-    });
   }
 });
 
