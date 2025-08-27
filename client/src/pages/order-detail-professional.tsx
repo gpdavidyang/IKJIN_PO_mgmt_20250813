@@ -34,7 +34,6 @@ import {
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { InvoiceManager } from "@/components/invoice-manager";
 import { ReceiptManager } from "@/components/receipt-manager";
-import { OrderPreviewSimple } from "@/components/order-preview-simple";
 import { EmailSendDialog } from "@/components/email-send-dialog";
 import { ExcelUploadFileInfo } from "@/components/excel-upload-file-info";
 import { format } from "date-fns";
@@ -48,6 +47,8 @@ export default function OrderDetailProfessional() {
   const [showPreview, setShowPreview] = useState(false);
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const orderId = parseInt(params.id);
 
   const { data: order, isLoading } = useQuery({
@@ -288,11 +289,36 @@ export default function OrderDetailProfessional() {
               )}
               <Button 
                 variant="outline" 
-                onClick={() => setShowPreview(true)}
+                onClick={async () => {
+                  setIsGeneratingPdf(true);
+                  try {
+                    // Generate PDF using the API
+                    const response = await apiRequest('POST', '/api/orders/generate-pdf', {
+                      orderData: order
+                    });
+                    
+                    if (response.pdfUrl) {
+                      setPdfUrl(response.pdfUrl);
+                      setShowPreview(true);
+                    } else {
+                      throw new Error('PDF URL not received');
+                    }
+                  } catch (error) {
+                    console.error('PDF generation error:', error);
+                    toast({
+                      title: "PDF 생성 실패",
+                      description: "PDF를 생성하는 중 오류가 발생했습니다.",
+                      variant: "destructive",
+                    });
+                  } finally {
+                    setIsGeneratingPdf(false);
+                  }
+                }}
+                disabled={isGeneratingPdf}
                 className="flex items-center gap-2"
               >
                 <Eye className="h-4 w-4" />
-                PDF 미리보기
+                {isGeneratingPdf ? 'PDF 생성 중...' : 'PDF 미리보기'}
               </Button>
               <Button 
                 variant="outline" 
@@ -863,8 +889,13 @@ export default function OrderDetailProfessional() {
         )}
 
         {/* Preview Modal */}
-        <Dialog open={showPreview} onOpenChange={setShowPreview}>
-          <DialogContent className="max-w-[1366px] max-h-[90vh] overflow-y-auto">
+        <Dialog open={showPreview} onOpenChange={(open) => {
+          setShowPreview(open);
+          if (!open) {
+            setPdfUrl(null); // Clear PDF URL when closing
+          }
+        }}>
+          <DialogContent className="max-w-[1366px] max-h-[90vh] overflow-hidden">
             <DialogHeader>
               <DialogTitle className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -872,42 +903,53 @@ export default function OrderDetailProfessional() {
                   <span className="text-lg font-semibold text-gray-900">발주서 미리보기</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      const printWindow = window.open('', '_blank');
-                      if (printWindow) {
-                        printWindow.document.write(`
-                          <html>
-                            <head>
-                              <title>발주서 - ${order?.orderNumber}</title>
-                              <style>
-                                body { margin: 0; font-family: Arial, sans-serif; }
-                                @media print {
-                                  body { margin: 0; }
-                                  .no-print { display: none !important; }
-                                }
-                              </style>
-                            </head>
-                            <body>
-                              ${document.querySelector('.order-preview-content')?.innerHTML || ''}
-                            </body>
-                          </html>
-                        `);
-                        printWindow.document.close();
-                        printWindow.print();
-                      }
-                    }}
-                  >
-                    <Printer className="h-4 w-4 mr-1" />
-                    PDF 출력
-                  </Button>
+                  {pdfUrl && (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          // Download PDF
+                          const link = document.createElement('a');
+                          link.href = pdfUrl;
+                          link.download = `발주서_${order?.orderNumber || 'document'}.pdf`;
+                          link.click();
+                        }}
+                      >
+                        <Download className="h-4 w-4 mr-1" />
+                        PDF 다운로드
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          // Open PDF in new window for printing
+                          window.open(pdfUrl, '_blank');
+                        }}
+                      >
+                        <Printer className="h-4 w-4 mr-1" />
+                        PDF 출력
+                      </Button>
+                    </>
+                  )}
                 </div>
               </DialogTitle>
             </DialogHeader>
-            <div className="order-preview-content mt-4">
-              {order && <OrderPreviewSimple order={order} />}
+            <div className="mt-4" style={{ height: 'calc(90vh - 100px)' }}>
+              {pdfUrl ? (
+                <iframe
+                  src={pdfUrl}
+                  className="w-full h-full border-0 rounded-lg"
+                  title="PDF Preview"
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600">PDF 생성 중...</p>
+                  </div>
+                </div>
+              )}
             </div>
           </DialogContent>
         </Dialog>
