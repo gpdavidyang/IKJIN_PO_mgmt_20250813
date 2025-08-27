@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { db } from '../db';
 import { purchaseOrders, purchaseOrderItems, attachments, orderHistory, users, projects, vendors } from '@shared/schema';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, count } from 'drizzle-orm';
 import { requireAuth } from '../local-auth';
 import multer from 'multer';
 import path from 'path';
@@ -315,7 +315,7 @@ router.get('/simple-upload-history', requireAuth, async (req, res) => {
         status: purchaseOrders.status,
         projectName: projects.projectName,
         vendorName: vendors.name,
-        itemCount: db.$count(purchaseOrderItems.id)
+        itemCount: count(purchaseOrderItems.id)
       })
       .from(purchaseOrders)
       .leftJoin(projects, eq(purchaseOrders.projectId, projects.id))

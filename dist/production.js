@@ -15461,7 +15461,7 @@ var approval_settings_default = router26;
 init_db();
 init_schema();
 import { Router as Router26 } from "express";
-import { eq as eq16, and as and12, desc as desc7 } from "drizzle-orm";
+import { eq as eq16, and as and12, desc as desc7, count as count4 } from "drizzle-orm";
 import multer5 from "multer";
 import path13 from "path";
 import fs16 from "fs/promises";
@@ -15702,7 +15702,7 @@ router27.get("/simple-upload-history", requireAuth, async (req, res) => {
       status: purchaseOrders.status,
       projectName: projects.projectName,
       vendorName: vendors.name,
-      itemCount: db.$count(purchaseOrderItems.id)
+      itemCount: count4(purchaseOrderItems.id)
     }).from(purchaseOrders).leftJoin(projects, eq16(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq16(purchaseOrders.vendorId, vendors.id)).leftJoin(purchaseOrderItems, eq16(purchaseOrderItems.orderId, purchaseOrders.id)).leftJoin(orderHistory, eq16(orderHistory.orderId, purchaseOrders.id)).where(
       and12(
         eq16(purchaseOrders.userId, req.user.id),
