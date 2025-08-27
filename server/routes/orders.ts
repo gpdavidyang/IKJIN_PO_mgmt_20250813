@@ -650,14 +650,29 @@ async function generatePDFLogic(req: any, res: any) {
       // Sanitize and prepare data
       const safeOrderData = {
         orderNumber: orderData.orderNumber || 'PO-TEMP-001',
-        projectName: orderData.projectName || '프로젝트 미지정',
-        vendorName: orderData.vendorName || '거래처 미지정',
+        projectName: orderData.projectName || orderData.project?.projectName || '현장 미지정',
+        vendorName: orderData.vendorName || orderData.vendor?.name || '거래처 미지정',
+        vendorBusinessNumber: orderData.vendor?.businessNumber || orderData.vendorBusinessNumber || '',
+        vendorPhone: orderData.vendor?.phone || orderData.vendorPhone || '',
+        vendorEmail: orderData.vendor?.email || orderData.vendorEmail || '',
+        vendorAddress: orderData.vendor?.address || orderData.vendorAddress || '',
+        vendorContactPerson: orderData.vendor?.contactPerson || orderData.vendorContactPerson || '',
         totalAmount: Number(orderData.totalAmount) || 0,
         items: Array.isArray(orderData.items) ? orderData.items : [],
         notes: orderData.notes || '',
         orderDate: orderData.orderDate || new Date().toISOString(),
         deliveryDate: orderData.deliveryDate || null,
-        createdBy: orderData.createdBy || '시스템'
+        deliveryPlace: orderData.deliveryPlace || '',
+        createdBy: orderData.createdBy || orderData.user?.name || '시스템',
+        createdAt: orderData.createdAt || new Date().toISOString(),
+        status: orderData.status || 'draft',
+        approvedBy: orderData.approvedBy || '',
+        approvedAt: orderData.approvedAt || null,
+        paymentTerms: orderData.paymentTerms || '',
+        deliveryMethod: orderData.deliveryMethod || '',
+        majorCategory: orderData.majorCategory || '',
+        middleCategory: orderData.middleCategory || '',
+        minorCategory: orderData.minorCategory || ''
       };
 
       // Create enhanced HTML content with better error handling
@@ -817,11 +832,11 @@ async function generatePDFLogic(req: any, res: any) {
       <div class="info-value">${safeOrderData.orderNumber}</div>
     </div>
     <div class="info-item">
-      <div class="info-label">발주일자</div>
+      <div class="info-label">발주일</div>
       <div class="info-value">${new Date(safeOrderData.orderDate).toLocaleDateString('ko-KR')}</div>
     </div>
     <div class="info-item">
-      <div class="info-label">프로젝트</div>
+      <div class="info-label">현장</div>
       <div class="info-value">${safeOrderData.projectName}</div>
     </div>
     <div class="info-item">
@@ -830,15 +845,85 @@ async function generatePDFLogic(req: any, res: any) {
     </div>
     ${safeOrderData.deliveryDate ? `
     <div class="info-item">
-      <div class="info-label">납기일자</div>
+      <div class="info-label">납기일</div>
       <div class="info-value">${new Date(safeOrderData.deliveryDate).toLocaleDateString('ko-KR')}</div>
+    </div>
+    ` : ''}
+    ${safeOrderData.deliveryPlace ? `
+    <div class="info-item">
+      <div class="info-label">납품장소</div>
+      <div class="info-value">${safeOrderData.deliveryPlace}</div>
     </div>
     ` : ''}
     <div class="info-item">
       <div class="info-label">작성자</div>
       <div class="info-value">${safeOrderData.createdBy}</div>
     </div>
+    <div class="info-item">
+      <div class="info-label">등록일</div>
+      <div class="info-value">${new Date(safeOrderData.createdAt).toLocaleDateString('ko-KR')} ${new Date(safeOrderData.createdAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</div>
+    </div>
   </div>
+
+  ${(safeOrderData.vendorBusinessNumber || safeOrderData.vendorContactPerson || safeOrderData.vendorPhone || safeOrderData.vendorEmail) ? `
+  <h3 class="section-title">거래처 정보</h3>
+  <div class="info-grid">
+    ${safeOrderData.vendorBusinessNumber ? `
+    <div class="info-item">
+      <div class="info-label">사업자등록번호</div>
+      <div class="info-value">${safeOrderData.vendorBusinessNumber}</div>
+    </div>
+    ` : ''}
+    ${safeOrderData.vendorContactPerson ? `
+    <div class="info-item">
+      <div class="info-label">담당자</div>
+      <div class="info-value">${safeOrderData.vendorContactPerson}</div>
+    </div>
+    ` : ''}
+    ${safeOrderData.vendorPhone ? `
+    <div class="info-item">
+      <div class="info-label">연락처</div>
+      <div class="info-value">${safeOrderData.vendorPhone}</div>
+    </div>
+    ` : ''}
+    ${safeOrderData.vendorEmail ? `
+    <div class="info-item">
+      <div class="info-label">이메일</div>
+      <div class="info-value">${safeOrderData.vendorEmail}</div>
+    </div>
+    ` : ''}
+    ${safeOrderData.vendorAddress ? `
+    <div class="info-item" style="grid-column: span 2;">
+      <div class="info-label">주소</div>
+      <div class="info-value">${safeOrderData.vendorAddress}</div>
+    </div>
+    ` : ''}
+  </div>
+  ` : ''}
+
+  ${(safeOrderData.majorCategory || safeOrderData.middleCategory || safeOrderData.minorCategory) ? `
+  <h3 class="section-title">분류 정보</h3>
+  <div class="info-grid">
+    ${safeOrderData.majorCategory ? `
+    <div class="info-item">
+      <div class="info-label">대분류</div>
+      <div class="info-value">${safeOrderData.majorCategory}</div>
+    </div>
+    ` : ''}
+    ${safeOrderData.middleCategory ? `
+    <div class="info-item">
+      <div class="info-label">중분류</div>
+      <div class="info-value">${safeOrderData.middleCategory}</div>
+    </div>
+    ` : ''}
+    ${safeOrderData.minorCategory ? `
+    <div class="info-item">
+      <div class="info-label">소분류</div>
+      <div class="info-value">${safeOrderData.minorCategory}</div>
+    </div>
+    ` : ''}
+  </div>
+  ` : ''}
 
   <h3 class="section-title">발주 품목</h3>
   
@@ -847,6 +932,7 @@ async function generatePDFLogic(req: any, res: any) {
       <tr>
         <th style="width: 50px;">순번</th>
         <th>품목명</th>
+        <th>규격</th>
         <th style="width: 80px;">수량</th>
         <th style="width: 60px;">단위</th>
         <th style="width: 120px;">단가</th>
@@ -858,18 +944,19 @@ async function generatePDFLogic(req: any, res: any) {
         safeOrderData.items.map((item: any, index: number) => `
           <tr>
             <td class="number-cell">${index + 1}</td>
-            <td>${item.name || item.itemName || '품목명 없음'}</td>
+            <td>${item.name || item.itemName || item.item_name || '품목명 없음'}</td>
+            <td>${item.specification || '-'}</td>
             <td class="amount-cell">${(item.quantity || 0).toLocaleString()}</td>
             <td class="number-cell">${item.unit || 'EA'}</td>
-            <td class="amount-cell">₩${(item.unitPrice || 0).toLocaleString()}</td>
-            <td class="amount-cell">₩${((item.quantity || 0) * (item.unitPrice || 0)).toLocaleString()}</td>
+            <td class="amount-cell">₩${(item.unitPrice || item.unit_price || 0).toLocaleString()}</td>
+            <td class="amount-cell">₩${(item.totalAmount || item.total_amount || ((item.quantity || 0) * (item.unitPrice || item.unit_price || 0))).toLocaleString()}</td>
           </tr>
         `).join('')
         : 
-        '<tr><td colspan="6" class="empty-state">품목 정보가 없습니다.</td></tr>'
+        '<tr><td colspan="7" class="empty-state">품목 정보가 없습니다.</td></tr>'
       }
       <tr class="total-row">
-        <td colspan="5" class="amount-cell" style="font-weight: bold;">총 금액</td>
+        <td colspan="6" class="amount-cell" style="font-weight: bold;">총 금액</td>
         <td class="amount-cell" style="font-weight: bold;">₩${safeOrderData.totalAmount.toLocaleString()}</td>
       </tr>
     </tbody>

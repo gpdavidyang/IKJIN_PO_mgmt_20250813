@@ -34,15 +34,33 @@ export function ExcelUploadFileInfo({ attachments, orderId }: ExcelUploadFileInf
   const isDarkMode = theme === 'dark';
   const [downloading, setDownloading] = useState<number | null>(null);
 
+  console.log('🔍 ExcelUploadFileInfo - COMPONENT CALLED!', { attachments, orderId });
   console.log('🔍 ExcelUploadFileInfo - received attachments:', attachments);
   
-  // Filter Excel files from attachments
-  const excelFiles = attachments.filter(attachment => 
-    attachment.mimeType?.includes('excel') || 
-    attachment.mimeType?.includes('spreadsheet') ||
-    attachment.originalName?.toLowerCase().endsWith('.xlsx') ||
-    attachment.originalName?.toLowerCase().endsWith('.xls')
-  );
+  // Filter Excel files from attachments - Enhanced filtering logic
+  const excelFiles = attachments.filter(attachment => {
+    const mimeType = attachment.mimeType?.toLowerCase() || '';
+    const fileName = attachment.originalName?.toLowerCase() || '';
+    
+    const isExcel = 
+      mimeType.includes('excel') ||
+      mimeType.includes('spreadsheet') ||
+      mimeType.includes('vnd.openxmlformats-officedocument.spreadsheetml.sheet') ||
+      mimeType.includes('vnd.ms-excel') ||
+      fileName.endsWith('.xlsx') ||
+      fileName.endsWith('.xls') ||
+      fileName.endsWith('.xlsm');
+    
+    console.log('🔍 Filtering attachment:', {
+      originalName: attachment.originalName,
+      mimeType: attachment.mimeType,
+      fileName,
+      mimeTypeLower: mimeType,
+      isExcel
+    });
+    
+    return isExcel;
+  });
 
   console.log('📊 ExcelUploadFileInfo - filtered excel files:', excelFiles);
 

@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, Edit, Send, Check, FileText, Download, Eye, Printer, Package, Building, User, Calendar, DollarSign, MapPin, Truck } from "lucide-react";
+import { ArrowLeft, Edit, Send, Check, FileText, Download, Eye, Printer, Package, Building, User, Calendar, DollarSign, MapPin, Truck, Loader2, ExternalLink } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { format } from "date-fns";
 import { formatKoreanWon } from "@/lib/utils";
@@ -19,6 +19,8 @@ export default function OrderDetailStandard() {
   const [, navigate] = useLocation();
   const params = useParams();
   const [showPreview, setShowPreview] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const orderId = parseInt(params.id);
 
   const { data: order, isLoading } = useQuery({
@@ -402,11 +404,35 @@ export default function OrderDetailStandard() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setShowPreview(true)}
+                onClick={async () => {
+                  setIsGeneratingPdf(true);
+                  try {
+                    const response = await apiRequest('POST', '/api/orders/generate-pdf', {
+                      orderData: order
+                    });
+                    if (response.pdfUrl) {
+                      setPdfUrl(response.pdfUrl);
+                      setShowPreview(true);
+                    }
+                  } catch (error) {
+                    console.error('PDF 생성 오류:', error);
+                    toast({
+                      title: "PDF 생성 실패",
+                      description: "PDF 생성 중 오류가 발생했습니다.",
+                      variant: "destructive",
+                    });
+                  } finally {
+                    setIsGeneratingPdf(false);
+                  }
+                }}
+                disabled={isGeneratingPdf}
                 className="w-full h-8 text-xs justify-start"
               >
-                <Eye className="h-3 w-3 mr-2" />
-                PDF 미리보기
+                {isGeneratingPdf ? (
+                  <><Loader2 className="h-3 w-3 mr-2 animate-spin" /> PDF 생성 중...</>
+                ) : (
+                  <><Eye className="h-3 w-3 mr-2" /> PDF 미리보기</>
+                )}
               </Button>
               <Button
                 variant="outline"
@@ -432,104 +458,58 @@ export default function OrderDetailStandard() {
       </div>
 
       {/* PDF Preview Dialog */}
-      <Dialog open={showPreview} onOpenChange={setShowPreview}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>발주서 미리보기</DialogTitle>
+      <Dialog open={showPreview} onOpenChange={(open) => {
+        setShowPreview(open);
+        if (!open) {
+          setPdfUrl(null);
+        }
+      }}>
+        <DialogContent className="max-w-5xl max-h-[90vh] p-0">
+          <DialogHeader className="px-6 py-4 border-b">
+            <DialogTitle className="flex items-center justify-between">
+              <span>발주서 미리보기</span>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (pdfUrl) {
+                      window.open(`${pdfUrl}?download=true`, '_blank');
+                    }
+                  }}
+                  disabled={!pdfUrl}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  다운로드
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (pdfUrl) {
+                      window.open(pdfUrl, '_blank');
+                    }
+                  }}
+                  disabled={!pdfUrl}
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  새 탭에서 열기
+                </Button>
+              </div>
+            </DialogTitle>
           </DialogHeader>
-          <div className="p-4">
-            <div className="bg-white border rounded-lg p-8" style={{ width: '210mm', minHeight: '297mm' }}>
-              <div className="text-center mb-8">
-                <h1 className="text-2xl font-bold mb-2">표준 발주서</h1>
-                <p className="text-sm text-gray-600">Purchase Order</p>
+          <div className="w-full h-[75vh] bg-gray-100">
+            {pdfUrl ? (
+              <iframe
+                src={pdfUrl}
+                className="w-full h-full border-0"
+                title="PDF Preview"
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
               </div>
-              
-              <div className="grid grid-cols-2 gap-8 mb-8">
-                <div>
-                  <h3 className="font-semibold mb-4">발주처 정보</h3>
-                  <div className="space-y-2 text-sm">
-                    <p><strong>회사명:</strong> (주)익진엔지니어링</p>
-                    <p><strong>발주번호:</strong> {order.orderNumber}</p>
-                    <p><strong>발주일:</strong> {order.orderDate ? format(new Date(order.orderDate), 'yyyy-MM-dd') : '-'}</p>
-                    <p><strong>납기일:</strong> {order.deliveryDate ? format(new Date(order.deliveryDate), 'yyyy-MM-dd') : '-'}</p>
-                    <p className="text-xs text-gray-500"><strong>시스템 등록:</strong> {order.createdAt ? format(new Date(order.createdAt), 'yyyy-MM-dd HH:mm') : '-'}</p>
-                  </div>
-                </div>
-                
-                <div>
-                  <h3 className="font-semibold mb-4">납품업체 정보</h3>
-                  <div className="space-y-2 text-sm">
-                    <p><strong>업체명:</strong> {order.vendor?.name || '-'}</p>
-                    <p><strong>사업자번호:</strong> {order.vendor?.businessNumber || '-'}</p>
-                    <p><strong>연락처:</strong> {order.vendor?.phone || '-'}</p>
-                    <p><strong>이메일:</strong> {order.vendor?.email || '-'}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mb-8">
-                <h3 className="font-semibold mb-4">품목 정보</h3>
-                <table className="w-full border-collapse border border-gray-300 text-sm">
-                  <thead>
-                    <tr className="bg-gray-100">
-                      <th className="border border-gray-300 p-2 text-left">품목명</th>
-                      <th className="border border-gray-300 p-2 text-left">규격</th>
-                      <th className="border border-gray-300 p-2 text-center">수량</th>
-                      <th className="border border-gray-300 p-2 text-right">단가</th>
-                      <th className="border border-gray-300 p-2 text-right">금액</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {order.items?.map((item: any, index: number) => (
-                      <tr key={index}>
-                        <td className="border border-gray-300 p-2">{item.itemName || item.item_name}</td>
-                        <td className="border border-gray-300 p-2">{item.specification || '-'}</td>
-                        <td className="border border-gray-300 p-2 text-center">{item.quantity?.toLocaleString() || '-'}</td>
-                        <td className="border border-gray-300 p-2 text-right">{formatKoreanWon(item.unitPrice || item.unit_price)}</td>
-                        <td className="border border-gray-300 p-2 text-right">{formatKoreanWon(item.totalAmount || item.total_amount)}</td>
-                      </tr>
-                    ))}
-                    <tr className="bg-gray-100 font-semibold">
-                      <td colSpan={4} className="border border-gray-300 p-2 text-right">총 합계</td>
-                      <td className="border border-gray-300 p-2 text-right">{formatKoreanWon(order.totalAmount)}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              {order.notes && (
-                <div className="mb-8">
-                  <h3 className="font-semibold mb-4">특이사항</h3>
-                  <p className="text-sm border border-gray-300 p-4 rounded">{order.notes}</p>
-                </div>
-              )}
-
-              {/* Excel Upload File Info */}
-              {order.attachments && order.attachments.length > 0 && (() => {
-                const excelFiles = order.attachments.filter((attachment: any) => 
-                  attachment.mimeType?.includes('excel') || 
-                  attachment.mimeType?.includes('spreadsheet') ||
-                  attachment.originalName?.toLowerCase().endsWith('.xlsx') ||
-                  attachment.originalName?.toLowerCase().endsWith('.xls')
-                );
-                
-                if (excelFiles.length > 0) {
-                  return (
-                    <div className="mb-8 no-print">
-                      <ExcelUploadFileInfo attachments={order.attachments} orderId={order.id} />
-                    </div>
-                  );
-                }
-                return null;
-              })()}
-
-              <div className="mt-16 text-center">
-                <div className="inline-block">
-                  <img src="/attached_assets/ikjin-logo.png" alt="회사 로고" className="h-4 mx-auto mb-2" />
-                  <p className="text-xs text-gray-600">(주)익진엔지니어링</p>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>

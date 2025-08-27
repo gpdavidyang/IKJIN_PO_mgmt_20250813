@@ -36,6 +36,7 @@ import { InvoiceManager } from "@/components/invoice-manager";
 import { ReceiptManager } from "@/components/receipt-manager";
 import { OrderPreviewSimple } from "@/components/order-preview-simple";
 import { EmailSendDialog } from "@/components/email-send-dialog";
+import { ExcelUploadFileInfo } from "@/components/excel-upload-file-info";
 import { format } from "date-fns";
 import { formatKoreanWon } from "@/lib/utils";
 
@@ -51,7 +52,13 @@ export default function OrderDetailProfessional() {
 
   const { data: order, isLoading } = useQuery({
     queryKey: [`/api/orders/${orderId}`],
-    queryFn: () => apiRequest("GET", `/api/orders/${orderId}`),
+    queryFn: async () => {
+      console.log('📘 OrderDetailProfessional - Fetching order:', orderId);
+      const result = await apiRequest("GET", `/api/orders/${orderId}`);
+      console.log('📘 OrderDetailProfessional - Order data received:', result);
+      console.log('📘 OrderDetailProfessional - Attachments:', result?.attachments);
+      return result;
+    },
   });
 
   const { data: orderStatuses } = useQuery({
@@ -779,17 +786,61 @@ export default function OrderDetailProfessional() {
           )}
         </div>
 
-        {/* Attachments */}
+        {/* Excel Upload File Info - Display Excel files separately */}
         {order.attachments && order.attachments.length > 0 && (
+          <ExcelUploadFileInfo 
+            attachments={order.attachments} 
+            orderId={orderId} 
+          />
+        )}
+
+        {/* Other Attachments - Display non-Excel files */}
+        {order.attachments && order.attachments.filter((a: any) => {
+          const mimeType = a.mimeType?.toLowerCase() || '';
+          const fileName = a.originalName?.toLowerCase() || '';
+          return !(
+            mimeType.includes('excel') ||
+            mimeType.includes('spreadsheet') ||
+            mimeType.includes('vnd.openxmlformats-officedocument.spreadsheetml.sheet') ||
+            mimeType.includes('vnd.ms-excel') ||
+            fileName.endsWith('.xlsx') ||
+            fileName.endsWith('.xls') ||
+            fileName.endsWith('.xlsm')
+          );
+        }).length > 0 && (
           <Card className="shadow-sm">
             <CardContent className="p-6">
               <div className="flex items-center gap-2 mb-4">
                 <Archive className="h-5 w-5 text-gray-600" />
-                <h3 className="text-lg font-semibold text-gray-900">첨부파일</h3>
-                <span className="text-sm text-gray-500">총 {order.attachments.length}개 파일</span>
+                <h3 className="text-lg font-semibold text-gray-900">기타 첨부파일</h3>
+                <span className="text-sm text-gray-500">총 {order.attachments.filter((a: any) => {
+                  const mimeType = a.mimeType?.toLowerCase() || '';
+                  const fileName = a.originalName?.toLowerCase() || '';
+                  return !(
+                    mimeType.includes('excel') ||
+                    mimeType.includes('spreadsheet') ||
+                    mimeType.includes('vnd.openxmlformats-officedocument.spreadsheetml.sheet') ||
+                    mimeType.includes('vnd.ms-excel') ||
+                    fileName.endsWith('.xlsx') ||
+                    fileName.endsWith('.xls') ||
+                    fileName.endsWith('.xlsm')
+                  );
+                }).length}개 파일</span>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {order.attachments.map((attachment: any) => (
+                {order.attachments.filter((a: any) => {
+                  const mimeType = a.mimeType?.toLowerCase() || '';
+                  const fileName = a.originalName?.toLowerCase() || '';
+                  return !(
+                    mimeType.includes('excel') ||
+                    mimeType.includes('spreadsheet') ||
+                    mimeType.includes('vnd.openxmlformats-officedocument.spreadsheetml.sheet') ||
+                    mimeType.includes('vnd.ms-excel') ||
+                    fileName.endsWith('.xlsx') ||
+                    fileName.endsWith('.xls') ||
+                    fileName.endsWith('.xlsm')
+                  );
+                }).map((attachment: any) => (
                   <div key={attachment.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-all">
                     <div className="flex items-center gap-3 min-w-0 flex-1">
                       <FileText className="h-5 w-5 text-gray-400" />

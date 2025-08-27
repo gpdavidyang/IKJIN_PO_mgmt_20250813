@@ -66,8 +66,16 @@ export default function OrderDetail() {
   });
   
   // 디버깅: order 데이터 로그
-  console.log('Order detail - full order data:', order);
-  console.log('Order detail - items:', order?.items);
+  console.log('🔴 ORDER DETAIL PAGE - Full order data:', order);
+  console.log('🔴 ORDER DETAIL PAGE - Attachments:', order?.attachments);
+  console.log('🔴 ORDER DETAIL PAGE - Attachments count:', order?.attachments?.length);
+  console.log('🔴 ORDER DETAIL PAGE - Items:', order?.items);
+  console.log('Order detail - attachments check:', {
+    hasOrder: !!order,
+    hasAttachments: !!order?.attachments,
+    attachmentsLength: order?.attachments?.length,
+    attachments: order?.attachments
+  });
 
   const { data: orderStatuses } = useQuery({
     queryKey: ["/api/order-statuses"],
@@ -706,9 +714,23 @@ export default function OrderDetail() {
 
 
         {/* Excel Upload File Info - Always render if attachments exist */}
-        {order?.attachments && order.attachments.length > 0 && (
-          <ExcelUploadFileInfo attachments={order.attachments} orderId={orderId} />
-        )}
+        {(() => {
+          console.log('🔍 ORDER DETAIL - Debug Excel Section:', {
+            hasOrder: !!order,
+            attachments: order?.attachments,
+            attachmentsLength: order?.attachments?.length,
+            orderId: orderId,
+            shouldRender: !!(order?.attachments && order.attachments.length > 0)
+          });
+          
+          if (order?.attachments && order.attachments.length > 0) {
+            console.log('✅ ORDER DETAIL - Rendering ExcelUploadFileInfo with:', order.attachments);
+            return <ExcelUploadFileInfo attachments={order.attachments} orderId={orderId} />;
+          }
+          
+          console.log('⚠️ ORDER DETAIL - NOT rendering ExcelUploadFileInfo');
+          return null;
+        })()}
 
         {/* TOSS-style Compact Management Section */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
