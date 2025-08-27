@@ -1234,28 +1234,49 @@ var init_po_template_processor_mock = __esm({
           const ordersByNumber = /* @__PURE__ */ new Map();
           for (const row of rows) {
             if (!row || row.length === 0 || !row[0] && !row[2] && !row[10]) continue;
-            while (row.length < 16) {
+            while (row.length < 17) {
               row.push("");
             }
-            const orderDate = this.formatDate(row[0]) || (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
-            const dueDate = this.formatDate(row[1]) || "";
-            const vendorName = String(row[2] || "").trim();
-            const vendorEmail = String(row[3] || "").trim();
-            const deliveryName = String(row[4] || "").trim();
-            const deliveryEmail = String(row[5] || "").trim();
-            const siteName = String(row[6] || "").trim();
-            const categoryLv1 = String(row[7] || "").trim();
-            const categoryLv2 = String(row[8] || "").trim();
-            const categoryLv3 = String(row[9] || "").trim();
-            const itemName = String(row[10] || "").trim();
-            const specification = String(row[11] || "-").trim();
-            const quantity = this.safeNumber(row[12]);
-            const unitPrice = this.safeNumber(row[13]);
-            const totalAmount = this.safeNumber(row[14]);
-            const notes = String(row[15] || "").trim();
-            const orderNumber = this.generateOrderNumber(orderDate, vendorName);
-            const supplyAmount = Math.round(totalAmount / 1.1);
-            const taxAmount = totalAmount - supplyAmount;
+            console.log("\u{1F50D} [\uD30C\uC2F1] \uC6D0\uBCF8 row \uB370\uC774\uD130:", {
+              row\uAE38\uC774: row.length,
+              \uBAA8\uB4E0\uAC12: row,
+              H\uC5F4_\uC778\uB371\uC2A47: row[7],
+              I\uC5F4_\uC778\uB371\uC2A48: row[8],
+              J\uC5F4_\uC778\uB371\uC2A49: row[9],
+              N\uC5F4_\uC778\uB371\uC2A413: row[13],
+              O\uC5F4_\uC778\uB371\uC2A414: row[14],
+              P\uC5F4_\uC778\uB371\uC2A415: row[15]
+            });
+            const vendorName = String(row[0] || "").trim();
+            const siteName = String(row[1] || "").trim();
+            const orderDate = this.formatDate(row[2]) || (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
+            const dueDate = this.formatDate(row[3]) || "";
+            const excelOrderNumber = String(row[4] || "").trim();
+            const itemName = String(row[5] || "").trim();
+            const specification = String(row[6] || "-").trim();
+            const quantity = this.safeNumber(row[7]);
+            const unit = String(row[8] || "").trim();
+            const unitPrice = this.safeNumber(row[9]);
+            const supplyAmount = this.safeNumber(row[10]);
+            const taxAmount = this.safeNumber(row[11]);
+            const totalAmount = this.safeNumber(row[12]);
+            const categoryLv1 = String(row[13] || "").trim();
+            const categoryLv2 = String(row[14] || "").trim();
+            const categoryLv3 = String(row[15] || "").trim();
+            const notes = String(row[16] || "").trim();
+            console.log("\u{1F50D} [\uD30C\uC2F1] \uBD84\uB958 \uAC12 \uD655\uC778:", {
+              row\uAE38\uC774: row.length,
+              categoryLv1: `"${categoryLv1}" (\uC778\uB371\uC2A4 13)`,
+              categoryLv2: `"${categoryLv2}" (\uC778\uB371\uC2A4 14)`,
+              categoryLv3: `"${categoryLv3}" (\uC778\uB371\uC2A4 15)`,
+              row13\uAC12: row[13],
+              row14\uAC12: row[14],
+              row15\uAC12: row[15]
+            });
+            const vendorEmail = "";
+            const deliveryName = vendorName;
+            const deliveryEmail = "";
+            const orderNumber = excelOrderNumber || this.generateOrderNumber(orderDate, vendorName);
             if (!ordersByNumber.has(orderNumber)) {
               ordersByNumber.set(orderNumber, {
                 orderNumber,
@@ -1281,6 +1302,10 @@ var init_po_template_processor_mock = __esm({
                 categoryLv1,
                 categoryLv2,
                 categoryLv3,
+                // 클라이언트 호환성을 위한 필드 추가
+                majorCategory: categoryLv1,
+                middleCategory: categoryLv2,
+                minorCategory: categoryLv3,
                 vendorName,
                 deliveryName,
                 notes
@@ -1523,7 +1548,7 @@ import express2 from "express";
 import session from "express-session";
 
 // server/routes/index.ts
-import { Router as Router26 } from "express";
+import { Router as Router28 } from "express";
 
 // server/routes/auth.ts
 import { Router } from "express";
@@ -3131,6 +3156,12 @@ async function login(req, res) {
     try {
       const authSession = req.session;
       authSession.userId = user.id;
+      console.log("\u{1F527} Session before save:", {
+        sessionId: req.sessionID,
+        userId: authSession.userId,
+        sessionExists: !!req.session,
+        sessionData: req.session
+      });
       const sessionSavePromise = new Promise((resolve, reject) => {
         const timeout = setTimeout(() => {
           console.log("\u26A0\uFE0F Session save timeout, proceeding without session persistence");
@@ -3139,10 +3170,16 @@ async function login(req, res) {
         req.session.save((err) => {
           clearTimeout(timeout);
           if (err) {
-            console.error("Session save error (non-fatal):", err);
+            console.error("\u274C Session save error:", err);
             resolve();
           } else {
-            console.log("Session saved successfully for user:", user.id);
+            console.log("\u2705 Session saved successfully for user:", user.id);
+            console.log("\u{1F527} Session after save:", {
+              sessionId: req.sessionID,
+              userId: authSession.userId,
+              sessionExists: !!req.session,
+              sessionData: req.session
+            });
             resolve();
           }
         });
@@ -3312,6 +3349,15 @@ router.get("/auth/debug", (req, res) => {
     environment: process.env.NODE_ENV || "unknown"
   });
 });
+router.get("/test/ping", (req, res) => {
+  res.json({
+    message: "Server is alive",
+    timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+    environment: process.env.NODE_ENV || "unknown",
+    vercel: process.env.VERCEL || "false",
+    origin: req.get("Origin") || "none"
+  });
+});
 router.get("/auth/debug-prod", (req, res) => {
   try {
     const authSession = req.session;
@@ -3352,12 +3398,12 @@ router.post("/auth/login-simple", (req, res) => {
     const { username, password, email } = req.body;
     const identifier = username || email;
     console.log("\u{1F510} Simple login attempt for:", identifier);
-    const users2 = [
+    const users3 = [
       { id: "admin", username: "admin", email: "admin@company.com", password: "admin123", name: "\uAD00\uB9AC\uC790", role: "admin" },
       { id: "manager", username: "manager", email: "manager@company.com", password: "manager123", name: "\uAE40\uBD80\uC7A5", role: "project_manager" },
       { id: "user", username: "user", email: "user@company.com", password: "user123", name: "\uC774\uAE30\uC0AC", role: "field_worker" }
     ];
-    const user = users2.find((u) => u.username === identifier || u.email === identifier);
+    const user = users3.find((u) => u.username === identifier || u.email === identifier);
     if (!user || user.password !== password) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
@@ -3376,12 +3422,12 @@ router.post("/auth/login-test", (req, res) => {
     const { username, password, email } = req.body;
     const identifier = username || email;
     console.log("\u{1F510} Test login attempt for:", identifier);
-    const users2 = [
+    const users3 = [
       { id: "admin", username: "admin", email: "admin@company.com", password: "admin123", name: "\uAD00\uB9AC\uC790", role: "admin" },
       { id: "manager", username: "manager", email: "manager@company.com", password: "manager123", name: "\uAE40\uBD80\uC7A5", role: "project_manager" },
       { id: "user", username: "user", email: "user@company.com", password: "user123", name: "\uC774\uAE30\uC0AC", role: "field_worker" }
     ];
-    const user = users2.find((u) => u.username === identifier || u.email === identifier);
+    const user = users3.find((u) => u.username === identifier || u.email === identifier);
     if (!user || user.password !== password) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
@@ -3397,6 +3443,51 @@ router.post("/auth/login-test", (req, res) => {
 });
 router.post("/auth/login", login);
 router.post("/auth/logout", logout);
+router.patch("/auth/profile", requireAuth, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    const { name } = req.body;
+    if (!name) {
+      return res.status(400).json({ message: "Name is required" });
+    }
+    const updatedUser = await storage.updateUser(userId, { name });
+    const { password: _, ...userWithoutPassword } = updatedUser;
+    res.json(userWithoutPassword);
+  } catch (error) {
+    console.error("Profile update error:", error);
+    res.status(500).json({ message: "Failed to update profile" });
+  }
+});
+router.patch("/auth/change-password", requireAuth, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: "Current and new passwords are required" });
+    }
+    const user = await storage.getUser(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    const bcrypt2 = await import("bcrypt");
+    const isValidPassword = await bcrypt2.compare(currentPassword, user.password);
+    if (!isValidPassword) {
+      return res.status(401).json({ message: "Current password is incorrect" });
+    }
+    const hashedPassword = await bcrypt2.hash(newPassword, 10);
+    await storage.updateUser(userId, { password: hashedPassword });
+    res.json({ message: "Password changed successfully" });
+  } catch (error) {
+    console.error("Password change error:", error);
+    res.status(500).json({ message: "Failed to change password" });
+  }
+});
 router.get("/logout", (req, res) => {
   if (req.session) {
     req.session.destroy(() => {
@@ -3528,8 +3619,8 @@ router.get("/auth/permissions/:userId", async (req, res) => {
 });
 router.get("/users", requireAuth, requireAdmin, async (req, res) => {
   try {
-    const users2 = await storage.getUsers();
-    res.json(users2);
+    const users3 = await storage.getUsers();
+    res.json(users3);
   } catch (error) {
     console.error("Error fetching users:", error);
     res.status(500).json({ message: "Failed to fetch users" });
@@ -6480,45 +6571,39 @@ router3.put("/orders/:id", requireAuth, async (req, res) => {
     res.status(500).json({ message: "Failed to update order" });
   }
 });
-router3.delete("/orders/:id", requireAuth, async (req, res) => {
+router3.delete("/orders/bulk", requireAuth, requireAdmin, async (req, res) => {
   try {
-    const orderId = parseInt(req.params.id, 10);
-    const order = await storage.getPurchaseOrder(orderId);
-    if (!order) {
-      return res.status(404).json({ message: "Order not found" });
-    }
-    if (order.status !== "draft") {
-      return res.status(403).json({ message: "Cannot delete submitted orders" });
-    }
-    await storage.deletePurchaseOrder(orderId);
-    res.json({ message: "Order deleted successfully" });
-  } catch (error) {
-    console.error("Error deleting order:", error);
-    res.status(500).json({ message: "Failed to delete order" });
-  }
-});
-router3.delete("/orders/bulk", requireAdmin, async (req, res) => {
-  try {
+    console.log("\u{1F5D1}\uFE0F Bulk delete request received:", { body: req.body, orderIds: req.body.orderIds });
     const { orderIds } = req.body;
     if (!orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
+      console.log("\u274C Invalid orderIds:", { orderIds, isArray: Array.isArray(orderIds), length: orderIds?.length });
       return res.status(400).json({ message: "Order IDs array is required" });
     }
+    console.log("\u{1F4CA} Parsing order IDs:", orderIds);
     const numericOrderIds = orderIds.map((id) => {
+      console.log("\u{1F50D} Processing ID:", id, "type:", typeof id);
       const numericId = parseInt(id, 10);
+      console.log("\u{1F50D} Parsed ID:", numericId, "isNaN:", isNaN(numericId));
       if (isNaN(numericId)) {
+        console.log("\u274C Invalid order ID detected:", id);
         throw new Error(`Invalid order ID: ${id}`);
       }
       return numericId;
     });
+    console.log("\u{1F50D} Looking up orders for IDs:", numericOrderIds);
     const orders = await Promise.all(
       numericOrderIds.map(async (orderId) => {
+        console.log("\u{1F50D} Looking up order ID:", orderId);
         const order = await storage.getPurchaseOrder(orderId);
         if (!order) {
+          console.log("\u274C Order not found:", orderId);
           throw new Error(`Order with ID ${orderId} not found`);
         }
+        console.log("\u2705 Found order:", { id: order.id, orderNumber: order.orderNumber, status: order.status });
         return order;
       })
     );
+    console.log("\u{1F4CB} All orders found:", orders.map((o) => ({ id: o.id, orderNumber: o.orderNumber, status: o.status })));
     const nonDraftOrders = orders.filter((order) => order.status !== "draft");
     if (nonDraftOrders.length > 0) {
       const nonDraftOrderNumbers = nonDraftOrders.map((order) => order.orderNumber).join(", ");
@@ -6531,10 +6616,13 @@ router3.delete("/orders/bulk", requireAdmin, async (req, res) => {
         }))
       });
     }
-    const deletePromises = numericOrderIds.map(
-      (orderId) => storage.deletePurchaseOrder(orderId)
-    );
+    console.log("\u{1F5D1}\uFE0F Starting deletion of orders:", numericOrderIds);
+    const deletePromises = numericOrderIds.map((orderId) => {
+      console.log("\u{1F5D1}\uFE0F Deleting order ID:", orderId);
+      return storage.deletePurchaseOrder(orderId);
+    });
     await Promise.all(deletePromises);
+    console.log("\u2705 All orders deleted successfully");
     res.json({
       message: `Successfully deleted ${numericOrderIds.length} order(s)`,
       deletedOrderIds: numericOrderIds,
@@ -6551,6 +6639,23 @@ router3.delete("/orders/bulk", requireAdmin, async (req, res) => {
       }
     }
     res.status(500).json({ message: "Failed to bulk delete orders" });
+  }
+});
+router3.delete("/orders/:id", requireAuth, async (req, res) => {
+  try {
+    const orderId = parseInt(req.params.id, 10);
+    const order = await storage.getPurchaseOrder(orderId);
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+    if (order.status !== "draft") {
+      return res.status(403).json({ message: "Cannot delete submitted orders" });
+    }
+    await storage.deletePurchaseOrder(orderId);
+    res.json({ message: "Order deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting order:", error);
+    res.status(500).json({ message: "Failed to delete order" });
   }
 });
 router3.post("/orders/:id/approve", requireAuth, async (req, res) => {
@@ -7441,10 +7546,10 @@ router3.post("/test-email-smtp", async (req, res) => {
       userName: "System Tester",
       userPhone: "010-0000-0000"
     };
-    const fs16 = __require("fs");
-    const path13 = __require("path");
-    const testExcelPath = path13.join(__dirname3, "../../uploads/smtp-test.txt");
-    fs16.writeFileSync(testExcelPath, "SMTP Test File - " + (/* @__PURE__ */ new Date()).toISOString());
+    const fs17 = __require("fs");
+    const path14 = __require("path");
+    const testExcelPath = path14.join(__dirname3, "../../uploads/smtp-test.txt");
+    fs17.writeFileSync(testExcelPath, "SMTP Test File - " + (/* @__PURE__ */ new Date()).toISOString());
     const result = await emailService.sendPurchaseOrderEmail({
       orderData: testOrderData,
       excelFilePath: testExcelPath,
@@ -7454,7 +7559,7 @@ router3.post("/test-email-smtp", async (req, res) => {
       orderId: 9999
     });
     try {
-      fs16.unlinkSync(testExcelPath);
+      fs17.unlinkSync(testExcelPath);
     } catch (e) {
       console.warn("\uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328:", e.message);
     }
@@ -9217,8 +9322,8 @@ router9.post("/debug-upload", requireAuth, upload2.single("file"), async (req, r
     step = 3;
     console.log(`\u{1F41B} [DEBUG] Step ${step}: File path check`);
     const filePath = req.file.path;
-    const fs16 = await import("fs");
-    if (!fs16.existsSync(filePath)) {
+    const fs17 = await import("fs");
+    if (!fs17.existsSync(filePath)) {
       return res.status(400).json({
         success: false,
         error: "\uC5C5\uB85C\uB4DC\uB41C \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.",
@@ -11815,6 +11920,177 @@ router11.get("/export-excel", requireAuth, async (req, res) => {
   } catch (error) {
     console.error("Error exporting Excel:", error);
     res.status(500).json({ error: "Failed to export Excel" });
+  }
+});
+router11.get("/processing", requireAuth, async (req, res) => {
+  try {
+    const {
+      startDate,
+      endDate,
+      year,
+      month,
+      status,
+      projectId,
+      vendorId,
+      search,
+      page = "1",
+      limit = "100"
+    } = req.query;
+    console.log("Processing report filters:", { startDate, endDate, year, month, status, projectId, vendorId, search });
+    const filters = [];
+    if (startDate && startDate !== "") {
+      filters.push(gte4(purchaseOrders.orderDate, new Date(startDate)));
+    }
+    if (endDate && endDate !== "") {
+      filters.push(lte4(purchaseOrders.orderDate, new Date(endDate)));
+    }
+    if (year && year !== "all" && year !== "") {
+      const yearNum = parseInt(year);
+      filters.push(
+        and6(
+          gte4(purchaseOrders.orderDate, /* @__PURE__ */ new Date(`${yearNum}-01-01`)),
+          lte4(purchaseOrders.orderDate, /* @__PURE__ */ new Date(`${yearNum}-12-31`))
+        )
+      );
+    }
+    if (month && month !== "all" && month !== "" && year && year !== "all") {
+      const yearNum = parseInt(year);
+      const monthNum = parseInt(month);
+      const startOfMonth = new Date(yearNum, monthNum - 1, 1);
+      const endOfMonth = new Date(yearNum, monthNum, 0);
+      filters.push(
+        and6(
+          gte4(purchaseOrders.orderDate, startOfMonth),
+          lte4(purchaseOrders.orderDate, endOfMonth)
+        )
+      );
+    }
+    if (status && status !== "all" && status !== "") {
+      filters.push(eq9(purchaseOrders.status, status));
+    }
+    if (projectId && projectId !== "all" && projectId !== "") {
+      filters.push(eq9(purchaseOrders.projectId, parseInt(projectId)));
+    }
+    if (vendorId && vendorId !== "all" && vendorId !== "") {
+      filters.push(eq9(purchaseOrders.vendorId, parseInt(vendorId)));
+    }
+    console.log(`Processing report filters count: ${filters.length}`);
+    let ordersQuery = db.select({
+      id: purchaseOrders.id,
+      orderNumber: purchaseOrders.orderNumber,
+      orderDate: purchaseOrders.orderDate,
+      status: purchaseOrders.status,
+      totalAmount: purchaseOrders.totalAmount,
+      urgency: purchaseOrders.urgency,
+      deliveryLocation: purchaseOrders.deliveryLocation,
+      specialNotes: purchaseOrders.specialNotes,
+      createdAt: purchaseOrders.createdAt,
+      updatedAt: purchaseOrders.updatedAt,
+      // Project information
+      projectId: projects.id,
+      projectName: projects.projectName,
+      projectCode: projects.projectCode,
+      // Vendor information
+      vendorId: vendors.id,
+      vendorName: vendors.name,
+      vendorCode: vendors.vendorCode,
+      // User information
+      userId: purchaseOrders.userId
+    }).from(purchaseOrders).leftJoin(projects, eq9(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq9(purchaseOrders.vendorId, vendors.id));
+    if (filters.length > 0) {
+      ordersQuery = ordersQuery.where(and6(...filters));
+    }
+    if (search && search !== "") {
+      const searchFilter = sql7`(
+        ${purchaseOrders.orderNumber} ILIKE ${`%${search}%`} OR
+        ${vendors.name} ILIKE ${`%${search}%`} OR
+        ${projects.projectName} ILIKE ${`%${search}%`} OR
+        ${purchaseOrders.deliveryLocation} ILIKE ${`%${search}%`} OR
+        ${purchaseOrders.specialNotes} ILIKE ${`%${search}%`}
+      )`;
+      if (filters.length > 0) {
+        ordersQuery = ordersQuery.where(and6(and6(...filters), searchFilter));
+      } else {
+        ordersQuery = ordersQuery.where(searchFilter);
+      }
+    }
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const offset = (pageNum - 1) * limitNum;
+    ordersQuery = ordersQuery.orderBy(purchaseOrders.orderDate, purchaseOrders.id).offset(offset).limit(limitNum);
+    const orders = await ordersQuery;
+    console.log(`Processing report found ${orders.length} orders`);
+    if (orders.length > 0) {
+      const orderIds = orders.map((o) => o.id);
+      const orderItems = await db.select({
+        orderId: purchaseOrderItems.orderId,
+        id: purchaseOrderItems.id,
+        itemName: purchaseOrderItems.itemName,
+        majorCategory: purchaseOrderItems.majorCategory,
+        middleCategory: purchaseOrderItems.middleCategory,
+        minorCategory: purchaseOrderItems.minorCategory,
+        specification: purchaseOrderItems.specification,
+        quantity: purchaseOrderItems.quantity,
+        unitPrice: purchaseOrderItems.unitPrice,
+        totalAmount: purchaseOrderItems.totalAmount,
+        unit: purchaseOrderItems.unit,
+        notes: purchaseOrderItems.notes
+      }).from(purchaseOrderItems).where(inArray2(purchaseOrderItems.orderId, orderIds));
+      const ordersWithItems = orders.map((order) => ({
+        ...order,
+        items: orderItems.filter((item) => item.orderId === order.id)
+      }));
+      let countQuery = db.select({ count: sql7`count(*)` }).from(purchaseOrders).leftJoin(projects, eq9(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq9(purchaseOrders.vendorId, vendors.id));
+      if (filters.length > 0) {
+        countQuery = countQuery.where(and6(...filters));
+      }
+      if (search && search !== "") {
+        const searchFilter = sql7`(
+          ${purchaseOrders.orderNumber} ILIKE ${`%${search}%`} OR
+          ${vendors.name} ILIKE ${`%${search}%`} OR
+          ${projects.projectName} ILIKE ${`%${search}%`} OR
+          ${purchaseOrders.deliveryLocation} ILIKE ${`%${search}%`} OR
+          ${purchaseOrders.specialNotes} ILIKE ${`%${search}%`}
+        )`;
+        if (filters.length > 0) {
+          countQuery = countQuery.where(and6(and6(...filters), searchFilter));
+        } else {
+          countQuery = countQuery.where(searchFilter);
+        }
+      }
+      const totalResult = await countQuery;
+      const total = totalResult[0]?.count || 0;
+      res.json({
+        orders: ordersWithItems,
+        total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(total / limitNum),
+        summary: {
+          totalOrders: ordersWithItems.length,
+          totalAmount: ordersWithItems.reduce((sum2, order) => sum2 + parseFloat(order.totalAmount), 0)
+        }
+      });
+    } else {
+      res.json({
+        orders: [],
+        total: 0,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: 0,
+        summary: {
+          totalOrders: 0,
+          totalAmount: 0
+        }
+      });
+    }
+  } catch (error) {
+    console.error("Error generating processing report:", error);
+    console.error("Error details:", error.message, error.stack);
+    res.status(500).json({
+      error: "Failed to generate processing report",
+      details: error.message
+    });
   }
 });
 router11.get("/summary", requireAuth, async (req, res) => {
@@ -14574,9 +14850,17 @@ async function findBestCategoryMatch(excelCategory, dbCategories) {
     }
   }
   suggestions.sort((a, b) => b.similarity - a.similarity);
+  const uniqueSuggestions = [];
+  const seenNames = /* @__PURE__ */ new Set();
+  for (const suggestion of suggestions) {
+    if (!seenNames.has(suggestion.name)) {
+      seenNames.add(suggestion.name);
+      uniqueSuggestions.push(suggestion);
+    }
+  }
   return {
     bestMatch,
-    suggestions: suggestions.slice(0, 5)
+    suggestions: uniqueSuggestions.slice(0, 5)
   };
 }
 function calculateStringSimilarity(str1, str2) {
@@ -15173,35 +15457,326 @@ router26.put("/step-instances/:id", async (req, res) => {
 });
 var approval_settings_default = router26;
 
-// server/routes/index.ts
+// server/routes/orders-simple.ts
+init_db();
+init_schema();
+import { Router as Router26 } from "express";
+import { eq as eq16, and as and12, desc as desc7 } from "drizzle-orm";
+import multer5 from "multer";
+import path13 from "path";
+import fs16 from "fs/promises";
+import { z as z5 } from "zod";
 var router27 = Router26();
-router27.use("/api", auth_default);
-router27.use("/api", projects_default);
-router27.use("/api", orders_default);
-router27.use("/api", vendors_default);
-router27.use("/api", items_default);
-router27.use("/api", dashboard_default);
-router27.use("/api", companies_default);
-router27.use("/api", admin_default);
-router27.use("/api/excel-automation", excel_automation_default);
-router27.use("/api/po-template", po_template_real_default);
-router27.use("/api/reports", reports_default);
-router27.use("/api", import_export_default);
-router27.use("/api", email_history_default);
-router27.use("/api/excel-template", excel_template_default);
-router27.use("/api", orders_optimized_default);
-router27.use("/api", order_statuses_default);
-router27.use("/api", invoices_default);
-router27.use("/api", verification_logs_default);
-router27.use("/api", item_receipts_default);
-router27.use("/api", approvals_default);
-router27.use("/api", project_members_default);
-router27.use("/api", project_types_default);
-router27.use("/api", simple_auth_default);
-router27.use("/api", test_accounts_default);
-router27.use("/api/categories", categories_default);
-router27.use("/api/approval-settings", approval_settings_default);
-var routes_default = router27;
+var storage4 = multer5.diskStorage({
+  destination: async (req, file, cb) => {
+    const uploadDir2 = path13.join(process.cwd(), "uploads", "excel-simple");
+    await fs16.mkdir(uploadDir2, { recursive: true });
+    cb(null, uploadDir2);
+  },
+  filename: (req, file, cb) => {
+    const timestamp2 = Date.now();
+    const sanitizedName = Buffer.from(file.originalname, "latin1").toString("utf8");
+    const ext = path13.extname(sanitizedName);
+    const basename = path13.basename(sanitizedName, ext);
+    cb(null, `${timestamp2}-${basename}${ext}`);
+  }
+});
+var upload5 = multer5({
+  storage: storage4,
+  limits: {
+    fileSize: 10 * 1024 * 1024
+    // 10MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    const ext = path13.extname(file.originalname).toLowerCase();
+    if ([".xlsx", ".xls", ".xlsm"].includes(ext)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only Excel files are allowed"));
+    }
+  }
+});
+var OrderItemSchema = z5.object({
+  itemName: z5.string().optional(),
+  specification: z5.string().optional(),
+  unit: z5.string().optional(),
+  quantity: z5.number().default(0),
+  unitPrice: z5.number().default(0),
+  totalAmount: z5.number().default(0),
+  remarks: z5.string().optional()
+});
+var OrderDataSchema = z5.object({
+  rowIndex: z5.number(),
+  orderDate: z5.string().optional(),
+  deliveryDate: z5.string().optional(),
+  vendorName: z5.string().optional(),
+  vendorEmail: z5.string().optional(),
+  deliveryPlace: z5.string().optional(),
+  deliveryEmail: z5.string().optional(),
+  projectName: z5.string().optional(),
+  majorCategory: z5.string().optional(),
+  middleCategory: z5.string().optional(),
+  minorCategory: z5.string().optional(),
+  items: z5.array(OrderItemSchema),
+  notes: z5.string().optional(),
+  isValid: z5.boolean().optional(),
+  errors: z5.array(z5.string()).optional()
+});
+router27.post("/bulk-create-simple", requireAuth, upload5.single("excelFile"), async (req, res) => {
+  try {
+    const ordersData = JSON.parse(req.body.orders);
+    const validatedOrders = z5.array(OrderDataSchema).parse(ordersData);
+    const sendEmail = req.body.sendEmail === "true";
+    if (validatedOrders.length === 0) {
+      return res.status(400).json({ error: "No orders to create" });
+    }
+    const savedOrders = [];
+    const errors = [];
+    const emailsToSend = [];
+    let defaultProject;
+    try {
+      console.log("\u{1F50D} Fetching default project...");
+      defaultProject = await db.select().from(projects).where(eq16(projects.projectName, "\uAE30\uBCF8 \uD504\uB85C\uC81D\uD2B8")).then((rows) => rows[0]);
+      console.log("\u2705 Default project fetch successful");
+    } catch (error) {
+      console.error("\u274C Error fetching default project:", error);
+      throw error;
+    }
+    if (!defaultProject) {
+      try {
+        console.log("\u{1F50D} Creating default project...");
+        const [newProject] = await db.insert(projects).values({
+          projectName: "\uAE30\uBCF8 \uD504\uB85C\uC81D\uD2B8",
+          projectCode: "DEFAULT",
+          status: "active",
+          startDate: (/* @__PURE__ */ new Date()).toISOString().split("T")[0]
+        }).returning();
+        defaultProject = newProject;
+        console.log("\u2705 Default project creation successful");
+      } catch (error) {
+        console.error("\u274C Error creating default project:", error);
+        throw error;
+      }
+    }
+    for (const orderData of validatedOrders) {
+      try {
+        let vendor = null;
+        if (orderData.vendorName) {
+          const existingVendor = await db.select().from(vendors).where(eq16(vendors.name, orderData.vendorName)).then((rows) => rows[0]);
+          if (existingVendor) {
+            vendor = existingVendor;
+          } else {
+            const [newVendor] = await db.insert(vendors).values({
+              name: orderData.vendorName,
+              contactPerson: "\uB2F4\uB2F9\uC790",
+              // Required field
+              email: orderData.vendorEmail || "unknown@example.com"
+              // Required field
+            }).returning();
+            vendor = newVendor;
+          }
+        }
+        let project = defaultProject;
+        if (orderData.projectName) {
+          const existingProject = await db.select().from(projects).where(eq16(projects.projectName, orderData.projectName)).then((rows) => rows[0]);
+          if (existingProject) {
+            project = existingProject;
+          }
+        }
+        const orderCount = await db.select().from(purchaseOrders).then((rows) => rows.length);
+        const orderNumber = `PO-${(/* @__PURE__ */ new Date()).getFullYear()}-${String(orderCount + 1).padStart(5, "0")}`;
+        const totalAmount = orderData.items.reduce((sum2, item) => {
+          return sum2 + (item.quantity || 0) * (item.unitPrice || 0);
+        }, 0);
+        const [newOrder] = await db.insert(purchaseOrders).values({
+          orderNumber,
+          projectId: project.id,
+          vendorId: vendor?.id || null,
+          userId: req.user.id,
+          orderDate: orderData.orderDate || (/* @__PURE__ */ new Date()).toISOString().split("T")[0],
+          // Required field
+          status: sendEmail ? "sent" : "draft",
+          totalAmount,
+          deliveryDate: orderData.deliveryDate || null,
+          notes: [
+            orderData.notes,
+            orderData.majorCategory ? `\uB300\uBD84\uB958: ${orderData.majorCategory}` : null,
+            orderData.middleCategory ? `\uC911\uBD84\uB958: ${orderData.middleCategory}` : null,
+            orderData.minorCategory ? `\uC18C\uBD84\uB958: ${orderData.minorCategory}` : null,
+            orderData.deliveryPlace ? `\uB0A9\uD488\uCC98: ${orderData.deliveryPlace}` : null,
+            orderData.deliveryEmail ? `\uB0A9\uD488\uCC98 \uC774\uBA54\uC77C: ${orderData.deliveryEmail}` : null
+          ].filter(Boolean).join("\n") || null,
+          createdAt: /* @__PURE__ */ new Date(),
+          updatedAt: /* @__PURE__ */ new Date()
+        }).returning();
+        if (orderData.items.length > 0) {
+          const itemsToInsert = orderData.items.filter((item) => item.itemName).map((item) => ({
+            orderId: newOrder.id,
+            itemName: item.itemName,
+            specification: item.specification || null,
+            unit: item.unit || null,
+            quantity: item.quantity || 0,
+            unitPrice: item.unitPrice || 0,
+            totalAmount: (item.quantity || 0) * (item.unitPrice || 0),
+            notes: item.remarks || null
+            // Use 'notes' field instead of 'remarks'
+          }));
+          if (itemsToInsert.length > 0) {
+            await db.insert(purchaseOrderItems).values(itemsToInsert);
+          }
+        }
+        if (req.file) {
+          await db.insert(attachments).values({
+            orderId: newOrder.id,
+            originalName: req.file.originalname,
+            storedName: req.file.filename,
+            filePath: req.file.path,
+            fileSize: req.file.size,
+            mimeType: req.file.mimetype,
+            uploadedBy: req.user.id,
+            uploadedAt: /* @__PURE__ */ new Date()
+          });
+        }
+        await db.insert(orderHistory).values({
+          orderId: newOrder.id,
+          userId: req.user.id,
+          action: sendEmail ? "sent" : "created",
+          changes: {
+            source: "excel_simple_upload",
+            rowIndex: orderData.rowIndex,
+            sendEmail
+          },
+          createdAt: /* @__PURE__ */ new Date()
+        });
+        if (sendEmail && vendor && orderData.vendorEmail) {
+          emailsToSend.push({
+            orderId: newOrder.id,
+            orderNumber: newOrder.orderNumber,
+            vendorName: vendor.name,
+            vendorEmail: orderData.vendorEmail,
+            totalAmount
+          });
+        }
+        savedOrders.push({
+          orderId: newOrder.id,
+          orderNumber: newOrder.orderNumber,
+          rowIndex: orderData.rowIndex,
+          emailSent: sendEmail && vendor && orderData.vendorEmail
+        });
+      } catch (error) {
+        console.error(`Error creating order for row ${orderData.rowIndex}:`, error);
+        errors.push({
+          rowIndex: orderData.rowIndex,
+          error: error instanceof Error ? error.message : "Unknown error"
+        });
+      }
+    }
+    if (emailsToSend.length > 0) {
+      console.log(`Would send ${emailsToSend.length} emails:`, emailsToSend);
+    }
+    const emailsSent = emailsToSend.length;
+    res.json({
+      success: true,
+      message: `Successfully created ${savedOrders.length} orders` + (emailsSent > 0 ? ` and sent ${emailsSent} emails` : ""),
+      savedCount: savedOrders.length,
+      emailsSent,
+      savedOrders,
+      emailsToSend: emailsToSend.length > 0 ? emailsToSend : void 0,
+      errors: errors.length > 0 ? errors : void 0
+    });
+  } catch (error) {
+    console.error("Bulk order creation error:", error);
+    res.status(500).json({
+      error: "Failed to create orders",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+router27.get("/simple-upload-history", requireAuth, async (req, res) => {
+  try {
+    const history = await db.select({
+      id: purchaseOrders.id,
+      orderNumber: purchaseOrders.orderNumber,
+      createdAt: purchaseOrders.createdAt,
+      totalAmount: purchaseOrders.totalAmount,
+      status: purchaseOrders.status,
+      projectName: projects.projectName,
+      vendorName: vendors.name,
+      itemCount: db.$count(purchaseOrderItems.id)
+    }).from(purchaseOrders).leftJoin(projects, eq16(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq16(purchaseOrders.vendorId, vendors.id)).leftJoin(purchaseOrderItems, eq16(purchaseOrderItems.orderId, purchaseOrders.id)).leftJoin(orderHistory, eq16(orderHistory.orderId, purchaseOrders.id)).where(
+      and12(
+        eq16(purchaseOrders.userId, req.user.id),
+        eq16(orderHistory.action, "created")
+      )
+    ).groupBy(
+      purchaseOrders.id,
+      purchaseOrders.orderNumber,
+      purchaseOrders.createdAt,
+      purchaseOrders.totalAmount,
+      purchaseOrders.status,
+      projects.projectName,
+      vendors.name
+    ).orderBy(desc7(purchaseOrders.createdAt)).limit(50);
+    res.json(history);
+  } catch (error) {
+    console.error("Error fetching upload history:", error);
+    res.status(500).json({ error: "Failed to fetch upload history" });
+  }
+});
+var orders_simple_default = router27;
+
+// server/routes/positions.ts
+import { Router as Router27 } from "express";
+var router28 = Router27();
+router28.get("/positions", async (req, res) => {
+  try {
+    res.json([]);
+  } catch (error) {
+    console.error("Error fetching positions:", error);
+    res.status(500).json({ error: "Failed to fetch positions" });
+  }
+});
+router28.get("/ui-terms", async (req, res) => {
+  try {
+    res.json([]);
+  } catch (error) {
+    console.error("Error fetching ui-terms:", error);
+    res.status(500).json({ error: "Failed to fetch ui-terms" });
+  }
+});
+var positions_default = router28;
+
+// server/routes/index.ts
+var router29 = Router28();
+router29.use("/api", auth_default);
+router29.use("/api", projects_default);
+router29.use("/api", orders_default);
+router29.use("/api", vendors_default);
+router29.use("/api", items_default);
+router29.use("/api", dashboard_default);
+router29.use("/api", companies_default);
+router29.use("/api/admin", admin_default);
+router29.use("/api/excel-automation", excel_automation_default);
+router29.use("/api/po-template", po_template_real_default);
+router29.use("/api/reports", reports_default);
+router29.use("/api", import_export_default);
+router29.use("/api", email_history_default);
+router29.use("/api/excel-template", excel_template_default);
+router29.use("/api", orders_optimized_default);
+router29.use("/api", order_statuses_default);
+router29.use("/api", invoices_default);
+router29.use("/api", verification_logs_default);
+router29.use("/api", item_receipts_default);
+router29.use("/api", approvals_default);
+router29.use("/api", project_members_default);
+router29.use("/api", project_types_default);
+router29.use("/api", simple_auth_default);
+router29.use("/api", test_accounts_default);
+router29.use("/api/categories", categories_default);
+router29.use("/api/approval-settings", approval_settings_default);
+router29.use("/api/orders", orders_simple_default);
+router29.use("/api", positions_default);
+var routes_default = router29;
 
 // server/production.ts
 dotenv2.config();
@@ -15237,7 +15812,7 @@ app.use(express2.urlencoded({ extended: false }));
 app.use("/attached_assets", express2.static("attached_assets"));
 app.use((req, res, next) => {
   const start = Date.now();
-  const path13 = req.path;
+  const path14 = req.path;
   let capturedJsonResponse = void 0;
   const originalResJson = res.json;
   res.json = function(bodyJson, ...args) {
@@ -15246,8 +15821,8 @@ app.use((req, res, next) => {
   };
   res.on("finish", () => {
     const duration = Date.now() - start;
-    if (path13.startsWith("/api")) {
-      let logLine = `${req.method} ${path13} ${res.statusCode} in ${duration}ms`;
+    if (path14.startsWith("/api")) {
+      let logLine = `${req.method} ${path14} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }
