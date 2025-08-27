@@ -87,24 +87,38 @@ router.post('/bulk-create-simple', requireAuth, upload.single('excelFile'), asyn
     const emailsToSend = [];
     
     // Get or create default project
-    let defaultProject = await db
-      .select()
-      .from(projects)
-      .where(eq(projects.name, '기본 프로젝트'))
-      .then(rows => rows[0]);
+    let defaultProject;
+    try {
+      console.log('🔍 Fetching default project...');
+      defaultProject = await db
+        .select()
+        .from(projects)
+        .where(eq(projects.projectName, '기본 프로젝트'))
+        .then(rows => rows[0]);
+      console.log('✅ Default project fetch successful');
+    } catch (error) {
+      console.error('❌ Error fetching default project:', error);
+      throw error;
+    }
       
     if (!defaultProject) {
-      const [newProject] = await db
-        .insert(projects)
-        .values({
-          name: '기본 프로젝트',
-          code: 'DEFAULT',
-          status: 'active',
-          startDate: new Date().toISOString().split('T')[0],
-          createdBy: req.user.id
-        })
-        .returning();
-      defaultProject = newProject;
+      try {
+        console.log('🔍 Creating default project...');
+        const [newProject] = await db
+          .insert(projects)
+          .values({
+            projectName: '기본 프로젝트',
+            projectCode: 'DEFAULT',
+            status: 'active',
+            startDate: new Date().toISOString().split('T')[0]
+          })
+          .returning();
+        defaultProject = newProject;
+        console.log('✅ Default project creation successful');
+      } catch (error) {
+        console.error('❌ Error creating default project:', error);
+        throw error;
+      }
     }
 
     // Process each order
@@ -126,8 +140,8 @@ router.post('/bulk-create-simple', requireAuth, upload.single('excelFile'), asyn
               .insert(vendors)
               .values({
                 name: orderData.vendorName,
-                contactEmail: orderData.vendorEmail || null,
-                createdBy: req.user.id
+                contactPerson: '담당자', // Required field
+                email: orderData.vendorEmail || 'unknown@example.com' // Required field
               })
               .returning();
             vendor = newVendor;
@@ -140,7 +154,7 @@ router.post('/bulk-create-simple', requireAuth, upload.single('excelFile'), asyn
           const existingProject = await db
             .select()
             .from(projects)
-            .where(eq(projects.name, orderData.projectName))
+            .where(eq(projects.projectName, orderData.projectName))
             .then(rows => rows[0]);
             
           if (existingProject) {
@@ -169,6 +183,7 @@ router.post('/bulk-create-simple', requireAuth, upload.single('excelFile'), asyn
             projectId: project.id,
             vendorId: vendor?.id || null,
             userId: req.user.id,
+            orderDate: orderData.orderDate || new Date().toISOString().split('T')[0], // Required field
             status: sendEmail ? 'sent' : 'draft',
             totalAmount,
             deliveryDate: orderData.deliveryDate || null,
@@ -197,7 +212,7 @@ router.post('/bulk-create-simple', requireAuth, upload.single('excelFile'), asyn
               quantity: item.quantity || 0,
               unitPrice: item.unitPrice || 0,
               totalAmount: (item.quantity || 0) * (item.unitPrice || 0),
-              remarks: item.remarks || null
+              notes: item.remarks || null // Use 'notes' field instead of 'remarks'
             }));
 
           if (itemsToInsert.length > 0) {
@@ -298,7 +313,7 @@ router.get('/simple-upload-history', requireAuth, async (req, res) => {
         createdAt: purchaseOrders.createdAt,
         totalAmount: purchaseOrders.totalAmount,
         status: purchaseOrders.status,
-        projectName: projects.name,
+        projectName: projects.projectName,
         vendorName: vendors.name,
         itemCount: db.$count(purchaseOrderItems.id)
       })
@@ -319,7 +334,7 @@ router.get('/simple-upload-history', requireAuth, async (req, res) => {
         purchaseOrders.createdAt,
         purchaseOrders.totalAmount,
         purchaseOrders.status,
-        projects.name,
+        projects.projectName,
         vendors.name
       )
       .orderBy(desc(purchaseOrders.createdAt))
