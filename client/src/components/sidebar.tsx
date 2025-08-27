@@ -41,11 +41,9 @@ const navigationSections = [
       { name: "대시보드", href: "/", icon: Home },
       { 
         name: "발주서 작성", 
-        href: "/create-order/unified-v2", // 직접 V2로 연결
+        href: "/create-order",
         icon: Plus,
         highlight: true, // 주요 기능 강조
-        // subItems 제거 - 더 이상 드롭다운 메뉴 없음
-        // 숨겨진 메뉴들: 통합워크플로우, 표준발주서, 엑셀발주서
       },
       { name: "발주서 관리", href: "/orders", icon: FileText },
       { name: "승인 관리", href: "/approvals", icon: CheckCircle },

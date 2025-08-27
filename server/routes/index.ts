@@ -30,6 +30,7 @@ import simpleAuthRoutes from "./simple-auth";
 import testAccountsRoutes from "./test-accounts";
 import categoryRoutes from "./categories";
 import approvalSettingsRoutes from "./approval-settings";
+import ordersSimpleRoutes from "./orders-simple";
 
 const router = Router();
 
@@ -41,7 +42,7 @@ router.use("/api", vendorRoutes);
 router.use("/api", itemRoutes);
 router.use("/api", dashboardRoutes);
 router.use("/api", companyRoutes);
-router.use("/api", adminRoutes);
+router.use("/api/admin", adminRoutes);
 router.use("/api/excel-automation", excelAutomationRoutes);
 router.use("/api/po-template", poTemplateRoutes);
 router.use("/api/reports", reportRoutes);
@@ -60,5 +61,6 @@ router.use("/api", simpleAuthRoutes);
 router.use("/api", testAccountsRoutes);
 router.use("/api/categories", categoryRoutes);
 router.use("/api/approval-settings", approvalSettingsRoutes);
+router.use("/api/orders", ordersSimpleRoutes);
 
 export default router;

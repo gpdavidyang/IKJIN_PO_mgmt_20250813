@@ -3353,6 +3353,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Positions API - Mock endpoint to prevent 404 errors
+  app.get("/api/positions", async (req, res) => {
+    try {
+      // Return empty array for now - this prevents the 404 error
+      res.json([]);
+    } catch (error) {
+      console.error("Error fetching positions:", error);
+      res.status(500).json({ error: "Failed to fetch positions" });
+    }
+  });
+
   // PO Template routes (간단한 버전)
   try {
     const poTemplateRouter = await import('./routes/po-template-real');

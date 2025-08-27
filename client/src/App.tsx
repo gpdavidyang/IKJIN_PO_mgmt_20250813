@@ -52,6 +52,7 @@ const CreateStandardOrder = createLazyComponent(() => import("@/pages/create-ord
 const CreateStandardOrderRefactored = createLazyComponent(() => import("@/pages/create-order-standard-refactored"), 'CreateStandardOrderRefactored');
 const CreateMaterialsOrder = createLazyComponent(() => import("@/pages/create-order-materials"), 'CreateMaterialsOrder');
 const CreateOrderExcel = createLazyComponent(() => DynamicFeatures.loadExcelPage(), 'CreateOrderExcel');
+const CreateOrderSimple = createLazyComponent(() => import("@/pages/create-order-simple"), 'CreateOrderSimple');
 const CreateOrderUnified = createLazyComponent(() => import("@/pages/create-order-unified"), 'CreateOrderUnified');
 const CreateOrderUnifiedV2 = createLazyComponent(() => import("@/pages/create-order-unified-v2"), 'CreateOrderUnifiedV2');
 const Vendors = createNetworkAwareLazyComponent(() => DynamicFeatures.loadVendorList(), 'Vendors');
@@ -282,6 +283,11 @@ function Layout() {
               <Route path="/create-order/excel">
                 <Suspense fallback={<FormLoadingFallback />}>
                   <CreateOrderExcel />
+                </Suspense>
+              </Route>
+              <Route path="/create-order/simple">
+                <Suspense fallback={<FormLoadingFallback />}>
+                  <CreateOrderSimple />
                 </Suspense>
               </Route>
               <Route path="/create-order/unified">

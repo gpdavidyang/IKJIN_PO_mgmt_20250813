@@ -57,7 +57,10 @@ export default function Reports() {
     status: 'all',
     templateId: 'all',
     amountRange: 'all',
-    userId: 'all'
+    userId: 'all',
+    search: '',
+    month: 'all',
+    projectId: 'all'
   });
 
   const [activeFilters, setActiveFilters] = useState<typeof filters | null>(null);
@@ -282,7 +285,7 @@ export default function Reports() {
 
   // 보고서 데이터 쿼리
   const { data: processingReport, isLoading: processingLoading } = useQuery({
-    queryKey: ["/api/orders", activeFilters],
+    queryKey: ["/api/reports/processing", activeFilters],
     queryFn: async () => {
       if (!activeFilters) {
         return { orders: [], total: 0 };
@@ -305,23 +308,26 @@ export default function Reports() {
       if (activeFilters.status && activeFilters.status !== 'all') {
         params.append('status', activeFilters.status);
       }
-      if (activeFilters.templateId && activeFilters.templateId !== 'all') {
-        params.append('templateId', activeFilters.templateId);
+      if (activeFilters.projectId && activeFilters.projectId !== 'all') {
+        params.append('projectId', activeFilters.projectId);
       }
-      if (activeFilters.userId && activeFilters.userId !== 'all') {
-        params.append('userId', activeFilters.userId);
+      if (activeFilters.month && activeFilters.month !== 'all') {
+        params.append('month', activeFilters.month);
+      }
+      if (activeFilters.search) {
+        params.append('search', activeFilters.search);
       }
       
       // Set a high limit to get all data for reports
       params.append('limit', '1000');
       
-      const response = await fetch(`/api/orders?${params.toString()}`);
+      const response = await fetch(`/api/reports/processing?${params.toString()}`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       return response.json();
     },
-    enabled: isAuthenticated && !!activeFilters,
+    enabled: isAuthenticated && !!activeFilters && reportType === 'orders',
   });
 
   const { data: summaryReport } = useQuery({

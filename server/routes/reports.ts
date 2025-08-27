@@ -666,6 +666,233 @@ router.get("/export-excel", requireAuth, async (req, res) => {
   }
 });
 
+// Get processing report (발주 내역 검색)
+router.get("/processing", requireAuth, async (req, res) => {
+  try {
+    const { 
+      startDate, 
+      endDate, 
+      year, 
+      month, 
+      status, 
+      projectId, 
+      vendorId,
+      search,
+      page = "1",
+      limit = "100"
+    } = req.query;
+    
+    console.log("Processing report filters:", { startDate, endDate, year, month, status, projectId, vendorId, search });
+
+    // Build filters
+    const filters = [];
+    
+    // Date filtering
+    if (startDate && startDate !== '') {
+      filters.push(gte(purchaseOrders.orderDate, new Date(startDate as string)));
+    }
+    if (endDate && endDate !== '') {
+      filters.push(lte(purchaseOrders.orderDate, new Date(endDate as string)));
+    }
+    
+    // Year filtering
+    if (year && year !== 'all' && year !== '') {
+      const yearNum = parseInt(year as string);
+      filters.push(
+        and(
+          gte(purchaseOrders.orderDate, new Date(`${yearNum}-01-01`)),
+          lte(purchaseOrders.orderDate, new Date(`${yearNum}-12-31`))
+        )
+      );
+    }
+    
+    // Month filtering (in combination with year)
+    if (month && month !== 'all' && month !== '' && year && year !== 'all') {
+      const yearNum = parseInt(year as string);
+      const monthNum = parseInt(month as string);
+      const startOfMonth = new Date(yearNum, monthNum - 1, 1);
+      const endOfMonth = new Date(yearNum, monthNum, 0);
+      filters.push(
+        and(
+          gte(purchaseOrders.orderDate, startOfMonth),
+          lte(purchaseOrders.orderDate, endOfMonth)
+        )
+      );
+    }
+    
+    // Status filtering
+    if (status && status !== 'all' && status !== '') {
+      filters.push(eq(purchaseOrders.status, status as string));
+    }
+    
+    // Project filtering
+    if (projectId && projectId !== 'all' && projectId !== '') {
+      filters.push(eq(purchaseOrders.projectId, parseInt(projectId as string)));
+    }
+    
+    // Vendor filtering
+    if (vendorId && vendorId !== 'all' && vendorId !== '') {
+      filters.push(eq(purchaseOrders.vendorId, parseInt(vendorId as string)));
+    }
+
+    console.log(`Processing report filters count: ${filters.length}`);
+
+    // Get orders with full details
+    let ordersQuery = db
+      .select({
+        id: purchaseOrders.id,
+        orderNumber: purchaseOrders.orderNumber,
+        orderDate: purchaseOrders.orderDate,
+        status: purchaseOrders.status,
+        totalAmount: purchaseOrders.totalAmount,
+        urgency: purchaseOrders.urgency,
+        deliveryLocation: purchaseOrders.deliveryLocation,
+        specialNotes: purchaseOrders.specialNotes,
+        createdAt: purchaseOrders.createdAt,
+        updatedAt: purchaseOrders.updatedAt,
+        
+        // Project information
+        projectId: projects.id,
+        projectName: projects.projectName,
+        projectCode: projects.projectCode,
+        
+        // Vendor information
+        vendorId: vendors.id,
+        vendorName: vendors.name,
+        vendorCode: vendors.vendorCode,
+        
+        // User information
+        userId: purchaseOrders.userId,
+      })
+      .from(purchaseOrders)
+      .leftJoin(projects, eq(purchaseOrders.projectId, projects.id))
+      .leftJoin(vendors, eq(purchaseOrders.vendorId, vendors.id));
+
+    if (filters.length > 0) {
+      ordersQuery = ordersQuery.where(and(...filters));
+    }
+
+    // Search functionality
+    if (search && search !== '') {
+      const searchFilter = sql`(
+        ${purchaseOrders.orderNumber} ILIKE ${`%${search}%`} OR
+        ${vendors.name} ILIKE ${`%${search}%`} OR
+        ${projects.projectName} ILIKE ${`%${search}%`} OR
+        ${purchaseOrders.deliveryLocation} ILIKE ${`%${search}%`} OR
+        ${purchaseOrders.specialNotes} ILIKE ${`%${search}%`}
+      )`;
+      if (filters.length > 0) {
+        ordersQuery = ordersQuery.where(and(and(...filters), searchFilter));
+      } else {
+        ordersQuery = ordersQuery.where(searchFilter);
+      }
+    }
+
+    // Add pagination
+    const pageNum = parseInt(page as string);
+    const limitNum = parseInt(limit as string);
+    const offset = (pageNum - 1) * limitNum;
+
+    ordersQuery = ordersQuery
+      .orderBy(purchaseOrders.orderDate, purchaseOrders.id)
+      .offset(offset)
+      .limit(limitNum);
+
+    const orders = await ordersQuery;
+
+    console.log(`Processing report found ${orders.length} orders`);
+
+    // Get order items for each order
+    if (orders.length > 0) {
+      const orderIds = orders.map(o => o.id);
+      const orderItems = await db
+        .select({
+          orderId: purchaseOrderItems.orderId,
+          id: purchaseOrderItems.id,
+          itemName: purchaseOrderItems.itemName,
+          majorCategory: purchaseOrderItems.majorCategory,
+          middleCategory: purchaseOrderItems.middleCategory,
+          minorCategory: purchaseOrderItems.minorCategory,
+          specification: purchaseOrderItems.specification,
+          quantity: purchaseOrderItems.quantity,
+          unitPrice: purchaseOrderItems.unitPrice,
+          totalAmount: purchaseOrderItems.totalAmount,
+          unit: purchaseOrderItems.unit,
+          notes: purchaseOrderItems.notes,
+        })
+        .from(purchaseOrderItems)
+        .where(inArray(purchaseOrderItems.orderId, orderIds));
+
+      // Attach items to orders
+      const ordersWithItems = orders.map(order => ({
+        ...order,
+        items: orderItems.filter(item => item.orderId === order.id)
+      }));
+
+      // Get total count for pagination
+      let countQuery = db
+        .select({ count: sql<number>`count(*)` })
+        .from(purchaseOrders)
+        .leftJoin(projects, eq(purchaseOrders.projectId, projects.id))
+        .leftJoin(vendors, eq(purchaseOrders.vendorId, vendors.id));
+
+      if (filters.length > 0) {
+        countQuery = countQuery.where(and(...filters));
+      }
+
+      if (search && search !== '') {
+        const searchFilter = sql`(
+          ${purchaseOrders.orderNumber} ILIKE ${`%${search}%`} OR
+          ${vendors.name} ILIKE ${`%${search}%`} OR
+          ${projects.projectName} ILIKE ${`%${search}%`} OR
+          ${purchaseOrders.deliveryLocation} ILIKE ${`%${search}%`} OR
+          ${purchaseOrders.specialNotes} ILIKE ${`%${search}%`}
+        )`;
+        if (filters.length > 0) {
+          countQuery = countQuery.where(and(and(...filters), searchFilter));
+        } else {
+          countQuery = countQuery.where(searchFilter);
+        }
+      }
+
+      const totalResult = await countQuery;
+      const total = totalResult[0]?.count || 0;
+
+      res.json({
+        orders: ordersWithItems,
+        total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(total / limitNum),
+        summary: {
+          totalOrders: ordersWithItems.length,
+          totalAmount: ordersWithItems.reduce((sum, order) => sum + parseFloat(order.totalAmount), 0),
+        }
+      });
+    } else {
+      res.json({
+        orders: [],
+        total: 0,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: 0,
+        summary: {
+          totalOrders: 0,
+          totalAmount: 0,
+        }
+      });
+    }
+
+  } catch (error) {
+    console.error("Error generating processing report:", error);
+    console.error("Error details:", error.message, error.stack);
+    res.status(500).json({ 
+      error: "Failed to generate processing report",
+      details: error.message
+    });
+  }
+});
+
 // Get comprehensive summary report
 router.get("/summary", requireAuth, async (req, res) => {
   try {
