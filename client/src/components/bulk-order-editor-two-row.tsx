@@ -444,7 +444,7 @@ export function BulkOrderEditorTwoRow({ orders, onOrderUpdate, onOrderRemove, on
             {/* Categories - Editable */}
             <div className="mt-3 pt-3 border-t">
               <div className="grid grid-cols-3 gap-3">
-                <EditableCell
+                <EditableField
                   cellId={`${orderIndex}-majorCategory`}
                   label="대분류"
                   value={order.majorCategory || ''}
@@ -452,7 +452,7 @@ export function BulkOrderEditorTwoRow({ orders, onOrderUpdate, onOrderRemove, on
                   field="majorCategory"
                   className="h-7"
                 />
-                <EditableCell
+                <EditableField
                   cellId={`${orderIndex}-middleCategory`}
                   label="중분류"
                   value={order.middleCategory || ''}
@@ -460,7 +460,7 @@ export function BulkOrderEditorTwoRow({ orders, onOrderUpdate, onOrderRemove, on
                   field="middleCategory"
                   className="h-7"
                 />
-                <EditableCell
+                <EditableField
                   cellId={`${orderIndex}-minorCategory`}
                   label="소분류"
                   value={order.minorCategory || ''}

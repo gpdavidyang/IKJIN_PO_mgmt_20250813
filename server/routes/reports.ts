@@ -99,10 +99,22 @@ const parseDateFilters = (startDate?: string, endDate?: string) => {
 // Get report by category (대/중/소분류별) - with full item hierarchy support
 router.get("/by-category", async (req, res) => {
   try {
-    const { startDate, endDate, categoryType = 'major' } = req.query;
+    const { 
+      startDate, 
+      endDate, 
+      majorCategory,
+      middleCategory,
+      minorCategory 
+    } = req.query;
     const dateFilters = parseDateFilters(startDate as string, endDate as string);
     
-    console.log("Category report filters:", { startDate, endDate, categoryType });
+    console.log("Category report filters:", { 
+      startDate, 
+      endDate, 
+      majorCategory,
+      middleCategory,
+      minorCategory 
+    });
 
     // Get order items with category information from purchaseOrderItems
     let query = db
@@ -122,8 +134,22 @@ router.get("/by-category", async (req, res) => {
       .from(purchaseOrderItems)
       .innerJoin(purchaseOrders, eq(purchaseOrderItems.orderId, purchaseOrders.id));
     
-    if (dateFilters.length > 0) {
-      query = query.where(and(...dateFilters));
+    // Build filter conditions
+    const filters = [...dateFilters];
+    
+    // Add hierarchical category filters
+    if (majorCategory && majorCategory !== 'all') {
+      filters.push(eq(purchaseOrderItems.majorCategory, majorCategory as string));
+    }
+    if (middleCategory && middleCategory !== 'all') {
+      filters.push(eq(purchaseOrderItems.middleCategory, middleCategory as string));
+    }
+    if (minorCategory && minorCategory !== 'all') {
+      filters.push(eq(purchaseOrderItems.minorCategory, minorCategory as string));
+    }
+    
+    if (filters.length > 0) {
+      query = query.where(and(...filters));
     }
     
     const orderItemsWithCategories = await query;
@@ -138,19 +164,23 @@ router.get("/by-category", async (req, res) => {
       let categoryKey = '';
       let hierarchyPath = '';
       
-      switch (categoryType) {
-        case 'major':
-          categoryKey = item.majorCategory || '미분류';
-          hierarchyPath = categoryKey;
-          break;
-        case 'middle':
-          categoryKey = item.middleCategory || '미분류';
-          hierarchyPath = `${item.majorCategory || '미분류'} > ${categoryKey}`;
-          break;
-        case 'minor':
-          categoryKey = item.minorCategory || '미분류';
-          hierarchyPath = `${item.majorCategory || '미분류'} > ${item.middleCategory || '미분류'} > ${categoryKey}`;
-          break;
+      // Determine the grouping level based on the filters
+      if (minorCategory && minorCategory !== 'all') {
+        // Group by minor category (most specific)
+        categoryKey = item.minorCategory || '미분류';
+        hierarchyPath = `${item.majorCategory || '미분류'} > ${item.middleCategory || '미분류'} > ${categoryKey}`;
+      } else if (middleCategory && middleCategory !== 'all') {
+        // Group by minor categories under this middle category
+        categoryKey = item.minorCategory || '미분류';
+        hierarchyPath = `${item.majorCategory || '미분류'} > ${item.middleCategory || '미분류'} > ${categoryKey}`;
+      } else if (majorCategory && majorCategory !== 'all') {
+        // Group by middle categories under this major category
+        categoryKey = item.middleCategory || '미분류';
+        hierarchyPath = `${item.majorCategory || '미분류'} > ${categoryKey}`;
+      } else {
+        // No specific filter, group by major categories
+        categoryKey = item.majorCategory || '미분류';
+        hierarchyPath = categoryKey;
       }
 
       if (!acc[categoryKey]) {

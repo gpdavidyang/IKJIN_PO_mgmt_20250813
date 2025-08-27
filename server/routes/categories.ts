@@ -4,12 +4,78 @@
  */
 
 import { Router } from "express";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { db } from "../db";
-import { itemCategories } from "@shared/schema";
+import { itemCategories, purchaseOrderItems, items } from "@shared/schema";
 import { validateCategoryMapping, validateCategoriesBatch, CategoryValidationRequest } from "../utils/category-mapping-validator";
 
 const router = Router();
+
+/**
+ * 카테고리 계층 구조 조회 (purchaseOrderItems와 items 테이블에서)
+ * GET /api/categories/hierarchy
+ */
+router.get("/hierarchy", async (req, res) => {
+  try {
+    // Get unique category combinations from purchase order items
+    const categoriesFromOrderItems = await db
+      .select({
+        majorCategory: purchaseOrderItems.majorCategory,
+        middleCategory: purchaseOrderItems.middleCategory,
+        minorCategory: purchaseOrderItems.minorCategory,
+      })
+      .from(purchaseOrderItems)
+      .groupBy(
+        purchaseOrderItems.majorCategory,
+        purchaseOrderItems.middleCategory,
+        purchaseOrderItems.minorCategory
+      );
+
+    // Get unique category combinations from items master data
+    const categoriesFromItems = await db
+      .select({
+        majorCategory: items.majorCategory,
+        middleCategory: items.middleCategory,
+        minorCategory: items.minorCategory,
+      })
+      .from(items)
+      .groupBy(
+        items.majorCategory,
+        items.middleCategory,
+        items.minorCategory
+      );
+
+    // Combine and deduplicate
+    const allCategories = [...categoriesFromOrderItems, ...categoriesFromItems];
+    const uniqueCategories = Array.from(
+      new Map(
+        allCategories.map(cat => [
+          `${cat.majorCategory}-${cat.middleCategory}-${cat.minorCategory}`,
+          cat
+        ])
+      ).values()
+    );
+
+    // Filter out null/empty values and sort
+    const filteredCategories = uniqueCategories
+      .filter(cat => cat.majorCategory || cat.middleCategory || cat.minorCategory)
+      .sort((a, b) => {
+        // Sort by major, then middle, then minor
+        if (a.majorCategory !== b.majorCategory) {
+          return (a.majorCategory || '').localeCompare(b.majorCategory || '');
+        }
+        if (a.middleCategory !== b.middleCategory) {
+          return (a.middleCategory || '').localeCompare(b.middleCategory || '');
+        }
+        return (a.minorCategory || '').localeCompare(b.minorCategory || '');
+      });
+
+    res.json(filteredCategories);
+  } catch (error) {
+    console.error("Error fetching category hierarchy:", error);
+    res.status(500).json({ error: "Failed to fetch category hierarchy" });
+  }
+});
 
 /**
  * 모든 카테고리 조회 (계층구조)

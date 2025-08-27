@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import ReportPreview from "@/components/report-preview";
 import { formatKoreanWon } from "@/lib/formatters";
+import { CategoryHierarchyFilter } from "@/components/category-hierarchy-filter";
 import { 
   Calendar, 
   TrendingUp, 
@@ -47,10 +48,17 @@ export default function Reports() {
   // 리포트 타입 상태
   const [reportType, setReportType] = useState<'orders' | 'category' | 'project' | 'vendor'>('orders');
   const [categoryType, setCategoryType] = useState<'major' | 'middle' | 'minor'>('major');
+  
+  // 계층적 카테고리 필터 상태
+  const [categoryFilters, setCategoryFilters] = useState({
+    majorCategory: 'all',
+    middleCategory: 'all',
+    minorCategory: 'all'
+  });
 
   // 필터 상태
   const [filters, setFilters] = useState({
-    year: new Date().getFullYear().toString(),
+    year: 'all',
     startDate: '',
     endDate: '',
     vendorId: 'all',
@@ -345,12 +353,22 @@ export default function Reports() {
   });
 
   const { data: categoryReport } = useQuery({
-    queryKey: ["/api/reports/by-category", activeFilters?.startDate, activeFilters?.endDate, categoryType],
+    queryKey: ["/api/reports/by-category", activeFilters?.startDate, activeFilters?.endDate, categoryFilters],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (activeFilters?.startDate) params.append('startDate', activeFilters.startDate);
       if (activeFilters?.endDate) params.append('endDate', activeFilters.endDate);
-      params.append('categoryType', categoryType);
+      
+      // Add hierarchical category filters
+      if (categoryFilters.majorCategory !== 'all') {
+        params.append('majorCategory', categoryFilters.majorCategory);
+      }
+      if (categoryFilters.middleCategory !== 'all') {
+        params.append('middleCategory', categoryFilters.middleCategory);
+      }
+      if (categoryFilters.minorCategory !== 'all') {
+        params.append('minorCategory', categoryFilters.minorCategory);
+      }
       
       const response = await fetch(`/api/reports/by-category?${params.toString()}`);
       if (!response.ok) throw new Error('Failed to fetch category report');
@@ -566,24 +584,11 @@ export default function Reports() {
               </>
             )}
 
-            {/* Category type selector for category report */}
+            {/* Hierarchical category filter for category report */}
             {reportType === 'category' && (
-              <div className="space-y-2">
-                <label className={`text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>분류 유형</label>
-                <Select 
-                  value={categoryType} 
-                  onValueChange={(value: 'major' | 'middle' | 'minor') => setCategoryType(value)}
-                >
-                  <SelectTrigger className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
-                    <SelectItem value="major">대분류</SelectItem>
-                    <SelectItem value="middle">중분류</SelectItem>
-                    <SelectItem value="minor">소분류</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <CategoryHierarchyFilter 
+                onFilterChange={setCategoryFilters}
+              />
             )}
 
             {/* Orders-specific filters */}
