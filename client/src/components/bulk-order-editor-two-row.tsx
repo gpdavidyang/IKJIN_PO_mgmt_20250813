@@ -383,13 +383,6 @@ export function BulkOrderEditorTwoRow({ orders, onOrderUpdate, onOrderRemove, on
                 label="프로젝트명"
                 icon={<Building className="h-3 w-3" />}
               />
-              
-              <div className="flex items-center gap-2 text-xs">
-                <span className="text-gray-500">분류:</span>
-                <span>{order.majorCategory || '-'}</span>/
-                <span>{order.middleCategory || '-'}</span>/
-                <span>{order.minorCategory || '-'}</span>
-              </div>
             </div>
 
             {/* Third Row - Item Info */}
@@ -448,16 +441,33 @@ export function BulkOrderEditorTwoRow({ orders, onOrderUpdate, onOrderRemove, on
               </div>
             </div>
 
-            {/* Categories - Display only */}
-            <div className="mt-3 pt-3 border-t flex items-center gap-4 text-xs text-gray-600">
-              <div>
-                <span className="font-medium">대분류:</span> {order.majorCategory || '-'}
-              </div>
-              <div>
-                <span className="font-medium">중분류:</span> {order.middleCategory || '-'}
-              </div>
-              <div>
-                <span className="font-medium">소분류:</span> {order.minorCategory || '-'}
+            {/* Categories - Editable */}
+            <div className="mt-3 pt-3 border-t">
+              <div className="grid grid-cols-3 gap-3">
+                <EditableCell
+                  cellId={`${orderIndex}-majorCategory`}
+                  label="대분류"
+                  value={order.majorCategory || ''}
+                  orderIndex={orderIndex}
+                  field="majorCategory"
+                  className="h-7"
+                />
+                <EditableCell
+                  cellId={`${orderIndex}-middleCategory`}
+                  label="중분류"
+                  value={order.middleCategory || ''}
+                  orderIndex={orderIndex}
+                  field="middleCategory"
+                  className="h-7"
+                />
+                <EditableCell
+                  cellId={`${orderIndex}-minorCategory`}
+                  label="소분류"
+                  value={order.minorCategory || ''}
+                  orderIndex={orderIndex}
+                  field="minorCategory"
+                  className="h-7"
+                />
               </div>
             </div>
           </Card>
