@@ -3418,10 +3418,29 @@ async function login(req, res) {
   try {
     const { email, password, username } = req.body;
     const loginIdentifier = email || username;
+    console.log("=== LOGIN REQUEST START ===");
+    console.log("\u{1F510} Attempting login with identifier:", loginIdentifier);
+    console.log("\u{1F4CD} Environment:", {
+      NODE_ENV: process.env.NODE_ENV,
+      VERCEL: process.env.VERCEL,
+      SESSION_SECRET_SET: !!process.env.SESSION_SECRET,
+      DATABASE_URL_SET: !!process.env.DATABASE_URL
+    });
+    console.log("\u{1F36A} Request headers:", {
+      cookie: req.headers.cookie,
+      origin: req.headers.origin,
+      host: req.headers.host
+    });
+    console.log("\u{1F4CA} Session info BEFORE login:", {
+      sessionExists: !!req.session,
+      sessionID: req.sessionID,
+      sessionCookie: req.session?.cookie,
+      sessionData: req.session
+    });
     if (!loginIdentifier || !password) {
       return res.status(400).json({ message: "Email/username and password are required" });
     }
-    console.log("\u{1F510} Attempting login with identifier:", loginIdentifier);
+    console.log("\u{1F510} Starting authentication process...");
     let user;
     try {
       user = await storage.getUserByEmail(loginIdentifier);
@@ -3509,6 +3528,13 @@ async function login(req, res) {
         });
       });
       await sessionSavePromise;
+      console.log("\u{1F4CA} Session info AFTER save:", {
+        sessionExists: !!req.session,
+        sessionID: req.sessionID,
+        sessionUserId: req.session?.userId,
+        sessionCookie: req.session?.cookie
+      });
+      console.log("=== LOGIN REQUEST END - SUCCESS ===");
       const { password: _, ...userWithoutPassword } = user;
       res.json({
         message: "Login successful",
@@ -3557,13 +3583,19 @@ async function logout(req, res) {
 }
 async function getCurrentUser(req, res) {
   try {
+    console.log("=== GET CURRENT USER START ===");
     const authSession = req.session;
     console.log("\u{1F50D} getCurrentUser - Session ID:", req.sessionID);
-    console.log("\u{1F50D} getCurrentUser - Session userId:", authSession.userId);
+    console.log("\u{1F50D} getCurrentUser - Session userId:", authSession?.userId);
     console.log("\u{1F50D} getCurrentUser - Session exists:", !!req.session);
+    console.log("\u{1F50D} getCurrentUser - Session data:", req.session);
     console.log("\u{1F50D} getCurrentUser - Cookie header:", req.headers.cookie);
-    console.log("\u{1F50D} getCurrentUser - Environment:", process.env.NODE_ENV);
-    console.log("\u{1F50D} getCurrentUser - Vercel:", !!process.env.VERCEL);
+    console.log("\u{1F50D} getCurrentUser - Environment:", {
+      NODE_ENV: process.env.NODE_ENV,
+      VERCEL: process.env.VERCEL,
+      SESSION_SECRET_SET: !!process.env.SESSION_SECRET,
+      DATABASE_URL_SET: !!process.env.DATABASE_URL
+    });
     if (!authSession.userId) {
       console.log("\u{1F534} getCurrentUser - No userId in session");
       return res.status(401).json({

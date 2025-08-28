@@ -30,12 +30,33 @@ export async function login(req: Request, res: Response) {
     const { email, password, username } = req.body;
     const loginIdentifier = email || username;
 
+    // Comprehensive logging for Vercel debugging
+    console.log("=== LOGIN REQUEST START ===");
+    console.log("🔐 Attempting login with identifier:", loginIdentifier);
+    console.log("📍 Environment:", {
+      NODE_ENV: process.env.NODE_ENV,
+      VERCEL: process.env.VERCEL,
+      SESSION_SECRET_SET: !!process.env.SESSION_SECRET,
+      DATABASE_URL_SET: !!process.env.DATABASE_URL
+    });
+    console.log("🍪 Request headers:", {
+      cookie: req.headers.cookie,
+      origin: req.headers.origin,
+      host: req.headers.host
+    });
+    console.log("📊 Session info BEFORE login:", {
+      sessionExists: !!req.session,
+      sessionID: req.sessionID,
+      sessionCookie: req.session?.cookie,
+      sessionData: req.session
+    });
+
     if (!loginIdentifier || !password) {
       return res.status(400).json({ message: "Email/username and password are required" });
     }
 
     // 🔴 SECURITY FIX: Use real database authentication instead of mock users
-    console.log("🔐 Attempting login with identifier:", loginIdentifier);
+    console.log("🔐 Starting authentication process...");
     
     // Declare user variable at function scope to avoid reference errors
     let user: User | undefined;
@@ -146,6 +167,15 @@ export async function login(req: Request, res: Response) {
 
       await sessionSavePromise;
       
+      // Log final session state
+      console.log("📊 Session info AFTER save:", {
+        sessionExists: !!req.session,
+        sessionID: req.sessionID,
+        sessionUserId: (req.session as AuthSession)?.userId,
+        sessionCookie: req.session?.cookie
+      });
+      console.log("=== LOGIN REQUEST END - SUCCESS ===");
+      
       // Return user data (exclude password)
       const { password: _, ...userWithoutPassword } = user;
       res.json({ 
@@ -209,13 +239,19 @@ export async function logout(req: Request, res: Response) {
  */
 export async function getCurrentUser(req: Request, res: Response) {
   try {
+    console.log("=== GET CURRENT USER START ===");
     const authSession = req.session as AuthSession;
     console.log("🔍 getCurrentUser - Session ID:", req.sessionID);
-    console.log("🔍 getCurrentUser - Session userId:", authSession.userId);
+    console.log("🔍 getCurrentUser - Session userId:", authSession?.userId);
     console.log("🔍 getCurrentUser - Session exists:", !!req.session);
+    console.log("🔍 getCurrentUser - Session data:", req.session);
     console.log("🔍 getCurrentUser - Cookie header:", req.headers.cookie);
-    console.log("🔍 getCurrentUser - Environment:", process.env.NODE_ENV);
-    console.log("🔍 getCurrentUser - Vercel:", !!process.env.VERCEL);
+    console.log("🔍 getCurrentUser - Environment:", {
+      NODE_ENV: process.env.NODE_ENV,
+      VERCEL: process.env.VERCEL,
+      SESSION_SECRET_SET: !!process.env.SESSION_SECRET,
+      DATABASE_URL_SET: !!process.env.DATABASE_URL
+    });
     
     // 🔴 SECURITY FIX: Always require proper authentication
     if (!authSession.userId) {
