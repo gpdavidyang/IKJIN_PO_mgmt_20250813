@@ -17538,7 +17538,7 @@ var OrderDataSchema = z6.object({
   isValid: z6.boolean().optional(),
   errors: z6.array(z6.string()).optional()
 });
-router29.post("/bulk-create-simple", requireAuth, upload5.single("excelFile"), async (req, res) => {
+router29.post("/orders/bulk-create-simple", requireAuth, upload5.single("excelFile"), async (req, res) => {
   console.log("\u{1F4E5} /bulk-create-simple - Received file:", req.file);
   console.log("\u{1F4E5} /bulk-create-simple - File details:", {
     originalname: req.file?.originalname,
@@ -17730,7 +17730,7 @@ router29.post("/bulk-create-simple", requireAuth, upload5.single("excelFile"), a
     });
   }
 });
-router29.get("/simple-upload-history", requireAuth, async (req, res) => {
+router29.get("/orders/simple-upload-history", requireAuth, async (req, res) => {
   try {
     const history = await db.select({
       id: purchaseOrders.id,
@@ -18504,7 +18504,7 @@ router32.use("/api/categories", categories_default);
 router32.use("/api/approval-settings", approval_settings_default);
 router32.use("/api", approval_authorities_default);
 router32.use("/api", notifications_default);
-router32.use("/api/orders", orders_simple_default);
+router32.use("/api", orders_simple_default);
 router32.use("/api", positions_default);
 router32.use("/api/audit", audit_default);
 var routes_default = router32;

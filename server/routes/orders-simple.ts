@@ -71,7 +71,7 @@ const OrderDataSchema = z.object({
 });
 
 // Bulk create orders without validation
-router.post('/bulk-create-simple', requireAuth, upload.single('excelFile'), async (req, res) => {
+router.post('/orders/bulk-create-simple', requireAuth, upload.single('excelFile'), async (req, res) => {
   console.log('📥 /bulk-create-simple - Received file:', req.file);
   console.log('📥 /bulk-create-simple - File details:', {
     originalname: req.file?.originalname,
@@ -327,7 +327,7 @@ router.post('/bulk-create-simple', requireAuth, upload.single('excelFile'), asyn
 });
 
 // Get simple upload history
-router.get('/simple-upload-history', requireAuth, async (req, res) => {
+router.get('/orders/simple-upload-history', requireAuth, async (req, res) => {
 
   try {
     const history = await db

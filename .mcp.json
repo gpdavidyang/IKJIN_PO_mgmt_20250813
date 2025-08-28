@@ -20,7 +20,7 @@
 				"-y",
 				"@modelcontextprotocol/server-vscode"
 			],
-			"cwd": "/Users/david/workspace/IKJIN_PO_20250826"
+			"cwd": "/Users/davidyang/workspace/20250713_PO_Mgmt"
 		},
 		"filesystem": {
 			"type": "stdio",
@@ -28,7 +28,7 @@
 			"args": [
 				"-y",
 				"@modelcontextprotocol/server-filesystem",
-				"/Users/david/workspace/IKJIN_PO_20250826"
+				"/Users/davidyang/workspace/20250713_PO_Mgmt"
 			]
 		},
 		"sequential-thinking": {
@@ -48,6 +48,17 @@
 			],
 			"env": {
 				"GITHUB_PERSONAL_ACCESS_TOKEN": "your_github_token_here"
+			}
+		},
+		"brave-search": {
+			"type": "stdio",
+			"command": "npx",
+			"args": [
+				"-y",
+				"@modelcontextprotocol/server-brave-search"
+			],
+			"env": {
+				"BRAVE_API_KEY": "your_brave_api_key_here"
 			}
 		}
 	}

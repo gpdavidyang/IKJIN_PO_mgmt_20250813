@@ -67,7 +67,7 @@ router.use("/api/categories", categoryRoutes);
 router.use("/api/approval-settings", approvalSettingsRoutes);
 router.use("/api", approvalAuthoritiesRoutes);
 router.use("/api", notificationsRoutes);
-router.use("/api/orders", ordersSimpleRoutes);
+router.use("/api", ordersSimpleRoutes);
 router.use("/api", positionsRoutes);
 router.use("/api/audit", auditRoutes);
 
