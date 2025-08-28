@@ -1775,7 +1775,7 @@ async function configureProductionSession(app2) {
         callback();
         resolve(true);
       };
-      sessionStore.get("test-session-id", (err, session2) => {
+      sessionStore.get("test-session-id", (err, session3) => {
         clearTimeout(testTimeout);
         if (err) {
           console.log("\u26A0\uFE0F Session store test error (expected for new installation):", err.message);
@@ -18489,6 +18489,26 @@ var app = express2();
 app.use(express2.json());
 app.use(express2.urlencoded({ extended: false }));
 app.use("/attached_assets", express2.static("attached_assets"));
+console.log("\u{1F527} Setting up session middleware...");
+var session2 = __require("express-session");
+var SESSION_SECRET2 = process.env.SESSION_SECRET || "ikjin-po-mgmt-prod-secret-2025-secure-key";
+app.use(session2({
+  secret: SESSION_SECRET2,
+  resave: false,
+  saveUninitialized: true,
+  // Required for serverless to create sessions
+  name: "connect.sid",
+  cookie: {
+    secure: process.env.NODE_ENV === "production",
+    // HTTPS in production, HTTP in dev
+    httpOnly: true,
+    maxAge: 1e3 * 60 * 60 * 24 * 7,
+    // 7 days
+    sameSite: "lax",
+    path: "/"
+  }
+}));
+console.log("\u2705 Session middleware configured globally");
 app.use((req, res, next) => {
   const start = Date.now();
   const path14 = req.path;
@@ -18528,30 +18548,6 @@ async function initializeProductionApp() {
 var isInitialized = false;
 if (process.env.VERCEL) {
   console.log("\u{1F680} Vercel environment detected - initializing production app");
-  try {
-    console.log("\u{1F527} Setting up session middleware for Vercel...");
-    const session2 = __require("express-session");
-    const SESSION_SECRET2 = process.env.SESSION_SECRET || "ikjin-po-mgmt-prod-secret-2025-secure-key";
-    app.use(session2({
-      secret: SESSION_SECRET2,
-      resave: false,
-      saveUninitialized: true,
-      // Required for Vercel serverless to create sessions
-      name: "connect.sid",
-      cookie: {
-        secure: true,
-        // HTTPS only
-        httpOnly: true,
-        maxAge: 1e3 * 60 * 60 * 24 * 7,
-        // 7 days
-        sameSite: "lax",
-        path: "/"
-      }
-    }));
-    console.log("\u2705 Session middleware configured for Vercel (memory store)");
-  } catch (error) {
-    console.error("\u{1F534} Session configuration error:", error);
-  }
   app.use(sessionErrorHandler);
   app.get("/api/debug/session-store", (req, res) => {
     const sessionData = {
@@ -18560,20 +18556,21 @@ if (process.env.VERCEL) {
       sessionKeys: req.session ? Object.keys(req.session) : [],
       sessionData: req.session || null,
       isAuthenticated: req.isAuthenticated ? req.isAuthenticated() : false,
-      storeType: "Memory Store (Vercel)",
+      storeType: "Global Memory Store",
       cookieSettings: req.session?.cookie,
       cookieHeader: req.headers.cookie,
       vercelInit: true,
       timestamp: (/* @__PURE__ */ new Date()).toISOString(),
       sessionStore: {
         ready: typeof req.sessionStore !== "undefined",
-        type: req.sessionStore ? req.sessionStore.constructor.name : "MemoryStore"
+        type: req.sessionStore ? req.sessionStore.constructor.name : "unknown"
       },
       environment: {
         NODE_ENV: process.env.NODE_ENV,
         VERCEL: process.env.VERCEL,
         SESSION_SECRET_SET: !!process.env.SESSION_SECRET
-      }
+      },
+      middlewareOrder: "session -> error-handler -> debug-endpoint -> routes"
     };
     console.log("\u{1F50D} Session debug info:", sessionData);
     res.json(sessionData);
