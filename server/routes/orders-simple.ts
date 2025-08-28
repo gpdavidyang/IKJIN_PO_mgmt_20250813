@@ -13,7 +13,10 @@ const router = Router();
 // Configure multer for file upload
 const storage = multer.diskStorage({
   destination: async (req, file, cb) => {
-    const uploadDir = path.join(process.cwd(), 'uploads', 'excel-simple');
+    // Use /tmp directory for Vercel deployment
+    const uploadDir = process.env.VERCEL 
+      ? path.join('/tmp', 'uploads', 'excel-simple')
+      : path.join(process.cwd(), 'uploads', 'excel-simple');
     await fs.mkdir(uploadDir, { recursive: true });
     cb(null, uploadDir);
   },
@@ -241,11 +244,16 @@ router.post('/orders/bulk-create-simple', requireAuth, upload.single('excelFile'
           });
           
           try {
+            // Use relative path for database storage to avoid /tmp issues
+            const relativePath = process.env.VERCEL 
+              ? req.file.filename  // Just store filename for Vercel
+              : req.file.path;     // Full path for local development
+              
             const [savedAttachment] = await db.insert(attachments).values({
               orderId: newOrder.id,
               originalName: req.file.originalname,
               storedName: req.file.filename,
-              filePath: req.file.path,
+              filePath: relativePath,
               fileSize: req.file.size,
               mimeType: req.file.mimetype,
               uploadedBy: req.user.id,
@@ -255,6 +263,8 @@ router.post('/orders/bulk-create-simple', requireAuth, upload.single('excelFile'
             console.log(`✅ Excel file attachment saved with ID ${savedAttachment.id} for order ${newOrder.orderNumber}`);
           } catch (attachmentError) {
             console.error(`❌ Failed to save Excel attachment for order ${newOrder.orderNumber}:`, attachmentError);
+            // Don't fail the entire order creation just because attachment save failed
+            console.log('⚠️ Continuing without attachment...');
           }
         }
 

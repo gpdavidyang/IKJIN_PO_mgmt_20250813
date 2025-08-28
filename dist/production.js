@@ -17485,7 +17485,7 @@ import { z as z6 } from "zod";
 var router29 = Router28();
 var storage4 = multer5.diskStorage({
   destination: async (req, file, cb) => {
-    const uploadDir2 = path13.join(process.cwd(), "uploads", "excel-simple");
+    const uploadDir2 = process.env.VERCEL ? path13.join("/tmp", "uploads", "excel-simple") : path13.join(process.cwd(), "uploads", "excel-simple");
     await fs16.mkdir(uploadDir2, { recursive: true });
     cb(null, uploadDir2);
   },
@@ -17660,11 +17660,12 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload5.single("excelFi
             uploadedBy: req.user.id
           });
           try {
+            const relativePath = process.env.VERCEL ? req.file.filename : req.file.path;
             const [savedAttachment] = await db.insert(attachments).values({
               orderId: newOrder.id,
               originalName: req.file.originalname,
               storedName: req.file.filename,
-              filePath: req.file.path,
+              filePath: relativePath,
               fileSize: req.file.size,
               mimeType: req.file.mimetype,
               uploadedBy: req.user.id,
@@ -17673,6 +17674,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload5.single("excelFi
             console.log(`\u2705 Excel file attachment saved with ID ${savedAttachment.id} for order ${newOrder.orderNumber}`);
           } catch (attachmentError) {
             console.error(`\u274C Failed to save Excel attachment for order ${newOrder.orderNumber}:`, attachmentError);
+            console.log("\u26A0\uFE0F Continuing without attachment...");
           }
         }
         await db.insert(orderHistory).values({
