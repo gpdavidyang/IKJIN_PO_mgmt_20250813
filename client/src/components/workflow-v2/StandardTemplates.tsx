@@ -16,7 +16,7 @@ const StandardTemplates: React.FC<StandardTemplatesProps> = ({ onTemplateSelect 
   const { data: templates } = useQuery({
     queryKey: ['templates'],
     queryFn: async () => {
-      const response = await fetch('/api/templates?type=purchase_order', {
+      const response = await fetch('/api/admin/templates?type=purchase_order', {
         credentials: 'include' // 인증 쿠키 포함
       });
       return response.json();
@@ -27,7 +27,7 @@ const StandardTemplates: React.FC<StandardTemplatesProps> = ({ onTemplateSelect 
   const { data: frequentTemplates } = useQuery({
     queryKey: ['frequent-templates'],
     queryFn: async () => {
-      const response = await fetch('/api/templates/frequent', {
+      const response = await fetch('/api/admin/templates/frequent', {
         credentials: 'include' // 인증 쿠키 포함
       });
       return response.json();
@@ -47,7 +47,7 @@ const StandardTemplates: React.FC<StandardTemplatesProps> = ({ onTemplateSelect 
     
     // 템플릿 상세 데이터 로드
     try {
-      const response = await fetch(`/api/templates/${templateId}`, {
+      const response = await fetch(`/api/admin/templates/${templateId}`, {
         credentials: 'include' // 인증 쿠키 포함
       });
       const templateData = await response.json();

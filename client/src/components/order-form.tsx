@@ -66,7 +66,7 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
         setIsLoadingTemplates(true);
         console.log('Loading templates...');
         
-        const response = await fetch('/api/templates', {
+        const response = await fetch('/api/admin/templates', {
           method: 'GET',
           headers: {
             'Accept': 'application/json',
@@ -97,7 +97,7 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
   
   // Fetch selected template details
   const { data: templateDetails } = useQuery({
-    queryKey: ['/api/templates', selectedTemplateId],
+    queryKey: ['/api/admin/templates', selectedTemplateId],
     enabled: !!selectedTemplateId,
     retry: 1
   });

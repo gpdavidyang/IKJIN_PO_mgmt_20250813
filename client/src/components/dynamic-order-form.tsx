@@ -22,7 +22,7 @@ export function DynamicOrderForm({ orderId, onSuccess, onCancel }: DynamicOrderF
     const loadTemplates = async () => {
       try {
         setIsLoadingTemplates(true);
-        const response = await fetch('/api/templates', {
+        const response = await fetch('/api/admin/templates', {
           method: 'GET',
           headers: {
             'Accept': 'application/json',

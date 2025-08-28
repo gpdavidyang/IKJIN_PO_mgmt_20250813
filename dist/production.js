@@ -5272,9 +5272,17 @@ var ExcelToPDFConverter = class {
       const pdfPath = outputPath || excelPath.replace(/\.(xlsx?|xlsm)$/i, ".pdf");
       console.log(`\u{1F4C4} PDF \uCD9C\uB825 \uACBD\uB85C: ${pdfPath}`);
       const outputDir = path2.dirname(pdfPath);
-      if (!fs2.existsSync(outputDir)) {
-        fs2.mkdirSync(outputDir, { recursive: true });
-        console.log(`\u{1F4C1} \uCD9C\uB825 \uB514\uB809\uD1A0\uB9AC \uC0DD\uC131: ${outputDir}`);
+      try {
+        if (!fs2.existsSync(outputDir)) {
+          fs2.mkdirSync(outputDir, { recursive: true });
+          console.log(`\u{1F4C1} \uCD9C\uB825 \uB514\uB809\uD1A0\uB9AC \uC0DD\uC131: ${outputDir}`);
+        }
+      } catch (error) {
+        console.error(`\u26A0\uFE0F \uCD9C\uB825 \uB514\uB809\uD1A0\uB9AC \uC0DD\uC131 \uC2E4\uD328: ${error}`);
+        if (process.env.VERCEL && !outputDir.startsWith("/tmp")) {
+          throw new Error("\u{1F680} Vercel \uD658\uACBD\uC5D0\uC11C\uB294 /tmp \uB514\uB809\uD1A0\uB9AC\uB97C \uC0AC\uC6A9\uD574\uC57C \uD569\uB2C8\uB2E4");
+        }
+        throw error;
       }
       console.log(`\u{1F4D6} Excel \uD30C\uC77C \uC77D\uB294 \uC911...`);
       const workbook = new ExcelJS.Workbook();
@@ -5307,7 +5315,7 @@ var ExcelToPDFConverter = class {
         // 30초 타임아웃
       });
       console.log(`\u{1F4C4} HTML \uCEE8\uD150\uCE20 \uC124\uC815 \uC644\uB8CC`);
-      console.log(`\u{1F4C4} PDF \uC0DD\uC131 \uC911...`);
+      console.log(`\u{1F4C4} PDF \uC0DD\uC131 \uC911... (\uACBD\uB85C: ${pdfPath})`);
       await page.pdf({
         path: pdfPath,
         format: "A4",
@@ -5320,7 +5328,7 @@ var ExcelToPDFConverter = class {
           right: "15mm"
         }
       });
-      console.log(`\u{1F4C4} PDF \uD30C\uC77C \uC0DD\uC131 \uC644\uB8CC`);
+      console.log(`\u{1F4C4} PDF \uD30C\uC77C \uC0DD\uC131 \uC644\uB8CC: ${pdfPath}`);
       await browser.close();
       browser = null;
       if (!fs2.existsSync(pdfPath)) {
@@ -7370,10 +7378,18 @@ async function generatePDFLogic(req, res) {
     console.log(`\u{1F4C4} PDF \uC0DD\uC131 \uC694\uCCAD: \uBC1C\uC8FC\uC11C ${orderData.orderNumber || "N/A"}`);
     console.log("\u{1F4C4} PDF \uC0DD\uC131 \uB370\uC774\uD130:", JSON.stringify(orderData, null, 2));
     const timestamp2 = Date.now();
-    const tempDir = path5.join(process.cwd(), "uploads/temp-pdf");
-    if (!fs7.existsSync(tempDir)) {
-      fs7.mkdirSync(tempDir, { recursive: true });
-      console.log(`\u{1F4C1} \uC784\uC2DC \uB514\uB809\uD1A0\uB9AC \uC0DD\uC131: ${tempDir}`);
+    const tempDir = process.env.VERCEL ? path5.join("/tmp", "temp-pdf") : path5.join(process.cwd(), "uploads/temp-pdf");
+    try {
+      if (!fs7.existsSync(tempDir)) {
+        fs7.mkdirSync(tempDir, { recursive: true });
+        console.log(`\u{1F4C1} \uC784\uC2DC \uB514\uB809\uD1A0\uB9AC \uC0DD\uC131: ${tempDir}`);
+      }
+    } catch (error) {
+      console.error(`\u26A0\uFE0F \uC784\uC2DC \uB514\uB809\uD1A0\uB9AC \uC0DD\uC131 \uC2E4\uD328: ${error}`);
+      if (process.env.VERCEL) {
+        throw new Error("\u{1F680} Vercel \uD658\uACBD\uC5D0\uC11C /tmp \uB514\uB809\uD1A0\uB9AC \uC811\uADFC \uBD88\uAC00");
+      }
+      throw error;
     }
     const tempHtmlPath = path5.join(tempDir, `order-${timestamp2}.html`);
     const tempPdfPath = path5.join(tempDir, `order-${timestamp2}.pdf`);
@@ -7983,7 +7999,7 @@ router3.get("/orders/download-pdf/:timestamp", (req, res) => {
   try {
     const { timestamp: timestamp2 } = req.params;
     const { download } = req.query;
-    const pdfPath = path5.join(process.cwd(), "uploads/temp-pdf", `order-${timestamp2}.pdf`);
+    const pdfPath = process.env.VERCEL ? path5.join("/tmp", "temp-pdf", `order-${timestamp2}.pdf`) : path5.join(process.cwd(), "uploads/temp-pdf", `order-${timestamp2}.pdf`);
     console.log(`\u{1F4C4} PDF \uB2E4\uC6B4\uB85C\uB4DC \uC694\uCCAD: ${pdfPath}`);
     console.log(`\u{1F4C4} \uD30C\uC77C \uC874\uC7AC \uC5EC\uBD80: ${fs7.existsSync(pdfPath)}`);
     console.log(`\u{1F4C4} \uB2E4\uC6B4\uB85C\uB4DC \uBAA8\uB4DC: ${download}`);
@@ -9044,6 +9060,15 @@ init_db();
 init_schema();
 import { eq as eq5, and as and5 } from "drizzle-orm";
 var router8 = Router8();
+router8.get("/users", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const users4 = await storage.getUsers();
+    res.json(users4);
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    res.status(500).json({ message: "Failed to fetch users" });
+  }
+});
 router8.get("/positions", async (req, res) => {
   try {
     const positions = await storage.getPositions();
@@ -13997,31 +14022,28 @@ router13.get("/orders-email-status", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Unauthorized" });
     }
-    const emailStatusQuery = await db.execute(sql8`
-      WITH latest_emails AS (
-        SELECT DISTINCT ON (order_id) 
-          order_id,
-          status,
-          sent_at,
-          recipient_email,
-          opened_at
-        FROM email_send_history
-        ORDER BY order_id, sent_at DESC
-      )
-      SELECT 
-        po.id,
-        po.order_number,
-        le.status as email_status,
-        le.sent_at as last_sent_at,
-        le.recipient_email,
-        le.opened_at,
-        COUNT(eh.id) as total_emails_sent
-      FROM purchase_orders po
-      LEFT JOIN latest_emails le ON po.id = le.order_id
-      LEFT JOIN email_send_history eh ON po.id = eh.order_id
-      GROUP BY po.id, po.order_number, le.status, le.sent_at, le.recipient_email, le.opened_at
-    `);
-    res.json(emailStatusQuery.rows);
+    try {
+      const orders = await db.select({
+        id: purchaseOrders.id,
+        orderNumber: purchaseOrders.orderNumber,
+        emailStatus: emailSendHistory.status,
+        lastSentAt: emailSendHistory.sentAt,
+        recipientEmail: emailSendHistory.recipientEmail,
+        openedAt: emailSendHistory.openedAt
+      }).from(purchaseOrders).leftJoin(emailSendHistory, eq11(purchaseOrders.id, emailSendHistory.orderId)).orderBy(desc4(purchaseOrders.id));
+      res.json(orders);
+    } catch (dbError) {
+      console.error("Database query error:", dbError);
+      const orders = await db.select({
+        id: purchaseOrders.id,
+        orderNumber: purchaseOrders.orderNumber,
+        emailStatus: sql8`null`.as("email_status"),
+        lastSentAt: sql8`null`.as("last_sent_at"),
+        recipientEmail: sql8`null`.as("recipient_email"),
+        openedAt: sql8`null`.as("opened_at")
+      }).from(purchaseOrders).orderBy(desc4(purchaseOrders.id));
+      res.json(orders);
+    }
   } catch (error) {
     console.error("Error fetching orders email status:", error);
     res.status(500).json({ error: "Internal server error" });
@@ -17867,7 +17889,11 @@ var AuditService = class {
     }).from(systemAuditLogs).where(gte6(systemAuditLogs.createdAt, startDate));
     const errors = await db.select().from(systemAuditLogs).where(
       and16(
-        eq20(systemAuditLogs.eventType, "error"),
+        or5(
+          eq20(systemAuditLogs.eventType, "system_error"),
+          eq20(systemAuditLogs.eventType, "security_alert"),
+          eq20(systemAuditLogs.eventType, "login_failed")
+        ),
         gte6(systemAuditLogs.createdAt, startDate)
       )
     ).orderBy(desc10(systemAuditLogs.createdAt)).limit(10);

@@ -184,13 +184,17 @@ export class AuditService {
       .from(systemAuditLogs)
       .where(gte(systemAuditLogs.createdAt, startDate));
 
-    // 에러 이벤트
+    // 에러 이벤트 (system_error 또는 security_alert)
     const errors = await db
       .select()
       .from(systemAuditLogs)
       .where(
         and(
-          eq(systemAuditLogs.eventType, 'error' as any),
+          or(
+            eq(systemAuditLogs.eventType, 'system_error' as any),
+            eq(systemAuditLogs.eventType, 'security_alert' as any),
+            eq(systemAuditLogs.eventType, 'login_failed' as any)
+          ),
           gte(systemAuditLogs.createdAt, startDate)
         )
       )

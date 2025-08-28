@@ -76,7 +76,7 @@ export function ExcelLikeOrderForm({ orderId, onSuccess, onCancel, preselectedTe
   });
 
   const { data: templates } = useQuery({
-    queryKey: ["/api/templates"],
+    queryKey: ["/api/admin/templates"],
   });
 
   const { data: orderData, isLoading: orderLoading } = useQuery({

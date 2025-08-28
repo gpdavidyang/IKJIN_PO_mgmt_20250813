@@ -633,12 +633,22 @@ async function generatePDFLogic(req: any, res: any) {
 
     // Create temporary directory for PDF generation
     const timestamp = Date.now();
-    const tempDir = path.join(process.cwd(), 'uploads/temp-pdf');
+    // Use /tmp directory for serverless environments like Vercel
+    const tempDir = process.env.VERCEL ? path.join('/tmp', 'temp-pdf') : path.join(process.cwd(), 'uploads/temp-pdf');
     
     // Ensure temp directory exists
-    if (!fs.existsSync(tempDir)) {
-      fs.mkdirSync(tempDir, { recursive: true });
-      console.log(`📁 임시 디렉토리 생성: ${tempDir}`);
+    try {
+      if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir, { recursive: true });
+        console.log(`📁 임시 디렉토리 생성: ${tempDir}`);
+      }
+    } catch (error) {
+      console.error(`⚠️ 임시 디렉토리 생성 실패: ${error}`);
+      // For serverless, /tmp should always be writable
+      if (process.env.VERCEL) {
+        throw new Error('🚀 Vercel 환경에서 /tmp 디렉토리 접근 불가');
+      }
+      throw error;
     }
 
     const tempHtmlPath = path.join(tempDir, `order-${timestamp}.html`);
@@ -1314,7 +1324,10 @@ router.get("/orders/download-pdf/:timestamp", (req, res) => {
   try {
     const { timestamp } = req.params;
     const { download } = req.query; // ?download=true 면 다운로드, 없으면 미리보기
-    const pdfPath = path.join(process.cwd(), 'uploads/temp-pdf', `order-${timestamp}.pdf`);
+    // Use same temp directory logic for PDF path
+    const pdfPath = process.env.VERCEL 
+      ? path.join('/tmp', 'temp-pdf', `order-${timestamp}.pdf`)
+      : path.join(process.cwd(), 'uploads/temp-pdf', `order-${timestamp}.pdf`);
     
     console.log(`📄 PDF 다운로드 요청: ${pdfPath}`);
     console.log(`📄 파일 존재 여부: ${fs.existsSync(pdfPath)}`);

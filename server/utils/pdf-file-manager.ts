@@ -38,9 +38,10 @@ export interface PDFCleanupOptions {
 
 export class PDFFileManager {
   private static readonly PDF_DIRECTORIES = {
-    temp: path.join(process.cwd(), 'uploads/temp-pdf'),
-    archive: path.join(process.cwd(), 'uploads/pdf-archive'),
-    orders: path.join(process.cwd(), 'uploads/order-pdfs')
+    // Use /tmp directory for serverless environments like Vercel
+    temp: process.env.VERCEL ? path.join('/tmp', 'temp-pdf') : path.join(process.cwd(), 'uploads/temp-pdf'),
+    archive: process.env.VERCEL ? path.join('/tmp', 'pdf-archive') : path.join(process.cwd(), 'uploads/pdf-archive'),
+    orders: process.env.VERCEL ? path.join('/tmp', 'order-pdfs') : path.join(process.cwd(), 'uploads/order-pdfs')
   };
 
   /**
@@ -50,11 +51,20 @@ export class PDFFileManager {
     console.log('📁 PDF 저장소 초기화 중...');
     
     for (const [type, dirPath] of Object.entries(this.PDF_DIRECTORIES)) {
-      if (!fs.existsSync(dirPath)) {
-        fs.mkdirSync(dirPath, { recursive: true });
-        console.log(`✅ PDF 디렉토리 생성: ${type} -> ${dirPath}`);
-      } else {
-        console.log(`📁 PDF 디렉토리 확인: ${type} -> ${dirPath}`);
+      try {
+        if (!fs.existsSync(dirPath)) {
+          fs.mkdirSync(dirPath, { recursive: true });
+          console.log(`✅ PDF 디렉토리 생성: ${type} -> ${dirPath}`);
+        } else {
+          console.log(`📁 PDF 디렉토리 확인: ${type} -> ${dirPath}`);
+        }
+      } catch (error) {
+        console.error(`⚠️ PDF 디렉토리 생성/확인 실패 (${type}): ${error}`);
+        // In serverless environments, we might not be able to create all directories
+        // but /tmp should be writable
+        if (process.env.VERCEL && !dirPath.startsWith('/tmp')) {
+          console.log(`🔄 Serverless 환경에서 ${type} 디렉토리 접근 불가, /tmp 사용`);
+        }
       }
     }
   }

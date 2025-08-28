@@ -11,6 +11,17 @@ import { eq, and } from "drizzle-orm";
 
 const router = Router();
 
+// Users management (admin only)
+router.get("/users", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const users = await storage.getUsers();
+    res.json(users);
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    res.status(500).json({ message: "Failed to fetch users" });
+  }
+});
+
 // Positions management
 router.get("/positions", async (req, res) => {
   try {

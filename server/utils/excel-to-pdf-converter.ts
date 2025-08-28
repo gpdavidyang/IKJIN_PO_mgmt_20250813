@@ -36,9 +36,18 @@ export class ExcelToPDFConverter {
       
       // 출력 디렉토리 확인 및 생성
       const outputDir = path.dirname(pdfPath);
-      if (!fs.existsSync(outputDir)) {
-        fs.mkdirSync(outputDir, { recursive: true });
-        console.log(`📁 출력 디렉토리 생성: ${outputDir}`);
+      try {
+        if (!fs.existsSync(outputDir)) {
+          fs.mkdirSync(outputDir, { recursive: true });
+          console.log(`📁 출력 디렉토리 생성: ${outputDir}`);
+        }
+      } catch (error) {
+        console.error(`⚠️ 출력 디렉토리 생성 실패: ${error}`);
+        // In serverless environments, suggest using /tmp
+        if (process.env.VERCEL && !outputDir.startsWith('/tmp')) {
+          throw new Error('🚀 Vercel 환경에서는 /tmp 디렉토리를 사용해야 합니다');
+        }
+        throw error;
       }
       
       // Excel 파일 읽기
@@ -81,7 +90,7 @@ export class ExcelToPDFConverter {
       console.log(`📄 HTML 컨텐츠 설정 완료`);
       
       // PDF 생성
-      console.log(`📄 PDF 생성 중...`);
+      console.log(`📄 PDF 생성 중... (경로: ${pdfPath})`);
       await page.pdf({
         path: pdfPath,
         format: 'A4',
@@ -94,7 +103,7 @@ export class ExcelToPDFConverter {
           right: '15mm'
         }
       });
-      console.log(`📄 PDF 파일 생성 완료`);
+      console.log(`📄 PDF 파일 생성 완료: ${pdfPath}`);
       
       await browser.close();
       browser = null;
