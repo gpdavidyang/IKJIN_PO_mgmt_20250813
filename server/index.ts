@@ -1,8 +1,13 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-// 환경변수 강제 오버라이드 - Direct Connection 사용
-process.env.DATABASE_URL = process.env.DATABASE_URL || "postgresql://postgres.tbvugytmskxxyqfvqmup:gps110601ysw@db.tbvugytmskxxyqfvqmup.supabase.co:5432/postgres?sslmode=require&connect_timeout=60";
+// Use environment variable if available, otherwise use pooler URL for production
+// Note: Direct connection URL (db.supabase.co) shouldn't be used in serverless
+const isDirect = process.env.DATABASE_URL?.includes('db.tbvugytmskxxyqfvqmup.supabase.co');
+if (!process.env.DATABASE_URL || isDirect) {
+  // Use pooler URL for serverless/production environments
+  process.env.DATABASE_URL = "postgresql://postgres.tbvugytmskxxyqfvqmup:gps110601ysw@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres";
+}
 console.log("🔧 Force-set DATABASE_URL:", process.env.DATABASE_URL.split('@')[0] + '@[HIDDEN]');
 
 import express, { type Request, Response, NextFunction } from "express";
@@ -103,10 +108,10 @@ async function initializeApp() {
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: process.env.NODE_ENV === 'production', // Enable secure cookies in production
+      secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
       httpOnly: true,
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Use 'none' for cross-origin in production
+      sameSite: 'lax', // Use 'lax' for same-site deployment
       domain: undefined // Let browser handle domain automatically
     }
   }));
@@ -160,10 +165,10 @@ if (process.env.VERCEL) {
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: process.env.NODE_ENV === 'production', // Enable secure cookies in production
+      secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
       httpOnly: true,
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Use 'none' for cross-origin in production
+      sameSite: 'lax', // Use 'lax' for same-site deployment
       domain: undefined // Let browser handle domain automatically
     }
   }));

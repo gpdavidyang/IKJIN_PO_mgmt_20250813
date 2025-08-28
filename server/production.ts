@@ -5,8 +5,8 @@ dotenv.config();
 const originalDatabaseUrl = process.env.DATABASE_URL;
 console.log("🔍 Original DATABASE_URL:", originalDatabaseUrl ? originalDatabaseUrl.split('@')[0] + '@[HIDDEN]' : 'not set');
 
-// Force use correct Supabase pooler URL for serverless
-const correctPoolerUrl = "postgresql://postgres.tbvugytmskxxyqfvqmup:gps110601ysw@aws-0-ap-northeast-2.pooler.supabase.com:5432/postgres";
+// Use environment variable if available, otherwise use correct pooler URL
+const correctPoolerUrl = process.env.DATABASE_URL || "postgresql://postgres.tbvugytmskxxyqfvqmup:gps110601ysw@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres";
 
 if (originalDatabaseUrl && (
   originalDatabaseUrl.includes('db.tbvugytmskxxyqfvqmup.supabase.co') || 
@@ -113,16 +113,16 @@ async function initializeProductionApp() {
       saveUninitialized: false,
       name: 'connect.sid', // Explicit session cookie name
       cookie: {
-        secure: true, // MUST be true for sameSite: 'none'
+        secure: true, // Required for HTTPS in production
         httpOnly: true,
         maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-        sameSite: 'none', // CRITICAL: Required for cross-origin with credentials
-        // No domain restriction
+        sameSite: 'lax', // Same-site deployment on Vercel
+        // No domain restriction - let browser handle it
       }
     }));
     console.log("✅ PostgreSQL session store initialized with settings:", {
       tableName: 'app_sessions',
-      secure: process.env.NODE_ENV === 'production',
+      secure: true,
       sameSite: 'lax',
       maxAge: '7 days'
     });
@@ -135,10 +135,10 @@ async function initializeProductionApp() {
       saveUninitialized: false,
       name: 'connect.sid',
       cookie: {
-        secure: true, // MUST be true for production HTTPS
+        secure: true, // Required for HTTPS in production
         httpOnly: true,
         maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-        sameSite: 'none', // Required for cross-origin requests
+        sameSite: 'lax', // Same-site deployment on Vercel
       }
     }));
   }
@@ -193,16 +193,16 @@ if (process.env.VERCEL) {
       saveUninitialized: false,
       name: 'connect.sid', // Explicit session cookie name
       cookie: {
-        secure: true, // MUST be true for sameSite: 'none'
+        secure: true, // Required for HTTPS in production
         httpOnly: true,
         maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-        sameSite: 'none', // CRITICAL: Required for cross-origin with credentials
-        // No domain restriction
+        sameSite: 'lax', // Same-site deployment on Vercel
+        // No domain restriction - let browser handle it
       }
     }));
     console.log("✅ PostgreSQL session store initialized with settings:", {
       tableName: 'app_sessions',
-      secure: process.env.NODE_ENV === 'production',
+      secure: true,
       sameSite: 'lax',
       maxAge: '7 days'
     });
@@ -215,10 +215,10 @@ if (process.env.VERCEL) {
       saveUninitialized: false,
       name: 'connect.sid',
       cookie: {
-        secure: true, // MUST be true for production HTTPS
+        secure: true, // Required for HTTPS in production
         httpOnly: true,
         maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-        sameSite: 'none', // Required for cross-origin requests
+        sameSite: 'lax', // Same-site deployment on Vercel
       }
     }));
   }
