@@ -1016,24 +1016,24 @@ var init_schema = __esm({
     ]);
     auditSettings = pgTable("audit_settings", {
       id: serial("id").primaryKey(),
-      logLevel: auditLogLevelEnum("log_level").notNull().default("INFO"),
-      enabledCategories: jsonb("enabled_categories").notNull().default(["auth", "data", "security"]).$type(),
-      retentionDays: integer("retention_days").notNull().default(90),
+      userId: varchar("user_id").references(() => users.id),
+      // User-specific settings
+      logLevel: auditLogLevelEnum("log_level").default("INFO"),
+      enableAuth: boolean("enable_auth").default(true),
+      enableData: boolean("enable_data").default(true),
+      enableSystem: boolean("enable_system").default(true),
+      enableSecurity: boolean("enable_security").default(true),
+      retentionDays: integer("retention_days").default(90),
       // Days to keep logs
       archiveEnabled: boolean("archive_enabled").default(true),
-      archiveAfterDays: integer("archive_after_days").default(30),
-      realTimeAlerts: boolean("real_time_alerts").default(false),
-      alertEmails: jsonb("alert_emails").default([]).$type(),
-      excludedPaths: jsonb("excluded_paths").default([]).$type(),
-      // API paths to exclude
-      excludedUsers: jsonb("excluded_users").default([]).$type(),
-      // User IDs to exclude
-      sensitiveDataMasking: boolean("sensitive_data_masking").default(true),
-      performanceTracking: boolean("performance_tracking").default(false),
-      apiAccessLogging: boolean("api_access_logging").default(false),
-      updatedBy: varchar("updated_by").references(() => users.id),
-      updatedAt: timestamp("updated_at").defaultNow().$onUpdate(() => /* @__PURE__ */ new Date()),
-      createdAt: timestamp("created_at").defaultNow()
+      maxLogSize: integer("max_log_size"),
+      // Max size in MB
+      autoCleanup: boolean("auto_cleanup").default(true),
+      alertsEnabled: boolean("alerts_enabled").default(false),
+      emailNotifications: boolean("email_notifications").default(false),
+      realTimeMonitoring: boolean("real_time_monitoring").default(false),
+      createdAt: timestamp("created_at").defaultNow(),
+      updatedAt: timestamp("updated_at").defaultNow()
     });
     archivedAuditLogs = pgTable("archived_audit_logs", {
       id: serial("id").primaryKey(),
@@ -1087,8 +1087,8 @@ var init_schema = __esm({
       })
     }));
     auditSettingsRelations = relations(auditSettings, ({ one }) => ({
-      updatedByUser: one(users, {
-        fields: [auditSettings.updatedBy],
+      user: one(users, {
+        fields: [auditSettings.userId],
         references: [users.id]
       })
     }));
@@ -1731,6 +1731,7 @@ var init_po_template_processor_mock = __esm({
 import dotenv2 from "dotenv";
 import express2 from "express";
 import session2 from "express-session";
+import cookieParser from "cookie-parser";
 import crypto from "crypto";
 
 // server/session-config.ts
@@ -3466,12 +3467,7 @@ async function getAuditSettings() {
       enableAuth: true,
       enableData: true,
       enableSystem: true,
-      enableSecurity: true,
-      excludedPaths: [],
-      excludedUsers: [],
-      sensitiveDataMasking: true,
-      performanceTracking: false,
-      apiAccessLogging: false
+      enableSecurity: true
     };
     settingsCacheTime = now;
     return cachedSettings;
@@ -3482,12 +3478,7 @@ async function getAuditSettings() {
       enableAuth: true,
       enableData: true,
       enableSystem: true,
-      enableSecurity: true,
-      excludedPaths: [],
-      excludedUsers: [],
-      sensitiveDataMasking: true,
-      performanceTracking: false,
-      apiAccessLogging: false
+      enableSecurity: true
     };
   }
 }
@@ -18523,6 +18514,7 @@ var sessionErrorHandler = (err, req, res, next) => {
 var app = express2();
 app.use(express2.json());
 app.use(express2.urlencoded({ extended: false }));
+app.use(cookieParser());
 app.use("/attached_assets", express2.static("attached_assets"));
 console.log("\u{1F527} Setting up session middleware...");
 var SESSION_SECRET2 = process.env.SESSION_SECRET || "ikjin-po-mgmt-prod-secret-2025-secure-key";

@@ -50,11 +50,6 @@ async function getAuditSettings() {
       enableData: true,
       enableSystem: true,
       enableSecurity: true,
-      excludedPaths: [],
-      excludedUsers: [],
-      sensitiveDataMasking: true,
-      performanceTracking: false,
-      apiAccessLogging: false,
     };
     settingsCacheTime = now;
     return cachedSettings;
@@ -66,11 +61,6 @@ async function getAuditSettings() {
       enableData: true,
       enableSystem: true,
       enableSecurity: true,
-      excludedPaths: [],
-      excludedUsers: [],
-      sensitiveDataMasking: true,
-      performanceTracking: false,
-      apiAccessLogging: false,
     };
   }
 }
@@ -207,16 +197,6 @@ export function auditLogger(req: AuditRequest, res: Response, next: NextFunction
         // 로그 레벨 확인
         if (settings.logLevel === 'OFF') return;
         
-        // 제외 경로 확인
-        if (settings.excludedPaths?.some((path: string) => req.path.includes(path))) {
-          return;
-        }
-        
-        // 제외 사용자 확인
-        if (req.user && settings.excludedUsers?.includes(req.user.id)) {
-          return;
-        }
-        
         const eventCategory = determineEventCategory(req.path, req.method);
         
         // 카테고리 활성화 확인
@@ -274,7 +254,7 @@ export function auditLogger(req: AuditRequest, res: Response, next: NextFunction
           
           // Body는 크기 제한
           if (req.body && JSON.stringify(req.body).length < 10000) {
-            details.body = settings.sensitiveDataMasking ? maskSensitiveData(req.body) : req.body;
+            details.body = maskSensitiveData(req.body);
           }
           
           logData.additionalDetails = JSON.stringify(details);
@@ -288,18 +268,10 @@ export function auditLogger(req: AuditRequest, res: Response, next: NextFunction
         
         // 변경 전후 값 (UPDATE 작업의 경우)
         if (req.auditLog?.oldValue) {
-          logData.oldData = JSON.stringify(
-            settings.sensitiveDataMasking 
-              ? maskSensitiveData(req.auditLog.oldValue) 
-              : req.auditLog.oldValue
-          );
+          logData.oldData = JSON.stringify(maskSensitiveData(req.auditLog.oldValue));
         }
         if (req.auditLog?.newValue) {
-          logData.newData = JSON.stringify(
-            settings.sensitiveDataMasking 
-              ? maskSensitiveData(req.auditLog.newValue) 
-              : req.auditLog.newValue
-          );
+          logData.newData = JSON.stringify(maskSensitiveData(req.auditLog.newValue));
         }
         
         // 데이터베이스에 로그 저장

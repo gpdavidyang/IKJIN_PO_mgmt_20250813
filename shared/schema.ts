@@ -1128,8 +1128,8 @@ export const systemAuditLogsRelations = relations(systemAuditLogs, ({ one }) => 
 }));
 
 export const auditSettingsRelations = relations(auditSettings, ({ one }) => ({
-  updatedByUser: one(users, {
-    fields: [auditSettings.updatedBy],
+  user: one(users, {
+    fields: [auditSettings.userId],
     references: [users.id],
   }),
 }));

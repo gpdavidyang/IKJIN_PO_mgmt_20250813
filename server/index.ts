@@ -16,6 +16,7 @@ import { migratePasswords } from "./migrate-passwords";
 import { createServer } from "http";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
+import cookieParser from "cookie-parser";
 import router from "./routes/index";
 import { requireAuth } from "./local-auth";
 import { auditLogger } from "./middleware/audit-logger";
@@ -58,6 +59,7 @@ app.use((req, res, next) => {
 // Basic middleware setup
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser()); // Add cookie parser middleware
 
 // Serve attached assets statically
 app.use('/attached_assets', express.static('attached_assets'));

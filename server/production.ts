@@ -26,6 +26,7 @@ console.log("✨ Production server starting without static file serving");
 
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
+import cookieParser from "cookie-parser";
 import crypto from "crypto";
 import { configureProductionSession } from "./session-config";
 import router from "./routes/index";
@@ -51,6 +52,7 @@ const app = express();
 // Basic middleware setup
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser()); // Add cookie parser middleware
 
 // Serve attached assets statically
 app.use('/attached_assets', express.static('attached_assets'));
