@@ -211,7 +211,7 @@ export default function Projects() {
       const projectData = { ...transformedData };
       delete projectData.orderManagerIds;
       
-      await updateMutation.mutateAsync({ id: editingProject.id, ...projectData });
+      await updateMutation.mutateAsync(projectData);
       
       // Update project members
       if (data.orderManagerIds) {
