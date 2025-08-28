@@ -647,8 +647,88 @@ async function generatePDFLogic(req: any, res: any) {
     console.log(`📄 임시 파일 경로 - HTML: ${tempHtmlPath}, PDF: ${tempPdfPath}`);
 
     try {
+      // Get company information (발주업체 정보)
+      let companyInfo = null;
+      try {
+        const companies = await storage.getCompanies();
+        if (companies && companies.length > 0) {
+          // Get the first active company or the first company
+          companyInfo = companies.find((c: any) => c.isActive) || companies[0];
+          console.log('📄 회사 정보 조회:', companyInfo);
+        }
+      } catch (error) {
+        console.error('⚠️ 회사 정보 조회 실패:', error);
+      }
+
+      // Extract delivery place from notes if not directly provided
+      let extractedDeliveryPlace = orderData.deliveryPlace || '';
+      let extractedMajorCategory = orderData.majorCategory || '';
+      let extractedMiddleCategory = orderData.middleCategory || '';
+      let extractedMinorCategory = orderData.minorCategory || '';
+      let cleanedNotes = orderData.notes || '';
+      
+      // Parse notes field to extract structured data
+      if (orderData.notes) {
+        const lines = orderData.notes.split('\n');
+        const extractedData: string[] = [];
+        const structuredData: string[] = [];
+        
+        lines.forEach((line: string) => {
+          const trimmedLine = line.trim();
+          if (!trimmedLine) return; // Skip empty lines
+          
+          if (trimmedLine.startsWith('납품처: ')) {
+            if (!extractedDeliveryPlace) {
+              extractedDeliveryPlace = trimmedLine.replace('납품처: ', '').trim();
+            }
+          } else if (trimmedLine.startsWith('대분류: ')) {
+            if (!extractedMajorCategory) {
+              extractedMajorCategory = trimmedLine.replace('대분류: ', '').trim();
+            }
+            structuredData.push(`대분류: ${trimmedLine.replace('대분류: ', '').trim()}`);
+          } else if (trimmedLine.startsWith('중분류: ')) {
+            if (!extractedMiddleCategory) {
+              extractedMiddleCategory = trimmedLine.replace('중분류: ', '').trim();
+            }
+            structuredData.push(`중분류: ${trimmedLine.replace('중분류: ', '').trim()}`);
+          } else if (trimmedLine.startsWith('소분류: ')) {
+            if (!extractedMinorCategory) {
+              extractedMinorCategory = trimmedLine.replace('소분류: ', '').trim();
+            }
+            structuredData.push(`소분류: ${trimmedLine.replace('소분류: ', '').trim()}`);
+          } else if (!trimmedLine.startsWith('납품처 이메일: ')) {
+            // Keep other notes that aren't structured data
+            extractedData.push(trimmedLine);
+          }
+        });
+        
+        // Combine notes with proper formatting
+        const allNotes: string[] = [];
+        
+        // Add structured data if they weren't extracted into separate fields
+        if (!orderData.majorCategory && !orderData.middleCategory && !orderData.minorCategory && structuredData.length > 0) {
+          allNotes.push(...structuredData);
+        }
+        
+        // Add other notes
+        if (extractedData.length > 0) {
+          allNotes.push(...extractedData);
+        }
+        
+        // Join with separator
+        cleanedNotes = allNotes.length > 0 ? allNotes.join(' | ') : '';
+      }
+
       // Sanitize and prepare data
       const safeOrderData = {
+        // Company info (발주업체)
+        companyName: companyInfo?.companyName || '(주)익진엔지니어링',
+        companyBusinessNumber: companyInfo?.businessNumber || '',
+        companyAddress: companyInfo?.address || '',
+        companyPhone: companyInfo?.phone || '',
+        companyEmail: companyInfo?.email || '',
+        companyContactPerson: companyInfo?.contactPerson || '',
+        // Order info
         orderNumber: orderData.orderNumber || 'PO-TEMP-001',
         projectName: orderData.projectName || orderData.project?.projectName || '현장 미지정',
         vendorName: orderData.vendorName || orderData.vendor?.name || '거래처 미지정',
@@ -659,10 +739,10 @@ async function generatePDFLogic(req: any, res: any) {
         vendorContactPerson: orderData.vendor?.contactPerson || orderData.vendorContactPerson || '',
         totalAmount: Number(orderData.totalAmount) || 0,
         items: Array.isArray(orderData.items) ? orderData.items : [],
-        notes: orderData.notes || '',
+        notes: cleanedNotes,
         orderDate: orderData.orderDate || new Date().toISOString(),
         deliveryDate: orderData.deliveryDate || null,
-        deliveryPlace: orderData.deliveryPlace || '',
+        deliveryPlace: extractedDeliveryPlace,
         createdBy: orderData.createdBy || orderData.user?.name || '시스템',
         createdAt: orderData.createdAt || new Date().toISOString(),
         status: orderData.status || 'draft',
@@ -670,9 +750,9 @@ async function generatePDFLogic(req: any, res: any) {
         approvedAt: orderData.approvedAt || null,
         paymentTerms: orderData.paymentTerms || '',
         deliveryMethod: orderData.deliveryMethod || '',
-        majorCategory: orderData.majorCategory || '',
-        middleCategory: orderData.middleCategory || '',
-        minorCategory: orderData.minorCategory || ''
+        majorCategory: extractedMajorCategory,
+        middleCategory: extractedMiddleCategory,
+        minorCategory: extractedMinorCategory
       };
 
       // Create enhanced HTML content with better error handling
@@ -685,74 +765,111 @@ async function generatePDFLogic(req: any, res: any) {
   <style>
     @page {
       size: A4;
-      margin: 20mm 15mm;
+      margin: 15mm 10mm;
     }
     body {
       font-family: 'Noto Sans KR', 'Malgun Gothic', '맑은 고딕', sans-serif;
       margin: 0;
       padding: 0;
-      line-height: 1.6;
+      line-height: 1.4;
       color: #333;
-      font-size: 12px;
+      font-size: 11px;
     }
     .header {
       text-align: center;
-      margin-bottom: 30px;
-      padding-bottom: 20px;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
       border-bottom: 2px solid #3B82F6;
     }
     .header h1 {
       color: #1F2937;
       margin: 0;
-      font-size: 28px;
+      font-size: 24px;
       font-weight: bold;
     }
     .header .subtitle {
-      margin: 8px 0 0 0;
+      margin: 5px 0 0 0;
       color: #6B7280;
-      font-size: 14px;
+      font-size: 12px;
     }
-    .info-grid {
+    .company-vendor-section {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 15px;
-      margin-bottom: 30px;
+      margin-bottom: 15px;
+    }
+    .company-box, .vendor-box {
+      border: 1px solid #D1D5DB;
+      border-radius: 6px;
+      padding: 10px;
+      background-color: #F9FAFB;
+    }
+    .box-title {
+      font-weight: bold;
+      color: #1F2937;
+      font-size: 12px;
+      margin-bottom: 8px;
+      padding-bottom: 5px;
+      border-bottom: 1px solid #E5E7EB;
+    }
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 15px;
+    }
+    .info-grid.two-col {
+      grid-template-columns: 1fr 1fr;
     }
     .info-item {
-      padding: 12px;
+      padding: 6px 8px;
       border: 1px solid #E5E7EB;
-      border-radius: 6px;
-      background-color: #F9FAFB;
+      border-radius: 4px;
+      background-color: #FFFFFF;
     }
     .info-label {
       font-weight: bold;
-      color: #374151;
-      margin-bottom: 5px;
-      font-size: 11px;
+      color: #6B7280;
+      margin-bottom: 2px;
+      font-size: 9px;
     }
     .info-value {
       color: #1F2937;
-      font-size: 13px;
+      font-size: 11px;
       word-break: break-all;
+    }
+    .compact-info {
+      display: flex;
+      align-items: baseline;
+      gap: 5px;
+    }
+    .compact-label {
+      font-weight: bold;
+      color: #6B7280;
+      font-size: 9px;
+    }
+    .compact-value {
+      color: #1F2937;
+      font-size: 10px;
     }
     .section-title {
       color: #374151;
       border-bottom: 1px solid #D1D5DB;
-      padding-bottom: 8px;
-      margin: 25px 0 15px 0;
-      font-size: 16px;
+      padding-bottom: 5px;
+      margin: 15px 0 10px 0;
+      font-size: 13px;
       font-weight: bold;
     }
     .items-table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 15px;
-      font-size: 11px;
+      margin-top: 10px;
+      font-size: 10px;
     }
     .items-table th,
     .items-table td {
       border: 1px solid #D1D5DB;
-      padding: 8px;
+      padding: 4px 6px;
       text-align: left;
     }
     .items-table th {
@@ -760,6 +877,7 @@ async function generatePDFLogic(req: any, res: any) {
       font-weight: bold;
       color: #374151;
       text-align: center;
+      font-size: 9px;
     }
     .items-table tbody tr:nth-child(even) {
       background-color: #F9FAFB;
@@ -775,21 +893,22 @@ async function generatePDFLogic(req: any, res: any) {
       font-weight: bold;
     }
     .notes-section {
-      margin-top: 30px;
-      padding: 15px;
+      margin-top: 15px;
+      padding: 10px;
       background-color: #F3F4F6;
-      border-radius: 6px;
+      border-radius: 4px;
     }
     .notes-title {
       margin-top: 0;
       color: #374151;
-      font-size: 14px;
+      font-size: 11px;
       font-weight: bold;
     }
     .notes-content {
-      margin: 8px 0 0 0;
+      margin: 5px 0 0 0;
       color: #6B7280;
-      line-height: 1.5;
+      line-height: 1.4;
+      font-size: 10px;
     }
     .footer {
       margin-top: 40px;
@@ -826,6 +945,88 @@ async function generatePDFLogic(req: any, res: any) {
     <p class="subtitle">Purchase Order</p>
   </div>
 
+  <!-- 발주업체 및 거래처 정보 (좌우 배치) -->
+  <div class="company-vendor-section">
+    <!-- 발주업체 정보 -->
+    <div class="company-box">
+      <div class="box-title">발주업체</div>
+      <div class="compact-info">
+        <span class="compact-label">업체명:</span>
+        <span class="compact-value" style="font-weight: bold;">${safeOrderData.companyName}</span>
+      </div>
+      ${safeOrderData.companyBusinessNumber ? `
+      <div class="compact-info">
+        <span class="compact-label">사업자번호:</span>
+        <span class="compact-value">${safeOrderData.companyBusinessNumber}</span>
+      </div>
+      ` : ''}
+      ${safeOrderData.companyContactPerson ? `
+      <div class="compact-info">
+        <span class="compact-label">담당자:</span>
+        <span class="compact-value">${safeOrderData.companyContactPerson}</span>
+      </div>
+      ` : ''}
+      ${safeOrderData.companyPhone ? `
+      <div class="compact-info">
+        <span class="compact-label">연락처:</span>
+        <span class="compact-value">${safeOrderData.companyPhone}</span>
+      </div>
+      ` : ''}
+      ${safeOrderData.companyEmail ? `
+      <div class="compact-info">
+        <span class="compact-label">이메일:</span>
+        <span class="compact-value">${safeOrderData.companyEmail}</span>
+      </div>
+      ` : ''}
+      ${safeOrderData.companyAddress ? `
+      <div class="compact-info">
+        <span class="compact-label">주소:</span>
+        <span class="compact-value">${safeOrderData.companyAddress}</span>
+      </div>
+      ` : ''}
+    </div>
+
+    <!-- 거래처 정보 -->
+    <div class="vendor-box">
+      <div class="box-title">거래처</div>
+      <div class="compact-info">
+        <span class="compact-label">업체명:</span>
+        <span class="compact-value" style="font-weight: bold;">${safeOrderData.vendorName}</span>
+      </div>
+      ${safeOrderData.vendorBusinessNumber ? `
+      <div class="compact-info">
+        <span class="compact-label">사업자번호:</span>
+        <span class="compact-value">${safeOrderData.vendorBusinessNumber}</span>
+      </div>
+      ` : ''}
+      ${safeOrderData.vendorContactPerson ? `
+      <div class="compact-info">
+        <span class="compact-label">담당자:</span>
+        <span class="compact-value">${safeOrderData.vendorContactPerson}</span>
+      </div>
+      ` : ''}
+      ${safeOrderData.vendorPhone ? `
+      <div class="compact-info">
+        <span class="compact-label">연락처:</span>
+        <span class="compact-value">${safeOrderData.vendorPhone}</span>
+      </div>
+      ` : ''}
+      ${safeOrderData.vendorEmail ? `
+      <div class="compact-info">
+        <span class="compact-label">이메일:</span>
+        <span class="compact-value">${safeOrderData.vendorEmail}</span>
+      </div>
+      ` : ''}
+      ${safeOrderData.vendorAddress ? `
+      <div class="compact-info">
+        <span class="compact-label">주소:</span>
+        <span class="compact-value">${safeOrderData.vendorAddress}</span>
+      </div>
+      ` : ''}
+    </div>
+  </div>
+
+  <!-- 발주 정보 (컴팩트한 그리드) -->
   <div class="info-grid">
     <div class="info-item">
       <div class="info-label">발주서 번호</div>
@@ -840,66 +1041,18 @@ async function generatePDFLogic(req: any, res: any) {
       <div class="info-value">${safeOrderData.projectName}</div>
     </div>
     <div class="info-item">
-      <div class="info-label">거래처</div>
-      <div class="info-value">${safeOrderData.vendorName}</div>
-    </div>
-    ${safeOrderData.deliveryDate ? `
-    <div class="info-item">
       <div class="info-label">납기일</div>
-      <div class="info-value">${new Date(safeOrderData.deliveryDate).toLocaleDateString('ko-KR')}</div>
+      <div class="info-value">${safeOrderData.deliveryDate ? new Date(safeOrderData.deliveryDate).toLocaleDateString('ko-KR') : '미정'}</div>
     </div>
-    ` : ''}
-    ${safeOrderData.deliveryPlace ? `
     <div class="info-item">
       <div class="info-label">납품장소</div>
-      <div class="info-value">${safeOrderData.deliveryPlace}</div>
+      <div class="info-value">${safeOrderData.deliveryPlace || '미정'}</div>
     </div>
-    ` : ''}
     <div class="info-item">
       <div class="info-label">작성자</div>
       <div class="info-value">${safeOrderData.createdBy}</div>
     </div>
-    <div class="info-item">
-      <div class="info-label">등록일</div>
-      <div class="info-value">${new Date(safeOrderData.createdAt).toLocaleDateString('ko-KR')} ${new Date(safeOrderData.createdAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</div>
-    </div>
   </div>
-
-  ${(safeOrderData.vendorBusinessNumber || safeOrderData.vendorContactPerson || safeOrderData.vendorPhone || safeOrderData.vendorEmail) ? `
-  <h3 class="section-title">거래처 정보</h3>
-  <div class="info-grid">
-    ${safeOrderData.vendorBusinessNumber ? `
-    <div class="info-item">
-      <div class="info-label">사업자등록번호</div>
-      <div class="info-value">${safeOrderData.vendorBusinessNumber}</div>
-    </div>
-    ` : ''}
-    ${safeOrderData.vendorContactPerson ? `
-    <div class="info-item">
-      <div class="info-label">담당자</div>
-      <div class="info-value">${safeOrderData.vendorContactPerson}</div>
-    </div>
-    ` : ''}
-    ${safeOrderData.vendorPhone ? `
-    <div class="info-item">
-      <div class="info-label">연락처</div>
-      <div class="info-value">${safeOrderData.vendorPhone}</div>
-    </div>
-    ` : ''}
-    ${safeOrderData.vendorEmail ? `
-    <div class="info-item">
-      <div class="info-label">이메일</div>
-      <div class="info-value">${safeOrderData.vendorEmail}</div>
-    </div>
-    ` : ''}
-    ${safeOrderData.vendorAddress ? `
-    <div class="info-item" style="grid-column: span 2;">
-      <div class="info-label">주소</div>
-      <div class="info-value">${safeOrderData.vendorAddress}</div>
-    </div>
-    ` : ''}
-  </div>
-  ` : ''}
 
   ${(safeOrderData.majorCategory || safeOrderData.middleCategory || safeOrderData.minorCategory) ? `
   <h3 class="section-title">분류 정보</h3>
@@ -965,7 +1118,7 @@ async function generatePDFLogic(req: any, res: any) {
   ${safeOrderData.notes ? `
   <div class="notes-section">
     <h4 class="notes-title">비고</h4>
-    <div class="notes-content">${safeOrderData.notes}</div>
+    <div class="notes-content">${safeOrderData.notes.replace(/\|/g, '<span style="color: #D1D5DB; margin: 0 8px;">|</span>')}</div>
   </div>
   ` : ''}
 

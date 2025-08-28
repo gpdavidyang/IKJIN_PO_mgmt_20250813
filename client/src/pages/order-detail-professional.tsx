@@ -370,6 +370,12 @@ export default function OrderDetailProfessional() {
                 <p className="text-lg font-semibold text-gray-900 mt-2">
                   {order.deliveryDate ? format(new Date(order.deliveryDate), 'MM월 dd일') : "미정"}
                 </p>
+                {(() => {
+                  const deliveryPlace = order.notes?.split('\n').find((line: string) => line.startsWith('납품처: '))?.replace('납품처: ', '').trim();
+                  return deliveryPlace ? (
+                    <p className="text-xs text-gray-500 mt-1">📍 {deliveryPlace}</p>
+                  ) : null;
+                })()}
               </div>
               <div className="bg-orange-100 p-3 rounded-lg">
                 <Calendar className="h-6 w-6 text-orange-600" />
@@ -420,6 +426,16 @@ export default function OrderDetailProfessional() {
                     {order.deliveryDate ? format(new Date(order.deliveryDate), 'yyyy년 MM월 dd일') : "-"}
                   </p>
                 </div>
+                {(() => {
+                  // Extract delivery place from notes if exists
+                  const deliveryPlace = order.notes?.split('\n').find((line: string) => line.startsWith('납품처: '))?.replace('납품처: ', '').trim();
+                  return deliveryPlace ? (
+                    <div>
+                      <p className="text-sm text-gray-600">납품장소</p>
+                      <p className="text-sm text-gray-900">{deliveryPlace}</p>
+                    </div>
+                  ) : null;
+                })()}
                 {order.templateId && (
                   <div>
                     <p className="text-sm text-gray-600">사용 템플릿</p>
