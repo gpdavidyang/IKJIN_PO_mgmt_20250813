@@ -1035,16 +1035,17 @@ export const systemAuditLogs = pgTable("system_audit_logs", {
   entityType: varchar("entity_type", { length: 50 }), // 'order', 'user', 'vendor', 'project', etc.
   entityId: varchar("entity_id", { length: 100 }), // ID of affected entity
   action: varchar("action", { length: 255 }).notNull(), // Detailed action description
+  tableName: varchar("table_name", { length: 100 }), // Database table affected
   additionalDetails: jsonb("additional_details"), // Additional event details
-  oldValue: jsonb("old_value"), // Previous state (for updates)
-  newValue: jsonb("new_value"), // New state (for updates)
+  oldData: jsonb("old_data"), // Previous state (for updates)
+  newData: jsonb("new_data"), // New state (for updates)
   ipAddress: varchar("ip_address", { length: 50 }),
   userAgent: text("user_agent"),
   sessionId: varchar("session_id", { length: 255 }),
   requestMethod: varchar("request_method", { length: 10 }), // GET, POST, PUT, DELETE
   requestPath: varchar("request_path", { length: 500 }),
   responseStatus: integer("response_status"), // HTTP status code
-  executionTime: integer("execution_time"), // in milliseconds
+  responseTime: integer("response_time"), // in milliseconds  
   errorMessage: text("error_message"), // For error events
   stackTrace: text("stack_trace"), // For debugging (only in DEBUG mode)
   createdAt: timestamp("created_at").defaultNow().notNull(),

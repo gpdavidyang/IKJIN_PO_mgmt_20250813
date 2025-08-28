@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { comparePasswords, generateSessionId } from "./auth-utils";
 import { User as BaseUser } from "@shared/schema";
 import { logAuditEvent } from "./middleware/audit-logger";
+import { generateToken, verifyToken, extractToken } from "./jwt-utils";
 
 // Extend User type to ensure id field is available
 interface User extends BaseUser {
@@ -129,62 +130,38 @@ export async function login(req: Request, res: Response) {
     }
 
     try {
-      // Create session
-      const authSession = req.session as AuthSession;
-      authSession.userId = user.id;
+      // Generate JWT token instead of using session
+      const token = generateToken({
+        userId: user.id,
+        email: user.email,
+        role: user.role
+      });
       
-      console.log("🔧 Session before save:", {
-        sessionId: req.sessionID,
-        userId: authSession.userId,
-        sessionExists: !!req.session,
-        sessionData: req.session,
-        sessionStore: req.sessionStore ? req.sessionStore.constructor.name : 'none',
-        cookieHeader: req.headers.cookie
+      console.log("🔧 JWT token generated for user:", {
+        userId: user.id,
+        email: user.email,
+        role: user.role,
+        tokenLength: token.length
       });
 
-      // Save session with timeout and fallback
-      const sessionSavePromise = new Promise<void>((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          console.log("⚠️ Session save timeout, proceeding without session persistence");
-          resolve();
-        }, 2000); // 2 second timeout
-
-        req.session.save((err) => {
-          clearTimeout(timeout);
-          if (err) {
-            console.error("❌ Session save error:", err);
-            resolve(); // Don't fail login due to session issues
-          } else {
-            console.log("✅ Session saved successfully for user:", user.id);
-            console.log("🔧 Session after save:", {
-              sessionId: req.sessionID,
-              userId: authSession.userId,
-              sessionExists: !!req.session,
-              sessionData: req.session
-            });
-            resolve();
-          }
-        });
+      // Set JWT token as httpOnly cookie
+      res.cookie('auth_token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        path: '/'
       });
 
-      await sessionSavePromise;
-      
-      // Log final session state
-      console.log("📊 Session info AFTER save:", {
-        sessionExists: !!req.session,
-        sessionID: req.sessionID,
-        sessionUserId: (req.session as AuthSession)?.userId,
-        sessionCookie: req.session?.cookie,
-        fullSessionData: req.session,
-        cookieHeaderSent: res.get('Set-Cookie')
-      });
-      console.log("=== LOGIN REQUEST END - SUCCESS ===");
+      console.log("✅ JWT token set as cookie for user:", user.id);
+      console.log("=== LOGIN REQUEST END - SUCCESS (JWT) ===");
       
       // Return user data (exclude password)
       const { password: _, ...userWithoutPassword } = user;
       res.json({ 
         message: "Login successful", 
-        user: userWithoutPassword 
+        user: userWithoutPassword,
+        token: token // Also return token for client-side storage if needed
       });
     } catch (sessionError) {
       console.error("Session handling error (non-fatal):", sessionError);
@@ -206,36 +183,38 @@ export async function login(req: Request, res: Response) {
  * Logout endpoint
  */
 export async function logout(req: Request, res: Response) {
-  const authSession = req.session as AuthSession;
-  const userId = authSession.userId;
+  const token = extractToken(req.headers.authorization, req.cookies);
   
-  // Log logout event before destroying session
-  if (userId) {
-    try {
-      const user = await storage.getUser(userId);
-      await logAuditEvent('logout', 'auth', {
-        userId: userId,
-        userName: user?.name || user?.email,
-        userRole: user?.role,
-        action: 'User logged out',
-        ipAddress: req.ip || req.connection.remoteAddress,
-        userAgent: req.headers['user-agent'],
-        sessionId: req.sessionID
-      });
-    } catch (error) {
-      console.error("Failed to log logout event:", error);
+  // Log logout event if user is authenticated
+  if (token) {
+    const payload = verifyToken(token);
+    if (payload) {
+      try {
+        const user = await storage.getUser(payload.userId);
+        await logAuditEvent('logout', 'auth', {
+          userId: payload.userId,
+          userName: user?.name || user?.email,
+          userRole: user?.role,
+          action: 'User logged out',
+          ipAddress: req.ip || req.connection.remoteAddress,
+          userAgent: req.headers['user-agent'],
+          sessionId: req.sessionID
+        });
+      } catch (error) {
+        console.error("Failed to log logout event:", error);
+      }
     }
   }
   
-  authSession.userId = undefined;
-  
-  req.session.destroy((err) => {
-    if (err) {
-      console.error("Session destruction error:", err);
-      return res.status(500).json({ message: "Logout failed" });
-    }
-    res.json({ message: "Logout successful" });
+  // Clear JWT cookie
+  res.clearCookie('auth_token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/'
   });
+  
+  res.json({ message: "Logout successful" });
 }
 
 /**
@@ -243,35 +222,43 @@ export async function logout(req: Request, res: Response) {
  */
 export async function getCurrentUser(req: Request, res: Response) {
   try {
-    console.log("=== GET CURRENT USER START ===");
-    const authSession = req.session as AuthSession;
-    console.log("🔍 getCurrentUser - Session ID:", req.sessionID);
-    console.log("🔍 getCurrentUser - Session userId:", authSession?.userId);
-    console.log("🔍 getCurrentUser - Session exists:", !!req.session);
-    console.log("🔍 getCurrentUser - Session data:", req.session);
-    console.log("🔍 getCurrentUser - Cookie header:", req.headers.cookie);
-    console.log("🔍 getCurrentUser - Environment:", {
-      NODE_ENV: process.env.NODE_ENV,
-      VERCEL: process.env.VERCEL,
-      SESSION_SECRET_SET: !!process.env.SESSION_SECRET,
-      DATABASE_URL_SET: !!process.env.DATABASE_URL
-    });
+    console.log("=== GET CURRENT USER START (JWT) ===");
+    const token = extractToken(req.headers.authorization, req.cookies);
     
-    // 🔴 SECURITY FIX: Always require proper authentication
-    if (!authSession.userId) {
-      console.log("🔴 getCurrentUser - No userId in session");
+    console.log("🔍 getCurrentUser - Token present:", !!token);
+    console.log("🔍 getCurrentUser - Cookie header:", req.headers.cookie);
+    console.log("🔍 getCurrentUser - Auth header:", req.headers.authorization);
+    
+    if (!token) {
+      console.log("🔴 getCurrentUser - No JWT token found");
       return res.status(401).json({ 
-        message: "Not authenticated",
+        message: "Not authenticated - no token",
         authenticated: false 
       });
     }
 
+    // Verify JWT token
+    const payload = verifyToken(token);
+    if (!payload) {
+      console.log("🔴 getCurrentUser - Invalid JWT token");
+      return res.status(401).json({ 
+        message: "Invalid token",
+        authenticated: false
+      });
+    }
+
+    console.log("🔍 getCurrentUser - JWT payload:", {
+      userId: payload.userId,
+      email: payload.email,
+      role: payload.role
+    });
+
     try {
-      // Use real database user lookup instead of mock users
-      let user = await storage.getUser(authSession.userId);
+      // Use real database user lookup
+      let user = await storage.getUser(payload.userId);
       
       // Admin fallback: handle dev_admin user in all environments
-      if (!user && authSession.userId === 'dev_admin') {
+      if (!user && payload.userId === 'dev_admin') {
         console.log("🔧 getCurrentUser - Admin fallback: Using hardcoded admin user");
         user = {
           id: 'dev_admin',
@@ -289,25 +276,22 @@ export async function getCurrentUser(req: Request, res: Response) {
       }
       
       if (!user) {
-        console.log("🔴 getCurrentUser - Database user not found:", authSession.userId);
-        // Clear invalid session
-        authSession.userId = undefined;
+        console.log("🔴 getCurrentUser - Database user not found:", payload.userId);
         return res.status(401).json({ 
-          message: "Invalid session - user not found",
+          message: "User not found",
           authenticated: false
         });
       }
 
       if (!user.isActive) {
         console.log("🔴 getCurrentUser - User account deactivated:", user.email);
-        authSession.userId = undefined;
         return res.status(401).json({ 
           message: "Account is deactivated",
           authenticated: false
         });
       }
 
-      console.log("🟢 getCurrentUser - Database user found:", user.name || user.email);
+      console.log("🟢 getCurrentUser - JWT user found:", user.name || user.email);
       
       // Set user on request for compatibility
       req.user = user as User;
@@ -320,8 +304,6 @@ export async function getCurrentUser(req: Request, res: Response) {
       });
     } catch (dbError) {
       console.error("🔴 Database error in getCurrentUser:", dbError);
-      // Clear session on database errors
-      authSession.userId = undefined;
       return res.status(401).json({ 
         message: "Authentication failed - database error",
         authenticated: false
@@ -341,21 +323,25 @@ export async function getCurrentUser(req: Request, res: Response) {
  */
 export async function requireAuth(req: Request, res: Response, next: NextFunction) {
   try {
-    // SECURITY FIX: Removed development authentication bypass
-    // This was a critical security vulnerability that allowed automatic login
+    const token = extractToken(req.headers.authorization, req.cookies);
     
-    const authSession = req.session as AuthSession;
-    
-    if (!authSession.userId) {
-      console.log('🔴 인증 실패 - userId 없음');
-      return res.status(401).json({ message: "Authentication required" });
+    if (!token) {
+      console.log('🔴 JWT 인증 실패 - 토큰 없음');
+      return res.status(401).json({ message: "Authentication required - no token" });
     }
 
-    // Get user from database - Mock 데이터 완전 제거
-    let user = await storage.getUser(authSession.userId);
+    // Verify JWT token
+    const payload = verifyToken(token);
+    if (!payload) {
+      console.log('🔴 JWT 인증 실패 - 유효하지 않은 토큰');
+      return res.status(401).json({ message: "Invalid token" });
+    }
+
+    // Get user from database
+    let user = await storage.getUser(payload.userId);
     
     // Admin fallback: handle dev_admin user in all environments
-    if (!user && authSession.userId === 'dev_admin') {
+    if (!user && payload.userId === 'dev_admin') {
       console.log("🔧 Admin fallback: Using hardcoded dev_admin user in requireAuth");
       user = {
         id: 'dev_admin',
@@ -373,17 +359,20 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     }
     
     if (!user) {
-      // Clear invalid session
-      authSession.userId = undefined;
-      console.log('🔴 인증 실패 - 사용자 없음:', authSession.userId);
-      return res.status(401).json({ message: "Invalid session" });
+      console.log('🔴 JWT 인증 실패 - 사용자 없음:', payload.userId);
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    if (!user.isActive) {
+      console.log('🔴 JWT 인증 실패 - 비활성 사용자:', user.email);
+      return res.status(401).json({ message: "Account deactivated" });
     }
 
     req.user = user;
-    console.log('🟢 인증 성공:', req.user.id);
+    console.log('🟢 JWT 인증 성공:', req.user.id);
     next();
   } catch (error) {
-    console.error("Authentication middleware error:", error);
+    console.error("JWT Authentication middleware error:", error);
     res.status(500).json({ message: "Authentication failed" });
   }
 }

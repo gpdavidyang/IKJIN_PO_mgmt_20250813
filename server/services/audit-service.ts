@@ -3,7 +3,7 @@
  * 감사 로그 관리 및 조회 서비스
  */
 
-import { db } from '../lib/database';
+import { db } from '../db';
 import { 
   systemAuditLogs, 
   auditSettings, 

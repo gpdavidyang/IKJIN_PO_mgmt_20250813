@@ -4,7 +4,7 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
-import { db } from '../lib/database';
+import { db } from '../db';
 import { systemAuditLogs, auditSettings } from '@shared/schema';
 import { eq, isNull } from 'drizzle-orm';
 
@@ -50,6 +50,7 @@ async function getAuditSettings() {
       enableData: true,
       enableSystem: true,
       enableSecurity: true,
+      excludedPaths: [],
       excludedUsers: [],
       sensitiveDataMasking: true,
       performanceTracking: false,
@@ -59,7 +60,18 @@ async function getAuditSettings() {
     return cachedSettings;
   } catch (error) {
     console.error('Failed to load audit settings:', error);
-    return cachedSettings || { logLevel: 'INFO', enabledCategories: ['auth', 'data', 'security'] };
+    return cachedSettings || { 
+      logLevel: 'INFO', 
+      enableAuth: true,
+      enableData: true,
+      enableSystem: true,
+      enableSecurity: true,
+      excludedPaths: [],
+      excludedUsers: [],
+      sensitiveDataMasking: true,
+      performanceTracking: false,
+      apiAccessLogging: false,
+    };
   }
 }
 
@@ -208,7 +220,14 @@ export function auditLogger(req: AuditRequest, res: Response, next: NextFunction
         const eventCategory = determineEventCategory(req.path, req.method);
         
         // 카테고리 활성화 확인
-        if (!settings.enabledCategories?.includes(eventCategory)) {
+        const categoryEnabled = 
+          (eventCategory === 'auth' && settings.enableAuth) ||
+          (eventCategory === 'data' && settings.enableData) ||
+          (eventCategory === 'system' && settings.enableSystem) ||
+          (eventCategory === 'security' && settings.enableSecurity) ||
+          (eventCategory === 'api' && settings.apiAccessLogging);
+        
+        if (!categoryEnabled) {
           return;
         }
         
