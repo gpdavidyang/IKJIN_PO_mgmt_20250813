@@ -18587,13 +18587,46 @@ async function initializeProductionApp() {
 var isInitialized = false;
 if (process.env.VERCEL) {
   console.log("\u{1F680} Vercel environment detected - initializing production app");
-  const { configureProductionSession: configureProductionSession2 } = (init_session_config(), __toCommonJS(session_config_exports));
-  (async () => {
-    await configureProductionSession2(app);
-    console.log("\u2705 Session configuration complete for Vercel");
-  })().catch((error) => {
-    console.error("\u{1F534} Failed to configure sessions for Vercel:", error);
-  });
+  try {
+    const sessionConfig = (init_session_config(), __toCommonJS(session_config_exports));
+    console.log("\u{1F527} Setting up basic session middleware first...");
+    const session2 = __require("express-session");
+    const SESSION_SECRET2 = process.env.SESSION_SECRET || "ikjin-po-mgmt-prod-secret-2025-secure-key";
+    app.use(session2({
+      secret: SESSION_SECRET2,
+      resave: false,
+      saveUninitialized: false,
+      name: "connect.sid",
+      cookie: {
+        secure: true,
+        httpOnly: true,
+        maxAge: 1e3 * 60 * 60 * 24 * 7,
+        sameSite: "lax",
+        path: "/"
+      }
+    }));
+    console.log("\u2705 Basic session middleware added");
+    app.get("/api/debug/session-store", (req, res) => {
+      const sessionData = {
+        hasSession: !!req.session,
+        sessionID: req.sessionID,
+        sessionKeys: req.session ? Object.keys(req.session) : [],
+        isAuthenticated: req.isAuthenticated ? req.isAuthenticated() : false,
+        storeType: "Memory (fallback)",
+        cookieSettings: req.session?.cookie,
+        vercelInit: true
+      };
+      console.log("\u{1F50D} Session debug info:", sessionData);
+      res.json(sessionData);
+    });
+    sessionConfig.configureProductionSession(app).then(() => {
+      console.log("\u2705 PostgreSQL session store upgrade complete");
+    }).catch((error) => {
+      console.error("\u{1F534} PostgreSQL session store upgrade failed, using memory store:", error);
+    });
+  } catch (error) {
+    console.error("\u{1F534} Session configuration error:", error);
+  }
   app.use(sessionErrorHandler);
   app.use(routes_default);
   app.use((err, _req, res, _next) => {

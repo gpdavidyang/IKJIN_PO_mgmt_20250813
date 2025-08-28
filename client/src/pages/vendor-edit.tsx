@@ -93,7 +93,7 @@ export default function VendorEdit() {
 
   const updateMutation = useMutation({
     mutationFn: async (data: VendorFormData) => {
-      return await apiRequest("PATCH", `/api/vendors/${vendorId}`, data);
+      return await apiRequest("PUT", `/api/vendors/${vendorId}`, data);
     },
     onSuccess: () => {
       toast({

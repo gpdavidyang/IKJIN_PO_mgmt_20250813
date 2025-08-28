@@ -112,21 +112,66 @@ async function initializeProductionApp() {
 // Initialize synchronously for Vercel
 let isInitialized = false;
 
-// For Vercel environment, initialize immediately
+// For Vercel environment, initialize immediately but synchronously
 if (process.env.VERCEL) {
   console.log("🚀 Vercel environment detected - initializing production app");
   
-  // Configure session middleware FIRST (synchronously for Vercel)
-  // Import the session configuration module
-  const { configureProductionSession } = require('./session-config');
-  
-  // Use async IIFE to handle the async configuration
-  (async () => {
-    await configureProductionSession(app);
-    console.log("✅ Session configuration complete for Vercel");
-  })().catch(error => {
-    console.error("🔴 Failed to configure sessions for Vercel:", error);
-  });
+  // Configure session middleware FIRST - this must be synchronous for Vercel
+  try {
+    // Use a synchronous approach with fallback
+    const sessionConfig = require('./session-config');
+    
+    // Call the async function but don't wait for it to complete
+    // Add basic middleware first, then enhance with async session store
+    console.log("🔧 Setting up basic session middleware first...");
+    
+    // Import session for basic setup
+    const session = require('express-session');
+    const SESSION_SECRET = process.env.SESSION_SECRET || 'ikjin-po-mgmt-prod-secret-2025-secure-key';
+    
+    // Add basic session middleware immediately
+    app.use(session({
+      secret: SESSION_SECRET,
+      resave: false,
+      saveUninitialized: false,
+      name: 'connect.sid',
+      cookie: {
+        secure: true,
+        httpOnly: true,
+        maxAge: 1000 * 60 * 60 * 24 * 7,
+        sameSite: 'lax',
+        path: '/'
+      }
+    }));
+    
+    console.log("✅ Basic session middleware added");
+    
+    // Add the debug endpoint immediately
+    app.get('/api/debug/session-store', (req: any, res: any) => {
+      const sessionData = {
+        hasSession: !!req.session,
+        sessionID: req.sessionID,
+        sessionKeys: req.session ? Object.keys(req.session) : [],
+        isAuthenticated: req.isAuthenticated ? req.isAuthenticated() : false,
+        storeType: 'Memory (fallback)',
+        cookieSettings: req.session?.cookie,
+        vercelInit: true
+      };
+      
+      console.log("🔍 Session debug info:", sessionData);
+      res.json(sessionData);
+    });
+    
+    // Now try to upgrade to PostgreSQL store asynchronously (non-blocking)
+    sessionConfig.configureProductionSession(app).then(() => {
+      console.log("✅ PostgreSQL session store upgrade complete");
+    }).catch((error: any) => {
+      console.error("🔴 PostgreSQL session store upgrade failed, using memory store:", error);
+    });
+    
+  } catch (error) {
+    console.error("🔴 Session configuration error:", error);
+  }
   
   // Add session error handler
   app.use(sessionErrorHandler);
