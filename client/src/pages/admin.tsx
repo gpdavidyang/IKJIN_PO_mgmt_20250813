@@ -308,14 +308,14 @@ export default function Admin() {
   const saveTerminologyMutation = useMutation({
     mutationFn: (data: TerminologyFormData) => {
       if (editingTerm) {
-        return apiRequest("PUT", `/api/terminology/${editingTerm.id}`, data);
+        return apiRequest("PUT", `/api/ui-terms/${editingTerm.id}`, data);
       } else {
-        return apiRequest("POST", "/api/terminology", data);
+        return apiRequest("POST", "/api/ui-terms", data);
       }
     },
     onSuccess: () => {
       toast({ title: "성공", description: editingTerm ? "용어가 수정되었습니다." : "용어가 추가되었습니다." });
-      queryClient.invalidateQueries({ queryKey: ["/api/terminology"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/ui-terms"] });
       setIsAddingTerm(false);
       setEditingTerm(null);
       terminologyForm.reset();
@@ -326,10 +326,10 @@ export default function Admin() {
   });
 
   const deleteTerminologyMutation = useMutation({
-    mutationFn: (id: number) => apiRequest("DELETE", `/api/terminology/${id}`),
+    mutationFn: (id: number) => apiRequest("DELETE", `/api/ui-terms/${id}`),
     onSuccess: () => {
       toast({ title: "성공", description: "용어가 삭제되었습니다." });
-      queryClient.invalidateQueries({ queryKey: ["/api/terminology"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/ui-terms"] });
     },
     onError: () => {
       toast({ title: "오류", description: "용어 삭제에 실패했습니다.", variant: "destructive" });
@@ -466,7 +466,7 @@ export default function Admin() {
 
       <div className={`shadow-sm rounded-lg border transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className={`grid w-full grid-cols-6 transition-colors ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+          <TabsList className={`grid w-full grid-cols-5 transition-colors ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
           <TabsTrigger value="company" className="flex items-center gap-2 text-sm">
             <Building className="h-4 w-4" />
             회사 정보
@@ -486,10 +486,6 @@ export default function Admin() {
           <TabsTrigger value="terminology" className="flex items-center gap-2 text-sm">
             <FileText className="h-4 w-4" />
             용어집 관리
-          </TabsTrigger>
-          <TabsTrigger value="audit" className="flex items-center gap-2 text-sm">
-            <Shield className="h-4 w-4" />
-            Audit 관리
           </TabsTrigger>
         </TabsList>
 
@@ -1032,94 +1028,6 @@ export default function Admin() {
         {/* 워크플로우 설정 탭 */}
         <TabsContent value="workflow" className="mt-2">
           <ApprovalWorkflowSettings />
-        </TabsContent>
-
-        {/* Audit 관리 탭 */}
-        <TabsContent value="audit" className="mt-2">
-          <Card className={`shadow-sm transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-            <CardHeader className="pb-1">
-              <CardTitle className={`flex items-center justify-between text-sm transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
-                <div className="flex items-center gap-1">
-                  <Shield className={`h-4 w-4 transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
-                  <span>시스템 Audit 관리</span>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => window.location.href = '/audit-management'}
-                  className="gap-1 h-6 px-2 text-xs"
-                >
-                  <Shield className="h-3 w-3" />
-                  Audit 대시보드 열기
-                </Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-1">
-              <div className="space-y-4">
-                <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-                  <h3 className={`text-sm font-semibold mb-2 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
-                    Audit 시스템 개요
-                  </h3>
-                  <p className={`text-xs mb-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                    시스템의 모든 활동을 추적하고 보안 이벤트를 모니터링합니다.
-                  </p>
-                  
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className={`p-3 rounded border ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
-                      <div className="flex items-center gap-2 mb-1">
-                        <Activity className={`h-4 w-4 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`} />
-                        <span className={`text-xs font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>활동 로그</span>
-                      </div>
-                      <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                        사용자 활동 및 시스템 이벤트 추적
-                      </p>
-                    </div>
-                    
-                    <div className={`p-3 rounded border ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
-                      <div className="flex items-center gap-2 mb-1">
-                        <Shield className={`h-4 w-4 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
-                        <span className={`text-xs font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>보안 모니터링</span>
-                      </div>
-                      <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                        로그인 실패 및 권한 변경 추적
-                      </p>
-                    </div>
-                    
-                    <div className={`p-3 rounded border ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
-                      <div className="flex items-center gap-2 mb-1">
-                        <FileText className={`h-4 w-4 ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`} />
-                        <span className={`text-xs font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>데이터 변경</span>
-                      </div>
-                      <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                        생성, 수정, 삭제 작업 기록
-                      </p>
-                    </div>
-                    
-                    <div className={`p-3 rounded border ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
-                      <div className="flex items-center gap-2 mb-1">
-                        <Settings2 className={`h-4 w-4 ${isDarkMode ? 'text-orange-400' : 'text-orange-600'}`} />
-                        <span className={`text-xs font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>로그 설정</span>
-                      </div>
-                      <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                        로그 레벨 및 보관 기간 설정
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex justify-center">
-                  <Button
-                    onClick={() => window.location.href = '/audit-management'}
-                    className="w-full max-w-md"
-                    size="sm"
-                  >
-                    <Shield className="h-4 w-4 mr-2" />
-                    Audit 관리 페이지로 이동
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </TabsContent>
 
         </Tabs>

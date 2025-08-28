@@ -1,7 +1,5 @@
 var __defProp = Object.defineProperty;
-var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
-var __hasOwnProp = Object.prototype.hasOwnProperty;
 var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
   get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
 }) : x)(function(x) {
@@ -15,155 +13,6 @@ var __export = (target, all) => {
   for (var name in all)
     __defProp(target, name, { get: all[name], enumerable: true });
 };
-var __copyProps = (to, from, except, desc11) => {
-  if (from && typeof from === "object" || typeof from === "function") {
-    for (let key of __getOwnPropNames(from))
-      if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc11 = __getOwnPropDesc(from, key)) || desc11.enumerable });
-  }
-  return to;
-};
-var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
-
-// server/session-config.ts
-var session_config_exports = {};
-__export(session_config_exports, {
-  configureDevelopmentSession: () => configureDevelopmentSession,
-  configureProductionSession: () => configureProductionSession
-});
-import session from "express-session";
-async function configureProductionSession(app2) {
-  console.log("=== CONFIGURING PRODUCTION SESSION ===");
-  const poolerUrl = "postgresql://postgres.tbvugytmskxxyqfvqmup:gps110601ysw@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres";
-  console.log("\u{1F517} Database connection URL parsed:", {
-    host: poolerUrl.includes("pooler.supabase.com"),
-    length: poolerUrl.length,
-    hasAuth: poolerUrl.includes("@")
-  });
-  try {
-    const connectPgSimple = __require("connect-pg-simple");
-    const pgSession = connectPgSimple(session);
-    console.log("\u{1F4CA} Creating PostgreSQL session store...");
-    const sessionStore = new pgSession({
-      conString: poolerUrl,
-      tableName: "app_sessions",
-      createTableIfMissing: true,
-      schemaName: "public",
-      pruneSessionInterval: false,
-      // Disable for serverless
-      errorLog: (error) => {
-        console.error("\u{1F534} Session store error:", error);
-      }
-    });
-    console.log("\u2705 PostgreSQL session store created");
-    console.log("\u{1F9EA} Testing session store connectivity...");
-    await new Promise((resolve, reject) => {
-      const testTimeout = setTimeout(() => {
-        reject(new Error("Session store connection timeout after 10 seconds"));
-      }, 1e4);
-      sessionStore.ready = (callback) => {
-        clearTimeout(testTimeout);
-        console.log("\u2705 Session store ready!");
-        callback();
-        resolve(true);
-      };
-      sessionStore.get("test-session-id", (err, session2) => {
-        clearTimeout(testTimeout);
-        if (err) {
-          console.log("\u26A0\uFE0F Session store test error (expected for new installation):", err.message);
-        } else {
-          console.log("\u2705 Session store test successful");
-        }
-        resolve(true);
-      });
-    });
-    const sessionMiddleware = session({
-      store: sessionStore,
-      secret: SESSION_SECRET,
-      resave: false,
-      saveUninitialized: false,
-      name: "connect.sid",
-      cookie: {
-        secure: true,
-        // HTTPS only
-        httpOnly: true,
-        maxAge: 1e3 * 60 * 60 * 24 * 7,
-        // 7 days
-        sameSite: "lax",
-        path: "/"
-      }
-    });
-    app2.use(sessionMiddleware);
-    app2.get("/api/debug/session-store", (req, res) => {
-      const sessionData = {
-        hasSession: !!req.session,
-        sessionID: req.sessionID,
-        sessionKeys: req.session ? Object.keys(req.session) : [],
-        isAuthenticated: req.isAuthenticated ? req.isAuthenticated() : false,
-        storeType: "PostgreSQL",
-        cookieSettings: req.session?.cookie
-      };
-      console.log("\u{1F50D} Session debug info:", sessionData);
-      res.json(sessionData);
-    });
-    console.log("\u2705 Session middleware configured:", {
-      store: "PostgreSQL",
-      tableName: "app_sessions",
-      secure: true,
-      sameSite: "lax",
-      maxAge: "7 days"
-    });
-    return true;
-  } catch (error) {
-    console.error("\u{1F534} Failed to configure PostgreSQL sessions:", error);
-    console.log("\u26A0\uFE0F Using memory session store (sessions won't persist across restarts)");
-    app2.use(session({
-      secret: SESSION_SECRET,
-      resave: false,
-      saveUninitialized: false,
-      name: "connect.sid",
-      cookie: {
-        secure: true,
-        httpOnly: true,
-        maxAge: 1e3 * 60 * 60 * 24 * 7,
-        sameSite: "lax",
-        path: "/"
-      }
-    }));
-    return false;
-  }
-}
-function configureDevelopmentSession(app2) {
-  console.log("=== CONFIGURING DEVELOPMENT SESSION ===");
-  app2.use(session({
-    secret: SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    name: "connect.sid",
-    cookie: {
-      secure: false,
-      // Allow HTTP in development
-      httpOnly: true,
-      maxAge: 1e3 * 60 * 60 * 24 * 7,
-      sameSite: "lax",
-      path: "/"
-    }
-  }));
-  console.log("\u2705 Development session configured (memory store)");
-}
-var SESSION_SECRET;
-var init_session_config = __esm({
-  "server/session-config.ts"() {
-    "use strict";
-    SESSION_SECRET = process.env.SESSION_SECRET || "ikjin-po-mgmt-prod-secret-2025-secure-key";
-    console.log("\u{1F527} Session Configuration:", {
-      SESSION_SECRET_SET: !!process.env.SESSION_SECRET,
-      SESSION_SECRET_LENGTH: SESSION_SECRET.length,
-      NODE_ENV: process.env.NODE_ENV,
-      VERCEL: process.env.VERCEL
-    });
-  }
-});
 
 // shared/schema.ts
 var schema_exports = {};
@@ -1879,9 +1728,119 @@ var init_po_template_processor_mock = __esm({
 });
 
 // server/production.ts
-init_session_config();
 import dotenv2 from "dotenv";
 import express2 from "express";
+
+// server/session-config.ts
+import session from "express-session";
+var SESSION_SECRET = process.env.SESSION_SECRET || "ikjin-po-mgmt-prod-secret-2025-secure-key";
+console.log("\u{1F527} Session Configuration:", {
+  SESSION_SECRET_SET: !!process.env.SESSION_SECRET,
+  SESSION_SECRET_LENGTH: SESSION_SECRET.length,
+  NODE_ENV: process.env.NODE_ENV,
+  VERCEL: process.env.VERCEL
+});
+async function configureProductionSession(app2) {
+  console.log("=== CONFIGURING PRODUCTION SESSION ===");
+  const poolerUrl = "postgresql://postgres.tbvugytmskxxyqfvqmup:gps110601ysw@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres";
+  console.log("\u{1F517} Database connection URL parsed:", {
+    host: poolerUrl.includes("pooler.supabase.com"),
+    length: poolerUrl.length,
+    hasAuth: poolerUrl.includes("@")
+  });
+  try {
+    const connectPgSimple = __require("connect-pg-simple");
+    const pgSession = connectPgSimple(session);
+    console.log("\u{1F4CA} Creating PostgreSQL session store...");
+    const sessionStore = new pgSession({
+      conString: poolerUrl,
+      tableName: "app_sessions",
+      createTableIfMissing: true,
+      schemaName: "public",
+      pruneSessionInterval: false,
+      // Disable for serverless
+      errorLog: (error) => {
+        console.error("\u{1F534} Session store error:", error);
+      }
+    });
+    console.log("\u2705 PostgreSQL session store created");
+    console.log("\u{1F9EA} Testing session store connectivity...");
+    await new Promise((resolve, reject) => {
+      const testTimeout = setTimeout(() => {
+        reject(new Error("Session store connection timeout after 10 seconds"));
+      }, 1e4);
+      sessionStore.ready = (callback) => {
+        clearTimeout(testTimeout);
+        console.log("\u2705 Session store ready!");
+        callback();
+        resolve(true);
+      };
+      sessionStore.get("test-session-id", (err, session2) => {
+        clearTimeout(testTimeout);
+        if (err) {
+          console.log("\u26A0\uFE0F Session store test error (expected for new installation):", err.message);
+        } else {
+          console.log("\u2705 Session store test successful");
+        }
+        resolve(true);
+      });
+    });
+    const sessionMiddleware = session({
+      store: sessionStore,
+      secret: SESSION_SECRET,
+      resave: false,
+      saveUninitialized: false,
+      name: "connect.sid",
+      cookie: {
+        secure: true,
+        // HTTPS only
+        httpOnly: true,
+        maxAge: 1e3 * 60 * 60 * 24 * 7,
+        // 7 days
+        sameSite: "lax",
+        path: "/"
+      }
+    });
+    app2.use(sessionMiddleware);
+    app2.get("/api/debug/session-store", (req, res) => {
+      const sessionData = {
+        hasSession: !!req.session,
+        sessionID: req.sessionID,
+        sessionKeys: req.session ? Object.keys(req.session) : [],
+        isAuthenticated: req.isAuthenticated ? req.isAuthenticated() : false,
+        storeType: "PostgreSQL",
+        cookieSettings: req.session?.cookie
+      };
+      console.log("\u{1F50D} Session debug info:", sessionData);
+      res.json(sessionData);
+    });
+    console.log("\u2705 Session middleware configured:", {
+      store: "PostgreSQL",
+      tableName: "app_sessions",
+      secure: true,
+      sameSite: "lax",
+      maxAge: "7 days"
+    });
+    return true;
+  } catch (error) {
+    console.error("\u{1F534} Failed to configure PostgreSQL sessions:", error);
+    console.log("\u26A0\uFE0F Using memory session store (sessions won't persist across restarts)");
+    app2.use(session({
+      secret: SESSION_SECRET,
+      resave: false,
+      saveUninitialized: false,
+      name: "connect.sid",
+      cookie: {
+        secure: true,
+        httpOnly: true,
+        maxAge: 1e3 * 60 * 60 * 24 * 7,
+        sameSite: "lax",
+        path: "/"
+      }
+    }));
+    return false;
+  }
+}
 
 // server/routes/index.ts
 import { Router as Router31 } from "express";
@@ -18570,30 +18529,26 @@ var isInitialized = false;
 if (process.env.VERCEL) {
   console.log("\u{1F680} Vercel environment detected - initializing production app");
   try {
-    const sessionConfig = (init_session_config(), __toCommonJS(session_config_exports));
-    console.log("\u{1F527} Setting up basic session middleware first...");
+    console.log("\u{1F527} Setting up session middleware for Vercel...");
     const session2 = __require("express-session");
     const SESSION_SECRET2 = process.env.SESSION_SECRET || "ikjin-po-mgmt-prod-secret-2025-secure-key";
     app.use(session2({
       secret: SESSION_SECRET2,
       resave: false,
       saveUninitialized: true,
-      // Changed to true for Vercel serverless
+      // Required for Vercel serverless to create sessions
       name: "connect.sid",
       cookie: {
         secure: true,
+        // HTTPS only
         httpOnly: true,
         maxAge: 1e3 * 60 * 60 * 24 * 7,
+        // 7 days
         sameSite: "lax",
         path: "/"
       }
     }));
-    console.log("\u2705 Basic session middleware added");
-    sessionConfig.configureProductionSession(app).then(() => {
-      console.log("\u2705 PostgreSQL session store upgrade complete");
-    }).catch((error) => {
-      console.error("\u{1F534} PostgreSQL session store upgrade failed, using memory store:", error);
-    });
+    console.log("\u2705 Session middleware configured for Vercel (memory store)");
   } catch (error) {
     console.error("\u{1F534} Session configuration error:", error);
   }
@@ -18605,14 +18560,19 @@ if (process.env.VERCEL) {
       sessionKeys: req.session ? Object.keys(req.session) : [],
       sessionData: req.session || null,
       isAuthenticated: req.isAuthenticated ? req.isAuthenticated() : false,
-      storeType: "Memory (fallback)",
+      storeType: "Memory Store (Vercel)",
       cookieSettings: req.session?.cookie,
       cookieHeader: req.headers.cookie,
       vercelInit: true,
       timestamp: (/* @__PURE__ */ new Date()).toISOString(),
       sessionStore: {
         ready: typeof req.sessionStore !== "undefined",
-        type: req.sessionStore ? req.sessionStore.constructor.name : "none"
+        type: req.sessionStore ? req.sessionStore.constructor.name : "MemoryStore"
+      },
+      environment: {
+        NODE_ENV: process.env.NODE_ENV,
+        VERCEL: process.env.VERCEL,
+        SESSION_SECRET_SET: !!process.env.SESSION_SECRET
       }
     };
     console.log("\u{1F50D} Session debug info:", sessionData);

@@ -116,42 +116,30 @@ let isInitialized = false;
 if (process.env.VERCEL) {
   console.log("🚀 Vercel environment detected - initializing production app");
   
-  // Configure session middleware FIRST - this must be synchronous for Vercel
+  // Configure session middleware - use memory store for reliability in Vercel
   try {
-    // Use a synchronous approach with fallback
-    const sessionConfig = require('./session-config');
+    console.log("🔧 Setting up session middleware for Vercel...");
     
-    // Call the async function but don't wait for it to complete
-    // Add basic middleware first, then enhance with async session store
-    console.log("🔧 Setting up basic session middleware first...");
-    
-    // Import session for basic setup
+    // Import session for setup
     const session = require('express-session');
     const SESSION_SECRET = process.env.SESSION_SECRET || 'ikjin-po-mgmt-prod-secret-2025-secure-key';
     
-    // Add basic session middleware immediately
+    // Add session middleware with memory store (reliable for Vercel serverless)
     app.use(session({
       secret: SESSION_SECRET,
       resave: false,
-      saveUninitialized: true, // Changed to true for Vercel serverless
+      saveUninitialized: true, // Required for Vercel serverless to create sessions
       name: 'connect.sid',
       cookie: {
-        secure: true,
+        secure: true, // HTTPS only
         httpOnly: true,
-        maxAge: 1000 * 60 * 60 * 24 * 7,
+        maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
         sameSite: 'lax',
         path: '/'
       }
     }));
     
-    console.log("✅ Basic session middleware added");
-    
-    // Now try to upgrade to PostgreSQL store asynchronously (non-blocking)
-    sessionConfig.configureProductionSession(app).then(() => {
-      console.log("✅ PostgreSQL session store upgrade complete");
-    }).catch((error: any) => {
-      console.error("🔴 PostgreSQL session store upgrade failed, using memory store:", error);
-    });
+    console.log("✅ Session middleware configured for Vercel (memory store)");
     
   } catch (error) {
     console.error("🔴 Session configuration error:", error);
@@ -168,14 +156,19 @@ if (process.env.VERCEL) {
       sessionKeys: req.session ? Object.keys(req.session) : [],
       sessionData: req.session || null,
       isAuthenticated: req.isAuthenticated ? req.isAuthenticated() : false,
-      storeType: 'Memory (fallback)',
+      storeType: 'Memory Store (Vercel)',
       cookieSettings: req.session?.cookie,
       cookieHeader: req.headers.cookie,
       vercelInit: true,
       timestamp: new Date().toISOString(),
       sessionStore: {
         ready: typeof req.sessionStore !== 'undefined',
-        type: req.sessionStore ? req.sessionStore.constructor.name : 'none'
+        type: req.sessionStore ? req.sessionStore.constructor.name : 'MemoryStore'
+      },
+      environment: {
+        NODE_ENV: process.env.NODE_ENV,
+        VERCEL: process.env.VERCEL,
+        SESSION_SECRET_SET: !!process.env.SESSION_SECRET
       }
     };
     

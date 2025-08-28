@@ -208,7 +208,7 @@ export default function AuditManagement() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">시스템 감사 관리</h1>
+          <h1 className="text-3xl font-bold">로그 관리</h1>
           <p className="text-muted-foreground mt-2">
             시스템 활동 로그 및 보안 이벤트 모니터링
           </p>

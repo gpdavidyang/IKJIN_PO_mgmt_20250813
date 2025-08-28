@@ -25,7 +25,8 @@ import {
   FileDown,
   FolderTree,
   PanelLeftClose,
-  PanelLeftOpen
+  PanelLeftOpen,
+  ScrollText
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSidebar } from "@/contexts/SidebarContext";
@@ -71,6 +72,7 @@ const navigationSections = [
     title: "시스템 설정",
     items: [
       { name: "시스템 관리", href: "/admin", icon: Settings, adminOnly: true },
+      { name: "로그 관리", href: "/audit-management", icon: ScrollText, adminOnly: true },
     ]
   }
 ];
