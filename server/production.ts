@@ -5,8 +5,8 @@ dotenv.config();
 const originalDatabaseUrl = process.env.DATABASE_URL;
 console.log("🔍 Original DATABASE_URL:", originalDatabaseUrl ? originalDatabaseUrl.split('@')[0] + '@[HIDDEN]' : 'not set');
 
-// Use environment variable if available, otherwise use correct pooler URL
-const correctPoolerUrl = process.env.DATABASE_URL || "postgresql://postgres.tbvugytmskxxyqfvqmup:gps110601ysw@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres";
+// Use correct pooler URL for serverless environments
+const correctPoolerUrl = "postgresql://postgres.tbvugytmskxxyqfvqmup:gps110601ysw@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres";
 
 if (originalDatabaseUrl && (
   originalDatabaseUrl.includes('db.tbvugytmskxxyqfvqmup.supabase.co') || 
@@ -116,7 +116,8 @@ async function initializeProductionApp() {
         secure: true, // Required for HTTPS in production
         httpOnly: true,
         maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-        sameSite: 'lax', // Same-site deployment on Vercel
+        sameSite: 'strict', // Strict for same-origin security
+        path: '/', // Ensure cookie is available for all paths
         // No domain restriction - let browser handle it
       }
     }));
@@ -196,7 +197,8 @@ if (process.env.VERCEL) {
         secure: true, // Required for HTTPS in production
         httpOnly: true,
         maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-        sameSite: 'lax', // Same-site deployment on Vercel
+        sameSite: 'strict', // Strict for same-origin security
+        path: '/', // Ensure cookie is available for all paths
         // No domain restriction - let browser handle it
       }
     }));

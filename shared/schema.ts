@@ -991,3 +991,183 @@ export const insertApprovalStepInstanceSchema = createInsertSchema(approvalStepI
 });
 export type ApprovalStepInstance = typeof approvalStepInstances.$inferSelect;
 export type InsertApprovalStepInstance = z.infer<typeof insertApprovalStepInstanceSchema>;
+
+// ============================================================================
+// AUDIT MANAGEMENT SYSTEM
+// ============================================================================
+
+// Audit log level enum
+export const auditLogLevelEnum = pgEnum("audit_log_level", ["OFF", "ERROR", "WARNING", "INFO", "DEBUG"]);
+
+// Audit event type enum  
+export const auditEventTypeEnum = pgEnum("audit_event_type", [
+  "login", 
+  "logout", 
+  "login_failed",
+  "session_expired",
+  "password_change",
+  "permission_change",
+  "data_create",
+  "data_read", 
+  "data_update",
+  "data_delete",
+  "data_export",
+  "approval_request",
+  "approval_grant",
+  "approval_reject",
+  "email_send",
+  "file_upload",
+  "file_download",
+  "settings_change",
+  "security_alert",
+  "api_access",
+  "error"
+]);
+
+// System audit logs table - 시스템 전체 감사 로그
+export const systemAuditLogs = pgTable("system_audit_logs", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id), // NULL for system events
+  userName: varchar("user_name", { length: 255 }), // Denormalized for performance
+  userRole: varchar("user_role", { length: 50 }), // Denormalized for performance
+  eventType: auditEventTypeEnum("event_type").notNull(),
+  eventCategory: varchar("event_category", { length: 50 }).notNull(), // 'auth', 'data', 'system', 'security'
+  entityType: varchar("entity_type", { length: 50 }), // 'order', 'user', 'vendor', 'project', etc.
+  entityId: varchar("entity_id", { length: 100 }), // ID of affected entity
+  action: varchar("action", { length: 255 }).notNull(), // Detailed action description
+  details: jsonb("details"), // Additional event details
+  oldValue: jsonb("old_value"), // Previous state (for updates)
+  newValue: jsonb("new_value"), // New state (for updates)
+  ipAddress: varchar("ip_address", { length: 50 }),
+  userAgent: text("user_agent"),
+  sessionId: varchar("session_id", { length: 255 }),
+  requestMethod: varchar("request_method", { length: 10 }), // GET, POST, PUT, DELETE
+  requestPath: varchar("request_path", { length: 500 }),
+  responseStatus: integer("response_status"), // HTTP status code
+  executionTime: integer("execution_time"), // in milliseconds
+  errorMessage: text("error_message"), // For error events
+  stackTrace: text("stack_trace"), // For debugging (only in DEBUG mode)
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_audit_user").on(table.userId),
+  index("idx_audit_event_type").on(table.eventType),
+  index("idx_audit_entity").on(table.entityType, table.entityId),
+  index("idx_audit_created").on(table.createdAt),
+  index("idx_audit_category").on(table.eventCategory),
+  index("idx_audit_session").on(table.sessionId),
+]);
+
+// Audit settings table - 감사 설정
+export const auditSettings = pgTable("audit_settings", {
+  id: serial("id").primaryKey(),
+  logLevel: auditLogLevelEnum("log_level").notNull().default("INFO"),
+  enabledCategories: jsonb("enabled_categories").notNull().default(["auth", "data", "security"]).$type<string[]>(),
+  retentionDays: integer("retention_days").notNull().default(90), // Days to keep logs
+  archiveEnabled: boolean("archive_enabled").default(true),
+  archiveAfterDays: integer("archive_after_days").default(30),
+  realTimeAlerts: boolean("real_time_alerts").default(false),
+  alertEmails: jsonb("alert_emails").default([]).$type<string[]>(),
+  excludedPaths: jsonb("excluded_paths").default([]).$type<string[]>(), // API paths to exclude
+  excludedUsers: jsonb("excluded_users").default([]).$type<string[]>(), // User IDs to exclude
+  sensitiveDataMasking: boolean("sensitive_data_masking").default(true),
+  performanceTracking: boolean("performance_tracking").default(false),
+  apiAccessLogging: boolean("api_access_logging").default(false),
+  updatedBy: varchar("updated_by").references(() => users.id),
+  updatedAt: timestamp("updated_at").defaultNow().$onUpdate(() => new Date()),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Archived audit logs table - 아카이브된 감사 로그
+export const archivedAuditLogs = pgTable("archived_audit_logs", {
+  id: serial("id").primaryKey(),
+  originalId: integer("original_id").notNull(), // Original log ID
+  userId: varchar("user_id", { length: 255 }),
+  userName: varchar("user_name", { length: 255 }),
+  userRole: varchar("user_role", { length: 50 }),
+  eventType: varchar("event_type", { length: 50 }).notNull(),
+  eventCategory: varchar("event_category", { length: 50 }).notNull(),
+  entityType: varchar("entity_type", { length: 50 }),
+  entityId: varchar("entity_id", { length: 100 }),
+  action: varchar("action", { length: 255 }).notNull(),
+  details: jsonb("details"),
+  ipAddress: varchar("ip_address", { length: 50 }),
+  createdAt: timestamp("created_at").notNull(),
+  archivedAt: timestamp("archived_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_archived_audit_user").on(table.userId),
+  index("idx_archived_audit_created").on(table.createdAt),
+  index("idx_archived_audit_archived").on(table.archivedAt),
+]);
+
+// Audit alert rules table - 감사 알림 규칙
+export const auditAlertRules = pgTable("audit_alert_rules", {
+  id: serial("id").primaryKey(),
+  ruleName: varchar("rule_name", { length: 100 }).notNull(),
+  description: text("description"),
+  eventTypes: jsonb("event_types").notNull().$type<string[]>(), // Events to monitor
+  condition: jsonb("condition"), // Complex conditions
+  severity: varchar("severity", { length: 20 }).notNull().default("medium"), // low, medium, high, critical
+  alertChannels: jsonb("alert_channels").notNull().$type<string[]>(), // email, slack, webhook
+  recipients: jsonb("recipients").notNull().$type<string[]>(), // Email addresses or webhook URLs
+  throttleMinutes: integer("throttle_minutes").default(60), // Prevent alert spam
+  isActive: boolean("is_active").default(true),
+  createdBy: varchar("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().$onUpdate(() => new Date()),
+}, (table) => [
+  index("idx_alert_rules_active").on(table.isActive),
+  index("idx_alert_rules_severity").on(table.severity),
+]);
+
+// Relations for audit tables
+export const systemAuditLogsRelations = relations(systemAuditLogs, ({ one }) => ({
+  user: one(users, {
+    fields: [systemAuditLogs.userId],
+    references: [users.id],
+  }),
+}));
+
+export const auditSettingsRelations = relations(auditSettings, ({ one }) => ({
+  updatedByUser: one(users, {
+    fields: [auditSettings.updatedBy],
+    references: [users.id],
+  }),
+}));
+
+export const auditAlertRulesRelations = relations(auditAlertRules, ({ one }) => ({
+  createdByUser: one(users, {
+    fields: [auditAlertRules.createdBy],
+    references: [users.id],
+  }),
+}));
+
+// Insert schemas for audit tables
+export const insertSystemAuditLogSchema = createInsertSchema(systemAuditLogs).omit({
+  id: true,
+  createdAt: true,
+});
+export type SystemAuditLog = typeof systemAuditLogs.$inferSelect;
+export type InsertSystemAuditLog = z.infer<typeof insertSystemAuditLogSchema>;
+
+export const insertAuditSettingsSchema = createInsertSchema(auditSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type AuditSettings = typeof auditSettings.$inferSelect;
+export type InsertAuditSettings = z.infer<typeof insertAuditSettingsSchema>;
+
+export const insertArchivedAuditLogSchema = createInsertSchema(archivedAuditLogs).omit({
+  id: true,
+  archivedAt: true,
+});
+export type ArchivedAuditLog = typeof archivedAuditLogs.$inferSelect;
+export type InsertArchivedAuditLog = z.infer<typeof insertArchivedAuditLogSchema>;
+
+export const insertAuditAlertRuleSchema = createInsertSchema(auditAlertRules).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type AuditAlertRule = typeof auditAlertRules.$inferSelect;
+export type InsertAuditAlertRule = z.infer<typeof insertAuditAlertRuleSchema>;

@@ -2048,7 +2048,7 @@ var DatabaseStorage = class {
     };
   }
   async getPurchaseOrder(id) {
-    const [order] = await db.select().from(purchaseOrders).leftJoin(vendors, eq(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq(purchaseOrders.userId, users.id)).leftJoin(projects, eq(purchaseOrders.projectId, projects.id)).where(eq(purchaseOrders.id, id));
+    const [order] = await db.select().from(purchaseOrders).leftJoin(vendors, eq(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq(purchaseOrders.userId, users.id)).leftJoin(projects, eq(purchaseOrders.projectId, projects.id)).leftJoin(companies, eq(companies.id, 1)).where(eq(purchaseOrders.id, id));
     if (!order) return void 0;
     const items3 = await db.select().from(purchaseOrderItems).where(eq(purchaseOrderItems.orderId, id));
     console.log("Debug: Items found:", items3);
@@ -2069,6 +2069,7 @@ var DatabaseStorage = class {
       vendor: order.vendors || void 0,
       user: order.users || void 0,
       project: order.projects || void 0,
+      company: order.companies || void 0,
       items: items3,
       attachments: orderAttachments
     };
@@ -6986,14 +6987,32 @@ async function generatePDFLogic(req, res) {
         }
         cleanedNotes = allNotes.length > 0 ? allNotes.join(" | ") : "";
       }
+      let creatorInfo = null;
+      if (orderData.createdById || orderData.user?.id) {
+        try {
+          const userId = orderData.createdById || orderData.user?.id;
+          const user = await storage.getUser(userId);
+          if (user) {
+            creatorInfo = {
+              name: user.name || "",
+              email: user.email || "",
+              phone: user.phone || ""
+            };
+            console.log("\u{1F4C4} \uBC1C\uC8FC \uC0DD\uC131\uC790 \uC815\uBCF4:", creatorInfo);
+          }
+        } catch (error) {
+          console.error("\u26A0\uFE0F \uC0AC\uC6A9\uC790 \uC815\uBCF4 \uC870\uD68C \uC2E4\uD328:", error);
+        }
+      }
       const safeOrderData = {
         // Company info (발주업체)
         companyName: companyInfo?.companyName || "(\uC8FC)\uC775\uC9C4\uC5D4\uC9C0\uB2C8\uC5B4\uB9C1",
         companyBusinessNumber: companyInfo?.businessNumber || "",
         companyAddress: companyInfo?.address || "",
-        companyPhone: companyInfo?.phone || "",
-        companyEmail: companyInfo?.email || "",
-        companyContactPerson: companyInfo?.contactPerson || "",
+        // Use creator's info for contact person details
+        companyPhone: creatorInfo?.phone || companyInfo?.phone || "",
+        companyEmail: creatorInfo?.email || companyInfo?.email || "",
+        companyContactPerson: creatorInfo?.name || orderData.createdBy || orderData.user?.name || "\uC2DC\uC2A4\uD15C",
         // Order info
         orderNumber: orderData.orderNumber || "PO-TEMP-001",
         projectName: orderData.projectName || orderData.project?.projectName || "\uD604\uC7A5 \uBBF8\uC9C0\uC815",
@@ -17335,7 +17354,7 @@ var routes_default = router31;
 dotenv2.config();
 var originalDatabaseUrl = process.env.DATABASE_URL;
 console.log("\u{1F50D} Original DATABASE_URL:", originalDatabaseUrl ? originalDatabaseUrl.split("@")[0] + "@[HIDDEN]" : "not set");
-var correctPoolerUrl2 = process.env.DATABASE_URL || "postgresql://postgres.tbvugytmskxxyqfvqmup:gps110601ysw@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres";
+var correctPoolerUrl2 = "postgresql://postgres.tbvugytmskxxyqfvqmup:gps110601ysw@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres";
 if (originalDatabaseUrl && (originalDatabaseUrl.includes("db.tbvugytmskxxyqfvqmup.supabase.co") || originalDatabaseUrl.includes("tbvugytmskxxyqfvqmup.supabase.co:5432"))) {
   console.log("\u{1F527} Using corrected Supabase pooler URL for serverless");
   process.env.DATABASE_URL = correctPoolerUrl2;
@@ -17417,8 +17436,10 @@ async function initializeProductionApp() {
         httpOnly: true,
         maxAge: 1e3 * 60 * 60 * 24 * 7,
         // 7 days
-        sameSite: "lax"
-        // Same-site deployment on Vercel
+        sameSite: "strict",
+        // Strict for same-origin security
+        path: "/"
+        // Ensure cookie is available for all paths
         // No domain restriction - let browser handle it
       }
     }));
@@ -17489,8 +17510,10 @@ if (process.env.VERCEL) {
         httpOnly: true,
         maxAge: 1e3 * 60 * 60 * 24 * 7,
         // 7 days
-        sameSite: "lax"
-        // Same-site deployment on Vercel
+        sameSite: "strict",
+        // Strict for same-origin security
+        path: "/"
+        // Ensure cookie is available for all paths
         // No domain restriction - let browser handle it
       }
     }));

@@ -719,15 +719,35 @@ async function generatePDFLogic(req: any, res: any) {
         cleanedNotes = allNotes.length > 0 ? allNotes.join(' | ') : '';
       }
 
+      // Get creator user information for PDF
+      let creatorInfo = null;
+      if (orderData.createdById || orderData.user?.id) {
+        try {
+          const userId = orderData.createdById || orderData.user?.id;
+          const user = await storage.getUser(userId);
+          if (user) {
+            creatorInfo = {
+              name: user.name || '',
+              email: user.email || '',
+              phone: user.phone || ''
+            };
+            console.log('📄 발주 생성자 정보:', creatorInfo);
+          }
+        } catch (error) {
+          console.error('⚠️ 사용자 정보 조회 실패:', error);
+        }
+      }
+
       // Sanitize and prepare data
       const safeOrderData = {
         // Company info (발주업체)
         companyName: companyInfo?.companyName || '(주)익진엔지니어링',
         companyBusinessNumber: companyInfo?.businessNumber || '',
         companyAddress: companyInfo?.address || '',
-        companyPhone: companyInfo?.phone || '',
-        companyEmail: companyInfo?.email || '',
-        companyContactPerson: companyInfo?.contactPerson || '',
+        // Use creator's info for contact person details
+        companyPhone: creatorInfo?.phone || companyInfo?.phone || '',
+        companyEmail: creatorInfo?.email || companyInfo?.email || '',
+        companyContactPerson: creatorInfo?.name || orderData.createdBy || orderData.user?.name || '시스템',
         // Order info
         orderNumber: orderData.orderNumber || 'PO-TEMP-001',
         projectName: orderData.projectName || orderData.project?.projectName || '현장 미지정',

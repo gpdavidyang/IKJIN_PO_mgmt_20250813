@@ -66,11 +66,11 @@ export function OrderPreviewPrint({ order }: OrderPreviewPrintProps) {
               </tr>
               <tr>
                 <td style={{ border: '1px solid #666', padding: '8px', fontSize: '10px' }}>
-                  <div><strong>회사명:</strong> 발주 시스템</div>
-                  <div><strong>담당자:</strong> David Yang</div>
-                  <div><strong>이메일:</strong> davidswyang@gmail.com</div>
-                  <div><strong>연락처:</strong> 031-000-0000</div>
-                  <div><strong>주소:</strong> 경기도 성남시 분당구</div>
+                  <div><strong>회사명:</strong> {order.company?.companyName || '(주)익진엔지니어링'}</div>
+                  <div><strong>담당자:</strong> {order.user?.name || order.createdBy || '시스템'}</div>
+                  <div><strong>이메일:</strong> {order.user?.email || '-'}</div>
+                  <div><strong>연락처:</strong> {order.user?.phone || '-'}</div>
+                  <div><strong>주소:</strong> {order.company?.address || '-'}</div>
                 </td>
               </tr>
             </table>
@@ -91,11 +91,11 @@ export function OrderPreviewPrint({ order }: OrderPreviewPrintProps) {
               </tr>
               <tr>
                 <td style={{ border: '1px solid #666', padding: '8px', fontSize: '10px' }}>
-                  <div><strong>회사명:</strong> {order.vendor?.name || "익진파트너스"}</div>
-                  <div><strong>사업자:</strong> {order.vendor?.businessNumber || "123-45-67890"}</div>
-                  <div><strong>담당자:</strong> 홍길동</div>
-                  <div><strong>연락처:</strong> 031-000-0000</div>
-                  <div><strong>주소:</strong> 경기도 성남시 분당구</div>
+                  <div><strong>회사명:</strong> {order.vendor?.name || "거래처명"}</div>
+                  <div><strong>사업자:</strong> {order.vendor?.businessNumber || "-"}</div>
+                  <div><strong>담당자:</strong> {order.vendor?.contactPerson || '-'}</div>
+                  <div><strong>연락처:</strong> {order.vendor?.phone || '-'}</div>
+                  <div><strong>주소:</strong> {order.vendor?.address || '-'}</div>
                 </td>
               </tr>
             </table>

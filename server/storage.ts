@@ -22,6 +22,7 @@ import {
 
   companies,
   purchaseOrderStatusEnum,
+  type Company,
   type User,
   type UpsertUser,
   type Vendor,
@@ -1063,13 +1064,14 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  async getPurchaseOrder(id: number): Promise<(PurchaseOrder & { vendor?: Vendor; user?: User; project?: Project; items?: PurchaseOrderItem[]; attachments?: Attachment[] }) | undefined> {
+  async getPurchaseOrder(id: number): Promise<(PurchaseOrder & { vendor?: Vendor; user?: User; project?: Project; items?: PurchaseOrderItem[]; attachments?: Attachment[]; company?: Company }) | undefined> {
     const [order] = await db
       .select()
       .from(purchaseOrders)
       .leftJoin(vendors, eq(purchaseOrders.vendorId, vendors.id))
       .leftJoin(users, eq(purchaseOrders.userId, users.id))
       .leftJoin(projects, eq(purchaseOrders.projectId, projects.id))
+      .leftJoin(companies, eq(companies.id, 1))
       .where(eq(purchaseOrders.id, id));
 
     if (!order) return undefined;
@@ -1106,6 +1108,7 @@ export class DatabaseStorage implements IStorage {
       vendor: order.vendors || undefined,
       user: order.users || undefined,
       project: order.projects || undefined,
+      company: order.companies || undefined,
       items,
       attachments: orderAttachments,
     };
