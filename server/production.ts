@@ -146,22 +146,6 @@ if (process.env.VERCEL) {
     
     console.log("✅ Basic session middleware added");
     
-    // Add the debug endpoint immediately
-    app.get('/api/debug/session-store', (req: any, res: any) => {
-      const sessionData = {
-        hasSession: !!req.session,
-        sessionID: req.sessionID,
-        sessionKeys: req.session ? Object.keys(req.session) : [],
-        isAuthenticated: req.isAuthenticated ? req.isAuthenticated() : false,
-        storeType: 'Memory (fallback)',
-        cookieSettings: req.session?.cookie,
-        vercelInit: true
-      };
-      
-      console.log("🔍 Session debug info:", sessionData);
-      res.json(sessionData);
-    });
-    
     // Now try to upgrade to PostgreSQL store asynchronously (non-blocking)
     sessionConfig.configureProductionSession(app).then(() => {
       console.log("✅ PostgreSQL session store upgrade complete");
@@ -176,7 +160,24 @@ if (process.env.VERCEL) {
   // Add session error handler
   app.use(sessionErrorHandler);
 
-  // Use modular routes
+  // Add the debug endpoint BEFORE the main router to ensure it's accessible
+  app.get('/api/debug/session-store', (req: any, res: any) => {
+    const sessionData = {
+      hasSession: !!req.session,
+      sessionID: req.sessionID,
+      sessionKeys: req.session ? Object.keys(req.session) : [],
+      isAuthenticated: req.isAuthenticated ? req.isAuthenticated() : false,
+      storeType: 'Memory (fallback)',
+      cookieSettings: req.session?.cookie,
+      vercelInit: true,
+      timestamp: new Date().toISOString()
+    };
+    
+    console.log("🔍 Session debug info:", sessionData);
+    res.json(sessionData);
+  });
+
+  // Use modular routes AFTER debug endpoints
   app.use(router);
   
   // Error handling middleware

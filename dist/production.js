@@ -1539,7 +1539,7 @@ __export(po_template_processor_mock_exports, {
   POTemplateProcessorMock: () => POTemplateProcessorMock
 });
 import XLSX4 from "xlsx";
-import { eq as eq6 } from "drizzle-orm";
+import { eq as eq7 } from "drizzle-orm";
 var POTemplateProcessorMock;
 var init_po_template_processor_mock = __esm({
   "server/utils/po-template-processor-mock.ts"() {
@@ -1680,7 +1680,7 @@ var init_po_template_processor_mock = __esm({
             for (const orderData of orders) {
               console.log(`\u{1F50D} [DB] \uBC1C\uC8FC\uC11C \uCC98\uB9AC \uC911: ${orderData.orderNumber}, \uAC70\uB798\uCC98: ${orderData.vendorName}`);
               console.log(`\u{1F50D} [DB] \uAC70\uB798\uCC98 \uC870\uD68C: ${orderData.vendorName}`);
-              let vendor = await tx.select().from(vendors).where(eq6(vendors.name, orderData.vendorName)).limit(1);
+              let vendor = await tx.select().from(vendors).where(eq7(vendors.name, orderData.vendorName)).limit(1);
               let vendorId;
               if (vendor.length === 0) {
                 console.log(`\u{1F50D} [DB] \uAC70\uB798\uCC98 \uC0DD\uC131: ${orderData.vendorName}`);
@@ -1698,7 +1698,7 @@ var init_po_template_processor_mock = __esm({
                 console.log(`\u2705 [DB] \uAC70\uB798\uCC98 \uAE30\uC874 \uBC1C\uACAC: ID ${vendorId}`);
               }
               console.log(`\u{1F50D} [DB] \uD504\uB85C\uC81D\uD2B8 \uC870\uD68C: ${orderData.siteName}`);
-              let project = await tx.select().from(projects).where(eq6(projects.projectName, orderData.siteName)).limit(1);
+              let project = await tx.select().from(projects).where(eq7(projects.projectName, orderData.siteName)).limit(1);
               let projectId;
               if (project.length === 0) {
                 console.log(`\u{1F50D} [DB] \uD504\uB85C\uC81D\uD2B8 \uC0DD\uC131: ${orderData.siteName}`);
@@ -3490,6 +3490,7 @@ async function comparePasswords(supplied, stored) {
 // server/middleware/audit-logger.ts
 init_db();
 init_schema();
+import { eq as eq2 } from "drizzle-orm";
 var cachedSettings = null;
 var settingsCacheTime = 0;
 var CACHE_TTL = 6e4;
@@ -3499,11 +3500,13 @@ async function getAuditSettings() {
     return cachedSettings;
   }
   try {
-    const settings = await db.select().from(auditSettings).limit(1);
+    const settings = await db.select().from(auditSettings).where(eq2(auditSettings.userId, null)).limit(1);
     cachedSettings = settings[0] || {
       logLevel: "INFO",
-      enabledCategories: ["auth", "data", "security"],
-      excludedPaths: [],
+      enableAuth: true,
+      enableData: true,
+      enableSystem: true,
+      enableSecurity: true,
       excludedUsers: [],
       sensitiveDataMasking: true,
       performanceTracking: false,
@@ -3516,33 +3519,12 @@ async function getAuditSettings() {
     return cachedSettings || { logLevel: "INFO", enabledCategories: ["auth", "data", "security"] };
   }
 }
-function maskSensitiveData(data) {
-  if (!data) return data;
-  const sensitiveFields = ["password", "token", "secret", "apiKey", "email", "phone"];
-  if (typeof data === "string") {
-    return data;
-  }
-  if (Array.isArray(data)) {
-    return data.map((item) => maskSensitiveData(item));
-  }
-  if (typeof data === "object") {
-    const masked = { ...data };
-    for (const key of Object.keys(masked)) {
-      if (sensitiveFields.some((field) => key.toLowerCase().includes(field))) {
-        masked[key] = "***MASKED***";
-      } else if (typeof masked[key] === "object") {
-        masked[key] = maskSensitiveData(masked[key]);
-      }
-    }
-    return masked;
-  }
-  return data;
-}
 async function logAuditEvent(eventType, eventCategory, details) {
   try {
     const settings = await getAuditSettings();
     if (settings.logLevel === "OFF") return;
-    if (!settings.enabledCategories?.includes(eventCategory)) return;
+    const categoryEnabled = eventCategory === "auth" && settings.enableAuth || eventCategory === "data" && settings.enableData || eventCategory === "system" && settings.enableSystem || eventCategory === "security" && settings.enableSecurity;
+    if (!categoryEnabled) return;
     await db.insert(systemAuditLogs).values({
       userId: details.userId || null,
       userName: details.userName || null,
@@ -3552,9 +3534,9 @@ async function logAuditEvent(eventType, eventCategory, details) {
       entityType: details.entityType,
       entityId: details.entityId,
       action: details.action,
-      details: details.additionalDetails,
-      oldValue: settings.sensitiveDataMasking ? maskSensitiveData(details.oldValue) : details.oldValue,
-      newValue: settings.sensitiveDataMasking ? maskSensitiveData(details.newValue) : details.newValue,
+      additionalDetails: details.additionalDetails ? JSON.stringify(details.additionalDetails) : null,
+      oldData: details.oldValue ? JSON.stringify(details.oldValue) : null,
+      newData: details.newValue ? JSON.stringify(details.newValue) : null,
       ipAddress: details.ipAddress,
       userAgent: details.userAgent,
       sessionId: details.sessionId
@@ -4235,7 +4217,7 @@ init_schema();
 // server/utils/optimized-queries.ts
 init_db();
 init_schema();
-import { eq as eq2, desc as desc2, count as count2, sql as sql3, and as and2, isNotNull as isNotNull2 } from "drizzle-orm";
+import { eq as eq3, desc as desc2, count as count2, sql as sql3, and as and2, isNotNull as isNotNull2 } from "drizzle-orm";
 
 // server/utils/cache.ts
 var MemoryCache = class {
@@ -4344,7 +4326,7 @@ var OptimizedOrderQueries = class {
         userName: users.name,
         approvalLevel: purchaseOrders.approvalLevel,
         currentApproverRole: purchaseOrders.currentApproverRole
-      }).from(purchaseOrders).leftJoin(projects, eq2(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq2(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq2(purchaseOrders.userId, users.id)).orderBy(desc2(purchaseOrders.orderDate));
+      }).from(purchaseOrders).leftJoin(projects, eq3(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq3(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq3(purchaseOrders.userId, users.id)).orderBy(desc2(purchaseOrders.orderDate));
       const result = await query;
       cache.set(cacheKey, result, 300);
       return result;
@@ -4363,8 +4345,8 @@ var OptimizedOrderQueries = class {
     try {
       const result = await db.select().from(purchaseOrders).where(
         and2(
-          eq2(purchaseOrders.status, "pending"),
-          eq2(purchaseOrders.currentApproverRole, role)
+          eq3(purchaseOrders.status, "pending"),
+          eq3(purchaseOrders.currentApproverRole, role)
         )
       ).orderBy(desc2(purchaseOrders.orderDate));
       cache.set(cacheKey, result, 120);
@@ -4383,8 +4365,8 @@ var OptimizedOrderQueries = class {
     if (cached) return cached;
     try {
       const [totalOrders] = await db.select({ count: count2() }).from(purchaseOrders);
-      const [pendingOrders] = await db.select({ count: count2() }).from(purchaseOrders).where(eq2(purchaseOrders.status, "pending"));
-      const [approvedOrders] = await db.select({ count: count2() }).from(purchaseOrders).where(eq2(purchaseOrders.status, "approved"));
+      const [pendingOrders] = await db.select({ count: count2() }).from(purchaseOrders).where(eq3(purchaseOrders.status, "pending"));
+      const [approvedOrders] = await db.select({ count: count2() }).from(purchaseOrders).where(eq3(purchaseOrders.status, "approved"));
       const result = {
         total: totalOrders.count || 0,
         pending: pendingOrders.count || 0,
@@ -4444,7 +4426,7 @@ var OptimizedDashboardQueries = class {
         vendorName: vendors.name,
         projectId: projects.id,
         projectName: projects.projectName
-      }).from(purchaseOrders).leftJoin(vendors, eq2(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq2(purchaseOrders.projectId, projects.id)).orderBy(desc2(purchaseOrders.createdAt)).limit(10);
+      }).from(purchaseOrders).leftJoin(vendors, eq3(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq3(purchaseOrders.projectId, projects.id)).orderBy(desc2(purchaseOrders.createdAt)).limit(10);
       const recentOrders = recentOrdersRaw.map((order) => ({
         id: order.id,
         orderNumber: order.orderNumber,
@@ -4487,7 +4469,7 @@ var OptimizedDashboardQueries = class {
         projectType: projects.projectType,
         orderCount: count2(),
         totalAmount: sql3`COALESCE(SUM(${purchaseOrders.totalAmount}), 0)`
-      }).from(purchaseOrders).leftJoin(projects, eq2(purchaseOrders.projectId, projects.id)).where(isNotNull2(projects.id)).groupBy(projects.id, projects.projectName, projects.projectType).orderBy(desc2(sql3`COALESCE(SUM(${purchaseOrders.totalAmount}), 0)`)).limit(10);
+      }).from(purchaseOrders).leftJoin(projects, eq3(purchaseOrders.projectId, projects.id)).where(isNotNull2(projects.id)).groupBy(projects.id, projects.projectName, projects.projectType).orderBy(desc2(sql3`COALESCE(SUM(${purchaseOrders.totalAmount}), 0)`)).limit(10);
       const result = {
         statistics: {
           totalOrders: parseInt(orderStats.totalOrders) || 0,
@@ -6002,7 +5984,7 @@ var EnhancedExcelToPDFConverter = class {
 init_db();
 init_schema();
 init_excel_input_sheet_remover();
-import { eq as eq3 } from "drizzle-orm";
+import { eq as eq4 } from "drizzle-orm";
 import * as XLSX2 from "xlsx";
 import { v4 as uuidv4 } from "uuid";
 import fs5 from "fs";
@@ -6268,7 +6250,7 @@ var POTemplateProcessor = class _POTemplateProcessor {
       }).returning();
       return vendor.id;
     }
-    const existingVendor = await tx.select().from(vendors).where(eq3(vendors.name, vendorName)).limit(1);
+    const existingVendor = await tx.select().from(vendors).where(eq4(vendors.name, vendorName)).limit(1);
     if (existingVendor.length > 0) {
       return existingVendor[0].id;
     }
@@ -6289,7 +6271,7 @@ var POTemplateProcessor = class _POTemplateProcessor {
       }).returning();
       return project.id;
     }
-    const existingProject = await tx.select().from(projects).where(eq3(projects.projectName, siteName)).limit(1);
+    const existingProject = await tx.select().from(projects).where(eq4(projects.projectName, siteName)).limit(1);
     if (existingProject.length > 0) {
       return existingProject[0].id;
     }
@@ -6722,7 +6704,7 @@ var POEmailService = class {
 // server/services/approval-routing-service.ts
 init_db();
 init_schema();
-import { eq as eq4, and as and4, lte as lte3, asc as asc2, desc as desc3 } from "drizzle-orm";
+import { eq as eq5, and as and4, lte as lte3, asc as asc2, desc as desc3 } from "drizzle-orm";
 var ApprovalRoutingService = class {
   /**
    * 주문에 대한 최적의 승인 경로를 결정합니다
@@ -6758,7 +6740,7 @@ var ApprovalRoutingService = class {
   static async handleDirectApproval(context, settings) {
     const directApprovalRoles = settings.directApprovalRoles || [];
     const canDirectApprove = directApprovalRoles.includes(context.currentUserRole);
-    const directApprovalUsers = await db.select({ id: users.id, name: users.name }).from(users).where(eq4(users.role, context.currentUserRole)).limit(10);
+    const directApprovalUsers = await db.select({ id: users.id, name: users.name }).from(users).where(eq5(users.role, context.currentUserRole)).limit(10);
     return {
       approvalMode: "direct",
       canDirectApprove,
@@ -6802,8 +6784,8 @@ var ApprovalRoutingService = class {
   static async findAppropriateStagedTemplate(companyId, orderAmount, priority) {
     const templates = await db.select().from(approvalStepTemplates).where(
       and4(
-        eq4(approvalStepTemplates.companyId, companyId),
-        eq4(approvalStepTemplates.isActive, true),
+        eq5(approvalStepTemplates.companyId, companyId),
+        eq5(approvalStepTemplates.isActive, true),
         lte3(approvalStepTemplates.minAmount, orderAmount.toString())
         // maxAmount가 null이거나 orderAmount보다 크거나 같은 경우
       )
@@ -6822,8 +6804,8 @@ var ApprovalRoutingService = class {
   static async checkSkippableSteps(currentUserRole, orderAmount, approvalSteps) {
     const userAuthority = await db.select().from(approvalAuthorities).where(
       and4(
-        eq4(approvalAuthorities.role, currentUserRole),
-        eq4(approvalAuthorities.isActive, true)
+        eq5(approvalAuthorities.role, currentUserRole),
+        eq5(approvalAuthorities.isActive, true)
       )
     ).limit(1);
     if (!userAuthority.length) {
@@ -6862,9 +6844,9 @@ var ApprovalRoutingService = class {
   static async getNextApprovalStep(orderId) {
     const nextStep = await db.select().from(approvalStepInstances).where(
       and4(
-        eq4(approvalStepInstances.orderId, orderId),
-        eq4(approvalStepInstances.status, "pending"),
-        eq4(approvalStepInstances.isActive, true)
+        eq5(approvalStepInstances.orderId, orderId),
+        eq5(approvalStepInstances.status, "pending"),
+        eq5(approvalStepInstances.isActive, true)
       )
     ).orderBy(asc2(approvalStepInstances.stepOrder)).limit(1);
     return nextStep[0] || null;
@@ -6875,9 +6857,9 @@ var ApprovalRoutingService = class {
   static async isApprovalComplete(orderId) {
     const pendingSteps = await db.select().from(approvalStepInstances).where(
       and4(
-        eq4(approvalStepInstances.orderId, orderId),
-        eq4(approvalStepInstances.status, "pending"),
-        eq4(approvalStepInstances.isActive, true)
+        eq5(approvalStepInstances.orderId, orderId),
+        eq5(approvalStepInstances.status, "pending"),
+        eq5(approvalStepInstances.isActive, true)
       )
     );
     return pendingSteps.length === 0;
@@ -6888,8 +6870,8 @@ var ApprovalRoutingService = class {
   static async getApprovalProgress(orderId) {
     const allSteps = await db.select().from(approvalStepInstances).where(
       and4(
-        eq4(approvalStepInstances.orderId, orderId),
-        eq4(approvalStepInstances.isActive, true)
+        eq5(approvalStepInstances.orderId, orderId),
+        eq5(approvalStepInstances.isActive, true)
       )
     ).orderBy(asc2(approvalStepInstances.stepOrder));
     const completedSteps = allSteps.filter(
@@ -6909,8 +6891,8 @@ var ApprovalRoutingService = class {
   static async getWorkflowSettings(companyId) {
     const settings = await db.select().from(approvalWorkflowSettings).where(
       and4(
-        eq4(approvalWorkflowSettings.companyId, companyId),
-        eq4(approvalWorkflowSettings.isActive, true)
+        eq5(approvalWorkflowSettings.companyId, companyId),
+        eq5(approvalWorkflowSettings.isActive, true)
       )
     ).orderBy(desc3(approvalWorkflowSettings.createdAt)).limit(1);
     return settings[0] || null;
@@ -9075,7 +9057,7 @@ var companies_default = router7;
 import { Router as Router8 } from "express";
 init_db();
 init_schema();
-import { eq as eq5, and as and5 } from "drizzle-orm";
+import { eq as eq6, and as and5 } from "drizzle-orm";
 var router8 = Router8();
 router8.get("/positions", async (req, res) => {
   try {
@@ -9159,8 +9141,8 @@ router8.get("/approval-workflow-settings", requireAuth, requireAdmin, async (req
   try {
     const settings = await db.select().from(approvalWorkflowSettings).where(
       and5(
-        eq5(approvalWorkflowSettings.isActive, true),
-        eq5(approvalWorkflowSettings.companyId, 1)
+        eq6(approvalWorkflowSettings.isActive, true),
+        eq6(approvalWorkflowSettings.companyId, 1)
       )
     ).limit(1);
     if (settings.length === 0) {
@@ -9197,7 +9179,7 @@ router8.put("/approval-workflow-settings", requireAuth, requireAdmin, async (req
       requireAllStages,
       skipLowerStages
     } = req.body;
-    const existing = await db.select().from(approvalWorkflowSettings).where(eq5(approvalWorkflowSettings.companyId, 1)).limit(1);
+    const existing = await db.select().from(approvalWorkflowSettings).where(eq6(approvalWorkflowSettings.companyId, 1)).limit(1);
     if (existing.length === 0) {
       const [newSettings] = await db.insert(approvalWorkflowSettings).values({
         companyId: 1,
@@ -9218,7 +9200,7 @@ router8.put("/approval-workflow-settings", requireAuth, requireAdmin, async (req
         requireAllStages,
         skipLowerStages,
         updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq5(approvalWorkflowSettings.id, existing[0].id)).returning();
+      }).where(eq6(approvalWorkflowSettings.id, existing[0].id)).returning();
       res.json(updatedSettings);
     }
   } catch (error) {
@@ -9242,7 +9224,7 @@ init_po_template_processor_mock();
 // server/utils/vendor-validation.ts
 init_db();
 init_schema();
-import { eq as eq7, sql as sql6 } from "drizzle-orm";
+import { eq as eq8, sql as sql6 } from "drizzle-orm";
 function levenshteinDistance(str1, str2) {
   const matrix = [];
   if (str1.length === 0) return str2.length;
@@ -9362,7 +9344,7 @@ async function validateVendorName(vendorName, vendorType = "\uAC70\uB798\uCC98")
         phone: vendors.phone,
         contactPerson: vendors.contactPerson,
         aliases: vendors.aliases
-      }).from(vendors).where(eq7(vendors.name, vendorName)).limit(1);
+      }).from(vendors).where(eq8(vendors.name, vendorName)).limit(1);
       const aliasMatchQuery = db.select({
         id: vendors.id,
         name: vendors.name,
@@ -9378,7 +9360,7 @@ async function validateVendorName(vendorName, vendorType = "\uAC70\uB798\uCC98")
         phone: vendors.phone,
         contactPerson: vendors.contactPerson,
         aliases: vendors.aliases
-      }).from(vendors).where(eq7(vendors.isActive, true));
+      }).from(vendors).where(eq8(vendors.isActive, true));
       exactMatch = await Promise.race([exactMatchQuery, dbTimeout]);
       aliasMatch = await Promise.race([aliasMatchQuery, dbTimeout]);
       allVendors = await Promise.race([allVendorsQuery, dbTimeout]);
@@ -11556,7 +11538,7 @@ var POTemplateValidator = class {
 // server/routes/po-template-real.ts
 init_db();
 init_schema();
-import { eq as eq8 } from "drizzle-orm";
+import { eq as eq9 } from "drizzle-orm";
 var router10 = Router10();
 router10.get("/test", (req, res) => {
   res.json({ message: "PO Template router is working!", timestamp: /* @__PURE__ */ new Date() });
@@ -11787,7 +11769,7 @@ router10.post("/save", simpleAuth, async (req, res) => {
       try {
         let savedOrders = 0;
         for (const orderData of orders) {
-          let vendor = await db.select().from(vendors).where(eq8(vendors.name, orderData.vendorName)).limit(1);
+          let vendor = await db.select().from(vendors).where(eq9(vendors.name, orderData.vendorName)).limit(1);
           let vendorId;
           if (vendor.length === 0) {
             const newVendor = await db.insert(vendors).values({
@@ -11800,7 +11782,7 @@ router10.post("/save", simpleAuth, async (req, res) => {
           } else {
             vendorId = vendor[0].id;
           }
-          let project = await db.select().from(projects).where(eq8(projects.projectName, orderData.siteName)).limit(1);
+          let project = await db.select().from(projects).where(eq9(projects.projectName, orderData.siteName)).limit(1);
           let projectId;
           if (project.length === 0) {
             const newProject = await db.insert(projects).values({
@@ -11816,7 +11798,7 @@ router10.post("/save", simpleAuth, async (req, res) => {
           let suffix = 1;
           while (true) {
             try {
-              const existing = await db.select().from(purchaseOrders).where(eq8(purchaseOrders.orderNumber, orderNumber));
+              const existing = await db.select().from(purchaseOrders).where(eq9(purchaseOrders.orderNumber, orderNumber));
               if (existing.length === 0) {
                 break;
               }
@@ -12300,7 +12282,7 @@ router10.saveToDatabase = async function(orders, userId) {
     try {
       let savedOrders = 0;
       for (const orderData of orders) {
-        let vendor = await db.select().from(vendors).where(eq8(vendors.name, orderData.vendorName)).limit(1);
+        let vendor = await db.select().from(vendors).where(eq9(vendors.name, orderData.vendorName)).limit(1);
         let vendorId;
         if (vendor.length === 0) {
           const newVendor = await db.insert(vendors).values({
@@ -12313,7 +12295,7 @@ router10.saveToDatabase = async function(orders, userId) {
         } else {
           vendorId = vendor[0].id;
         }
-        let project = await db.select().from(projects).where(eq8(projects.projectName, orderData.siteName)).limit(1);
+        let project = await db.select().from(projects).where(eq9(projects.projectName, orderData.siteName)).limit(1);
         let projectId;
         if (project.length === 0) {
           const newProject = await db.insert(projects).values({
@@ -12386,7 +12368,7 @@ var po_template_real_default = router10;
 import { Router as Router11 } from "express";
 init_db();
 init_schema();
-import { eq as eq9, sql as sql7, and as and6, gte as gte4, lte as lte4, inArray as inArray2 } from "drizzle-orm";
+import { eq as eq10, sql as sql7, and as and6, gte as gte4, lte as lte4, inArray as inArray2 } from "drizzle-orm";
 import * as XLSX7 from "xlsx";
 var formatKoreanWon = (amount) => {
   return `\u20A9${amount.toLocaleString("ko-KR")}`;
@@ -12449,7 +12431,7 @@ router11.get("/debug-processing", async (req, res) => {
       totalAmount: purchaseOrders.totalAmount,
       projectName: projects.projectName,
       vendorName: vendors.name
-    }).from(purchaseOrders).leftJoin(projects, eq9(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq9(purchaseOrders.vendorId, vendors.id)).limit(10);
+    }).from(purchaseOrders).leftJoin(projects, eq10(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq10(purchaseOrders.vendorId, vendors.id)).limit(10);
     res.json({
       totalOrders: allOrders.length,
       ordersWithoutJoins: allOrders,
@@ -12500,16 +12482,16 @@ router11.get("/by-category", async (req, res) => {
       orderStatus: purchaseOrders.status,
       specification: purchaseOrderItems.specification,
       unitPrice: purchaseOrderItems.unitPrice
-    }).from(purchaseOrderItems).innerJoin(purchaseOrders, eq9(purchaseOrderItems.orderId, purchaseOrders.id));
+    }).from(purchaseOrderItems).innerJoin(purchaseOrders, eq10(purchaseOrderItems.orderId, purchaseOrders.id));
     const filters = [...dateFilters];
     if (majorCategory && majorCategory !== "all") {
-      filters.push(eq9(purchaseOrderItems.majorCategory, majorCategory));
+      filters.push(eq10(purchaseOrderItems.majorCategory, majorCategory));
     }
     if (middleCategory && middleCategory !== "all") {
-      filters.push(eq9(purchaseOrderItems.middleCategory, middleCategory));
+      filters.push(eq10(purchaseOrderItems.middleCategory, middleCategory));
     }
     if (minorCategory && minorCategory !== "all") {
-      filters.push(eq9(purchaseOrderItems.minorCategory, minorCategory));
+      filters.push(eq10(purchaseOrderItems.minorCategory, minorCategory));
     }
     if (filters.length > 0) {
       query = query.where(and6(...filters));
@@ -12607,7 +12589,7 @@ router11.get("/by-project", requireAuth, async (req, res) => {
     const { startDate, endDate, projectId } = req.query;
     const filters = parseDateFilters(startDate, endDate);
     if (projectId) {
-      filters.push(eq9(purchaseOrders.projectId, parseInt(projectId)));
+      filters.push(eq10(purchaseOrders.projectId, parseInt(projectId)));
     }
     const ordersWithProjects = await db.select({
       projectId: projects.id,
@@ -12621,7 +12603,7 @@ router11.get("/by-project", requireAuth, async (req, res) => {
       orderStatus: purchaseOrders.status,
       vendorId: purchaseOrders.vendorId,
       vendorName: vendors.name
-    }).from(purchaseOrders).innerJoin(projects, eq9(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq9(purchaseOrders.vendorId, vendors.id)).where(filters.length > 0 ? and6(...filters) : void 0);
+    }).from(purchaseOrders).innerJoin(projects, eq10(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq10(purchaseOrders.vendorId, vendors.id)).where(filters.length > 0 ? and6(...filters) : void 0);
     const projectReport = ordersWithProjects.reduce((acc, order) => {
       const projectKey = order.projectId;
       if (!acc[projectKey]) {
@@ -12703,7 +12685,7 @@ router11.get("/by-vendor", async (req, res) => {
       projectName: projects.projectName,
       originalVendorId: purchaseOrders.vendorId
       // Add original vendorId for null check
-    }).from(purchaseOrders).leftJoin(vendors, eq9(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq9(purchaseOrders.projectId, projects.id));
+    }).from(purchaseOrders).leftJoin(vendors, eq10(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq10(purchaseOrders.projectId, projects.id));
     if (filters.length > 0) {
       vendorQuery = vendorQuery.where(and6(...filters));
     }
@@ -13044,16 +13026,16 @@ router11.get("/processing", requireAuth, async (req, res) => {
       );
     }
     if (status && status !== "all" && status !== "") {
-      filters.push(eq9(purchaseOrders.status, status));
+      filters.push(eq10(purchaseOrders.status, status));
     }
     if (projectId && projectId !== "all" && projectId !== "") {
-      filters.push(eq9(purchaseOrders.projectId, parseInt(projectId)));
+      filters.push(eq10(purchaseOrders.projectId, parseInt(projectId)));
     }
     if (vendorId && vendorId !== "all" && vendorId !== "") {
-      filters.push(eq9(purchaseOrders.vendorId, parseInt(vendorId)));
+      filters.push(eq10(purchaseOrders.vendorId, parseInt(vendorId)));
     }
     console.log(`Processing report filters count: ${filters.length}`);
-    let ordersQuery = db.select().from(purchaseOrders).leftJoin(projects, eq9(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq9(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq9(purchaseOrders.userId, users.id));
+    let ordersQuery = db.select().from(purchaseOrders).leftJoin(projects, eq10(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq10(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq10(purchaseOrders.userId, users.id));
     if (filters.length > 0) {
       ordersQuery = ordersQuery.where(and6(...filters));
     }
@@ -13130,7 +13112,7 @@ router11.get("/processing", requireAuth, async (req, res) => {
         ...order,
         items: orderItems.filter((item) => item.orderId === order.id)
       }));
-      let countQuery = db.select({ count: sql7`count(*)` }).from(purchaseOrders).leftJoin(projects, eq9(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq9(purchaseOrders.vendorId, vendors.id));
+      let countQuery = db.select({ count: sql7`count(*)` }).from(purchaseOrders).leftJoin(projects, eq10(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq10(purchaseOrders.vendorId, vendors.id));
       if (filters.length > 0) {
         countQuery = countQuery.where(and6(...filters));
       }
@@ -13201,13 +13183,13 @@ router11.get("/summary", requireAuth, async (req, res) => {
       vendorName: vendors.name,
       orderCount: sql7`count(${purchaseOrders.id})`,
       totalAmount: sql7`sum(${purchaseOrders.totalAmount})`
-    }).from(purchaseOrders).innerJoin(vendors, eq9(purchaseOrders.vendorId, vendors.id)).where(and6(...dateFilters)).groupBy(vendors.id, vendors.name).orderBy(sql7`sum(${purchaseOrders.totalAmount}) desc`).limit(10);
+    }).from(purchaseOrders).innerJoin(vendors, eq10(purchaseOrders.vendorId, vendors.id)).where(and6(...dateFilters)).groupBy(vendors.id, vendors.name).orderBy(sql7`sum(${purchaseOrders.totalAmount}) desc`).limit(10);
     const topProjects = await db.select({
       projectId: projects.id,
       projectName: projects.projectName,
       orderCount: sql7`count(${purchaseOrders.id})`,
       totalAmount: sql7`sum(${purchaseOrders.totalAmount})`
-    }).from(purchaseOrders).innerJoin(projects, eq9(purchaseOrders.projectId, projects.id)).where(and6(...dateFilters)).groupBy(projects.id, projects.projectName).orderBy(sql7`sum(${purchaseOrders.totalAmount}) desc`).limit(10);
+    }).from(purchaseOrders).innerJoin(projects, eq10(purchaseOrders.projectId, projects.id)).where(and6(...dateFilters)).groupBy(projects.id, projects.projectName).orderBy(sql7`sum(${purchaseOrders.totalAmount}) desc`).limit(10);
     const monthlyTrend = await db.select({
       month: sql7`to_char(${purchaseOrders.orderDate}, 'YYYY-MM')`,
       orderCount: sql7`count(*)`,
@@ -13239,7 +13221,7 @@ init_db();
 init_schema();
 import * as XLSX8 from "xlsx";
 import Papa from "papaparse";
-import { eq as eq10 } from "drizzle-orm";
+import { eq as eq11 } from "drizzle-orm";
 import fs14 from "fs";
 var ImportExportService = class {
   // Parse Excel file
@@ -13511,7 +13493,7 @@ var ImportExportService = class {
   }
   // Export Methods
   static async exportVendors(format) {
-    const vendorData = await db.select().from(vendors).where(eq10(vendors.isActive, true));
+    const vendorData = await db.select().from(vendors).where(eq11(vendors.isActive, true));
     const exportData = vendorData.map((vendor) => ({
       "\uAC70\uB798\uCC98\uBA85": vendor.name,
       "\uAC70\uB798\uCC98\uCF54\uB4DC": vendor.vendorCode || "",
@@ -13538,7 +13520,7 @@ var ImportExportService = class {
     }
   }
   static async exportItems(format) {
-    const itemData = await db.select().from(items).where(eq10(items.isActive, true));
+    const itemData = await db.select().from(items).where(eq11(items.isActive, true));
     const exportData = itemData.map((item) => ({
       "\uD488\uBAA9\uBA85": item.name,
       "\uADDC\uACA9": item.specification || "",
@@ -13564,7 +13546,7 @@ var ImportExportService = class {
     }
   }
   static async exportProjects(format) {
-    const projectData = await db.select().from(projects).where(eq10(projects.isActive, true));
+    const projectData = await db.select().from(projects).where(eq11(projects.isActive, true));
     const typeMap = {
       "commercial": "\uC0C1\uC5C5\uC2DC\uC124",
       "residential": "\uC8FC\uAC70\uC2DC\uC124",
@@ -13624,7 +13606,7 @@ var ImportExportService = class {
       middleCategory: purchaseOrderItems.middleCategory,
       minorCategory: purchaseOrderItems.minorCategory,
       itemNotes: purchaseOrderItems.notes
-    }).from(purchaseOrders).leftJoin(purchaseOrderItems, eq10(purchaseOrders.id, purchaseOrderItems.orderId)).where(eq10(purchaseOrders.isActive, true));
+    }).from(purchaseOrders).leftJoin(purchaseOrderItems, eq11(purchaseOrders.id, purchaseOrderItems.orderId)).where(eq11(purchaseOrders.isActive, true));
     const statusMap = {
       "pending": "\uB300\uAE30",
       "approved": "\uC2B9\uC778",
@@ -13932,7 +13914,7 @@ var import_export_default = router12;
 init_db();
 init_schema();
 import { Router as Router13 } from "express";
-import { eq as eq11, desc as desc4, sql as sql8 } from "drizzle-orm";
+import { eq as eq12, desc as desc4, sql as sql8 } from "drizzle-orm";
 import { z as z2 } from "zod";
 var router13 = Router13();
 var createEmailHistorySchema = z2.object({
@@ -13962,7 +13944,7 @@ router13.get("/orders/:orderId/email-history", async (req, res) => {
       return res.status(400).json({ error: "Invalid order ID" });
     }
     const order = await db.query.purchaseOrders.findFirst({
-      where: eq11(purchaseOrders.id, orderId)
+      where: eq12(purchaseOrders.id, orderId)
     });
     if (!order) {
       return res.status(404).json({ error: "Order not found" });
@@ -13987,7 +13969,7 @@ router13.get("/orders/:orderId/email-history", async (req, res) => {
       trackingId: emailSendHistory.trackingId,
       emailProvider: emailSendHistory.emailProvider,
       messageId: emailSendHistory.messageId
-    }).from(emailSendHistory).leftJoin(users, eq11(emailSendHistory.sentBy, users.id)).where(eq11(emailSendHistory.orderId, orderId)).orderBy(desc4(emailSendHistory.sentAt));
+    }).from(emailSendHistory).leftJoin(users, eq12(emailSendHistory.sentBy, users.id)).where(eq12(emailSendHistory.orderId, orderId)).orderBy(desc4(emailSendHistory.sentAt));
     res.json(emailHistory);
   } catch (error) {
     console.error("Error fetching email history:", error);
@@ -14008,13 +13990,13 @@ router13.post("/email-history", async (req, res) => {
       attachments: validatedData.attachments || null
     }).returning();
     const order = await db.query.purchaseOrders.findFirst({
-      where: eq11(purchaseOrders.id, validatedData.orderId)
+      where: eq12(purchaseOrders.id, validatedData.orderId)
     });
     if (order && order.status === "approved") {
       await db.update(purchaseOrders).set({
         status: "sent",
         updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq11(purchaseOrders.id, validatedData.orderId));
+      }).where(eq12(purchaseOrders.id, validatedData.orderId));
     }
     res.json(newEmailHistory);
   } catch (error) {
@@ -14081,7 +14063,7 @@ router13.put("/email-tracking/:trackingId", async (req, res) => {
     if (req.headers["user-agent"]) {
       updateData.userAgent = req.headers["user-agent"];
     }
-    const [updated] = await db.update(emailSendHistory).set(updateData).where(eq11(emailSendHistory.trackingId, trackingId)).returning();
+    const [updated] = await db.update(emailSendHistory).set(updateData).where(eq12(emailSendHistory.trackingId, trackingId)).returning();
     if (!updated) {
       return res.status(404).json({ error: "Email not found" });
     }
@@ -14124,7 +14106,7 @@ router13.get("/email-history/:id", async (req, res) => {
       trackingId: emailSendHistory.trackingId,
       emailProvider: emailSendHistory.emailProvider,
       messageId: emailSendHistory.messageId
-    }).from(emailSendHistory).leftJoin(purchaseOrders, eq11(emailSendHistory.orderId, purchaseOrders.id)).leftJoin(vendors, eq11(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq11(emailSendHistory.sentBy, users.id)).where(eq11(emailSendHistory.id, emailId));
+    }).from(emailSendHistory).leftJoin(purchaseOrders, eq12(emailSendHistory.orderId, purchaseOrders.id)).leftJoin(vendors, eq12(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq12(emailSendHistory.sentBy, users.id)).where(eq12(emailSendHistory.id, emailId));
     if (!email || email.length === 0) {
       return res.status(404).json({ error: "Email not found" });
     }
@@ -14408,7 +14390,7 @@ import { Router as Router14 } from "express";
 // server/utils/optimized-orders-query.ts
 init_db();
 init_schema();
-import { eq as eq12, desc as desc5, asc as asc3, ilike as ilike3, and as and8, or as or3, between as between2, count as count3, sql as sql9, gte as gte5, lte as lte5 } from "drizzle-orm";
+import { eq as eq13, desc as desc5, asc as asc3, ilike as ilike3, and as and8, or as or3, between as between2, count as count3, sql as sql9, gte as gte5, lte as lte5 } from "drizzle-orm";
 var OptimizedOrdersService = class _OptimizedOrdersService {
   /**
    * 정렬 필드에 따른 ORDER BY 절 생성
@@ -14459,16 +14441,16 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
     } = filters;
     const whereConditions = [];
     if (userId && userId !== "all") {
-      whereConditions.push(eq12(purchaseOrders.userId, userId));
+      whereConditions.push(eq13(purchaseOrders.userId, userId));
     }
     if (status && status !== "all" && status !== "") {
       whereConditions.push(sql9`${purchaseOrders.status} = ${status}`);
     }
     if (vendorId && vendorId !== "all") {
-      whereConditions.push(eq12(purchaseOrders.vendorId, vendorId));
+      whereConditions.push(eq13(purchaseOrders.vendorId, vendorId));
     }
     if (projectId && projectId !== "all") {
-      whereConditions.push(eq12(purchaseOrders.projectId, projectId));
+      whereConditions.push(eq13(purchaseOrders.projectId, projectId));
     }
     if (startDate && endDate) {
       whereConditions.push(between2(purchaseOrders.orderDate, startDate, endDate));
@@ -14509,8 +14491,8 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
       vendorName: vendors.name,
       projectName: projects.projectName,
       userName: users.name
-    }).from(purchaseOrders).leftJoin(vendors, eq12(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq12(purchaseOrders.projectId, projects.id)).leftJoin(users, eq12(purchaseOrders.userId, users.id)).where(whereClause).orderBy(_OptimizedOrdersService.getOrderByClause(sortBy, sortOrder)).limit(limit).offset((page - 1) * limit);
-    const countQuery = db.select({ count: count3() }).from(purchaseOrders).leftJoin(vendors, eq12(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq12(purchaseOrders.projectId, projects.id)).leftJoin(users, eq12(purchaseOrders.userId, users.id)).where(whereClause);
+    }).from(purchaseOrders).leftJoin(vendors, eq13(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq13(purchaseOrders.projectId, projects.id)).leftJoin(users, eq13(purchaseOrders.userId, users.id)).where(whereClause).orderBy(_OptimizedOrdersService.getOrderByClause(sortBy, sortOrder)).limit(limit).offset((page - 1) * limit);
+    const countQuery = db.select({ count: count3() }).from(purchaseOrders).leftJoin(vendors, eq13(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq13(purchaseOrders.projectId, projects.id)).leftJoin(users, eq13(purchaseOrders.userId, users.id)).where(whereClause);
     const [orders, [{ count: totalCount }]] = await Promise.all([
       ordersQuery,
       countQuery
@@ -14533,19 +14515,19 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
       db.select({
         id: vendors.id,
         name: vendors.name
-      }).from(vendors).where(eq12(vendors.isActive, true)).orderBy(asc3(vendors.name)),
+      }).from(vendors).where(eq13(vendors.isActive, true)).orderBy(asc3(vendors.name)),
       // Only active projects
       db.select({
         id: projects.id,
         projectName: projects.projectName,
         projectCode: projects.projectCode
-      }).from(projects).where(eq12(projects.isActive, true)).orderBy(asc3(projects.projectName)),
+      }).from(projects).where(eq13(projects.isActive, true)).orderBy(asc3(projects.projectName)),
       // Only active users
       db.select({
         id: users.id,
         name: users.name,
         email: users.email
-      }).from(users).where(eq12(users.isActive, true)).orderBy(asc3(users.name))
+      }).from(users).where(eq13(users.isActive, true)).orderBy(asc3(users.name))
     ]);
     return {
       vendors: vendorsList,
@@ -14587,7 +14569,7 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
    * Uses materialized view for better performance
    */
   static async getOrderStatistics(userId) {
-    const whereClause = userId ? eq12(purchaseOrders.userId, userId) : void 0;
+    const whereClause = userId ? eq13(purchaseOrders.userId, userId) : void 0;
     const stats = await db.select({
       status: purchaseOrders.status,
       count: count3(),
@@ -15059,12 +15041,12 @@ var item_receipts_default = router19;
 import { Router as Router19 } from "express";
 init_db();
 init_schema();
-import { eq as eq14, and as and10, desc as desc6, sql as sql11, inArray as inArray4 } from "drizzle-orm";
+import { eq as eq15, and as and10, desc as desc6, sql as sql11, inArray as inArray4 } from "drizzle-orm";
 
 // server/services/notification-service.ts
 init_db();
 init_schema();
-import { eq as eq13, and as and9, inArray as inArray3, sql as sql10 } from "drizzle-orm";
+import { eq as eq14, and as and9, inArray as inArray3, sql as sql10 } from "drizzle-orm";
 var NotificationService = class {
   /**
    * 승인 요청 시 알림 발송
@@ -15157,7 +15139,7 @@ var NotificationService = class {
       maxAmount: approvalAuthorities.maxAmount
     }).from(approvalAuthorities).where(
       and9(
-        eq13(approvalAuthorities.isActive, true),
+        eq14(approvalAuthorities.isActive, true),
         sql10`CAST(${approvalAuthorities.maxAmount} AS DECIMAL) >= ${orderAmount}`
       )
     );
@@ -15166,7 +15148,7 @@ var NotificationService = class {
         id: users.id,
         name: users.name,
         role: users.role
-      }).from(users).where(eq13(users.role, "admin")).limit(10);
+      }).from(users).where(eq14(users.role, "admin")).limit(10);
     }
     const eligibleRoles = authorities.map((auth) => auth.role);
     return await db.select({
@@ -15189,7 +15171,7 @@ var NotificationService = class {
       projectName: projects.projectName,
       vendorName: vendors.name,
       requesterName: users.name
-    }).from(purchaseOrders).leftJoin(projects, eq13(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq13(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq13(purchaseOrders.userId, users.id)).where(eq13(purchaseOrders.id, orderId)).limit(1);
+    }).from(purchaseOrders).leftJoin(projects, eq14(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq14(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq14(purchaseOrders.userId, users.id)).where(eq14(purchaseOrders.id, orderId)).limit(1);
     return result[0] || null;
   }
   /**
@@ -15203,7 +15185,7 @@ var NotificationService = class {
       stakeholders.add(orderInfo.userId);
     }
     if (orderInfo.projectId) {
-      const projectMembers3 = await db.select({ userId: users.id }).from(users).where(eq13(users.role, "project_manager")).limit(5);
+      const projectMembers3 = await db.select({ userId: users.id }).from(users).where(eq14(users.role, "project_manager")).limit(5);
       projectMembers3.forEach((member) => stakeholders.add(member.userId));
     }
     if (stakeholders.size === 0) return [];
@@ -15238,8 +15220,8 @@ var NotificationService = class {
     try {
       const result = await db.select().from(notifications).where(
         and9(
-          eq13(notifications.userId, userId),
-          eq13(notifications.isActive, true)
+          eq14(notifications.userId, userId),
+          eq14(notifications.isActive, true)
         )
       ).orderBy(sql10`${notifications.createdAt} DESC`).limit(limit);
       return result.map((notification) => ({
@@ -15263,8 +15245,8 @@ var NotificationService = class {
         updatedAt: /* @__PURE__ */ new Date()
       }).where(
         and9(
-          eq13(notifications.id, notificationId),
-          eq13(notifications.userId, userId)
+          eq14(notifications.id, notificationId),
+          eq14(notifications.userId, userId)
         )
       ).returning();
       return result.length > 0;
@@ -15283,9 +15265,9 @@ var NotificationService = class {
         updatedAt: /* @__PURE__ */ new Date()
       }).where(
         and9(
-          eq13(notifications.userId, userId),
-          eq13(notifications.isRead, false),
-          eq13(notifications.isActive, true)
+          eq14(notifications.userId, userId),
+          eq14(notifications.isRead, false),
+          eq14(notifications.isActive, true)
         )
       ).returning();
       return result.length;
@@ -15302,8 +15284,8 @@ async function checkApprovalPermission(userRole, orderAmount) {
   try {
     const authority = await db.select().from(approvalAuthorities).where(
       and10(
-        eq14(approvalAuthorities.role, userRole),
-        eq14(approvalAuthorities.isActive, true)
+        eq15(approvalAuthorities.role, userRole),
+        eq15(approvalAuthorities.isActive, true)
       )
     ).limit(1);
     if (authority.length === 0) {
@@ -15330,7 +15312,7 @@ router20.get("/approvals/history", requireAuth, requireRole(["admin", "executive
       comments: orderHistory.notes,
       amount: purchaseOrders.totalAmount,
       createdAt: orderHistory.performedAt
-    }).from(orderHistory).leftJoin(purchaseOrders, eq14(orderHistory.orderId, purchaseOrders.id)).leftJoin(users, eq14(orderHistory.performedBy, users.id)).where(
+    }).from(orderHistory).leftJoin(purchaseOrders, eq15(orderHistory.orderId, purchaseOrders.id)).leftJoin(users, eq15(orderHistory.performedBy, users.id)).where(
       inArray4(orderHistory.action, ["approved", "rejected"])
     ).orderBy(desc6(orderHistory.performedAt)).limit(50);
     const allHistory = approvalHistory.map((record) => ({
@@ -15374,7 +15356,7 @@ router20.get("/approvals/pending", requireAuth, requireRole(["admin", "executive
       // Vendor information
       vendorId: vendors.id,
       vendorName: vendors.name
-    }).from(purchaseOrders).leftJoin(projects, eq14(purchaseOrders.projectId, projects.id)).leftJoin(users, eq14(purchaseOrders.userId, users.id)).leftJoin(vendors, eq14(purchaseOrders.vendorId, vendors.id)).where(eq14(purchaseOrders.status, "pending")).orderBy(desc6(purchaseOrders.createdAt));
+    }).from(purchaseOrders).leftJoin(projects, eq15(purchaseOrders.projectId, projects.id)).leftJoin(users, eq15(purchaseOrders.userId, users.id)).leftJoin(vendors, eq15(purchaseOrders.vendorId, vendors.id)).where(eq15(purchaseOrders.status, "pending")).orderBy(desc6(purchaseOrders.createdAt));
     const formattedOrders = pendingOrders.map((order) => ({
       id: order.id,
       orderNumber: order.orderNumber,
@@ -15410,11 +15392,11 @@ router20.get("/approvals/stats", requireAuth, requireRole(["admin", "executive",
       // 전체 발주서 수
       db.select({ count: sql11`count(*)` }).from(purchaseOrders),
       // 승인 대기 수
-      db.select({ count: sql11`count(*)` }).from(purchaseOrders).where(eq14(purchaseOrders.status, "pending")),
+      db.select({ count: sql11`count(*)` }).from(purchaseOrders).where(eq15(purchaseOrders.status, "pending")),
       // 승인 완료 수
-      db.select({ count: sql11`count(*)` }).from(purchaseOrders).where(eq14(purchaseOrders.status, "approved")),
+      db.select({ count: sql11`count(*)` }).from(purchaseOrders).where(eq15(purchaseOrders.status, "approved")),
       // 반려 수
-      db.select({ count: sql11`count(*)` }).from(purchaseOrders).where(eq14(purchaseOrders.status, "rejected"))
+      db.select({ count: sql11`count(*)` }).from(purchaseOrders).where(eq15(purchaseOrders.status, "rejected"))
     ]);
     const totalCount = totalStats[0]?.count || 0;
     const pendingCount = pendingStats[0]?.count || 0;
@@ -15470,7 +15452,7 @@ router20.post("/approvals/:id/process", requireAuth, requireRole(["admin", "exec
     const { action, comments } = req.body;
     const user = req.user;
     console.log(`\u{1F4CB} Processing approval ${id} with action: ${action} by ${user.name} (${user.role})`);
-    const existingOrder = await db.select().from(purchaseOrders).where(eq14(purchaseOrders.id, id)).limit(1);
+    const existingOrder = await db.select().from(purchaseOrders).where(eq15(purchaseOrders.id, id)).limit(1);
     if (existingOrder.length === 0) {
       return res.status(404).json({ message: "\uBC1C\uC8FC\uC11C\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
     }
@@ -15485,7 +15467,7 @@ router20.post("/approvals/:id/process", requireAuth, requireRole(["admin", "exec
     await db.update(purchaseOrders).set({
       status: newStatus,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq14(purchaseOrders.id, id));
+    }).where(eq15(purchaseOrders.id, id));
     const historyEntry = {
       orderId: id,
       action: action === "approve" ? "approved" : "rejected",
@@ -15573,7 +15555,7 @@ router20.post("/approvals/:orderId/reject", requireAuth, requireRole(["admin", "
 });
 async function processApproval(req, res, orderId, action, note, user) {
   try {
-    const existingOrder = await db.select().from(purchaseOrders).where(eq14(purchaseOrders.id, orderId)).limit(1);
+    const existingOrder = await db.select().from(purchaseOrders).where(eq15(purchaseOrders.id, orderId)).limit(1);
     if (existingOrder.length === 0) {
       throw new Error("\uBC1C\uC8FC\uC11C\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4");
     }
@@ -15586,7 +15568,7 @@ async function processApproval(req, res, orderId, action, note, user) {
     await db.update(purchaseOrders).set({
       status: newStatus,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq14(purchaseOrders.id, orderId));
+    }).where(eq15(purchaseOrders.id, orderId));
     const historyEntry = {
       orderId,
       action: action === "approve" ? "approved" : "rejected",
@@ -15632,7 +15614,7 @@ router20.post("/approvals/:orderId/start-workflow", requireAuth, requireRole(["a
       totalAmount: purchaseOrders.totalAmount,
       status: purchaseOrders.status,
       userId: purchaseOrders.userId
-    }).from(purchaseOrders).where(eq14(purchaseOrders.id, orderId)).limit(1);
+    }).from(purchaseOrders).where(eq15(purchaseOrders.id, orderId)).limit(1);
     if (orderInfo.length === 0) {
       return res.status(404).json({ message: "\uBC1C\uC8FC\uC11C\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
     }
@@ -15671,7 +15653,7 @@ router20.post("/approvals/:orderId/start-workflow", requireAuth, requireRole(["a
       await db.update(purchaseOrders).set({
         status: "pending",
         updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq14(purchaseOrders.id, orderId));
+      }).where(eq15(purchaseOrders.id, orderId));
       await NotificationService.sendApprovalRequestNotification({
         orderId,
         action: "approval_requested",
@@ -15725,7 +15707,7 @@ router20.post("/approvals/:orderId/step/:stepId", requireAuth, requireRole(["adm
     const { action, comments } = req.body;
     const user = req.user;
     console.log(`\u{1F504} Processing approval step ${stepId} for order ${orderId} with action: ${action}`);
-    const stepInstance = await db.select().from(approvalStepInstances).where(eq14(approvalStepInstances.id, stepId)).limit(1);
+    const stepInstance = await db.select().from(approvalStepInstances).where(eq15(approvalStepInstances.id, stepId)).limit(1);
     if (stepInstance.length === 0) {
       return res.status(404).json({ message: "\uC2B9\uC778 \uB2E8\uACC4\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
     }
@@ -15742,7 +15724,7 @@ router20.post("/approvals/:orderId/step/:stepId", requireAuth, requireRole(["adm
       approvedAt: /* @__PURE__ */ new Date(),
       comments: comments || "",
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq14(approvalStepInstances.id, stepId));
+    }).where(eq15(approvalStepInstances.id, stepId));
     const isComplete = await ApprovalRoutingService.isApprovalComplete(orderId);
     const progress = await ApprovalRoutingService.getApprovalProgress(orderId);
     let finalOrderStatus = "pending";
@@ -15753,8 +15735,8 @@ router20.post("/approvals/:orderId/step/:stepId", requireAuth, requireRole(["adm
         updatedAt: /* @__PURE__ */ new Date()
       }).where(
         and10(
-          eq14(approvalStepInstances.orderId, orderId),
-          eq14(approvalStepInstances.status, "pending")
+          eq15(approvalStepInstances.orderId, orderId),
+          eq15(approvalStepInstances.status, "pending")
         )
       );
     } else if (isComplete) {
@@ -15764,7 +15746,7 @@ router20.post("/approvals/:orderId/step/:stepId", requireAuth, requireRole(["adm
       await db.update(purchaseOrders).set({
         status: finalOrderStatus,
         updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq14(purchaseOrders.id, orderId));
+      }).where(eq15(purchaseOrders.id, orderId));
       await db.insert(orderHistory).values({
         orderId,
         action: finalOrderStatus === "approved" ? "approved" : "rejected",
@@ -16382,12 +16364,12 @@ var test_accounts_default = router24;
 init_db();
 init_schema();
 import { Router as Router24 } from "express";
-import { eq as eq16, and as and12 } from "drizzle-orm";
+import { eq as eq17, and as and12 } from "drizzle-orm";
 
 // server/utils/category-mapping-validator.ts
 init_db();
 init_schema();
-import { eq as eq15 } from "drizzle-orm";
+import { eq as eq16 } from "drizzle-orm";
 async function validateCategoryMapping(request) {
   console.log("\u{1F50D} \uBD84\uB958 \uB9E4\uD551 \uAC80\uC99D \uC2DC\uC791:", request);
   const result = {
@@ -16402,7 +16384,7 @@ async function validateCategoryMapping(request) {
     confidence: 0
   };
   try {
-    const allCategories = await db.select().from(itemCategories).where(eq15(itemCategories.isActive, true));
+    const allCategories = await db.select().from(itemCategories).where(eq16(itemCategories.isActive, true));
     const majorCategories = allCategories.filter((c) => c.categoryType === "major");
     const middleCategories = allCategories.filter((c) => c.categoryType === "middle");
     const minorCategories = allCategories.filter((c) => c.categoryType === "minor");
@@ -16652,7 +16634,7 @@ router25.get("/hierarchy", async (req, res) => {
 router25.get("/", async (req, res) => {
   try {
     console.log("\u{1F4CB} Fetching all categories...");
-    const categories = await db.select().from(itemCategories).where(eq16(itemCategories.isActive, true)).orderBy(itemCategories.displayOrder, itemCategories.categoryName);
+    const categories = await db.select().from(itemCategories).where(eq17(itemCategories.isActive, true)).orderBy(itemCategories.displayOrder, itemCategories.categoryName);
     const majorCategories = categories.filter((c) => c.categoryType === "major");
     const middleCategories = categories.filter((c) => c.categoryType === "middle");
     const minorCategories = categories.filter((c) => c.categoryType === "minor");
@@ -16718,11 +16700,11 @@ router25.get("/:type", async (req, res) => {
     const { parentId } = req.query;
     console.log(`\u{1F4CB} Fetching ${type} categories...`);
     let query = db.select().from(itemCategories).where(and12(
-      eq16(itemCategories.categoryType, type),
-      eq16(itemCategories.isActive, true)
+      eq17(itemCategories.categoryType, type),
+      eq17(itemCategories.isActive, true)
     ));
     if (parentId) {
-      query = query.where(eq16(itemCategories.parentId, parseInt(parentId)));
+      query = query.where(eq17(itemCategories.parentId, parseInt(parentId)));
     }
     const categories = await query.orderBy(itemCategories.displayOrder, itemCategories.categoryName);
     res.json({
@@ -16773,7 +16755,7 @@ router25.put("/:id", async (req, res) => {
       displayOrder,
       isActive,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq16(itemCategories.id, parseInt(id))).returning();
+    }).where(eq17(itemCategories.id, parseInt(id))).returning();
     if (updatedCategory.length === 0) {
       return res.status(404).json({
         success: false,
@@ -16801,7 +16783,7 @@ router25.delete("/:id", async (req, res) => {
     const updatedCategory = await db.update(itemCategories).set({
       isActive: false,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq16(itemCategories.id, parseInt(id))).returning();
+    }).where(eq17(itemCategories.id, parseInt(id))).returning();
     if (updatedCategory.length === 0) {
       return res.status(404).json({
         success: false,
@@ -16884,7 +16866,7 @@ var categories_default = router25;
 init_db();
 init_schema();
 import { Router as Router25 } from "express";
-import { eq as eq17, and as and13, desc as desc7, asc as asc5 } from "drizzle-orm";
+import { eq as eq18, and as and13, desc as desc7, asc as asc5 } from "drizzle-orm";
 import { z as z4 } from "zod";
 var router26 = Router25();
 router26.get("/workflow-settings/:companyId", async (req, res) => {
@@ -16895,8 +16877,8 @@ router26.get("/workflow-settings/:companyId", async (req, res) => {
     const { companyId } = req.params;
     const settings = await db.select().from(approvalWorkflowSettings).where(
       and13(
-        eq17(approvalWorkflowSettings.companyId, parseInt(companyId)),
-        eq17(approvalWorkflowSettings.isActive, true)
+        eq18(approvalWorkflowSettings.companyId, parseInt(companyId)),
+        eq18(approvalWorkflowSettings.isActive, true)
       )
     ).orderBy(desc7(approvalWorkflowSettings.createdAt)).limit(1);
     return res.json({
@@ -16924,8 +16906,8 @@ router26.post("/workflow-settings", async (req, res) => {
     });
     const existingSettings = await db.select().from(approvalWorkflowSettings).where(
       and13(
-        eq17(approvalWorkflowSettings.companyId, validatedData.companyId),
-        eq17(approvalWorkflowSettings.isActive, true)
+        eq18(approvalWorkflowSettings.companyId, validatedData.companyId),
+        eq18(approvalWorkflowSettings.isActive, true)
       )
     ).limit(1);
     let result;
@@ -16933,7 +16915,7 @@ router26.post("/workflow-settings", async (req, res) => {
       result = await db.update(approvalWorkflowSettings).set({
         ...validatedData,
         updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq17(approvalWorkflowSettings.id, existingSettings[0].id)).returning();
+      }).where(eq18(approvalWorkflowSettings.id, existingSettings[0].id)).returning();
     } else {
       result = await db.insert(approvalWorkflowSettings).values(validatedData).returning();
     }
@@ -16963,16 +16945,16 @@ router26.get("/step-templates/:companyId", async (req, res) => {
     const { templateName } = req.query;
     let query = db.select().from(approvalStepTemplates).where(
       and13(
-        eq17(approvalStepTemplates.companyId, parseInt(companyId)),
-        eq17(approvalStepTemplates.isActive, true)
+        eq18(approvalStepTemplates.companyId, parseInt(companyId)),
+        eq18(approvalStepTemplates.isActive, true)
       )
     );
     if (templateName) {
       query = query.where(
         and13(
-          eq17(approvalStepTemplates.companyId, parseInt(companyId)),
-          eq17(approvalStepTemplates.isActive, true),
-          eq17(approvalStepTemplates.templateName, templateName)
+          eq18(approvalStepTemplates.companyId, parseInt(companyId)),
+          eq18(approvalStepTemplates.isActive, true),
+          eq18(approvalStepTemplates.templateName, templateName)
         )
       );
     }
@@ -17031,7 +17013,7 @@ router26.put("/step-templates/:id", async (req, res) => {
     const result = await db.update(approvalStepTemplates).set({
       ...validatedData,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq17(approvalStepTemplates.id, parseInt(id))).returning();
+    }).where(eq18(approvalStepTemplates.id, parseInt(id))).returning();
     if (result.length === 0) {
       return res.status(404).json({ error: "\uC2B9\uC778 \uB2E8\uACC4 \uD15C\uD50C\uB9BF\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
     }
@@ -17064,7 +17046,7 @@ router26.delete("/step-templates/:id", async (req, res) => {
     const result = await db.update(approvalStepTemplates).set({
       isActive: false,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq17(approvalStepTemplates.id, parseInt(id))).returning();
+    }).where(eq18(approvalStepTemplates.id, parseInt(id))).returning();
     if (result.length === 0) {
       return res.status(404).json({ error: "\uC2B9\uC778 \uB2E8\uACC4 \uD15C\uD50C\uB9BF\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
     }
@@ -17087,8 +17069,8 @@ router26.get("/step-instances/:orderId", async (req, res) => {
     const { orderId } = req.params;
     const instances = await db.select().from(approvalStepInstances).where(
       and13(
-        eq17(approvalStepInstances.orderId, parseInt(orderId)),
-        eq17(approvalStepInstances.isActive, true)
+        eq18(approvalStepInstances.orderId, parseInt(orderId)),
+        eq18(approvalStepInstances.isActive, true)
       )
     ).orderBy(asc5(approvalStepInstances.stepOrder));
     return res.json({
@@ -17115,9 +17097,9 @@ router26.post("/step-instances", async (req, res) => {
     }
     const templates = await db.select().from(approvalStepTemplates).where(
       and13(
-        eq17(approvalStepTemplates.companyId, companyId),
-        eq17(approvalStepTemplates.templateName, templateName),
-        eq17(approvalStepTemplates.isActive, true)
+        eq18(approvalStepTemplates.companyId, companyId),
+        eq18(approvalStepTemplates.templateName, templateName),
+        eq18(approvalStepTemplates.isActive, true)
       )
     ).orderBy(asc5(approvalStepTemplates.stepOrder));
     if (templates.length === 0) {
@@ -17164,7 +17146,7 @@ router26.put("/step-instances/:id", async (req, res) => {
     };
     if (comments) updateData.comments = comments;
     if (rejectionReason) updateData.rejectionReason = rejectionReason;
-    const result = await db.update(approvalStepInstances).set(updateData).where(eq17(approvalStepInstances.id, parseInt(id))).returning();
+    const result = await db.update(approvalStepInstances).set(updateData).where(eq18(approvalStepInstances.id, parseInt(id))).returning();
     if (result.length === 0) {
       return res.status(404).json({ error: "\uC2B9\uC778 \uB2E8\uACC4 \uC778\uC2A4\uD134\uC2A4\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
     }
@@ -17185,7 +17167,7 @@ var approval_settings_default = router26;
 import { Router as Router26 } from "express";
 init_db();
 init_schema();
-import { eq as eq18, and as and14, desc as desc8 } from "drizzle-orm";
+import { eq as eq19, and as and14, desc as desc8 } from "drizzle-orm";
 import { z as z5 } from "zod";
 var router27 = Router26();
 router27.get("/approval-authorities", requireAuth, requireRole(["admin"]), async (req, res) => {
@@ -17222,8 +17204,8 @@ router27.post("/approval-authorities", requireAuth, requireRole(["admin"]), asyn
     const validatedData = insertApprovalAuthoritySchema.parse(req.body);
     const existingAuthority = await db.select().from(approvalAuthorities).where(
       and14(
-        eq18(approvalAuthorities.role, validatedData.role),
-        eq18(approvalAuthorities.isActive, true)
+        eq19(approvalAuthorities.role, validatedData.role),
+        eq19(approvalAuthorities.isActive, true)
       )
     ).limit(1);
     if (existingAuthority.length > 0) {
@@ -17262,7 +17244,7 @@ router27.put("/approval-authorities/:id", requireAuth, requireRole(["admin"]), a
     const result = await db.update(approvalAuthorities).set({
       ...validatedData,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq18(approvalAuthorities.id, id)).returning();
+    }).where(eq19(approvalAuthorities.id, id)).returning();
     if (result.length === 0) {
       return res.status(404).json({
         message: "\uC2B9\uC778 \uAD8C\uD55C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4"
@@ -17297,7 +17279,7 @@ router27.delete("/approval-authorities/:id", requireAuth, requireRole(["admin"])
     const result = await db.update(approvalAuthorities).set({
       isActive: false,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq18(approvalAuthorities.id, id)).returning();
+    }).where(eq19(approvalAuthorities.id, id)).returning();
     if (result.length === 0) {
       return res.status(404).json({
         message: "\uC2B9\uC778 \uAD8C\uD55C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4"
@@ -17321,8 +17303,8 @@ router27.get("/approval-authorities/role/:role", requireAuth, requireRole(["admi
     console.log(`\u{1F4CB} Fetching approval authority for role: ${role}`);
     const authority = await db.select().from(approvalAuthorities).where(
       and14(
-        eq18(approvalAuthorities.role, role),
-        eq18(approvalAuthorities.isActive, true)
+        eq19(approvalAuthorities.role, role),
+        eq19(approvalAuthorities.isActive, true)
       )
     ).limit(1);
     if (authority.length === 0) {
@@ -17363,8 +17345,8 @@ router27.post("/approval-authorities/check-permission", requireAuth, requireRole
     }
     const authority = await db.select().from(approvalAuthorities).where(
       and14(
-        eq18(approvalAuthorities.role, checkRole),
-        eq18(approvalAuthorities.isActive, true)
+        eq19(approvalAuthorities.role, checkRole),
+        eq19(approvalAuthorities.isActive, true)
       )
     ).limit(1);
     let canApprove = false;
@@ -17488,7 +17470,7 @@ var notifications_default = router28;
 init_db();
 init_schema();
 import { Router as Router28 } from "express";
-import { eq as eq19, and as and15, desc as desc9, count as count4 } from "drizzle-orm";
+import { eq as eq20, and as and15, desc as desc9, count as count4 } from "drizzle-orm";
 import multer5 from "multer";
 import path13 from "path";
 import fs16 from "fs/promises";
@@ -17571,7 +17553,7 @@ router29.post("/bulk-create-simple", requireAuth, upload5.single("excelFile"), a
     let defaultProject;
     try {
       console.log("\u{1F50D} Fetching default project...");
-      defaultProject = await db.select().from(projects).where(eq19(projects.projectName, "\uAE30\uBCF8 \uD504\uB85C\uC81D\uD2B8")).then((rows) => rows[0]);
+      defaultProject = await db.select().from(projects).where(eq20(projects.projectName, "\uAE30\uBCF8 \uD504\uB85C\uC81D\uD2B8")).then((rows) => rows[0]);
       console.log("\u2705 Default project fetch successful");
     } catch (error) {
       console.error("\u274C Error fetching default project:", error);
@@ -17597,7 +17579,7 @@ router29.post("/bulk-create-simple", requireAuth, upload5.single("excelFile"), a
       try {
         let vendor = null;
         if (orderData.vendorName) {
-          const existingVendor = await db.select().from(vendors).where(eq19(vendors.name, orderData.vendorName)).then((rows) => rows[0]);
+          const existingVendor = await db.select().from(vendors).where(eq20(vendors.name, orderData.vendorName)).then((rows) => rows[0]);
           if (existingVendor) {
             vendor = existingVendor;
           } else {
@@ -17613,7 +17595,7 @@ router29.post("/bulk-create-simple", requireAuth, upload5.single("excelFile"), a
         }
         let project = defaultProject;
         if (orderData.projectName) {
-          const existingProject = await db.select().from(projects).where(eq19(projects.projectName, orderData.projectName)).then((rows) => rows[0]);
+          const existingProject = await db.select().from(projects).where(eq20(projects.projectName, orderData.projectName)).then((rows) => rows[0]);
           if (existingProject) {
             project = existingProject;
           }
@@ -17752,10 +17734,10 @@ router29.get("/simple-upload-history", requireAuth, async (req, res) => {
       projectName: projects.projectName,
       vendorName: vendors.name,
       itemCount: count4(purchaseOrderItems.id)
-    }).from(purchaseOrders).leftJoin(projects, eq19(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq19(purchaseOrders.vendorId, vendors.id)).leftJoin(purchaseOrderItems, eq19(purchaseOrderItems.orderId, purchaseOrders.id)).leftJoin(orderHistory, eq19(orderHistory.orderId, purchaseOrders.id)).where(
+    }).from(purchaseOrders).leftJoin(projects, eq20(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq20(purchaseOrders.vendorId, vendors.id)).leftJoin(purchaseOrderItems, eq20(purchaseOrderItems.orderId, purchaseOrders.id)).leftJoin(orderHistory, eq20(orderHistory.orderId, purchaseOrders.id)).where(
       and15(
-        eq19(purchaseOrders.userId, req.user.id),
-        eq19(orderHistory.action, "created")
+        eq20(purchaseOrders.userId, req.user.id),
+        eq20(orderHistory.action, "created")
       )
     ).groupBy(
       purchaseOrders.id,
@@ -17801,7 +17783,7 @@ import { Router as Router30 } from "express";
 // server/services/audit-service.ts
 init_db();
 init_schema();
-import { eq as eq20, and as and16, or as or5, gte as gte6, lte as lte6, desc as desc10, asc as asc7, sql as sql13, inArray as inArray5 } from "drizzle-orm";
+import { eq as eq21, and as and16, or as or5, gte as gte6, lte as lte6, desc as desc10, asc as asc7, sql as sql13, inArray as inArray5 } from "drizzle-orm";
 var AuditService = class {
   /**
    * 감사 로그 조회
@@ -17821,11 +17803,11 @@ var AuditService = class {
       sortOrder = "desc"
     } = params;
     const conditions = [];
-    if (userId) conditions.push(eq20(systemAuditLogs.userId, userId));
-    if (eventType) conditions.push(eq20(systemAuditLogs.eventType, eventType));
-    if (eventCategory) conditions.push(eq20(systemAuditLogs.eventCategory, eventCategory));
-    if (entityType) conditions.push(eq20(systemAuditLogs.entityType, entityType));
-    if (entityId) conditions.push(eq20(systemAuditLogs.entityId, entityId));
+    if (userId) conditions.push(eq21(systemAuditLogs.userId, userId));
+    if (eventType) conditions.push(eq21(systemAuditLogs.eventType, eventType));
+    if (eventCategory) conditions.push(eq21(systemAuditLogs.eventCategory, eventCategory));
+    if (entityType) conditions.push(eq21(systemAuditLogs.entityType, entityType));
+    if (entityId) conditions.push(eq21(systemAuditLogs.entityId, entityId));
     if (startDate) conditions.push(gte6(systemAuditLogs.createdAt, startDate));
     if (endDate) conditions.push(lte6(systemAuditLogs.createdAt, endDate));
     const orderByColumn = sortBy === "eventType" ? systemAuditLogs.eventType : sortBy === "userName" ? systemAuditLogs.userName : systemAuditLogs.createdAt;
@@ -17853,20 +17835,20 @@ var AuditService = class {
       count: sql13`count(*)`
     }).from(systemAuditLogs).where(
       and16(
-        eq20(systemAuditLogs.userId, userId),
+        eq21(systemAuditLogs.userId, userId),
         gte6(systemAuditLogs.createdAt, startDate)
       )
     ).groupBy(systemAuditLogs.eventType);
     const lastLogin = await db.select().from(systemAuditLogs).where(
       and16(
-        eq20(systemAuditLogs.userId, userId),
-        eq20(systemAuditLogs.eventType, "login")
+        eq21(systemAuditLogs.userId, userId),
+        eq21(systemAuditLogs.eventType, "login")
       )
     ).orderBy(desc10(systemAuditLogs.createdAt)).limit(1);
     const failedLogins = await db.select({ count: sql13`count(*)` }).from(systemAuditLogs).where(
       and16(
-        eq20(systemAuditLogs.userId, userId),
-        eq20(systemAuditLogs.eventType, "login_failed"),
+        eq21(systemAuditLogs.userId, userId),
+        eq21(systemAuditLogs.eventType, "login_failed"),
         gte6(systemAuditLogs.createdAt, startDate)
       )
     );
@@ -17900,16 +17882,16 @@ var AuditService = class {
     }).from(systemAuditLogs).where(gte6(systemAuditLogs.createdAt, startDate));
     const errors = await db.select().from(systemAuditLogs).where(
       and16(
-        eq20(systemAuditLogs.eventType, "error"),
+        eq21(systemAuditLogs.eventType, "error"),
         gte6(systemAuditLogs.createdAt, startDate)
       )
     ).orderBy(desc10(systemAuditLogs.createdAt)).limit(10);
     const securityEvents = await db.select().from(systemAuditLogs).where(
       and16(
         or5(
-          eq20(systemAuditLogs.eventType, "login_failed"),
-          eq20(systemAuditLogs.eventType, "security_alert"),
-          eq20(systemAuditLogs.eventCategory, "security")
+          eq21(systemAuditLogs.eventType, "login_failed"),
+          eq21(systemAuditLogs.eventType, "security_alert"),
+          eq21(systemAuditLogs.eventCategory, "security")
         ),
         gte6(systemAuditLogs.createdAt, startDate)
       )
@@ -17941,7 +17923,7 @@ var AuditService = class {
         ...settings,
         updatedBy: userId,
         updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq20(auditSettings.id, existingSettings.id)).returning();
+      }).where(eq21(auditSettings.id, existingSettings.id)).returning();
       await logAuditEvent("settings_change", "system", {
         userId,
         entityType: "audit_settings",
@@ -17999,7 +17981,7 @@ var AuditService = class {
   static async getArchivedLogs(params) {
     const { userId, startDate, endDate, limit = 50, offset = 0 } = params;
     const conditions = [];
-    if (userId) conditions.push(eq20(archivedAuditLogs.userId, userId));
+    if (userId) conditions.push(eq21(archivedAuditLogs.userId, userId));
     if (startDate) conditions.push(gte6(archivedAuditLogs.createdAt, startDate));
     if (endDate) conditions.push(lte6(archivedAuditLogs.createdAt, endDate));
     const logs = await db.select().from(archivedAuditLogs).where(conditions.length > 0 ? and16(...conditions) : void 0).orderBy(desc10(archivedAuditLogs.createdAt)).limit(limit).offset(offset);
@@ -18018,7 +18000,7 @@ var AuditService = class {
       gte6(systemAuditLogs.createdAt, startDate)
     ];
     if (userId) {
-      conditions.push(eq20(systemAuditLogs.userId, userId));
+      conditions.push(eq21(systemAuditLogs.userId, userId));
     }
     const history = await db.select({
       id: systemAuditLogs.id,
@@ -18078,9 +18060,9 @@ var AuditService = class {
       inArray5(systemAuditLogs.eventType, ["data_create", "data_update", "data_delete"]),
       gte6(systemAuditLogs.createdAt, startDate)
     ];
-    if (entityType) conditions.push(eq20(systemAuditLogs.entityType, entityType));
-    if (entityId) conditions.push(eq20(systemAuditLogs.entityId, entityId));
-    if (userId) conditions.push(eq20(systemAuditLogs.userId, userId));
+    if (entityType) conditions.push(eq21(systemAuditLogs.entityType, entityType));
+    if (entityId) conditions.push(eq21(systemAuditLogs.entityId, entityId));
+    if (userId) conditions.push(eq21(systemAuditLogs.userId, userId));
     const changes = await db.select().from(systemAuditLogs).where(and16(...conditions)).orderBy(desc10(systemAuditLogs.createdAt)).limit(100);
     return changes;
   }
@@ -18092,11 +18074,11 @@ var AuditService = class {
     const startDate = /* @__PURE__ */ new Date();
     startDate.setDate(startDate.getDate() - days);
     const conditions = [
-      eq20(systemAuditLogs.eventType, "data_delete"),
+      eq21(systemAuditLogs.eventType, "data_delete"),
       gte6(systemAuditLogs.createdAt, startDate)
     ];
     if (entityType) {
-      conditions.push(eq20(systemAuditLogs.entityType, entityType));
+      conditions.push(eq21(systemAuditLogs.entityType, entityType));
     }
     const deletions = await db.select().from(systemAuditLogs).where(and16(...conditions)).orderBy(desc10(systemAuditLogs.createdAt));
     const records = deletions.map((deletion) => ({
@@ -18128,7 +18110,7 @@ var AuditService = class {
       and16(
         or5(
           inArray5(systemAuditLogs.eventType, securityEventTypes),
-          eq20(systemAuditLogs.eventCategory, "security")
+          eq21(systemAuditLogs.eventCategory, "security")
         ),
         gte6(systemAuditLogs.createdAt, startDate)
       )
@@ -18154,7 +18136,7 @@ var AuditService = class {
    * 알림 규칙 조회
    */
   static async getAlertRules() {
-    return await db.select().from(auditAlertRules).where(eq20(auditAlertRules.isActive, true)).orderBy(desc10(auditAlertRules.severity));
+    return await db.select().from(auditAlertRules).where(eq21(auditAlertRules.isActive, true)).orderBy(desc10(auditAlertRules.severity));
   }
   /**
    * 알림 규칙 생성/업데이트
@@ -18164,7 +18146,7 @@ var AuditService = class {
       return await db.update(auditAlertRules).set({
         ...rule,
         updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq20(auditAlertRules.id, rule.id)).returning();
+      }).where(eq21(auditAlertRules.id, rule.id)).returning();
     } else {
       return await db.insert(auditAlertRules).values({
         ...rule,
@@ -18606,19 +18588,6 @@ if (process.env.VERCEL) {
       }
     }));
     console.log("\u2705 Basic session middleware added");
-    app.get("/api/debug/session-store", (req, res) => {
-      const sessionData = {
-        hasSession: !!req.session,
-        sessionID: req.sessionID,
-        sessionKeys: req.session ? Object.keys(req.session) : [],
-        isAuthenticated: req.isAuthenticated ? req.isAuthenticated() : false,
-        storeType: "Memory (fallback)",
-        cookieSettings: req.session?.cookie,
-        vercelInit: true
-      };
-      console.log("\u{1F50D} Session debug info:", sessionData);
-      res.json(sessionData);
-    });
     sessionConfig.configureProductionSession(app).then(() => {
       console.log("\u2705 PostgreSQL session store upgrade complete");
     }).catch((error) => {
@@ -18628,6 +18597,20 @@ if (process.env.VERCEL) {
     console.error("\u{1F534} Session configuration error:", error);
   }
   app.use(sessionErrorHandler);
+  app.get("/api/debug/session-store", (req, res) => {
+    const sessionData = {
+      hasSession: !!req.session,
+      sessionID: req.sessionID,
+      sessionKeys: req.session ? Object.keys(req.session) : [],
+      isAuthenticated: req.isAuthenticated ? req.isAuthenticated() : false,
+      storeType: "Memory (fallback)",
+      cookieSettings: req.session?.cookie,
+      vercelInit: true,
+      timestamp: (/* @__PURE__ */ new Date()).toISOString()
+    };
+    console.log("\u{1F50D} Session debug info:", sessionData);
+    res.json(sessionData);
+  });
   app.use(routes_default);
   app.use((err, _req, res, _next) => {
     const status = err.status || err.statusCode || 500;
