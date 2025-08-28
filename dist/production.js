@@ -1730,6 +1730,7 @@ var init_po_template_processor_mock = __esm({
 // server/production.ts
 import dotenv2 from "dotenv";
 import express2 from "express";
+import session2 from "express-session";
 
 // server/session-config.ts
 import session from "express-session";
@@ -18490,7 +18491,6 @@ app.use(express2.json());
 app.use(express2.urlencoded({ extended: false }));
 app.use("/attached_assets", express2.static("attached_assets"));
 console.log("\u{1F527} Setting up session middleware...");
-var session2 = __require("express-session");
 var SESSION_SECRET2 = process.env.SESSION_SECRET || "ikjin-po-mgmt-prod-secret-2025-secure-key";
 app.use(session2({
   secret: SESSION_SECRET2,

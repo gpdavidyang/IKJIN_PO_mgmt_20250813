@@ -25,6 +25,7 @@ if (originalDatabaseUrl && (
 console.log("✨ Production server starting without static file serving");
 
 import express, { type Request, Response, NextFunction } from "express";
+import session from "express-session";
 import { configureProductionSession } from "./session-config";
 import router from "./routes/index";
 
@@ -55,7 +56,6 @@ app.use('/attached_assets', express.static('attached_assets'));
 
 // Configure session middleware IMMEDIATELY for all environments
 console.log("🔧 Setting up session middleware...");
-const session = require('express-session');
 const SESSION_SECRET = process.env.SESSION_SECRET || 'ikjin-po-mgmt-prod-secret-2025-secure-key';
 
 app.use(session({
