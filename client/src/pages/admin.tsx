@@ -124,7 +124,7 @@ export default function Admin() {
   });
 
   const { data: terminology = [], isLoading: isLoadingTerminology } = useQuery<Terminology[]>({
-    queryKey: ["/api/terminology"],
+    queryKey: ["/api/ui-terms"],
     enabled: !!user && user.role === "admin",
   });
 

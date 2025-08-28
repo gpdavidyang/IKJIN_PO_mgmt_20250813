@@ -76,6 +76,7 @@ const Approvals = createLazyComponent(() => import("@/pages/approvals"), 'Approv
 const ApprovalAuthorities = createLazyComponent(() => import("@/pages/approval-authorities"), 'ApprovalAuthorities');
 const ExcelAutomationTest = createLazyComponent(() => import("@/pages/excel-automation-test"), 'ExcelAutomationTest');
 const ImportExport = createLazyComponent(() => import("@/pages/import-export"), 'ImportExport');
+const AuditManagement = createLazyComponent(() => import("@/pages/audit-management"), 'AuditManagement');
 const AccessibilityExample = createLazyComponent(
   () => import("@/components/examples/accessibility-example").then(module => ({
     default: module.AccessibilityExample
@@ -435,6 +436,13 @@ function Layout() {
                 <Suspense fallback={<PageLoadingFallback />}>
                   <ImportExport />
                 </Suspense>
+              </Route>
+              <Route path="/audit-management">
+                <AdminRoute>
+                  <Suspense fallback={<PageLoadingFallback />}>
+                    <AuditManagement />
+                  </Suspense>
+                </AdminRoute>
               </Route>
               <Route path="/accessibility-example">
                 <Suspense fallback={<PageLoadingFallback />}>

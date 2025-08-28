@@ -133,7 +133,7 @@ if (process.env.VERCEL) {
     app.use(session({
       secret: SESSION_SECRET,
       resave: false,
-      saveUninitialized: false,
+      saveUninitialized: true, // Changed to true for Vercel serverless
       name: 'connect.sid',
       cookie: {
         secure: true,
@@ -166,11 +166,17 @@ if (process.env.VERCEL) {
       hasSession: !!req.session,
       sessionID: req.sessionID,
       sessionKeys: req.session ? Object.keys(req.session) : [],
+      sessionData: req.session || null,
       isAuthenticated: req.isAuthenticated ? req.isAuthenticated() : false,
       storeType: 'Memory (fallback)',
       cookieSettings: req.session?.cookie,
+      cookieHeader: req.headers.cookie,
       vercelInit: true,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      sessionStore: {
+        ready: typeof req.sessionStore !== 'undefined',
+        type: req.sessionStore ? req.sessionStore.constructor.name : 'none'
+      }
     };
     
     console.log("🔍 Session debug info:", sessionData);
