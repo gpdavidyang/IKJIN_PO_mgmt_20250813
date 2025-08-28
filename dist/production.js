@@ -22,8 +22,15 @@ __export(schema_exports, {
   approvalStepStatusEnum: () => approvalStepStatusEnum,
   approvalStepTemplates: () => approvalStepTemplates,
   approvalWorkflowSettings: () => approvalWorkflowSettings,
+  archivedAuditLogs: () => archivedAuditLogs,
   attachments: () => attachments,
   attachmentsRelations: () => attachmentsRelations,
+  auditAlertRules: () => auditAlertRules,
+  auditAlertRulesRelations: () => auditAlertRulesRelations,
+  auditEventTypeEnum: () => auditEventTypeEnum,
+  auditLogLevelEnum: () => auditLogLevelEnum,
+  auditSettings: () => auditSettings,
+  auditSettingsRelations: () => auditSettingsRelations,
   companies: () => companies,
   emailSendHistory: () => emailSendHistory,
   emailSendHistoryRelations: () => emailSendHistoryRelations,
@@ -33,7 +40,10 @@ __export(schema_exports, {
   insertApprovalStepInstanceSchema: () => insertApprovalStepInstanceSchema,
   insertApprovalStepTemplateSchema: () => insertApprovalStepTemplateSchema,
   insertApprovalWorkflowSettingsSchema: () => insertApprovalWorkflowSettingsSchema,
+  insertArchivedAuditLogSchema: () => insertArchivedAuditLogSchema,
   insertAttachmentSchema: () => insertAttachmentSchema,
+  insertAuditAlertRuleSchema: () => insertAuditAlertRuleSchema,
+  insertAuditSettingsSchema: () => insertAuditSettingsSchema,
   insertCompanySchema: () => insertCompanySchema,
   insertEmailSendHistorySchema: () => insertEmailSendHistorySchema,
   insertHandsontableConfigSchema: () => insertHandsontableConfigSchema,
@@ -48,6 +58,7 @@ __export(schema_exports, {
   insertProjectSchema: () => insertProjectSchema,
   insertPurchaseOrderItemSchema: () => insertPurchaseOrderItemSchema,
   insertPurchaseOrderSchema: () => insertPurchaseOrderSchema,
+  insertSystemAuditLogSchema: () => insertSystemAuditLogSchema,
   insertTemplateFieldSchema: () => insertTemplateFieldSchema,
   insertTemplateVersionSchema: () => insertTemplateVersionSchema,
   insertTerminologySchema: () => insertTerminologySchema,
@@ -83,6 +94,8 @@ __export(schema_exports, {
   purchaseOrders: () => purchaseOrders,
   purchaseOrdersRelations: () => purchaseOrdersRelations,
   sessions: () => sessions,
+  systemAuditLogs: () => systemAuditLogs,
+  systemAuditLogsRelations: () => systemAuditLogsRelations,
   templateFields: () => templateFields,
   templateFieldsRelations: () => templateFieldsRelations,
   templateVersions: () => templateVersions,
@@ -116,7 +129,7 @@ import {
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-var sessions, uiTerms, itemCategories, userRoleEnum, purchaseOrderStatusEnum, projectStatusEnum, projectTypeEnum, invoiceStatusEnum, itemReceiptStatusEnum, verificationActionEnum, approvalStepStatusEnum, approvalAuthorities, users, companies, vendors, items, terminology, projects, projectMembers, projectHistory, orderTemplates, templateFields, handsontableConfigs, templateVersions, purchaseOrders, purchaseOrderItems, attachments, orderHistory, emailSendHistory, invoices, itemReceipts, verificationLogs, usersRelations, vendorsRelations, itemsRelations, projectsRelations, projectMembersRelations, projectHistoryRelations, orderTemplatesRelations, purchaseOrdersRelations, purchaseOrderItemsRelations, attachmentsRelations, orderHistoryRelations, invoicesRelations, itemReceiptsRelations, verificationLogsRelations, templateFieldsRelations, handsontableConfigsRelations, templateVersionsRelations, itemCategoriesRelations, emailSendHistoryRelations, insertCompanySchema, insertVendorSchema, insertItemSchema, insertProjectSchema, insertOrderTemplateSchema, insertItemCategorySchema, insertPurchaseOrderSchema, insertPurchaseOrderItemSchema, insertAttachmentSchema, insertOrderHistorySchema, insertInvoiceSchema, insertItemReceiptSchema, insertVerificationLogSchema, insertEmailSendHistorySchema, insertTemplateFieldSchema, insertHandsontableConfigSchema, insertTemplateVersionSchema, insertProjectMemberSchema, insertProjectHistorySchema, insertUiTermSchema, insertTerminologySchema, insertUITermSchema, insertApprovalAuthoritySchema, approvalWorkflowSettings, approvalStepTemplates, approvalStepInstances, insertApprovalWorkflowSettingsSchema, insertApprovalStepTemplateSchema, insertApprovalStepInstanceSchema;
+var sessions, uiTerms, itemCategories, userRoleEnum, purchaseOrderStatusEnum, projectStatusEnum, projectTypeEnum, invoiceStatusEnum, itemReceiptStatusEnum, verificationActionEnum, approvalStepStatusEnum, approvalAuthorities, users, companies, vendors, items, terminology, projects, projectMembers, projectHistory, orderTemplates, templateFields, handsontableConfigs, templateVersions, purchaseOrders, purchaseOrderItems, attachments, orderHistory, emailSendHistory, invoices, itemReceipts, verificationLogs, usersRelations, vendorsRelations, itemsRelations, projectsRelations, projectMembersRelations, projectHistoryRelations, orderTemplatesRelations, purchaseOrdersRelations, purchaseOrderItemsRelations, attachmentsRelations, orderHistoryRelations, invoicesRelations, itemReceiptsRelations, verificationLogsRelations, templateFieldsRelations, handsontableConfigsRelations, templateVersionsRelations, itemCategoriesRelations, emailSendHistoryRelations, insertCompanySchema, insertVendorSchema, insertItemSchema, insertProjectSchema, insertOrderTemplateSchema, insertItemCategorySchema, insertPurchaseOrderSchema, insertPurchaseOrderItemSchema, insertAttachmentSchema, insertOrderHistorySchema, insertInvoiceSchema, insertItemReceiptSchema, insertVerificationLogSchema, insertEmailSendHistorySchema, insertTemplateFieldSchema, insertHandsontableConfigSchema, insertTemplateVersionSchema, insertProjectMemberSchema, insertProjectHistorySchema, insertUiTermSchema, insertTerminologySchema, insertUITermSchema, insertApprovalAuthoritySchema, approvalWorkflowSettings, approvalStepTemplates, approvalStepInstances, insertApprovalWorkflowSettingsSchema, insertApprovalStepTemplateSchema, insertApprovalStepInstanceSchema, auditLogLevelEnum, auditEventTypeEnum, systemAuditLogs, auditSettings, archivedAuditLogs, auditAlertRules, systemAuditLogsRelations, auditSettingsRelations, auditAlertRulesRelations, insertSystemAuditLogSchema, insertAuditSettingsSchema, insertArchivedAuditLogSchema, insertAuditAlertRuleSchema;
 var init_schema = __esm({
   "shared/schema.ts"() {
     "use strict";
@@ -931,6 +944,178 @@ var init_schema = __esm({
       createdAt: true,
       updatedAt: true
     });
+    auditLogLevelEnum = pgEnum("audit_log_level", ["OFF", "ERROR", "WARNING", "INFO", "DEBUG"]);
+    auditEventTypeEnum = pgEnum("audit_event_type", [
+      "login",
+      "logout",
+      "login_failed",
+      "session_expired",
+      "password_change",
+      "permission_change",
+      "data_create",
+      "data_read",
+      "data_update",
+      "data_delete",
+      "data_export",
+      "approval_request",
+      "approval_grant",
+      "approval_reject",
+      "email_send",
+      "file_upload",
+      "file_download",
+      "settings_change",
+      "security_alert",
+      "api_access",
+      "error"
+    ]);
+    systemAuditLogs = pgTable("system_audit_logs", {
+      id: serial("id").primaryKey(),
+      userId: varchar("user_id").references(() => users.id),
+      // NULL for system events
+      userName: varchar("user_name", { length: 255 }),
+      // Denormalized for performance
+      userRole: varchar("user_role", { length: 50 }),
+      // Denormalized for performance
+      eventType: auditEventTypeEnum("event_type").notNull(),
+      eventCategory: varchar("event_category", { length: 50 }).notNull(),
+      // 'auth', 'data', 'system', 'security'
+      entityType: varchar("entity_type", { length: 50 }),
+      // 'order', 'user', 'vendor', 'project', etc.
+      entityId: varchar("entity_id", { length: 100 }),
+      // ID of affected entity
+      action: varchar("action", { length: 255 }).notNull(),
+      // Detailed action description
+      details: jsonb("details"),
+      // Additional event details
+      oldValue: jsonb("old_value"),
+      // Previous state (for updates)
+      newValue: jsonb("new_value"),
+      // New state (for updates)
+      ipAddress: varchar("ip_address", { length: 50 }),
+      userAgent: text("user_agent"),
+      sessionId: varchar("session_id", { length: 255 }),
+      requestMethod: varchar("request_method", { length: 10 }),
+      // GET, POST, PUT, DELETE
+      requestPath: varchar("request_path", { length: 500 }),
+      responseStatus: integer("response_status"),
+      // HTTP status code
+      executionTime: integer("execution_time"),
+      // in milliseconds
+      errorMessage: text("error_message"),
+      // For error events
+      stackTrace: text("stack_trace"),
+      // For debugging (only in DEBUG mode)
+      createdAt: timestamp("created_at").defaultNow().notNull()
+    }, (table) => [
+      index("idx_audit_user").on(table.userId),
+      index("idx_audit_event_type").on(table.eventType),
+      index("idx_audit_entity").on(table.entityType, table.entityId),
+      index("idx_audit_created").on(table.createdAt),
+      index("idx_audit_category").on(table.eventCategory),
+      index("idx_audit_session").on(table.sessionId)
+    ]);
+    auditSettings = pgTable("audit_settings", {
+      id: serial("id").primaryKey(),
+      logLevel: auditLogLevelEnum("log_level").notNull().default("INFO"),
+      enabledCategories: jsonb("enabled_categories").notNull().default(["auth", "data", "security"]).$type(),
+      retentionDays: integer("retention_days").notNull().default(90),
+      // Days to keep logs
+      archiveEnabled: boolean("archive_enabled").default(true),
+      archiveAfterDays: integer("archive_after_days").default(30),
+      realTimeAlerts: boolean("real_time_alerts").default(false),
+      alertEmails: jsonb("alert_emails").default([]).$type(),
+      excludedPaths: jsonb("excluded_paths").default([]).$type(),
+      // API paths to exclude
+      excludedUsers: jsonb("excluded_users").default([]).$type(),
+      // User IDs to exclude
+      sensitiveDataMasking: boolean("sensitive_data_masking").default(true),
+      performanceTracking: boolean("performance_tracking").default(false),
+      apiAccessLogging: boolean("api_access_logging").default(false),
+      updatedBy: varchar("updated_by").references(() => users.id),
+      updatedAt: timestamp("updated_at").defaultNow().$onUpdate(() => /* @__PURE__ */ new Date()),
+      createdAt: timestamp("created_at").defaultNow()
+    });
+    archivedAuditLogs = pgTable("archived_audit_logs", {
+      id: serial("id").primaryKey(),
+      originalId: integer("original_id").notNull(),
+      // Original log ID
+      userId: varchar("user_id", { length: 255 }),
+      userName: varchar("user_name", { length: 255 }),
+      userRole: varchar("user_role", { length: 50 }),
+      eventType: varchar("event_type", { length: 50 }).notNull(),
+      eventCategory: varchar("event_category", { length: 50 }).notNull(),
+      entityType: varchar("entity_type", { length: 50 }),
+      entityId: varchar("entity_id", { length: 100 }),
+      action: varchar("action", { length: 255 }).notNull(),
+      details: jsonb("details"),
+      ipAddress: varchar("ip_address", { length: 50 }),
+      createdAt: timestamp("created_at").notNull(),
+      archivedAt: timestamp("archived_at").defaultNow().notNull()
+    }, (table) => [
+      index("idx_archived_audit_user").on(table.userId),
+      index("idx_archived_audit_created").on(table.createdAt),
+      index("idx_archived_audit_archived").on(table.archivedAt)
+    ]);
+    auditAlertRules = pgTable("audit_alert_rules", {
+      id: serial("id").primaryKey(),
+      ruleName: varchar("rule_name", { length: 100 }).notNull(),
+      description: text("description"),
+      eventTypes: jsonb("event_types").notNull().$type(),
+      // Events to monitor
+      condition: jsonb("condition"),
+      // Complex conditions
+      severity: varchar("severity", { length: 20 }).notNull().default("medium"),
+      // low, medium, high, critical
+      alertChannels: jsonb("alert_channels").notNull().$type(),
+      // email, slack, webhook
+      recipients: jsonb("recipients").notNull().$type(),
+      // Email addresses or webhook URLs
+      throttleMinutes: integer("throttle_minutes").default(60),
+      // Prevent alert spam
+      isActive: boolean("is_active").default(true),
+      createdBy: varchar("created_by").references(() => users.id),
+      createdAt: timestamp("created_at").defaultNow(),
+      updatedAt: timestamp("updated_at").defaultNow().$onUpdate(() => /* @__PURE__ */ new Date())
+    }, (table) => [
+      index("idx_alert_rules_active").on(table.isActive),
+      index("idx_alert_rules_severity").on(table.severity)
+    ]);
+    systemAuditLogsRelations = relations(systemAuditLogs, ({ one }) => ({
+      user: one(users, {
+        fields: [systemAuditLogs.userId],
+        references: [users.id]
+      })
+    }));
+    auditSettingsRelations = relations(auditSettings, ({ one }) => ({
+      updatedByUser: one(users, {
+        fields: [auditSettings.updatedBy],
+        references: [users.id]
+      })
+    }));
+    auditAlertRulesRelations = relations(auditAlertRules, ({ one }) => ({
+      createdByUser: one(users, {
+        fields: [auditAlertRules.createdBy],
+        references: [users.id]
+      })
+    }));
+    insertSystemAuditLogSchema = createInsertSchema(systemAuditLogs).omit({
+      id: true,
+      createdAt: true
+    });
+    insertAuditSettingsSchema = createInsertSchema(auditSettings).omit({
+      id: true,
+      createdAt: true,
+      updatedAt: true
+    });
+    insertArchivedAuditLogSchema = createInsertSchema(archivedAuditLogs).omit({
+      id: true,
+      archivedAt: true
+    });
+    insertAuditAlertRuleSchema = createInsertSchema(auditAlertRules).omit({
+      id: true,
+      createdAt: true,
+      updatedAt: true
+    });
   }
 });
 
@@ -1548,7 +1733,7 @@ import express2 from "express";
 import session from "express-session";
 
 // server/routes/index.ts
-import { Router as Router30 } from "express";
+import { Router as Router31 } from "express";
 
 // server/routes/auth.ts
 import { Router } from "express";
@@ -3151,6 +3336,83 @@ async function comparePasswords(supplied, stored) {
   }
 }
 
+// server/middleware/audit-logger.ts
+init_db();
+init_schema();
+var cachedSettings = null;
+var settingsCacheTime = 0;
+var CACHE_TTL = 6e4;
+async function getAuditSettings() {
+  const now = Date.now();
+  if (cachedSettings && now - settingsCacheTime < CACHE_TTL) {
+    return cachedSettings;
+  }
+  try {
+    const settings = await db.select().from(auditSettings).limit(1);
+    cachedSettings = settings[0] || {
+      logLevel: "INFO",
+      enabledCategories: ["auth", "data", "security"],
+      excludedPaths: [],
+      excludedUsers: [],
+      sensitiveDataMasking: true,
+      performanceTracking: false,
+      apiAccessLogging: false
+    };
+    settingsCacheTime = now;
+    return cachedSettings;
+  } catch (error) {
+    console.error("Failed to load audit settings:", error);
+    return cachedSettings || { logLevel: "INFO", enabledCategories: ["auth", "data", "security"] };
+  }
+}
+function maskSensitiveData(data) {
+  if (!data) return data;
+  const sensitiveFields = ["password", "token", "secret", "apiKey", "email", "phone"];
+  if (typeof data === "string") {
+    return data;
+  }
+  if (Array.isArray(data)) {
+    return data.map((item) => maskSensitiveData(item));
+  }
+  if (typeof data === "object") {
+    const masked = { ...data };
+    for (const key of Object.keys(masked)) {
+      if (sensitiveFields.some((field) => key.toLowerCase().includes(field))) {
+        masked[key] = "***MASKED***";
+      } else if (typeof masked[key] === "object") {
+        masked[key] = maskSensitiveData(masked[key]);
+      }
+    }
+    return masked;
+  }
+  return data;
+}
+async function logAuditEvent(eventType, eventCategory, details) {
+  try {
+    const settings = await getAuditSettings();
+    if (settings.logLevel === "OFF") return;
+    if (!settings.enabledCategories?.includes(eventCategory)) return;
+    await db.insert(systemAuditLogs).values({
+      userId: details.userId || null,
+      userName: details.userName || null,
+      userRole: details.userRole || null,
+      eventType,
+      eventCategory,
+      entityType: details.entityType,
+      entityId: details.entityId,
+      action: details.action,
+      details: details.additionalDetails,
+      oldValue: settings.sensitiveDataMasking ? maskSensitiveData(details.oldValue) : details.oldValue,
+      newValue: settings.sensitiveDataMasking ? maskSensitiveData(details.newValue) : details.newValue,
+      ipAddress: details.ipAddress,
+      userAgent: details.userAgent,
+      sessionId: details.sessionId
+    });
+  } catch (error) {
+    console.error("Failed to log audit event:", error);
+  }
+}
+
 // server/local-auth.ts
 async function login(req, res) {
   try {
@@ -3191,9 +3453,26 @@ async function login(req, res) {
       const isValidPassword = await comparePasswords(password, user.password);
       if (!isValidPassword) {
         console.log("\u274C Invalid password for user:", loginIdentifier);
+        await logAuditEvent("login_failed", "auth", {
+          userName: loginIdentifier,
+          action: "Failed login attempt",
+          additionalDetails: { reason: "Invalid password" },
+          ipAddress: req.ip || req.connection.remoteAddress,
+          userAgent: req.headers["user-agent"],
+          sessionId: req.sessionID
+        });
         return res.status(401).json({ message: "Invalid credentials" });
       }
       console.log("\u2705 Database authentication successful for user:", user.name || user.email);
+      await logAuditEvent("login", "auth", {
+        userId: user.id,
+        userName: user.name || user.email,
+        userRole: user.role,
+        action: "User logged in",
+        ipAddress: req.ip || req.connection.remoteAddress,
+        userAgent: req.headers["user-agent"],
+        sessionId: req.sessionID
+      });
     } catch (dbError) {
       console.error("\u{1F534} Database authentication error:", dbError);
       return res.status(500).json({ message: "Authentication failed - database error" });
@@ -3248,8 +3527,25 @@ async function login(req, res) {
     res.status(500).json({ message: "Login failed" });
   }
 }
-function logout(req, res) {
+async function logout(req, res) {
   const authSession = req.session;
+  const userId = authSession.userId;
+  if (userId) {
+    try {
+      const user = await storage.getUser(userId);
+      await logAuditEvent("logout", "auth", {
+        userId,
+        userName: user?.name || user?.email,
+        userRole: user?.role,
+        action: "User logged out",
+        ipAddress: req.ip || req.connection.remoteAddress,
+        userAgent: req.headers["user-agent"],
+        sessionId: req.sessionID
+      });
+    } catch (error) {
+      console.error("Failed to log logout event:", error);
+    }
+  }
   authSession.userId = void 0;
   req.session.destroy((err) => {
     if (err) {
@@ -17316,39 +17612,726 @@ router30.get("/ui-terms", async (req, res) => {
 });
 var positions_default = router30;
 
-// server/routes/index.ts
+// server/routes/audit.ts
+import { Router as Router30 } from "express";
+
+// server/services/audit-service.ts
+init_db();
+init_schema();
+import { eq as eq20, and as and16, or as or5, gte as gte6, lte as lte6, desc as desc10, asc as asc7, sql as sql13, inArray as inArray5 } from "drizzle-orm";
+var AuditService = class {
+  /**
+   * 감사 로그 조회
+   */
+  static async getAuditLogs(params) {
+    const {
+      userId,
+      eventType,
+      eventCategory,
+      entityType,
+      entityId,
+      startDate,
+      endDate,
+      limit = 50,
+      offset = 0,
+      sortBy = "createdAt",
+      sortOrder = "desc"
+    } = params;
+    const conditions = [];
+    if (userId) conditions.push(eq20(systemAuditLogs.userId, userId));
+    if (eventType) conditions.push(eq20(systemAuditLogs.eventType, eventType));
+    if (eventCategory) conditions.push(eq20(systemAuditLogs.eventCategory, eventCategory));
+    if (entityType) conditions.push(eq20(systemAuditLogs.entityType, entityType));
+    if (entityId) conditions.push(eq20(systemAuditLogs.entityId, entityId));
+    if (startDate) conditions.push(gte6(systemAuditLogs.createdAt, startDate));
+    if (endDate) conditions.push(lte6(systemAuditLogs.createdAt, endDate));
+    const orderByColumn = sortBy === "eventType" ? systemAuditLogs.eventType : sortBy === "userName" ? systemAuditLogs.userName : systemAuditLogs.createdAt;
+    const orderByDirection = sortOrder === "asc" ? asc7 : desc10;
+    const query = db.select().from(systemAuditLogs).where(conditions.length > 0 ? and16(...conditions) : void 0).orderBy(orderByDirection(orderByColumn)).limit(limit).offset(offset);
+    const [logs, countResult] = await Promise.all([
+      query,
+      db.select({ count: sql13`count(*)` }).from(systemAuditLogs).where(conditions.length > 0 ? and16(...conditions) : void 0)
+    ]);
+    return {
+      logs,
+      total: countResult[0]?.count || 0,
+      limit,
+      offset
+    };
+  }
+  /**
+   * 사용자별 활동 요약
+   */
+  static async getUserActivitySummary(userId, days = 30) {
+    const startDate = /* @__PURE__ */ new Date();
+    startDate.setDate(startDate.getDate() - days);
+    const activities = await db.select({
+      eventType: systemAuditLogs.eventType,
+      count: sql13`count(*)`
+    }).from(systemAuditLogs).where(
+      and16(
+        eq20(systemAuditLogs.userId, userId),
+        gte6(systemAuditLogs.createdAt, startDate)
+      )
+    ).groupBy(systemAuditLogs.eventType);
+    const lastLogin = await db.select().from(systemAuditLogs).where(
+      and16(
+        eq20(systemAuditLogs.userId, userId),
+        eq20(systemAuditLogs.eventType, "login")
+      )
+    ).orderBy(desc10(systemAuditLogs.createdAt)).limit(1);
+    const failedLogins = await db.select({ count: sql13`count(*)` }).from(systemAuditLogs).where(
+      and16(
+        eq20(systemAuditLogs.userId, userId),
+        eq20(systemAuditLogs.eventType, "login_failed"),
+        gte6(systemAuditLogs.createdAt, startDate)
+      )
+    );
+    return {
+      activities,
+      lastLogin: lastLogin[0],
+      failedLoginCount: failedLogins[0]?.count || 0,
+      period: `${days} days`
+    };
+  }
+  /**
+   * 시스템 활동 대시보드 통계
+   */
+  static async getDashboardStats(hours = 24) {
+    const startDate = /* @__PURE__ */ new Date();
+    startDate.setHours(startDate.getHours() - hours);
+    const categoryStats = await db.select({
+      category: systemAuditLogs.eventCategory,
+      count: sql13`count(*)`
+    }).from(systemAuditLogs).where(gte6(systemAuditLogs.createdAt, startDate)).groupBy(systemAuditLogs.eventCategory);
+    const eventStats = await db.select({
+      eventType: systemAuditLogs.eventType,
+      count: sql13`count(*)`
+    }).from(systemAuditLogs).where(gte6(systemAuditLogs.createdAt, startDate)).groupBy(systemAuditLogs.eventType);
+    const hourlyActivity = await db.select({
+      hour: sql13`date_trunc('hour', ${systemAuditLogs.createdAt})`,
+      count: sql13`count(*)`
+    }).from(systemAuditLogs).where(gte6(systemAuditLogs.createdAt, startDate)).groupBy(sql13`date_trunc('hour', ${systemAuditLogs.createdAt})`).orderBy(sql13`date_trunc('hour', ${systemAuditLogs.createdAt})`);
+    const activeUsers = await db.select({
+      count: sql13`count(distinct ${systemAuditLogs.userId})`
+    }).from(systemAuditLogs).where(gte6(systemAuditLogs.createdAt, startDate));
+    const errors = await db.select().from(systemAuditLogs).where(
+      and16(
+        eq20(systemAuditLogs.eventType, "error"),
+        gte6(systemAuditLogs.createdAt, startDate)
+      )
+    ).orderBy(desc10(systemAuditLogs.createdAt)).limit(10);
+    const securityEvents = await db.select().from(systemAuditLogs).where(
+      and16(
+        or5(
+          eq20(systemAuditLogs.eventType, "login_failed"),
+          eq20(systemAuditLogs.eventType, "security_alert"),
+          eq20(systemAuditLogs.eventCategory, "security")
+        ),
+        gte6(systemAuditLogs.createdAt, startDate)
+      )
+    ).orderBy(desc10(systemAuditLogs.createdAt)).limit(10);
+    return {
+      categoryStats,
+      eventStats,
+      hourlyActivity,
+      activeUserCount: activeUsers[0]?.count || 0,
+      recentErrors: errors,
+      securityEvents,
+      period: `${hours} hours`
+    };
+  }
+  /**
+   * 감사 설정 조회
+   */
+  static async getSettings() {
+    const settings = await db.select().from(auditSettings).limit(1);
+    return settings[0] || null;
+  }
+  /**
+   * 감사 설정 업데이트
+   */
+  static async updateSettings(settings, userId) {
+    const existingSettings = await this.getSettings();
+    if (existingSettings) {
+      const updated = await db.update(auditSettings).set({
+        ...settings,
+        updatedBy: userId,
+        updatedAt: /* @__PURE__ */ new Date()
+      }).where(eq20(auditSettings.id, existingSettings.id)).returning();
+      await logAuditEvent("settings_change", "system", {
+        userId,
+        entityType: "audit_settings",
+        entityId: String(existingSettings.id),
+        action: "Update audit settings",
+        oldValue: existingSettings,
+        newValue: updated[0]
+      });
+      return updated[0];
+    } else {
+      const created = await db.insert(auditSettings).values({
+        ...settings,
+        updatedBy: userId
+      }).returning();
+      await logAuditEvent("settings_change", "system", {
+        userId,
+        entityType: "audit_settings",
+        entityId: String(created[0].id),
+        action: "Create audit settings",
+        newValue: created[0]
+      });
+      return created[0];
+    }
+  }
+  /**
+   * 로그 아카이빙
+   */
+  static async archiveLogs(beforeDate) {
+    const logsToArchive = await db.select().from(systemAuditLogs).where(lte6(systemAuditLogs.createdAt, beforeDate)).limit(1e3);
+    if (logsToArchive.length === 0) {
+      return { archived: 0 };
+    }
+    const archiveData = logsToArchive.map((log) => ({
+      originalId: log.id,
+      userId: log.userId,
+      userName: log.userName,
+      userRole: log.userRole,
+      eventType: log.eventType,
+      eventCategory: log.eventCategory,
+      entityType: log.entityType,
+      entityId: log.entityId,
+      action: log.action,
+      details: log.details,
+      ipAddress: log.ipAddress,
+      createdAt: log.createdAt
+    }));
+    await db.insert(archivedAuditLogs).values(archiveData);
+    const logIds = logsToArchive.map((log) => log.id);
+    await db.delete(systemAuditLogs).where(inArray5(systemAuditLogs.id, logIds));
+    return { archived: logsToArchive.length };
+  }
+  /**
+   * 아카이브된 로그 조회
+   */
+  static async getArchivedLogs(params) {
+    const { userId, startDate, endDate, limit = 50, offset = 0 } = params;
+    const conditions = [];
+    if (userId) conditions.push(eq20(archivedAuditLogs.userId, userId));
+    if (startDate) conditions.push(gte6(archivedAuditLogs.createdAt, startDate));
+    if (endDate) conditions.push(lte6(archivedAuditLogs.createdAt, endDate));
+    const logs = await db.select().from(archivedAuditLogs).where(conditions.length > 0 ? and16(...conditions) : void 0).orderBy(desc10(archivedAuditLogs.createdAt)).limit(limit).offset(offset);
+    return logs;
+  }
+  /**
+   * 로그인 기록 조회
+   */
+  static async getLoginHistory(params) {
+    const { userId, days = 30, includeFailures = true } = params;
+    const startDate = /* @__PURE__ */ new Date();
+    startDate.setDate(startDate.getDate() - days);
+    const eventTypes = includeFailures ? ["login", "logout", "login_failed", "session_expired"] : ["login", "logout"];
+    const conditions = [
+      inArray5(systemAuditLogs.eventType, eventTypes),
+      gte6(systemAuditLogs.createdAt, startDate)
+    ];
+    if (userId) {
+      conditions.push(eq20(systemAuditLogs.userId, userId));
+    }
+    const history = await db.select({
+      id: systemAuditLogs.id,
+      userId: systemAuditLogs.userId,
+      userName: systemAuditLogs.userName,
+      userRole: systemAuditLogs.userRole,
+      eventType: systemAuditLogs.eventType,
+      ipAddress: systemAuditLogs.ipAddress,
+      userAgent: systemAuditLogs.userAgent,
+      details: systemAuditLogs.details,
+      createdAt: systemAuditLogs.createdAt
+    }).from(systemAuditLogs).where(and16(...conditions)).orderBy(desc10(systemAuditLogs.createdAt)).limit(100);
+    const sessions2 = [];
+    let currentSession = null;
+    for (const event of history) {
+      if (event.eventType === "login") {
+        if (currentSession) {
+          sessions2.push(currentSession);
+        }
+        currentSession = {
+          loginTime: event.createdAt,
+          loginIp: event.ipAddress,
+          userAgent: event.userAgent,
+          userId: event.userId,
+          userName: event.userName,
+          duration: null,
+          logoutType: null
+        };
+      } else if (currentSession && (event.eventType === "logout" || event.eventType === "session_expired")) {
+        currentSession.logoutTime = event.createdAt;
+        currentSession.duration = Math.floor(
+          (new Date(event.createdAt).getTime() - new Date(currentSession.loginTime).getTime()) / 1e3
+        );
+        currentSession.logoutType = event.eventType;
+        sessions2.push(currentSession);
+        currentSession = null;
+      }
+    }
+    if (currentSession) {
+      sessions2.push(currentSession);
+    }
+    return {
+      history,
+      sessions: sessions2,
+      totalLogins: history.filter((h) => h.eventType === "login").length,
+      failedLogins: history.filter((h) => h.eventType === "login_failed").length
+    };
+  }
+  /**
+   * 데이터 변경 기록 조회
+   */
+  static async getDataChangeLogs(params) {
+    const { entityType, entityId, userId, days = 30 } = params;
+    const startDate = /* @__PURE__ */ new Date();
+    startDate.setDate(startDate.getDate() - days);
+    const conditions = [
+      inArray5(systemAuditLogs.eventType, ["data_create", "data_update", "data_delete"]),
+      gte6(systemAuditLogs.createdAt, startDate)
+    ];
+    if (entityType) conditions.push(eq20(systemAuditLogs.entityType, entityType));
+    if (entityId) conditions.push(eq20(systemAuditLogs.entityId, entityId));
+    if (userId) conditions.push(eq20(systemAuditLogs.userId, userId));
+    const changes = await db.select().from(systemAuditLogs).where(and16(...conditions)).orderBy(desc10(systemAuditLogs.createdAt)).limit(100);
+    return changes;
+  }
+  /**
+   * 삭제 기록 조회
+   */
+  static async getDeletedRecords(params) {
+    const { entityType, days = 30, includeBackup = true } = params;
+    const startDate = /* @__PURE__ */ new Date();
+    startDate.setDate(startDate.getDate() - days);
+    const conditions = [
+      eq20(systemAuditLogs.eventType, "data_delete"),
+      gte6(systemAuditLogs.createdAt, startDate)
+    ];
+    if (entityType) {
+      conditions.push(eq20(systemAuditLogs.entityType, entityType));
+    }
+    const deletions = await db.select().from(systemAuditLogs).where(and16(...conditions)).orderBy(desc10(systemAuditLogs.createdAt));
+    const records = deletions.map((deletion) => ({
+      id: deletion.id,
+      entityType: deletion.entityType,
+      entityId: deletion.entityId,
+      deletedBy: deletion.userName,
+      deletedAt: deletion.createdAt,
+      reason: deletion.details?.reason,
+      backup: includeBackup ? deletion.oldValue : void 0,
+      restorable: !!deletion.oldValue
+    }));
+    return records;
+  }
+  /**
+   * 보안 이벤트 조회
+   */
+  static async getSecurityEvents(params) {
+    const { severity = "all", days = 7 } = params;
+    const startDate = /* @__PURE__ */ new Date();
+    startDate.setDate(startDate.getDate() - days);
+    const securityEventTypes = [
+      "login_failed",
+      "permission_change",
+      "security_alert",
+      "password_change"
+    ];
+    const events = await db.select().from(systemAuditLogs).where(
+      and16(
+        or5(
+          inArray5(systemAuditLogs.eventType, securityEventTypes),
+          eq20(systemAuditLogs.eventCategory, "security")
+        ),
+        gte6(systemAuditLogs.createdAt, startDate)
+      )
+    ).orderBy(desc10(systemAuditLogs.createdAt));
+    const categorizedEvents = events.map((event) => {
+      let eventSeverity = "low";
+      if (event.eventType === "security_alert" || event.eventType === "permission_change") {
+        eventSeverity = "high";
+      } else if (event.eventType === "login_failed") {
+        eventSeverity = "medium";
+      }
+      return {
+        ...event,
+        severity: eventSeverity
+      };
+    });
+    if (severity !== "all") {
+      return categorizedEvents.filter((e) => e.severity === severity);
+    }
+    return categorizedEvents;
+  }
+  /**
+   * 알림 규칙 조회
+   */
+  static async getAlertRules() {
+    return await db.select().from(auditAlertRules).where(eq20(auditAlertRules.isActive, true)).orderBy(desc10(auditAlertRules.severity));
+  }
+  /**
+   * 알림 규칙 생성/업데이트
+   */
+  static async upsertAlertRule(rule, userId) {
+    if (rule.id) {
+      return await db.update(auditAlertRules).set({
+        ...rule,
+        updatedAt: /* @__PURE__ */ new Date()
+      }).where(eq20(auditAlertRules.id, rule.id)).returning();
+    } else {
+      return await db.insert(auditAlertRules).values({
+        ...rule,
+        createdBy: userId
+      }).returning();
+    }
+  }
+  /**
+   * 자동 아카이빙 작업
+   */
+  static async performAutoArchive() {
+    const settings = await this.getSettings();
+    if (!settings?.archiveEnabled || !settings?.archiveAfterDays) {
+      return { success: false, message: "Auto-archive is disabled" };
+    }
+    const archiveDate = /* @__PURE__ */ new Date();
+    archiveDate.setDate(archiveDate.getDate() - settings.archiveAfterDays);
+    const result = await this.archiveLogs(archiveDate);
+    if (settings.retentionDays) {
+      const deleteDate = /* @__PURE__ */ new Date();
+      deleteDate.setDate(deleteDate.getDate() - settings.retentionDays);
+      await db.delete(archivedAuditLogs).where(lte6(archivedAuditLogs.archivedAt, deleteDate));
+    }
+    return { success: true, ...result };
+  }
+};
+
+// server/routes/audit.ts
+import { z as z7 } from "zod";
 var router31 = Router30();
-router31.use("/api", auth_default);
-router31.use("/api", projects_default);
-router31.use("/api", orders_default);
-router31.use("/api", vendors_default);
-router31.use("/api", items_default);
-router31.use("/api", dashboard_default);
-router31.use("/api", companies_default);
-router31.use("/api/admin", admin_default);
-router31.use("/api/excel-automation", excel_automation_default);
-router31.use("/api/po-template", po_template_real_default);
-router31.use("/api/reports", reports_default);
-router31.use("/api", import_export_default);
-router31.use("/api", email_history_default);
-router31.use("/api/excel-template", excel_template_default);
-router31.use("/api", orders_optimized_default);
-router31.use("/api", order_statuses_default);
-router31.use("/api", invoices_default);
-router31.use("/api", verification_logs_default);
-router31.use("/api", item_receipts_default);
-router31.use("/api", approvals_default);
-router31.use("/api", project_members_default);
-router31.use("/api", project_types_default);
-router31.use("/api", simple_auth_default);
-router31.use("/api", test_accounts_default);
-router31.use("/api/categories", categories_default);
-router31.use("/api/approval-settings", approval_settings_default);
-router31.use("/api", approval_authorities_default);
-router31.use("/api", notifications_default);
-router31.use("/api/orders", orders_simple_default);
-router31.use("/api", positions_default);
-var routes_default = router31;
+var getAuditLogsSchema = z7.object({
+  userId: z7.string().optional(),
+  eventType: z7.string().optional(),
+  eventCategory: z7.string().optional(),
+  entityType: z7.string().optional(),
+  entityId: z7.string().optional(),
+  startDate: z7.string().optional(),
+  endDate: z7.string().optional(),
+  limit: z7.coerce.number().min(1).max(100).default(50),
+  offset: z7.coerce.number().min(0).default(0),
+  sortBy: z7.enum(["createdAt", "eventType", "userName"]).default("createdAt"),
+  sortOrder: z7.enum(["asc", "desc"]).default("desc")
+});
+var updateSettingsSchema = z7.object({
+  logLevel: z7.enum(["OFF", "ERROR", "WARNING", "INFO", "DEBUG"]).optional(),
+  enabledCategories: z7.array(z7.string()).optional(),
+  retentionDays: z7.number().min(1).max(365).optional(),
+  archiveEnabled: z7.boolean().optional(),
+  archiveAfterDays: z7.number().min(1).max(180).optional(),
+  realTimeAlerts: z7.boolean().optional(),
+  alertEmails: z7.array(z7.string().email()).optional(),
+  excludedPaths: z7.array(z7.string()).optional(),
+  excludedUsers: z7.array(z7.string()).optional(),
+  sensitiveDataMasking: z7.boolean().optional(),
+  performanceTracking: z7.boolean().optional(),
+  apiAccessLogging: z7.boolean().optional()
+});
+var alertRuleSchema = z7.object({
+  id: z7.number().optional(),
+  ruleName: z7.string().min(1).max(100),
+  description: z7.string().optional(),
+  eventTypes: z7.array(z7.string()),
+  condition: z7.any().optional(),
+  severity: z7.enum(["low", "medium", "high", "critical"]),
+  alertChannels: z7.array(z7.string()),
+  recipients: z7.array(z7.string()),
+  throttleMinutes: z7.number().min(0).max(1440).optional(),
+  isActive: z7.boolean().optional()
+});
+router31.get("/logs", requireAuth, async (req, res) => {
+  try {
+    const user = req.user;
+    const params = getAuditLogsSchema.parse(req.query);
+    if (user.role !== "admin" && user.role !== "executive" && user.role !== "hq_management") {
+      params.userId = user.id;
+    }
+    const result = await AuditService.getAuditLogs({
+      ...params,
+      startDate: params.startDate ? new Date(params.startDate) : void 0,
+      endDate: params.endDate ? new Date(params.endDate) : void 0
+    });
+    res.json(result);
+  } catch (error) {
+    console.error("Failed to get audit logs:", error);
+    res.status(500).json({
+      message: "Failed to retrieve audit logs",
+      error: process.env.NODE_ENV === "development" ? error : void 0
+    });
+  }
+});
+router31.get("/dashboard", requireAuth, requireRole(["admin"]), async (req, res) => {
+  try {
+    const hours = parseInt(req.query.hours) || 24;
+    const stats = await AuditService.getDashboardStats(hours);
+    res.json(stats);
+  } catch (error) {
+    console.error("Failed to get dashboard stats:", error);
+    res.status(500).json({
+      message: "Failed to retrieve dashboard statistics",
+      error: process.env.NODE_ENV === "development" ? error : void 0
+    });
+  }
+});
+router31.get("/user-activity/:userId", requireAuth, async (req, res) => {
+  try {
+    const user = req.user;
+    const { userId } = req.params;
+    const days = parseInt(req.query.days) || 30;
+    if (user.role !== "admin" && user.id !== userId) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+    const summary = await AuditService.getUserActivitySummary(userId, days);
+    res.json(summary);
+  } catch (error) {
+    console.error("Failed to get user activity:", error);
+    res.status(500).json({
+      message: "Failed to retrieve user activity summary",
+      error: process.env.NODE_ENV === "development" ? error : void 0
+    });
+  }
+});
+router31.get("/login-history", requireAuth, async (req, res) => {
+  try {
+    const user = req.user;
+    const userId = req.query.userId;
+    const days = parseInt(req.query.days) || 30;
+    const includeFailures = req.query.includeFailures !== "false";
+    const targetUserId = user.role === "admin" || user.role === "executive" ? userId : user.id;
+    const history = await AuditService.getLoginHistory({
+      userId: targetUserId,
+      days,
+      includeFailures
+    });
+    res.json(history);
+  } catch (error) {
+    console.error("Failed to get login history:", error);
+    res.status(500).json({
+      message: "Failed to retrieve login history",
+      error: process.env.NODE_ENV === "development" ? error : void 0
+    });
+  }
+});
+router31.get("/data-changes", requireAuth, requireRole(["admin", "executive", "hq_management"]), async (req, res) => {
+  try {
+    const params = {
+      entityType: req.query.entityType,
+      entityId: req.query.entityId,
+      userId: req.query.userId,
+      days: parseInt(req.query.days) || 30
+    };
+    const changes = await AuditService.getDataChangeLogs(params);
+    res.json(changes);
+  } catch (error) {
+    console.error("Failed to get data changes:", error);
+    res.status(500).json({
+      message: "Failed to retrieve data change logs",
+      error: process.env.NODE_ENV === "development" ? error : void 0
+    });
+  }
+});
+router31.get("/deleted-records", requireAuth, requireRole(["admin"]), async (req, res) => {
+  try {
+    const params = {
+      entityType: req.query.entityType,
+      days: parseInt(req.query.days) || 30,
+      includeBackup: req.query.includeBackup !== "false"
+    };
+    const records = await AuditService.getDeletedRecords(params);
+    res.json(records);
+  } catch (error) {
+    console.error("Failed to get deleted records:", error);
+    res.status(500).json({
+      message: "Failed to retrieve deleted records",
+      error: process.env.NODE_ENV === "development" ? error : void 0
+    });
+  }
+});
+router31.get("/security-events", requireAuth, requireRole(["admin", "executive"]), async (req, res) => {
+  try {
+    const params = {
+      severity: req.query.severity || "all",
+      days: parseInt(req.query.days) || 7
+    };
+    const events = await AuditService.getSecurityEvents(params);
+    res.json(events);
+  } catch (error) {
+    console.error("Failed to get security events:", error);
+    res.status(500).json({
+      message: "Failed to retrieve security events",
+      error: process.env.NODE_ENV === "development" ? error : void 0
+    });
+  }
+});
+router31.get("/archived", requireAuth, requireRole(["admin"]), async (req, res) => {
+  try {
+    const params = {
+      userId: req.query.userId,
+      startDate: req.query.startDate ? new Date(req.query.startDate) : void 0,
+      endDate: req.query.endDate ? new Date(req.query.endDate) : void 0,
+      limit: parseInt(req.query.limit) || 50,
+      offset: parseInt(req.query.offset) || 0
+    };
+    const logs = await AuditService.getArchivedLogs(params);
+    res.json(logs);
+  } catch (error) {
+    console.error("Failed to get archived logs:", error);
+    res.status(500).json({
+      message: "Failed to retrieve archived logs",
+      error: process.env.NODE_ENV === "development" ? error : void 0
+    });
+  }
+});
+router31.get("/settings", requireAuth, requireRole(["admin"]), async (req, res) => {
+  try {
+    const settings = await AuditService.getSettings();
+    res.json(settings || {
+      logLevel: "INFO",
+      enabledCategories: ["auth", "data", "security"],
+      retentionDays: 90,
+      archiveEnabled: true,
+      archiveAfterDays: 30,
+      realTimeAlerts: false,
+      alertEmails: [],
+      excludedPaths: [],
+      excludedUsers: [],
+      sensitiveDataMasking: true,
+      performanceTracking: false,
+      apiAccessLogging: false
+    });
+  } catch (error) {
+    console.error("Failed to get audit settings:", error);
+    res.status(500).json({
+      message: "Failed to retrieve audit settings",
+      error: process.env.NODE_ENV === "development" ? error : void 0
+    });
+  }
+});
+router31.put("/settings", requireAuth, requireRole(["admin"]), async (req, res) => {
+  try {
+    const user = req.user;
+    const settings = updateSettingsSchema.parse(req.body);
+    const updated = await AuditService.updateSettings(settings, user.id);
+    res.json(updated);
+  } catch (error) {
+    if (error instanceof z7.ZodError) {
+      return res.status(400).json({
+        message: "Invalid settings data",
+        errors: error.errors
+      });
+    }
+    console.error("Failed to update audit settings:", error);
+    res.status(500).json({
+      message: "Failed to update audit settings",
+      error: process.env.NODE_ENV === "development" ? error : void 0
+    });
+  }
+});
+router31.get("/alert-rules", requireAuth, requireRole(["admin"]), async (req, res) => {
+  try {
+    const rules = await AuditService.getAlertRules();
+    res.json(rules);
+  } catch (error) {
+    console.error("Failed to get alert rules:", error);
+    res.status(500).json({
+      message: "Failed to retrieve alert rules",
+      error: process.env.NODE_ENV === "development" ? error : void 0
+    });
+  }
+});
+router31.post("/alert-rules", requireAuth, requireRole(["admin"]), async (req, res) => {
+  try {
+    const user = req.user;
+    const rule = alertRuleSchema.parse(req.body);
+    const result = await AuditService.upsertAlertRule(rule, user.id);
+    res.json(result[0]);
+  } catch (error) {
+    if (error instanceof z7.ZodError) {
+      return res.status(400).json({
+        message: "Invalid alert rule data",
+        errors: error.errors
+      });
+    }
+    console.error("Failed to save alert rule:", error);
+    res.status(500).json({
+      message: "Failed to save alert rule",
+      error: process.env.NODE_ENV === "development" ? error : void 0
+    });
+  }
+});
+router31.post("/archive", requireAuth, requireRole(["admin"]), async (req, res) => {
+  try {
+    const beforeDate = req.body.beforeDate ? new Date(req.body.beforeDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1e3);
+    const result = await AuditService.archiveLogs(beforeDate);
+    res.json(result);
+  } catch (error) {
+    console.error("Failed to archive logs:", error);
+    res.status(500).json({
+      message: "Failed to archive logs",
+      error: process.env.NODE_ENV === "development" ? error : void 0
+    });
+  }
+});
+router31.post("/auto-archive", requireAuth, requireRole(["admin"]), async (req, res) => {
+  try {
+    const result = await AuditService.performAutoArchive();
+    res.json(result);
+  } catch (error) {
+    console.error("Failed to perform auto-archive:", error);
+    res.status(500).json({
+      message: "Failed to perform auto-archive",
+      error: process.env.NODE_ENV === "development" ? error : void 0
+    });
+  }
+});
+var audit_default = router31;
+
+// server/routes/index.ts
+var router32 = Router31();
+router32.use("/api", auth_default);
+router32.use("/api", projects_default);
+router32.use("/api", orders_default);
+router32.use("/api", vendors_default);
+router32.use("/api", items_default);
+router32.use("/api", dashboard_default);
+router32.use("/api", companies_default);
+router32.use("/api/admin", admin_default);
+router32.use("/api/excel-automation", excel_automation_default);
+router32.use("/api/po-template", po_template_real_default);
+router32.use("/api/reports", reports_default);
+router32.use("/api", import_export_default);
+router32.use("/api", email_history_default);
+router32.use("/api/excel-template", excel_template_default);
+router32.use("/api", orders_optimized_default);
+router32.use("/api", order_statuses_default);
+router32.use("/api", invoices_default);
+router32.use("/api", verification_logs_default);
+router32.use("/api", item_receipts_default);
+router32.use("/api", approvals_default);
+router32.use("/api", project_members_default);
+router32.use("/api", project_types_default);
+router32.use("/api", simple_auth_default);
+router32.use("/api", test_accounts_default);
+router32.use("/api/categories", categories_default);
+router32.use("/api/approval-settings", approval_settings_default);
+router32.use("/api", approval_authorities_default);
+router32.use("/api", notifications_default);
+router32.use("/api/orders", orders_simple_default);
+router32.use("/api", positions_default);
+router32.use("/api/audit", audit_default);
+var routes_default = router32;
 
 // server/production.ts
 dotenv2.config();
@@ -17407,25 +18390,31 @@ app.use((req, res, next) => {
   next();
 });
 async function initializeProductionApp() {
+  if (!process.env.SESSION_SECRET) {
+    process.env.SESSION_SECRET = "ikjin-po-mgmt-secure-session-secret-2025-prod";
+    console.warn("\u26A0\uFE0F SESSION_SECRET not set in environment, using default secure key");
+  }
   try {
     const connectPgSimple = (await import("connect-pg-simple")).default;
     const pgSession = connectPgSimple(session);
+    const sessionDbUrl = correctPoolerUrl2;
+    console.log("\u{1F527} Using session database URL:", sessionDbUrl.split("@")[0] + "@[HIDDEN]");
     app.use(session({
       store: new pgSession({
-        conString: process.env.DATABASE_URL,
+        conString: sessionDbUrl,
+        // Use the hardcoded correct pooler URL
         tableName: "app_sessions",
         // Serverless-specific settings
         createTableIfMissing: true,
         schemaName: "public",
-        // Connection pool settings for serverless
-        pruneSessionInterval: 60 * 15,
-        // Prune expired sessions every 15 minutes
+        // Disable automatic pruning in serverless (will cause issues)
+        pruneSessionInterval: false,
         // Error handling for session store
         errorLog: (error) => {
           console.error("\u{1F534} PostgreSQL session store error:", error);
         }
       }),
-      secret: process.env.SESSION_SECRET || "default-secret-key",
+      secret: process.env.SESSION_SECRET,
       resave: false,
       saveUninitialized: false,
       name: "connect.sid",
@@ -17436,24 +18425,27 @@ async function initializeProductionApp() {
         httpOnly: true,
         maxAge: 1e3 * 60 * 60 * 24 * 7,
         // 7 days
-        sameSite: "strict",
-        // Strict for same-origin security
-        path: "/"
+        sameSite: "lax",
+        // Use lax for Vercel (not strict)
+        path: "/",
         // Ensure cookie is available for all paths
-        // No domain restriction - let browser handle it
+        domain: void 0
+        // Let browser handle domain automatically
       }
     }));
     console.log("\u2705 PostgreSQL session store initialized with settings:", {
       tableName: "app_sessions",
+      databaseUrl: sessionDbUrl.split("@")[0] + "@[HIDDEN]",
       secure: true,
       sameSite: "lax",
-      maxAge: "7 days"
+      maxAge: "7 days",
+      pruneSessionInterval: "disabled for serverless"
     });
     console.log("\u2705 Using PostgreSQL session store for serverless persistence");
   } catch (sessionError) {
     console.error("\u{1F534} Failed to initialize PostgreSQL session store, using memory fallback:", sessionError);
     app.use(session({
-      secret: process.env.SESSION_SECRET || "default-secret-key",
+      secret: process.env.SESSION_SECRET || "ikjin-po-mgmt-secure-session-secret-2025-prod",
       resave: false,
       saveUninitialized: false,
       name: "connect.sid",
@@ -17463,8 +18455,10 @@ async function initializeProductionApp() {
         httpOnly: true,
         maxAge: 1e3 * 60 * 60 * 24 * 7,
         // 7 days
-        sameSite: "lax"
+        sameSite: "lax",
         // Same-site deployment on Vercel
+        path: "/",
+        domain: void 0
       }
     }));
   }
@@ -17481,25 +18475,31 @@ async function initializeProductionApp() {
 var isInitialized = false;
 if (process.env.VERCEL) {
   console.log("\u{1F680} Vercel environment detected - initializing production app");
+  if (!process.env.SESSION_SECRET) {
+    process.env.SESSION_SECRET = "ikjin-po-mgmt-secure-session-secret-2025-prod";
+    console.warn("\u26A0\uFE0F SESSION_SECRET not set in environment, using default secure key");
+  }
   try {
     const connectPgSimple = __require("connect-pg-simple");
     const pgSession = connectPgSimple(session);
+    const sessionDbUrl = correctPoolerUrl2;
+    console.log("\u{1F527} Using session database URL:", sessionDbUrl.split("@")[0] + "@[HIDDEN]");
     app.use(session({
       store: new pgSession({
-        conString: process.env.DATABASE_URL,
+        conString: sessionDbUrl,
+        // Use the hardcoded correct pooler URL
         tableName: "app_sessions",
         // Serverless-specific settings
         createTableIfMissing: true,
         schemaName: "public",
-        // Connection pool settings for serverless
-        pruneSessionInterval: 60 * 15,
-        // Prune expired sessions every 15 minutes
+        // Disable automatic pruning in serverless (will cause issues)
+        pruneSessionInterval: false,
         // Error handling for session store
         errorLog: (error) => {
           console.error("\u{1F534} PostgreSQL session store error:", error);
         }
       }),
-      secret: process.env.SESSION_SECRET || "default-secret-key",
+      secret: process.env.SESSION_SECRET,
       resave: false,
       saveUninitialized: false,
       name: "connect.sid",
@@ -17510,24 +18510,27 @@ if (process.env.VERCEL) {
         httpOnly: true,
         maxAge: 1e3 * 60 * 60 * 24 * 7,
         // 7 days
-        sameSite: "strict",
-        // Strict for same-origin security
-        path: "/"
+        sameSite: "lax",
+        // Use lax for Vercel (not strict)
+        path: "/",
         // Ensure cookie is available for all paths
-        // No domain restriction - let browser handle it
+        domain: void 0
+        // Let browser handle domain automatically
       }
     }));
     console.log("\u2705 PostgreSQL session store initialized with settings:", {
       tableName: "app_sessions",
+      databaseUrl: sessionDbUrl.split("@")[0] + "@[HIDDEN]",
       secure: true,
       sameSite: "lax",
-      maxAge: "7 days"
+      maxAge: "7 days",
+      pruneSessionInterval: "disabled for serverless"
     });
     console.log("\u2705 Using PostgreSQL session store for serverless persistence");
   } catch (sessionError) {
     console.error("\u{1F534} Failed to initialize PostgreSQL session store, using memory fallback:", sessionError);
     app.use(session({
-      secret: process.env.SESSION_SECRET || "default-secret-key",
+      secret: process.env.SESSION_SECRET || "ikjin-po-mgmt-secure-session-secret-2025-prod",
       resave: false,
       saveUninitialized: false,
       name: "connect.sid",
@@ -17537,8 +18540,10 @@ if (process.env.VERCEL) {
         httpOnly: true,
         maxAge: 1e3 * 60 * 60 * 24 * 7,
         // 7 days
-        sameSite: "lax"
+        sameSite: "lax",
         // Same-site deployment on Vercel
+        path: "/",
+        domain: void 0
       }
     }));
   }

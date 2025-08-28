@@ -34,6 +34,7 @@ import approvalAuthoritiesRoutes from "./approval-authorities";
 import notificationsRoutes from "./notifications";
 import ordersSimpleRoutes from "./orders-simple";
 import positionsRoutes from "./positions";
+import auditRoutes from "./audit";
 
 const router = Router();
 
@@ -68,5 +69,6 @@ router.use("/api", approvalAuthoritiesRoutes);
 router.use("/api", notificationsRoutes);
 router.use("/api/orders", ordersSimpleRoutes);
 router.use("/api", positionsRoutes);
+router.use("/api/audit", auditRoutes);
 
 export default router;

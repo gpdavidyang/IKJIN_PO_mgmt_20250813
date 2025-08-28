@@ -18,6 +18,7 @@ import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import router from "./routes/index";
 import { requireAuth } from "./local-auth";
+import { auditLogger } from "./middleware/audit-logger";
 
 // Create app instance
 const app = express();
@@ -116,6 +117,9 @@ async function initializeApp() {
     }
   }));
 
+  // Apply audit logging middleware (before routes)
+  app.use(auditLogger);
+
   // Use modular routes
   app.use(router);
   
@@ -172,6 +176,9 @@ if (process.env.VERCEL) {
       domain: undefined // Let browser handle domain automatically
     }
   }));
+
+  // Apply audit logging middleware (before routes)
+  app.use(auditLogger);
 
   // Use modular routes
   app.use(router);

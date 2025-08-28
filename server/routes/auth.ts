@@ -8,6 +8,7 @@ import { storage } from "../storage";
 import { login, logout, getCurrentUser } from "../local-auth";
 import { requireAuth, requireAdmin } from "../local-auth";
 import { OptimizedUserQueries } from "../utils/optimized-queries";
+import { logAuditEvent } from "../middleware/audit-logger";
 
 const router = Router();
 

@@ -3,6 +3,7 @@ import session from "express-session";
 import { storage } from "./storage";
 import { comparePasswords, generateSessionId } from "./auth-utils";
 import { User as BaseUser } from "@shared/schema";
+import { logAuditEvent } from "./middleware/audit-logger";
 
 // Extend User type to ensure id field is available
 interface User extends BaseUser {
@@ -75,10 +76,32 @@ export async function login(req: Request, res: Response) {
       const isValidPassword = await comparePasswords(password, user.password);
       if (!isValidPassword) {
         console.log("❌ Invalid password for user:", loginIdentifier);
+        
+        // Log failed login attempt
+        await logAuditEvent('login_failed', 'auth', {
+          userName: loginIdentifier,
+          action: 'Failed login attempt',
+          additionalDetails: { reason: 'Invalid password' },
+          ipAddress: req.ip || req.connection.remoteAddress,
+          userAgent: req.headers['user-agent'],
+          sessionId: req.sessionID
+        });
+        
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
       console.log("✅ Database authentication successful for user:", user.name || user.email);
+      
+      // Log successful login
+      await logAuditEvent('login', 'auth', {
+        userId: user.id,
+        userName: user.name || user.email,
+        userRole: user.role,
+        action: 'User logged in',
+        ipAddress: req.ip || req.connection.remoteAddress,
+        userAgent: req.headers['user-agent'],
+        sessionId: req.sessionID
+      });
     } catch (dbError) {
       console.error("🔴 Database authentication error:", dbError);
       return res.status(500).json({ message: "Authentication failed - database error" });
@@ -148,8 +171,28 @@ export async function login(req: Request, res: Response) {
 /**
  * Logout endpoint
  */
-export function logout(req: Request, res: Response) {
+export async function logout(req: Request, res: Response) {
   const authSession = req.session as AuthSession;
+  const userId = authSession.userId;
+  
+  // Log logout event before destroying session
+  if (userId) {
+    try {
+      const user = await storage.getUser(userId);
+      await logAuditEvent('logout', 'auth', {
+        userId: userId,
+        userName: user?.name || user?.email,
+        userRole: user?.role,
+        action: 'User logged out',
+        ipAddress: req.ip || req.connection.remoteAddress,
+        userAgent: req.headers['user-agent'],
+        sessionId: req.sessionID
+      });
+    } catch (error) {
+      console.error("Failed to log logout event:", error);
+    }
+  }
+  
   authSession.userId = undefined;
   
   req.session.destroy((err) => {

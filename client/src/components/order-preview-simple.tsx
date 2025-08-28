@@ -202,7 +202,7 @@ export function OrderPreviewSimple({ order }: OrderPreviewSimpleProps) {
                           {item.specification || "-"}
                         </td>
                         <td style={{ border: '1px solid #666', padding: '4px', fontSize: '10px', textAlign: 'center' }}>
-                          {parseFloat(item.quantity).toLocaleString()}
+                          {Math.round(parseFloat(item.quantity)).toLocaleString('ko-KR')}
                         </td>
                         <td style={{ border: '1px solid #666', padding: '4px', fontSize: '10px', textAlign: 'right' }}>
                           {formatAmount(item.unitPrice)}
