@@ -26,6 +26,7 @@ console.log("✨ Production server starting without static file serving");
 
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
+import crypto from "crypto";
 import { configureProductionSession } from "./session-config";
 import router from "./routes/index";
 
@@ -60,7 +61,7 @@ const SESSION_SECRET = process.env.SESSION_SECRET || 'ikjin-po-mgmt-prod-secret-
 
 app.use(session({
   secret: SESSION_SECRET,
-  resave: false,
+  resave: true, // Force save to ensure persistence in serverless
   saveUninitialized: true, // Required for serverless to create sessions
   name: 'connect.sid',
   cookie: {
@@ -69,6 +70,10 @@ app.use(session({
     maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
     sameSite: 'lax',
     path: '/'
+  },
+  // Force session regeneration to ensure data persistence
+  genid: () => {
+    return crypto.randomUUID();
   }
 }));
 

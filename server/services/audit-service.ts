@@ -3,7 +3,7 @@
  * 감사 로그 관리 및 조회 서비스
  */
 
-import { db } from '../db';
+import { db } from '../lib/database';
 import { 
   systemAuditLogs, 
   auditSettings, 
@@ -309,7 +309,7 @@ export class AuditService {
       entityType: log.entityType,
       entityId: log.entityId,
       action: log.action,
-      details: log.details,
+      details: log.additionalDetails,
       ipAddress: log.ipAddress,
       createdAt: log.createdAt
     }));
@@ -388,7 +388,7 @@ export class AuditService {
         eventType: systemAuditLogs.eventType,
         ipAddress: systemAuditLogs.ipAddress,
         userAgent: systemAuditLogs.userAgent,
-        details: systemAuditLogs.details,
+        details: systemAuditLogs.additionalDetails,
         createdAt: systemAuditLogs.createdAt
       })
       .from(systemAuditLogs)
@@ -504,7 +504,7 @@ export class AuditService {
       entityId: deletion.entityId,
       deletedBy: deletion.userName,
       deletedAt: deletion.createdAt,
-      reason: deletion.details?.reason,
+      reason: deletion.additionalDetails?.reason,
       backup: includeBackup ? deletion.oldValue : undefined,
       restorable: !!deletion.oldValue
     }));

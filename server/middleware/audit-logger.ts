@@ -4,9 +4,9 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
-import { db } from '../db';
+import { db } from '../lib/database';
 import { systemAuditLogs, auditSettings } from '@shared/schema';
-import { eq } from 'drizzle-orm';
+import { eq, isNull } from 'drizzle-orm';
 
 interface AuditRequest extends Request {
   auditLog?: {
@@ -43,7 +43,7 @@ async function getAuditSettings() {
   }
 
   try {
-    const settings = await db.select().from(auditSettings).where(eq(auditSettings.userId, null)).limit(1);
+    const settings = await db.select().from(auditSettings).limit(1);
     cachedSettings = settings[0] || {
       logLevel: 'INFO',
       enableAuth: true,

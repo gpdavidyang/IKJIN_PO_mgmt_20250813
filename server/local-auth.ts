@@ -137,7 +137,9 @@ export async function login(req: Request, res: Response) {
         sessionId: req.sessionID,
         userId: authSession.userId,
         sessionExists: !!req.session,
-        sessionData: req.session
+        sessionData: req.session,
+        sessionStore: req.sessionStore ? req.sessionStore.constructor.name : 'none',
+        cookieHeader: req.headers.cookie
       });
 
       // Save session with timeout and fallback
@@ -172,7 +174,9 @@ export async function login(req: Request, res: Response) {
         sessionExists: !!req.session,
         sessionID: req.sessionID,
         sessionUserId: (req.session as AuthSession)?.userId,
-        sessionCookie: req.session?.cookie
+        sessionCookie: req.session?.cookie,
+        fullSessionData: req.session,
+        cookieHeaderSent: res.get('Set-Cookie')
       });
       console.log("=== LOGIN REQUEST END - SUCCESS ===");
       

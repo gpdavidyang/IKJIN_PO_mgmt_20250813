@@ -1035,7 +1035,7 @@ export const systemAuditLogs = pgTable("system_audit_logs", {
   entityType: varchar("entity_type", { length: 50 }), // 'order', 'user', 'vendor', 'project', etc.
   entityId: varchar("entity_id", { length: 100 }), // ID of affected entity
   action: varchar("action", { length: 255 }).notNull(), // Detailed action description
-  details: jsonb("details"), // Additional event details
+  additionalDetails: jsonb("additional_details"), // Additional event details
   oldValue: jsonb("old_value"), // Previous state (for updates)
   newValue: jsonb("new_value"), // New state (for updates)
   ipAddress: varchar("ip_address", { length: 50 }),
@@ -1089,7 +1089,7 @@ export const archivedAuditLogs = pgTable("archived_audit_logs", {
   entityType: varchar("entity_type", { length: 50 }),
   entityId: varchar("entity_id", { length: 100 }),
   action: varchar("action", { length: 255 }).notNull(),
-  details: jsonb("details"),
+  additionalDetails: jsonb("additional_details"),
   ipAddress: varchar("ip_address", { length: 50 }),
   createdAt: timestamp("created_at").notNull(),
   archivedAt: timestamp("archived_at").defaultNow().notNull(),
