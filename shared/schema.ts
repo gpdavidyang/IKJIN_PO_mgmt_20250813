@@ -1047,7 +1047,6 @@ export const systemAuditLogs = pgTable("system_audit_logs", {
   responseStatus: integer("response_status"), // HTTP status code
   responseTime: integer("response_time"), // in milliseconds  
   errorMessage: text("error_message"), // For error events
-  stackTrace: text("stack_trace"), // For debugging (only in DEBUG mode)
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => [
   index("idx_audit_user").on(table.userId),
@@ -1061,21 +1060,21 @@ export const systemAuditLogs = pgTable("system_audit_logs", {
 // Audit settings table - 감사 설정
 export const auditSettings = pgTable("audit_settings", {
   id: serial("id").primaryKey(),
-  logLevel: auditLogLevelEnum("log_level").notNull().default("INFO"),
-  enabledCategories: jsonb("enabled_categories").notNull().default(["auth", "data", "security"]).$type<string[]>(),
-  retentionDays: integer("retention_days").notNull().default(90), // Days to keep logs
+  userId: varchar("user_id").references(() => users.id), // User-specific settings
+  logLevel: auditLogLevelEnum("log_level").default("INFO"),
+  enableAuth: boolean("enable_auth").default(true),
+  enableData: boolean("enable_data").default(true),
+  enableSystem: boolean("enable_system").default(true),
+  enableSecurity: boolean("enable_security").default(true),
+  retentionDays: integer("retention_days").default(90), // Days to keep logs
   archiveEnabled: boolean("archive_enabled").default(true),
-  archiveAfterDays: integer("archive_after_days").default(30),
-  realTimeAlerts: boolean("real_time_alerts").default(false),
-  alertEmails: jsonb("alert_emails").default([]).$type<string[]>(),
-  excludedPaths: jsonb("excluded_paths").default([]).$type<string[]>(), // API paths to exclude
-  excludedUsers: jsonb("excluded_users").default([]).$type<string[]>(), // User IDs to exclude
-  sensitiveDataMasking: boolean("sensitive_data_masking").default(true),
-  performanceTracking: boolean("performance_tracking").default(false),
-  apiAccessLogging: boolean("api_access_logging").default(false),
-  updatedBy: varchar("updated_by").references(() => users.id),
-  updatedAt: timestamp("updated_at").defaultNow().$onUpdate(() => new Date()),
+  maxLogSize: integer("max_log_size"), // Max size in MB
+  autoCleanup: boolean("auto_cleanup").default(true),
+  alertsEnabled: boolean("alerts_enabled").default(false),
+  emailNotifications: boolean("email_notifications").default(false),
+  realTimeMonitoring: boolean("real_time_monitoring").default(false),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Archived audit logs table - 아카이브된 감사 로그

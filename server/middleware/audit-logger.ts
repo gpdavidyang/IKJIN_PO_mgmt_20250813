@@ -283,10 +283,6 @@ export function auditLogger(req: AuditRequest, res: Response, next: NextFunction
           if (res.statusCode >= 400) {
             const responseData = typeof data === 'string' ? { message: data } : data;
             logData.errorMessage = responseData?.message || responseData?.error;
-            
-            if (currentLogLevel >= LOG_LEVELS.DEBUG) {
-              logData.stackTrace = responseData?.stack;
-            }
           }
         }
         
