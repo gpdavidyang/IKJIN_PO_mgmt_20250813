@@ -16,6 +16,16 @@ export default defineConfig({
         ]
       : []),
   ],
+  // Explicitly define environment variables for production builds
+  define: {
+    // Force enable Excel upload in production if not explicitly disabled
+    'import.meta.env.VITE_ENABLE_EXCEL_UPLOAD': JSON.stringify(
+      process.env.VITE_ENABLE_EXCEL_UPLOAD || 'true'
+    ),
+    'import.meta.env.VITE_ENVIRONMENT': JSON.stringify(
+      process.env.VITE_ENVIRONMENT || 'production'
+    ),
+  },
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "client", "src"),

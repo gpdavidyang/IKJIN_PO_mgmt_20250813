@@ -18,6 +18,15 @@ export default function CreateOrder() {
   
   // Feature flag check for Excel upload
   const isExcelUploadEnabled = isFeatureEnabled('EXCEL_UPLOAD');
+  
+  // Debug info for environment variables
+  console.log('🔍 Create Order Debug Info:', {
+    isExcelUploadEnabled,
+    VITE_ENVIRONMENT: import.meta.env.VITE_ENVIRONMENT,
+    VITE_ENABLE_EXCEL_UPLOAD: import.meta.env.VITE_ENABLE_EXCEL_UPLOAD,
+    NODE_ENV: import.meta.env.NODE_ENV,
+    timestamp: new Date().toISOString()
+  });
 
   const handleSuccess = () => {
     navigate("/orders");

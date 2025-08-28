@@ -26,7 +26,7 @@
       "dest": "dist/public/$1"
     },
     {
-      "src": "/(create-order/simple|create-order/.*|orders.*|vendors.*|items.*|projects.*|dashboard.*|admin.*|users.*|profile.*|reports.*|.*)",
+      "src": "/(create-order|create-order/.*|orders.*|vendors.*|items.*|projects.*|dashboard.*|admin.*|users.*|profile.*|reports.*|.*)",
       "dest": "dist/public/index.html"
     }
   ],

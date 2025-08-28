@@ -1,7 +1,7 @@
 // Feature flags for environment separation
 export const FEATURE_FLAGS = {
-  // Excel upload feature (for development environment)
-  EXCEL_UPLOAD: import.meta.env.VITE_ENABLE_EXCEL_UPLOAD === 'true' || false,
+  // Excel upload feature (enabled by default in production)
+  EXCEL_UPLOAD: import.meta.env.VITE_ENABLE_EXCEL_UPLOAD !== 'false',
   
   // Future features (disabled by default)
   HANDSONTABLE: import.meta.env.VITE_ENABLE_HANDSONTABLE === 'true' || false,
