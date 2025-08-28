@@ -1202,7 +1202,7 @@ var po_template_processor_mock_exports = {};
 __export(po_template_processor_mock_exports, {
   POTemplateProcessorMock: () => POTemplateProcessorMock
 });
-import XLSX3 from "xlsx";
+import XLSX4 from "xlsx";
 import { eq as eq6 } from "drizzle-orm";
 var POTemplateProcessorMock;
 var init_po_template_processor_mock = __esm({
@@ -1218,7 +1218,7 @@ var init_po_template_processor_mock = __esm({
        */
       static parseInputSheet(filePath) {
         try {
-          const workbook = XLSX3.readFile(filePath);
+          const workbook = XLSX4.readFile(filePath);
           if (!workbook.SheetNames.includes("Input")) {
             return {
               success: false,
@@ -1229,7 +1229,7 @@ var init_po_template_processor_mock = __esm({
             };
           }
           const worksheet = workbook.Sheets["Input"];
-          const data = XLSX3.utils.sheet_to_json(worksheet, { header: 1 });
+          const data = XLSX4.utils.sheet_to_json(worksheet, { header: 1 });
           const rows = data.slice(1);
           const ordersByNumber = /* @__PURE__ */ new Map();
           for (const row of rows) {
@@ -1445,18 +1445,18 @@ var init_po_template_processor_mock = __esm({
           } else {
             console.error(`\u274C \uC644\uC804\uD55C \uC11C\uC2DD \uBCF4\uC874 \uCD94\uCD9C \uC2E4\uD328: ${result.error}`);
             console.log(`\u{1F504} \uD3F4\uBC31: \uAE30\uBCF8 XLSX \uB77C\uC774\uBE0C\uB7EC\uB9AC\uB85C \uC2DC\uB3C4`);
-            const workbook = XLSX3.readFile(sourcePath);
-            const newWorkbook = XLSX3.utils.book_new();
+            const workbook = XLSX4.readFile(sourcePath);
+            const newWorkbook = XLSX4.utils.book_new();
             const extractedSheets = [];
             for (const sheetName of sheetNames) {
               if (workbook.SheetNames.includes(sheetName)) {
                 const worksheet = workbook.Sheets[sheetName];
-                XLSX3.utils.book_append_sheet(newWorkbook, worksheet, sheetName);
+                XLSX4.utils.book_append_sheet(newWorkbook, worksheet, sheetName);
                 extractedSheets.push(sheetName);
               }
             }
             if (extractedSheets.length > 0) {
-              XLSX3.writeFile(newWorkbook, targetPath);
+              XLSX4.writeFile(newWorkbook, targetPath);
             }
             return {
               success: true,
@@ -1548,7 +1548,7 @@ import express2 from "express";
 import session from "express-session";
 
 // server/routes/index.ts
-import { Router as Router28 } from "express";
+import { Router as Router30 } from "express";
 
 // server/routes/auth.ts
 import { Router } from "express";
@@ -2063,6 +2063,7 @@ var DatabaseStorage = class {
       uploadedBy: attachments.uploadedBy,
       uploadedAt: attachments.uploadedAt
     }).from(attachments).where(eq(attachments.orderId, id));
+    console.log(`\u{1F4CE} Storage - Attachments found for order ID ${id}:`, orderAttachments);
     const result = {
       ...order.purchase_orders,
       vendor: order.vendors || void 0,
@@ -3092,6 +3093,49 @@ var DatabaseStorage = class {
       return [];
     }
   }
+  // Attachment methods
+  async getAttachment(orderId, attachmentId) {
+    try {
+      const [attachment] = await db.select({
+        id: attachments.id,
+        orderId: attachments.orderId,
+        originalName: attachments.originalName,
+        storedName: attachments.storedName,
+        filePath: attachments.filePath,
+        fileSize: attachments.fileSize,
+        mimeType: attachments.mimeType,
+        uploadedBy: attachments.uploadedBy,
+        uploadedAt: attachments.uploadedAt
+      }).from(attachments).where(
+        and(
+          eq(attachments.id, attachmentId),
+          eq(attachments.orderId, orderId)
+        )
+      );
+      return attachment || void 0;
+    } catch (error) {
+      console.error("Error getting attachment:", error);
+      return void 0;
+    }
+  }
+  async getOrderAttachments(orderId) {
+    try {
+      return await db.select({
+        id: attachments.id,
+        orderId: attachments.orderId,
+        originalName: attachments.originalName,
+        storedName: attachments.storedName,
+        filePath: attachments.filePath,
+        fileSize: attachments.fileSize,
+        mimeType: attachments.mimeType,
+        uploadedBy: attachments.uploadedBy,
+        uploadedAt: attachments.uploadedAt
+      }).from(attachments).where(eq(attachments.orderId, orderId));
+    } catch (error) {
+      console.error("Error getting order attachments:", error);
+      return [];
+    }
+  }
 };
 var storage = new DatabaseStorage();
 
@@ -3398,12 +3442,12 @@ router.post("/auth/login-simple", (req, res) => {
     const { username, password, email } = req.body;
     const identifier = username || email;
     console.log("\u{1F510} Simple login attempt for:", identifier);
-    const users3 = [
+    const users4 = [
       { id: "admin", username: "admin", email: "admin@company.com", password: "admin123", name: "\uAD00\uB9AC\uC790", role: "admin" },
       { id: "manager", username: "manager", email: "manager@company.com", password: "manager123", name: "\uAE40\uBD80\uC7A5", role: "project_manager" },
       { id: "user", username: "user", email: "user@company.com", password: "user123", name: "\uC774\uAE30\uC0AC", role: "field_worker" }
     ];
-    const user = users3.find((u) => u.username === identifier || u.email === identifier);
+    const user = users4.find((u) => u.username === identifier || u.email === identifier);
     if (!user || user.password !== password) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
@@ -3422,12 +3466,12 @@ router.post("/auth/login-test", (req, res) => {
     const { username, password, email } = req.body;
     const identifier = username || email;
     console.log("\u{1F510} Test login attempt for:", identifier);
-    const users3 = [
+    const users4 = [
       { id: "admin", username: "admin", email: "admin@company.com", password: "admin123", name: "\uAD00\uB9AC\uC790", role: "admin" },
       { id: "manager", username: "manager", email: "manager@company.com", password: "manager123", name: "\uAE40\uBD80\uC7A5", role: "project_manager" },
       { id: "user", username: "user", email: "user@company.com", password: "user123", name: "\uC774\uAE30\uC0AC", role: "field_worker" }
     ];
-    const user = users3.find((u) => u.username === identifier || u.email === identifier);
+    const user = users4.find((u) => u.username === identifier || u.email === identifier);
     if (!user || user.password !== password) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
@@ -3619,8 +3663,8 @@ router.get("/auth/permissions/:userId", async (req, res) => {
 });
 router.get("/users", requireAuth, requireAdmin, async (req, res) => {
   try {
-    const users3 = await storage.getUsers();
-    res.json(users3);
+    const users4 = await storage.getUsers();
+    res.json(users4);
   } catch (error) {
     console.error("Error fetching users:", error);
     res.status(500).json({ message: "Failed to fetch users" });
@@ -6398,6 +6442,7 @@ var approval_routing_service_default = ApprovalRoutingService;
 import fs7 from "fs";
 import path5 from "path";
 import { fileURLToPath as fileURLToPath3 } from "url";
+import * as XLSX3 from "xlsx";
 var __filename3 = fileURLToPath3(import.meta.url);
 var __dirname3 = path5.dirname(__filename3);
 var router3 = Router3();
@@ -6433,6 +6478,56 @@ router3.get("/orders", async (req, res) => {
   } catch (error) {
     console.error("Error fetching orders:", error);
     res.status(500).json({ message: "Failed to fetch orders" });
+  }
+});
+router3.get("/orders/export", requireAuth, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    const user = await storage.getUser(userId);
+    console.log("Export request params:", req.query);
+    const vendorIdParam = req.query.vendorId;
+    const vendorId = vendorIdParam && vendorIdParam !== "all" ? parseInt(vendorIdParam) : void 0;
+    const projectIdParam = req.query.projectId;
+    const projectId = projectIdParam && projectIdParam !== "all" && projectIdParam !== "" ? parseInt(projectIdParam) : void 0;
+    const filters = {
+      userId: user?.role === "admin" && req.query.userId && req.query.userId !== "all" ? req.query.userId : user?.role === "admin" ? void 0 : userId,
+      status: req.query.status && req.query.status !== "all" ? req.query.status : void 0,
+      vendorId,
+      projectId,
+      startDate: req.query.startDate ? new Date(req.query.startDate) : void 0,
+      endDate: req.query.endDate ? new Date(req.query.endDate) : void 0,
+      minAmount: req.query.minAmount ? parseFloat(req.query.minAmount) : void 0,
+      maxAmount: req.query.maxAmount ? parseFloat(req.query.maxAmount) : void 0,
+      searchText: req.query.searchText,
+      majorCategory: req.query.majorCategory && req.query.majorCategory !== "all" ? req.query.majorCategory : void 0,
+      middleCategory: req.query.middleCategory && req.query.middleCategory !== "all" ? req.query.middleCategory : void 0,
+      minorCategory: req.query.minorCategory && req.query.minorCategory !== "all" ? req.query.minorCategory : void 0,
+      limit: 1e3
+      // Export more records
+    };
+    console.log("Export filters:", filters);
+    const { orders } = await storage.getPurchaseOrders(filters);
+    const excelData = orders.map((order) => ({
+      "\uBC1C\uC8FC\uBC88\uD638": order.orderNumber,
+      "\uAC70\uB798\uCC98": order.vendor?.name || "",
+      "\uBC1C\uC8FC\uC77C\uC790": order.orderDate,
+      "\uB0A9\uAE30\uD76C\uB9DD\uC77C": order.deliveryDate,
+      "\uC8FC\uC694\uD488\uBAA9": order.items?.map((item) => item.itemName).join(", ") || "",
+      "\uCD1D\uAE08\uC561": order.totalAmount,
+      "\uC0C1\uD0DC": order.status,
+      "\uC791\uC131\uC790": order.user?.name || "",
+      "\uD2B9\uC774\uC0AC\uD56D": order.notes || ""
+    }));
+    const worksheet = XLSX3.utils.json_to_sheet(excelData);
+    const workbook = XLSX3.utils.book_new();
+    XLSX3.utils.book_append_sheet(workbook, worksheet, "Orders");
+    const excelBuffer = XLSX3.write(workbook, { type: "buffer", bookType: "xlsx" });
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", "attachment; filename=orders.xlsx");
+    res.send(excelBuffer);
+  } catch (error) {
+    console.error("Error exporting orders:", error);
+    res.status(500).json({ message: "Failed to export orders" });
   }
 });
 router3.get("/orders/:id", async (req, res) => {
@@ -6837,16 +6932,93 @@ async function generatePDFLogic(req, res) {
     const tempPdfPath = path5.join(tempDir, `order-${timestamp2}.pdf`);
     console.log(`\u{1F4C4} \uC784\uC2DC \uD30C\uC77C \uACBD\uB85C - HTML: ${tempHtmlPath}, PDF: ${tempPdfPath}`);
     try {
+      let companyInfo = null;
+      try {
+        const companies3 = await storage.getCompanies();
+        if (companies3 && companies3.length > 0) {
+          companyInfo = companies3.find((c) => c.isActive) || companies3[0];
+          console.log("\u{1F4C4} \uD68C\uC0AC \uC815\uBCF4 \uC870\uD68C:", companyInfo);
+        }
+      } catch (error) {
+        console.error("\u26A0\uFE0F \uD68C\uC0AC \uC815\uBCF4 \uC870\uD68C \uC2E4\uD328:", error);
+      }
+      let extractedDeliveryPlace = orderData.deliveryPlace || "";
+      let extractedMajorCategory = orderData.majorCategory || "";
+      let extractedMiddleCategory = orderData.middleCategory || "";
+      let extractedMinorCategory = orderData.minorCategory || "";
+      let cleanedNotes = orderData.notes || "";
+      if (orderData.notes) {
+        const lines = orderData.notes.split("\n");
+        const extractedData = [];
+        const structuredData = [];
+        lines.forEach((line) => {
+          const trimmedLine = line.trim();
+          if (!trimmedLine) return;
+          if (trimmedLine.startsWith("\uB0A9\uD488\uCC98: ")) {
+            if (!extractedDeliveryPlace) {
+              extractedDeliveryPlace = trimmedLine.replace("\uB0A9\uD488\uCC98: ", "").trim();
+            }
+          } else if (trimmedLine.startsWith("\uB300\uBD84\uB958: ")) {
+            if (!extractedMajorCategory) {
+              extractedMajorCategory = trimmedLine.replace("\uB300\uBD84\uB958: ", "").trim();
+            }
+            structuredData.push(`\uB300\uBD84\uB958: ${trimmedLine.replace("\uB300\uBD84\uB958: ", "").trim()}`);
+          } else if (trimmedLine.startsWith("\uC911\uBD84\uB958: ")) {
+            if (!extractedMiddleCategory) {
+              extractedMiddleCategory = trimmedLine.replace("\uC911\uBD84\uB958: ", "").trim();
+            }
+            structuredData.push(`\uC911\uBD84\uB958: ${trimmedLine.replace("\uC911\uBD84\uB958: ", "").trim()}`);
+          } else if (trimmedLine.startsWith("\uC18C\uBD84\uB958: ")) {
+            if (!extractedMinorCategory) {
+              extractedMinorCategory = trimmedLine.replace("\uC18C\uBD84\uB958: ", "").trim();
+            }
+            structuredData.push(`\uC18C\uBD84\uB958: ${trimmedLine.replace("\uC18C\uBD84\uB958: ", "").trim()}`);
+          } else if (!trimmedLine.startsWith("\uB0A9\uD488\uCC98 \uC774\uBA54\uC77C: ")) {
+            extractedData.push(trimmedLine);
+          }
+        });
+        const allNotes = [];
+        if (!orderData.majorCategory && !orderData.middleCategory && !orderData.minorCategory && structuredData.length > 0) {
+          allNotes.push(...structuredData);
+        }
+        if (extractedData.length > 0) {
+          allNotes.push(...extractedData);
+        }
+        cleanedNotes = allNotes.length > 0 ? allNotes.join(" | ") : "";
+      }
       const safeOrderData = {
+        // Company info (발주업체)
+        companyName: companyInfo?.companyName || "(\uC8FC)\uC775\uC9C4\uC5D4\uC9C0\uB2C8\uC5B4\uB9C1",
+        companyBusinessNumber: companyInfo?.businessNumber || "",
+        companyAddress: companyInfo?.address || "",
+        companyPhone: companyInfo?.phone || "",
+        companyEmail: companyInfo?.email || "",
+        companyContactPerson: companyInfo?.contactPerson || "",
+        // Order info
         orderNumber: orderData.orderNumber || "PO-TEMP-001",
-        projectName: orderData.projectName || "\uD504\uB85C\uC81D\uD2B8 \uBBF8\uC9C0\uC815",
-        vendorName: orderData.vendorName || "\uAC70\uB798\uCC98 \uBBF8\uC9C0\uC815",
+        projectName: orderData.projectName || orderData.project?.projectName || "\uD604\uC7A5 \uBBF8\uC9C0\uC815",
+        vendorName: orderData.vendorName || orderData.vendor?.name || "\uAC70\uB798\uCC98 \uBBF8\uC9C0\uC815",
+        vendorBusinessNumber: orderData.vendor?.businessNumber || orderData.vendorBusinessNumber || "",
+        vendorPhone: orderData.vendor?.phone || orderData.vendorPhone || "",
+        vendorEmail: orderData.vendor?.email || orderData.vendorEmail || "",
+        vendorAddress: orderData.vendor?.address || orderData.vendorAddress || "",
+        vendorContactPerson: orderData.vendor?.contactPerson || orderData.vendorContactPerson || "",
         totalAmount: Number(orderData.totalAmount) || 0,
         items: Array.isArray(orderData.items) ? orderData.items : [],
-        notes: orderData.notes || "",
+        notes: cleanedNotes,
         orderDate: orderData.orderDate || (/* @__PURE__ */ new Date()).toISOString(),
         deliveryDate: orderData.deliveryDate || null,
-        createdBy: orderData.createdBy || "\uC2DC\uC2A4\uD15C"
+        deliveryPlace: extractedDeliveryPlace,
+        createdBy: orderData.createdBy || orderData.user?.name || "\uC2DC\uC2A4\uD15C",
+        createdAt: orderData.createdAt || (/* @__PURE__ */ new Date()).toISOString(),
+        status: orderData.status || "draft",
+        approvedBy: orderData.approvedBy || "",
+        approvedAt: orderData.approvedAt || null,
+        paymentTerms: orderData.paymentTerms || "",
+        deliveryMethod: orderData.deliveryMethod || "",
+        majorCategory: extractedMajorCategory,
+        middleCategory: extractedMiddleCategory,
+        minorCategory: extractedMinorCategory
       };
       const orderHtml = `
 <!DOCTYPE html>
@@ -6857,74 +7029,111 @@ async function generatePDFLogic(req, res) {
   <style>
     @page {
       size: A4;
-      margin: 20mm 15mm;
+      margin: 15mm 10mm;
     }
     body {
       font-family: 'Noto Sans KR', 'Malgun Gothic', '\uB9D1\uC740 \uACE0\uB515', sans-serif;
       margin: 0;
       padding: 0;
-      line-height: 1.6;
+      line-height: 1.4;
       color: #333;
-      font-size: 12px;
+      font-size: 11px;
     }
     .header {
       text-align: center;
-      margin-bottom: 30px;
-      padding-bottom: 20px;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
       border-bottom: 2px solid #3B82F6;
     }
     .header h1 {
       color: #1F2937;
       margin: 0;
-      font-size: 28px;
+      font-size: 24px;
       font-weight: bold;
     }
     .header .subtitle {
-      margin: 8px 0 0 0;
+      margin: 5px 0 0 0;
       color: #6B7280;
-      font-size: 14px;
+      font-size: 12px;
     }
-    .info-grid {
+    .company-vendor-section {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 15px;
-      margin-bottom: 30px;
+      margin-bottom: 15px;
+    }
+    .company-box, .vendor-box {
+      border: 1px solid #D1D5DB;
+      border-radius: 6px;
+      padding: 10px;
+      background-color: #F9FAFB;
+    }
+    .box-title {
+      font-weight: bold;
+      color: #1F2937;
+      font-size: 12px;
+      margin-bottom: 8px;
+      padding-bottom: 5px;
+      border-bottom: 1px solid #E5E7EB;
+    }
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 15px;
+    }
+    .info-grid.two-col {
+      grid-template-columns: 1fr 1fr;
     }
     .info-item {
-      padding: 12px;
+      padding: 6px 8px;
       border: 1px solid #E5E7EB;
-      border-radius: 6px;
-      background-color: #F9FAFB;
+      border-radius: 4px;
+      background-color: #FFFFFF;
     }
     .info-label {
       font-weight: bold;
-      color: #374151;
-      margin-bottom: 5px;
-      font-size: 11px;
+      color: #6B7280;
+      margin-bottom: 2px;
+      font-size: 9px;
     }
     .info-value {
       color: #1F2937;
-      font-size: 13px;
+      font-size: 11px;
       word-break: break-all;
+    }
+    .compact-info {
+      display: flex;
+      align-items: baseline;
+      gap: 5px;
+    }
+    .compact-label {
+      font-weight: bold;
+      color: #6B7280;
+      font-size: 9px;
+    }
+    .compact-value {
+      color: #1F2937;
+      font-size: 10px;
     }
     .section-title {
       color: #374151;
       border-bottom: 1px solid #D1D5DB;
-      padding-bottom: 8px;
-      margin: 25px 0 15px 0;
-      font-size: 16px;
+      padding-bottom: 5px;
+      margin: 15px 0 10px 0;
+      font-size: 13px;
       font-weight: bold;
     }
     .items-table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 15px;
-      font-size: 11px;
+      margin-top: 10px;
+      font-size: 10px;
     }
     .items-table th,
     .items-table td {
       border: 1px solid #D1D5DB;
-      padding: 8px;
+      padding: 4px 6px;
       text-align: left;
     }
     .items-table th {
@@ -6932,6 +7141,7 @@ async function generatePDFLogic(req, res) {
       font-weight: bold;
       color: #374151;
       text-align: center;
+      font-size: 9px;
     }
     .items-table tbody tr:nth-child(even) {
       background-color: #F9FAFB;
@@ -6947,21 +7157,22 @@ async function generatePDFLogic(req, res) {
       font-weight: bold;
     }
     .notes-section {
-      margin-top: 30px;
-      padding: 15px;
+      margin-top: 15px;
+      padding: 10px;
       background-color: #F3F4F6;
-      border-radius: 6px;
+      border-radius: 4px;
     }
     .notes-title {
       margin-top: 0;
       color: #374151;
-      font-size: 14px;
+      font-size: 11px;
       font-weight: bold;
     }
     .notes-content {
-      margin: 8px 0 0 0;
+      margin: 5px 0 0 0;
       color: #6B7280;
-      line-height: 1.5;
+      line-height: 1.4;
+      font-size: 10px;
     }
     .footer {
       margin-top: 40px;
@@ -6998,34 +7209,138 @@ async function generatePDFLogic(req, res) {
     <p class="subtitle">Purchase Order</p>
   </div>
 
+  <!-- \uBC1C\uC8FC\uC5C5\uCCB4 \uBC0F \uAC70\uB798\uCC98 \uC815\uBCF4 (\uC88C\uC6B0 \uBC30\uCE58) -->
+  <div class="company-vendor-section">
+    <!-- \uBC1C\uC8FC\uC5C5\uCCB4 \uC815\uBCF4 -->
+    <div class="company-box">
+      <div class="box-title">\uBC1C\uC8FC\uC5C5\uCCB4</div>
+      <div class="compact-info">
+        <span class="compact-label">\uC5C5\uCCB4\uBA85:</span>
+        <span class="compact-value" style="font-weight: bold;">${safeOrderData.companyName}</span>
+      </div>
+      ${safeOrderData.companyBusinessNumber ? `
+      <div class="compact-info">
+        <span class="compact-label">\uC0AC\uC5C5\uC790\uBC88\uD638:</span>
+        <span class="compact-value">${safeOrderData.companyBusinessNumber}</span>
+      </div>
+      ` : ""}
+      ${safeOrderData.companyContactPerson ? `
+      <div class="compact-info">
+        <span class="compact-label">\uB2F4\uB2F9\uC790:</span>
+        <span class="compact-value">${safeOrderData.companyContactPerson}</span>
+      </div>
+      ` : ""}
+      ${safeOrderData.companyPhone ? `
+      <div class="compact-info">
+        <span class="compact-label">\uC5F0\uB77D\uCC98:</span>
+        <span class="compact-value">${safeOrderData.companyPhone}</span>
+      </div>
+      ` : ""}
+      ${safeOrderData.companyEmail ? `
+      <div class="compact-info">
+        <span class="compact-label">\uC774\uBA54\uC77C:</span>
+        <span class="compact-value">${safeOrderData.companyEmail}</span>
+      </div>
+      ` : ""}
+      ${safeOrderData.companyAddress ? `
+      <div class="compact-info">
+        <span class="compact-label">\uC8FC\uC18C:</span>
+        <span class="compact-value">${safeOrderData.companyAddress}</span>
+      </div>
+      ` : ""}
+    </div>
+
+    <!-- \uAC70\uB798\uCC98 \uC815\uBCF4 -->
+    <div class="vendor-box">
+      <div class="box-title">\uAC70\uB798\uCC98</div>
+      <div class="compact-info">
+        <span class="compact-label">\uC5C5\uCCB4\uBA85:</span>
+        <span class="compact-value" style="font-weight: bold;">${safeOrderData.vendorName}</span>
+      </div>
+      ${safeOrderData.vendorBusinessNumber ? `
+      <div class="compact-info">
+        <span class="compact-label">\uC0AC\uC5C5\uC790\uBC88\uD638:</span>
+        <span class="compact-value">${safeOrderData.vendorBusinessNumber}</span>
+      </div>
+      ` : ""}
+      ${safeOrderData.vendorContactPerson ? `
+      <div class="compact-info">
+        <span class="compact-label">\uB2F4\uB2F9\uC790:</span>
+        <span class="compact-value">${safeOrderData.vendorContactPerson}</span>
+      </div>
+      ` : ""}
+      ${safeOrderData.vendorPhone ? `
+      <div class="compact-info">
+        <span class="compact-label">\uC5F0\uB77D\uCC98:</span>
+        <span class="compact-value">${safeOrderData.vendorPhone}</span>
+      </div>
+      ` : ""}
+      ${safeOrderData.vendorEmail ? `
+      <div class="compact-info">
+        <span class="compact-label">\uC774\uBA54\uC77C:</span>
+        <span class="compact-value">${safeOrderData.vendorEmail}</span>
+      </div>
+      ` : ""}
+      ${safeOrderData.vendorAddress ? `
+      <div class="compact-info">
+        <span class="compact-label">\uC8FC\uC18C:</span>
+        <span class="compact-value">${safeOrderData.vendorAddress}</span>
+      </div>
+      ` : ""}
+    </div>
+  </div>
+
+  <!-- \uBC1C\uC8FC \uC815\uBCF4 (\uCEF4\uD329\uD2B8\uD55C \uADF8\uB9AC\uB4DC) -->
   <div class="info-grid">
     <div class="info-item">
       <div class="info-label">\uBC1C\uC8FC\uC11C \uBC88\uD638</div>
       <div class="info-value">${safeOrderData.orderNumber}</div>
     </div>
     <div class="info-item">
-      <div class="info-label">\uBC1C\uC8FC\uC77C\uC790</div>
+      <div class="info-label">\uBC1C\uC8FC\uC77C</div>
       <div class="info-value">${new Date(safeOrderData.orderDate).toLocaleDateString("ko-KR")}</div>
     </div>
     <div class="info-item">
-      <div class="info-label">\uD504\uB85C\uC81D\uD2B8</div>
+      <div class="info-label">\uD604\uC7A5</div>
       <div class="info-value">${safeOrderData.projectName}</div>
     </div>
     <div class="info-item">
-      <div class="info-label">\uAC70\uB798\uCC98</div>
-      <div class="info-value">${safeOrderData.vendorName}</div>
+      <div class="info-label">\uB0A9\uAE30\uC77C</div>
+      <div class="info-value">${safeOrderData.deliveryDate ? new Date(safeOrderData.deliveryDate).toLocaleDateString("ko-KR") : "\uBBF8\uC815"}</div>
     </div>
-    ${safeOrderData.deliveryDate ? `
     <div class="info-item">
-      <div class="info-label">\uB0A9\uAE30\uC77C\uC790</div>
-      <div class="info-value">${new Date(safeOrderData.deliveryDate).toLocaleDateString("ko-KR")}</div>
+      <div class="info-label">\uB0A9\uD488\uC7A5\uC18C</div>
+      <div class="info-value">${safeOrderData.deliveryPlace || "\uBBF8\uC815"}</div>
     </div>
-    ` : ""}
     <div class="info-item">
       <div class="info-label">\uC791\uC131\uC790</div>
       <div class="info-value">${safeOrderData.createdBy}</div>
     </div>
   </div>
+
+  ${safeOrderData.majorCategory || safeOrderData.middleCategory || safeOrderData.minorCategory ? `
+  <h3 class="section-title">\uBD84\uB958 \uC815\uBCF4</h3>
+  <div class="info-grid">
+    ${safeOrderData.majorCategory ? `
+    <div class="info-item">
+      <div class="info-label">\uB300\uBD84\uB958</div>
+      <div class="info-value">${safeOrderData.majorCategory}</div>
+    </div>
+    ` : ""}
+    ${safeOrderData.middleCategory ? `
+    <div class="info-item">
+      <div class="info-label">\uC911\uBD84\uB958</div>
+      <div class="info-value">${safeOrderData.middleCategory}</div>
+    </div>
+    ` : ""}
+    ${safeOrderData.minorCategory ? `
+    <div class="info-item">
+      <div class="info-label">\uC18C\uBD84\uB958</div>
+      <div class="info-value">${safeOrderData.minorCategory}</div>
+    </div>
+    ` : ""}
+  </div>
+  ` : ""}
 
   <h3 class="section-title">\uBC1C\uC8FC \uD488\uBAA9</h3>
   
@@ -7034,6 +7349,7 @@ async function generatePDFLogic(req, res) {
       <tr>
         <th style="width: 50px;">\uC21C\uBC88</th>
         <th>\uD488\uBAA9\uBA85</th>
+        <th>\uADDC\uACA9</th>
         <th style="width: 80px;">\uC218\uB7C9</th>
         <th style="width: 60px;">\uB2E8\uC704</th>
         <th style="width: 120px;">\uB2E8\uAC00</th>
@@ -7044,15 +7360,16 @@ async function generatePDFLogic(req, res) {
       ${safeOrderData.items.length > 0 ? safeOrderData.items.map((item, index2) => `
           <tr>
             <td class="number-cell">${index2 + 1}</td>
-            <td>${item.name || item.itemName || "\uD488\uBAA9\uBA85 \uC5C6\uC74C"}</td>
+            <td>${item.name || item.itemName || item.item_name || "\uD488\uBAA9\uBA85 \uC5C6\uC74C"}</td>
+            <td>${item.specification || "-"}</td>
             <td class="amount-cell">${(item.quantity || 0).toLocaleString()}</td>
             <td class="number-cell">${item.unit || "EA"}</td>
-            <td class="amount-cell">\u20A9${(item.unitPrice || 0).toLocaleString()}</td>
-            <td class="amount-cell">\u20A9${((item.quantity || 0) * (item.unitPrice || 0)).toLocaleString()}</td>
+            <td class="amount-cell">\u20A9${(item.unitPrice || item.unit_price || 0).toLocaleString()}</td>
+            <td class="amount-cell">\u20A9${(item.totalAmount || item.total_amount || (item.quantity || 0) * (item.unitPrice || item.unit_price || 0)).toLocaleString()}</td>
           </tr>
-        `).join("") : '<tr><td colspan="6" class="empty-state">\uD488\uBAA9 \uC815\uBCF4\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.</td></tr>'}
+        `).join("") : '<tr><td colspan="7" class="empty-state">\uD488\uBAA9 \uC815\uBCF4\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.</td></tr>'}
       <tr class="total-row">
-        <td colspan="5" class="amount-cell" style="font-weight: bold;">\uCD1D \uAE08\uC561</td>
+        <td colspan="6" class="amount-cell" style="font-weight: bold;">\uCD1D \uAE08\uC561</td>
         <td class="amount-cell" style="font-weight: bold;">\u20A9${safeOrderData.totalAmount.toLocaleString()}</td>
       </tr>
     </tbody>
@@ -7061,7 +7378,7 @@ async function generatePDFLogic(req, res) {
   ${safeOrderData.notes ? `
   <div class="notes-section">
     <h4 class="notes-title">\uBE44\uACE0</h4>
-    <div class="notes-content">${safeOrderData.notes}</div>
+    <div class="notes-content">${safeOrderData.notes.replace(/\|/g, '<span style="color: #D1D5DB; margin: 0 8px;">|</span>')}</div>
   </div>
   ` : ""}
 
@@ -7481,6 +7798,84 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
     });
   }
 });
+router3.post("/orders/send-email-simple", requireAuth, async (req, res) => {
+  try {
+    const { to, cc, subject, body, orderData, attachPdf, attachExcel } = req.body;
+    console.log("\u{1F4E7} \uAC04\uD3B8 \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC694\uCCAD:", { to, cc, subject, attachments: { attachPdf, attachExcel } });
+    if (!to || to.length === 0) {
+      return res.status(400).json({ error: "\uC218\uC2E0\uC790\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4." });
+    }
+    const toEmails = to.map(
+      (recipient) => typeof recipient === "string" ? recipient : recipient.email
+    ).filter(Boolean);
+    const ccEmails = cc ? cc.map(
+      (recipient) => typeof recipient === "string" ? recipient : recipient.email
+    ).filter(Boolean) : [];
+    if (toEmails.length === 0) {
+      return res.status(400).json({ error: "\uC720\uD6A8\uD55C \uC774\uBA54\uC77C \uC8FC\uC18C\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4." });
+    }
+    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+      console.warn("\u26A0\uFE0F SMTP \uC124\uC815\uC774 \uC5C6\uC5B4\uC11C \uC774\uBA54\uC77C\uC744 \uBC1C\uC1A1\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.");
+      return res.json({
+        success: true,
+        message: "\uC774\uBA54\uC77C \uAE30\uB2A5\uC774 \uC544\uC9C1 \uC124\uC815\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4. (\uAC1C\uBC1C \uBAA8\uB4DC)",
+        mockData: { to: toEmails, cc: ccEmails, subject }
+      });
+    }
+    const emailData = {
+      orderNumber: orderData?.orderNumber || "PO-" + Date.now(),
+      projectName: orderData?.projectName || "\uD504\uB85C\uC81D\uD2B8",
+      vendorName: orderData?.vendorName || "\uAC70\uB798\uCC98",
+      location: orderData?.location || "\uD604\uC7A5",
+      orderDate: orderData?.orderDate || (/* @__PURE__ */ new Date()).toLocaleDateString("ko-KR"),
+      deliveryDate: orderData?.deliveryDate || (/* @__PURE__ */ new Date()).toLocaleDateString("ko-KR"),
+      totalAmount: orderData?.totalAmount || 0,
+      userName: req.user?.name || "\uB2F4\uB2F9\uC790",
+      userPhone: req.user?.phone || "\uC5F0\uB77D\uCC98"
+    };
+    let excelPath = "";
+    if (attachExcel && orderData?.excelFilePath) {
+      excelPath = path5.join(__dirname3, "../../", orderData.excelFilePath.replace(/^\//, ""));
+      if (!fs7.existsSync(excelPath)) {
+        console.warn("\u26A0\uFE0F \uC5D1\uC140 \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4:", excelPath);
+        excelPath = "";
+      }
+    }
+    if (!excelPath) {
+      const tempDir = path5.join(__dirname3, "../../uploads/temp");
+      if (!fs7.existsSync(tempDir)) {
+        fs7.mkdirSync(tempDir, { recursive: true });
+      }
+      excelPath = path5.join(tempDir, `temp_${Date.now()}.txt`);
+      fs7.writeFileSync(excelPath, `\uBC1C\uC8FC\uC11C \uC0C1\uC138 \uB0B4\uC6A9
+
+${body}`);
+    }
+    const result = await emailService.sendPurchaseOrderEmail({
+      orderData: emailData,
+      excelFilePath: excelPath,
+      recipients: toEmails,
+      cc: ccEmails,
+      userId: req.user?.id,
+      orderId: orderData?.orderId
+    });
+    if (excelPath.includes("temp_")) {
+      try {
+        fs7.unlinkSync(excelPath);
+      } catch (err) {
+        console.warn("\uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328:", err);
+      }
+    }
+    console.log("\u{1F4E7} \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC131\uACF5:", result);
+    res.json({ success: true, ...result });
+  } catch (error) {
+    console.error("\uC774\uBA54\uC77C \uBC1C\uC1A1 \uC624\uB958:", error);
+    res.status(500).json({
+      error: "\uC774\uBA54\uC77C \uBC1C\uC1A1\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.",
+      details: error instanceof Error ? error.message : "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"
+    });
+  }
+});
 router3.post("/orders/send-email-with-excel", requireAuth, async (req, res) => {
   try {
     const { emailSettings, excelFilePath, orderData } = req.body;
@@ -7596,6 +7991,68 @@ router3.post("/test-email-smtp", async (req, res) => {
         code: error.code,
         response: error.response
       }
+    });
+  }
+});
+router3.get("/orders/:orderId/attachments/:attachmentId/download", requireAuth, async (req, res) => {
+  try {
+    const orderId = parseInt(req.params.orderId, 10);
+    const attachmentId = parseInt(req.params.attachmentId, 10);
+    console.log(`\u{1F4CE} \uD30C\uC77C \uB2E4\uC6B4\uB85C\uB4DC \uC694\uCCAD: \uBC1C\uC8FC\uC11C ID ${orderId}, \uCCA8\uBD80\uD30C\uC77C ID ${attachmentId}`);
+    const attachment = await storage.getAttachment(orderId, attachmentId);
+    if (!attachment) {
+      console.log(`\u274C \uCCA8\uBD80\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC74C: ID ${attachmentId}`);
+      return res.status(404).json({
+        error: "\uCCA8\uBD80\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.",
+        attachmentId
+      });
+    }
+    console.log(`\u{1F4CE} \uCCA8\uBD80\uD30C\uC77C \uC815\uBCF4:`, {
+      originalName: attachment.originalName,
+      storedName: attachment.storedName,
+      filePath: attachment.filePath,
+      fileSize: attachment.fileSize
+    });
+    let filePath = attachment.filePath;
+    if (!path5.isAbsolute(filePath)) {
+      filePath = path5.join(__dirname3, "../../", filePath);
+    }
+    console.log(`\u{1F4C2} \uD30C\uC77C \uACBD\uB85C: ${filePath}`);
+    if (!fs7.existsSync(filePath)) {
+      console.log(`\u274C \uD30C\uC77C\uC774 \uC874\uC7AC\uD558\uC9C0 \uC54A\uC74C: ${filePath}`);
+      return res.status(404).json({
+        error: "\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.",
+        filePath: attachment.filePath
+      });
+    }
+    const stats = fs7.statSync(filePath);
+    console.log(`\u{1F4CA} \uD30C\uC77C \uD06C\uAE30: ${(stats.size / 1024).toFixed(2)} KB`);
+    const originalName = decodeKoreanFilename(attachment.originalName);
+    const encodedFilename = encodeURIComponent(originalName);
+    res.setHeader("Content-Type", attachment.mimeType || "application/octet-stream");
+    res.setHeader("Content-Length", stats.size);
+    res.setHeader("Content-Disposition", `attachment; filename="${originalName}"; filename*=UTF-8''${encodedFilename}`);
+    res.setHeader("Cache-Control", "no-cache");
+    console.log(`\u{1F4E4} \uD30C\uC77C \uB2E4\uC6B4\uB85C\uB4DC \uC2DC\uC791: ${originalName}`);
+    const fileStream = fs7.createReadStream(filePath);
+    fileStream.on("error", (error) => {
+      console.error("\u274C \uD30C\uC77C \uC2A4\uD2B8\uB9BC \uC624\uB958:", error);
+      if (!res.headersSent) {
+        res.status(500).json({
+          error: "\uD30C\uC77C \uC77D\uAE30 \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4.",
+          details: error.message
+        });
+      }
+    });
+    fileStream.on("end", () => {
+      console.log(`\u2705 \uD30C\uC77C \uB2E4\uC6B4\uB85C\uB4DC \uC644\uB8CC: ${originalName}`);
+    });
+    fileStream.pipe(res);
+  } catch (error) {
+    console.error("\u274C \uCCA8\uBD80\uD30C\uC77C \uB2E4\uC6B4\uB85C\uB4DC \uC624\uB958:", error);
+    res.status(500).json({
+      error: "\uD30C\uC77C \uB2E4\uC6B4\uB85C\uB4DC \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4.",
+      details: error instanceof Error ? error.message : "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"
     });
   }
 });
@@ -8037,7 +8494,13 @@ router7.get("/companies/debug", async (req, res) => {
 });
 router7.get("/companies", async (req, res) => {
   try {
-    console.log("\u{1F3E2} Fetching companies (using reliable mock data)...");
+    console.log("\u{1F3E2} Fetching companies from database...");
+    const companies3 = await storage.getCompanies();
+    console.log(`\u2705 Successfully returning ${companies3.length} companies from database`);
+    res.json(companies3);
+  } catch (error) {
+    console.error("\u274C Error fetching companies from database:", error);
+    console.log("\u{1F504} Falling back to mock data for reliability...");
     const mockCompanies = [
       {
         id: 1,
@@ -8076,14 +8539,8 @@ router7.get("/companies", async (req, res) => {
         updatedAt: (/* @__PURE__ */ new Date()).toISOString()
       }
     ];
-    console.log(`\u2705 Successfully returning ${mockCompanies.length} companies (mock data)`);
+    console.log(`\u2705 Successfully returning ${mockCompanies.length} companies (fallback mock data)`);
     res.json(mockCompanies);
-  } catch (error) {
-    console.error("\u274C Error in companies endpoint:", error);
-    res.status(500).json({
-      message: "Failed to fetch companies",
-      error: process.env.NODE_ENV === "development" ? error?.message : void 0
-    });
   }
 });
 router7.post("/companies", logoUpload.single("logo"), async (req, res) => {
@@ -9902,7 +10359,7 @@ startxref
 };
 
 // server/utils/excel-to-pdf-mock.ts
-import XLSX4 from "xlsx";
+import XLSX5 from "xlsx";
 import path9 from "path";
 import fs11 from "fs";
 var ExcelToPdfConverterMock = class {
@@ -9917,7 +10374,7 @@ var ExcelToPdfConverterMock = class {
           error: "Excel \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
         };
       }
-      const workbook = XLSX4.readFile(excelPath);
+      const workbook = XLSX5.readFile(excelPath);
       const pdfPath = options.outputPath || excelPath.replace(/\.xlsx?m?$/, ".pdf");
       const htmlContent = this.generateHtmlFromWorkbook(workbook);
       const pdfResult = await this.createMockPdf(htmlContent, pdfPath);
@@ -9946,7 +10403,7 @@ var ExcelToPdfConverterMock = class {
           error: "Excel \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
         };
       }
-      const workbook = XLSX4.readFile(excelPath);
+      const workbook = XLSX5.readFile(excelPath);
       const pdfPath = options.outputPath || excelPath.replace(/\.xlsx?m?$/, "-sheets.pdf");
       const htmlContent = this.generateHtmlFromSheets(workbook, sheetNames);
       const pdfResult = await this.createMockPdf(htmlContent, pdfPath);
@@ -10060,7 +10517,7 @@ startxref
   static generateHtmlFromWorkbook(workbook) {
     const sheets = workbook.SheetNames.map((name) => {
       const worksheet = workbook.Sheets[name];
-      const htmlTable = XLSX4.utils.sheet_to_html(worksheet);
+      const htmlTable = XLSX5.utils.sheet_to_html(worksheet);
       return `
         <div class="sheet-container">
           <h2 class="sheet-title">${name}</h2>
@@ -10077,7 +10534,7 @@ startxref
   static generateHtmlFromSheets(workbook, sheetNames) {
     const sheets = sheetNames.filter((name) => workbook.SheetNames.includes(name)).map((name) => {
       const worksheet = workbook.Sheets[name];
-      const htmlTable = XLSX4.utils.sheet_to_html(worksheet);
+      const htmlTable = XLSX5.utils.sheet_to_html(worksheet);
       return `
           <div class="sheet-container">
             <h2 class="sheet-title">${name}</h2>
@@ -10208,7 +10665,7 @@ async function convertExcelToPdfMock(excelPath, outputPath, sheetsOnly) {
 }
 
 // server/utils/po-template-validator.ts
-import XLSX5 from "xlsx";
+import XLSX6 from "xlsx";
 import fs12 from "fs";
 import path10 from "path";
 var POTemplateValidator = class {
@@ -10338,14 +10795,14 @@ var POTemplateValidator = class {
         result.errors.push("\uC9C0\uC6D0\uD558\uC9C0 \uC54A\uB294 \uD30C\uC77C \uD615\uC2DD\uC785\uB2C8\uB2E4. Excel \uD30C\uC77C(.xlsx, .xlsm, .xls)\uB9CC \uC9C0\uC6D0\uB429\uB2C8\uB2E4.");
         return result;
       }
-      const workbook = XLSX5.readFile(filePath);
+      const workbook = XLSX6.readFile(filePath);
       if (!workbook.SheetNames.includes("Input")) {
         result.isValid = false;
         result.errors.push("Input \uC2DC\uD2B8\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.");
         return result;
       }
       const worksheet = workbook.Sheets["Input"];
-      const data = XLSX5.utils.sheet_to_json(worksheet, { header: 1 });
+      const data = XLSX6.utils.sheet_to_json(worksheet, { header: 1 });
       if (data.length < 2) {
         result.isValid = false;
         result.errors.push("Input \uC2DC\uD2B8\uC5D0 \uB370\uC774\uD130\uAC00 \uC5C6\uAC70\uB098 \uD5E4\uB354\uB9CC \uC788\uC2B5\uB2C8\uB2E4.");
@@ -10574,7 +11031,7 @@ var POTemplateValidator = class {
         result.errors.push("\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.");
         return result;
       }
-      const workbook = XLSX5.readFile(filePath);
+      const workbook = XLSX6.readFile(filePath);
       result.hasInputSheet = workbook.SheetNames.includes("Input");
       if (!result.hasInputSheet) {
         result.isValid = false;
@@ -10587,7 +11044,7 @@ var POTemplateValidator = class {
       }
       if (result.hasInputSheet) {
         const worksheet = workbook.Sheets["Input"];
-        const data = XLSX5.utils.sheet_to_json(worksheet, { header: 1 });
+        const data = XLSX6.utils.sheet_to_json(worksheet, { header: 1 });
         result.rowCount = Math.max(0, data.length - 1);
       }
     } catch (error) {
@@ -11432,7 +11889,7 @@ import { Router as Router11 } from "express";
 init_db();
 init_schema();
 import { eq as eq9, sql as sql7, and as and6, gte as gte4, lte as lte4, inArray as inArray2 } from "drizzle-orm";
-import * as XLSX6 from "xlsx";
+import * as XLSX7 from "xlsx";
 var formatKoreanWon = (amount) => {
   return `\u20A9${amount.toLocaleString("ko-KR")}`;
 };
@@ -11476,6 +11933,36 @@ router11.get("/debug-data", async (req, res) => {
     res.status(500).json({ error: "Debug failed" });
   }
 });
+router11.get("/debug-processing", async (req, res) => {
+  try {
+    console.log("Debug processing endpoint called");
+    const allOrders = await db.select({
+      id: purchaseOrders.id,
+      orderNumber: purchaseOrders.orderNumber,
+      orderDate: purchaseOrders.orderDate,
+      status: purchaseOrders.status,
+      totalAmount: purchaseOrders.totalAmount
+    }).from(purchaseOrders).limit(10);
+    const ordersWithJoins = await db.select({
+      id: purchaseOrders.id,
+      orderNumber: purchaseOrders.orderNumber,
+      orderDate: purchaseOrders.orderDate,
+      status: purchaseOrders.status,
+      totalAmount: purchaseOrders.totalAmount,
+      projectName: projects.projectName,
+      vendorName: vendors.name
+    }).from(purchaseOrders).leftJoin(projects, eq9(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq9(purchaseOrders.vendorId, vendors.id)).limit(10);
+    res.json({
+      totalOrders: allOrders.length,
+      ordersWithoutJoins: allOrders,
+      ordersWithJoins,
+      message: "Debug data fetched successfully"
+    });
+  } catch (error) {
+    console.error("Debug processing error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
 var parseDateFilters = (startDate, endDate) => {
   const filters = [];
   if (startDate && startDate !== "") {
@@ -11488,9 +11975,21 @@ var parseDateFilters = (startDate, endDate) => {
 };
 router11.get("/by-category", async (req, res) => {
   try {
-    const { startDate, endDate, categoryType = "major" } = req.query;
+    const {
+      startDate,
+      endDate,
+      majorCategory,
+      middleCategory,
+      minorCategory
+    } = req.query;
     const dateFilters = parseDateFilters(startDate, endDate);
-    console.log("Category report filters:", { startDate, endDate, categoryType });
+    console.log("Category report filters:", {
+      startDate,
+      endDate,
+      majorCategory,
+      middleCategory,
+      minorCategory
+    });
     let query = db.select({
       orderId: purchaseOrderItems.orderId,
       itemName: purchaseOrderItems.itemName,
@@ -11504,8 +12003,18 @@ router11.get("/by-category", async (req, res) => {
       specification: purchaseOrderItems.specification,
       unitPrice: purchaseOrderItems.unitPrice
     }).from(purchaseOrderItems).innerJoin(purchaseOrders, eq9(purchaseOrderItems.orderId, purchaseOrders.id));
-    if (dateFilters.length > 0) {
-      query = query.where(and6(...dateFilters));
+    const filters = [...dateFilters];
+    if (majorCategory && majorCategory !== "all") {
+      filters.push(eq9(purchaseOrderItems.majorCategory, majorCategory));
+    }
+    if (middleCategory && middleCategory !== "all") {
+      filters.push(eq9(purchaseOrderItems.middleCategory, middleCategory));
+    }
+    if (minorCategory && minorCategory !== "all") {
+      filters.push(eq9(purchaseOrderItems.minorCategory, minorCategory));
+    }
+    if (filters.length > 0) {
+      query = query.where(and6(...filters));
     }
     const orderItemsWithCategories = await query;
     console.log("Order items with categories found:", orderItemsWithCategories.length);
@@ -11515,19 +12024,18 @@ router11.get("/by-category", async (req, res) => {
     const categoryReport = orderItemsWithCategories.reduce((acc, item) => {
       let categoryKey = "";
       let hierarchyPath = "";
-      switch (categoryType) {
-        case "major":
-          categoryKey = item.majorCategory || "\uBBF8\uBD84\uB958";
-          hierarchyPath = categoryKey;
-          break;
-        case "middle":
-          categoryKey = item.middleCategory || "\uBBF8\uBD84\uB958";
-          hierarchyPath = `${item.majorCategory || "\uBBF8\uBD84\uB958"} > ${categoryKey}`;
-          break;
-        case "minor":
-          categoryKey = item.minorCategory || "\uBBF8\uBD84\uB958";
-          hierarchyPath = `${item.majorCategory || "\uBBF8\uBD84\uB958"} > ${item.middleCategory || "\uBBF8\uBD84\uB958"} > ${categoryKey}`;
-          break;
+      if (minorCategory && minorCategory !== "all") {
+        categoryKey = item.minorCategory || "\uBBF8\uBD84\uB958";
+        hierarchyPath = `${item.majorCategory || "\uBBF8\uBD84\uB958"} > ${item.middleCategory || "\uBBF8\uBD84\uB958"} > ${categoryKey}`;
+      } else if (middleCategory && middleCategory !== "all") {
+        categoryKey = item.minorCategory || "\uBBF8\uBD84\uB958";
+        hierarchyPath = `${item.majorCategory || "\uBBF8\uBD84\uB958"} > ${item.middleCategory || "\uBBF8\uBD84\uB958"} > ${categoryKey}`;
+      } else if (majorCategory && majorCategory !== "all") {
+        categoryKey = item.middleCategory || "\uBBF8\uBD84\uB958";
+        hierarchyPath = `${item.majorCategory || "\uBBF8\uBD84\uB958"} > ${categoryKey}`;
+      } else {
+        categoryKey = item.majorCategory || "\uBBF8\uBD84\uB958";
+        hierarchyPath = categoryKey;
       }
       if (!acc[categoryKey]) {
         acc[categoryKey] = {
@@ -11579,7 +12087,6 @@ router11.get("/by-category", async (req, res) => {
     });
     reportData.sort((a, b) => b.totalAmount - a.totalAmount);
     res.json({
-      categoryType,
       period: {
         startDate: startDate || "all",
         endDate: endDate || "all"
@@ -11846,24 +12353,52 @@ router11.get("/export-excel", requireAuth, async (req, res) => {
         reportData = await vendorResponse.json();
         sheetName = "\uAC70\uB798\uCC98\uBCC4 \uBCF4\uACE0\uC11C";
         break;
+      case "processing":
+        const processingParams = new URLSearchParams();
+        if (startDate) processingParams.append("startDate", startDate);
+        if (endDate) processingParams.append("endDate", endDate);
+        processingParams.append("limit", "1000");
+        const processingResponse = await fetch(`${req.protocol}://${req.get("host")}/api/reports/processing?${processingParams.toString()}`, {
+          headers: {
+            "Cookie": req.headers.cookie || ""
+          }
+        });
+        if (!processingResponse.ok) {
+          throw new Error(`Processing API error: ${processingResponse.status}`);
+        }
+        reportData = await processingResponse.json();
+        sheetName = "\uBC1C\uC8FC \uB0B4\uC5ED \uAC80\uC0C9";
+        break;
       default:
         return res.status(400).json({ error: "Invalid report type" });
     }
-    const wb = XLSX6.utils.book_new();
+    const wb = XLSX7.utils.book_new();
     const summaryData = [
       ["\uBCF4\uACE0\uC11C \uC720\uD615", sheetName],
-      ["\uAE30\uAC04", `${reportData.period.startDate} ~ ${reportData.period.endDate}`],
       ["\uC0DD\uC131\uC77C\uC2DC", (/* @__PURE__ */ new Date()).toLocaleString("ko-KR")],
       [],
       ["\uC694\uC57D \uC815\uBCF4"]
     ];
-    Object.entries(reportData.summary).forEach(([key, value]) => {
-      const label = key === "totalCategories" ? "\uCD1D \uBD84\uB958 \uC218" : key === "totalProjects" ? "\uCD1D \uD504\uB85C\uC81D\uD2B8 \uC218" : key === "totalVendors" ? "\uCD1D \uAC70\uB798\uCC98 \uC218" : key === "totalOrders" ? "\uCD1D \uBC1C\uC8FC \uC218" : key === "totalItems" ? "\uCD1D \uD488\uBAA9 \uC218" : key === "totalAmount" ? "\uCD1D \uAE08\uC561" : key === "averagePerProject" ? "\uD504\uB85C\uC81D\uD2B8\uB2F9 \uD3C9\uADE0" : key === "averagePerVendor" ? "\uAC70\uB798\uCC98\uB2F9 \uD3C9\uADE0" : key;
-      const formattedValue = key.includes("Amount") || key.includes("average") ? formatKoreanWon(Math.floor(value)) : value;
-      summaryData.push([label, formattedValue]);
-    });
-    const summarySheet = XLSX6.utils.aoa_to_sheet(summaryData);
-    XLSX6.utils.book_append_sheet(wb, summarySheet, "\uC694\uC57D");
+    if (reportData.period) {
+      summaryData.splice(2, 0, ["\uAE30\uAC04", `${reportData.period.startDate} ~ ${reportData.period.endDate}`]);
+    }
+    if (reportData.summary) {
+      Object.entries(reportData.summary).forEach(([key, value]) => {
+        const label = key === "totalCategories" ? "\uCD1D \uBD84\uB958 \uC218" : key === "totalProjects" ? "\uCD1D \uD504\uB85C\uC81D\uD2B8 \uC218" : key === "totalVendors" ? "\uCD1D \uAC70\uB798\uCC98 \uC218" : key === "totalOrders" ? "\uCD1D \uBC1C\uC8FC \uC218" : key === "totalItems" ? "\uCD1D \uD488\uBAA9 \uC218" : key === "totalAmount" ? "\uCD1D \uAE08\uC561" : key === "averagePerProject" ? "\uD504\uB85C\uC81D\uD2B8\uB2F9 \uD3C9\uADE0" : key === "averagePerVendor" ? "\uAC70\uB798\uCC98\uB2F9 \uD3C9\uADE0" : key;
+        const formattedValue = key.includes("Amount") || key.includes("average") ? formatKoreanWon(Math.floor(value)) : value;
+        summaryData.push([label, formattedValue]);
+      });
+    } else if (type === "processing" && reportData.total !== void 0) {
+      summaryData.push(["\uCD1D \uBC1C\uC8FC \uC218", reportData.total]);
+      if (reportData.summary?.totalOrders) {
+        summaryData.push(["\uAC80\uC0C9\uB41C \uBC1C\uC8FC \uC218", reportData.summary.totalOrders]);
+      }
+      if (reportData.summary?.totalAmount) {
+        summaryData.push(["\uCD1D \uAE08\uC561", formatKoreanWon(Math.floor(reportData.summary.totalAmount))]);
+      }
+    }
+    const summarySheet = XLSX7.utils.aoa_to_sheet(summaryData);
+    XLSX7.utils.book_append_sheet(wb, summarySheet, "\uC694\uC57D");
     let detailData = [];
     if (type === "category") {
       detailData = [
@@ -11909,17 +12444,62 @@ router11.get("/export-excel", requireAuth, async (req, res) => {
           formatKoreanWon(Math.floor(item.averageOrderAmount))
         ]);
       });
+    } else if (type === "processing") {
+      detailData = [
+        ["\uBC1C\uC8FC\uBC88\uD638", "\uBC1C\uC8FC\uC77C\uC790", "\uD504\uB85C\uC81D\uD2B8\uBA85", "\uAC70\uB798\uCC98\uBA85", "\uCD1D \uAE08\uC561", "\uC0C1\uD0DC", "\uC0DD\uC131\uC77C\uC2DC"]
+      ];
+      if (reportData.orders && Array.isArray(reportData.orders)) {
+        reportData.orders.forEach((order) => {
+          const statusText = order.status === "draft" ? "\uC784\uC2DC \uC800\uC7A5" : order.status === "pending" ? "\uC2B9\uC778 \uB300\uAE30" : order.status === "approved" ? "\uC9C4\uD589 \uC911" : order.status === "sent" ? "\uBC1C\uC1A1\uB428" : order.status === "completed" ? "\uC644\uB8CC" : order.status === "rejected" ? "\uBC18\uB824" : order.status;
+          detailData.push([
+            order.orderNumber || "-",
+            order.orderDate || "-",
+            order.projectName || "-",
+            order.vendorName || "-",
+            order.totalAmount ? formatKoreanWon(Math.floor(order.totalAmount)) : "-",
+            statusText,
+            order.createdAt ? new Date(order.createdAt).toLocaleString("ko-KR") : "-"
+          ]);
+        });
+      }
     }
-    const detailSheet = XLSX6.utils.aoa_to_sheet(detailData);
-    XLSX6.utils.book_append_sheet(wb, detailSheet, "\uC0C1\uC138 \uB370\uC774\uD130");
-    const buffer = XLSX6.write(wb, { bookType: "xlsx", type: "buffer" });
+    const detailSheet = XLSX7.utils.aoa_to_sheet(detailData);
+    XLSX7.utils.book_append_sheet(wb, detailSheet, "\uC0C1\uC138 \uB370\uC774\uD130");
+    const buffer = XLSX7.write(wb, { bookType: "xlsx", type: "buffer" });
     res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-    res.setHeader("Content-Disposition", `attachment; filename="${sheetName}_${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}.xlsx"`);
+    const safeFileName = type === "processing" ? "order_processing_report" : type === "category" ? "category_report" : type === "project" ? "project_report" : type === "vendor" ? "vendor_report" : "report";
+    const dateStr = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+    const filename = `${safeFileName}_${dateStr}.xlsx`;
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
     res.setHeader("Content-Length", buffer.length);
     res.send(buffer);
   } catch (error) {
     console.error("Error exporting Excel:", error);
     res.status(500).json({ error: "Failed to export Excel" });
+  }
+});
+router11.get("/processing-test", async (req, res) => {
+  try {
+    console.log("Processing test endpoint called");
+    const orders = await db.select({
+      id: purchaseOrders.id,
+      orderNumber: purchaseOrders.orderNumber,
+      orderDate: purchaseOrders.orderDate,
+      status: purchaseOrders.status,
+      totalAmount: purchaseOrders.totalAmount
+    }).from(purchaseOrders).limit(5);
+    res.json({
+      success: true,
+      count: orders.length,
+      orders,
+      message: "Test endpoint working"
+    });
+  } catch (error) {
+    console.error("Processing test error:", error);
+    res.status(500).json({
+      error: error.message,
+      stack: error.stack
+    });
   }
 });
 router11.get("/processing", requireAuth, async (req, res) => {
@@ -11975,28 +12555,7 @@ router11.get("/processing", requireAuth, async (req, res) => {
       filters.push(eq9(purchaseOrders.vendorId, parseInt(vendorId)));
     }
     console.log(`Processing report filters count: ${filters.length}`);
-    let ordersQuery = db.select({
-      id: purchaseOrders.id,
-      orderNumber: purchaseOrders.orderNumber,
-      orderDate: purchaseOrders.orderDate,
-      status: purchaseOrders.status,
-      totalAmount: purchaseOrders.totalAmount,
-      urgency: purchaseOrders.urgency,
-      deliveryLocation: purchaseOrders.deliveryLocation,
-      specialNotes: purchaseOrders.specialNotes,
-      createdAt: purchaseOrders.createdAt,
-      updatedAt: purchaseOrders.updatedAt,
-      // Project information
-      projectId: projects.id,
-      projectName: projects.projectName,
-      projectCode: projects.projectCode,
-      // Vendor information
-      vendorId: vendors.id,
-      vendorName: vendors.name,
-      vendorCode: vendors.vendorCode,
-      // User information
-      userId: purchaseOrders.userId
-    }).from(purchaseOrders).leftJoin(projects, eq9(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq9(purchaseOrders.vendorId, vendors.id));
+    let ordersQuery = db.select().from(purchaseOrders).leftJoin(projects, eq9(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq9(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq9(purchaseOrders.userId, users.id));
     if (filters.length > 0) {
       ordersQuery = ordersQuery.where(and6(...filters));
     }
@@ -12005,8 +12564,7 @@ router11.get("/processing", requireAuth, async (req, res) => {
         ${purchaseOrders.orderNumber} ILIKE ${`%${search}%`} OR
         ${vendors.name} ILIKE ${`%${search}%`} OR
         ${projects.projectName} ILIKE ${`%${search}%`} OR
-        ${purchaseOrders.deliveryLocation} ILIKE ${`%${search}%`} OR
-        ${purchaseOrders.specialNotes} ILIKE ${`%${search}%`}
+        ${purchaseOrders.notes} ILIKE ${`%${search}%`}
       )`;
       if (filters.length > 0) {
         ordersQuery = ordersQuery.where(and6(and6(...filters), searchFilter));
@@ -12017,11 +12575,45 @@ router11.get("/processing", requireAuth, async (req, res) => {
     const pageNum = parseInt(page);
     const limitNum = parseInt(limit);
     const offset = (pageNum - 1) * limitNum;
-    ordersQuery = ordersQuery.orderBy(purchaseOrders.orderDate, purchaseOrders.id).offset(offset).limit(limitNum);
+    ordersQuery = ordersQuery.orderBy(purchaseOrders.orderDate).offset(offset).limit(limitNum);
     const orders = await ordersQuery;
     console.log(`Processing report found ${orders.length} orders`);
     if (orders.length > 0) {
-      const orderIds = orders.map((o) => o.id);
+      console.log("Debug: First order structure:", {
+        purchaseOrders: orders[0].purchase_orders ? "exists" : "null",
+        users: orders[0].users ? "exists" : "null",
+        vendors: orders[0].vendors ? "exists" : "null",
+        projects: orders[0].projects ? "exists" : "null"
+      });
+    }
+    const flatOrders = orders.map((row) => ({
+      // Order data
+      id: row.purchase_orders?.id,
+      orderNumber: row.purchase_orders?.orderNumber,
+      orderDate: row.purchase_orders?.orderDate,
+      status: row.purchase_orders?.status,
+      totalAmount: row.purchase_orders?.totalAmount,
+      deliveryDate: row.purchase_orders?.deliveryDate,
+      notes: row.purchase_orders?.notes,
+      createdAt: row.purchase_orders?.createdAt,
+      updatedAt: row.purchase_orders?.updatedAt,
+      userId: row.purchase_orders?.userId,
+      // Project data
+      projectId: row.projects?.id,
+      projectName: row.projects?.projectName,
+      projectCode: row.projects?.projectCode,
+      // Vendor data
+      vendorId: row.vendors?.id,
+      vendorName: row.vendors?.name,
+      vendorCode: row.vendors?.vendorCode,
+      // User data
+      userName: row.users?.name,
+      userFirstName: row.users?.firstName,
+      userLastName: row.users?.lastName
+    })).filter((order) => order.id);
+    console.log(`Processing report found ${flatOrders.length} orders after flattening`);
+    if (flatOrders.length > 0) {
+      const orderIds = flatOrders.map((o) => o.id);
       const orderItems = await db.select({
         orderId: purchaseOrderItems.orderId,
         id: purchaseOrderItems.id,
@@ -12036,7 +12628,7 @@ router11.get("/processing", requireAuth, async (req, res) => {
         unit: purchaseOrderItems.unit,
         notes: purchaseOrderItems.notes
       }).from(purchaseOrderItems).where(inArray2(purchaseOrderItems.orderId, orderIds));
-      const ordersWithItems = orders.map((order) => ({
+      const ordersWithItems = flatOrders.map((order) => ({
         ...order,
         items: orderItems.filter((item) => item.orderId === order.id)
       }));
@@ -12049,8 +12641,7 @@ router11.get("/processing", requireAuth, async (req, res) => {
           ${purchaseOrders.orderNumber} ILIKE ${`%${search}%`} OR
           ${vendors.name} ILIKE ${`%${search}%`} OR
           ${projects.projectName} ILIKE ${`%${search}%`} OR
-          ${purchaseOrders.deliveryLocation} ILIKE ${`%${search}%`} OR
-          ${purchaseOrders.specialNotes} ILIKE ${`%${search}%`}
+          ${purchaseOrders.notes} ILIKE ${`%${search}%`}
         )`;
         if (filters.length > 0) {
           countQuery = countQuery.where(and6(and6(...filters), searchFilter));
@@ -12068,7 +12659,7 @@ router11.get("/processing", requireAuth, async (req, res) => {
         totalPages: Math.ceil(total / limitNum),
         summary: {
           totalOrders: ordersWithItems.length,
-          totalAmount: ordersWithItems.reduce((sum2, order) => sum2 + parseFloat(order.totalAmount), 0)
+          totalAmount: ordersWithItems.reduce((sum2, order) => sum2 + parseFloat(order.totalAmount || 0), 0)
         }
       });
     } else {
@@ -12148,17 +12739,17 @@ import { Router as Router12 } from "express";
 // server/utils/import-export-service.ts
 init_db();
 init_schema();
-import * as XLSX7 from "xlsx";
+import * as XLSX8 from "xlsx";
 import Papa from "papaparse";
 import { eq as eq10 } from "drizzle-orm";
 import fs14 from "fs";
 var ImportExportService = class {
   // Parse Excel file
   static parseExcelFile(filePath) {
-    const workbook = XLSX7.readFile(filePath);
+    const workbook = XLSX8.readFile(filePath);
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
-    const data = XLSX7.utils.sheet_to_json(worksheet);
+    const data = XLSX8.utils.sheet_to_json(worksheet);
     return data;
   }
   // Parse CSV file
@@ -12436,10 +13027,10 @@ var ImportExportService = class {
       "\uC0DD\uC131\uC77C": vendor.createdAt?.toISOString().split("T")[0] || ""
     }));
     if (format === "excel") {
-      const ws = XLSX7.utils.json_to_sheet(exportData);
-      const wb = XLSX7.utils.book_new();
-      XLSX7.utils.book_append_sheet(wb, ws, "\uAC70\uB798\uCC98\uBAA9\uB85D");
-      return Buffer.from(XLSX7.write(wb, { bookType: "xlsx", type: "buffer" }));
+      const ws = XLSX8.utils.json_to_sheet(exportData);
+      const wb = XLSX8.utils.book_new();
+      XLSX8.utils.book_append_sheet(wb, ws, "\uAC70\uB798\uCC98\uBAA9\uB85D");
+      return Buffer.from(XLSX8.write(wb, { bookType: "xlsx", type: "buffer" }));
     } else {
       const csv = Papa.unparse(exportData, {
         header: true,
@@ -12462,10 +13053,10 @@ var ImportExportService = class {
       "\uC0DD\uC131\uC77C": item.createdAt?.toISOString().split("T")[0] || ""
     }));
     if (format === "excel") {
-      const ws = XLSX7.utils.json_to_sheet(exportData);
-      const wb = XLSX7.utils.book_new();
-      XLSX7.utils.book_append_sheet(wb, ws, "\uD488\uBAA9\uBAA9\uB85D");
-      return Buffer.from(XLSX7.write(wb, { bookType: "xlsx", type: "buffer" }));
+      const ws = XLSX8.utils.json_to_sheet(exportData);
+      const wb = XLSX8.utils.book_new();
+      XLSX8.utils.book_append_sheet(wb, ws, "\uD488\uBAA9\uBAA9\uB85D");
+      return Buffer.from(XLSX8.write(wb, { bookType: "xlsx", type: "buffer" }));
     } else {
       const csv = Papa.unparse(exportData, {
         header: true,
@@ -12503,10 +13094,10 @@ var ImportExportService = class {
       "\uC0DD\uC131\uC77C": project.createdAt?.toISOString().split("T")[0] || ""
     }));
     if (format === "excel") {
-      const ws = XLSX7.utils.json_to_sheet(exportData);
-      const wb = XLSX7.utils.book_new();
-      XLSX7.utils.book_append_sheet(wb, ws, "\uD504\uB85C\uC81D\uD2B8\uBAA9\uB85D");
-      return Buffer.from(XLSX7.write(wb, { bookType: "xlsx", type: "buffer" }));
+      const ws = XLSX8.utils.json_to_sheet(exportData);
+      const wb = XLSX8.utils.book_new();
+      XLSX8.utils.book_append_sheet(wb, ws, "\uD504\uB85C\uC81D\uD2B8\uBAA9\uB85D");
+      return Buffer.from(XLSX8.write(wb, { bookType: "xlsx", type: "buffer" }));
     } else {
       const csv = Papa.unparse(exportData, {
         header: true,
@@ -12564,10 +13155,10 @@ var ImportExportService = class {
       "\uD488\uBAA9\uBE44\uACE0": order.itemNotes || ""
     }));
     if (format === "excel") {
-      const ws = XLSX7.utils.json_to_sheet(exportData);
-      const wb = XLSX7.utils.book_new();
-      XLSX7.utils.book_append_sheet(wb, ws, "\uBC1C\uC8FC\uC11C\uBAA9\uB85D");
-      return Buffer.from(XLSX7.write(wb, { bookType: "xlsx", type: "buffer" }));
+      const ws = XLSX8.utils.json_to_sheet(exportData);
+      const wb = XLSX8.utils.book_new();
+      XLSX8.utils.book_append_sheet(wb, ws, "\uBC1C\uC8FC\uC11C\uBAA9\uB85D");
+      return Buffer.from(XLSX8.write(wb, { bookType: "xlsx", type: "buffer" }));
     } else {
       const csv = Papa.unparse(exportData, {
         header: true,
@@ -12640,10 +13231,10 @@ var ImportExportService = class {
     };
     const data = templates[entity];
     if (format === "excel") {
-      const ws = XLSX7.utils.json_to_sheet(data);
-      const wb = XLSX7.utils.book_new();
-      XLSX7.utils.book_append_sheet(wb, ws, "Template");
-      return Buffer.from(XLSX7.write(wb, { bookType: "xlsx", type: "buffer" }));
+      const ws = XLSX8.utils.json_to_sheet(data);
+      const wb = XLSX8.utils.book_new();
+      XLSX8.utils.book_append_sheet(wb, ws, "Template");
+      return Buffer.from(XLSX8.write(wb, { bookType: "xlsx", type: "buffer" }));
     } else {
       const csv = Papa.unparse(data, {
         header: true,
@@ -13049,7 +13640,7 @@ var email_history_default = router13;
 
 // server/routes/excel-template.ts
 import express from "express";
-import * as XLSX8 from "xlsx";
+import * as XLSX9 from "xlsx";
 var router14 = express.Router();
 router14.get("/download", async (req, res) => {
   try {
@@ -13131,8 +13722,8 @@ router14.get("/download", async (req, res) => {
         "\uD488\uC9C8 \uAC80\uC0AC \uD544\uC218"
       ]
     ];
-    const workbook = XLSX8.utils.book_new();
-    const inputWorksheet = XLSX8.utils.aoa_to_sheet(templateData);
+    const workbook = XLSX9.utils.book_new();
+    const inputWorksheet = XLSX9.utils.aoa_to_sheet(templateData);
     const columnWidths = [
       { wch: 12 },
       // A: 발주일자
@@ -13180,7 +13771,7 @@ router14.get("/download", async (req, res) => {
       }
     };
     for (let col = 0; col < 16; col++) {
-      const cellRef = XLSX8.utils.encode_cell({ r: 0, c: col });
+      const cellRef = XLSX9.utils.encode_cell({ r: 0, c: col });
       if (!inputWorksheet[cellRef]) inputWorksheet[cellRef] = { v: "", t: "s" };
       inputWorksheet[cellRef].s = headerStyle;
     }
@@ -13194,12 +13785,12 @@ router14.get("/download", async (req, res) => {
     };
     for (let row = 1; row <= 3; row++) {
       for (let col = 0; col < 16; col++) {
-        const cellRef = XLSX8.utils.encode_cell({ r: row, c: col });
+        const cellRef = XLSX9.utils.encode_cell({ r: row, c: col });
         if (!inputWorksheet[cellRef]) inputWorksheet[cellRef] = { v: "", t: "s" };
         inputWorksheet[cellRef].s = dataBorder;
       }
     }
-    XLSX8.utils.book_append_sheet(workbook, inputWorksheet, "Input");
+    XLSX9.utils.book_append_sheet(workbook, inputWorksheet, "Input");
     const gapjiData = [
       ["\uBC1C\uC8FC\uC11C (\uAC11\uC9C0)", "", "", "", "", ""],
       ["", "", "", "", "", ""],
@@ -13214,7 +13805,7 @@ router14.get("/download", async (req, res) => {
       ["", "", "", "", "", ""],
       ["", "", "", "\uD569\uACC4:", "", ""]
     ];
-    const gapjiWorksheet = XLSX8.utils.aoa_to_sheet(gapjiData);
+    const gapjiWorksheet = XLSX9.utils.aoa_to_sheet(gapjiData);
     gapjiWorksheet["!cols"] = [
       { wch: 8 },
       { wch: 25 },
@@ -13223,7 +13814,7 @@ router14.get("/download", async (req, res) => {
       { wch: 12 },
       { wch: 15 }
     ];
-    XLSX8.utils.book_append_sheet(workbook, gapjiWorksheet, "\uAC11\uC9C0");
+    XLSX9.utils.book_append_sheet(workbook, gapjiWorksheet, "\uAC11\uC9C0");
     const euljiData = [
       ["\uBC1C\uC8FC\uC11C (\uC744\uC9C0)", "", "", "", "", ""],
       ["", "", "", "", "", ""],
@@ -13238,7 +13829,7 @@ router14.get("/download", async (req, res) => {
       ["", "", "", "", "", ""],
       ["", "", "", "\uD569\uACC4:", "", ""]
     ];
-    const euljiWorksheet = XLSX8.utils.aoa_to_sheet(euljiData);
+    const euljiWorksheet = XLSX9.utils.aoa_to_sheet(euljiData);
     euljiWorksheet["!cols"] = [
       { wch: 8 },
       { wch: 25 },
@@ -13247,8 +13838,8 @@ router14.get("/download", async (req, res) => {
       { wch: 12 },
       { wch: 15 }
     ];
-    XLSX8.utils.book_append_sheet(workbook, euljiWorksheet, "\uC744\uC9C0");
-    const buffer = XLSX8.write(workbook, {
+    XLSX9.utils.book_append_sheet(workbook, euljiWorksheet, "\uC744\uC9C0");
+    const buffer = XLSX9.write(workbook, {
       type: "buffer",
       bookType: "xlsx",
       cellStyles: true,
@@ -13730,38 +14321,7 @@ router17.get("/invoices", async (req, res) => {
   try {
     const { orderId } = req.query;
     console.log(`\u{1F4B0} Fetching invoices for order ${orderId} (using reliable mock data)...`);
-    const mockInvoices = orderId ? [
-      {
-        id: 1,
-        orderId: parseInt(orderId),
-        invoiceNumber: "INV-2025-001",
-        issueDate: "2025-01-15",
-        dueDate: "2025-02-15",
-        amount: 55e5,
-        tax: 55e4,
-        totalAmount: 605e4,
-        status: "issued",
-        vendorName: "\uC0BC\uC131\uAC74\uC124",
-        description: "\uCCA0\uADFC D16 \uBC0F \uC2DC\uBA58\uD2B8 \uACF5\uAE09",
-        createdAt: (/* @__PURE__ */ new Date()).toISOString(),
-        updatedAt: (/* @__PURE__ */ new Date()).toISOString()
-      },
-      {
-        id: 2,
-        orderId: parseInt(orderId),
-        invoiceNumber: "INV-2025-002",
-        issueDate: "2025-01-20",
-        dueDate: "2025-02-20",
-        amount: 24e5,
-        tax: 24e4,
-        totalAmount: 264e4,
-        status: "paid",
-        vendorName: "\uC0BC\uC131\uAC74\uC124",
-        description: "\uC804\uAE30\uC790\uC7AC \uACF5\uAE09",
-        createdAt: (/* @__PURE__ */ new Date()).toISOString(),
-        updatedAt: (/* @__PURE__ */ new Date()).toISOString()
-      }
-    ] : [];
+    const mockInvoices = [];
     console.log(`\u2705 Successfully returning ${mockInvoices.length} invoices (mock data)`);
     res.json(mockInvoices);
   } catch (error) {
@@ -13999,50 +14559,293 @@ var item_receipts_default = router19;
 
 // server/routes/approvals.ts
 import { Router as Router19 } from "express";
+init_db();
+init_schema();
+import { eq as eq14, and as and10, desc as desc6, sql as sql11, inArray as inArray4 } from "drizzle-orm";
+
+// server/services/notification-service.ts
+init_db();
+init_schema();
+import { eq as eq13, and as and9, inArray as inArray3, sql as sql10 } from "drizzle-orm";
+var NotificationService = class {
+  /**
+   * 승인 요청 시 알림 발송
+   */
+  static async sendApprovalRequestNotification(context) {
+    try {
+      const orderInfo = await this.getOrderInfo(context.orderId);
+      if (!orderInfo) {
+        console.error(`Order ${context.orderId} not found for notification`);
+        return;
+      }
+      const approvers = await this.getEligibleApprovers(parseFloat(orderInfo.totalAmount || "0"));
+      if (approvers.length === 0) {
+        console.warn(`No eligible approvers found for order ${context.orderId}`);
+        return;
+      }
+      const notifications2 = approvers.map((approver) => ({
+        userId: approver.id,
+        type: "approval_request",
+        title: "\uC0C8\uB85C\uC6B4 \uC2B9\uC778 \uC694\uCCAD",
+        message: `\uBC1C\uC8FC\uC11C #${orderInfo.orderNumber || context.orderId} (${orderInfo.totalAmount?.toLocaleString()}\uC6D0)\uC758 \uC2B9\uC778\uC744 \uC694\uCCAD\uD569\uB2C8\uB2E4.`,
+        relatedId: context.orderId.toString(),
+        relatedType: "purchase_order",
+        priority: this.determinePriority(parseFloat(orderInfo.totalAmount || "0")),
+        isRead: false,
+        metadata: JSON.stringify({
+          orderId: context.orderId,
+          orderNumber: orderInfo.orderNumber,
+          amount: orderInfo.totalAmount,
+          projectName: orderInfo.projectName,
+          vendorName: orderInfo.vendorName,
+          requestedBy: orderInfo.requesterName
+        })
+      }));
+      await db.insert(notifications2).values(notifications2);
+      console.log(`\u2705 Sent approval request notifications to ${approvers.length} users for order ${context.orderId}`);
+    } catch (error) {
+      console.error("\u274C Error sending approval request notification:", error);
+    }
+  }
+  /**
+   * 승인 완료/거부 시 알림 발송
+   */
+  static async sendApprovalResultNotification(context) {
+    try {
+      const orderInfo = await this.getOrderInfo(context.orderId);
+      if (!orderInfo) {
+        console.error(`Order ${context.orderId} not found for notification`);
+        return;
+      }
+      const recipients = await this.getOrderStakeholders(context.orderId);
+      if (recipients.length === 0) {
+        console.warn(`No stakeholders found for order ${context.orderId}`);
+        return;
+      }
+      const isApproved = context.action === "approval_completed";
+      const title = isApproved ? "\uBC1C\uC8FC\uC11C \uC2B9\uC778 \uC644\uB8CC" : "\uBC1C\uC8FC\uC11C \uC2B9\uC778 \uAC70\uBD80";
+      const message = isApproved ? `\uBC1C\uC8FC\uC11C #${orderInfo.orderNumber || context.orderId}\uAC00 \uC2B9\uC778\uB418\uC5C8\uC2B5\uB2C8\uB2E4.` : `\uBC1C\uC8FC\uC11C #${orderInfo.orderNumber || context.orderId}\uAC00 \uAC70\uBD80\uB418\uC5C8\uC2B5\uB2C8\uB2E4. ${context.comments ? `\uC0AC\uC720: ${context.comments}` : ""}`;
+      const notifications2 = recipients.map((recipient) => ({
+        userId: recipient.id,
+        type: isApproved ? "approval_approved" : "approval_rejected",
+        title,
+        message,
+        relatedId: context.orderId.toString(),
+        relatedType: "purchase_order",
+        priority: isApproved ? "medium" : "high",
+        isRead: false,
+        metadata: JSON.stringify({
+          orderId: context.orderId,
+          orderNumber: orderInfo.orderNumber,
+          amount: orderInfo.totalAmount,
+          projectName: orderInfo.projectName,
+          vendorName: orderInfo.vendorName,
+          approvedBy: context.performedBy,
+          comments: context.comments
+        })
+      }));
+      await db.insert(notifications2).values(notifications2);
+      console.log(`\u2705 Sent approval result notifications to ${recipients.length} users for order ${context.orderId}`);
+    } catch (error) {
+      console.error("\u274C Error sending approval result notification:", error);
+    }
+  }
+  /**
+   * 승인 권한이 있는 사용자들 조회
+   */
+  static async getEligibleApprovers(orderAmount) {
+    const authorities = await db.select({
+      role: approvalAuthorities.role,
+      maxAmount: approvalAuthorities.maxAmount
+    }).from(approvalAuthorities).where(
+      and9(
+        eq13(approvalAuthorities.isActive, true),
+        sql10`CAST(${approvalAuthorities.maxAmount} AS DECIMAL) >= ${orderAmount}`
+      )
+    );
+    if (authorities.length === 0) {
+      return await db.select({
+        id: users.id,
+        name: users.name,
+        role: users.role
+      }).from(users).where(eq13(users.role, "admin")).limit(10);
+    }
+    const eligibleRoles = authorities.map((auth) => auth.role);
+    return await db.select({
+      id: users.id,
+      name: users.name,
+      role: users.role
+    }).from(users).where(inArray3(users.role, eligibleRoles)).limit(20);
+  }
+  /**
+   * 발주서 관련 정보 조회
+   */
+  static async getOrderInfo(orderId) {
+    const result = await db.select({
+      id: purchaseOrders.id,
+      orderNumber: purchaseOrders.orderNumber,
+      totalAmount: purchaseOrders.totalAmount,
+      userId: purchaseOrders.userId,
+      projectId: purchaseOrders.projectId,
+      vendorId: purchaseOrders.vendorId,
+      projectName: projects.projectName,
+      vendorName: vendors.name,
+      requesterName: users.name
+    }).from(purchaseOrders).leftJoin(projects, eq13(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq13(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq13(purchaseOrders.userId, users.id)).where(eq13(purchaseOrders.id, orderId)).limit(1);
+    return result[0] || null;
+  }
+  /**
+   * 발주서 관련 이해관계자들 조회
+   */
+  static async getOrderStakeholders(orderId) {
+    const orderInfo = await this.getOrderInfo(orderId);
+    if (!orderInfo) return [];
+    const stakeholders = /* @__PURE__ */ new Set();
+    if (orderInfo.userId) {
+      stakeholders.add(orderInfo.userId);
+    }
+    if (orderInfo.projectId) {
+      const projectMembers3 = await db.select({ userId: users.id }).from(users).where(eq13(users.role, "project_manager")).limit(5);
+      projectMembers3.forEach((member) => stakeholders.add(member.userId));
+    }
+    if (stakeholders.size === 0) return [];
+    return await db.select({
+      id: users.id,
+      name: users.name
+    }).from(users).where(inArray3(users.id, Array.from(stakeholders))).limit(10);
+  }
+  /**
+   * 발주 금액에 따른 우선순위 결정
+   */
+  static determinePriority(amount) {
+    if (amount >= 1e7) return "high";
+    if (amount >= 5e6) return "medium";
+    return "low";
+  }
+  /**
+   * 사용자의 읽지 않은 알림 수 조회
+   */
+  static async getUnreadNotificationCount(userId) {
+    try {
+      return 0;
+    } catch (error) {
+      console.error("\u274C Error getting unread notification count:", error);
+      return 0;
+    }
+  }
+  /**
+   * 사용자의 알림 목록 조회
+   */
+  static async getUserNotifications(userId, limit = 20) {
+    try {
+      const result = await db.select().from(notifications).where(
+        and9(
+          eq13(notifications.userId, userId),
+          eq13(notifications.isActive, true)
+        )
+      ).orderBy(sql10`${notifications.createdAt} DESC`).limit(limit);
+      return result.map((notification) => ({
+        ...notification,
+        metadata: notification.metadata ? JSON.parse(notification.metadata) : null,
+        createdAt: notification.createdAt?.toISOString(),
+        updatedAt: notification.updatedAt?.toISOString()
+      }));
+    } catch (error) {
+      console.error("\u274C Error getting user notifications:", error);
+      return [];
+    }
+  }
+  /**
+   * 알림을 읽음으로 표시
+   */
+  static async markNotificationAsRead(notificationId, userId) {
+    try {
+      const result = await db.update(notifications).set({
+        isRead: true,
+        updatedAt: /* @__PURE__ */ new Date()
+      }).where(
+        and9(
+          eq13(notifications.id, notificationId),
+          eq13(notifications.userId, userId)
+        )
+      ).returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error("\u274C Error marking notification as read:", error);
+      return false;
+    }
+  }
+  /**
+   * 모든 알림을 읽음으로 표시
+   */
+  static async markAllNotificationsAsRead(userId) {
+    try {
+      const result = await db.update(notifications).set({
+        isRead: true,
+        updatedAt: /* @__PURE__ */ new Date()
+      }).where(
+        and9(
+          eq13(notifications.userId, userId),
+          eq13(notifications.isRead, false),
+          eq13(notifications.isActive, true)
+        )
+      ).returning();
+      return result.length;
+    } catch (error) {
+      console.error("\u274C Error marking all notifications as read:", error);
+      return 0;
+    }
+  }
+};
+
+// server/routes/approvals.ts
 var router20 = Router19();
+async function checkApprovalPermission(userRole, orderAmount) {
+  try {
+    const authority = await db.select().from(approvalAuthorities).where(
+      and10(
+        eq14(approvalAuthorities.role, userRole),
+        eq14(approvalAuthorities.isActive, true)
+      )
+    ).limit(1);
+    if (authority.length === 0) {
+      return userRole === "admin";
+    }
+    const maxAmount = parseFloat(authority[0].maxAmount);
+    return orderAmount <= maxAmount;
+  } catch (error) {
+    console.error("\uC2B9\uC778 \uAD8C\uD55C \uD655\uC778 \uC624\uB958:", error);
+    return userRole === "admin";
+  }
+}
 router20.get("/approvals/history", requireAuth, requireRole(["admin", "executive", "hq_management", "project_manager"]), async (req, res) => {
   try {
-    console.log("\u{1F4CB} Fetching approval history (using reliable mock data)...");
-    const mockApprovalHistory = [
-      {
-        id: 1,
-        orderId: 135,
-        orderTitle: "\uCCA0\uADFC \uBC0F \uC2DC\uBA58\uD2B8 \uBC1C\uC8FC",
-        approver: "\uAE40\uBD80\uC7A5",
-        approverRole: "project_manager",
-        action: "approved",
-        approvalDate: "2025-01-15T10:30:00Z",
-        comments: "\uC608\uC0B0 \uBC94\uC704 \uB0B4\uC5D0\uC11C \uC2B9\uC778\uD569\uB2C8\uB2E4.",
-        amount: 55e5,
-        createdAt: (/* @__PURE__ */ new Date()).toISOString()
-      },
-      {
-        id: 2,
-        orderId: 134,
-        orderTitle: "\uC804\uAE30\uC790\uC7AC \uBC1C\uC8FC",
-        approver: "\uC774\uACFC\uC7A5",
-        approverRole: "hq_management",
-        action: "rejected",
-        approvalDate: "2025-01-14T14:20:00Z",
-        comments: "\uC0AC\uC591 \uC7AC\uAC80\uD1A0 \uD6C4 \uC7AC\uC2E0\uCCAD \uBC14\uB78D\uB2C8\uB2E4.",
-        amount: 24e5,
-        createdAt: (/* @__PURE__ */ new Date()).toISOString()
-      },
-      {
-        id: 3,
-        orderId: 133,
-        orderTitle: "\uBC30\uAD00\uC790\uC7AC \uBC1C\uC8FC",
-        approver: "\uBC15\uC0C1\uBB34",
-        approverRole: "executive",
-        action: "approved",
-        approvalDate: "2025-01-13T09:15:00Z",
-        comments: "\uAE34\uAE09 \uACF5\uC0AC\uC6A9\uC73C\uB85C \uC2B9\uC778",
-        amount: 875e4,
-        createdAt: (/* @__PURE__ */ new Date()).toISOString()
-      }
-    ];
-    console.log(`\u2705 Successfully returning ${mockApprovalHistory.length} approval records (mock data)`);
-    res.json(mockApprovalHistory);
+    console.log("\u{1F4CB} Fetching approval history from database...");
+    const approvalHistory = await db.select({
+      id: orderHistory.id,
+      orderId: orderHistory.orderId,
+      orderTitle: purchaseOrders.orderNumber,
+      approver: users.name,
+      approverRole: users.role,
+      action: orderHistory.action,
+      approvalDate: orderHistory.performedAt,
+      comments: orderHistory.notes,
+      amount: purchaseOrders.totalAmount,
+      createdAt: orderHistory.performedAt
+    }).from(orderHistory).leftJoin(purchaseOrders, eq14(orderHistory.orderId, purchaseOrders.id)).leftJoin(users, eq14(orderHistory.performedBy, users.id)).where(
+      inArray4(orderHistory.action, ["approved", "rejected"])
+    ).orderBy(desc6(orderHistory.performedAt)).limit(50);
+    const allHistory = approvalHistory.map((record) => ({
+      ...record,
+      orderTitle: record.orderTitle || `\uBC1C\uC8FC\uC11C #${record.orderId}`,
+      approver: record.approver || "\uC54C \uC218 \uC5C6\uC74C",
+      amount: parseFloat(record.amount || "0"),
+      createdAt: record.createdAt?.toISOString() || (/* @__PURE__ */ new Date()).toISOString(),
+      approvalDate: record.approvalDate?.toISOString() || (/* @__PURE__ */ new Date()).toISOString(),
+      comments: record.comments || ""
+    })).sort((a, b) => new Date(b.approvalDate).getTime() - new Date(a.approvalDate).getTime()).slice(0, 50);
+    console.log(`\u2705 Successfully returning ${allHistory.length} approval records from database`);
+    res.json(allHistory);
   } catch (error) {
     console.error("\u274C Error in approvals/history endpoint:", error);
     res.status(500).json({
@@ -14053,39 +14856,47 @@ router20.get("/approvals/history", requireAuth, requireRole(["admin", "executive
 });
 router20.get("/approvals/pending", requireAuth, requireRole(["admin", "executive", "hq_management", "project_manager"]), async (req, res) => {
   try {
-    console.log("\u23F3 Fetching pending approvals (using reliable mock data)...");
-    const mockPendingApprovals = [
-      {
-        id: 137,
-        title: "\uB9C8\uAC10\uC790\uC7AC \uBC1C\uC8FC",
-        requestedBy: "\uD604\uC7A5\uAD00\uB9AC\uC790",
-        requestDate: "2025-01-20T08:00:00Z",
-        totalAmount: 32e5,
-        urgency: "high",
-        projectName: "\uC544\uD30C\uD2B8 A\uB3D9 \uAC74\uC124",
-        status: "pending",
-        requiresApproval: true,
-        nextApprover: "\uAE40\uBD80\uC7A5",
-        estimatedItems: 15,
-        description: "\uB0B4\uC7A5\uC7AC \uBC0F \uC678\uC7A5\uC7AC \uAE34\uAE09 \uBC1C\uC8FC"
-      },
-      {
-        id: 138,
-        title: "\uC548\uC804\uC6A9\uD488 \uBC1C\uC8FC",
-        requestedBy: "\uC548\uC804\uAD00\uB9AC\uC790",
-        requestDate: "2025-01-19T16:30:00Z",
-        totalAmount: 85e4,
-        urgency: "medium",
-        projectName: "\uC624\uD53C\uC2A4\uBE4C\uB529 B\uB3D9",
-        status: "pending",
-        requiresApproval: true,
-        nextApprover: "\uC774\uACFC\uC7A5",
-        estimatedItems: 8,
-        description: "\uD604\uC7A5 \uC548\uC804\uC7A5\uBE44 \uBCF4\uCDA9"
-      }
-    ];
-    console.log(`\u2705 Successfully returning ${mockPendingApprovals.length} pending approvals (mock data)`);
-    res.json(mockPendingApprovals);
+    console.log("\u23F3 Fetching pending approvals from database...");
+    const pendingOrders = await db.select({
+      id: purchaseOrders.id,
+      orderNumber: purchaseOrders.orderNumber,
+      totalAmount: purchaseOrders.totalAmount,
+      orderDate: purchaseOrders.orderDate,
+      status: purchaseOrders.status,
+      notes: purchaseOrders.notes,
+      createdAt: purchaseOrders.createdAt,
+      // Project information
+      projectId: projects.id,
+      projectName: projects.projectName,
+      // User information
+      userId: users.id,
+      userName: users.name,
+      userFirstName: users.firstName,
+      userLastName: users.lastName,
+      // Vendor information
+      vendorId: vendors.id,
+      vendorName: vendors.name
+    }).from(purchaseOrders).leftJoin(projects, eq14(purchaseOrders.projectId, projects.id)).leftJoin(users, eq14(purchaseOrders.userId, users.id)).leftJoin(vendors, eq14(purchaseOrders.vendorId, vendors.id)).where(eq14(purchaseOrders.status, "pending")).orderBy(desc6(purchaseOrders.createdAt));
+    const formattedOrders = pendingOrders.map((order) => ({
+      id: order.id,
+      orderNumber: order.orderNumber,
+      title: order.orderNumber || `\uBC1C\uC8FC\uC11C #${order.id}`,
+      requestedBy: order.userName || `${order.userLastName || ""} ${order.userFirstName || ""}`.trim() || "\uC54C \uC218 \uC5C6\uC74C",
+      requestDate: order.orderDate,
+      totalAmount: parseFloat(order.totalAmount || "0"),
+      urgency: parseFloat(order.totalAmount || "0") > 5e6 ? "high" : parseFloat(order.totalAmount || "0") > 1e6 ? "medium" : "low",
+      projectName: order.projectName || "\uD504\uB85C\uC81D\uD2B8 \uBBF8\uC9C0\uC815",
+      status: order.status,
+      requiresApproval: true,
+      nextApprover: "\uB2F4\uB2F9\uC790",
+      // TODO: 실제 승인자 로직 구현 필요
+      estimatedItems: 0,
+      // TODO: 발주 아이템 수 계산 필요
+      description: order.notes || "",
+      vendorName: order.vendorName
+    }));
+    console.log(`\u2705 Successfully returning ${formattedOrders.length} pending approvals from DB`);
+    res.json(formattedOrders);
   } catch (error) {
     console.error("\u274C Error in approvals/pending endpoint:", error);
     res.status(500).json({
@@ -14096,29 +14907,57 @@ router20.get("/approvals/pending", requireAuth, requireRole(["admin", "executive
 });
 router20.get("/approvals/stats", requireAuth, requireRole(["admin", "executive", "hq_management", "project_manager"]), async (req, res) => {
   try {
-    console.log("\u{1F4CA} Fetching approval stats (using reliable mock data)...");
-    const mockApprovalStats = {
-      totalApprovals: 156,
-      approvedCount: 128,
-      rejectedCount: 12,
-      pendingCount: 16,
-      averageApprovalTime: "2.3",
-      // days
-      approvalRate: 89.5,
-      // percentage
-      monthlyStats: [
-        { month: "2024-11", approved: 24, rejected: 3, pending: 2 },
-        { month: "2024-12", approved: 31, rejected: 2, pending: 5 },
-        { month: "2025-01", approved: 18, rejected: 1, pending: 9 }
-      ],
+    console.log("\u{1F4CA} Fetching approval stats from database...");
+    const [totalStats, pendingStats, approvedStats, rejectedStats] = await Promise.all([
+      // 전체 발주서 수
+      db.select({ count: sql11`count(*)` }).from(purchaseOrders),
+      // 승인 대기 수
+      db.select({ count: sql11`count(*)` }).from(purchaseOrders).where(eq14(purchaseOrders.status, "pending")),
+      // 승인 완료 수
+      db.select({ count: sql11`count(*)` }).from(purchaseOrders).where(eq14(purchaseOrders.status, "approved")),
+      // 반려 수
+      db.select({ count: sql11`count(*)` }).from(purchaseOrders).where(eq14(purchaseOrders.status, "rejected"))
+    ]);
+    const totalCount = totalStats[0]?.count || 0;
+    const pendingCount = pendingStats[0]?.count || 0;
+    const approvedCount = approvedStats[0]?.count || 0;
+    const rejectedCount = rejectedStats[0]?.count || 0;
+    const approvalRate = totalCount > 0 ? approvedCount / (approvedCount + rejectedCount) * 100 : 0;
+    const monthlyStatsQuery = await db.select({
+      month: sql11`to_char(created_at, 'YYYY-MM')`,
+      status: purchaseOrders.status,
+      count: sql11`count(*)`
+    }).from(purchaseOrders).where(sql11`created_at >= NOW() - INTERVAL '3 months'`).groupBy(sql11`to_char(created_at, 'YYYY-MM')`, purchaseOrders.status).orderBy(sql11`to_char(created_at, 'YYYY-MM') DESC`);
+    const monthlyStats = [];
+    const monthlyData = {};
+    monthlyStatsQuery.forEach((row) => {
+      if (!monthlyData[row.month]) {
+        monthlyData[row.month] = { month: row.month, approved: 0, rejected: 0, pending: 0 };
+      }
+      monthlyData[row.month][row.status] = row.count;
+    });
+    Object.values(monthlyData).forEach((data) => monthlyStats.push(data));
+    const stats = {
+      totalApprovals: totalCount,
+      approvedCount,
+      rejectedCount,
+      pendingCount,
+      averageApprovalTime: "2.1",
+      // TODO: 실제 계산 로직 구현 필요
+      approvalRate: Math.round(approvalRate * 10) / 10,
+      monthlyStats,
       topApprovers: [
-        { name: "\uAE40\uBD80\uC7A5", count: 45, avgTime: "1.8" },
-        { name: "\uC774\uACFC\uC7A5", count: 38, avgTime: "2.1" },
-        { name: "\uBC15\uC0C1\uBB34", count: 25, avgTime: "3.2" }
+        // TODO: 실제 승인자 통계 구현 필요
+        { name: "\uAD00\uB9AC\uC790", count: approvedCount, avgTime: "2.1" }
       ]
     };
-    console.log(`\u2705 Successfully returning approval statistics (mock data)`);
-    res.json(mockApprovalStats);
+    console.log(`\u2705 Successfully returning approval statistics from DB:`, {
+      total: totalCount,
+      pending: pendingCount,
+      approved: approvedCount,
+      rejected: rejectedCount
+    });
+    res.json(stats);
   } catch (error) {
     console.error("\u274C Error in approvals/stats endpoint:", error);
     res.status(500).json({
@@ -14133,24 +14972,332 @@ router20.post("/approvals/:id/process", requireAuth, requireRole(["admin", "exec
     const { action, comments } = req.body;
     const user = req.user;
     console.log(`\u{1F4CB} Processing approval ${id} with action: ${action} by ${user.name} (${user.role})`);
-    const mockApprovalResult = {
+    const existingOrder = await db.select().from(purchaseOrders).where(eq14(purchaseOrders.id, id)).limit(1);
+    if (existingOrder.length === 0) {
+      return res.status(404).json({ message: "\uBC1C\uC8FC\uC11C\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
+    }
+    const order = existingOrder[0];
+    const hasPermission = await checkApprovalPermission(user.role, parseFloat(order.totalAmount || "0"));
+    if (!hasPermission) {
+      return res.status(403).json({
+        message: "\uD574\uB2F9 \uAE08\uC561\uC5D0 \uB300\uD55C \uC2B9\uC778 \uAD8C\uD55C\uC774 \uC5C6\uC2B5\uB2C8\uB2E4"
+      });
+    }
+    const newStatus = action === "approve" ? "approved" : "rejected";
+    await db.update(purchaseOrders).set({
+      status: newStatus,
+      updatedAt: /* @__PURE__ */ new Date()
+    }).where(eq14(purchaseOrders.id, id));
+    const historyEntry = {
+      orderId: id,
+      action: action === "approve" ? "approved" : "rejected",
+      performedBy: user.id,
+      performedAt: /* @__PURE__ */ new Date(),
+      notes: comments || "",
+      previousStatus: order.status,
+      newStatus
+    };
+    await db.insert(orderHistory).values(historyEntry);
+    await NotificationService.sendApprovalResultNotification({
+      orderId: id,
+      action: action === "approve" ? "approval_completed" : "approval_rejected",
+      performedBy: user.id,
+      comments
+    });
+    const approvalResult = {
       id,
       orderId: id,
       action,
-      // 'approve' or 'reject'
       approver: user.name || user.email,
       approverRole: user.role,
       approvalDate: (/* @__PURE__ */ new Date()).toISOString(),
       comments: comments || "",
-      status: action === "approve" ? "approved" : "rejected",
+      status: newStatus,
       processedAt: (/* @__PURE__ */ new Date()).toISOString()
     };
-    console.log(`\u2705 Successfully processed approval ${id} (mock data)`);
-    res.json(mockApprovalResult);
+    console.log(`\u2705 Successfully processed ${action} for order ${id} in database`);
+    res.json(approvalResult);
   } catch (error) {
     console.error("\u274C Error processing approval:", error);
     res.status(500).json({
       message: "Failed to process approval",
+      error: process.env.NODE_ENV === "development" ? error?.message : void 0
+    });
+  }
+});
+router20.post("/approvals/:orderId/approve", requireAuth, requireRole(["admin", "executive", "hq_management", "project_manager"]), async (req, res) => {
+  try {
+    const orderId = parseInt(req.params.orderId, 10);
+    const { note } = req.body;
+    const user = req.user;
+    console.log(`\u2705 Processing approval for order ${orderId} by ${user.name} (${user.role})`);
+    req.params.id = req.params.orderId;
+    req.body = { action: "approve", comments: note };
+    const result = await new Promise((resolve, reject) => {
+      const originalSend = res.json;
+      const originalStatus = res.status;
+      res.json = function(data) {
+        resolve(data);
+        return this;
+      };
+      res.status = function(statusCode) {
+        if (statusCode >= 400) {
+          reject(new Error("Approval processing failed"));
+        }
+        return this;
+      };
+      processApproval(req, res, orderId, "approve", note, user);
+    });
+    res.json(result);
+  } catch (error) {
+    console.error("\u274C Error in approve endpoint:", error);
+    res.status(500).json({
+      message: "Failed to approve order",
+      error: process.env.NODE_ENV === "development" ? error?.message : void 0
+    });
+  }
+});
+router20.post("/approvals/:orderId/reject", requireAuth, requireRole(["admin", "executive", "hq_management", "project_manager"]), async (req, res) => {
+  try {
+    const orderId = parseInt(req.params.orderId, 10);
+    const { note } = req.body;
+    const user = req.user;
+    console.log(`\u274C Processing rejection for order ${orderId} by ${user.name} (${user.role})`);
+    const result = await processApproval(req, res, orderId, "reject", note, user);
+    res.json(result);
+  } catch (error) {
+    console.error("\u274C Error in reject endpoint:", error);
+    res.status(500).json({
+      message: "Failed to reject order",
+      error: process.env.NODE_ENV === "development" ? error?.message : void 0
+    });
+  }
+});
+async function processApproval(req, res, orderId, action, note, user) {
+  try {
+    const existingOrder = await db.select().from(purchaseOrders).where(eq14(purchaseOrders.id, orderId)).limit(1);
+    if (existingOrder.length === 0) {
+      throw new Error("\uBC1C\uC8FC\uC11C\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4");
+    }
+    const order = existingOrder[0];
+    const hasPermission = await checkApprovalPermission(user.role, parseFloat(order.totalAmount || "0"));
+    if (!hasPermission) {
+      throw new Error("\uD574\uB2F9 \uAE08\uC561\uC5D0 \uB300\uD55C \uC2B9\uC778 \uAD8C\uD55C\uC774 \uC5C6\uC2B5\uB2C8\uB2E4");
+    }
+    const newStatus = action === "approve" ? "approved" : "rejected";
+    await db.update(purchaseOrders).set({
+      status: newStatus,
+      updatedAt: /* @__PURE__ */ new Date()
+    }).where(eq14(purchaseOrders.id, orderId));
+    const historyEntry = {
+      orderId,
+      action: action === "approve" ? "approved" : "rejected",
+      performedBy: user.id,
+      performedAt: /* @__PURE__ */ new Date(),
+      notes: note || "",
+      previousStatus: order.status,
+      newStatus
+    };
+    await db.insert(orderHistory).values(historyEntry);
+    await NotificationService.sendApprovalResultNotification({
+      orderId,
+      action: action === "approve" ? "approval_completed" : "approval_rejected",
+      performedBy: user.id,
+      comments: note
+    });
+    const approvalResult = {
+      id: orderId,
+      orderId,
+      action,
+      approver: user.name || user.email,
+      approverRole: user.role,
+      approvalDate: (/* @__PURE__ */ new Date()).toISOString(),
+      comments: note || "",
+      status: newStatus,
+      processedAt: (/* @__PURE__ */ new Date()).toISOString()
+    };
+    console.log(`\u2705 Successfully processed ${action} for order ${orderId} in database`);
+    return approvalResult;
+  } catch (error) {
+    console.error(`\u274C Error processing ${action} for order ${orderId}:`, error);
+    throw error;
+  }
+}
+router20.post("/approvals/:orderId/start-workflow", requireAuth, requireRole(["admin", "executive", "hq_management", "project_manager"]), async (req, res) => {
+  try {
+    const orderId = parseInt(req.params.orderId, 10);
+    const { companyId } = req.body;
+    const user = req.user;
+    console.log(`\u{1F504} Starting approval workflow for order ${orderId}`);
+    const orderInfo = await db.select({
+      id: purchaseOrders.id,
+      totalAmount: purchaseOrders.totalAmount,
+      status: purchaseOrders.status,
+      userId: purchaseOrders.userId
+    }).from(purchaseOrders).where(eq14(purchaseOrders.id, orderId)).limit(1);
+    if (orderInfo.length === 0) {
+      return res.status(404).json({ message: "\uBC1C\uC8FC\uC11C\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
+    }
+    const order = orderInfo[0];
+    const orderAmount = parseFloat(order.totalAmount || "0");
+    const approvalContext = {
+      orderId,
+      orderAmount,
+      companyId: companyId || 1,
+      // Default company
+      currentUserId: user.id,
+      currentUserRole: user.role,
+      priority: orderAmount > 1e7 ? "high" : orderAmount > 5e6 ? "medium" : "low"
+    };
+    const routeDecision = await ApprovalRoutingService.determineApprovalRoute(approvalContext);
+    if (routeDecision.approvalMode === "direct") {
+      if (routeDecision.canDirectApprove) {
+        return res.json({
+          success: true,
+          mode: "direct",
+          canApprove: true,
+          message: "\uC9C1\uC811 \uC2B9\uC778\uC774 \uAC00\uB2A5\uD569\uB2C8\uB2E4",
+          reasoning: routeDecision.reasoning
+        });
+      } else {
+        return res.status(403).json({
+          success: false,
+          mode: "direct",
+          canApprove: false,
+          message: "\uC2B9\uC778 \uAD8C\uD55C\uC774 \uC5C6\uC2B5\uB2C8\uB2E4",
+          reasoning: routeDecision.reasoning
+        });
+      }
+    } else {
+      const approvalInstances = await ApprovalRoutingService.createApprovalInstances(orderId, approvalContext);
+      await db.update(purchaseOrders).set({
+        status: "pending",
+        updatedAt: /* @__PURE__ */ new Date()
+      }).where(eq14(purchaseOrders.id, orderId));
+      await NotificationService.sendApprovalRequestNotification({
+        orderId,
+        action: "approval_requested",
+        performedBy: user.id
+      });
+      return res.json({
+        success: true,
+        mode: "staged",
+        approvalSteps: routeDecision.stagedApprovalSteps?.length || 0,
+        templateName: routeDecision.templateName,
+        message: `${approvalInstances.length}\uB2E8\uACC4 \uC2B9\uC778 \uD504\uB85C\uC138\uC2A4\uAC00 \uC2DC\uC791\uB418\uC5C8\uC2B5\uB2C8\uB2E4`,
+        reasoning: routeDecision.reasoning,
+        instances: approvalInstances
+      });
+    }
+  } catch (error) {
+    console.error("\u274C Error starting approval workflow:", error);
+    res.status(500).json({
+      message: "Failed to start approval workflow",
+      error: process.env.NODE_ENV === "development" ? error?.message : void 0
+    });
+  }
+});
+router20.get("/approvals/:orderId/progress", requireAuth, requireRole(["admin", "executive", "hq_management", "project_manager"]), async (req, res) => {
+  try {
+    const orderId = parseInt(req.params.orderId, 10);
+    console.log(`\u{1F4CA} Getting approval progress for order ${orderId}`);
+    const progress = await ApprovalRoutingService.getApprovalProgress(orderId);
+    const nextStep = await ApprovalRoutingService.getNextApprovalStep(orderId);
+    const isComplete = await ApprovalRoutingService.isApprovalComplete(orderId);
+    res.json({
+      success: true,
+      data: {
+        ...progress,
+        nextStep,
+        isComplete
+      }
+    });
+  } catch (error) {
+    console.error("\u274C Error getting approval progress:", error);
+    res.status(500).json({
+      message: "Failed to get approval progress",
+      error: process.env.NODE_ENV === "development" ? error?.message : void 0
+    });
+  }
+});
+router20.post("/approvals/:orderId/step/:stepId", requireAuth, requireRole(["admin", "executive", "hq_management", "project_manager"]), async (req, res) => {
+  try {
+    const orderId = parseInt(req.params.orderId, 10);
+    const stepId = parseInt(req.params.stepId, 10);
+    const { action, comments } = req.body;
+    const user = req.user;
+    console.log(`\u{1F504} Processing approval step ${stepId} for order ${orderId} with action: ${action}`);
+    const stepInstance = await db.select().from(approvalStepInstances).where(eq14(approvalStepInstances.id, stepId)).limit(1);
+    if (stepInstance.length === 0) {
+      return res.status(404).json({ message: "\uC2B9\uC778 \uB2E8\uACC4\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
+    }
+    const step = stepInstance[0];
+    if (step.requiredRole !== user.role && user.role !== "admin") {
+      return res.status(403).json({
+        message: `\uC774 \uB2E8\uACC4\uB294 ${step.requiredRole} \uC5ED\uD560\uB9CC \uCC98\uB9AC\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4`
+      });
+    }
+    const newStatus = action === "approve" ? "approved" : action === "reject" ? "rejected" : "skipped";
+    await db.update(approvalStepInstances).set({
+      status: newStatus,
+      approvedBy: user.id,
+      approvedAt: /* @__PURE__ */ new Date(),
+      comments: comments || "",
+      updatedAt: /* @__PURE__ */ new Date()
+    }).where(eq14(approvalStepInstances.id, stepId));
+    const isComplete = await ApprovalRoutingService.isApprovalComplete(orderId);
+    const progress = await ApprovalRoutingService.getApprovalProgress(orderId);
+    let finalOrderStatus = "pending";
+    if (action === "reject") {
+      finalOrderStatus = "rejected";
+      await db.update(approvalStepInstances).set({
+        isActive: false,
+        updatedAt: /* @__PURE__ */ new Date()
+      }).where(
+        and10(
+          eq14(approvalStepInstances.orderId, orderId),
+          eq14(approvalStepInstances.status, "pending")
+        )
+      );
+    } else if (isComplete) {
+      finalOrderStatus = "approved";
+    }
+    if (finalOrderStatus !== "pending") {
+      await db.update(purchaseOrders).set({
+        status: finalOrderStatus,
+        updatedAt: /* @__PURE__ */ new Date()
+      }).where(eq14(purchaseOrders.id, orderId));
+      await db.insert(orderHistory).values({
+        orderId,
+        action: finalOrderStatus === "approved" ? "approved" : "rejected",
+        performedBy: user.id,
+        performedAt: /* @__PURE__ */ new Date(),
+        notes: comments || "",
+        previousStatus: "pending",
+        newStatus: finalOrderStatus
+      });
+      await NotificationService.sendApprovalResultNotification({
+        orderId,
+        action: finalOrderStatus === "approved" ? "approval_completed" : "approval_rejected",
+        performedBy: user.id,
+        comments
+      });
+    }
+    res.json({
+      success: true,
+      stepProcessed: {
+        stepId,
+        action,
+        status: newStatus
+      },
+      progress,
+      isComplete,
+      finalStatus: finalOrderStatus
+    });
+  } catch (error) {
+    console.error("\u274C Error processing approval step:", error);
+    res.status(500).json({
+      message: "Failed to process approval step",
       error: process.env.NODE_ENV === "development" ? error?.message : void 0
     });
   }
@@ -14737,12 +15884,12 @@ var test_accounts_default = router24;
 init_db();
 init_schema();
 import { Router as Router24 } from "express";
-import { eq as eq14, and as and10 } from "drizzle-orm";
+import { eq as eq16, and as and12 } from "drizzle-orm";
 
 // server/utils/category-mapping-validator.ts
 init_db();
 init_schema();
-import { eq as eq13 } from "drizzle-orm";
+import { eq as eq15 } from "drizzle-orm";
 async function validateCategoryMapping(request) {
   console.log("\u{1F50D} \uBD84\uB958 \uB9E4\uD551 \uAC80\uC99D \uC2DC\uC791:", request);
   const result = {
@@ -14757,7 +15904,7 @@ async function validateCategoryMapping(request) {
     confidence: 0
   };
   try {
-    const allCategories = await db.select().from(itemCategories).where(eq13(itemCategories.isActive, true));
+    const allCategories = await db.select().from(itemCategories).where(eq15(itemCategories.isActive, true));
     const majorCategories = allCategories.filter((c) => c.categoryType === "major");
     const middleCategories = allCategories.filter((c) => c.categoryType === "middle");
     const minorCategories = allCategories.filter((c) => c.categoryType === "minor");
@@ -14960,10 +16107,54 @@ async function validateCategoriesBatch(requests) {
 
 // server/routes/categories.ts
 var router25 = Router24();
+router25.get("/hierarchy", async (req, res) => {
+  try {
+    const categoriesFromOrderItems = await db.select({
+      majorCategory: purchaseOrderItems.majorCategory,
+      middleCategory: purchaseOrderItems.middleCategory,
+      minorCategory: purchaseOrderItems.minorCategory
+    }).from(purchaseOrderItems).groupBy(
+      purchaseOrderItems.majorCategory,
+      purchaseOrderItems.middleCategory,
+      purchaseOrderItems.minorCategory
+    );
+    const categoriesFromItems = await db.select({
+      majorCategory: items.majorCategory,
+      middleCategory: items.middleCategory,
+      minorCategory: items.minorCategory
+    }).from(items).groupBy(
+      items.majorCategory,
+      items.middleCategory,
+      items.minorCategory
+    );
+    const allCategories = [...categoriesFromOrderItems, ...categoriesFromItems];
+    const uniqueCategories = Array.from(
+      new Map(
+        allCategories.map((cat) => [
+          `${cat.majorCategory}-${cat.middleCategory}-${cat.minorCategory}`,
+          cat
+        ])
+      ).values()
+    );
+    const filteredCategories = uniqueCategories.filter((cat) => cat.majorCategory || cat.middleCategory || cat.minorCategory).sort((a, b) => {
+      if (a.majorCategory !== b.majorCategory) {
+        return (a.majorCategory || "").localeCompare(b.majorCategory || "");
+      }
+      if (a.middleCategory !== b.middleCategory) {
+        return (a.middleCategory || "").localeCompare(b.middleCategory || "");
+      }
+      return (a.minorCategory || "").localeCompare(b.minorCategory || "");
+    });
+    res.json(filteredCategories);
+  } catch (error) {
+    console.error("Error fetching category hierarchy:", error);
+    res.status(500).json({ error: "Failed to fetch category hierarchy" });
+  }
+});
 router25.get("/", async (req, res) => {
   try {
     console.log("\u{1F4CB} Fetching all categories...");
-    const categories = await db.select().from(itemCategories).where(eq14(itemCategories.isActive, true)).orderBy(itemCategories.displayOrder, itemCategories.categoryName);
+    const categories = await db.select().from(itemCategories).where(eq16(itemCategories.isActive, true)).orderBy(itemCategories.displayOrder, itemCategories.categoryName);
     const majorCategories = categories.filter((c) => c.categoryType === "major");
     const middleCategories = categories.filter((c) => c.categoryType === "middle");
     const minorCategories = categories.filter((c) => c.categoryType === "minor");
@@ -14988,17 +16179,52 @@ router25.get("/", async (req, res) => {
     });
   }
 });
+router25.get("/used-in-orders", async (req, res) => {
+  try {
+    console.log("\u{1F4CB} Fetching categories used in purchase orders...");
+    const categoriesFromOrders = await db.select({
+      majorCategory: purchaseOrderItems.majorCategory,
+      middleCategory: purchaseOrderItems.middleCategory,
+      minorCategory: purchaseOrderItems.minorCategory
+    }).from(purchaseOrderItems).groupBy(
+      purchaseOrderItems.majorCategory,
+      purchaseOrderItems.middleCategory,
+      purchaseOrderItems.minorCategory
+    );
+    console.log(`Raw categories from orders: ${JSON.stringify(categoriesFromOrders.slice(0, 5))}`);
+    const filteredCategories = categoriesFromOrders.sort((a, b) => {
+      const majorA = a.majorCategory || "zzz_null";
+      const majorB = b.majorCategory || "zzz_null";
+      if (majorA !== majorB) {
+        return majorA.localeCompare(majorB);
+      }
+      const middleA = a.middleCategory || "zzz_null";
+      const middleB = b.middleCategory || "zzz_null";
+      if (middleA !== middleB) {
+        return middleA.localeCompare(middleB);
+      }
+      const minorA = a.minorCategory || "zzz_null";
+      const minorB = b.minorCategory || "zzz_null";
+      return minorA.localeCompare(minorB);
+    });
+    console.log(`Found ${filteredCategories.length} categories used in orders`);
+    res.json(filteredCategories);
+  } catch (error) {
+    console.error("Error fetching used categories:", error);
+    res.status(500).json({ error: "Failed to fetch used categories" });
+  }
+});
 router25.get("/:type", async (req, res) => {
   try {
     const { type } = req.params;
     const { parentId } = req.query;
     console.log(`\u{1F4CB} Fetching ${type} categories...`);
-    let query = db.select().from(itemCategories).where(and10(
-      eq14(itemCategories.categoryType, type),
-      eq14(itemCategories.isActive, true)
+    let query = db.select().from(itemCategories).where(and12(
+      eq16(itemCategories.categoryType, type),
+      eq16(itemCategories.isActive, true)
     ));
     if (parentId) {
-      query = query.where(eq14(itemCategories.parentId, parseInt(parentId)));
+      query = query.where(eq16(itemCategories.parentId, parseInt(parentId)));
     }
     const categories = await query.orderBy(itemCategories.displayOrder, itemCategories.categoryName);
     res.json({
@@ -15049,7 +16275,7 @@ router25.put("/:id", async (req, res) => {
       displayOrder,
       isActive,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq14(itemCategories.id, parseInt(id))).returning();
+    }).where(eq16(itemCategories.id, parseInt(id))).returning();
     if (updatedCategory.length === 0) {
       return res.status(404).json({
         success: false,
@@ -15077,7 +16303,7 @@ router25.delete("/:id", async (req, res) => {
     const updatedCategory = await db.update(itemCategories).set({
       isActive: false,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq14(itemCategories.id, parseInt(id))).returning();
+    }).where(eq16(itemCategories.id, parseInt(id))).returning();
     if (updatedCategory.length === 0) {
       return res.status(404).json({
         success: false,
@@ -15160,7 +16386,7 @@ var categories_default = router25;
 init_db();
 init_schema();
 import { Router as Router25 } from "express";
-import { eq as eq15, and as and11, desc as desc6, asc as asc4 } from "drizzle-orm";
+import { eq as eq17, and as and13, desc as desc7, asc as asc5 } from "drizzle-orm";
 import { z as z4 } from "zod";
 var router26 = Router25();
 router26.get("/workflow-settings/:companyId", async (req, res) => {
@@ -15170,11 +16396,11 @@ router26.get("/workflow-settings/:companyId", async (req, res) => {
     }
     const { companyId } = req.params;
     const settings = await db.select().from(approvalWorkflowSettings).where(
-      and11(
-        eq15(approvalWorkflowSettings.companyId, parseInt(companyId)),
-        eq15(approvalWorkflowSettings.isActive, true)
+      and13(
+        eq17(approvalWorkflowSettings.companyId, parseInt(companyId)),
+        eq17(approvalWorkflowSettings.isActive, true)
       )
-    ).orderBy(desc6(approvalWorkflowSettings.createdAt)).limit(1);
+    ).orderBy(desc7(approvalWorkflowSettings.createdAt)).limit(1);
     return res.json({
       success: true,
       data: settings[0] || null
@@ -15199,9 +16425,9 @@ router26.post("/workflow-settings", async (req, res) => {
       createdBy: req.user.id
     });
     const existingSettings = await db.select().from(approvalWorkflowSettings).where(
-      and11(
-        eq15(approvalWorkflowSettings.companyId, validatedData.companyId),
-        eq15(approvalWorkflowSettings.isActive, true)
+      and13(
+        eq17(approvalWorkflowSettings.companyId, validatedData.companyId),
+        eq17(approvalWorkflowSettings.isActive, true)
       )
     ).limit(1);
     let result;
@@ -15209,7 +16435,7 @@ router26.post("/workflow-settings", async (req, res) => {
       result = await db.update(approvalWorkflowSettings).set({
         ...validatedData,
         updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq15(approvalWorkflowSettings.id, existingSettings[0].id)).returning();
+      }).where(eq17(approvalWorkflowSettings.id, existingSettings[0].id)).returning();
     } else {
       result = await db.insert(approvalWorkflowSettings).values(validatedData).returning();
     }
@@ -15238,23 +16464,23 @@ router26.get("/step-templates/:companyId", async (req, res) => {
     const { companyId } = req.params;
     const { templateName } = req.query;
     let query = db.select().from(approvalStepTemplates).where(
-      and11(
-        eq15(approvalStepTemplates.companyId, parseInt(companyId)),
-        eq15(approvalStepTemplates.isActive, true)
+      and13(
+        eq17(approvalStepTemplates.companyId, parseInt(companyId)),
+        eq17(approvalStepTemplates.isActive, true)
       )
     );
     if (templateName) {
       query = query.where(
-        and11(
-          eq15(approvalStepTemplates.companyId, parseInt(companyId)),
-          eq15(approvalStepTemplates.isActive, true),
-          eq15(approvalStepTemplates.templateName, templateName)
+        and13(
+          eq17(approvalStepTemplates.companyId, parseInt(companyId)),
+          eq17(approvalStepTemplates.isActive, true),
+          eq17(approvalStepTemplates.templateName, templateName)
         )
       );
     }
     const templates = await query.orderBy(
-      asc4(approvalStepTemplates.templateName),
-      asc4(approvalStepTemplates.stepOrder)
+      asc5(approvalStepTemplates.templateName),
+      asc5(approvalStepTemplates.stepOrder)
     );
     return res.json({
       success: true,
@@ -15307,7 +16533,7 @@ router26.put("/step-templates/:id", async (req, res) => {
     const result = await db.update(approvalStepTemplates).set({
       ...validatedData,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq15(approvalStepTemplates.id, parseInt(id))).returning();
+    }).where(eq17(approvalStepTemplates.id, parseInt(id))).returning();
     if (result.length === 0) {
       return res.status(404).json({ error: "\uC2B9\uC778 \uB2E8\uACC4 \uD15C\uD50C\uB9BF\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
     }
@@ -15340,7 +16566,7 @@ router26.delete("/step-templates/:id", async (req, res) => {
     const result = await db.update(approvalStepTemplates).set({
       isActive: false,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq15(approvalStepTemplates.id, parseInt(id))).returning();
+    }).where(eq17(approvalStepTemplates.id, parseInt(id))).returning();
     if (result.length === 0) {
       return res.status(404).json({ error: "\uC2B9\uC778 \uB2E8\uACC4 \uD15C\uD50C\uB9BF\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
     }
@@ -15362,11 +16588,11 @@ router26.get("/step-instances/:orderId", async (req, res) => {
     }
     const { orderId } = req.params;
     const instances = await db.select().from(approvalStepInstances).where(
-      and11(
-        eq15(approvalStepInstances.orderId, parseInt(orderId)),
-        eq15(approvalStepInstances.isActive, true)
+      and13(
+        eq17(approvalStepInstances.orderId, parseInt(orderId)),
+        eq17(approvalStepInstances.isActive, true)
       )
-    ).orderBy(asc4(approvalStepInstances.stepOrder));
+    ).orderBy(asc5(approvalStepInstances.stepOrder));
     return res.json({
       success: true,
       data: instances
@@ -15390,12 +16616,12 @@ router26.post("/step-instances", async (req, res) => {
       });
     }
     const templates = await db.select().from(approvalStepTemplates).where(
-      and11(
-        eq15(approvalStepTemplates.companyId, companyId),
-        eq15(approvalStepTemplates.templateName, templateName),
-        eq15(approvalStepTemplates.isActive, true)
+      and13(
+        eq17(approvalStepTemplates.companyId, companyId),
+        eq17(approvalStepTemplates.templateName, templateName),
+        eq17(approvalStepTemplates.isActive, true)
       )
-    ).orderBy(asc4(approvalStepTemplates.stepOrder));
+    ).orderBy(asc5(approvalStepTemplates.stepOrder));
     if (templates.length === 0) {
       return res.status(404).json({
         error: "\uC2B9\uC778 \uB2E8\uACC4 \uD15C\uD50C\uB9BF\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4"
@@ -15440,7 +16666,7 @@ router26.put("/step-instances/:id", async (req, res) => {
     };
     if (comments) updateData.comments = comments;
     if (rejectionReason) updateData.rejectionReason = rejectionReason;
-    const result = await db.update(approvalStepInstances).set(updateData).where(eq15(approvalStepInstances.id, parseInt(id))).returning();
+    const result = await db.update(approvalStepInstances).set(updateData).where(eq17(approvalStepInstances.id, parseInt(id))).returning();
     if (result.length === 0) {
       return res.status(404).json({ error: "\uC2B9\uC778 \uB2E8\uACC4 \uC778\uC2A4\uD134\uC2A4\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
     }
@@ -15457,16 +16683,319 @@ router26.put("/step-instances/:id", async (req, res) => {
 });
 var approval_settings_default = router26;
 
+// server/routes/approval-authorities.ts
+import { Router as Router26 } from "express";
+init_db();
+init_schema();
+import { eq as eq18, and as and14, desc as desc8 } from "drizzle-orm";
+import { z as z5 } from "zod";
+var router27 = Router26();
+router27.get("/approval-authorities", requireAuth, requireRole(["admin"]), async (req, res) => {
+  try {
+    console.log("\u{1F4CB} Fetching approval authorities...");
+    const authorities = await db.select({
+      id: approvalAuthorities.id,
+      role: approvalAuthorities.role,
+      maxAmount: approvalAuthorities.maxAmount,
+      description: approvalAuthorities.description,
+      isActive: approvalAuthorities.isActive,
+      createdAt: approvalAuthorities.createdAt,
+      updatedAt: approvalAuthorities.updatedAt
+    }).from(approvalAuthorities).orderBy(desc8(approvalAuthorities.maxAmount));
+    const formattedAuthorities = authorities.map((auth) => ({
+      ...auth,
+      maxAmount: parseFloat(auth.maxAmount),
+      createdAt: auth.createdAt?.toISOString(),
+      updatedAt: auth.updatedAt?.toISOString()
+    }));
+    console.log(`\u2705 Successfully returning ${formattedAuthorities.length} approval authorities`);
+    res.json(formattedAuthorities);
+  } catch (error) {
+    console.error("\u274C Error fetching approval authorities:", error);
+    res.status(500).json({
+      message: "Failed to fetch approval authorities",
+      error: process.env.NODE_ENV === "development" ? error?.message : void 0
+    });
+  }
+});
+router27.post("/approval-authorities", requireAuth, requireRole(["admin"]), async (req, res) => {
+  try {
+    console.log("\u{1F4DD} Creating new approval authority:", req.body);
+    const validatedData = insertApprovalAuthoritySchema.parse(req.body);
+    const existingAuthority = await db.select().from(approvalAuthorities).where(
+      and14(
+        eq18(approvalAuthorities.role, validatedData.role),
+        eq18(approvalAuthorities.isActive, true)
+      )
+    ).limit(1);
+    if (existingAuthority.length > 0) {
+      return res.status(400).json({
+        message: "\uD574\uB2F9 \uC5ED\uD560\uC5D0 \uB300\uD55C \uC2B9\uC778 \uAD8C\uD55C\uC774 \uC774\uBBF8 \uC874\uC7AC\uD569\uB2C8\uB2E4"
+      });
+    }
+    const result = await db.insert(approvalAuthorities).values(validatedData).returning();
+    const newAuthority = {
+      ...result[0],
+      maxAmount: parseFloat(result[0].maxAmount),
+      createdAt: result[0].createdAt?.toISOString(),
+      updatedAt: result[0].updatedAt?.toISOString()
+    };
+    console.log("\u2705 Successfully created approval authority:", newAuthority.id);
+    res.status(201).json(newAuthority);
+  } catch (error) {
+    console.error("\u274C Error creating approval authority:", error);
+    if (error instanceof z5.ZodError) {
+      return res.status(400).json({
+        message: "\uC785\uB825 \uB370\uC774\uD130\uAC00 \uC62C\uBC14\uB974\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4",
+        details: error.errors
+      });
+    }
+    res.status(500).json({
+      message: "Failed to create approval authority",
+      error: process.env.NODE_ENV === "development" ? error?.message : void 0
+    });
+  }
+});
+router27.put("/approval-authorities/:id", requireAuth, requireRole(["admin"]), async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    console.log(`\u{1F4DD} Updating approval authority ${id}:`, req.body);
+    const validatedData = insertApprovalAuthoritySchema.parse(req.body);
+    const result = await db.update(approvalAuthorities).set({
+      ...validatedData,
+      updatedAt: /* @__PURE__ */ new Date()
+    }).where(eq18(approvalAuthorities.id, id)).returning();
+    if (result.length === 0) {
+      return res.status(404).json({
+        message: "\uC2B9\uC778 \uAD8C\uD55C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4"
+      });
+    }
+    const updatedAuthority = {
+      ...result[0],
+      maxAmount: parseFloat(result[0].maxAmount),
+      createdAt: result[0].createdAt?.toISOString(),
+      updatedAt: result[0].updatedAt?.toISOString()
+    };
+    console.log("\u2705 Successfully updated approval authority:", id);
+    res.json(updatedAuthority);
+  } catch (error) {
+    console.error("\u274C Error updating approval authority:", error);
+    if (error instanceof z5.ZodError) {
+      return res.status(400).json({
+        message: "\uC785\uB825 \uB370\uC774\uD130\uAC00 \uC62C\uBC14\uB974\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4",
+        details: error.errors
+      });
+    }
+    res.status(500).json({
+      message: "Failed to update approval authority",
+      error: process.env.NODE_ENV === "development" ? error?.message : void 0
+    });
+  }
+});
+router27.delete("/approval-authorities/:id", requireAuth, requireRole(["admin"]), async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    console.log(`\u{1F5D1}\uFE0F Deactivating approval authority ${id}`);
+    const result = await db.update(approvalAuthorities).set({
+      isActive: false,
+      updatedAt: /* @__PURE__ */ new Date()
+    }).where(eq18(approvalAuthorities.id, id)).returning();
+    if (result.length === 0) {
+      return res.status(404).json({
+        message: "\uC2B9\uC778 \uAD8C\uD55C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4"
+      });
+    }
+    console.log("\u2705 Successfully deactivated approval authority:", id);
+    res.json({
+      message: "\uC2B9\uC778 \uAD8C\uD55C\uC774 \uBE44\uD65C\uC131\uD654\uB418\uC5C8\uC2B5\uB2C8\uB2E4"
+    });
+  } catch (error) {
+    console.error("\u274C Error deactivating approval authority:", error);
+    res.status(500).json({
+      message: "Failed to deactivate approval authority",
+      error: process.env.NODE_ENV === "development" ? error?.message : void 0
+    });
+  }
+});
+router27.get("/approval-authorities/role/:role", requireAuth, requireRole(["admin", "executive", "hq_management", "project_manager"]), async (req, res) => {
+  try {
+    const { role } = req.params;
+    console.log(`\u{1F4CB} Fetching approval authority for role: ${role}`);
+    const authority = await db.select().from(approvalAuthorities).where(
+      and14(
+        eq18(approvalAuthorities.role, role),
+        eq18(approvalAuthorities.isActive, true)
+      )
+    ).limit(1);
+    if (authority.length === 0) {
+      return res.json({
+        role,
+        maxAmount: 0,
+        hasAuthority: false,
+        message: "\uD574\uB2F9 \uC5ED\uD560\uC5D0 \uB300\uD55C \uC2B9\uC778 \uAD8C\uD55C\uC774 \uC124\uC815\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4"
+      });
+    }
+    const result = {
+      ...authority[0],
+      maxAmount: parseFloat(authority[0].maxAmount),
+      hasAuthority: true,
+      createdAt: authority[0].createdAt?.toISOString(),
+      updatedAt: authority[0].updatedAt?.toISOString()
+    };
+    console.log(`\u2705 Found approval authority for ${role}: max ${result.maxAmount}`);
+    res.json(result);
+  } catch (error) {
+    console.error("\u274C Error fetching role approval authority:", error);
+    res.status(500).json({
+      message: "Failed to fetch role approval authority",
+      error: process.env.NODE_ENV === "development" ? error?.message : void 0
+    });
+  }
+});
+router27.post("/approval-authorities/check-permission", requireAuth, requireRole(["admin", "executive", "hq_management", "project_manager"]), async (req, res) => {
+  try {
+    const { role, amount, userId } = req.body;
+    const checkRole = role || req.user?.role;
+    const checkAmount = parseFloat(amount);
+    console.log(`\u{1F50D} Checking approval permission - Role: ${checkRole}, Amount: ${checkAmount}`);
+    if (!checkRole || isNaN(checkAmount)) {
+      return res.status(400).json({
+        message: "\uC5ED\uD560\uACFC \uAE08\uC561 \uC815\uBCF4\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4"
+      });
+    }
+    const authority = await db.select().from(approvalAuthorities).where(
+      and14(
+        eq18(approvalAuthorities.role, checkRole),
+        eq18(approvalAuthorities.isActive, true)
+      )
+    ).limit(1);
+    let canApprove = false;
+    let maxAmount = 0;
+    let message = "";
+    if (authority.length === 0) {
+      canApprove = checkRole === "admin";
+      message = canApprove ? "\uAD00\uB9AC\uC790\uB294 \uBAA8\uB4E0 \uAE08\uC561\uC744 \uC2B9\uC778\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4" : "\uD574\uB2F9 \uC5ED\uD560\uC5D0 \uB300\uD55C \uC2B9\uC778 \uAD8C\uD55C\uC774 \uC124\uC815\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4";
+    } else {
+      maxAmount = parseFloat(authority[0].maxAmount);
+      canApprove = checkAmount <= maxAmount;
+      message = canApprove ? `\uC2B9\uC778 \uAC00\uB2A5 (\uD55C\uB3C4: ${maxAmount.toLocaleString()}\uC6D0)` : `\uC2B9\uC778 \uBD88\uAC00 (\uD55C\uB3C4 \uCD08\uACFC: ${maxAmount.toLocaleString()}\uC6D0)`;
+    }
+    const result = {
+      canApprove,
+      role: checkRole,
+      amount: checkAmount,
+      maxAmount,
+      message,
+      hasAuthority: authority.length > 0
+    };
+    console.log(`\u2705 Permission check result:`, result);
+    res.json(result);
+  } catch (error) {
+    console.error("\u274C Error checking approval permission:", error);
+    res.status(500).json({
+      message: "Failed to check approval permission",
+      error: process.env.NODE_ENV === "development" ? error?.message : void 0
+    });
+  }
+});
+var approval_authorities_default = router27;
+
+// server/routes/notifications.ts
+import { Router as Router27 } from "express";
+var router28 = Router27();
+router28.get("/notifications", requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const limit = parseInt(req.query.limit) || 20;
+    console.log(`\u{1F4EC} Fetching notifications for user ${userId}`);
+    const notifications2 = await NotificationService.getUserNotifications(userId, limit);
+    res.json({
+      success: true,
+      data: notifications2
+    });
+  } catch (error) {
+    console.error("\u274C Error fetching notifications:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch notifications",
+      error: process.env.NODE_ENV === "development" ? error?.message : void 0
+    });
+  }
+});
+router28.get("/notifications/unread-count", requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const count5 = await NotificationService.getUnreadNotificationCount(userId);
+    res.json({
+      success: true,
+      count: count5
+    });
+  } catch (error) {
+    console.error("\u274C Error getting unread count:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to get unread count",
+      error: process.env.NODE_ENV === "development" ? error?.message : void 0
+    });
+  }
+});
+router28.put("/notifications/:id/read", requireAuth, async (req, res) => {
+  try {
+    const notificationId = parseInt(req.params.id);
+    const userId = req.user.id;
+    console.log(`\u{1F4D6} Marking notification ${notificationId} as read for user ${userId}`);
+    const success = await NotificationService.markNotificationAsRead(notificationId, userId);
+    if (success) {
+      res.json({
+        success: true,
+        message: "Notification marked as read"
+      });
+    } else {
+      res.status(404).json({
+        success: false,
+        message: "Notification not found or already read"
+      });
+    }
+  } catch (error) {
+    console.error("\u274C Error marking notification as read:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to mark notification as read",
+      error: process.env.NODE_ENV === "development" ? error?.message : void 0
+    });
+  }
+});
+router28.put("/notifications/mark-all-read", requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    console.log(`\u{1F4D6} Marking all notifications as read for user ${userId}`);
+    const count5 = await NotificationService.markAllNotificationsAsRead(userId);
+    res.json({
+      success: true,
+      message: `Marked ${count5} notifications as read`,
+      markedCount: count5
+    });
+  } catch (error) {
+    console.error("\u274C Error marking all notifications as read:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to mark all notifications as read",
+      error: process.env.NODE_ENV === "development" ? error?.message : void 0
+    });
+  }
+});
+var notifications_default = router28;
+
 // server/routes/orders-simple.ts
 init_db();
 init_schema();
-import { Router as Router26 } from "express";
-import { eq as eq16, and as and12, desc as desc7, count as count4 } from "drizzle-orm";
+import { Router as Router28 } from "express";
+import { eq as eq19, and as and15, desc as desc9, count as count4 } from "drizzle-orm";
 import multer5 from "multer";
 import path13 from "path";
 import fs16 from "fs/promises";
-import { z as z5 } from "zod";
-var router27 = Router26();
+import { z as z6 } from "zod";
+var router29 = Router28();
 var storage4 = multer5.diskStorage({
   destination: async (req, file, cb) => {
     const uploadDir2 = path13.join(process.cwd(), "uploads", "excel-simple");
@@ -15496,36 +17025,44 @@ var upload5 = multer5({
     }
   }
 });
-var OrderItemSchema = z5.object({
-  itemName: z5.string().optional(),
-  specification: z5.string().optional(),
-  unit: z5.string().optional(),
-  quantity: z5.number().default(0),
-  unitPrice: z5.number().default(0),
-  totalAmount: z5.number().default(0),
-  remarks: z5.string().optional()
+var OrderItemSchema = z6.object({
+  itemName: z6.string().optional(),
+  specification: z6.string().optional(),
+  unit: z6.string().optional(),
+  quantity: z6.number().default(0),
+  unitPrice: z6.number().default(0),
+  totalAmount: z6.number().default(0),
+  remarks: z6.string().optional()
 });
-var OrderDataSchema = z5.object({
-  rowIndex: z5.number(),
-  orderDate: z5.string().optional(),
-  deliveryDate: z5.string().optional(),
-  vendorName: z5.string().optional(),
-  vendorEmail: z5.string().optional(),
-  deliveryPlace: z5.string().optional(),
-  deliveryEmail: z5.string().optional(),
-  projectName: z5.string().optional(),
-  majorCategory: z5.string().optional(),
-  middleCategory: z5.string().optional(),
-  minorCategory: z5.string().optional(),
-  items: z5.array(OrderItemSchema),
-  notes: z5.string().optional(),
-  isValid: z5.boolean().optional(),
-  errors: z5.array(z5.string()).optional()
+var OrderDataSchema = z6.object({
+  rowIndex: z6.number(),
+  orderDate: z6.string().optional(),
+  deliveryDate: z6.string().optional(),
+  vendorName: z6.string().optional(),
+  vendorEmail: z6.string().optional(),
+  deliveryPlace: z6.string().optional(),
+  deliveryEmail: z6.string().optional(),
+  projectName: z6.string().optional(),
+  majorCategory: z6.string().optional(),
+  middleCategory: z6.string().optional(),
+  minorCategory: z6.string().optional(),
+  items: z6.array(OrderItemSchema),
+  notes: z6.string().optional(),
+  isValid: z6.boolean().optional(),
+  errors: z6.array(z6.string()).optional()
 });
-router27.post("/bulk-create-simple", requireAuth, upload5.single("excelFile"), async (req, res) => {
+router29.post("/bulk-create-simple", requireAuth, upload5.single("excelFile"), async (req, res) => {
+  console.log("\u{1F4E5} /bulk-create-simple - Received file:", req.file);
+  console.log("\u{1F4E5} /bulk-create-simple - File details:", {
+    originalname: req.file?.originalname,
+    filename: req.file?.filename,
+    mimetype: req.file?.mimetype,
+    size: req.file?.size,
+    path: req.file?.path
+  });
   try {
     const ordersData = JSON.parse(req.body.orders);
-    const validatedOrders = z5.array(OrderDataSchema).parse(ordersData);
+    const validatedOrders = z6.array(OrderDataSchema).parse(ordersData);
     const sendEmail = req.body.sendEmail === "true";
     if (validatedOrders.length === 0) {
       return res.status(400).json({ error: "No orders to create" });
@@ -15536,7 +17073,7 @@ router27.post("/bulk-create-simple", requireAuth, upload5.single("excelFile"), a
     let defaultProject;
     try {
       console.log("\u{1F50D} Fetching default project...");
-      defaultProject = await db.select().from(projects).where(eq16(projects.projectName, "\uAE30\uBCF8 \uD504\uB85C\uC81D\uD2B8")).then((rows) => rows[0]);
+      defaultProject = await db.select().from(projects).where(eq19(projects.projectName, "\uAE30\uBCF8 \uD504\uB85C\uC81D\uD2B8")).then((rows) => rows[0]);
       console.log("\u2705 Default project fetch successful");
     } catch (error) {
       console.error("\u274C Error fetching default project:", error);
@@ -15562,7 +17099,7 @@ router27.post("/bulk-create-simple", requireAuth, upload5.single("excelFile"), a
       try {
         let vendor = null;
         if (orderData.vendorName) {
-          const existingVendor = await db.select().from(vendors).where(eq16(vendors.name, orderData.vendorName)).then((rows) => rows[0]);
+          const existingVendor = await db.select().from(vendors).where(eq19(vendors.name, orderData.vendorName)).then((rows) => rows[0]);
           if (existingVendor) {
             vendor = existingVendor;
           } else {
@@ -15578,7 +17115,7 @@ router27.post("/bulk-create-simple", requireAuth, upload5.single("excelFile"), a
         }
         let project = defaultProject;
         if (orderData.projectName) {
-          const existingProject = await db.select().from(projects).where(eq16(projects.projectName, orderData.projectName)).then((rows) => rows[0]);
+          const existingProject = await db.select().from(projects).where(eq19(projects.projectName, orderData.projectName)).then((rows) => rows[0]);
           if (existingProject) {
             project = existingProject;
           }
@@ -15626,16 +17163,30 @@ router27.post("/bulk-create-simple", requireAuth, upload5.single("excelFile"), a
           }
         }
         if (req.file) {
-          await db.insert(attachments).values({
+          console.log(`\u{1F4CE} Saving Excel file attachment for order ${newOrder.orderNumber}:`, {
             orderId: newOrder.id,
             originalName: req.file.originalname,
             storedName: req.file.filename,
             filePath: req.file.path,
             fileSize: req.file.size,
             mimeType: req.file.mimetype,
-            uploadedBy: req.user.id,
-            uploadedAt: /* @__PURE__ */ new Date()
+            uploadedBy: req.user.id
           });
+          try {
+            const [savedAttachment] = await db.insert(attachments).values({
+              orderId: newOrder.id,
+              originalName: req.file.originalname,
+              storedName: req.file.filename,
+              filePath: req.file.path,
+              fileSize: req.file.size,
+              mimeType: req.file.mimetype,
+              uploadedBy: req.user.id,
+              uploadedAt: /* @__PURE__ */ new Date()
+            }).returning();
+            console.log(`\u2705 Excel file attachment saved with ID ${savedAttachment.id} for order ${newOrder.orderNumber}`);
+          } catch (attachmentError) {
+            console.error(`\u274C Failed to save Excel attachment for order ${newOrder.orderNumber}:`, attachmentError);
+          }
         }
         await db.insert(orderHistory).values({
           orderId: newOrder.id,
@@ -15692,7 +17243,7 @@ router27.post("/bulk-create-simple", requireAuth, upload5.single("excelFile"), a
     });
   }
 });
-router27.get("/simple-upload-history", requireAuth, async (req, res) => {
+router29.get("/simple-upload-history", requireAuth, async (req, res) => {
   try {
     const history = await db.select({
       id: purchaseOrders.id,
@@ -15703,10 +17254,10 @@ router27.get("/simple-upload-history", requireAuth, async (req, res) => {
       projectName: projects.projectName,
       vendorName: vendors.name,
       itemCount: count4(purchaseOrderItems.id)
-    }).from(purchaseOrders).leftJoin(projects, eq16(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq16(purchaseOrders.vendorId, vendors.id)).leftJoin(purchaseOrderItems, eq16(purchaseOrderItems.orderId, purchaseOrders.id)).leftJoin(orderHistory, eq16(orderHistory.orderId, purchaseOrders.id)).where(
-      and12(
-        eq16(purchaseOrders.userId, req.user.id),
-        eq16(orderHistory.action, "created")
+    }).from(purchaseOrders).leftJoin(projects, eq19(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq19(purchaseOrders.vendorId, vendors.id)).leftJoin(purchaseOrderItems, eq19(purchaseOrderItems.orderId, purchaseOrders.id)).leftJoin(orderHistory, eq19(orderHistory.orderId, purchaseOrders.id)).where(
+      and15(
+        eq19(purchaseOrders.userId, req.user.id),
+        eq19(orderHistory.action, "created")
       )
     ).groupBy(
       purchaseOrders.id,
@@ -15716,19 +17267,19 @@ router27.get("/simple-upload-history", requireAuth, async (req, res) => {
       purchaseOrders.status,
       projects.projectName,
       vendors.name
-    ).orderBy(desc7(purchaseOrders.createdAt)).limit(50);
+    ).orderBy(desc9(purchaseOrders.createdAt)).limit(50);
     res.json(history);
   } catch (error) {
     console.error("Error fetching upload history:", error);
     res.status(500).json({ error: "Failed to fetch upload history" });
   }
 });
-var orders_simple_default = router27;
+var orders_simple_default = router29;
 
 // server/routes/positions.ts
-import { Router as Router27 } from "express";
-var router28 = Router27();
-router28.get("/positions", async (req, res) => {
+import { Router as Router29 } from "express";
+var router30 = Router29();
+router30.get("/positions", async (req, res) => {
   try {
     res.json([]);
   } catch (error) {
@@ -15736,7 +17287,7 @@ router28.get("/positions", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch positions" });
   }
 });
-router28.get("/ui-terms", async (req, res) => {
+router30.get("/ui-terms", async (req, res) => {
   try {
     res.json([]);
   } catch (error) {
@@ -15744,45 +17295,47 @@ router28.get("/ui-terms", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch ui-terms" });
   }
 });
-var positions_default = router28;
+var positions_default = router30;
 
 // server/routes/index.ts
-var router29 = Router28();
-router29.use("/api", auth_default);
-router29.use("/api", projects_default);
-router29.use("/api", orders_default);
-router29.use("/api", vendors_default);
-router29.use("/api", items_default);
-router29.use("/api", dashboard_default);
-router29.use("/api", companies_default);
-router29.use("/api/admin", admin_default);
-router29.use("/api/excel-automation", excel_automation_default);
-router29.use("/api/po-template", po_template_real_default);
-router29.use("/api/reports", reports_default);
-router29.use("/api", import_export_default);
-router29.use("/api", email_history_default);
-router29.use("/api/excel-template", excel_template_default);
-router29.use("/api", orders_optimized_default);
-router29.use("/api", order_statuses_default);
-router29.use("/api", invoices_default);
-router29.use("/api", verification_logs_default);
-router29.use("/api", item_receipts_default);
-router29.use("/api", approvals_default);
-router29.use("/api", project_members_default);
-router29.use("/api", project_types_default);
-router29.use("/api", simple_auth_default);
-router29.use("/api", test_accounts_default);
-router29.use("/api/categories", categories_default);
-router29.use("/api/approval-settings", approval_settings_default);
-router29.use("/api/orders", orders_simple_default);
-router29.use("/api", positions_default);
-var routes_default = router29;
+var router31 = Router30();
+router31.use("/api", auth_default);
+router31.use("/api", projects_default);
+router31.use("/api", orders_default);
+router31.use("/api", vendors_default);
+router31.use("/api", items_default);
+router31.use("/api", dashboard_default);
+router31.use("/api", companies_default);
+router31.use("/api/admin", admin_default);
+router31.use("/api/excel-automation", excel_automation_default);
+router31.use("/api/po-template", po_template_real_default);
+router31.use("/api/reports", reports_default);
+router31.use("/api", import_export_default);
+router31.use("/api", email_history_default);
+router31.use("/api/excel-template", excel_template_default);
+router31.use("/api", orders_optimized_default);
+router31.use("/api", order_statuses_default);
+router31.use("/api", invoices_default);
+router31.use("/api", verification_logs_default);
+router31.use("/api", item_receipts_default);
+router31.use("/api", approvals_default);
+router31.use("/api", project_members_default);
+router31.use("/api", project_types_default);
+router31.use("/api", simple_auth_default);
+router31.use("/api", test_accounts_default);
+router31.use("/api/categories", categories_default);
+router31.use("/api/approval-settings", approval_settings_default);
+router31.use("/api", approval_authorities_default);
+router31.use("/api", notifications_default);
+router31.use("/api/orders", orders_simple_default);
+router31.use("/api", positions_default);
+var routes_default = router31;
 
 // server/production.ts
 dotenv2.config();
 var originalDatabaseUrl = process.env.DATABASE_URL;
 console.log("\u{1F50D} Original DATABASE_URL:", originalDatabaseUrl ? originalDatabaseUrl.split("@")[0] + "@[HIDDEN]" : "not set");
-var correctPoolerUrl2 = "postgresql://postgres.tbvugytmskxxyqfvqmup:gps110601ysw@aws-0-ap-northeast-2.pooler.supabase.com:5432/postgres";
+var correctPoolerUrl2 = process.env.DATABASE_URL || "postgresql://postgres.tbvugytmskxxyqfvqmup:gps110601ysw@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres";
 if (originalDatabaseUrl && (originalDatabaseUrl.includes("db.tbvugytmskxxyqfvqmup.supabase.co") || originalDatabaseUrl.includes("tbvugytmskxxyqfvqmup.supabase.co:5432"))) {
   console.log("\u{1F527} Using corrected Supabase pooler URL for serverless");
   process.env.DATABASE_URL = correctPoolerUrl2;
@@ -15860,18 +17413,18 @@ async function initializeProductionApp() {
       // Explicit session cookie name
       cookie: {
         secure: true,
-        // MUST be true for sameSite: 'none'
+        // Required for HTTPS in production
         httpOnly: true,
         maxAge: 1e3 * 60 * 60 * 24 * 7,
         // 7 days
-        sameSite: "none"
-        // CRITICAL: Required for cross-origin with credentials
-        // No domain restriction
+        sameSite: "lax"
+        // Same-site deployment on Vercel
+        // No domain restriction - let browser handle it
       }
     }));
     console.log("\u2705 PostgreSQL session store initialized with settings:", {
       tableName: "app_sessions",
-      secure: process.env.NODE_ENV === "production",
+      secure: true,
       sameSite: "lax",
       maxAge: "7 days"
     });
@@ -15885,12 +17438,12 @@ async function initializeProductionApp() {
       name: "connect.sid",
       cookie: {
         secure: true,
-        // MUST be true for production HTTPS
+        // Required for HTTPS in production
         httpOnly: true,
         maxAge: 1e3 * 60 * 60 * 24 * 7,
         // 7 days
-        sameSite: "none"
-        // Required for cross-origin requests
+        sameSite: "lax"
+        // Same-site deployment on Vercel
       }
     }));
   }
@@ -15932,18 +17485,18 @@ if (process.env.VERCEL) {
       // Explicit session cookie name
       cookie: {
         secure: true,
-        // MUST be true for sameSite: 'none'
+        // Required for HTTPS in production
         httpOnly: true,
         maxAge: 1e3 * 60 * 60 * 24 * 7,
         // 7 days
-        sameSite: "none"
-        // CRITICAL: Required for cross-origin with credentials
-        // No domain restriction
+        sameSite: "lax"
+        // Same-site deployment on Vercel
+        // No domain restriction - let browser handle it
       }
     }));
     console.log("\u2705 PostgreSQL session store initialized with settings:", {
       tableName: "app_sessions",
-      secure: process.env.NODE_ENV === "production",
+      secure: true,
       sameSite: "lax",
       maxAge: "7 days"
     });
@@ -15957,12 +17510,12 @@ if (process.env.VERCEL) {
       name: "connect.sid",
       cookie: {
         secure: true,
-        // MUST be true for production HTTPS
+        // Required for HTTPS in production
         httpOnly: true,
         maxAge: 1e3 * 60 * 60 * 24 * 7,
         // 7 days
-        sameSite: "none"
-        // Required for cross-origin requests
+        sameSite: "lax"
+        // Same-site deployment on Vercel
       }
     }));
   }
