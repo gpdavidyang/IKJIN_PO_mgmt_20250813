@@ -36,92 +36,31 @@ function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [, navigate] = useLocation();
 
-  // Production-safe authentication check using React state
+  // Always check auth status to properly handle login flow
   const [shouldCheckAuth, setShouldCheckAuth] = useState(() => {
     console.log('🚀 Initializing useAuth hook');
-    // ⭐ FIX: Check for existing auth indicators to enable checking after login
-    try {
-      const hasSession = document.cookie.includes('connect.sid') || 
-                        document.cookie.includes('session') ||
-                        localStorage.getItem('hasAuthenticated') === 'true' ||
-                        sessionStorage.getItem('userAuthenticated') === 'true';
-      
-      if (isDevelopmentEnvironment()) {
-        devLog('🔧 Development mode: Auth checking enabled', { hasSession });
-        return true; // Always return true in development
-      } else {
-        // ⭐ PRODUCTION FIX: Enable auth checking if session indicators exist
-        if (hasSession) {
-          devLog('🏭 Production mode: Auth checking enabled due to existing session');
-          return true;
-        } else {
-          devLog('🏭 Production mode: Auth checking disabled - no session indicators');
-          return false;
-        }
-      }
-    } catch {
-      if (isDevelopmentEnvironment()) {
-        devWarn('🔧 Development mode: Error checking session, defaulting to enabled');
-        return true; // Always return true in development even on error
-      } else {
-        devLog('🏭 Production mode: Error checking session, defaulting to disabled');
-        return false;
-      }
-    }
+    // Always enable auth checking to properly handle login/logout flow
+    // The query itself will handle 401 responses gracefully
+    return true;
   });
 
-  // Dynamic session monitoring effect
+  // Monitor storage changes for multi-tab sync
   useEffect(() => {
-    const checkAuthIndicators = () => {
-      // In development, always keep auth checking enabled
-      if (isDevelopmentEnvironment()) {
-        if (!shouldCheckAuth) {
-          setShouldCheckAuth(true);
-          devLog('🔧 Development mode: Ensuring auth checking remains enabled');
-        }
-        return;
-      }
-
-      // ⭐ PRODUCTION FIX: Check for session indicators to enable/disable auth checking
-      try {
-        const hasSession = document.cookie.includes('connect.sid') || 
-                          document.cookie.includes('session') ||
-                          localStorage.getItem('hasAuthenticated') === 'true' ||
-                          sessionStorage.getItem('userAuthenticated') === 'true';
-        
-        if (hasSession && !shouldCheckAuth) {
-          setShouldCheckAuth(true);
-          devLog('🏭 Production mode: Enabling auth checking due to session indicators');
-        } else if (!hasSession && shouldCheckAuth) {
-          setShouldCheckAuth(false);
-          devLog('🏭 Production mode: Disabling auth checking - no session indicators');
-        }
-      } catch (e) {
-        devLog('🏭 Production mode: Error checking session indicators:', e);
-      }
-    };
-
-    // Initial check after component mount
-    checkAuthIndicators();
-
     // Listen for storage changes (login/logout in other tabs)
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'hasAuthenticated' || e.key === 'userAuthenticated') {
-        devLog('🔄 Storage change detected, rechecking auth indicators');
-        checkAuthIndicators();
+        devLog('🔄 Storage change detected, invalidating auth query');
+        // Invalidate the auth query to re-check authentication status
+        queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       }
     };
 
     window.addEventListener('storage', handleStorageChange);
-    
-    // Check periodically for cookie changes (since there's no cookie change event)
-    const interval = setInterval(checkAuthIndicators, 5000);
 
     return () => {
       window.removeEventListener('storage', handleStorageChange);
-      clearInterval(interval);
     };
-  }, [shouldCheckAuth]);
+  }, [queryClient]);
 
   // Debug effect to monitor shouldCheckAuth state changes
   useEffect(() => {
@@ -250,15 +189,10 @@ function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('hasAuthenticated', 'true');
       sessionStorage.setItem('userAuthenticated', 'true');
       
-      // Enable auth checking after successful login (especially important in production)
-      if (!shouldCheckAuth) {
-        setShouldCheckAuth(true);
-        devLog('🔓 Auth checking enabled after successful login');
-      }
-      
-      // Clear any other queries to ensure fresh data on next access
-      queryClient.removeQueries({ queryKey: ["/api/auth/user"], exact: false });
-      queryClient.setQueryData(["/api/auth/user"], user); // Ensure user data remains set
+      // Invalidate and refetch to ensure session is properly established
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      }, 100);
     },
   });
 
@@ -272,12 +206,6 @@ function AuthProvider({ children }: { children: ReactNode }) {
       // Clear authentication indicators immediately
       localStorage.removeItem('hasAuthenticated');
       sessionStorage.removeItem('userAuthenticated');
-      
-      // Disable auth checking on logout (production and development)
-      if (shouldCheckAuth) {
-        setShouldCheckAuth(false);
-        devLog('🔒 Auth checking disabled after force logout');
-      }
       
       // Cancel any outgoing requests to prevent race conditions
       await queryClient.cancelQueries({ queryKey: ["/api/auth/user"] });
@@ -317,11 +245,8 @@ function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem('hasAuthenticated');
       sessionStorage.removeItem('userAuthenticated');
       
-      // Disable auth checking on logout (production and development)
-      if (shouldCheckAuth) {
-        setShouldCheckAuth(false);
-        devLog('🔒 Auth checking disabled after regular logout');
-      }
+      // Keep auth checking enabled to properly handle the logged-out state
+      // The query will return null for unauthenticated users
       
       // Cancel any pending auth queries to prevent 401 errors
       await queryClient.cancelQueries({ queryKey: ["/api/auth/user"] });
