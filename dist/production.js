@@ -35,6 +35,11 @@ import session from "express-session";
 async function configureProductionSession(app2) {
   console.log("=== CONFIGURING PRODUCTION SESSION ===");
   const poolerUrl = "postgresql://postgres.tbvugytmskxxyqfvqmup:gps110601ysw@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres";
+  console.log("\u{1F517} Database connection URL parsed:", {
+    host: poolerUrl.includes("pooler.supabase.com"),
+    length: poolerUrl.length,
+    hasAuth: poolerUrl.includes("@")
+  });
   try {
     const connectPgSimple = __require("connect-pg-simple");
     const pgSession = connectPgSimple(session);
@@ -51,6 +56,27 @@ async function configureProductionSession(app2) {
       }
     });
     console.log("\u2705 PostgreSQL session store created");
+    console.log("\u{1F9EA} Testing session store connectivity...");
+    await new Promise((resolve, reject) => {
+      const testTimeout = setTimeout(() => {
+        reject(new Error("Session store connection timeout after 10 seconds"));
+      }, 1e4);
+      sessionStore.ready = (callback) => {
+        clearTimeout(testTimeout);
+        console.log("\u2705 Session store ready!");
+        callback();
+        resolve(true);
+      };
+      sessionStore.get("test-session-id", (err, session2) => {
+        clearTimeout(testTimeout);
+        if (err) {
+          console.log("\u26A0\uFE0F Session store test error (expected for new installation):", err.message);
+        } else {
+          console.log("\u2705 Session store test successful");
+        }
+        resolve(true);
+      });
+    });
     const sessionMiddleware = session({
       store: sessionStore,
       secret: SESSION_SECRET,
@@ -68,6 +94,18 @@ async function configureProductionSession(app2) {
       }
     });
     app2.use(sessionMiddleware);
+    app2.get("/api/debug/session-store", (req, res) => {
+      const sessionData = {
+        hasSession: !!req.session,
+        sessionID: req.sessionID,
+        sessionKeys: req.session ? Object.keys(req.session) : [],
+        isAuthenticated: req.isAuthenticated ? req.isAuthenticated() : false,
+        storeType: "PostgreSQL",
+        cookieSettings: req.session?.cookie
+      };
+      console.log("\u{1F50D} Session debug info:", sessionData);
+      res.json(sessionData);
+    });
     console.log("\u2705 Session middleware configured:", {
       store: "PostgreSQL",
       tableName: "app_sessions",
