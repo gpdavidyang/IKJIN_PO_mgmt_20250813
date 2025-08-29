@@ -13,7 +13,7 @@ export default defineConfig({
   use: {
     baseURL: process.env.TEST_ENV === 'production' 
       ? 'https://ikjin-po-mgmt-20250813.vercel.app'
-      : 'http://localhost:5173',
+      : 'http://localhost:3000',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -44,7 +44,7 @@ export default defineConfig({
       name: 'localhost',
       use: {
         ...devices['Desktop Chrome'],
-        baseURL: 'http://localhost:5173',
+        baseURL: 'http://localhost:3000',
       },
     },
     {
@@ -58,8 +58,8 @@ export default defineConfig({
 
   webServer: process.env.TEST_ENV !== 'production' ? {
     command: 'npm run dev',
-    url: 'http://localhost:5173',
-    reuseExistingServer: !process.env.CI,
+    url: 'http://localhost:3000',
+    reuseExistingServer: true,
     timeout: 120 * 1000,
   } : undefined,
 });

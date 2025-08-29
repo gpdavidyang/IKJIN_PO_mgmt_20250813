@@ -5,6 +5,7 @@ import { vendors, projects, purchaseOrders, purchaseOrderItems } from "@shared/s
 import { eq } from "drizzle-orm";
 import { DebugLogger } from './debug-logger';
 import type { PgTransaction } from 'drizzle-orm/pg-core';
+import { PDFGenerationService } from '../services/pdf-generation-service';
 
 export interface POTemplateItem {
   itemName: string;
@@ -271,6 +272,7 @@ export class POTemplateProcessorMock {
           const orderId = newOrder[0].id;
 
           // 4. 발주서 아이템들 생성
+          const itemsForPDF = [];
           for (const item of orderData.items) {
             await tx.insert(purchaseOrderItems).values({
               orderId: orderId,
@@ -285,6 +287,58 @@ export class POTemplateProcessorMock {
               minorCategory: item.categoryLv3 || null,
               notes: item.notes || null
             });
+            
+            // PDF 생성을 위한 아이템 정보 수집
+            itemsForPDF.push({
+              category: item.categoryLv1 || '',
+              subCategory1: item.categoryLv2 || '',
+              subCategory2: item.categoryLv3 || '',
+              name: item.itemName,
+              specification: item.specification || '',
+              quantity: item.quantity,
+              unit: '개', // 기본 단위
+              unitPrice: item.unitPrice,
+              price: item.totalAmount,
+              deliveryLocation: item.deliveryName || ''
+            });
+          }
+
+          // 5. PDF 생성 (트랜잭션 밖에서 처리)
+          try {
+            console.log(`📄 [DB] PDF 생성 시작: 발주서 ${orderData.orderNumber}`);
+            
+            // 거래처 정보 조회
+            const vendorInfo = await tx.select().from(vendors).where(eq(vendors.id, vendorId)).limit(1);
+            const projectInfo = await tx.select().from(projects).where(eq(projects.id, projectId)).limit(1);
+            
+            const pdfData = {
+              orderNumber: orderData.orderNumber,
+              orderDate: new Date(orderData.orderDate),
+              deliveryDate: new Date(orderData.dueDate),
+              projectName: projectInfo[0]?.projectName,
+              vendorName: vendorInfo[0]?.name,
+              vendorContact: vendorInfo[0]?.contactPerson,
+              vendorEmail: vendorInfo[0]?.email,
+              items: itemsForPDF,
+              totalAmount: orderData.totalAmount,
+              notes: `PO Template에서 자동 생성됨`,
+              site: orderData.siteName
+            };
+            
+            const pdfResult = await PDFGenerationService.generatePurchaseOrderPDF(
+              orderId,
+              pdfData,
+              userId
+            );
+            
+            if (pdfResult.success) {
+              console.log(`✅ [DB] PDF 생성 완료: ${pdfResult.pdfPath}`);
+            } else {
+              console.error(`⚠️ [DB] PDF 생성 실패: ${pdfResult.error}`);
+            }
+          } catch (pdfError) {
+            console.error(`❌ [DB] PDF 생성 오류:`, pdfError);
+            // PDF 생성 실패해도 발주서 저장은 계속 진행
           }
 
           savedOrders++;

@@ -4,10 +4,10 @@ test.describe('구매 발주 시스템 테스트', () => {
   test.beforeEach(async ({ page }) => {
     // 각 테스트 전 로그인
     await page.goto('/');
-    await page.fill('input[name="username"]', 'admin');
+    await page.fill('input[name="email"]', 'admin@company.com');
     await page.fill('input[name="password"]', 'admin123');
     await page.click('button[type="submit"]');
-    await page.waitForURL('/dashboard');
+    await page.waitForURL('/dashboard', { timeout: 15000 });
   });
 
   test('발주서 목록 조회', async ({ page }) => {

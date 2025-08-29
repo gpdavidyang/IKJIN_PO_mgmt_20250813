@@ -4,6 +4,7 @@ import { emailSendHistory, purchaseOrders, users, vendors } from "@shared/schema
 import { eq, desc, and, sql } from "drizzle-orm";
 import { z } from "zod";
 import type { EmailSendHistory } from "@shared/schema";
+import { requireAuth } from "../local-auth";
 
 const router = Router();
 
@@ -27,12 +28,8 @@ const createEmailHistorySchema = z.object({
 });
 
 // Get email history for a specific order
-router.get("/orders/:orderId/email-history", async (req, res) => {
+router.get("/orders/:orderId/email-history", requireAuth, async (req, res) => {
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-
     const orderId = parseInt(req.params.orderId);
     if (isNaN(orderId)) {
       return res.status(400).json({ error: "Invalid order ID" });
@@ -83,12 +80,8 @@ router.get("/orders/:orderId/email-history", async (req, res) => {
 });
 
 // Create new email history record
-router.post("/email-history", async (req, res) => {
+router.post("/email-history", requireAuth, async (req, res) => {
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-
     const validatedData = createEmailHistorySchema.parse(req.body);
     
     // Create tracking ID
@@ -130,12 +123,8 @@ router.post("/email-history", async (req, res) => {
 });
 
 // Get all orders with email status summary
-router.get("/orders-email-status", async (req, res) => {
+router.get("/orders-email-status", requireAuth, async (req, res) => {
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-
     try {
       // Simplified approach: get orders with their latest email status
       const orders = await db
@@ -220,12 +209,8 @@ router.put("/email-tracking/:trackingId", async (req, res) => {
 });
 
 // Get email history detail
-router.get("/email-history/:id", async (req, res) => {
+router.get("/email-history/:id", requireAuth, async (req, res) => {
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-
     const emailId = parseInt(req.params.id);
     if (isNaN(emailId)) {
       return res.status(400).json({ error: "Invalid email ID" });

@@ -442,6 +442,7 @@ export function ExcelLikeOrderForm({ orderId, onSuccess, onCancel, preselectedTe
       deliveryDate: formData.deliveryDate || undefined,
       items,
       totalAmount,
+      isDirectSubmit: true, // Flag to indicate direct submission
     };
     
     createOrderMutation.mutate(orderData);

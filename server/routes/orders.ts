@@ -14,6 +14,7 @@ import { OptimizedOrderQueries, OptimizedDashboardQueries } from "../utils/optim
 import { ExcelToPDFConverter } from "../utils/excel-to-pdf-converter";
 import { POEmailService } from "../utils/po-email-service";
 import ApprovalRoutingService from "../services/approval-routing-service";
+import { PDFGenerationService } from "../services/pdf-generation-service";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -110,21 +111,76 @@ router.get("/orders/export", requireAuth, async (req: any, res) => {
 
     const { orders } = await storage.getPurchaseOrders(filters);
     
-    const excelData = orders.map(order => ({
-      '발주번호': order.orderNumber,
-      '거래처': order.vendor?.name || '',
-      '발주일자': order.orderDate,
-      '납기희망일': order.deliveryDate,
-      '주요품목': order.items?.map(item => item.itemName).join(', ') || '',
-      '총금액': order.totalAmount,
-      '상태': order.status,
-      '작성자': order.user?.name || '',
-      '특이사항': order.notes || '',
-    }));
+    // 품목별 상세 정보를 하나의 시트로 통합
+    const excelData: any[] = [];
+    orders.forEach(order => {
+      if (order.items && order.items.length > 0) {
+        order.items.forEach((item, index) => {
+          excelData.push({
+            '발주번호': order.orderNumber,
+            '거래처': order.vendor?.name || '',
+            '거래처 이메일': order.vendor?.email || '',
+            '납품처': order.deliverySite || '',
+            '납품처 이메일': order.deliverySiteEmail || '',
+            '프로젝트명': order.project?.projectName || '',
+            '발주일자': order.orderDate,
+            '납기희망일': order.deliveryDate,
+            '대분류': item.majorCategory || '',
+            '중분류': item.middleCategory || '',
+            '소분류': item.minorCategory || '',
+            '품목명': item.itemName,
+            '규격': item.specification || '',
+            '단위': item.unit || '',
+            '수량': item.quantity,
+            '단가': item.unitPrice,
+            '공급가액': item.supplyAmount || (item.quantity * item.unitPrice),
+            '부가세': item.taxAmount || 0,
+            '총금액': item.totalAmount,
+            '발주총액': order.totalAmount,
+            '상태': order.status,
+            '작성자': order.user?.name || '',
+            '승인자': order.approver?.name || '',
+            '승인일': order.approvedAt || '',
+            '품목비고': item.notes || '',
+            '발주비고': order.notes || '',
+          });
+        });
+      } else {
+        // 품목이 없는 발주서도 포함
+        excelData.push({
+          '발주번호': order.orderNumber,
+          '거래처': order.vendor?.name || '',
+          '거래처 이메일': order.vendor?.email || '',
+          '납품처': order.deliverySite || '',
+          '납품처 이메일': order.deliverySiteEmail || '',
+          '프로젝트명': order.project?.projectName || '',
+          '발주일자': order.orderDate,
+          '납기희망일': order.deliveryDate,
+          '대분류': '',
+          '중분류': '',
+          '소분류': '',
+          '품목명': '',
+          '규격': '',
+          '단위': '',
+          '수량': '',
+          '단가': '',
+          '공급가액': '',
+          '부가세': '',
+          '총금액': '',
+          '발주총액': order.totalAmount,
+          '상태': order.status,
+          '작성자': order.user?.name || '',
+          '승인자': order.approver?.name || '',
+          '승인일': order.approvedAt || '',
+          '품목비고': '',
+          '발주비고': order.notes || '',
+        });
+      }
+    });
 
     const worksheet = XLSX.utils.json_to_sheet(excelData);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Orders');
+    XLSX.utils.book_append_sheet(workbook, worksheet, '발주내역');
     
     const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
     
@@ -184,7 +240,42 @@ router.post("/orders", requireAuth, upload.array('attachments'), async (req, res
     const totalAmount = items.reduce((sum, item) => 
       sum + (parseFloat(item.quantity) * parseFloat(item.unitPrice)), 0);
 
-    // Prepare order data
+    // First, determine if approval is needed
+    const approvalContext = {
+      orderId: 0, // Temporary, will be set after order creation
+      orderAmount: totalAmount,
+      companyId: 1, // Default company ID, should be dynamic based on user's company
+      currentUserId: userId,
+      currentUserRole: req.user?.role || 'field_worker',
+      priority: req.body.priority || 'medium'
+    };
+
+    // Check approval requirements
+    let initialStatus = "draft";
+    try {
+      const approvalRoute = await ApprovalRoutingService.determineApprovalRoute(approvalContext);
+      console.log("🔧🔧🔧 ORDERS.TS - Approval route preview:", approvalRoute);
+      
+      // Determine initial status based on approval requirements
+      if (req.body.isDirectSubmit || req.body.status === "sent") {
+        // User explicitly wants to submit the order
+        if (approvalRoute.canDirectApprove || approvalRoute.approvalMode === 'none') {
+          // No approval needed, directly send
+          initialStatus = "sent";
+        } else {
+          // Approval needed
+          initialStatus = "pending";
+        }
+      } else {
+        // Default to draft if not explicitly submitting
+        initialStatus = req.body.status || "draft";
+      }
+    } catch (error) {
+      console.error("Error checking approval requirements:", error);
+      // Default to the requested status or draft
+      initialStatus = req.body.status || "draft";
+    }
+    
     const orderData = {
       orderNumber: await OrderService.generateOrderNumber(),
       projectId: parseInt(req.body.projectId),
@@ -195,13 +286,13 @@ router.post("/orders", requireAuth, upload.array('attachments'), async (req, res
       deliveryDate: req.body.deliveryDate ? new Date(req.body.deliveryDate) : null,
       totalAmount,
       notes: req.body.notes || null,
-      status: "draft" as const,
+      status: initialStatus as const,
       currentApproverRole: null,
       approvalLevel: 0,
       items
     };
 
-    console.log("🔧🔧🔧 ORDERS.TS - Prepared order data:", orderData);
+    console.log("🔧🔧🔧 ORDERS.TS - Prepared order data with status:", initialStatus);
 
     // Create order
     const order = await storage.createPurchaseOrder(orderData);
@@ -227,6 +318,58 @@ router.post("/orders", requireAuth, upload.array('attachments'), async (req, res
           uploadedBy: userId
         });
       }
+    }
+
+    // Generate PDF for the order
+    try {
+      console.log("🔧🔧🔧 ORDERS.TS - Generating PDF for order:", order.id);
+      
+      // Get vendor and project details for PDF
+      const vendor = orderData.vendorId ? await storage.getVendor(orderData.vendorId) : null;
+      const project = await storage.getProject(orderData.projectId);
+      
+      const pdfData = {
+        orderNumber: order.orderNumber,
+        orderDate: order.orderDate,
+        deliveryDate: order.deliveryDate,
+        projectName: project?.name,
+        vendorName: vendor?.name,
+        vendorContact: vendor?.contactPerson,
+        vendorEmail: vendor?.email,
+        items: items.map(item => ({
+          category: item.category,
+          subCategory1: item.subCategory1,
+          subCategory2: item.subCategory2,
+          item: item.item,
+          name: item.name || item.item,
+          specification: item.specification,
+          quantity: parseFloat(item.quantity),
+          unit: item.unit,
+          unitPrice: parseFloat(item.unitPrice),
+          price: parseFloat(item.quantity) * parseFloat(item.unitPrice),
+          deliveryLocation: item.deliveryLocation
+        })),
+        totalAmount,
+        notes: orderData.notes,
+        receiver: req.body.receiver,
+        manager: req.body.manager,
+        site: req.body.site
+      };
+      
+      const pdfResult = await PDFGenerationService.generatePurchaseOrderPDF(
+        order.id,
+        pdfData,
+        userId
+      );
+      
+      if (pdfResult.success) {
+        console.log("✅ ORDERS.TS - PDF generated successfully:", pdfResult.pdfPath);
+      } else {
+        console.error("⚠️ ORDERS.TS - PDF generation failed:", pdfResult.error);
+      }
+    } catch (pdfError) {
+      console.error("❌ ORDERS.TS - Error generating PDF:", pdfError);
+      // Continue without PDF - don't fail the entire order creation
     }
 
     // Set up approval process using the new approval routing service
@@ -1340,6 +1483,74 @@ async function generatePDFLogic(req: any, res: any) {
 // Generate PDF for order (with auth)
 router.post("/orders/generate-pdf", requireAuth, async (req, res) => {
   return await generatePDFLogic(req, res);
+});
+
+// Regenerate PDF for specific order and save to DB
+router.post("/orders/:id/regenerate-pdf", requireAuth, async (req, res) => {
+  try {
+    const orderId = parseInt(req.params.id);
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ message: "User not authenticated" });
+    }
+
+    // Get order details with related data
+    const order = await storage.getPurchaseOrderWithDetails(orderId);
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    // Prepare PDF data
+    const pdfData = {
+      orderNumber: order.orderNumber,
+      orderDate: order.orderDate,
+      deliveryDate: order.deliveryDate,
+      projectName: order.project?.projectName,
+      vendorName: order.vendor?.name,
+      vendorContact: order.vendor?.contactPerson,
+      vendorEmail: order.vendor?.email,
+      items: (order.items || []).map((item: any) => ({
+        category: item.majorCategory || '',
+        subCategory1: item.middleCategory || '',
+        subCategory2: item.minorCategory || '',
+        name: item.itemName,
+        specification: item.specification || '',
+        quantity: item.quantity || 0,
+        unit: item.unit || '개',
+        unitPrice: item.unitPrice || 0,
+        price: item.totalAmount || 0,
+        deliveryLocation: ''
+      })),
+      totalAmount: order.totalAmount,
+      notes: order.notes
+    };
+
+    // Regenerate PDF (this will replace existing auto-generated PDFs)
+    const result = await PDFGenerationService.regeneratePDF(orderId, pdfData, userId);
+
+    if (result.success) {
+      res.json({
+        success: true,
+        message: "PDF가 성공적으로 재생성되어 저장되었습니다",
+        attachmentId: result.attachmentId,
+        pdfPath: result.pdfPath
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        message: "PDF 재생성 실패",
+        error: result.error
+      });
+    }
+  } catch (error) {
+    console.error("PDF regeneration error:", error);
+    res.status(500).json({
+      success: false,
+      message: "PDF 재생성 중 오류 발생",
+      error: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
 });
 
 // Remove test endpoint in production

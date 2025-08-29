@@ -7,6 +7,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs/promises';
 import { z } from 'zod';
+import { PDFGenerationService } from '../services/pdf-generation-service';
 
 const router = Router();
 
@@ -212,23 +213,74 @@ router.post('/orders/bulk-create-simple', requireAuth, upload.single('excelFile'
           .returning();
 
         // Create order items
+        const itemsForPDF = [];
         if (orderData.items.length > 0) {
           const itemsToInsert = orderData.items
             .filter(item => item.itemName) // Only insert items with names
-            .map(item => ({
-              orderId: newOrder.id,
-              itemName: item.itemName!,
-              specification: item.specification || null,
-              unit: item.unit || null,
-              quantity: item.quantity || 0,
-              unitPrice: item.unitPrice || 0,
-              totalAmount: (item.quantity || 0) * (item.unitPrice || 0),
-              notes: item.remarks || null // Use 'notes' field instead of 'remarks'
-            }));
+            .map(item => {
+              // Collect items for PDF generation
+              itemsForPDF.push({
+                category: orderData.majorCategory || '',
+                subCategory1: orderData.middleCategory || '',
+                subCategory2: orderData.minorCategory || '',
+                name: item.itemName!,
+                specification: item.specification || '',
+                quantity: item.quantity || 0,
+                unit: item.unit || '개',
+                unitPrice: item.unitPrice || 0,
+                price: (item.quantity || 0) * (item.unitPrice || 0),
+                deliveryLocation: orderData.deliveryPlace || ''
+              });
+              
+              return {
+                orderId: newOrder.id,
+                itemName: item.itemName!,
+                specification: item.specification || null,
+                unit: item.unit || null,
+                quantity: item.quantity || 0,
+                unitPrice: item.unitPrice || 0,
+                totalAmount: (item.quantity || 0) * (item.unitPrice || 0),
+                notes: item.remarks || null // Use 'notes' field instead of 'remarks'
+              };
+            });
 
           if (itemsToInsert.length > 0) {
             await db.insert(purchaseOrderItems).values(itemsToInsert);
           }
+        }
+
+        // Generate PDF for the order
+        try {
+          console.log(`📄 Generating PDF for order ${newOrder.orderNumber}`);
+          
+          const pdfData = {
+            orderNumber: newOrder.orderNumber,
+            orderDate: new Date(newOrder.orderDate),
+            deliveryDate: orderData.deliveryDate ? new Date(orderData.deliveryDate) : null,
+            projectName: project.projectName,
+            vendorName: vendor?.name || orderData.vendorName,
+            vendorContact: vendor?.contactPerson,
+            vendorEmail: vendor?.email || orderData.vendorEmail,
+            items: itemsForPDF,
+            totalAmount,
+            notes: newOrder.notes,
+            site: project.projectName
+          };
+          
+          const pdfResult = await PDFGenerationService.generatePurchaseOrderPDF(
+            newOrder.id,
+            pdfData,
+            req.user.id
+          );
+          
+          if (pdfResult.success) {
+            console.log(`✅ PDF generated successfully for order ${newOrder.orderNumber}`);
+          } else {
+            console.error(`⚠️ PDF generation failed for order ${newOrder.orderNumber}:`, pdfResult.error);
+          }
+        } catch (pdfError) {
+          console.error(`❌ Error generating PDF for order ${newOrder.orderNumber}:`, pdfError);
+          // Continue without PDF - don't fail the entire order creation
         }
 
         // Save file attachment if provided (attach to all orders from the same upload)

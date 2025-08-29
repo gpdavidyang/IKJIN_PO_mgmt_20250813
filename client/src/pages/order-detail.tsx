@@ -43,6 +43,7 @@ export default function OrderDetail() {
   const [, navigate] = useLocation();
   const params = useParams();
   const [showPreview, setShowPreview] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const { theme } = useTheme();
   const isDarkMode = theme === 'dark';
   const orderId = parseInt(params.id);
@@ -122,6 +123,49 @@ export default function OrderDetail() {
       });
     },
   });
+
+  // PDF preview - show existing PDF or generate if not exists
+  const handlePdfPreview = async () => {
+    // Check if PDF already exists
+    const existingPdf = order?.attachments?.find((attachment: any) => 
+      attachment.mimeType === 'application/pdf' &&
+      attachment.originalName?.startsWith('PO_')
+    );
+
+    if (existingPdf) {
+      // Show existing PDF
+      setShowPreview(true);
+      return;
+    }
+
+    // No existing PDF, generate new one
+    setIsGeneratingPdf(true);
+    try {
+      // Call server to regenerate and save PDF
+      const result = await apiRequest("POST", `/api/orders/${orderId}/regenerate-pdf`);
+      
+      if (result.success) {
+        toast({
+          title: "PDF 생성 완료",
+          description: "PDF가 생성되어 첨부파일에 저장되었습니다.",
+        });
+        
+        // Refresh order data to show the new PDF
+        queryClient.invalidateQueries({ queryKey: [`/api/orders/${orderId}`] });
+        
+        // Show preview
+        setShowPreview(true);
+      }
+    } catch (error) {
+      toast({
+        title: "PDF 생성 실패",
+        description: error.message || "PDF 생성 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     const statusObj = orderStatuses?.find((s: any) => s.code === status);
@@ -305,11 +349,32 @@ export default function OrderDetail() {
             <Button 
               variant="outline" 
               size="sm" 
-              onClick={() => setShowPreview(true)} 
+              onClick={handlePdfPreview}
+              disabled={isGeneratingPdf}
               className={`h-8 px-3 text-xs transition-colors ${isDarkMode ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
             >
-              <Eye className="h-4 w-4 mr-1" />
-              미리보기
+              {isGeneratingPdf ? (
+                <>
+                  <div className="animate-spin h-3 w-3 mr-1 border border-gray-300 border-t-transparent rounded-full"></div>
+                  생성 중...
+                </>
+              ) : (() => {
+                const existingPdf = order?.attachments?.find((attachment: any) => 
+                  attachment.mimeType === 'application/pdf' &&
+                  attachment.originalName?.startsWith('PO_')
+                );
+                return existingPdf ? (
+                  <>
+                    <Eye className="h-4 w-4 mr-1" />
+                    PDF 미리보기
+                  </>
+                ) : (
+                  <>
+                    <Eye className="h-4 w-4 mr-1" />
+                    PDF 생성 및 미리보기
+                  </>
+                );
+              })()}
             </Button>
           </div>
         </div>
@@ -747,14 +812,113 @@ export default function OrderDetail() {
           )}
         </div>
 
-        {/* Other Attachments (non-Excel files) */}
+        {/* Generated PDF Files */}
         {order.attachments && order.attachments.length > 0 && (() => {
-          // Filter out Excel files to show only other attachments
+          // Filter for auto-generated PDF files
+          const pdfFiles = order.attachments.filter((attachment: any) => 
+            attachment.mimeType === 'application/pdf' &&
+            attachment.originalName?.startsWith('PO_')
+          );
+
+          if (pdfFiles.length > 0) {
+            return (
+              <div className={`shadow-sm rounded-lg border transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+                <div className={`p-6 border-b transition-colors ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                  <div className="flex items-center">
+                    <div className={`p-2 rounded-lg mr-3 transition-colors ${isDarkMode ? 'bg-green-900/20' : 'bg-green-50'}`}>
+                      <FileText className={`h-5 w-5 transition-colors ${isDarkMode ? 'text-green-400' : 'text-green-600'}`} />
+                    </div>
+                    <div>
+                      <h3 className={`text-lg font-semibold transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>발주서 PDF</h3>
+                      <span className={`text-sm transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>자동 생성된 PDF 문서</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-6">
+                  <div className="space-y-3">
+                    {pdfFiles.map((pdf: any) => (
+                      <div key={pdf.id} className={`flex items-center justify-between p-4 border rounded-lg transition-all ${isDarkMode ? 'border-gray-600 hover:border-gray-500 hover:bg-gray-700' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'}`}>
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className={`p-2 rounded ${isDarkMode ? 'bg-red-900/20' : 'bg-red-50'}`}>
+                            <FileText className={`h-5 w-5 transition-colors ${isDarkMode ? 'text-red-400' : 'text-red-600'}`} />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <span className={`text-sm font-medium truncate block transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`} title={pdf.originalName}>
+                              {pdf.originalName}
+                            </span>
+                            <span className={`text-xs transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                              생성일: {pdf.uploadedAt ? format(new Date(pdf.uploadedAt), 'yyyy.MM.dd HH:mm') : '-'}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className={`flex-shrink-0 h-8 px-3 text-xs transition-colors ${isDarkMode ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                            onClick={() => setShowPreview(true)}
+                          >
+                            <Eye className="h-3 w-3 mr-1" />
+                            미리보기
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className={`flex-shrink-0 h-8 px-3 text-xs transition-colors ${isDarkMode ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                            onClick={async () => {
+                              try {
+                                const response = await fetch(`/api/orders/${orderId}/attachments/${pdf.id}/download`, {
+                                  method: 'GET',
+                                  headers: {
+                                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                                  },
+                                });
+                                if (!response.ok) throw new Error('Download failed');
+                                const blob = await response.blob();
+                                const url = window.URL.createObjectURL(blob);
+                                const link = document.createElement('a');
+                                link.href = url;
+                                link.download = pdf.originalName;
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                                window.URL.revokeObjectURL(url);
+                                toast({
+                                  title: "다운로드 완료",
+                                  description: "PDF 파일이 다운로드되었습니다.",
+                                });
+                              } catch (error) {
+                                toast({
+                                  title: "다운로드 실패",
+                                  description: "파일 다운로드 중 오류가 발생했습니다.",
+                                  variant: "destructive",
+                                });
+                              }
+                            }}
+                          >
+                            <Download className="h-3 w-3 mr-1" />
+                            다운로드
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            );
+          }
+          return null;
+        })()}
+
+        {/* Other Attachments (non-Excel, non-PDF files) */}
+        {order.attachments && order.attachments.length > 0 && (() => {
+          // Filter out Excel files and auto-generated PDFs to show only other attachments
           const otherFiles = order.attachments.filter((attachment: any) => 
             !attachment.mimeType?.includes('excel') && 
             !attachment.mimeType?.includes('spreadsheet') &&
             !attachment.originalName?.toLowerCase().endsWith('.xlsx') &&
-            !attachment.originalName?.toLowerCase().endsWith('.xls')
+            !attachment.originalName?.toLowerCase().endsWith('.xls') &&
+            !(attachment.mimeType === 'application/pdf' && attachment.originalName?.startsWith('PO_'))
           );
 
           if (otherFiles.length === 0) return null;

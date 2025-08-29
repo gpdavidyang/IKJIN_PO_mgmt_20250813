@@ -13,16 +13,13 @@ import {
 } from "../../shared/schema";
 import { eq, and, desc, asc } from "drizzle-orm";
 import { z } from "zod";
+import { requireAuth, requireAdmin } from "../local-auth";
 
 const router = Router();
 
 // Get approval workflow settings for a company
-router.get("/workflow-settings/:companyId", async (req, res) => {
+router.get("/workflow-settings/:companyId", requireAuth, async (req, res) => {
   try {
-    if (!req.isAuthenticated() || !req.user) {
-      return res.status(401).json({ error: "인증이 필요합니다" });
-    }
-
     const { companyId } = req.params;
 
     const settings = await db
@@ -51,15 +48,8 @@ router.get("/workflow-settings/:companyId", async (req, res) => {
 });
 
 // Create or update approval workflow settings
-router.post("/workflow-settings", async (req, res) => {
+router.post("/workflow-settings", requireAuth, requireAdmin, async (req, res) => {
   try {
-    if (!req.isAuthenticated() || !req.user) {
-      return res.status(401).json({ error: "인증이 필요합니다" });
-    }
-
-    if (req.user.role !== "admin") {
-      return res.status(403).json({ error: "관리자 권한이 필요합니다" });
-    }
 
     const validatedData = insertApprovalWorkflowSettingsSchema.parse({
       ...req.body,
@@ -118,12 +108,8 @@ router.post("/workflow-settings", async (req, res) => {
 });
 
 // Get approval step templates for a company
-router.get("/step-templates/:companyId", async (req, res) => {
+router.get("/step-templates/:companyId", requireAuth, async (req, res) => {
   try {
-    if (!req.isAuthenticated() || !req.user) {
-      return res.status(401).json({ error: "인증이 필요합니다" });
-    }
-
     const { companyId } = req.params;
     const { templateName } = req.query;
 
@@ -166,15 +152,8 @@ router.get("/step-templates/:companyId", async (req, res) => {
 });
 
 // Create approval step template
-router.post("/step-templates", async (req, res) => {
+router.post("/step-templates", requireAuth, requireAdmin, async (req, res) => {
   try {
-    if (!req.isAuthenticated() || !req.user) {
-      return res.status(401).json({ error: "인증이 필요합니다" });
-    }
-
-    if (req.user.role !== "admin") {
-      return res.status(403).json({ error: "관리자 권한이 필요합니다" });
-    }
 
     const validatedData = insertApprovalStepTemplateSchema.parse(req.body);
 
@@ -203,15 +182,8 @@ router.post("/step-templates", async (req, res) => {
 });
 
 // Update approval step template
-router.put("/step-templates/:id", async (req, res) => {
+router.put("/step-templates/:id", requireAuth, requireAdmin, async (req, res) => {
   try {
-    if (!req.isAuthenticated() || !req.user) {
-      return res.status(401).json({ error: "인증이 필요합니다" });
-    }
-
-    if (req.user.role !== "admin") {
-      return res.status(403).json({ error: "관리자 권한이 필요합니다" });
-    }
 
     const { id } = req.params;
     const validatedData = insertApprovalStepTemplateSchema.parse(req.body);
@@ -249,15 +221,8 @@ router.put("/step-templates/:id", async (req, res) => {
 });
 
 // Delete approval step template
-router.delete("/step-templates/:id", async (req, res) => {
+router.delete("/step-templates/:id", requireAuth, requireAdmin, async (req, res) => {
   try {
-    if (!req.isAuthenticated() || !req.user) {
-      return res.status(401).json({ error: "인증이 필요합니다" });
-    }
-
-    if (req.user.role !== "admin") {
-      return res.status(403).json({ error: "관리자 권한이 필요합니다" });
-    }
 
     const { id } = req.params;
 
@@ -288,12 +253,8 @@ router.delete("/step-templates/:id", async (req, res) => {
 });
 
 // Get approval step instances for an order
-router.get("/step-instances/:orderId", async (req, res) => {
+router.get("/step-instances/:orderId", requireAuth, async (req, res) => {
   try {
-    if (!req.isAuthenticated() || !req.user) {
-      return res.status(401).json({ error: "인증이 필요합니다" });
-    }
-
     const { orderId } = req.params;
 
     const instances = await db
@@ -321,12 +282,8 @@ router.get("/step-instances/:orderId", async (req, res) => {
 });
 
 // Create approval step instances for an order
-router.post("/step-instances", async (req, res) => {
+router.post("/step-instances", requireAuth, async (req, res) => {
   try {
-    if (!req.isAuthenticated() || !req.user) {
-      return res.status(401).json({ error: "인증이 필요합니다" });
-    }
-
     const { orderId, templateName, companyId } = req.body;
 
     if (!orderId || !templateName || !companyId) {
@@ -382,12 +339,8 @@ router.post("/step-instances", async (req, res) => {
 });
 
 // Update approval step instance (approve/reject/skip)
-router.put("/step-instances/:id", async (req, res) => {
+router.put("/step-instances/:id", requireAuth, async (req, res) => {
   try {
-    if (!req.isAuthenticated() || !req.user) {
-      return res.status(401).json({ error: "인증이 필요합니다" });
-    }
-
     const { id } = req.params;
     const { status, comments, rejectionReason } = req.body;
 

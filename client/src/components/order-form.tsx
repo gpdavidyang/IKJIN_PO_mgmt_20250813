@@ -605,6 +605,7 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
         totalAmount: calculateTotalAmount(item),
       })),
       totalAmount: calculateGrandTotal(),
+      isDirectSubmit: !orderId, // Flag to indicate direct submission for new orders
     };
     
     if (orderId) {
