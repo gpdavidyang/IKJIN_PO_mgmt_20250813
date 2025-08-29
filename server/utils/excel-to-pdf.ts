@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import puppeteer from 'puppeteer';
+import { chromium } from 'playwright-chromium';
 import path from 'path';
 import fs from 'fs';
 
@@ -30,14 +30,14 @@ export class ExcelToPdfConverter {
       // HTML 생성
       const htmlContent = this.generateHtmlFromWorkbook(workbook);
       
-      // Puppeteer로 PDF 생성
-      const browser = await puppeteer.launch({
+      // Playwright로 PDF 생성
+      const browser = await chromium.launch({
         headless: true,
         args: ['--no-sandbox', '--disable-setuid-sandbox']
       });
       
       const page = await browser.newPage();
-      await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+      await page.setContent(htmlContent, { waitUntil: 'networkidle' });
       
       await page.pdf({
         path: pdfPath,
@@ -82,14 +82,14 @@ export class ExcelToPdfConverter {
       // 지정된 시트들만 HTML로 변환
       const htmlContent = this.generateHtmlFromSheets(workbook, sheetNames);
       
-      // Puppeteer로 PDF 생성
-      const browser = await puppeteer.launch({
+      // Playwright로 PDF 생성
+      const browser = await chromium.launch({
         headless: true,
         args: ['--no-sandbox', '--disable-setuid-sandbox']
       });
       
       const page = await browser.newPage();
-      await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+      await page.setContent(htmlContent, { waitUntil: 'networkidle' });
       
       await page.pdf({
         path: pdfPath,

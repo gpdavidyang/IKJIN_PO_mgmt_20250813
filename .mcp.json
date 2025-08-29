@@ -28,7 +28,7 @@
 			"args": [
 				"-y",
 				"@modelcontextprotocol/server-filesystem",
-				"/Users/davidyang/workspace/20250713_PO_Mgmt"
+				"/Users/david/workspace/IKJIN_PO_20250826/IKJIN_PO_mgmt_20250813"
 			]
 		},
 		"sequential-thinking": {
@@ -60,6 +60,22 @@
 			"env": {
 				"BRAVE_API_KEY": "your_brave_api_key_here"
 			}
+		},
+		"puppeteer": {
+			"type": "stdio",
+			"command": "npx",
+			"args": [
+				"-y",
+				"@modelcontextprotocol/server-puppeteer"
+			]
+		},
+		"playwright": {
+			"type": "stdio",
+			"command": "npx",
+			"args": [
+				"-y",
+				"@executeautomation/playwright-mcp-server"
+			]
 		}
 	}
 }

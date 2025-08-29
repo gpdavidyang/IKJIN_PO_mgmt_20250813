@@ -4,7 +4,7 @@
  * PRD 요구사항: 엑셀 파일과 함께 엑셀파일을 PDF화 한 파일도 보존해야 함
  */
 
-import puppeteer from 'puppeteer';
+import { chromium } from 'playwright-chromium';
 import ExcelJS from 'exceljs';
 import path from 'path';
 import fs from 'fs';
@@ -61,10 +61,10 @@ export class ExcelToPDFConverter {
       const html = await this.generateHTMLFromWorkbook(workbook);
       console.log(`🌐 HTML 생성 완료. 크기: ${html.length} 문자`);
       
-      // Puppeteer 브라우저 실행
-      console.log(`🚀 Puppeteer 브라우저 시작 중...`);
-      browser = await puppeteer.launch({
-        headless: 'new',
+      // Playwright 브라우저 실행
+      console.log(`🚀 Playwright 브라우저 시작 중...`);
+      browser = await chromium.launch({
+        headless: true,
         args: [
           '--no-sandbox', 
           '--disable-setuid-sandbox',
@@ -76,7 +76,7 @@ export class ExcelToPDFConverter {
           '--disable-gpu'
         ]
       });
-      console.log(`🚀 Puppeteer 브라우저 시작 완료`);
+      console.log(`🚀 Playwright 브라우저 시작 완료`);
       
       const page = await browser.newPage();
       console.log(`📄 새 페이지 생성 완료`);
@@ -84,7 +84,7 @@ export class ExcelToPDFConverter {
       // HTML 컨텐츠 설정
       console.log(`📄 HTML 컨텐츠 설정 중...`);
       await page.setContent(html, { 
-        waitUntil: 'networkidle0',
+        waitUntil: 'networkidle',
         timeout: 30000 // 30초 타임아웃
       });
       console.log(`📄 HTML 컨텐츠 설정 완료`);
@@ -279,8 +279,8 @@ export class ExcelToPDFConverter {
     outputPath: string
   ): Promise<string> {
     try {
-      const browser = await puppeteer.launch({
-        headless: 'new',
+      const browser = await chromium.launch({
+        headless: true,
         args: ['--no-sandbox', '--disable-setuid-sandbox']
       });
 
@@ -361,7 +361,7 @@ export class ExcelToPDFConverter {
 </html>
 `;
 
-      await page.setContent(combinedHTML, { waitUntil: 'networkidle0' });
+      await page.setContent(combinedHTML, { waitUntil: 'networkidle' });
       
       await page.pdf({
         path: outputPath,

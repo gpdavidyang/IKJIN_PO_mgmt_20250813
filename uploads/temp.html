@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HR 제도 혁신 리서치 인포그래픽</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .flowchart-step {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-weight: 700;
+            min-height: 80px;
+        }
+        .flowchart-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: #118AB2;
+        }
+        .timeline-item {
+            position: relative;
+            padding-bottom: 2rem;
+            padding-left: 2.5rem;
+        }
+        .timeline-dot {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            border: 4px solid white;
+        }
+        .timeline-line {
+            position: absolute;
+            left: 9px;
+            top: 20px;
+            bottom: 0;
+            width: 2px;
+        }
+    </style>
+</head>
+<body class="bg-slate-50">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <header class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-black text-[#073B4C] mb-2">HR 제도 혁신 리서치</h1>
+            <p class="text-xl text-[#118AB2]">보상 및 복리후생 트렌드 분석 (2025년 8월)</p>
+        </header>
+
+        <main class="space-y-8">
+            
+            <section id="overview" class="bg-white rounded-lg shadow-md p-6 md:p-8">
+                <h2 class="text-2xl font-bold text-[#073B4C] mb-4"># 보고서 개요</h2>
+                <p class="text-slate-600 mb-6">본 보고서는 급변하는 경영 환경 속에서 우수 인재를 확보하고 몰입도를 높이기 위해, 최신 보상 및 복리후생 트렌드를 분석합니다. 경쟁사와의 비교를 통해 자사의 현 위치를 진단하고, 전략적 개선 방향과 구체적인 실행 로드맵을 제시하는 것을 목표로 합니다.</p>
+                <h3 class="text-xl font-bold text-[#118AB2] mb-4">보고서 구성도</h3>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+                    <div class="flowchart-step bg-[#FFD166] text-[#073B4C]">1-2장<br>개요 및<br>트렌드 분석</div>
+                    <div class="flowchart-arrow hidden md:flex">→</div>
+                    <div class="flowchart-step bg-[#06D6A0] text-[#073B4C]">3-4장<br>경쟁사 및<br>자사 현황 분석</div>
+                    <div class="flowchart-arrow hidden md:flex">→</div>
+                    <div class="flowchart-step bg-[#118AB2] text-white">5-6장<br>Gap 분석 및<br>Best Practice</div>
+                     <div class="flowchart-arrow hidden md:flex">→</div>
+                    <div class="flowchart-step bg-[#FF6B6B] text-white">7-8장<br>실행 로드맵 및<br>부록</div>
+                </div>
+            </section>
+
+            <section id="trends" class="bg-white rounded-lg shadow-md p-6 md:p-8">
+                <h2 class="text-2xl font-bold text-[#073B4C] mb-4"># 국내 보상 및 복리후생 트렌드</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                        <h3 class="text-xl font-bold text-[#118AB2] mb-2 text-center">금전적 보상 패러다임의 변화</h3>
+                        <p class="text-slate-600 mb-4 text-center">연공서열 중심에서 성과 및 직무 전문성 중심으로 보상 체계가 빠르게 전환되고 있습니다.</p>
+                        <div class="chart-container h-64 md:h-80">
+                            <canvas id="monetaryChart"></canvas>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-[#118AB2] mb-2 text-center">비금전적 보상의 중요성 증대</h3>
+                        <p class="text-slate-600 mb-4 text-center">직원들의 삶의 질과 성장을 지원하는 다양한 제도가 핵심적인 동기부여 요소로 부상하고 있습니다.</p>
+                        <div class="chart-container h-64 md:h-80">
+                            <canvas id="nonMonetaryChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="analysis" class="bg-white rounded-lg shadow-md p-6 md:p-8">
+                <h2 class="text-2xl font-bold text-[#073B4C] mb-4"># 경쟁사 및 자사 현황 비교 분석</h2>
+                <p class="text-slate-600 mb-6">화학 산업 내 주요 경쟁사와 자사의 보상 및 복리후생 시스템을 다각도로 비교하여 현재 위치를 객관적으로 진단합니다.</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+                    <div class="md:col-span-2">
+                         <div class="chart-container h-80 md:h-96">
+                            <canvas id="competitorRadarChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="text-center p-6 bg-[#FF6B6B] rounded-lg text-white">
+                        <p class="text-lg font-bold mb-2">경인양행의 핵심 전략</p>
+                        <p class="text-5xl font-black">성과주의</p>
+                        <p class="mt-2">"노력한 만큼 공정한 보상" 원칙을 통해 높은 성과를 낸 직원에게 파격적인 보너스를 지급하여 동기부여를 극대화합니다.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="gap" class="bg-white rounded-lg shadow-md p-6 md:p-8">
+                <h2 class="text-2xl font-bold text-[#073B4C] mb-4"># Gap 분석 및 개선 방향</h2>
+                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                        <h3 class="text-xl font-bold text-[#118AB2] mb-2 text-center">시장 트렌드와의 격차</h3>
+                        <p class="text-slate-600 mb-4">자사의 보상 시스템은 즉각적 인센티브, 맞춤형 복지 등 최신 트렌드를 충분히 반영하지 못하고 있어 개선이 필요합니다.</p>
+                        <div class="chart-container h-80 md:h-96">
+                            <canvas id="gapAnalysisChart"></canvas>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-[#118AB2] mb-2 text-center">Best Practices & 시사점</h3>
+                        <div class="space-y-4 mt-4">
+                            <div class="p-4 border-l-4 border-[#06D6A0] bg-slate-50 rounded-r-lg">
+                                <h4 class="font-bold text-slate-800">LG화학: Peer Bonus 제도</h4>
+                                <p class="text-slate-600 text-sm">동료 간 인정 문화를 조성하고 도전적 목표 달성에 즉각적인 보상을 제공합니다.</p>
+                            </div>
+                            <div class="p-4 border-l-4 border-[#FFD166] bg-slate-50 rounded-r-lg">
+                                <h4 class="font-bold text-slate-800">SK이노베이션: 단일 직급 체계</h4>
+                                <p class="text-slate-600 text-sm">수평적 조직 문화를 만들고 성과와 기여에 기반한 보상을 강화합니다.</p>
+                            </div>
+                            <div class="p-4 border-l-4 border-[#FF6B6B] bg-slate-50 rounded-r-lg">
+                                <h4 class="font-bold text-slate-800">CJ제일제당: 선택적 복리후생</h4>
+                                <p class="text-slate-600 text-sm">직원들에게 맞춤형 복지를 제공하여 만족도를 극대화합니다.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="roadmap" class="bg-white rounded-lg shadow-md p-6 md:p-8">
+                <h2 class="text-2xl font-bold text-[#073B4C] mb-6"># 단기 실행 로드맵</h2>
+                <div class="relative">
+                    <div class="timeline-item">
+                        <div class="timeline-dot bg-[#FFD166]"></div>
+                        <div class="timeline-line bg-[#FFD166]"></div>
+                        <h3 class="text-xl font-bold text-[#073B4C]">Phase 1: 제도 개선 과제</h3>
+                        <p class="text-slate-600 mt-1">특정 부서 대상 반기별 성과급 및 즉각적 인센티브 제도 파일럿 시행. 직원 니즈 조사를 통한 맞춤형 복지 포인트 제도 도입 검토.</p>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot bg-[#06D6A0]"></div>
+                        <div class="timeline-line bg-[#06D6A0]"></div>
+                        <h3 class="text-xl font-bold text-[#073B4C]">Phase 2: 복리후생 시스템 운영</h3>
+                        <p class="text-slate-600 mt-1">R&D 등 특정 부서에 선택적 근로시간제 시범 적용. 스트레스 관리, 건강 상담 등 직원 웰니스 프로그램 구축 및 도입.</p>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot bg-[#118AB2]"></div>
+                        <h3 class="text-xl font-bold text-[#073B4C]">Phase 3: KPI 모니터링 및 피드백</h3>
+                        <p class="text-slate-600 mt-1">제도 도입 후 보상 만족도, 이직률, 조직 몰입도 등 핵심 지표 정기적 측정. 설문조사 및 간담회를 통해 현장 의견을 수렴하고 지속적으로 제도 보완.</p>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        const energeticPlayfulPalette = {
+            red: '#FF6B6B',
+            yellow: '#FFD166',
+            green: '#06D6A0',
+            blue: '#118AB2',
+            darkBlue: '#073B4C',
+            lightGray: '#F8F9FA'
+        };
+
+        const tooltipTitleCallback = (tooltipItems) => {
+            const item = tooltipItems[0];
+            let label = item.chart.data.labels[item.dataIndex];
+            if (Array.isArray(label)) {
+                return label.join(' ');
+            } else {
+                return label;
+            }
+        };
+        
+        const wrapLabel = (label) => {
+            const maxLength = 16;
+            if (label.length <= maxLength) return label;
+            
+            const words = label.split(' ');
+            const lines = [];
+            let currentLine = '';
+
+            words.forEach(word => {
+                if ((currentLine + word).length > maxLength) {
+                    lines.push(currentLine.trim());
+                    currentLine = '';
+                }
+                currentLine += word + ' ';
+            });
+            lines.push(currentLine.trim());
+            return lines;
+        };
+
+        const commonChartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: energeticPlayfulPalette.darkBlue,
+                        font: {
+                            size: 12
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        title: tooltipTitleCallback
+                    }
+                }
+            }
+        };
+
+        new Chart(document.getElementById('monetaryChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['성과/직무 전문성 중심', '연공서열 중심'],
+                datasets: [{
+                    label: '보상 패러다임',
+                    data: [75, 25],
+                    backgroundColor: [energeticPlayfulPalette.green, energeticPlayfulPalette.lightGray],
+                    borderColor: '#ffffff',
+                    borderWidth: 4
+                }]
+            },
+            options: { ...commonChartOptions }
+        });
+
+        const nonMonetaryLabels = ['유연근무제 확대', '맞춤형 복지 제도', '성장 지원 프로그램', '심리적 지원 및 웰니스'].map(wrapLabel);
+        new Chart(document.getElementById('nonMonetaryChart'), {
+            type: 'bar',
+            data: {
+                labels: nonMonetaryLabels,
+                datasets: [{
+                    label: '중요도',
+                    data: [90, 85, 80, 75],
+                    backgroundColor: [
+                        energeticPlayfulPalette.blue,
+                        energeticPlayfulPalette.green,
+                        energeticPlayfulPalette.yellow,
+                        energeticPlayfulPalette.red
+                    ],
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                ...commonChartOptions,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: '#e5e7eb'
+                        }
+                    },
+                    x: {
+                         grid: {
+                            display: false
+                        }
+                    }
+                },
+                plugins: {
+                    ...commonChartOptions.plugins,
+                    legend: { display: false }
+                }
+            }
+        });
+        
+        const radarLabels = ['금전적 보상', '비금전적 보상', '제도 유연성', '보상 투명성', '성장 지원'].map(wrapLabel);
+        new Chart(document.getElementById('competitorRadarChart'), {
+            type: 'radar',
+            data: {
+                labels: radarLabels,
+                datasets: [
+                    {
+                        label: '삼양엔씨켐',
+                        data: [70, 65, 50, 60, 70],
+                        fill: true,
+                        backgroundColor: 'rgba(255, 107, 107, 0.2)',
+                        borderColor: energeticPlayfulPalette.red,
+                        pointBackgroundColor: energeticPlayfulPalette.red,
+                    },
+                    {
+                        label: '경인양행',
+                        data: [85, 75, 80, 85, 70],
+                        fill: true,
+                        backgroundColor: 'rgba(6, 214, 160, 0.2)',
+                        borderColor: energeticPlayfulPalette.green,
+                        pointBackgroundColor: energeticPlayfulPalette.green,
+                    },
+                    {
+                        label: '미원상사',
+                        data: [60, 70, 40, 50, 55],
+                        fill: true,
+                        backgroundColor: 'rgba(255, 209, 102, 0.2)',
+                        borderColor: energeticPlayfulPalette.yellow,
+                        pointBackgroundColor: energeticPlayfulPalette.yellow,
+                    }
+                ]
+            },
+            options: {
+                ...commonChartOptions,
+                scales: {
+                    r: {
+                        angleLines: { color: '#e5e7eb' },
+                        grid: { color: '#e5e7eb' },
+                        pointLabels: {
+                            font: { size: 12, weight: 'bold' },
+                            color: energeticPlayfulPalette.darkBlue
+                        },
+                        ticks: {
+                            backdropColor: 'rgba(255, 255, 255, 0.75)',
+                            color: energeticPlayfulPalette.darkBlue
+                        }
+                    }
+                }
+            }
+        });
+
+        new Chart(document.getElementById('gapAnalysisChart'), {
+            type: 'bar',
+            data: {
+                labels: ['즉각적 인센티브', '맞춤형 복지', '유연근무 제도'],
+                datasets: [
+                    {
+                        label: '자사 현황',
+                        data: [40, 55, 50],
+                        backgroundColor: energeticPlayfulPalette.yellow,
+                    },
+                    {
+                        label: '시장 트렌드',
+                        data: [85, 90, 80],
+                        backgroundColor: energeticPlayfulPalette.blue,
+                    }
+                ]
+            },
+            options: {
+                ...commonChartOptions,
+                indexAxis: 'y',
+                scales: {
+                    x: {
+                        stacked: false,
+                        grid: { color: '#e5e7eb' },
+                        max: 100
+                    },
+                    y: {
+                        stacked: false,
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+
+    </script>
+</body>
+</html>

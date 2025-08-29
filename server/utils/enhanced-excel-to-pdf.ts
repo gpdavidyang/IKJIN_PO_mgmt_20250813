@@ -14,7 +14,7 @@
  * - File management and cleanup utilities
  */
 
-import puppeteer from 'puppeteer';
+import { chromium } from 'playwright-chromium';
 import ExcelJS from 'exceljs';
 import path from 'path';
 import fs from 'fs';
@@ -115,9 +115,9 @@ export class EnhancedExcelToPDFConverter {
       const html = await this.generateEnhancedHTML(sheetsToConvert, finalOptions);
       console.log(`🌐 Enhanced HTML 생성 완료. 크기: ${Math.round(html.length / 1024)}KB`);
 
-      // Puppeteer 브라우저 실행
-      browser = await puppeteer.launch({
-        headless: 'new',
+      // Playwright 브라우저 실행
+      browser = await chromium.launch({
+        headless: true,
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
@@ -134,15 +134,14 @@ export class EnhancedExcelToPDFConverter {
       const page = await browser.newPage();
       
       // 뷰포트 설정 (A4 크기에 맞춤)
-      await page.setViewport({
+      await page.setViewportSize({
         width: finalOptions.orientation === 'landscape' ? 1169 : 827,
-        height: finalOptions.orientation === 'landscape' ? 827 : 1169,
-        deviceScaleFactor: 2 // 고해상도
+        height: finalOptions.orientation === 'landscape' ? 827 : 1169
       });
 
       // HTML 컨텐츠 설정
       await page.setContent(html, {
-        waitUntil: 'networkidle0',
+        waitUntil: 'networkidle',
         timeout: 60000 // 1분 타임아웃
       });
 

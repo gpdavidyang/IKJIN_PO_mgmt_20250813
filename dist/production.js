@@ -5028,7 +5028,7 @@ import { dirname } from "path";
 
 // server/utils/excel-to-pdf.ts
 import * as XLSX from "xlsx";
-import puppeteer from "puppeteer";
+import { chromium } from "playwright-chromium";
 var ExcelToPdfConverter = class {
   /**
    * Excel 파일을 PDF로 변환
@@ -5038,12 +5038,12 @@ var ExcelToPdfConverter = class {
       const workbook = XLSX.readFile(excelPath);
       const pdfPath = options.outputPath || excelPath.replace(/\.xlsx?m?$/, ".pdf");
       const htmlContent = this.generateHtmlFromWorkbook(workbook);
-      const browser = await puppeteer.launch({
+      const browser = await chromium.launch({
         headless: true,
         args: ["--no-sandbox", "--disable-setuid-sandbox"]
       });
       const page = await browser.newPage();
-      await page.setContent(htmlContent, { waitUntil: "networkidle0" });
+      await page.setContent(htmlContent, { waitUntil: "networkidle" });
       await page.pdf({
         path: pdfPath,
         format: options.pageFormat || "A4",
@@ -5076,12 +5076,12 @@ var ExcelToPdfConverter = class {
       const workbook = XLSX.readFile(excelPath);
       const pdfPath = options.outputPath || excelPath.replace(/\.xlsx?m?$/, "-sheets.pdf");
       const htmlContent = this.generateHtmlFromSheets(workbook, sheetNames);
-      const browser = await puppeteer.launch({
+      const browser = await chromium.launch({
         headless: true,
         args: ["--no-sandbox", "--disable-setuid-sandbox"]
       });
       const page = await browser.newPage();
-      await page.setContent(htmlContent, { waitUntil: "networkidle0" });
+      await page.setContent(htmlContent, { waitUntil: "networkidle" });
       await page.pdf({
         path: pdfPath,
         format: options.pageFormat || "A4",
@@ -5248,7 +5248,7 @@ async function convertExcelToPdf(excelPath, outputPath, sheetsOnly) {
 }
 
 // server/utils/excel-to-pdf-converter.ts
-import puppeteer2 from "puppeteer";
+import { chromium as chromium2 } from "playwright-chromium";
 import ExcelJS from "exceljs";
 import path2 from "path";
 import fs2 from "fs";
@@ -5291,9 +5291,9 @@ var ExcelToPDFConverter = class {
       console.log(`\u{1F310} HTML \uC0DD\uC131 \uC911...`);
       const html = await this.generateHTMLFromWorkbook(workbook);
       console.log(`\u{1F310} HTML \uC0DD\uC131 \uC644\uB8CC. \uD06C\uAE30: ${html.length} \uBB38\uC790`);
-      console.log(`\u{1F680} Puppeteer \uBE0C\uB77C\uC6B0\uC800 \uC2DC\uC791 \uC911...`);
-      browser = await puppeteer2.launch({
-        headless: "new",
+      console.log(`\u{1F680} Playwright \uBE0C\uB77C\uC6B0\uC800 \uC2DC\uC791 \uC911...`);
+      browser = await chromium2.launch({
+        headless: true,
         args: [
           "--no-sandbox",
           "--disable-setuid-sandbox",
@@ -5305,12 +5305,12 @@ var ExcelToPDFConverter = class {
           "--disable-gpu"
         ]
       });
-      console.log(`\u{1F680} Puppeteer \uBE0C\uB77C\uC6B0\uC800 \uC2DC\uC791 \uC644\uB8CC`);
+      console.log(`\u{1F680} Playwright \uBE0C\uB77C\uC6B0\uC800 \uC2DC\uC791 \uC644\uB8CC`);
       const page = await browser.newPage();
       console.log(`\u{1F4C4} \uC0C8 \uD398\uC774\uC9C0 \uC0DD\uC131 \uC644\uB8CC`);
       console.log(`\u{1F4C4} HTML \uCEE8\uD150\uCE20 \uC124\uC815 \uC911...`);
       await page.setContent(html, {
-        waitUntil: "networkidle0",
+        waitUntil: "networkidle",
         timeout: 3e4
         // 30초 타임아웃
       });
@@ -5464,8 +5464,8 @@ var ExcelToPDFConverter = class {
    */
   static async convertMultipleExcelsToPDF(excelPaths, outputPath) {
     try {
-      const browser = await puppeteer2.launch({
-        headless: "new",
+      const browser = await chromium2.launch({
+        headless: true,
         args: ["--no-sandbox", "--disable-setuid-sandbox"]
       });
       const page = await browser.newPage();
@@ -5535,7 +5535,7 @@ var ExcelToPDFConverter = class {
 </body>
 </html>
 `;
-      await page.setContent(combinedHTML, { waitUntil: "networkidle0" });
+      await page.setContent(combinedHTML, { waitUntil: "networkidle" });
       await page.pdf({
         path: outputPath,
         format: "A4",
@@ -5559,7 +5559,7 @@ var ExcelToPDFConverter = class {
 };
 
 // server/utils/enhanced-excel-to-pdf.ts
-import puppeteer3 from "puppeteer";
+import { chromium as chromium3 } from "playwright-chromium";
 import ExcelJS2 from "exceljs";
 import path3 from "path";
 import fs3 from "fs";
@@ -5609,8 +5609,8 @@ var EnhancedExcelToPDFConverter = class {
       console.log(`\u{1F3AF} \uBCC0\uD658 \uB300\uC0C1 \uC2DC\uD2B8: ${sheetsToConvert.map((ws) => ws.name).join(", ")}`);
       const html = await this.generateEnhancedHTML(sheetsToConvert, finalOptions);
       console.log(`\u{1F310} Enhanced HTML \uC0DD\uC131 \uC644\uB8CC. \uD06C\uAE30: ${Math.round(html.length / 1024)}KB`);
-      browser = await puppeteer3.launch({
-        headless: "new",
+      browser = await chromium3.launch({
+        headless: true,
         args: [
           "--no-sandbox",
           "--disable-setuid-sandbox",
@@ -5624,14 +5624,12 @@ var EnhancedExcelToPDFConverter = class {
         ]
       });
       const page = await browser.newPage();
-      await page.setViewport({
+      await page.setViewportSize({
         width: finalOptions.orientation === "landscape" ? 1169 : 827,
-        height: finalOptions.orientation === "landscape" ? 827 : 1169,
-        deviceScaleFactor: 2
-        // 고해상도
+        height: finalOptions.orientation === "landscape" ? 827 : 1169
       });
       await page.setContent(html, {
-        waitUntil: "networkidle0",
+        waitUntil: "networkidle",
         timeout: 6e4
         // 1분 타임아웃
       });
@@ -7879,8 +7877,8 @@ async function generatePDFLogic(req, res) {
       let browser = null;
       try {
         console.log("\u{1F680} Puppeteer \uBE0C\uB77C\uC6B0\uC800 \uC2DC\uC791...");
-        const puppeteer4 = await import("puppeteer");
-        browser = await puppeteer4.default.launch({
+        const puppeteer = await import("puppeteer");
+        browser = await puppeteer.default.launch({
           headless: "new",
           args: [
             "--no-sandbox",
