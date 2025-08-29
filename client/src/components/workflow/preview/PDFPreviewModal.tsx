@@ -237,10 +237,25 @@ const PDFPreviewModal: React.FC<PDFPreviewModalProps> = ({
     const isServerless = window.location.hostname.includes('vercel.app') || 
                         window.location.hostname.includes('ikjin-po');
     
+    console.log('🔍 PDF 생성 환경 감지:', { 
+      hostname: window.location.hostname, 
+      isServerless, 
+      useClientPdf 
+    });
+    
+    // Vercel 환경에서는 항상 클라이언트 PDF 사용
     if (useClientPdf || isServerless) {
+      console.log('📄 클라이언트 PDF 생성 시작');
       await generateClientPDF();
     } else {
-      await generateServerPDF();
+      console.log('📄 서버 PDF 생성 시도');
+      try {
+        await generateServerPDF();
+      } catch (error) {
+        console.error('❌ 서버 PDF 실패, 클라이언트 PDF로 전환', error);
+        setUseClientPdf(true);
+        await generateClientPDF();
+      }
     }
   };
 
@@ -495,13 +510,58 @@ const PDFPreviewModal: React.FC<PDFPreviewModalProps> = ({
             </div>
 
             {/* PDF 뷰어 영역 */}
-            <div className="bg-gray-100 rounded-lg p-4 min-h-[600px] flex items-center justify-center">
-              {pdfStatus.url ? (
-                <iframe
-                  src={`${pdfStatus.url}#view=FitH&zoom=${zoom}`}
-                  className="w-full h-[600px] border-0 rounded"
-                  title="PDF 미리보기"
-                />
+            <div className="bg-gray-100 rounded-lg p-4 min-h-[600px] flex flex-col items-center justify-center">
+              {pdfStatus.blob ? (
+                // 클라이언트 PDF의 경우 
+                <div className="w-full h-full flex flex-col items-center justify-center">
+                  <div className="bg-white p-8 rounded-lg shadow-lg text-center">
+                    <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">PDF 생성 완료!</h3>
+                    <p className="text-gray-600 mb-4">
+                      PDF가 성공적으로 생성되었습니다.
+                    </p>
+                    <div className="flex gap-3 justify-center">
+                      <Button onClick={handleDownload} className="flex items-center gap-2">
+                        <Download className="w-4 h-4" />
+                        PDF 다운로드
+                      </Button>
+                      <Button onClick={handlePrint} variant="outline" className="flex items-center gap-2">
+                        <Eye className="w-4 h-4" />
+                        PDF 보기
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ) : pdfStatus.url ? (
+                // 서버 PDF의 경우 iframe 사용  
+                <>
+                  <iframe
+                    src={`${pdfStatus.url}#view=FitH&zoom=${zoom}`}
+                    className="w-full h-[600px] border-0 rounded"
+                    title="PDF 미리보기"
+                    onError={(e) => {
+                      console.error('❌ iframe PDF 로드 실패');
+                      // iframe 로드 실패 시 다운로드 버튼만 표시
+                      const iframe = e.target as HTMLIFrameElement;
+                      iframe.style.display = 'none';
+                      setUseClientPdf(true);
+                      generateClientPDF();
+                    }}
+                  />
+                  {/* 대체 보기 옵션 */}
+                  <div className="mt-4 text-center">
+                    <p className="text-sm text-gray-600 mb-2">
+                      PDF가 표시되지 않나요?
+                    </p>
+                    <Button 
+                      onClick={() => window.open(pdfStatus.url, '_blank')}
+                      variant="outline"
+                      size="sm"
+                    >
+                      새 탭에서 열기
+                    </Button>
+                  </div>
+                </>
               ) : (
                 <div className="text-center py-16">
                   <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
