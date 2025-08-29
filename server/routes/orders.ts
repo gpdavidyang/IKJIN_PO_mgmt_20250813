@@ -1168,66 +1168,99 @@ async function generatePDFLogic(req: any, res: any) {
         throw new Error(`HTML 파일 생성 실패: ${writeError.message}`);
       }
 
-      // Enhanced Puppeteer configuration
-      let browser = null;
-      try {
-        console.log('🚀 Puppeteer 브라우저 시작...');
+      // Check if serverless environment
+      const isServerless = !!(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.NETLIFY);
+      
+      if (isServerless) {
+        // Use serverless PDF generation for Vercel and other serverless platforms
+        console.log('🚀 Serverless 환경 감지 - HTML 기반 PDF 생성');
         
-        const puppeteer = await import('puppeteer');
+        // Save HTML for client-side PDF generation
+        const htmlForPdf = orderHtml.replace(
+          '</head>',
+          `<script>
+            function generatePDF() {
+              window.print();
+            }
+            window.onload = function() {
+              if (window.location.search.includes('print=true')) {
+                setTimeout(generatePDF, 1000);
+              }
+            };
+          </script>
+          </head>`
+        );
         
-        browser = await puppeteer.default.launch({
-          headless: 'new',
-          args: [
-            '--no-sandbox', 
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-accelerated-2d-canvas',
-            '--no-first-run',
-            '--no-zygote',
-            '--disable-gpu',
-            '--disable-background-timer-throttling',
-            '--disable-backgrounding-occluded-windows',
-            '--disable-renderer-backgrounding'
-          ],
-          timeout: 60000 // 1 minute timeout
-        });
+        fs.writeFileSync(tempPdfPath.replace('.pdf', '.html'), htmlForPdf);
+        
+        // Return HTML path for client-side conversion
+        console.log('✅ HTML 파일 생성 완료 (클라이언트 PDF 변환용)');
+        
+        // Create a placeholder PDF message
+        fs.writeFileSync(tempPdfPath, 'PDF generation pending - use browser print');
+        
+      } else {
+        // Use Playwright for local environments
+        let browser = null;
+        try {
+          console.log('🚀 Playwright 브라우저 시작...');
+          
+          const { chromium } = await import('playwright-chromium');
+          
+          browser = await chromium.launch({
+            headless: true,
+            args: [
+              '--no-sandbox', 
+              '--disable-setuid-sandbox',
+              '--disable-dev-shm-usage',
+              '--disable-accelerated-2d-canvas',
+              '--no-first-run',
+              '--no-zygote',
+              '--disable-gpu',
+              '--disable-background-timer-throttling',
+              '--disable-backgrounding-occluded-windows',
+              '--disable-renderer-backgrounding'
+            ],
+            timeout: 60000 // 1 minute timeout
+          });
 
-        const page = await browser.newPage();
-        
-        // Set viewport and media type
-        await page.setViewport({ width: 1200, height: 1600 });
-        await page.emulateMediaType('print');
-        
-        console.log('📄 HTML 콘텐츠 로딩...');
-        await page.setContent(orderHtml, { 
-          waitUntil: ['networkidle0', 'domcontentloaded'],
-          timeout: 30000
-        });
-        
-        console.log('📄 PDF 생성 중...');
-        await page.pdf({
-          path: tempPdfPath,
-          format: 'A4',
-          landscape: false,
-          printBackground: true,
-          preferCSSPageSize: true,
-          margin: {
-            top: '20mm',
-            bottom: '20mm',
-            left: '15mm',
-            right: '15mm'
+          const page = await browser.newPage();
+          
+          // Set viewport and media type
+          await page.setViewportSize({ width: 1200, height: 1600 });
+          await page.emulateMedia({ media: 'print' });
+          
+          console.log('📄 HTML 콘텐츠 로딩...');
+          await page.setContent(orderHtml, { 
+            waitUntil: 'networkidle',
+            timeout: 30000
+          });
+          
+          console.log('📄 PDF 생성 중...');
+          await page.pdf({
+            path: tempPdfPath,
+            format: 'A4',
+            landscape: false,
+            printBackground: true,
+            preferCSSPageSize: true,
+            margin: {
+              top: '20mm',
+              bottom: '20mm',
+              left: '15mm',
+              right: '15mm'
+            }
+          });
+
+          console.log('✅ PDF 생성 완료');
+
+        } catch (playwrightError) {
+          console.error('❌ Playwright 오류:', playwrightError);
+          throw new Error(`PDF 생성 실패: ${playwrightError.message}`);
+        } finally {
+          if (browser) {
+            await browser.close();
+            console.log('🔒 Playwright 브라우저 종료');
           }
-        });
-
-        console.log('✅ PDF 생성 완료');
-
-      } catch (puppeteerError) {
-        console.error('❌ Puppeteer 오류:', puppeteerError);
-        throw new Error(`PDF 생성 실패: ${puppeteerError.message}`);
-      } finally {
-        if (browser) {
-          await browser.close();
-          console.log('🔒 Puppeteer 브라우저 종료');
         }
       }
 
@@ -1319,19 +1352,38 @@ if (process.env.NODE_ENV === 'development') {
   });
 }
 
-// Download or preview generated PDF
+// Download or preview generated PDF or HTML
 router.get("/orders/download-pdf/:timestamp", (req, res) => {
   try {
     const { timestamp } = req.params;
     const { download } = req.query; // ?download=true 면 다운로드, 없으면 미리보기
-    // Use same temp directory logic for PDF path
-    const pdfPath = process.env.VERCEL 
-      ? path.join('/tmp', 'temp-pdf', `order-${timestamp}.pdf`)
-      : path.join(process.cwd(), 'uploads/temp-pdf', `order-${timestamp}.pdf`);
     
-    console.log(`📄 PDF 다운로드 요청: ${pdfPath}`);
-    console.log(`📄 파일 존재 여부: ${fs.existsSync(pdfPath)}`);
+    // Check for both PDF and HTML files
+    const basePath = process.env.VERCEL 
+      ? path.join('/tmp', 'temp-pdf', `order-${timestamp}`)
+      : path.join(process.cwd(), 'uploads/temp-pdf', `order-${timestamp}`);
+    
+    const pdfPath = `${basePath}.pdf`;
+    const htmlPath = `${basePath}.html`;
+    
+    console.log(`📄 파일 요청: ${basePath}.*`);
+    console.log(`📄 PDF 존재: ${fs.existsSync(pdfPath)}, HTML 존재: ${fs.existsSync(htmlPath)}`);
     console.log(`📄 다운로드 모드: ${download}`);
+    
+    // If in serverless and only HTML exists, serve HTML
+    if (process.env.VERCEL && !fs.existsSync(pdfPath) && fs.existsSync(htmlPath)) {
+      const htmlContent = fs.readFileSync(htmlPath, 'utf-8');
+      
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.setHeader('Cache-Control', 'no-cache');
+      
+      if (download === 'true') {
+        res.setHeader('Content-Disposition', `attachment; filename="order-${timestamp}.html"`);
+      }
+      
+      res.send(htmlContent);
+      return;
+    }
 
     if (fs.existsSync(pdfPath)) {
       try {

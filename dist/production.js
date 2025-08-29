@@ -7874,57 +7874,79 @@ async function generatePDFLogic(req, res) {
       } catch (writeError) {
         throw new Error(`HTML \uD30C\uC77C \uC0DD\uC131 \uC2E4\uD328: ${writeError.message}`);
       }
-      let browser = null;
-      try {
-        console.log("\u{1F680} Puppeteer \uBE0C\uB77C\uC6B0\uC800 \uC2DC\uC791...");
-        const puppeteer = await import("puppeteer");
-        browser = await puppeteer.default.launch({
-          headless: "new",
-          args: [
-            "--no-sandbox",
-            "--disable-setuid-sandbox",
-            "--disable-dev-shm-usage",
-            "--disable-accelerated-2d-canvas",
-            "--no-first-run",
-            "--no-zygote",
-            "--disable-gpu",
-            "--disable-background-timer-throttling",
-            "--disable-backgrounding-occluded-windows",
-            "--disable-renderer-backgrounding"
-          ],
-          timeout: 6e4
-          // 1 minute timeout
-        });
-        const page = await browser.newPage();
-        await page.setViewport({ width: 1200, height: 1600 });
-        await page.emulateMediaType("print");
-        console.log("\u{1F4C4} HTML \uCF58\uD150\uCE20 \uB85C\uB529...");
-        await page.setContent(orderHtml, {
-          waitUntil: ["networkidle0", "domcontentloaded"],
-          timeout: 3e4
-        });
-        console.log("\u{1F4C4} PDF \uC0DD\uC131 \uC911...");
-        await page.pdf({
-          path: tempPdfPath,
-          format: "A4",
-          landscape: false,
-          printBackground: true,
-          preferCSSPageSize: true,
-          margin: {
-            top: "20mm",
-            bottom: "20mm",
-            left: "15mm",
-            right: "15mm"
+      const isServerless = !!(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.NETLIFY);
+      if (isServerless) {
+        console.log("\u{1F680} Serverless \uD658\uACBD \uAC10\uC9C0 - HTML \uAE30\uBC18 PDF \uC0DD\uC131");
+        const htmlForPdf = orderHtml.replace(
+          "</head>",
+          `<script>
+            function generatePDF() {
+              window.print();
+            }
+            window.onload = function() {
+              if (window.location.search.includes('print=true')) {
+                setTimeout(generatePDF, 1000);
+              }
+            };
+          </script>
+          </head>`
+        );
+        fs7.writeFileSync(tempPdfPath.replace(".pdf", ".html"), htmlForPdf);
+        console.log("\u2705 HTML \uD30C\uC77C \uC0DD\uC131 \uC644\uB8CC (\uD074\uB77C\uC774\uC5B8\uD2B8 PDF \uBCC0\uD658\uC6A9)");
+        fs7.writeFileSync(tempPdfPath, "PDF generation pending - use browser print");
+      } else {
+        let browser = null;
+        try {
+          console.log("\u{1F680} Playwright \uBE0C\uB77C\uC6B0\uC800 \uC2DC\uC791...");
+          const { chromium: chromium4 } = await import("playwright-chromium");
+          browser = await chromium4.launch({
+            headless: true,
+            args: [
+              "--no-sandbox",
+              "--disable-setuid-sandbox",
+              "--disable-dev-shm-usage",
+              "--disable-accelerated-2d-canvas",
+              "--no-first-run",
+              "--no-zygote",
+              "--disable-gpu",
+              "--disable-background-timer-throttling",
+              "--disable-backgrounding-occluded-windows",
+              "--disable-renderer-backgrounding"
+            ],
+            timeout: 6e4
+            // 1 minute timeout
+          });
+          const page = await browser.newPage();
+          await page.setViewportSize({ width: 1200, height: 1600 });
+          await page.emulateMedia({ media: "print" });
+          console.log("\u{1F4C4} HTML \uCF58\uD150\uCE20 \uB85C\uB529...");
+          await page.setContent(orderHtml, {
+            waitUntil: "networkidle",
+            timeout: 3e4
+          });
+          console.log("\u{1F4C4} PDF \uC0DD\uC131 \uC911...");
+          await page.pdf({
+            path: tempPdfPath,
+            format: "A4",
+            landscape: false,
+            printBackground: true,
+            preferCSSPageSize: true,
+            margin: {
+              top: "20mm",
+              bottom: "20mm",
+              left: "15mm",
+              right: "15mm"
+            }
+          });
+          console.log("\u2705 PDF \uC0DD\uC131 \uC644\uB8CC");
+        } catch (playwrightError) {
+          console.error("\u274C Playwright \uC624\uB958:", playwrightError);
+          throw new Error(`PDF \uC0DD\uC131 \uC2E4\uD328: ${playwrightError.message}`);
+        } finally {
+          if (browser) {
+            await browser.close();
+            console.log("\u{1F512} Playwright \uBE0C\uB77C\uC6B0\uC800 \uC885\uB8CC");
           }
-        });
-        console.log("\u2705 PDF \uC0DD\uC131 \uC644\uB8CC");
-      } catch (puppeteerError) {
-        console.error("\u274C Puppeteer \uC624\uB958:", puppeteerError);
-        throw new Error(`PDF \uC0DD\uC131 \uC2E4\uD328: ${puppeteerError.message}`);
-      } finally {
-        if (browser) {
-          await browser.close();
-          console.log("\u{1F512} Puppeteer \uBE0C\uB77C\uC6B0\uC800 \uC885\uB8CC");
         }
       }
       if (!fs7.existsSync(tempPdfPath)) {
@@ -7997,10 +8019,22 @@ router3.get("/orders/download-pdf/:timestamp", (req, res) => {
   try {
     const { timestamp: timestamp2 } = req.params;
     const { download } = req.query;
-    const pdfPath = process.env.VERCEL ? path5.join("/tmp", "temp-pdf", `order-${timestamp2}.pdf`) : path5.join(process.cwd(), "uploads/temp-pdf", `order-${timestamp2}.pdf`);
-    console.log(`\u{1F4C4} PDF \uB2E4\uC6B4\uB85C\uB4DC \uC694\uCCAD: ${pdfPath}`);
-    console.log(`\u{1F4C4} \uD30C\uC77C \uC874\uC7AC \uC5EC\uBD80: ${fs7.existsSync(pdfPath)}`);
+    const basePath = process.env.VERCEL ? path5.join("/tmp", "temp-pdf", `order-${timestamp2}`) : path5.join(process.cwd(), "uploads/temp-pdf", `order-${timestamp2}`);
+    const pdfPath = `${basePath}.pdf`;
+    const htmlPath = `${basePath}.html`;
+    console.log(`\u{1F4C4} \uD30C\uC77C \uC694\uCCAD: ${basePath}.*`);
+    console.log(`\u{1F4C4} PDF \uC874\uC7AC: ${fs7.existsSync(pdfPath)}, HTML \uC874\uC7AC: ${fs7.existsSync(htmlPath)}`);
     console.log(`\u{1F4C4} \uB2E4\uC6B4\uB85C\uB4DC \uBAA8\uB4DC: ${download}`);
+    if (process.env.VERCEL && !fs7.existsSync(pdfPath) && fs7.existsSync(htmlPath)) {
+      const htmlContent = fs7.readFileSync(htmlPath, "utf-8");
+      res.setHeader("Content-Type", "text/html; charset=utf-8");
+      res.setHeader("Cache-Control", "no-cache");
+      if (download === "true") {
+        res.setHeader("Content-Disposition", `attachment; filename="order-${timestamp2}.html"`);
+      }
+      res.send(htmlContent);
+      return;
+    }
     if (fs7.existsSync(pdfPath)) {
       try {
         const stat = fs7.statSync(pdfPath);

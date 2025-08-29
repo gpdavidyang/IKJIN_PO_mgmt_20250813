@@ -35,6 +35,11 @@
       "maxDuration": 60
     }
   },
+  "build": {
+    "env": {
+      "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"
+    }
+  },
   "env": {
     "DATABASE_URL": "postgresql://postgres.tbvugytmskxxyqfvqmup:gps110601ysw@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres",
     "SESSION_SECRET": "ikjin-po-mgmt-secure-session-key-2025",
