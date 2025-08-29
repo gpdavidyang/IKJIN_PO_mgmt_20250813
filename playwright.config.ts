@@ -11,7 +11,9 @@ export default defineConfig({
     ['list']
   ],
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: process.env.TEST_ENV === 'production' 
+      ? 'https://ikjin-po-mgmt-20250813.vercel.app'
+      : 'http://localhost:5173',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -26,12 +28,38 @@ export default defineConfig({
       name: 'firefox',
       use: { ...devices['Desktop Firefox'] },
     },
+    {
+      name: 'webkit',
+      use: { ...devices['Desktop Safari'] },
+    },
+    {
+      name: 'Mobile Chrome',
+      use: { ...devices['Pixel 5'] },
+    },
+    {
+      name: 'Mobile Safari',
+      use: { ...devices['iPhone 12'] },
+    },
+    {
+      name: 'localhost',
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5173',
+      },
+    },
+    {
+      name: 'production',
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'https://ikjin-po-mgmt-20250813.vercel.app',
+      },
+    },
   ],
 
-  webServer: {
+  webServer: process.env.TEST_ENV !== 'production' ? {
     command: 'npm run dev',
-    port: 3000,
+    url: 'http://localhost:5173',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
-  },
+  } : undefined,
 });

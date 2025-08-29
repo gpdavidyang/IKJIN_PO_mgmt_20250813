@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -16,8 +16,10 @@ import {
   AlertCircle,
   Maximize2,
   ZoomIn,
-  ZoomOut
+  ZoomOut,
+  FileDown
 } from 'lucide-react';
+import { ClientPdfGenerator } from '@/utils/client-pdf-generator';
 
 interface PDFPreviewModalProps {
   orderData: any;
@@ -30,8 +32,10 @@ interface PDFPreviewModalProps {
 interface PDFGenerationStatus {
   status: 'idle' | 'generating' | 'ready' | 'error';
   url?: string;
+  blob?: Blob;
   error?: string;
   progress?: number;
+  message?: string;
 }
 
 const PDFPreviewModal: React.FC<PDFPreviewModalProps> = ({
@@ -45,9 +49,61 @@ const PDFPreviewModal: React.FC<PDFPreviewModalProps> = ({
   const [zoom, setZoom] = useState(100);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [useClientPdf, setUseClientPdf] = useState(false);
+  const orderPreviewRef = useRef<HTMLDivElement>(null);
 
-  // PDF 생성 함수
-  const generatePDF = async () => {
+  // 클라이언트 사이드 PDF 생성
+  const generateClientPDF = async () => {
+    setPdfStatus({ status: 'generating', progress: 0 });
+    
+    try {
+      console.log('📄 클라이언트 PDF 생성 시작...');
+      
+      if (!orderData || Object.keys(orderData).length === 0) {
+        throw new Error('발주서 데이터가 없습니다.');
+      }
+      
+      // 프로그레스 업데이트
+      setPdfStatus({ status: 'generating', progress: 30 });
+      
+      // 클라이언트에서 PDF 생성
+      const result = await ClientPdfGenerator.generateOrderPdf(orderData, {
+        filename: `PO_${orderData.orderNumber || 'draft'}.pdf`,
+        orientation: 'portrait',
+        format: 'a4'
+      });
+      
+      setPdfStatus({ status: 'generating', progress: 70 });
+      
+      if (!result.success || !result.blob) {
+        throw new Error(result.error || 'PDF 생성 실패');
+      }
+      
+      // Blob URL 생성
+      const blobUrl = window.URL.createObjectURL(result.blob);
+      
+      setPdfStatus({ status: 'generating', progress: 100 });
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      setPdfStatus({ 
+        status: 'ready', 
+        url: blobUrl,
+        blob: result.blob
+      });
+      
+      console.log('✅ 클라이언트 PDF 생성 완료');
+      
+    } catch (error) {
+      console.error('❌ 클라이언트 PDF 생성 오류:', error);
+      setPdfStatus({ 
+        status: 'error', 
+        error: error instanceof Error ? error.message : 'PDF 생성 실패' 
+      });
+    }
+  };
+  
+  // 서버 사이드 PDF 생성 (기존 함수)
+  const generateServerPDF = async () => {
     setPdfStatus({ status: 'generating', progress: 0 });
     
     try {
@@ -175,6 +231,19 @@ const PDFPreviewModal: React.FC<PDFPreviewModalProps> = ({
     }
   };
 
+  // PDF 생성 함수 선택
+  const generatePDF = async () => {
+    // Vercel 환경이거나 서버 오류 시 클라이언트 PDF 사용
+    const isServerless = window.location.hostname.includes('vercel.app') || 
+                        window.location.hostname.includes('ikjin-po');
+    
+    if (useClientPdf || isServerless) {
+      await generateClientPDF();
+    } else {
+      await generateServerPDF();
+    }
+  };
+
   // 컴포넌트 마운트 시 자동으로 PDF 생성 시작
   useEffect(() => {
     if (isOpen && pdfStatus.status === 'idle') {
@@ -183,7 +252,13 @@ const PDFPreviewModal: React.FC<PDFPreviewModalProps> = ({
   }, [isOpen]);
 
   const handleDownload = () => {
-    if (pdfStatus.url && onDownload) {
+    if (pdfStatus.blob) {
+      // 클라이언트 PDF의 경우 Blob 사용
+      ClientPdfGenerator.downloadPdf(
+        pdfStatus.blob, 
+        `PO_${orderData?.orderNumber || 'draft'}.pdf`
+      );
+    } else if (pdfStatus.url && onDownload) {
       onDownload(pdfStatus.url);
     } else if (pdfStatus.url) {
       const link = document.createElement('a');
@@ -196,7 +271,10 @@ const PDFPreviewModal: React.FC<PDFPreviewModalProps> = ({
   };
 
   const handlePrint = () => {
-    if (pdfStatus.url) {
+    if (pdfStatus.blob) {
+      // 클라이언트 PDF의 경우
+      ClientPdfGenerator.previewPdf(pdfStatus.blob);
+    } else if (pdfStatus.url) {
       window.open(pdfStatus.url, '_blank');
     }
   };
@@ -316,6 +394,18 @@ const PDFPreviewModal: React.FC<PDFPreviewModalProps> = ({
               </Button>
               
               <Button 
+                onClick={() => {
+                  setUseClientPdf(true);
+                  generateClientPDF();
+                }}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <FileDown className="w-4 h-4" />
+                브라우저 PDF 생성
+              </Button>
+              
+              <Button 
                 onClick={() => window.location.reload()}
                 variant="secondary"
                 className="flex items-center gap-2"
@@ -341,13 +431,9 @@ const PDFPreviewModal: React.FC<PDFPreviewModalProps> = ({
               
               <Button 
                 onClick={() => {
-                  // Try alternative download method
-                  if (orderData?.id) {
-                    window.open(`/api/orders/${orderData.id}/download`, '_blank');
-                  } else {
-                    // Fallback: try to generate and download PDF directly
-                    handleAlternativeDownload();
-                  }
+                  // 클라이언트 PDF로 전환하여 재시도
+                  setUseClientPdf(true);
+                  generateClientPDF();
                 }}
                 disabled={!orderData?.orderNumber}
                 className="flex items-center gap-2"
