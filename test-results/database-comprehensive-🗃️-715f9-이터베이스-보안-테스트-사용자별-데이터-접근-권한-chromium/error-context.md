@@ -1,0 +1,302 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - region "Notifications (F8)":
+      - list
+    - generic [ref=e3]:
+      - button "메뉴 열기" [ref=e5] [cursor=pointer]:
+        - img
+      - generic [ref=e6]:
+        - banner [ref=e7]:
+          - generic [ref=e8]:
+            - generic [ref=e10]:
+              - heading "대시보드" [level=1] [ref=e11]
+              - navigation "페이지 경로" [ref=e12]:
+                - generic [ref=e14]: 대시보드
+            - generic [ref=e15]:
+              - button [ref=e16] [cursor=pointer]:
+                - img
+              - button "사용자 메뉴 열기" [ref=e18] [cursor=pointer]:
+                - generic [ref=e19] [cursor=pointer]:
+                  - generic [ref=e20] [cursor=pointer]: 현장작업자 테스트
+                  - generic [ref=e21] [cursor=pointer]: field_worker
+                - generic [ref=e23] [cursor=pointer]: 현장
+        - main [ref=e24]:
+          - generic [ref=e26]:
+            - generic [ref=e28]:
+              - generic [ref=e29]:
+                - heading "대시보드" [level=1] [ref=e30]
+                - paragraph [ref=e31]: 실시간 발주 현황을 한눈에 확인하세요
+              - generic [ref=e32]:
+                - button "새 발주서" [ref=e33] [cursor=pointer]:
+                  - img [ref=e34] [cursor=pointer]
+                  - text: 새 발주서
+                - generic [ref=e35]: "마지막 업데이트: 오전 08:51"
+            - generic [ref=e36]:
+              - generic [ref=e38]:
+                - generic [ref=e39]:
+                  - paragraph [ref=e40]: 총 발주서
+                  - paragraph [ref=e41]: "70"
+                  - generic [ref=e42]:
+                    - img [ref=e43]
+                    - generic [ref=e45]: 12% 증가
+                - img [ref=e47]
+              - generic [ref=e51]:
+                - generic [ref=e52]:
+                  - paragraph [ref=e53]: 총 발주 금액
+                  - paragraph [ref=e54]: ₩1,372,087,284
+                  - generic [ref=e55]:
+                    - img [ref=e56]
+                    - generic [ref=e58]: 8.5% 증가
+                - img [ref=e60]
+              - generic [ref=e63] [cursor=pointer]:
+                - generic [ref=e64] [cursor=pointer]:
+                  - paragraph [ref=e65] [cursor=pointer]: 승인 대기
+                  - paragraph [ref=e66] [cursor=pointer]: "23"
+                  - generic [ref=e67] [cursor=pointer]:
+                    - img [ref=e68] [cursor=pointer]
+                    - generic [ref=e70] [cursor=pointer]: 즉시 확인 필요
+                - img [ref=e72] [cursor=pointer]
+              - generic [ref=e76]:
+                - generic [ref=e77]:
+                  - paragraph [ref=e78]: 활성 프로젝트
+                  - paragraph [ref=e79]: "11"
+                  - generic [ref=e80]:
+                    - img [ref=e81]
+                    - generic [ref=e83]: 변동 없음
+                - img [ref=e85]
+            - generic [ref=e88]:
+              - generic [ref=e89]:
+                - generic [ref=e90]:
+                  - heading "월별 발주 추이" [level=3] [ref=e91]
+                  - button "전체 보기" [ref=e92] [cursor=pointer]
+                - img [ref=e96]:
+                  - generic [ref=e101]:
+                    - generic [ref=e104]: "24.09"
+                    - generic [ref=e107]: "24.10"
+                    - generic [ref=e110]: "24.11"
+                    - generic [ref=e113]: "24.12"
+                    - generic [ref=e116]: 01월
+                    - generic [ref=e119]: 02월
+                    - generic [ref=e122]: 06월
+                    - generic [ref=e125]: 07월
+                    - generic [ref=e128]: 08월
+                  - generic [ref=e129]:
+                    - generic [ref=e130]:
+                      - generic [ref=e133]: "0"
+                      - generic [ref=e136]: "9"
+                      - generic [ref=e139]: "18"
+                      - generic [ref=e142]: "27"
+                      - generic [ref=e145]: "36"
+                    - generic [ref=e147]: 발주 건수
+              - generic [ref=e152]:
+                - generic [ref=e153]:
+                  - heading "발주 상태 분포" [level=3] [ref=e154]
+                  - button "상세 보기" [ref=e155] [cursor=pointer]
+                - generic [ref=e156]:
+                  - img [ref=e160]:
+                    - generic [ref=e161]:
+                      - img [ref=e163]
+                      - img [ref=e165]
+                      - img [ref=e167]
+                      - img [ref=e169]
+                      - img [ref=e171]
+                  - generic [ref=e172]:
+                    - generic [ref=e173]:
+                      - generic [ref=e176]: 승인대기
+                      - generic [ref=e177]: 23건
+                    - generic [ref=e178]:
+                      - generic [ref=e181]: 발송완료
+                      - generic [ref=e182]: 20건
+                    - generic [ref=e183]:
+                      - generic [ref=e186]: 승인완료
+                      - generic [ref=e187]: 17건
+                    - generic [ref=e188]:
+                      - generic [ref=e191]: 완료
+                      - generic [ref=e192]: 6건
+                    - generic [ref=e193]:
+                      - generic [ref=e196]: 임시저장
+                      - generic [ref=e197]: 4건
+            - generic [ref=e198]:
+              - generic [ref=e200]:
+                - heading "최근 발주 내역" [level=3] [ref=e201]
+                - button "전체 보기" [ref=e202] [cursor=pointer]:
+                  - text: 전체 보기
+                  - img [ref=e203] [cursor=pointer]
+              - table [ref=e206]:
+                - rowgroup [ref=e207]:
+                  - row "발주번호 거래처 현장 발주일 금액 상태 이메일 액션" [ref=e208]:
+                    - cell "발주번호" [ref=e209]:
+                      - button "발주번호" [ref=e210] [cursor=pointer]:
+                        - text: 발주번호
+                        - img [ref=e211] [cursor=pointer]
+                    - cell "거래처" [ref=e214]:
+                      - button "거래처" [ref=e215] [cursor=pointer]:
+                        - text: 거래처
+                        - img [ref=e216] [cursor=pointer]
+                    - cell "현장" [ref=e219]:
+                      - button "현장" [ref=e220] [cursor=pointer]:
+                        - text: 현장
+                        - img [ref=e221] [cursor=pointer]
+                    - cell "발주일" [ref=e224]:
+                      - button "발주일" [ref=e225] [cursor=pointer]:
+                        - text: 발주일
+                        - img [ref=e226] [cursor=pointer]
+                    - cell "금액" [ref=e229]:
+                      - button "금액" [ref=e230] [cursor=pointer]:
+                        - text: 금액
+                        - img [ref=e231] [cursor=pointer]
+                    - cell "상태" [ref=e234]:
+                      - button "상태" [ref=e235] [cursor=pointer]:
+                        - text: 상태
+                        - img [ref=e236] [cursor=pointer]
+                    - cell "이메일" [ref=e239]
+                    - cell "액션" [ref=e240]
+                - rowgroup [ref=e241]:
+                  - row "PO-2025-00070 제이파트너 힐스테이트 도곡동1차 2025. 8. 28. ₩810,059 임시저장 미발송" [ref=e242]:
+                    - cell "PO-2025-00070" [ref=e243]:
+                      - button "PO-2025-00070" [ref=e244] [cursor=pointer]
+                    - cell "제이파트너" [ref=e245]:
+                      - button "제이파트너" [ref=e246] [cursor=pointer]
+                    - cell "힐스테이트 도곡동1차" [ref=e247]:
+                      - button "힐스테이트 도곡동1차" [ref=e248] [cursor=pointer]
+                    - cell "2025. 8. 28." [ref=e249]
+                    - cell "₩810,059" [ref=e250]:
+                      - generic [ref=e251]: ₩810,059
+                    - cell "임시저장" [ref=e252]:
+                      - generic [ref=e253]: 임시저장
+                    - cell "미발송" [ref=e254]:
+                      - generic [ref=e255]: 미발송
+                    - cell [ref=e256]:
+                      - generic [ref=e257]:
+                        - button "상세보기" [ref=e258] [cursor=pointer]:
+                          - img [ref=e259] [cursor=pointer]
+                        - button "수정" [ref=e262] [cursor=pointer]:
+                          - img [ref=e263] [cursor=pointer]
+                        - button "PDF 보기" [ref=e266] [cursor=pointer]:
+                          - img [ref=e267] [cursor=pointer]
+                        - button "이메일 전송" [ref=e270] [cursor=pointer]:
+                          - img [ref=e271] [cursor=pointer]
+                  - row "PO-2025-00069 분당파트너스 힐스테이트 도곡동1차 2025. 8. 28. ₩73,248 임시저장 미발송" [ref=e274]:
+                    - cell "PO-2025-00069" [ref=e275]:
+                      - button "PO-2025-00069" [ref=e276] [cursor=pointer]
+                    - cell "분당파트너스" [ref=e277]:
+                      - button "분당파트너스" [ref=e278] [cursor=pointer]
+                    - cell "힐스테이트 도곡동1차" [ref=e279]:
+                      - button "힐스테이트 도곡동1차" [ref=e280] [cursor=pointer]
+                    - cell "2025. 8. 28." [ref=e281]
+                    - cell "₩73,248" [ref=e282]:
+                      - generic [ref=e283]: ₩73,248
+                    - cell "임시저장" [ref=e284]:
+                      - generic [ref=e285]: 임시저장
+                    - cell "미발송" [ref=e286]:
+                      - generic [ref=e287]: 미발송
+                    - cell [ref=e288]:
+                      - generic [ref=e289]:
+                        - button "상세보기" [ref=e290] [cursor=pointer]:
+                          - img [ref=e291] [cursor=pointer]
+                        - button "수정" [ref=e294] [cursor=pointer]:
+                          - img [ref=e295] [cursor=pointer]
+                        - button "PDF 보기" [ref=e298] [cursor=pointer]:
+                          - img [ref=e299] [cursor=pointer]
+                        - button "이메일 전송" [ref=e302] [cursor=pointer]:
+                          - img [ref=e303] [cursor=pointer]
+                  - row "PO-2025-00068 엠코헤리츠 힐스테이트 도곡동1차 2025. 8. 28. ₩521,886 임시저장 미발송" [ref=e306]:
+                    - cell "PO-2025-00068" [ref=e307]:
+                      - button "PO-2025-00068" [ref=e308] [cursor=pointer]
+                    - cell "엠코헤리츠" [ref=e309]:
+                      - button "엠코헤리츠" [ref=e310] [cursor=pointer]
+                    - cell "힐스테이트 도곡동1차" [ref=e311]:
+                      - button "힐스테이트 도곡동1차" [ref=e312] [cursor=pointer]
+                    - cell "2025. 8. 28." [ref=e313]
+                    - cell "₩521,886" [ref=e314]:
+                      - generic [ref=e315]: ₩521,886
+                    - cell "임시저장" [ref=e316]:
+                      - generic [ref=e317]: 임시저장
+                    - cell "미발송" [ref=e318]:
+                      - generic [ref=e319]: 미발송
+                    - cell [ref=e320]:
+                      - generic [ref=e321]:
+                        - button "상세보기" [ref=e322] [cursor=pointer]:
+                          - img [ref=e323] [cursor=pointer]
+                        - button "수정" [ref=e326] [cursor=pointer]:
+                          - img [ref=e327] [cursor=pointer]
+                        - button "PDF 보기" [ref=e330] [cursor=pointer]:
+                          - img [ref=e331] [cursor=pointer]
+                        - button "이메일 전송" [ref=e334] [cursor=pointer]:
+                          - img [ref=e335] [cursor=pointer]
+                  - row "PO-2025-00067 제이파트너 힐스테이트 도곡동1차 2025. 8. 28. ₩810,059 임시저장 미발송" [ref=e338]:
+                    - cell "PO-2025-00067" [ref=e339]:
+                      - button "PO-2025-00067" [ref=e340] [cursor=pointer]
+                    - cell "제이파트너" [ref=e341]:
+                      - button "제이파트너" [ref=e342] [cursor=pointer]
+                    - cell "힐스테이트 도곡동1차" [ref=e343]:
+                      - button "힐스테이트 도곡동1차" [ref=e344] [cursor=pointer]
+                    - cell "2025. 8. 28." [ref=e345]
+                    - cell "₩810,059" [ref=e346]:
+                      - generic [ref=e347]: ₩810,059
+                    - cell "임시저장" [ref=e348]:
+                      - generic [ref=e349]: 임시저장
+                    - cell "미발송" [ref=e350]:
+                      - generic [ref=e351]: 미발송
+                    - cell [ref=e352]:
+                      - generic [ref=e353]:
+                        - button "상세보기" [ref=e354] [cursor=pointer]:
+                          - img [ref=e355] [cursor=pointer]
+                        - button "수정" [ref=e358] [cursor=pointer]:
+                          - img [ref=e359] [cursor=pointer]
+                        - button "PDF 보기" [ref=e362] [cursor=pointer]:
+                          - img [ref=e363] [cursor=pointer]
+                        - button "이메일 전송" [ref=e366] [cursor=pointer]:
+                          - img [ref=e367] [cursor=pointer]
+                  - row "PO-2025-00074 제이파트너 힐스테이트 도곡동1차 2025. 8. 27. ₩810,059 발송됨 미발송" [ref=e370]:
+                    - cell "PO-2025-00074" [ref=e371]:
+                      - button "PO-2025-00074" [ref=e372] [cursor=pointer]
+                    - cell "제이파트너" [ref=e373]:
+                      - button "제이파트너" [ref=e374] [cursor=pointer]
+                    - cell "힐스테이트 도곡동1차" [ref=e375]:
+                      - button "힐스테이트 도곡동1차" [ref=e376] [cursor=pointer]
+                    - cell "2025. 8. 27." [ref=e377]
+                    - cell "₩810,059" [ref=e378]:
+                      - generic [ref=e379]: ₩810,059
+                    - cell "발송됨" [ref=e380]:
+                      - generic [ref=e381]: 발송됨
+                    - cell "미발송" [ref=e382]:
+                      - generic [ref=e383]: 미발송
+                    - cell [ref=e384]:
+                      - generic [ref=e385]:
+                        - button "상세보기" [ref=e386] [cursor=pointer]:
+                          - img [ref=e387] [cursor=pointer]
+                        - button "수정" [ref=e390] [cursor=pointer]:
+                          - img [ref=e391] [cursor=pointer]
+                        - button "PDF 보기" [ref=e394] [cursor=pointer]:
+                          - img [ref=e395] [cursor=pointer]
+                        - button "이메일 전송" [ref=e398] [cursor=pointer]:
+                          - img [ref=e399] [cursor=pointer]
+            - generic [ref=e402]:
+              - button "승인 대기 확인 23건 대기중" [ref=e403] [cursor=pointer]:
+                - img [ref=e405] [cursor=pointer]
+                - generic [ref=e407] [cursor=pointer]:
+                  - paragraph [ref=e408] [cursor=pointer]: 승인 대기 확인
+                  - paragraph [ref=e409] [cursor=pointer]: 23건 대기중
+              - button "거래처 관리 82개 활성" [ref=e410] [cursor=pointer]:
+                - img [ref=e412] [cursor=pointer]
+                - generic [ref=e417] [cursor=pointer]:
+                  - paragraph [ref=e418] [cursor=pointer]: 거래처 관리
+                  - paragraph [ref=e419] [cursor=pointer]: 82개 활성
+              - button "현장 관리 11개 진행중" [ref=e420] [cursor=pointer]:
+                - img [ref=e422] [cursor=pointer]
+                - generic [ref=e425] [cursor=pointer]:
+                  - paragraph [ref=e426] [cursor=pointer]: 현장 관리
+                  - paragraph [ref=e427] [cursor=pointer]: 11개 진행중
+              - button "보고서 생성 상세 분석" [ref=e428] [cursor=pointer]:
+                - img [ref=e430] [cursor=pointer]
+                - generic [ref=e432] [cursor=pointer]:
+                  - paragraph [ref=e433] [cursor=pointer]: 보고서 생성
+                  - paragraph [ref=e434] [cursor=pointer]: 상세 분석
+      - button "Open Query DevTools" [ref=e435] [cursor=pointer]:
+        - img [ref=e436] [cursor=pointer]
+  - generic [ref=e441]: "0"
+```
