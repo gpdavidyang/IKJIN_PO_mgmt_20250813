@@ -1,4 +1,5 @@
 import express from 'express';
+import path from 'path';
 import { emailService } from '../services/email-service';
 
 const router = express.Router();
@@ -74,9 +75,24 @@ router.post('/send-test', async (req, res) => {
       userPhone: '010-1234-5678'
     };
 
+    // 임시 Excel 파일 생성 (실제 파일 없이 이메일만 테스트)
+    const dummyFilePath = path.join(process.cwd(), 'uploads', 'test-email.xlsx');
+    
+    // uploads 디렉토리가 없으면 생성
+    const fs = require('fs');
+    const uploadsDir = path.join(process.cwd(), 'uploads');
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+    
+    // 더미 파일 생성
+    if (!fs.existsSync(dummyFilePath)) {
+      fs.writeFileSync(dummyFilePath, 'test content');
+    }
+    
     const result = await emailService.sendPurchaseOrderEmail({
       orderData: testOrderData,
-      excelFilePath: '/Users/davidyang/workspace/IKJIN_PO_Mgmt_20250806/uploads/test-file.xlsx', // 실제로는 없어도 됨
+      excelFilePath: dummyFilePath,
       recipients: [to],
       cc: [],
       userId: 'test-user',

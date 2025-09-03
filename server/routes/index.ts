@@ -35,6 +35,7 @@ import notificationsRoutes from "./notifications";
 import ordersSimpleRoutes from "./orders-simple";
 import positionsRoutes from "./positions";
 import auditRoutes from "./audit";
+import emailTestRoutes from "./email-test";
 
 const router = Router();
 
@@ -70,5 +71,6 @@ router.use("/api", notificationsRoutes);
 router.use("/api", ordersSimpleRoutes);
 router.use("/api", positionsRoutes);
 router.use("/api/audit", auditRoutes);
+router.use("/api/email-test", emailTestRoutes);
 
 export default router;

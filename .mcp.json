@@ -1,27 +1,5 @@
 {
 	"mcpServers": {
-		"supabase": {
-			"type": "stdio",
-			"command": "npx",
-			"args": [
-				"-y",
-				"@supabase/mcp-server-supabase"
-			],
-			"env": {
-				"SUPABASE_URL": "https://tbvugytmskxxyqfvqmup.supabase.co",
-				"SUPABASE_SERVICE_ROLE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidnVneXRtc2t4eHlxZnZxbXVwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MjM3OTUxOCwiZXhwIjoyMDY3OTU1NTE4fQ.1xyuCHnAtXlMailPc52C7z6olHXRob40TkjYaXwuqMY",
-				"SUPABASE_ACCESS_TOKEN": "sbp_10d96376d2362334606fa79f9bc1499b54ed841e"
-			}
-		},
-		"ide": {
-			"type": "stdio",
-			"command": "npx",
-			"args": [
-				"-y",
-				"@modelcontextprotocol/server-vscode"
-			],
-			"cwd": "/Users/davidyang/workspace/20250713_PO_Mgmt"
-		},
 		"filesystem": {
 			"type": "stdio",
 			"command": "npx",
@@ -39,6 +17,19 @@
 				"@modelcontextprotocol/server-sequential-thinking"
 			]
 		},
+		"supabase": {
+			"type": "stdio",
+			"command": "npx",
+			"args": [
+				"-y",
+				"@supabase/mcp-server-supabase"
+			],
+			"env": {
+				"SUPABASE_URL": "https://tbvugytmskxxyqfvqmup.supabase.co",
+				"SUPABASE_SERVICE_ROLE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidnVneXRtc2t4eHlxZnZxbXVwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MjM3OTUxOCwiZXhwIjoyMDY3OTU1NTE4fQ.1xyuCHnAtXlMailPc52C7z6olHXRob40TkjYaXwuqMY",
+				"SUPABASE_ACCESS_TOKEN": "sbp_10d96376d2362334606fa79f9bc1499b54ed841e"
+			}
+		},
 		"github": {
 			"type": "stdio",
 			"command": "npx",
@@ -49,6 +40,18 @@
 			"env": {
 				"GITHUB_PERSONAL_ACCESS_TOKEN": "your_github_token_here"
 			}
+		}
+	},
+	"_disabled_servers": {
+		"_comment": "아래 서버들은 필요시 위의 mcpServers로 이동하여 활성화",
+		"ide": {
+			"type": "stdio",
+			"command": "npx",
+			"args": [
+				"-y",
+				"@modelcontextprotocol/server-vscode"
+			],
+			"cwd": "/Users/davidyang/workspace/20250713_PO_Mgmt"
 		},
 		"brave-search": {
 			"type": "stdio",
