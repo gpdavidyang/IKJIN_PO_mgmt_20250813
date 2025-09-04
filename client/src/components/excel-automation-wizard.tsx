@@ -229,7 +229,7 @@ export function ExcelAutomationWizard() {
     }
   }, []);
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  const { getRootProps, getInputProps, isDragActive, isDragReject, rejectedFiles } = useDropzone({
     onDrop,
     accept: {
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
@@ -237,7 +237,18 @@ export function ExcelAutomationWizard() {
       'application/vnd.ms-excel': ['.xls']
     },
     maxFiles: 1,
-    disabled: isProcessing
+    maxSize: 10485760, // 10MB
+    disabled: isProcessing,
+    onDropRejected: (rejectedFiles) => {
+      const file = rejectedFiles[0];
+      if (file) {
+        if (file.file.size > 10485760) {
+          setError('파일 크기가 10MB를 초과합니다. 더 작은 파일을 선택해주세요.');
+        } else {
+          setError('지원하지 않는 파일 형식입니다. .xlsx, .xlsm, .xls 파일만 업로드 가능합니다.');
+        }
+      }
+    }
   });
 
   const updateStepStatus = (stepId: string, status: ProcessingStep['status']) => {
@@ -392,21 +403,77 @@ export function ExcelAutomationWizard() {
           <CardContent>
             <div
               {...getRootProps()}
-              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                isDragActive 
-                  ? (isDarkMode ? 'border-blue-400 bg-blue-900/20' : 'border-blue-500 bg-blue-50')
-                  : (isDarkMode ? 'border-gray-600 hover:border-gray-500' : 'border-gray-300 hover:border-gray-400')
-              } ${isProcessing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+              className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-all duration-300 ${
+                isDragReject
+                  ? (isDarkMode ? 'border-red-400 bg-red-900/30 scale-105' : 'border-red-500 bg-red-50 scale-105')
+                  : isDragActive 
+                    ? (isDarkMode ? 'border-blue-400 bg-blue-900/30 scale-105 shadow-lg' : 'border-blue-500 bg-blue-50 scale-105 shadow-lg')
+                    : (isDarkMode ? 'border-gray-600 hover:border-gray-500 hover:bg-gray-800/20' : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50')
+              } ${isProcessing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:shadow-md'}`}
             >
               <input {...getInputProps()} />
-              <FileText className={`h-12 w-12 mx-auto mb-4 transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
-              {isDragActive ? (
-                <p className={`transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>파일을 여기에 놓으세요...</p>
+              
+              {/* 업로드 아이콘 - 드래그 상태에 따라 애니메이션 */}
+              <div className={`transition-all duration-300 ${isDragActive ? 'animate-bounce' : isDragReject ? 'animate-pulse' : ''}`}>
+                {isDragReject ? (
+                  <XCircle className={`h-16 w-16 mx-auto mb-4 transition-colors ${isDarkMode ? 'text-red-400' : 'text-red-600'}`} />
+                ) : isDragActive ? (
+                  <Upload className={`h-16 w-16 mx-auto mb-4 transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                ) : (
+                  <FileText className={`h-12 w-12 mx-auto mb-4 transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} group-hover:text-blue-500`} />
+                )}
+              </div>
+
+              {/* 드래그 상태에 따른 텍스트 */}
+              {isDragReject ? (
+                <div>
+                  <p className={`text-lg font-semibold mb-2 transition-colors ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>
+                    지원하지 않는 파일입니다! ❌
+                  </p>
+                  <p className={`text-sm transition-colors ${isDarkMode ? 'text-red-300' : 'text-red-500'}`}>
+                    .xlsx, .xlsm, .xls 파일만 업로드 가능합니다
+                  </p>
+                </div>
+              ) : isDragActive ? (
+                <div>
+                  <p className={`text-lg font-semibold mb-2 transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                    파일을 여기에 놓으세요! 📁
+                  </p>
+                  <p className={`text-sm transition-colors ${isDarkMode ? 'text-blue-300' : 'text-blue-500'}`}>
+                    Excel 파일이 자동으로 처리됩니다
+                  </p>
+                </div>
               ) : (
                 <div>
-                  <p className={`text-lg mb-2 transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>Excel 파일을 드래그하거나 클릭하여 업로드</p>
-                  <p className={`text-sm transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>.xlsx, .xlsm, .xls 파일 지원 (최대 10MB)</p>
+                  <p className={`text-lg mb-2 font-medium transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>
+                    📄 Excel 파일을 드래그하거나 클릭하여 업로드
+                  </p>
+                  <p className={`text-sm mb-2 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    .xlsx, .xlsm, .xls 파일 지원 (최대 10MB)
+                  </p>
+                  
+                  {/* 버튼 스타일 추가 */}
+                  <div className="mt-4">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      disabled={isProcessing}
+                      className={`transition-colors ${
+                        isDarkMode 
+                          ? 'border-gray-600 hover:border-blue-400 hover:text-blue-400' 
+                          : 'border-gray-300 hover:border-blue-500 hover:text-blue-600'
+                      }`}
+                      onClick={(e) => e.preventDefault()} // 클릭 이벤트는 getRootProps가 처리
+                    >
+                      파일 선택하기
+                    </Button>
+                  </div>
                 </div>
+              )}
+
+              {/* 드래그 오버레이 효과 */}
+              {isDragActive && (
+                <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-blue-500/10 to-purple-500/10 animate-pulse" />
               )}
             </div>
 
