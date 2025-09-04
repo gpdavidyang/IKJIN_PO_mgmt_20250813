@@ -157,15 +157,7 @@ export default function DashboardProfessional() {
     }
   };
 
-  // Debug: Log theme state
-  useEffect(() => {
-    console.log('🎨 Theme Debug:', { 
-      actualTheme, 
-      isDarkMode,
-      htmlClasses: document.documentElement.className,
-      hasDarkClass: document.documentElement.classList.contains('dark')
-    });
-  }, [actualTheme, isDarkMode]);
+  // Debug logging removed for performance
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -180,7 +172,7 @@ export default function DashboardProfessional() {
       }, 500);
       return;
     }
-  }, [user, authLoading, toast]);
+  }, [user, authLoading, navigate]); // Remove toast from dependencies to prevent re-renders
 
   // Unified dashboard API call - only fetch when authenticated
   const { data: dashboardData, isLoading: dashboardLoading, error: dashboardError } = useDashboardData();
