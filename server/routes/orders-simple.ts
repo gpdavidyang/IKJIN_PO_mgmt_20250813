@@ -212,7 +212,7 @@ router.post('/orders/bulk-create-simple', requireAuth, upload.single('excelFile'
             vendorId: vendor?.id || null,
             userId: req.user.id,
             orderDate: orderData.orderDate || new Date().toISOString().split('T')[0], // Required field
-            status: isDraft ? 'draft' : (sendEmail ? 'sent' : 'pending'), // Keep legacy status for backward compatibility
+            status: isDraft ? 'draft' : (sendEmail ? 'sent' : 'created'), // Keep legacy status for backward compatibility
             orderStatus, // New order status
             approvalStatus, // New approval status
             approvalBypassReason, // Reason for bypassing approval
@@ -399,7 +399,10 @@ router.post('/orders/bulk-create-simple', requireAuth, upload.single('excelFile'
                 .then(rows => rows[0]);
                 
               if (attachment) {
-                excelAttachment = path.join(process.cwd(), 'uploads', attachment.storedName);
+                // Use the actual file path stored in the database
+                excelAttachment = process.env.VERCEL 
+                  ? path.join('/tmp', 'uploads', 'excel-simple', attachment.storedName)
+                  : attachment.filePath;
               }
             }
             

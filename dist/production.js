@@ -18264,7 +18264,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload5.single("excelFi
           userId: req.user.id,
           orderDate: orderData.orderDate || (/* @__PURE__ */ new Date()).toISOString().split("T")[0],
           // Required field
-          status: isDraft ? "draft" : sendEmail ? "sent" : "pending",
+          status: isDraft ? "draft" : sendEmail ? "sent" : "created",
           // Keep legacy status for backward compatibility
           orderStatus,
           // New order status
@@ -18417,7 +18417,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload5.single("excelFi
             if (req.file) {
               const attachment = await db.select().from(attachments).where(eq20(attachments.orderId, emailInfo.orderId)).then((rows) => rows[0]);
               if (attachment) {
-                excelAttachment = path14.join(process.cwd(), "uploads", attachment.storedName);
+                excelAttachment = process.env.VERCEL ? path14.join("/tmp", "uploads", "excel-simple", attachment.storedName) : attachment.filePath;
               }
             }
             if (excelAttachment && fs17.existsSync(excelAttachment)) {

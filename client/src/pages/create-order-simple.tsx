@@ -15,7 +15,9 @@ import {
   CheckCircle,
   Download,
   Edit3,
-  Package
+  Package,
+  Mail,
+  Send
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { BulkOrderEditor } from '@/components/bulk-order-editor';
@@ -54,6 +56,7 @@ export default function CreateOrderSimple() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [editedOrders, setEditedOrders] = useState<ParsedOrderData[]>([]);
+  const [sendEmail, setSendEmail] = useState(false);
 
   // 드래그 앤 드롭 핸들러
   const handleDrag = (e: React.DragEvent) => {
@@ -209,6 +212,7 @@ export default function CreateOrderSimple() {
       
       // 발주서 데이터를 JSON으로 전송
       formData.append('orders', JSON.stringify(orders));
+      formData.append('sendEmail', String(sendEmail)); // 이메일 발송 플래그 추가
       
       const response = await fetch('/api/orders/bulk-create-simple', {
         method: 'POST',
@@ -224,9 +228,12 @@ export default function CreateOrderSimple() {
       return response.json();
     },
     onSuccess: (data) => {
+      const emailMsg = data.emailsSent > 0 
+        ? ` (${data.emailsSent}개 이메일 발송 완료)` 
+        : '';
       toast({
         title: "저장 완료",
-        description: `${data.savedCount}개의 발주서가 성공적으로 저장되었습니다.`,
+        description: `${data.savedCount}개의 발주서가 성공적으로 저장되었습니다${emailMsg}.`,
       });
       setTimeout(() => navigate('/orders'), 1500);
     },
@@ -366,14 +373,37 @@ export default function CreateOrderSimple() {
             <div className="sticky top-0 z-10 bg-white border rounded-lg shadow-sm p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2 border rounded-lg px-3 py-2 bg-gray-50">
+                    <input
+                      type="checkbox"
+                      id="sendEmail"
+                      checked={sendEmail}
+                      onChange={(e) => setSendEmail(e.target.checked)}
+                      className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                    />
+                    <label htmlFor="sendEmail" className="flex items-center gap-1 text-sm text-gray-700 cursor-pointer">
+                      <Mail className="h-4 w-4" />
+                      이메일 발송
+                    </label>
+                  </div>
+                  
                   <Button
                     onClick={handleSaveAll}
                     disabled={saveBulkOrders.isPending}
                     size="lg"
                     className="bg-blue-600 hover:bg-blue-700"
                   >
-                    <Save className="h-4 w-4 mr-2" />
-                    {saveBulkOrders.isPending ? '저장 중...' : '모두 저장'}
+                    {sendEmail ? (
+                      <>
+                        <Send className="h-4 w-4 mr-2" />
+                        {saveBulkOrders.isPending ? '저장 및 발송 중...' : '저장 및 발송'}
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4 mr-2" />
+                        {saveBulkOrders.isPending ? '저장 중...' : '저장'}
+                      </>
+                    )}
                   </Button>
                   
                   <Button
