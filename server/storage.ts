@@ -288,6 +288,12 @@ export interface IStorage {
 export class DatabaseStorage implements IStorage {
   // User operations
   async getUser(id: string): Promise<User | undefined> {
+    // Check if database is available
+    if (!db) {
+      console.error("❌ Database connection not available - DATABASE_URL not configured");
+      throw new Error("Database connection not available. Please configure DATABASE_URL environment variable.");
+    }
+    
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
@@ -393,6 +399,13 @@ export class DatabaseStorage implements IStorage {
 
   async getUserByEmail(email: string): Promise<User | undefined> {
     console.log("🔍 Searching for user with email:", email);
+    
+    // Check if database is available
+    if (!db) {
+      console.error("❌ Database connection not available - DATABASE_URL not configured");
+      throw new Error("Database connection not available. Please configure DATABASE_URL environment variable.");
+    }
+    
     try {
       const result = await db.select().from(users).where(eq(users.email, email));
       console.log("🔍 Database query result:", result);

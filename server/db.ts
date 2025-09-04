@@ -1,28 +1,32 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-// 환경변수에서 DATABASE_URL 읽기 - .env 파일의 올바른 pooler 주소 사용
+// 환경변수에서 DATABASE_URL 읽기
 let DATABASE_URL = process.env.DATABASE_URL;
-console.log("🔍 Original DATABASE_URL:", DATABASE_URL?.split('@')[0] + '@[HIDDEN]');
+console.log("🔍 DATABASE_URL status:", DATABASE_URL ? "Set" : "Not set");
 
-// Force correct Supabase pooler URL for serverless environments
-// Try original .env region first
-const correctPoolerUrl = "postgresql://postgres.tbvugytmskxxyqfvqmup:gps110601ysw@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres";
-
-if (DATABASE_URL && (
-  DATABASE_URL.includes('db.tbvugytmskxxyqfvqmup.supabase.co') || 
-  DATABASE_URL.includes('tbvugytmskxxyqfvqmup.supabase.co:5432') ||
-  DATABASE_URL.includes('aws-0-ap-southeast-1.pooler.supabase.com:6543') ||
-  DATABASE_URL.includes('aws-0-ap-northeast-2.pooler.supabase.com:5432')
-)) {
-  console.log("🔧 Fixing incorrect hostname to use pooler URL");
-  DATABASE_URL = correctPoolerUrl;
-} else if (!DATABASE_URL) {
-  console.log("🔧 No DATABASE_URL set, using default Supabase pooler");
-  DATABASE_URL = correctPoolerUrl;
+// In Vercel serverless environment, if DATABASE_URL is not set, log error details
+if (!DATABASE_URL) {
+  console.error("❌ DATABASE_URL environment variable is not set!");
+  console.error("📍 Environment details:", {
+    NODE_ENV: process.env.NODE_ENV,
+    VERCEL: process.env.VERCEL,
+    VERCEL_ENV: process.env.VERCEL_ENV,
+    VERCEL_REGION: process.env.VERCEL_REGION
+  });
+  
+  // In Vercel serverless, we should not call process.exit(1)
+  // Instead, we'll handle this gracefully
+  if (process.env.VERCEL) {
+    console.error("🚨 Running in Vercel without DATABASE_URL - database operations will fail");
+  }
+} else {
+  // Log sanitized URL for debugging
+  const urlParts = DATABASE_URL.split('@');
+  if (urlParts.length > 1) {
+    console.log("🔍 Database host:", urlParts[1].split('/')[0]);
+  }
 }
-
-console.log("🔍 Final DATABASE_URL:", DATABASE_URL?.split('@')[0] + '@[HIDDEN]');
 
 // Use standard postgres driver for better Supabase compatibility
 import pkg from 'pg';
@@ -34,11 +38,19 @@ import * as schema from "@shared/schema";
 let db: any = null;
 
 if (!DATABASE_URL) {
-  console.error("❌ DATABASE_URL not set - cannot connect to database");
-  process.exit(1);
+  console.error("❌ DATABASE_URL not set - database connection not initialized");
+  
+  // In Vercel serverless, don't exit the process
+  if (!process.env.VERCEL) {
+    console.error("💀 Exiting process - DATABASE_URL is required");
+    process.exit(1);
+  } else {
+    console.error("🚨 Vercel deployment without DATABASE_URL - API calls will fail");
+    // Export null db for Vercel to handle errors at runtime
+  }
 } else {
   try {
-    console.log("🔄 Creating PostgreSQL connection pool with URL:", DATABASE_URL?.split('@')[0] + '@[HIDDEN]');
+    console.log("🔄 Creating PostgreSQL connection pool...");
     
     const pool = new Pool({
       connectionString: DATABASE_URL,
@@ -60,7 +72,11 @@ if (!DATABASE_URL) {
   } catch (error) {
     console.error("❌ Database connection failed:", error instanceof Error ? error.message : String(error));
     console.error("❌ Database error details:", error);
-    process.exit(1);
+    
+    // In Vercel, log but don't exit
+    if (!process.env.VERCEL) {
+      process.exit(1);
+    }
   }
 }
 
