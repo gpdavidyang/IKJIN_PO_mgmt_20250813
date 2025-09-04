@@ -43,8 +43,56 @@ router.post('/process', upload.single('file'), async (req, res) => {
     
     // Get raw data with headers
     const rawData = xlsx.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
-    console.log('Headers found:', rawData[0]);
+    const headers = rawData[0] || [];
+    console.log('Headers found:', headers);
     console.log('First data row:', rawData[1]);
+    
+    // Validate field names
+    const missingFields: string[] = [];
+    const incorrectFields: string[] = [];
+    
+    // Check for required standard fields
+    requiredStandardFields.forEach(field => {
+      if (!headers.includes(field)) {
+        missingFields.push(field);
+      }
+    });
+    
+    // Check for incorrect field names (fields not in standard)
+    headers.forEach((header: any) => {
+      if (header && typeof header === 'string' && header.trim()) {
+        // Skip empty headers
+        if (!standardFieldMappings[header as keyof typeof standardFieldMappings]) {
+          // Common incorrect field names
+          if (header === '발주일' || header === '납기일') {
+            incorrectFields.push(`${header} (정확한 필드명: ${header}자)`);
+          } else if (header === '현장명') {
+            incorrectFields.push(`${header} (정확한 필드명: 프로젝트명)`);
+          } else if (header === '품목') {
+            incorrectFields.push(`${header} (정확한 필드명: 품목명)`);
+          } else if (header === '합계' || header === '공급가액' || header === '부가세') {
+            incorrectFields.push(`${header} (정확한 필드명: 총금액)`);
+          }
+        }
+      }
+    });
+    
+    // If there are field errors, return error response
+    if (missingFields.length > 0 || incorrectFields.length > 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Excel 필드명 오류',
+        fieldErrors: {
+          missing: missingFields,
+          incorrect: incorrectFields
+        },
+        message: `Excel 파일의 필드명이 표준 형식과 일치하지 않습니다.\n\n` +
+                 (missingFields.length > 0 ? `필수 필드 누락: ${missingFields.join(', ')}\n` : '') +
+                 (incorrectFields.length > 0 ? `잘못된 필드명: ${incorrectFields.join(', ')}\n` : '') +
+                 `\n표준 템플릿을 다운로드하여 정확한 필드명을 사용해주세요.`,
+        templateUrl: '/api/excel-template/download'
+      });
+    }
     
     // Convert to JSON with proper header mapping
     const data = xlsx.utils.sheet_to_json(worksheet);
@@ -56,35 +104,34 @@ router.post('/process', upload.single('file'), async (req, res) => {
     const validationResults: any[] = [];
     const processedData: any[] = [];
     
-    // Define field mappings based on the actual Excel headers
-    const fieldMappings = {
-      // Main fields
-      '납품처': 'deliveryLocation',  
+    // Define STRICT field mappings - only accept standard field names
+    const standardFieldMappings = {
+      // Standard template fields only
+      '발주일자': 'orderDate',
+      '납기일자': 'deliveryDate',
       '거래처명': 'vendorName',
-      '거래처': 'vendorName',  // alias
-      '현장명': 'projectName',
-      '프로젝트명': 'projectName',  // alias
-      '발주일': 'orderDate',
-      '납기일': 'deliveryDate',
-      '발주번호': 'orderNumber',
-      '품목': 'itemName',
-      '규격': 'specification', 
+      '거래처 이메일': 'vendorEmail',
+      '납품처명': 'deliveryLocation',
+      '납품처 이메일': 'deliveryEmail',
+      '프로젝트명': 'projectName',
+      '품목명': 'itemName',
+      '규격': 'specification',
       '수량': 'quantity',
-      '단위': 'unit',
       '단가': 'unitPrice',
-      '공급가액': 'supplyAmount',
-      '부가세': 'vat',
-      '합계': 'totalAmount',
+      '총금액': 'totalAmount',
       '대분류': 'majorCategory',
       '중분류': 'middleCategory',
       '소분류': 'minorCategory',
       '비고': 'notes'
     };
     
-    // Define required fields and validation rules
-    const requiredFields = ['거래처명', '현장명', '품목'];
-    const emailFields = ['이메일', 'email', 'vendorEmail'];
-    const numberFields = ['수량', 'quantity', '단가', 'unitPrice', '공급가액', 'supplyAmount', '부가세', 'vat', '합계', 'totalAmount'];
+    // Required fields for validation
+    const requiredStandardFields = ['거래처명', '프로젝트명', '품목명'];
+    const expectedFields = Object.keys(standardFieldMappings);
+    
+    // Define validation rules for standard fields only
+    const emailFields = ['거래처 이메일', '납품처 이메일'];
+    const numberFields = ['수량', '단가', '총금액'];
 
     data.forEach((row: any, index: number) => {
       const rowNumber = index + 1;
@@ -104,8 +151,8 @@ router.post('/process', upload.single('file'), async (req, res) => {
         hashes.add(hash);
       }
 
-      // Validate required fields
-      requiredFields.forEach(field => {
+      // Validate required standard fields
+      requiredStandardFields.forEach(field => {
         if (!row[field] || !row[field].toString().trim()) {
           errors.push(`${field}이(가) 필요합니다`);
           status = 'error';
@@ -145,13 +192,15 @@ router.post('/process', upload.single('file'), async (req, res) => {
         }
       }
 
-      // Build processed row with proper field mappings
+      // Build processed row with standard field mappings only
       const mappedRow: any = {};
       
-      // Map Korean field names to English keys for consistent frontend display
+      // Only map standard field names
       Object.keys(row).forEach(key => {
-        const mappedKey = fieldMappings[key as keyof typeof fieldMappings] || key;
-        mappedRow[mappedKey] = row[key];
+        const mappedKey = standardFieldMappings[key as keyof typeof standardFieldMappings];
+        if (mappedKey) {
+          mappedRow[mappedKey] = row[key];
+        }
         // Keep original field for display
         mappedRow[key] = row[key];
       });
@@ -213,8 +262,8 @@ router.post('/process', upload.single('file'), async (req, res) => {
         validationResults,
         duplicates,
         columns: Object.keys(data[0] || {}).map(key => {
-          // Use mapped field name if available, otherwise use original
-          const mappedKey = fieldMappings[key as keyof typeof fieldMappings] || key;
+          // Only use standard field mappings
+          const mappedKey = standardFieldMappings[key as keyof typeof standardFieldMappings] || key;
           return {
             key: mappedKey,
             label: key,  // Keep original Korean label for display

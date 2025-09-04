@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, X } from 'lucide-react';
+import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, X, Info, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { useDropzone } from 'react-dropzone';
@@ -21,6 +21,12 @@ export default function ExcelSmartUploadSimple() {
     error: 0
   });
   const [autoSaveStatus, setAutoSaveStatus] = useState<'saving' | 'saved' | 'error' | null>(null);
+  const [fieldError, setFieldError] = useState<{
+    missing?: string[];
+    incorrect?: string[];
+    message?: string;
+    templateUrl?: string;
+  } | null>(null);
   const { toast } = useToast();
 
   const onDrop = useCallback((acceptedFiles: File[], rejectedFiles: any[]) => {
@@ -76,6 +82,7 @@ export default function ExcelSmartUploadSimple() {
   const removeFile = () => {
     setFile(null);
     setUploadResult(null);
+    setFieldError(null);
   };
 
   const handleUpload = async () => {
@@ -140,11 +147,22 @@ export default function ExcelSmartUploadSimple() {
     } catch (error: any) {
       console.error('Upload error:', error);
       setAutoSaveStatus('error');
-      toast({
-        title: '업로드 실패',
-        description: error.message || '파일 업로드 중 오류가 발생했습니다.',
-        variant: 'destructive',
-      });
+      
+      // Check if it's a field validation error
+      if (error.fieldErrors) {
+        setFieldError(error.fieldErrors);
+        toast({
+          title: 'Excel 필드명 오류',
+          description: error.message || '표준 템플릿 형식을 사용해주세요.',
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: '업로드 실패',
+          description: error.message || '파일 업로드 중 오류가 발생했습니다.',
+          variant: 'destructive',
+        });
+      }
     } finally {
       clearInterval(progressInterval);
       setIsUploading(false);
@@ -161,6 +179,39 @@ export default function ExcelSmartUploadSimple() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Field Guide Alert */}
+          <Alert className="border-blue-200 bg-blue-50">
+            <Info className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="text-sm">
+              <div className="font-semibold text-blue-900 mb-2">필수 Excel 필드명 안내</div>
+              <div className="grid grid-cols-2 gap-2 text-xs text-blue-800">
+                <div>• <strong>발주일자</strong> (날짜 형식)</div>
+                <div>• <strong>납기일자</strong> (날짜 형식)</div>
+                <div>• <strong>거래처명</strong> (필수)</div>
+                <div>• <strong>거래처 이메일</strong></div>
+                <div>• <strong>납품처명</strong></div>
+                <div>• <strong>프로젝트명</strong> (필수)</div>
+                <div>• <strong>품목명</strong> (필수)</div>
+                <div>• <strong>규격</strong></div>
+                <div>• <strong>수량</strong> (숫자)</div>
+                <div>• <strong>단가</strong> (숫자)</div>
+                <div>• <strong>총금액</strong> (숫자)</div>
+                <div>• <strong>대분류, 중분류, 소분류</strong></div>
+              </div>
+              <div className="mt-2 flex items-center gap-2">
+                <Button 
+                  size="xs" 
+                  variant="outline" 
+                  className="h-7 text-xs border-blue-300 text-blue-700 hover:bg-blue-100"
+                  onClick={() => window.open('/api/excel-template/download', '_blank')}
+                >
+                  <Download className="h-3 w-3 mr-1" />
+                  표준 템플릿 다운로드
+                </Button>
+                <span className="text-xs text-blue-700">※ Input 시트에 데이터를 입력하세요</span>
+              </div>
+            </AlertDescription>
+          </Alert>
           {/* Drag and Drop File Upload Section */}
           <div
             {...getRootProps()}
@@ -245,6 +296,48 @@ export default function ExcelSmartUploadSimple() {
               {isUploading ? '처리 중...' : '업로드 및 처리'}
             </Button>
           </div>
+          
+          {/* Field Error Alert */}
+          {fieldError && (
+            <Alert className="border-red-200 bg-red-50">
+              <AlertCircle className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-sm">
+                <div className="font-semibold text-red-900 mb-2">Excel 필드명 오류 발견</div>
+                {fieldError.missing && fieldError.missing.length > 0 && (
+                  <div className="mb-2">
+                    <span className="font-semibold text-red-800">필수 필드 누락:</span>
+                    <div className="mt-1 text-xs text-red-700">
+                      {fieldError.missing.map(field => (
+                        <div key={field}>• {field}</div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {fieldError.incorrect && fieldError.incorrect.length > 0 && (
+                  <div className="mb-2">
+                    <span className="font-semibold text-red-800">잘못된 필드명:</span>
+                    <div className="mt-1 text-xs text-red-700">
+                      {fieldError.incorrect.map(field => (
+                        <div key={field}>• {field}</div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <div className="mt-3 flex items-center gap-2">
+                  <Button 
+                    size="xs" 
+                    variant="outline" 
+                    className="h-7 text-xs border-red-300 text-red-700 hover:bg-red-100"
+                    onClick={() => window.open('/api/excel-template/download', '_blank')}
+                  >
+                    <Download className="h-3 w-3 mr-1" />
+                    표준 템플릿 다운로드
+                  </Button>
+                  <span className="text-xs text-red-700">템플릿을 사용하여 다시 업로드해주세요</span>
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
         </CardContent>
       </Card>
 
