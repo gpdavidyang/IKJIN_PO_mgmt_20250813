@@ -9912,6 +9912,7 @@ import { Router as Router9 } from "express";
 import multer2 from "multer";
 import path7 from "path";
 import fs9 from "fs";
+import xlsx from "xlsx";
 
 // server/utils/excel-automation-service.ts
 init_db();
@@ -10653,6 +10654,26 @@ var ExcelAutomationService = class {
 // server/routes/excel-automation.ts
 init_debug_logger();
 var router9 = Router9();
+var standardFieldMappings = {
+  // Standard template fields only
+  "\uBC1C\uC8FC\uC77C\uC790": "orderDate",
+  "\uB0A9\uAE30\uC77C\uC790": "deliveryDate",
+  "\uAC70\uB798\uCC98\uBA85": "vendorName",
+  "\uAC70\uB798\uCC98 \uC774\uBA54\uC77C": "vendorEmail",
+  "\uB0A9\uD488\uCC98\uBA85": "deliveryLocation",
+  "\uB0A9\uD488\uCC98 \uC774\uBA54\uC77C": "deliveryEmail",
+  "\uD504\uB85C\uC81D\uD2B8\uBA85": "projectName",
+  "\uD488\uBAA9\uBA85": "itemName",
+  "\uADDC\uACA9": "specification",
+  "\uC218\uB7C9": "quantity",
+  "\uB2E8\uAC00": "unitPrice",
+  "\uCD1D\uAE08\uC561": "totalAmount",
+  "\uB300\uBD84\uB958": "majorCategory",
+  "\uC911\uBD84\uB958": "middleCategory",
+  "\uC18C\uBD84\uB958": "minorCategory",
+  "\uBE44\uACE0": "notes"
+};
+var requiredStandardFields = ["\uAC70\uB798\uCC98\uBA85", "\uD504\uB85C\uC81D\uD2B8\uBA85", "\uD488\uBAA9\uBA85"];
 var storage2 = multer2.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir2 = process.env.VERCEL ? "/tmp" : "uploads";
@@ -10670,20 +10691,27 @@ var storage2 = multer2.diskStorage({
 var upload2 = multer2({
   storage: storage2,
   fileFilter: (req, file, cb) => {
-    const allowedTypes = [
+    console.log("=== Excel Automation File Upload Debug ===");
+    console.log("File name:", file.originalname);
+    console.log("File MIME type:", file.mimetype);
+    const validMimeTypes = [
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      // .xlsx
+      "application/vnd.ms-excel",
       "application/vnd.ms-excel.sheet.macroEnabled.12",
-      // .xlsm (대문자 E)
-      "application/vnd.ms-excel.sheet.macroenabled.12",
-      // .xlsm (소문자 e)
-      "application/vnd.ms-excel"
-      // .xls
+      "application/octet-stream"
+      // Sometimes Excel files are uploaded as octet-stream
     ];
-    if (allowedTypes.includes(file.mimetype)) {
+    const fileName = file.originalname.toLowerCase();
+    const hasValidExtension = fileName.endsWith(".xlsx") || fileName.endsWith(".xls") || fileName.endsWith(".xlsm");
+    const hasValidMimeType = validMimeTypes.includes(file.mimetype);
+    console.log("Valid MIME type:", hasValidMimeType);
+    console.log("Valid extension:", hasValidExtension);
+    if (hasValidMimeType && hasValidExtension) {
+      console.log("File accepted:", file.originalname);
       cb(null, true);
     } else {
-      cb(new Error("Excel \uD30C\uC77C\uB9CC \uC5C5\uB85C\uB4DC \uAC00\uB2A5\uD569\uB2C8\uB2E4."));
+      console.log("File rejected:", file.originalname, "MIME type:", file.mimetype, "Extension valid:", hasValidExtension);
+      cb(new Error("Only Excel files are allowed"));
     }
   },
   limits: {
@@ -10732,6 +10760,105 @@ router9.post("/upload-and-process", requireAuth, upload2.single("file"), async (
       });
     }
     console.log(`\u{1F4C1} [API] Excel \uC790\uB3D9\uD654 \uCC98\uB9AC \uC2DC\uC791: ${filePath}, \uC0AC\uC6A9\uC790: ${userId}, \uD30C\uC77C\uD06C\uAE30: ${req.file.size}bytes`);
+    console.log(`\u{1F50D} [API] Excel \uD544\uB4DC\uBA85 \uAC80\uC99D \uC2DC\uC791`);
+    try {
+      const workbook = xlsx.read(fs9.readFileSync(filePath), { type: "buffer" });
+      let sheetName = workbook.SheetNames.find(
+        (name) => name === "Input" || name.toLowerCase().includes("input")
+      ) || workbook.SheetNames[0];
+      console.log(`\u{1F50D} [API] Available sheets:`, workbook.SheetNames);
+      console.log(`\u{1F50D} [API] Processing sheet:`, sheetName);
+      const worksheet = workbook.Sheets[sheetName];
+      const rawData = xlsx.utils.sheet_to_json(worksheet, { header: 1 });
+      if (!rawData || rawData.length === 0) {
+        clearTimeout(timeoutHandler);
+        responseHandled = true;
+        return res.status(400).json({
+          success: false,
+          error: "\uBE48 Excel \uD30C\uC77C",
+          message: "Excel \uD30C\uC77C\uC5D0 \uB370\uC774\uD130\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.",
+          fieldErrors: null
+        });
+      }
+      const headers = rawData[0] || [];
+      console.log(`\u{1F50D} [API] Headers found:`, headers);
+      const missingFields = [];
+      const incorrectFields = [];
+      console.log(`\u{1F50D} [API] Checking required fields:`, requiredStandardFields);
+      requiredStandardFields.forEach((field) => {
+        if (!headers.includes(field)) {
+          missingFields.push(field);
+          console.log(`\u274C [API] Missing required field: ${field}`);
+        }
+      });
+      headers.forEach((header) => {
+        if (header && typeof header === "string" && header.trim()) {
+          if (!standardFieldMappings[header]) {
+            if (header === "\uBC1C\uC8FC\uC77C" || header === "\uB0A9\uAE30\uC77C") {
+              incorrectFields.push(`${header} \u2192 \uC815\uD655\uD55C \uD544\uB4DC\uBA85: ${header}\uC790`);
+            } else if (header === "\uD604\uC7A5\uBA85") {
+              incorrectFields.push(`${header} \u2192 \uC815\uD655\uD55C \uD544\uB4DC\uBA85: \uD504\uB85C\uC81D\uD2B8\uBA85`);
+            } else if (header === "\uD488\uBAA9") {
+              incorrectFields.push(`${header} \u2192 \uC815\uD655\uD55C \uD544\uB4DC\uBA85: \uD488\uBAA9\uBA85`);
+            } else if (header === "\uAC70\uB798\uCC98") {
+              incorrectFields.push(`${header} \u2192 \uC815\uD655\uD55C \uD544\uB4DC\uBA85: \uAC70\uB798\uCC98\uBA85`);
+            } else if (header === "\uD569\uACC4") {
+              incorrectFields.push(`${header} \u2192 \uC815\uD655\uD55C \uD544\uB4DC\uBA85: \uCD1D\uAE08\uC561`);
+            } else if (header === "\uACF5\uAE09\uAC00\uC561" || header === "\uBD80\uAC00\uC138") {
+              incorrectFields.push(`${header} \u2192 \uC774 \uD544\uB4DC\uB294 \uC81C\uAC70\uD558\uACE0 '\uCD1D\uAE08\uC561'\uB9CC \uC0AC\uC6A9\uD558\uC138\uC694`);
+            } else if (header === "\uBC1C\uC8FC\uBC88\uD638" || header === "\uB2E8\uC704") {
+              incorrectFields.push(`${header} \u2192 \uD45C\uC900 \uD15C\uD50C\uB9BF\uC5D0 \uC5C6\uB294 \uD544\uB4DC\uC785\uB2C8\uB2E4`);
+            } else {
+              incorrectFields.push(`${header} \u2192 \uD45C\uC900 \uD15C\uD50C\uB9BF\uC5D0 \uC5C6\uB294 \uD544\uB4DC\uC785\uB2C8\uB2E4`);
+            }
+          }
+        }
+      });
+      console.log(`\u{1F50D} [API] Missing fields:`, missingFields);
+      console.log(`\u{1F50D} [API] Incorrect fields:`, incorrectFields);
+      if (missingFields.length > 0 || incorrectFields.length > 0) {
+        const errorResponse = {
+          success: false,
+          error: "Excel \uD544\uB4DC\uBA85 \uC624\uB958",
+          fieldErrors: {
+            missing: missingFields,
+            incorrect: incorrectFields
+          },
+          message: `Excel \uD30C\uC77C\uC758 \uD544\uB4DC\uBA85\uC774 \uD45C\uC900 \uD615\uC2DD\uACFC \uC77C\uCE58\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4.
+
+` + (missingFields.length > 0 ? `\u274C \uD544\uC218 \uD544\uB4DC \uB204\uB77D:
+${missingFields.map((f) => `  \u2022 ${f}`).join("\n")}
+
+` : "") + (incorrectFields.length > 0 ? `\u26A0\uFE0F \uC798\uBABB\uB41C \uD544\uB4DC\uBA85:
+${incorrectFields.map((f) => `  \u2022 ${f}`).join("\n")}
+
+` : "") + `\u{1F4E5} \uD45C\uC900 \uD15C\uD50C\uB9BF\uC744 \uB2E4\uC6B4\uB85C\uB4DC\uD558\uC5EC \uC815\uD655\uD55C \uD544\uB4DC\uBA85\uC744 \uC0AC\uC6A9\uD574\uC8FC\uC138\uC694.`,
+          templateUrl: "/api/excel-template/download"
+        };
+        console.log(`\u274C [API] Field validation failed:`, errorResponse);
+        if (fs9.existsSync(filePath)) {
+          fs9.unlinkSync(filePath);
+        }
+        clearTimeout(timeoutHandler);
+        responseHandled = true;
+        return res.status(400).json(errorResponse);
+      }
+      console.log(`\u2705 [API] Field validation passed! Continuing with automation process...`);
+    } catch (fieldValidationError) {
+      console.error(`\u274C [API] Field validation error:`, fieldValidationError);
+      if (fs9.existsSync(filePath)) {
+        fs9.unlinkSync(filePath);
+      }
+      clearTimeout(timeoutHandler);
+      responseHandled = true;
+      return res.status(400).json({
+        success: false,
+        error: "Excel \uD30C\uC77C \uD615\uC2DD \uC624\uB958",
+        message: "Excel \uD30C\uC77C\uC744 \uC77D\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4. \uD30C\uC77C\uC774 \uC190\uC0C1\uB418\uC5C8\uAC70\uB098 \uC62C\uBC14\uB978 Excel \uD615\uC2DD\uC774 \uC544\uB2D0 \uC218 \uC788\uC2B5\uB2C8\uB2E4.",
+        details: fieldValidationError instanceof Error ? fieldValidationError.message : "Unknown error",
+        fieldErrors: null
+      });
+    }
     console.log(`\u{1F504} [API] ExcelAutomationService.processExcelUpload \uD638\uCD9C \uC2DC\uC791`);
     const result = await ExcelAutomationService.processExcelUpload(filePath, userId);
     console.log(`\u2705 [API] ExcelAutomationService.processExcelUpload \uC644\uB8CC:`, result.success ? "\uC131\uACF5" : "\uC2E4\uD328");
@@ -20740,7 +20867,7 @@ var workflow_default = router34;
 // server/routes/excel-smart-upload-simple.ts
 import { Router as Router32 } from "express";
 import multer6 from "multer";
-import xlsx from "xlsx";
+import xlsx2 from "xlsx";
 import crypto from "crypto";
 var router35 = Router32();
 var storage5 = multer6.memoryStorage();
@@ -20775,7 +20902,7 @@ var upload6 = multer6({
     }
   }
 });
-var standardFieldMappings = {
+var standardFieldMappings2 = {
   // Standard template fields only
   "\uBC1C\uC8FC\uC77C\uC790": "orderDate",
   "\uB0A9\uAE30\uC77C\uC790": "deliveryDate",
@@ -20794,7 +20921,7 @@ var standardFieldMappings = {
   "\uC18C\uBD84\uB958": "minorCategory",
   "\uBE44\uACE0": "notes"
 };
-var requiredStandardFields = ["\uAC70\uB798\uCC98\uBA85", "\uD504\uB85C\uC81D\uD2B8\uBA85", "\uD488\uBAA9\uBA85"];
+var requiredStandardFields2 = ["\uAC70\uB798\uCC98\uBA85", "\uD504\uB85C\uC81D\uD2B8\uBA85", "\uD488\uBAA9\uBA85"];
 var emailFields = ["\uAC70\uB798\uCC98 \uC774\uBA54\uC77C", "\uB0A9\uD488\uCC98 \uC774\uBA54\uC77C"];
 var numberFields = ["\uC218\uB7C9", "\uB2E8\uAC00", "\uCD1D\uAE08\uC561"];
 router35.post("/process", upload6.single("file"), async (req, res) => {
@@ -20808,14 +20935,14 @@ router35.post("/process", upload6.single("file"), async (req, res) => {
     console.log("=== Excel Smart Upload Processing Started ===");
     console.log("File received:", req.file.originalname);
     console.log("File size:", req.file.size, "bytes");
-    const workbook = xlsx.read(req.file.buffer, { type: "buffer" });
+    const workbook = xlsx2.read(req.file.buffer, { type: "buffer" });
     let sheetName = workbook.SheetNames.find(
       (name) => name === "Input" || name.toLowerCase().includes("input")
     ) || workbook.SheetNames[0];
     console.log("Available sheets:", workbook.SheetNames);
     console.log("Processing sheet:", sheetName);
     const worksheet = workbook.Sheets[sheetName];
-    const rawData = xlsx.utils.sheet_to_json(worksheet, { header: 1 });
+    const rawData = xlsx2.utils.sheet_to_json(worksheet, { header: 1 });
     if (!rawData || rawData.length === 0) {
       return res.status(400).json({
         success: false,
@@ -20828,8 +20955,8 @@ router35.post("/process", upload6.single("file"), async (req, res) => {
     console.log("First data row:", rawData[1]);
     const missingFields = [];
     const incorrectFields = [];
-    console.log("Checking required fields:", requiredStandardFields);
-    requiredStandardFields.forEach((field) => {
+    console.log("Checking required fields:", requiredStandardFields2);
+    requiredStandardFields2.forEach((field) => {
       if (!headers.includes(field)) {
         missingFields.push(field);
         console.log(`Missing required field: ${field}`);
@@ -20837,7 +20964,7 @@ router35.post("/process", upload6.single("file"), async (req, res) => {
     });
     headers.forEach((header) => {
       if (header && typeof header === "string" && header.trim()) {
-        if (!standardFieldMappings[header]) {
+        if (!standardFieldMappings2[header]) {
           if (header === "\uBC1C\uC8FC\uC77C" || header === "\uB0A9\uAE30\uC77C") {
             incorrectFields.push(`${header} \u2192 \uC815\uD655\uD55C \uD544\uB4DC\uBA85: ${header}\uC790`);
           } else if (header === "\uD604\uC7A5\uBA85") {
@@ -20881,7 +21008,7 @@ ${incorrectFields.map((f) => `  \u2022 ${f}`).join("\n")}
       return res.status(400).json(errorResponse);
     }
     console.log("Field validation passed! Continuing with data processing...");
-    const data = xlsx.utils.sheet_to_json(worksheet);
+    const data = xlsx2.utils.sheet_to_json(worksheet);
     console.log("Total data rows:", data.length);
     console.log("First parsed row:", data[0]);
     const hashes = /* @__PURE__ */ new Set();
@@ -20902,7 +21029,7 @@ ${incorrectFields.map((f) => `  \u2022 ${f}`).join("\n")}
       } else {
         hashes.add(hash);
       }
-      requiredStandardFields.forEach((field) => {
+      requiredStandardFields2.forEach((field) => {
         if (!row[field] || !row[field].toString().trim()) {
           errors.push(`${field}\uC774(\uAC00) \uD544\uC694\uD569\uB2C8\uB2E4`);
           status = "error";
@@ -20936,7 +21063,7 @@ ${incorrectFields.map((f) => `  \u2022 ${f}`).join("\n")}
       }
       const mappedRow = {};
       Object.keys(row).forEach((key) => {
-        const mappedKey = standardFieldMappings[key];
+        const mappedKey = standardFieldMappings2[key];
         if (mappedKey) {
           mappedRow[mappedKey] = row[key];
         }
@@ -20995,7 +21122,7 @@ ${incorrectFields.map((f) => `  \u2022 ${f}`).join("\n")}
         validationResults: validationResults2,
         duplicates,
         columns: Object.keys(data[0] || {}).map((key) => {
-          const mappedKey = standardFieldMappings[key] || key;
+          const mappedKey = standardFieldMappings2[key] || key;
           return {
             key: mappedKey,
             label: key,
@@ -21021,7 +21148,7 @@ router35.get("/health", (req, res) => {
     status: "ok",
     service: "excel-smart-upload-simple",
     fieldValidation: "enabled",
-    requiredFields: requiredStandardFields
+    requiredFields: requiredStandardFields2
   });
 });
 var excel_smart_upload_simple_default = router35;
