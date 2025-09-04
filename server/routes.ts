@@ -3373,6 +3373,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const excelAutomationRouter = await import('./routes/excel-automation');
     app.use('/api/excel-automation', excelAutomationRouter.default);
 
+    // Smart Upload 간소화 라우트 등록
+    const excelSmartUploadSimpleRouter = await import('./routes/excel-smart-upload-simple');
+    app.use('/api/excel-smart-upload', excelSmartUploadSimpleRouter.default);
+
     // 이메일 테스트 라우트 등록
     const emailTestRouter = await import('./routes/email-test');
     app.use('/api/email-test', emailTestRouter.default);

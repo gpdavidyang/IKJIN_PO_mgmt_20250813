@@ -27,6 +27,7 @@ import type { Company, User } from "@shared/schema";
 import { formatKoreanWon } from "@/lib/formatters";
 import { ApprovalWorkflowSettings } from "@/components/admin/approval-workflow-settings";
 import { ApprovalSettingsManager } from "@/components/admin/ApprovalSettingsManager";
+import { EmailSettings } from "@/components/email-settings";
 
 interface Terminology {
   id: number;
@@ -466,7 +467,7 @@ export default function Admin() {
 
       <div className={`shadow-sm rounded-lg border transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className={`grid w-full grid-cols-5 transition-colors ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+          <TabsList className={`grid w-full grid-cols-6 transition-colors ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
           <TabsTrigger value="company" className="flex items-center gap-2 text-sm">
             <Building className="h-4 w-4" />
             회사 정보
@@ -486,6 +487,10 @@ export default function Admin() {
           <TabsTrigger value="terminology" className="flex items-center gap-2 text-sm">
             <FileText className="h-4 w-4" />
             용어집 관리
+          </TabsTrigger>
+          <TabsTrigger value="email" className="flex items-center gap-2 text-sm">
+            <Mail className="h-4 w-4" />
+            이메일 설정
           </TabsTrigger>
         </TabsList>
 
@@ -1028,6 +1033,11 @@ export default function Admin() {
         {/* 워크플로우 설정 탭 */}
         <TabsContent value="workflow" className="mt-2">
           <ApprovalWorkflowSettings />
+        </TabsContent>
+
+        {/* 이메일 설정 탭 */}
+        <TabsContent value="email" className="mt-2">
+          <EmailSettings />
         </TabsContent>
 
         </Tabs>

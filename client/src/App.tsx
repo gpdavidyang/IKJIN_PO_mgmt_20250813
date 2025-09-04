@@ -77,7 +77,7 @@ const ApprovalAuthorities = createLazyComponent(() => import("@/pages/approval-a
 const ExcelAutomationTest = createLazyComponent(() => import("@/pages/excel-automation-test"), 'ExcelAutomationTest');
 const ImportExport = createLazyComponent(() => import("@/pages/import-export"), 'ImportExport');
 const AuditManagement = createLazyComponent(() => import("@/pages/audit-management"), 'AuditManagement');
-const ExcelSmartUpload = createLazyComponent(() => import("@/pages/excel-smart-upload"), 'ExcelSmartUpload');
+const ExcelSmartUpload = createLazyComponent(() => import("@/pages/excel-smart-upload-simple"), 'ExcelSmartUploadSimple');
 const AccessibilityExample = createLazyComponent(
   () => import("@/components/examples/accessibility-example").then(module => ({
     default: module.AccessibilityExample
