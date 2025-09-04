@@ -9,6 +9,8 @@ import { eq, and } from "drizzle-orm";
 import type { OrderStatus, ApprovalStatus, WorkflowStatus, WorkflowEvent } from "@shared/order-types";
 import { ApprovalBypassReason } from "@shared/order-types";
 import { approvalAuthorityService } from "./approval-authority-service";
+import { webSocketService } from "./websocket-service";
+import type { OrderUpdateEvent, ApprovalRequestEvent, DeliveryConfirmationEvent, WebSocketUser } from "./websocket-service";
 // Email service will be integrated later
 // import { POEmailService } from "../utils/po-email-service";
 
@@ -178,7 +180,7 @@ export class WorkflowEngine {
   }
   
   /**
-   * Update order status with validation
+   * Update order status with validation and WebSocket broadcast
    */
   private async updateOrderStatus(
     orderId: number,
@@ -186,6 +188,21 @@ export class WorkflowEngine {
     approvalStatus: ApprovalStatus,
     additionalData?: Record<string, any>
   ): Promise<void> {
+    // Get order details before update
+    const beforeOrder = await db.select({
+      id: purchaseOrders.id,
+      orderNumber: purchaseOrders.orderNumber,
+      orderStatus: purchaseOrders.orderStatus,
+      approvalStatus: purchaseOrders.approvalStatus,
+      userId: purchaseOrders.userId,
+    })
+    .from(purchaseOrders)
+    .where(eq(purchaseOrders.id, orderId))
+    .limit(1);
+    
+    if (!beforeOrder || beforeOrder.length === 0) return;
+    
+    // Update the order
     await db.update(purchaseOrders)
       .set({
         orderStatus,
@@ -194,6 +211,34 @@ export class WorkflowEngine {
         updatedAt: new Date(),
       })
       .where(eq(purchaseOrders.id, orderId));
+    
+    // Get updatedBy user info (will be provided by context in actual usage)
+    const updatedBy = await this.getUserAsWebSocketUser(beforeOrder[0].userId);
+    
+    // Broadcast update via WebSocket
+    if (updatedBy) {
+      const event: OrderUpdateEvent = {
+        orderId,
+        orderNumber: beforeOrder[0].orderNumber || `PO-${orderId}`,
+        orderStatus,
+        approvalStatus,
+        updatedBy,
+        timestamp: new Date(),
+        changes: {
+          from: {
+            orderStatus: beforeOrder[0].orderStatus,
+            approvalStatus: beforeOrder[0].approvalStatus,
+          },
+          to: {
+            orderStatus,
+            approvalStatus,
+          },
+          ...additionalData,
+        },
+      };
+      
+      webSocketService.broadcastOrderUpdate(event);
+    }
   }
   
   /**
@@ -328,8 +373,36 @@ export class WorkflowEngine {
    * Notify approver about pending approval
    */
   private async notifyApprover(approverId: string, orderId: number): Promise<void> {
-    // In production, send email/push notification
-    // For now, just log
+    const approver = await this.getUserAsWebSocketUser(approverId);
+    
+    // Get order info
+    const order = await db.select({
+      id: purchaseOrders.id,
+      orderNumber: purchaseOrders.orderNumber,
+      totalAmount: purchaseOrders.totalAmount,
+      userId: purchaseOrders.userId,
+    })
+    .from(purchaseOrders)
+    .where(eq(purchaseOrders.id, orderId))
+    .limit(1);
+    
+    if (order[0] && approver) {
+      const requestedBy = await this.getUserAsWebSocketUser(order[0].userId);
+      
+      if (requestedBy) {
+        const event: ApprovalRequestEvent = {
+          orderId,
+          orderNumber: order[0].orderNumber || `PO-${orderId}`,
+          requestedBy,
+          requiredApprover: approver,
+          orderAmount: parseFloat(order[0].totalAmount?.toString() || '0'),
+          timestamp: new Date(),
+        };
+        
+        webSocketService.notifyApprovalRequest(event);
+      }
+    }
+    
     console.log(`📧 Notification sent to approver ${approverId} for order ${orderId}`);
   }
   
@@ -337,9 +410,49 @@ export class WorkflowEngine {
    * Notify order creator about status change
    */
   private async notifyCreator(creatorId: string, orderId: number, status: string): Promise<void> {
-    // In production, send email/push notification
-    // For now, just log
+    const creator = await this.getUserAsWebSocketUser(creatorId);
+    
+    if (creator) {
+      webSocketService.notifyUser(creatorId, {
+        title: '발주서 상태 변경',
+        message: `발주서 ${orderId}의 상태가 ${this.getStatusDisplayName(status)}로 변경되었습니다.`,
+        type: status === 'rejected' ? 'error' : 'success',
+        data: { orderId, status }
+      });
+    }
+    
     console.log(`📧 Notification sent to creator ${creatorId}: Order ${orderId} is ${status}`);
+  }
+  
+  /**
+   * Convert database user to WebSocket user format
+   */
+  private async getUserAsWebSocketUser(userId: string): Promise<WebSocketUser | null> {
+    try {
+      const user = await this.getUser(userId);
+      return {
+        id: user.id,
+        name: user.name,
+        role: user.role,
+        companyId: user.companyId || undefined,
+      };
+    } catch (error) {
+      console.error(`Failed to get user ${userId}:`, error);
+      return null;
+    }
+  }
+  
+  /**
+   * Get display name for status
+   */
+  private getStatusDisplayName(status: string): string {
+    const statusMap: Record<string, string> = {
+      'approved': '승인됨',
+      'rejected': '반려됨',
+      'sent': '발송됨',
+      'delivered': '납품됨',
+    };
+    return statusMap[status] || status;
   }
 }
 

@@ -1,5 +1,6 @@
 import { Bell, LogOut, User, Settings, Home, ChevronRight, Plus } from "lucide-react";
 import { NotificationBell } from "@/components/notifications/notification-bell";
+import { WebSocketStatus } from "@/components/websocket-status";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -288,6 +289,7 @@ export function Header() {
         </div>
         
         <div className="flex items-center space-x-3">
+          <WebSocketStatus />
           <NotificationBell />
           
           <div className="flex items-center space-x-3">

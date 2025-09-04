@@ -7,6 +7,7 @@ import { Plus, Search, Download, Filter, ChevronUp, ChevronDown, ChevronsUpDown,
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useOrders, useVendors, useProjects, useUsers } from "@/hooks/use-enhanced-queries";
+import { useWebSocketContext } from "@/contexts/websocket-context";
 import { useOrdersEmailStatus } from "@/hooks/use-email-history";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -24,6 +25,9 @@ export default function Orders() {
   const [location, navigate] = useLocation();
   const { theme } = useTheme();
   const isDarkMode = theme === 'dark';
+  
+  // WebSocket integration for real-time updates
+  const { connected: wsConnected, subscribeToOrder, unsubscribeFromOrder } = useWebSocketContext();
 
   // Simple theme debug logging
   useEffect(() => {
@@ -131,6 +135,23 @@ export default function Orders() {
   const { data: projects } = useProjects();
   const { data: users } = useUsers();
   const { data: emailStatusData } = useOrdersEmailStatus();
+
+  // Subscribe to WebSocket updates for visible orders
+  useEffect(() => {
+    if (ordersData?.orders && wsConnected) {
+      // Subscribe to all orders in the current view
+      ordersData.orders.forEach((order: any) => {
+        subscribeToOrder(order.id);
+      });
+
+      // Cleanup on unmount or data change
+      return () => {
+        ordersData.orders.forEach((order: any) => {
+          unsubscribeFromOrder(order.id);
+        });
+      };
+    }
+  }, [ordersData?.orders, wsConnected, subscribeToOrder, unsubscribeFromOrder]);
 
   const statusChangeMutation = useMutation({
     mutationFn: async ({ orderId, status }: { orderId: string; status: string }) => {

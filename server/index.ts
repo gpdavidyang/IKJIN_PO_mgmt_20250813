@@ -20,6 +20,7 @@ import cookieParser from "cookie-parser";
 import router from "./routes/index";
 import { requireAuth } from "./local-auth";
 import { auditLogger } from "./middleware/audit-logger";
+import { webSocketService } from "./services/websocket-service";
 
 // Create app instance
 const app = express();
@@ -141,11 +142,15 @@ async function initializeApp() {
     const { setupVite } = await import("./vite");
     await setupVite(app, server);
     
+    // Initialize WebSocket service in development
+    webSocketService.initialize(server);
+    
     // Start server only if not in Vercel environment
     if (!process.env.VERCEL) {
       const port = process.env.PORT || 5000;
       server.listen(port, "0.0.0.0", () => {
         log(`serving on port ${port}`);
+        log(`WebSocket service initialized`);
       });
     }
   } else {

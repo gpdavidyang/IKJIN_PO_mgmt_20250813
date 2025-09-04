@@ -85,6 +85,7 @@ const AccessibilityExample = createLazyComponent(
 );
 import { Sidebar } from "@/components/sidebar";
 import { Header } from "@/components/header";
+import { WebSocketProvider } from "@/contexts/websocket-context";
 
 // Loading fallback components for different page types
 function DashboardLoadingFallback() {
@@ -512,16 +513,18 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <AccessibilityProvider>
-          <ContrastProvider>
-            <FocusProvider>
-              <TooltipProvider>
-                <Toaster />
-                <Router />
-              </TooltipProvider>
-            </FocusProvider>
-          </ContrastProvider>
-        </AccessibilityProvider>
+        <WebSocketProvider>
+          <AccessibilityProvider>
+            <ContrastProvider>
+              <FocusProvider>
+                <TooltipProvider>
+                  <Toaster />
+                  <Router />
+                </TooltipProvider>
+              </FocusProvider>
+            </ContrastProvider>
+          </AccessibilityProvider>
+        </WebSocketProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
