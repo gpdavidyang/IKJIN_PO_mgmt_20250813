@@ -63,8 +63,10 @@ export async function login(req: Request, res: Response) {
     let user: User | undefined;
     
     try {
+      console.log("🔍 DB: Looking up user by email:", loginIdentifier);
       // Find user in database by email (most common login method)
       user = await storage.getUserByEmail(loginIdentifier);
+      console.log("🔍 DB: User lookup result:", user ? 'User found' : 'User not found');
       
       // Admin fallback: if user not found in database, provide admin@company.com access
       if (!user && loginIdentifier === 'admin@company.com') {
@@ -130,6 +132,12 @@ export async function login(req: Request, res: Response) {
     }
 
     try {
+      console.log("🔧 Starting JWT token generation for user:", {
+        userId: user.id,
+        email: user.email,
+        role: user.role
+      });
+      
       // Generate JWT token instead of using session
       const token = generateToken({
         userId: user.id,
@@ -137,11 +145,12 @@ export async function login(req: Request, res: Response) {
         role: user.role
       });
       
-      console.log("🔧 JWT token generated for user:", {
+      console.log("🔧 JWT token generated successfully for user:", {
         userId: user.id,
         email: user.email,
         role: user.role,
-        tokenLength: token.length
+        tokenLength: token.length,
+        tokenPreview: token.substring(0, 20) + '...'
       });
 
       // Set JWT token as httpOnly cookie
@@ -174,8 +183,20 @@ export async function login(req: Request, res: Response) {
       });
     }
   } catch (error) {
-    console.error("Login error:", error);
-    res.status(500).json({ message: "Login failed" });
+    console.error("🚨 CRITICAL LOGIN ERROR:", error);
+    console.error("🚨 Error stack:", error instanceof Error ? error.stack : 'No stack trace');
+    console.error("🚨 Error details:", {
+      name: error instanceof Error ? error.name : typeof error,
+      message: error instanceof Error ? error.message : String(error)
+    });
+    
+    res.status(500).json({ 
+      message: "Login failed",
+      error: process.env.NODE_ENV === 'development' ? {
+        name: error instanceof Error ? error.name : typeof error,
+        message: error instanceof Error ? error.message : String(error)
+      } : undefined
+    });
   }
 }
 

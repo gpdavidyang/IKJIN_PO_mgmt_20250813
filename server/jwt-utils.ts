@@ -15,7 +15,15 @@ export interface JWTPayload {
  * Generate JWT token for user authentication
  */
 export function generateToken(payload: Omit<JWTPayload, 'iat' | 'exp'>): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRY });
+  try {
+    console.log('🔧 JWT: Generating token with secret length:', JWT_SECRET.length);
+    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRY });
+    console.log('✅ JWT: Token generated successfully, length:', token.length);
+    return token;
+  } catch (error) {
+    console.error('🚨 JWT: Token generation failed:', error);
+    throw new Error(`JWT token generation failed: ${error instanceof Error ? error.message : String(error)}`);
+  }
 }
 
 /**
