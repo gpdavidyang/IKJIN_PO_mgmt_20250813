@@ -249,35 +249,48 @@ export function useLocalStorage<T>(
 }
 
 /**
- * Performance monitoring hook
+ * Performance monitoring hook - Optimized to prevent memory leaks
  */
 export function usePerformanceMonitor(componentName: string) {
   const startTime = useRef<number>();
   const renderCount = useRef(0);
+  const lastLogTime = useRef(Date.now());
+  const isFirstRender = useRef(true);
 
+  // Only run in development mode
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  
   useEffect(() => {
-    startTime.current = performance.now();
+    if (!isDevelopment) return;
+    
+    const renderStart = performance.now();
     renderCount.current += 1;
-
+    
+    // Throttle logging to prevent console spam
+    const shouldLog = Date.now() - lastLogTime.current > 5000; // Log at most every 5 seconds
+    
     return () => {
-      if (startTime.current) {
-        const endTime = performance.now();
-        const duration = endTime - startTime.current;
+      if (renderStart) {
+        const duration = performance.now() - renderStart;
         
-        // Log slow renders
-        if (duration > 16) { // 16ms threshold for 60fps
-          console.warn(`Slow render detected in ${componentName}: ${duration.toFixed(2)}ms`);
+        // Only log if it's a significant slowdown and we haven't logged recently
+        if (shouldLog && duration > 50) { // Higher threshold to reduce noise
+          console.warn(`[${componentName}] Render: ${duration.toFixed(1)}ms (render #${renderCount.current})`);
+          lastLogTime.current = Date.now();
         }
-
-        // Log excessive re-renders
-        if (renderCount.current > 10) {
-          console.warn(`Excessive re-renders in ${componentName}: ${renderCount.current} renders`);
+        
+        // Reset render count periodically to prevent unbounded growth
+        if (renderCount.current > 50) {
+          renderCount.current = 0;
         }
       }
     };
-  });
+  }, []); // Empty dependency array to prevent memory leaks
 
-  return { renderCount: renderCount.current };
+  // Return minimal data to prevent unnecessary re-renders
+  return useMemo(() => ({ 
+    renderCount: renderCount.current 
+  }), []);
 }
 
 /**
@@ -312,7 +325,7 @@ export function useMemoryMonitor() {
 }
 
 /**
- * First Contentful Paint monitoring
+ * First Contentful Paint monitoring - Optimized to prevent multiple observers
  */
 export function usePageLoadMetrics() {
   const [metrics, setMetrics] = useState<{
@@ -321,25 +334,44 @@ export function usePageLoadMetrics() {
     cls?: number;
     fid?: number;
   }>({});
+  
+  const hasSetupObserver = useRef(false);
+  const isDevelopment = process.env.NODE_ENV === 'development';
 
   useEffect(() => {
-    // Measure First Contentful Paint
-    const observer = new PerformanceObserver((list) => {
-      const entries = list.getEntries();
-      entries.forEach((entry) => {
-        if (entry.entryType === 'paint' && entry.name === 'first-contentful-paint') {
-          setMetrics(prev => ({ ...prev, fcp: entry.startTime }));
-        }
-        if (entry.entryType === 'largest-contentful-paint') {
-          setMetrics(prev => ({ ...prev, lcp: entry.startTime }));
-        }
+    // Only setup in development and only once
+    if (!isDevelopment || hasSetupObserver.current) return;
+    
+    hasSetupObserver.current = true;
+    
+    // Check if PerformanceObserver is supported
+    if (typeof PerformanceObserver === 'undefined') return;
+    
+    try {
+      // Measure First Contentful Paint and Largest Contentful Paint
+      const observer = new PerformanceObserver((list) => {
+        const entries = list.getEntries();
+        entries.forEach((entry) => {
+          if (entry.entryType === 'paint' && entry.name === 'first-contentful-paint') {
+            setMetrics(prev => ({ ...prev, fcp: entry.startTime }));
+          }
+          if (entry.entryType === 'largest-contentful-paint') {
+            setMetrics(prev => ({ ...prev, lcp: entry.startTime }));
+          }
+        });
       });
-    });
 
-    observer.observe({ entryTypes: ['paint', 'largest-contentful-paint'] });
+      observer.observe({ entryTypes: ['paint', 'largest-contentful-paint'] });
 
-    return () => observer.disconnect();
-  }, []);
+      return () => {
+        observer.disconnect();
+        hasSetupObserver.current = false;
+      };
+    } catch (error) {
+      // Silently handle any PerformanceObserver errors
+      hasSetupObserver.current = false;
+    }
+  }, []); // Empty dependency array to prevent re-setup
 
   return metrics;
 }
@@ -369,24 +401,37 @@ export function useComponentSize(ref: React.RefObject<HTMLElement>) {
 }
 
 /**
- * Bundle size analytics
+ * Bundle size analytics - Optimized to run only once and cache results
  */
 export function useBundleAnalytics() {
+  const hasRun = useRef(false);
+  
   useEffect(() => {
-    // Log bundle information in development
-    if (process.env.NODE_ENV === 'development') {
-      const scripts = Array.from(document.querySelectorAll('script[src]'));
-      const totalSize = scripts.reduce((acc, script) => {
-        const src = script.getAttribute('src');
-        if (src && src.includes('chunk')) {
-          // Estimate chunk size (would need actual measurements in production)
-          return acc + 100; // Placeholder
-        }
-        return acc;
-      }, 0);
-
-      console.log(`Estimated bundle size: ${totalSize}KB`);
+    // Only run once and only in development
+    if (hasRun.current || process.env.NODE_ENV !== 'development') {
+      return;
     }
+    
+    hasRun.current = true;
+    
+    // Defer bundle analysis to avoid blocking render
+    const timeoutId = setTimeout(() => {
+      try {
+        const scripts = Array.from(document.querySelectorAll('script[src]'));
+        const chunkCount = scripts.filter(script => {
+          const src = script.getAttribute('src');
+          return src && src.includes('chunk');
+        }).length;
+
+        if (chunkCount > 0) {
+          console.log(`Bundle chunks detected: ${chunkCount}`);
+        }
+      } catch (error) {
+        // Silently handle any DOM query errors
+      }
+    }, 1000); // Delay to not interfere with initial render
+    
+    return () => clearTimeout(timeoutId);
   }, []);
 }
 

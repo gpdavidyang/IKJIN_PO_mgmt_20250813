@@ -38,7 +38,9 @@ function AuthProvider({ children }: { children: ReactNode }) {
 
   // Always check auth status to properly handle login flow
   const [shouldCheckAuth, setShouldCheckAuth] = useState(() => {
-    console.log('🚀 Initializing useAuth hook');
+    if (isDevelopmentEnvironment()) {
+      console.log('🚀 Initializing useAuth hook');
+    }
     // Always enable auth checking to properly handle login/logout flow
     // The query itself will handle 401 responses gracefully
     return true;
@@ -64,7 +66,9 @@ function AuthProvider({ children }: { children: ReactNode }) {
 
   // Debug effect to monitor shouldCheckAuth state changes
   useEffect(() => {
-    console.log('🔄 shouldCheckAuth changed:', shouldCheckAuth);
+    if (isDevelopmentEnvironment()) {
+      console.log('🔄 shouldCheckAuth changed:', shouldCheckAuth);
+    }
   }, [shouldCheckAuth]);
 
   const {
@@ -97,21 +101,21 @@ function AuthProvider({ children }: { children: ReactNode }) {
         }
         
         const userData = await response.json();
-        console.log('🔍 useAuth - Raw response data:', userData);
-        console.log('🌍 Environment check:', {
-          hostname: window.location.hostname,
-          port: window.location.port,
-          href: window.location.href,
-          isDev: isDevelopmentEnvironment(),
-          isProd: isProductionEnvironment()
-        });
-        console.log('🔑 Auth indicators:', {
-          hasSessionCookie: document.cookie.includes('connect.sid') || document.cookie.includes('session'),
-          hasLocalAuth: localStorage.getItem('hasAuthenticated') === 'true',
-          hasSessionAuth: sessionStorage.getItem('userAuthenticated') === 'true',
-          shouldCheckAuth,
-          cookies: document.cookie
-        });
+        
+        // Only log in development and throttle to prevent console spam
+        if (isDevelopmentEnvironment()) {
+          // Use sessionStorage to throttle logging
+          const lastLogTime = parseInt(sessionStorage.getItem('authLogTime') || '0');
+          const now = Date.now();
+          if (now - lastLogTime > 10000) { // Log at most every 10 seconds
+            console.log('🔍 useAuth - User authenticated:', {
+              id: userData.id,
+              name: userData.name,
+              role: userData.role
+            });
+            sessionStorage.setItem('authLogTime', now.toString());
+          }
+        }
         
         // Set authentication indicators on successful auth
         localStorage.setItem('hasAuthenticated', 'true');
@@ -147,20 +151,26 @@ function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  // Debug effect to monitor user data changes (after useQuery is defined)
+  // Debug effect to monitor user data changes (after useQuery is defined) - throttled
   useEffect(() => {
-    console.log('👤 useAuth user data changed:', {
-      user: user ? {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role
-      } : null,
-      isLoading,
-      error: error?.message,
-      shouldCheckAuth
-    });
-  }, [user, isLoading, error, shouldCheckAuth]);
+    if (!isDevelopmentEnvironment()) return;
+    
+    // Throttle user data logging to prevent console spam
+    const logTimeout = setTimeout(() => {
+      const lastUserLogTime = parseInt(sessionStorage.getItem('userLogTime') || '0');
+      const now = Date.now();
+      if (now - lastUserLogTime > 10000) { // Log at most every 10 seconds
+        console.log('👤 useAuth state:', {
+          hasUser: !!user,
+          isLoading,
+          hasError: !!error
+        });
+        sessionStorage.setItem('userLogTime', now.toString());
+      }
+    }, 100);
+    
+    return () => clearTimeout(logTimeout);
+  }, [user, isLoading, error]);
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: { email: string; password: string }) => {

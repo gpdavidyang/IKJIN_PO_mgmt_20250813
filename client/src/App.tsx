@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from "react";
+import React, { Suspense, lazy, useMemo } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -15,7 +15,7 @@ import { ContrastProvider } from "@/components/accessibility/high-contrast";
 import { FocusProvider } from "@/components/accessibility/focus-management";
 import "@/styles/accessibility.css";
 // Performance monitoring
-import { usePerformanceMonitor, useBundleAnalytics, usePageLoadMetrics } from "@/hooks/use-performance";
+import { usePerformanceMonitor, useBundleAnalytics, usePageLoadMetrics, useThrottle } from "@/hooks/use-performance";
 import { DashboardSkeleton } from "@/components/common/LazyWrapper";
 // Query optimization
 import { useAppInitialization, useCacheWarming } from "@/hooks/use-enhanced-queries";
@@ -129,11 +129,11 @@ function FormLoadingFallback() {
   );
 }
 
-function Layout() {
+const Layout = React.memo(function Layout() {
   const [location] = useLocation();
   const { isCollapsed } = useSidebar();
   
-  // Performance monitoring
+  // Performance monitoring (optimized hooks)
   usePerformanceMonitor('Layout');
   useBundleAnalytics();
   const pageMetrics = usePageLoadMetrics();
@@ -143,29 +143,51 @@ function Layout() {
   const { warmEssentialData, warmUserSpecificData } = useCacheWarming();
   const showQueryDevTools = useQueryDevTools();
   
-  // Warm caches on app initialization and user authentication
+  // Memoize user ID to prevent unnecessary re-renders
+  const userId = useMemo(() => {
+    return user && 'id' in user && typeof user.id === 'number' ? user.id : null;
+  }, [user]);
+  
+  // Throttle cache warming to prevent excessive calls
+  const throttledWarmEssentialData = useThrottle(warmEssentialData, 5000);
+  const throttledWarmUserData = useThrottle(warmUserSpecificData, 5000);
+  
+  // Warm caches on app initialization and user authentication (optimized)
   useEffect(() => {
-    warmEssentialData();
+    throttledWarmEssentialData();
     
     // Warm user-specific data when user is authenticated
-    if (user && 'id' in user && typeof user.id === 'number') {
-      warmUserSpecificData(user.id);
+    if (userId) {
+      throttledWarmUserData(userId);
     }
-  }, [warmEssentialData, warmUserSpecificData, user]);
+  }, [throttledWarmEssentialData, throttledWarmUserData, userId]);
   
-  // Route-based preloading
-  useEffect(() => {
-    preloadRouteComponents(location);
-  }, [location]);
+  // Throttle route preloading to prevent excessive dynamic imports
+  const throttledPreloadRoute = useThrottle(preloadRouteComponents, 1000);
   
-  // Log performance metrics and bundle info in development
+  // Route-based preloading (throttled)
   useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
+    throttledPreloadRoute(location);
+  }, [location, throttledPreloadRoute]);
+  
+  // Memoize sidebar classes to prevent recalculation
+  const sidebarClasses = useMemo(() => cn(
+    "transition-all duration-300 sidebar-transition",
+    isCollapsed ? "xl:ml-16" : "xl:ml-64"
+  ), [isCollapsed]);
+  
+  // Development logging (throttled and conditional)
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'development') return;
+    
+    const logTimeout = setTimeout(() => {
       if (pageMetrics.fcp) {
         console.log(`Page performance metrics:`, pageMetrics);
       }
       logBundleInfo();
-    }
+    }, 100); // Defer logging to not block render
+    
+    return () => clearTimeout(logTimeout);
   }, [pageMetrics]);
   
   return (
@@ -174,10 +196,7 @@ function Layout() {
         <AccessibilityToolbar />
       </div>
       <Sidebar />
-      <div className={cn(
-        "transition-all duration-300 sidebar-transition",
-        isCollapsed ? "xl:ml-16" : "xl:ml-64"
-      )}>
+      <div className={sidebarClasses}>
         <Header />
         <main id="main-content">
           <Suspense fallback={<DashboardLoadingFallback />}>
