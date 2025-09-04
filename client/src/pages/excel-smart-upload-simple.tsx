@@ -152,15 +152,15 @@ export default function ExcelSmartUploadSimple() {
   };
 
   return (
-    <div className="container mx-auto py-6 max-w-4xl">
+    <div className="container mx-auto py-4">
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileSpreadsheet className="h-6 w-6" />
-            스마트 엑셀 업로드 (간소화 버전)
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <FileSpreadsheet className="h-5 w-5" />
+            스마트 엑셀 업로드
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-4">
           {/* Drag and Drop File Upload Section */}
           <div
             {...getRootProps()}
@@ -240,60 +240,80 @@ export default function ExcelSmartUploadSimple() {
               onClick={handleUpload}
               disabled={!file || isUploading}
               className="min-w-[200px]"
+              size="sm"
             >
               {isUploading ? '처리 중...' : '업로드 및 처리'}
             </Button>
           </div>
-
-          {/* Validation Status Panel */}
-          {(isUploading || uploadResult) && (
-            <div className="mt-6">
-              <ValidationStatusPanel
-                validationProgress={validationProgress}
-                statusCounts={statusCounts}
-                autoSaveStatus={autoSaveStatus}
-                totalItems={uploadResult?.itemCount || 0}
-              />
-            </div>
-          )}
-
-          {/* Smart Table for detailed results */}
-          {uploadResult && uploadResult.details && uploadResult.details.processedData && (
-            <Card className="mt-6">
-              <CardHeader>
-                <CardTitle className="text-lg">상세 데이터 검증 결과</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <SmartTable
-                  data={uploadResult.details.processedData}
-                  columns={uploadResult.details.columns || []}
-                  onDataChange={(updatedData) => {
-                    // Handle data changes
-                    console.log('Data updated:', updatedData);
-                    toast({
-                      title: '데이터 수정됨',
-                      description: '변경사항이 저장되었습니다.',
-                      variant: 'success',
-                    });
-                  }}
-                />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Instructions */}
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              <div className="space-y-1 text-sm">
-                <div>• Excel 파일(.xlsx, .xls)만 지원됩니다</div>
-                <div>• 파일 크기는 10MB 이하여야 합니다</div>
-                <div>• 중복 검출 및 자동 검증이 수행됩니다</div>
-              </div>
-            </AlertDescription>
-          </Alert>
         </CardContent>
       </Card>
+
+      {/* Validation Status Panel - Separated and Compact */}
+      {(isUploading || uploadResult) && (
+        <Card className="mt-4">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">검증 결과 요약</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ValidationStatusPanel
+              validationProgress={validationProgress}
+              statusCounts={statusCounts}
+              autoSaveStatus={autoSaveStatus}
+              totalItems={uploadResult?.itemCount || 0}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Smart Table for detailed results - Full Width */}
+      {uploadResult && uploadResult.details && uploadResult.details.processedData && (
+        <Card className="mt-4">
+          <CardHeader className="pb-3">
+            <div className="flex justify-between items-center">
+              <CardTitle className="text-base">상세 데이터 검증 결과</CardTitle>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline">
+                  <FileSpreadsheet className="h-4 w-4 mr-1" />
+                  Excel 다운로드
+                </Button>
+                <Button size="sm" variant="default" className="bg-green-600 hover:bg-green-700">
+                  <CheckCircle className="h-4 w-4 mr-1" />
+                  발주서 생성
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <SmartTable
+              data={uploadResult.details.processedData}
+              columns={uploadResult.details.columns || []}
+              onDataChange={(updatedData) => {
+                // Handle data changes
+                console.log('Data updated:', updatedData);
+                toast({
+                  title: '데이터 수정됨',
+                  description: '변경사항이 저장되었습니다.',
+                  variant: 'success',
+                });
+              }}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Instructions - Moved to bottom */}
+      {!uploadResult && (
+        <Alert className="mt-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            <div className="space-y-1 text-xs">
+              <div>• Excel 파일(.xlsx, .xls)만 지원됩니다</div>
+              <div>• 파일 크기는 10MB 이하여야 합니다</div>
+              <div>• 중복 검출 및 자동 검증이 수행됩니다</div>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
     </div>
   );
 }

@@ -22,77 +22,65 @@ export function ValidationStatusPanel({
   totalItems
 }: ValidationStatusPanelProps) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Progress Bar */}
-      <div className="space-y-2">
-        <div className="flex justify-between text-sm text-gray-600">
+      <div className="space-y-1">
+        <div className="flex justify-between text-xs text-gray-600">
           <span>검증 진행률</span>
           <span>{validationProgress}%</span>
         </div>
-        <Progress value={validationProgress} className="h-2" />
+        <Progress value={validationProgress} className="h-1.5" />
       </div>
 
-      {/* Status Cards */}
-      <div className="grid grid-cols-3 gap-4">
+      {/* Status Cards - Compact Version */}
+      <div className="grid grid-cols-3 gap-2">
         {/* Valid Items */}
-        <Card className="border-green-200 bg-green-50/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">유효</p>
-                <p className="text-2xl font-bold text-green-600">
-                  {statusCounts.valid}
-                </p>
-              </div>
-              <CheckCircle2 className="h-8 w-8 text-green-500" />
+        <div className="border border-green-200 bg-green-50/50 rounded-lg p-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-gray-600">유효</p>
+              <p className="text-lg font-bold text-green-600">
+                {statusCounts.valid}
+              </p>
             </div>
-            <div className="mt-2">
-              <div className="text-xs text-gray-500">
-                {totalItems > 0 ? Math.round((statusCounts.valid / totalItems) * 100) : 0}%
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            <CheckCircle2 className="h-5 w-5 text-green-500" />
+          </div>
+          <div className="text-xs text-gray-500">
+            {totalItems > 0 ? Math.round((statusCounts.valid / totalItems) * 100) : 0}%
+          </div>
+        </div>
 
         {/* Warning Items */}
-        <Card className="border-yellow-200 bg-yellow-50/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">경고</p>
-                <p className="text-2xl font-bold text-yellow-600">
-                  {statusCounts.warning}
-                </p>
-              </div>
-              <AlertTriangle className="h-8 w-8 text-yellow-500" />
+        <div className="border border-yellow-200 bg-yellow-50/50 rounded-lg p-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-gray-600">경고</p>
+              <p className="text-lg font-bold text-yellow-600">
+                {statusCounts.warning}
+              </p>
             </div>
-            <div className="mt-2">
-              <div className="text-xs text-gray-500">
-                {totalItems > 0 ? Math.round((statusCounts.warning / totalItems) * 100) : 0}%
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            <AlertTriangle className="h-5 w-5 text-yellow-500" />
+          </div>
+          <div className="text-xs text-gray-500">
+            {totalItems > 0 ? Math.round((statusCounts.warning / totalItems) * 100) : 0}%
+          </div>
+        </div>
 
         {/* Error Items */}
-        <Card className="border-red-200 bg-red-50/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">오류</p>
-                <p className="text-2xl font-bold text-red-600">
-                  {statusCounts.error}
-                </p>
-              </div>
-              <XCircle className="h-8 w-8 text-red-500" />
+        <div className="border border-red-200 bg-red-50/50 rounded-lg p-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-gray-600">오류</p>
+              <p className="text-lg font-bold text-red-600">
+                {statusCounts.error}
+              </p>
             </div>
-            <div className="mt-2">
-              <div className="text-xs text-gray-500">
-                {totalItems > 0 ? Math.round((statusCounts.error / totalItems) * 100) : 0}%
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            <XCircle className="h-5 w-5 text-red-500" />
+          </div>
+          <div className="text-xs text-gray-500">
+            {totalItems > 0 ? Math.round((statusCounts.error / totalItems) * 100) : 0}%
+          </div>
+        </div>
       </div>
 
       {/* Auto Save Indicator */}
