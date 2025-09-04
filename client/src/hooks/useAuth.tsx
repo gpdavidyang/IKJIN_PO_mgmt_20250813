@@ -46,23 +46,7 @@ function AuthProvider({ children }: { children: ReactNode }) {
     return true;
   });
 
-  // Monitor storage changes for multi-tab sync
-  useEffect(() => {
-    // Listen for storage changes (login/logout in other tabs)
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'hasAuthenticated' || e.key === 'userAuthenticated') {
-        devLog('🔄 Storage change detected, invalidating auth query');
-        // Invalidate the auth query to re-check authentication status
-        queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, [queryClient]);
+  // Storage sync disabled to prevent infinite loops
 
   // Debug effect to monitor shouldCheckAuth state changes
   useEffect(() => {
@@ -139,11 +123,13 @@ function AuthProvider({ children }: { children: ReactNode }) {
     },
     enabled: shouldCheckAuth, // Only run query when session indicators are present
     retry: false, // Never retry auth queries to prevent 401 spam
-    staleTime: 1000 * 60 * 5, // 5 minutes - prevent excessive polling
-    refetchOnWindowFocus: false, // Disable window focus refetch to prevent 401 spam
+    staleTime: Infinity, // Never consider stale to prevent refetches
+    gcTime: Infinity, // Keep cache forever
+    refetchOnWindowFocus: false, // Disable window focus refetch
     refetchOnMount: false, // Prevent automatic refetch on mount
-    refetchOnReconnect: false, // Disable reconnect refetch during logout
-    refetchInterval: false, // No automatic polling for auth
+    refetchOnReconnect: false, // Disable reconnect refetch
+    refetchInterval: false, // No automatic polling
+    networkMode: 'offlineFirst' // Prioritize cache over network
     // Add meta for query identification in DevTools
     meta: {
       cacheType: 'MASTER',
@@ -151,26 +137,7 @@ function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  // Debug effect to monitor user data changes (after useQuery is defined) - throttled
-  useEffect(() => {
-    if (!isDevelopmentEnvironment()) return;
-    
-    // Throttle user data logging to prevent console spam
-    const logTimeout = setTimeout(() => {
-      const lastUserLogTime = parseInt(sessionStorage.getItem('userLogTime') || '0');
-      const now = Date.now();
-      if (now - lastUserLogTime > 10000) { // Log at most every 10 seconds
-        console.log('👤 useAuth state:', {
-          hasUser: !!user,
-          isLoading,
-          hasError: !!error
-        });
-        sessionStorage.setItem('userLogTime', now.toString());
-      }
-    }, 100);
-    
-    return () => clearTimeout(logTimeout);
-  }, [user, isLoading, error]);
+  // Debug logging disabled to prevent infinite loops
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: { email: string; password: string }) => {

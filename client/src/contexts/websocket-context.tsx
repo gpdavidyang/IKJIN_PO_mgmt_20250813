@@ -34,18 +34,8 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
   const queryClient = useQueryClient();
   const [notifications, setNotifications] = useState<WebSocketNotification[]>([]);
   
-  // Get current user info
-  const { data: user } = useQuery({
-    queryKey: ['/api/auth/user'],
-    queryFn: async () => {
-      const response = await fetch('/api/auth/user', {
-        credentials: 'include'
-      });
-      if (!response.ok) return null;
-      return response.json();
-    },
-    retry: false
-  });
+  // Get current user info - disabled to prevent loops
+  const user = null; // Temporarily disabled to prevent infinite loops
 
   // Handle workflow events
   const handleWorkflowEvent = (event: WorkflowEvent) => {
