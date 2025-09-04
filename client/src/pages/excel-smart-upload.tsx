@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { SmartDropZone } from '@/components/smart-upload/SmartDropZone';
-import { ValidationStatusPanel } from '@/components/smart-upload/ValidationStatusPanel';
-import { SmartTable } from '@/components/smart-upload/SmartTable';
-import { AICorrectionPanel } from '@/components/smart-upload/AICorrectionPanel';
+import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
+
+// Lazy load heavy components
+const SmartDropZone = lazy(() => import('@/components/smart-upload/SmartDropZone').then(m => ({ default: m.SmartDropZone })));
+const ValidationStatusPanel = lazy(() => import('@/components/smart-upload/ValidationStatusPanel').then(m => ({ default: m.ValidationStatusPanel })));
+const SmartTable = lazy(() => import('@/components/smart-upload/SmartTable').then(m => ({ default: m.SmartTable })));
+const AICorrectionPanel = lazy(() => import('@/components/smart-upload/AICorrectionPanel').then(m => ({ default: m.AICorrectionPanel })));
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -344,6 +346,14 @@ export function ExcelSmartUploadPage() {
   }) || [];
 
   return (
+    <Suspense fallback={
+      <div className="container mx-auto py-6 flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">페이지를 로딩 중입니다...</p>
+        </div>
+      </div>
+    }>
     <div className="container mx-auto py-6 space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
@@ -513,5 +523,6 @@ export function ExcelSmartUploadPage() {
         </TabsContent>
       </Tabs>
     </div>
+    </Suspense>
   );
 }
