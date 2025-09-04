@@ -9,7 +9,7 @@ import { eq, and } from "drizzle-orm";
 import type { OrderStatus, ApprovalStatus, WorkflowStatus, WorkflowEvent } from "@shared/order-types";
 import { ApprovalBypassReason } from "@shared/order-types";
 import { approvalAuthorityService } from "./approval-authority-service";
-import { sendOrderEmail } from "../utils/email-service";
+import { sendOrderEmail } from "../utils/po-email-service";
 
 export class WorkflowEngine {
   /**
