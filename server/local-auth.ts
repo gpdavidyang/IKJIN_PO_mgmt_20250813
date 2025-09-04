@@ -28,6 +28,46 @@ export interface AuthSession extends session.Session {
  */
 export async function login(req: Request, res: Response) {
   try {
+    // Vercel environment check
+    if (process.env.VERCEL && !process.env.DATABASE_URL) {
+      console.error("🚨 VERCEL DEPLOYMENT: DATABASE_URL is not set!");
+      // Allow admin login without database in Vercel
+      if (req.body.email === 'admin@company.com' && req.body.password === 'admin123') {
+        const mockAdmin = {
+          id: 'vercel_admin',
+          email: 'admin@company.com',
+          name: 'Vercel Admin',
+          role: 'admin',
+          phoneNumber: null,
+          profileImageUrl: null,
+          position: null,
+          isActive: true,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+        
+        const token = generateToken({
+          userId: mockAdmin.id,
+          email: mockAdmin.email,
+          role: mockAdmin.role
+        });
+        
+        res.cookie('auth_token', token, {
+          httpOnly: true,
+          secure: true,
+          sameSite: 'lax',
+          maxAge: 7 * 24 * 60 * 60 * 1000,
+          path: '/'
+        });
+        
+        return res.json({ 
+          message: "Login successful (Vercel fallback)", 
+          user: mockAdmin,
+          token: token
+        });
+      }
+    }
+    
     const { email, password, username } = req.body;
     const loginIdentifier = email || username;
 
