@@ -117,6 +117,50 @@ export function SimpleExcelBulkUpload() {
       const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
       setUploadProgress(80);
 
+      // 필드 검증: 첫 번째 행(헤더)이 올바른 필드명을 포함하는지 확인
+      if (jsonData.length === 0) {
+        throw new Error('엑셀 파일이 비어있습니다.');
+      }
+
+      const headerRow = jsonData[0];
+      const expectedFields = [
+        '발주일자', '납기일자', '거래처명', '거래처 이메일',
+        '납품처명', '납품처 이메일', '프로젝트명',
+        '대분류', '중분류', '소분류',
+        '품목명', '규격', '수량', '단가', '총금액', '비고'
+      ];
+
+      const fieldValidationErrors = [];
+      const headerMapping = new Map<string, number>();
+
+      // 헤더 필드 검증 및 매핑 생성
+      for (let i = 0; i < expectedFields.length; i++) {
+        const expectedField = expectedFields[i];
+        const actualField = headerRow[i]?.toString().trim();
+        
+        if (!actualField || actualField !== expectedField) {
+          fieldValidationErrors.push(
+            `컬럼 ${i + 1}: "${actualField || '(빈값)'}" → 올바른 필드명: "${expectedField}"`
+          );
+        } else {
+          headerMapping.set(expectedField, i);
+        }
+      }
+
+      // 필드 검증 실패 시 에러 표시
+      if (fieldValidationErrors.length > 0) {
+        const errorMessage = [
+          '엑셀 파일의 헤더가 올바르지 않습니다.',
+          '',
+          '잘못된 필드:',
+          ...fieldValidationErrors,
+          '',
+          '올바른 엑셀 템플릿을 다운로드하여 사용해주세요.'
+        ].join('\n');
+        
+        throw new Error(errorMessage);
+      }
+
       // 헤더 행 제거 (첫 번째 행이 헤더라고 가정)
       const dataRows = jsonData.slice(1);
       
@@ -178,11 +222,23 @@ export function SimpleExcelBulkUpload() {
       });
     } catch (error) {
       console.error('Excel parsing error:', error);
-      toast({
-        title: "파일 파싱 실패",
-        description: "엑셀 파일을 읽는 중 오류가 발생했습니다.",
-        variant: "destructive"
-      });
+      
+      const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.';
+      
+      // 필드 검증 오류인 경우 더 자세한 정보 표시
+      if (errorMessage.includes('헤더가 올바르지 않습니다')) {
+        toast({
+          title: "엑셀 필드 검증 실패",
+          description: errorMessage,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "파일 파싱 실패",
+          description: errorMessage,
+          variant: "destructive"
+        });
+      }
     } finally {
       setIsProcessing(false);
       setTimeout(() => setUploadProgress(0), 1000);
