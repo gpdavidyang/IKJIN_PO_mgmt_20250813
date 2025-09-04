@@ -153,19 +153,19 @@ const Layout = React.memo(function Layout() {
     return user && 'id' in user && typeof user.id === 'number' ? user.id : null;
   }, [user]);
   
-  // Throttle cache warming to prevent excessive calls
-  const throttledWarmEssentialData = useThrottle(warmEssentialData, 5000);
-  const throttledWarmUserData = useThrottle(warmUserSpecificData, 5000);
+  // REMOVED: Cache warming causing ReferenceError
+  // const throttledWarmEssentialData = useThrottle(warmEssentialData, 5000);
+  // const throttledWarmUserData = useThrottle(warmUserSpecificData, 5000);
   
-  // Warm caches on app initialization and user authentication (optimized)
-  useEffect(() => {
-    throttledWarmEssentialData();
-    
-    // Warm user-specific data when user is authenticated
-    if (userId) {
-      throttledWarmUserData(userId);
-    }
-  }, [throttledWarmEssentialData, throttledWarmUserData, userId]);
+  // REMOVED: Cache warming useEffect causing infinite loops
+  // useEffect(() => {
+  //   throttledWarmEssentialData();
+  //   
+  //   // Warm user-specific data when user is authenticated
+  //   if (userId) {
+  //     throttledWarmUserData(userId);
+  //   }
+  // }, [throttledWarmEssentialData, throttledWarmUserData, userId]);
   
   // Throttle route preloading to prevent excessive dynamic imports
   const throttledPreloadRoute = useThrottle(preloadRouteComponents, 1000);
