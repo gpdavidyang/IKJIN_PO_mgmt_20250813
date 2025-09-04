@@ -19,6 +19,7 @@ import * as XLSX from 'xlsx';
 import { BulkOrderEditorTwoRow } from '@/components/bulk-order-editor-two-row';
 import { toast } from '@/hooks/use-toast';
 import { useMutation } from '@tanstack/react-query';
+import { queryClient } from '@/lib/queryClient';
 
 interface ParsedOrderData {
   rowIndex: number;
@@ -246,11 +247,26 @@ export function SimpleExcelBulkUpload() {
       
       return response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
+      // Invalidate all orders related queries to refresh the list
+      await queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const queryKey = query.queryKey as string[];
+          return queryKey.some(key => 
+            typeof key === 'string' && (
+              key.includes('orders') || 
+              key.includes('/api/orders')
+            )
+          );
+        }
+      });
+      
       toast({
         title: "저장 완료",
         description: `${data.savedCount}개의 발주서가 성공적으로 저장되었습니다.`,
       });
+      
+      // Navigate to orders page after cache invalidation
       setTimeout(() => navigate('/orders'), 1500);
     },
     onError: (error) => {

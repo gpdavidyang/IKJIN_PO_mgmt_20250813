@@ -47,8 +47,10 @@ export class POEmailService {
       },
       tls: {
         rejectUnauthorized: false,
-        minVersion: 'TLSv1.2'
+        minVersion: 'TLSv1.2',
+        ciphers: 'SSLv3' // Some Naver configurations require this
       },
+      requireTLS: true, // Force TLS for Naver
       debug: true, // Enable debug output
       logger: true // Enable logging
     };
@@ -57,7 +59,8 @@ export class POEmailService {
       host: smtpConfig.host,
       port: smtpConfig.port,
       user: smtpConfig.auth.user,
-      passLength: smtpConfig.auth.pass?.length || 0
+      passLength: smtpConfig.auth.pass?.length || 0,
+      passPreview: smtpConfig.auth.pass ? `${smtpConfig.auth.pass.substring(0, 3)}...${smtpConfig.auth.pass.substring(smtpConfig.auth.pass.length - 3)}` : 'NOT SET'
     });
 
     if (!smtpConfig.auth.user || !smtpConfig.auth.pass) {

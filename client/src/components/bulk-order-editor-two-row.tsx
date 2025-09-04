@@ -20,6 +20,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
+import { queryClient } from '@/lib/queryClient';
 import { EmailComposeModal } from '@/components/email-compose-modal';
 
 interface OrderItem {
@@ -94,7 +95,20 @@ export function BulkOrderEditorTwoRow({ orders, onOrderUpdate, onOrderRemove, on
       
       return response.json();
     },
-    onSuccess: (data, variables) => {
+    onSuccess: async (data, variables) => {
+      // Invalidate all orders related queries to refresh the list
+      await queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const queryKey = query.queryKey as string[];
+          return queryKey.some(key => 
+            typeof key === 'string' && (
+              key.includes('orders') || 
+              key.includes('/api/orders')
+            )
+          );
+        }
+      });
+      
       if (variables.isDraft) {
         // 임시저장 처리
         toast({

@@ -126,6 +126,33 @@ router.post('/send-test', async (req, res) => {
 });
 
 /**
+ * @route GET /api/email-test/config
+ * @description 현재 이메일 설정 확인
+ */
+router.get('/config', async (req, res) => {
+  try {
+    const config = {
+      host: process.env.SMTP_HOST,
+      port: process.env.SMTP_PORT,
+      user: process.env.SMTP_USER,
+      hasPassword: !!process.env.SMTP_PASS,
+      passwordLength: process.env.SMTP_PASS?.length || 0
+    };
+    
+    res.json({
+      success: true,
+      config
+    });
+  } catch (error) {
+    console.error("Config check error:", error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
  * @route POST /api/email-test/simple
  * @description 간단한 이메일 발송 테스트 (POEmailService 직접 사용)
  */
