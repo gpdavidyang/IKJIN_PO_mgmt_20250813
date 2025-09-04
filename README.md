@@ -32,4 +32,4 @@ npm run dev
 DATABASE_URL=<PostgreSQL 연결 문자열>
 VITE_ENVIRONMENT=development|production
 VITE_ENABLE_EXCEL_UPLOAD=true|false
-```
+```# Force Vercel redeploy Thu Sep  4 22:18:06 KST 2025
