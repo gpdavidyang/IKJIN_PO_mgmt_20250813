@@ -486,7 +486,7 @@ const Layout = React.memo(function Layout() {
       {showQueryDevTools && <QueryDevTools />}
     </div>
   );
-}
+});
 
 function Router() {
   const { user, isLoading } = useAuth();
