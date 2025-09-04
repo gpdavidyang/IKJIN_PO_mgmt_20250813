@@ -252,33 +252,8 @@ export function useLocalStorage<T>(
  * Performance monitoring hook - Disabled in production for better performance
  */
 export function usePerformanceMonitor(componentName: string) {
-  // Completely disable performance monitoring in production
-  if (process.env.NODE_ENV === 'production') {
-    return useMemo(() => ({ renderCount: 0 }), []);
-  }
-
-  const renderCount = useRef(0);
-  const lastLogTime = useRef(Date.now());
-
-  useEffect(() => {
-    const renderStart = performance.now();
-    renderCount.current += 1;
-    
-    const cleanup = () => {
-      const duration = performance.now() - renderStart;
-      const now = Date.now();
-      
-      // Only log extremely slow renders and throttle heavily
-      if (duration > 100 && now - lastLogTime.current > 10000) {
-        console.warn(`[${componentName}] Slow render: ${duration.toFixed(1)}ms`);
-        lastLogTime.current = now;
-      }
-    };
-    
-    return cleanup;
-  });
-
-  return useMemo(() => ({ renderCount: renderCount.current }), []);
+  // COMPLETELY DISABLE performance monitoring in ALL environments to prevent infinite loops
+  return useMemo(() => ({ renderCount: 0 }), []);
 }
 
 /**
@@ -316,41 +291,8 @@ export function useMemoryMonitor() {
  * Page load metrics - Disabled in production for performance
  */
 export function usePageLoadMetrics() {
-  // Disable completely in production
-  if (process.env.NODE_ENV === 'production') {
-    return useMemo(() => ({}), []);
-  }
-
-  const [metrics, setMetrics] = useState<{
-    fcp?: number;
-    lcp?: number;
-  }>({});
-  
-  const hasSetupObserver = useRef(false);
-
-  useEffect(() => {
-    if (hasSetupObserver.current || typeof PerformanceObserver === 'undefined') return;
-    
-    hasSetupObserver.current = true;
-    
-    try {
-      const observer = new PerformanceObserver((list) => {
-        const entries = list.getEntries();
-        entries.forEach((entry) => {
-          if (entry.entryType === 'paint' && entry.name === 'first-contentful-paint') {
-            setMetrics(prev => ({ ...prev, fcp: entry.startTime }));
-          }
-        });
-      });
-
-      observer.observe({ entryTypes: ['paint'] });
-      return () => observer.disconnect();
-    } catch {
-      // Silently ignore errors
-    }
-  }, []);
-
-  return metrics;
+  // COMPLETELY DISABLE in ALL environments to prevent infinite loops
+  return useMemo(() => ({}), []);
 }
 
 /**

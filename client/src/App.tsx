@@ -15,10 +15,10 @@ import { ContrastProvider } from "@/components/accessibility/high-contrast";
 import { FocusProvider } from "@/components/accessibility/focus-management";
 import "@/styles/accessibility.css";
 // Performance monitoring
-import { usePerformanceMonitor, useBundleAnalytics, usePageLoadMetrics, useThrottle } from "@/hooks/use-performance";
+import { useThrottle } from "@/hooks/use-performance";
 import { DashboardSkeleton } from "@/components/common/LazyWrapper";
-// Query optimization
-import { useAppInitialization, useCacheWarming } from "@/hooks/use-enhanced-queries";
+// Query optimization - DISABLED to prevent infinite loops
+// import { useAppInitialization, useCacheWarming } from "@/hooks/use-enhanced-queries";
 import { QueryDevTools, useQueryDevTools } from "@/components/dev/query-devtools";
 
 // Critical components (loaded immediately)
@@ -133,15 +133,20 @@ const Layout = React.memo(function Layout() {
   const [location] = useLocation();
   const { isCollapsed } = useSidebar();
   
-  // Performance monitoring (optimized hooks)
-  usePerformanceMonitor('Layout');
-  useBundleAnalytics();
-  const pageMetrics = usePageLoadMetrics();
+  // Performance monitoring - DISABLED to prevent infinite loops
+  // These hooks were causing excessive re-renders in production
+  // usePerformanceMonitor('Layout');
+  // useBundleAnalytics();
+  // const pageMetrics = usePageLoadMetrics();
   
-  // Query optimization and cache warming
-  const { user, isInitialized } = useAppInitialization();
-  const { warmEssentialData, warmUserSpecificData } = useCacheWarming();
+  // DISABLED: Query optimization causing infinite loops
+  // const { user, isInitialized } = useAppInitialization();
+  // const { warmEssentialData, warmUserSpecificData } = useCacheWarming();
   const showQueryDevTools = useQueryDevTools();
+  
+  // Use direct auth hook instead
+  const { user, isAuthenticated } = useAuth();
+  const isInitialized = isAuthenticated;
   
   // Memoize user ID to prevent unnecessary re-renders
   const userId = useMemo(() => {
@@ -176,19 +181,8 @@ const Layout = React.memo(function Layout() {
     isCollapsed ? "xl:ml-16" : "xl:ml-64"
   ), [isCollapsed]);
   
-  // Development logging (throttled and conditional)
-  useEffect(() => {
-    if (process.env.NODE_ENV !== 'development') return;
-    
-    const logTimeout = setTimeout(() => {
-      if (pageMetrics.fcp) {
-        console.log(`Page performance metrics:`, pageMetrics);
-      }
-      logBundleInfo();
-    }, 100); // Defer logging to not block render
-    
-    return () => clearTimeout(logTimeout);
-  }, [pageMetrics]);
+  // Development logging - DISABLED to prevent render loops
+  // All performance monitoring and logging disabled to prevent infinite loops
   
   return (
     <div className="min-h-screen bg-gray-50">

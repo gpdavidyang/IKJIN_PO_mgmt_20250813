@@ -343,35 +343,29 @@ export function useSmartMutation<TData, TError = Error, TVariables = void, TCont
   });
 }
 
-// Background sync hook for keeping data fresh
+// Background sync hook for keeping data fresh - DISABLED to prevent infinite loops
 export function useBackgroundSync(
   queryKeys: readonly unknown[][],
   interval: number = 5 * 60 * 1000 // 5 minutes default
 ) {
   const queryClient = useQueryClient();
-  const intervalRef = useRef<NodeJS.Timeout>();
   
-  useEffect(() => {
-    const sync = () => {
-      queryKeys.forEach(queryKey => {
-        queryClient.invalidateQueries({ queryKey, exact: false });
-      });
-    };
-    
-    intervalRef.current = setInterval(sync, interval);
-    
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, [queryClient, queryKeys, interval]);
+  // DISABLED: Background sync that was causing infinite loops
+  // The automatic interval invalidation was triggering cascading re-renders
   
-  // Manual sync function
+  // Manual sync function only - no automatic intervals
   const syncNow = useCallback(() => {
-    queryKeys.forEach(queryKey => {
-      queryClient.invalidateQueries({ queryKey, exact: false });
-    });
+    // Only sync in development and throttle heavily
+    if (process.env.NODE_ENV === 'development') {
+      const lastSync = parseInt(sessionStorage.getItem('lastBackgroundSync') || '0');
+      const now = Date.now();
+      if (now - lastSync > 60000) { // Minimum 1 minute between syncs
+        queryKeys.forEach(queryKey => {
+          queryClient.invalidateQueries({ queryKey, exact: false, refetchType: 'none' });
+        });
+        sessionStorage.setItem('lastBackgroundSync', now.toString());
+      }
+    }
   }, [queryClient, queryKeys]);
   
   return syncNow;

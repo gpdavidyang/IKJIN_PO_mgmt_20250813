@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useWebSocket, type WebSocketNotification } from '../hooks/use-websocket';
 import type { WorkflowEvent } from '../../../server/services/websocket-service';
@@ -34,13 +34,15 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
   const queryClient = useQueryClient();
   const [notifications, setNotifications] = useState<WebSocketNotification[]>([]);
   
-  // TEMPORARY FIX: Use mock user in production to bypass auth issues
-  const user = process.env.NODE_ENV === 'production' ? {
-    id: "temp-user",
-    email: "admin@company.com", 
-    name: "관리자",
-    role: "admin" as const
-  } : null;
+  // TEMPORARY FIX: Use mock user in production to bypass auth issues - MEMOIZED
+  const user = useMemo(() => {
+    return process.env.NODE_ENV === 'production' ? {
+      id: "temp-user",
+      email: "admin@company.com", 
+      name: "관리자",
+      role: "admin" as const
+    } : null;
+  }, []); // Empty dependency array - this value never changes
 
   // Handle workflow events
   const handleWorkflowEvent = (event: WorkflowEvent) => {

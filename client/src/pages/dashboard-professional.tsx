@@ -1,7 +1,7 @@
 import { FileText, Package, Users, Clock, Building, Plus, AlertCircle, BarChart3, CheckCircle, TrendingUp, ShoppingCart, Activity, FolderTree, ChevronRight, DollarSign, ArrowUp, ArrowDown, Calendar, Eye, ChevronsUpDown, Send, Mail, Edit } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useDashboardData } from "@/hooks/use-enhanced-queries";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import React from "react";
 import { useTheme } from "@/components/ui/theme-provider";
 import { useToast } from "@/hooks/use-toast";
@@ -47,8 +47,10 @@ export default function DashboardProfessional() {
   const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
   const [selectedOrderForPDF, setSelectedOrderForPDF] = useState<any>(null);
 
-  // Check if dark mode is active - ensure we're getting the correct theme
-  const isDarkMode = actualTheme === 'dark' && document.documentElement.classList.contains('dark');
+  // Check if dark mode is active - MEMOIZED to prevent recalculation
+  const isDarkMode = useMemo(() => {
+    return actualTheme === 'dark' && document.documentElement.classList.contains('dark');
+  }, [actualTheme]);
 
   // Helper functions for email and status rendering (from orders-professional.tsx)
   const renderEmailStatus = (order: any) => {
@@ -103,16 +105,16 @@ export default function DashboardProfessional() {
     }
   };
 
-  // Email handlers (from orders-professional.tsx)
-  const handleEmailSend = (order: any) => {
+  // Email handlers (from orders-professional.tsx) - MEMOIZED
+  const handleEmailSend = useCallback((order: any) => {
     const fullOrder = recentOrders.find((o: any) => o.id === order.id);
     if (fullOrder) {
       setSelectedOrder(fullOrder);
       setEmailDialogOpen(true);
     }
-  };
+  }, [recentOrders]);
 
-  const handleSendEmail = async (emailData: any) => {
+  const handleSendEmail = useCallback(async (emailData: any) => {
     if (!selectedOrder) return;
 
     try {
@@ -138,24 +140,24 @@ export default function DashboardProfessional() {
         variant: "destructive",
       });
     }
-  };
+  }, [selectedOrder, toast]);
 
-  const handleViewEmailHistory = (order: any) => {
+  const handleViewEmailHistory = useCallback((order: any) => {
     const fullOrder = recentOrders.find((o: any) => o.id === order.id);
     if (fullOrder) {
       setSelectedOrderForHistory(fullOrder);
       setEmailHistoryModalOpen(true);
     }
-  };
+  }, [recentOrders]);
 
-  // PDF preview handler
-  const handlePDFPreview = (order: any) => {
+  // PDF preview handler - MEMOIZED
+  const handlePDFPreview = useCallback((order: any) => {
     const fullOrder = recentOrders.find((o: any) => o.id === order.id);
     if (fullOrder) {
       setSelectedOrderForPDF(fullOrder);
       setPdfPreviewOpen(true);
     }
-  };
+  }, [recentOrders]);
 
   // Debug logging removed for performance
 
@@ -250,21 +252,8 @@ export default function DashboardProfessional() {
       status: item.status // Keep original status for debugging
     }));
 
-  // Enhanced debug logging
-  console.log('📊 Dashboard Professional - Monthly Data:', {
-    original_monthlyStats: monthlyStats,
-    transformed_monthlyChartData: monthlyChartData,
-    dataLength: monthlyChartData.length
-  });
-  
-  console.log('📊 Dashboard Professional - Status Data:', {
-    original_statusStats: statusStats,
-    filtered_statusChartData: statusChartData,
-    hasOriginalData: statusStats && statusStats.length > 0,
-    hasFilteredData: statusChartData && statusChartData.length > 0,
-    chartDataLength: statusChartData?.length || 0,
-    firstChartItem: statusChartData?.[0] || null
-  });
+  // REMOVED: Debug logging that caused infinite loops
+  // All console.log statements removed to prevent render loops
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: isDarkMode ? '#111827' : '#f9fafb' }}>

@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useContext, useCallback, useState, useEffect } from "react";
+import { createContext, ReactNode, useContext, useCallback, useState, useEffect, useMemo } from "react";
 import {
   useQuery,
   useMutation,
@@ -39,8 +39,8 @@ function AuthProvider({ children }: { children: ReactNode }) {
   // Disable auth check temporarily to fix 401 issues
   const [shouldCheckAuth, setShouldCheckAuth] = useState(false);
   
-  // Mock user for production to bypass auth issues
-  const mockUser = {
+  // Mock user for production to bypass auth issues - MEMOIZED to prevent recreation
+  const mockUser = useMemo(() => ({
     id: "temp-user",
     email: "admin@company.com", 
     name: "관리자",
@@ -51,20 +51,24 @@ function AuthProvider({ children }: { children: ReactNode }) {
     role: "admin" as const,
     createdAt: new Date(),
     updatedAt: new Date()
-  };
+  }), []); // Empty dependency array - this value never changes
 
-  // Storage sync disabled to prevent infinite loops
-
-  // Debug effect to monitor shouldCheckAuth state changes
+  // Debug effect to monitor shouldCheckAuth state changes - THROTTLED
   useEffect(() => {
     if (isDevelopmentEnvironment()) {
-      console.log('🔄 shouldCheckAuth changed:', shouldCheckAuth);
+      const timeout = setTimeout(() => {
+        console.log('🔄 shouldCheckAuth changed:', shouldCheckAuth);
+      }, 100); // Throttle logging
+      return () => clearTimeout(timeout);
     }
   }, [shouldCheckAuth]);
 
   // TEMPORARY FIX: Bypass authentication completely due to persistent 401 issues
   // Return mock user directly instead of making API calls
-  const user = isProductionEnvironment() ? mockUser : null;
+  const user = useMemo(() => {
+    return isProductionEnvironment() ? mockUser : null;
+  }, [mockUser]); // Memoize to prevent recreation
+
   const error = null;
   const isLoading = false;
   
@@ -147,8 +151,7 @@ function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  // Debug logging disabled to prevent infinite loops
-
+  // STABLE LOGIN MUTATION - no query invalidation loops
   const loginMutation = useMutation({
     mutationFn: async (credentials: { email: string; password: string }) => {
       const response = await fetch("/api/auth/login", {
@@ -176,13 +179,13 @@ function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('hasAuthenticated', 'true');
       sessionStorage.setItem('userAuthenticated', 'true');
       
-      // Invalidate and refetch to ensure session is properly established
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-      }, 100);
+      // REMOVED: Timeout invalidation that caused loops
+      // Just navigate directly
+      navigate("/dashboard");
     },
   });
 
+  // STABLE FORCE LOGOUT - memoized to prevent recreation
   const forceLogout = useCallback(async () => {
     console.log("🚪 Starting force logout process");
     
@@ -219,8 +222,9 @@ function AuthProvider({ children }: { children: ReactNode }) {
     navigate("/login");
     
     console.log("✅ Force logout completed");
-  }, [queryClient, navigate]);
+  }, [queryClient, navigate]); // Stable dependencies
 
+  // STABLE LOGOUT MUTATION - memoized
   const logoutMutation = useMutation({
     mutationFn: async () => {
       console.log("🚪 Starting logout process");
@@ -231,9 +235,6 @@ function AuthProvider({ children }: { children: ReactNode }) {
       // Clear authentication indicators immediately
       localStorage.removeItem('hasAuthenticated');
       sessionStorage.removeItem('userAuthenticated');
-      
-      // Keep auth checking enabled to properly handle the logged-out state
-      // The query will return null for unauthenticated users
       
       // Cancel any pending auth queries to prevent 401 errors
       await queryClient.cancelQueries({ queryKey: ["/api/auth/user"] });
@@ -268,18 +269,19 @@ function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  // MEMOIZED CONTEXT VALUE to prevent provider recreation
+  const contextValue = useMemo(() => ({
+    user: user ?? null,
+    isLoading,
+    isAuthenticated: !!user,
+    error,
+    loginMutation,
+    logoutMutation,
+    forceLogout,
+  }), [user, isLoading, error, loginMutation, logoutMutation, forceLogout]);
+
   return (
-    <AuthContext.Provider
-      value={{
-        user: user ?? null,
-        isLoading,
-        isAuthenticated: !!user,
-        error,
-        loginMutation,
-        logoutMutation,
-        forceLogout,
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
