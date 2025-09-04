@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useWebSocket } from '@/hooks/use-websocket';
-import { api } from '@/services/api.ts';
+import { apiRequest as api } from '@/lib/queryClient';
 import { 
   Upload, 
   CheckCircle, 
