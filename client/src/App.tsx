@@ -148,10 +148,10 @@ const Layout = React.memo(function Layout() {
   const { user, isAuthenticated } = useAuth();
   const isInitialized = isAuthenticated;
   
-  // Memoize user ID to prevent unnecessary re-renders
+  // EMERGENCY FIX: Stabilize user ID with deeper memoization
   const userId = useMemo(() => {
     return user && 'id' in user && typeof user.id === 'number' ? user.id : null;
-  }, [user]);
+  }, [user?.id]); // More specific dependency to prevent recreation
   
   // REMOVED: Cache warming causing ReferenceError
   // const throttledWarmEssentialData = useThrottle(warmEssentialData, 5000);
@@ -167,13 +167,14 @@ const Layout = React.memo(function Layout() {
   //   }
   // }, [throttledWarmEssentialData, throttledWarmUserData, userId]);
   
-  // Throttle route preloading to prevent excessive dynamic imports
-  const throttledPreloadRoute = useThrottle(preloadRouteComponents, 1000);
+  // EMERGENCY FIX: Disable route preloading to prevent infinite loops
+  // The throttledPreloadRoute was causing unstable dependencies
+  // const throttledPreloadRoute = useThrottle(preloadRouteComponents, 1000);
   
-  // Route-based preloading (throttled)
-  useEffect(() => {
-    throttledPreloadRoute(location);
-  }, [location, throttledPreloadRoute]);
+  // Route-based preloading DISABLED to prevent infinite loops
+  // useEffect(() => {
+  //   throttledPreloadRoute(location);
+  // }, [location, throttledPreloadRoute]);
   
   // Memoize sidebar classes to prevent recalculation
   const sidebarClasses = useMemo(() => cn(

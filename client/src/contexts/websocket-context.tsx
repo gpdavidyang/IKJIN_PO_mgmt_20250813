@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useWebSocket, type WebSocketNotification } from '../hooks/use-websocket';
 import type { WorkflowEvent } from '../../../server/services/websocket-service';
@@ -44,8 +44,8 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
     } : null;
   }, []); // Empty dependency array - this value never changes
 
-  // Handle workflow events
-  const handleWorkflowEvent = (event: WorkflowEvent) => {
+  // Handle workflow events - MEMOIZED to prevent recreation
+  const handleWorkflowEvent = useCallback((event: WorkflowEvent) => {
     switch (event.type) {
       case 'order_updated':
         // Invalidate order queries to refresh data
@@ -131,10 +131,10 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
         });
         break;
     }
-  };
+  }, [queryClient, user?.id, toast]); // Stable dependencies
 
-  // Handle direct notifications
-  const handleNotification = (notification: WebSocketNotification) => {
+  // Handle direct notifications - MEMOIZED to prevent recreation
+  const handleNotification = useCallback((notification: WebSocketNotification) => {
     setNotifications(prev => [notification, ...prev.slice(0, 49)]); // Keep last 50
     
     // Show toast notification
@@ -164,7 +164,7 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
         });
       }
     }
-  };
+  }, [toast]); // Stable dependencies
 
   // Initialize WebSocket connection
   const webSocket = useWebSocket({
@@ -183,11 +183,12 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
     }
   }, []);
 
-  const clearNotifications = () => {
+  const clearNotifications = useCallback(() => {
     setNotifications([]);
-  };
+  }, []); // Stable callback
 
-  const contextValue: WebSocketContextType = {
+  // MEMOIZED context value to prevent provider recreation
+  const contextValue: WebSocketContextType = useMemo(() => ({
     connected: webSocket.connected,
     authenticated: webSocket.authenticated,
     connecting: webSocket.connecting,
@@ -196,7 +197,7 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
     unsubscribeFromOrder: webSocket.unsubscribeFromOrder,
     notifications,
     clearNotifications
-  };
+  }), [webSocket.connected, webSocket.authenticated, webSocket.connecting, webSocket.error, webSocket.subscribeToOrder, webSocket.unsubscribeFromOrder, notifications, clearNotifications]); // All dependencies
 
   return (
     <WebSocketContext.Provider value={contextValue}>

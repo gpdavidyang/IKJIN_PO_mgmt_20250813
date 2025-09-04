@@ -81,39 +81,39 @@ export const getQueryFn: <T>(options: {
 // Use the optimized query client with enhanced defaults
 export const queryClient = createOptimizedQueryClient();
 
-// Override the default query function with auth-friendly defaults
+// EMERGENCY ANTI-LOOP CONFIGURATION: Override defaults with aggressive caching
 queryClient.setDefaultOptions({
   queries: {
     queryFn: getQueryFn({ on401: "returnNull" }), // Return null for 401 instead of throwing
-    retry: (failureCount, error: any) => {
-      // Don't retry auth-related or client errors
-      if (error?.message?.includes('401') || 
-          error?.message?.includes('403') || 
-          error?.message?.includes('404') ||
-          error?.status >= 400 && error?.status < 500) {
-        return false;
-      }
-      return failureCount < 3;
-    },
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: false, // EMERGENCY: Disable all retries to prevent loops
+    staleTime: Infinity, // EMERGENCY: Never consider data stale to prevent refetches
+    gcTime: Infinity, // EMERGENCY: Keep cache forever to prevent re-requests
     refetchOnWindowFocus: false, // Prevent excessive refetching
-    // Production-specific optimizations for auth queries
-    refetchOnMount: isDevelopmentEnvironment(),
-    refetchOnReconnect: false,
+    refetchOnMount: false, // EMERGENCY: Never refetch on mount
+    refetchOnReconnect: false, // Never refetch on reconnect
+    refetchInterval: false, // Disable automatic polling
+    // EMERGENCY: Network prioritization to use cache first
+    networkMode: 'offlineFirst',
   },
-  // Global error handling to suppress 401s in production
-  onError: (error: any) => {
-    // Only log non-auth errors in production
-    if (!isDevelopmentEnvironment()) {
-      // Suppress 401 errors from console logs in production
-      if (error?.message?.includes('401') || error?.status === 401) {
-        return;
-      }
-    }
-    
-    // Log other errors normally
-    if (isDevelopmentEnvironment()) {
-      console.warn('Query error:', error);
-    }
+  mutations: {
+    // EMERGENCY: Disable mutation retry to prevent cascades
+    retry: false,
+    // EMERGENCY: Disable automatic query invalidation
+    onSuccess: () => {
+      // Do nothing - prevent automatic invalidations that cause loops
+    },
+  },
+  // EMERGENCY: Suppress ALL query errors to prevent console spam and loops
+  defaultOptions: {
+    queries: {
+      onError: () => {
+        // EMERGENCY: Complete error suppression to prevent cascading failures
+      },
+    },
+    mutations: {
+      onError: () => {
+        // EMERGENCY: Complete error suppression to prevent cascading failures  
+      },
+    },
   },
 });
