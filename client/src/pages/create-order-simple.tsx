@@ -29,7 +29,9 @@ interface ParsedOrderData {
   projectName?: string;
   vendorName?: string;
   vendorEmail?: string;
+  orderDate?: string;
   deliveryDate?: string;
+  orderNumber?: string;
   items: Array<{
     itemName?: string;
     specification?: string;
@@ -37,6 +39,9 @@ interface ParsedOrderData {
     quantity?: number;
     unitPrice?: number;
     totalAmount?: number;
+    category?: string;
+    subCategory1?: string;
+    subCategory2?: string;
     remarks?: string;
   }>;
   notes?: string;
@@ -122,24 +127,32 @@ export default function CreateOrderSimple() {
       const dataRows = jsonData.slice(1);
       
       // 데이터를 발주서 객체로 변환
+      // 엑셀 컬럼 순서: 거래처명(0), 현장명(1), 발주일(2), 납기일(3), 발주번호(4), 
+      // 품목(5), 규격(6), 수량(7), 단위(8), 단가(9), 공급가액(10), 부가세(11), 합계(12),
+      // 대분류(13), 중분류(14), 소분류(15), 비고(16)
       const orders: ParsedOrderData[] = dataRows
         .filter(row => row && row.some(cell => cell)) // 빈 행 제거
         .map((row, index) => ({
           rowIndex: index + 2, // 엑셀 행 번호 (1-based, 헤더 제외)
-          projectName: row[0]?.toString().trim(),
-          vendorName: row[1]?.toString().trim(),
-          vendorEmail: row[2]?.toString().trim(),
-          deliveryDate: row[3]?.toString().trim(),
+          vendorName: row[0]?.toString().trim(),    // 거래처명
+          projectName: row[1]?.toString().trim(),   // 현장명
+          orderDate: row[2]?.toString().trim(),      // 발주일
+          deliveryDate: row[3]?.toString().trim(),   // 납기일
+          orderNumber: row[4]?.toString().trim(),    // 발주번호
+          vendorEmail: undefined, // 엑셀에 이메일 컬럼 없음 - 나중에 거래처 마스터에서 조회
           items: [{
-            itemName: row[4]?.toString().trim(),
-            specification: row[5]?.toString().trim(),
-            unit: row[6]?.toString().trim(),
-            quantity: parseFloat(row[7]) || 0,
-            unitPrice: parseFloat(row[8]) || 0,
-            totalAmount: parseFloat(row[9]) || 0,
-            remarks: row[10]?.toString().trim()
+            itemName: row[5]?.toString().trim(),     // 품목
+            specification: row[6]?.toString().trim(), // 규격
+            quantity: parseFloat(row[7]) || 0,       // 수량
+            unit: row[8]?.toString().trim(),         // 단위
+            unitPrice: parseFloat(row[9]) || 0,      // 단가
+            totalAmount: parseFloat(row[10]) || 0,   // 공급가액
+            category: row[13]?.toString().trim(),    // 대분류
+            subCategory1: row[14]?.toString().trim(), // 중분류
+            subCategory2: row[15]?.toString().trim(), // 소분류
+            remarks: row[16]?.toString().trim()      // 비고
           }],
-          notes: row[11]?.toString().trim(),
+          notes: row[16]?.toString().trim(),         // 비고를 notes에도 저장
           isValid: true,
           errors: []
         }));
