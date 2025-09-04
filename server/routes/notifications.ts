@@ -6,6 +6,8 @@
 import { Router } from "express";
 import { requireAuth } from "../local-auth";
 import { NotificationService } from "../services/notification-service";
+import { extractToken, verifyToken } from "../jwt-utils";
+import { storage } from "../storage";
 
 const router = Router();
 
@@ -33,23 +35,58 @@ router.get("/notifications", requireAuth, async (req, res) => {
   }
 });
 
-// Get unread notification count
-router.get("/notifications/unread-count", requireAuth, async (req, res) => {
+// Get unread notification count (gracefully handle unauthenticated users)
+router.get("/notifications/unread-count", async (req, res) => {
   try {
-    const userId = req.user!.id;
+    // Try to extract and verify token without throwing error
+    const token = extractToken(req.headers.authorization, req.cookies);
     
-    const count = await NotificationService.getUnreadNotificationCount(userId);
+    if (!token) {
+      // No token - return 0 for unauthenticated users
+      return res.json({
+        success: true,
+        count: 0,
+        authenticated: false
+      });
+    }
+    
+    // Verify JWT token
+    const payload = verifyToken(token);
+    if (!payload) {
+      // Invalid token - return 0
+      return res.json({
+        success: true,
+        count: 0,
+        authenticated: false
+      });
+    }
+    
+    // Get user from database
+    const user = await storage.getUser(payload.userId);
+    if (!user) {
+      // User not found - return 0
+      return res.json({
+        success: true,
+        count: 0,
+        authenticated: false
+      });
+    }
+    
+    // User is authenticated - get actual count
+    const count = await NotificationService.getUnreadNotificationCount(user.id);
     
     res.json({
       success: true,
-      count
+      count,
+      authenticated: true
     });
   } catch (error) {
     console.error("❌ Error getting unread count:", error);
-    res.status(500).json({ 
-      success: false,
-      message: "Failed to get unread count",
-      error: process.env.NODE_ENV === 'development' ? error?.message : undefined
+    // Even on error, return 0 instead of error status
+    res.json({ 
+      success: true,
+      count: 0,
+      authenticated: false
     });
   }
 });

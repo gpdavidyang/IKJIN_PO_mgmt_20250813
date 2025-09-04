@@ -18041,20 +18041,44 @@ router28.get("/notifications", requireAuth, async (req, res) => {
     });
   }
 });
-router28.get("/notifications/unread-count", requireAuth, async (req, res) => {
+router28.get("/notifications/unread-count", async (req, res) => {
   try {
-    const userId = req.user.id;
-    const count5 = await NotificationService.getUnreadNotificationCount(userId);
+    const token = extractToken(req.headers.authorization, req.cookies);
+    if (!token) {
+      return res.json({
+        success: true,
+        count: 0,
+        authenticated: false
+      });
+    }
+    const payload = verifyToken(token);
+    if (!payload) {
+      return res.json({
+        success: true,
+        count: 0,
+        authenticated: false
+      });
+    }
+    const user = await storage.getUser(payload.userId);
+    if (!user) {
+      return res.json({
+        success: true,
+        count: 0,
+        authenticated: false
+      });
+    }
+    const count5 = await NotificationService.getUnreadNotificationCount(user.id);
     res.json({
       success: true,
-      count: count5
+      count: count5,
+      authenticated: true
     });
   } catch (error) {
     console.error("\u274C Error getting unread count:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to get unread count",
-      error: process.env.NODE_ENV === "development" ? error?.message : void 0
+    res.json({
+      success: true,
+      count: 0,
+      authenticated: false
     });
   }
 });
@@ -20713,285 +20737,12 @@ router34.get("/api/orders/required-approvers", async (req, res) => {
 });
 var workflow_default = router34;
 
-// server/routes/orders-workflow.ts
-init_db();
-init_schema();
-import { Router as Router32 } from "express";
-import { eq as eq26 } from "drizzle-orm";
-import { z as z9 } from "zod";
-var router35 = Router32();
-router35.post("/orders/check-approval-authority", requireAuth, async (req, res) => {
-  try {
-    const schema = z9.object({
-      orderAmount: z9.number().positive()
-    });
-    const { orderAmount } = schema.parse(req.body);
-    const user = await db.select().from(users).where(eq26(users.id, req.user.id)).then((rows) => rows[0]);
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
-    const authorityCheck = await approvalAuthorityService.checkAuthority(user, orderAmount);
-    let requiredApprovers = [];
-    if (authorityCheck.requiresApproval && !authorityCheck.canDirectApprove) {
-      requiredApprovers = await approvalAuthorityService.getRequiredApprovers(orderAmount, user.companyId);
-    }
-    res.json({
-      ...authorityCheck,
-      requiredApprovers,
-      user: {
-        id: user.id,
-        name: user.name,
-        role: user.role,
-        email: user.email
-      }
-    });
-  } catch (error) {
-    console.error("Error checking approval authority:", error);
-    res.status(500).json({
-      error: "Failed to check approval authority",
-      details: error instanceof Error ? error.message : "Unknown error"
-    });
-  }
-});
-router35.post("/orders/create-with-workflow", requireAuth, async (req, res) => {
-  try {
-    const schema = z9.object({
-      orderData: z9.object({
-        projectId: z9.number(),
-        vendorId: z9.number(),
-        orderDate: z9.string(),
-        deliveryDate: z9.string().optional(),
-        totalAmount: z9.number(),
-        notes: z9.string().optional(),
-        items: z9.array(z9.object({
-          itemId: z9.number(),
-          quantity: z9.number(),
-          unitPrice: z9.number(),
-          totalAmount: z9.number(),
-          notes: z9.string().optional()
-        }))
-      }),
-      sendEmail: z9.boolean().optional()
-    });
-    const { orderData, sendEmail } = schema.parse(req.body);
-    const user = await db.select().from(users).where(eq26(users.id, req.user.id)).then((rows) => rows[0]);
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
-    const authorityCheck = await approvalAuthorityService.checkAuthority(user, orderData.totalAmount);
-    let orderStatus = "draft";
-    let approvalStatus = "not_required";
-    let approvalBypassReason = null;
-    let nextApproverId = null;
-    if (authorityCheck.canDirectApprove) {
-      orderStatus = "created";
-      approvalStatus = "not_required";
-      approvalBypassReason = authorityCheck.bypassReason || "direct_approval";
-    } else if (authorityCheck.requiresApproval) {
-      orderStatus = "created";
-      approvalStatus = "pending";
-      nextApproverId = authorityCheck.nextApprover;
-    } else {
-      const autoApproval = await approvalAuthorityService.checkAutoApproval(orderData);
-      if (autoApproval.shouldAutoApprove) {
-        orderStatus = "created";
-        approvalStatus = "not_required";
-        approvalBypassReason = autoApproval.reason;
-      }
-    }
-    const orderCount = await db.select().from(purchaseOrders).then((rows) => rows.length);
-    const orderNumber = `PO-${(/* @__PURE__ */ new Date()).getFullYear()}-${String(orderCount + 1).padStart(5, "0")}`;
-    const [newOrder] = await db.insert(purchaseOrders).values({
-      ...orderData,
-      orderNumber,
-      userId: req.user.id,
-      status: orderStatus === "draft" ? "draft" : approvalStatus === "pending" ? "pending" : "approved",
-      orderStatus,
-      approvalStatus,
-      approvalBypassReason,
-      nextApproverId,
-      createdAt: /* @__PURE__ */ new Date(),
-      updatedAt: /* @__PURE__ */ new Date()
-    }).returning();
-    await db.insert(orderHistory).values({
-      orderId: newOrder.id,
-      userId: req.user.id,
-      action: "created",
-      changes: {
-        orderStatus,
-        approvalStatus,
-        approvalBypassReason,
-        authorityCheck
-      },
-      createdAt: /* @__PURE__ */ new Date()
-    });
-    await workflowEngine.processNextStep(newOrder.id, req.user.id);
-    if (approvalStatus === "pending") {
-      await workflowEngine.sendNotifications(newOrder.id, "approval_requested");
-    } else if (sendEmail && orderStatus === "created") {
-      await workflowEngine.sendNotifications(newOrder.id, "order_created");
-    }
-    res.json({
-      order: newOrder,
-      workflowStatus: await workflowEngine.trackWorkflowProgress(newOrder.id)
-    });
-  } catch (error) {
-    console.error("Error creating order with workflow:", error);
-    res.status(500).json({
-      error: "Failed to create order",
-      details: error instanceof Error ? error.message : "Unknown error"
-    });
-  }
-});
-router35.get("/orders/workflow-status/:id", requireAuth, async (req, res) => {
-  try {
-    const orderId = parseInt(req.params.id, 10);
-    if (isNaN(orderId)) {
-      return res.status(400).json({ error: "Invalid order ID" });
-    }
-    const order = await db.select().from(purchaseOrders).where(eq26(purchaseOrders.id, orderId)).then((rows) => rows[0]);
-    if (!order) {
-      return res.status(404).json({ error: "Order not found" });
-    }
-    const workflowStatus = await workflowEngine.trackWorkflowProgress(orderId);
-    res.json(workflowStatus);
-  } catch (error) {
-    console.error("Error getting workflow status:", error);
-    res.status(500).json({
-      error: "Failed to get workflow status",
-      details: error instanceof Error ? error.message : "Unknown error"
-    });
-  }
-});
-router35.post("/orders/:id/confirm-delivery", requireAuth, async (req, res) => {
-  try {
-    const orderId = parseInt(req.params.id, 10);
-    if (isNaN(orderId)) {
-      return res.status(400).json({ error: "Invalid order ID" });
-    }
-    const schema = z9.object({
-      deliveryNotes: z9.string().optional(),
-      actualDeliveryDate: z9.string().optional(),
-      receivedBy: z9.string().optional()
-    });
-    const { deliveryNotes, actualDeliveryDate, receivedBy } = schema.parse(req.body);
-    const order = await db.select().from(purchaseOrders).where(eq26(purchaseOrders.id, orderId)).then((rows) => rows[0]);
-    if (!order) {
-      return res.status(404).json({ error: "Order not found" });
-    }
-    if (order.orderStatus !== "sent") {
-      return res.status(400).json({
-        error: "Invalid order status",
-        message: "Only sent orders can be marked as delivered"
-      });
-    }
-    const [updatedOrder] = await db.update(purchaseOrders).set({
-      orderStatus: "delivered",
-      status: "completed",
-      // Legacy status
-      deliveredAt: actualDeliveryDate ? new Date(actualDeliveryDate) : /* @__PURE__ */ new Date(),
-      deliveredBy: receivedBy || req.user.id,
-      notes: deliveryNotes ? order.notes ? `${order.notes}
-
-\uBC30\uC1A1 \uBA54\uBAA8: ${deliveryNotes}` : deliveryNotes : order.notes,
-      updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq26(purchaseOrders.id, orderId)).returning();
-    await db.insert(orderHistory).values({
-      orderId,
-      userId: req.user.id,
-      action: "delivery_confirmed",
-      changes: {
-        previousStatus: order.orderStatus,
-        newStatus: "delivered",
-        deliveryNotes,
-        actualDeliveryDate,
-        receivedBy: receivedBy || req.user.id
-      },
-      createdAt: /* @__PURE__ */ new Date()
-    });
-    const confirmedBy = {
-      id: req.user.id,
-      name: req.user.name,
-      role: req.user.role,
-      companyId: req.user.companyId || void 0
-    };
-    const deliveryEvent = {
-      orderId,
-      orderNumber: order.orderNumber || `PO-${orderId}`,
-      confirmedBy,
-      deliveredAt: actualDeliveryDate ? new Date(actualDeliveryDate) : /* @__PURE__ */ new Date(),
-      timestamp: /* @__PURE__ */ new Date()
-    };
-    webSocketService.notifyDeliveryConfirmation(deliveryEvent);
-    await workflowEngine.sendNotifications(orderId, "delivery_completed");
-    res.json({
-      success: true,
-      order: updatedOrder,
-      message: "Delivery confirmed successfully"
-    });
-  } catch (error) {
-    console.error("Error confirming delivery:", error);
-    res.status(500).json({
-      error: "Failed to confirm delivery",
-      details: error instanceof Error ? error.message : "Unknown error"
-    });
-  }
-});
-router35.post("/orders/:id/approve", requireAuth, async (req, res) => {
-  try {
-    const orderId = parseInt(req.params.id, 10);
-    if (isNaN(orderId)) {
-      return res.status(400).json({ error: "Invalid order ID" });
-    }
-    const schema = z9.object({
-      decision: z9.enum(["approved", "rejected"]),
-      comments: z9.string().optional()
-    });
-    const { decision, comments } = schema.parse(req.body);
-    const success = await approvalAuthorityService.processApproval(
-      orderId,
-      req.user.id,
-      decision,
-      comments
-    );
-    if (!success) {
-      return res.status(500).json({ error: "Failed to process approval" });
-    }
-    await db.insert(orderHistory).values({
-      orderId,
-      userId: req.user.id,
-      action: decision === "approved" ? "approved" : "rejected",
-      changes: {
-        decision,
-        comments
-      },
-      createdAt: /* @__PURE__ */ new Date()
-    });
-    await workflowEngine.processNextStep(orderId, req.user.id);
-    await workflowEngine.sendNotifications(
-      orderId,
-      decision === "approved" ? "order_approved" : "order_rejected"
-    );
-    res.json({
-      success: true,
-      message: `Order ${decision === "approved" ? "approved" : "rejected"} successfully`
-    });
-  } catch (error) {
-    console.error("Error processing approval:", error);
-    res.status(500).json({
-      error: "Failed to process approval",
-      details: error instanceof Error ? error.message : "Unknown error"
-    });
-  }
-});
-var orders_workflow_default = router35;
-
 // server/routes/excel-smart-upload-simple.ts
-import { Router as Router33 } from "express";
+import { Router as Router32 } from "express";
 import multer6 from "multer";
 import xlsx from "xlsx";
 import crypto from "crypto";
-var router36 = Router33();
+var router35 = Router32();
 var storage5 = multer6.memoryStorage();
 var upload6 = multer6({
   storage: storage5,
@@ -21029,7 +20780,7 @@ var standardFieldMappings = {
 var requiredStandardFields = ["\uAC70\uB798\uCC98\uBA85", "\uD504\uB85C\uC81D\uD2B8\uBA85", "\uD488\uBAA9\uBA85"];
 var emailFields = ["\uAC70\uB798\uCC98 \uC774\uBA54\uC77C", "\uB0A9\uD488\uCC98 \uC774\uBA54\uC77C"];
 var numberFields = ["\uC218\uB7C9", "\uB2E8\uAC00", "\uCD1D\uAE08\uC561"];
-router36.post("/process", upload6.single("file"), async (req, res) => {
+router35.post("/process", upload6.single("file"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({
@@ -21248,7 +20999,7 @@ ${incorrectFields.map((f) => `  \u2022 ${f}`).join("\n")}
     });
   }
 });
-router36.get("/health", (req, res) => {
+router35.get("/health", (req, res) => {
   res.json({
     status: "ok",
     service: "excel-smart-upload-simple",
@@ -21256,7 +21007,280 @@ router36.get("/health", (req, res) => {
     requiredFields: requiredStandardFields
   });
 });
-var excel_smart_upload_simple_default = router36;
+var excel_smart_upload_simple_default = router35;
+
+// server/routes/orders-workflow.ts
+init_db();
+init_schema();
+import { Router as Router33 } from "express";
+import { eq as eq26 } from "drizzle-orm";
+import { z as z9 } from "zod";
+var router36 = Router33();
+router36.post("/orders/check-approval-authority", requireAuth, async (req, res) => {
+  try {
+    const schema = z9.object({
+      orderAmount: z9.number().positive()
+    });
+    const { orderAmount } = schema.parse(req.body);
+    const user = await db.select().from(users).where(eq26(users.id, req.user.id)).then((rows) => rows[0]);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    const authorityCheck = await approvalAuthorityService.checkAuthority(user, orderAmount);
+    let requiredApprovers = [];
+    if (authorityCheck.requiresApproval && !authorityCheck.canDirectApprove) {
+      requiredApprovers = await approvalAuthorityService.getRequiredApprovers(orderAmount, user.companyId);
+    }
+    res.json({
+      ...authorityCheck,
+      requiredApprovers,
+      user: {
+        id: user.id,
+        name: user.name,
+        role: user.role,
+        email: user.email
+      }
+    });
+  } catch (error) {
+    console.error("Error checking approval authority:", error);
+    res.status(500).json({
+      error: "Failed to check approval authority",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+router36.post("/orders/create-with-workflow", requireAuth, async (req, res) => {
+  try {
+    const schema = z9.object({
+      orderData: z9.object({
+        projectId: z9.number(),
+        vendorId: z9.number(),
+        orderDate: z9.string(),
+        deliveryDate: z9.string().optional(),
+        totalAmount: z9.number(),
+        notes: z9.string().optional(),
+        items: z9.array(z9.object({
+          itemId: z9.number(),
+          quantity: z9.number(),
+          unitPrice: z9.number(),
+          totalAmount: z9.number(),
+          notes: z9.string().optional()
+        }))
+      }),
+      sendEmail: z9.boolean().optional()
+    });
+    const { orderData, sendEmail } = schema.parse(req.body);
+    const user = await db.select().from(users).where(eq26(users.id, req.user.id)).then((rows) => rows[0]);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    const authorityCheck = await approvalAuthorityService.checkAuthority(user, orderData.totalAmount);
+    let orderStatus = "draft";
+    let approvalStatus = "not_required";
+    let approvalBypassReason = null;
+    let nextApproverId = null;
+    if (authorityCheck.canDirectApprove) {
+      orderStatus = "created";
+      approvalStatus = "not_required";
+      approvalBypassReason = authorityCheck.bypassReason || "direct_approval";
+    } else if (authorityCheck.requiresApproval) {
+      orderStatus = "created";
+      approvalStatus = "pending";
+      nextApproverId = authorityCheck.nextApprover;
+    } else {
+      const autoApproval = await approvalAuthorityService.checkAutoApproval(orderData);
+      if (autoApproval.shouldAutoApprove) {
+        orderStatus = "created";
+        approvalStatus = "not_required";
+        approvalBypassReason = autoApproval.reason;
+      }
+    }
+    const orderCount = await db.select().from(purchaseOrders).then((rows) => rows.length);
+    const orderNumber = `PO-${(/* @__PURE__ */ new Date()).getFullYear()}-${String(orderCount + 1).padStart(5, "0")}`;
+    const [newOrder] = await db.insert(purchaseOrders).values({
+      ...orderData,
+      orderNumber,
+      userId: req.user.id,
+      status: orderStatus === "draft" ? "draft" : approvalStatus === "pending" ? "pending" : "approved",
+      orderStatus,
+      approvalStatus,
+      approvalBypassReason,
+      nextApproverId,
+      createdAt: /* @__PURE__ */ new Date(),
+      updatedAt: /* @__PURE__ */ new Date()
+    }).returning();
+    await db.insert(orderHistory).values({
+      orderId: newOrder.id,
+      userId: req.user.id,
+      action: "created",
+      changes: {
+        orderStatus,
+        approvalStatus,
+        approvalBypassReason,
+        authorityCheck
+      },
+      createdAt: /* @__PURE__ */ new Date()
+    });
+    await workflowEngine.processNextStep(newOrder.id, req.user.id);
+    if (approvalStatus === "pending") {
+      await workflowEngine.sendNotifications(newOrder.id, "approval_requested");
+    } else if (sendEmail && orderStatus === "created") {
+      await workflowEngine.sendNotifications(newOrder.id, "order_created");
+    }
+    res.json({
+      order: newOrder,
+      workflowStatus: await workflowEngine.trackWorkflowProgress(newOrder.id)
+    });
+  } catch (error) {
+    console.error("Error creating order with workflow:", error);
+    res.status(500).json({
+      error: "Failed to create order",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+router36.get("/orders/workflow-status/:id", requireAuth, async (req, res) => {
+  try {
+    const orderId = parseInt(req.params.id, 10);
+    if (isNaN(orderId)) {
+      return res.status(400).json({ error: "Invalid order ID" });
+    }
+    const order = await db.select().from(purchaseOrders).where(eq26(purchaseOrders.id, orderId)).then((rows) => rows[0]);
+    if (!order) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+    const workflowStatus = await workflowEngine.trackWorkflowProgress(orderId);
+    res.json(workflowStatus);
+  } catch (error) {
+    console.error("Error getting workflow status:", error);
+    res.status(500).json({
+      error: "Failed to get workflow status",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+router36.post("/orders/:id/confirm-delivery", requireAuth, async (req, res) => {
+  try {
+    const orderId = parseInt(req.params.id, 10);
+    if (isNaN(orderId)) {
+      return res.status(400).json({ error: "Invalid order ID" });
+    }
+    const schema = z9.object({
+      deliveryNotes: z9.string().optional(),
+      actualDeliveryDate: z9.string().optional(),
+      receivedBy: z9.string().optional()
+    });
+    const { deliveryNotes, actualDeliveryDate, receivedBy } = schema.parse(req.body);
+    const order = await db.select().from(purchaseOrders).where(eq26(purchaseOrders.id, orderId)).then((rows) => rows[0]);
+    if (!order) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+    if (order.orderStatus !== "sent") {
+      return res.status(400).json({
+        error: "Invalid order status",
+        message: "Only sent orders can be marked as delivered"
+      });
+    }
+    const [updatedOrder] = await db.update(purchaseOrders).set({
+      orderStatus: "delivered",
+      status: "completed",
+      // Legacy status
+      deliveredAt: actualDeliveryDate ? new Date(actualDeliveryDate) : /* @__PURE__ */ new Date(),
+      deliveredBy: receivedBy || req.user.id,
+      notes: deliveryNotes ? order.notes ? `${order.notes}
+
+\uBC30\uC1A1 \uBA54\uBAA8: ${deliveryNotes}` : deliveryNotes : order.notes,
+      updatedAt: /* @__PURE__ */ new Date()
+    }).where(eq26(purchaseOrders.id, orderId)).returning();
+    await db.insert(orderHistory).values({
+      orderId,
+      userId: req.user.id,
+      action: "delivery_confirmed",
+      changes: {
+        previousStatus: order.orderStatus,
+        newStatus: "delivered",
+        deliveryNotes,
+        actualDeliveryDate,
+        receivedBy: receivedBy || req.user.id
+      },
+      createdAt: /* @__PURE__ */ new Date()
+    });
+    const confirmedBy = {
+      id: req.user.id,
+      name: req.user.name,
+      role: req.user.role,
+      companyId: req.user.companyId || void 0
+    };
+    const deliveryEvent = {
+      orderId,
+      orderNumber: order.orderNumber || `PO-${orderId}`,
+      confirmedBy,
+      deliveredAt: actualDeliveryDate ? new Date(actualDeliveryDate) : /* @__PURE__ */ new Date(),
+      timestamp: /* @__PURE__ */ new Date()
+    };
+    webSocketService.notifyDeliveryConfirmation(deliveryEvent);
+    await workflowEngine.sendNotifications(orderId, "delivery_completed");
+    res.json({
+      success: true,
+      order: updatedOrder,
+      message: "Delivery confirmed successfully"
+    });
+  } catch (error) {
+    console.error("Error confirming delivery:", error);
+    res.status(500).json({
+      error: "Failed to confirm delivery",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+router36.post("/orders/:id/approve", requireAuth, async (req, res) => {
+  try {
+    const orderId = parseInt(req.params.id, 10);
+    if (isNaN(orderId)) {
+      return res.status(400).json({ error: "Invalid order ID" });
+    }
+    const schema = z9.object({
+      decision: z9.enum(["approved", "rejected"]),
+      comments: z9.string().optional()
+    });
+    const { decision, comments } = schema.parse(req.body);
+    const success = await approvalAuthorityService.processApproval(
+      orderId,
+      req.user.id,
+      decision,
+      comments
+    );
+    if (!success) {
+      return res.status(500).json({ error: "Failed to process approval" });
+    }
+    await db.insert(orderHistory).values({
+      orderId,
+      userId: req.user.id,
+      action: decision === "approved" ? "approved" : "rejected",
+      changes: {
+        decision,
+        comments
+      },
+      createdAt: /* @__PURE__ */ new Date()
+    });
+    await workflowEngine.processNextStep(orderId, req.user.id);
+    await workflowEngine.sendNotifications(
+      orderId,
+      decision === "approved" ? "order_approved" : "order_rejected"
+    );
+    res.json({
+      success: true,
+      message: `Order ${decision === "approved" ? "approved" : "rejected"} successfully`
+    });
+  } catch (error) {
+    console.error("Error processing approval:", error);
+    res.status(500).json({
+      error: "Failed to process approval",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+var orders_workflow_default = router36;
 
 // server/routes/index.ts
 var router37 = Router34();
@@ -21422,6 +21446,12 @@ if (process.env.VERCEL) {
   console.log("\u2705 Production app initialized for Vercel");
 } else {
   console.log("\u2705 Non-Vercel production app initialized");
+}
+if (!process.env.VERCEL) {
+  const port = process.env.PORT || 3e3;
+  app.listen(port, () => {
+    console.log(`\u{1F680} Production server running on port ${port}`);
+  });
 }
 var production_default = app;
 export {

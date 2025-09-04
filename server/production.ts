@@ -177,5 +177,13 @@ if (process.env.VERCEL) {
   console.log("✅ Non-Vercel production app initialized");
 }
 
+// Start server for non-Vercel environments
+if (!process.env.VERCEL) {
+  const port = process.env.PORT || 3000;
+  app.listen(port, () => {
+    console.log(`🚀 Production server running on port ${port}`);
+  });
+}
+
 // Export for Vercel serverless
 export default app;

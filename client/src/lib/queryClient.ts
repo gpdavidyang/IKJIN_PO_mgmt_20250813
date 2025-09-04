@@ -5,9 +5,22 @@ import { isDevelopmentEnvironment } from "@/utils/environment";
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
-    const error = new Error(`${res.status}: ${text}`);
-    // Attach status to error for better error handling
+    let errorData: any;
+    
+    // Try to parse as JSON to get structured error data
+    try {
+      errorData = JSON.parse(text);
+    } catch {
+      errorData = { message: text };
+    }
+    
+    // Create error with message
+    const error = new Error(errorData.message || `${res.status}: ${text}`);
+    
+    // Attach all error properties to the error object
+    Object.assign(error, errorData);
     (error as any).status = res.status;
+    
     throw error;
   }
 }

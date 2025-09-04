@@ -40,22 +40,33 @@ export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
 
   // Fetch unread count
-  const { data: unreadCount = 0 } = useQuery<number>({
+  const { data: unreadCount = 0, error, isError } = useQuery<number>({
     queryKey: ['notifications', 'unread-count'],
     queryFn: async () => {
       const response = await fetch('/api/notifications/unread-count', {
         credentials: 'include'
       });
       
-      if (!response.ok) {
-        throw new Error('Failed to fetch unread count');
+      // Always treat response as successful (even 401)
+      const result = await response.json();
+      
+      // If not authenticated, return 0
+      if (!result.authenticated) {
+        return 0;
       }
       
-      const result = await response.json();
-      return result.count;
+      return result.count || 0;
     },
-    refetchInterval: 30000, // 30초마다 갱신
-    refetchIntervalInBackground: true
+    // Stop refetching if user is not authenticated
+    refetchInterval: (data, query) => {
+      // If we detected user is not authenticated, stop refetching
+      if (query?.state?.data === 0 && !query?.state?.error) {
+        return false;
+      }
+      return 30000; // 30초마다 갱신
+    },
+    refetchIntervalInBackground: false, // Don't refetch in background
+    retry: false // Don't retry on error
   });
 
   // Fetch notifications
@@ -66,14 +77,21 @@ export function NotificationBell() {
         credentials: 'include'
       });
       
+      // If unauthorized, return empty array
+      if (response.status === 401) {
+        return [];
+      }
+      
       if (!response.ok) {
-        throw new Error('Failed to fetch notifications');
+        console.warn('Failed to fetch notifications');
+        return [];
       }
       
       const result = await response.json();
-      return result.data;
+      return result.data || [];
     },
-    enabled: isOpen // 팝오버가 열렸을 때만 로드
+    enabled: isOpen && unreadCount !== undefined, // 팝오버가 열렸을 때만 로드
+    retry: false // Don't retry on error
   });
 
   // Mark notification as read

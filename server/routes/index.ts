@@ -38,8 +38,8 @@ import auditRoutes from "./audit";
 import emailTestRoutes from "./email-test";
 import emailSettingsRoutes from "./email-settings";
 import workflowRoutes from "./workflow";
-import ordersWorkflowRoutes from "./orders-workflow";
 import excelSmartUploadRoutes from "./excel-smart-upload-simple";
+import ordersWorkflowRoutes from "./orders-workflow";
 
 const router = Router();
 
