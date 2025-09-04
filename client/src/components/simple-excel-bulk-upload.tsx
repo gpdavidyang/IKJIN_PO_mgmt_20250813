@@ -13,10 +13,13 @@ import {
   X, 
   AlertCircle, 
   CheckCircle,
-  Package
+  Package,
+  Info,
+  Download
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { BulkOrderEditorTwoRow } from '@/components/bulk-order-editor-two-row';
+import { FieldValidationErrorDialog } from './FieldValidationErrorDialog';
 import { toast } from '@/hooks/use-toast';
 import { useMutation } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
@@ -56,6 +59,8 @@ export function SimpleExcelBulkUpload() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [editedOrders, setEditedOrders] = useState<ParsedOrderData[]>([]);
+  const [fieldValidationErrors, setFieldValidationErrors] = useState<string[]>([]);
+  const [showErrorDialog, setShowErrorDialog] = useState(false);
 
   // 드래그 앤 드롭 핸들러
   const handleDrag = (e: React.DragEvent) => {
@@ -147,18 +152,12 @@ export function SimpleExcelBulkUpload() {
         }
       }
 
-      // 필드 검증 실패 시 에러 표시
+      // 필드 검증 실패 시 에러 다이얼로그 표시
       if (fieldValidationErrors.length > 0) {
-        const errorMessage = [
-          '엑셀 파일의 헤더가 올바르지 않습니다.',
-          '',
-          '잘못된 필드:',
-          ...fieldValidationErrors,
-          '',
-          '올바른 엑셀 템플릿을 다운로드하여 사용해주세요.'
-        ].join('\n');
-        
-        throw new Error(errorMessage);
+        setFieldValidationErrors(fieldValidationErrors);
+        setShowErrorDialog(true);
+        setIsProcessing(false);
+        return; // 처리 중단
       }
 
       // 헤더 행 제거 (첫 번째 행이 헤더라고 가정)
@@ -360,6 +359,39 @@ export function SimpleExcelBulkUpload() {
     fileInputRef.current?.click();
   };
 
+  const handleDownloadTemplate = async () => {
+    try {
+      const response = await fetch('/api/excel-template/download');
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'PO_Excel_Template.xlsx';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast({
+        title: '템플릿 다운로드 완료',
+        description: '표준 Excel 템플릿을 다운로드했습니다.',
+      });
+    } catch (error) {
+      console.error('Template download error:', error);
+      toast({
+        title: '다운로드 실패',
+        description: '템플릿 다운로드 중 오류가 발생했습니다.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleRetry = () => {
+    setShowErrorDialog(false);
+    setFieldValidationErrors([]);
+    triggerFileSelect();
+  };
+
   return (
     <div className="space-y-6">
       {/* 파일 업로드 영역 */}
@@ -397,14 +429,24 @@ export function SimpleExcelBulkUpload() {
                 </p>
               </div>
               
-              <Button
-                onClick={triggerFileSelect}
-                disabled={isProcessing}
-                className="mt-6"
-                size="lg"
-              >
-                {isProcessing ? '처리 중...' : '파일 선택'}
-              </Button>
+              <div className="flex items-center justify-center gap-3 mt-6">
+                <Button
+                  onClick={triggerFileSelect}
+                  disabled={isProcessing}
+                  size="lg"
+                >
+                  {isProcessing ? '처리 중...' : '파일 선택'}
+                </Button>
+                <Button
+                  onClick={handleDownloadTemplate}
+                  variant="outline"
+                  size="lg"
+                  className="gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  템플릿 다운로드
+                </Button>
+              </div>
             </div>
 
             {uploadProgress > 0 && (
@@ -425,6 +467,24 @@ export function SimpleExcelBulkUpload() {
                 </AlertDescription>
               </Alert>
             )}
+
+            {/* 필수 필드명 가이드 */}
+            <Alert className="mt-6 bg-blue-50 border-blue-200">
+              <Info className="h-4 w-4 text-blue-600" />
+              <AlertDescription>
+                <div className="text-sm">
+                  <p className="font-semibold text-blue-900 mb-2">📋 필수 Excel 필드명 (정확히 일치해야 함)</p>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-blue-800">
+                    <div>• <strong>기본 정보:</strong> 발주일자, 납기일자</div>
+                    <div>• <strong>거래처:</strong> 거래처명, 거래처 이메일</div>
+                    <div>• <strong>납품처:</strong> 납품처명, 납품처 이메일</div>
+                    <div>• <strong>프로젝트:</strong> 프로젝트명</div>
+                    <div>• <strong>분류:</strong> 대분류, 중분류, 소분류</div>
+                    <div>• <strong>품목:</strong> 품목명, 규격, 수량, 단가, 총금액, 비고</div>
+                  </div>
+                </div>
+              </AlertDescription>
+            </Alert>
 
             <Alert className="mt-6">
               <AlertCircle className="h-4 w-4" />
@@ -490,6 +550,15 @@ export function SimpleExcelBulkUpload() {
           />
         </>
       )}
+
+      {/* 필드 검증 에러 다이얼로그 */}
+      <FieldValidationErrorDialog
+        isOpen={showErrorDialog}
+        onClose={() => setShowErrorDialog(false)}
+        errors={fieldValidationErrors}
+        onRetry={handleRetry}
+        onDownloadTemplate={handleDownloadTemplate}
+      />
     </div>
   );
 }
