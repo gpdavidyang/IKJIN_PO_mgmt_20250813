@@ -9,11 +9,38 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import xlsx from 'xlsx';
 import { ExcelAutomationService } from '../utils/excel-automation-service.js';
 import { DebugLogger } from '../utils/debug-logger.js';
 import { requireAuth } from '../local-auth.js';
 
 const router = Router();
+
+// STRICT field mappings - MUST BE DEFINED BEFORE USE
+const standardFieldMappings: Record<string, string> = {
+  // Standard template fields only
+  '발주일자': 'orderDate',
+  '납기일자': 'deliveryDate',
+  '거래처명': 'vendorName',
+  '거래처 이메일': 'vendorEmail',
+  '납품처명': 'deliveryLocation',
+  '납품처 이메일': 'deliveryEmail',
+  '프로젝트명': 'projectName',
+  '품목명': 'itemName',
+  '규격': 'specification',
+  '수량': 'quantity',
+  '단가': 'unitPrice',
+  '총금액': 'totalAmount',
+  '대분류': 'majorCategory',
+  '중분류': 'middleCategory',
+  '소분류': 'minorCategory',
+  '비고': 'notes'
+};
+
+// Required fields for validation - MUST BE DEFINED BEFORE USE
+const requiredStandardFields = ['거래처명', '프로젝트명', '품목명'];
+const emailFields = ['거래처 이메일', '납품처 이메일'];
+const numberFields = ['수량', '단가', '총금액'];
 
 // 파일 업로드 설정 - Vercel serverless 환경 지원
 const storage = multer.diskStorage({
@@ -35,17 +62,31 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage,
   fileFilter: (req, file, cb) => {
-    const allowedTypes = [
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
-      'application/vnd.ms-excel.sheet.macroEnabled.12', // .xlsm (대문자 E)
-      'application/vnd.ms-excel.sheet.macroenabled.12', // .xlsm (소문자 e)
-      'application/vnd.ms-excel' // .xls
+    console.log('=== Excel Automation File Upload Debug ===');
+    console.log('File name:', file.originalname);
+    console.log('File MIME type:', file.mimetype);
+    
+    // Check both MIME type and file extension for Excel files
+    const validMimeTypes = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel',
+      'application/vnd.ms-excel.sheet.macroEnabled.12',
+      'application/octet-stream' // Sometimes Excel files are uploaded as octet-stream
     ];
     
-    if (allowedTypes.includes(file.mimetype)) {
+    const fileName = file.originalname.toLowerCase();
+    const hasValidExtension = fileName.endsWith('.xlsx') || fileName.endsWith('.xls') || fileName.endsWith('.xlsm');
+    const hasValidMimeType = validMimeTypes.includes(file.mimetype);
+    
+    console.log('Valid MIME type:', hasValidMimeType);
+    console.log('Valid extension:', hasValidExtension);
+    
+    if (hasValidMimeType && hasValidExtension) {
+      console.log('File accepted:', file.originalname);
       cb(null, true);
     } else {
-      cb(new Error('Excel 파일만 업로드 가능합니다.'));
+      console.log('File rejected:', file.originalname, 'MIME type:', file.mimetype, 'Extension valid:', hasValidExtension);
+      cb(new Error('Only Excel files are allowed'));
     }
   },
   limits: {
@@ -106,6 +147,135 @@ router.post('/upload-and-process', requireAuth, upload.single('file'), async (re
     }
 
     console.log(`📁 [API] Excel 자동화 처리 시작: ${filePath}, 사용자: ${userId}, 파일크기: ${req.file.size}bytes`);
+
+    // ===== CRITICAL: Excel 필드 검증 먼저 수행 =====
+    console.log(`🔍 [API] Excel 필드명 검증 시작`);
+    
+    try {
+      // Parse Excel file for field validation
+      const workbook = xlsx.read(fs.readFileSync(filePath), { type: 'buffer' });
+      
+      // Find the correct sheet (Input or first available)
+      let sheetName = workbook.SheetNames.find(name => 
+        name === 'Input' || name.toLowerCase().includes('input')
+      ) || workbook.SheetNames[0];
+      
+      console.log(`🔍 [API] Available sheets:`, workbook.SheetNames);
+      console.log(`🔍 [API] Processing sheet:`, sheetName);
+      
+      const worksheet = workbook.Sheets[sheetName];
+      
+      // Get raw data with headers
+      const rawData = xlsx.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+      
+      if (!rawData || rawData.length === 0) {
+        clearTimeout(timeoutHandler);
+        responseHandled = true;
+        return res.status(400).json({
+          success: false,
+          error: '빈 Excel 파일',
+          message: 'Excel 파일에 데이터가 없습니다.',
+          fieldErrors: null
+        });
+      }
+      
+      const headers = rawData[0] || [];
+      console.log(`🔍 [API] Headers found:`, headers);
+      
+      // CRITICAL: Field validation MUST happen here
+      const missingFields: string[] = [];
+      const incorrectFields: string[] = [];
+      
+      // Check for required standard fields
+      console.log(`🔍 [API] Checking required fields:`, requiredStandardFields);
+      requiredStandardFields.forEach(field => {
+        if (!headers.includes(field)) {
+          missingFields.push(field);
+          console.log(`❌ [API] Missing required field: ${field}`);
+        }
+      });
+      
+      // Check for incorrect field names
+      headers.forEach((header: any) => {
+        if (header && typeof header === 'string' && header.trim()) {
+          // Skip empty headers
+          if (!standardFieldMappings[header as keyof typeof standardFieldMappings]) {
+            // Common incorrect field names with helpful messages
+            if (header === '발주일' || header === '납기일') {
+              incorrectFields.push(`${header} → 정확한 필드명: ${header}자`);
+            } else if (header === '현장명') {
+              incorrectFields.push(`${header} → 정확한 필드명: 프로젝트명`);
+            } else if (header === '품목') {
+              incorrectFields.push(`${header} → 정확한 필드명: 품목명`);
+            } else if (header === '거래처') {
+              incorrectFields.push(`${header} → 정확한 필드명: 거래처명`);
+            } else if (header === '합계') {
+              incorrectFields.push(`${header} → 정확한 필드명: 총금액`);
+            } else if (header === '공급가액' || header === '부가세') {
+              // These fields should be removed, not renamed
+              incorrectFields.push(`${header} → 이 필드는 제거하고 '총금액'만 사용하세요`);
+            } else if (header === '발주번호' || header === '단위') {
+              // These fields are not in template
+              incorrectFields.push(`${header} → 표준 템플릿에 없는 필드입니다`);
+            } else {
+              // Generic incorrect field
+              incorrectFields.push(`${header} → 표준 템플릿에 없는 필드입니다`);
+            }
+          }
+        }
+      });
+      
+      console.log(`🔍 [API] Missing fields:`, missingFields);
+      console.log(`🔍 [API] Incorrect fields:`, incorrectFields);
+      
+      // If there are field errors, return detailed error response
+      if (missingFields.length > 0 || incorrectFields.length > 0) {
+        const errorResponse = {
+          success: false,
+          error: 'Excel 필드명 오류',
+          fieldErrors: {
+            missing: missingFields,
+            incorrect: incorrectFields
+          },
+          message: `Excel 파일의 필드명이 표준 형식과 일치하지 않습니다.\n\n` +
+                   (missingFields.length > 0 ? `❌ 필수 필드 누락:\n${missingFields.map(f => `  • ${f}`).join('\n')}\n\n` : '') +
+                   (incorrectFields.length > 0 ? `⚠️ 잘못된 필드명:\n${incorrectFields.map(f => `  • ${f}`).join('\n')}\n\n` : '') +
+                   `📥 표준 템플릿을 다운로드하여 정확한 필드명을 사용해주세요.`,
+          templateUrl: '/api/excel-template/download'
+        };
+        
+        console.log(`❌ [API] Field validation failed:`, errorResponse);
+        
+        // Clean up uploaded file
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+        
+        clearTimeout(timeoutHandler);
+        responseHandled = true;
+        return res.status(400).json(errorResponse);
+      }
+      
+      console.log(`✅ [API] Field validation passed! Continuing with automation process...`);
+      
+    } catch (fieldValidationError) {
+      console.error(`❌ [API] Field validation error:`, fieldValidationError);
+      
+      // Clean up uploaded file
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+      
+      clearTimeout(timeoutHandler);
+      responseHandled = true;
+      return res.status(400).json({
+        success: false,
+        error: 'Excel 파일 형식 오류',
+        message: 'Excel 파일을 읽을 수 없습니다. 파일이 손상되었거나 올바른 Excel 형식이 아닐 수 있습니다.',
+        details: fieldValidationError instanceof Error ? fieldValidationError.message : 'Unknown error',
+        fieldErrors: null
+      });
+    }
 
     // 통합 자동화 프로세스 실행
     console.log(`🔄 [API] ExcelAutomationService.processExcelUpload 호출 시작`);
