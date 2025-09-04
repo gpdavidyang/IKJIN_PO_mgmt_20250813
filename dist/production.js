@@ -21013,16 +21013,48 @@ router36.post("/process", upload6.single("file"), async (req, res) => {
       return res.status(400).json({ error: "No file uploaded" });
     }
     const workbook = xlsx.read(req.file.buffer, { type: "buffer" });
-    const sheetName = workbook.SheetNames[0];
+    let sheetName = workbook.SheetNames.find(
+      (name) => name === "Input" || name.toLowerCase().includes("input")
+    ) || workbook.SheetNames[0];
+    console.log("Processing sheet:", sheetName);
     const worksheet = workbook.Sheets[sheetName];
+    const rawData = xlsx.utils.sheet_to_json(worksheet, { header: 1 });
+    console.log("Headers found:", rawData[0]);
+    console.log("First data row:", rawData[1]);
     const data = xlsx.utils.sheet_to_json(worksheet);
+    console.log("First parsed row:", data[0]);
     const hashes = /* @__PURE__ */ new Set();
     const duplicates = [];
     const validationResults2 = [];
     const processedData = [];
-    const requiredFields = ["\uD504\uB85C\uC81D\uD2B8\uBA85", "projectName"];
+    const fieldMappings = {
+      // Main fields
+      "\uB0A9\uD488\uCC98": "deliveryLocation",
+      "\uAC70\uB798\uCC98\uBA85": "vendorName",
+      "\uAC70\uB798\uCC98": "vendorName",
+      // alias
+      "\uD604\uC7A5\uBA85": "projectName",
+      "\uD504\uB85C\uC81D\uD2B8\uBA85": "projectName",
+      // alias
+      "\uBC1C\uC8FC\uC77C": "orderDate",
+      "\uB0A9\uAE30\uC77C": "deliveryDate",
+      "\uBC1C\uC8FC\uBC88\uD638": "orderNumber",
+      "\uD488\uBAA9": "itemName",
+      "\uADDC\uACA9": "specification",
+      "\uC218\uB7C9": "quantity",
+      "\uB2E8\uC704": "unit",
+      "\uB2E8\uAC00": "unitPrice",
+      "\uACF5\uAE09\uAC00\uC561": "supplyAmount",
+      "\uBD80\uAC00\uC138": "vat",
+      "\uD569\uACC4": "totalAmount",
+      "\uB300\uBD84\uB958": "majorCategory",
+      "\uC911\uBD84\uB958": "middleCategory",
+      "\uC18C\uBD84\uB958": "minorCategory",
+      "\uBE44\uACE0": "notes"
+    };
+    const requiredFields = ["\uAC70\uB798\uCC98\uBA85", "\uD604\uC7A5\uBA85", "\uD488\uBAA9"];
     const emailFields = ["\uC774\uBA54\uC77C", "email", "vendorEmail"];
-    const numberFields = ["\uC218\uB7C9", "quantity", "\uB2E8\uAC00", "unitPrice", "\uAE08\uC561", "amount"];
+    const numberFields = ["\uC218\uB7C9", "quantity", "\uB2E8\uAC00", "unitPrice", "\uACF5\uAE09\uAC00\uC561", "supplyAmount", "\uBD80\uAC00\uC138", "vat", "\uD569\uACC4", "totalAmount"];
     data.forEach((row, index2) => {
       const rowNumber = index2 + 1;
       const errors = [];
@@ -21037,11 +21069,12 @@ router36.post("/process", upload6.single("file"), async (req, res) => {
       } else {
         hashes.add(hash);
       }
-      const hasProjectName = requiredFields.some((field) => row[field] && row[field].toString().trim());
-      if (!hasProjectName) {
-        errors.push("\uD504\uB85C\uC81D\uD2B8\uBA85\uC774 \uD544\uC694\uD569\uB2C8\uB2E4");
-        status = "error";
-      }
+      requiredFields.forEach((field) => {
+        if (!row[field] || !row[field].toString().trim()) {
+          errors.push(`${field}\uC774(\uAC00) \uD544\uC694\uD569\uB2C8\uB2E4`);
+          status = "error";
+        }
+      });
       emailFields.forEach((field) => {
         if (row[field]) {
           const email = row[field].toString().trim();
@@ -21068,13 +21101,19 @@ router36.post("/process", upload6.single("file"), async (req, res) => {
           if (status === "valid") status = "warning";
         }
       }
+      const mappedRow = {};
+      Object.keys(row).forEach((key) => {
+        const mappedKey = fieldMappings[key] || key;
+        mappedRow[mappedKey] = row[key];
+        mappedRow[key] = row[key];
+      });
       const processedRow = {
         id: `row_${rowNumber}`,
         rowNumber,
         status,
         errors,
         warnings,
-        ...row
+        ...mappedRow
       };
       processedData.push(processedRow);
       if (errors.length > 0) {
@@ -21118,12 +21157,16 @@ router36.post("/process", upload6.single("file"), async (req, res) => {
         // Limit to first 100 rows for performance
         validationResults: validationResults2,
         duplicates,
-        columns: Object.keys(data[0] || {}).map((key) => ({
-          key,
-          label: key,
-          type: numberFields.includes(key) ? "number" : emailFields.includes(key) ? "email" : "text",
-          editable: true
-        }))
+        columns: Object.keys(data[0] || {}).map((key) => {
+          const mappedKey = fieldMappings[key] || key;
+          return {
+            key: mappedKey,
+            label: key,
+            // Keep original Korean label for display
+            type: numberFields.includes(key) ? "number" : emailFields.includes(key) ? "email" : "text",
+            editable: true
+          };
+        })
       }
     });
   } catch (error) {

@@ -32,9 +32,23 @@ router.post('/process', upload.single('file'), async (req, res) => {
 
     // Parse Excel file
     const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
-    const sheetName = workbook.SheetNames[0];
+    
+    // Find the correct sheet (Input or first available)
+    let sheetName = workbook.SheetNames.find(name => 
+      name === 'Input' || name.toLowerCase().includes('input')
+    ) || workbook.SheetNames[0];
+    
+    console.log('Processing sheet:', sheetName);
     const worksheet = workbook.Sheets[sheetName];
+    
+    // Get raw data with headers
+    const rawData = xlsx.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+    console.log('Headers found:', rawData[0]);
+    console.log('First data row:', rawData[1]);
+    
+    // Convert to JSON with proper header mapping
     const data = xlsx.utils.sheet_to_json(worksheet);
+    console.log('First parsed row:', data[0]);
 
     // Enhanced validation and processing
     const hashes = new Set<string>();
@@ -42,10 +56,35 @@ router.post('/process', upload.single('file'), async (req, res) => {
     const validationResults: any[] = [];
     const processedData: any[] = [];
     
+    // Define field mappings based on the actual Excel headers
+    const fieldMappings = {
+      // Main fields
+      '납품처': 'deliveryLocation',  
+      '거래처명': 'vendorName',
+      '거래처': 'vendorName',  // alias
+      '현장명': 'projectName',
+      '프로젝트명': 'projectName',  // alias
+      '발주일': 'orderDate',
+      '납기일': 'deliveryDate',
+      '발주번호': 'orderNumber',
+      '품목': 'itemName',
+      '규격': 'specification', 
+      '수량': 'quantity',
+      '단위': 'unit',
+      '단가': 'unitPrice',
+      '공급가액': 'supplyAmount',
+      '부가세': 'vat',
+      '합계': 'totalAmount',
+      '대분류': 'majorCategory',
+      '중분류': 'middleCategory',
+      '소분류': 'minorCategory',
+      '비고': 'notes'
+    };
+    
     // Define required fields and validation rules
-    const requiredFields = ['프로젝트명', 'projectName'];
+    const requiredFields = ['거래처명', '현장명', '품목'];
     const emailFields = ['이메일', 'email', 'vendorEmail'];
-    const numberFields = ['수량', 'quantity', '단가', 'unitPrice', '금액', 'amount'];
+    const numberFields = ['수량', 'quantity', '단가', 'unitPrice', '공급가액', 'supplyAmount', '부가세', 'vat', '합계', 'totalAmount'];
 
     data.forEach((row: any, index: number) => {
       const rowNumber = index + 1;
@@ -66,11 +105,12 @@ router.post('/process', upload.single('file'), async (req, res) => {
       }
 
       // Validate required fields
-      const hasProjectName = requiredFields.some(field => row[field] && row[field].toString().trim());
-      if (!hasProjectName) {
-        errors.push('프로젝트명이 필요합니다');
-        status = 'error';
-      }
+      requiredFields.forEach(field => {
+        if (!row[field] || !row[field].toString().trim()) {
+          errors.push(`${field}이(가) 필요합니다`);
+          status = 'error';
+        }
+      });
 
       // Validate email fields
       emailFields.forEach(field => {
@@ -105,14 +145,24 @@ router.post('/process', upload.single('file'), async (req, res) => {
         }
       }
 
-      // Build processed row
+      // Build processed row with proper field mappings
+      const mappedRow: any = {};
+      
+      // Map Korean field names to English keys for consistent frontend display
+      Object.keys(row).forEach(key => {
+        const mappedKey = fieldMappings[key as keyof typeof fieldMappings] || key;
+        mappedRow[mappedKey] = row[key];
+        // Keep original field for display
+        mappedRow[key] = row[key];
+      });
+      
       const processedRow = {
         id: `row_${rowNumber}`,
         rowNumber,
         status,
         errors,
         warnings,
-        ...row
+        ...mappedRow
       };
 
       processedData.push(processedRow);
@@ -162,13 +212,17 @@ router.post('/process', upload.single('file'), async (req, res) => {
         processedData: processedData.slice(0, 100), // Limit to first 100 rows for performance
         validationResults,
         duplicates,
-        columns: Object.keys(data[0] || {}).map(key => ({
-          key,
-          label: key,
-          type: numberFields.includes(key) ? 'number' : 
-                emailFields.includes(key) ? 'email' : 'text',
-          editable: true
-        }))
+        columns: Object.keys(data[0] || {}).map(key => {
+          // Use mapped field name if available, otherwise use original
+          const mappedKey = fieldMappings[key as keyof typeof fieldMappings] || key;
+          return {
+            key: mappedKey,
+            label: key,  // Keep original Korean label for display
+            type: numberFields.includes(key) ? 'number' : 
+                  emailFields.includes(key) ? 'email' : 'text',
+            editable: true
+          };
+        })
       }
     });
 
