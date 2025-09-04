@@ -182,7 +182,7 @@ export default function DashboardProfessional() {
     }
   }, [user, authLoading, toast]);
 
-  // Unified dashboard API call
+  // Unified dashboard API call - only fetch when authenticated
   const { data: dashboardData, isLoading: dashboardLoading, error: dashboardError } = useDashboardData();
   
   // Extract data from unified response with fallbacks
@@ -194,12 +194,19 @@ export default function DashboardProfessional() {
   const categoryStats = dashboardData?.categoryStats || [];
 
 
-  if (dashboardLoading) {
+  // Show loading while checking authentication
+  if (authLoading) {
     return <DashboardSkeleton />;
   }
 
+  // Redirect if not authenticated
   if (!user) {
-    return null;
+    return <DashboardSkeleton />; // Show skeleton while redirecting
+  }
+
+  // Show loading while fetching dashboard data
+  if (dashboardLoading) {
+    return <DashboardSkeleton />;
   }
 
   // Professional color palette

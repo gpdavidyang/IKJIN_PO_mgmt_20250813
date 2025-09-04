@@ -60,12 +60,15 @@ export function useUserPermissions(userId: number) {
 
 // Dashboard hooks
 export function useDashboardData() {
+  const { user } = useAuth();
+  
   return useSmartQuery(
     queryKeys.dashboard.unified(),
     {
       queryFn: () => apiRequest("GET", "/api/dashboard/unified"),
       cacheType: "DYNAMIC",
       backgroundSync: true,
+      enabled: !!user, // Only fetch when user is authenticated
     }
   );
 }
