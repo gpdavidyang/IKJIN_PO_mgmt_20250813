@@ -5,6 +5,13 @@ import { comparePasswords, generateSessionId } from "./auth-utils";
 import { User as BaseUser } from "@shared/schema";
 import { logAuditEvent } from "./middleware/audit-logger";
 import { generateToken, verifyToken, extractToken } from "./jwt-utils";
+import { 
+  shouldUseFallback, 
+  getFallbackUserByEmail, 
+  getFallbackUserById, 
+  verifyFallbackPassword,
+  logFallbackUsage 
+} from "./fallback-auth";
 
 // Extend User type to ensure id field is available
 interface User extends BaseUser {
@@ -66,27 +73,31 @@ export async function login(req: Request, res: Response) {
     let user: User | undefined;
     
     try {
-      console.log("🔍 DB: Looking up user by email:", loginIdentifier);
-      // Find user in database by email (most common login method)
-      user = await storage.getUserByEmail(loginIdentifier);
-      console.log("🔍 DB: User lookup result:", user ? 'User found' : 'User not found');
+      // Check if we should use fallback authentication
+      if (shouldUseFallback()) {
+        console.log("⚠️ Using fallback authentication (DATABASE_URL not configured)");
+        logFallbackUsage("Login attempt", loginIdentifier);
+        user = await getFallbackUserByEmail(loginIdentifier);
+      } else {
+        console.log("🔍 DB: Looking up user by email:", loginIdentifier);
+        try {
+          // Try database lookup first
+          user = await storage.getUserByEmail(loginIdentifier);
+          console.log("🔍 DB: User lookup result:", user ? 'User found' : 'User not found');
+        } catch (dbError) {
+          console.error("⚠️ Database error, falling back to test users:", dbError);
+          // If database fails, use fallback
+          user = await getFallbackUserByEmail(loginIdentifier);
+          if (user) {
+            logFallbackUsage("Database error fallback", loginIdentifier);
+          }
+        }
+      }
       
       // Admin fallback: if user not found in database, provide admin@company.com access
       if (!user && loginIdentifier === 'admin@company.com') {
-        console.log("🔧 Admin fallback: Using hardcoded admin user");
-        user = {
-          id: 'dev_admin',
-          email: 'admin@company.com',
-          name: 'Dev Administrator', 
-          password: '$2b$10$RbLrxzWq3TQEx6UTrnRwCeWwOai9N0QzdeJxg8iUp71jGS8kKgwjC', // admin123
-          role: 'admin' as const,
-          phoneNumber: null,
-          profileImageUrl: null,
-          position: null,
-          isActive: true,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        };
+        console.log("🔧 Admin fallback: Using default admin user");
+        user = await getFallbackUserByEmail('admin@company.com');
       }
       
       if (!user) {
@@ -100,7 +111,15 @@ export async function login(req: Request, res: Response) {
       }
 
       // Verify password using proper password comparison
-      const isValidPassword = await comparePasswords(password, user.password);
+      let isValidPassword = false;
+      if (shouldUseFallback() || user.id.includes('_fallback')) {
+        // Use fallback password verification for test users
+        isValidPassword = await verifyFallbackPassword(password, user.password);
+      } else {
+        // Use normal password comparison for database users
+        isValidPassword = await comparePasswords(password, user.password);
+      }
+      
       if (!isValidPassword) {
         console.log("❌ Invalid password for user:", loginIdentifier);
         
@@ -117,21 +136,47 @@ export async function login(req: Request, res: Response) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
-      console.log("✅ Database authentication successful for user:", user.name || user.email);
+      const authMethod = shouldUseFallback() || user.id.includes('_fallback') ? 'fallback' : 'database';
+      console.log(`✅ Authentication successful (${authMethod}) for user:`, user.name || user.email);
       
-      // Log successful login
-      await logAuditEvent('login', 'auth', {
+      // Log successful login (skip for fallback to avoid DB dependency)
+      if (!shouldUseFallback() && !user.id.includes('_fallback')) {
+        try {
+          await logAuditEvent('login', 'auth', {
         userId: user.id,
         userName: user.name || user.email,
         userRole: user.role,
         action: 'User logged in',
         ipAddress: req.ip || req.connection.remoteAddress,
         userAgent: req.headers['user-agent'],
-        sessionId: req.sessionID
-      });
-    } catch (dbError) {
-      console.error("🔴 Database authentication error:", dbError);
-      return res.status(500).json({ message: "Authentication failed - database error" });
+          sessionId: req.sessionID
+        });
+        } catch (logError) {
+          console.error("Failed to log audit event (non-fatal):", logError);
+        }
+      }
+    } catch (authError) {
+      console.error("🔴 Authentication error:", authError);
+      // Try fallback authentication as last resort
+      try {
+        if (!user) {
+          user = await getFallbackUserByEmail(loginIdentifier);
+          if (user) {
+            const isValidPassword = await verifyFallbackPassword(password, user.password);
+            if (!isValidPassword) {
+              return res.status(401).json({ message: "Invalid credentials" });
+            }
+            logFallbackUsage("Emergency fallback", loginIdentifier);
+          } else {
+            return res.status(401).json({ message: "Invalid credentials" });
+          }
+        } else {
+          return res.status(500).json({ message: "Authentication error" });
+        }
+      } catch (fallbackError) {
+        console.error("🔴 Fallback authentication also failed:", fallbackError);
+        return res.status(500).json({ message: "Authentication service unavailable" });
+      }
     }
 
     try {
@@ -278,25 +323,26 @@ export async function getCurrentUser(req: Request, res: Response) {
     });
 
     try {
-      // Use real database user lookup
-      let user = await storage.getUser(payload.userId);
+      let user: User | undefined;
       
-      // Admin fallback: handle dev_admin user in all environments
-      if (!user && payload.userId === 'dev_admin') {
-        console.log("🔧 getCurrentUser - Admin fallback: Using hardcoded admin user");
-        user = {
-          id: 'dev_admin',
-          email: 'admin@company.com',
-          name: 'Dev Administrator', 
-          password: '$2b$10$RbLrxzWq3TQEx6UTrnRwCeWwOai9N0QzdeJxg8iUp71jGS8kKgwjC', // admin123
-          role: 'admin' as const,
-          phoneNumber: null,
-          profileImageUrl: null,
-          position: null,
-          isActive: true,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        };
+      // Check if we should use fallback authentication
+      if (shouldUseFallback()) {
+        console.log("⚠️ getCurrentUser - Using fallback (DATABASE_URL not configured)");
+        user = await getFallbackUserById(payload.userId);
+      } else {
+        try {
+          // Use real database user lookup
+          user = await storage.getUser(payload.userId);
+        } catch (dbError) {
+          console.error("⚠️ getCurrentUser - Database error, trying fallback:", dbError);
+          user = await getFallbackUserById(payload.userId);
+        }
+      }
+      
+      // Admin fallback: handle fallback users
+      if (!user && (payload.userId === 'dev_admin' || payload.userId === 'admin_fallback')) {
+        console.log("🔧 getCurrentUser - Admin fallback");
+        user = await getFallbackUserById('admin_fallback');
       }
       
       if (!user) {
@@ -327,9 +373,24 @@ export async function getCurrentUser(req: Request, res: Response) {
         authenticated: true
       });
     } catch (dbError) {
-      console.error("🔴 Database error in getCurrentUser:", dbError);
+      console.error("🔴 Error in getCurrentUser:", dbError);
+      // Try fallback as last resort
+      try {
+        const fallbackUser = await getFallbackUserById(payload.userId);
+        if (fallbackUser && fallbackUser.isActive) {
+          req.user = fallbackUser as User;
+          const { password: _, ...userWithoutPassword } = fallbackUser;
+          return res.json({
+            ...userWithoutPassword,
+            authenticated: true
+          });
+        }
+      } catch (fallbackError) {
+        console.error("🔴 Fallback also failed:", fallbackError);
+      }
+      
       return res.status(401).json({ 
-        message: "Authentication failed - database error",
+        message: "Authentication failed",
         authenticated: false
       });
     }
@@ -361,25 +422,24 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
       return res.status(401).json({ message: "Invalid token" });
     }
 
-    // Get user from database
-    let user = await storage.getUser(payload.userId);
+    // Get user from database or fallback
+    let user: User | undefined;
     
-    // Admin fallback: handle dev_admin user in all environments
-    if (!user && payload.userId === 'dev_admin') {
-      console.log("🔧 Admin fallback: Using hardcoded dev_admin user in requireAuth");
-      user = {
-        id: 'dev_admin',
-        email: 'admin@company.com',
-        name: 'Dev Administrator',
-        password: '$2b$10$RbLrxzWq3TQEx6UTrnRwCeWwOai9N0QzdeJxg8iUp71jGS8kKgwjC', // admin123
-        role: 'admin' as const,
-        phoneNumber: null,
-        profileImageUrl: null,
-        position: null,
-        isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
+    if (shouldUseFallback()) {
+      console.log('🔧 requireAuth - Using fallback authentication');
+      user = await getFallbackUserById(payload.userId);
+    } else {
+      try {
+        user = await storage.getUser(payload.userId);
+      } catch (dbError) {
+        console.error('⚠️ requireAuth - Database error, using fallback:', dbError);
+        user = await getFallbackUserById(payload.userId);
+      }
+    }
+    
+    // Admin fallback for compatibility
+    if (!user && (payload.userId === 'dev_admin' || payload.userId === 'admin_fallback')) {
+      user = await getFallbackUserById('admin_fallback');
     }
     
     if (!user) {

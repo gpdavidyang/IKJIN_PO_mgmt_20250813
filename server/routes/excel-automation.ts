@@ -65,6 +65,9 @@ const upload = multer({
   }
 });
 
+// Initialize router
+const router = Router();
+
 /**
  * 1단계: 엑셀 파일 업로드 및 초기 처리
  * POST /api/excel-automation/upload-and-process
