@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
 
 // Comprehensive status configurations for different entities
 export const STATUS_CONFIGS = {
-  // Purchase Order Status
+  // Purchase Order Status (New Dual Status)
   order: {
     draft: {
       label: "임시저장",
@@ -30,6 +30,28 @@ export const STATUS_CONFIGS = {
       pulse: false,
       description: "작성 중인 발주서",
     },
+    created: {
+      label: "발주서 생성",
+      variant: "info" as const,
+      icon: CheckCircle2,
+      pulse: false,
+      description: "발주서 생성 완료",
+    },
+    sent: {
+      label: "발송완료",
+      variant: "success" as const,
+      icon: Send,
+      pulse: false,
+      description: "거래처에 발송 완료",
+    },
+    delivered: {
+      label: "납품완료",
+      variant: "success" as const,
+      icon: Package,
+      pulse: false,
+      description: "납품 및 검수 완료",
+    },
+    // Legacy statuses for backward compatibility
     pending: {
       label: "승인 대기",
       variant: "warning" as const,
@@ -43,13 +65,6 @@ export const STATUS_CONFIGS = {
       icon: CheckCircle2,
       pulse: false,
       description: "승인 완료됨",
-    },
-    sent: {
-      label: "발송됨",
-      variant: "success" as const,
-      icon: Send,
-      pulse: false,
-      description: "거래처에 발송 완료",
     },
     completed: {
       label: "완료",
@@ -71,6 +86,38 @@ export const STATUS_CONFIGS = {
       icon: Square,
       pulse: false,
       description: "발주가 취소됨",
+    },
+  },
+  
+  // Approval Status (New Dual Status)
+  approval: {
+    not_required: {
+      label: "승인불필요",
+      variant: "default" as const,
+      icon: CheckCircle2,
+      pulse: false,
+      description: "승인 과정이 필요하지 않음",
+    },
+    pending: {
+      label: "승인대기",
+      variant: "warning" as const,
+      icon: Clock,
+      pulse: true,
+      description: "승인자 검토 대기 중",
+    },
+    approved: {
+      label: "승인완료",
+      variant: "success" as const,
+      icon: CheckCircle2,
+      pulse: false,
+      description: "승인이 완료됨",
+    },
+    rejected: {
+      label: "반려",
+      variant: "danger" as const,
+      icon: XCircle,
+      pulse: false,
+      description: "승인이 거부됨",
     },
   },
   

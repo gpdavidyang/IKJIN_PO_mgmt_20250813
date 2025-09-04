@@ -314,7 +314,7 @@ export function ApprovalWorkflowSettings() {
           <div className="space-y-2">
             <p><strong>• 승인 방식 선택:</strong></p>
             <ul className="ml-4 space-y-1">
-              <li>- <strong>직접 승인:</strong> 권한이 있는 담당자가 바로 승인하는 간단한 방식</li>
+              <li>- <strong>직접 승인:</strong> 발주서 생성 시 승인절차 없이 바로 발주서가 생성되는 방식</li>
               <li>- <strong>단계별 승인:</strong> 현장 작업자 → 프로젝트 매니저 → 임원 등 순차적으로 승인하는 방식</li>
             </ul>
           </div>
@@ -340,10 +340,10 @@ export function ApprovalWorkflowSettings() {
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <Settings className="w-5 h-5" />
-            <span>기본 워크플로 설정</span>
+            <span>기본 워크플로우 설정</span>
           </CardTitle>
           <CardDescription>
-            회사의 기본 승인 워크플로 방식을 설정합니다.
+            회사의 기본 승인 워크플로우 방식을 설정합니다.
           </CardDescription>
         </CardHeader>
         
@@ -365,7 +365,7 @@ export function ApprovalWorkflowSettings() {
             </Select>
             <p className="text-sm text-gray-600">
               {workflowForm.approvalMode === 'direct' 
-                ? "권한이 있는 사용자가 바로 승인하는 방식입니다."
+                ? "직접승인 모드는 발주서 생성 시, 승인절차 없이 바로 발주서가 생성이 됩니다."
                 : "여러 단계를 거쳐 순차적으로 승인하는 방식입니다."
               }
             </p>

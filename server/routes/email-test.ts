@@ -1,6 +1,7 @@
 import express from 'express';
 import path from 'path';
 import { emailService } from '../services/email-service';
+import { POEmailService } from '../utils/po-email-service-enhanced';
 
 const router = express.Router();
 
@@ -120,6 +121,73 @@ router.post('/send-test', async (req, res) => {
       success: false,
       message: error instanceof Error ? error.message : '테스트 이메일 발송 실패',
       error: error
+    });
+  }
+});
+
+/**
+ * @route POST /api/email-test/simple
+ * @description 간단한 이메일 발송 테스트 (POEmailService 직접 사용)
+ */
+router.post('/simple', async (req, res) => {
+  try {
+    const { to } = req.body;
+    
+    if (!to) {
+      return res.status(400).json({
+        success: false,
+        message: '수신자 이메일 주소를 입력해주세요.'
+      });
+    }
+
+    console.log('📧 Simple email test started to:', to);
+    
+    // POEmailService 직접 사용
+    const poEmailService = new POEmailService();
+    
+    // 간단한 텍스트 이메일 발송
+    const result = await poEmailService.sendEmail({
+      to: to,
+      subject: `[테스트] 발주 시스템 이메일 테스트 - ${new Date().toLocaleString('ko-KR')}`,
+      text: '이것은 발주 시스템의 이메일 테스트 메시지입니다.\n\n이메일이 정상적으로 수신되었다면 시스템이 올바르게 설정된 것입니다.',
+      html: `
+        <div style="font-family: Arial, sans-serif; padding: 20px;">
+          <h2>발주 시스템 이메일 테스트</h2>
+          <p>이것은 발주 시스템의 이메일 테스트 메시지입니다.</p>
+          <p>이메일이 정상적으로 수신되었다면 시스템이 올바르게 설정된 것입니다.</p>
+          <hr>
+          <p style="color: #666; font-size: 12px;">
+            발송 시간: ${new Date().toLocaleString('ko-KR')}<br>
+            발송 서버: ${process.env.SMTP_HOST || 'unknown'}<br>
+            발송자: ${process.env.SMTP_USER || 'unknown'}
+          </p>
+        </div>
+      `
+    });
+
+    console.log('📧 Simple email test result:', result);
+
+    if (result.success) {
+      res.json({
+        success: true,
+        message: '테스트 이메일 발송 성공',
+        messageId: result.messageId,
+        to: to
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        message: '테스트 이메일 발송 실패',
+        error: result.error,
+        to: to
+      });
+    }
+  } catch (error) {
+    console.error('❌ Simple email test error:', error);
+    res.status(500).json({
+      success: false,
+      message: '이메일 테스트 중 오류 발생',
+      error: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 });

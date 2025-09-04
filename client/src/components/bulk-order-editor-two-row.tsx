@@ -67,7 +67,7 @@ export function BulkOrderEditorTwoRow({ orders, onOrderUpdate, onOrderRemove, on
 
   // Individual order save mutation
   const saveIndividualOrder = useMutation({
-    mutationFn: async ({ order, sendEmail, index }: { order: OrderData; sendEmail: boolean; index: number }) => {
+    mutationFn: async ({ order, sendEmail, index, isDraft = false }: { order: OrderData; sendEmail: boolean; index: number; isDraft?: boolean }) => {
       const formData = new FormData();
       
       // Attach original Excel file if available
@@ -75,9 +75,10 @@ export function BulkOrderEditorTwoRow({ orders, onOrderUpdate, onOrderRemove, on
         formData.append('excelFile', file);
       }
       
-      // Send single order data with email flag
+      // Send single order data with email flag and draft status
       formData.append('orders', JSON.stringify([order]));
       formData.append('sendEmail', sendEmail.toString());
+      formData.append('isDraft', isDraft.toString());
       
       const response = await fetch('/api/orders/bulk-create-simple', {
         method: 'POST',
@@ -93,7 +94,14 @@ export function BulkOrderEditorTwoRow({ orders, onOrderUpdate, onOrderRemove, on
       return response.json();
     },
     onSuccess: (data, variables) => {
-      if (variables.sendEmail) {
+      if (variables.isDraft) {
+        // 임시저장 처리
+        toast({
+          title: "임시저장 완료",
+          description: "발주서가 임시저장되었습니다. 발주서 관리 화면에서 확인 및 수정할 수 있습니다.",
+        });
+        onOrderRemove(variables.index);
+      } else if (variables.sendEmail) {
         // 이메일 발송 옵션이 선택된 경우 이메일 모달 표시
         setSavedOrderData({ 
           ...data, 
@@ -143,6 +151,17 @@ export function BulkOrderEditorTwoRow({ orders, onOrderUpdate, onOrderRemove, on
         index
       });
     }
+  };
+
+  const handleDraftSave = (index: number) => {
+    // 임시저장 처리 - 이메일 발송 없이 draft 상태로 저장
+    setSavingIndex(index);
+    saveIndividualOrder.mutate({
+      order: orders[index],
+      sendEmail: false, // 이메일 발송하지 않음
+      index,
+      isDraft: true // draft 상태 플래그 추가
+    });
   };
 
   const handleEmailCheckboxChange = (index: number, checked: boolean) => {
@@ -401,6 +420,18 @@ export function BulkOrderEditorTwoRow({ orders, onOrderUpdate, onOrderRemove, on
                 >
                   <FileText className="h-3 w-3 mr-1" />
                   {savingIndex === orderIndex ? '생성 중...' : '발주서 생성'}
+                </Button>
+                
+                {/* Draft save button */}
+                <Button
+                  onClick={() => handleDraftSave(orderIndex)}
+                  disabled={!order.isValid || savingIndex === orderIndex}
+                  size="sm"
+                  variant="outline"
+                  className="text-xs"
+                >
+                  <Save className="h-3 w-3 mr-1" />
+                  {savingIndex === orderIndex ? '저장 중...' : '임시저장'}
                 </Button>
                 
                 {/* Remove button */}

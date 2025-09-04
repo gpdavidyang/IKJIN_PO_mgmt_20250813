@@ -34,7 +34,9 @@ import { BulkDeleteDialog } from "./bulk-delete-dialog";
 interface Order {
   id: string;
   orderNumber: string;
-  status: string;
+  status: string; // Legacy status
+  orderStatus?: string; // New dual status - order status
+  approvalStatus?: string; // New dual status - approval status
   totalAmount: number;
   orderDate: string;
   deliveryDate: string | null;
@@ -293,16 +295,47 @@ export function EnhancedOrdersTable({
       key: "status",
       header: "상태",
       sortable: true,
-      width: "100px",
-      accessor: (row) => (
-        <SmartStatusBadge
-          type="order"
-          status={row.status}
-          showIcon={false}
-          showTooltip
-          animated
-        />
-      ),
+      width: "180px",
+      accessor: (row) => {
+        // Check if dual status is available
+        if (row.orderStatus || row.approvalStatus) {
+          // Use the DualStatusBadge component if available
+          return (
+            <div className="flex gap-1">
+              {row.orderStatus && (
+                <SmartStatusBadge
+                  type="order"
+                  status={row.orderStatus}
+                  showIcon={false}
+                  showTooltip
+                  animated
+                  size="sm"
+                />
+              )}
+              {row.approvalStatus && row.approvalStatus !== 'not_required' && (
+                <SmartStatusBadge
+                  type="approval"
+                  status={row.approvalStatus}
+                  showIcon={false}
+                  showTooltip
+                  animated
+                  size="sm"
+                />
+              )}
+            </div>
+          );
+        }
+        // Fallback to legacy status
+        return (
+          <SmartStatusBadge
+            type="order"
+            status={row.status}
+            showIcon={false}
+            showTooltip
+            animated
+          />
+        );
+      },
     },
     {
       key: "emailStatus",

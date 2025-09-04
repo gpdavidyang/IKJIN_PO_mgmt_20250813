@@ -89,6 +89,7 @@ router.post('/orders/bulk-create-simple', requireAuth, upload.single('excelFile'
     const ordersData = JSON.parse(req.body.orders);
     const validatedOrders = z.array(OrderDataSchema).parse(ordersData);
     const sendEmail = req.body.sendEmail === 'true'; // Parse email flag
+    const isDraft = req.body.isDraft === 'true'; // Parse draft flag
     
     if (validatedOrders.length === 0) {
       return res.status(400).json({ error: 'No orders to create' });
@@ -187,7 +188,22 @@ router.post('/orders/bulk-create-simple', requireAuth, upload.single('excelFile'
           return sum + ((item.quantity || 0) * (item.unitPrice || 0));
         }, 0);
 
-        // Create purchase order
+        // Determine dual status based on flags
+        let orderStatus: 'draft' | 'created' | 'sent' = 'draft';
+        let approvalStatus: 'not_required' | 'pending' = 'not_required';
+        let approvalBypassReason = null;
+        
+        if (isDraft) {
+          orderStatus = 'draft';
+          approvalStatus = 'not_required';
+        } else {
+          // Check if needs approval (simplified for bulk creation - assumes direct approval for now)
+          orderStatus = sendEmail ? 'sent' : 'created';
+          approvalStatus = 'not_required';
+          approvalBypassReason = 'excel_automation'; // Bulk orders bypass approval
+        }
+
+        // Create purchase order with dual status
         const [newOrder] = await db
           .insert(purchaseOrders)
           .values({
@@ -196,7 +212,10 @@ router.post('/orders/bulk-create-simple', requireAuth, upload.single('excelFile'
             vendorId: vendor?.id || null,
             userId: req.user.id,
             orderDate: orderData.orderDate || new Date().toISOString().split('T')[0], // Required field
-            status: sendEmail ? 'sent' : 'draft',
+            status: isDraft ? 'draft' : (sendEmail ? 'sent' : 'pending'), // Keep legacy status for backward compatibility
+            orderStatus, // New order status
+            approvalStatus, // New approval status
+            approvalBypassReason, // Reason for bypassing approval
             totalAmount,
             deliveryDate: orderData.deliveryDate || null,
             notes: [
@@ -360,10 +379,81 @@ router.post('/orders/bulk-create-simple', requireAuth, upload.single('excelFile'
       }
     }
 
-    // TODO: Send emails here (implement email service)
-    // For now, just log the emails that should be sent
+    // Send emails using POEmailService
     if (emailsToSend.length > 0) {
-      console.log(`Would send ${emailsToSend.length} emails:`, emailsToSend);
+      console.log(`📧 Preparing to send ${emailsToSend.length} emails...`);
+      
+      try {
+        const { POEmailService } = await import('../utils/po-email-service-enhanced');
+        const emailService = new POEmailService();
+        
+        for (const emailInfo of emailsToSend) {
+          try {
+            // Find the attachment for this order (if Excel file was uploaded)
+            let excelAttachment = null;
+            if (req.file) {
+              const attachment = await db
+                .select()
+                .from(attachments)
+                .where(eq(attachments.orderId, emailInfo.orderId))
+                .then(rows => rows[0]);
+                
+              if (attachment) {
+                excelAttachment = path.join(process.cwd(), 'uploads', attachment.storedName);
+              }
+            }
+            
+            // Send email with Excel attachment if available
+            if (excelAttachment && fs.existsSync(excelAttachment)) {
+              console.log(`📎 Sending email with attachment for order ${emailInfo.orderNumber}`);
+              
+              const result = await emailService.sendPOWithOriginalFormat(
+                excelAttachment,
+                {
+                  to: emailInfo.vendorEmail,
+                  subject: `발주서 전송 - ${emailInfo.orderNumber}`,
+                  orderNumber: emailInfo.orderNumber,
+                  vendorName: emailInfo.vendorName,
+                  totalAmount: emailInfo.totalAmount,
+                  orderDate: new Date().toLocaleDateString('ko-KR'),
+                  additionalMessage: `${emailInfo.vendorName} 담당자님께 발주서를 전송드립니다.`
+                }
+              );
+              
+              if (result.success) {
+                console.log(`✅ Email sent successfully for order ${emailInfo.orderNumber}`);
+                
+                // Update order status to 'sent'
+                await db
+                  .update(purchaseOrders)
+                  .set({ status: 'sent' })
+                  .where(eq(purchaseOrders.id, emailInfo.orderId));
+                  
+                // Add history entry for email sent
+                await db.insert(orderHistory).values({
+                  orderId: emailInfo.orderId,
+                  userId: req.user.id,
+                  action: 'email_sent',
+                  changes: {
+                    to: emailInfo.vendorEmail,
+                    vendorName: emailInfo.vendorName,
+                    messageId: result.messageId
+                  },
+                  createdAt: new Date()
+                });
+              } else {
+                console.error(`❌ Failed to send email for order ${emailInfo.orderNumber}: ${result.error}`);
+              }
+            } else {
+              console.warn(`⚠️ No attachment found for order ${emailInfo.orderNumber}, skipping email`);
+            }
+          } catch (emailError) {
+            console.error(`❌ Error sending email for order ${emailInfo.orderNumber}:`, emailError);
+          }
+        }
+      } catch (serviceError) {
+        console.error('❌ Error initializing email service:', serviceError);
+      }
     }
 
     const emailsSent = emailsToSend.length;

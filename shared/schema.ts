@@ -57,7 +57,14 @@ export const itemCategories = pgTable("item_categories", {
 
 // Enum definitions
 export const userRoleEnum = pgEnum("user_role", ["field_worker", "project_manager", "hq_management", "executive", "admin"]);
+
+// 기존 상태 enum (하위 호환성 유지)
 export const purchaseOrderStatusEnum = pgEnum("purchase_order_status", ["draft", "pending", "approved", "sent", "completed"]);
+
+// 새로운 이중 상태 시스템 enums
+export const orderStatusEnum = pgEnum("order_status", ["draft", "created", "sent", "delivered"]);
+export const approvalStatusEnum = pgEnum("approval_status", ["not_required", "pending", "approved", "rejected"]);
+
 export const projectStatusEnum = pgEnum("project_status", ["planning", "active", "on_hold", "completed", "cancelled"]);
 export const projectTypeEnum = pgEnum("project_type", ["commercial", "residential", "industrial", "infrastructure"]);
 export const invoiceStatusEnum = pgEnum("invoice_status", ["pending", "verified", "paid"]);
@@ -72,6 +79,8 @@ export const approvalAuthorities = pgTable("approval_authorities", {
   maxAmount: decimal("max_amount", { precision: 15, scale: 2 }).notNull(),
   description: text("description"),
   isActive: boolean("is_active").default(true),
+  canDirectApprove: boolean("can_direct_approve").default(false), // 직접 승인 가능 여부
+  directApproveLimit: decimal("direct_approve_limit", { precision: 15, scale: 2 }), // 직접 승인 한도
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
@@ -298,7 +307,21 @@ export const purchaseOrders = pgTable("purchase_orders", {
   templateId: integer("template_id").references(() => orderTemplates.id),
   orderDate: date("order_date").notNull(),
   deliveryDate: date("delivery_date"),
+  
+  // 기존 status 필드 (하위 호환성)
   status: purchaseOrderStatusEnum("status").notNull().default("pending"),
+  
+  // 새로운 이중 상태 시스템 필드
+  orderStatus: orderStatusEnum("order_status").default("draft"),
+  approvalStatus: approvalStatusEnum("approval_status").default("not_required"),
+  approvalBypassReason: text("approval_bypass_reason"),
+  nextApproverId: varchar("next_approver_id").references(() => users.id),
+  approvalRequestedAt: timestamp("approval_requested_at"),
+  
+  // 납품 관련 필드
+  deliveredAt: timestamp("delivered_at"),
+  deliveredBy: varchar("delivered_by").references(() => users.id),
+  
   totalAmount: decimal("total_amount", { precision: 15, scale: 2 }).default("0").$type<number>(),
   notes: text("notes"),
   // customFields: jsonb("custom_fields"), // TODO: Add this column to database

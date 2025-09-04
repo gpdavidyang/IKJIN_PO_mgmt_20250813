@@ -36,6 +36,7 @@ import ordersSimpleRoutes from "./orders-simple";
 import positionsRoutes from "./positions";
 import auditRoutes from "./audit";
 import emailTestRoutes from "./email-test";
+import workflowRoutes from "./workflow";
 
 const router = Router();
 
@@ -72,5 +73,6 @@ router.use("/api", ordersSimpleRoutes);
 router.use("/api", positionsRoutes);
 router.use("/api/audit", auditRoutes);
 router.use("/api/email-test", emailTestRoutes);
+router.use(workflowRoutes); // Workflow routes already have /api prefix
 
 export default router;

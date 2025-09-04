@@ -54,7 +54,8 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
   const { toast } = useToast();
   const { theme } = useTheme();
   const isDarkMode = theme === 'dark';
-  const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(preselectedTemplateId || null);
+  // 템플릿 기능 비활성화
+  const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(null);
   const [templates, setTemplates] = useState<any[]>([]);
   const [isLoadingTemplates, setIsLoadingTemplates] = useState(true);
   const [templatesError, setTemplatesError] = useState<any>(null);
@@ -594,7 +595,7 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
       ...data,
       vendorId,
       projectId: data.projectId ? Number(data.projectId) : undefined,
-      templateId: selectedTemplateId ? Number(selectedTemplateId) : undefined,
+      templateId: undefined, // 템플릿 기능 사용하지 않음
       orderDate: data.orderDate,
       deliveryDate: data.deliveryDate || undefined,
       items: orderItems.map(item => ({
@@ -619,33 +620,7 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
     return <div className="p-6">Loading...</div>;
   }
 
-  // Get selected template details
-  const selectedTemplate = templates.find(t => t.id === selectedTemplateId);
-  
-  console.log('=== RENDER CHECK ===');
-  console.log('Current selectedTemplateId:', selectedTemplateId);
-  console.log('Selected template:', selectedTemplate);
-  console.log('Template type:', selectedTemplate?.templateType);
-  console.log('Templates available:', templates.map(t => ({ id: t.id, name: t.templateName, type: t.templateType })));
-  
-  // Render Excel-like form for excel_like or handsontable template type - check this BEFORE rendering the main form
-  if (selectedTemplate?.templateType === 'excel_like' || selectedTemplate?.templateType === 'handsontable') {
-    console.log('Rendering ExcelLikeOrderForm for template:', selectedTemplateId);
-    return (
-      <ExcelLikeOrderForm 
-        key={`excel-${selectedTemplateId}-${Date.now()}`} // Force re-render when template changes with timestamp
-        orderId={orderId}
-        onSuccess={onSuccess}
-        onCancel={onCancel}
-        preselectedTemplateId={selectedTemplateId}
-        onTemplateChange={(templateId) => {
-          console.log('OrderForm: Received template change from ExcelLikeOrderForm:', templateId);
-          setSelectedTemplateId(templateId);
-          setValue("templateId", templateId);
-        }}
-      />
-    );
-  }
+  // 템플릿 기능 비활성화 - ExcelLikeOrderForm 사용하지 않음
 
   return (
     <div className={`max-w-[1366px] mx-auto compact-form space-y-3 pb-20 transition-colors ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`} key={`general-${selectedTemplateId}`}>
@@ -656,75 +631,6 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
           </CardHeader>
           <CardContent className="space-y-3 pt-2">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <Label htmlFor="templateId" className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>발주서 템플릿 *</Label>
-                <Select 
-                  onValueChange={(value) => {
-                    const templateId = parseInt(value);
-                    console.log('Template selected:', templateId);
-                    setValue("templateId", templateId);
-                    setSelectedTemplateId(templateId);
-                    
-                    // Force a re-render by updating a key or triggering state change
-                    console.log('Setting selectedTemplateId to:', templateId);
-                    
-                    // Reset order items when template changes
-                    setOrderItems([{
-                      itemId: 0,
-                      itemName: "",
-                      specification: "",
-                      majorCategory: "",
-                      middleCategory: "",
-                      minorCategory: "",
-                      quantity: 1,
-                      unitPrice: 0,
-                      totalAmount: 0,
-                      notes: ""
-                    }]);
-                    setValue("items", [{
-                      itemId: 0,
-                      itemName: "",
-                      specification: "",
-                      majorCategory: "",
-                      middleCategory: "",
-                      minorCategory: "",
-                      quantity: 1,
-                      unitPrice: 0,
-                      totalAmount: 0,
-                      notes: ""
-                    }]);
-                  }}
-                  disabled={isLoadingTemplates}
-                  value={selectedTemplateId?.toString() || ""}
-                >
-                  <SelectTrigger className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}>
-                    <SelectValue placeholder={isLoadingTemplates ? "로딩 중..." : "템플릿을 선택하세요"} />
-                  </SelectTrigger>
-                  <SelectContent className={`transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
-                    {templates && templates.length > 0 ? (
-                      templates.map((template: any) => {
-                        console.log('Rendering template:', template);
-                        return (
-                          <SelectItem key={template.id} value={template.id.toString()}>
-                            {template.templateName}
-                          </SelectItem>
-                        );
-                      })
-                    ) : (
-                      <SelectItem value="no-templates" disabled>
-                        템플릿이 없습니다
-                      </SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-                {errors.templateId && (
-                  <p className={`text-sm mt-1 transition-colors ${isDarkMode ? 'text-red-400' : 'text-red-500'}`}>{errors.templateId.message}</p>
-                )}
-                {templatesError && (
-                  <p className={`text-sm mt-1 transition-colors ${isDarkMode ? 'text-yellow-400' : 'text-yellow-600'}`}>템플릿 API 연결 오류: 기본 템플릿 사용 중</p>
-                )}
-              </div>
-              
               <div>
                 <Label htmlFor="projectId" className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>현장 *</Label>
                 <Select 

@@ -69,8 +69,8 @@ export class POTemplateProcessorMock {
       // 헤더 행 제거
       const rows = data.slice(1) as any[][];
       
-      // 발주서별로 그룹화 (발주번호로만 구분)
-      const ordersByNumber = new Map<string, POTemplateOrder>();
+      // 발주서별로 그룹화 (거래처명과 발주일로 그룹화)
+      const ordersByVendorAndDate = new Map<string, POTemplateOrder>();
       
       for (const row of rows) {
         // 빈 행이거나 필수 데이터가 없는 경우 건너뛰기
@@ -129,25 +129,28 @@ export class POTemplateProcessorMock {
         const deliveryName = vendorName; // 거래처명을 납품처명으로 사용
         const deliveryEmail = ''; // Excel에 없음
         
-        // 발주번호 생성 (Excel에서 가져온 것이 있으면 사용, 없으면 생성)
-        const orderNumber = excelOrderNumber || this.generateOrderNumber(orderDate, vendorName);
+        // 발주번호 생성 - 거래처명과 발주일별로 하나의 발주번호 사용
+        // 거래처명과 발주일을 조합하여 키 생성
+        const vendorDateKey = `${vendorName}_${orderDate}`;
         
         // Excel에서 읽어온 값들을 그대로 사용 (K, L, M열에서 이미 계산된 값)
 
         // 발주서 정보 생성 또는 업데이트
-        if (!ordersByNumber.has(orderNumber)) {
-          ordersByNumber.set(orderNumber, {
+        if (!ordersByVendorAndDate.has(vendorDateKey)) {
+          // 거래처+날짜별 첫 번째 발주서 생성
+          const orderNumber = excelOrderNumber || this.generateOrderNumber(orderDate, vendorName);
+          ordersByVendorAndDate.set(vendorDateKey, {
             orderNumber,
             orderDate,
             siteName,
             dueDate,
-            vendorName, // 첫 번째 행의 거래처명 사용
+            vendorName,
             totalAmount: 0,
             items: []
           });
         }
 
-        const order = ordersByNumber.get(orderNumber)!;
+        const order = ordersByVendorAndDate.get(vendorDateKey)!;
         
         // 아이템 추가
         if (itemName) {
@@ -176,7 +179,7 @@ export class POTemplateProcessorMock {
         }
       }
 
-      const orders = Array.from(ordersByNumber.values());
+      const orders = Array.from(ordersByVendorAndDate.values());
       
       return {
         success: true,
@@ -257,7 +260,7 @@ export class POTemplateProcessorMock {
             console.log(`✅ [DB] 프로젝트 기존 발견: ID ${projectId}`);
           }
           
-          // 3. 발주서 생성
+          // 3. 발주서 생성 - Excel 자동화로 생성되므로 'sent' 상태로 설정 (dual status 적용)
           const newOrder = await tx.insert(purchaseOrders).values({
             orderNumber: orderData.orderNumber,
             projectId,
@@ -266,7 +269,11 @@ export class POTemplateProcessorMock {
             orderDate: orderData.orderDate,
             deliveryDate: orderData.dueDate,
             totalAmount: orderData.totalAmount,
-            notes: `PO Template에서 자동 생성됨`
+            status: 'sent', // Legacy status for backward compatibility
+            orderStatus: 'sent', // New dual status - sent because Excel automation completes email sending
+            approvalStatus: 'not_required', // Excel automation bypasses approval
+            approvalBypassReason: 'excel_automation', // Reason for bypassing
+            notes: `PO Template에서 자동 생성 및 발송됨`
           }).returning({ id: purchaseOrders.id });
 
           const orderId = newOrder[0].id;
