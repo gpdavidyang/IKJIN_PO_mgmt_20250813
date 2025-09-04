@@ -63,11 +63,15 @@ function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [shouldCheckAuth]);
 
-  // TEMPORARY FIX: Bypass authentication completely due to persistent 401 issues
-  // Return mock user directly instead of making API calls
-  const user = useMemo(() => {
-    return isProductionEnvironment() ? mockUser : null;
-  }, [mockUser]); // Memoize to prevent recreation
+  // Get user from React Query cache or return null
+  const userQuery = useQuery({
+    queryKey: ["/api/auth/user"],
+    queryFn: () => null, // Dummy function, data will be set by login mutation
+    enabled: false, // Never actually run the query
+    initialData: null
+  });
+  
+  const user = userQuery.data;
 
   const error = null;
   const isLoading = false;
@@ -170,17 +174,19 @@ function AuthProvider({ children }: { children: ReactNode }) {
 
       return await response.json();
     },
-    onSuccess: (user: User) => {
+    onSuccess: (response: any) => {
+      // Extract user data from response
+      const userData = response.user || response;
+      
       // Set the user data directly without invalidating to prevent immediate 401 calls
-      queryClient.setQueryData(["/api/auth/user"], user);
-      devLog('✅ Login successful, user data set:', user);
+      queryClient.setQueryData(["/api/auth/user"], userData);
+      devLog('✅ Login successful, user data set:', response);
       
       // Set authentication indicators for future sessions
       localStorage.setItem('hasAuthenticated', 'true');
       sessionStorage.setItem('userAuthenticated', 'true');
       
-      // REMOVED: Timeout invalidation that caused loops
-      // Just navigate directly
+      // Navigate to dashboard
       navigate("/dashboard");
     },
   });
