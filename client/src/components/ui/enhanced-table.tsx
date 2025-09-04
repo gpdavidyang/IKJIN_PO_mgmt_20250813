@@ -39,6 +39,10 @@ interface EnhancedTableProps<T> {
   className?: string;
   stickyHeader?: boolean;
   maxHeight?: string;
+  // External sorting support
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+  onSort?: (field: string) => void;
 }
 
 type SortDirection = "asc" | "desc" | null;
@@ -58,6 +62,9 @@ export function EnhancedTable<T>({
   className,
   stickyHeader = false,
   maxHeight,
+  sortBy: externalSortBy,
+  sortOrder: externalSortOrder,
+  onSort: externalOnSort,
 }: EnhancedTableProps<T>) {
   const { theme, actualTheme } = useTheme();
   
@@ -226,6 +233,10 @@ export function EnhancedTable<T>({
 
   // Sort data
   const sortedData = React.useMemo(() => {
+    // If external sorting is provided, don't sort locally
+    if (externalOnSort) return filteredData;
+    
+    // Otherwise use internal sorting
     if (!sortColumn || !sortDirection) return filteredData;
 
     const column = columns.find(col => col.key === sortColumn);
@@ -245,7 +256,7 @@ export function EnhancedTable<T>({
       const comparison = aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
       return sortDirection === "asc" ? comparison : -comparison;
     });
-  }, [filteredData, sortColumn, sortDirection, columns]);
+  }, [filteredData, sortColumn, sortDirection, columns, externalOnSort]);
 
   // Paginate data
   const paginatedData = React.useMemo(() => {
@@ -258,24 +269,34 @@ export function EnhancedTable<T>({
   const totalPages = Math.ceil(sortedData.length / pageSize);
 
   const handleSort = (columnKey: string) => {
-    if (sortColumn === columnKey) {
-      if (sortDirection === "asc") {
-        setSortDirection("desc");
-      } else if (sortDirection === "desc") {
-        setSortDirection(null);
-        setSortColumn(null);
-      }
+    // If external sorting is provided, use it
+    if (externalOnSort) {
+      externalOnSort(columnKey);
     } else {
-      setSortColumn(columnKey);
-      setSortDirection("asc");
+      // Otherwise use internal sorting
+      if (sortColumn === columnKey) {
+        if (sortDirection === "asc") {
+          setSortDirection("desc");
+        } else if (sortDirection === "desc") {
+          setSortDirection(null);
+          setSortColumn(null);
+        }
+      } else {
+        setSortColumn(columnKey);
+        setSortDirection("asc");
+      }
     }
   };
 
   const getSortIcon = (columnKey: string) => {
-    if (sortColumn !== columnKey) {
+    // Use external sorting state if provided
+    const currentSortColumn = externalSortBy || sortColumn;
+    const currentSortDirection = externalSortBy === columnKey ? externalSortOrder : sortDirection;
+    
+    if (currentSortColumn !== columnKey) {
       return <ChevronsUpDown className="h-4 w-4 text-gray-400 dark:text-gray-500" />;
     }
-    if (sortDirection === "asc") {
+    if (currentSortDirection === "asc") {
       return <ChevronUp className="h-4 w-4 text-blue-600 dark:text-blue-400" />;
     }
     return <ChevronDown className="h-4 w-4 text-blue-600 dark:text-blue-400" />;

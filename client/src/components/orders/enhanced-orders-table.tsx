@@ -630,6 +630,9 @@ export function EnhancedOrdersTable({
         stickyHeader
         maxHeight="calc(100vh - 300px)"
         className="shadow-sm"
+        sortBy={sortBy}
+        sortOrder={sortOrder}
+        onSort={onSort}
       />
 
       {/* Bulk Delete Confirmation Dialog */}
