@@ -115,7 +115,7 @@ async function initializeApp() {
       secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
       httpOnly: true,
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-      sameSite: 'lax', // Use 'lax' for same-site deployment
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 'none' for cross-origin in production
       domain: undefined // Let browser handle domain automatically
     }
   }));
@@ -179,7 +179,7 @@ if (process.env.VERCEL) {
       secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
       httpOnly: true,
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-      sameSite: 'lax', // Use 'lax' for same-site deployment
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 'none' for cross-origin in production
       domain: undefined // Let browser handle domain automatically
     }
   }));
