@@ -52,6 +52,32 @@ export default function DashboardProfessional() {
     return actualTheme === 'dark' && document.documentElement.classList.contains('dark');
   }, [actualTheme]);
 
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      toast({
+        title: "Unauthorized", 
+        description: "You are logged out. Redirecting to login...",
+        variant: "destructive",
+      });
+      setTimeout(() => {
+        navigate("/login");
+      }, 500);
+      return;
+    }
+  }, [user, authLoading, navigate]); // Remove toast from dependencies to prevent re-renders
+
+  // Unified dashboard API call - only fetch when authenticated
+  const { data: dashboardData, isLoading: dashboardLoading, error: dashboardError } = useDashboardData();
+  
+  // Extract data from unified response with fallbacks - MUST BE DEFINED BEFORE CALLBACKS
+  const stats = dashboardData?.statistics || {};
+  const recentOrders = dashboardData?.recentOrders || [];
+  const monthlyStats = dashboardData?.monthlyStats || [];
+  const statusStats = dashboardData?.statusStats || [];
+  const projectStats = dashboardData?.projectStats || [];
+  const categoryStats = dashboardData?.categoryStats || [];
+
   // Helper functions for email and status rendering (from orders-professional.tsx)
   const renderEmailStatus = (order: any) => {
     if (!order.emailStatus || order.totalEmailsSent === 0) {
@@ -106,6 +132,7 @@ export default function DashboardProfessional() {
   };
 
   // Email handlers (from orders-professional.tsx) - MEMOIZED
+  // NOW SAFE - recentOrders is defined above
   const handleEmailSend = useCallback((order: any) => {
     const fullOrder = recentOrders.find((o: any) => o.id === order.id);
     if (fullOrder) {
@@ -158,34 +185,6 @@ export default function DashboardProfessional() {
       setPdfPreviewOpen(true);
     }
   }, [recentOrders]);
-
-  // Debug logging removed for performance
-
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!authLoading && !user) {
-      toast({
-        title: "Unauthorized", 
-        description: "You are logged out. Redirecting to login...",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        navigate("/login");
-      }, 500);
-      return;
-    }
-  }, [user, authLoading, navigate]); // Remove toast from dependencies to prevent re-renders
-
-  // Unified dashboard API call - only fetch when authenticated
-  const { data: dashboardData, isLoading: dashboardLoading, error: dashboardError } = useDashboardData();
-  
-  // Extract data from unified response with fallbacks
-  const stats = dashboardData?.statistics || {};
-  const recentOrders = dashboardData?.recentOrders || [];
-  const monthlyStats = dashboardData?.monthlyStats || [];
-  const statusStats = dashboardData?.statusStats || [];
-  const projectStats = dashboardData?.projectStats || [];
-  const categoryStats = dashboardData?.categoryStats || [];
 
 
   // Show loading while checking authentication
