@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Upload, FileSpreadsheet, CheckCircle, AlertCircle } from 'lucide-react';
+import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import { useDropzone } from 'react-dropzone';
+import { cn } from '@/lib/utils';
 
 export default function ExcelSmartUploadSimple() {
   const [file, setFile] = useState<File | null>(null);
@@ -12,21 +14,59 @@ export default function ExcelSmartUploadSimple() {
   const [uploadResult, setUploadResult] = useState<any>(null);
   const { toast } = useToast();
 
+  const onDrop = useCallback((acceptedFiles: File[], rejectedFiles: any[]) => {
+    if (rejectedFiles.length > 0) {
+      toast({
+        title: '파일 형식 오류',
+        description: 'Excel 파일(.xlsx, .xls)만 업로드 가능합니다.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (acceptedFiles.length > 0) {
+      setFile(acceptedFiles[0]);
+      setUploadResult(null);
+      toast({
+        title: '파일 선택됨',
+        description: `${acceptedFiles[0].name} 파일이 선택되었습니다.`,
+      });
+    }
+  }, [toast]);
+
+  const { getRootProps, getInputProps, isDragActive, isDragReject } = useDropzone({
+    onDrop,
+    accept: {
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+      'application/vnd.ms-excel': ['.xls'],
+      'application/vnd.ms-excel.sheet.macroEnabled.12': ['.xlsm'],
+    },
+    maxFiles: 1,
+    maxSize: 10 * 1024 * 1024, // 10MB
+    disabled: isUploading,
+  });
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
       if (selectedFile.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
-          selectedFile.type === 'application/vnd.ms-excel') {
+          selectedFile.type === 'application/vnd.ms-excel' ||
+          selectedFile.type === 'application/vnd.ms-excel.sheet.macroEnabled.12') {
         setFile(selectedFile);
         setUploadResult(null);
       } else {
         toast({
           title: '파일 형식 오류',
-          description: 'Excel 파일(.xlsx, .xls)만 업로드 가능합니다.',
+          description: 'Excel 파일(.xlsx, .xls, .xlsm)만 업로드 가능합니다.',
           variant: 'destructive',
         });
       }
     }
+  };
+
+  const removeFile = () => {
+    setFile(null);
+    setUploadResult(null);
   };
 
   const handleUpload = async () => {
@@ -74,28 +114,75 @@ export default function ExcelSmartUploadSimple() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* File Upload Section */}
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-            <Upload className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-            <div className="mb-4">
-              <label htmlFor="file-upload" className="cursor-pointer">
-                <span className="text-blue-600 hover:text-blue-700 font-medium">
-                  파일을 선택하세요
-                </span>
-                <input
-                  id="file-upload"
-                  name="file-upload"
-                  type="file"
-                  className="sr-only"
-                  accept=".xlsx,.xls"
-                  onChange={handleFileSelect}
-                  disabled={isUploading}
-                />
-              </label>
-            </div>
-            {file && (
-              <div className="text-sm text-gray-600">
-                선택된 파일: {file.name} ({(file.size / 1024).toFixed(2)} KB)
+          {/* Drag and Drop File Upload Section */}
+          <div
+            {...getRootProps()}
+            className={cn(
+              "border-2 border-dashed rounded-lg p-8 text-center transition-all cursor-pointer",
+              isDragActive && !isDragReject && "border-blue-500 bg-blue-50",
+              isDragReject && "border-red-500 bg-red-50",
+              !isDragActive && !file && "border-gray-300 hover:border-gray-400",
+              file && "border-green-500 bg-green-50",
+              isUploading && "opacity-50 cursor-not-allowed"
+            )}
+          >
+            <input {...getInputProps()} />
+            
+            {!file ? (
+              <>
+                <Upload className={cn(
+                  "h-12 w-12 mx-auto mb-4",
+                  isDragActive && !isDragReject && "text-blue-500",
+                  isDragReject && "text-red-500",
+                  !isDragActive && "text-gray-400"
+                )} />
+                <div className="mb-4">
+                  {isDragActive && !isDragReject ? (
+                    <p className="text-blue-600 font-medium">파일을 여기에 놓으세요</p>
+                  ) : isDragReject ? (
+                    <p className="text-red-600 font-medium">Excel 파일만 업로드 가능합니다</p>
+                  ) : (
+                    <>
+                      <p className="text-lg font-medium text-gray-700">
+                        파일을 드래그하거나
+                      </p>
+                      <p className="text-blue-600 hover:text-blue-700 font-medium mt-2">
+                        클릭하여 선택하세요
+                      </p>
+                    </>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500">
+                  Excel 파일 (.xlsx, .xls, .xlsm) - 최대 10MB
+                </p>
+              </>
+            ) : (
+              <div className="space-y-4">
+                <FileSpreadsheet className="h-12 w-12 mx-auto text-green-500" />
+                <div className="flex items-center justify-center gap-2">
+                  <span className="text-sm font-medium text-gray-700">
+                    {file.name}
+                  </span>
+                  <span className="text-sm text-gray-500">
+                    ({(file.size / 1024).toFixed(2)} KB)
+                  </span>
+                  {!isUploading && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeFile();
+                      }}
+                      className="ml-2 p-1 hover:bg-gray-100 rounded"
+                    >
+                      <X className="h-4 w-4 text-gray-500" />
+                    </button>
+                  )}
+                </div>
+                {!isUploading && (
+                  <p className="text-xs text-gray-500">
+                    다른 파일을 선택하려면 클릭하거나 드래그하세요
+                  </p>
+                )}
               </div>
             )}
           </div>
