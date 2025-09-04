@@ -36,9 +36,9 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
   
   // Get current user info
   const { data: user } = useQuery({
-    queryKey: ['/api/auth/me'],
+    queryKey: ['/api/auth/user'],
     queryFn: async () => {
-      const response = await fetch('/api/auth/me', {
+      const response = await fetch('/api/auth/user', {
         credentials: 'include'
       });
       if (!response.ok) return null;

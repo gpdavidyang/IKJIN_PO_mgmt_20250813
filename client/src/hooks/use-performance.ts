@@ -249,48 +249,36 @@ export function useLocalStorage<T>(
 }
 
 /**
- * Performance monitoring hook - Optimized to prevent memory leaks
+ * Performance monitoring hook - Disabled in production for better performance
  */
 export function usePerformanceMonitor(componentName: string) {
-  const startTime = useRef<number>();
+  // Completely disable performance monitoring in production
+  if (process.env.NODE_ENV === 'production') {
+    return useMemo(() => ({ renderCount: 0 }), []);
+  }
+
   const renderCount = useRef(0);
   const lastLogTime = useRef(Date.now());
-  const isFirstRender = useRef(true);
 
-  // Only run in development mode
-  const isDevelopment = process.env.NODE_ENV === 'development';
-  
   useEffect(() => {
-    if (!isDevelopment) return;
-    
     const renderStart = performance.now();
     renderCount.current += 1;
     
-    // Throttle logging to prevent console spam
-    const shouldLog = Date.now() - lastLogTime.current > 5000; // Log at most every 5 seconds
-    
-    return () => {
-      if (renderStart) {
-        const duration = performance.now() - renderStart;
-        
-        // Only log if it's a significant slowdown and we haven't logged recently
-        if (shouldLog && duration > 50) { // Higher threshold to reduce noise
-          console.warn(`[${componentName}] Render: ${duration.toFixed(1)}ms (render #${renderCount.current})`);
-          lastLogTime.current = Date.now();
-        }
-        
-        // Reset render count periodically to prevent unbounded growth
-        if (renderCount.current > 50) {
-          renderCount.current = 0;
-        }
+    const cleanup = () => {
+      const duration = performance.now() - renderStart;
+      const now = Date.now();
+      
+      // Only log extremely slow renders and throttle heavily
+      if (duration > 100 && now - lastLogTime.current > 10000) {
+        console.warn(`[${componentName}] Slow render: ${duration.toFixed(1)}ms`);
+        lastLogTime.current = now;
       }
     };
-  }, []); // Empty dependency array to prevent memory leaks
+    
+    return cleanup;
+  });
 
-  // Return minimal data to prevent unnecessary re-renders
-  return useMemo(() => ({ 
-    renderCount: renderCount.current 
-  }), []);
+  return useMemo(() => ({ renderCount: renderCount.current }), []);
 }
 
 /**
@@ -325,53 +313,42 @@ export function useMemoryMonitor() {
 }
 
 /**
- * First Contentful Paint monitoring - Optimized to prevent multiple observers
+ * Page load metrics - Disabled in production for performance
  */
 export function usePageLoadMetrics() {
+  // Disable completely in production
+  if (process.env.NODE_ENV === 'production') {
+    return useMemo(() => ({}), []);
+  }
+
   const [metrics, setMetrics] = useState<{
     fcp?: number;
     lcp?: number;
-    cls?: number;
-    fid?: number;
   }>({});
   
   const hasSetupObserver = useRef(false);
-  const isDevelopment = process.env.NODE_ENV === 'development';
 
   useEffect(() => {
-    // Only setup in development and only once
-    if (!isDevelopment || hasSetupObserver.current) return;
+    if (hasSetupObserver.current || typeof PerformanceObserver === 'undefined') return;
     
     hasSetupObserver.current = true;
     
-    // Check if PerformanceObserver is supported
-    if (typeof PerformanceObserver === 'undefined') return;
-    
     try {
-      // Measure First Contentful Paint and Largest Contentful Paint
       const observer = new PerformanceObserver((list) => {
         const entries = list.getEntries();
         entries.forEach((entry) => {
           if (entry.entryType === 'paint' && entry.name === 'first-contentful-paint') {
             setMetrics(prev => ({ ...prev, fcp: entry.startTime }));
           }
-          if (entry.entryType === 'largest-contentful-paint') {
-            setMetrics(prev => ({ ...prev, lcp: entry.startTime }));
-          }
         });
       });
 
-      observer.observe({ entryTypes: ['paint', 'largest-contentful-paint'] });
-
-      return () => {
-        observer.disconnect();
-        hasSetupObserver.current = false;
-      };
-    } catch (error) {
-      // Silently handle any PerformanceObserver errors
-      hasSetupObserver.current = false;
+      observer.observe({ entryTypes: ['paint'] });
+      return () => observer.disconnect();
+    } catch {
+      // Silently ignore errors
     }
-  }, []); // Empty dependency array to prevent re-setup
+  }, []);
 
   return metrics;
 }
@@ -401,38 +378,10 @@ export function useComponentSize(ref: React.RefObject<HTMLElement>) {
 }
 
 /**
- * Bundle size analytics - Optimized to run only once and cache results
+ * Bundle analytics - Completely disabled for performance
  */
 export function useBundleAnalytics() {
-  const hasRun = useRef(false);
-  
-  useEffect(() => {
-    // Only run once and only in development
-    if (hasRun.current || process.env.NODE_ENV !== 'development') {
-      return;
-    }
-    
-    hasRun.current = true;
-    
-    // Defer bundle analysis to avoid blocking render
-    const timeoutId = setTimeout(() => {
-      try {
-        const scripts = Array.from(document.querySelectorAll('script[src]'));
-        const chunkCount = scripts.filter(script => {
-          const src = script.getAttribute('src');
-          return src && src.includes('chunk');
-        }).length;
-
-        if (chunkCount > 0) {
-          console.log(`Bundle chunks detected: ${chunkCount}`);
-        }
-      } catch (error) {
-        // Silently handle any DOM query errors
-      }
-    }, 1000); // Delay to not interfere with initial render
-    
-    return () => clearTimeout(timeoutId);
-  }, []);
+  // No-op - completely disabled
 }
 
 // Utility function for deep equality check
