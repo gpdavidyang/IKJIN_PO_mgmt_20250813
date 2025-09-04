@@ -80,16 +80,16 @@ export default async function handler(req, res) {
     // CRITICAL: Allow all Vercel deployments for this project + specific allowed origins
     const isAllowedOrigin = origin && (
       allowedOrigins.includes(origin) ||
-      // Allow all Vercel deployments for this project
-      /^https:\/\/ikjin-po-mgmt-20250813-[a-z0-9]+-davidswyang-3963s-projects\.vercel\.app$/.test(origin)
+      // Allow all Vercel deployments for this project (including preview deployments)
+      origin.includes('ikjin-po-mgmt-20250813') && origin.includes('.vercel.app')
     );
     
     if (isAllowedOrigin) {
       res.setHeader('Access-Control-Allow-Origin', origin);
       console.log('✅ CORS origin set to:', origin);
     } else if (!origin) {
-      // For same-origin requests from production domain - use main deployment
-      res.setHeader('Access-Control-Allow-Origin', 'https://ikjin-po-mgmt-20250813-dno9.vercel.app');
+      // For same-origin requests from production domain - allow any Vercel deployment
+      res.setHeader('Access-Control-Allow-Origin', '*');
       console.log('✅ CORS origin set to main production domain');
     }
     

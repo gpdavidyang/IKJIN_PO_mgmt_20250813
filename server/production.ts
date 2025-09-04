@@ -28,7 +28,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import cookieParser from "cookie-parser";
 import crypto from "crypto";
-import { configureProductionSession } from "./session-config";
+// import { configureProductionSession } from "./session-config"; // Not needed for Vercel serverless
 import router from "./routes/index";
 
 // Session error handler middleware
@@ -67,10 +67,10 @@ app.use(session({
   saveUninitialized: true, // Required for serverless to create sessions
   name: 'connect.sid',
   cookie: {
-    secure: process.env.NODE_ENV === 'production', // HTTPS in production, HTTP in dev
+    secure: true, // Always HTTPS in Vercel production
     httpOnly: true,
     maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-    sameSite: 'lax',
+    sameSite: 'none', // Required for cross-origin in production
     path: '/'
   },
   // Force session regeneration to ensure data persistence
@@ -114,28 +114,8 @@ app.use((req, res, next) => {
 
 // Static file serving handled by Vercel - no need for Express static middleware
 
-// Initialize app for production
-async function initializeProductionApp() {
-  // Configure session middleware FIRST
-  await configureProductionSession(app);
-  
-  // Add session error handler
-  app.use(sessionErrorHandler);
-
-  // Use modular routes
-  app.use(router);
-  
-  // Error handling middleware
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-    console.error("Express error:", err);
-    res.status(status).json({ message });
-  });
-
-  // Skip static serving in Vercel - handled by vercel.json
-  console.log("⚠️ Skipping static file serving in Vercel environment");
-}
+// Initialize app for production (removed - using synchronous initialization for Vercel)
+// async function initializeProductionApp() { ... }
 
 // Initialize synchronously for Vercel
 let isInitialized = false;
@@ -193,10 +173,8 @@ if (process.env.VERCEL) {
   isInitialized = true;
   console.log("✅ Production app initialized for Vercel");
 } else {
-  // For other environments, use async initialization
-  initializeProductionApp().then(() => {
-    console.log("App initialized successfully");
-  }).catch(console.error);
+  // For other environments, initialize synchronously as well
+  console.log("✅ Non-Vercel production app initialized");
 }
 
 // Export for Vercel serverless
