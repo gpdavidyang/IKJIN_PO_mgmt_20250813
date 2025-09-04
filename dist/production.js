@@ -21007,54 +21007,119 @@ var upload6 = multer6({
     }
   }
 });
+var standardFieldMappings = {
+  // Standard template fields only
+  "\uBC1C\uC8FC\uC77C\uC790": "orderDate",
+  "\uB0A9\uAE30\uC77C\uC790": "deliveryDate",
+  "\uAC70\uB798\uCC98\uBA85": "vendorName",
+  "\uAC70\uB798\uCC98 \uC774\uBA54\uC77C": "vendorEmail",
+  "\uB0A9\uD488\uCC98\uBA85": "deliveryLocation",
+  "\uB0A9\uD488\uCC98 \uC774\uBA54\uC77C": "deliveryEmail",
+  "\uD504\uB85C\uC81D\uD2B8\uBA85": "projectName",
+  "\uD488\uBAA9\uBA85": "itemName",
+  "\uADDC\uACA9": "specification",
+  "\uC218\uB7C9": "quantity",
+  "\uB2E8\uAC00": "unitPrice",
+  "\uCD1D\uAE08\uC561": "totalAmount",
+  "\uB300\uBD84\uB958": "majorCategory",
+  "\uC911\uBD84\uB958": "middleCategory",
+  "\uC18C\uBD84\uB958": "minorCategory",
+  "\uBE44\uACE0": "notes"
+};
+var requiredStandardFields = ["\uAC70\uB798\uCC98\uBA85", "\uD504\uB85C\uC81D\uD2B8\uBA85", "\uD488\uBAA9\uBA85"];
+var emailFields = ["\uAC70\uB798\uCC98 \uC774\uBA54\uC77C", "\uB0A9\uD488\uCC98 \uC774\uBA54\uC77C"];
+var numberFields = ["\uC218\uB7C9", "\uB2E8\uAC00", "\uCD1D\uAE08\uC561"];
 router36.post("/process", upload6.single("file"), async (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ error: "No file uploaded" });
+      return res.status(400).json({
+        success: false,
+        error: "No file uploaded"
+      });
     }
+    console.log("=== Excel Smart Upload Processing Started ===");
+    console.log("File received:", req.file.originalname);
+    console.log("File size:", req.file.size, "bytes");
     const workbook = xlsx.read(req.file.buffer, { type: "buffer" });
     let sheetName = workbook.SheetNames.find(
       (name) => name === "Input" || name.toLowerCase().includes("input")
     ) || workbook.SheetNames[0];
+    console.log("Available sheets:", workbook.SheetNames);
     console.log("Processing sheet:", sheetName);
     const worksheet = workbook.Sheets[sheetName];
     const rawData = xlsx.utils.sheet_to_json(worksheet, { header: 1 });
-    console.log("Headers found:", rawData[0]);
+    if (!rawData || rawData.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: "\uBE48 Excel \uD30C\uC77C",
+        message: "Excel \uD30C\uC77C\uC5D0 \uB370\uC774\uD130\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4."
+      });
+    }
+    const headers = rawData[0] || [];
+    console.log("Headers found:", headers);
     console.log("First data row:", rawData[1]);
+    const missingFields = [];
+    const incorrectFields = [];
+    console.log("Checking required fields:", requiredStandardFields);
+    requiredStandardFields.forEach((field) => {
+      if (!headers.includes(field)) {
+        missingFields.push(field);
+        console.log(`Missing required field: ${field}`);
+      }
+    });
+    headers.forEach((header) => {
+      if (header && typeof header === "string" && header.trim()) {
+        if (!standardFieldMappings[header]) {
+          if (header === "\uBC1C\uC8FC\uC77C" || header === "\uB0A9\uAE30\uC77C") {
+            incorrectFields.push(`${header} \u2192 \uC815\uD655\uD55C \uD544\uB4DC\uBA85: ${header}\uC790`);
+          } else if (header === "\uD604\uC7A5\uBA85") {
+            incorrectFields.push(`${header} \u2192 \uC815\uD655\uD55C \uD544\uB4DC\uBA85: \uD504\uB85C\uC81D\uD2B8\uBA85`);
+          } else if (header === "\uD488\uBAA9") {
+            incorrectFields.push(`${header} \u2192 \uC815\uD655\uD55C \uD544\uB4DC\uBA85: \uD488\uBAA9\uBA85`);
+          } else if (header === "\uAC70\uB798\uCC98") {
+            incorrectFields.push(`${header} \u2192 \uC815\uD655\uD55C \uD544\uB4DC\uBA85: \uAC70\uB798\uCC98\uBA85`);
+          } else if (header === "\uD569\uACC4") {
+            incorrectFields.push(`${header} \u2192 \uC815\uD655\uD55C \uD544\uB4DC\uBA85: \uCD1D\uAE08\uC561`);
+          } else if (header === "\uACF5\uAE09\uAC00\uC561" || header === "\uBD80\uAC00\uC138") {
+            incorrectFields.push(`${header} \u2192 \uC774 \uD544\uB4DC\uB294 \uC81C\uAC70\uD558\uACE0 '\uCD1D\uAE08\uC561'\uB9CC \uC0AC\uC6A9\uD558\uC138\uC694`);
+          } else if (header === "\uBC1C\uC8FC\uBC88\uD638" || header === "\uB2E8\uC704") {
+            incorrectFields.push(`${header} \u2192 \uD45C\uC900 \uD15C\uD50C\uB9BF\uC5D0 \uC5C6\uB294 \uD544\uB4DC\uC785\uB2C8\uB2E4`);
+          }
+        }
+      }
+    });
+    console.log("Missing fields:", missingFields);
+    console.log("Incorrect fields:", incorrectFields);
+    if (missingFields.length > 0 || incorrectFields.length > 0) {
+      const errorResponse = {
+        success: false,
+        error: "Excel \uD544\uB4DC\uBA85 \uC624\uB958",
+        fieldErrors: {
+          missing: missingFields,
+          incorrect: incorrectFields
+        },
+        message: `Excel \uD30C\uC77C\uC758 \uD544\uB4DC\uBA85\uC774 \uD45C\uC900 \uD615\uC2DD\uACFC \uC77C\uCE58\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4.
+
+` + (missingFields.length > 0 ? `\u274C \uD544\uC218 \uD544\uB4DC \uB204\uB77D:
+${missingFields.map((f) => `  \u2022 ${f}`).join("\n")}
+
+` : "") + (incorrectFields.length > 0 ? `\u26A0\uFE0F \uC798\uBABB\uB41C \uD544\uB4DC\uBA85:
+${incorrectFields.map((f) => `  \u2022 ${f}`).join("\n")}
+
+` : "") + `\u{1F4E5} \uD45C\uC900 \uD15C\uD50C\uB9BF\uC744 \uB2E4\uC6B4\uB85C\uB4DC\uD558\uC5EC \uC815\uD655\uD55C \uD544\uB4DC\uBA85\uC744 \uC0AC\uC6A9\uD574\uC8FC\uC138\uC694.`,
+        templateUrl: "/api/excel-template/download"
+      };
+      console.log("Returning field validation error:", errorResponse);
+      return res.status(400).json(errorResponse);
+    }
+    console.log("Field validation passed! Continuing with data processing...");
     const data = xlsx.utils.sheet_to_json(worksheet);
+    console.log("Total data rows:", data.length);
     console.log("First parsed row:", data[0]);
     const hashes = /* @__PURE__ */ new Set();
     const duplicates = [];
     const validationResults2 = [];
     const processedData = [];
-    const fieldMappings = {
-      // Main fields
-      "\uB0A9\uD488\uCC98": "deliveryLocation",
-      "\uAC70\uB798\uCC98\uBA85": "vendorName",
-      "\uAC70\uB798\uCC98": "vendorName",
-      // alias
-      "\uD604\uC7A5\uBA85": "projectName",
-      "\uD504\uB85C\uC81D\uD2B8\uBA85": "projectName",
-      // alias
-      "\uBC1C\uC8FC\uC77C": "orderDate",
-      "\uB0A9\uAE30\uC77C": "deliveryDate",
-      "\uBC1C\uC8FC\uBC88\uD638": "orderNumber",
-      "\uD488\uBAA9": "itemName",
-      "\uADDC\uACA9": "specification",
-      "\uC218\uB7C9": "quantity",
-      "\uB2E8\uC704": "unit",
-      "\uB2E8\uAC00": "unitPrice",
-      "\uACF5\uAE09\uAC00\uC561": "supplyAmount",
-      "\uBD80\uAC00\uC138": "vat",
-      "\uD569\uACC4": "totalAmount",
-      "\uB300\uBD84\uB958": "majorCategory",
-      "\uC911\uBD84\uB958": "middleCategory",
-      "\uC18C\uBD84\uB958": "minorCategory",
-      "\uBE44\uACE0": "notes"
-    };
-    const requiredFields = ["\uAC70\uB798\uCC98\uBA85", "\uD604\uC7A5\uBA85", "\uD488\uBAA9"];
-    const emailFields = ["\uC774\uBA54\uC77C", "email", "vendorEmail"];
-    const numberFields = ["\uC218\uB7C9", "quantity", "\uB2E8\uAC00", "unitPrice", "\uACF5\uAE09\uAC00\uC561", "supplyAmount", "\uBD80\uAC00\uC138", "vat", "\uD569\uACC4", "totalAmount"];
     data.forEach((row, index2) => {
       const rowNumber = index2 + 1;
       const errors = [];
@@ -21069,7 +21134,7 @@ router36.post("/process", upload6.single("file"), async (req, res) => {
       } else {
         hashes.add(hash);
       }
-      requiredFields.forEach((field) => {
+      requiredStandardFields.forEach((field) => {
         if (!row[field] || !row[field].toString().trim()) {
           errors.push(`${field}\uC774(\uAC00) \uD544\uC694\uD569\uB2C8\uB2E4`);
           status = "error";
@@ -21094,8 +21159,8 @@ router36.post("/process", upload6.single("file"), async (req, res) => {
           }
         }
       });
-      if (row["\uAC70\uB798\uCC98"] || row["vendor"]) {
-        const vendor = row["\uAC70\uB798\uCC98"] || row["vendor"];
+      if (row["\uAC70\uB798\uCC98\uBA85"]) {
+        const vendor = row["\uAC70\uB798\uCC98\uBA85"];
         if (vendor && vendor.toString().includes("\uD14C\uC2A4\uD2B8")) {
           warnings.push("\uD14C\uC2A4\uD2B8 \uAC70\uB798\uCC98\uC785\uB2C8\uB2E4");
           if (status === "valid") status = "warning";
@@ -21103,8 +21168,10 @@ router36.post("/process", upload6.single("file"), async (req, res) => {
       }
       const mappedRow = {};
       Object.keys(row).forEach((key) => {
-        const mappedKey = fieldMappings[key] || key;
-        mappedRow[mappedKey] = row[key];
+        const mappedKey = standardFieldMappings[key];
+        if (mappedKey) {
+          mappedRow[mappedKey] = row[key];
+        }
         mappedRow[key] = row[key];
       });
       const processedRow = {
@@ -21134,6 +21201,8 @@ router36.post("/process", upload6.single("file"), async (req, res) => {
     const validCount = processedData.filter((r) => r.status === "valid").length;
     const warningCount = processedData.filter((r) => r.status === "warning").length;
     const errorCount = processedData.filter((r) => r.status === "error").length;
+    console.log("Processing complete!");
+    console.log(`Valid: ${validCount}, Warning: ${warningCount}, Error: ${errorCount}`);
     res.json({
       success: true,
       itemCount: data.length,
@@ -21158,7 +21227,7 @@ router36.post("/process", upload6.single("file"), async (req, res) => {
         validationResults: validationResults2,
         duplicates,
         columns: Object.keys(data[0] || {}).map((key) => {
-          const mappedKey = fieldMappings[key] || key;
+          const mappedKey = standardFieldMappings[key] || key;
           return {
             key: mappedKey,
             label: key,
@@ -21172,13 +21241,20 @@ router36.post("/process", upload6.single("file"), async (req, res) => {
   } catch (error) {
     console.error("Excel processing error:", error);
     res.status(500).json({
+      success: false,
       error: "Failed to process Excel file",
-      message: error.message
+      message: error.message || "\uD30C\uC77C \uCC98\uB9AC \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4.",
+      fieldErrors: null
     });
   }
 });
 router36.get("/health", (req, res) => {
-  res.json({ status: "ok", service: "excel-smart-upload-simple" });
+  res.json({
+    status: "ok",
+    service: "excel-smart-upload-simple",
+    fieldValidation: "enabled",
+    requiredFields: requiredStandardFields
+  });
 });
 var excel_smart_upload_simple_default = router36;
 
