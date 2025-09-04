@@ -1193,4 +1193,171 @@ export const insertAuditAlertRuleSchema = createInsertSchema(auditAlertRules).om
   updatedAt: true,
 });
 export type AuditAlertRule = typeof auditAlertRules.$inferSelect;
+
+// ============================================
+// Smart Excel Upload System Tables
+// ============================================
+
+// Validation sessions table for tracking Excel upload sessions
+export const validationSessions = pgTable("validation_sessions", {
+  id: varchar("id", { length: 36 }).primaryKey(), // UUID
+  userId: integer("user_id").notNull(),
+  fileName: varchar("file_name", { length: 255 }).notNull(),
+  fileSize: integer("file_size").notNull(),
+  totalItems: integer("total_items").default(0),
+  validItems: integer("valid_items").default(0),
+  warningItems: integer("warning_items").default(0),
+  errorItems: integer("error_items").default(0),
+  status: varchar("status", { length: 20 }).notNull().default("pending"), // pending, processing, completed, failed
+  createdAt: timestamp("created_at").defaultNow(),
+  completedAt: timestamp("completed_at"),
+  metadata: jsonb("metadata"), // Additional session data
+});
+
+// Validation results table for storing item-level validation results
+export const validationResults = pgTable("validation_results", {
+  id: serial("id").primaryKey(),
+  sessionId: varchar("session_id", { length: 36 }).notNull(),
+  rowIndex: integer("row_index").notNull(),
+  fieldName: varchar("field_name", { length: 100 }),
+  originalValue: text("original_value"),
+  validatedValue: text("validated_value"),
+  validationStatus: varchar("validation_status", { length: 20 }), // valid, warning, error
+  errorMessage: text("error_message"),
+  suggestion: text("suggestion"),
+  confidence: decimal("confidence", { precision: 5, scale: 2 }), // 0.00 to 100.00
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// AI suggestions table for storing AI-generated corrections
+export const aiSuggestions = pgTable("ai_suggestions", {
+  id: serial("id").primaryKey(),
+  sessionId: varchar("session_id", { length: 36 }).notNull(),
+  rowIndex: integer("row_index").notNull(),
+  fieldName: varchar("field_name", { length: 100 }).notNull(),
+  originalValue: text("original_value"),
+  suggestedValue: text("suggested_value"),
+  suggestionType: varchar("suggestion_type", { length: 50 }), // vendor, email, category, date, duplicate
+  confidence: decimal("confidence", { precision: 5, scale: 2 }).notNull(), // 0.00 to 100.00
+  reason: text("reason"),
+  applied: boolean("applied").default(false),
+  appliedAt: timestamp("applied_at"),
+  appliedBy: integer("applied_by"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Vendor mappings cache table for quick vendor validation
+export const vendorMappings = pgTable("vendor_mappings", {
+  id: serial("id").primaryKey(),
+  originalName: varchar("original_name", { length: 255 }).notNull(),
+  mappedVendorId: integer("mapped_vendor_id").notNull(),
+  mappedVendorName: varchar("mapped_vendor_name", { length: 255 }).notNull(),
+  confidence: decimal("confidence", { precision: 5, scale: 2 }).notNull(),
+  usageCount: integer("usage_count").default(1),
+  lastUsedAt: timestamp("last_used_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+  createdBy: integer("created_by"),
+});
+
+// Category mappings cache table for quick category assignment
+export const categoryMappings = pgTable("category_mappings", {
+  id: serial("id").primaryKey(),
+  itemName: varchar("item_name", { length: 255 }).notNull(),
+  majorCategory: varchar("major_category", { length: 100 }),
+  middleCategory: varchar("middle_category", { length: 100 }),
+  minorCategory: varchar("minor_category", { length: 100 }),
+  confidence: decimal("confidence", { precision: 5, scale: 2 }).notNull(),
+  usageCount: integer("usage_count").default(1),
+  lastUsedAt: timestamp("last_used_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+  createdBy: integer("created_by"),
+});
+
+
+// Relations
+export const validationSessionsRelations = relations(validationSessions, ({ one, many }) => ({
+  user: one(users, {
+    fields: [validationSessions.userId],
+    references: [users.id],
+  }),
+  results: many(validationResults),
+  suggestions: many(aiSuggestions),
+}));
+
+export const validationResultsRelations = relations(validationResults, ({ one }) => ({
+  session: one(validationSessions, {
+    fields: [validationResults.sessionId],
+    references: [validationSessions.id],
+  }),
+}));
+
+export const aiSuggestionsRelations = relations(aiSuggestions, ({ one }) => ({
+  session: one(validationSessions, {
+    fields: [aiSuggestions.sessionId],
+    references: [validationSessions.id],
+  }),
+  appliedByUser: one(users, {
+    fields: [aiSuggestions.appliedBy],
+    references: [users.id],
+  }),
+}));
+
+export const vendorMappingsRelations = relations(vendorMappings, ({ one }) => ({
+  vendor: one(vendors, {
+    fields: [vendorMappings.mappedVendorId],
+    references: [vendors.id],
+  }),
+  createdByUser: one(users, {
+    fields: [vendorMappings.createdBy],
+    references: [users.id],
+  }),
+}));
+
+export const categoryMappingsRelations = relations(categoryMappings, ({ one }) => ({
+  createdByUser: one(users, {
+    fields: [categoryMappings.createdBy],
+    references: [users.id],
+  }),
+}));
+
+// Insert schemas for new tables
+export const insertValidationSessionSchema = createInsertSchema(validationSessions).omit({
+  createdAt: true,
+  completedAt: true,
+});
+export type ValidationSession = typeof validationSessions.$inferSelect;
+export type InsertValidationSession = z.infer<typeof insertValidationSessionSchema>;
+
+export const insertValidationResultSchema = createInsertSchema(validationResults).omit({
+  id: true,
+  createdAt: true,
+});
+export type ValidationResult = typeof validationResults.$inferSelect;
+export type InsertValidationResult = z.infer<typeof insertValidationResultSchema>;
+
+export const insertAISuggestionSchema = createInsertSchema(aiSuggestions).omit({
+  id: true,
+  createdAt: true,
+  appliedAt: true,
+});
+export type AISuggestion = typeof aiSuggestions.$inferSelect;
+export type InsertAISuggestion = z.infer<typeof insertAISuggestionSchema>;
+
+export const insertVendorMappingSchema = createInsertSchema(vendorMappings).omit({
+  id: true,
+  createdAt: true,
+  lastUsedAt: true,
+});
+export type VendorMapping = typeof vendorMappings.$inferSelect;
+export type InsertVendorMapping = z.infer<typeof insertVendorMappingSchema>;
+
+export const insertCategoryMappingSchema = createInsertSchema(categoryMappings).omit({
+  id: true,
+  createdAt: true,
+  lastUsedAt: true,
+});
+export type CategoryMapping = typeof categoryMappings.$inferSelect;
+export type InsertCategoryMapping = z.infer<typeof insertCategoryMappingSchema>;
 export type InsertAuditAlertRule = z.infer<typeof insertAuditAlertRuleSchema>;

@@ -7,9 +7,8 @@ import { dirname } from 'path';
 // ES 모듈에서 __dirname 대체
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-import { convertExcelToPdf } from './excel-to-pdf';
-import { ExcelToPDFConverter } from './excel-to-pdf-converter';
-import { EnhancedExcelToPDFConverter } from './enhanced-excel-to-pdf';
+// 통합 Excel PDF 서비스로 교체
+import { UnifiedExcelPdfService } from '../services/unified-excel-pdf-service';
 import { POTemplateProcessor } from './po-template-processor';
 import { removeAllInputSheets } from './excel-input-sheet-remover';
 

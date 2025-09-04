@@ -16,8 +16,8 @@ import { validateMultipleVendors } from './vendor-validation';
 import { POEmailService } from './po-email-service';
 import { removeAllInputSheets } from './excel-input-sheet-remover';
 import { DebugLogger } from './debug-logger';
-import { ExcelToPDFConverter } from './excel-to-pdf-converter';
-import { EnhancedExcelToPDFConverter } from './enhanced-excel-to-pdf';
+// 통합 Excel PDF 서비스로 교체
+import { UnifiedExcelPdfService } from '../services/unified-excel-pdf-service';
 import fs from 'fs';
 import path from 'path';
 
@@ -322,32 +322,30 @@ export class ExcelAutomationService {
       
       let pdfConversionSuccess = false;
       try {
-        // Enhanced PDF 변환기 우선 사용 (고품질, 워터마크 포함)
-        const enhancedResult = await EnhancedExcelToPDFConverter.convertExcelToPDF(processedPath, {
+        // 통합 PDF 서비스 사용 (모든 기존 변환기 통합, 자동 fallback)
+        const result = await UnifiedExcelPdfService.convertExcelToPDF(processedPath, {
           outputPath: pdfPath,
           quality: 'high',
           orientation: 'landscape',
           excludeSheets: ['Input', 'Settings'],
-          watermark: '발주서'
+          watermark: '발주서',
+          retryCount: 2
         });
 
-        if (enhancedResult.success) {
+        if (result.success) {
           pdfConversionSuccess = true;
-          console.log(`✅ Enhanced PDF 변환 성공: ${pdfPath} (${Math.round(enhancedResult.stats!.fileSize / 1024)}KB)`);
+          const fileSize = result.stats ? Math.round(result.stats.fileSize / 1024) : 0;
+          console.log(`✅ ${result.engineUsed} 엔진으로 PDF 변환 성공: ${pdfPath} (${fileSize}KB)`);
+          if (result.warnings && result.warnings.length > 0) {
+            console.warn(`⚠️ 경고: ${result.warnings.join(', ')}`);
+          }
         } else {
-          throw new Error(enhancedResult.error || 'Enhanced PDF 변환 실패');
+          throw new Error(result.error || 'PDF 변환 실패');
         }
-      } catch (enhancedError) {
-        console.warn(`⚠️ Enhanced PDF 변환 실패, 기존 변환기로 fallback: ${enhancedError}`);
-        try {
-          await ExcelToPDFConverter.convertExcelToPDF(processedPath, pdfPath);
-          pdfConversionSuccess = true;
-          console.log(`✅ 기존 PDF 변환기로 성공: ${pdfPath}`);
-        } catch (pdfError) {
-          console.error('⚠️ PDF 변환 실패 - Excel 파일만 첨부됩니다:', pdfError);
-          // PDF 변환 실패는 치명적이지 않으므로 계속 진행
-          // Excel 파일만으로도 이메일 발송은 가능
-        }
+      } catch (pdfError) {
+        console.error('⚠️ 통합 PDF 서비스 실패 - Excel 파일만 첨부됩니다:', pdfError);
+        // PDF 변환 실패는 치명적이지 않으므로 계속 진행
+        // Excel 파일만으로도 이메일 발송은 가능
       }
 
       const stats = fs.statSync(processedPath);
@@ -518,31 +516,29 @@ export class ExcelAutomationService {
       
       let pdfConversionSuccess = false;
       try {
-        // Enhanced PDF 변환기 우선 사용 (고품질, 워터마크 포함)
-        const enhancedResult = await EnhancedExcelToPDFConverter.convertExcelToPDF(processedPath, {
+        // 통합 PDF 서비스 사용 (모든 기존 변환기 통합, 자동 fallback)
+        const result = await UnifiedExcelPdfService.convertExcelToPDF(processedPath, {
           outputPath: pdfPath,
           quality: 'high',
           orientation: 'landscape',
           excludeSheets: ['Input', 'Settings'],
-          watermark: '발주서'
+          watermark: '발주서',
+          retryCount: 2
         });
 
-        if (enhancedResult.success) {
+        if (result.success) {
           pdfConversionSuccess = true;
-          console.log(`✅ Enhanced PDF 변환 성공: ${pdfPath} (${Math.round(enhancedResult.stats!.fileSize / 1024)}KB)`);
+          const fileSize = result.stats ? Math.round(result.stats.fileSize / 1024) : 0;
+          console.log(`✅ ${result.engineUsed} 엔진으로 PDF 변환 성공: ${pdfPath} (${fileSize}KB)`);
+          if (result.warnings && result.warnings.length > 0) {
+            console.warn(`⚠️ 경고: ${result.warnings.join(', ')}`);
+          }
         } else {
-          throw new Error(enhancedResult.error || 'Enhanced PDF 변환 실패');
+          throw new Error(result.error || 'PDF 변환 실패');
         }
-      } catch (enhancedError) {
-        console.warn(`⚠️ Enhanced PDF 변환 실패, 기존 변환기로 fallback: ${enhancedError}`);
-        try {
-          await ExcelToPDFConverter.convertExcelToPDF(processedPath, pdfPath);
-          pdfConversionSuccess = true;
-          console.log(`✅ 기존 PDF 변환기로 성공: ${pdfPath}`);
-        } catch (pdfError) {
-          console.error('⚠️ PDF 변환 실패 - Excel 파일만 첨부됩니다:', pdfError);
-          // PDF 변환 실패는 치명적이지 않으므로 계속 진행
-        }
+      } catch (pdfError) {
+        console.error('⚠️ 통합 PDF 서비스 실패 - Excel 파일만 첨부됩니다:', pdfError);
+        // PDF 변환 실패는 치명적이지 않으므로 계속 진행
       }
 
       const stats = fs.statSync(processedPath);

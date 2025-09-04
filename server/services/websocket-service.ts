@@ -47,8 +47,11 @@ export type WorkflowEvent =
   | { type: 'order_sent'; data: OrderUpdateEvent };
 
 export class WebSocketService {
+  private static instance: WebSocketService;
   private io: SocketIOServer | null = null;
   private connectedUsers = new Map<string, { socketId: string; user: WebSocketUser }>();
+  private userSockets: Map<number, Set<string>> = new Map();
+  private socketUsers: Map<string, number> = new Map();
 
   initialize(server: HttpServer) {
     this.io = new SocketIOServer(server, {
@@ -250,7 +253,27 @@ export class WebSocketService {
     return Array.from(this.connectedUsers.values())
       .some(userInfo => userInfo.user.id === userId);
   }
+
+  // Get singleton instance
+  static getInstance(): WebSocketService {
+    if (!WebSocketService.instance) {
+      WebSocketService.instance = new WebSocketService();
+    }
+    return WebSocketService.instance;
+  }
+
+  // Emit event to specific user
+  emitToUser(userId: number, event: string, data: any): void {
+    if (!this.io) return;
+    this.io.to(`user_${userId}`).emit(event, data);
+  }
+
+  // Emit event to session subscribers  
+  emitToSession(sessionId: string, event: string, data: any): void {
+    if (!this.io) return;
+    this.io.to(`session_${sessionId}`).emit(event, data);
+  }
 }
 
 // Singleton instance
-export const webSocketService = new WebSocketService();
+export const webSocketService = WebSocketService.getInstance();

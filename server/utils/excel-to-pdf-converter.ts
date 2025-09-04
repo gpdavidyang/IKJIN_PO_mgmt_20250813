@@ -1,6 +1,9 @@
 /**
  * Excel to PDF Converter
  * 
+ * @deprecated 이 클래스는 deprecated됩니다. 
+ * 대신 UnifiedExcelPdfService를 사용하세요.
+ * 
  * PRD 요구사항: 엑셀 파일과 함께 엑셀파일을 PDF화 한 파일도 보존해야 함
  */
 

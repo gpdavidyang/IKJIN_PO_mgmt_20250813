@@ -1,3 +1,8 @@
+/**
+ * @deprecated 이 모듈은 deprecated됩니다. 
+ * 대신 UnifiedExcelPdfService를 사용하세요.
+ */
+
 import * as XLSX from 'xlsx';
 import { chromium } from 'playwright-chromium';
 import path from 'path';

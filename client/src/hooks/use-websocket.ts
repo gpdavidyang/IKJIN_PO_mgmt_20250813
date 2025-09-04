@@ -15,6 +15,7 @@ export interface UseWebSocketOptions {
   enabled?: boolean;
   onWorkflowEvent?: (event: WorkflowEvent) => void;
   onNotification?: (notification: WebSocketNotification) => void;
+  onMessage?: (event: MessageEvent) => void;
 }
 
 export interface WebSocketState {
@@ -22,20 +23,23 @@ export interface WebSocketState {
   authenticated: boolean;
   connecting: boolean;
   error: string | null;
+  lastMessage?: any;
 }
 
 export function useWebSocket({
   userId,
   enabled = true,
   onWorkflowEvent,
-  onNotification
+  onNotification,
+  onMessage
 }: UseWebSocketOptions = {}) {
   const socketRef = useRef<Socket | null>(null);
   const [state, setState] = useState<WebSocketState>({
     connected: false,
     authenticated: false,
     connecting: false,
-    error: null
+    error: null,
+    lastMessage: null
   });
 
   // Track subscribed orders
@@ -128,7 +132,64 @@ export function useWebSocket({
       onNotification?.(fullNotification);
     });
 
-  }, [enabled, userId, onWorkflowEvent, onNotification]);
+    // Excel upload specific events
+    socket.on('validation:started', (data: any) => {
+      console.log('📊 Validation started:', data);
+      const message = { type: 'validation:started', ...data };
+      setState(prev => ({ ...prev, lastMessage: message }));
+      onMessage?.({ data: JSON.stringify(message) } as MessageEvent);
+    });
+
+    socket.on('validation:progress', (data: any) => {
+      console.log('📊 Validation progress:', data);
+      const message = { type: 'validation:progress', ...data };
+      setState(prev => ({ ...prev, lastMessage: message }));
+      onMessage?.({ data: JSON.stringify(message) } as MessageEvent);
+    });
+
+    socket.on('validation:completed', (data: any) => {
+      console.log('📊 Validation completed:', data);
+      const message = { type: 'validation:completed', ...data };
+      setState(prev => ({ ...prev, lastMessage: message }));
+      onMessage?.({ data: JSON.stringify(message) } as MessageEvent);
+    });
+
+    socket.on('validation:error', (data: any) => {
+      console.log('📊 Validation error:', data);
+      const message = { type: 'validation:error', ...data };
+      setState(prev => ({ ...prev, lastMessage: message }));
+      onMessage?.({ data: JSON.stringify(message) } as MessageEvent);
+    });
+
+    socket.on('validation:updated', (data: any) => {
+      console.log('📊 Validation updated:', data);
+      const message = { type: 'validation:updated', ...data };
+      setState(prev => ({ ...prev, lastMessage: message }));
+      onMessage?.({ data: JSON.stringify(message) } as MessageEvent);
+    });
+
+    socket.on('ai:suggestions', (data: any) => {
+      console.log('🤖 AI suggestions:', data);
+      const message = { type: 'ai:suggestions', ...data };
+      setState(prev => ({ ...prev, lastMessage: message }));
+      onMessage?.({ data: JSON.stringify(message) } as MessageEvent);
+    });
+
+    socket.on('session:finalized', (data: any) => {
+      console.log('✅ Session finalized:', data);
+      const message = { type: 'session:finalized', ...data };
+      setState(prev => ({ ...prev, lastMessage: message }));
+      onMessage?.({ data: JSON.stringify(message) } as MessageEvent);
+    });
+
+    socket.on('session:cancelled', (data: any) => {
+      console.log('❌ Session cancelled:', data);
+      const message = { type: 'session:cancelled', ...data };
+      setState(prev => ({ ...prev, lastMessage: message }));
+      onMessage?.({ data: JSON.stringify(message) } as MessageEvent);
+    });
+
+  }, [enabled, userId, onWorkflowEvent, onNotification, onMessage]);
 
   const disconnect = useCallback(() => {
     if (socketRef.current) {
@@ -175,6 +236,8 @@ export function useWebSocket({
 
   return {
     ...state,
+    isConnected: state.connected,
+    lastMessage: state.lastMessage,
     connect,
     disconnect,
     subscribeToOrder,
