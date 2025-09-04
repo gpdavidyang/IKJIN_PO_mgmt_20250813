@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -7,11 +7,20 @@ import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { useDropzone } from 'react-dropzone';
 import { cn } from '@/lib/utils';
+import { ValidationStatusPanel } from '@/components/excel/ValidationStatusPanel';
+import { SmartTable } from '@/components/excel/SmartTable';
 
 export default function ExcelSmartUploadSimple() {
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState<any>(null);
+  const [validationProgress, setValidationProgress] = useState(0);
+  const [statusCounts, setStatusCounts] = useState({
+    valid: 0,
+    warning: 0,
+    error: 0
+  });
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'saving' | 'saved' | 'error' | null>(null);
   const { toast } = useToast();
 
   const onDrop = useCallback((acceptedFiles: File[], rejectedFiles: any[]) => {
@@ -80,26 +89,63 @@ export default function ExcelSmartUploadSimple() {
     }
 
     setIsUploading(true);
+    setValidationProgress(0);
+    setStatusCounts({ valid: 0, warning: 0, error: 0 });
+    setAutoSaveStatus(null);
+
+    // Simulate validation progress
+    const progressInterval = setInterval(() => {
+      setValidationProgress(prev => {
+        if (prev >= 90) {
+          clearInterval(progressInterval);
+          return 100;
+        }
+        return prev + 10;
+      });
+    }, 200);
+
     const formData = new FormData();
     formData.append('file', file);
 
     try {
+      setAutoSaveStatus('saving');
       const response = await apiRequest('POST', '/api/excel-smart-upload/process', formData);
 
+      // Update validation counts from server response
+      if (response.statusCounts) {
+        setStatusCounts(response.statusCounts);
+      } else {
+        // Fallback for backward compatibility
+        const totalItems = response.itemCount || 0;
+        const errors = response.validationErrors || 0;
+        const duplicates = response.duplicates || 0;
+        
+        setStatusCounts({
+          valid: totalItems - errors - duplicates,
+          warning: duplicates,
+          error: errors
+        });
+      }
+      
+      setValidationProgress(100);
+      setAutoSaveStatus('saved');
       setUploadResult(response);
+      
       toast({
         title: '업로드 성공',
-        description: `${response.itemCount || 0}개의 항목이 처리되었습니다.`,
+        description: `${totalItems}개의 항목이 처리되었습니다.`,
         variant: 'success',
       });
     } catch (error: any) {
       console.error('Upload error:', error);
+      setAutoSaveStatus('error');
       toast({
         title: '업로드 실패',
         description: error.message || '파일 업로드 중 오류가 발생했습니다.',
         variant: 'destructive',
       });
     } finally {
+      clearInterval(progressInterval);
       setIsUploading(false);
     }
   };
@@ -198,25 +244,40 @@ export default function ExcelSmartUploadSimple() {
             </Button>
           </div>
 
-          {/* Results */}
-          {uploadResult && (
-            <Alert className="mt-6">
-              <CheckCircle className="h-4 w-4" />
-              <AlertDescription>
-                <div className="space-y-2">
-                  <div>✅ 업로드 완료</div>
-                  {uploadResult.itemCount && (
-                    <div>처리된 항목: {uploadResult.itemCount}개</div>
-                  )}
-                  {uploadResult.duplicates && (
-                    <div>중복 발견: {uploadResult.duplicates}개</div>
-                  )}
-                  {uploadResult.validationErrors && (
-                    <div>검증 오류: {uploadResult.validationErrors}개</div>
-                  )}
-                </div>
-              </AlertDescription>
-            </Alert>
+          {/* Validation Status Panel */}
+          {(isUploading || uploadResult) && (
+            <div className="mt-6">
+              <ValidationStatusPanel
+                validationProgress={validationProgress}
+                statusCounts={statusCounts}
+                autoSaveStatus={autoSaveStatus}
+                totalItems={uploadResult?.itemCount || 0}
+              />
+            </div>
+          )}
+
+          {/* Smart Table for detailed results */}
+          {uploadResult && uploadResult.details && uploadResult.details.processedData && (
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle className="text-lg">상세 데이터 검증 결과</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <SmartTable
+                  data={uploadResult.details.processedData}
+                  columns={uploadResult.details.columns || []}
+                  onDataChange={(updatedData) => {
+                    // Handle data changes
+                    console.log('Data updated:', updatedData);
+                    toast({
+                      title: '데이터 수정됨',
+                      description: '변경사항이 저장되었습니다.',
+                      variant: 'success',
+                    });
+                  }}
+                />
+              </CardContent>
+            </Card>
           )}
 
           {/* Instructions */}

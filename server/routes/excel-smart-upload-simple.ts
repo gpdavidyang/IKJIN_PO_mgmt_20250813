@@ -36,44 +36,140 @@ router.post('/process', upload.single('file'), async (req, res) => {
     const worksheet = workbook.Sheets[sheetName];
     const data = xlsx.utils.sheet_to_json(worksheet);
 
-    // Simple duplicate detection using hash
+    // Enhanced validation and processing
     const hashes = new Set<string>();
     const duplicates: any[] = [];
-    const validationErrors: any[] = [];
+    const validationResults: any[] = [];
+    const processedData: any[] = [];
+    
+    // Define required fields and validation rules
+    const requiredFields = ['프로젝트명', 'projectName'];
+    const emailFields = ['이메일', 'email', 'vendorEmail'];
+    const numberFields = ['수량', 'quantity', '단가', 'unitPrice', '금액', 'amount'];
 
     data.forEach((row: any, index: number) => {
-      // Create hash of the row
+      const rowNumber = index + 1;
+      const errors: string[] = [];
+      const warnings: string[] = [];
+      let status: 'valid' | 'warning' | 'error' = 'valid';
+
+      // Create hash of the row for duplicate detection
       const rowString = JSON.stringify(row);
       const hash = crypto.createHash('sha256').update(rowString).digest('hex');
       
       if (hashes.has(hash)) {
-        duplicates.push({ row: index + 1, data: row });
+        warnings.push(`중복된 데이터 (동일한 내용이 이미 존재)`);
+        duplicates.push({ row: rowNumber, data: row });
+        status = 'warning';
       } else {
         hashes.add(hash);
       }
 
-      // Simple validation
-      if (!row['프로젝트명'] && !row['projectName']) {
-        validationErrors.push({
-          row: index + 1,
-          field: 'projectName',
-          error: 'Project name is required',
+      // Validate required fields
+      const hasProjectName = requiredFields.some(field => row[field] && row[field].toString().trim());
+      if (!hasProjectName) {
+        errors.push('프로젝트명이 필요합니다');
+        status = 'error';
+      }
+
+      // Validate email fields
+      emailFields.forEach(field => {
+        if (row[field]) {
+          const email = row[field].toString().trim();
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(email)) {
+            errors.push(`${field}: 유효하지 않은 이메일 형식`);
+            status = 'error';
+          }
+        }
+      });
+
+      // Validate number fields
+      numberFields.forEach(field => {
+        if (row[field]) {
+          const value = row[field];
+          if (isNaN(Number(value))) {
+            errors.push(`${field}: 숫자가 아닌 값`);
+            status = 'error';
+          }
+        }
+      });
+
+      // Check for vendor validation
+      if (row['거래처'] || row['vendor']) {
+        const vendor = row['거래처'] || row['vendor'];
+        // Simulate vendor validation
+        if (vendor && vendor.toString().includes('테스트')) {
+          warnings.push('테스트 거래처입니다');
+          if (status === 'valid') status = 'warning';
+        }
+      }
+
+      // Build processed row
+      const processedRow = {
+        id: `row_${rowNumber}`,
+        rowNumber,
+        status,
+        errors,
+        warnings,
+        ...row
+      };
+
+      processedData.push(processedRow);
+      
+      if (errors.length > 0) {
+        validationResults.push({
+          row: rowNumber,
+          type: 'error',
+          messages: errors
+        });
+      }
+      
+      if (warnings.length > 0) {
+        validationResults.push({
+          row: rowNumber,
+          type: 'warning',
+          messages: warnings
         });
       }
     });
 
-    // Return results
+    // Calculate statistics
+    const validCount = processedData.filter(r => r.status === 'valid').length;
+    const warningCount = processedData.filter(r => r.status === 'warning').length;
+    const errorCount = processedData.filter(r => r.status === 'error').length;
+
+    // Return enhanced results
     res.json({
       success: true,
       itemCount: data.length,
       duplicates: duplicates.length,
-      validationErrors: validationErrors.length,
+      validationErrors: errorCount,
       summary: {
         totalRows: data.length,
         uniqueRows: hashes.size,
         duplicateRows: duplicates.length,
-        errorRows: validationErrors.length,
+        errorRows: errorCount,
+        warningRows: warningCount,
+        validRows: validCount,
       },
+      statusCounts: {
+        valid: validCount,
+        warning: warningCount,
+        error: errorCount
+      },
+      details: {
+        processedData: processedData.slice(0, 100), // Limit to first 100 rows for performance
+        validationResults,
+        duplicates,
+        columns: Object.keys(data[0] || {}).map(key => ({
+          key,
+          label: key,
+          type: numberFields.includes(key) ? 'number' : 
+                emailFields.includes(key) ? 'email' : 'text',
+          editable: true
+        }))
+      }
     });
 
   } catch (error: any) {

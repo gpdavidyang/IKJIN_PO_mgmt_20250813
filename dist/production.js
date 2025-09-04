@@ -21018,33 +21018,112 @@ router36.post("/process", upload6.single("file"), async (req, res) => {
     const data = xlsx.utils.sheet_to_json(worksheet);
     const hashes = /* @__PURE__ */ new Set();
     const duplicates = [];
-    const validationErrors = [];
+    const validationResults2 = [];
+    const processedData = [];
+    const requiredFields = ["\uD504\uB85C\uC81D\uD2B8\uBA85", "projectName"];
+    const emailFields = ["\uC774\uBA54\uC77C", "email", "vendorEmail"];
+    const numberFields = ["\uC218\uB7C9", "quantity", "\uB2E8\uAC00", "unitPrice", "\uAE08\uC561", "amount"];
     data.forEach((row, index2) => {
+      const rowNumber = index2 + 1;
+      const errors = [];
+      const warnings = [];
+      let status = "valid";
       const rowString = JSON.stringify(row);
       const hash = crypto.createHash("sha256").update(rowString).digest("hex");
       if (hashes.has(hash)) {
-        duplicates.push({ row: index2 + 1, data: row });
+        warnings.push(`\uC911\uBCF5\uB41C \uB370\uC774\uD130 (\uB3D9\uC77C\uD55C \uB0B4\uC6A9\uC774 \uC774\uBBF8 \uC874\uC7AC)`);
+        duplicates.push({ row: rowNumber, data: row });
+        status = "warning";
       } else {
         hashes.add(hash);
       }
-      if (!row["\uD504\uB85C\uC81D\uD2B8\uBA85"] && !row["projectName"]) {
-        validationErrors.push({
-          row: index2 + 1,
-          field: "projectName",
-          error: "Project name is required"
+      const hasProjectName = requiredFields.some((field) => row[field] && row[field].toString().trim());
+      if (!hasProjectName) {
+        errors.push("\uD504\uB85C\uC81D\uD2B8\uBA85\uC774 \uD544\uC694\uD569\uB2C8\uB2E4");
+        status = "error";
+      }
+      emailFields.forEach((field) => {
+        if (row[field]) {
+          const email = row[field].toString().trim();
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(email)) {
+            errors.push(`${field}: \uC720\uD6A8\uD558\uC9C0 \uC54A\uC740 \uC774\uBA54\uC77C \uD615\uC2DD`);
+            status = "error";
+          }
+        }
+      });
+      numberFields.forEach((field) => {
+        if (row[field]) {
+          const value = row[field];
+          if (isNaN(Number(value))) {
+            errors.push(`${field}: \uC22B\uC790\uAC00 \uC544\uB2CC \uAC12`);
+            status = "error";
+          }
+        }
+      });
+      if (row["\uAC70\uB798\uCC98"] || row["vendor"]) {
+        const vendor = row["\uAC70\uB798\uCC98"] || row["vendor"];
+        if (vendor && vendor.toString().includes("\uD14C\uC2A4\uD2B8")) {
+          warnings.push("\uD14C\uC2A4\uD2B8 \uAC70\uB798\uCC98\uC785\uB2C8\uB2E4");
+          if (status === "valid") status = "warning";
+        }
+      }
+      const processedRow = {
+        id: `row_${rowNumber}`,
+        rowNumber,
+        status,
+        errors,
+        warnings,
+        ...row
+      };
+      processedData.push(processedRow);
+      if (errors.length > 0) {
+        validationResults2.push({
+          row: rowNumber,
+          type: "error",
+          messages: errors
+        });
+      }
+      if (warnings.length > 0) {
+        validationResults2.push({
+          row: rowNumber,
+          type: "warning",
+          messages: warnings
         });
       }
     });
+    const validCount = processedData.filter((r) => r.status === "valid").length;
+    const warningCount = processedData.filter((r) => r.status === "warning").length;
+    const errorCount = processedData.filter((r) => r.status === "error").length;
     res.json({
       success: true,
       itemCount: data.length,
       duplicates: duplicates.length,
-      validationErrors: validationErrors.length,
+      validationErrors: errorCount,
       summary: {
         totalRows: data.length,
         uniqueRows: hashes.size,
         duplicateRows: duplicates.length,
-        errorRows: validationErrors.length
+        errorRows: errorCount,
+        warningRows: warningCount,
+        validRows: validCount
+      },
+      statusCounts: {
+        valid: validCount,
+        warning: warningCount,
+        error: errorCount
+      },
+      details: {
+        processedData: processedData.slice(0, 100),
+        // Limit to first 100 rows for performance
+        validationResults: validationResults2,
+        duplicates,
+        columns: Object.keys(data[0] || {}).map((key) => ({
+          key,
+          label: key,
+          type: numberFields.includes(key) ? "number" : emailFields.includes(key) ? "email" : "text",
+          editable: true
+        }))
       }
     });
   } catch (error) {
