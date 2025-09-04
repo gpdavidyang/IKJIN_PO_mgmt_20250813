@@ -131,9 +131,10 @@ export default function ExcelSmartUploadSimple() {
       setAutoSaveStatus('saved');
       setUploadResult(response);
       
+      const totalCount = response.itemCount || 0;
       toast({
         title: '업로드 성공',
-        description: `${totalItems}개의 항목이 처리되었습니다.`,
+        description: `${totalCount}개의 항목이 처리되었습니다.`,
         variant: 'success',
       });
     } catch (error: any) {
