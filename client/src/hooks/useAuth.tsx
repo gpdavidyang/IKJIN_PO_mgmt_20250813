@@ -129,7 +129,7 @@ function AuthProvider({ children }: { children: ReactNode }) {
     refetchOnMount: false, // Prevent automatic refetch on mount
     refetchOnReconnect: false, // Disable reconnect refetch
     refetchInterval: false, // No automatic polling
-    networkMode: 'offlineFirst' // Prioritize cache over network
+    networkMode: 'offlineFirst', // Prioritize cache over network
     // Add meta for query identification in DevTools
     meta: {
       cacheType: 'MASTER',
