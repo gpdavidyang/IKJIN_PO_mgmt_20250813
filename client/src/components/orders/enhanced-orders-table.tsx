@@ -292,47 +292,42 @@ export function EnhancedOrdersTable({
       ),
     },
     {
-      key: "status",
-      header: "상태",
+      key: "orderStatus",
+      header: "발주상태",
       sortable: true,
-      width: "180px",
+      width: "100px",
       accessor: (row) => {
-        // Check if dual status is available
-        if (row.orderStatus || row.approvalStatus) {
-          // Use the DualStatusBadge component if available
-          return (
-            <div className="flex gap-1">
-              {row.orderStatus && (
-                <SmartStatusBadge
-                  type="order"
-                  status={row.orderStatus}
-                  showIcon={false}
-                  showTooltip
-                  animated
-                  size="sm"
-                />
-              )}
-              {row.approvalStatus && row.approvalStatus !== 'not_required' && (
-                <SmartStatusBadge
-                  type="approval"
-                  status={row.approvalStatus}
-                  showIcon={false}
-                  showTooltip
-                  animated
-                  size="sm"
-                />
-              )}
-            </div>
-          );
-        }
-        // Fallback to legacy status
+        const status = row.orderStatus || row.status || 'draft';
         return (
           <SmartStatusBadge
             type="order"
-            status={row.status}
+            status={status}
             showIcon={false}
             showTooltip
             animated
+            size="sm"
+          />
+        );
+      },
+    },
+    {
+      key: "approvalStatus",
+      header: "승인상태",
+      sortable: true,
+      width: "100px",
+      accessor: (row) => {
+        // Don't show if not_required
+        if (!row.approvalStatus || row.approvalStatus === 'not_required') {
+          return <span className="text-xs text-gray-400">-</span>;
+        }
+        return (
+          <SmartStatusBadge
+            type="approval"
+            status={row.approvalStatus}
+            showIcon={false}
+            showTooltip
+            animated
+            size="sm"
           />
         );
       },

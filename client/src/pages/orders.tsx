@@ -36,7 +36,9 @@ export default function Orders() {
   }, [theme, isDarkMode]);
 
   const [filters, setFilters] = useState({
-    status: "",
+    status: "", // Legacy status for backward compatibility
+    orderStatus: "", // New dual status - order status
+    approvalStatus: "", // New dual status - approval status
     vendorId: "",
     projectId: "",
     userId: "",
@@ -71,6 +73,8 @@ export default function Orders() {
     const newFilters: any = { 
       page: 1,
       status: "",
+      orderStatus: "",
+      approvalStatus: "",
       vendorId: "", 
       projectId: "",
       userId: "",
@@ -110,7 +114,8 @@ export default function Orders() {
       
       newFilters.startDate = today.toISOString().split('T')[0];
       newFilters.endDate = urgentDate.toISOString().split('T')[0];
-      newFilters.status = 'approved';
+      newFilters.orderStatus = 'created';
+      newFilters.approvalStatus = 'approved';
     }
     
     if (vendorIdFromUrl) {
@@ -603,18 +608,36 @@ export default function Orders() {
 
                   <div className="space-y-2">
                     <label className={`text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>발주 상태</label>
-                    <Select value={filters.status || "all"} onValueChange={(value) => handleFilterChange("status", value)}>
-                      <SelectTrigger className={`h-11 text-sm rounded-lg transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'} ${filters.status && filters.status !== "" ? `${isDarkMode ? 'border-blue-400 bg-blue-900/20' : 'border-blue-500 bg-blue-50'}` : ""}`}>
-                        <SelectValue placeholder="모든 상태" />
+                    <Select value={filters.orderStatus || "all"} onValueChange={(value) => handleFilterChange("orderStatus", value)}>
+                      <SelectTrigger className={`h-11 text-sm rounded-lg transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'} ${filters.orderStatus && filters.orderStatus !== "" ? `${isDarkMode ? 'border-blue-400 bg-blue-900/20' : 'border-blue-500 bg-blue-50'}` : ""}`}>
+                        <SelectValue placeholder="모든 발주상태" />
                       </SelectTrigger>
                       <SelectContent className={`transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
-                        <SelectItem value="all">모든 상태</SelectItem>
-                        <SelectItem value="draft">{getStatusText("draft")}</SelectItem>
-                        <SelectItem value="pending">{getStatusText("pending")}</SelectItem>
-                        <SelectItem value="approved">{getStatusText("approved")}</SelectItem>
-                        <SelectItem value="sent">{getStatusText("sent")}</SelectItem>
-                        <SelectItem value="completed">{getStatusText("completed")}</SelectItem>
-                        <SelectItem value="rejected">{getStatusText("rejected")}</SelectItem>
+                        <SelectItem value="all">모든 발주상태</SelectItem>
+                        <SelectItem value="draft">임시저장</SelectItem>
+                        <SelectItem value="created">생성됨</SelectItem>
+                        <SelectItem value="sent">발송됨</SelectItem>
+                        <SelectItem value="delivered">납품완료</SelectItem>
+                        <SelectItem value="cancelled">취소됨</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Approval Status Filter */}
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <label className={`text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>승인 상태</label>
+                    <Select value={filters.approvalStatus || "all"} onValueChange={(value) => handleFilterChange("approvalStatus", value)}>
+                      <SelectTrigger className={`h-11 text-sm rounded-lg transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'} ${filters.approvalStatus && filters.approvalStatus !== "" ? `${isDarkMode ? 'border-blue-400 bg-blue-900/20' : 'border-blue-500 bg-blue-50'}` : ""}`}>
+                        <SelectValue placeholder="모든 승인상태" />
+                      </SelectTrigger>
+                      <SelectContent className={`transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
+                        <SelectItem value="all">모든 승인상태</SelectItem>
+                        <SelectItem value="not_required">승인불필요</SelectItem>
+                        <SelectItem value="pending">승인대기</SelectItem>
+                        <SelectItem value="approved">승인완료</SelectItem>
+                        <SelectItem value="rejected">반려</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -648,7 +671,7 @@ export default function Orders() {
             {/* Active Filters Display */}
             <div className="flex flex-wrap items-center gap-2">
               {(filters.projectId !== "" || filters.vendorId !== "" || filters.userId !== "" || 
-                filters.status !== "" || filters.startDate || filters.endDate || 
+                filters.orderStatus !== "" || filters.approvalStatus !== "" || filters.startDate || filters.endDate || 
                 filters.minAmount || filters.maxAmount || filters.searchText) && (
                 <>
                   <span className={`text-xs font-medium transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>적용된 필터:</span>
@@ -676,6 +699,37 @@ export default function Orders() {
                       </button>
                     </span>
                   )}
+                  
+                  {filters.orderStatus && filters.orderStatus !== "" && filters.orderStatus !== "all" && (
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs border transition-colors ${isDarkMode ? 'bg-indigo-900/20 text-indigo-300 border-indigo-700' : 'bg-indigo-50 text-indigo-700 border-indigo-200'}`}>
+                      발주상태: {filters.orderStatus === 'draft' ? '임시저장' : 
+                                filters.orderStatus === 'created' ? '생성됨' :
+                                filters.orderStatus === 'sent' ? '발송됨' :
+                                filters.orderStatus === 'delivered' ? '납품완료' :
+                                filters.orderStatus === 'cancelled' ? '취소됨' : filters.orderStatus}
+                      <button
+                        onClick={() => handleFilterChange("orderStatus", "")}
+                        className={`ml-2 rounded-full w-4 h-4 flex items-center justify-center transition-colors ${isDarkMode ? 'hover:bg-indigo-800 text-indigo-400' : 'hover:bg-indigo-100 text-indigo-600'}`}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  )}
+                  
+                  {filters.approvalStatus && filters.approvalStatus !== "" && filters.approvalStatus !== "all" && (
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs border transition-colors ${isDarkMode ? 'bg-green-900/20 text-green-300 border-green-700' : 'bg-green-50 text-green-700 border-green-200'}`}>
+                      승인상태: {filters.approvalStatus === 'not_required' ? '승인불필요' : 
+                                filters.approvalStatus === 'pending' ? '승인대기' :
+                                filters.approvalStatus === 'approved' ? '승인완료' :
+                                filters.approvalStatus === 'rejected' ? '반려' : filters.approvalStatus}
+                      <button
+                        onClick={() => handleFilterChange("approvalStatus", "")}
+                        className={`ml-2 rounded-full w-4 h-4 flex items-center justify-center transition-colors ${isDarkMode ? 'hover:bg-green-800 text-green-400' : 'hover:bg-green-100 text-green-600'}`}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  )}
                 </>
               )}
             </div>
@@ -683,7 +737,7 @@ export default function Orders() {
             {/* Actions */}
             <div className="flex items-center gap-2">
               {(filters.projectId !== "" || filters.vendorId !== "" || filters.userId !== "" || 
-                filters.status !== "" || filters.startDate || filters.endDate || 
+                filters.orderStatus !== "" || filters.approvalStatus !== "" || filters.startDate || filters.endDate || 
                 filters.minAmount || filters.maxAmount || filters.searchText) && (
                 <Button
                   variant="outline"
@@ -691,6 +745,8 @@ export default function Orders() {
                   onClick={() => {
                     setFilters({
                       status: "",
+                      orderStatus: "",
+                      approvalStatus: "",
                       vendorId: "",
                       projectId: "",
                       userId: "",
