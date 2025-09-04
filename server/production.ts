@@ -174,6 +174,51 @@ if (process.env.VERCEL) {
   console.log("✅ Production app initialized for Vercel");
 } else {
   // For other environments, initialize synchronously as well
+  console.log("🔧 Non-Vercel environment detected - initializing production app");
+  
+  // Add session error handler
+  app.use(sessionErrorHandler);
+
+  // Add the debug endpoint BEFORE the main router to ensure it's accessible
+  app.get('/api/debug/session-store', (req: any, res: any) => {
+    const sessionData = {
+      hasSession: !!req.session,
+      sessionID: req.sessionID,
+      sessionKeys: req.session ? Object.keys(req.session) : [],
+      sessionData: req.session || null,
+      isAuthenticated: req.isAuthenticated ? req.isAuthenticated() : false,
+      storeType: 'Non-Vercel Memory Store',
+      cookieSettings: req.session?.cookie,
+      cookieHeader: req.headers.cookie,
+      nonVercelInit: true,
+      timestamp: new Date().toISOString(),
+      sessionStore: {
+        ready: typeof req.sessionStore !== 'undefined',
+        type: req.sessionStore ? req.sessionStore.constructor.name : 'unknown'
+      },
+      environment: {
+        NODE_ENV: process.env.NODE_ENV,
+        VERCEL: process.env.VERCEL,
+        SESSION_SECRET_SET: !!process.env.SESSION_SECRET
+      },
+      middlewareOrder: 'session -> error-handler -> debug-endpoint -> routes'
+    };
+    
+    console.log("🔍 Session debug info:", sessionData);
+    res.json(sessionData);
+  });
+
+  // Use modular routes AFTER debug endpoints
+  app.use(router);
+  
+  // Error handling middleware
+  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+    const status = err.status || err.statusCode || 500;
+    const message = err.message || "Internal Server Error";
+    console.error("Express error:", err);
+    res.status(status).json({ message });
+  });
+  
   console.log("✅ Non-Vercel production app initialized");
 }
 

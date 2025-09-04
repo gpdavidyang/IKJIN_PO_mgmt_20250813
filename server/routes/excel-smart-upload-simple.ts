@@ -14,10 +14,30 @@ const upload = multer({
     fileSize: 10 * 1024 * 1024, // 10MB limit
   },
   fileFilter: (req, file, cb) => {
-    if (file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
-        file.mimetype === 'application/vnd.ms-excel') {
+    console.log('=== File Upload Debug ===');
+    console.log('File name:', file.originalname);
+    console.log('File MIME type:', file.mimetype);
+    
+    // Check both MIME type and file extension for Excel files
+    const validMimeTypes = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel',
+      'application/vnd.ms-excel.sheet.macroEnabled.12',
+      'application/octet-stream' // Sometimes Excel files are uploaded as octet-stream
+    ];
+    
+    const fileName = file.originalname.toLowerCase();
+    const hasValidExtension = fileName.endsWith('.xlsx') || fileName.endsWith('.xls') || fileName.endsWith('.xlsm');
+    const hasValidMimeType = validMimeTypes.includes(file.mimetype);
+    
+    console.log('Valid MIME type:', hasValidMimeType);
+    console.log('Valid extension:', hasValidExtension);
+    
+    if (hasValidMimeType && hasValidExtension) {
+      console.log('File accepted:', file.originalname);
       cb(null, true);
     } else {
+      console.log('File rejected:', file.originalname, 'MIME type:', file.mimetype, 'Extension valid:', hasValidExtension);
       cb(new Error('Only Excel files are allowed'));
     }
   },
