@@ -44,13 +44,7 @@ export default function ExcelSmartUploadSimple() {
     formData.append('file', file);
 
     try {
-      const response = await apiRequest('/api/excel-smart-upload/process', {
-        method: 'POST',
-        body: formData,
-        headers: {
-          // FormData를 보낼 때는 Content-Type을 설정하지 않음
-        },
-      });
+      const response = await apiRequest('POST', '/api/excel-smart-upload/process', formData);
 
       setUploadResult(response);
       toast({
