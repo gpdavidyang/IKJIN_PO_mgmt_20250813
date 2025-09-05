@@ -89,11 +89,6 @@ export default function OrdersProfessionalFast() {
     sortOrder: "desc" as "asc" | "desc",
   });
 
-  // For bulk selection
-  const [selectedOrders, setSelectedOrders] = useState<Set<number>>(new Set());
-  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
-  const isAdmin = user?.role === 'admin';
-
   const [debouncedSearchText, setDebouncedSearchText] = useState("");
   const [isFilterExpanded, setIsFilterExpanded] = useState(false);
   
@@ -108,6 +103,11 @@ export default function OrdersProfessionalFast() {
   // PDF preview modal state
   const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
   const [selectedOrderForPDF, setSelectedOrderForPDF] = useState<Order | null>(null);
+
+  // For bulk selection - moved after other state declarations to avoid initialization issues
+  const [selectedOrders, setSelectedOrders] = useState<Set<number>>(new Set());
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+  const isAdmin = user?.role === 'admin';
 
   // Initialize filters based on URL parameters
   useEffect(() => {
@@ -284,11 +284,11 @@ export default function OrdersProfessionalFast() {
     mutationFn: async (orderIds: number[]) => {
       await apiRequest("DELETE", `/api/orders/bulk-delete`, { orderIds });
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["orders-optimized"] });
       toast({
         title: "성공",
-        description: `${selectedOrders.size}개의 발주서가 삭제되었습니다.`,
+        description: `${variables.length}개의 발주서가 삭제되었습니다.`,
       });
       setSelectedOrders(new Set());
       setBulkDeleteDialogOpen(false);

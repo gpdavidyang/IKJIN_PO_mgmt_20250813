@@ -226,9 +226,18 @@ export default function OrderDetailProfessional() {
     );
   }
 
-  const canApprove = user?.role === "admin" && (order.status === "pending_approval" || order.status === "pending");
-  const canSend = order.status === "approved";
-  const canEdit = order.status !== "sent" && order.status !== "received";
+  // Determine the actual status (orderStatus is the new field, status is legacy)
+  const actualStatus = order.orderStatus || order.status;
+  const isDraft = actualStatus === 'draft';
+  const isCreated = actualStatus === 'created';
+  const isSent = actualStatus === 'sent' || actualStatus === 'delivered';
+  
+  // Permission checks based on status
+  const canCreateOrder = isDraft && (user?.role === "admin" || order.userId === user?.id);
+  const canGeneratePDF = isCreated || isSent;
+  const canSendEmail = isCreated && (user?.role === "admin" || order.userId === user?.id);
+  const canEdit = isDraft || (isCreated && (user?.role === "admin" || order.userId === user?.id));
+  const canApprove = user?.role === "admin" && order.approvalStatus === "pending";
 
   return (
     <div className="min-h-screen bg-gray-50">

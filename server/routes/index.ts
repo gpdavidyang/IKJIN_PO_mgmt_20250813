@@ -40,6 +40,7 @@ import emailSettingsRoutes from "./email-settings";
 import workflowRoutes from "./workflow";
 import excelSmartUploadRoutes from "./excel-smart-upload-simple";
 import ordersWorkflowRoutes from "./orders-workflow";
+import ordersCreateRoutes from "./orders-create";
 import healthRoutes from "./health";
 import debugRoutes from "./debug";
 
@@ -61,6 +62,7 @@ router.use("/api", importExportRoutes);
 router.use("/api", emailHistoryRoutes);
 router.use("/api/excel-template", excelTemplateRoutes);
 router.use("/api", ordersOptimizedRoutes);
+router.use("/api", ordersCreateRoutes); // Order creation with PDF generation
 router.use("/api", orderStatusesRoutes);
 router.use("/api", invoicesRoutes);
 router.use("/api", verificationLogsRoutes);
