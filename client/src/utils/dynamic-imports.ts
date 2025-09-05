@@ -164,7 +164,7 @@ export const DynamicFeatures = {
   
   // Order management features  
   loadOrderForm: () => import('@/components/order-form'),
-  loadOrderList: () => import('@/pages/orders-professional'),
+  loadOrderList: () => import('@/pages/orders-professional-fast'),
   loadOrderDetail: () => import('@/pages/order-detail'),
   
   // Vendor management features
