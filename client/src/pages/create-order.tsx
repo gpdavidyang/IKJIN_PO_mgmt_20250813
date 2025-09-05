@@ -1,9 +1,7 @@
-import { useState } from "react";
 import { useLocation } from "wouter";
 import { OrderForm } from "@/components/order-form";
-import { SimpleExcelUpload } from "@/components/simple-excel-upload";
 import { SimpleExcelBulkUpload } from "@/components/simple-excel-bulk-upload";
-import { FileText, FileSpreadsheet, Upload, Info, Download } from "lucide-react";
+import { FileText, Upload, Info } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -12,7 +10,6 @@ import { useTheme } from "@/components/ui/theme-provider";
 
 export default function CreateOrder() {
   const [, navigate] = useLocation();
-  const [excelData, setExcelData] = useState<any[]>([]);
   const { theme } = useTheme();
   const isDarkMode = theme === 'dark';
   
@@ -36,9 +33,6 @@ export default function CreateOrder() {
     navigate("/orders");
   };
 
-  const handleExcelDataParsed = (data: any[]) => {
-    setExcelData(data);
-  };
 
   return (
     <div className={`min-h-screen transition-colors ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
@@ -76,19 +70,8 @@ export default function CreateOrder() {
           </Alert>
         )}
         {isExcelUploadEnabled ? (
-          <Tabs defaultValue="excel" className="w-full">
-            <TabsList className={`grid w-full grid-cols-3 transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-100'}`}>
-              <TabsTrigger 
-                value="excel" 
-                className={`flex items-center gap-2 transition-colors ${
-                  isDarkMode 
-                    ? 'data-[state=active]:bg-gray-700 data-[state=active]:text-white hover:bg-gray-750' 
-                    : 'data-[state=active]:bg-white data-[state=active]:text-gray-900'
-                }`}
-              >
-                <FileSpreadsheet className="h-4 w-4" />
-                엑셀 파일 업로드
-              </TabsTrigger>
+          <Tabs defaultValue="form" className="w-full">
+            <TabsList className={`grid w-full grid-cols-2 transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-100'}`}>
               <TabsTrigger 
                 value="form" 
                 className={`flex items-center gap-2 transition-colors ${
@@ -112,48 +95,6 @@ export default function CreateOrder() {
                 엑셀 업로드 입력
               </TabsTrigger>
             </TabsList>
-
-            <TabsContent value="excel" className="mt-6">
-              <div className="space-y-6">
-                <SimpleExcelUpload onDataParsed={handleExcelDataParsed} />
-                
-                {excelData.length > 0 && (
-                  <div className="space-y-4">
-                    <Alert className={`transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-                      <AlertDescription className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
-                        Excel 데이터를 불러왔습니다. "직접 입력" 탭으로 이동하여 발주서를 완성해주세요.
-                      </AlertDescription>
-                    </Alert>
-                    
-                    <div className={`rounded-lg p-4 transition-colors ${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
-                      <h3 className={`font-medium mb-3 transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>미리보기 ({excelData.length}개 행)</h3>
-                      <div className="overflow-x-auto">
-                        <table className="min-w-full text-sm">
-                          <tbody>
-                            {excelData.slice(0, 5).map((row, index) => (
-                              <tr key={index} className={`border-b transition-colors ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
-                                {row.slice(0, 6).map((cell: any, cellIndex: number) => (
-                                  <td key={cellIndex} className={`py-2 px-3 transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
-                                    {cell || '-'}
-                                  </td>
-                                ))}
-                              </tr>
-                            ))}
-                            {excelData.length > 5 && (
-                              <tr>
-                                <td colSpan={6} className={`py-2 px-3 text-center transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                                  ... 외 {excelData.length - 5}개 행
-                                </td>
-                              </tr>
-                            )}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </TabsContent>
 
             <TabsContent value="form" className="mt-6">
               <OrderForm onSuccess={handleSuccess} onCancel={handleCancel} />
