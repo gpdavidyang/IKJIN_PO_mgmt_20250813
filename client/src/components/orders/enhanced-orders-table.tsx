@@ -100,6 +100,14 @@ export function EnhancedOrdersTable({
   // Check if user is admin (only admins can use bulk delete)
   const isAdmin = user?.role === 'admin';
   
+  // Debug logging
+  console.log('🔍 Admin check:', { 
+    userRole: user?.role, 
+    isAdmin, 
+    onBulkDelete: !!onBulkDelete,
+    showCheckboxes: isAdmin && !!onBulkDelete 
+  });
+  
   // Helper functions for multi-select
   const handleSelectOrder = useCallback((orderId: string, checked: boolean) => {
     setSelectedOrderIds(prev => {
@@ -243,16 +251,17 @@ export function EnhancedOrdersTable({
     ...(isAdmin && onBulkDelete ? [{
       key: "select" as keyof Order,
       header: (
-        <div className="flex items-center justify-center">
+        <div className="flex items-center justify-center" title="모두 선택">
           <Checkbox
             checked={allOrdersSelected}
             onCheckedChange={handleSelectAll}
             disabled={orders.length === 0}
             aria-label="모든 발주서 선택"
+            className="border-2 border-gray-400 dark:border-gray-500"
           />
         </div>
       ),
-      width: "40px",
+      width: "50px",
       accessor: (row: Order) => (
         <div className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
           <Checkbox
@@ -408,25 +417,28 @@ export function EnhancedOrdersTable({
       ),
     },
     {
-      key: "createdAt",
-      header: "등록일",
-      sortable: true,
-      width: "130px",
-      accessor: (row) => (
-        <div className="text-gray-500 dark:text-gray-500 text-xs">
-          {format(new Date(row.createdAt), "yyyy.MM.dd HH:mm", { locale: ko })}
-        </div>
-      ),
-    },
-    {
       key: "deliveryDate",
       header: "납기일",
       sortable: true,
-      width: "110px",
+      width: "100px",
       accessor: (row) => (
         <div className="text-gray-600 dark:text-gray-400 text-sm">
           {row.deliveryDate 
             ? format(new Date(row.deliveryDate), "yyyy.MM.dd", { locale: ko })
+            : "-"
+          }
+        </div>
+      ),
+    },
+    {
+      key: "createdAt",
+      header: "등록일",
+      sortable: true,
+      width: "140px",
+      accessor: (row) => (
+        <div className="text-gray-500 dark:text-gray-500 text-xs">
+          {row.createdAt
+            ? format(new Date(row.createdAt), "yyyy.MM.dd HH:mm", { locale: ko })
             : "-"
           }
         </div>
@@ -565,6 +577,18 @@ export function EnhancedOrdersTable({
 
   return (
     <div className="space-y-4">
+      {/* Admin Status Display - Show admin capabilities */}
+      {isAdmin && onBulkDelete && (
+        <div className="flex items-center gap-2 mb-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded">
+          <Badge variant="outline" className="text-yellow-700 dark:text-yellow-300 border-yellow-300 dark:border-yellow-600">
+            관리자 모드
+          </Badge>
+          <span className="text-xs text-yellow-700 dark:text-yellow-300">
+            발주서를 선택하여 일괄 삭제할 수 있습니다. 각 행의 체크박스를 사용하세요.
+          </span>
+        </div>
+      )}
+      
       {/* Bulk Action Bar - Only show for admins when orders are selected */}
       {isAdmin && onBulkDelete && selectedOrderIds.length > 0 && (
         <div className="flex items-center justify-between p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg">

@@ -515,7 +515,7 @@ export default function Orders() {
               </div>
 
               {/* Project Filter */}
-              <div className="w-full xl:w-72">
+              <div className="w-full xl:w-56">
                 <label className={`text-sm font-medium block mb-2 transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>현장</label>
                 <Select value={filters.projectId || "all"} onValueChange={(value) => handleFilterChange("projectId", value)}>
                   <SelectTrigger className={`h-11 text-sm rounded-lg transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'} ${filters.projectId && filters.projectId !== "" ? `${isDarkMode ? 'border-blue-400 bg-blue-900/20' : 'border-blue-500 bg-blue-50'}` : ""}`}>
@@ -528,6 +528,40 @@ export default function Orders() {
                         {project.projectName} ({project.projectCode})
                       </SelectItem>
                     ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Order Status Filter (발주 상태) */}
+              <div className="w-full xl:w-40">
+                <label className={`text-sm font-medium block mb-2 transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>발주 상태</label>
+                <Select value={filters.status || "all"} onValueChange={(value) => handleFilterChange("status", value)}>
+                  <SelectTrigger className={`h-11 text-sm rounded-lg transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'} ${filters.status && filters.status !== "" ? `${isDarkMode ? 'border-blue-400 bg-blue-900/20' : 'border-blue-500 bg-blue-50'}` : ""}`}>
+                    <SelectValue placeholder="모든 상태" />
+                  </SelectTrigger>
+                  <SelectContent className={`transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
+                    <SelectItem value="all">모든 상태</SelectItem>
+                    <SelectItem value="draft">임시저장</SelectItem>
+                    <SelectItem value="created">발주생성</SelectItem>
+                    <SelectItem value="sent">발주완료</SelectItem>
+                    <SelectItem value="completed">납품검수완료</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Approval Status Filter (승인 상태) */}
+              <div className="w-full xl:w-40">
+                <label className={`text-sm font-medium block mb-2 transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>승인 상태</label>
+                <Select value={filters.approvalStatus || "all"} onValueChange={(value) => handleFilterChange("approvalStatus", value)}>
+                  <SelectTrigger className={`h-11 text-sm rounded-lg transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'} ${filters.approvalStatus && filters.approvalStatus !== "" ? `${isDarkMode ? 'border-blue-400 bg-blue-900/20' : 'border-blue-500 bg-blue-50'}` : ""}`}>
+                    <SelectValue placeholder="모든 승인" />
+                  </SelectTrigger>
+                  <SelectContent className={`transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
+                    <SelectItem value="all">모든 승인</SelectItem>
+                    <SelectItem value="not_required">승인불필요</SelectItem>
+                    <SelectItem value="pending">승인대기</SelectItem>
+                    <SelectItem value="approved">승인완료</SelectItem>
+                    <SelectItem value="rejected">반려</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -618,42 +652,8 @@ export default function Orders() {
                     </Select>
                   </div>
 
-                  <div className="space-y-2">
-                    <label className={`text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>발주 상태</label>
-                    <Select value={filters.status || "all"} onValueChange={(value) => handleFilterChange("status", value)}>
-                      <SelectTrigger className={`h-11 text-sm rounded-lg transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'} ${filters.status && filters.status !== "" ? `${isDarkMode ? 'border-blue-400 bg-blue-900/20' : 'border-blue-500 bg-blue-50'}` : ""}`}>
-                        <SelectValue placeholder="모든 발주상태" />
-                      </SelectTrigger>
-                      <SelectContent className={`transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
-                        <SelectItem value="all">모든 발주상태</SelectItem>
-                        <SelectItem value="draft">임시저장</SelectItem>
-                        <SelectItem value="created">생성됨</SelectItem>
-                        <SelectItem value="sent">발송됨</SelectItem>
-                        <SelectItem value="delivered">납품완료</SelectItem>
-                        <SelectItem value="cancelled">취소됨</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
                 </div>
 
-                {/* Approval Status Filter */}
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <label className={`text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>승인 상태</label>
-                    <Select value={filters.approvalStatus || "all"} onValueChange={(value) => handleFilterChange("approvalStatus", value)}>
-                      <SelectTrigger className={`h-11 text-sm rounded-lg transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'} ${filters.approvalStatus && filters.approvalStatus !== "" ? `${isDarkMode ? 'border-blue-400 bg-blue-900/20' : 'border-blue-500 bg-blue-50'}` : ""}`}>
-                        <SelectValue placeholder="모든 승인상태" />
-                      </SelectTrigger>
-                      <SelectContent className={`transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
-                        <SelectItem value="all">모든 승인상태</SelectItem>
-                        <SelectItem value="not_required">승인불필요</SelectItem>
-                        <SelectItem value="pending">승인대기</SelectItem>
-                        <SelectItem value="approved">승인완료</SelectItem>
-                        <SelectItem value="rejected">반려</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
 
                 {/* User Filter */}
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
