@@ -2780,7 +2780,7 @@ import cookieParser from "cookie-parser";
 import crypto2 from "crypto";
 
 // server/routes/index.ts
-import { Router as Router34 } from "express";
+import { Router as Router35 } from "express";
 
 // server/routes/auth.ts
 import { Router } from "express";
@@ -4948,15 +4948,15 @@ var requireAdmin = requireRole(["admin"]);
 var requireOrderManager = requireRole(["admin", "order_manager"]);
 
 // server/routes/auth.ts
-var router2 = Router();
-router2.get("/auth/debug", (req, res) => {
+var router = Router();
+router.get("/auth/debug", (req, res) => {
   res.json({
     message: "Auth routes are working",
     timestamp: (/* @__PURE__ */ new Date()).toISOString(),
     environment: process.env.NODE_ENV || "unknown"
   });
 });
-router2.get("/test/ping", (req, res) => {
+router.get("/test/ping", (req, res) => {
   res.json({
     message: "Server is alive",
     timestamp: (/* @__PURE__ */ new Date()).toISOString(),
@@ -4965,7 +4965,7 @@ router2.get("/test/ping", (req, res) => {
     origin: req.get("Origin") || "none"
   });
 });
-router2.get("/auth/debug-prod", (req, res) => {
+router.get("/auth/debug-prod", (req, res) => {
   try {
     const authSession = req.session;
     console.log("\u{1F50D} Production auth debug:", {
@@ -5000,7 +5000,7 @@ router2.get("/auth/debug-prod", (req, res) => {
     });
   }
 });
-router2.post("/auth/login-simple", (req, res) => {
+router.post("/auth/login-simple", (req, res) => {
   try {
     const { username, password, email } = req.body;
     const identifier = username || email;
@@ -5024,7 +5024,7 @@ router2.post("/auth/login-simple", (req, res) => {
     res.status(500).json({ message: "Login failed", error: error.message });
   }
 });
-router2.post("/auth/login-test", (req, res) => {
+router.post("/auth/login-test", (req, res) => {
   try {
     const { username, password, email } = req.body;
     const identifier = username || email;
@@ -5048,9 +5048,9 @@ router2.post("/auth/login-test", (req, res) => {
     res.status(500).json({ message: "Login failed", error: error.message });
   }
 });
-router2.post("/auth/login", login);
-router2.post("/auth/logout", logout);
-router2.patch("/auth/profile", requireAuth, async (req, res) => {
+router.post("/auth/login", login);
+router.post("/auth/logout", logout);
+router.patch("/auth/profile", requireAuth, async (req, res) => {
   try {
     const userId = req.user?.id;
     if (!userId) {
@@ -5068,7 +5068,7 @@ router2.patch("/auth/profile", requireAuth, async (req, res) => {
     res.status(500).json({ message: "Failed to update profile" });
   }
 });
-router2.patch("/auth/change-password", requireAuth, async (req, res) => {
+router.patch("/auth/change-password", requireAuth, async (req, res) => {
   try {
     const userId = req.user?.id;
     if (!userId) {
@@ -5095,7 +5095,7 @@ router2.patch("/auth/change-password", requireAuth, async (req, res) => {
     res.status(500).json({ message: "Failed to change password" });
   }
 });
-router2.get("/logout", (req, res) => {
+router.get("/logout", (req, res) => {
   if (req.session) {
     req.session.destroy(() => {
       res.clearCookie("connect.sid");
@@ -5105,7 +5105,7 @@ router2.get("/logout", (req, res) => {
     res.json({ message: "Logout successful" });
   }
 });
-router2.post("/auth/force-logout", (req, res) => {
+router.post("/auth/force-logout", (req, res) => {
   try {
     console.log("\u{1F534} Force logout request - clearing all authentication state");
     try {
@@ -5143,7 +5143,7 @@ router2.post("/auth/force-logout", (req, res) => {
     });
   }
 });
-router2.get("/auth/status", (req, res) => {
+router.get("/auth/status", (req, res) => {
   try {
     console.log("\u{1F50D} Authentication status check");
     const authSession = req.session;
@@ -5169,8 +5169,8 @@ router2.get("/auth/status", (req, res) => {
     });
   }
 });
-router2.get("/auth/user", getCurrentUser);
-router2.get("/auth/me", (req, res) => {
+router.get("/auth/user", getCurrentUser);
+router.get("/auth/me", (req, res) => {
   try {
     console.log("\u{1F464} Get me request - LEGACY ENDPOINT");
     console.log("\u{1F6AB} Legacy /auth/me endpoint called - returning null to stop polling");
@@ -5185,7 +5185,7 @@ router2.get("/auth/me", (req, res) => {
     res.status(500).json({ message: "Failed to get user data" });
   }
 });
-router2.get("/auth/permissions/:userId", async (req, res) => {
+router.get("/auth/permissions/:userId", async (req, res) => {
   try {
     const userId = req.params.userId;
     let user = await storage.getUser(userId);
@@ -5224,7 +5224,7 @@ router2.get("/auth/permissions/:userId", async (req, res) => {
     res.status(500).json({ message: "Failed to fetch permissions" });
   }
 });
-router2.get("/users", requireAuth, requireAdmin, async (req, res) => {
+router.get("/users", requireAuth, requireAdmin, async (req, res) => {
   try {
     const users4 = await storage.getUsers();
     res.json(users4);
@@ -5233,7 +5233,7 @@ router2.get("/users", requireAuth, requireAdmin, async (req, res) => {
     res.status(500).json({ message: "Failed to fetch users" });
   }
 });
-router2.post("/users", requireAuth, requireAdmin, async (req, res) => {
+router.post("/users", requireAuth, requireAdmin, async (req, res) => {
   try {
     const { email, name, phoneNumber, role } = req.body;
     const newUser = await storage.upsertUser({
@@ -5250,7 +5250,7 @@ router2.post("/users", requireAuth, requireAdmin, async (req, res) => {
     res.status(500).json({ message: "Failed to create user" });
   }
 });
-router2.patch("/users/:id", async (req, res) => {
+router.patch("/users/:id", async (req, res) => {
   try {
     const id = req.params.id;
     const updates = req.body;
@@ -5265,7 +5265,7 @@ router2.patch("/users/:id", async (req, res) => {
     res.status(500).json({ message: "Failed to update user" });
   }
 });
-router2.put("/users/:id", async (req, res) => {
+router.put("/users/:id", async (req, res) => {
   try {
     const id = req.params.id;
     const updates = req.body;
@@ -5280,7 +5280,7 @@ router2.put("/users/:id", async (req, res) => {
     res.status(500).json({ message: "Failed to update user" });
   }
 });
-router2.delete("/users/:id", async (req, res) => {
+router.delete("/users/:id", async (req, res) => {
   try {
     const id = req.params.id;
     const userOrders = await storage.getOrdersByUserId(id);
@@ -5298,7 +5298,7 @@ router2.delete("/users/:id", async (req, res) => {
     res.status(500).json({ message: "Failed to delete user" });
   }
 });
-router2.patch("/users/:id/toggle-active", async (req, res) => {
+router.patch("/users/:id/toggle-active", async (req, res) => {
   try {
     const id = req.params.id;
     const { isActive } = req.body;
@@ -5309,7 +5309,7 @@ router2.patch("/users/:id/toggle-active", async (req, res) => {
     res.status(500).json({ message: "Failed to toggle user active status" });
   }
 });
-var auth_default = router2;
+var auth_default = router;
 
 // server/routes/projects.ts
 import { Router as Router2 } from "express";
@@ -5620,8 +5620,8 @@ var OptimizedDashboardQueries = class {
 };
 
 // server/routes/projects.ts
-var router3 = Router2();
-router3.get("/projects", async (req, res) => {
+var router2 = Router2();
+router2.get("/projects", async (req, res) => {
   try {
     const projects2 = await storage.getProjects();
     res.json(projects2);
@@ -5630,7 +5630,7 @@ router3.get("/projects", async (req, res) => {
     res.status(500).json({ message: "Failed to fetch projects" });
   }
 });
-router3.get("/projects/active", async (req, res) => {
+router2.get("/projects/active", async (req, res) => {
   try {
     const projects2 = await storage.getActiveProjects();
     res.json(projects2);
@@ -5639,7 +5639,7 @@ router3.get("/projects/active", async (req, res) => {
     res.status(500).json({ message: "Failed to fetch active projects" });
   }
 });
-router3.get("/projects/:id", async (req, res) => {
+router2.get("/projects/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     const project = await storage.getProject(id);
@@ -5652,7 +5652,7 @@ router3.get("/projects/:id", async (req, res) => {
     res.status(500).json({ message: "Failed to fetch project" });
   }
 });
-router3.post("/projects", requireAuth, async (req, res) => {
+router2.post("/projects", requireAuth, async (req, res) => {
   try {
     const userId = req.user?.id;
     if (!userId) {
@@ -5718,7 +5718,7 @@ router3.post("/projects", requireAuth, async (req, res) => {
     res.status(500).json({ message: "Failed to create project", error: error.message });
   }
 });
-router3.put("/projects/:id", requireAuth, async (req, res) => {
+router2.put("/projects/:id", requireAuth, async (req, res) => {
   try {
     const userId = req.user?.id;
     if (!userId) {
@@ -5745,7 +5745,7 @@ router3.put("/projects/:id", requireAuth, async (req, res) => {
     res.status(500).json({ message: "Failed to update project" });
   }
 });
-router3.delete("/projects/:id", requireAuth, async (req, res) => {
+router2.delete("/projects/:id", requireAuth, async (req, res) => {
   try {
     const userId = req.user?.id;
     if (!userId) {
@@ -5763,7 +5763,7 @@ router3.delete("/projects/:id", requireAuth, async (req, res) => {
     res.status(500).json({ message: "Failed to delete project" });
   }
 });
-router3.get("/projects/:id/members", async (req, res) => {
+router2.get("/projects/:id/members", async (req, res) => {
   try {
     const projectId = parseInt(req.params.id, 10);
     const members = await storage.getProjectMembers(projectId);
@@ -5773,7 +5773,7 @@ router3.get("/projects/:id/members", async (req, res) => {
     res.status(500).json({ message: "Failed to fetch project members" });
   }
 });
-router3.post("/projects/:id/members", requireAuth, async (req, res) => {
+router2.post("/projects/:id/members", requireAuth, async (req, res) => {
   try {
     const projectId = parseInt(req.params.id, 10);
     const { userId } = req.body;
@@ -5784,7 +5784,7 @@ router3.post("/projects/:id/members", requireAuth, async (req, res) => {
     res.status(500).json({ message: "Failed to add project member" });
   }
 });
-router3.delete("/projects/:id/members/:userId", requireAuth, async (req, res) => {
+router2.delete("/projects/:id/members/:userId", requireAuth, async (req, res) => {
   try {
     const projectId = parseInt(req.params.id, 10);
     const userId = req.params.userId;
@@ -5795,7 +5795,7 @@ router3.delete("/projects/:id/members/:userId", requireAuth, async (req, res) =>
     res.status(500).json({ message: "Failed to remove project member" });
   }
 });
-router3.get("/projects/:id/stats", async (req, res) => {
+router2.get("/projects/:id/stats", async (req, res) => {
   try {
     const projectId = parseInt(req.params.id, 10);
     const orders = await OptimizedOrderQueries.getProjectOrders(projectId);
@@ -5814,7 +5814,7 @@ router3.get("/projects/:id/stats", async (req, res) => {
     res.status(500).json({ message: "Failed to fetch project statistics" });
   }
 });
-var projects_default = router3;
+var projects_default = router2;
 
 // server/routes/orders.ts
 import { Router as Router3 } from "express";
@@ -7568,9 +7568,9 @@ import { fileURLToPath as fileURLToPath2 } from "url";
 import * as XLSX3 from "xlsx";
 var __filename2 = fileURLToPath2(import.meta.url);
 var __dirname2 = path5.dirname(__filename2);
-var router4 = Router3();
+var router3 = Router3();
 var emailService = new POEmailService();
-router4.get("/orders", async (req, res) => {
+router3.get("/orders", async (req, res) => {
   try {
     const {
       page = "1",
@@ -7603,7 +7603,7 @@ router4.get("/orders", async (req, res) => {
     res.status(500).json({ message: "Failed to fetch orders" });
   }
 });
-router4.get("/orders/export", requireAuth, async (req, res) => {
+router3.get("/orders/export", requireAuth, async (req, res) => {
   try {
     const userId = req.user?.id;
     const user = await storage.getUser(userId);
@@ -7706,7 +7706,7 @@ router4.get("/orders/export", requireAuth, async (req, res) => {
     res.status(500).json({ message: "Failed to export orders" });
   }
 });
-router4.get("/orders/:id", async (req, res) => {
+router3.get("/orders/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     const order = await storage.getPurchaseOrder(id);
@@ -7719,7 +7719,7 @@ router4.get("/orders/:id", async (req, res) => {
     res.status(500).json({ message: "Failed to fetch order" });
   }
 });
-router4.post("/orders", requireAuth, upload.array("attachments"), async (req, res) => {
+router3.post("/orders", requireAuth, upload.array("attachments"), async (req, res) => {
   try {
     const userId = req.user?.id;
     if (!userId) {
@@ -7895,7 +7895,7 @@ router4.post("/orders", requireAuth, upload.array("attachments"), async (req, re
     res.status(500).json({ message: "Failed to create order" });
   }
 });
-router4.put("/orders/:id", requireAuth, async (req, res) => {
+router3.put("/orders/:id", requireAuth, async (req, res) => {
   try {
     const orderId = parseInt(req.params.id, 10);
     const updateData = req.body;
@@ -7913,7 +7913,7 @@ router4.put("/orders/:id", requireAuth, async (req, res) => {
     res.status(500).json({ message: "Failed to update order" });
   }
 });
-router4.delete("/orders/bulk", requireAuth, requireAdmin, async (req, res) => {
+router3.delete("/orders/bulk", requireAuth, requireAdmin, async (req, res) => {
   try {
     console.log("\u{1F5D1}\uFE0F Bulk delete request received:", { body: req.body, orderIds: req.body.orderIds });
     const { orderIds } = req.body;
@@ -7983,7 +7983,7 @@ router4.delete("/orders/bulk", requireAuth, requireAdmin, async (req, res) => {
     res.status(500).json({ message: "Failed to bulk delete orders" });
   }
 });
-router4.delete("/orders/:id", requireAuth, async (req, res) => {
+router3.delete("/orders/:id", requireAuth, async (req, res) => {
   try {
     const orderId = parseInt(req.params.id, 10);
     const order = await storage.getPurchaseOrder(orderId);
@@ -8000,7 +8000,7 @@ router4.delete("/orders/:id", requireAuth, async (req, res) => {
     res.status(500).json({ message: "Failed to delete order" });
   }
 });
-router4.post("/orders/:id/approve", requireAuth, async (req, res) => {
+router3.post("/orders/:id/approve", requireAuth, async (req, res) => {
   try {
     const orderId = parseInt(req.params.id, 10);
     const userId = req.user?.id;
@@ -8051,7 +8051,7 @@ router4.post("/orders/:id/approve", requireAuth, async (req, res) => {
     res.status(500).json({ message: "Failed to approve order" });
   }
 });
-router4.get("/orders/:id/approval-progress", requireAuth, async (req, res) => {
+router3.get("/orders/:id/approval-progress", requireAuth, async (req, res) => {
   try {
     const orderId = parseInt(req.params.id, 10);
     const progress = await approval_routing_service_default.getApprovalProgress(orderId);
@@ -8061,7 +8061,7 @@ router4.get("/orders/:id/approval-progress", requireAuth, async (req, res) => {
     res.status(500).json({ message: "Failed to get approval progress" });
   }
 });
-router4.post("/orders/:id/reject", requireAuth, async (req, res) => {
+router3.post("/orders/:id/reject", requireAuth, async (req, res) => {
   try {
     const orderId = parseInt(req.params.id, 10);
     const { reason } = req.body;
@@ -8076,7 +8076,7 @@ router4.post("/orders/:id/reject", requireAuth, async (req, res) => {
     res.status(500).json({ message: "Failed to reject order" });
   }
 });
-router4.post("/orders/:id/submit", requireAuth, async (req, res) => {
+router3.post("/orders/:id/submit", requireAuth, async (req, res) => {
   try {
     const orderId = parseInt(req.params.id, 10);
     const userId = req.user?.id;
@@ -8090,7 +8090,7 @@ router4.post("/orders/:id/submit", requireAuth, async (req, res) => {
     res.status(500).json({ message: "Failed to submit order" });
   }
 });
-router4.get("/orders/pending-approval", requireAuth, async (req, res) => {
+router3.get("/orders/pending-approval", requireAuth, async (req, res) => {
   try {
     const userId = req.user?.id;
     if (!userId) {
@@ -8107,7 +8107,7 @@ router4.get("/orders/pending-approval", requireAuth, async (req, res) => {
     res.status(500).json({ message: "Failed to fetch pending orders" });
   }
 });
-router4.get("/orders/stats", async (req, res) => {
+router3.get("/orders/stats", async (req, res) => {
   try {
     const stats = await OptimizedDashboardQueries.getOrderStatistics();
     res.json(stats);
@@ -8116,7 +8116,7 @@ router4.get("/orders/stats", async (req, res) => {
     res.status(500).json({ message: "Failed to fetch order statistics" });
   }
 });
-router4.post("/orders/test-pdf", async (req, res) => {
+router3.post("/orders/test-pdf", async (req, res) => {
   try {
     const testOrderData = {
       orderNumber: "PO-TEST-001",
@@ -8799,10 +8799,10 @@ async function generatePDFLogic(req, res) {
     });
   }
 }
-router4.post("/orders/generate-pdf", requireAuth, async (req, res) => {
+router3.post("/orders/generate-pdf", requireAuth, async (req, res) => {
   return await generatePDFLogic(req, res);
 });
-router4.post("/orders/:id/regenerate-pdf", requireAuth, async (req, res) => {
+router3.post("/orders/:id/regenerate-pdf", requireAuth, async (req, res) => {
   try {
     const orderId = parseInt(req.params.id);
     const userId = req.user?.id;
@@ -8863,11 +8863,11 @@ router4.post("/orders/:id/regenerate-pdf", requireAuth, async (req, res) => {
 if (process.env.NODE_ENV === "development") {
   console.log("\u{1F9EA} Development mode: PDF test endpoint available at /api/orders/test-pdf");
 } else {
-  router4.all("/orders/test-pdf", (req, res) => {
+  router3.all("/orders/test-pdf", (req, res) => {
     res.status(404).json({ error: "Test endpoint not available in production" });
   });
 }
-router4.get("/orders/download-pdf/:timestamp", (req, res) => {
+router3.get("/orders/download-pdf/:timestamp", (req, res) => {
   try {
     const { timestamp: timestamp2 } = req.params;
     const { download } = req.query;
@@ -8960,7 +8960,7 @@ router4.get("/orders/download-pdf/:timestamp", (req, res) => {
     });
   }
 });
-router4.post("/orders/send-email", requireAuth, async (req, res) => {
+router3.post("/orders/send-email", requireAuth, async (req, res) => {
   try {
     const { orderData, pdfUrl, recipients, emailSettings } = req.body;
     console.log("\u{1F4E7} \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC694\uCCAD:", { orderData, pdfUrl, recipients, emailSettings });
@@ -9163,7 +9163,7 @@ router4.post("/orders/send-email", requireAuth, async (req, res) => {
     });
   }
 });
-router4.post("/orders/send-email-simple", requireAuth, async (req, res) => {
+router3.post("/orders/send-email-simple", requireAuth, async (req, res) => {
   try {
     const { to, cc, subject, body, orderData, attachPdf, attachExcel } = req.body;
     console.log("\u{1F4E7} \uAC04\uD3B8 \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC694\uCCAD:", { to, cc, subject, attachments: { attachPdf, attachExcel } });
@@ -9241,7 +9241,7 @@ ${body}`);
     });
   }
 });
-router4.post("/orders/send-email-with-excel", requireAuth, async (req, res) => {
+router3.post("/orders/send-email-with-excel", requireAuth, async (req, res) => {
   try {
     const { emailSettings, excelFilePath, orderData } = req.body;
     console.log("\u{1F4E7} \uC5D1\uC140 \uD30C\uC77C \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC694\uCCAD:", { emailSettings, excelFilePath });
@@ -9284,7 +9284,7 @@ router4.post("/orders/send-email-with-excel", requireAuth, async (req, res) => {
     });
   }
 });
-router4.post("/test-email-smtp", async (req, res) => {
+router3.post("/test-email-smtp", async (req, res) => {
   try {
     console.log("\u{1F50D} SMTP \uD14C\uC2A4\uD2B8 \uC2DC\uC791...");
     console.log("\u{1F527} SMTP \uC124\uC815:", {
@@ -9359,7 +9359,7 @@ router4.post("/test-email-smtp", async (req, res) => {
     });
   }
 });
-router4.get("/orders/:orderId/attachments/:attachmentId/download", requireAuth, async (req, res) => {
+router3.get("/orders/:orderId/attachments/:attachmentId/download", requireAuth, async (req, res) => {
   try {
     const orderId = parseInt(req.params.orderId, 10);
     const attachmentId = parseInt(req.params.attachmentId, 10);
@@ -9421,12 +9421,12 @@ router4.get("/orders/:orderId/attachments/:attachmentId/download", requireAuth, 
     });
   }
 });
-var orders_default = router4;
+var orders_default = router3;
 
 // server/routes/vendors.ts
 import { Router as Router4 } from "express";
-var router5 = Router4();
-router5.get("/vendors", async (req, res) => {
+var router4 = Router4();
+router4.get("/vendors", async (req, res) => {
   try {
     console.log("\u{1F3EA} Fetching vendors from database...");
     const vendors3 = await storage.getVendors();
@@ -9443,7 +9443,7 @@ router5.get("/vendors", async (req, res) => {
     });
   }
 });
-router5.get("/vendors/:id", requireAuth, async (req, res) => {
+router4.get("/vendors/:id", requireAuth, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const vendor = await storage.getVendor(id);
@@ -9456,7 +9456,7 @@ router5.get("/vendors/:id", requireAuth, async (req, res) => {
     res.status(500).json({ message: "Failed to fetch vendor" });
   }
 });
-router5.post("/vendors", requireAuth, async (req, res) => {
+router4.post("/vendors", requireAuth, async (req, res) => {
   try {
     console.log("\u{1F50D} Vendor creation request body:", req.body);
     console.log("\u{1F50D} User:", req.user);
@@ -9496,7 +9496,7 @@ router5.post("/vendors", requireAuth, async (req, res) => {
     });
   }
 });
-router5.put("/vendors/:id", requireAuth, async (req, res) => {
+router4.put("/vendors/:id", requireAuth, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     console.log("\u{1F50D} Vendor update request - ID:", id);
@@ -9512,7 +9512,7 @@ router5.put("/vendors/:id", requireAuth, async (req, res) => {
     res.status(500).json({ message: "Failed to update vendor" });
   }
 });
-router5.delete("/vendors/:id", requireAuth, async (req, res) => {
+router4.delete("/vendors/:id", requireAuth, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     await storage.deleteVendor(id);
@@ -9522,7 +9522,7 @@ router5.delete("/vendors/:id", requireAuth, async (req, res) => {
     res.status(500).json({ message: "Failed to delete vendor" });
   }
 });
-router5.post("/vendors/validate", async (req, res) => {
+router4.post("/vendors/validate", async (req, res) => {
   try {
     const { vendorName } = req.body;
     if (!vendorName) {
@@ -9569,13 +9569,13 @@ router5.post("/vendors/validate", async (req, res) => {
     });
   }
 });
-var vendors_default = router5;
+var vendors_default = router4;
 
 // server/routes/items.ts
 import { Router as Router5 } from "express";
 init_schema();
-var router6 = Router5();
-router6.get("/items", async (req, res) => {
+var router5 = Router5();
+router5.get("/items", async (req, res) => {
   try {
     console.log("\u{1F528} Fetching items (using reliable mock data)...");
     const mockItems = [
@@ -9638,7 +9638,7 @@ router6.get("/items", async (req, res) => {
     });
   }
 });
-router6.get("/items/categories", async (req, res) => {
+router5.get("/items/categories", async (req, res) => {
   try {
     console.log("\u{1F3F7}\uFE0F Fetching item categories (using reliable mock data)...");
     const mockCategories = [
@@ -9658,7 +9658,7 @@ router6.get("/items/categories", async (req, res) => {
     });
   }
 });
-router6.get("/items/:id", async (req, res) => {
+router5.get("/items/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     const item = await storage.getItem(id);
@@ -9671,7 +9671,7 @@ router6.get("/items/:id", async (req, res) => {
     res.status(500).json({ message: "Failed to fetch item" });
   }
 });
-router6.post("/items", async (req, res) => {
+router5.post("/items", async (req, res) => {
   try {
     const validatedData = insertItemSchema.parse(req.body);
     const item = await storage.createItem(validatedData);
@@ -9681,7 +9681,7 @@ router6.post("/items", async (req, res) => {
     res.status(500).json({ message: "Failed to create item" });
   }
 });
-router6.put("/items/:id", async (req, res) => {
+router5.put("/items/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     const updatedItem = await storage.updateItem(id, req.body);
@@ -9691,7 +9691,7 @@ router6.put("/items/:id", async (req, res) => {
     res.status(500).json({ message: "Failed to update item" });
   }
 });
-router6.delete("/items/:id", async (req, res) => {
+router5.delete("/items/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     await storage.deleteItem(id);
@@ -9701,7 +9701,7 @@ router6.delete("/items/:id", async (req, res) => {
     res.status(500).json({ message: "Failed to delete item" });
   }
 });
-router6.get("/item-categories", async (req, res) => {
+router5.get("/item-categories", async (req, res) => {
   try {
     const categories = await storage.getItemCategories();
     res.json(categories);
@@ -9710,7 +9710,7 @@ router6.get("/item-categories", async (req, res) => {
     res.status(500).json({ message: "Failed to fetch item categories" });
   }
 });
-router6.get("/item-categories/major", async (req, res) => {
+router5.get("/item-categories/major", async (req, res) => {
   try {
     const categories = await storage.getMajorCategories();
     res.json(categories);
@@ -9719,7 +9719,7 @@ router6.get("/item-categories/major", async (req, res) => {
     res.status(500).json({ message: "Failed to fetch major categories" });
   }
 });
-router6.get("/item-categories/middle", async (req, res) => {
+router5.get("/item-categories/middle", async (req, res) => {
   try {
     const { majorId } = req.query;
     const categories = await storage.getMiddleCategories(majorId ? parseInt(majorId) : void 0);
@@ -9729,7 +9729,7 @@ router6.get("/item-categories/middle", async (req, res) => {
     res.status(500).json({ message: "Failed to fetch middle categories" });
   }
 });
-router6.get("/item-categories/minor", async (req, res) => {
+router5.get("/item-categories/minor", async (req, res) => {
   try {
     const { middleId } = req.query;
     const categories = await storage.getMinorCategories(middleId ? parseInt(middleId) : void 0);
@@ -9739,7 +9739,7 @@ router6.get("/item-categories/minor", async (req, res) => {
     res.status(500).json({ message: "Failed to fetch minor categories" });
   }
 });
-router6.post("/item-categories", async (req, res) => {
+router5.post("/item-categories", async (req, res) => {
   try {
     const category = await storage.createItemCategory(req.body);
     res.status(201).json(category);
@@ -9748,7 +9748,7 @@ router6.post("/item-categories", async (req, res) => {
     res.status(500).json({ message: "Failed to create item category" });
   }
 });
-router6.put("/item-categories/:id", async (req, res) => {
+router5.put("/item-categories/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     const updatedCategory = await storage.updateItemCategory(id, req.body);
@@ -9758,7 +9758,7 @@ router6.put("/item-categories/:id", async (req, res) => {
     res.status(500).json({ message: "Failed to update item category" });
   }
 });
-router6.delete("/item-categories/:id", async (req, res) => {
+router5.delete("/item-categories/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     await storage.deleteItemCategory(id);
@@ -9768,13 +9768,13 @@ router6.delete("/item-categories/:id", async (req, res) => {
     res.status(500).json({ message: "Failed to delete item category" });
   }
 });
-var items_default = router6;
+var items_default = router5;
 
 // server/routes/dashboard.ts
 import { Router as Router6 } from "express";
 import { sql as sql4 } from "drizzle-orm";
-var router7 = Router6();
-router7.get("/dashboard/test-db", async (req, res) => {
+var router6 = Router6();
+router6.get("/dashboard/test-db", async (req, res) => {
   try {
     const { db: db2 } = await Promise.resolve().then(() => (init_db(), db_exports));
     const result = await db2.execute(sql4`SELECT COUNT(*) as count FROM purchase_orders`);
@@ -9784,7 +9784,7 @@ router7.get("/dashboard/test-db", async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 });
-router7.get("/dashboard/unified", async (req, res) => {
+router6.get("/dashboard/unified", async (req, res) => {
   try {
     if (req.query.force === "true") {
       cache.delete("unified_dashboard_data");
@@ -9796,7 +9796,7 @@ router7.get("/dashboard/unified", async (req, res) => {
     res.status(500).json({ message: "Failed to fetch dashboard data" });
   }
 });
-router7.get("/dashboard/recent-projects", async (req, res) => {
+router6.get("/dashboard/recent-projects", async (req, res) => {
   try {
     const projects2 = await storage.getRecentProjectsThisMonth();
     res.json(projects2);
@@ -9805,7 +9805,7 @@ router7.get("/dashboard/recent-projects", async (req, res) => {
     res.status(500).json({ message: "Failed to fetch recent projects" });
   }
 });
-router7.get("/dashboard/urgent-orders", async (req, res) => {
+router6.get("/dashboard/urgent-orders", async (req, res) => {
   try {
     const orders = await storage.getUrgentOrders();
     res.json(orders);
@@ -9814,14 +9814,14 @@ router7.get("/dashboard/urgent-orders", async (req, res) => {
     res.status(500).json({ message: "Failed to fetch urgent orders" });
   }
 });
-var dashboard_default = router7;
+var dashboard_default = router6;
 
 // server/routes/companies.ts
 import { Router as Router7 } from "express";
 init_schema();
 import { sql as sql5 } from "drizzle-orm";
-var router8 = Router7();
-router8.get("/companies/debug", async (req, res) => {
+var router7 = Router7();
+router7.get("/companies/debug", async (req, res) => {
   console.log("\u{1F50D} Debug endpoint called");
   try {
     console.log("\u{1F50D} Attempting to import db module...");
@@ -9857,7 +9857,7 @@ router8.get("/companies/debug", async (req, res) => {
     });
   }
 });
-router8.get("/companies", async (req, res) => {
+router7.get("/companies", async (req, res) => {
   try {
     console.log("\u{1F3E2} Fetching companies from database...");
     const companies3 = await storage.getCompanies();
@@ -9908,7 +9908,7 @@ router8.get("/companies", async (req, res) => {
     res.json(mockCompanies);
   }
 });
-router8.post("/companies", logoUpload.single("logo"), async (req, res) => {
+router7.post("/companies", logoUpload.single("logo"), async (req, res) => {
   try {
     const companyData = { ...req.body };
     if (req.file) {
@@ -9922,7 +9922,7 @@ router8.post("/companies", logoUpload.single("logo"), async (req, res) => {
     res.status(500).json({ message: "Failed to create company" });
   }
 });
-router8.put("/companies/:id", logoUpload.single("logo"), async (req, res) => {
+router7.put("/companies/:id", logoUpload.single("logo"), async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     const updateData = { ...req.body };
@@ -9936,15 +9936,15 @@ router8.put("/companies/:id", logoUpload.single("logo"), async (req, res) => {
     res.status(500).json({ message: "Failed to update company" });
   }
 });
-var companies_default = router8;
+var companies_default = router7;
 
 // server/routes/admin.ts
 import { Router as Router8 } from "express";
 init_db();
 init_schema();
 import { eq as eq6, and as and5 } from "drizzle-orm";
-var router9 = Router8();
-router9.get("/users", requireAuth, requireAdmin, async (req, res) => {
+var router8 = Router8();
+router8.get("/users", requireAuth, requireAdmin, async (req, res) => {
   try {
     const users4 = await storage.getUsers();
     res.json(users4);
@@ -9953,7 +9953,7 @@ router9.get("/users", requireAuth, requireAdmin, async (req, res) => {
     res.status(500).json({ message: "Failed to fetch users" });
   }
 });
-router9.get("/positions", async (req, res) => {
+router8.get("/positions", async (req, res) => {
   try {
     const positions = await storage.getPositions();
     res.json(positions);
@@ -9962,7 +9962,7 @@ router9.get("/positions", async (req, res) => {
     res.status(500).json({ message: "Failed to fetch positions" });
   }
 });
-router9.get("/ui-terms", async (req, res) => {
+router8.get("/ui-terms", async (req, res) => {
   try {
     const terms = await storage.getUiTerms();
     res.json(terms);
@@ -9971,7 +9971,7 @@ router9.get("/ui-terms", async (req, res) => {
     res.status(500).json({ message: "Failed to fetch UI terms" });
   }
 });
-router9.post("/ui-terms", requireAuth, requireAdmin, async (req, res) => {
+router8.post("/ui-terms", requireAuth, requireAdmin, async (req, res) => {
   try {
     const term = await storage.createUiTerm(req.body);
     res.status(201).json(term);
@@ -9980,7 +9980,7 @@ router9.post("/ui-terms", requireAuth, requireAdmin, async (req, res) => {
     res.status(500).json({ message: "Failed to create UI term" });
   }
 });
-router9.get("/templates", async (req, res) => {
+router8.get("/templates", async (req, res) => {
   try {
     const templates = await storage.getOrderTemplates();
     res.json(templates);
@@ -9989,7 +9989,7 @@ router9.get("/templates", async (req, res) => {
     res.status(500).json({ message: "Failed to fetch templates" });
   }
 });
-router9.get("/templates/:id", async (req, res) => {
+router8.get("/templates/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     const template = await storage.getOrderTemplate(id);
@@ -10002,7 +10002,7 @@ router9.get("/templates/:id", async (req, res) => {
     res.status(500).json({ message: "Failed to fetch template" });
   }
 });
-router9.post("/templates", requireAuth, async (req, res) => {
+router8.post("/templates", requireAuth, async (req, res) => {
   try {
     const template = await storage.createOrderTemplate(req.body);
     res.status(201).json(template);
@@ -10011,7 +10011,7 @@ router9.post("/templates", requireAuth, async (req, res) => {
     res.status(500).json({ message: "Failed to create template" });
   }
 });
-router9.put("/templates/:id", requireAuth, async (req, res) => {
+router8.put("/templates/:id", requireAuth, async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     const template = await storage.updateOrderTemplate(id, req.body);
@@ -10021,7 +10021,7 @@ router9.put("/templates/:id", requireAuth, async (req, res) => {
     res.status(500).json({ message: "Failed to update template" });
   }
 });
-router9.delete("/templates/:id", requireAuth, async (req, res) => {
+router8.delete("/templates/:id", requireAuth, async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     await storage.deleteOrderTemplate(id);
@@ -10031,7 +10031,7 @@ router9.delete("/templates/:id", requireAuth, async (req, res) => {
     res.status(500).json({ message: "Failed to delete template" });
   }
 });
-router9.get("/approval-workflow-settings", requireAuth, requireAdmin, async (req, res) => {
+router8.get("/approval-workflow-settings", requireAuth, requireAdmin, async (req, res) => {
   try {
     const settings = await db.select().from(approvalWorkflowSettings).where(
       and5(
@@ -10064,7 +10064,7 @@ router9.get("/approval-workflow-settings", requireAuth, requireAdmin, async (req
     res.status(500).json({ error: "Failed to fetch workflow settings" });
   }
 });
-router9.put("/approval-workflow-settings", requireAuth, requireAdmin, async (req, res) => {
+router8.put("/approval-workflow-settings", requireAuth, requireAdmin, async (req, res) => {
   try {
     const {
       approvalMode,
@@ -10102,9 +10102,10 @@ router9.put("/approval-workflow-settings", requireAuth, requireAdmin, async (req
     res.status(500).json({ error: "Failed to update workflow settings" });
   }
 });
-var admin_default = router9;
+var admin_default = router8;
 
 // server/routes/excel-automation.ts
+import { Router as Router9 } from "express";
 import multer2 from "multer";
 import path7 from "path";
 import fs9 from "fs";
@@ -10893,7 +10894,8 @@ var upload2 = multer2({
     // 10MB
   }
 });
-router.post("/upload-and-process", requireAuth, upload2.single("file"), async (req, res) => {
+var router9 = Router9();
+router9.post("/upload-and-process", requireAuth, upload2.single("file"), async (req, res) => {
   console.log(`\u{1F680} [API] Excel automation request received`);
   DebugLogger.logExecutionPath("/api/excel-automation/upload-and-process", "ExcelAutomationService.processExcelUpload");
   const timeoutDuration = process.env.VERCEL ? 55e3 : 12e4;
@@ -10998,7 +11000,7 @@ router.post("/upload-and-process", requireAuth, upload2.single("file"), async (r
     }
   }
 });
-router.post("/update-email-preview", requireAuth, async (req, res) => {
+router9.post("/update-email-preview", requireAuth, async (req, res) => {
   DebugLogger.logExecutionPath("/api/excel-automation/update-email-preview", "ExcelAutomationService.updateEmailPreviewWithVendorSelection");
   try {
     const { filePath, selectedVendors } = req.body;
@@ -11033,7 +11035,7 @@ router.post("/update-email-preview", requireAuth, async (req, res) => {
     });
   }
 });
-router.post("/send-emails", requireAuth, async (req, res) => {
+router9.post("/send-emails", requireAuth, async (req, res) => {
   DebugLogger.logExecutionPath("/api/excel-automation/send-emails", "ExcelAutomationService.sendEmails");
   try {
     const {
@@ -11079,7 +11081,7 @@ router.post("/send-emails", requireAuth, async (req, res) => {
     });
   }
 });
-router.post("/validate-vendors", requireAuth, async (req, res) => {
+router9.post("/validate-vendors", requireAuth, async (req, res) => {
   try {
     const { filePath } = req.body;
     if (!filePath || !fs9.existsSync(filePath)) {
@@ -11103,7 +11105,7 @@ router.post("/validate-vendors", requireAuth, async (req, res) => {
     });
   }
 });
-router.get("/download/:filename", requireAuth, (req, res) => {
+router9.get("/download/:filename", requireAuth, (req, res) => {
   try {
     const filename = req.params.filename;
     const filePath = path7.join("uploads", filename);
@@ -11130,7 +11132,7 @@ router.get("/download/:filename", requireAuth, (req, res) => {
     });
   }
 });
-router.post("/debug-upload", requireAuth, upload2.single("file"), async (req, res) => {
+router9.post("/debug-upload", requireAuth, upload2.single("file"), async (req, res) => {
   console.log(`\u{1F41B} [DEBUG] Excel automation debug request received`);
   let step = 0;
   const startTime = Date.now();
@@ -11199,7 +11201,7 @@ router.post("/debug-upload", requireAuth, upload2.single("file"), async (req, re
     });
   }
 });
-router.delete("/cleanup", requireAuth, async (req, res) => {
+router9.delete("/cleanup", requireAuth, async (req, res) => {
   try {
     const { filePaths } = req.body;
     if (!Array.isArray(filePaths)) {
@@ -11239,12 +11241,12 @@ router.delete("/cleanup", requireAuth, async (req, res) => {
     });
   }
 });
-var excel_automation_default = router;
+var excel_automation_default = router9;
 
 // server/routes/po-template-real.ts
 init_po_template_processor_mock();
 init_debug_logger();
-import { Router as Router9 } from "express";
+import { Router as Router10 } from "express";
 import multer3 from "multer";
 import path11 from "path";
 import fs13 from "fs";
@@ -12434,7 +12436,7 @@ var POTemplateValidator = class {
 init_db();
 init_schema();
 import { eq as eq9 } from "drizzle-orm";
-var router10 = Router9();
+var router10 = Router10();
 router10.get("/test", (req, res) => {
   res.json({ message: "PO Template router is working!", timestamp: /* @__PURE__ */ new Date() });
 });
@@ -13260,7 +13262,7 @@ router10.saveToDatabase = async function(orders, userId) {
 var po_template_real_default = router10;
 
 // server/routes/reports.ts
-import { Router as Router10 } from "express";
+import { Router as Router11 } from "express";
 init_db();
 init_schema();
 import { eq as eq10, sql as sql7, and as and6, gte as gte4, lte as lte4, inArray as inArray2 } from "drizzle-orm";
@@ -13268,7 +13270,7 @@ import * as XLSX7 from "xlsx";
 var formatKoreanWon = (amount) => {
   return `\u20A9${amount.toLocaleString("ko-KR")}`;
 };
-var router11 = Router10();
+var router11 = Router11();
 router11.get("/debug-data", async (req, res) => {
   try {
     console.log("Debug data endpoint called");
@@ -14109,7 +14111,7 @@ router11.get("/summary", requireAuth, async (req, res) => {
 var reports_default = router11;
 
 // server/routes/import-export.ts
-import { Router as Router11 } from "express";
+import { Router as Router12 } from "express";
 
 // server/utils/import-export-service.ts
 init_db();
@@ -14643,7 +14645,7 @@ var upload4 = multer4({
     }
   }
 });
-var router12 = Router11();
+var router12 = Router12();
 var getFileType = (filename) => {
   const ext = path12.extname(filename).toLowerCase();
   return ext === ".csv" ? "csv" : "excel";
@@ -14808,10 +14810,10 @@ var import_export_default = router12;
 // server/routes/email-history.ts
 init_db();
 init_schema();
-import { Router as Router12 } from "express";
+import { Router as Router13 } from "express";
 import { eq as eq12, desc as desc4, sql as sql8 } from "drizzle-orm";
 import { z as z2 } from "zod";
-var router13 = Router12();
+var router13 = Router13();
 var createEmailHistorySchema = z2.object({
   orderId: z2.number(),
   recipientEmail: z2.string().email(),
@@ -15265,7 +15267,7 @@ router14.get("/info", (req, res) => {
 var excel_template_default = router14;
 
 // server/routes/orders-optimized.ts
-import { Router as Router13 } from "express";
+import { Router as Router14 } from "express";
 
 // server/utils/optimized-orders-query.ts
 init_db();
@@ -15491,7 +15493,7 @@ var QueryPerformanceMonitor = class {
 
 // server/routes/orders-optimized.ts
 import { z as z3 } from "zod";
-var router15 = Router13();
+var router15 = Router14();
 var OrderFiltersSchema = z3.object({
   page: z3.string().optional().transform((val) => val ? parseInt(val) : 1),
   limit: z3.string().optional().transform((val) => val ? parseInt(val) : 20),
@@ -15646,8 +15648,8 @@ function generatePerformanceRecommendations(stats) {
 var orders_optimized_default = router15;
 
 // server/routes/order-statuses.ts
-import { Router as Router14 } from "express";
-var router16 = Router14();
+import { Router as Router15 } from "express";
+var router16 = Router15();
 router16.get("/order-statuses", async (req, res) => {
   try {
     console.log("\u{1F4CA} Fetching order statuses (using reliable mock data)...");
@@ -15675,8 +15677,8 @@ router16.get("/order-statuses", async (req, res) => {
 var order_statuses_default = router16;
 
 // server/routes/invoices.ts
-import { Router as Router15 } from "express";
-var router17 = Router15();
+import { Router as Router16 } from "express";
+var router17 = Router16();
 router17.get("/invoices", async (req, res) => {
   try {
     const { orderId } = req.query;
@@ -15724,8 +15726,8 @@ router17.get("/invoices/:id", async (req, res) => {
 var invoices_default = router17;
 
 // server/routes/verification-logs.ts
-import { Router as Router16 } from "express";
-var router18 = Router16();
+import { Router as Router17 } from "express";
+var router18 = Router17();
 router18.get("/verification-logs", async (req, res) => {
   try {
     const { orderId } = req.query;
@@ -15790,8 +15792,8 @@ router18.post("/verification-logs", async (req, res) => {
 var verification_logs_default = router18;
 
 // server/routes/item-receipts.ts
-import { Router as Router17 } from "express";
-var router19 = Router17();
+import { Router as Router18 } from "express";
+var router19 = Router18();
 router19.get("/item-receipts", async (req, res) => {
   try {
     console.log("\u{1F4E6} Fetching item receipts (using reliable mock data)...");
@@ -15918,7 +15920,7 @@ router19.post("/item-receipts", async (req, res) => {
 var item_receipts_default = router19;
 
 // server/routes/approvals.ts
-import { Router as Router18 } from "express";
+import { Router as Router19 } from "express";
 init_db();
 init_schema();
 import { eq as eq15, and as and10, desc as desc6, sql as sql11, inArray as inArray4 } from "drizzle-orm";
@@ -16159,7 +16161,7 @@ var NotificationService = class {
 };
 
 // server/routes/approvals.ts
-var router20 = Router18();
+var router20 = Router19();
 async function checkApprovalPermission(userRole, orderAmount) {
   try {
     const authority = await db.select().from(approvalAuthorities).where(
@@ -16665,8 +16667,8 @@ router20.post("/approvals/:orderId/step/:stepId", requireAuth, requireRole(["adm
 var approvals_default = router20;
 
 // server/routes/project-members.ts
-import { Router as Router19 } from "express";
-var router21 = Router19();
+import { Router as Router20 } from "express";
+var router21 = Router20();
 router21.get("/project-members", async (req, res) => {
   try {
     const { projectId } = req.query;
@@ -16838,8 +16840,8 @@ router21.delete("/project-members/:id", async (req, res) => {
 var project_members_default = router21;
 
 // server/routes/project-types.ts
-import { Router as Router20 } from "express";
-var router22 = Router20();
+import { Router as Router21 } from "express";
+var router22 = Router21();
 router22.get("/project-types", async (req, res) => {
   try {
     console.log("\u{1F3D7}\uFE0F Fetching project types (using reliable mock data)...");
@@ -16993,8 +16995,8 @@ router22.get("/project-statuses", async (req, res) => {
 var project_types_default = router22;
 
 // server/routes/simple-auth.ts
-import { Router as Router21 } from "express";
-var router23 = Router21();
+import { Router as Router22 } from "express";
+var router23 = Router22();
 var mockUsers = [
   {
     id: "admin",
@@ -17099,8 +17101,8 @@ router23.get("/simple-auth/me", (req, res) => {
 var simple_auth_default = router23;
 
 // server/routes/test-accounts.ts
-import { Router as Router22 } from "express";
-var router24 = Router22();
+import { Router as Router23 } from "express";
+var router24 = Router23();
 var testUsers = [
   {
     id: "admin",
@@ -17243,7 +17245,7 @@ var test_accounts_default = router24;
 // server/routes/categories.ts
 init_db();
 init_schema();
-import { Router as Router23 } from "express";
+import { Router as Router24 } from "express";
 import { eq as eq17, and as and12 } from "drizzle-orm";
 
 // server/utils/category-mapping-validator.ts
@@ -17466,7 +17468,7 @@ async function validateCategoriesBatch(requests) {
 }
 
 // server/routes/categories.ts
-var router25 = Router23();
+var router25 = Router24();
 router25.get("/hierarchy", async (req, res) => {
   try {
     const categoriesFromOrderItems = await db.select({
@@ -17745,10 +17747,10 @@ var categories_default = router25;
 // server/routes/approval-settings.ts
 init_db();
 init_schema();
-import { Router as Router24 } from "express";
+import { Router as Router25 } from "express";
 import { eq as eq18, and as and13, desc as desc7, asc as asc5 } from "drizzle-orm";
 import { z as z4 } from "zod";
-var router26 = Router24();
+var router26 = Router25();
 router26.get("/workflow-settings/:companyId", requireAuth, async (req, res) => {
   try {
     const { companyId } = req.params;
@@ -18005,12 +18007,12 @@ router26.put("/step-instances/:id", requireAuth, async (req, res) => {
 var approval_settings_default = router26;
 
 // server/routes/approval-authorities.ts
-import { Router as Router25 } from "express";
+import { Router as Router26 } from "express";
 init_db();
 init_schema();
 import { eq as eq19, and as and14, desc as desc8 } from "drizzle-orm";
 import { z as z5 } from "zod";
-var router27 = Router25();
+var router27 = Router26();
 router27.get("/approval-authorities", requireAuth, requireRole(["admin"]), async (req, res) => {
   try {
     console.log("\u{1F4CB} Fetching approval authorities...");
@@ -18222,8 +18224,8 @@ router27.post("/approval-authorities/check-permission", requireAuth, requireRole
 var approval_authorities_default = router27;
 
 // server/routes/notifications.ts
-import { Router as Router26 } from "express";
-var router28 = Router26();
+import { Router as Router27 } from "express";
+var router28 = Router27();
 router28.get("/notifications", requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -18334,14 +18336,14 @@ var notifications_default = router28;
 // server/routes/orders-simple.ts
 init_db();
 init_schema();
-import { Router as Router27 } from "express";
+import { Router as Router28 } from "express";
 import { eq as eq20, and as and15, desc as desc9, count as count4 } from "drizzle-orm";
 init_pdf_generation_service();
 import multer5 from "multer";
 import path14 from "path";
 import fs17 from "fs/promises";
 import { z as z6 } from "zod";
-var router29 = Router27();
+var router29 = Router28();
 var storage4 = multer5.diskStorage({
   destination: async (req, file, cb) => {
     const uploadDir2 = process.env.VERCEL ? path14.join("/tmp", "uploads", "excel-simple") : path14.join(process.cwd(), "uploads", "excel-simple");
@@ -18740,8 +18742,8 @@ router29.get("/orders/simple-upload-history", requireAuth, async (req, res) => {
 var orders_simple_default = router29;
 
 // server/routes/positions.ts
-import { Router as Router28 } from "express";
-var router30 = Router28();
+import { Router as Router29 } from "express";
+var router30 = Router29();
 router30.get("/positions", async (req, res) => {
   try {
     res.json([]);
@@ -18761,7 +18763,7 @@ router30.get("/ui-terms", async (req, res) => {
 var positions_default = router30;
 
 // server/routes/audit.ts
-import { Router as Router29 } from "express";
+import { Router as Router30 } from "express";
 
 // server/services/audit-service.ts
 init_db();
@@ -19163,7 +19165,7 @@ var AuditService = class {
 
 // server/routes/audit.ts
 import { z as z7 } from "zod";
-var router31 = Router29();
+var router31 = Router30();
 var getAuditLogsSchema = z7.object({
   userId: z7.string().optional(),
   eventType: z7.string().optional(),
@@ -20020,7 +20022,7 @@ router33.post("/test", async (req, res) => {
 var email_settings_default = router33;
 
 // server/routes/workflow.ts
-import { Router as Router30 } from "express";
+import { Router as Router31 } from "express";
 
 // server/services/approval-authority-service.ts
 init_db();
@@ -20719,7 +20721,7 @@ var workflowEngine = new WorkflowEngine();
 init_db();
 init_schema();
 import { eq as eq25 } from "drizzle-orm";
-var router34 = Router30();
+var router34 = Router31();
 router34.post("/api/orders/check-approval-authority", async (req, res) => {
   try {
     const { amount } = req.body;
@@ -20940,11 +20942,11 @@ router34.get("/api/orders/required-approvers", async (req, res) => {
 var workflow_default = router34;
 
 // server/routes/excel-smart-upload-simple.ts
-import { Router as Router31 } from "express";
+import { Router as Router32 } from "express";
 import multer6 from "multer";
 import xlsx from "xlsx";
 import crypto from "crypto";
-var router35 = Router31();
+var router35 = Router32();
 var storage5 = multer6.memoryStorage();
 var upload6 = multer6({
   storage: storage5,
@@ -21231,10 +21233,10 @@ var excel_smart_upload_simple_default = router35;
 // server/routes/orders-workflow.ts
 init_db();
 init_schema();
-import { Router as Router32 } from "express";
+import { Router as Router33 } from "express";
 import { eq as eq26 } from "drizzle-orm";
 import { z as z9 } from "zod";
-var router36 = Router32();
+var router36 = Router33();
 router36.post("/orders/check-approval-authority", requireAuth, async (req, res) => {
   try {
     const schema = z9.object({
@@ -21503,9 +21505,9 @@ var orders_workflow_default = router36;
 
 // server/routes/health.ts
 init_db();
-import { Router as Router33 } from "express";
+import { Router as Router34 } from "express";
 import { sql as sql14 } from "drizzle-orm";
-var router37 = Router33();
+var router37 = Router34();
 router37.get("/health", (req, res) => {
   res.json({
     status: "healthy",
@@ -21632,7 +21634,7 @@ router37.get("/health/system", async (req, res) => {
 var health_default = router37;
 
 // server/routes/index.ts
-var router38 = Router34();
+var router38 = Router35();
 router38.use("/api", auth_default);
 router38.use("/api", projects_default);
 router38.use("/api", orders_default);
