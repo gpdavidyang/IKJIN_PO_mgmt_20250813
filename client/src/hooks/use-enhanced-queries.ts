@@ -87,19 +87,7 @@ export function useDashboardStats(timeRange?: string) {
 export function useOrders(filters?: any) {
   const queryFn = async () => {
     const url = `/api/orders-optimized${filters ? `?${new URLSearchParams(filters).toString()}` : ''}`;
-    console.log('🔍 useOrders - Requesting optimized:', url);
-    console.log('🔍 useOrders - Filters:', filters);
-    
     const response = await apiRequest("GET", url);
-    console.log('📦 useOrders - Response received:', response);
-    console.log('📦 useOrders - Orders count:', response?.orders?.length || 0);
-    console.log('📦 useOrders - Total count:', response?.total || 0);
-    console.log('📦 useOrders - First order:', response?.orders?.[0]);
-    console.log('📦 useOrders - Vendor/Project info:', {
-      vendorName: response?.orders?.[0]?.vendorName,
-      projectName: response?.orders?.[0]?.projectName
-    });
-    
     return response;
   };
 

@@ -445,13 +445,6 @@ export default function Orders() {
     };
   });
   
-  // Debug logging - Enable temporarily
-  console.log('🔍 Orders Page - ordersData:', ordersData);
-  console.log('🔍 Orders Page - orders array:', orders);
-  console.log('🔍 Orders Page - first order:', orders[0]);
-  console.log('🔍 Orders Page - emailStatusData:', emailStatusData);
-  console.log('🔍 Orders Page - isLoading:', ordersLoading);
-  console.log('🔍 Orders Page - filters:', filters);
 
   return (
     <div className={`min-h-screen transition-colors ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
