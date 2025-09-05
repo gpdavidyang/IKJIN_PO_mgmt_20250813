@@ -113,11 +113,9 @@ export function EnhancedOrdersTable({
   
   const handleSelectAll = useCallback((checked: boolean) => {
     if (checked) {
-      // Only select draft orders (only they can be deleted)
-      const draftOrderIds = orders
-        .filter(order => order.status === 'draft')
-        .map(order => order.id);
-      setSelectedOrderIds(draftOrderIds);
+      // Admin can select all orders
+      const orderIds = orders.map(order => order.id);
+      setSelectedOrderIds(orderIds);
     } else {
       setSelectedOrderIds([]);
     }
@@ -137,10 +135,9 @@ export function EnhancedOrdersTable({
     }
   }, [onBulkDelete, selectedOrderIds]);
   
-  // Get draft orders for selection (only draft orders can be deleted)
-  const draftOrders = orders.filter(order => order.status === 'draft');
-  const allDraftOrdersSelected = draftOrders.length > 0 && draftOrders.every(order => selectedOrderIds.includes(order.id));
-  const someDraftOrdersSelected = draftOrders.some(order => selectedOrderIds.includes(order.id));
+  // For admin, all orders can be selected for deletion
+  const allOrdersSelected = orders.length > 0 && orders.every(order => selectedOrderIds.includes(order.id));
+  const someOrdersSelected = orders.some(order => selectedOrderIds.includes(order.id));
   
   // 디버깅: props 확인
   console.log('🔍 EnhancedOrdersTable props:', {
@@ -245,9 +242,9 @@ export function EnhancedOrdersTable({
       header: (
         <div className="flex items-center justify-center">
           <Checkbox
-            checked={allDraftOrdersSelected}
+            checked={allOrdersSelected}
             onCheckedChange={handleSelectAll}
-            disabled={draftOrders.length === 0}
+            disabled={orders.length === 0}
             aria-label="모든 발주서 선택"
           />
         </div>
@@ -258,7 +255,6 @@ export function EnhancedOrdersTable({
           <Checkbox
             checked={selectedOrderIds.includes(row.id)}
             onCheckedChange={(checked) => handleSelectOrder(row.id, checked as boolean)}
-            disabled={row.status !== 'draft'} // Only draft orders can be selected for deletion
             aria-label={`발주서 ${row.orderNumber} 선택`}
           />
         </div>
@@ -574,7 +570,7 @@ export function EnhancedOrdersTable({
               {selectedOrderIds.length}개의 발주서가 선택됨
             </span>
             <Badge variant="outline" className="text-blue-600 border-blue-300">
-              임시저장 상태만 삭제 가능
+              관리자 권한으로 삭제 가능
             </Badge>
           </div>
           <div className="flex items-center gap-2">
