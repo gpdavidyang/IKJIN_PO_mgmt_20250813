@@ -140,6 +140,7 @@ export interface IStorage {
   createPurchaseOrder(order: InsertPurchaseOrder): Promise<PurchaseOrder>;
   updatePurchaseOrder(id: number, order: Partial<Omit<InsertPurchaseOrder, 'items'>>): Promise<PurchaseOrder>;
   deletePurchaseOrder(id: number): Promise<void>;
+  bulkDeleteOrders(orderIds: number[], deletedBy: string): Promise<PurchaseOrder[]>;
   approvePurchaseOrder(id: number, approvedBy: string): Promise<PurchaseOrder>;
   
   // Purchase order item operations
@@ -1229,6 +1230,37 @@ export class DatabaseStorage implements IStorage {
     await db.delete(attachments).where(eq(attachments.orderId, id));
     await db.delete(orderHistory).where(eq(orderHistory.orderId, id));
     await db.delete(purchaseOrders).where(eq(purchaseOrders.id, id));
+  }
+
+  async bulkDeleteOrders(orderIds: number[], deletedBy: string): Promise<PurchaseOrder[]> {
+    if (!orderIds || orderIds.length === 0) {
+      return [];
+    }
+
+    // Get orders that exist before deleting
+    const existingOrders = await db
+      .select()
+      .from(purchaseOrders)
+      .where(sql`${purchaseOrders.id} = ANY(${orderIds})`);
+
+    if (existingOrders.length === 0) {
+      return [];
+    }
+
+    const existingOrderIds = existingOrders.map(o => o.id);
+
+    // Delete related records for all orders
+    await db.delete(purchaseOrderItems).where(sql`${purchaseOrderItems.orderId} = ANY(${existingOrderIds})`);
+    await db.delete(attachments).where(sql`${attachments.orderId} = ANY(${existingOrderIds})`);
+    await db.delete(orderHistory).where(sql`${orderHistory.orderId} = ANY(${existingOrderIds})`);
+    
+    // Delete the orders themselves
+    await db.delete(purchaseOrders).where(sql`${purchaseOrders.id} = ANY(${existingOrderIds})`);
+
+    // Log the bulk deletion
+    console.log(`🗑️ Bulk deleted ${existingOrders.length} orders by ${deletedBy}`);
+
+    return existingOrders;
   }
 
   async approvePurchaseOrder(id: number, approvedBy: string): Promise<PurchaseOrder> {
