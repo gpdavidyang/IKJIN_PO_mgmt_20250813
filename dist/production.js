@@ -1548,21 +1548,26 @@ var init_pdf_generation_service = __esm({
           console.log(`\u{1F4C4} [PDFGenerator] \uBC1C\uC8FC\uC11C PDF \uC0DD\uC131 \uC2DC\uC791: Order ID ${orderId}`);
           const timestamp2 = Date.now();
           const fileName = `PO_${orderData.orderNumber}_${timestamp2}.pdf`;
-          const htmlContent = this.generateHTMLTemplate(orderData);
-          const tempDir = process.env.VERCEL ? "/tmp" : path4.join(this.uploadDir, String((/* @__PURE__ */ new Date()).getFullYear()), String((/* @__PURE__ */ new Date()).getMonth() + 1).padStart(2, "0"));
-          if (!process.env.VERCEL) {
-            console.log(`\u{1F4C1} [PDFGenerator] \uB514\uB809\uD1A0\uB9AC \uC0DD\uC131 \uC911: ${tempDir}`);
-            if (!fs6.existsSync(tempDir)) {
+          let pdfBuffer;
+          if (process.env.VERCEL) {
+            console.log("\u{1F4C4} [PDFGenerator] Vercel \uD658\uACBD: PDFKit\uC73C\uB85C PDF \uC9C1\uC811 \uC0DD\uC131");
+            pdfBuffer = await this.generatePDFWithPDFKit(orderData);
+          } else {
+            console.log("\u{1F4C4} [PDFGenerator] \uB85C\uCEEC \uD658\uACBD: HTML \uD15C\uD50C\uB9BF\uC73C\uB85C PDF \uC0DD\uC131");
+            const tempDir2 = path4.join(this.uploadDir, String((/* @__PURE__ */ new Date()).getFullYear()), String((/* @__PURE__ */ new Date()).getMonth() + 1).padStart(2, "0"));
+            console.log(`\u{1F4C1} [PDFGenerator] \uB514\uB809\uD1A0\uB9AC \uC0DD\uC131 \uC911: ${tempDir2}`);
+            if (!fs6.existsSync(tempDir2)) {
               try {
-                fs6.mkdirSync(tempDir, { recursive: true });
-                console.log(`\u2705 [PDFGenerator] \uB514\uB809\uD1A0\uB9AC \uC0DD\uC131 \uC644\uB8CC: ${tempDir}`);
+                fs6.mkdirSync(tempDir2, { recursive: true });
+                console.log(`\u2705 [PDFGenerator] \uB514\uB809\uD1A0\uB9AC \uC0DD\uC131 \uC644\uB8CC: ${tempDir2}`);
               } catch (dirError) {
-                console.error(`\u274C [PDFGenerator] \uB514\uB809\uD1A0\uB9AC \uC0DD\uC131 \uC2E4\uD328: ${tempDir}`, dirError);
+                console.error(`\u274C [PDFGenerator] \uB514\uB809\uD1A0\uB9AC \uC0DD\uC131 \uC2E4\uD328: ${tempDir2}`, dirError);
                 throw new Error(`\uB514\uB809\uD1A0\uB9AC \uC0DD\uC131 \uC2E4\uD328: ${dirError instanceof Error ? dirError.message : "Unknown error"}`);
               }
             }
+            const htmlContent = this.generateHTMLTemplate(orderData);
+            pdfBuffer = await this.convertHTMLToPDFFromString(htmlContent);
           }
-          const pdfBuffer = await this.convertHTMLToPDFFromString(htmlContent);
           let filePath = "";
           let attachmentId;
           if (process.env.VERCEL) {
@@ -1900,61 +1905,139 @@ var init_pdf_generation_service = __esm({
         }
       }
       /**
-       * HTML 문자열을 PDF로 변환 (Puppeteer + Chromium 사용 - Vercel 호환)
+       * PDF를 순수 JavaScript로 생성 (브라우저 의존성 제거)
        */
       static async convertHTMLToPDFFromString(htmlContent) {
         if (process.env.VERCEL) {
-          const puppeteer = await import("puppeteer-core");
-          const chromium2 = await import("@sparticuz/chromium-min");
-          const browser = await puppeteer.default.launch({
-            args: chromium2.default.args,
-            defaultViewport: chromium2.default.defaultViewport,
-            executablePath: await chromium2.default.executablePath(),
-            headless: chromium2.default.headless,
-            ignoreHTTPSErrors: true
-          });
-          const page = await browser.newPage();
-          try {
-            await page.setContent(htmlContent, {
-              waitUntil: "networkidle0"
-            });
-            const pdfBuffer = await page.pdf({
-              format: "A4",
-              printBackground: true,
-              margin: {
-                top: "15mm",
-                right: "15mm",
-                bottom: "15mm",
-                left: "15mm"
-              }
-            });
-            return pdfBuffer;
-          } finally {
-            await browser.close();
-          }
+          return await this.generatePDFWithPDFKit(htmlContent);
         } else {
-          const { chromium: chromium2 } = await import("playwright");
-          const browser = await chromium2.launch({ headless: true });
-          const page = await browser.newPage();
           try {
-            await page.setContent(htmlContent, {
-              waitUntil: "networkidle"
-            });
-            const pdfBuffer = await page.pdf({
-              format: "A4",
-              printBackground: true,
-              margin: {
-                top: "15mm",
-                right: "15mm",
-                bottom: "15mm",
-                left: "15mm"
-              }
-            });
-            return pdfBuffer;
-          } finally {
-            await browser.close();
+            const { chromium: chromium2 } = await import("playwright");
+            const browser = await chromium2.launch({ headless: true });
+            const page = await browser.newPage();
+            try {
+              await page.setContent(htmlContent, {
+                waitUntil: "networkidle"
+              });
+              const pdfBuffer = await page.pdf({
+                format: "A4",
+                printBackground: true,
+                margin: {
+                  top: "15mm",
+                  right: "15mm",
+                  bottom: "15mm",
+                  left: "15mm"
+                }
+              });
+              return pdfBuffer;
+            } finally {
+              await browser.close();
+            }
+          } catch (playwrightError) {
+            console.warn("\u26A0\uFE0F Playwright \uC2E4\uD328, PDFKit\uC73C\uB85C \uB300\uCCB4:", playwrightError);
+            return await this.generatePDFWithPDFKit(htmlContent);
           }
         }
+      }
+      /**
+       * PDFKit으로 발주서 PDF 직접 생성 (브라우저 의존성 제거)
+       */
+      static async generatePDFWithPDFKit(orderData) {
+        const PDFKitDocument = (await import("pdfkit")).default;
+        return new Promise((resolve2, reject) => {
+          try {
+            const doc = new PDFKitDocument({
+              size: "A4",
+              margins: { top: 50, bottom: 50, left: 50, right: 50 }
+            });
+            const buffers = [];
+            doc.on("data", buffers.push.bind(buffers));
+            doc.on("end", () => resolve2(Buffer.concat(buffers)));
+            doc.on("error", reject);
+            doc.font("Helvetica");
+            doc.fontSize(20).text("\uAD6C\uB9E4 \uBC1C\uC8FC\uC11C", { align: "center" });
+            doc.fontSize(12).text("Purchase Order", { align: "center" });
+            doc.moveDown(2);
+            const formatDate = (date2) => {
+              if (!date2) return "-";
+              return format(new Date(date2), "yyyy\uB144 MM\uC6D4 dd\uC77C", { locale: ko });
+            };
+            const formatCurrency = (amount) => {
+              return new Intl.NumberFormat("ko-KR", {
+                style: "currency",
+                currency: "KRW"
+              }).format(amount);
+            };
+            const startY = doc.y;
+            doc.fontSize(10);
+            doc.text(`\uBC1C\uC8FC\uC11C \uBC88\uD638: ${orderData.orderNumber}`, 50, startY);
+            doc.text(`\uC791\uC131\uC77C: ${formatDate(orderData.orderDate)}`, 50, startY + 20);
+            doc.text(`\uAC70\uB798\uCC98: ${orderData.vendorName || "-"}`, 50, startY + 40);
+            doc.text(`\uB2F4\uB2F9\uC790: ${orderData.vendorContact || "-"}`, 50, startY + 60);
+            doc.text(`\uD504\uB85C\uC81D\uD2B8: ${orderData.projectName || "-"}`, 300, startY);
+            doc.text(`\uD604\uC7A5: ${orderData.site || "-"}`, 300, startY + 20);
+            doc.text(`\uB0A9\uAE30\uC77C: ${formatDate(orderData.deliveryDate)}`, 300, startY + 40);
+            doc.text(`\uCD1D \uAE08\uC561: ${formatCurrency(orderData.totalAmount)}`, 300, startY + 60);
+            doc.moveDown(5);
+            doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
+            doc.moveDown(1);
+            const tableTop = doc.y;
+            doc.fontSize(9);
+            doc.rect(50, tableTop, 495, 15).fill("#f0f0f0");
+            doc.fillColor("black");
+            doc.text("No", 55, tableTop + 3);
+            doc.text("\uD488\uBAA9\uBA85", 90, tableTop + 3);
+            doc.text("\uADDC\uACA9", 220, tableTop + 3);
+            doc.text("\uC218\uB7C9", 290, tableTop + 3);
+            doc.text("\uB2E8\uC704", 330, tableTop + 3);
+            doc.text("\uB2E8\uAC00", 370, tableTop + 3);
+            doc.text("\uAE08\uC561", 430, tableTop + 3);
+            doc.text("\uB0A9\uD488\uCC98", 490, tableTop + 3);
+            doc.rect(50, tableTop, 495, 15).stroke();
+            doc.moveDown(1.2);
+            let currentY = doc.y;
+            orderData.items.forEach((item, index2) => {
+              const rowHeight = 20;
+              if (index2 % 2 === 0) {
+                doc.rect(50, currentY, 495, rowHeight).fill("#f9f9f9");
+                doc.fillColor("black");
+              }
+              doc.text(`${index2 + 1}`, 55, currentY + 5);
+              doc.text(item.name.substring(0, 15) + (item.name.length > 15 ? "..." : ""), 90, currentY + 5);
+              doc.text((item.specification || "-").substring(0, 8), 220, currentY + 5);
+              doc.text(item.quantity.toString(), 290, currentY + 5);
+              doc.text(item.unit, 330, currentY + 5);
+              doc.text(formatCurrency(item.unitPrice), 370, currentY + 5);
+              doc.text(formatCurrency(item.price), 430, currentY + 5);
+              doc.text(item.deliveryLocation?.substring(0, 6) || "-", 490, currentY + 5);
+              doc.rect(50, currentY, 495, rowHeight).stroke();
+              currentY += rowHeight;
+            });
+            doc.rect(50, currentY, 495, 20).fill("#e0e0e0");
+            doc.fillColor("black");
+            doc.fontSize(10).text("\uD569\uACC4", 55, currentY + 5);
+            doc.text(formatCurrency(orderData.totalAmount), 430, currentY + 5);
+            doc.rect(50, currentY, 495, 20).stroke();
+            doc.moveDown(2);
+            if (orderData.notes) {
+              doc.fontSize(10).text("\uD2B9\uC774\uC0AC\uD56D:", 50, doc.y);
+              doc.fontSize(9).text(orderData.notes, 50, doc.y + 15);
+              doc.moveDown(2);
+            }
+            doc.moveDown(2);
+            const signY = doc.y;
+            const signBoxWidth = 80;
+            const signBoxHeight = 50;
+            ["\uB2F4\uB2F9", "\uACF5\uBB34", "\uD300\uC7A5", "\uC784\uC6D0", "\uC0AC\uC7A5"].forEach((title, index2) => {
+              const x = 50 + index2 * 95;
+              doc.rect(x, signY, signBoxWidth, signBoxHeight).stroke();
+              doc.fontSize(9).text(title, x + 30, signY + 5);
+            });
+            doc.end();
+          } catch (error) {
+            reject(error);
+          }
+        });
       }
       /**
        * 기존 발주서에 대해 PDF 재생성
@@ -4509,6 +4592,29 @@ var DatabaseStorage = class {
     } catch (error) {
       console.error("Error getting order attachments:", error);
       return [];
+    }
+  }
+  /**
+   * Get attachment by file path (for database-stored PDFs)
+   */
+  async getAttachmentByPath(filePath) {
+    try {
+      const [attachment] = await db.select({
+        id: attachments.id,
+        orderId: attachments.orderId,
+        originalName: attachments.originalName,
+        storedName: attachments.storedName,
+        filePath: attachments.filePath,
+        fileSize: attachments.fileSize,
+        mimeType: attachments.mimeType,
+        uploadedBy: attachments.uploadedBy,
+        uploadedAt: attachments.uploadedAt,
+        fileData: attachments.fileData
+      }).from(attachments).where(eq(attachments.filePath, filePath));
+      return attachment || void 0;
+    } catch (error) {
+      console.error("Error getting attachment by path:", error);
+      return void 0;
     }
   }
 };
@@ -8077,6 +8183,88 @@ router3.put("/orders/:id", requireAuth, async (req, res) => {
     res.status(500).json({ message: "Failed to update order" });
   }
 });
+router3.delete("/orders/bulk-delete", requireAuth, async (req, res) => {
+  console.log("\u{1F5D1}\uFE0F Bulk delete request received");
+  try {
+    const { user } = req;
+    const { orderIds } = req.body;
+    console.log("\u{1F464} User info:", { id: user?.id, role: user?.role, name: user?.name });
+    console.log("\u{1F4C4} Request body:", req.body);
+    if (user.role !== "admin") {
+      console.log("\u274C Access denied: User is not admin");
+      return res.status(403).json({
+        message: "\uAD00\uB9AC\uC790\uB9CC \uC77C\uAD04 \uC0AD\uC81C\uAC00 \uAC00\uB2A5\uD569\uB2C8\uB2E4."
+      });
+    }
+    if (!orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
+      console.log("\u274C Invalid request: Missing or invalid orderIds");
+      return res.status(400).json({
+        message: "\uC0AD\uC81C\uD560 \uBC1C\uC8FC\uC11C ID \uBAA9\uB85D\uC774 \uD544\uC694\uD569\uB2C8\uB2E4."
+      });
+    }
+    const numericOrderIds = orderIds.map((id) => {
+      const numId = typeof id === "string" ? parseInt(id, 10) : id;
+      if (isNaN(numId)) {
+        throw new Error(`Invalid order ID: ${id}`);
+      }
+      return numId;
+    });
+    console.log(`\u{1F5D1}\uFE0F \uAD00\uB9AC\uC790 \uC77C\uAD04 \uC0AD\uC81C \uC694\uCCAD: ${numericOrderIds.length}\uAC1C \uBC1C\uC8FC\uC11C`, { admin: user.name, orderIds: numericOrderIds });
+    console.log("\u{1F50D} Looking up orders for validation...");
+    const validOrders = [];
+    for (const orderId of numericOrderIds) {
+      const order = await storage.getPurchaseOrder(orderId);
+      if (order) {
+        validOrders.push(order);
+      } else {
+        console.log(`\u26A0\uFE0F Order not found: ${orderId}`);
+      }
+    }
+    if (validOrders.length === 0) {
+      return res.status(404).json({
+        message: "\uC0AD\uC81C\uD560 \uC218 \uC788\uB294 \uBC1C\uC8FC\uC11C\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4."
+      });
+    }
+    console.log(`\u{1F5D1}\uFE0F Deleting ${validOrders.length} valid orders...`);
+    const deletedOrders = [];
+    const failedDeletions = [];
+    for (const order of validOrders) {
+      try {
+        console.log(`\u{1F5D1}\uFE0F Deleting order ${order.id} (${order.orderNumber})`);
+        await storage.deletePurchaseOrder(order.id);
+        deletedOrders.push(order);
+        console.log(`\u2705 Successfully deleted order ${order.id}`);
+      } catch (deleteError) {
+        console.error(`\u274C Failed to delete order ${order.id}:`, deleteError);
+        failedDeletions.push({
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          error: deleteError instanceof Error ? deleteError.message : "Unknown error"
+        });
+      }
+    }
+    console.log(`\u2705 \uC77C\uAD04 \uC0AD\uC81C \uC644\uB8CC: ${deletedOrders.length}\uAC1C \uC131\uACF5, ${failedDeletions.length}\uAC1C \uC2E4\uD328`);
+    const response = {
+      message: `${deletedOrders.length}\uAC1C\uC758 \uBC1C\uC8FC\uC11C\uAC00 \uC0AD\uC81C\uB418\uC5C8\uC2B5\uB2C8\uB2E4.`,
+      deletedCount: deletedOrders.length,
+      deletedOrders: deletedOrders.map((o) => ({ id: o.id, orderNumber: o.orderNumber }))
+    };
+    if (failedDeletions.length > 0) {
+      response.partialFailure = true;
+      response.failedCount = failedDeletions.length;
+      response.failedDeletions = failedDeletions;
+      response.message += ` (${failedDeletions.length}\uAC1C\uB294 \uC0AD\uC81C\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.)`;
+    }
+    res.json(response);
+  } catch (error) {
+    console.error("\u274C \uC77C\uAD04 \uC0AD\uC81C \uC624\uB958:", error);
+    res.status(500).json({
+      message: "\uBC1C\uC8FC\uC11C \uC77C\uAD04 \uC0AD\uC81C\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.",
+      error: error instanceof Error ? error.message : "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958",
+      stack: process.env.NODE_ENV === "development" ? error instanceof Error ? error.stack : void 0 : void 0
+    });
+  }
+});
 router3.delete("/orders/:id", requireAuth, async (req, res) => {
   try {
     const orderId = parseInt(req.params.id, 10);
@@ -8264,11 +8452,11 @@ async function generatePDFLogic(req, res) {
     console.log(`\u{1F4C4} PDF \uC0DD\uC131 \uC694\uCCAD: \uBC1C\uC8FC\uC11C ${orderData.orderNumber || "N/A"}`);
     console.log("\u{1F4C4} PDF \uC0DD\uC131 \uB370\uC774\uD130:", JSON.stringify(orderData, null, 2));
     const timestamp2 = Date.now();
-    const tempDir = process.env.VERCEL ? path5.join("/tmp", "temp-pdf") : path5.join(process.cwd(), "uploads/temp-pdf");
+    const tempDir2 = process.env.VERCEL ? path5.join("/tmp", "temp-pdf") : path5.join(process.cwd(), "uploads/temp-pdf");
     try {
-      if (!fs7.existsSync(tempDir)) {
-        fs7.mkdirSync(tempDir, { recursive: true });
-        console.log(`\u{1F4C1} \uC784\uC2DC \uB514\uB809\uD1A0\uB9AC \uC0DD\uC131: ${tempDir}`);
+      if (!fs7.existsSync(tempDir2)) {
+        fs7.mkdirSync(tempDir2, { recursive: true });
+        console.log(`\u{1F4C1} \uC784\uC2DC \uB514\uB809\uD1A0\uB9AC \uC0DD\uC131: ${tempDir2}`);
       }
     } catch (error) {
       console.error(`\u26A0\uFE0F \uC784\uC2DC \uB514\uB809\uD1A0\uB9AC \uC0DD\uC131 \uC2E4\uD328: ${error}`);
@@ -8277,8 +8465,8 @@ async function generatePDFLogic(req, res) {
       }
       throw error;
     }
-    const tempHtmlPath = path5.join(tempDir, `order-${timestamp2}.html`);
-    const tempPdfPath = path5.join(tempDir, `order-${timestamp2}.pdf`);
+    const tempHtmlPath = path5.join(tempDir2, `order-${timestamp2}.html`);
+    const tempPdfPath = path5.join(tempDir2, `order-${timestamp2}.pdf`);
     console.log(`\u{1F4C4} \uC784\uC2DC \uD30C\uC77C \uACBD\uB85C - HTML: ${tempHtmlPath}, PDF: ${tempPdfPath}`);
     try {
       let companyInfo = null;
@@ -8961,16 +9149,48 @@ if (process.env.NODE_ENV === "development") {
     res.status(404).json({ error: "Test endpoint not available in production" });
   });
 }
-router3.get("/orders/download-pdf/:timestamp", (req, res) => {
+router3.get("/orders/download-pdf/:timestamp", async (req, res) => {
   try {
     const { timestamp: timestamp2 } = req.params;
     const { download } = req.query;
+    console.log(`\u{1F4C4} PDF \uB2E4\uC6B4\uB85C\uB4DC \uC694\uCCAD: timestamp=${timestamp2}, download=${download}`);
+    if (process.env.VERCEL) {
+      try {
+        const dbPath = `db://pdf-${timestamp2}`;
+        console.log(`\u{1F4C4} \uB370\uC774\uD130\uBCA0\uC774\uC2A4\uC5D0\uC11C PDF \uC870\uD68C: ${dbPath}`);
+        const attachment = await storage.getAttachmentByPath(dbPath);
+        if (attachment && attachment.fileData) {
+          console.log(`\u{1F4C4} \uB370\uC774\uD130\uBCA0\uC774\uC2A4\uC5D0\uC11C PDF \uBC1C\uACAC: ${attachment.originalName} (\uD06C\uAE30: ${attachment.fileSize} bytes)`);
+          const pdfBuffer = Buffer.from(attachment.fileData, "base64");
+          console.log(`\u{1F4C4} PDF \uBC84\uD37C \uC0DD\uC131 \uC644\uB8CC: ${pdfBuffer.length} bytes`);
+          res.setHeader("Access-Control-Allow-Origin", "*");
+          res.setHeader("Access-Control-Allow-Methods", "GET");
+          res.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+          res.setHeader("X-Frame-Options", "SAMEORIGIN");
+          res.setHeader("Content-Type", "application/pdf");
+          res.setHeader("Content-Length", pdfBuffer.length.toString());
+          if (download === "true") {
+            res.setHeader("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent("\uBC1C\uC8FC\uC11C.pdf")}`);
+          } else {
+            res.setHeader("Content-Disposition", `inline; filename*=UTF-8''${encodeURIComponent("\uBC1C\uC8FC\uC11C.pdf")}`);
+            res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+            res.setHeader("Pragma", "no-cache");
+            res.setHeader("Expires", "0");
+          }
+          res.send(pdfBuffer);
+          return;
+        } else {
+          console.log(`\u{1F4C4} \uB370\uC774\uD130\uBCA0\uC774\uC2A4\uC5D0\uC11C PDF \uCC3E\uC9C0 \uBABB\uD568: ${dbPath}`);
+        }
+      } catch (dbError) {
+        console.error("\u274C \uB370\uC774\uD130\uBCA0\uC774\uC2A4 PDF \uC870\uD68C \uC624\uB958:", dbError);
+      }
+    }
     const basePath = process.env.VERCEL ? path5.join("/tmp", "temp-pdf", `order-${timestamp2}`) : path5.join(process.cwd(), "uploads/temp-pdf", `order-${timestamp2}`);
     const pdfPath = `${basePath}.pdf`;
     const htmlPath = `${basePath}.html`;
-    console.log(`\u{1F4C4} \uD30C\uC77C \uC694\uCCAD: ${basePath}.*`);
+    console.log(`\u{1F4C4} \uD30C\uC77C \uC2DC\uC2A4\uD15C\uC5D0\uC11C \uD30C\uC77C \uC694\uCCAD: ${basePath}.*`);
     console.log(`\u{1F4C4} PDF \uC874\uC7AC: ${fs7.existsSync(pdfPath)}, HTML \uC874\uC7AC: ${fs7.existsSync(htmlPath)}`);
-    console.log(`\u{1F4C4} \uB2E4\uC6B4\uB85C\uB4DC \uBAA8\uB4DC: ${download}`);
     if (process.env.VERCEL && !fs7.existsSync(pdfPath) && fs7.existsSync(htmlPath)) {
       const htmlContent = fs7.readFileSync(htmlPath, "utf-8");
       res.setHeader("Content-Type", "text/html; charset=utf-8");
@@ -9301,11 +9521,11 @@ router3.post("/orders/send-email-simple", requireAuth, async (req, res) => {
       }
     }
     if (!excelPath) {
-      const tempDir = path5.join(__dirname2, "../../uploads/temp");
-      if (!fs7.existsSync(tempDir)) {
-        fs7.mkdirSync(tempDir, { recursive: true });
+      const tempDir2 = path5.join(__dirname2, "../../uploads/temp");
+      if (!fs7.existsSync(tempDir2)) {
+        fs7.mkdirSync(tempDir2, { recursive: true });
       }
-      excelPath = path5.join(tempDir, `temp_${Date.now()}.txt`);
+      excelPath = path5.join(tempDir2, `temp_${Date.now()}.txt`);
       fs7.writeFileSync(excelPath, `\uBC1C\uC8FC\uC11C \uC0C1\uC138 \uB0B4\uC6A9
 
 ${body}`);
@@ -9521,88 +9741,6 @@ router3.get("/orders/:orderId/attachments/:attachmentId/download", requireAuth, 
     res.status(500).json({
       error: "\uD30C\uC77C \uB2E4\uC6B4\uB85C\uB4DC \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4.",
       details: error instanceof Error ? error.message : "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"
-    });
-  }
-});
-router3.delete("/orders/bulk-delete", requireAuth, async (req, res) => {
-  console.log("\u{1F5D1}\uFE0F Bulk delete request received");
-  try {
-    const { user } = req;
-    const { orderIds } = req.body;
-    console.log("\u{1F464} User info:", { id: user?.id, role: user?.role, name: user?.name });
-    console.log("\u{1F4C4} Request body:", req.body);
-    if (user.role !== "admin") {
-      console.log("\u274C Access denied: User is not admin");
-      return res.status(403).json({
-        message: "\uAD00\uB9AC\uC790\uB9CC \uC77C\uAD04 \uC0AD\uC81C\uAC00 \uAC00\uB2A5\uD569\uB2C8\uB2E4."
-      });
-    }
-    if (!orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
-      console.log("\u274C Invalid request: Missing or invalid orderIds");
-      return res.status(400).json({
-        message: "\uC0AD\uC81C\uD560 \uBC1C\uC8FC\uC11C ID \uBAA9\uB85D\uC774 \uD544\uC694\uD569\uB2C8\uB2E4."
-      });
-    }
-    const numericOrderIds = orderIds.map((id) => {
-      const numId = typeof id === "string" ? parseInt(id, 10) : id;
-      if (isNaN(numId)) {
-        throw new Error(`Invalid order ID: ${id}`);
-      }
-      return numId;
-    });
-    console.log(`\u{1F5D1}\uFE0F \uAD00\uB9AC\uC790 \uC77C\uAD04 \uC0AD\uC81C \uC694\uCCAD: ${numericOrderIds.length}\uAC1C \uBC1C\uC8FC\uC11C`, { admin: user.name, orderIds: numericOrderIds });
-    console.log("\u{1F50D} Looking up orders for validation...");
-    const validOrders = [];
-    for (const orderId of numericOrderIds) {
-      const order = await storage.getPurchaseOrder(orderId);
-      if (order) {
-        validOrders.push(order);
-      } else {
-        console.log(`\u26A0\uFE0F Order not found: ${orderId}`);
-      }
-    }
-    if (validOrders.length === 0) {
-      return res.status(404).json({
-        message: "\uC0AD\uC81C\uD560 \uC218 \uC788\uB294 \uBC1C\uC8FC\uC11C\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4."
-      });
-    }
-    console.log(`\u{1F5D1}\uFE0F Deleting ${validOrders.length} valid orders...`);
-    const deletedOrders = [];
-    const failedDeletions = [];
-    for (const order of validOrders) {
-      try {
-        console.log(`\u{1F5D1}\uFE0F Deleting order ${order.id} (${order.orderNumber})`);
-        await storage.deletePurchaseOrder(order.id);
-        deletedOrders.push(order);
-        console.log(`\u2705 Successfully deleted order ${order.id}`);
-      } catch (deleteError) {
-        console.error(`\u274C Failed to delete order ${order.id}:`, deleteError);
-        failedDeletions.push({
-          orderId: order.id,
-          orderNumber: order.orderNumber,
-          error: deleteError instanceof Error ? deleteError.message : "Unknown error"
-        });
-      }
-    }
-    console.log(`\u2705 \uC77C\uAD04 \uC0AD\uC81C \uC644\uB8CC: ${deletedOrders.length}\uAC1C \uC131\uACF5, ${failedDeletions.length}\uAC1C \uC2E4\uD328`);
-    const response = {
-      message: `${deletedOrders.length}\uAC1C\uC758 \uBC1C\uC8FC\uC11C\uAC00 \uC0AD\uC81C\uB418\uC5C8\uC2B5\uB2C8\uB2E4.`,
-      deletedCount: deletedOrders.length,
-      deletedOrders: deletedOrders.map((o) => ({ id: o.id, orderNumber: o.orderNumber }))
-    };
-    if (failedDeletions.length > 0) {
-      response.partialFailure = true;
-      response.failedCount = failedDeletions.length;
-      response.failedDeletions = failedDeletions;
-      response.message += ` (${failedDeletions.length}\uAC1C\uB294 \uC0AD\uC81C\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.)`;
-    }
-    res.json(response);
-  } catch (error) {
-    console.error("\u274C \uC77C\uAD04 \uC0AD\uC81C \uC624\uB958:", error);
-    res.status(500).json({
-      message: "\uBC1C\uC8FC\uC11C \uC77C\uAD04 \uC0AD\uC81C\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.",
-      error: error instanceof Error ? error.message : "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958",
-      stack: process.env.NODE_ENV === "development" ? error instanceof Error ? error.stack : void 0 : void 0
     });
   }
 });

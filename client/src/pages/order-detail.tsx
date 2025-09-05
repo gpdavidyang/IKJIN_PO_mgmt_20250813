@@ -405,6 +405,27 @@ export default function OrderDetail() {
                 );
               })()}
             </Button>
+            {canDelete && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleDelete} 
+                disabled={deleteMutation.isPending}
+                className={`h-8 px-3 text-xs transition-colors ${isDarkMode ? 'border-red-800 text-red-400 hover:bg-red-950 hover:border-red-700' : 'border-red-300 text-red-700 hover:bg-red-50'}`}
+              >
+                {deleteMutation.isPending ? (
+                  <>
+                    <div className="animate-spin h-3 w-3 mr-1 border border-red-400 border-t-transparent rounded-full"></div>
+                    삭제 중...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    삭제
+                  </>
+                )}
+              </Button>
+            )}
           </div>
         </div>
       </div>

@@ -725,7 +725,7 @@ router.get("/orders/stats", async (req, res) => {
   }
 });
 
-// Test PDF generation endpoint (no auth for testing)
+// Test PDF generation endpoint (no auth for testing) - Uses PDFGenerationService
 router.post("/orders/test-pdf", async (req, res) => {
   try {
     const testOrderData = {
@@ -738,27 +738,49 @@ router.post("/orders/test-pdf", async (req, res) => {
           name: "테스트 품목 1",
           quantity: 10,
           unit: "EA",
-          unitPrice: 50000
+          unitPrice: 50000,
+          price: 500000
         },
         {
           name: "테스트 품목 2", 
           quantity: 5,
           unit: "SET",
-          unitPrice: 100000
+          unitPrice: 100000,
+          price: 500000
         }
       ],
       notes: "테스트용 발주서입니다.",
-      orderDate: new Date().toISOString(),
+      orderDate: new Date(),
       createdBy: "테스트 사용자"
     };
 
     console.log('🧪 PDF 테스트 시작:', testOrderData.orderNumber);
     
-    // Forward to the main PDF generation logic
-    req.body = { orderData: testOrderData, options: {} };
-    
-    // Call the main PDF generation function
-    return await generatePDFLogic(req, res);
+    // Use PDFGenerationService directly instead of the old generatePDFLogic
+    const result = await PDFGenerationService.generatePurchaseOrderPDF(
+      0, // Test order ID
+      testOrderData,
+      'test-user'
+    );
+
+    if (result.success) {
+      // Get the timestamp from the attachment path
+      const timestamp = Date.now();
+      
+      res.json({
+        success: true,
+        pdfUrl: `/api/orders/download-pdf/${timestamp}`,
+        message: "PDF가 성공적으로 생성되었습니다.",
+        fileSize: result.pdfBuffer?.length || 0,
+        attachmentId: result.attachmentId
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        error: result.error || "PDF 생성 실패",
+        details: "PDFGenerationService 오류"
+      });
+    }
   } catch (error) {
     console.error('🧪 PDF 테스트 오류:', error);
     res.status(500).json({
