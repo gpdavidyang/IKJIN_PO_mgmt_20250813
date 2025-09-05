@@ -603,7 +603,7 @@ export default function OrdersProfessionalFast() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">모든 발주 상태</SelectItem>
-                  <SelectItem value="draft">초안</SelectItem>
+                  <SelectItem value="draft">임시저장</SelectItem>
                   <SelectItem value="created">발주생성</SelectItem>
                   <SelectItem value="sent">발주발송</SelectItem>
                   <SelectItem value="delivered">납품완료</SelectItem>
