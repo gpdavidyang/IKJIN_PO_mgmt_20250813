@@ -14,6 +14,7 @@ import {
   verificationLogs,
   orderTemplates,
   itemCategories,
+  approvalStepInstances,
 
   uiTerms,
   terminology,
@@ -1225,7 +1226,8 @@ export class DatabaseStorage implements IStorage {
     const order = await this.getPurchaseOrder(id);
     if (!order) return;
 
-    // Delete related records
+    // Delete related records in correct order to avoid FK constraints
+    await db.delete(approvalStepInstances).where(eq(approvalStepInstances.orderId, id));
     await db.delete(purchaseOrderItems).where(eq(purchaseOrderItems.orderId, id));
     await db.delete(attachments).where(eq(attachments.orderId, id));
     await db.delete(orderHistory).where(eq(orderHistory.orderId, id));
@@ -1264,19 +1266,26 @@ export class DatabaseStorage implements IStorage {
       for (const orderId of existingOrderIds) {
         console.log(`🗑️ Deleting related records for order ${orderId}...`);
         
-        // Delete purchase order items
-        await db.delete(purchaseOrderItems).where(eq(purchaseOrderItems.orderId, orderId));
+        // 1. Delete approval step instances (no cascade, must be deleted first)
+        const deletedApprovalSteps = await db.delete(approvalStepInstances).where(eq(approvalStepInstances.orderId, orderId)).returning();
+        console.log(`   🗑️ Deleted ${deletedApprovalSteps.length} approval step instances`);
         
-        // Delete attachments
-        await db.delete(attachments).where(eq(attachments.orderId, orderId));
+        // 2. Delete purchase order items (this will cascade to itemReceipts due to FK constraint)
+        const deletedItems = await db.delete(purchaseOrderItems).where(eq(purchaseOrderItems.orderId, orderId)).returning();
+        console.log(`   🗑️ Deleted ${deletedItems.length} purchase order items`);
         
-        // Delete order history
-        await db.delete(orderHistory).where(eq(orderHistory.orderId, orderId));
+        // 3. Delete attachments
+        const deletedAttachments = await db.delete(attachments).where(eq(attachments.orderId, orderId)).returning();
+        console.log(`   🗑️ Deleted ${deletedAttachments.length} attachments`);
         
-        // Delete the order itself
+        // 4. Delete order history
+        const deletedHistory = await db.delete(orderHistory).where(eq(orderHistory.orderId, orderId)).returning();
+        console.log(`   🗑️ Deleted ${deletedHistory.length} order history entries`);
+        
+        // 5. Delete the order itself (this will cascade to invoices, verificationLogs, emailSendHistory)
         await db.delete(purchaseOrders).where(eq(purchaseOrders.id, orderId));
         
-        console.log(`✅ Deleted order ${orderId} and its related records`);
+        console.log(`✅ Deleted order ${orderId} and all related records`);
       }
 
       console.log(`✅ Bulk deleted ${existingOrders.length} orders successfully`);
@@ -1288,6 +1297,8 @@ export class DatabaseStorage implements IStorage {
         message: error?.message,
         code: error?.code,
         detail: error?.detail,
+        constraint: error?.constraint,
+        table: error?.table,
         stack: error?.stack
       });
       throw error;

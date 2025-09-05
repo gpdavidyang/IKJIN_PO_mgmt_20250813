@@ -55,6 +55,16 @@ export default defineConfig({
     reportCompressedSize: false, // Disable to speed up build
     chunkSizeWarningLimit: 1000, // Increase limit since we're not chunking
   },
+  // Development server configuration
+  server: {
+    port: 5001,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      }
+    }
+  },
   // Performance optimizations
   optimizeDeps: {
     include: [

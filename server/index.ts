@@ -34,7 +34,8 @@ app.use((req, res, next) => {
     'https://ikjin-po-mgmt-20250813-dno9.vercel.app',
     'https://ikjin-po-mgmt-20250813-dn.vercel.app',
     'http://localhost:3000',
-    'http://localhost:5000'
+    'http://localhost:5000',
+    'http://localhost:5001'
   ];
   
   // Check if origin matches allowed origins or Vercel deployment pattern
@@ -147,7 +148,7 @@ async function initializeApp() {
     
     // Start server only if not in Vercel environment
     if (!process.env.VERCEL) {
-      const port = process.env.PORT || 5000;
+      const port = process.env.PORT || 5001;
       server.listen(port, "0.0.0.0", () => {
         log(`serving on port ${port}`);
         log(`WebSocket service initialized`);
