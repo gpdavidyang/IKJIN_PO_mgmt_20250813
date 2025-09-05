@@ -82,7 +82,7 @@ export function AttachedFilesInfo({ attachments, orderId }: AttachedFilesInfoPro
   const handleDownload = async (attachment: any) => {
     setDownloading(attachment.id);
     try {
-      const response = await fetch(`/api/orders/${orderId}/attachments/${attachment.id}/download`, {
+      const response = await fetch(`/api/attachments/${attachment.id}/download`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
