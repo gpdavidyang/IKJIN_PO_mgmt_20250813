@@ -41,6 +41,7 @@ import workflowRoutes from "./workflow";
 import excelSmartUploadRoutes from "./excel-smart-upload-simple";
 import ordersWorkflowRoutes from "./orders-workflow";
 import healthRoutes from "./health";
+import debugRoutes from "./debug";
 
 const router = Router();
 
@@ -82,5 +83,6 @@ router.use(workflowRoutes); // Workflow routes already have /api prefix
 router.use("/api", ordersWorkflowRoutes); // Orders workflow routes
 router.use("/api/excel-smart-upload", excelSmartUploadRoutes); // Smart Excel upload routes
 router.use("/api", healthRoutes); // Health check routes
+router.use("/api", debugRoutes); // Debug routes
 
 export default router;

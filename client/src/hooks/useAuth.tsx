@@ -63,18 +63,56 @@ function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [shouldCheckAuth]);
 
-  // Get user from React Query cache or return null
+  // FIXED: Re-enable authentication query with proper error handling
   const userQuery = useQuery({
     queryKey: ["/api/auth/user"],
-    queryFn: () => null, // Dummy function, data will be set by login mutation
-    enabled: false, // Never actually run the query
-    initialData: null
+    queryFn: async () => {
+      try {
+        const response = await fetch("/api/auth/user", {
+          credentials: 'include',
+        });
+        
+        // Silently handle 401 errors - user is not authenticated
+        if (response.status === 401) {
+          return null;
+        }
+        
+        // Handle other HTTP errors
+        if (!response.ok) {
+          throw new Error(`Authentication check failed: ${response.status}`);
+        }
+        
+        const userData = await response.json();
+        console.log('🟢 useAuth - User authenticated:', {
+          id: userData.id,
+          name: userData.name,
+          role: userData.role
+        });
+        
+        return userData;
+      } catch (fetchError: any) {
+        // Silently handle network errors that might indicate auth issues
+        if (fetchError.name === 'TypeError' && fetchError.message.includes('Failed to fetch')) {
+          return null;
+        }
+        
+        // Re-throw other errors for proper error handling
+        throw fetchError;
+      }
+    },
+    enabled: true, // FIXED: Re-enable authentication checking
+    retry: 1, // Allow one retry
+    staleTime: 5 * 60 * 1000, // Consider fresh for 5 minutes
+    gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: true, // Check on mount
+    refetchOnReconnect: false,
+    refetchInterval: false,
   });
   
   const user = userQuery.data;
-
-  const error = null;
-  const isLoading = false;
+  const error = userQuery.error;
+  const isLoading = userQuery.isLoading;
   
   // Disabled: Real authentication query - causing persistent 401 errors in production
   const disabledQuery = useQuery<User | null>({

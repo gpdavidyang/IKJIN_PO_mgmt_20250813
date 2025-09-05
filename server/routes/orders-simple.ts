@@ -76,6 +76,9 @@ const OrderDataSchema = z.object({
 
 // Bulk create orders without validation
 router.post('/orders/bulk-create-simple', requireAuth, upload.single('excelFile'), async (req, res) => {
+  console.log('📥 /bulk-create-simple - Raw body:', req.body);
+  console.log('📥 /bulk-create-simple - Orders field type:', typeof req.body.orders);
+  console.log('📥 /bulk-create-simple - Orders field value:', req.body.orders);
   console.log('📥 /bulk-create-simple - Received file:', req.file);
   console.log('📥 /bulk-create-simple - File details:', {
     originalname: req.file?.originalname,
@@ -86,7 +89,23 @@ router.post('/orders/bulk-create-simple', requireAuth, upload.single('excelFile'
   });
 
   try {
-    const ordersData = JSON.parse(req.body.orders);
+    // Enhanced error handling for JSON parsing
+    let ordersData;
+    if (!req.body.orders) {
+      return res.status(400).json({ error: 'No orders data provided' });
+    }
+    
+    try {
+      ordersData = JSON.parse(req.body.orders);
+    } catch (parseError) {
+      console.error('❌ JSON parse error:', parseError);
+      console.error('❌ Raw orders data:', req.body.orders);
+      return res.status(400).json({ 
+        error: 'Invalid JSON format in orders data',
+        details: parseError instanceof Error ? parseError.message : String(parseError)
+      });
+    }
+    
     const validatedOrders = z.array(OrderDataSchema).parse(ordersData);
     const sendEmail = req.body.sendEmail === 'true'; // Parse email flag
     const isDraft = req.body.isDraft === 'true'; // Parse draft flag
