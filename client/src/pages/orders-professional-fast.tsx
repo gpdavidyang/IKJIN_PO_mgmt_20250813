@@ -711,6 +711,50 @@ export default function OrdersProfessionalFast() {
     return statusMap[status] || status;
   };
 
+  // 발주 상태 텍스트
+  const getOrderStatusText = (status: string) => {
+    const statusMap: { [key: string]: string } = {
+      'draft': '임시저장',
+      'created': '발주생성',
+      'sent': '발주발송',
+      'delivered': '납품완료'
+    };
+    return statusMap[status] || status || '-';
+  };
+
+  // 승인 상태 텍스트
+  const getApprovalStatusText = (status: string) => {
+    const statusMap: { [key: string]: string } = {
+      'not_required': '승인불필요',
+      'pending': '승인대기',
+      'approved': '승인완료',
+      'rejected': '반려'
+    };
+    return statusMap[status] || status || '-';
+  };
+
+  // 발주 상태 색상
+  const getOrderStatusColor = (status: string) => {
+    switch(status) {
+      case 'draft': return 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-500/25 dark:text-gray-200 dark:border-gray-400/50';
+      case 'created': return 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-500/25 dark:text-blue-200 dark:border-blue-400/50';
+      case 'sent': return 'bg-indigo-100 text-indigo-800 border-indigo-300 dark:bg-indigo-500/25 dark:text-indigo-200 dark:border-indigo-400/50';
+      case 'delivered': return 'bg-green-100 text-green-800 border-green-300 dark:bg-green-500/25 dark:text-green-200 dark:border-green-400/50';
+      default: return 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-500/25 dark:text-gray-200 dark:border-gray-400/50';
+    }
+  };
+
+  // 승인 상태 색상
+  const getApprovalStatusColor = (status: string) => {
+    switch(status) {
+      case 'not_required': return 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-500/25 dark:text-gray-200 dark:border-gray-400/50';
+      case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-500/25 dark:text-yellow-200 dark:border-yellow-400/50';
+      case 'approved': return 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-500/25 dark:text-blue-200 dark:border-blue-400/50';
+      case 'rejected': return 'bg-red-100 text-red-800 border-red-300 dark:bg-red-500/25 dark:text-red-200 dark:border-red-400/50';
+      default: return 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-500/25 dark:text-gray-200 dark:border-gray-400/50';
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <div className="max-w-[1366px] mx-auto p-6">
@@ -757,19 +801,31 @@ export default function OrdersProfessionalFast() {
 
             {/* Quick Filters */}
             <div className="flex flex-wrap gap-3 mb-4">
-              {/* 상태 필터 - 실제 status 필드 사용 */}
-              <Select value={filters.status || "all"} onValueChange={(value) => handleFilterChange("status", value)}>
+              {/* 발주 상태 필터 */}
+              <Select value={filters.orderStatus || "all"} onValueChange={(value) => handleFilterChange("orderStatus", value)}>
                 <SelectTrigger className="w-40 h-10 bg-white dark:bg-gray-700">
-                  <SelectValue placeholder="상태 선택" />
+                  <SelectValue placeholder="발주 상태" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">모든 상태</SelectItem>
+                  <SelectItem value="all">모든 발주상태</SelectItem>
                   <SelectItem value="draft">임시저장</SelectItem>
-                  <SelectItem value="pending">결재대기</SelectItem>
-                  <SelectItem value="approved">승인됨</SelectItem>
-                  <SelectItem value="rejected">반려됨</SelectItem>
-                  <SelectItem value="sent">발송됨</SelectItem>
-                  <SelectItem value="completed">완료</SelectItem>
+                  <SelectItem value="created">발주생성</SelectItem>
+                  <SelectItem value="sent">발주발송</SelectItem>
+                  <SelectItem value="delivered">납품완료</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* 승인 상태 필터 */}
+              <Select value={filters.approvalStatus || "all"} onValueChange={(value) => handleFilterChange("approvalStatus", value)}>
+                <SelectTrigger className="w-40 h-10 bg-white dark:bg-gray-700">
+                  <SelectValue placeholder="승인 상태" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">모든 승인상태</SelectItem>
+                  <SelectItem value="not_required">승인불필요</SelectItem>
+                  <SelectItem value="pending">승인대기</SelectItem>
+                  <SelectItem value="approved">승인완료</SelectItem>
+                  <SelectItem value="rejected">반려</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -996,10 +1052,19 @@ export default function OrdersProfessionalFast() {
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     <button
-                      onClick={() => handleSort("status")}
+                      onClick={() => handleSort("orderStatus")}
                       className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200"
                     >
-                      상태
+                      발주상태
+                      <ChevronsUpDown className="h-3 w-3" />
+                    </button>
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <button
+                      onClick={() => handleSort("approvalStatus")}
+                      className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200"
+                    >
+                      승인상태
                       <ChevronsUpDown className="h-3 w-3" />
                     </button>
                   </th>
@@ -1010,7 +1075,7 @@ export default function OrdersProfessionalFast() {
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={isAdmin ? 10 : 9} className="px-6 py-12 text-center">
+                    <td colSpan={isAdmin ? 11 : 10} className="px-6 py-12 text-center">
                       <div className="flex justify-center">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
                       </div>
@@ -1018,7 +1083,7 @@ export default function OrdersProfessionalFast() {
                   </tr>
                 ) : orders.length === 0 ? (
                   <tr>
-                    <td colSpan={isAdmin ? 10 : 9} className="px-6 py-12 text-center">
+                    <td colSpan={isAdmin ? 11 : 10} className="px-6 py-12 text-center">
                       <div className="text-gray-500 dark:text-gray-400">
                         <FileText className="h-12 w-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
                         <p className="text-sm">발주서가 없습니다.</p>
@@ -1084,8 +1149,13 @@ export default function OrdersProfessionalFast() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(order.status)}`}>
-                          {getStatusText(order.status)}
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getOrderStatusColor(order.orderStatus || 'draft')}`}>
+                          {getOrderStatusText(order.orderStatus || 'draft')}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getApprovalStatusColor(order.approvalStatus || 'not_required')}`}>
+                          {getApprovalStatusText(order.approvalStatus || 'not_required')}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
