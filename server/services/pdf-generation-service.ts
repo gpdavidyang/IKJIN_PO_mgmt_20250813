@@ -58,13 +58,19 @@ export class PDFGenerationService {
       const timestamp = Date.now();
       const fileName = `PO_${orderData.orderNumber}_${timestamp}.pdf`;
 
-      // HTML 템플릿 생성
-      const htmlContent = this.generateHTMLTemplate(orderData);
+      // PDF 생성 방식 선택
+      let pdfBuffer: Buffer;
       
-      // Vercel 환경에서는 임시 파일을 /tmp에 생성
-      const tempDir = process.env.VERCEL ? '/tmp' : path.join(this.uploadDir, String(new Date().getFullYear()), String(new Date().getMonth() + 1).padStart(2, '0'));
-      
-      if (!process.env.VERCEL) {
+      if (process.env.VERCEL) {
+        // Vercel: 브라우저 없이 직접 PDF 생성 (더 안정적)
+        console.log('📄 [PDFGenerator] Vercel 환경: PDFKit으로 PDF 직접 생성');
+        pdfBuffer = await this.generatePDFWithPDFKit(orderData);
+      } else {
+        // 로컬: HTML 템플릿을 통한 PDF 생성
+        console.log('📄 [PDFGenerator] 로컬 환경: HTML 템플릿으로 PDF 생성');
+        
+        const tempDir = path.join(this.uploadDir, String(new Date().getFullYear()), String(new Date().getMonth() + 1).padStart(2, '0'));
+        
         // 로컬 환경에서만 디렉토리 생성
         console.log(`📁 [PDFGenerator] 디렉토리 생성 중: ${tempDir}`);
         
@@ -77,10 +83,10 @@ export class PDFGenerationService {
             throw new Error(`디렉토리 생성 실패: ${dirError instanceof Error ? dirError.message : 'Unknown error'}`);
           }
         }
+        
+        const htmlContent = this.generateHTMLTemplate(orderData);
+        pdfBuffer = await this.convertHTMLToPDFFromString(htmlContent);
       }
-
-      // HTML을 PDF로 변환 (메모리에서 처리)
-      const pdfBuffer = await this.convertHTMLToPDFFromString(htmlContent);
       
       let filePath = '';
       let attachmentId: number;
@@ -440,75 +446,196 @@ export class PDFGenerationService {
   }
 
   /**
-   * HTML 문자열을 PDF로 변환 (Puppeteer + Chromium 사용 - Vercel 호환)
+   * PDF를 순수 JavaScript로 생성 (브라우저 의존성 제거)
    */
   private static async convertHTMLToPDFFromString(htmlContent: string): Promise<Buffer> {
     if (process.env.VERCEL) {
-      // Vercel 환경에서는 Puppeteer + @sparticuz/chromium-min 사용
-      const puppeteer = await import('puppeteer-core');
-      const chromium = await import('@sparticuz/chromium-min');
-      
-      const browser = await puppeteer.default.launch({
-        args: chromium.default.args,
-        defaultViewport: chromium.default.defaultViewport,
-        executablePath: await chromium.default.executablePath(),
-        headless: chromium.default.headless,
-        ignoreHTTPSErrors: true,
-      });
-      
-      const page = await browser.newPage();
-      
-      try {
-        await page.setContent(htmlContent, {
-          waitUntil: 'networkidle0'
-        });
-        
-        const pdfBuffer = await page.pdf({
-          format: 'A4',
-          printBackground: true,
-          margin: {
-            top: '15mm',
-            right: '15mm',
-            bottom: '15mm',
-            left: '15mm'
-          }
-        });
-        
-        return pdfBuffer;
-        
-      } finally {
-        await browser.close();
-      }
+      // Vercel 환경: PDFKit으로 직접 PDF 생성 (브라우저 불필요)
+      return await this.generatePDFWithPDFKit(htmlContent);
     } else {
-      // 로컬 환경에서는 Playwright 사용
-      const { chromium } = await import('playwright');
-      
-      const browser = await chromium.launch({ headless: true });
-      const page = await browser.newPage();
-      
+      // 로컬 환경: 기존 Playwright 사용
       try {
-        await page.setContent(htmlContent, {
-          waitUntil: 'networkidle'
-        });
+        const { chromium } = await import('playwright');
         
-        const pdfBuffer = await page.pdf({
-          format: 'A4',
-          printBackground: true,
-          margin: {
-            top: '15mm',
-            right: '15mm',
-            bottom: '15mm',
-            left: '15mm'
-          }
-        });
+        const browser = await chromium.launch({ headless: true });
+        const page = await browser.newPage();
         
-        return pdfBuffer;
-        
-      } finally {
-        await browser.close();
+        try {
+          await page.setContent(htmlContent, {
+            waitUntil: 'networkidle'
+          });
+          
+          const pdfBuffer = await page.pdf({
+            format: 'A4',
+            printBackground: true,
+            margin: {
+              top: '15mm',
+              right: '15mm',
+              bottom: '15mm',
+              left: '15mm'
+            }
+          });
+          
+          return pdfBuffer;
+          
+        } finally {
+          await browser.close();
+        }
+      } catch (playwrightError) {
+        console.warn('⚠️ Playwright 실패, PDFKit으로 대체:', playwrightError);
+        // 로컬에서도 Playwright 실패 시 PDFKit 사용
+        return await this.generatePDFWithPDFKit(htmlContent);
       }
     }
   }
+
+  /**
+   * PDFKit으로 발주서 PDF 직접 생성 (브라우저 의존성 제거)
+   */
+  private static async generatePDFWithPDFKit(orderData: PurchaseOrderPDFData): Promise<Buffer> {
+    const PDFDocument = (await import('pdfkit')).default;
+    
+    return new Promise((resolve, reject) => {
+      try {
+        const doc = new PDFDocument({ 
+          size: 'A4',
+          margins: { top: 50, bottom: 50, left: 50, right: 50 }
+        });
+        
+        const buffers: Buffer[] = [];
+        doc.on('data', buffers.push.bind(buffers));
+        doc.on('end', () => resolve(Buffer.concat(buffers)));
+        doc.on('error', reject);
+
+        // 한글 폰트 설정 (기본 폰트 사용)
+        doc.font('Helvetica');
+        
+        // 제목
+        doc.fontSize(20).text('구매 발주서', { align: 'center' });
+        doc.fontSize(12).text('Purchase Order', { align: 'center' });
+        doc.moveDown(2);
+        
+        // 날짜 포맷팅 함수
+        const formatDate = (date?: Date | null) => {
+          if (!date) return '-';
+          return format(new Date(date), 'yyyy년 MM월 dd일', { locale: ko });
+        };
+
+        // 금액 포맷팅 함수
+        const formatCurrency = (amount: number) => {
+          return new Intl.NumberFormat('ko-KR', {
+            style: 'currency',
+            currency: 'KRW'
+          }).format(amount);
+        };
+        
+        // 발주서 정보 섹션
+        const startY = doc.y;
+        doc.fontSize(10);
+        
+        // 좌측 정보
+        doc.text(`발주서 번호: ${orderData.orderNumber}`, 50, startY);
+        doc.text(`작성일: ${formatDate(orderData.orderDate)}`, 50, startY + 20);
+        doc.text(`거래처: ${orderData.vendorName || '-'}`, 50, startY + 40);
+        doc.text(`담당자: ${orderData.vendorContact || '-'}`, 50, startY + 60);
+        
+        // 우측 정보  
+        doc.text(`프로젝트: ${orderData.projectName || '-'}`, 300, startY);
+        doc.text(`현장: ${orderData.site || '-'}`, 300, startY + 20);
+        doc.text(`납기일: ${formatDate(orderData.deliveryDate)}`, 300, startY + 40);
+        doc.text(`총 금액: ${formatCurrency(orderData.totalAmount)}`, 300, startY + 60);
+        
+        doc.moveDown(5);
+        
+        // 구분선
+        doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
+        doc.moveDown(1);
+        
+        // 품목 테이블 헤더
+        const tableTop = doc.y;
+        doc.fontSize(9);
+        
+        // 헤더 배경
+        doc.rect(50, tableTop, 495, 15).fill('#f0f0f0');
+        
+        // 헤더 텍스트
+        doc.fillColor('black');
+        doc.text('No', 55, tableTop + 3);
+        doc.text('품목명', 90, tableTop + 3);
+        doc.text('규격', 220, tableTop + 3);
+        doc.text('수량', 290, tableTop + 3);
+        doc.text('단위', 330, tableTop + 3);
+        doc.text('단가', 370, tableTop + 3);
+        doc.text('금액', 430, tableTop + 3);
+        doc.text('납품처', 490, tableTop + 3);
+        
+        // 테이블 경계선
+        doc.rect(50, tableTop, 495, 15).stroke();
+        doc.moveDown(1.2);
+        
+        // 품목 행들
+        let currentY = doc.y;
+        orderData.items.forEach((item, index) => {
+          const rowHeight = 20;
+          
+          // 행 배경 (짝수 행)
+          if (index % 2 === 0) {
+            doc.rect(50, currentY, 495, rowHeight).fill('#f9f9f9');
+            doc.fillColor('black');
+          }
+          
+          // 품목 정보
+          doc.text(`${index + 1}`, 55, currentY + 5);
+          doc.text(item.name.substring(0, 15) + (item.name.length > 15 ? '...' : ''), 90, currentY + 5);
+          doc.text((item.specification || '-').substring(0, 8), 220, currentY + 5);
+          doc.text(item.quantity.toString(), 290, currentY + 5);
+          doc.text(item.unit, 330, currentY + 5);
+          doc.text(formatCurrency(item.unitPrice), 370, currentY + 5);
+          doc.text(formatCurrency(item.price), 430, currentY + 5);
+          doc.text(item.deliveryLocation?.substring(0, 6) || '-', 490, currentY + 5);
+          
+          // 행 경계선
+          doc.rect(50, currentY, 495, rowHeight).stroke();
+          
+          currentY += rowHeight;
+        });
+        
+        // 합계 행
+        doc.rect(50, currentY, 495, 20).fill('#e0e0e0');
+        doc.fillColor('black');
+        doc.fontSize(10).text('합계', 55, currentY + 5);
+        doc.text(formatCurrency(orderData.totalAmount), 430, currentY + 5);
+        doc.rect(50, currentY, 495, 20).stroke();
+        
+        doc.moveDown(2);
+        
+        // 특이사항
+        if (orderData.notes) {
+          doc.fontSize(10).text('특이사항:', 50, doc.y);
+          doc.fontSize(9).text(orderData.notes, 50, doc.y + 15);
+          doc.moveDown(2);
+        }
+        
+        // 하단 서명란
+        doc.moveDown(2);
+        const signY = doc.y;
+        const signBoxWidth = 80;
+        const signBoxHeight = 50;
+        
+        ['담당', '공무', '팀장', '임원', '사장'].forEach((title, index) => {
+          const x = 50 + (index * 95);
+          doc.rect(x, signY, signBoxWidth, signBoxHeight).stroke();
+          doc.fontSize(9).text(title, x + 30, signY + 5);
+        });
+        
+        doc.end();
+        
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+  
 
   /**
    * 기존 발주서에 대해 PDF 재생성
