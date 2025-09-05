@@ -40,7 +40,7 @@ export interface PurchaseOrderPDFData {
 }
 
 export class PDFGenerationService {
-  private static uploadDir = 'uploads/pdf';
+  private static uploadDir = path.join(process.cwd(), 'uploads/pdf');
 
   /**
    * 발주서 PDF 생성 및 첨부파일 등록
@@ -58,8 +58,16 @@ export class PDFGenerationService {
       const month = String(new Date().getMonth() + 1).padStart(2, '0');
       const pdfDir = path.join(this.uploadDir, String(year), month);
       
+      console.log(`📁 [PDFGenerator] 디렉토리 생성 중: ${pdfDir}`);
+      
       if (!fs.existsSync(pdfDir)) {
-        fs.mkdirSync(pdfDir, { recursive: true });
+        try {
+          fs.mkdirSync(pdfDir, { recursive: true });
+          console.log(`✅ [PDFGenerator] 디렉토리 생성 완료: ${pdfDir}`);
+        } catch (dirError) {
+          console.error(`❌ [PDFGenerator] 디렉토리 생성 실패: ${pdfDir}`, dirError);
+          throw new Error(`디렉토리 생성 실패: ${dirError instanceof Error ? dirError.message : 'Unknown error'}`);
+        }
       }
 
       // PDF 파일명 생성
