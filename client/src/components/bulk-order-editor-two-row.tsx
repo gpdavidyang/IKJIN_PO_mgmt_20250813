@@ -113,7 +113,7 @@ export function BulkOrderEditorTwoRow({ orders, onOrderUpdate, onOrderRemove, on
         // 임시저장 처리
         toast({
           title: "임시저장 완료",
-          description: "발주서가 임시저장되었습니다. 발주서 관리 화면에서 확인 및 수정할 수 있습니다.",
+          description: "발주서가 '임시저장' 상태로 저장되어 작업 목록에서 제거되었습니다. 발주서 관리 화면에서 언제든지 조회, 수정, 승인요청이 가능합니다.",
         });
         onOrderRemove(variables.index);
       } else if (variables.sendEmail) {
