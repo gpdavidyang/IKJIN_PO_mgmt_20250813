@@ -103,6 +103,9 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
     retry: 1
   });
   
+  // Define selectedTemplate from templateDetails
+  const selectedTemplate = templateDetails;
+  
   // Fetch items from database
   const { data: itemsData, isLoading: isLoadingItems, error: itemsError } = useQuery({
     queryKey: ['/api/items'],

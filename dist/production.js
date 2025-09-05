@@ -7946,18 +7946,7 @@ router3.delete("/orders/bulk", requireAuth, requireAdmin, async (req, res) => {
       })
     );
     console.log("\u{1F4CB} All orders found:", orders.map((o) => ({ id: o.id, orderNumber: o.orderNumber, status: o.status })));
-    const nonDraftOrders = orders.filter((order) => order.status !== "draft");
-    if (nonDraftOrders.length > 0) {
-      const nonDraftOrderNumbers = nonDraftOrders.map((order) => order.orderNumber).join(", ");
-      return res.status(403).json({
-        message: `Cannot delete non-draft orders: ${nonDraftOrderNumbers}. Only draft orders can be deleted.`,
-        nonDeletableOrders: nonDraftOrders.map((order) => ({
-          id: order.id,
-          orderNumber: order.orderNumber,
-          status: order.status
-        }))
-      });
-    }
+    console.log("\u2705 Admin user authorized to delete all orders regardless of status");
     console.log("\u{1F5D1}\uFE0F Starting deletion of orders:", numericOrderIds);
     const deletePromises = numericOrderIds.map((orderId) => {
       console.log("\u{1F5D1}\uFE0F Deleting order ID:", orderId);
