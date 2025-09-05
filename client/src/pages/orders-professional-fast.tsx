@@ -85,8 +85,8 @@ export default function OrdersProfessionalFast() {
     maxAmount: "",
     searchText: "",
     page: 1,
-    limit: 20, // 초기 로딩 속도를 위해 20개로 제한
-    sortBy: "orderDate",
+    limit: 50, // 다양한 상태의 발주서를 표시하기 위해 50개로 증가
+    sortBy: "createdAt",
     sortOrder: "desc" as "asc" | "desc",
   });
 
@@ -663,7 +663,7 @@ export default function OrdersProfessionalFast() {
               </Button>
 
               <div className="ml-auto flex gap-2">
-                {Object.values(filters).some(v => v && v !== "" && v !== 1 && v !== 20 && v !== "orderDate" && v !== "desc") && (
+                {Object.values(filters).some(v => v && v !== "" && v !== 1 && v !== 50 && v !== "createdAt" && v !== "desc") && (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -678,8 +678,8 @@ export default function OrdersProfessionalFast() {
                       maxAmount: "",
                       searchText: "",
                       page: 1,
-                      limit: 20,
-                      sortBy: "orderDate",
+                      limit: 50,
+                      sortBy: "createdAt",
                       sortOrder: "desc"
                     })}
                     className="h-10"

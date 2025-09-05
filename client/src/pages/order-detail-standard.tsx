@@ -11,7 +11,7 @@ import { ArrowLeft, Edit, Send, Check, FileText, Download, Eye, Printer, Package
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { format } from "date-fns";
 import { formatKoreanWon } from "@/lib/utils";
-import { ExcelUploadFileInfo } from "@/components/excel-upload-file-info";
+import { AttachedFilesInfo } from "@/components/attached-files-info";
 
 export default function OrderDetailStandard() {
   const { user } = useAuth();

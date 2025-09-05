@@ -1240,11 +1240,17 @@ export class DatabaseStorage implements IStorage {
     console.log(`🗑️ Starting bulk delete for ${orderIds.length} orders by ${deletedBy}:`, orderIds);
 
     try {
-      // Get orders that exist before deleting
-      const existingOrders = await db
-        .select()
-        .from(purchaseOrders)
-        .where(inArray(purchaseOrders.id, orderIds));
+      // Get orders that exist before deleting using individual queries for compatibility
+      const existingOrders: PurchaseOrder[] = [];
+      for (const orderId of orderIds) {
+        const [order] = await db
+          .select()
+          .from(purchaseOrders)
+          .where(eq(purchaseOrders.id, orderId));
+        if (order) {
+          existingOrders.push(order);
+        }
+      }
 
       if (existingOrders.length === 0) {
         console.log('⚠️ No orders found to delete');
@@ -1254,24 +1260,36 @@ export class DatabaseStorage implements IStorage {
       const existingOrderIds = existingOrders.map(o => o.id);
       console.log(`🔍 Found ${existingOrders.length} orders to delete:`, existingOrderIds);
 
-      // Delete related records for all orders (in proper order to avoid FK constraints)
-      console.log('🗑️ Deleting purchase order items...');
-      await db.delete(purchaseOrderItems).where(inArray(purchaseOrderItems.orderId, existingOrderIds));
-      
-      console.log('🗑️ Deleting attachments...');
-      await db.delete(attachments).where(inArray(attachments.orderId, existingOrderIds));
-      
-      console.log('🗑️ Deleting order history...');
-      await db.delete(orderHistory).where(inArray(orderHistory.orderId, existingOrderIds));
-      
-      console.log('🗑️ Deleting orders...');
-      await db.delete(purchaseOrders).where(inArray(purchaseOrders.id, existingOrderIds));
+      // Delete related records for each order individually (in proper order to avoid FK constraints)
+      for (const orderId of existingOrderIds) {
+        console.log(`🗑️ Deleting related records for order ${orderId}...`);
+        
+        // Delete purchase order items
+        await db.delete(purchaseOrderItems).where(eq(purchaseOrderItems.orderId, orderId));
+        
+        // Delete attachments
+        await db.delete(attachments).where(eq(attachments.orderId, orderId));
+        
+        // Delete order history
+        await db.delete(orderHistory).where(eq(orderHistory.orderId, orderId));
+        
+        // Delete the order itself
+        await db.delete(purchaseOrders).where(eq(purchaseOrders.id, orderId));
+        
+        console.log(`✅ Deleted order ${orderId} and its related records`);
+      }
 
       console.log(`✅ Bulk deleted ${existingOrders.length} orders successfully`);
       return existingOrders;
       
     } catch (error) {
       console.error('❌ Bulk delete error:', error);
+      console.error('❌ Error details:', {
+        message: error?.message,
+        code: error?.code,
+        detail: error?.detail,
+        stack: error?.stack
+      });
       throw error;
     }
   }

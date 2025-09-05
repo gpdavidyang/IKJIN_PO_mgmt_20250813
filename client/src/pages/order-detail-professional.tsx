@@ -35,7 +35,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { InvoiceManager } from "@/components/invoice-manager";
 import { ReceiptManager } from "@/components/receipt-manager";
 import { EmailSendDialog } from "@/components/email-send-dialog";
-import { ExcelUploadFileInfo } from "@/components/excel-upload-file-info";
+import { AttachedFilesInfo } from "@/components/attached-files-info";
 import { format } from "date-fns";
 import { formatKoreanWon } from "@/lib/utils";
 
@@ -904,7 +904,7 @@ export default function OrderDetailProfessional() {
 
         {/* Excel Upload File Info - Display Excel files separately */}
         {order.attachments && order.attachments.length > 0 && (
-          <ExcelUploadFileInfo 
+          <AttachedFilesInfo 
             attachments={order.attachments} 
             orderId={orderId} 
           />

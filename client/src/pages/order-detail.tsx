@@ -32,7 +32,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { InvoiceManager } from "@/components/invoice-manager";
 import { ReceiptManager } from "@/components/receipt-manager";
 import { OrderPreviewSimple } from "@/components/order-preview-simple";
-import { ExcelUploadFileInfo } from "@/components/excel-upload-file-info";
+import { AttachedFilesInfo } from "@/components/attached-files-info";
 import { format } from "date-fns";
 import { formatKoreanWon } from "@/lib/utils";
 import { useTheme } from "@/components/ui/theme-provider";
@@ -789,11 +789,11 @@ export default function OrderDetail() {
           });
           
           if (order?.attachments && order.attachments.length > 0) {
-            console.log('✅ ORDER DETAIL - Rendering ExcelUploadFileInfo with:', order.attachments);
-            return <ExcelUploadFileInfo attachments={order.attachments} orderId={orderId} />;
+            console.log('✅ ORDER DETAIL - Rendering AttachedFilesInfo with:', order.attachments);
+            return <AttachedFilesInfo attachments={order.attachments} orderId={orderId} />;
           }
           
-          console.log('⚠️ ORDER DETAIL - NOT rendering ExcelUploadFileInfo');
+          console.log('⚠️ ORDER DETAIL - NOT rendering AttachedFilesInfo');
           return null;
         })()}
 

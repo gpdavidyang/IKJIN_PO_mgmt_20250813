@@ -14,7 +14,7 @@ import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "@/components/ui/theme-provider";
 
-interface ExcelUploadFileInfoProps {
+interface AttachedFilesInfoProps {
   attachments: Array<{
     id: number;
     originalName: string;
@@ -28,49 +28,56 @@ interface ExcelUploadFileInfoProps {
   orderId: number;
 }
 
-export function ExcelUploadFileInfo({ attachments, orderId }: ExcelUploadFileInfoProps) {
+export function AttachedFilesInfo({ attachments, orderId }: AttachedFilesInfoProps) {
   const { toast } = useToast();
   const { theme } = useTheme();
   const isDarkMode = theme === 'dark';
   const [downloading, setDownloading] = useState<number | null>(null);
 
-  console.log('🔍 ExcelUploadFileInfo - COMPONENT CALLED!', { attachments, orderId });
-  console.log('🔍 ExcelUploadFileInfo - received attachments:', attachments);
+  console.log('🔍 AttachedFilesInfo - COMPONENT CALLED!', { attachments, orderId });
+  console.log('🔍 AttachedFilesInfo - received attachments:', attachments);
   
-  // Filter Excel files from attachments - Enhanced filtering logic
-  const excelFiles = attachments.filter(attachment => {
+  // Get all attachments including Excel, PDF, and other files
+  const attachedFiles = attachments.map(attachment => {
     const mimeType = attachment.mimeType?.toLowerCase() || '';
     const fileName = attachment.originalName?.toLowerCase() || '';
     
-    const isExcel = 
-      mimeType.includes('excel') ||
-      mimeType.includes('spreadsheet') ||
-      mimeType.includes('vnd.openxmlformats-officedocument.spreadsheetml.sheet') ||
-      mimeType.includes('vnd.ms-excel') ||
-      fileName.endsWith('.xlsx') ||
-      fileName.endsWith('.xls') ||
-      fileName.endsWith('.xlsm');
+    // Determine file type and icon
+    let fileType = 'other';
+    let icon = FileText;
     
-    console.log('🔍 Filtering attachment:', {
+    if (mimeType.includes('excel') || mimeType.includes('spreadsheet') || 
+        fileName.endsWith('.xlsx') || fileName.endsWith('.xls') || fileName.endsWith('.xlsm')) {
+      fileType = 'excel';
+      icon = FileSpreadsheet;
+    } else if (mimeType.includes('pdf') || fileName.endsWith('.pdf')) {
+      fileType = 'pdf';
+      icon = FileText;
+    }
+    
+    console.log('🔍 Processing attachment:', {
       originalName: attachment.originalName,
       mimeType: attachment.mimeType,
       fileName,
-      mimeTypeLower: mimeType,
-      isExcel
+      fileType
     });
     
-    return isExcel;
+    return {
+      ...attachment,
+      fileType,
+      icon
+    };
   });
 
-  console.log('📊 ExcelUploadFileInfo - filtered excel files:', excelFiles);
+  console.log('📊 AttachedFilesInfo - attached files:', attachedFiles);
 
-  // If no Excel files found, don't render the component
-  if (excelFiles.length === 0) {
-    console.log('⚠️ ExcelUploadFileInfo - No Excel files found, component will not render');
+  // If no attached files found, don't render the component
+  if (attachedFiles.length === 0) {
+    console.log('⚠️ AttachedFilesInfo - No attached files found, component will not render');
     return null;
   }
   
-  console.log('✅ ExcelUploadFileInfo - Rendering component with', excelFiles.length, 'Excel files');
+  console.log('✅ AttachedFilesInfo - Rendering component with', attachedFiles.length, 'attached files');
 
   const handleDownload = async (attachment: any) => {
     setDownloading(attachment.id);
@@ -129,9 +136,9 @@ export function ExcelUploadFileInfo({ attachments, orderId }: ExcelUploadFileInf
               <FileSpreadsheet className={`h-5 w-5 transition-colors ${isDarkMode ? 'text-green-400' : 'text-green-600'}`} />
             </div>
             <div>
-              <h3 className={`text-lg font-semibold transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>엑셀 업로드 파일</h3>
+              <h3 className={`text-lg font-semibold transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>첨부 된 파일</h3>
               <span className={`text-sm transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                발주서 생성에 사용된 엑셀 파일 ({excelFiles.length}개)
+                발주서와 관련된 첨부 파일 ({attachedFiles.length}개)
               </span>
             </div>
           </div>
@@ -139,18 +146,18 @@ export function ExcelUploadFileInfo({ attachments, orderId }: ExcelUploadFileInf
             variant="outline" 
             className={`transition-colors ${
               isDarkMode 
-                ? 'border-green-600 text-green-400' 
-                : 'border-green-200 text-green-700 bg-green-50'
+                ? 'border-blue-600 text-blue-400' 
+                : 'border-blue-200 text-blue-700 bg-blue-50'
             }`}
           >
-            <FileSpreadsheet className="h-3 w-3 mr-1" />
-            Excel 소스
+            <FileText className="h-3 w-3 mr-1" />
+            첨부파일
           </Badge>
         </div>
       </div>
 
       <div className="p-6 space-y-4">
-        {excelFiles.map((file) => (
+        {attachedFiles.map((file) => (
           <div 
             key={file.id} 
             className={`border rounded-lg p-4 transition-all hover:shadow-md ${
@@ -162,10 +169,18 @@ export function ExcelUploadFileInfo({ attachments, orderId }: ExcelUploadFileInf
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3 min-w-0 flex-1">
                 <div className={`p-2 rounded-lg transition-colors ${
-                  isDarkMode ? 'bg-green-900/30' : 'bg-green-100'
+                  file.fileType === 'excel' ? 
+                    (isDarkMode ? 'bg-green-900/30' : 'bg-green-100') :
+                    file.fileType === 'pdf' ?
+                    (isDarkMode ? 'bg-red-900/30' : 'bg-red-100') :
+                    (isDarkMode ? 'bg-gray-900/30' : 'bg-gray-100')
                 }`}>
-                  <FileSpreadsheet className={`h-5 w-5 transition-colors ${
-                    isDarkMode ? 'text-green-400' : 'text-green-600'
+                  <file.icon className={`h-5 w-5 transition-colors ${
+                    file.fileType === 'excel' ?
+                    (isDarkMode ? 'text-green-400' : 'text-green-600') :
+                    file.fileType === 'pdf' ?
+                    (isDarkMode ? 'text-red-400' : 'text-red-600') :
+                    (isDarkMode ? 'text-gray-400' : 'text-gray-600')
                   }`} />
                 </div>
                 
@@ -177,7 +192,7 @@ export function ExcelUploadFileInfo({ attachments, orderId }: ExcelUploadFileInf
                       {file.originalName}
                     </span>
                     <Badge variant="secondary" className="text-xs">
-                      원본 파일
+                      {file.fileType === 'excel' ? 'Excel' : file.fileType === 'pdf' ? 'PDF' : '파일'}
                     </Badge>
                   </div>
                   
@@ -261,13 +276,13 @@ export function ExcelUploadFileInfo({ attachments, orderId }: ExcelUploadFileInf
               <p className={`font-medium transition-colors ${
                 isDarkMode ? 'text-blue-400' : 'text-blue-600'
               }`}>
-                엑셀 업로드 파일 정보
+                첨부 파일 정보
               </p>
               <p className={`transition-colors ${
                 isDarkMode ? 'text-gray-400' : 'text-gray-600'
               }`}>
-                이 파일들은 발주서 생성 시 업로드된 원본 엑셀 파일입니다. 
-                데이터 확인이나 재처리가 필요한 경우 다운로드하여 사용할 수 있습니다.
+                이 섹션에는 발주서와 관련된 모든 첨부 파일이 표시됩니다. 
+                Excel 파일, PDF 문서 등 다양한 형태의 파일을 다운로드하여 사용할 수 있습니다.
               </p>
             </div>
           </div>
