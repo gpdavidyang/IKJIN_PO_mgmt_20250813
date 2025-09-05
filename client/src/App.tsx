@@ -38,7 +38,7 @@ import { initializeBundleMonitoring } from "@/utils/bundle-analyzer";
 
 // Enhanced lazy load page components with error handling and retry
 const Dashboard = createNetworkAwareLazyComponent(() => import("@/pages/dashboard-professional"), 'Dashboard');
-const Orders = createLazyComponent(() => import("@/pages/orders"), 'Orders');
+const Orders = createLazyComponent(() => import("@/pages/orders-professional-fast"), 'Orders');
 const OrderDetail = createLazyComponent(() => import("@/pages/order-detail-professional"), 'OrderDetail');
 const OrderDetailStandard = createLazyComponent(() => import("@/pages/order-detail-standard"), 'OrderDetailStandard');
 const OrderEdit = createLazyComponent(() => import("@/pages/order-edit"), 'OrderEdit');

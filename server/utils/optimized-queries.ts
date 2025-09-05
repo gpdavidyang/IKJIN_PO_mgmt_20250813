@@ -236,14 +236,28 @@ export class OptimizedDashboardQueries {
         .groupBy(purchaseOrders.status)
         .orderBy(desc(count()));
 
-      // Separate order status and approval status
-      const orderStatusStats = statusStats.filter(item => 
-        ['draft', 'sent', 'completed'].includes(item.status)
+      // Define all possible order statuses
+      const allOrderStatuses = ['draft', 'created', 'sent', 'completed'];
+      
+      // Filter and ensure all statuses are present (with 0 if missing)
+      const existingStatusStats = statusStats.filter(item => 
+        allOrderStatuses.includes(item.status)
       );
-
-      const approvalStatusStats = statusStats.filter(item =>
-        ['pending', 'approved', 'rejected', 'direct_approval'].includes(item.status)
-      );
+      
+      // Create a map for quick lookup
+      const statusMap = new Map(existingStatusStats.map(item => [item.status, item]));
+      
+      // Ensure all statuses are present with 0 values if missing
+      const orderStatusStats = allOrderStatuses.map(status => {
+        if (statusMap.has(status)) {
+          return statusMap.get(status);
+        }
+        return {
+          status,
+          count: 0,
+          amount: 0
+        };
+      });
 
       // Get project statistics (top 10 by order amount)
       const projectStatsList = await db
@@ -273,8 +287,7 @@ export class OptimizedDashboardQueries {
         recentOrders,
         monthlyStats,
         statusStats, // Keep for backward compatibility
-        orderStatusStats, // New: separated order status
-        approvalStatusStats, // New: separated approval status
+        orderStatusStats, // Separated order status
         projectStats: projectStatsList
       };
 
@@ -304,7 +317,6 @@ export class OptimizedDashboardQueries {
         monthlyStats: [],
         statusStats: [],
         orderStatusStats: [],
-        approvalStatusStats: [],
         projectStats: []
       };
     }

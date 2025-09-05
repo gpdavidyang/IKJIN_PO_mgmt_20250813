@@ -202,13 +202,43 @@ router.post('/orders/bulk-create-simple', requireAuth, upload.single('excelFile'
           }
         }
 
-        // Generate order number
-        const orderCount = await db
-          .select()
-          .from(purchaseOrders)
-          .then(rows => rows.length);
+        // Generate unique order number with timestamp to avoid duplicates
+        const now = new Date();
+        const year = now.getFullYear();
+        const timestamp = now.getTime();
         
-        const orderNumber = `PO-${new Date().getFullYear()}-${String(orderCount + 1).padStart(5, '0')}`;
+        // Try to get the highest existing order number for this year
+        let orderNumber: string;
+        let attempts = 0;
+        const maxAttempts = 10;
+        
+        do {
+          const orderCount = await db
+            .select()
+            .from(purchaseOrders)
+            .then(rows => rows.length);
+          
+          const sequenceNumber = orderCount + 1 + attempts;
+          orderNumber = `PO-${year}-${String(sequenceNumber).padStart(5, '0')}`;
+          
+          // Check if this order number already exists
+          const existingOrder = await db
+            .select()
+            .from(purchaseOrders)
+            .where(eq(purchaseOrders.orderNumber, orderNumber))
+            .then(rows => rows[0]);
+            
+          if (!existingOrder) {
+            break; // Order number is unique, use it
+          }
+          
+          attempts++;
+        } while (attempts < maxAttempts);
+        
+        if (attempts >= maxAttempts) {
+          // Fallback: use timestamp-based order number
+          orderNumber = `PO-${year}-${String(timestamp).slice(-5)}`;
+        }
         
         // Calculate total amount
         const totalAmount = orderData.items.reduce((sum, item) => {
@@ -220,14 +250,19 @@ router.post('/orders/bulk-create-simple', requireAuth, upload.single('excelFile'
         let approvalStatus: 'not_required' | 'pending' = 'not_required';
         let approvalBypassReason = null;
         
+        // Legacy status for backward compatibility (must match purchaseOrderStatusEnum)
+        let legacyStatus: 'draft' | 'pending' | 'approved' | 'sent' | 'completed' = 'pending';
+        
         if (isDraft) {
           orderStatus = 'draft';
           approvalStatus = 'not_required';
+          legacyStatus = 'draft';
         } else {
           // Check if needs approval (simplified for bulk creation - assumes direct approval for now)
           orderStatus = sendEmail ? 'sent' : 'created';
           approvalStatus = 'not_required';
           approvalBypassReason = 'direct_approval'; // Bulk orders use direct approval
+          legacyStatus = sendEmail ? 'sent' : 'approved'; // Use 'approved' instead of 'created'
         }
 
         // Create purchase order with dual status
@@ -239,7 +274,7 @@ router.post('/orders/bulk-create-simple', requireAuth, upload.single('excelFile'
             vendorId: vendor?.id || null,
             userId: req.user.id,
             orderDate: orderData.orderDate || new Date().toISOString().split('T')[0], // Required field
-            status: isDraft ? 'draft' : (sendEmail ? 'sent' : 'created'), // Keep legacy status for backward compatibility
+            status: legacyStatus, // Use correct legacy status values
             orderStatus, // New order status
             approvalStatus, // New approval status
             approvalBypassReason, // Reason for bypassing approval

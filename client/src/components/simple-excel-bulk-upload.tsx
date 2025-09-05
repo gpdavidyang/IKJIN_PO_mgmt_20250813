@@ -390,6 +390,33 @@ export function SimpleExcelBulkUpload() {
               </Alert>
             )}
 
+            {/* 직접승인 처리 안내 */}
+            <Alert className="mt-6 bg-yellow-50 border-yellow-200">
+              <AlertCircle className="h-4 w-4 text-yellow-600" />
+              <AlertDescription>
+                <strong className="text-yellow-900">💡 직접승인(Direct Approval) 방식으로 처리됩니다</strong>
+                <ul className="list-disc list-inside mt-2 text-sm text-yellow-800 space-y-1">
+                  <li>별도의 승인 절차 없이 바로 발주서가 생성됩니다. 즉시 발송 가능한 상태가 됩니다.</li>
+                  <li>대량 발주 처리를 위해 승인 단계를 생략하고 신속하게 처리됩니다.</li>
+                  <li>승인 권한과 무관하게 모든 사용자가 엑셀 업로드 시 직접승인으로 처리됩니다.</li>
+                </ul>
+              </AlertDescription>
+            </Alert>
+
+            {/* 엑셀 심플 업로드 특징 */}
+            <Alert className="mt-6">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                <strong>엑셀 심플 업로드 특징:</strong>
+                <ul className="list-disc list-inside mt-2 text-sm space-y-1">
+                  <li>DB 값과 비교/보정 과정 없음</li>
+                  <li>엑셀 데이터를 그대로 표시</li>
+                  <li>모든 필드를 직접 수정 가능</li>
+                  <li>여러 발주서를 한번에 편집 및 저장</li>
+                </ul>
+              </AlertDescription>
+            </Alert>
+
             {/* 필수 필드명 가이드 */}
             <Alert className="mt-6 bg-blue-50 border-blue-200">
               <Info className="h-4 w-4 text-blue-600" />
@@ -405,19 +432,6 @@ export function SimpleExcelBulkUpload() {
                     <div>• <strong>품목:</strong> 품목명, 규격, 수량, 단가, 총금액, 비고</div>
                   </div>
                 </div>
-              </AlertDescription>
-            </Alert>
-
-            <Alert className="mt-6">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                <strong>엑셀 심플 업로드 특징:</strong>
-                <ul className="list-disc list-inside mt-2 text-sm space-y-1">
-                  <li>DB 값과 비교/보정 과정 없음</li>
-                  <li>엑셀 데이터를 그대로 표시</li>
-                  <li>모든 필드를 직접 수정 가능</li>
-                  <li>여러 발주서를 한번에 편집 및 저장</li>
-                </ul>
               </AlertDescription>
             </Alert>
           </CardContent>

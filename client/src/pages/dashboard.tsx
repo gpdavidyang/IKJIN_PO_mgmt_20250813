@@ -1,4 +1,4 @@
-import { FileText, Package, Users, Clock, Building, Plus, AlertCircle, BarChart3, CheckCircle, TrendingUp, ShoppingCart, Activity, FolderTree, ChevronRight, DollarSign } from "lucide-react";
+import { FileText, Package, Users, Clock, Building, Plus, AlertCircle, BarChart3, TrendingUp, ShoppingCart, Activity, FolderTree, ChevronRight, DollarSign } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useDashboardData } from "@/hooks/use-enhanced-queries";
 import { useEffect } from "react";
@@ -69,7 +69,6 @@ export default function Dashboard() {
   const monthlyStats = dashboardData?.monthlyStats || [];
   const statusStats = dashboardData?.statusStats || [];
   const orderStatusStats = dashboardData?.orderStatusStats || [];
-  const approvalStatusStats = dashboardData?.approvalStatusStats || [];
   const projectStats = dashboardData?.projectStats || [];
   const categoryStats = dashboardData?.categoryStats || [];
   const activeProjectsCount = { count: stats.activeProjects || 0 };
@@ -397,17 +396,15 @@ export default function Dashboard() {
               <Package className={`h-3 w-3 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`} />
               <h3 className={`text-xs font-semibold transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>발주상태분포</h3>
             </div>
-            {!isAnyLoading && orderStatusStats && Array.isArray(orderStatusStats) && orderStatusStats.length > 0 ? (
+            {!isAnyLoading ? (
               <div className="h-[140px] w-full">
                 <AdvancedPieChart
-                  data={orderStatusStats.map((item: any) => ({
-                    name: item.status === 'draft' ? '임시저장' : 
-                          item.status === 'sent' ? '발주완료' : 
-                          item.status === 'completed' ? '납품검수완료' : 
-                          item.status,
-                    value: parseInt(item.count),
-                    status: item.status
-                  }))}
+                  data={[
+                    { name: '임시저장', value: orderStatusStats.find((s: any) => s.status === 'draft')?.count || 0, status: 'draft' },
+                    { name: '발주생성', value: orderStatusStats.find((s: any) => s.status === 'created')?.count || 0, status: 'created' },
+                    { name: '발주완료', value: orderStatusStats.find((s: any) => s.status === 'sent')?.count || 0, status: 'sent' },
+                    { name: '납품검수완료', value: orderStatusStats.find((s: any) => s.status === 'completed')?.count || 0, status: 'completed' }
+                  ]}
                   dataKey="value"
                   nameKey="name"
                   height={140}
@@ -418,6 +415,7 @@ export default function Dashboard() {
                   outerRadius={45}
                   colors={[
                     '#6b7280', // draft - gray
+                    '#f59e0b', // created - yellow/warning
                     '#3b82f6', // sent - blue
                     '#8b5cf6'  // completed - purple
                   ]}
@@ -434,52 +432,6 @@ export default function Dashboard() {
             )}
           </div>
 
-          {/* Approval Status Distribution - Pie Chart */}
-          <div className={`rounded border p-2 transition-colors ${
-            isDarkMode 
-              ? 'bg-gray-800 border-gray-600' 
-              : 'bg-white border-blue-300'
-          }`}>
-            <div className="flex items-center gap-1 mb-2">
-              <CheckCircle className={`h-3 w-3 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`} />
-              <h3 className={`text-xs font-semibold transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>승인상태분포</h3>
-            </div>
-            {!isAnyLoading && approvalStatusStats && Array.isArray(approvalStatusStats) && approvalStatusStats.length > 0 ? (
-              <div className="h-[140px] w-full">
-                <AdvancedPieChart
-                  data={approvalStatusStats.map((item: any) => ({
-                    name: item.status === 'pending' ? '승인대기' : 
-                          item.status === 'approved' ? '승인완료' : 
-                          item.status === 'rejected' ? '반려' : 
-                          item.status,
-                    value: parseInt(item.count),
-                    status: item.status
-                  }))}
-                  dataKey="value"
-                  nameKey="name"
-                  height={140}
-                  showExport={false}
-                  showLabels={false}
-                  showLegend={false}
-                  innerRadius={20}
-                  outerRadius={45}
-                  colors={[
-                    '#f59e0b', // pending - yellow
-                    '#10b981', // approved - green  
-                    '#ef4444'  // rejected - red
-                  ]}
-                  formatValue={(value: number) => `${value}건`}
-                />
-              </div>
-            ) : (
-              <div className={`h-[140px] flex items-center justify-center transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                <div className="text-center">
-                  <CheckCircle className={`h-6 w-6 mx-auto mb-1 transition-colors ${isDarkMode ? 'text-gray-600' : 'text-gray-300'}`} />
-                  <p className="text-xs">데이터 준비 중...</p>
-                </div>
-              </div>
-            )}
-          </div>
         </div>
 
         {/* Center Column: Project Stats List */}
