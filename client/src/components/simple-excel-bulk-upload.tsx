@@ -9,7 +9,6 @@ import { Progress } from '@/components/ui/progress';
 import { 
   Upload, 
   FileSpreadsheet, 
-  Save, 
   X, 
   AlertCircle, 
   CheckCircle,
@@ -21,8 +20,6 @@ import * as XLSX from 'xlsx';
 import { BulkOrderEditorTwoRow } from '@/components/bulk-order-editor-two-row';
 import { FieldValidationErrorDialog } from './FieldValidationErrorDialog';
 import { toast } from '@/hooks/use-toast';
-import { useMutation } from '@tanstack/react-query';
-import { queryClient } from '@/lib/queryClient';
 
 interface ParsedOrderData {
   rowIndex: number;
@@ -244,23 +241,6 @@ export function SimpleExcelBulkUpload() {
     }
   };
 
-  const groupOrdersByVendor = (orders: ParsedOrderData[]): ParsedOrderData[] => {
-    const grouped = new Map<string, ParsedOrderData>();
-    
-    orders.forEach(order => {
-      const key = `${order.projectName}-${order.vendorName}`;
-      
-      if (grouped.has(key)) {
-        const existing = grouped.get(key)!;
-        existing.items.push(...order.items);
-      } else {
-        grouped.set(key, { ...order });
-      }
-    });
-    
-    return Array.from(grouped.values());
-  };
-
   const handleOrderUpdate = (index: number, updatedOrder: ParsedOrderData) => {
     const newOrders = [...editedOrders];
     newOrders[index] = updatedOrder;
@@ -270,6 +250,17 @@ export function SimpleExcelBulkUpload() {
   const handleRemoveOrder = (index: number, isSilent: boolean = false) => {
     const newOrders = editedOrders.filter((_, i) => i !== index);
     setEditedOrders(newOrders);
+    
+    // 모든 발주서가 처리되었는지 확인
+    if (newOrders.length === 0 && parsedOrders.length > 0) {
+      toast({
+        title: "모든 처리 완료",
+        description: `${parsedOrders.length}개의 발주서가 모두 처리되었습니다. 발주서 관리 화면으로 이동합니다.`,
+      });
+      setTimeout(() => navigate('/orders'), 1500);
+      return;
+    }
+    
     // isSilent가 true면 임시저장 등으로 인한 제거이므로 메시지를 표시하지 않음
     if (!isSilent) {
       toast({
@@ -277,78 +268,6 @@ export function SimpleExcelBulkUpload() {
         description: "선택한 항목이 목록에서 제거되었습니다.",
       });
     }
-  };
-
-  // 일괄 저장 Mutation
-  const saveBulkOrders = useMutation({
-    mutationFn: async (orders: ParsedOrderData[]) => {
-      const formData = new FormData();
-      
-      // 원본 엑셀 파일 첨부
-      if (file) {
-        formData.append('excelFile', file);
-      }
-      
-      // 발주서 데이터를 JSON으로 전송
-      formData.append('orders', JSON.stringify(orders));
-      
-      const response = await fetch('/api/orders/bulk-create-simple', {
-        method: 'POST',
-        credentials: 'include',
-        body: formData
-      });
-      
-      if (!response.ok) {
-        const error = await response.text();
-        throw new Error(error || 'Failed to save orders');
-      }
-      
-      return response.json();
-    },
-    onSuccess: async (data) => {
-      // Invalidate all orders related queries to refresh the list
-      await queryClient.invalidateQueries({ 
-        predicate: (query) => {
-          const queryKey = query.queryKey as string[];
-          return queryKey.some(key => 
-            typeof key === 'string' && (
-              key.includes('orders') || 
-              key.includes('/api/orders')
-            )
-          );
-        }
-      });
-      
-      toast({
-        title: "저장 완료",
-        description: `${data.savedCount}개의 발주서가 성공적으로 저장되었습니다.`,
-      });
-      
-      // Navigate to orders page after cache invalidation
-      setTimeout(() => navigate('/orders'), 1500);
-    },
-    onError: (error) => {
-      toast({
-        title: "저장 실패",
-        description: error.message || "발주서 저장 중 오류가 발생했습니다.",
-        variant: "destructive"
-      });
-    }
-  });
-
-  const handleSaveAll = () => {
-    const validOrders = editedOrders.filter(order => order.isValid !== false);
-    
-    if (validOrders.length === 0) {
-      toast({
-        title: "저장할 수 없음",
-        description: "유효한 발주서가 없습니다.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    saveBulkOrders.mutate(validOrders);
   };
 
   const handleReset = () => {
@@ -512,15 +431,15 @@ export function SimpleExcelBulkUpload() {
           <div className="sticky top-0 z-10 bg-white border rounded-lg shadow-sm p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <Button
-                  onClick={handleSaveAll}
-                  disabled={saveBulkOrders.isPending}
-                  size="lg"
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  {saveBulkOrders.isPending ? '저장 중...' : '모두 저장'}
-                </Button>
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Info className="h-4 w-4" />
+                    <span>각 발주서를 개별적으로 검토하고 저장하세요</span>
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    처리 진행률: {parsedOrders.length - editedOrders.length}/{parsedOrders.length}개 완료
+                  </div>
+                </div>
                 
                 <Button
                   onClick={handleReset}
@@ -528,17 +447,18 @@ export function SimpleExcelBulkUpload() {
                   size="lg"
                 >
                   <X className="h-4 w-4 mr-2" />
-                  초기화
+                  전체 초기화
                 </Button>
               </div>
 
               <div className="flex items-center gap-4">
                 <Badge variant="secondary" className="px-3 py-1">
                   <Package className="h-3 w-3 mr-1" />
-                  {editedOrders.length}개 발주서
+                  {editedOrders.length}개 대기중
                 </Badge>
-                <Badge variant="outline" className="px-3 py-1">
-                  {editedOrders.reduce((sum, order) => sum + order.items.length, 0)}개 품목
+                <Badge variant="success" className="px-3 py-1 bg-green-100 text-green-700">
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                  {parsedOrders.length - editedOrders.length}개 완료
                 </Badge>
               </div>
             </div>
