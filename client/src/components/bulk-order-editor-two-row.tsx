@@ -52,7 +52,7 @@ interface OrderData {
 interface BulkOrderEditorTwoRowProps {
   orders: OrderData[];
   onOrderUpdate: (index: number, order: OrderData) => void;
-  onOrderRemove: (index: number) => void;
+  onOrderRemove: (index: number, isSilent?: boolean) => void;
   onSingleOrderSave?: (index: number, sendEmail: boolean) => void;
   file?: File | null;
 }
@@ -115,7 +115,7 @@ export function BulkOrderEditorTwoRow({ orders, onOrderUpdate, onOrderRemove, on
           title: "임시저장 완료",
           description: "발주서가 '임시저장' 상태로 저장되어 작업 목록에서 제거되었습니다. 발주서 관리 화면에서 언제든지 조회, 수정, 승인요청이 가능합니다.",
         });
-        onOrderRemove(variables.index);
+        onOrderRemove(variables.index, true); // isSilent = true로 호출하여 추가 메시지 방지
       } else if (variables.sendEmail) {
         // 이메일 발송 옵션이 선택된 경우 이메일 모달 표시
         setSavedOrderData({ 
@@ -134,7 +134,7 @@ export function BulkOrderEditorTwoRow({ orders, onOrderUpdate, onOrderRemove, on
           title: "발주서 생성 완료",
           description: "발주서가 성공적으로 생성되었습니다. 생성된 발주서는 발주서 관리 화면에서 확인할 수 있습니다.",
         });
-        onOrderRemove(variables.index);
+        onOrderRemove(variables.index, true); // isSilent = true로 호출
       }
     },
     onError: (error) => {
@@ -336,7 +336,7 @@ export function BulkOrderEditorTwoRow({ orders, onOrderUpdate, onOrderRemove, on
       
       // 성공/실패 여부와 관계없이 발주서는 생성되었으므로 목록에서 제거
       if (savedOrderData?.originalIndex !== undefined) {
-        onOrderRemove(savedOrderData.originalIndex);
+        onOrderRemove(savedOrderData.originalIndex, true); // isSilent = true로 호출
       }
       
     } catch (error) {
@@ -349,7 +349,7 @@ export function BulkOrderEditorTwoRow({ orders, onOrderUpdate, onOrderRemove, on
       
       // 에러가 나도 발주서는 생성되었으므로 목록에서 제거
       if (savedOrderData?.originalIndex !== undefined) {
-        onOrderRemove(savedOrderData.originalIndex);
+        onOrderRemove(savedOrderData.originalIndex, true); // isSilent = true로 호출
       }
     } finally {
       setShowEmailModal(false);
@@ -361,7 +361,7 @@ export function BulkOrderEditorTwoRow({ orders, onOrderUpdate, onOrderRemove, on
     setShowEmailModal(false);
     // 이메일 모달을 닫은 경우에도 발주서는 이미 생성되었으므로 목록에서 제거
     if (savedOrderData?.originalIndex !== undefined) {
-      onOrderRemove(savedOrderData.originalIndex);
+      onOrderRemove(savedOrderData.originalIndex, true); // isSilent = true로 호출
     }
     setSavedOrderData(null);
   };

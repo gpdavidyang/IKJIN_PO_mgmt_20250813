@@ -204,13 +204,16 @@ export default function CreateOrderSimple() {
     setEditedOrders(newOrders);
   };
 
-  const handleRemoveOrder = (index: number) => {
+  const handleRemoveOrder = (index: number, isSilent: boolean = false) => {
     const newOrders = editedOrders.filter((_, i) => i !== index);
     setEditedOrders(newOrders);
-    toast({
-      title: "항목 제거",
-      description: "선택한 항목이 목록에서 제거되었습니다.",
-    });
+    // isSilent가 true면 임시저장 등으로 인한 제거이므로 메시지를 표시하지 않음
+    if (!isSilent) {
+      toast({
+        title: "항목 제거",
+        description: "선택한 항목이 목록에서 제거되었습니다.",
+      });
+    }
   };
 
   // 일괄 저장 Mutation
