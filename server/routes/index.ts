@@ -43,6 +43,7 @@ import ordersWorkflowRoutes from "./orders-workflow";
 import ordersCreateRoutes from "./orders-create";
 import healthRoutes from "./health";
 import debugRoutes from "./debug";
+import attachmentsRoutes from "./attachments";
 
 const router = Router();
 
@@ -84,6 +85,7 @@ router.use("/api/email-settings", emailSettingsRoutes);
 router.use(workflowRoutes); // Workflow routes already have /api prefix
 router.use("/api", ordersWorkflowRoutes); // Orders workflow routes
 router.use("/api/excel-smart-upload", excelSmartUploadRoutes); // Smart Excel upload routes
+router.use("/api", attachmentsRoutes); // Attachment download routes
 router.use("/api", healthRoutes); // Health check routes
 router.use("/api", debugRoutes); // Debug routes
 
