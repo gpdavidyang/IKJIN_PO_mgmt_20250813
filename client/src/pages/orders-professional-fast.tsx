@@ -589,32 +589,30 @@ export default function OrdersProfessionalFast() {
     );
   };
 
-  // Status colors optimized for dark mode visibility
+  // Status colors optimized for dark mode visibility - 실제 status 필드에 맞게 수정
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'draft': return 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-500/25 dark:text-gray-200 dark:border-gray-400/50';
-      case 'created': return 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-500/25 dark:text-blue-200 dark:border-blue-400/50';
       case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-500/25 dark:text-yellow-200 dark:border-yellow-400/50';
-      case 'approved': return 'bg-green-100 text-green-800 border-green-300 dark:bg-green-500/25 dark:text-green-200 dark:border-green-400/50';
-      case 'sent': return 'bg-indigo-100 text-indigo-800 border-indigo-300 dark:bg-indigo-500/25 dark:text-indigo-200 dark:border-indigo-400/50';
-      case 'delivered':
-      case 'completed': return 'bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-500/25 dark:text-purple-200 dark:border-purple-400/50';
+      case 'approved': return 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-500/25 dark:text-blue-200 dark:border-blue-400/50';
       case 'rejected': return 'bg-red-100 text-red-800 border-red-300 dark:bg-red-500/25 dark:text-red-200 dark:border-red-400/50';
+      case 'sent': return 'bg-indigo-100 text-indigo-800 border-indigo-300 dark:bg-indigo-500/25 dark:text-indigo-200 dark:border-indigo-400/50';
+      case 'completed': return 'bg-green-100 text-green-800 border-green-300 dark:bg-green-500/25 dark:text-green-200 dark:border-green-400/50';
+      case 'deleted': return 'bg-red-100 text-red-800 border-red-300 dark:bg-red-500/25 dark:text-red-200 dark:border-red-400/50';
       default: return 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-500/25 dark:text-gray-200 dark:border-gray-400/50';
     }
   };
 
-  // Get status text
+  // Get status text - 실제 status 필드에 맞게 수정
   const getStatusText = (status: string) => {
     const statusMap: { [key: string]: string } = {
       'draft': '임시저장',
-      'created': '발주서생성',
-      'sent': '발송완료',
-      'delivered': '납품완료',
-      'pending': '승인대기',
-      'approved': '승인완료',
-      'rejected': '반려',
-      'completed': '완료'
+      'pending': '결재대기',
+      'approved': '승인됨',
+      'rejected': '반려됨',
+      'sent': '발송됨',
+      'completed': '완료',
+      'deleted': '삭제됨'
     };
     return statusMap[status] || status;
   };
@@ -1004,8 +1002,8 @@ export default function OrdersProfessionalFast() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(order.orderStatus || order.status)}`}>
-                          {getStatusText(order.orderStatus || order.status)}
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(order.status)}`}>
+                          {getStatusText(order.status)}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
