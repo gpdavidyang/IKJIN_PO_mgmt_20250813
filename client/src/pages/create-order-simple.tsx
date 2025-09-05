@@ -208,8 +208,8 @@ export default function CreateOrderSimple() {
     const newOrders = editedOrders.filter((_, i) => i !== index);
     setEditedOrders(newOrders);
     toast({
-      title: "발주서 생성 완료",
-      description: "성공적으로 발주서가 생성되어 작성 목록에서 제거되었습니다. 생성된 발주서는 발주서 관리 화면에서 확인할 수 있습니다.",
+      title: "항목 제거",
+      description: "선택한 항목이 목록에서 제거되었습니다.",
     });
   };
 
