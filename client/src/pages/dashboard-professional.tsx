@@ -336,26 +336,26 @@ export default function DashboardProfessional() {
             </div>
           </div>
 
-          {/* Pending Orders */}
+          {/* Completed Orders */}
           <div 
             className="rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow cursor-pointer" 
             style={{ backgroundColor: isDarkMode ? '#1f2937' : '#ffffff' }}
-            onClick={() => navigate('/orders?status=pending')}
+            onClick={() => navigate('/orders?status=completed')}
           >
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm font-medium" style={{ color: isDarkMode ? '#9ca3af' : '#4b5563' }}>승인 대기</p>
-                <p className="text-2xl font-bold mt-2" style={{ color: isDarkMode ? '#fb923c' : '#ea580c' }}>{stats.pendingOrders || 0}</p>
+                <p className="text-sm font-medium" style={{ color: isDarkMode ? '#9ca3af' : '#4b5563' }}>발주완료</p>
+                <p className="text-2xl font-bold mt-2" style={{ color: isDarkMode ? '#34d399' : '#059669' }}>{stats.completedOrders || 0}</p>
                 <div className="flex items-center mt-2 text-sm">
-                  <AlertCircle className="h-4 w-4 text-orange-500 mr-1" />
-                  <span className="text-orange-600">즉시 확인 필요</span>
+                  <Package className="h-4 w-4 text-green-500 mr-1" />
+                  <span className="text-green-600">처리 완료</span>
                 </div>
               </div>
               <div 
                 className="p-3 rounded-lg"
-                style={{ backgroundColor: isDarkMode ? 'rgba(194, 65, 12, 0.3)' : '#fed7aa' }}
+                style={{ backgroundColor: isDarkMode ? 'rgba(5, 150, 105, 0.3)' : '#d1fae5' }}
               >
-                <Clock className="h-6 w-6" style={{ color: isDarkMode ? '#fb923c' : '#ea580c' }} />
+                <Package className="h-6 w-6" style={{ color: isDarkMode ? '#34d399' : '#059669' }} />
               </div>
             </div>
           </div>
@@ -803,7 +803,7 @@ export default function DashboardProfessional() {
         {/* Quick Actions */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
           <button
-            onClick={() => navigate('/orders?status=pending')}
+            onClick={() => navigate('/orders?status=completed')}
             className="rounded-lg p-4 hover:shadow-md transition-shadow flex items-center gap-3 border"
             style={{ 
               backgroundColor: isDarkMode ? '#1f2937' : '#ffffff',
@@ -812,13 +812,13 @@ export default function DashboardProfessional() {
           >
             <div 
               className="p-2 rounded-lg"
-              style={{ backgroundColor: isDarkMode ? 'rgba(194, 65, 12, 0.3)' : '#fed7aa' }}
+              style={{ backgroundColor: isDarkMode ? 'rgba(5, 150, 105, 0.3)' : '#d1fae5' }}
             >
-              <AlertCircle className="h-5 w-5" style={{ color: isDarkMode ? '#fb923c' : '#ea580c' }} />
+              <Package className="h-5 w-5" style={{ color: isDarkMode ? '#34d399' : '#059669' }} />
             </div>
             <div className="text-left">
-              <p className="text-sm font-medium" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}>승인 대기 확인</p>
-              <p className="text-xs" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>{stats.pendingOrders || 0}건 대기중</p>
+              <p className="text-sm font-medium" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}>발주완료 확인</p>
+              <p className="text-xs" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>{stats.completedOrders || 0}건 완료</p>
             </div>
           </button>
 

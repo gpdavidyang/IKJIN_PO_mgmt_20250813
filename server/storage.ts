@@ -2819,6 +2819,7 @@ export class DatabaseStorage implements IStorage {
           mimeType: attachments.mimeType,
           uploadedBy: attachments.uploadedBy,
           uploadedAt: attachments.uploadedAt,
+          fileData: attachments.fileData,
         })
         .from(attachments)
         .where(

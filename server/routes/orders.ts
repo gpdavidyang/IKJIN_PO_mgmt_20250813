@@ -2165,58 +2165,75 @@ router.get("/orders/:orderId/attachments/:attachmentId/download", requireAuth, a
       fileSize: attachment.fileSize
     });
 
-    // Build file path
-    let filePath = attachment.filePath;
-    
-    // Handle relative paths
-    if (!path.isAbsolute(filePath)) {
-      filePath = path.join(__dirname, '../../', filePath);
-    }
-
-    console.log(`📂 파일 경로: ${filePath}`);
-
-    // Check if file exists
-    if (!fs.existsSync(filePath)) {
-      console.log(`❌ 파일이 존재하지 않음: ${filePath}`);
-      return res.status(404).json({ 
-        error: "파일을 찾을 수 없습니다.",
-        filePath: attachment.filePath 
-      });
-    }
-
-    // Get file stats
-    const stats = fs.statSync(filePath);
-    console.log(`📊 파일 크기: ${(stats.size / 1024).toFixed(2)} KB`);
-
     // Set headers for download
     const originalName = decodeKoreanFilename(attachment.originalName);
     const encodedFilename = encodeURIComponent(originalName);
     
     res.setHeader('Content-Type', attachment.mimeType || 'application/octet-stream');
-    res.setHeader('Content-Length', stats.size);
     res.setHeader('Content-Disposition', `attachment; filename="${originalName}"; filename*=UTF-8''${encodedFilename}`);
     res.setHeader('Cache-Control', 'no-cache');
 
     console.log(`📤 파일 다운로드 시작: ${originalName}`);
 
-    // Stream the file
-    const fileStream = fs.createReadStream(filePath);
-    
-    fileStream.on('error', (error) => {
-      console.error('❌ 파일 스트림 오류:', error);
-      if (!res.headersSent) {
-        res.status(500).json({ 
-          error: "파일 읽기 중 오류가 발생했습니다.",
-          details: error.message 
+    // Check if file is stored in database (Vercel environment)
+    if (attachment.filePath.startsWith('db://') && (attachment as any).fileData) {
+      console.log(`💾 DB에서 파일 데이터 읽기: ${attachment.filePath}`);
+      
+      // Decode Base64 data from database
+      const fileBuffer = Buffer.from((attachment as any).fileData, 'base64');
+      
+      res.setHeader('Content-Length', fileBuffer.length);
+      console.log(`📊 파일 크기 (DB): ${(fileBuffer.length / 1024).toFixed(2)} KB`);
+      
+      // Send buffer directly
+      res.send(fileBuffer);
+      console.log(`✅ 파일 다운로드 완료 (DB): ${originalName}`);
+      
+    } else {
+      // File is stored in file system
+      let filePath = attachment.filePath;
+      
+      // Handle relative paths
+      if (!path.isAbsolute(filePath)) {
+        filePath = path.join(__dirname, '../../', filePath);
+      }
+
+      console.log(`📂 파일 경로: ${filePath}`);
+
+      // Check if file exists
+      if (!fs.existsSync(filePath)) {
+        console.log(`❌ 파일이 존재하지 않음: ${filePath}`);
+        return res.status(404).json({ 
+          error: "파일을 찾을 수 없습니다.",
+          filePath: attachment.filePath 
         });
       }
-    });
 
-    fileStream.on('end', () => {
-      console.log(`✅ 파일 다운로드 완료: ${originalName}`);
-    });
+      // Get file stats
+      const stats = fs.statSync(filePath);
+      console.log(`📊 파일 크기: ${(stats.size / 1024).toFixed(2)} KB`);
+      
+      res.setHeader('Content-Length', stats.size);
 
-    fileStream.pipe(res);
+      // Stream the file
+      const fileStream = fs.createReadStream(filePath);
+      
+      fileStream.on('error', (error) => {
+        console.error('❌ 파일 스트림 오류:', error);
+        if (!res.headersSent) {
+          res.status(500).json({ 
+            error: "파일 읽기 중 오류가 발생했습니다.",
+            details: error.message 
+          });
+        }
+      });
+
+      fileStream.on('end', () => {
+        console.log(`✅ 파일 다운로드 완료: ${originalName}`);
+      });
+
+      fileStream.pipe(res);
+    }
 
   } catch (error) {
     console.error('❌ 첨부파일 다운로드 오류:', error);
