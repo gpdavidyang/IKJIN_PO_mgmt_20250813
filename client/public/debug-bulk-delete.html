@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Bulk Delete</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        button { padding: 10px 15px; margin: 5px; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 4px; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+    </style>
+</head>
+<body>
+    <h1>Bulk Delete Debug Tool</h1>
+    
+    <div class="section">
+        <h2>1. Authentication</h2>
+        <div>
+            <input type="email" id="email" placeholder="Email" value="test@ikjin.co.kr" />
+            <input type="password" id="password" placeholder="Password" value="test123" />
+            <button onclick="login()">Login</button>
+            <button onclick="getCurrentUser()">Check Auth Status</button>
+            <button onclick="logout()">Logout</button>
+        </div>
+        <div id="auth-status"></div>
+    </div>
+    
+    <div class="section">
+        <h2>2. Get Orders</h2>
+        <button onclick="getOrders()">Fetch Orders</button>
+        <div id="orders-list"></div>
+    </div>
+    
+    <div class="section">
+        <h2>3. Bulk Delete Test</h2>
+        <div>
+            <input type="text" id="orderIds" placeholder="Order IDs (comma-separated)" value="1,2" />
+            <button onclick="testBulkDelete()">Test Bulk Delete</button>
+        </div>
+        <div id="bulk-delete-result"></div>
+    </div>
+    
+    <div class="section">
+        <h2>4. Debug Logs</h2>
+        <button onclick="clearLogs()">Clear Logs</button>
+        <pre id="debug-logs"></pre>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3000/api';
+        const logs = [];
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+            const logEntry = `[${timestamp}] ${message}`;
+            logs.push(logEntry);
+            
+            const logElement = document.getElementById('debug-logs');
+            logElement.textContent = logs.join('\n');
+            logElement.scrollTop = logElement.scrollHeight;
+            
+            console.log(logEntry);
+        }
+        
+        function clearLogs() {
+            logs.length = 0;
+            document.getElementById('debug-logs').textContent = '';
+        }
+        
+        async function apiRequest(method, url, data = null) {
+            log(`🌐 ${method} ${url} ${data ? 'with data' : ''}`, 'info');
+            
+            const options = {
+                method,
+                credentials: 'include', // Important for cookies
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            };
+            
+            if (data) {
+                options.body = JSON.stringify(data);
+                log(`📤 Request data: ${JSON.stringify(data, null, 2)}`);
+            }
+            
+            try {
+                const response = await fetch(url, options);
+                log(`📥 Response status: ${response.status} ${response.statusText}`);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    log(`❌ Error response: ${errorText}`, 'error');
+                    throw new Error(`${response.status}: ${errorText}`);
+                }
+                
+                const result = await response.json();
+                log(`✅ Response data: ${JSON.stringify(result, null, 2)}`, 'success');
+                return result;
+            } catch (error) {
+                log(`💥 Request failed: ${error.message}`, 'error');
+                throw error;
+            }
+        }
+        
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const result = await apiRequest('POST', `${API_BASE}/auth/login`, { email, password });
+                document.getElementById('auth-status').innerHTML = 
+                    `<div class="success">✅ Login successful: ${result.user.name} (${result.user.role})</div>`;
+                log(`🔓 Login successful for ${result.user.email}`, 'success');
+            } catch (error) {
+                document.getElementById('auth-status').innerHTML = 
+                    `<div class="error">❌ Login failed: ${error.message}</div>`;
+                log(`🔒 Login failed: ${error.message}`, 'error');
+            }
+        }
+        
+        async function getCurrentUser() {
+            try {
+                const result = await apiRequest('GET', `${API_BASE}/auth/user`);
+                document.getElementById('auth-status').innerHTML = 
+                    `<div class="success">✅ Authenticated: ${result.name} (${result.role})</div>`;
+                log(`👤 Current user: ${result.email} - ${result.role}`, 'success');
+            } catch (error) {
+                document.getElementById('auth-status').innerHTML = 
+                    `<div class="error">❌ Not authenticated: ${error.message}</div>`;
+                log(`🚫 Not authenticated: ${error.message}`, 'error');
+            }
+        }
+        
+        async function logout() {
+            try {
+                await apiRequest('POST', `${API_BASE}/auth/logout`);
+                document.getElementById('auth-status').innerHTML = 
+                    '<div class="info">ℹ️ Logged out</div>';
+                log('👋 Logged out successfully', 'info');
+            } catch (error) {
+                log(`🔴 Logout error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function getOrders() {
+            try {
+                const result = await apiRequest('GET', `${API_BASE}/orders-optimized?limit=10`);
+                const ordersHtml = result.orders.map(order => 
+                    `<div>ID: ${order.id} - ${order.orderNumber} (${order.status})</div>`
+                ).join('');
+                document.getElementById('orders-list').innerHTML = ordersHtml;
+                log(`📋 Fetched ${result.orders.length} orders`, 'success');
+            } catch (error) {
+                document.getElementById('orders-list').innerHTML = 
+                    `<div class="error">❌ Failed to fetch orders: ${error.message}</div>`;
+                log(`📋 Failed to fetch orders: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testBulkDelete() {
+            const orderIdsInput = document.getElementById('orderIds').value;
+            const orderIds = orderIdsInput.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+            
+            if (orderIds.length === 0) {
+                log('⚠️ No valid order IDs provided', 'error');
+                return;
+            }
+            
+            log(`🗑️ Testing bulk delete for order IDs: ${orderIds.join(', ')}`);
+            
+            try {
+                const result = await apiRequest('DELETE', `${API_BASE}/orders/bulk-delete`, { orderIds });
+                document.getElementById('bulk-delete-result').innerHTML = 
+                    `<div class="success">✅ Bulk delete successful: ${result.message}</div>`;
+                log(`🗑️ Bulk delete successful: ${result.deletedCount} orders deleted`, 'success');
+                
+                // Refresh orders list to see changes
+                await getOrders();
+            } catch (error) {
+                document.getElementById('bulk-delete-result').innerHTML = 
+                    `<div class="error">❌ Bulk delete failed: ${error.message}</div>`;
+                log(`🗑️ Bulk delete failed: ${error.message}`, 'error');
+            }
+        }
+        
+        // Auto-check auth status on load
+        window.onload = () => {
+            log('🚀 Debug tool loaded', 'info');
+            getCurrentUser();
+        };
+    </script>
+</body>
+</html>

@@ -101,19 +101,6 @@ export default function CreateOrder() {
             </TabsContent>
 
             <TabsContent value="simple" className="mt-6">
-              {/* 직접승인 안내 메시지 */}
-              <Alert className="mb-6 border-blue-200 bg-blue-50">
-                <Info className="h-4 w-4 text-blue-600" />
-                <AlertDescription className="text-blue-900">
-                  <div className="font-semibold mb-2">📌 직접승인 처리 안내</div>
-                  <ul className="space-y-1 text-sm">
-                    <li>• 엑셀 업로드로 생성되는 모든 발주서는 <strong>직접승인(Direct Approval)</strong> 방식으로 처리됩니다.</li>
-                    <li>• 별도의 승인 절차 없이 바로 발주서가 생성되며, 즉시 발송 가능한 상태가 됩니다.</li>
-                    <li>• 대량 발주 처리를 위해 승인 단계를 생략하고 신속하게 처리합니다.</li>
-                    <li>• 승인 권한과 무관하게 모든 사용자가 엑셀 업로드 시 직접승인으로 처리됩니다.</li>
-                  </ul>
-                </AlertDescription>
-              </Alert>
               <SimpleExcelBulkUpload />
             </TabsContent>
           </Tabs>

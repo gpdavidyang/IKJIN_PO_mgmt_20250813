@@ -317,41 +317,101 @@ export default function OrdersProfessionalFast() {
   // Bulk delete mutation for admin
   const bulkDeleteMutation = useMutation({
     mutationFn: async (orderIds: number[]) => {
-      await apiRequest("DELETE", `/api/orders/bulk-delete`, { orderIds });
-      return orderIds; // Return the deleted order IDs
+      console.log('🚀 BULK DELETE: Starting mutation with orderIds:', orderIds);
+      
+      try {
+        const response = await apiRequest("DELETE", `/api/orders/bulk-delete`, { orderIds });
+        console.log('✅ BULK DELETE: API request successful, response:', response);
+        return orderIds; // Return the deleted order IDs
+      } catch (error) {
+        console.error('❌ BULK DELETE: API request failed:', error);
+        throw error;
+      }
     },
     onMutate: async (orderIds: number[]) => {
+      console.log('🔄 BULK DELETE: onMutate started with orderIds:', orderIds);
+      
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: ["orders-optimized"] });
+      console.log('🔄 BULK DELETE: Cancelled existing queries');
       
       // Snapshot the previous value
       const previousOrders = queryClient.getQueriesData({ queryKey: ["orders-optimized"] });
+      console.log('🔄 BULK DELETE: Previous cached data snapshot:', previousOrders.length, 'queries found');
+      
+      // Log current cache state before update
+      const currentCacheData = queryClient.getQueryData(["orders-optimized"]);
+      console.log('🔄 BULK DELETE: Current cache data before optimistic update:', {
+        totalOrders: currentCacheData?.orders?.length || 0,
+        totalCount: currentCacheData?.totalCount || 0,
+        firstFewOrders: currentCacheData?.orders?.slice(0, 3)?.map(o => ({ id: o.id, orderNumber: o.orderNumber })) || []
+      });
       
       // Optimistically update all cached queries
       queryClient.setQueriesData(
         { queryKey: ["orders-optimized"] },
         (old: any) => {
-          if (!old) return old;
+          if (!old) {
+            console.log('🔄 BULK DELETE: No cached data found, skipping optimistic update');
+            return old;
+          }
+          
           const orderIdSet = new Set(orderIds.map(id => id.toString()));
-          return {
+          console.log('🔄 BULK DELETE: Created order ID set for filtering:', Array.from(orderIdSet));
+          
+          const filteredOrders = old.orders?.filter((order: any) => {
+            const shouldKeep = !orderIdSet.has(order.id.toString());
+            if (!shouldKeep) {
+              console.log('🔄 BULK DELETE: Removing order from cache:', { id: order.id, orderNumber: order.orderNumber });
+            }
+            return shouldKeep;
+          });
+          
+          const newData = {
             ...old,
-            orders: old.orders?.filter((order: any) => !orderIdSet.has(order.id.toString())),
+            orders: filteredOrders,
             totalCount: old.totalCount ? old.totalCount - orderIds.length : 0
           };
+          
+          console.log('🔄 BULK DELETE: Optimistic update applied:', {
+            originalCount: old.orders?.length || 0,
+            newCount: filteredOrders?.length || 0,
+            removedCount: orderIds.length,
+            newTotalCount: newData.totalCount
+          });
+          
+          return newData;
         }
       );
+      
+      // Verify cache was updated
+      const updatedCacheData = queryClient.getQueryData(["orders-optimized"]);
+      console.log('🔄 BULK DELETE: Cache data after optimistic update:', {
+        totalOrders: updatedCacheData?.orders?.length || 0,
+        totalCount: updatedCacheData?.totalCount || 0,
+        firstFewOrders: updatedCacheData?.orders?.slice(0, 3)?.map(o => ({ id: o.id, orderNumber: o.orderNumber })) || []
+      });
       
       return { previousOrders };
     },
     onError: (err, orderIds, context) => {
+      console.error('❌ BULK DELETE: onError triggered:', err);
+      console.log('❌ BULK DELETE: Rolling back for orderIds:', orderIds);
+      
       // If the mutation fails, use the context returned from onMutate to roll back
       if (context?.previousOrders) {
+        console.log('❌ BULK DELETE: Rolling back', context.previousOrders.length, 'cached queries');
         context.previousOrders.forEach(([queryKey, data]) => {
           queryClient.setQueryData(queryKey, data);
         });
+        console.log('❌ BULK DELETE: Rollback completed');
+      } else {
+        console.log('❌ BULK DELETE: No previous data found for rollback');
       }
+      
       // Handle error messages
       if (isUnauthorizedError(err)) {
+        console.log('❌ BULK DELETE: Unauthorized error, redirecting to login');
         toast({
           title: "Unauthorized",
           description: "You are logged out. Logging in again...",
@@ -362,6 +422,8 @@ export default function OrdersProfessionalFast() {
         }, 500);
         return;
       }
+      
+      console.log('❌ BULK DELETE: Showing error toast');
       toast({
         title: "오류",
         description: "발주서 일괄 삭제에 실패했습니다.",
@@ -369,17 +431,39 @@ export default function OrdersProfessionalFast() {
       });
     },
     onSuccess: async (_, variables) => {
+      console.log('✅ BULK DELETE: onSuccess triggered for orderIds:', variables);
+      
+      // Log cache state before invalidation
+      const beforeInvalidation = queryClient.getQueryData(["orders-optimized"]);
+      console.log('✅ BULK DELETE: Cache state before invalidation:', {
+        totalOrders: beforeInvalidation?.orders?.length || 0,
+        totalCount: beforeInvalidation?.totalCount || 0
+      });
+      
       // Invalidate and refetch
       await queryClient.invalidateQueries({ 
         queryKey: ["orders-optimized"],
         exact: false
       });
+      console.log('✅ BULK DELETE: Cache invalidation completed');
+      
+      // Log cache state after invalidation (should trigger refetch)
+      setTimeout(() => {
+        const afterInvalidation = queryClient.getQueryData(["orders-optimized"]);
+        console.log('✅ BULK DELETE: Cache state after invalidation:', {
+          totalOrders: afterInvalidation?.orders?.length || 0,
+          totalCount: afterInvalidation?.totalCount || 0
+        });
+      }, 100);
+      
       toast({
         title: "성공",
         description: `${variables.length}개의 발주서가 삭제되었습니다.`,
       });
       setSelectedOrders(new Set());
       setBulkDeleteDialogOpen(false);
+      
+      console.log('✅ BULK DELETE: Success handling completed');
     }
   });
 
@@ -438,19 +522,25 @@ export default function OrdersProfessionalFast() {
     setSelectedOrders(prev => {
       const newSet = new Set(prev);
       if (newSet.has(orderId)) {
+        console.log('🎯 SELECTION: Deselecting order:', orderId);
         newSet.delete(orderId);
       } else {
+        console.log('🎯 SELECTION: Selecting order:', orderId);
         newSet.add(orderId);
       }
+      console.log('🎯 SELECTION: Updated selected orders:', Array.from(newSet));
       return newSet;
     });
   };
 
   const toggleSelectAll = () => {
     if (selectedOrders.size === orders.length && orders.length > 0) {
+      console.log('🎯 SELECTION: Deselecting all orders');
       setSelectedOrders(new Set());
     } else {
-      setSelectedOrders(new Set(orders.map(o => o.id)));
+      const allOrderIds = orders.map(o => o.id);
+      console.log('🎯 SELECTION: Selecting all orders:', allOrderIds);
+      setSelectedOrders(new Set(allOrderIds));
     }
   };
 
@@ -460,7 +550,11 @@ export default function OrdersProfessionalFast() {
   };
 
   const confirmBulkDelete = () => {
-    bulkDeleteMutation.mutate(Array.from(selectedOrders));
+    const orderIdsToDelete = Array.from(selectedOrders);
+    console.log('🎯 BULK DELETE: confirmBulkDelete called with selected orders:', orderIdsToDelete);
+    console.log('🎯 BULK DELETE: selectedOrders Set:', selectedOrders);
+    
+    bulkDeleteMutation.mutate(orderIdsToDelete);
   };
 
   // 정렬 처리 함수
@@ -663,31 +757,19 @@ export default function OrdersProfessionalFast() {
 
             {/* Quick Filters */}
             <div className="flex flex-wrap gap-3 mb-4">
-              {/* 발주 상태 필터 (신규 추가) */}
-              <Select value={filters.orderStatus || "all"} onValueChange={(value) => handleFilterChange("orderStatus", value)}>
+              {/* 상태 필터 - 실제 status 필드 사용 */}
+              <Select value={filters.status || "all"} onValueChange={(value) => handleFilterChange("status", value)}>
                 <SelectTrigger className="w-40 h-10 bg-white dark:bg-gray-700">
-                  <SelectValue placeholder="발주 상태" />
+                  <SelectValue placeholder="상태 선택" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">모든 발주 상태</SelectItem>
+                  <SelectItem value="all">모든 상태</SelectItem>
                   <SelectItem value="draft">임시저장</SelectItem>
-                  <SelectItem value="created">발주생성</SelectItem>
-                  <SelectItem value="sent">발주발송</SelectItem>
-                  <SelectItem value="delivered">납품완료</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {/* 승인 상태 필터 (기존 status를 approvalStatus로 변경) */}
-              <Select value={filters.approvalStatus || "all"} onValueChange={(value) => handleFilterChange("approvalStatus", value)}>
-                <SelectTrigger className="w-40 h-10 bg-white dark:bg-gray-700">
-                  <SelectValue placeholder="승인 상태" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">모든 승인 상태</SelectItem>
-                  <SelectItem value="not_required">승인불필요</SelectItem>
-                  <SelectItem value="pending">승인 대기</SelectItem>
-                  <SelectItem value="approved">승인 완료</SelectItem>
-                  <SelectItem value="rejected">반려</SelectItem>
+                  <SelectItem value="pending">결재대기</SelectItem>
+                  <SelectItem value="approved">승인됨</SelectItem>
+                  <SelectItem value="rejected">반려됨</SelectItem>
+                  <SelectItem value="sent">발송됨</SelectItem>
+                  <SelectItem value="completed">완료</SelectItem>
                 </SelectContent>
               </Select>
 
