@@ -382,18 +382,6 @@ export default function CreateOrderSimple() {
         {editedOrders.length === 0 && (
           <Card>
             <CardContent className="p-8">
-              {/* 직접승인 안내 메시지 */}
-              <Alert className="mb-6 border-blue-200 bg-blue-50">
-                <AlertCircle className="h-4 w-4 text-blue-600" />
-                <AlertDescription className="text-sm text-blue-900">
-                  <strong>직접승인 처리 안내</strong>
-                  <div className="mt-2 space-y-1">
-                    <p>• 엑셀 업로드로 생성되는 모든 발주서는 <strong>직접승인</strong> 방식으로 처리됩니다.</p>
-                    <p>• 별도의 승인 절차 없이 바로 발주서가 생성되며, 즉시 발송 가능한 상태가 됩니다.</p>
-                    <p>• 대량 발주 처리를 위해 승인 단계를 생략하고 신속하게 처리됩니다.</p>
-                  </div>
-                </AlertDescription>
-              </Alert>
               
               <input
                 ref={fileInputRef}

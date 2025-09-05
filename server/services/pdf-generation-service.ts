@@ -493,11 +493,11 @@ export class PDFGenerationService {
    * PDFKit으로 발주서 PDF 직접 생성 (브라우저 의존성 제거)
    */
   private static async generatePDFWithPDFKit(orderData: PurchaseOrderPDFData): Promise<Buffer> {
-    const PDFDocument = (await import('pdfkit')).default;
+    const PDFKitDocument = (await import('pdfkit')).default;
     
     return new Promise((resolve, reject) => {
       try {
-        const doc = new PDFDocument({ 
+        const doc = new PDFKitDocument({ 
           size: 'A4',
           margins: { top: 50, bottom: 50, left: 50, right: 50 }
         });
