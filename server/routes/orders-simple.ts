@@ -321,6 +321,9 @@ router.post('/orders/bulk-create-simple', requireAuth, upload.single('excelFile'
                 quantity: item.quantity || 0,
                 unitPrice: item.unitPrice || 0,
                 totalAmount: (item.quantity || 0) * (item.unitPrice || 0),
+                majorCategory: orderData.majorCategory || null,
+                middleCategory: orderData.middleCategory || null,
+                minorCategory: orderData.minorCategory || null,
                 notes: item.remarks || null // Use 'notes' field instead of 'remarks'
               };
             });
@@ -366,9 +369,12 @@ router.post('/orders/bulk-create-simple', requireAuth, upload.single('excelFile'
 
         // Save file attachment if provided (attach to all orders from the same upload)
         if (req.file) {
+          // Fix Korean encoding for filename
+          const decodedOriginalName = Buffer.from(req.file.originalname, 'latin1').toString('utf8');
+          
           console.log(`📎 Saving Excel file attachment for order ${newOrder.orderNumber}:`, {
             orderId: newOrder.id,
-            originalName: req.file.originalname,
+            originalName: decodedOriginalName,
             storedName: req.file.filename,
             filePath: req.file.path,
             fileSize: req.file.size,
@@ -384,7 +390,7 @@ router.post('/orders/bulk-create-simple', requireAuth, upload.single('excelFile'
               
             const [savedAttachment] = await db.insert(attachments).values({
               orderId: newOrder.id,
-              originalName: req.file.originalname,
+              originalName: decodedOriginalName,
               storedName: req.file.filename,
               filePath: relativePath,
               fileSize: req.file.size,
