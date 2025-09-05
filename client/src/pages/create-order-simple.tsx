@@ -226,9 +226,35 @@ export default function CreateOrderSimple() {
         formData.append('excelFile', file);
       }
       
-      // 발주서 데이터를 JSON으로 전송
-      formData.append('orders', JSON.stringify(orders));
+      // 발주서 데이터를 안전하게 직렬화 (순환 참조 방지)
+      try {
+        const cleanOrders = orders.map(order => ({
+          ...order,
+          // 함수나 undefined 값들 제거
+          items: order.items?.map(item => ({
+            itemName: item.itemName || '',
+            specification: item.specification || '',
+            unit: item.unit || '',
+            quantity: Number(item.quantity) || 0,
+            unitPrice: Number(item.unitPrice) || 0,
+            totalAmount: Number(item.totalAmount) || 0,
+            remarks: item.remarks || ''
+          })) || []
+        }));
+        
+        console.log('🔍 Serializing orders data:', cleanOrders);
+        const serializedOrders = JSON.stringify(cleanOrders);
+        console.log('✅ Orders serialization successful, length:', serializedOrders.length);
+        
+        formData.append('orders', serializedOrders);
+      } catch (serializationError) {
+        console.error('❌ Orders serialization failed:', serializationError);
+        console.error('❌ Original orders data:', orders);
+        throw new Error('Failed to serialize orders data');
+      }
+      
       formData.append('sendEmail', String(sendEmail)); // 이메일 발송 플래그 추가
+      formData.append('isDraft', 'true'); // 임시저장 플래그 추가
       
       const response = await fetch('/api/orders/bulk-create-simple', {
         method: 'POST',

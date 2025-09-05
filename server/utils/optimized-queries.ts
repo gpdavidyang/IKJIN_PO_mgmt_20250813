@@ -225,7 +225,7 @@ export class OptimizedDashboardQueries {
         totalAmount: item.amount // Add alias for compatibility
       }));
 
-      // Get status statistics
+      // Get separated status statistics
       const statusStats = await db
         .select({
           status: purchaseOrders.status,
@@ -235,6 +235,15 @@ export class OptimizedDashboardQueries {
         .from(purchaseOrders)
         .groupBy(purchaseOrders.status)
         .orderBy(desc(count()));
+
+      // Separate order status and approval status
+      const orderStatusStats = statusStats.filter(item => 
+        ['draft', 'sent', 'completed'].includes(item.status)
+      );
+
+      const approvalStatusStats = statusStats.filter(item =>
+        ['pending', 'approved', 'rejected'].includes(item.status)
+      );
 
       // Get project statistics (top 10 by order amount)
       const projectStatsList = await db
@@ -263,7 +272,9 @@ export class OptimizedDashboardQueries {
         },
         recentOrders,
         monthlyStats,
-        statusStats,
+        statusStats, // Keep for backward compatibility
+        orderStatusStats, // New: separated order status
+        approvalStatusStats, // New: separated approval status
         projectStats: projectStatsList
       };
 
@@ -292,6 +303,8 @@ export class OptimizedDashboardQueries {
         recentOrders: [],
         monthlyStats: [],
         statusStats: [],
+        orderStatusStats: [],
+        approvalStatusStats: [],
         projectStats: []
       };
     }
