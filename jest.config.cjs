@@ -12,7 +12,8 @@ module.exports = {
       roots: ['<rootDir>/tests', '<rootDir>/server'],
       testMatch: [
         '<rootDir>/tests/**/*.test.ts',
-        '<rootDir>/server/**/*.test.ts'
+        '<rootDir>/server/**/*.test.ts',
+        '<rootDir>/server/**/*.test.js'
       ],
       transform: {
         '^.+\\.(ts|tsx)$': ['ts-jest', {

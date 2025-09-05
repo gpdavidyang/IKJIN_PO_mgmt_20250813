@@ -108,16 +108,47 @@ export default function OrderDetailProfessional() {
     },
   });
 
+  const createOrderMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("POST", `/api/orders/${orderId}/create-order`);
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "발주서 생성 완료",
+        description: "발주서가 성공적으로 생성되었습니다. PDF가 첨부되었습니다.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/orders/${orderId}`] });
+      // Optionally show the PDF
+      if (data.pdfUrl) {
+        setPdfUrl(data.pdfUrl);
+        setShowPreview(true);
+      }
+    },
+    onError: (error) => {
+      toast({
+        title: "발주서 생성 실패",
+        description: error.message || "발주서 생성 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Professional status colors
   const getStatusColor = (status: string) => {
     switch (status) {
+      case 'draft':
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'created':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'pending_approval':
       case 'pending':
         return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'approved':
         return 'bg-green-100 text-green-800 border-green-200';
       case 'sent':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
+        return 'bg-indigo-100 text-indigo-800 border-indigo-200';
+      case 'delivered':
       case 'completed':
         return 'bg-purple-100 text-purple-800 border-purple-200';
       case 'rejected':
@@ -128,8 +159,20 @@ export default function OrderDetailProfessional() {
   };
 
   const getStatusText = (status: string) => {
-    const statusObj = orderStatuses?.find((s: any) => s.code === status);
-    return statusObj ? statusObj.name : status;
+    // Handle new status values
+    const statusMap: { [key: string]: string } = {
+      'draft': '임시저장',
+      'created': '발주서 생성완료',
+      'sent': '발송완료',
+      'delivered': '납품완료',
+      'pending_approval': '승인대기',
+      'pending': '승인대기',
+      'approved': '승인완료',
+      'rejected': '반려',
+      'completed': '완료'
+    };
+    
+    return statusMap[status] || status;
   };
 
   const handleApprove = () => {
@@ -256,9 +299,14 @@ export default function OrderDetailProfessional() {
             <div>
               <h1 className="text-2xl font-bold text-gray-900">{order.orderNumber}</h1>
               <div className="flex items-center gap-4 mt-2">
-                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(order.status)}`}>
-                  {getStatusText(order.status)}
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(actualStatus)}`}>
+                  {getStatusText(actualStatus)}
                 </span>
+                {isDraft && (
+                  <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">
+                    ⚠️ 임시저장 상태 - 발주서 생성 필요
+                  </span>
+                )}
                 <p className="text-sm text-gray-500">
                   {order.vendor?.name} • {order.orderDate ? format(new Date(order.orderDate), 'yyyy년 MM월 dd일') : '날짜 미정'}
                 </p>
@@ -266,6 +314,7 @@ export default function OrderDetailProfessional() {
             </div>
             
             <div className="flex items-center gap-3">
+              {/* Edit button - only for draft and created status */}
               {canEdit && (
                 <Button 
                   variant="outline" 
@@ -276,6 +325,24 @@ export default function OrderDetailProfessional() {
                   수정
                 </Button>
               )}
+              
+              {/* Create Order button - only for draft status */}
+              {canCreateOrder && (
+                <Button 
+                  onClick={() => {
+                    if (confirm("발주서를 생성하시겠습니까? PDF가 자동으로 생성되고 상태가 변경됩니다.")) {
+                      createOrderMutation.mutate();
+                    }
+                  }}
+                  disabled={createOrderMutation.isPending}
+                  className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
+                >
+                  <FileText className="h-4 w-4" />
+                  {createOrderMutation.isPending ? '생성 중...' : '발주서 생성'}
+                </Button>
+              )}
+              
+              {/* Approval button - for pending approval */}
               {canApprove && (
                 <Button 
                   onClick={handleApprove} 
@@ -286,60 +353,58 @@ export default function OrderDetailProfessional() {
                   승인
                 </Button>
               )}
-              {canSend && (
+              
+              {/* PDF Preview button - only for created/sent status */}
+              {canGeneratePDF && (
                 <Button 
-                  onClick={handleSend} 
-                  disabled={sendMutation.isPending}
-                  className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
+                  variant="outline" 
+                  onClick={async () => {
+                    setIsGeneratingPdf(true);
+                    try {
+                      // Generate PDF using the API
+                      const response = await apiRequest('POST', '/api/orders/generate-pdf', {
+                        orderData: order
+                      });
+                      
+                      if (response.pdfUrl) {
+                        setPdfUrl(response.pdfUrl);
+                        setShowPreview(true);
+                      } else {
+                        throw new Error('PDF URL not received');
+                      }
+                    } catch (error) {
+                      console.error('PDF generation error:', error);
+                      toast({
+                        title: "PDF 생성 실패",
+                        description: "PDF를 생성하는 중 오류가 발생했습니다.",
+                        variant: "destructive",
+                      });
+                    } finally {
+                      setIsGeneratingPdf(false);
+                    }
+                  }}
+                  disabled={isGeneratingPdf}
+                  className="flex items-center gap-2"
                 >
-                  <Send className="h-4 w-4" />
-                  발송
+                  <Eye className="h-4 w-4" />
+                  {isGeneratingPdf ? 'PDF 생성 중...' : 'PDF 미리보기'}
                 </Button>
               )}
-              <Button 
-                variant="outline" 
-                onClick={async () => {
-                  setIsGeneratingPdf(true);
-                  try {
-                    // Generate PDF using the API
-                    const response = await apiRequest('POST', '/api/orders/generate-pdf', {
-                      orderData: order
-                    });
-                    
-                    if (response.pdfUrl) {
-                      setPdfUrl(response.pdfUrl);
-                      setShowPreview(true);
-                    } else {
-                      throw new Error('PDF URL not received');
-                    }
-                  } catch (error) {
-                    console.error('PDF generation error:', error);
-                    toast({
-                      title: "PDF 생성 실패",
-                      description: "PDF를 생성하는 중 오류가 발생했습니다.",
-                      variant: "destructive",
-                    });
-                  } finally {
-                    setIsGeneratingPdf(false);
-                  }
-                }}
-                disabled={isGeneratingPdf}
-                className="flex items-center gap-2"
-              >
-                <Eye className="h-4 w-4" />
-                {isGeneratingPdf ? 'PDF 생성 중...' : 'PDF 미리보기'}
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  setSelectedOrder(order);
-                  setEmailDialogOpen(true);
-                }}
-                className="flex items-center gap-2"
-              >
-                <Mail className="h-4 w-4" />
-                이메일
-              </Button>
+              
+              {/* Email button - only for created status */}
+              {canSendEmail && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setSelectedOrder(order);
+                    setEmailDialogOpen(true);
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <Mail className="h-4 w-4" />
+                  이메일 발송
+                </Button>
+              )}
             </div>
           </div>
         </div>
