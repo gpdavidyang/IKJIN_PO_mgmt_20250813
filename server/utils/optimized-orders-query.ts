@@ -15,7 +15,9 @@ import { eq, desc, asc, ilike, and, or, between, count, sql, gte, lte } from "dr
 
 export interface OptimizedOrderFilters {
   userId?: string;
-  status?: string;
+  status?: string; // Legacy field
+  orderStatus?: string; // New order status field
+  approvalStatus?: string; // New approval status field
   vendorId?: number;
   projectId?: number;
   startDate?: Date;
@@ -33,6 +35,9 @@ export interface OrderWithMetadata {
   id: number;
   orderNumber: string;
   status: string;
+  orderStatus?: string; // 발주 상태
+  approvalStatus?: string; // 승인 상태
+  createdAt?: string; // 등록일
   totalAmount: number;
   orderDate: string;
   deliveryDate: string | null;
@@ -69,6 +74,8 @@ export class OptimizedOrdersService {
           return users.name;
         case 'orderDate':
           return purchaseOrders.orderDate;
+        case 'createdAt':
+          return purchaseOrders.createdAt;
         case 'totalAmount':
           return purchaseOrders.totalAmount;
         default:
@@ -88,6 +95,8 @@ export class OptimizedOrdersService {
     const { 
       userId, 
       status, 
+      orderStatus,
+      approvalStatus,
       vendorId, 
       projectId, 
       startDate, 
@@ -110,6 +119,16 @@ export class OptimizedOrdersService {
     }
     if (status && status !== 'all' && status !== '') {
       whereConditions.push(sql`${purchaseOrders.status} = ${status}`);
+    }
+    
+    // New order status filter
+    if (orderStatus && orderStatus !== 'all' && orderStatus !== '') {
+      whereConditions.push(sql`${purchaseOrders.orderStatus} = ${orderStatus}`);
+    }
+    
+    // New approval status filter
+    if (approvalStatus && approvalStatus !== 'all' && approvalStatus !== '') {
+      whereConditions.push(sql`${purchaseOrders.approvalStatus} = ${approvalStatus}`);
     }
     
     if (vendorId && vendorId !== 'all') {
@@ -154,6 +173,8 @@ export class OptimizedOrdersService {
         id: purchaseOrders.id,
         orderNumber: purchaseOrders.orderNumber,
         status: purchaseOrders.status,
+        orderStatus: purchaseOrders.orderStatus,
+        approvalStatus: purchaseOrders.approvalStatus,
         totalAmount: purchaseOrders.totalAmount,
         orderDate: purchaseOrders.orderDate,
         deliveryDate: purchaseOrders.deliveryDate,

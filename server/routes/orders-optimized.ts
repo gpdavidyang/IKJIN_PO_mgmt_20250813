@@ -13,7 +13,9 @@ const router = Router();
 const OrderFiltersSchema = z.object({
   page: z.string().optional().transform(val => val ? parseInt(val) : 1),
   limit: z.string().optional().transform(val => val ? parseInt(val) : 20),
-  status: z.string().optional(),
+  status: z.string().optional(), // Legacy field for backward compatibility
+  orderStatus: z.string().optional(), // New order status field
+  approvalStatus: z.string().optional(), // New approval status field
   projectId: z.string().optional().transform(val => val && val !== 'all' ? parseInt(val) : undefined),
   vendorId: z.string().optional().transform(val => val && val !== 'all' ? parseInt(val) : undefined),
   userId: z.string().optional(),
