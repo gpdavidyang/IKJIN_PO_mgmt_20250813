@@ -5564,12 +5564,21 @@ var OptimizedDashboardQueries = class {
         count: count2(),
         amount: sql3`COALESCE(SUM(${purchaseOrders.totalAmount}), 0)`
       }).from(purchaseOrders).groupBy(purchaseOrders.status).orderBy(desc2(count2()));
-      const orderStatusStats = statusStats.filter(
-        (item) => ["draft", "sent", "completed"].includes(item.status)
+      const allOrderStatuses = ["draft", "created", "sent", "completed"];
+      const existingStatusStats = statusStats.filter(
+        (item) => allOrderStatuses.includes(item.status)
       );
-      const approvalStatusStats = statusStats.filter(
-        (item) => ["pending", "approved", "rejected", "direct_approval"].includes(item.status)
-      );
+      const statusMap = new Map(existingStatusStats.map((item) => [item.status, item]));
+      const orderStatusStats = allOrderStatuses.map((status) => {
+        if (statusMap.has(status)) {
+          return statusMap.get(status);
+        }
+        return {
+          status,
+          count: 0,
+          amount: 0
+        };
+      });
       const projectStatsList = await db.select({
         projectId: projects.id,
         projectName: projects.projectName,
@@ -5591,9 +5600,7 @@ var OptimizedDashboardQueries = class {
         statusStats,
         // Keep for backward compatibility
         orderStatusStats,
-        // New: separated order status
-        approvalStatusStats,
-        // New: separated approval status
+        // Separated order status
         projectStats: projectStatsList
       };
       console.log("\u2705 Dashboard data compiled successfully:", {
@@ -5619,7 +5626,6 @@ var OptimizedDashboardQueries = class {
         monthlyStats: [],
         statusStats: [],
         orderStatusStats: [],
-        approvalStatusStats: [],
         projectStats: []
       };
     }
@@ -18495,21 +18501,41 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload5.single("excelFi
             project = existingProject;
           }
         }
-        const orderCount = await db.select().from(purchaseOrders).then((rows) => rows.length);
-        const orderNumber = `PO-${(/* @__PURE__ */ new Date()).getFullYear()}-${String(orderCount + 1).padStart(5, "0")}`;
+        const now = /* @__PURE__ */ new Date();
+        const year = now.getFullYear();
+        const timestamp2 = now.getTime();
+        let orderNumber;
+        let attempts = 0;
+        const maxAttempts = 10;
+        do {
+          const orderCount = await db.select().from(purchaseOrders).then((rows) => rows.length);
+          const sequenceNumber = orderCount + 1 + attempts;
+          orderNumber = `PO-${year}-${String(sequenceNumber).padStart(5, "0")}`;
+          const existingOrder = await db.select().from(purchaseOrders).where(eq20(purchaseOrders.orderNumber, orderNumber)).then((rows) => rows[0]);
+          if (!existingOrder) {
+            break;
+          }
+          attempts++;
+        } while (attempts < maxAttempts);
+        if (attempts >= maxAttempts) {
+          orderNumber = `PO-${year}-${String(timestamp2).slice(-5)}`;
+        }
         const totalAmount = orderData.items.reduce((sum2, item) => {
           return sum2 + (item.quantity || 0) * (item.unitPrice || 0);
         }, 0);
         let orderStatus = "draft";
         let approvalStatus = "not_required";
         let approvalBypassReason = null;
+        let legacyStatus = "pending";
         if (isDraft) {
           orderStatus = "draft";
           approvalStatus = "not_required";
+          legacyStatus = "draft";
         } else {
           orderStatus = sendEmail ? "sent" : "created";
           approvalStatus = "not_required";
           approvalBypassReason = "direct_approval";
+          legacyStatus = sendEmail ? "sent" : "approved";
         }
         const [newOrder] = await db.insert(purchaseOrders).values({
           orderNumber,
@@ -18518,8 +18544,8 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload5.single("excelFi
           userId: req.user.id,
           orderDate: orderData.orderDate || (/* @__PURE__ */ new Date()).toISOString().split("T")[0],
           // Required field
-          status: isDraft ? "draft" : sendEmail ? "sent" : "created",
-          // Keep legacy status for backward compatibility
+          status: legacyStatus,
+          // Use correct legacy status values
           orderStatus,
           // New order status
           approvalStatus,

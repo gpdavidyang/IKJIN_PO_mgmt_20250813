@@ -16,6 +16,7 @@ import PDFPreviewModal from "@/components/workflow/preview/PDFPreviewModal";
 
 // Import modals
 import { MonthlyTrendModal } from "@/components/modals/monthly-trend-modal";
+import { StatusDistributionModal } from "@/components/modals/status-distribution-modal";
 
 // Import enhanced components
 import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
@@ -32,6 +33,7 @@ export default function DashboardProfessional() {
 
   // Modal states
   const [isMonthlyTrendModalOpen, setIsMonthlyTrendModalOpen] = useState(false);
+  const [isStatusDistributionModalOpen, setIsStatusDistributionModalOpen] = useState(false);
   
   // Email dialog state
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
