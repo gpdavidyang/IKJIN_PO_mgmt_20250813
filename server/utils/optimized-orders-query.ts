@@ -104,11 +104,20 @@ export class OptimizedOrdersService {
     // Build dynamic WHERE conditions
     const whereConditions = [];
     
+    // Debug logging
+    console.log('🔍 Building WHERE conditions:', {
+      status,
+      userId,
+      vendorId,
+      projectId
+    });
+    
     if (userId && userId !== 'all') {
       whereConditions.push(eq(purchaseOrders.userId, userId));
     }
     
     if (status && status !== 'all' && status !== '') {
+      console.log('📌 Adding status filter:', status);
       whereConditions.push(sql`${purchaseOrders.status} = ${status}`);
     }
     
@@ -191,6 +200,19 @@ export class OptimizedOrdersService {
       ordersQuery,
       countQuery
     ]);
+
+    // Debug log the results
+    console.log('📊 Query results:', {
+      totalOrders: orders.length,
+      totalCount,
+      draftOrders: orders.filter(o => o.status === 'draft').length,
+      statuses: [...new Set(orders.map(o => o.status))],
+      firstFewOrders: orders.slice(0, 3).map(o => ({
+        id: o.id,
+        orderNumber: o.orderNumber,
+        status: o.status
+      }))
+    });
 
     return {
       orders: orders as OrderWithMetadata[],

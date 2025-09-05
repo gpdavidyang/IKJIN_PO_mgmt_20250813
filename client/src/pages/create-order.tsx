@@ -71,26 +71,6 @@ export default function CreateOrder() {
                     <span className={`font-medium ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>일반 폼 작성:</span> 소량 발주서, 세밀한 조정, 즉시 처리에 적합 (10건 이하 권장)
                   </div>
                 </div>
-                <div className={`pt-2 border-t transition-colors ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className={`transition-colors ${
-                      isDarkMode 
-                        ? 'text-blue-400 border-gray-600 hover:bg-gray-700 hover:border-blue-500' 
-                        : 'text-blue-600 border-blue-200 hover:bg-blue-50'
-                    }`}
-                    onClick={() => {
-                      const link = document.createElement('a');
-                      link.href = '/PO_Excel_Template.xlsx';
-                      link.download = 'PO_Excel_Template.xlsx';
-                      link.click();
-                    }}
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Excel 템플릿 다운로드
-                  </Button>
-                </div>
               </div>
             </AlertDescription>
           </Alert>
