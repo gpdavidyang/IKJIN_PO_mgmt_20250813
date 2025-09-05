@@ -40,7 +40,9 @@ export interface PurchaseOrderPDFData {
 }
 
 export class PDFGenerationService {
-  private static uploadDir = path.join(process.cwd(), 'uploads/pdf');
+  private static uploadDir = process.env.VERCEL 
+    ? '/tmp/pdf' // Vercel only allows writing to /tmp
+    : path.join(process.cwd(), 'uploads/pdf');
 
   /**
    * 발주서 PDF 생성 및 첨부파일 등록
@@ -49,68 +51,83 @@ export class PDFGenerationService {
     orderId: number,
     orderData: PurchaseOrderPDFData,
     userId: string
-  ): Promise<{ success: boolean; pdfPath?: string; attachmentId?: number; error?: string }> {
+  ): Promise<{ success: boolean; pdfPath?: string; attachmentId?: number; error?: string; pdfBuffer?: Buffer }> {
     try {
       console.log(`📄 [PDFGenerator] 발주서 PDF 생성 시작: Order ID ${orderId}`);
 
-      // PDF 저장 디렉토리 생성
-      const year = new Date().getFullYear();
-      const month = String(new Date().getMonth() + 1).padStart(2, '0');
-      const pdfDir = path.join(this.uploadDir, String(year), month);
-      
-      console.log(`📁 [PDFGenerator] 디렉토리 생성 중: ${pdfDir}`);
-      
-      if (!fs.existsSync(pdfDir)) {
-        try {
-          fs.mkdirSync(pdfDir, { recursive: true });
-          console.log(`✅ [PDFGenerator] 디렉토리 생성 완료: ${pdfDir}`);
-        } catch (dirError) {
-          console.error(`❌ [PDFGenerator] 디렉토리 생성 실패: ${pdfDir}`, dirError);
-          throw new Error(`디렉토리 생성 실패: ${dirError instanceof Error ? dirError.message : 'Unknown error'}`);
-        }
-      }
-
-      // PDF 파일명 생성
       const timestamp = Date.now();
       const fileName = `PO_${orderData.orderNumber}_${timestamp}.pdf`;
-      const filePath = path.join(pdfDir, fileName);
 
       // HTML 템플릿 생성
       const htmlContent = this.generateHTMLTemplate(orderData);
       
-      // HTML을 PDF로 변환 (임시로 HTML 파일로 저장)
-      const htmlPath = filePath.replace('.pdf', '.html');
-      fs.writeFileSync(htmlPath, htmlContent);
-
-      // Playwright를 사용한 PDF 생성
-      const pdfBuffer = await this.convertHTMLToPDF(htmlPath);
-      fs.writeFileSync(filePath, pdfBuffer);
+      // Vercel 환경에서는 임시 파일을 /tmp에 생성
+      const tempDir = process.env.VERCEL ? '/tmp' : path.join(this.uploadDir, String(new Date().getFullYear()), String(new Date().getMonth() + 1).padStart(2, '0'));
       
-      // HTML 임시 파일 삭제
-      if (fs.existsSync(htmlPath)) {
-        fs.unlinkSync(htmlPath);
+      if (!process.env.VERCEL) {
+        // 로컬 환경에서만 디렉토리 생성
+        console.log(`📁 [PDFGenerator] 디렉토리 생성 중: ${tempDir}`);
+        
+        if (!fs.existsSync(tempDir)) {
+          try {
+            fs.mkdirSync(tempDir, { recursive: true });
+            console.log(`✅ [PDFGenerator] 디렉토리 생성 완료: ${tempDir}`);
+          } catch (dirError) {
+            console.error(`❌ [PDFGenerator] 디렉토리 생성 실패: ${tempDir}`, dirError);
+            throw new Error(`디렉토리 생성 실패: ${dirError instanceof Error ? dirError.message : 'Unknown error'}`);
+          }
+        }
       }
 
-      // 파일 크기 확인
-      const stats = fs.statSync(filePath);
+      // HTML을 PDF로 변환 (메모리에서 처리)
+      const pdfBuffer = await this.convertHTMLToPDFFromString(htmlContent);
+      
+      let filePath = '';
+      let attachmentId: number;
 
-      // 첨부파일 DB 등록
-      const [attachment] = await db.db.insert(attachments).values({
-        orderId,
-        originalName: fileName,
-        storedName: fileName,
-        filePath,
-        fileSize: stats.size,
-        mimeType: 'application/pdf',
-        uploadedBy: userId
-      }).returning();
-
-      console.log(`✅ [PDFGenerator] PDF 생성 완료: ${filePath}, Attachment ID: ${attachment.id}`);
+      if (process.env.VERCEL) {
+        // Vercel 환경: /tmp 디렉토리에 임시 저장 (함수 실행 동안만 유효)
+        const tmpPath = `/tmp/${fileName}`;
+        fs.writeFileSync(tmpPath, pdfBuffer);
+        
+        const [attachment] = await db.db.insert(attachments).values({
+          orderId,
+          originalName: fileName,
+          storedName: fileName,
+          filePath: tmpPath,
+          fileSize: pdfBuffer.length,
+          mimeType: 'application/pdf',
+          uploadedBy: userId
+        }).returning();
+        
+        attachmentId = attachment.id;
+        filePath = tmpPath;
+        
+        console.log(`✅ [PDFGenerator] PDF 생성 완료 (Vercel /tmp): ${tmpPath}, Attachment ID: ${attachment.id}`);
+      } else {
+        // 로컬 환경: 파일 시스템에 저장
+        filePath = path.join(tempDir, fileName);
+        fs.writeFileSync(filePath, pdfBuffer);
+        
+        const [attachment] = await db.db.insert(attachments).values({
+          orderId,
+          originalName: fileName,
+          storedName: fileName,
+          filePath,
+          fileSize: pdfBuffer.length,
+          mimeType: 'application/pdf',
+          uploadedBy: userId
+        }).returning();
+        
+        attachmentId = attachment.id;
+        console.log(`✅ [PDFGenerator] PDF 생성 완료: ${filePath}, Attachment ID: ${attachment.id}`);
+      }
 
       return {
         success: true,
         pdfPath: filePath,
-        attachmentId: attachment.id
+        attachmentId,
+        pdfBuffer: process.env.VERCEL ? pdfBuffer : undefined
       };
 
     } catch (error) {
@@ -389,7 +406,7 @@ export class PDFGenerationService {
   }
 
   /**
-   * HTML을 PDF로 변환 (Playwright 사용)
+   * HTML을 PDF로 변환 (Playwright 사용 - 파일 기반)
    */
   private static async convertHTMLToPDF(htmlPath: string): Promise<Buffer> {
     const { chromium } = await import('playwright');
@@ -400,6 +417,40 @@ export class PDFGenerationService {
     try {
       // HTML 파일 로드
       await page.goto(`file://${path.resolve(htmlPath)}`, {
+        waitUntil: 'networkidle'
+      });
+      
+      // PDF 생성
+      const pdfBuffer = await page.pdf({
+        format: 'A4',
+        printBackground: true,
+        margin: {
+          top: '15mm',
+          right: '15mm',
+          bottom: '15mm',
+          left: '15mm'
+        }
+      });
+      
+      return pdfBuffer;
+      
+    } finally {
+      await browser.close();
+    }
+  }
+
+  /**
+   * HTML 문자열을 PDF로 변환 (Playwright 사용 - 메모리 기반)
+   */
+  private static async convertHTMLToPDFFromString(htmlContent: string): Promise<Buffer> {
+    const { chromium } = await import('playwright');
+    
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+    
+    try {
+      // HTML 콘텐츠를 직접 설정
+      await page.setContent(htmlContent, {
         waitUntil: 'networkidle'
       });
       

@@ -148,6 +148,11 @@ export class OptimizedDashboardQueries {
       );
       const pendingOrderStats = pendingOrderResult.rows[0] || { pendingOrders: 0 };
 
+      const completedOrderResult = await db.execute(
+        sql`SELECT COUNT(*) as "completedOrders" FROM purchase_orders WHERE status = 'completed'`
+      );
+      const completedOrderStats = completedOrderResult.rows[0] || { completedOrders: 0 };
+
       const monthlyOrderResult = await db.execute(
         sql`SELECT COUNT(*) as "monthlyOrders" 
             FROM purchase_orders 
@@ -280,6 +285,7 @@ export class OptimizedDashboardQueries {
           totalOrders: parseInt(orderStats.totalOrders) || 0,
           totalAmount: Number(orderStats.totalAmount) || 0,
           pendingOrders: parseInt(pendingOrderStats.pendingOrders) || 0,
+          completedOrders: parseInt(completedOrderStats.completedOrders) || 0,
           monthlyOrders: parseInt(monthlyOrderStats.monthlyOrders) || 0,
           activeProjects: parseInt(projectStats.activeProjects) || 0,
           activeVendors: parseInt(vendorStats.activeVendors) || 0
@@ -309,6 +315,7 @@ export class OptimizedDashboardQueries {
           totalOrders: 0, 
           totalAmount: 0, 
           pendingOrders: 0,
+          completedOrders: 0,
           monthlyOrders: 0,
           activeProjects: 0, 
           activeVendors: 0 

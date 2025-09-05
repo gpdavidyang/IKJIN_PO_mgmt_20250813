@@ -122,17 +122,17 @@ export default function Dashboard() {
       status: 'success' as const
     },
     {
-      id: 'pending-orders',
-      title: '승인 대기',
-      value: realtimeStats.pendingOrders || stats.pendingOrders || 0,
-      previousValue: stats.pendingOrders,
+      id: 'completed-orders',
+      title: '발주완료',
+      value: realtimeStats.completedOrders || stats.completedOrders || 0,
+      previousValue: stats.completedOrders,
       format: 'number' as const,
-      trend: 'down' as const,
-      trendValue: 5,
-      description: '승인 대기 중인 발주서',
-      category: '승인관리',
+      trend: 'up' as const,
+      trendValue: 8,
+      description: '발주완료된 주문서',
+      category: '완료관리',
       lastUpdated: new Date(),
-      status: stats.pendingOrders > 10 ? 'warning' as const : 'normal' as const
+      status: 'success' as const
     }
   ];
 
@@ -157,9 +157,9 @@ export default function Dashboard() {
   // Define quick actions
   const quickActionItems = [
     {
-      label: "승인 대기 확인",
-      icon: AlertCircle,
-      onClick: () => navigate('/orders?status=pending'),
+      label: "발주완료 확인",
+      icon: Package,
+      onClick: () => navigate('/orders?status=completed'),
       variant: "outline" as const,
     },
     {
@@ -212,24 +212,24 @@ export default function Dashboard() {
 
       {/* Ultra-High Density KPI Row */}
       <div className="grid grid-cols-6 gap-1 mb-2">
-        {/* Pending Orders */}
+        {/* Completed Orders */}
         <div 
           className={`rounded border p-2 hover:shadow-sm transition-all cursor-pointer ${
             isDarkMode 
               ? 'bg-blue-900/20 border-blue-700 hover:bg-blue-900/30' 
               : 'bg-blue-50/30 border-blue-300 hover:bg-blue-50/50'
           }`}
-          onClick={() => navigate('/orders?status=pending')}
+          onClick={() => navigate('/orders?status=completed')}
         >
           <div className="flex items-center justify-between">
             <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
-              isDarkMode ? 'bg-amber-900/30' : 'bg-amber-100'
+              isDarkMode ? 'bg-green-900/30' : 'bg-green-100'
             }`}>
-              <Clock className={`h-3 w-3 ${isDarkMode ? 'text-amber-400' : 'text-amber-600'}`} />
+              <Package className={`h-3 w-3 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`} />
             </div>
             <div className="text-right">
-              <div className={`text-lg font-bold transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{stats.pendingOrders || 0}</div>
-              <div className={`text-xs transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>승인대기</div>
+              <div className={`text-lg font-bold transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{stats.completedOrders || 0}</div>
+              <div className={`text-xs transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>발주완료</div>
             </div>
           </div>
         </div>
