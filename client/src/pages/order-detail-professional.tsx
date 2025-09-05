@@ -14,7 +14,7 @@ import {
   CheckCircle,
   FileText, 
   Download, 
-  Eye, 
+  ExternalLink, 
   Printer,
   Building2,
   MapPin,
@@ -44,11 +44,8 @@ export default function OrderDetailProfessional() {
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const params = useParams();
-  const [showPreview, setShowPreview] = useState(false);
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
-  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const orderId = parseInt(params.id);
 
   const { data: order, isLoading } = useQuery({
@@ -119,11 +116,6 @@ export default function OrderDetailProfessional() {
       });
       queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
       queryClient.invalidateQueries({ queryKey: [`/api/orders/${orderId}`] });
-      // Optionally show the PDF
-      if (data.pdfUrl) {
-        setPdfUrl(data.pdfUrl);
-        setShowPreview(true);
-      }
     },
     onError: (error) => {
       toast({
@@ -330,7 +322,12 @@ export default function OrderDetailProfessional() {
               {canCreateOrder && (
                 <Button 
                   onClick={() => {
-                    if (confirm("발주서를 생성하시겠습니까? PDF가 자동으로 생성되고 상태가 변경됩니다.")) {
+                    if (confirm(
+                      "발주서를 생성하시겠습니까?\n\n" +
+                      "• PDF 파일이 자동으로 생성됩니다\n" +
+                      "• 상태가 '생성됨'으로 변경됩니다\n" +
+                      "• 생성 후 PDF 보기 및 이메일 발송이 가능합니다"
+                    )) {
                       createOrderMutation.mutate();
                     }
                   }}
@@ -354,40 +351,32 @@ export default function OrderDetailProfessional() {
                 </Button>
               )}
               
-              {/* PDF Preview button - only for created/sent status */}
+              {/* PDF View button - only for created/sent status */}
               {canGeneratePDF && (
                 <Button 
                   variant="outline" 
-                  onClick={async () => {
-                    setIsGeneratingPdf(true);
-                    try {
-                      // Generate PDF using the API
-                      const response = await apiRequest('POST', '/api/orders/generate-pdf', {
-                        orderData: order
-                      });
-                      
-                      if (response.pdfUrl) {
-                        setPdfUrl(response.pdfUrl);
-                        setShowPreview(true);
-                      } else {
-                        throw new Error('PDF URL not received');
-                      }
-                    } catch (error) {
-                      console.error('PDF generation error:', error);
+                  onClick={() => {
+                    // Find PDF attachment from existing attachments
+                    const pdfAttachment = order.attachments?.find(
+                      (att: any) => att.mimeType?.includes('pdf') || att.originalName?.toLowerCase().endsWith('.pdf')
+                    );
+                    
+                    if (pdfAttachment) {
+                      // Open PDF in new tab
+                      window.open(`/api/attachments/${pdfAttachment.id}/download`, '_blank');
+                    } else {
+                      // PDF not found - show helpful message
                       toast({
-                        title: "PDF 생성 실패",
-                        description: "PDF를 생성하는 중 오류가 발생했습니다.",
-                        variant: "destructive",
+                        title: "PDF 파일이 없습니다",
+                        description: "발주서 생성 버튼을 클릭하면 PDF가 자동으로 생성됩니다.",
                       });
-                    } finally {
-                      setIsGeneratingPdf(false);
                     }
                   }}
-                  disabled={isGeneratingPdf}
                   className="flex items-center gap-2"
+                  title="새 탭에서 PDF 열기"
                 >
-                  <Eye className="h-4 w-4" />
-                  {isGeneratingPdf ? 'PDF 생성 중...' : 'PDF 미리보기'}
+                  <ExternalLink className="h-4 w-4" />
+                  PDF 보기
                 </Button>
               )}
               
@@ -708,87 +697,6 @@ export default function OrderDetailProfessional() {
           </Card>
         )}
 
-        {/* Category Summary */}
-        {order.items?.some((item: any) => item.majorCategory || item.middleCategory || item.minorCategory) && (
-          <Card className="shadow-sm mb-6 bg-white border-blue-200">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <TrendingUp className="h-5 w-5 text-gray-600" />
-                <h3 className="text-lg font-semibold text-gray-900">품목 분류 요약</h3>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* 대분류별 집계 */}
-                {(() => {
-                  const majorCategories = order.items?.reduce((acc: any, item: any) => {
-                    if (item.majorCategory) {
-                      acc[item.majorCategory] = (acc[item.majorCategory] || 0) + 1;
-                    }
-                    return acc;
-                  }, {});
-                  return Object.keys(majorCategories || {}).length > 0 && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-700 mb-2">대분류</p>
-                      <div className="space-y-1">
-                        {Object.entries(majorCategories || {}).map(([category, count]) => (
-                          <div key={category} className="flex justify-between items-center text-sm">
-                            <span className="text-gray-600">{category}</span>
-                            <span className="text-blue-600 font-medium">{count}개</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })()}
-                
-                {/* 중분류별 집계 */}
-                {(() => {
-                  const middleCategories = order.items?.reduce((acc: any, item: any) => {
-                    if (item.middleCategory) {
-                      acc[item.middleCategory] = (acc[item.middleCategory] || 0) + 1;
-                    }
-                    return acc;
-                  }, {});
-                  return Object.keys(middleCategories || {}).length > 0 && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-700 mb-2">중분류</p>
-                      <div className="space-y-1">
-                        {Object.entries(middleCategories || {}).map(([category, count]) => (
-                          <div key={category} className="flex justify-between items-center text-sm">
-                            <span className="text-gray-600">{category}</span>
-                            <span className="text-blue-600 font-medium">{count}개</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })()}
-                
-                {/* 소분류별 집계 */}
-                {(() => {
-                  const minorCategories = order.items?.reduce((acc: any, item: any) => {
-                    if (item.minorCategory) {
-                      acc[item.minorCategory] = (acc[item.minorCategory] || 0) + 1;
-                    }
-                    return acc;
-                  }, {});
-                  return Object.keys(minorCategories || {}).length > 0 && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-700 mb-2">소분류</p>
-                      <div className="space-y-1">
-                        {Object.entries(minorCategories || {}).map(([category, count]) => (
-                          <div key={category} className="flex justify-between items-center text-sm">
-                            <span className="text-gray-600">{category}</span>
-                            <span className="text-blue-600 font-medium">{count}개</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })()}
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Items Section */}
         <Card className="shadow-sm mb-8 bg-white border-blue-200">
@@ -977,72 +885,6 @@ export default function OrderDetailProfessional() {
             </CardContent>
           </Card>
         )}
-
-        {/* Preview Modal */}
-        <Dialog open={showPreview} onOpenChange={(open) => {
-          setShowPreview(open);
-          if (!open) {
-            setPdfUrl(null); // Clear PDF URL when closing
-          }
-        }}>
-          <DialogContent className="max-w-[1366px] max-h-[90vh] overflow-hidden">
-            <DialogHeader>
-              <DialogTitle className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Eye className="h-5 w-5 text-gray-600" />
-                  <span className="text-lg font-semibold text-gray-900">발주서 미리보기</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  {pdfUrl && (
-                    <>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          // Download PDF
-                          const link = document.createElement('a');
-                          link.href = pdfUrl;
-                          link.download = `발주서_${order?.orderNumber || 'document'}.pdf`;
-                          link.click();
-                        }}
-                      >
-                        <Download className="h-4 w-4 mr-1" />
-                        PDF 다운로드
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          // Open PDF in new window for printing
-                          window.open(pdfUrl, '_blank');
-                        }}
-                      >
-                        <Printer className="h-4 w-4 mr-1" />
-                        PDF 출력
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </DialogTitle>
-            </DialogHeader>
-            <div className="mt-4" style={{ height: 'calc(90vh - 100px)' }}>
-              {pdfUrl ? (
-                <iframe
-                  src={pdfUrl}
-                  className="w-full h-full border-0 rounded-lg"
-                  title="PDF Preview"
-                />
-              ) : (
-                <div className="flex items-center justify-center h-full">
-                  <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                    <p className="text-gray-600">PDF 생성 중...</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
 
         {/* Email Send Dialog */}
         {order && (
