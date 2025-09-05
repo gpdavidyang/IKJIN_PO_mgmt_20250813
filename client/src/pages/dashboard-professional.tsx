@@ -344,7 +344,7 @@ export default function DashboardProfessional() {
           >
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm font-medium" style={{ color: isDarkMode ? '#9ca3af' : '#4b5563' }}>발주완료</p>
+                <p className="text-sm font-medium" style={{ color: isDarkMode ? '#9ca3af' : '#4b5563' }}>금월 발주완료</p>
                 <p className="text-2xl font-bold mt-2" style={{ color: isDarkMode ? '#34d399' : '#059669' }}>{stats.completedOrders || 0}</p>
                 <div className="flex items-center mt-2 text-sm">
                   <Package className="h-4 w-4 text-green-500 mr-1" />
@@ -817,7 +817,7 @@ export default function DashboardProfessional() {
               <Package className="h-5 w-5" style={{ color: isDarkMode ? '#34d399' : '#059669' }} />
             </div>
             <div className="text-left">
-              <p className="text-sm font-medium" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}>발주완료 확인</p>
+              <p className="text-sm font-medium" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}>금월 발주완료</p>
               <p className="text-xs" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>{stats.completedOrders || 0}건 완료</p>
             </div>
           </button>

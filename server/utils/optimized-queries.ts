@@ -149,7 +149,10 @@ export class OptimizedDashboardQueries {
       const pendingOrderStats = pendingOrderResult.rows[0] || { pendingOrders: 0 };
 
       const completedOrderResult = await db.execute(
-        sql`SELECT COUNT(*) as "completedOrders" FROM purchase_orders WHERE status = 'completed'`
+        sql`SELECT COUNT(*) as "completedOrders" 
+            FROM purchase_orders 
+            WHERE status = 'completed' 
+            AND order_date >= DATE_TRUNC('month', CURRENT_DATE)`
       );
       const completedOrderStats = completedOrderResult.rows[0] || { completedOrders: 0 };
 

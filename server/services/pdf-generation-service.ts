@@ -440,36 +440,73 @@ export class PDFGenerationService {
   }
 
   /**
-   * HTML 문자열을 PDF로 변환 (Playwright 사용 - 메모리 기반)
+   * HTML 문자열을 PDF로 변환 (Puppeteer + Chromium 사용 - Vercel 호환)
    */
   private static async convertHTMLToPDFFromString(htmlContent: string): Promise<Buffer> {
-    const { chromium } = await import('playwright');
-    
-    const browser = await chromium.launch({ headless: true });
-    const page = await browser.newPage();
-    
-    try {
-      // HTML 콘텐츠를 직접 설정
-      await page.setContent(htmlContent, {
-        waitUntil: 'networkidle'
+    if (process.env.VERCEL) {
+      // Vercel 환경에서는 Puppeteer + @sparticuz/chromium-min 사용
+      const puppeteer = await import('puppeteer-core');
+      const chromium = await import('@sparticuz/chromium-min');
+      
+      const browser = await puppeteer.default.launch({
+        args: chromium.default.args,
+        defaultViewport: chromium.default.defaultViewport,
+        executablePath: await chromium.default.executablePath(),
+        headless: chromium.default.headless,
+        ignoreHTTPSErrors: true,
       });
       
-      // PDF 생성
-      const pdfBuffer = await page.pdf({
-        format: 'A4',
-        printBackground: true,
-        margin: {
-          top: '15mm',
-          right: '15mm',
-          bottom: '15mm',
-          left: '15mm'
-        }
-      });
+      const page = await browser.newPage();
       
-      return pdfBuffer;
+      try {
+        await page.setContent(htmlContent, {
+          waitUntil: 'networkidle0'
+        });
+        
+        const pdfBuffer = await page.pdf({
+          format: 'A4',
+          printBackground: true,
+          margin: {
+            top: '15mm',
+            right: '15mm',
+            bottom: '15mm',
+            left: '15mm'
+          }
+        });
+        
+        return pdfBuffer;
+        
+      } finally {
+        await browser.close();
+      }
+    } else {
+      // 로컬 환경에서는 Playwright 사용
+      const { chromium } = await import('playwright');
       
-    } finally {
-      await browser.close();
+      const browser = await chromium.launch({ headless: true });
+      const page = await browser.newPage();
+      
+      try {
+        await page.setContent(htmlContent, {
+          waitUntil: 'networkidle'
+        });
+        
+        const pdfBuffer = await page.pdf({
+          format: 'A4',
+          printBackground: true,
+          margin: {
+            top: '15mm',
+            right: '15mm',
+            bottom: '15mm',
+            left: '15mm'
+          }
+        });
+        
+        return pdfBuffer;
+        
+      } finally {
+        await browser.close();
+      }
     }
   }
 
