@@ -32,6 +32,11 @@ interface ParsedOrderData {
   orderDate?: string;
   deliveryDate?: string;
   orderNumber?: string;
+  majorCategory?: string;   // 대분류
+  middleCategory?: string;  // 중분류
+  minorCategory?: string;   // 소분류
+  deliveryPlace?: string;   // 납품처
+  deliveryEmail?: string;   // 납품처 이메일
   items: Array<{
     itemName?: string;
     specification?: string;
@@ -237,6 +242,11 @@ export default function CreateOrderSimple() {
       try {
         const cleanOrders = orders.map(order => ({
           ...order,
+          majorCategory: order.majorCategory || '',
+          middleCategory: order.middleCategory || '',
+          minorCategory: order.minorCategory || '',
+          deliveryPlace: order.deliveryPlace || '',
+          deliveryEmail: order.deliveryEmail || '',
           // 함수나 undefined 값들 제거
           items: order.items?.map(item => ({
             itemName: item.itemName || '',

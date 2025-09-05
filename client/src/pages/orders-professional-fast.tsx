@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Download, Filter, ChevronUp, ChevronDown, FileText, Eye, Edit, Mail, Clock, CheckCircle, XCircle, AlertCircle, Calendar, Building, Users, DollarSign, Send, ChevronsUpDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Search, Download, Filter, ChevronUp, ChevronDown, FileText, Eye, Edit, Mail, Clock, CheckCircle, XCircle, AlertCircle, Calendar, Building, Users, DollarSign, Send, ChevronsUpDown, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -23,9 +23,12 @@ interface Order {
   id: number;
   orderNumber: string;
   status: string;
+  orderStatus?: string; // 발주 상태: draft, created, sent, delivered
+  approvalStatus?: string; // 승인 상태: not_required, pending, approved, rejected
   totalAmount: number;
   orderDate: string;
   deliveryDate: string | null;
+  createdAt?: string; // 등록일
   userId: string;
   vendorId: number | null;
   projectId: number | null;
@@ -70,6 +73,8 @@ export default function OrdersProfessionalFast() {
 
   const [filters, setFilters] = useState({
     status: "",
+    orderStatus: "", // 발주 상태 필터 추가
+    approvalStatus: "", // 승인 상태 필터 추가
     vendorId: "",
     projectId: "",
     userId: "",
@@ -83,6 +88,11 @@ export default function OrdersProfessionalFast() {
     sortBy: "orderDate",
     sortOrder: "desc" as "asc" | "desc",
   });
+
+  // For bulk selection
+  const [selectedOrders, setSelectedOrders] = useState<Set<number>>(new Set());
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+  const isAdmin = user?.role === 'admin';
 
   const [debouncedSearchText, setDebouncedSearchText] = useState("");
   const [isFilterExpanded, setIsFilterExpanded] = useState(false);
@@ -269,6 +279,40 @@ export default function OrdersProfessionalFast() {
     },
   });
 
+  // Bulk delete mutation for admin
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (orderIds: number[]) => {
+      await apiRequest("DELETE", `/api/orders/bulk-delete`, { orderIds });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["orders-optimized"] });
+      toast({
+        title: "성공",
+        description: `${selectedOrders.size}개의 발주서가 삭제되었습니다.`,
+      });
+      setSelectedOrders(new Set());
+      setBulkDeleteDialogOpen(false);
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          navigate("/login");
+        }, 500);
+        return;
+      }
+      toast({
+        title: "오류",
+        description: "발주서 일괄 삭제에 실패했습니다.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const exportMutation = useMutation({
     mutationFn: async () => {
       const params = new URLSearchParams();
@@ -318,6 +362,36 @@ export default function OrdersProfessionalFast() {
     const filterValue = (value === "all") ? "" : value;
     setFilters(prev => ({ ...prev, [key]: filterValue, page: 1 }));
   }, []);
+
+  // Bulk selection handlers
+  const toggleOrderSelection = useCallback((orderId: number) => {
+    setSelectedOrders(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(orderId)) {
+        newSet.delete(orderId);
+      } else {
+        newSet.add(orderId);
+      }
+      return newSet;
+    });
+  }, []);
+
+  const toggleSelectAll = useCallback(() => {
+    if (selectedOrders.size === orders.length && orders.length > 0) {
+      setSelectedOrders(new Set());
+    } else {
+      setSelectedOrders(new Set(orders.map(o => o.id)));
+    }
+  }, [orders, selectedOrders.size]);
+
+  const handleBulkDelete = useCallback(() => {
+    if (selectedOrders.size === 0) return;
+    setBulkDeleteDialogOpen(true);
+  }, [selectedOrders.size]);
+
+  const confirmBulkDelete = useCallback(() => {
+    bulkDeleteMutation.mutate(Array.from(selectedOrders));
+  }, [selectedOrders, bulkDeleteMutation]);
 
   // 정렬 처리 함수
   const handleSort = useCallback((field: string) => {
@@ -503,16 +577,30 @@ export default function OrdersProfessionalFast() {
 
             {/* Quick Filters */}
             <div className="flex flex-wrap gap-3 mb-4">
-              <Select value={filters.status || "all"} onValueChange={(value) => handleFilterChange("status", value)}>
+              {/* 발주 상태 필터 (신규 추가) */}
+              <Select value={filters.orderStatus || "all"} onValueChange={(value) => handleFilterChange("orderStatus", value)}>
                 <SelectTrigger className="w-40 h-10 bg-white dark:bg-gray-700">
-                  <SelectValue placeholder="상태 선택" />
+                  <SelectValue placeholder="발주 상태" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">모든 상태</SelectItem>
+                  <SelectItem value="all">모든 발주 상태</SelectItem>
+                  <SelectItem value="draft">초안</SelectItem>
+                  <SelectItem value="created">발주생성</SelectItem>
+                  <SelectItem value="sent">발주발송</SelectItem>
+                  <SelectItem value="delivered">납품완료</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* 승인 상태 필터 (기존 status를 approvalStatus로 변경) */}
+              <Select value={filters.approvalStatus || "all"} onValueChange={(value) => handleFilterChange("approvalStatus", value)}>
+                <SelectTrigger className="w-40 h-10 bg-white dark:bg-gray-700">
+                  <SelectValue placeholder="승인 상태" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">모든 승인 상태</SelectItem>
+                  <SelectItem value="not_required">승인불필요</SelectItem>
                   <SelectItem value="pending">승인 대기</SelectItem>
                   <SelectItem value="approved">승인 완료</SelectItem>
-                  <SelectItem value="sent">발송 완료</SelectItem>
-                  <SelectItem value="completed">완료</SelectItem>
                   <SelectItem value="rejected">반려</SelectItem>
                 </SelectContent>
               </Select>
@@ -578,6 +666,16 @@ export default function OrdersProfessionalFast() {
                     className="h-10"
                   >
                     필터 초기화
+                  </Button>
+                )}
+                {isAdmin && selectedOrders.size > 0 && (
+                  <Button
+                    variant="destructive"
+                    onClick={handleBulkDelete}
+                    className="h-10"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    선택한 {selectedOrders.size}개 삭제
                   </Button>
                 )}
                 <Button
@@ -664,6 +762,16 @@ export default function OrdersProfessionalFast() {
             <table className="w-full">
               <thead className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
                 <tr>
+                  {isAdmin && (
+                    <th className="px-4 py-4 text-center">
+                      <input
+                        type="checkbox"
+                        checked={selectedOrders.size === orders.length && orders.length > 0}
+                        onChange={toggleSelectAll}
+                        className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                      />
+                    </th>
+                  )}
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     <button
                       onClick={() => handleSort("orderNumber")}
@@ -702,6 +810,15 @@ export default function OrdersProfessionalFast() {
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     <button
+                      onClick={() => handleSort("createdAt")}
+                      className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200"
+                    >
+                      등록일
+                      <ChevronsUpDown className="h-3 w-3" />
+                    </button>
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <button
                       onClick={() => handleSort("totalAmount")}
                       className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200"
                     >
@@ -725,7 +842,7 @@ export default function OrdersProfessionalFast() {
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={8} className="px-6 py-12 text-center">
+                    <td colSpan={isAdmin ? 10 : 9} className="px-6 py-12 text-center">
                       <div className="flex justify-center">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
                       </div>
@@ -733,7 +850,7 @@ export default function OrdersProfessionalFast() {
                   </tr>
                 ) : orders.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-6 py-12 text-center">
+                    <td colSpan={isAdmin ? 10 : 9} className="px-6 py-12 text-center">
                       <div className="text-gray-500 dark:text-gray-400">
                         <FileText className="h-12 w-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
                         <p className="text-sm">발주서가 없습니다.</p>
@@ -743,6 +860,16 @@ export default function OrdersProfessionalFast() {
                 ) : (
                   orders.map((order) => (
                     <tr key={order.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                      {isAdmin && (
+                        <td className="px-4 py-4 text-center">
+                          <input
+                            type="checkbox"
+                            checked={selectedOrders.has(order.id)}
+                            onChange={() => toggleOrderSelection(order.id)}
+                            className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                          />
+                        </td>
+                      )}
                       <td className="px-6 py-4 whitespace-nowrap">
                         <button
                           onClick={() => navigate(`/orders/${order.id}`)}
@@ -779,6 +906,9 @@ export default function OrdersProfessionalFast() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                         {new Date(order.orderDate).toLocaleDateString('ko-KR')}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                        {order.createdAt ? new Date(order.createdAt).toLocaleDateString('ko-KR') : '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-semibold text-blue-600 dark:text-blue-400">
@@ -958,6 +1088,26 @@ export default function OrdersProfessionalFast() {
                 description: `발주서 ${selectedOrderForPDF.orderNumber}의 PDF가 다운로드되었습니다.`,
               });
             }}
+          />
+        )}
+
+        {/* Bulk Delete Dialog */}
+        {isAdmin && (
+          <BulkDeleteDialog
+            open={bulkDeleteDialogOpen}
+            onOpenChange={setBulkDeleteDialogOpen}
+            selectedOrders={Array.from(selectedOrders).map(id => {
+              const order = orders.find(o => o.id === id);
+              return {
+                id: String(id),
+                orderNumber: order?.orderNumber || '',
+                status: order?.status || '',
+                vendorName: order?.vendorName,
+                totalAmount: order?.totalAmount || 0
+              };
+            })}
+            onConfirm={confirmBulkDelete}
+            isLoading={bulkDeleteMutation.isPending}
           />
         )}
       </div>

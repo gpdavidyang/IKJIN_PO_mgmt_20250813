@@ -8,6 +8,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import { z } from 'zod';
 import { PDFGenerationService } from '../services/pdf-generation-service';
+import { decodeKoreanFilename } from '../utils/korean-filename';
 
 const router = Router();
 
@@ -23,9 +24,10 @@ const storage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     const timestamp = Date.now();
-    const sanitizedName = Buffer.from(file.originalname, 'latin1').toString('utf8');
-    const ext = path.extname(sanitizedName);
-    const basename = path.basename(sanitizedName, ext);
+    // Use centralized Korean decoding function
+    const decodedName = decodeKoreanFilename(file.originalname);
+    const ext = path.extname(decodedName);
+    const basename = path.basename(decodedName, ext);
     cb(null, `${timestamp}-${basename}${ext}`);
   }
 });
@@ -36,7 +38,12 @@ const upload = multer({
     fileSize: 10 * 1024 * 1024 // 10MB limit
   },
   fileFilter: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
+    // Decode Korean filename before checking
+    const decodedName = decodeKoreanFilename(file.originalname);
+    // Update the originalname with decoded version for downstream processing
+    file.originalname = decodedName;
+    
+    const ext = path.extname(decodedName).toLowerCase();
     if (['.xlsx', '.xls', '.xlsm'].includes(ext)) {
       cb(null, true);
     } else {
@@ -369,8 +376,8 @@ router.post('/orders/bulk-create-simple', requireAuth, upload.single('excelFile'
 
         // Save file attachment if provided (attach to all orders from the same upload)
         if (req.file) {
-          // Fix Korean encoding for filename
-          const decodedOriginalName = Buffer.from(req.file.originalname, 'latin1').toString('utf8');
+          // The filename is already decoded by multer fileFilter
+          const decodedOriginalName = req.file.originalname;
           
           console.log(`📎 Saving Excel file attachment for order ${newOrder.orderNumber}:`, {
             orderId: newOrder.id,
