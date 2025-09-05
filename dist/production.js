@@ -2489,9 +2489,9 @@ var init_po_email_service_enhanced = __esm({
             console.error("\u274C PDF \uBCC0\uD658 \uC624\uB958:", pdfError);
             pdfResult.error = pdfError instanceof Error ? pdfError.message : "PDF conversion error";
           }
-          const attachments2 = [];
+          const attachments3 = [];
           if (fs16.existsSync(processedPath)) {
-            attachments2.push({
+            attachments3.push({
               filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`,
               path: processedPath,
               contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -2499,7 +2499,7 @@ var init_po_email_service_enhanced = __esm({
             console.log(`\u{1F4CE} Excel \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00: \uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`);
           }
           if (pdfResult.success && fs16.existsSync(pdfPath)) {
-            attachments2.push({
+            attachments3.push({
               filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`,
               path: pdfPath,
               contentType: "application/pdf"
@@ -2516,7 +2516,7 @@ var init_po_email_service_enhanced = __esm({
             bcc: emailOptions.bcc,
             subject: emailOptions.subject || `\uBC1C\uC8FC\uC11C \uC804\uC1A1 - ${emailOptions.orderNumber || ""}`,
             html: emailContent,
-            attachments: attachments2
+            attachments: attachments3
           });
           this.cleanupTempFiles([processedPath, pdfPath]);
           if (result.success) {
@@ -2780,7 +2780,7 @@ import cookieParser from "cookie-parser";
 import crypto2 from "crypto";
 
 // server/routes/index.ts
-import { Router as Router36 } from "express";
+import { Router as Router37 } from "express";
 
 // server/routes/auth.ts
 import { Router } from "express";
@@ -3371,10 +3371,60 @@ var DatabaseStorage = class {
   async deletePurchaseOrder(id) {
     const order = await this.getPurchaseOrder(id);
     if (!order) return;
+    await db.delete(approvalStepInstances).where(eq(approvalStepInstances.orderId, id));
     await db.delete(purchaseOrderItems).where(eq(purchaseOrderItems.orderId, id));
     await db.delete(attachments).where(eq(attachments.orderId, id));
     await db.delete(orderHistory).where(eq(orderHistory.orderId, id));
     await db.delete(purchaseOrders).where(eq(purchaseOrders.id, id));
+  }
+  async bulkDeleteOrders(orderIds, deletedBy) {
+    if (!orderIds || orderIds.length === 0) {
+      return [];
+    }
+    console.log(`\u{1F5D1}\uFE0F Starting bulk delete for ${orderIds.length} orders by ${deletedBy}:`, orderIds);
+    return await db.transaction(async (tx) => {
+      try {
+        const existingOrders = [];
+        for (const orderId of orderIds) {
+          const [order] = await tx.select().from(purchaseOrders).where(eq(purchaseOrders.id, orderId));
+          if (order) {
+            existingOrders.push(order);
+          }
+        }
+        if (existingOrders.length === 0) {
+          console.log("\u26A0\uFE0F No orders found to delete");
+          return [];
+        }
+        const existingOrderIds = existingOrders.map((o) => o.id);
+        console.log(`\u{1F50D} Found ${existingOrders.length} orders to delete:`, existingOrderIds);
+        for (const orderId of existingOrderIds) {
+          console.log(`\u{1F5D1}\uFE0F Deleting related records for order ${orderId}...`);
+          const deletedApprovalSteps = await tx.delete(approvalStepInstances).where(eq(approvalStepInstances.orderId, orderId)).returning();
+          console.log(`   \u{1F5D1}\uFE0F Deleted ${deletedApprovalSteps.length} approval step instances`);
+          const deletedItems = await tx.delete(purchaseOrderItems).where(eq(purchaseOrderItems.orderId, orderId)).returning();
+          console.log(`   \u{1F5D1}\uFE0F Deleted ${deletedItems.length} purchase order items`);
+          const deletedAttachments = await tx.delete(attachments).where(eq(attachments.orderId, orderId)).returning();
+          console.log(`   \u{1F5D1}\uFE0F Deleted ${deletedAttachments.length} attachments`);
+          const deletedHistory = await tx.delete(orderHistory).where(eq(orderHistory.orderId, orderId)).returning();
+          console.log(`   \u{1F5D1}\uFE0F Deleted ${deletedHistory.length} order history entries`);
+          await tx.delete(purchaseOrders).where(eq(purchaseOrders.id, orderId));
+          console.log(`\u2705 Deleted order ${orderId} and all related records`);
+        }
+        console.log(`\u2705 Bulk deleted ${existingOrders.length} orders successfully`);
+        return existingOrders;
+      } catch (error) {
+        console.error("\u274C Bulk delete error:", error);
+        console.error("\u274C Error details:", {
+          message: error?.message,
+          code: error?.code,
+          detail: error?.detail,
+          constraint: error?.constraint,
+          table: error?.table,
+          stack: error?.stack
+        });
+        throw error;
+      }
+    });
   }
   async approvePurchaseOrder(id, approvedBy) {
     const [approvedOrder] = await db.update(purchaseOrders).set({
@@ -4730,7 +4780,8 @@ async function login(req, res) {
       res.cookie("auth_token", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        // 'none' for cross-origin in Vercel
         maxAge: 7 * 24 * 60 * 60 * 1e3,
         // 7 days
         path: "/"
@@ -4792,7 +4843,8 @@ async function logout(req, res) {
   res.clearCookie("auth_token", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    // Match cookie setting
     path: "/"
   });
   res.json({ message: "Logout successful" });
@@ -7036,9 +7088,9 @@ var POEmailService = class {
         pdfResult.error = `\uD1B5\uD569 PDF \uC11C\uBE44\uC2A4 \uC624\uB958: ${error.message}`;
         console.warn(`\u26A0\uFE0F PDF \uBCC0\uD658 \uC644\uC804 \uC2E4\uD328: ${pdfResult.error}, Excel \uD30C\uC77C\uB9CC \uCCA8\uBD80\uD569\uB2C8\uB2E4.`);
       }
-      const attachments2 = [];
+      const attachments3 = [];
       if (fs5.existsSync(processedPath)) {
-        attachments2.push({
+        attachments3.push({
           filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`,
           path: processedPath,
           contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -7046,14 +7098,14 @@ var POEmailService = class {
         console.log(`\u{1F4CE} Excel \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00: \uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`);
       }
       if (pdfResult.success && fs5.existsSync(pdfPath)) {
-        attachments2.push({
+        attachments3.push({
           filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`,
           path: pdfPath,
           contentType: "application/pdf"
         });
         console.log(`\u{1F4CE} PDF \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00: \uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`);
       }
-      if (attachments2.length === 0) {
+      if (attachments3.length === 0) {
         return {
           success: false,
           error: "\uCCA8\uBD80\uD560 \uD30C\uC77C\uC774 \uC0DD\uC131\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4."
@@ -7066,7 +7118,7 @@ var POEmailService = class {
         bcc: emailOptions.bcc,
         subject: emailOptions.subject || `\uBC1C\uC8FC\uC11C \uC804\uC1A1 - ${emailOptions.orderNumber || ""}`,
         html: emailContent,
-        attachments: attachments2
+        attachments: attachments3
       });
       this.cleanupTempFiles([processedPath, pdfPath]);
       if (result.success) {
@@ -7110,16 +7162,16 @@ var POEmailService = class {
           error: `PDF \uBCC0\uD658 \uC2E4\uD328: ${pdfResult.error}`
         };
       }
-      const attachments2 = [];
+      const attachments3 = [];
       if (fs5.existsSync(extractedPath)) {
-        attachments2.push({
+        attachments3.push({
           filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`,
           path: extractedPath,
           contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         });
       }
       if (fs5.existsSync(pdfPath)) {
-        attachments2.push({
+        attachments3.push({
           filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`,
           path: pdfPath,
           contentType: "application/pdf"
@@ -7132,7 +7184,7 @@ var POEmailService = class {
         bcc: emailOptions.bcc,
         subject: emailOptions.subject,
         html: emailContent,
-        attachments: attachments2
+        attachments: attachments3
       });
       this.cleanupTempFiles([extractedPath, pdfPath]);
       return result;
@@ -8984,11 +9036,11 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
       totalAmount: orderData.totalAmount,
       additionalMessage: emailSettings?.message
     };
-    let attachments2 = [];
+    let attachments3 = [];
     if (pdfUrl) {
       const pdfPath = path5.join(__dirname2, "../../", pdfUrl.replace(/^\//, ""));
       if (fs7.existsSync(pdfPath)) {
-        attachments2.push({
+        attachments3.push({
           filename: `\uBC1C\uC8FC\uC11C_${orderData.orderNumber || Date.now()}.pdf`,
           path: pdfPath,
           contentType: "application/pdf"
@@ -9146,14 +9198,14 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
       to: emailOptions.to,
       cc: emailOptions.cc,
       subject: emailOptions.subject,
-      attachmentsCount: attachments2.length
+      attachmentsCount: attachments3.length
     });
     const result = await emailService.sendEmail({
       to: emailOptions.to,
       cc: emailOptions.cc,
       subject: emailOptions.subject,
       html: generateEmailContent(emailOptions),
-      attachments: attachments2
+      attachments: attachments3
     });
     console.log("\u{1F4E7} sendEmail \uACB0\uACFC:", result);
     if (result.success) {
@@ -9426,6 +9478,49 @@ router3.get("/orders/:orderId/attachments/:attachmentId/download", requireAuth, 
     res.status(500).json({
       error: "\uD30C\uC77C \uB2E4\uC6B4\uB85C\uB4DC \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4.",
       details: error instanceof Error ? error.message : "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"
+    });
+  }
+});
+router3.delete("/orders/bulk-delete", requireAuth, async (req, res) => {
+  console.log("\u{1F5D1}\uFE0F Bulk delete request received");
+  try {
+    const { user } = req;
+    const { orderIds } = req.body;
+    console.log("\u{1F464} User info:", { id: user?.id, role: user?.role, name: user?.name });
+    console.log("\u{1F4C4} Request body:", req.body);
+    if (user.role !== "admin") {
+      console.log("\u274C Access denied: User is not admin");
+      return res.status(403).json({
+        message: "\uAD00\uB9AC\uC790\uB9CC \uC77C\uAD04 \uC0AD\uC81C\uAC00 \uAC00\uB2A5\uD569\uB2C8\uB2E4."
+      });
+    }
+    if (!orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
+      console.log("\u274C Invalid request: Missing or invalid orderIds");
+      return res.status(400).json({
+        message: "\uC0AD\uC81C\uD560 \uBC1C\uC8FC\uC11C ID \uBAA9\uB85D\uC774 \uD544\uC694\uD569\uB2C8\uB2E4."
+      });
+    }
+    const numericOrderIds = orderIds.map((id) => {
+      const numId = typeof id === "string" ? parseInt(id, 10) : id;
+      if (isNaN(numId)) {
+        throw new Error(`Invalid order ID: ${id}`);
+      }
+      return numId;
+    });
+    console.log(`\u{1F5D1}\uFE0F \uAD00\uB9AC\uC790 \uC77C\uAD04 \uC0AD\uC81C \uC694\uCCAD: ${numericOrderIds.length}\uAC1C \uBC1C\uC8FC\uC11C`, { admin: user.name, orderIds: numericOrderIds });
+    const deletedOrders = await storage.bulkDeleteOrders(numericOrderIds, user.id);
+    console.log(`\u2705 \uC77C\uAD04 \uC0AD\uC81C \uC644\uB8CC: ${deletedOrders.length}\uAC1C \uBC1C\uC8FC\uC11C \uC0AD\uC81C\uB428`);
+    res.json({
+      message: `${deletedOrders.length}\uAC1C\uC758 \uBC1C\uC8FC\uC11C\uAC00 \uC0AD\uC81C\uB418\uC5C8\uC2B5\uB2C8\uB2E4.`,
+      deletedCount: deletedOrders.length,
+      deletedOrders: deletedOrders.map((o) => ({ id: o.id, orderNumber: o.orderNumber }))
+    });
+  } catch (error) {
+    console.error("\u274C \uC77C\uAD04 \uC0AD\uC81C \uC624\uB958:", error);
+    res.status(500).json({
+      message: "\uBC1C\uC8FC\uC11C \uC77C\uAD04 \uC0AD\uC81C\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.",
+      error: error instanceof Error ? error.message : "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958",
+      stack: process.env.NODE_ENV === "development" ? error instanceof Error ? error.stack : void 0 : void 0
     });
   }
 });
@@ -11315,16 +11410,16 @@ var POEmailServiceMock = class {
           error: `PDF \uBCC0\uD658 \uC2E4\uD328: ${pdfResult.error}`
         };
       }
-      const attachments2 = [];
+      const attachments3 = [];
       if (fs10.existsSync(extractedPath)) {
-        attachments2.push({
+        attachments3.push({
           filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`,
           path: extractedPath,
           contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         });
       }
       if (fs10.existsSync(pdfPath)) {
-        attachments2.push({
+        attachments3.push({
           filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`,
           path: pdfPath,
           contentType: "application/pdf"
@@ -11339,7 +11434,7 @@ var POEmailServiceMock = class {
           bcc: emailOptions.bcc,
           subject: emailOptions.subject,
           html: emailContent,
-          attachments: attachments2
+          attachments: attachments3
         });
       } else {
         result = await this.sendMockEmail({
@@ -11348,7 +11443,7 @@ var POEmailServiceMock = class {
           bcc: emailOptions.bcc,
           subject: emailOptions.subject,
           html: emailContent,
-          attachments: attachments2
+          attachments: attachments3
         });
       }
       setTimeout(() => {
@@ -15300,6 +15395,8 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
           return users.name;
         case "orderDate":
           return purchaseOrders.orderDate;
+        case "createdAt":
+          return purchaseOrders.createdAt;
         case "totalAmount":
           return purchaseOrders.totalAmount;
         default:
@@ -15317,6 +15414,8 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
     const {
       userId,
       status,
+      orderStatus,
+      approvalStatus,
       vendorId,
       projectId,
       startDate,
@@ -15335,6 +15434,12 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
     }
     if (status && status !== "all" && status !== "") {
       whereConditions.push(sql9`${purchaseOrders.status} = ${status}`);
+    }
+    if (orderStatus && orderStatus !== "all" && orderStatus !== "") {
+      whereConditions.push(sql9`${purchaseOrders.orderStatus} = ${orderStatus}`);
+    }
+    if (approvalStatus && approvalStatus !== "all" && approvalStatus !== "") {
+      whereConditions.push(sql9`${purchaseOrders.approvalStatus} = ${approvalStatus}`);
     }
     if (vendorId && vendorId !== "all") {
       whereConditions.push(eq13(purchaseOrders.vendorId, vendorId));
@@ -15368,6 +15473,8 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
       id: purchaseOrders.id,
       orderNumber: purchaseOrders.orderNumber,
       status: purchaseOrders.status,
+      orderStatus: purchaseOrders.orderStatus,
+      approvalStatus: purchaseOrders.approvalStatus,
       totalAmount: purchaseOrders.totalAmount,
       orderDate: purchaseOrders.orderDate,
       deliveryDate: purchaseOrders.deliveryDate,
@@ -15506,6 +15613,11 @@ var OrderFiltersSchema = z3.object({
   page: z3.string().optional().transform((val) => val ? parseInt(val) : 1),
   limit: z3.string().optional().transform((val) => val ? parseInt(val) : 20),
   status: z3.string().optional(),
+  // Legacy field for backward compatibility
+  orderStatus: z3.string().optional(),
+  // New order status field
+  approvalStatus: z3.string().optional(),
+  // New approval status field
   projectId: z3.string().optional().transform((val) => val && val !== "all" ? parseInt(val) : void 0),
   vendorId: z3.string().optional().transform((val) => val && val !== "all" ? parseInt(val) : void 0),
   userId: z3.string().optional(),
@@ -18360,9 +18472,9 @@ var storage4 = multer5.diskStorage({
   },
   filename: (req, file, cb) => {
     const timestamp2 = Date.now();
-    const sanitizedName = Buffer.from(file.originalname, "latin1").toString("utf8");
-    const ext = path14.extname(sanitizedName);
-    const basename = path14.basename(sanitizedName, ext);
+    const decodedName = decodeKoreanFilename(file.originalname);
+    const ext = path14.extname(decodedName);
+    const basename = path14.basename(decodedName, ext);
     cb(null, `${timestamp2}-${basename}${ext}`);
   }
 });
@@ -18373,7 +18485,9 @@ var upload5 = multer5({
     // 10MB limit
   },
   fileFilter: (req, file, cb) => {
-    const ext = path14.extname(file.originalname).toLowerCase();
+    const decodedName = decodeKoreanFilename(file.originalname);
+    file.originalname = decodedName;
+    const ext = path14.extname(decodedName).toLowerCase();
     if ([".xlsx", ".xls", ".xlsm"].includes(ext)) {
       cb(null, true);
     } else {
@@ -18588,6 +18702,9 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload5.single("excelFi
               quantity: item.quantity || 0,
               unitPrice: item.unitPrice || 0,
               totalAmount: (item.quantity || 0) * (item.unitPrice || 0),
+              majorCategory: orderData.majorCategory || null,
+              middleCategory: orderData.middleCategory || null,
+              minorCategory: orderData.minorCategory || null,
               notes: item.remarks || null
               // Use 'notes' field instead of 'remarks'
             };
@@ -18625,9 +18742,10 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload5.single("excelFi
           console.error(`\u274C Error generating PDF for order ${newOrder.orderNumber}:`, pdfError);
         }
         if (req.file) {
+          const decodedOriginalName = req.file.originalname;
           console.log(`\u{1F4CE} Saving Excel file attachment for order ${newOrder.orderNumber}:`, {
             orderId: newOrder.id,
-            originalName: req.file.originalname,
+            originalName: decodedOriginalName,
             storedName: req.file.filename,
             filePath: req.file.path,
             fileSize: req.file.size,
@@ -18638,7 +18756,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload5.single("excelFi
             const relativePath = process.env.VERCEL ? req.file.filename : req.file.path;
             const [savedAttachment] = await db.insert(attachments).values({
               orderId: newOrder.id,
-              originalName: req.file.originalname,
+              originalName: decodedOriginalName,
               storedName: req.file.filename,
               filePath: relativePath,
               fileSize: req.file.size,
@@ -21590,12 +21708,163 @@ router36.post("/orders/:id/approve", requireAuth, async (req, res) => {
 });
 var orders_workflow_default = router36;
 
+// server/routes/orders-create.ts
+init_db();
+init_schema();
+import { Router as Router34 } from "express";
+import { eq as eq27 } from "drizzle-orm";
+init_pdf_generation_service();
+var router37 = Router34();
+router37.post("/orders/:id/create-order", requireAuth, async (req, res) => {
+  const orderId = parseInt(req.params.id);
+  const userId = req.user?.id;
+  if (!userId) {
+    return res.status(401).json({ error: "\uC778\uC99D\uC774 \uD544\uC694\uD569\uB2C8\uB2E4." });
+  }
+  try {
+    const [order] = await db.select().from(purchaseOrders).where(eq27(purchaseOrders.id, orderId));
+    if (!order) {
+      return res.status(404).json({
+        error: "\uBC1C\uC8FC\uC11C\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.",
+        orderId
+      });
+    }
+    if (order.orderStatus !== "draft" && order.status !== "draft") {
+      return res.status(400).json({
+        error: "\uC784\uC2DC\uC800\uC7A5 \uC0C1\uD0DC\uC758 \uBC1C\uC8FC\uC11C\uB9CC \uC0DD\uC131\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4.",
+        currentStatus: order.orderStatus || order.status
+      });
+    }
+    const fullOrderData = await db.query.purchaseOrders.findFirst({
+      where: eq27(purchaseOrders.id, orderId),
+      with: {
+        vendor: true,
+        project: true,
+        items: true,
+        user: true
+      }
+    });
+    if (!fullOrderData) {
+      return res.status(404).json({ error: "\uBC1C\uC8FC\uC11C \uC815\uBCF4\uB97C \uBD88\uB7EC\uC62C \uC218 \uC5C6\uC2B5\uB2C8\uB2E4." });
+    }
+    console.log(`\u{1F4C4} Creating order PDF for order ${order.orderNumber}...`);
+    const pdfData = {
+      orderNumber: order.orderNumber,
+      orderDate: new Date(order.orderDate),
+      deliveryDate: order.deliveryDate ? new Date(order.deliveryDate) : null,
+      projectName: fullOrderData.project?.projectName,
+      vendorName: fullOrderData.vendor?.name,
+      vendorContact: fullOrderData.vendor?.contactPerson,
+      vendorEmail: fullOrderData.vendor?.email,
+      items: fullOrderData.items.map((item) => ({
+        category: item.majorCategory || "",
+        subCategory1: item.middleCategory || "",
+        subCategory2: item.minorCategory || "",
+        name: item.itemName,
+        specification: item.specification || "",
+        quantity: Number(item.quantity),
+        unit: item.unit || "\uAC1C",
+        unitPrice: Number(item.unitPrice),
+        price: Number(item.totalAmount),
+        deliveryLocation: fullOrderData.project?.location || ""
+      })),
+      totalAmount: Number(order.totalAmount),
+      notes: order.notes || "",
+      site: fullOrderData.project?.projectName
+    };
+    const pdfResult = await PDFGenerationService.generatePurchaseOrderPDF(
+      orderId,
+      pdfData,
+      userId
+    );
+    if (!pdfResult.success) {
+      console.error("\u274C PDF generation failed:", pdfResult.error);
+      return res.status(500).json({
+        error: "PDF \uC0DD\uC131\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.",
+        details: pdfResult.error
+      });
+    }
+    console.log(`\u2705 PDF generated successfully: ${pdfResult.pdfPath}`);
+    const [updatedOrder] = await db.update(purchaseOrders).set({
+      orderStatus: "created",
+      status: "approved",
+      // 레거시 호환성
+      updatedAt: /* @__PURE__ */ new Date()
+    }).where(eq27(purchaseOrders.id, orderId)).returning();
+    await db.insert(orderHistory).values({
+      orderId,
+      userId,
+      action: "order_created",
+      changes: {
+        from: "draft",
+        to: "created",
+        pdfGenerated: true,
+        pdfPath: pdfResult.pdfPath,
+        attachmentId: pdfResult.attachmentId
+      },
+      createdAt: /* @__PURE__ */ new Date()
+    });
+    console.log(`\u2705 Order ${order.orderNumber} successfully created with PDF`);
+    res.json({
+      success: true,
+      orderId,
+      orderNumber: order.orderNumber,
+      status: "created",
+      orderStatus: "created",
+      pdfUrl: `/api/attachments/${pdfResult.attachmentId}/download`,
+      attachmentId: pdfResult.attachmentId,
+      message: "\uBC1C\uC8FC\uC11C\uAC00 \uC131\uACF5\uC801\uC73C\uB85C \uC0DD\uC131\uB418\uC5C8\uC2B5\uB2C8\uB2E4."
+    });
+  } catch (error) {
+    console.error("\u274C Error creating order:", error);
+    res.status(500).json({
+      error: "\uBC1C\uC8FC\uC11C \uC0DD\uC131 \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4.",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+router37.get("/orders/:id/permissions", requireAuth, async (req, res) => {
+  const orderId = parseInt(req.params.id);
+  const userId = req.user?.id;
+  const userRole = req.user?.role;
+  try {
+    const [order] = await db.select({
+      id: purchaseOrders.id,
+      status: purchaseOrders.status,
+      orderStatus: purchaseOrders.orderStatus,
+      approvalStatus: purchaseOrders.approvalStatus,
+      userId: purchaseOrders.userId
+    }).from(purchaseOrders).where(eq27(purchaseOrders.id, orderId));
+    if (!order) {
+      return res.status(404).json({ error: "\uBC1C\uC8FC\uC11C\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4." });
+    }
+    const isOwner = order.userId === userId;
+    const isAdmin = userRole === "admin";
+    const orderStatus = order.orderStatus || order.status;
+    const permissions = {
+      canEdit: (isOwner || isAdmin) && ["draft", "created"].includes(orderStatus),
+      canDelete: (isOwner || isAdmin) && orderStatus === "draft",
+      canCreateOrder: (isOwner || isAdmin) && orderStatus === "draft",
+      canGeneratePDF: ["created", "sent", "delivered"].includes(orderStatus),
+      canSendEmail: (isOwner || isAdmin) && orderStatus === "created",
+      canApprove: isAdmin && order.approvalStatus === "pending",
+      canViewHistory: isOwner || isAdmin,
+      canDownloadAttachments: true
+    };
+    res.json({ permissions });
+  } catch (error) {
+    console.error("Error fetching permissions:", error);
+    res.status(500).json({ error: "\uAD8C\uD55C \uC870\uD68C \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4." });
+  }
+});
+var orders_create_default = router37;
+
 // server/routes/health.ts
 init_db();
-import { Router as Router34 } from "express";
+import { Router as Router35 } from "express";
 import { sql as sql14 } from "drizzle-orm";
-var router37 = Router34();
-router37.get("/health", (req, res) => {
+var router38 = Router35();
+router38.get("/health", (req, res) => {
   res.json({
     status: "healthy",
     timestamp: (/* @__PURE__ */ new Date()).toISOString(),
@@ -21603,7 +21872,7 @@ router37.get("/health", (req, res) => {
     vercel: process.env.VERCEL ? "true" : "false"
   });
 });
-router37.get("/health/database", async (req, res) => {
+router38.get("/health/database", async (req, res) => {
   const status = {
     database: {
       configured: false,
@@ -21652,7 +21921,7 @@ router37.get("/health/database", async (req, res) => {
     message: "All systems operational"
   });
 });
-router37.get("/health/auth", (req, res) => {
+router38.get("/health/auth", (req, res) => {
   const status = {
     authentication: {
       jwtConfigured: !!process.env.JWT_SECRET,
@@ -21686,7 +21955,7 @@ router37.get("/health/auth", (req, res) => {
     message: status.authentication.fallbackAuthActive ? "Authentication operational (using fallback)" : "Authentication fully operational"
   });
 });
-router37.get("/health/system", async (req, res) => {
+router38.get("/health/system", async (req, res) => {
   const results = {
     server: true,
     database: false,
@@ -21718,15 +21987,15 @@ router37.get("/health/system", async (req, res) => {
     message: shouldUseFallback() ? "System operational with fallback authentication (DATABASE_URL not configured)" : isHealthy ? "All systems operational" : "System degraded - some components not functional"
   });
 });
-var health_default = router37;
+var health_default = router38;
 
 // server/routes/debug.ts
 init_db();
 init_schema();
-import { Router as Router35 } from "express";
-import { eq as eq27, sql as sql15, desc as desc12 } from "drizzle-orm";
-var router38 = Router35();
-router38.get("/debug/recent-drafts", async (req, res) => {
+import { Router as Router36 } from "express";
+import { eq as eq28, sql as sql15, desc as desc12 } from "drizzle-orm";
+var router39 = Router36();
+router39.get("/debug/recent-drafts", async (req, res) => {
   try {
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1e3);
     const recentDrafts = await db.select({
@@ -21738,7 +22007,7 @@ router38.get("/debug/recent-drafts", async (req, res) => {
       vendorId: purchaseOrders.vendorId,
       totalAmount: purchaseOrders.totalAmount,
       vendorName: vendors.name
-    }).from(purchaseOrders).leftJoin(vendors, eq27(purchaseOrders.vendorId, vendors.id)).where(eq27(purchaseOrders.status, "draft")).orderBy(desc12(purchaseOrders.createdAt)).limit(20);
+    }).from(purchaseOrders).leftJoin(vendors, eq28(purchaseOrders.vendorId, vendors.id)).where(eq28(purchaseOrders.status, "draft")).orderBy(desc12(purchaseOrders.createdAt)).limit(20);
     const allRecentOrders = await db.select({
       id: purchaseOrders.id,
       orderNumber: purchaseOrders.orderNumber,
@@ -21748,7 +22017,7 @@ router38.get("/debug/recent-drafts", async (req, res) => {
       vendorId: purchaseOrders.vendorId,
       totalAmount: purchaseOrders.totalAmount,
       vendorName: vendors.name
-    }).from(purchaseOrders).leftJoin(vendors, eq27(purchaseOrders.vendorId, vendors.id)).where(sql15`${purchaseOrders.createdAt} > ${oneHourAgo}`).orderBy(desc12(purchaseOrders.createdAt)).limit(50);
+    }).from(purchaseOrders).leftJoin(vendors, eq28(purchaseOrders.vendorId, vendors.id)).where(sql15`${purchaseOrders.createdAt} > ${oneHourAgo}`).orderBy(desc12(purchaseOrders.createdAt)).limit(50);
     const jbVendor = await db.select().from(vendors).where(sql15`${vendors.name} LIKE '%제이비엔지니어링%'`).limit(5);
     res.json({
       recentDrafts,
@@ -21764,49 +22033,50 @@ router38.get("/debug/recent-drafts", async (req, res) => {
     res.status(500).json({ error: "Debug endpoint failed" });
   }
 });
-var debug_default = router38;
+var debug_default = router39;
 
 // server/routes/index.ts
-var router39 = Router36();
-router39.use("/api", auth_default);
-router39.use("/api", projects_default);
-router39.use("/api", orders_default);
-router39.use("/api", vendors_default);
-router39.use("/api", items_default);
-router39.use("/api", dashboard_default);
-router39.use("/api", companies_default);
-router39.use("/api/admin", admin_default);
-router39.use("/api/excel-automation", excel_automation_default);
-router39.use("/api/po-template", po_template_real_default);
-router39.use("/api/reports", reports_default);
-router39.use("/api", import_export_default);
-router39.use("/api", email_history_default);
-router39.use("/api/excel-template", excel_template_default);
-router39.use("/api", orders_optimized_default);
-router39.use("/api", order_statuses_default);
-router39.use("/api", invoices_default);
-router39.use("/api", verification_logs_default);
-router39.use("/api", item_receipts_default);
-router39.use("/api", approvals_default);
-router39.use("/api", project_members_default);
-router39.use("/api", project_types_default);
-router39.use("/api", simple_auth_default);
-router39.use("/api", test_accounts_default);
-router39.use("/api/categories", categories_default);
-router39.use("/api/approval-settings", approval_settings_default);
-router39.use("/api", approval_authorities_default);
-router39.use("/api", notifications_default);
-router39.use("/api", orders_simple_default);
-router39.use("/api", positions_default);
-router39.use("/api/audit", audit_default);
-router39.use("/api/email-test", email_test_default);
-router39.use("/api/email-settings", email_settings_default);
-router39.use(workflow_default);
-router39.use("/api", orders_workflow_default);
-router39.use("/api/excel-smart-upload", excel_smart_upload_simple_default);
-router39.use("/api", health_default);
-router39.use("/api", debug_default);
-var routes_default = router39;
+var router40 = Router37();
+router40.use("/api", auth_default);
+router40.use("/api", projects_default);
+router40.use("/api", orders_default);
+router40.use("/api", vendors_default);
+router40.use("/api", items_default);
+router40.use("/api", dashboard_default);
+router40.use("/api", companies_default);
+router40.use("/api/admin", admin_default);
+router40.use("/api/excel-automation", excel_automation_default);
+router40.use("/api/po-template", po_template_real_default);
+router40.use("/api/reports", reports_default);
+router40.use("/api", import_export_default);
+router40.use("/api", email_history_default);
+router40.use("/api/excel-template", excel_template_default);
+router40.use("/api", orders_optimized_default);
+router40.use("/api", orders_create_default);
+router40.use("/api", order_statuses_default);
+router40.use("/api", invoices_default);
+router40.use("/api", verification_logs_default);
+router40.use("/api", item_receipts_default);
+router40.use("/api", approvals_default);
+router40.use("/api", project_members_default);
+router40.use("/api", project_types_default);
+router40.use("/api", simple_auth_default);
+router40.use("/api", test_accounts_default);
+router40.use("/api/categories", categories_default);
+router40.use("/api/approval-settings", approval_settings_default);
+router40.use("/api", approval_authorities_default);
+router40.use("/api", notifications_default);
+router40.use("/api", orders_simple_default);
+router40.use("/api", positions_default);
+router40.use("/api/audit", audit_default);
+router40.use("/api/email-test", email_test_default);
+router40.use("/api/email-settings", email_settings_default);
+router40.use(workflow_default);
+router40.use("/api", orders_workflow_default);
+router40.use("/api/excel-smart-upload", excel_smart_upload_simple_default);
+router40.use("/api", health_default);
+router40.use("/api", debug_default);
+var routes_default = router40;
 
 // server/production.ts
 dotenv2.config();

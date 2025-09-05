@@ -205,7 +205,7 @@ export async function login(req: Request, res: Response) {
       res.cookie('auth_token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 'none' for cross-origin in Vercel
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         path: '/'
       });
@@ -279,7 +279,7 @@ export async function logout(req: Request, res: Response) {
   res.clearCookie('auth_token', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Match cookie setting
     path: '/'
   });
   
