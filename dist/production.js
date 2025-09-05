@@ -491,7 +491,9 @@ var init_schema = __esm({
       fileSize: integer("file_size"),
       mimeType: varchar("mime_type", { length: 100 }),
       uploadedBy: varchar("uploaded_by", { length: 50 }),
-      uploadedAt: timestamp("uploaded_at").defaultNow()
+      uploadedAt: timestamp("uploaded_at").defaultNow(),
+      fileData: text("file_data")
+      // Base64 encoded PDF data for Vercel/cloud storage
     });
     orderHistory = pgTable("order_history", {
       id: serial("id").primaryKey(),
@@ -1536,7 +1538,7 @@ var init_pdf_generation_service = __esm({
     init_schema();
     PDFGenerationService = class {
       static {
-        this.uploadDir = "uploads/pdf";
+        this.uploadDir = process.env.VERCEL ? "/tmp/pdf" : path4.join(process.cwd(), "uploads/pdf");
       }
       /**
        * 발주서 PDF 생성 및 첨부파일 등록
@@ -1544,38 +1546,62 @@ var init_pdf_generation_service = __esm({
       static async generatePurchaseOrderPDF(orderId, orderData, userId) {
         try {
           console.log(`\u{1F4C4} [PDFGenerator] \uBC1C\uC8FC\uC11C PDF \uC0DD\uC131 \uC2DC\uC791: Order ID ${orderId}`);
-          const year = (/* @__PURE__ */ new Date()).getFullYear();
-          const month = String((/* @__PURE__ */ new Date()).getMonth() + 1).padStart(2, "0");
-          const pdfDir = path4.join(this.uploadDir, String(year), month);
-          if (!fs6.existsSync(pdfDir)) {
-            fs6.mkdirSync(pdfDir, { recursive: true });
-          }
           const timestamp2 = Date.now();
           const fileName = `PO_${orderData.orderNumber}_${timestamp2}.pdf`;
-          const filePath = path4.join(pdfDir, fileName);
           const htmlContent = this.generateHTMLTemplate(orderData);
-          const htmlPath = filePath.replace(".pdf", ".html");
-          fs6.writeFileSync(htmlPath, htmlContent);
-          const pdfBuffer = await this.convertHTMLToPDF(htmlPath);
-          fs6.writeFileSync(filePath, pdfBuffer);
-          if (fs6.existsSync(htmlPath)) {
-            fs6.unlinkSync(htmlPath);
+          const tempDir = process.env.VERCEL ? "/tmp" : path4.join(this.uploadDir, String((/* @__PURE__ */ new Date()).getFullYear()), String((/* @__PURE__ */ new Date()).getMonth() + 1).padStart(2, "0"));
+          if (!process.env.VERCEL) {
+            console.log(`\u{1F4C1} [PDFGenerator] \uB514\uB809\uD1A0\uB9AC \uC0DD\uC131 \uC911: ${tempDir}`);
+            if (!fs6.existsSync(tempDir)) {
+              try {
+                fs6.mkdirSync(tempDir, { recursive: true });
+                console.log(`\u2705 [PDFGenerator] \uB514\uB809\uD1A0\uB9AC \uC0DD\uC131 \uC644\uB8CC: ${tempDir}`);
+              } catch (dirError) {
+                console.error(`\u274C [PDFGenerator] \uB514\uB809\uD1A0\uB9AC \uC0DD\uC131 \uC2E4\uD328: ${tempDir}`, dirError);
+                throw new Error(`\uB514\uB809\uD1A0\uB9AC \uC0DD\uC131 \uC2E4\uD328: ${dirError instanceof Error ? dirError.message : "Unknown error"}`);
+              }
+            }
           }
-          const stats = fs6.statSync(filePath);
-          const [attachment] = await db.insert(attachments).values({
-            orderId,
-            originalName: fileName,
-            storedName: fileName,
-            filePath,
-            fileSize: stats.size,
-            mimeType: "application/pdf",
-            uploadedBy: userId
-          }).returning();
-          console.log(`\u2705 [PDFGenerator] PDF \uC0DD\uC131 \uC644\uB8CC: ${filePath}, Attachment ID: ${attachment.id}`);
+          const pdfBuffer = await this.convertHTMLToPDFFromString(htmlContent);
+          let filePath = "";
+          let attachmentId;
+          if (process.env.VERCEL) {
+            const base64Data = pdfBuffer.toString("base64");
+            const [attachment] = await db.insert(attachments).values({
+              orderId,
+              originalName: fileName,
+              storedName: fileName,
+              filePath: `db://${fileName}`,
+              // DB 저장 위치 표시
+              fileSize: pdfBuffer.length,
+              mimeType: "application/pdf",
+              uploadedBy: userId,
+              fileData: base64Data
+              // PDF 데이터를 Base64로 DB에 저장
+            }).returning();
+            attachmentId = attachment.id;
+            filePath = `db://${fileName}`;
+            console.log(`\u2705 [PDFGenerator] PDF \uC0DD\uC131 \uC644\uB8CC (DB \uC800\uC7A5): ${fileName}, Attachment ID: ${attachment.id}, \uD06C\uAE30: ${Math.round(base64Data.length / 1024)}KB`);
+          } else {
+            filePath = path4.join(tempDir, fileName);
+            fs6.writeFileSync(filePath, pdfBuffer);
+            const [attachment] = await db.insert(attachments).values({
+              orderId,
+              originalName: fileName,
+              storedName: fileName,
+              filePath,
+              fileSize: pdfBuffer.length,
+              mimeType: "application/pdf",
+              uploadedBy: userId
+            }).returning();
+            attachmentId = attachment.id;
+            console.log(`\u2705 [PDFGenerator] PDF \uC0DD\uC131 \uC644\uB8CC: ${filePath}, Attachment ID: ${attachment.id}`);
+          }
           return {
             success: true,
             pdfPath: filePath,
-            attachmentId: attachment.id
+            attachmentId,
+            pdfBuffer: process.env.VERCEL ? pdfBuffer : void 0
           };
         } catch (error) {
           console.error("\u274C [PDFGenerator] PDF \uC0DD\uC131 \uC624\uB958:", error);
@@ -1848,7 +1874,7 @@ var init_pdf_generation_service = __esm({
     `;
       }
       /**
-       * HTML을 PDF로 변환 (Playwright 사용)
+       * HTML을 PDF로 변환 (Playwright 사용 - 파일 기반)
        */
       static async convertHTMLToPDF(htmlPath) {
         const { chromium: chromium2 } = await import("playwright");
@@ -1871,6 +1897,63 @@ var init_pdf_generation_service = __esm({
           return pdfBuffer;
         } finally {
           await browser.close();
+        }
+      }
+      /**
+       * HTML 문자열을 PDF로 변환 (Puppeteer + Chromium 사용 - Vercel 호환)
+       */
+      static async convertHTMLToPDFFromString(htmlContent) {
+        if (process.env.VERCEL) {
+          const puppeteer = await import("puppeteer-core");
+          const chromium2 = await import("@sparticuz/chromium-min");
+          const browser = await puppeteer.default.launch({
+            args: chromium2.default.args,
+            defaultViewport: chromium2.default.defaultViewport,
+            executablePath: await chromium2.default.executablePath(),
+            headless: chromium2.default.headless,
+            ignoreHTTPSErrors: true
+          });
+          const page = await browser.newPage();
+          try {
+            await page.setContent(htmlContent, {
+              waitUntil: "networkidle0"
+            });
+            const pdfBuffer = await page.pdf({
+              format: "A4",
+              printBackground: true,
+              margin: {
+                top: "15mm",
+                right: "15mm",
+                bottom: "15mm",
+                left: "15mm"
+              }
+            });
+            return pdfBuffer;
+          } finally {
+            await browser.close();
+          }
+        } else {
+          const { chromium: chromium2 } = await import("playwright");
+          const browser = await chromium2.launch({ headless: true });
+          const page = await browser.newPage();
+          try {
+            await page.setContent(htmlContent, {
+              waitUntil: "networkidle"
+            });
+            const pdfBuffer = await page.pdf({
+              format: "A4",
+              printBackground: true,
+              margin: {
+                top: "15mm",
+                right: "15mm",
+                bottom: "15mm",
+                left: "15mm"
+              }
+            });
+            return pdfBuffer;
+          } finally {
+            await browser.close();
+          }
         }
       }
       /**
@@ -4396,7 +4479,8 @@ var DatabaseStorage = class {
         fileSize: attachments.fileSize,
         mimeType: attachments.mimeType,
         uploadedBy: attachments.uploadedBy,
-        uploadedAt: attachments.uploadedAt
+        uploadedAt: attachments.uploadedAt,
+        fileData: attachments.fileData
       }).from(attachments).where(
         and(
           eq(attachments.id, attachmentId),
@@ -5555,6 +5639,13 @@ var OptimizedDashboardQueries = class {
         sql3`SELECT COUNT(*) as "pendingOrders" FROM purchase_orders WHERE status = 'pending'`
       );
       const pendingOrderStats = pendingOrderResult.rows[0] || { pendingOrders: 0 };
+      const completedOrderResult = await db.execute(
+        sql3`SELECT COUNT(*) as "completedOrders" 
+            FROM purchase_orders 
+            WHERE status = 'completed' 
+            AND order_date >= DATE_TRUNC('month', CURRENT_DATE)`
+      );
+      const completedOrderStats = completedOrderResult.rows[0] || { completedOrders: 0 };
       const monthlyOrderResult = await db.execute(
         sql3`SELECT COUNT(*) as "monthlyOrders" 
             FROM purchase_orders 
@@ -5643,6 +5734,7 @@ var OptimizedDashboardQueries = class {
           totalOrders: parseInt(orderStats.totalOrders) || 0,
           totalAmount: Number(orderStats.totalAmount) || 0,
           pendingOrders: parseInt(pendingOrderStats.pendingOrders) || 0,
+          completedOrders: parseInt(completedOrderStats.completedOrders) || 0,
           monthlyOrders: parseInt(monthlyOrderStats.monthlyOrders) || 0,
           activeProjects: parseInt(projectStats.activeProjects) || 0,
           activeVendors: parseInt(vendorStats.activeVendors) || 0
@@ -5670,6 +5762,7 @@ var OptimizedDashboardQueries = class {
           totalOrders: 0,
           totalAmount: 0,
           pendingOrders: 0,
+          completedOrders: 0,
           monthlyOrders: 0,
           activeProjects: 0,
           activeVendors: 0
@@ -7984,65 +8077,6 @@ router3.put("/orders/:id", requireAuth, async (req, res) => {
     res.status(500).json({ message: "Failed to update order" });
   }
 });
-router3.delete("/orders/bulk", requireAuth, requireAdmin, async (req, res) => {
-  try {
-    console.log("\u{1F5D1}\uFE0F Bulk delete request received:", { body: req.body, orderIds: req.body.orderIds });
-    const { orderIds } = req.body;
-    if (!orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
-      console.log("\u274C Invalid orderIds:", { orderIds, isArray: Array.isArray(orderIds), length: orderIds?.length });
-      return res.status(400).json({ message: "Order IDs array is required" });
-    }
-    console.log("\u{1F4CA} Parsing order IDs:", orderIds);
-    const numericOrderIds = orderIds.map((id) => {
-      console.log("\u{1F50D} Processing ID:", id, "type:", typeof id);
-      const numericId = parseInt(id, 10);
-      console.log("\u{1F50D} Parsed ID:", numericId, "isNaN:", isNaN(numericId));
-      if (isNaN(numericId)) {
-        console.log("\u274C Invalid order ID detected:", id);
-        throw new Error(`Invalid order ID: ${id}`);
-      }
-      return numericId;
-    });
-    console.log("\u{1F50D} Looking up orders for IDs:", numericOrderIds);
-    const orders = await Promise.all(
-      numericOrderIds.map(async (orderId) => {
-        console.log("\u{1F50D} Looking up order ID:", orderId);
-        const order = await storage.getPurchaseOrder(orderId);
-        if (!order) {
-          console.log("\u274C Order not found:", orderId);
-          throw new Error(`Order with ID ${orderId} not found`);
-        }
-        console.log("\u2705 Found order:", { id: order.id, orderNumber: order.orderNumber, status: order.status });
-        return order;
-      })
-    );
-    console.log("\u{1F4CB} All orders found:", orders.map((o) => ({ id: o.id, orderNumber: o.orderNumber, status: o.status })));
-    console.log("\u2705 Admin user authorized to delete all orders regardless of status");
-    console.log("\u{1F5D1}\uFE0F Starting deletion of orders:", numericOrderIds);
-    const deletePromises = numericOrderIds.map((orderId) => {
-      console.log("\u{1F5D1}\uFE0F Deleting order ID:", orderId);
-      return storage.deletePurchaseOrder(orderId);
-    });
-    await Promise.all(deletePromises);
-    console.log("\u2705 All orders deleted successfully");
-    res.json({
-      message: `Successfully deleted ${numericOrderIds.length} order(s)`,
-      deletedOrderIds: numericOrderIds,
-      deletedCount: numericOrderIds.length
-    });
-  } catch (error) {
-    console.error("Error bulk deleting orders:", error);
-    if (error instanceof Error) {
-      if (error.message.includes("not found")) {
-        return res.status(404).json({ message: error.message });
-      }
-      if (error.message.includes("Invalid order ID")) {
-        return res.status(400).json({ message: error.message });
-      }
-    }
-    res.status(500).json({ message: "Failed to bulk delete orders" });
-  }
-});
 router3.delete("/orders/:id", requireAuth, async (req, res) => {
   try {
     const orderId = parseInt(req.params.id, 10);
@@ -9438,41 +9472,50 @@ router3.get("/orders/:orderId/attachments/:attachmentId/download", requireAuth, 
       filePath: attachment.filePath,
       fileSize: attachment.fileSize
     });
-    let filePath = attachment.filePath;
-    if (!path5.isAbsolute(filePath)) {
-      filePath = path5.join(__dirname2, "../../", filePath);
-    }
-    console.log(`\u{1F4C2} \uD30C\uC77C \uACBD\uB85C: ${filePath}`);
-    if (!fs7.existsSync(filePath)) {
-      console.log(`\u274C \uD30C\uC77C\uC774 \uC874\uC7AC\uD558\uC9C0 \uC54A\uC74C: ${filePath}`);
-      return res.status(404).json({
-        error: "\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.",
-        filePath: attachment.filePath
-      });
-    }
-    const stats = fs7.statSync(filePath);
-    console.log(`\u{1F4CA} \uD30C\uC77C \uD06C\uAE30: ${(stats.size / 1024).toFixed(2)} KB`);
     const originalName = decodeKoreanFilename(attachment.originalName);
     const encodedFilename = encodeURIComponent(originalName);
     res.setHeader("Content-Type", attachment.mimeType || "application/octet-stream");
-    res.setHeader("Content-Length", stats.size);
     res.setHeader("Content-Disposition", `attachment; filename="${originalName}"; filename*=UTF-8''${encodedFilename}`);
     res.setHeader("Cache-Control", "no-cache");
     console.log(`\u{1F4E4} \uD30C\uC77C \uB2E4\uC6B4\uB85C\uB4DC \uC2DC\uC791: ${originalName}`);
-    const fileStream = fs7.createReadStream(filePath);
-    fileStream.on("error", (error) => {
-      console.error("\u274C \uD30C\uC77C \uC2A4\uD2B8\uB9BC \uC624\uB958:", error);
-      if (!res.headersSent) {
-        res.status(500).json({
-          error: "\uD30C\uC77C \uC77D\uAE30 \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4.",
-          details: error.message
+    if (attachment.filePath.startsWith("db://") && attachment.fileData) {
+      console.log(`\u{1F4BE} DB\uC5D0\uC11C \uD30C\uC77C \uB370\uC774\uD130 \uC77D\uAE30: ${attachment.filePath}`);
+      const fileBuffer = Buffer.from(attachment.fileData, "base64");
+      res.setHeader("Content-Length", fileBuffer.length);
+      console.log(`\u{1F4CA} \uD30C\uC77C \uD06C\uAE30 (DB): ${(fileBuffer.length / 1024).toFixed(2)} KB`);
+      res.send(fileBuffer);
+      console.log(`\u2705 \uD30C\uC77C \uB2E4\uC6B4\uB85C\uB4DC \uC644\uB8CC (DB): ${originalName}`);
+    } else {
+      let filePath = attachment.filePath;
+      if (!path5.isAbsolute(filePath)) {
+        filePath = path5.join(__dirname2, "../../", filePath);
+      }
+      console.log(`\u{1F4C2} \uD30C\uC77C \uACBD\uB85C: ${filePath}`);
+      if (!fs7.existsSync(filePath)) {
+        console.log(`\u274C \uD30C\uC77C\uC774 \uC874\uC7AC\uD558\uC9C0 \uC54A\uC74C: ${filePath}`);
+        return res.status(404).json({
+          error: "\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.",
+          filePath: attachment.filePath
         });
       }
-    });
-    fileStream.on("end", () => {
-      console.log(`\u2705 \uD30C\uC77C \uB2E4\uC6B4\uB85C\uB4DC \uC644\uB8CC: ${originalName}`);
-    });
-    fileStream.pipe(res);
+      const stats = fs7.statSync(filePath);
+      console.log(`\u{1F4CA} \uD30C\uC77C \uD06C\uAE30: ${(stats.size / 1024).toFixed(2)} KB`);
+      res.setHeader("Content-Length", stats.size);
+      const fileStream = fs7.createReadStream(filePath);
+      fileStream.on("error", (error) => {
+        console.error("\u274C \uD30C\uC77C \uC2A4\uD2B8\uB9BC \uC624\uB958:", error);
+        if (!res.headersSent) {
+          res.status(500).json({
+            error: "\uD30C\uC77C \uC77D\uAE30 \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4.",
+            details: error.message
+          });
+        }
+      });
+      fileStream.on("end", () => {
+        console.log(`\u2705 \uD30C\uC77C \uB2E4\uC6B4\uB85C\uB4DC \uC644\uB8CC: ${originalName}`);
+      });
+      fileStream.pipe(res);
+    }
   } catch (error) {
     console.error("\u274C \uCCA8\uBD80\uD30C\uC77C \uB2E4\uC6B4\uB85C\uB4DC \uC624\uB958:", error);
     res.status(500).json({
@@ -9508,13 +9551,52 @@ router3.delete("/orders/bulk-delete", requireAuth, async (req, res) => {
       return numId;
     });
     console.log(`\u{1F5D1}\uFE0F \uAD00\uB9AC\uC790 \uC77C\uAD04 \uC0AD\uC81C \uC694\uCCAD: ${numericOrderIds.length}\uAC1C \uBC1C\uC8FC\uC11C`, { admin: user.name, orderIds: numericOrderIds });
-    const deletedOrders = await storage.bulkDeleteOrders(numericOrderIds, user.id);
-    console.log(`\u2705 \uC77C\uAD04 \uC0AD\uC81C \uC644\uB8CC: ${deletedOrders.length}\uAC1C \uBC1C\uC8FC\uC11C \uC0AD\uC81C\uB428`);
-    res.json({
+    console.log("\u{1F50D} Looking up orders for validation...");
+    const validOrders = [];
+    for (const orderId of numericOrderIds) {
+      const order = await storage.getPurchaseOrder(orderId);
+      if (order) {
+        validOrders.push(order);
+      } else {
+        console.log(`\u26A0\uFE0F Order not found: ${orderId}`);
+      }
+    }
+    if (validOrders.length === 0) {
+      return res.status(404).json({
+        message: "\uC0AD\uC81C\uD560 \uC218 \uC788\uB294 \uBC1C\uC8FC\uC11C\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4."
+      });
+    }
+    console.log(`\u{1F5D1}\uFE0F Deleting ${validOrders.length} valid orders...`);
+    const deletedOrders = [];
+    const failedDeletions = [];
+    for (const order of validOrders) {
+      try {
+        console.log(`\u{1F5D1}\uFE0F Deleting order ${order.id} (${order.orderNumber})`);
+        await storage.deletePurchaseOrder(order.id);
+        deletedOrders.push(order);
+        console.log(`\u2705 Successfully deleted order ${order.id}`);
+      } catch (deleteError) {
+        console.error(`\u274C Failed to delete order ${order.id}:`, deleteError);
+        failedDeletions.push({
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          error: deleteError instanceof Error ? deleteError.message : "Unknown error"
+        });
+      }
+    }
+    console.log(`\u2705 \uC77C\uAD04 \uC0AD\uC81C \uC644\uB8CC: ${deletedOrders.length}\uAC1C \uC131\uACF5, ${failedDeletions.length}\uAC1C \uC2E4\uD328`);
+    const response = {
       message: `${deletedOrders.length}\uAC1C\uC758 \uBC1C\uC8FC\uC11C\uAC00 \uC0AD\uC81C\uB418\uC5C8\uC2B5\uB2C8\uB2E4.`,
       deletedCount: deletedOrders.length,
       deletedOrders: deletedOrders.map((o) => ({ id: o.id, orderNumber: o.orderNumber }))
-    });
+    };
+    if (failedDeletions.length > 0) {
+      response.partialFailure = true;
+      response.failedCount = failedDeletions.length;
+      response.failedDeletions = failedDeletions;
+      response.message += ` (${failedDeletions.length}\uAC1C\uB294 \uC0AD\uC81C\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.)`;
+    }
+    res.json(response);
   } catch (error) {
     console.error("\u274C \uC77C\uAD04 \uC0AD\uC81C \uC624\uB958:", error);
     res.status(500).json({

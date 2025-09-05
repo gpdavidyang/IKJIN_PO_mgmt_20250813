@@ -451,81 +451,7 @@ router.put("/orders/:id", requireAuth, async (req, res) => {
   }
 });
 
-// Bulk delete orders (Admin only) - Must come BEFORE /orders/:id to avoid route collision
-router.delete("/orders/bulk", requireAuth, requireAdmin, async (req, res) => {
-  try {
-    console.log('🗑️ Bulk delete request received:', { body: req.body, orderIds: req.body.orderIds });
-    const { orderIds } = req.body;
-    
-    if (!orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
-      console.log('❌ Invalid orderIds:', { orderIds, isArray: Array.isArray(orderIds), length: orderIds?.length });
-      return res.status(400).json({ message: "Order IDs array is required" });
-    }
-
-    // Validate that all IDs are numbers
-    console.log('📊 Parsing order IDs:', orderIds);
-    const numericOrderIds = orderIds.map(id => {
-      console.log('🔍 Processing ID:', id, 'type:', typeof id);
-      const numericId = parseInt(id, 10);
-      console.log('🔍 Parsed ID:', numericId, 'isNaN:', isNaN(numericId));
-      if (isNaN(numericId)) {
-        console.log('❌ Invalid order ID detected:', id);
-        throw new Error(`Invalid order ID: ${id}`);
-      }
-      return numericId;
-    });
-
-    // Check if all orders exist and get their current status
-    console.log('🔍 Looking up orders for IDs:', numericOrderIds);
-    const orders = await Promise.all(
-      numericOrderIds.map(async (orderId) => {
-        console.log('🔍 Looking up order ID:', orderId);
-        const order = await storage.getPurchaseOrder(orderId);
-        if (!order) {
-          console.log('❌ Order not found:', orderId);
-          throw new Error(`Order with ID ${orderId} not found`);
-        }
-        console.log('✅ Found order:', { id: order.id, orderNumber: order.orderNumber, status: order.status });
-        return order;
-      })
-    );
-    console.log('📋 All orders found:', orders.map(o => ({ id: o.id, orderNumber: o.orderNumber, status: o.status })));
-
-    // Admin users can delete any orders - no status restriction
-    // This endpoint already requires requireAdmin middleware
-    console.log('✅ Admin user authorized to delete all orders regardless of status');
-
-    // Delete all orders
-    console.log('🗑️ Starting deletion of orders:', numericOrderIds);
-    const deletePromises = numericOrderIds.map(orderId => {
-      console.log('🗑️ Deleting order ID:', orderId);
-      return storage.deletePurchaseOrder(orderId);
-    });
-    
-    await Promise.all(deletePromises);
-    console.log('✅ All orders deleted successfully');
-
-    res.json({ 
-      message: `Successfully deleted ${numericOrderIds.length} order(s)`,
-      deletedOrderIds: numericOrderIds,
-      deletedCount: numericOrderIds.length
-    });
-  } catch (error) {
-    console.error("Error bulk deleting orders:", error);
-    
-    if (error instanceof Error) {
-      // Handle specific error cases
-      if (error.message.includes("not found")) {
-        return res.status(404).json({ message: error.message });
-      }
-      if (error.message.includes("Invalid order ID")) {
-        return res.status(400).json({ message: error.message });
-      }
-    }
-    
-    res.status(500).json({ message: "Failed to bulk delete orders" });
-  }
-});
+// Bulk delete orders (Admin only) - REMOVED DUPLICATE - Use /orders/bulk-delete instead
 
 // Delete single order - Must come AFTER /orders/bulk to avoid route collision
 router.delete("/orders/:id", requireAuth, async (req, res) => {
@@ -2282,16 +2208,63 @@ router.delete("/orders/bulk-delete", requireAuth, async (req: any, res) => {
 
     console.log(`🗑️ 관리자 일괄 삭제 요청: ${numericOrderIds.length}개 발주서`, { admin: user.name, orderIds: numericOrderIds });
 
-    // Delete orders from database
-    const deletedOrders = await storage.bulkDeleteOrders(numericOrderIds, user.id);
+    // Use simpler individual deletion approach to avoid complex transaction issues
+    console.log('🔍 Looking up orders for validation...');
+    const validOrders = [];
+    for (const orderId of numericOrderIds) {
+      const order = await storage.getPurchaseOrder(orderId);
+      if (order) {
+        validOrders.push(order);
+      } else {
+        console.log(`⚠️ Order not found: ${orderId}`);
+      }
+    }
 
-    console.log(`✅ 일괄 삭제 완료: ${deletedOrders.length}개 발주서 삭제됨`);
+    if (validOrders.length === 0) {
+      return res.status(404).json({ 
+        message: "삭제할 수 있는 발주서가 없습니다." 
+      });
+    }
 
-    res.json({ 
+    console.log(`🗑️ Deleting ${validOrders.length} valid orders...`);
+    
+    // Delete orders individually to avoid transaction complexity
+    const deletedOrders = [];
+    const failedDeletions = [];
+    
+    for (const order of validOrders) {
+      try {
+        console.log(`🗑️ Deleting order ${order.id} (${order.orderNumber})`);
+        await storage.deletePurchaseOrder(order.id);
+        deletedOrders.push(order);
+        console.log(`✅ Successfully deleted order ${order.id}`);
+      } catch (deleteError) {
+        console.error(`❌ Failed to delete order ${order.id}:`, deleteError);
+        failedDeletions.push({
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          error: deleteError instanceof Error ? deleteError.message : 'Unknown error'
+        });
+      }
+    }
+
+    console.log(`✅ 일괄 삭제 완료: ${deletedOrders.length}개 성공, ${failedDeletions.length}개 실패`);
+
+    // Return success even if some deletions failed
+    const response: any = { 
       message: `${deletedOrders.length}개의 발주서가 삭제되었습니다.`,
       deletedCount: deletedOrders.length,
       deletedOrders: deletedOrders.map(o => ({ id: o.id, orderNumber: o.orderNumber }))
-    });
+    };
+
+    if (failedDeletions.length > 0) {
+      response.partialFailure = true;
+      response.failedCount = failedDeletions.length;
+      response.failedDeletions = failedDeletions;
+      response.message += ` (${failedDeletions.length}개는 삭제할 수 없습니다.)`;
+    }
+
+    res.json(response);
   } catch (error) {
     console.error("❌ 일괄 삭제 오류:", error);
     res.status(500).json({ 
