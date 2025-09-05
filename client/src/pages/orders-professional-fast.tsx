@@ -15,6 +15,7 @@ import { EmailSendDialog } from "@/components/email-send-dialog";
 import { EmailService } from "@/services/emailService";
 import { EmailHistoryModal } from "@/components/email-history-modal";
 import PDFPreviewModal from "@/components/workflow/preview/PDFPreviewModal";
+import { BulkDeleteDialog } from "@/components/orders/bulk-delete-dialog";
 import { formatKoreanWon } from "@/lib/utils";
 import { debounce } from "lodash";
 
