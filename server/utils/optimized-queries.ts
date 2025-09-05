@@ -242,7 +242,7 @@ export class OptimizedDashboardQueries {
       );
 
       const approvalStatusStats = statusStats.filter(item =>
-        ['pending', 'approved', 'rejected'].includes(item.status)
+        ['pending', 'approved', 'rejected', 'direct_approval'].includes(item.status)
       );
 
       // Get project statistics (top 10 by order amount)

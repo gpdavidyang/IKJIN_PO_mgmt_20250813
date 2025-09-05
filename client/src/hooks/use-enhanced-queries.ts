@@ -83,10 +83,11 @@ export function useDashboardStats(timeRange?: string) {
   );
 }
 
-// Order hooks (using optimized endpoint)
+// Order hooks (temporarily using normal orders endpoint to fix draft visibility)
 export function useOrders(filters?: any) {
   const queryFn = async () => {
-    const url = `/api/orders-optimized${filters ? `?${new URLSearchParams(filters).toString()}` : ''}`;
+    // Use regular orders endpoint instead of optimized to ensure draft orders are shown
+    const url = `/api/orders${filters ? `?${new URLSearchParams(filters).toString()}` : ''}`;
     const response = await apiRequest("GET", url);
     return response;
   };

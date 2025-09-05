@@ -76,11 +76,19 @@ const OrderDataSchema = z.object({
 
 // Bulk create orders without validation
 router.post('/orders/bulk-create-simple', requireAuth, upload.single('excelFile'), async (req, res) => {
-  console.log('📥 /bulk-create-simple - Raw body:', req.body);
-  console.log('📥 /bulk-create-simple - Orders field type:', typeof req.body.orders);
-  console.log('📥 /bulk-create-simple - Orders field value:', req.body.orders);
-  console.log('📥 /bulk-create-simple - Received file:', req.file);
-  console.log('📥 /bulk-create-simple - File details:', {
+  console.log('🚀 /bulk-create-simple - REQUEST START');
+  console.log('📋 Request headers:', {
+    'content-type': req.headers['content-type'],
+    'content-length': req.headers['content-length'],
+    'user-agent': req.headers['user-agent']
+  });
+  console.log('📥 Raw body keys:', Object.keys(req.body));
+  console.log('📥 Raw body:', req.body);
+  console.log('📥 Orders field exists:', 'orders' in req.body);
+  console.log('📥 Orders field type:', typeof req.body.orders);
+  console.log('📥 Orders field value:', req.body.orders);
+  console.log('📁 Received file:', req.file);
+  console.log('📁 File details:', {
     originalname: req.file?.originalname,
     filename: req.file?.filename,
     mimetype: req.file?.mimetype,
@@ -219,7 +227,7 @@ router.post('/orders/bulk-create-simple', requireAuth, upload.single('excelFile'
           // Check if needs approval (simplified for bulk creation - assumes direct approval for now)
           orderStatus = sendEmail ? 'sent' : 'created';
           approvalStatus = 'not_required';
-          approvalBypassReason = 'excel_automation'; // Bulk orders bypass approval
+          approvalBypassReason = 'direct_approval'; // Bulk orders use direct approval
         }
 
         // Create purchase order with dual status
@@ -542,6 +550,52 @@ router.get('/orders/simple-upload-history', requireAuth, async (req, res) => {
   } catch (error) {
     console.error('Error fetching upload history:', error);
     res.status(500).json({ error: 'Failed to fetch upload history' });
+  }
+});
+
+// Get draft orders specifically
+router.get('/orders/drafts', requireAuth, async (req, res) => {
+  try {
+    const drafts = await db
+      .select({
+        id: purchaseOrders.id,
+        orderNumber: purchaseOrders.orderNumber,
+        createdAt: purchaseOrders.createdAt,
+        updatedAt: purchaseOrders.updatedAt,
+        totalAmount: purchaseOrders.totalAmount,
+        status: purchaseOrders.status,
+        approvalStatus: purchaseOrders.approvalStatus,
+        orderDate: purchaseOrders.orderDate,
+        deliveryDate: purchaseOrders.deliveryDate,
+        projectId: purchaseOrders.projectId,
+        projectName: projects.projectName,
+        vendorId: purchaseOrders.vendorId,
+        vendorName: vendors.name,
+        userId: purchaseOrders.userId,
+        userName: users.name,
+        notes: purchaseOrders.notes
+      })
+      .from(purchaseOrders)
+      .leftJoin(projects, eq(purchaseOrders.projectId, projects.id))
+      .leftJoin(vendors, eq(purchaseOrders.vendorId, vendors.id))
+      .leftJoin(users, eq(purchaseOrders.userId, users.id))
+      .where(eq(purchaseOrders.status, 'draft'))
+      .orderBy(desc(purchaseOrders.createdAt));
+
+    console.log(`📝 Found ${drafts.length} draft orders`);
+
+    res.json({
+      success: true,
+      orders: drafts,
+      total: drafts.length,
+      message: `Found ${drafts.length} draft orders`
+    });
+  } catch (error) {
+    console.error('Error fetching draft orders:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch draft orders',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 });
 

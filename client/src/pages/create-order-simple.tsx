@@ -219,11 +219,18 @@ export default function CreateOrderSimple() {
   // 일괄 저장 Mutation
   const saveBulkOrders = useMutation({
     mutationFn: async (orders: ParsedOrderData[]) => {
+      console.log('🚀 CLIENT: Starting saveBulkOrders mutation');
+      console.log('📝 CLIENT: Orders to save:', orders.length);
+      console.log('📁 CLIENT: File object:', file ? { name: file.name, size: file.size, type: file.type } : null);
+      
       const formData = new FormData();
       
       // 원본 엑셀 파일 첨부
       if (file) {
+        console.log('📁 CLIENT: Appending file to FormData:', file.name);
         formData.append('excelFile', file);
+      } else {
+        console.log('⚠️ CLIENT: No file to append');
       }
       
       // 발주서 데이터를 안전하게 직렬화 (순환 참조 방지)
@@ -242,32 +249,49 @@ export default function CreateOrderSimple() {
           })) || []
         }));
         
-        console.log('🔍 Serializing orders data:', cleanOrders);
+        console.log('🔍 CLIENT: Serializing orders data:', cleanOrders.length, 'orders');
         const serializedOrders = JSON.stringify(cleanOrders);
-        console.log('✅ Orders serialization successful, length:', serializedOrders.length);
+        console.log('✅ CLIENT: Orders serialization successful, length:', serializedOrders.length);
+        console.log('📦 CLIENT: Sample serialized data (first 200 chars):', serializedOrders.substring(0, 200));
         
         formData.append('orders', serializedOrders);
       } catch (serializationError) {
-        console.error('❌ Orders serialization failed:', serializationError);
-        console.error('❌ Original orders data:', orders);
+        console.error('❌ CLIENT: Orders serialization failed:', serializationError);
+        console.error('❌ CLIENT: Original orders data:', orders);
         throw new Error('Failed to serialize orders data');
       }
       
       formData.append('sendEmail', String(sendEmail)); // 이메일 발송 플래그 추가
       formData.append('isDraft', 'true'); // 임시저장 플래그 추가
       
+      // FormData 내용 확인
+      console.log('📦 CLIENT: FormData entries:');
+      for (const [key, value] of formData.entries()) {
+        if (value instanceof File) {
+          console.log(`  ${key}: File(${value.name}, ${value.size} bytes, ${value.type})`);
+        } else {
+          console.log(`  ${key}: ${typeof value} (length: ${String(value).length})`);
+        }
+      }
+      
+      console.log('🌐 CLIENT: Sending request to /api/orders/bulk-create-simple');
       const response = await fetch('/api/orders/bulk-create-simple', {
         method: 'POST',
         credentials: 'include',
         body: formData
       });
       
+      console.log('📨 CLIENT: Response status:', response.status, response.statusText);
+      
       if (!response.ok) {
         const error = await response.text();
+        console.error('❌ CLIENT: Request failed:', error);
         throw new Error(error || 'Failed to save orders');
       }
       
-      return response.json();
+      const result = await response.json();
+      console.log('✅ CLIENT: Request successful:', result);
+      return result;
     },
     onSuccess: (data) => {
       const emailMsg = data.emailsSent > 0 
@@ -348,6 +372,19 @@ export default function CreateOrderSimple() {
         {editedOrders.length === 0 && (
           <Card>
             <CardContent className="p-8">
+              {/* 직접승인 안내 메시지 */}
+              <Alert className="mb-6 border-blue-200 bg-blue-50">
+                <AlertCircle className="h-4 w-4 text-blue-600" />
+                <AlertDescription className="text-sm text-blue-900">
+                  <strong>직접승인 처리 안내</strong>
+                  <div className="mt-2 space-y-1">
+                    <p>• 엑셀 업로드로 생성되는 모든 발주서는 <strong>직접승인</strong> 방식으로 처리됩니다.</p>
+                    <p>• 별도의 승인 절차 없이 바로 발주서가 생성되며, 즉시 발송 가능한 상태가 됩니다.</p>
+                    <p>• 대량 발주 처리를 위해 승인 단계를 생략하고 신속하게 처리됩니다.</p>
+                  </div>
+                </AlertDescription>
+              </Alert>
+              
               <input
                 ref={fileInputRef}
                 type="file"

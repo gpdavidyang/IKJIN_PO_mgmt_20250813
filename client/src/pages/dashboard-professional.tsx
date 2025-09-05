@@ -75,6 +75,8 @@ export default function DashboardProfessional() {
   const recentOrders = dashboardData?.recentOrders || [];
   const monthlyStats = dashboardData?.monthlyStats || [];
   const statusStats = dashboardData?.statusStats || [];
+  const orderStatusStats = dashboardData?.orderStatusStats || [];
+  const approvalStatusStats = dashboardData?.approvalStatusStats || [];
   const projectStats = dashboardData?.projectStats || [];
   const categoryStats = dashboardData?.categoryStats || [];
 
@@ -231,25 +233,38 @@ export default function DashboardProfessional() {
       };
     });
 
-  // Status distribution for pie chart - filter out zero values and validate data
-  const statusChartData = statusStats
+  // Order Status distribution for pie chart - filter out zero values and validate data
+  const orderStatusChartData = orderStatusStats
+    .filter((item: any) => item && Number(item.count) > 0) // Filter out zero or invalid values
+    .map((item: any) => ({
+      name: item.status === 'draft' ? '임시저장' : 
+            item.status === 'sent' ? '발주완료' : 
+            item.status === 'completed' ? '납품검수완료' : item.status,
+      value: Number(item.count),
+      color: item.status === 'draft' ? colors.gray :
+             item.status === 'sent' ? colors.primary :
+             item.status === 'completed' ? colors.primaryDark : colors.gray,
+      status: item.status // Keep original status for debugging
+    }));
+
+  // Approval Status distribution for pie chart - filter out zero values and validate data  
+  const approvalStatusChartData = approvalStatusStats
     .filter((item: any) => item && Number(item.count) > 0) // Filter out zero or invalid values
     .map((item: any) => ({
       name: item.status === 'pending' ? '승인대기' : 
             item.status === 'approved' ? '승인완료' : 
-            item.status === 'sent' ? '발송완료' : 
-            item.status === 'completed' ? '완료' :
-            item.status === 'draft' ? '임시저장' :
-            item.status === 'cancelled' ? '취소됨' : item.status,
+            item.status === 'rejected' ? '반려' : 
+            item.status === 'direct_approval' ? '직접승인' : item.status,
       value: Number(item.count),
       color: item.status === 'pending' ? colors.warning :
              item.status === 'approved' ? colors.success :
-             item.status === 'sent' ? colors.primary :
-             item.status === 'completed' ? colors.primaryDark :
-             item.status === 'draft' ? colors.gray :
-             item.status === 'cancelled' ? colors.danger : colors.gray,
+             item.status === 'rejected' ? colors.danger :
+             item.status === 'direct_approval' ? colors.primaryLight : colors.gray,
       status: item.status // Keep original status for debugging
     }));
+
+  // Keep statusChartData for backward compatibility
+  const statusChartData = orderStatusChartData;
 
   // REMOVED: Debug logging that caused infinite loops
   // All console.log statements removed to prevent render loops
@@ -456,34 +471,24 @@ export default function DashboardProfessional() {
             </div>
           </div>
 
-          {/* Status Distribution - Modern Donut Chart */}
+          {/* Order Status Distribution - Modern Donut Chart */}
           <div 
             className="rounded-xl shadow-sm p-6"
             style={{ backgroundColor: isDarkMode ? '#1f2937' : '#ffffff' }}
           >
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}>발주 상태 분포</h3>
-              <button 
-                onClick={() => setIsStatusDistributionModalOpen(true)}
-                className="text-sm font-medium transition-colors hover:underline"
-                style={{ color: isDarkMode ? '#60a5fa' : '#2563eb' }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = isDarkMode ? '#3b82f6' : '#1d4ed8';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = isDarkMode ? '#60a5fa' : '#2563eb';
-                }}
-              >
-                상세 보기
-              </button>
+              <div className="flex items-center gap-2">
+                <Package className="h-5 w-5" style={{ color: isDarkMode ? '#60a5fa' : '#2563eb' }} />
+                <h3 className="text-lg font-semibold" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}>발주 상태 분포</h3>
+              </div>
             </div>
-            {statusStats && statusStats.length > 0 && statusChartData.length > 0 ? (
+            {orderStatusStats && orderStatusStats.length > 0 && orderStatusChartData.length > 0 ? (
               <div className="h-64 flex items-center">
                 <div className="w-1/2 h-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart width={200} height={200}>
                       <Pie
-                        data={statusChartData}
+                        data={orderStatusChartData}
                         cx="50%"
                         cy="50%"
                         innerRadius={50}
@@ -491,7 +496,7 @@ export default function DashboardProfessional() {
                         paddingAngle={2}
                         dataKey="value"
                       >
-                        {statusChartData.map((entry: any, index: number) => (
+                        {orderStatusChartData.map((entry: any, index: number) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
@@ -509,7 +514,7 @@ export default function DashboardProfessional() {
                   </ResponsiveContainer>
                 </div>
                 <div className="w-1/2 pl-6">
-                  {statusChartData.map((item: any, index: number) => (
+                  {orderStatusChartData.map((item: any, index: number) => (
                     <div key={index} className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-3">
                         <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }}></div>
@@ -524,7 +529,72 @@ export default function DashboardProfessional() {
               <div className="h-64 flex items-center justify-center" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>
                 <div className="text-center">
                   <Package className="h-12 w-12 mx-auto mb-2" style={{ color: isDarkMode ? '#4b5563' : '#d1d5db' }} />
-                  <p className="text-sm">상태별 데이터가 없습니다.</p>
+                  <p className="text-sm">발주 상태별 데이터가 없습니다.</p>
+                  <p className="text-xs mt-1" style={{ color: isDarkMode ? '#6b7280' : '#9ca3af' }}>발주서를 생성하면 차트가 표시됩니다.</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Approval Status Distribution - Modern Donut Chart */}
+          <div 
+            className="rounded-xl shadow-sm p-6"
+            style={{ backgroundColor: isDarkMode ? '#1f2937' : '#ffffff' }}
+          >
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5" style={{ color: isDarkMode ? '#10b981' : '#059669' }} />
+                <h3 className="text-lg font-semibold" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}>승인 상태 분포</h3>
+              </div>
+            </div>
+            {approvalStatusStats && approvalStatusStats.length > 0 && approvalStatusChartData.length > 0 ? (
+              <div className="h-64 flex items-center">
+                <div className="w-1/2 h-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart width={200} height={200}>
+                      <Pie
+                        data={approvalStatusChartData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={50}
+                        outerRadius={90}
+                        paddingAngle={2}
+                        dataKey="value"
+                      >
+                        {approvalStatusChartData.map((entry: any, index: number) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        formatter={(value: any, name: any) => [`${value}건`, name]}
+                        contentStyle={{ 
+                          backgroundColor: isDarkMode ? '#1f2937' : 'white', 
+                          border: isDarkMode ? '1px solid #374151' : '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                          color: isDarkMode ? '#f9fafb' : '#1f2937'
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="w-1/2 pl-6">
+                  {approvalStatusChartData.map((item: any, index: number) => (
+                    <div key={index} className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }}></div>
+                        <span className="text-sm font-medium" style={{ color: isDarkMode ? '#d1d5db' : '#374151' }}>{item.name}</span>
+                      </div>
+                      <span className="text-sm font-semibold" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}>{item.value}건</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="h-64 flex items-center justify-center" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>
+                <div className="text-center">
+                  <CheckCircle className="h-12 w-12 mx-auto mb-2" style={{ color: isDarkMode ? '#4b5563' : '#d1d5db' }} />
+                  <p className="text-sm">승인 상태별 데이터가 없습니다.</p>
                   <p className="text-xs mt-1" style={{ color: isDarkMode ? '#6b7280' : '#9ca3af' }}>발주서를 생성하면 차트가 표시됩니다.</p>
                 </div>
               </div>

@@ -2780,7 +2780,7 @@ import cookieParser from "cookie-parser";
 import crypto2 from "crypto";
 
 // server/routes/index.ts
-import { Router as Router35 } from "express";
+import { Router as Router36 } from "express";
 
 // server/routes/auth.ts
 import { Router } from "express";
@@ -5005,12 +5005,12 @@ router.post("/auth/login-simple", (req, res) => {
     const { username, password, email } = req.body;
     const identifier = username || email;
     console.log("\u{1F510} Simple login attempt for:", identifier);
-    const users4 = [
+    const users3 = [
       { id: "admin", username: "admin", email: "admin@company.com", password: "admin123", name: "\uAD00\uB9AC\uC790", role: "admin" },
       { id: "manager", username: "manager", email: "manager@company.com", password: "manager123", name: "\uAE40\uBD80\uC7A5", role: "project_manager" },
       { id: "user", username: "user", email: "user@company.com", password: "user123", name: "\uC774\uAE30\uC0AC", role: "field_worker" }
     ];
-    const user = users4.find((u) => u.username === identifier || u.email === identifier);
+    const user = users3.find((u) => u.username === identifier || u.email === identifier);
     if (!user || user.password !== password) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
@@ -5029,12 +5029,12 @@ router.post("/auth/login-test", (req, res) => {
     const { username, password, email } = req.body;
     const identifier = username || email;
     console.log("\u{1F510} Test login attempt for:", identifier);
-    const users4 = [
+    const users3 = [
       { id: "admin", username: "admin", email: "admin@company.com", password: "admin123", name: "\uAD00\uB9AC\uC790", role: "admin" },
       { id: "manager", username: "manager", email: "manager@company.com", password: "manager123", name: "\uAE40\uBD80\uC7A5", role: "project_manager" },
       { id: "user", username: "user", email: "user@company.com", password: "user123", name: "\uC774\uAE30\uC0AC", role: "field_worker" }
     ];
-    const user = users4.find((u) => u.username === identifier || u.email === identifier);
+    const user = users3.find((u) => u.username === identifier || u.email === identifier);
     if (!user || user.password !== password) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
@@ -5226,8 +5226,8 @@ router.get("/auth/permissions/:userId", async (req, res) => {
 });
 router.get("/users", requireAuth, requireAdmin, async (req, res) => {
   try {
-    const users4 = await storage.getUsers();
-    res.json(users4);
+    const users3 = await storage.getUsers();
+    res.json(users3);
   } catch (error) {
     console.error("Error fetching users:", error);
     res.status(500).json({ message: "Failed to fetch users" });
@@ -5564,6 +5564,12 @@ var OptimizedDashboardQueries = class {
         count: count2(),
         amount: sql3`COALESCE(SUM(${purchaseOrders.totalAmount}), 0)`
       }).from(purchaseOrders).groupBy(purchaseOrders.status).orderBy(desc2(count2()));
+      const orderStatusStats = statusStats.filter(
+        (item) => ["draft", "sent", "completed"].includes(item.status)
+      );
+      const approvalStatusStats = statusStats.filter(
+        (item) => ["pending", "approved", "rejected", "direct_approval"].includes(item.status)
+      );
       const projectStatsList = await db.select({
         projectId: projects.id,
         projectName: projects.projectName,
@@ -5583,6 +5589,11 @@ var OptimizedDashboardQueries = class {
         recentOrders,
         monthlyStats,
         statusStats,
+        // Keep for backward compatibility
+        orderStatusStats,
+        // New: separated order status
+        approvalStatusStats,
+        // New: separated approval status
         projectStats: projectStatsList
       };
       console.log("\u2705 Dashboard data compiled successfully:", {
@@ -5607,6 +5618,8 @@ var OptimizedDashboardQueries = class {
         recentOrders: [],
         monthlyStats: [],
         statusStats: [],
+        orderStatusStats: [],
+        approvalStatusStats: [],
         projectStats: []
       };
     }
@@ -9935,8 +9948,8 @@ import { eq as eq6, and as and5 } from "drizzle-orm";
 var router8 = Router8();
 router8.get("/users", requireAuth, requireAdmin, async (req, res) => {
   try {
-    const users4 = await storage.getUsers();
-    res.json(users4);
+    const users3 = await storage.getUsers();
+    res.json(users3);
   } catch (error) {
     console.error("Error fetching users:", error);
     res.status(500).json({ message: "Failed to fetch users" });
@@ -18389,8 +18402,19 @@ var OrderDataSchema = z6.object({
   errors: z6.array(z6.string()).optional()
 });
 router29.post("/orders/bulk-create-simple", requireAuth, upload5.single("excelFile"), async (req, res) => {
-  console.log("\u{1F4E5} /bulk-create-simple - Received file:", req.file);
-  console.log("\u{1F4E5} /bulk-create-simple - File details:", {
+  console.log("\u{1F680} /bulk-create-simple - REQUEST START");
+  console.log("\u{1F4CB} Request headers:", {
+    "content-type": req.headers["content-type"],
+    "content-length": req.headers["content-length"],
+    "user-agent": req.headers["user-agent"]
+  });
+  console.log("\u{1F4E5} Raw body keys:", Object.keys(req.body));
+  console.log("\u{1F4E5} Raw body:", req.body);
+  console.log("\u{1F4E5} Orders field exists:", "orders" in req.body);
+  console.log("\u{1F4E5} Orders field type:", typeof req.body.orders);
+  console.log("\u{1F4E5} Orders field value:", req.body.orders);
+  console.log("\u{1F4C1} Received file:", req.file);
+  console.log("\u{1F4C1} File details:", {
     originalname: req.file?.originalname,
     filename: req.file?.filename,
     mimetype: req.file?.mimetype,
@@ -18398,7 +18422,20 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload5.single("excelFi
     path: req.file?.path
   });
   try {
-    const ordersData = JSON.parse(req.body.orders);
+    let ordersData;
+    if (!req.body.orders) {
+      return res.status(400).json({ error: "No orders data provided" });
+    }
+    try {
+      ordersData = JSON.parse(req.body.orders);
+    } catch (parseError) {
+      console.error("\u274C JSON parse error:", parseError);
+      console.error("\u274C Raw orders data:", req.body.orders);
+      return res.status(400).json({
+        error: "Invalid JSON format in orders data",
+        details: parseError instanceof Error ? parseError.message : String(parseError)
+      });
+    }
     const validatedOrders = z6.array(OrderDataSchema).parse(ordersData);
     const sendEmail = req.body.sendEmail === "true";
     const isDraft = req.body.isDraft === "true";
@@ -18472,7 +18509,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload5.single("excelFi
         } else {
           orderStatus = sendEmail ? "sent" : "created";
           approvalStatus = "not_required";
-          approvalBypassReason = "excel_automation";
+          approvalBypassReason = "direct_approval";
         }
         const [newOrder] = await db.insert(purchaseOrders).values({
           orderNumber,
@@ -18726,6 +18763,41 @@ router29.get("/orders/simple-upload-history", requireAuth, async (req, res) => {
   } catch (error) {
     console.error("Error fetching upload history:", error);
     res.status(500).json({ error: "Failed to fetch upload history" });
+  }
+});
+router29.get("/orders/drafts", requireAuth, async (req, res) => {
+  try {
+    const drafts = await db.select({
+      id: purchaseOrders.id,
+      orderNumber: purchaseOrders.orderNumber,
+      createdAt: purchaseOrders.createdAt,
+      updatedAt: purchaseOrders.updatedAt,
+      totalAmount: purchaseOrders.totalAmount,
+      status: purchaseOrders.status,
+      approvalStatus: purchaseOrders.approvalStatus,
+      orderDate: purchaseOrders.orderDate,
+      deliveryDate: purchaseOrders.deliveryDate,
+      projectId: purchaseOrders.projectId,
+      projectName: projects.projectName,
+      vendorId: purchaseOrders.vendorId,
+      vendorName: vendors.name,
+      userId: purchaseOrders.userId,
+      userName: users.name,
+      notes: purchaseOrders.notes
+    }).from(purchaseOrders).leftJoin(projects, eq20(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq20(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq20(purchaseOrders.userId, users.id)).where(eq20(purchaseOrders.status, "draft")).orderBy(desc9(purchaseOrders.createdAt));
+    console.log(`\u{1F4DD} Found ${drafts.length} draft orders`);
+    res.json({
+      success: true,
+      orders: drafts,
+      total: drafts.length,
+      message: `Found ${drafts.length} draft orders`
+    });
+  } catch (error) {
+    console.error("Error fetching draft orders:", error);
+    res.status(500).json({
+      error: "Failed to fetch draft orders",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
   }
 });
 var orders_simple_default = router29;
@@ -21622,46 +21694,93 @@ router37.get("/health/system", async (req, res) => {
 });
 var health_default = router37;
 
-// server/routes/index.ts
+// server/routes/debug.ts
+init_db();
+init_schema();
+import { Router as Router35 } from "express";
+import { eq as eq27, sql as sql15, desc as desc12 } from "drizzle-orm";
 var router38 = Router35();
-router38.use("/api", auth_default);
-router38.use("/api", projects_default);
-router38.use("/api", orders_default);
-router38.use("/api", vendors_default);
-router38.use("/api", items_default);
-router38.use("/api", dashboard_default);
-router38.use("/api", companies_default);
-router38.use("/api/admin", admin_default);
-router38.use("/api/excel-automation", excel_automation_default);
-router38.use("/api/po-template", po_template_real_default);
-router38.use("/api/reports", reports_default);
-router38.use("/api", import_export_default);
-router38.use("/api", email_history_default);
-router38.use("/api/excel-template", excel_template_default);
-router38.use("/api", orders_optimized_default);
-router38.use("/api", order_statuses_default);
-router38.use("/api", invoices_default);
-router38.use("/api", verification_logs_default);
-router38.use("/api", item_receipts_default);
-router38.use("/api", approvals_default);
-router38.use("/api", project_members_default);
-router38.use("/api", project_types_default);
-router38.use("/api", simple_auth_default);
-router38.use("/api", test_accounts_default);
-router38.use("/api/categories", categories_default);
-router38.use("/api/approval-settings", approval_settings_default);
-router38.use("/api", approval_authorities_default);
-router38.use("/api", notifications_default);
-router38.use("/api", orders_simple_default);
-router38.use("/api", positions_default);
-router38.use("/api/audit", audit_default);
-router38.use("/api/email-test", email_test_default);
-router38.use("/api/email-settings", email_settings_default);
-router38.use(workflow_default);
-router38.use("/api", orders_workflow_default);
-router38.use("/api/excel-smart-upload", excel_smart_upload_simple_default);
-router38.use("/api", health_default);
-var routes_default = router38;
+router38.get("/debug/recent-drafts", async (req, res) => {
+  try {
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1e3);
+    const recentDrafts = await db.select({
+      id: purchaseOrders.id,
+      orderNumber: purchaseOrders.orderNumber,
+      status: purchaseOrders.status,
+      createdAt: purchaseOrders.createdAt,
+      userId: purchaseOrders.userId,
+      vendorId: purchaseOrders.vendorId,
+      totalAmount: purchaseOrders.totalAmount,
+      vendorName: vendors.name
+    }).from(purchaseOrders).leftJoin(vendors, eq27(purchaseOrders.vendorId, vendors.id)).where(eq27(purchaseOrders.status, "draft")).orderBy(desc12(purchaseOrders.createdAt)).limit(20);
+    const allRecentOrders = await db.select({
+      id: purchaseOrders.id,
+      orderNumber: purchaseOrders.orderNumber,
+      status: purchaseOrders.status,
+      createdAt: purchaseOrders.createdAt,
+      userId: purchaseOrders.userId,
+      vendorId: purchaseOrders.vendorId,
+      totalAmount: purchaseOrders.totalAmount,
+      vendorName: vendors.name
+    }).from(purchaseOrders).leftJoin(vendors, eq27(purchaseOrders.vendorId, vendors.id)).where(sql15`${purchaseOrders.createdAt} > ${oneHourAgo}`).orderBy(desc12(purchaseOrders.createdAt)).limit(50);
+    const jbVendor = await db.select().from(vendors).where(sql15`${vendors.name} LIKE '%제이비엔지니어링%'`).limit(5);
+    res.json({
+      recentDrafts,
+      recentDraftsCount: recentDrafts.length,
+      allRecentOrders,
+      allRecentCount: allRecentOrders.length,
+      jbVendors: jbVendor,
+      currentTime: (/* @__PURE__ */ new Date()).toISOString(),
+      oneHourAgo: oneHourAgo.toISOString()
+    });
+  } catch (error) {
+    console.error("Debug endpoint error:", error);
+    res.status(500).json({ error: "Debug endpoint failed" });
+  }
+});
+var debug_default = router38;
+
+// server/routes/index.ts
+var router39 = Router36();
+router39.use("/api", auth_default);
+router39.use("/api", projects_default);
+router39.use("/api", orders_default);
+router39.use("/api", vendors_default);
+router39.use("/api", items_default);
+router39.use("/api", dashboard_default);
+router39.use("/api", companies_default);
+router39.use("/api/admin", admin_default);
+router39.use("/api/excel-automation", excel_automation_default);
+router39.use("/api/po-template", po_template_real_default);
+router39.use("/api/reports", reports_default);
+router39.use("/api", import_export_default);
+router39.use("/api", email_history_default);
+router39.use("/api/excel-template", excel_template_default);
+router39.use("/api", orders_optimized_default);
+router39.use("/api", order_statuses_default);
+router39.use("/api", invoices_default);
+router39.use("/api", verification_logs_default);
+router39.use("/api", item_receipts_default);
+router39.use("/api", approvals_default);
+router39.use("/api", project_members_default);
+router39.use("/api", project_types_default);
+router39.use("/api", simple_auth_default);
+router39.use("/api", test_accounts_default);
+router39.use("/api/categories", categories_default);
+router39.use("/api/approval-settings", approval_settings_default);
+router39.use("/api", approval_authorities_default);
+router39.use("/api", notifications_default);
+router39.use("/api", orders_simple_default);
+router39.use("/api", positions_default);
+router39.use("/api/audit", audit_default);
+router39.use("/api/email-test", email_test_default);
+router39.use("/api/email-settings", email_settings_default);
+router39.use(workflow_default);
+router39.use("/api", orders_workflow_default);
+router39.use("/api/excel-smart-upload", excel_smart_upload_simple_default);
+router39.use("/api", health_default);
+router39.use("/api", debug_default);
+var routes_default = router39;
 
 // server/production.ts
 dotenv2.config();
