@@ -254,7 +254,11 @@ export default function OrdersProfessionalFast() {
       await apiRequest("DELETE", `/api/orders/${orderId}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["orders-optimized"] });
+      // 모든 orders-optimized 쿼리를 무효화 (필터 관계없이)
+      queryClient.invalidateQueries({ 
+        queryKey: ["orders-optimized"],
+        exact: false  // 부분 매칭으로 모든 관련 쿼리 무효화
+      });
       toast({
         title: "성공",
         description: "발주서가 삭제되었습니다.",
@@ -286,7 +290,11 @@ export default function OrdersProfessionalFast() {
       await apiRequest("DELETE", `/api/orders/bulk-delete`, { orderIds });
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["orders-optimized"] });
+      // 모든 orders-optimized 쿼리를 무효화 (필터 관계없이)
+      queryClient.invalidateQueries({ 
+        queryKey: ["orders-optimized"],
+        exact: false  // 부분 매칭으로 모든 관련 쿼리 무효화
+      });
       toast({
         title: "성공",
         description: `${variables.length}개의 발주서가 삭제되었습니다.`,

@@ -8410,22 +8410,44 @@ router3.post("/orders/test-pdf", async (req, res) => {
           name: "\uD14C\uC2A4\uD2B8 \uD488\uBAA9 1",
           quantity: 10,
           unit: "EA",
-          unitPrice: 5e4
+          unitPrice: 5e4,
+          price: 5e5
         },
         {
           name: "\uD14C\uC2A4\uD2B8 \uD488\uBAA9 2",
           quantity: 5,
           unit: "SET",
-          unitPrice: 1e5
+          unitPrice: 1e5,
+          price: 5e5
         }
       ],
       notes: "\uD14C\uC2A4\uD2B8\uC6A9 \uBC1C\uC8FC\uC11C\uC785\uB2C8\uB2E4.",
-      orderDate: (/* @__PURE__ */ new Date()).toISOString(),
+      orderDate: /* @__PURE__ */ new Date(),
       createdBy: "\uD14C\uC2A4\uD2B8 \uC0AC\uC6A9\uC790"
     };
     console.log("\u{1F9EA} PDF \uD14C\uC2A4\uD2B8 \uC2DC\uC791:", testOrderData.orderNumber);
-    req.body = { orderData: testOrderData, options: {} };
-    return await generatePDFLogic(req, res);
+    const result = await PDFGenerationService.generatePurchaseOrderPDF(
+      0,
+      // Test order ID
+      testOrderData,
+      "test-user"
+    );
+    if (result.success) {
+      const timestamp2 = Date.now();
+      res.json({
+        success: true,
+        pdfUrl: `/api/orders/download-pdf/${timestamp2}`,
+        message: "PDF\uAC00 \uC131\uACF5\uC801\uC73C\uB85C \uC0DD\uC131\uB418\uC5C8\uC2B5\uB2C8\uB2E4.",
+        fileSize: result.pdfBuffer?.length || 0,
+        attachmentId: result.attachmentId
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        error: result.error || "PDF \uC0DD\uC131 \uC2E4\uD328",
+        details: "PDFGenerationService \uC624\uB958"
+      });
+    }
   } catch (error) {
     console.error("\u{1F9EA} PDF \uD14C\uC2A4\uD2B8 \uC624\uB958:", error);
     res.status(500).json({
