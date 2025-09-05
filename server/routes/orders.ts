@@ -451,9 +451,112 @@ router.put("/orders/:id", requireAuth, async (req, res) => {
   }
 });
 
-// Bulk delete orders (Admin only) - REMOVED DUPLICATE - Use /orders/bulk-delete instead
+// Bulk delete orders (Admin only) - MUST COME BEFORE /:id route to avoid conflicts
+router.delete("/orders/bulk-delete", requireAuth, async (req: any, res) => {
+  console.log('🗑️ Bulk delete request received');
+  
+  try {
+    const { user } = req;
+    const { orderIds } = req.body;
 
-// Delete single order - Must come AFTER /orders/bulk to avoid route collision
+    console.log('👤 User info:', { id: user?.id, role: user?.role, name: user?.name });
+    console.log('📄 Request body:', req.body);
+
+    // Check if user is admin
+    if (user.role !== 'admin') {
+      console.log('❌ Access denied: User is not admin');
+      return res.status(403).json({ 
+        message: "관리자만 일괄 삭제가 가능합니다." 
+      });
+    }
+
+    // Validate request
+    if (!orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
+      console.log('❌ Invalid request: Missing or invalid orderIds');
+      return res.status(400).json({ 
+        message: "삭제할 발주서 ID 목록이 필요합니다." 
+      });
+    }
+
+    // Convert string IDs to numbers if necessary
+    const numericOrderIds = orderIds.map((id: any) => {
+      const numId = typeof id === 'string' ? parseInt(id, 10) : id;
+      if (isNaN(numId)) {
+        throw new Error(`Invalid order ID: ${id}`);
+      }
+      return numId;
+    });
+
+    console.log(`🗑️ 관리자 일괄 삭제 요청: ${numericOrderIds.length}개 발주서`, { admin: user.name, orderIds: numericOrderIds });
+
+    // Use simpler individual deletion approach to avoid complex transaction issues
+    console.log('🔍 Looking up orders for validation...');
+    const validOrders = [];
+    for (const orderId of numericOrderIds) {
+      const order = await storage.getPurchaseOrder(orderId);
+      if (order) {
+        validOrders.push(order);
+      } else {
+        console.log(`⚠️ Order not found: ${orderId}`);
+      }
+    }
+
+    if (validOrders.length === 0) {
+      return res.status(404).json({ 
+        message: "삭제할 수 있는 발주서가 없습니다." 
+      });
+    }
+
+    console.log(`🗑️ Deleting ${validOrders.length} valid orders...`);
+    
+    // Delete orders individually to avoid transaction complexity
+    const deletedOrders = [];
+    const failedDeletions = [];
+    
+    for (const order of validOrders) {
+      try {
+        console.log(`🗑️ Deleting order ${order.id} (${order.orderNumber})`);
+        await storage.deletePurchaseOrder(order.id);
+        deletedOrders.push(order);
+        console.log(`✅ Successfully deleted order ${order.id}`);
+      } catch (deleteError) {
+        console.error(`❌ Failed to delete order ${order.id}:`, deleteError);
+        failedDeletions.push({
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          error: deleteError instanceof Error ? deleteError.message : 'Unknown error'
+        });
+      }
+    }
+
+    console.log(`✅ 일괄 삭제 완료: ${deletedOrders.length}개 성공, ${failedDeletions.length}개 실패`);
+
+    // Return success even if some deletions failed
+    const response: any = { 
+      message: `${deletedOrders.length}개의 발주서가 삭제되었습니다.`,
+      deletedCount: deletedOrders.length,
+      deletedOrders: deletedOrders.map(o => ({ id: o.id, orderNumber: o.orderNumber }))
+    };
+
+    if (failedDeletions.length > 0) {
+      response.partialFailure = true;
+      response.failedCount = failedDeletions.length;
+      response.failedDeletions = failedDeletions;
+      response.message += ` (${failedDeletions.length}개는 삭제할 수 없습니다.)`;
+    }
+
+    res.json(response);
+  } catch (error) {
+    console.error("❌ 일괄 삭제 오류:", error);
+    res.status(500).json({ 
+      message: "발주서 일괄 삭제에 실패했습니다.",
+      error: error instanceof Error ? error.message : "알 수 없는 오류",
+      stack: process.env.NODE_ENV === 'development' ? error instanceof Error ? error.stack : undefined : undefined
+    });
+  }
+});
+
+// Delete single order - Must come AFTER /orders/bulk-delete to avoid route collision
 router.delete("/orders/:id", requireAuth, async (req, res) => {
   try {
     const orderId = parseInt(req.params.id, 10);
@@ -1479,13 +1582,59 @@ if (process.env.NODE_ENV === 'development') {
   });
 }
 
-// Download or preview generated PDF or HTML
-router.get("/orders/download-pdf/:timestamp", (req, res) => {
+// Download or preview generated PDF or HTML (with database support for Vercel)
+router.get("/orders/download-pdf/:timestamp", async (req, res) => {
   try {
     const { timestamp } = req.params;
     const { download } = req.query; // ?download=true 면 다운로드, 없으면 미리보기
     
-    // Check for both PDF and HTML files
+    console.log(`📄 PDF 다운로드 요청: timestamp=${timestamp}, download=${download}`);
+    
+    // Vercel mode: Check database for PDF data first
+    if (process.env.VERCEL) {
+      try {
+        // Look for attachment with db:// path containing the timestamp
+        const dbPath = `db://pdf-${timestamp}`;
+        console.log(`📄 데이터베이스에서 PDF 조회: ${dbPath}`);
+        
+        const attachment = await storage.getAttachmentByPath(dbPath);
+        
+        if (attachment && (attachment as any).fileData) {
+          console.log(`📄 데이터베이스에서 PDF 발견: ${attachment.originalName} (크기: ${attachment.fileSize} bytes)`);
+          
+          // Decode Base64 PDF data
+          const pdfBuffer = Buffer.from((attachment as any).fileData, 'base64');
+          console.log(`📄 PDF 버퍼 생성 완료: ${pdfBuffer.length} bytes`);
+          
+          // Set headers
+          res.setHeader('Access-Control-Allow-Origin', '*');
+          res.setHeader('Access-Control-Allow-Methods', 'GET');
+          res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+          res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+          res.setHeader('Content-Type', 'application/pdf');
+          res.setHeader('Content-Length', pdfBuffer.length.toString());
+          
+          if (download === 'true') {
+            res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent('발주서.pdf')}`);
+          } else {
+            res.setHeader('Content-Disposition', `inline; filename*=UTF-8''${encodeURIComponent('발주서.pdf')}`);
+            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.setHeader('Pragma', 'no-cache');
+            res.setHeader('Expires', '0');
+          }
+          
+          res.send(pdfBuffer);
+          return;
+        } else {
+          console.log(`📄 데이터베이스에서 PDF 찾지 못함: ${dbPath}`);
+        }
+      } catch (dbError) {
+        console.error('❌ 데이터베이스 PDF 조회 오류:', dbError);
+        // Continue to file system fallback
+      }
+    }
+    
+    // File system mode (local or fallback)
     const basePath = process.env.VERCEL 
       ? path.join('/tmp', 'temp-pdf', `order-${timestamp}`)
       : path.join(process.cwd(), 'uploads/temp-pdf', `order-${timestamp}`);
@@ -1493,9 +1642,8 @@ router.get("/orders/download-pdf/:timestamp", (req, res) => {
     const pdfPath = `${basePath}.pdf`;
     const htmlPath = `${basePath}.html`;
     
-    console.log(`📄 파일 요청: ${basePath}.*`);
+    console.log(`📄 파일 시스템에서 파일 요청: ${basePath}.*`);
     console.log(`📄 PDF 존재: ${fs.existsSync(pdfPath)}, HTML 존재: ${fs.existsSync(htmlPath)}`);
-    console.log(`📄 다운로드 모드: ${download}`);
     
     // If in serverless and only HTML exists, serve HTML
     if (process.env.VERCEL && !fs.existsSync(pdfPath) && fs.existsSync(htmlPath)) {
@@ -2170,109 +2318,5 @@ router.get("/orders/:orderId/attachments/:attachmentId/download", requireAuth, a
   }
 });
 
-// Bulk delete orders (Admin only)
-router.delete("/orders/bulk-delete", requireAuth, async (req: any, res) => {
-  console.log('🗑️ Bulk delete request received');
-  
-  try {
-    const { user } = req;
-    const { orderIds } = req.body;
-
-    console.log('👤 User info:', { id: user?.id, role: user?.role, name: user?.name });
-    console.log('📄 Request body:', req.body);
-
-    // Check if user is admin
-    if (user.role !== 'admin') {
-      console.log('❌ Access denied: User is not admin');
-      return res.status(403).json({ 
-        message: "관리자만 일괄 삭제가 가능합니다." 
-      });
-    }
-
-    // Validate request
-    if (!orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
-      console.log('❌ Invalid request: Missing or invalid orderIds');
-      return res.status(400).json({ 
-        message: "삭제할 발주서 ID 목록이 필요합니다." 
-      });
-    }
-
-    // Convert string IDs to numbers if necessary
-    const numericOrderIds = orderIds.map((id: any) => {
-      const numId = typeof id === 'string' ? parseInt(id, 10) : id;
-      if (isNaN(numId)) {
-        throw new Error(`Invalid order ID: ${id}`);
-      }
-      return numId;
-    });
-
-    console.log(`🗑️ 관리자 일괄 삭제 요청: ${numericOrderIds.length}개 발주서`, { admin: user.name, orderIds: numericOrderIds });
-
-    // Use simpler individual deletion approach to avoid complex transaction issues
-    console.log('🔍 Looking up orders for validation...');
-    const validOrders = [];
-    for (const orderId of numericOrderIds) {
-      const order = await storage.getPurchaseOrder(orderId);
-      if (order) {
-        validOrders.push(order);
-      } else {
-        console.log(`⚠️ Order not found: ${orderId}`);
-      }
-    }
-
-    if (validOrders.length === 0) {
-      return res.status(404).json({ 
-        message: "삭제할 수 있는 발주서가 없습니다." 
-      });
-    }
-
-    console.log(`🗑️ Deleting ${validOrders.length} valid orders...`);
-    
-    // Delete orders individually to avoid transaction complexity
-    const deletedOrders = [];
-    const failedDeletions = [];
-    
-    for (const order of validOrders) {
-      try {
-        console.log(`🗑️ Deleting order ${order.id} (${order.orderNumber})`);
-        await storage.deletePurchaseOrder(order.id);
-        deletedOrders.push(order);
-        console.log(`✅ Successfully deleted order ${order.id}`);
-      } catch (deleteError) {
-        console.error(`❌ Failed to delete order ${order.id}:`, deleteError);
-        failedDeletions.push({
-          orderId: order.id,
-          orderNumber: order.orderNumber,
-          error: deleteError instanceof Error ? deleteError.message : 'Unknown error'
-        });
-      }
-    }
-
-    console.log(`✅ 일괄 삭제 완료: ${deletedOrders.length}개 성공, ${failedDeletions.length}개 실패`);
-
-    // Return success even if some deletions failed
-    const response: any = { 
-      message: `${deletedOrders.length}개의 발주서가 삭제되었습니다.`,
-      deletedCount: deletedOrders.length,
-      deletedOrders: deletedOrders.map(o => ({ id: o.id, orderNumber: o.orderNumber }))
-    };
-
-    if (failedDeletions.length > 0) {
-      response.partialFailure = true;
-      response.failedCount = failedDeletions.length;
-      response.failedDeletions = failedDeletions;
-      response.message += ` (${failedDeletions.length}개는 삭제할 수 없습니다.)`;
-    }
-
-    res.json(response);
-  } catch (error) {
-    console.error("❌ 일괄 삭제 오류:", error);
-    res.status(500).json({ 
-      message: "발주서 일괄 삭제에 실패했습니다.",
-      error: error instanceof Error ? error.message : "알 수 없는 오류",
-      stack: process.env.NODE_ENV === 'development' ? error instanceof Error ? error.stack : undefined : undefined
-    });
-  }
-});
 
 export default router;

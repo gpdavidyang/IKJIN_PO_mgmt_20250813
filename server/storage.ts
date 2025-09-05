@@ -2857,6 +2857,34 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
   }
+
+  /**
+   * Get attachment by file path (for database-stored PDFs)
+   */
+  async getAttachmentByPath(filePath: string): Promise<Attachment | undefined> {
+    try {
+      const [attachment] = await db
+        .select({
+          id: attachments.id,
+          orderId: attachments.orderId,
+          originalName: attachments.originalName,
+          storedName: attachments.storedName,
+          filePath: attachments.filePath,
+          fileSize: attachments.fileSize,
+          mimeType: attachments.mimeType,
+          uploadedBy: attachments.uploadedBy,
+          uploadedAt: attachments.uploadedAt,
+          fileData: attachments.fileData,
+        })
+        .from(attachments)
+        .where(eq(attachments.filePath, filePath));
+
+      return attachment || undefined;
+    } catch (error) {
+      console.error('Error getting attachment by path:', error);
+      return undefined;
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();

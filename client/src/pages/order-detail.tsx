@@ -26,7 +26,8 @@ import {
   Package,
   User,
   Clock,
-  Archive
+  Archive,
+  Trash2
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { InvoiceManager } from "@/components/invoice-manager";
@@ -118,6 +119,27 @@ export default function OrderDetail() {
     onError: (error) => {
       toast({
         title: "발송 실패", 
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("DELETE", `/api/orders/${orderId}`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "발주서 삭제",
+        description: "발주서가 성공적으로 삭제되었습니다.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      navigate("/orders");
+    },
+    onError: (error) => {
+      toast({
+        title: "삭제 실패",
         description: error.message,
         variant: "destructive",
       });
@@ -218,6 +240,12 @@ export default function OrderDetail() {
     }
   };
 
+  const handleDelete = () => {
+    if (confirm("이 발주서를 삭제하시겠습니까?\n\n삭제된 발주서는 복구할 수 없습니다.")) {
+      deleteMutation.mutate();
+    }
+  };
+
   if (isLoading) {
     return (
       <div className={`min-h-screen transition-colors ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
@@ -271,6 +299,7 @@ export default function OrderDetail() {
   const canApprove = user?.role === "admin" && order.status === "pending_approval";
   const canSend = order.status === "approved";
   const canEdit = order.status !== "sent" && order.status !== "received";
+  const canDelete = user?.role === "admin" && order.status !== "sent" && order.status !== "received";
 
   return (
     <div className={`min-h-screen transition-colors ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
