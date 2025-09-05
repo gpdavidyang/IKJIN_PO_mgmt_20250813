@@ -363,8 +363,8 @@ export default function OrdersProfessionalFast() {
     setFilters(prev => ({ ...prev, [key]: filterValue, page: 1 }));
   }, []);
 
-  // Bulk selection handlers
-  const toggleOrderSelection = useCallback((orderId: number) => {
+  // Bulk selection handlers - simplified to avoid initialization issues
+  const toggleOrderSelection = (orderId: number) => {
     setSelectedOrders(prev => {
       const newSet = new Set(prev);
       if (newSet.has(orderId)) {
@@ -374,24 +374,24 @@ export default function OrdersProfessionalFast() {
       }
       return newSet;
     });
-  }, []);
+  };
 
-  const toggleSelectAll = useCallback(() => {
+  const toggleSelectAll = () => {
     if (selectedOrders.size === orders.length && orders.length > 0) {
       setSelectedOrders(new Set());
     } else {
       setSelectedOrders(new Set(orders.map(o => o.id)));
     }
-  }, [orders, selectedOrders.size]);
+  };
 
-  const handleBulkDelete = useCallback(() => {
+  const handleBulkDelete = () => {
     if (selectedOrders.size === 0) return;
     setBulkDeleteDialogOpen(true);
-  }, [selectedOrders.size]);
+  };
 
-  const confirmBulkDelete = useCallback(() => {
+  const confirmBulkDelete = () => {
     bulkDeleteMutation.mutate(Array.from(selectedOrders));
-  }, [selectedOrders, bulkDeleteMutation]);
+  };
 
   // 정렬 처리 함수
   const handleSort = useCallback((field: string) => {
@@ -522,13 +522,31 @@ export default function OrdersProfessionalFast() {
   // Status colors optimized for dark mode visibility
   const getStatusColor = (status: string) => {
     switch (status) {
+      case 'draft': return 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-500/25 dark:text-gray-200 dark:border-gray-400/50';
+      case 'created': return 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-500/25 dark:text-blue-200 dark:border-blue-400/50';
       case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-500/25 dark:text-yellow-200 dark:border-yellow-400/50';
       case 'approved': return 'bg-green-100 text-green-800 border-green-300 dark:bg-green-500/25 dark:text-green-200 dark:border-green-400/50';
-      case 'sent': return 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-500/25 dark:text-blue-200 dark:border-blue-400/50';
+      case 'sent': return 'bg-indigo-100 text-indigo-800 border-indigo-300 dark:bg-indigo-500/25 dark:text-indigo-200 dark:border-indigo-400/50';
+      case 'delivered':
       case 'completed': return 'bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-500/25 dark:text-purple-200 dark:border-purple-400/50';
       case 'rejected': return 'bg-red-100 text-red-800 border-red-300 dark:bg-red-500/25 dark:text-red-200 dark:border-red-400/50';
       default: return 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-500/25 dark:text-gray-200 dark:border-gray-400/50';
     }
+  };
+
+  // Get status text
+  const getStatusText = (status: string) => {
+    const statusMap: { [key: string]: string } = {
+      'draft': '임시저장',
+      'created': '발주서생성',
+      'sent': '발송완료',
+      'delivered': '납품완료',
+      'pending': '승인대기',
+      'approved': '승인완료',
+      'rejected': '반려',
+      'completed': '완료'
+    };
+    return statusMap[status] || status;
   };
 
   return (
@@ -916,8 +934,8 @@ export default function OrdersProfessionalFast() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(order.status)}`}>
-                          {getStatusText(order.status)}
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(order.orderStatus || order.status)}`}>
+                          {getStatusText(order.orderStatus || order.status)}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -925,6 +943,7 @@ export default function OrdersProfessionalFast() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         <div className="flex items-center justify-center gap-1">
+                          {/* Always show detail view button */}
                           <button
                             onClick={() => navigate(`/orders/${order.id}`)}
                             className="p-1.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-900/20 rounded-md transition-all duration-200"
@@ -933,29 +952,48 @@ export default function OrdersProfessionalFast() {
                             <Eye className="h-4 w-4" />
                           </button>
                           
-                          <button
-                            onClick={() => navigate(`/orders/${order.id}/edit`)}
-                            className="p-1.5 text-green-500 hover:text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:text-green-300 dark:hover:bg-green-900/20 rounded-md transition-all duration-200"
-                            title="수정"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </button>
+                          {/* Edit button - only for draft and created status */}
+                          {(order.orderStatus === 'draft' || order.orderStatus === 'created' || 
+                            (!order.orderStatus && order.status !== 'sent' && order.status !== 'delivered')) && (
+                            <button
+                              onClick={() => navigate(`/orders/${order.id}/edit`)}
+                              className="p-1.5 text-green-500 hover:text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:text-green-300 dark:hover:bg-green-900/20 rounded-md transition-all duration-200"
+                              title="수정"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </button>
+                          )}
                           
-                          <button
-                            onClick={() => handlePDFPreview(order)}
-                            className="p-1.5 text-orange-500 hover:text-orange-700 hover:bg-orange-50 dark:text-orange-400 dark:hover:text-orange-300 dark:hover:bg-orange-900/20 rounded-md transition-all duration-200"
-                            title="PDF 보기"
-                          >
-                            <FileText className="h-4 w-4" />
-                          </button>
+                          {/* PDF button - only for created, sent, delivered status */}
+                          {(order.orderStatus === 'created' || order.orderStatus === 'sent' || order.orderStatus === 'delivered' ||
+                            (!order.orderStatus && (order.status === 'approved' || order.status === 'sent' || order.status === 'completed'))) && (
+                            <button
+                              onClick={() => handlePDFPreview(order)}
+                              className="p-1.5 text-orange-500 hover:text-orange-700 hover:bg-orange-50 dark:text-orange-400 dark:hover:text-orange-300 dark:hover:bg-orange-900/20 rounded-md transition-all duration-200"
+                              title="PDF 보기"
+                            >
+                              <FileText className="h-4 w-4" />
+                            </button>
+                          )}
                           
-                          <button
-                            onClick={() => handleEmailSend(order)}
-                            className="p-1.5 text-purple-500 hover:text-purple-700 hover:bg-purple-50 dark:text-purple-400 dark:hover:text-purple-300 dark:hover:bg-purple-900/20 rounded-md transition-all duration-200"
-                            title="이메일 전송"
-                          >
-                            <Mail className="h-4 w-4" />
-                          </button>
+                          {/* Email button - only for created status */}
+                          {(order.orderStatus === 'created' || 
+                            (!order.orderStatus && order.status === 'approved')) && (
+                            <button
+                              onClick={() => handleEmailSend(order)}
+                              className="p-1.5 text-purple-500 hover:text-purple-700 hover:bg-purple-50 dark:text-purple-400 dark:hover:text-purple-300 dark:hover:bg-purple-900/20 rounded-md transition-all duration-200"
+                              title="이메일 전송"
+                            >
+                              <Mail className="h-4 w-4" />
+                            </button>
+                          )}
+                          
+                          {/* Draft indicator */}
+                          {order.orderStatus === 'draft' && (
+                            <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded" title="임시저장 상태">
+                              📝
+                            </span>
+                          )}
                         </div>
                       </td>
                     </tr>
