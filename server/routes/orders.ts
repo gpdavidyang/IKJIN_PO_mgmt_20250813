@@ -2229,12 +2229,18 @@ router.get("/orders/:orderId/attachments/:attachmentId/download", requireAuth, a
 
 // Bulk delete orders (Admin only)
 router.delete("/orders/bulk-delete", requireAuth, async (req: any, res) => {
+  console.log('🗑️ Bulk delete request received');
+  
   try {
     const { user } = req;
     const { orderIds } = req.body;
 
+    console.log('👤 User info:', { id: user?.id, role: user?.role, name: user?.name });
+    console.log('📄 Request body:', req.body);
+
     // Check if user is admin
     if (user.role !== 'admin') {
+      console.log('❌ Access denied: User is not admin');
       return res.status(403).json({ 
         message: "관리자만 일괄 삭제가 가능합니다." 
       });
@@ -2242,28 +2248,39 @@ router.delete("/orders/bulk-delete", requireAuth, async (req: any, res) => {
 
     // Validate request
     if (!orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
+      console.log('❌ Invalid request: Missing or invalid orderIds');
       return res.status(400).json({ 
         message: "삭제할 발주서 ID 목록이 필요합니다." 
       });
     }
 
-    console.log(`🗑️ 관리자 일괄 삭제 요청: ${orderIds.length}개 발주서`, { admin: user.name, orderIds });
+    // Convert string IDs to numbers if necessary
+    const numericOrderIds = orderIds.map((id: any) => {
+      const numId = typeof id === 'string' ? parseInt(id, 10) : id;
+      if (isNaN(numId)) {
+        throw new Error(`Invalid order ID: ${id}`);
+      }
+      return numId;
+    });
+
+    console.log(`🗑️ 관리자 일괄 삭제 요청: ${numericOrderIds.length}개 발주서`, { admin: user.name, orderIds: numericOrderIds });
 
     // Delete orders from database
-    const deletedOrders = await storage.bulkDeleteOrders(orderIds, user.id);
+    const deletedOrders = await storage.bulkDeleteOrders(numericOrderIds, user.id);
 
     console.log(`✅ 일괄 삭제 완료: ${deletedOrders.length}개 발주서 삭제됨`);
 
     res.json({ 
       message: `${deletedOrders.length}개의 발주서가 삭제되었습니다.`,
       deletedCount: deletedOrders.length,
-      deletedOrders 
+      deletedOrders: deletedOrders.map(o => ({ id: o.id, orderNumber: o.orderNumber }))
     });
   } catch (error) {
     console.error("❌ 일괄 삭제 오류:", error);
     res.status(500).json({ 
       message: "발주서 일괄 삭제에 실패했습니다.",
-      error: error instanceof Error ? error.message : "알 수 없는 오류"
+      error: error instanceof Error ? error.message : "알 수 없는 오류",
+      stack: process.env.NODE_ENV === 'development' ? error instanceof Error ? error.stack : undefined : undefined
     });
   }
 });

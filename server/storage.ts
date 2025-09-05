@@ -1237,30 +1237,43 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
 
-    // Get orders that exist before deleting
-    const existingOrders = await db
-      .select()
-      .from(purchaseOrders)
-      .where(sql`${purchaseOrders.id} = ANY(${orderIds})`);
+    console.log(`🗑️ Starting bulk delete for ${orderIds.length} orders by ${deletedBy}:`, orderIds);
 
-    if (existingOrders.length === 0) {
-      return [];
+    try {
+      // Get orders that exist before deleting
+      const existingOrders = await db
+        .select()
+        .from(purchaseOrders)
+        .where(inArray(purchaseOrders.id, orderIds));
+
+      if (existingOrders.length === 0) {
+        console.log('⚠️ No orders found to delete');
+        return [];
+      }
+
+      const existingOrderIds = existingOrders.map(o => o.id);
+      console.log(`🔍 Found ${existingOrders.length} orders to delete:`, existingOrderIds);
+
+      // Delete related records for all orders (in proper order to avoid FK constraints)
+      console.log('🗑️ Deleting purchase order items...');
+      await db.delete(purchaseOrderItems).where(inArray(purchaseOrderItems.orderId, existingOrderIds));
+      
+      console.log('🗑️ Deleting attachments...');
+      await db.delete(attachments).where(inArray(attachments.orderId, existingOrderIds));
+      
+      console.log('🗑️ Deleting order history...');
+      await db.delete(orderHistory).where(inArray(orderHistory.orderId, existingOrderIds));
+      
+      console.log('🗑️ Deleting orders...');
+      await db.delete(purchaseOrders).where(inArray(purchaseOrders.id, existingOrderIds));
+
+      console.log(`✅ Bulk deleted ${existingOrders.length} orders successfully`);
+      return existingOrders;
+      
+    } catch (error) {
+      console.error('❌ Bulk delete error:', error);
+      throw error;
     }
-
-    const existingOrderIds = existingOrders.map(o => o.id);
-
-    // Delete related records for all orders
-    await db.delete(purchaseOrderItems).where(sql`${purchaseOrderItems.orderId} = ANY(${existingOrderIds})`);
-    await db.delete(attachments).where(sql`${attachments.orderId} = ANY(${existingOrderIds})`);
-    await db.delete(orderHistory).where(sql`${orderHistory.orderId} = ANY(${existingOrderIds})`);
-    
-    // Delete the orders themselves
-    await db.delete(purchaseOrders).where(sql`${purchaseOrders.id} = ANY(${existingOrderIds})`);
-
-    // Log the bulk deletion
-    console.log(`🗑️ Bulk deleted ${existingOrders.length} orders by ${deletedBy}`);
-
-    return existingOrders;
   }
 
   async approvePurchaseOrder(id: number, approvedBy: string): Promise<PurchaseOrder> {
