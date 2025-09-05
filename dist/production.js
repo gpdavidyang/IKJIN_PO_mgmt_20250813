@@ -1580,9 +1580,8 @@ var init_pdf_generation_service = __esm({
               // DB 저장 위치 표시
               fileSize: pdfBuffer.length,
               mimeType: "application/pdf",
-              uploadedBy: userId,
-              fileData: base64Data
-              // PDF 데이터를 Base64로 DB에 저장
+              uploadedBy: userId
+              // fileData: base64Data // Temporarily commented out - PDF 데이터를 Base64로 DB에 저장
             }).returning();
             attachmentId = attachment.id;
             filePath = `db://${fileName}`;
@@ -4562,8 +4561,8 @@ var DatabaseStorage = class {
         fileSize: attachments.fileSize,
         mimeType: attachments.mimeType,
         uploadedBy: attachments.uploadedBy,
-        uploadedAt: attachments.uploadedAt,
-        fileData: attachments.fileData
+        uploadedAt: attachments.uploadedAt
+        // fileData: attachments.fileData, // Temporarily commented out due to schema migration
       }).from(attachments).where(
         and(
           eq(attachments.id, attachmentId),
@@ -4608,8 +4607,8 @@ var DatabaseStorage = class {
         fileSize: attachments.fileSize,
         mimeType: attachments.mimeType,
         uploadedBy: attachments.uploadedBy,
-        uploadedAt: attachments.uploadedAt,
-        fileData: attachments.fileData
+        uploadedAt: attachments.uploadedAt
+        // fileData: attachments.fileData, // Temporarily commented out due to schema migration
       }).from(attachments).where(eq(attachments.filePath, filePath));
       return attachment || void 0;
     } catch (error) {

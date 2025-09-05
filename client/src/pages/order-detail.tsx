@@ -299,7 +299,8 @@ export default function OrderDetail() {
   const canApprove = user?.role === "admin" && order.status === "pending_approval";
   const canSend = order.status === "approved";
   const canEdit = order.status !== "sent" && order.status !== "received";
-  const canDelete = (user?.role === "admin" || user?.role === "hq_management") && order.status !== "sent" && order.status !== "received";
+  // Admin은 모든 상태에서 삭제 가능, 다른 role은 sent/received 상태가 아닌 경우만 가능
+  const canDelete = user?.role === "admin" || (user?.role === "hq_management" && order.status !== "sent" && order.status !== "received");
 
   // 디버깅용 로그
   console.log('Delete button visibility check:', {
@@ -308,8 +309,11 @@ export default function OrderDetail() {
     canDelete,
     isAdmin: user?.role === "admin",
     isHqManagement: user?.role === "hq_management",
+    orderStatusValue: order.status,
     isNotSent: order.status !== "sent",
-    isNotReceived: order.status !== "received"
+    isNotReceived: order.status !== "received",
+    user: user,
+    order: order
   });
 
   return (

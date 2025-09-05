@@ -2819,7 +2819,7 @@ export class DatabaseStorage implements IStorage {
           mimeType: attachments.mimeType,
           uploadedBy: attachments.uploadedBy,
           uploadedAt: attachments.uploadedAt,
-          fileData: attachments.fileData,
+          // fileData: attachments.fileData, // Temporarily commented out due to schema migration
         })
         .from(attachments)
         .where(
@@ -2874,7 +2874,7 @@ export class DatabaseStorage implements IStorage {
           mimeType: attachments.mimeType,
           uploadedBy: attachments.uploadedBy,
           uploadedAt: attachments.uploadedAt,
-          fileData: attachments.fileData,
+          // fileData: attachments.fileData, // Temporarily commented out due to schema migration
         })
         .from(attachments)
         .where(eq(attachments.filePath, filePath));

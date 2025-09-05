@@ -40,10 +40,10 @@ export default defineConfig({
     sourcemap: process.env.NODE_ENV === 'development',
     rollupOptions: {
       output: {
-        // Simple file naming without manual chunking
-        chunkFileNames: 'assets/js/[name]-[hash].js',
-        entryFileNames: 'assets/js/[name]-[hash].js',
-        assetFileNames: 'assets/[ext]/[name]-[hash].[ext]'
+        // Add timestamp to force cache invalidation
+        chunkFileNames: `assets/js/[name]-[hash]-${Date.now()}.js`,
+        entryFileNames: `assets/js/[name]-[hash]-${Date.now()}.js`,
+        assetFileNames: `assets/[ext]/[name]-[hash]-${Date.now()}.[ext]`
       },
       // Ensure React is treated as external dependency properly
       external: [],
