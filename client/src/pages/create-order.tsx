@@ -129,7 +129,7 @@ export default function CreateOrder() {
                 }`}
               >
                 <Upload className="h-4 w-4" />
-                엑셀 심플 업로드v1.1
+                엑셀 업로드 입력
               </TabsTrigger>
             </TabsList>
 

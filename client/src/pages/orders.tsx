@@ -40,8 +40,7 @@ export default function Orders() {
   }, [theme, isDarkMode]);
 
   const [filters, setFilters] = useState({
-    status: "", // Legacy status for backward compatibility
-    orderStatus: "", // New dual status - order status
+    status: "", // Main status field for order status
     approvalStatus: "", // New dual status - approval status
     vendorId: "",
     projectId: "",
@@ -77,7 +76,6 @@ export default function Orders() {
     const newFilters: any = { 
       page: 1,
       status: "",
-      orderStatus: "",
       approvalStatus: "",
       vendorId: "", 
       projectId: "",
@@ -118,7 +116,7 @@ export default function Orders() {
       
       newFilters.startDate = today.toISOString().split('T')[0];
       newFilters.endDate = urgentDate.toISOString().split('T')[0];
-      newFilters.orderStatus = 'created';
+      newFilters.status = 'created';
       newFilters.approvalStatus = 'approved';
     }
     
@@ -629,8 +627,8 @@ export default function Orders() {
 
                   <div className="space-y-2">
                     <label className={`text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>발주 상태</label>
-                    <Select value={filters.orderStatus || "all"} onValueChange={(value) => handleFilterChange("orderStatus", value)}>
-                      <SelectTrigger className={`h-11 text-sm rounded-lg transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'} ${filters.orderStatus && filters.orderStatus !== "" ? `${isDarkMode ? 'border-blue-400 bg-blue-900/20' : 'border-blue-500 bg-blue-50'}` : ""}`}>
+                    <Select value={filters.status || "all"} onValueChange={(value) => handleFilterChange("status", value)}>
+                      <SelectTrigger className={`h-11 text-sm rounded-lg transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'} ${filters.status && filters.status !== "" ? `${isDarkMode ? 'border-blue-400 bg-blue-900/20' : 'border-blue-500 bg-blue-50'}` : ""}`}>
                         <SelectValue placeholder="모든 발주상태" />
                       </SelectTrigger>
                       <SelectContent className={`transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
@@ -692,7 +690,7 @@ export default function Orders() {
             {/* Active Filters Display */}
             <div className="flex flex-wrap items-center gap-2">
               {(filters.projectId !== "" || filters.vendorId !== "" || filters.userId !== "" || 
-                filters.orderStatus !== "" || filters.approvalStatus !== "" || filters.startDate || filters.endDate || 
+                filters.status !== "" || filters.approvalStatus !== "" || filters.startDate || filters.endDate || 
                 filters.minAmount || filters.maxAmount || filters.searchText) && (
                 <>
                   <span className={`text-xs font-medium transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>적용된 필터:</span>
@@ -721,15 +719,15 @@ export default function Orders() {
                     </span>
                   )}
                   
-                  {filters.orderStatus && filters.orderStatus !== "" && filters.orderStatus !== "all" && (
+                  {filters.status && filters.status !== "" && filters.status !== "all" && (
                     <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs border transition-colors ${isDarkMode ? 'bg-indigo-900/20 text-indigo-300 border-indigo-700' : 'bg-indigo-50 text-indigo-700 border-indigo-200'}`}>
-                      발주상태: {filters.orderStatus === 'draft' ? '임시저장' : 
-                                filters.orderStatus === 'created' ? '생성됨' :
-                                filters.orderStatus === 'sent' ? '발송됨' :
-                                filters.orderStatus === 'delivered' ? '납품완료' :
-                                filters.orderStatus === 'cancelled' ? '취소됨' : filters.orderStatus}
+                      발주상태: {filters.status === 'draft' ? '임시저장' : 
+                                filters.status === 'created' ? '생성됨' :
+                                filters.status === 'sent' ? '발송됨' :
+                                filters.status === 'delivered' ? '납품완료' :
+                                filters.status === 'cancelled' ? '취소됨' : filters.status}
                       <button
-                        onClick={() => handleFilterChange("orderStatus", "")}
+                        onClick={() => handleFilterChange("status", "")}
                         className={`ml-2 rounded-full w-4 h-4 flex items-center justify-center transition-colors ${isDarkMode ? 'hover:bg-indigo-800 text-indigo-400' : 'hover:bg-indigo-100 text-indigo-600'}`}
                       >
                         ×
@@ -758,7 +756,7 @@ export default function Orders() {
             {/* Actions */}
             <div className="flex items-center gap-2">
               {(filters.projectId !== "" || filters.vendorId !== "" || filters.userId !== "" || 
-                filters.orderStatus !== "" || filters.approvalStatus !== "" || filters.startDate || filters.endDate || 
+                filters.status !== "" || filters.approvalStatus !== "" || filters.startDate || filters.endDate || 
                 filters.minAmount || filters.maxAmount || filters.searchText) && (
                 <Button
                   variant="outline"
@@ -766,7 +764,6 @@ export default function Orders() {
                   onClick={() => {
                     setFilters({
                       status: "",
-                      orderStatus: "",
                       approvalStatus: "",
                       vendorId: "",
                       projectId: "",
