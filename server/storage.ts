@@ -14,7 +14,6 @@ import {
   verificationLogs,
   orderTemplates,
   itemCategories,
-  approvalStepInstances,
 
   uiTerms,
   terminology,
@@ -1223,15 +1222,37 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deletePurchaseOrder(id: number): Promise<void> {
+    console.log(`🗑️ [storage.deletePurchaseOrder] Starting deletion for order ID: ${id}`);
+    
     const order = await this.getPurchaseOrder(id);
-    if (!order) return;
+    if (!order) {
+      console.log(`⚠️ [storage.deletePurchaseOrder] Order ${id} not found, skipping deletion`);
+      return;
+    }
+    
+    console.log(`📝 [storage.deletePurchaseOrder] Found order: ${order.orderNumber}, status: ${order.status}`);
 
-    // Delete related records in correct order to avoid FK constraints
-    await db.delete(approvalStepInstances).where(eq(approvalStepInstances.orderId, id));
-    await db.delete(purchaseOrderItems).where(eq(purchaseOrderItems.orderId, id));
-    await db.delete(attachments).where(eq(attachments.orderId, id));
-    await db.delete(orderHistory).where(eq(orderHistory.orderId, id));
-    await db.delete(purchaseOrders).where(eq(purchaseOrders.id, id));
+    try {
+      // Delete related records in correct order to avoid FK constraints
+      // NOTE: approvalStepInstances table doesn't exist in the database, skipping
+      
+      console.log(`🔗 [storage.deletePurchaseOrder] Deleting purchaseOrderItems for order ${id}`);
+      await db.delete(purchaseOrderItems).where(eq(purchaseOrderItems.orderId, id));
+      
+      console.log(`🔗 [storage.deletePurchaseOrder] Deleting attachments for order ${id}`);
+      await db.delete(attachments).where(eq(attachments.orderId, id));
+      
+      console.log(`🔗 [storage.deletePurchaseOrder] Deleting orderHistory for order ${id}`);
+      await db.delete(orderHistory).where(eq(orderHistory.orderId, id));
+      
+      console.log(`🔗 [storage.deletePurchaseOrder] Deleting purchaseOrder ${id}`);
+      await db.delete(purchaseOrders).where(eq(purchaseOrders.id, id));
+      
+      console.log(`✅ [storage.deletePurchaseOrder] Successfully deleted order ${id}`);
+    } catch (error) {
+      console.error(`❌ [storage.deletePurchaseOrder] Failed to delete order ${id}:`, error);
+      throw error; // Re-throw to propagate error to caller
+    }
   }
 
   async bulkDeleteOrders(orderIds: number[], deletedBy: string): Promise<PurchaseOrder[]> {
