@@ -491,19 +491,9 @@ router.delete("/orders/bulk", requireAuth, requireAdmin, async (req, res) => {
     );
     console.log('📋 All orders found:', orders.map(o => ({ id: o.id, orderNumber: o.orderNumber, status: o.status })));
 
-    // Check if any orders cannot be deleted (only draft orders can be deleted)
-    const nonDraftOrders = orders.filter(order => order.status !== 'draft');
-    if (nonDraftOrders.length > 0) {
-      const nonDraftOrderNumbers = nonDraftOrders.map(order => order.orderNumber).join(', ');
-      return res.status(403).json({ 
-        message: `Cannot delete non-draft orders: ${nonDraftOrderNumbers}. Only draft orders can be deleted.`,
-        nonDeletableOrders: nonDraftOrders.map(order => ({
-          id: order.id,
-          orderNumber: order.orderNumber,
-          status: order.status
-        }))
-      });
-    }
+    // Admin users can delete any orders - no status restriction
+    // This endpoint already requires requireAdmin middleware
+    console.log('✅ Admin user authorized to delete all orders regardless of status');
 
     // Delete all orders
     console.log('🗑️ Starting deletion of orders:', numericOrderIds);

@@ -139,6 +139,9 @@ export function EnhancedOrdersTable({
   const allOrdersSelected = orders.length > 0 && orders.every(order => selectedOrderIds.includes(order.id));
   const someOrdersSelected = orders.some(order => selectedOrderIds.includes(order.id));
   
+  // Draft 상태인 주문들 필터링
+  const draftOrders = orders.filter(order => order.status === 'draft');
+  
   // 디버깅: props 확인
   console.log('🔍 EnhancedOrdersTable props:', {
     ordersCount: orders.length,
