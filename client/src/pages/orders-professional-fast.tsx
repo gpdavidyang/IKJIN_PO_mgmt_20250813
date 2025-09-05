@@ -252,20 +252,39 @@ export default function OrdersProfessionalFast() {
   const deleteOrderMutation = useMutation({
     mutationFn: async (orderId: string) => {
       await apiRequest("DELETE", `/api/orders/${orderId}`);
+      return orderId; // Return the deleted order ID
     },
-    onSuccess: () => {
-      // 모든 orders-optimized 쿼리를 무효화 (필터 관계없이)
-      queryClient.invalidateQueries({ 
-        queryKey: ["orders-optimized"],
-        exact: false  // 부분 매칭으로 모든 관련 쿼리 무효화
-      });
-      toast({
-        title: "성공",
-        description: "발주서가 삭제되었습니다.",
-      });
+    onMutate: async (orderId: string) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["orders-optimized"] });
+      
+      // Snapshot the previous value
+      const previousOrders = queryClient.getQueriesData({ queryKey: ["orders-optimized"] });
+      
+      // Optimistically update all cached queries
+      queryClient.setQueriesData(
+        { queryKey: ["orders-optimized"] },
+        (old: any) => {
+          if (!old) return old;
+          return {
+            ...old,
+            orders: old.orders?.filter((order: any) => order.id.toString() !== orderId),
+            totalCount: old.totalCount ? old.totalCount - 1 : 0
+          };
+        }
+      );
+      
+      return { previousOrders };
     },
-    onError: (error) => {
-      if (isUnauthorizedError(error)) {
+    onError: (err, orderId, context) => {
+      // If the mutation fails, use the context returned from onMutate to roll back
+      if (context?.previousOrders) {
+        context.previousOrders.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+      // Handle error messages
+      if (isUnauthorizedError(err)) {
         toast({
           title: "Unauthorized",
           description: "You are logged out. Logging in again...",
@@ -282,28 +301,57 @@ export default function OrdersProfessionalFast() {
         variant: "destructive",
       });
     },
+    onSuccess: async () => {
+      // Invalidate and refetch
+      await queryClient.invalidateQueries({ 
+        queryKey: ["orders-optimized"],
+        exact: false
+      });
+      toast({
+        title: "성공",
+        description: "발주서가 삭제되었습니다.",
+      });
+    }
   });
 
   // Bulk delete mutation for admin
   const bulkDeleteMutation = useMutation({
     mutationFn: async (orderIds: number[]) => {
       await apiRequest("DELETE", `/api/orders/bulk-delete`, { orderIds });
+      return orderIds; // Return the deleted order IDs
     },
-    onSuccess: (_, variables) => {
-      // 모든 orders-optimized 쿼리를 무효화 (필터 관계없이)
-      queryClient.invalidateQueries({ 
-        queryKey: ["orders-optimized"],
-        exact: false  // 부분 매칭으로 모든 관련 쿼리 무효화
-      });
-      toast({
-        title: "성공",
-        description: `${variables.length}개의 발주서가 삭제되었습니다.`,
-      });
-      setSelectedOrders(new Set());
-      setBulkDeleteDialogOpen(false);
+    onMutate: async (orderIds: number[]) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["orders-optimized"] });
+      
+      // Snapshot the previous value
+      const previousOrders = queryClient.getQueriesData({ queryKey: ["orders-optimized"] });
+      
+      // Optimistically update all cached queries
+      queryClient.setQueriesData(
+        { queryKey: ["orders-optimized"] },
+        (old: any) => {
+          if (!old) return old;
+          const orderIdSet = new Set(orderIds.map(id => id.toString()));
+          return {
+            ...old,
+            orders: old.orders?.filter((order: any) => !orderIdSet.has(order.id.toString())),
+            totalCount: old.totalCount ? old.totalCount - orderIds.length : 0
+          };
+        }
+      );
+      
+      return { previousOrders };
     },
-    onError: (error) => {
-      if (isUnauthorizedError(error)) {
+    onError: (err, orderIds, context) => {
+      // If the mutation fails, use the context returned from onMutate to roll back
+      if (context?.previousOrders) {
+        context.previousOrders.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+      // Handle error messages
+      if (isUnauthorizedError(err)) {
         toast({
           title: "Unauthorized",
           description: "You are logged out. Logging in again...",
@@ -320,6 +368,19 @@ export default function OrdersProfessionalFast() {
         variant: "destructive",
       });
     },
+    onSuccess: async (_, variables) => {
+      // Invalidate and refetch
+      await queryClient.invalidateQueries({ 
+        queryKey: ["orders-optimized"],
+        exact: false
+      });
+      toast({
+        title: "성공",
+        description: `${variables.length}개의 발주서가 삭제되었습니다.`,
+      });
+      setSelectedOrders(new Set());
+      setBulkDeleteDialogOpen(false);
+    }
   });
 
   const exportMutation = useMutation({

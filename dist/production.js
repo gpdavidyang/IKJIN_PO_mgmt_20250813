@@ -1549,19 +1549,19 @@ var init_pdf_generation_service = __esm({
           const timestamp2 = Date.now();
           const fileName = `PO_${orderData.orderNumber}_${timestamp2}.pdf`;
           let pdfBuffer;
+          const tempDir = path4.join(this.uploadDir, String((/* @__PURE__ */ new Date()).getFullYear()), String((/* @__PURE__ */ new Date()).getMonth() + 1).padStart(2, "0"));
           if (process.env.VERCEL) {
             console.log("\u{1F4C4} [PDFGenerator] Vercel \uD658\uACBD: PDFKit\uC73C\uB85C PDF \uC9C1\uC811 \uC0DD\uC131");
             pdfBuffer = await this.generatePDFWithPDFKit(orderData);
           } else {
             console.log("\u{1F4C4} [PDFGenerator] \uB85C\uCEEC \uD658\uACBD: HTML \uD15C\uD50C\uB9BF\uC73C\uB85C PDF \uC0DD\uC131");
-            const tempDir2 = path4.join(this.uploadDir, String((/* @__PURE__ */ new Date()).getFullYear()), String((/* @__PURE__ */ new Date()).getMonth() + 1).padStart(2, "0"));
-            console.log(`\u{1F4C1} [PDFGenerator] \uB514\uB809\uD1A0\uB9AC \uC0DD\uC131 \uC911: ${tempDir2}`);
-            if (!fs6.existsSync(tempDir2)) {
+            console.log(`\u{1F4C1} [PDFGenerator] \uB514\uB809\uD1A0\uB9AC \uC0DD\uC131 \uC911: ${tempDir}`);
+            if (!fs6.existsSync(tempDir)) {
               try {
-                fs6.mkdirSync(tempDir2, { recursive: true });
-                console.log(`\u2705 [PDFGenerator] \uB514\uB809\uD1A0\uB9AC \uC0DD\uC131 \uC644\uB8CC: ${tempDir2}`);
+                fs6.mkdirSync(tempDir, { recursive: true });
+                console.log(`\u2705 [PDFGenerator] \uB514\uB809\uD1A0\uB9AC \uC0DD\uC131 \uC644\uB8CC: ${tempDir}`);
               } catch (dirError) {
-                console.error(`\u274C [PDFGenerator] \uB514\uB809\uD1A0\uB9AC \uC0DD\uC131 \uC2E4\uD328: ${tempDir2}`, dirError);
+                console.error(`\u274C [PDFGenerator] \uB514\uB809\uD1A0\uB9AC \uC0DD\uC131 \uC2E4\uD328: ${tempDir}`, dirError);
                 throw new Error(`\uB514\uB809\uD1A0\uB9AC \uC0DD\uC131 \uC2E4\uD328: ${dirError instanceof Error ? dirError.message : "Unknown error"}`);
               }
             }
@@ -8474,11 +8474,11 @@ async function generatePDFLogic(req, res) {
     console.log(`\u{1F4C4} PDF \uC0DD\uC131 \uC694\uCCAD: \uBC1C\uC8FC\uC11C ${orderData.orderNumber || "N/A"}`);
     console.log("\u{1F4C4} PDF \uC0DD\uC131 \uB370\uC774\uD130:", JSON.stringify(orderData, null, 2));
     const timestamp2 = Date.now();
-    const tempDir2 = process.env.VERCEL ? path5.join("/tmp", "temp-pdf") : path5.join(process.cwd(), "uploads/temp-pdf");
+    const tempDir = process.env.VERCEL ? path5.join("/tmp", "temp-pdf") : path5.join(process.cwd(), "uploads/temp-pdf");
     try {
-      if (!fs7.existsSync(tempDir2)) {
-        fs7.mkdirSync(tempDir2, { recursive: true });
-        console.log(`\u{1F4C1} \uC784\uC2DC \uB514\uB809\uD1A0\uB9AC \uC0DD\uC131: ${tempDir2}`);
+      if (!fs7.existsSync(tempDir)) {
+        fs7.mkdirSync(tempDir, { recursive: true });
+        console.log(`\u{1F4C1} \uC784\uC2DC \uB514\uB809\uD1A0\uB9AC \uC0DD\uC131: ${tempDir}`);
       }
     } catch (error) {
       console.error(`\u26A0\uFE0F \uC784\uC2DC \uB514\uB809\uD1A0\uB9AC \uC0DD\uC131 \uC2E4\uD328: ${error}`);
@@ -8487,8 +8487,8 @@ async function generatePDFLogic(req, res) {
       }
       throw error;
     }
-    const tempHtmlPath = path5.join(tempDir2, `order-${timestamp2}.html`);
-    const tempPdfPath = path5.join(tempDir2, `order-${timestamp2}.pdf`);
+    const tempHtmlPath = path5.join(tempDir, `order-${timestamp2}.html`);
+    const tempPdfPath = path5.join(tempDir, `order-${timestamp2}.pdf`);
     console.log(`\u{1F4C4} \uC784\uC2DC \uD30C\uC77C \uACBD\uB85C - HTML: ${tempHtmlPath}, PDF: ${tempPdfPath}`);
     try {
       let companyInfo = null;
@@ -9543,11 +9543,11 @@ router3.post("/orders/send-email-simple", requireAuth, async (req, res) => {
       }
     }
     if (!excelPath) {
-      const tempDir2 = path5.join(__dirname2, "../../uploads/temp");
-      if (!fs7.existsSync(tempDir2)) {
-        fs7.mkdirSync(tempDir2, { recursive: true });
+      const tempDir = path5.join(__dirname2, "../../uploads/temp");
+      if (!fs7.existsSync(tempDir)) {
+        fs7.mkdirSync(tempDir, { recursive: true });
       }
-      excelPath = path5.join(tempDir2, `temp_${Date.now()}.txt`);
+      excelPath = path5.join(tempDir, `temp_${Date.now()}.txt`);
       fs7.writeFileSync(excelPath, `\uBC1C\uC8FC\uC11C \uC0C1\uC138 \uB0B4\uC6A9
 
 ${body}`);

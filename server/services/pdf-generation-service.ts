@@ -61,6 +61,9 @@ export class PDFGenerationService {
       // PDF 생성 방식 선택
       let pdfBuffer: Buffer;
       
+      // Initialize tempDir for local environment (needed for file saving later)
+      const tempDir = path.join(this.uploadDir, String(new Date().getFullYear()), String(new Date().getMonth() + 1).padStart(2, '0'));
+      
       if (process.env.VERCEL) {
         // Vercel: 브라우저 없이 직접 PDF 생성 (더 안정적)
         console.log('📄 [PDFGenerator] Vercel 환경: PDFKit으로 PDF 직접 생성');
@@ -68,8 +71,6 @@ export class PDFGenerationService {
       } else {
         // 로컬: HTML 템플릿을 통한 PDF 생성
         console.log('📄 [PDFGenerator] 로컬 환경: HTML 템플릿으로 PDF 생성');
-        
-        const tempDir = path.join(this.uploadDir, String(new Date().getFullYear()), String(new Date().getMonth() + 1).padStart(2, '0'));
         
         // 로컬 환경에서만 디렉토리 생성
         console.log(`📁 [PDFGenerator] 디렉토리 생성 중: ${tempDir}`);

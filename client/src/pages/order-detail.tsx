@@ -299,7 +299,18 @@ export default function OrderDetail() {
   const canApprove = user?.role === "admin" && order.status === "pending_approval";
   const canSend = order.status === "approved";
   const canEdit = order.status !== "sent" && order.status !== "received";
-  const canDelete = user?.role === "admin" && order.status !== "sent" && order.status !== "received";
+  const canDelete = (user?.role === "admin" || user?.role === "hq_management") && order.status !== "sent" && order.status !== "received";
+
+  // 디버깅용 로그
+  console.log('Delete button visibility check:', {
+    userRole: user?.role,
+    orderStatus: order.status,
+    canDelete,
+    isAdmin: user?.role === "admin",
+    isHqManagement: user?.role === "hq_management",
+    isNotSent: order.status !== "sent",
+    isNotReceived: order.status !== "received"
+  });
 
   return (
     <div className={`min-h-screen transition-colors ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
