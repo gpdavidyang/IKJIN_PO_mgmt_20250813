@@ -60,57 +60,33 @@ const OrderFiltersSchema = z.object({
 
 /**
  * GET /api/orders-optimized
- * Simplified endpoint for order management page
+ * High-performance endpoint for order management page
  */
 router.get("/orders-optimized", async (req, res) => {
+  const endTimer = QueryPerformanceMonitor.startTimer('orders-optimized');
+  
   try {
-    console.log('🚀 Starting orders-optimized request');
+    console.log('🚀 Optimized orders request:', {
+      filters: req.query,
+      timestamp: new Date().toISOString()
+    });
     
-    // Check DB connection first
-    if (!db) {
-      throw new Error("Database connection not available");
-    }
+    // Parse and validate filters
+    const parsedFilters = OrderFiltersSchema.parse(req.query);
     
-    // Simple test query first
-    await db.execute({ sql: "SELECT 1", args: [] });
-    console.log('✅ DB connection verified');
+    // Get orders using the optimized service
+    const result = await OptimizedOrdersService.getOrdersWithMetadata(parsedFilters);
     
-    // Return minimal mock data for now to test API flow
-    const mockResponse = {
-      orders: [
-        {
-          id: 1,
-          orderNumber: "PO-2025-001",
-          status: "draft",
-          totalAmount: "1000000.00",
-          orderDate: "2025-09-06",
-          createdAt: "2025-09-06T02:00:00.000Z",
-          vendorName: "Mock Vendor",
-          projectName: "Mock Project",
-          userName: "Mock User",
-          emailStatus: null,
-          lastSentAt: null,
-          totalEmailsSent: 0,
-          openedAt: null
-        }
-      ],
-      total: 1,
-      page: 1,
-      limit: 20,
-      totalPages: 1,
-      metadata: {
-        vendors: [{ id: 1, name: "Mock Vendor" }],
-        projects: [{ id: 1, project_name: "Mock Project" }],
-        users: []
-      },
-      performance: {
-        queryTime: "10.00ms",
-        timestamp: new Date().toISOString()
-      }
-    };
-
-    console.log('✅ Returning mock data successfully');
-    res.json(mockResponse);
+    console.log('✅ Optimized orders response:', {
+      ordersCount: result.orders.length,
+      total: result.total,
+      page: result.page,
+      totalPages: result.totalPages,
+      vendorsCount: result.metadata?.vendors?.length || 0,
+      projectsCount: result.metadata?.projects?.length || 0
+    });
+    
+    res.json(result);
     
   } catch (error) {
     console.error("❌ Error in orders-optimized:", error);
@@ -119,6 +95,8 @@ router.get("/orders-optimized", async (req, res) => {
       error: error.message,
       stack: error.stack
     });
+  } finally {
+    endTimer();
   }
 });
 

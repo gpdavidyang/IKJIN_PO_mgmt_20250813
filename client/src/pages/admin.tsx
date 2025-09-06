@@ -29,16 +29,6 @@ import { ApprovalWorkflowSettings } from "@/components/admin/approval-workflow-s
 import { ApprovalSettingsManager } from "@/components/admin/ApprovalSettingsManager";
 import { EmailSettings } from "@/components/email-settings";
 
-interface Terminology {
-  id: number;
-  termKey: string;
-  termValue: string;
-  category: string;
-  description?: string;
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
 
 interface ApprovalAuthority {
   id: number;
@@ -69,13 +59,6 @@ const UserFormSchema = z.object({
   role: z.enum(["field_worker", "project_manager", "hq_management", "executive", "admin"]),
 });
 
-const TerminologyFormSchema = z.object({
-  termKey: z.string().min(1, "용어 키를 입력해주세요"),
-  termValue: z.string().min(1, "용어 값을 입력해주세요"),
-  category: z.string().min(1, "카테고리를 입력해주세요"),
-  description: z.string().optional(),
-  isActive: z.boolean().default(true),
-});
 
 const ApprovalAuthorityFormSchema = z.object({
   role: z.enum(["field_worker", "project_manager", "hq_management", "executive"]),
@@ -85,7 +68,6 @@ const ApprovalAuthorityFormSchema = z.object({
 
 type CompanyFormData = z.infer<typeof CompanyFormSchema>;
 type UserFormData = z.infer<typeof UserFormSchema>;
-type TerminologyFormData = z.infer<typeof TerminologyFormSchema>;
 type ApprovalAuthorityFormData = z.infer<typeof ApprovalAuthorityFormSchema>;
 
 export default function Admin() {
@@ -100,9 +82,6 @@ export default function Admin() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddingUser, setIsAddingUser] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [isAddingTerm, setIsAddingTerm] = useState(false);
-  const [editingTerm, setEditingTerm] = useState<Terminology | null>(null);
-  const [termSearchTerm, setTermSearchTerm] = useState("");
   const [isAddingApproval, setIsAddingApproval] = useState(false);
   const [editingApproval, setEditingApproval] = useState<ApprovalAuthority | null>(null);
 
@@ -124,10 +103,6 @@ export default function Admin() {
     enabled: !!user && user.role === "admin",
   });
 
-  const { data: terminology = [], isLoading: isLoadingTerminology } = useQuery<Terminology[]>({
-    queryKey: ["/api/ui-terms"],
-    enabled: !!user && user.role === "admin",
-  });
 
   const { data: approvalAuthorities = [], isLoading: isLoadingApprovals } = useQuery<ApprovalAuthority[]>({
     queryKey: ["/api/approval-authorities"],
@@ -161,16 +136,6 @@ export default function Admin() {
     },
   });
 
-  const terminologyForm = useForm<TerminologyFormData>({
-    resolver: zodResolver(TerminologyFormSchema),
-    defaultValues: {
-      termKey: "",
-      termValue: "",
-      category: "",
-      description: "",
-      isActive: true,
-    },
-  });
 
   const approvalForm = useForm<ApprovalAuthorityFormData>({
     resolver: zodResolver(ApprovalAuthorityFormSchema),
@@ -210,18 +175,6 @@ export default function Admin() {
     }
   }, [editingUser, userForm]);
 
-  // Load terminology data into form when editing
-  useEffect(() => {
-    if (editingTerm) {
-      terminologyForm.reset({
-        termKey: editingTerm.termKey || "",
-        termValue: editingTerm.termValue || "",
-        category: editingTerm.category || "",
-        description: editingTerm.description || "",
-        isActive: editingTerm.isActive ?? true,
-      });
-    }
-  }, [editingTerm, terminologyForm]);
 
   // Authentication check
   if (isLoading) {
@@ -251,12 +204,6 @@ export default function Admin() {
       }
     });
 
-  const filteredTerminology = terminology
-    .filter(term =>
-      term.termKey.toLowerCase().includes(termSearchTerm.toLowerCase()) ||
-      term.termValue.toLowerCase().includes(termSearchTerm.toLowerCase()) ||
-      term.category.toLowerCase().includes(termSearchTerm.toLowerCase())
-    );
 
   // Mutations
   const saveCompanyMutation = useMutation({
@@ -306,36 +253,6 @@ export default function Admin() {
     },
   });
 
-  const saveTerminologyMutation = useMutation({
-    mutationFn: (data: TerminologyFormData) => {
-      if (editingTerm) {
-        return apiRequest("PUT", `/api/ui-terms/${editingTerm.id}`, data);
-      } else {
-        return apiRequest("POST", "/api/ui-terms", data);
-      }
-    },
-    onSuccess: () => {
-      toast({ title: "성공", description: editingTerm ? "용어가 수정되었습니다." : "용어가 추가되었습니다." });
-      queryClient.invalidateQueries({ queryKey: ["/api/ui-terms"] });
-      setIsAddingTerm(false);
-      setEditingTerm(null);
-      terminologyForm.reset();
-    },
-    onError: () => {
-      toast({ title: "오류", description: "용어 저장에 실패했습니다.", variant: "destructive" });
-    },
-  });
-
-  const deleteTerminologyMutation = useMutation({
-    mutationFn: (id: number) => apiRequest("DELETE", `/api/ui-terms/${id}`),
-    onSuccess: () => {
-      toast({ title: "성공", description: "용어가 삭제되었습니다." });
-      queryClient.invalidateQueries({ queryKey: ["/api/ui-terms"] });
-    },
-    onError: () => {
-      toast({ title: "오류", description: "용어 삭제에 실패했습니다.", variant: "destructive" });
-    },
-  });
 
   const toggleUserActiveMutation = useMutation({
     mutationFn: ({ userId, isActive }: { userId: string; isActive: boolean }) =>
@@ -389,9 +306,6 @@ export default function Admin() {
     saveUserMutation.mutate(data);
   };
 
-  const handleSaveTerminology = (data: TerminologyFormData) => {
-    saveTerminologyMutation.mutate(data);
-  };
 
   const handleSaveApproval = (data: ApprovalAuthorityFormData) => {
     const submitData = editingApproval ? { ...data, id: editingApproval.id } : data;
@@ -483,10 +397,6 @@ export default function Admin() {
           <TabsTrigger value="workflow" className="flex items-center gap-2 text-sm">
             <Settings2 className="h-4 w-4" />
             승인 워크플로우
-          </TabsTrigger>
-          <TabsTrigger value="terminology" className="flex items-center gap-2 text-sm">
-            <FileText className="h-4 w-4" />
-            용어집 관리
           </TabsTrigger>
           <TabsTrigger value="email" className="flex items-center gap-2 text-sm">
             <Mail className="h-4 w-4" />
@@ -890,140 +800,6 @@ export default function Admin() {
           </Card>
         </TabsContent>
 
-        {/* 용어집 관리 탭 */}
-        <TabsContent value="terminology" className="mt-2">
-          <Card className={`shadow-sm transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-            <CardHeader className="pb-1">
-              <CardTitle className={`flex items-center justify-between text-sm transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
-                <div className="flex items-center gap-1">
-                  <FileText className={`h-4 w-4 transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
-                  <span>용어집 관리</span>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsAddingTerm(true)}
-                  className="gap-1 h-6 px-2 text-xs"
-                >
-                  <Plus className="h-3 w-3" />
-                  용어 추가
-                </Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-1">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <div className="relative flex-1">
-                    <Search className={`absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
-                    <Input
-                      placeholder="용어 검색..."
-                      value={termSearchTerm}
-                      onChange={(e) => setTermSearchTerm(e.target.value)}
-                      className={`h-7 text-xs pl-7 transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}
-                    />
-                  </div>
-                </div>
-                
-                {isLoadingTerminology ? (
-                  <div className={`text-xs text-center py-4 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>용어 정보를 불러오는 중...</div>
-                ) : (
-                  <div className={`border rounded-md overflow-hidden transition-colors ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}>
-                    <div className={`grid grid-cols-12 gap-2 px-2 py-1 text-xs font-medium border-b transition-colors ${
-                      isDarkMode 
-                        ? 'bg-gray-700 text-gray-300 border-gray-600' 
-                        : 'bg-gray-50 text-gray-600 border-gray-200'
-                    }`}>
-                      <div className="col-span-2">용어 키</div>
-                      <div className="col-span-3">용어 값</div>
-                      <div className="col-span-2">카테고리</div>
-                      <div className="col-span-3">설명</div>
-                      <div className="col-span-1">상태</div>
-                      <div className="col-span-1 text-center">작업</div>
-                    </div>
-                    
-                    {filteredTerminology.map((term) => (
-                      <div key={term.id} className={`grid grid-cols-12 gap-2 px-2 py-2 text-xs border-b last:border-b-0 transition-colors ${
-                        isDarkMode 
-                          ? 'hover:bg-gray-700 border-gray-600' 
-                          : 'hover:bg-gray-50 border-gray-100'
-                      }`}>
-                        <div className={`col-span-2 font-medium truncate transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
-                          {term.termKey}
-                        </div>
-                        <div className={`col-span-3 truncate transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                          {term.termValue}
-                        </div>
-                        <div className={`col-span-2 truncate transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                          {term.category}
-                        </div>
-                        <div className={`col-span-3 truncate transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                          {term.description || '-'}
-                        </div>
-                        <div className="col-span-1">
-                          <Badge variant={term.isActive ? "outline" : "secondary"}>
-                            {term.isActive ? "활성" : "비활성"}
-                          </Badge>
-                        </div>
-                        <div className="col-span-1 flex items-center justify-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setEditingTerm(term)}
-                            className={`h-5 w-5 p-0 transition-colors ${
-                              isDarkMode 
-                                ? 'text-blue-400 hover:text-blue-300' 
-                                : 'text-blue-600 hover:text-blue-700'
-                            }`}
-                            title="수정"
-                          >
-                            <Edit className="h-3 w-3" />
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className={`h-5 w-5 p-0 transition-colors ${
-                                  isDarkMode 
-                                    ? 'text-red-400 hover:text-red-300' 
-                                    : 'text-red-600 hover:text-red-700'
-                                }`}
-                                title="삭제"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>용어 삭제</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  {term.termKey} 용어를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>취소</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => deleteTerminologyMutation.mutate(term.id)}
-                                  className="bg-red-600 hover:bg-red-700"
-                                >
-                                  삭제
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                
-                <div className={`text-xs pt-1 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  총 {terminology.length}개의 용어가 등록되어 있습니다.
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
         {/* 승인 설정 탭 */}
         <TabsContent value="approval" className="mt-2">
@@ -1145,92 +921,6 @@ export default function Admin() {
         </Dialog>
       )}
 
-      {/* Terminology Add/Edit Dialog */}
-      {(isAddingTerm || editingTerm) && (
-        <Dialog open={true} onOpenChange={() => {
-          setIsAddingTerm(false);
-          setEditingTerm(null);
-          terminologyForm.reset();
-        }}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{editingTerm ? "용어 수정" : "용어 추가"}</DialogTitle>
-            </DialogHeader>
-            <Form {...terminologyForm}>
-              <form onSubmit={terminologyForm.handleSubmit(handleSaveTerminology)} className="space-y-4">
-                <FormField
-                  control={terminologyForm.control}
-                  name="termKey"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>용어 키</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={terminologyForm.control}
-                  name="termValue"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>용어 값</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={terminologyForm.control}
-                  name="category"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>카테고리</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={terminologyForm.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>설명</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <div className="flex justify-end gap-2">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={() => {
-                      setIsAddingTerm(false);
-                      setEditingTerm(null);
-                      terminologyForm.reset();
-                    }}
-                  >
-                    취소
-                  </Button>
-                  <Button type="submit" disabled={saveTerminologyMutation.isPending}>
-                    {editingTerm ? "수정" : "추가"}
-                  </Button>
-                </div>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
-      )}
 
       {/* Approval Authority Add/Edit Dialog */}
       {(isAddingApproval || editingApproval) && (

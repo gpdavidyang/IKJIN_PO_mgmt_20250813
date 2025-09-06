@@ -2036,22 +2036,43 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
       `;
     };
 
-    console.log('📧 sendEmail 호출 전 옵션:', {
+    console.log('📧 sendPOWithOriginalFormat 호출 전 옵션:', {
       to: emailOptions.to,
       cc: emailOptions.cc,
       subject: emailOptions.subject,
       attachmentsCount: attachments.length
     });
 
-    const result = await POEmailService.sendEmail({
+    // 임시 파일 생성 (POEmailService.sendPOWithOriginalFormat이 파일 경로를 요구하므로)
+    const tempDir = path.join(__dirname, '../../uploads/temp');
+    if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir, { recursive: true });
+    }
+    const tempFilePath = path.join(tempDir, `email_temp_${Date.now()}.html`);
+    fs.writeFileSync(tempFilePath, generateEmailContent(emailOptions));
+
+    const result = await POEmailService.sendPOWithOriginalFormat(tempFilePath, {
       to: emailOptions.to,
       cc: emailOptions.cc,
       subject: emailOptions.subject,
-      html: generateEmailContent(emailOptions),
-      attachments
+      body: generateEmailContent(emailOptions),
+      orderData: {
+        orderNumber: orderData.orderNumber,
+        vendorName: orderData.vendorName,
+        totalAmount: orderData.totalAmount
+      },
+      userId: (req as any).user?.id || 'system',
+      orderId: orderData.orderId
     });
 
-    console.log('📧 sendEmail 결과:', result);
+    // 임시 파일 정리
+    try {
+      fs.unlinkSync(tempFilePath);
+    } catch (err) {
+      console.warn('임시 파일 삭제 실패:', err);
+    }
+
+    console.log('📧 sendPOWithOriginalFormat 결과:', result);
 
     if (result.success) {
       console.log('📧 이메일 발송 성공');
