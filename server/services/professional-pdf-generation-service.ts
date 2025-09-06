@@ -823,14 +823,9 @@ export class ProfessionalPDFGenerationService {
       font-size: 6pt;
     }
     
-    /* === APPROVAL SECTION === */
-    .approval-section {
-      margin: 10px 0;
-      border: 2px solid #1e40af;
-      background: #f8fafc;
-    }
     
-    .approval-header {
+    /* Approval styles removed */
+    .removed-approval-header {
       background: #1e40af;
       color: white;
       padding: 4px 8px;
@@ -933,19 +928,17 @@ export class ProfessionalPDFGenerationService {
 <body>
   <div class="container">
     <!-- HEADER -->
-    <div class="header">
-      <div class="logo-area">
-        Company<br>Logo
+    <div class="header" style="display: grid; grid-template-columns: 150px 1fr; gap: 20px; align-items: center;">
+      <div class="logo-area" style="display: flex; align-items: center; justify-content: center;">
+        <img src="file://${path.join(process.cwd(), 'assets', 'company-logo.png')}" alt="Company Logo" style="max-width: 120px; max-height: 60px; object-fit: contain;" />
       </div>
-      <div class="header-center">
+      <div class="header-center" style="text-align: center;">
         <h1>구매 발주서</h1>
         <div class="order-number">${data.orderNumber}</div>
         <div class="status-badge status-${data.orderStatus}">${this.getStatusDisplayName(data.orderStatus)}</div>
-      </div>
-      <div class="qr-area">
-        <div>QR Code</div>
-        <div>${data.metadata.documentId.substring(0, 10)}...</div>
-        <div>${formatDate(data.metadata.generatedAt)}</div>
+        <div style="font-size: 8pt; color: #666; margin-top: 5px;">
+          생성일: ${formatDate(data.metadata.generatedAt)} | 문서ID: ${data.metadata.documentId.substring(0, 10)}
+        </div>
       </div>
     </div>
     
@@ -1132,14 +1125,6 @@ export class ProfessionalPDFGenerationService {
           : '<div style="color: #666;">발송 이력 없음</div>'
         }
         ${data.communication.lastEmailSent ? `<div style="margin-top: 3px; font-size: 6pt; color: #666;">최종 발송: ${formatDate(data.communication.lastEmailSent)}</div>` : ''}
-      </div>
-    </div>
-    
-    <!-- APPROVAL SECTION -->
-    <div class="approval-section">
-      <div class="approval-header">✅ 결재 현황 (Level ${data.approval.approvalLevel})</div>
-      <div class="approval-grid">
-        ${approverBoxes}
       </div>
     </div>
     

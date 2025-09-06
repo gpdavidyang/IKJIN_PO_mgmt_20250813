@@ -2594,5 +2594,60 @@ router.get("/orders/:orderId/attachments/:attachmentId/download", requireAuth, a
   }
 });
 
+// Complete delivery - change status to delivered
+router.post("/orders/:id/complete-delivery", requireAuth, async (req: any, res) => {
+  try {
+    const userId = req.user.id;
+    const user = await storage.getUser(userId);
+    const orderId = parseInt(req.params.id);
+    
+    // Get current order
+    const order = await storage.getPurchaseOrder(orderId);
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    // Check permissions - admin or order owner
+    if (user?.role !== "admin" && order.userId !== user?.id) {
+      return res.status(403).json({ message: "Access denied - insufficient permissions" });
+    }
+
+    // Check current status - can complete delivery from 'created' or 'sent' status
+    const currentStatus = order.orderStatus || order.status;
+    if (currentStatus !== 'created' && currentStatus !== 'sent') {
+      return res.status(400).json({ 
+        message: "주문이 발주생성 또는 발송됨 상태가 아닙니다. 납품검수완료는 발주생성 또는 발송된 주문에서만 가능합니다." 
+      });
+    }
+
+    // Update order status to completed/delivered
+    const updatedOrder = await storage.updatePurchaseOrder(orderId, {
+      status: 'completed',
+      orderStatus: 'delivered',
+      updatedAt: new Date()
+    });
+
+    // Add to order history
+    await storage.addOrderHistory({
+      orderId: orderId,
+      action: 'delivery_completed',
+      details: '납품검수완료',
+      userId: userId,
+      timestamp: new Date()
+    });
+
+    res.json({ 
+      message: "납품검수가 완료되었습니다.",
+      order: updatedOrder
+    });
+  } catch (error) {
+    console.error("Error completing delivery:", error);
+    res.status(500).json({ 
+      message: "납품검수 완료 중 오류가 발생했습니다.",
+      error: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
 
 export default router;

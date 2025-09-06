@@ -91,22 +91,22 @@ export class EmailService {
     },
     emailData: EmailData
   ): Promise<EmailSendResponse> {
-    const emailRequest: EmailSendRequest = {
-      to: emailData.to,
-      cc: emailData.cc,
-      subject: emailData.subject,
-      additionalMessage: emailData.message,
-      poData: {
-        orderNumber: orderData.orderNumber,
-        orderDate: orderData.orderDate,
-        siteName: orderData.siteName,
-        vendorName: orderData.vendorName,
-        totalAmount: orderData.totalAmount,
-      }
-    };
-
-    // 첨부파일 경로가 있는 경우 추가
+    // filePath가 있으면 기존 방식 사용
     if (orderData.filePath) {
+      const emailRequest: EmailSendRequest = {
+        to: emailData.to,
+        cc: emailData.cc,
+        subject: emailData.subject,
+        additionalMessage: emailData.message,
+        poData: {
+          orderNumber: orderData.orderNumber,
+          orderDate: orderData.orderDate,
+          siteName: orderData.siteName,
+          vendorName: orderData.vendorName,
+          totalAmount: orderData.totalAmount,
+        }
+      };
+
       emailRequest.attachments = [];
       
       if (emailData.attachExcel) {
@@ -124,10 +124,40 @@ export class EmailService {
           filename: `발주서_${orderData.orderNumber}.pdf`
         });
       }
-    }
 
+      try {
+        return await apiRequest('POST', `${this.BASE_URL}/send-email`, emailRequest);
+      } catch (error) {
+        console.error('Email send error:', error);
+        throw new Error('이메일 발송 중 오류가 발생했습니다.');
+      }
+    } 
+    
+    // filePath가 없으면 orders 엔드포인트 사용 (PDF 없이 이메일만 발송)
     try {
-      return await apiRequest('POST', `${this.BASE_URL}/send-email`, emailRequest);
+      const response = await apiRequest('POST', '/api/orders/send-email', {
+        orderData: {
+          orderNumber: orderData.orderNumber,
+          vendorName: orderData.vendorName,
+          orderDate: orderData.orderDate,
+          totalAmount: orderData.totalAmount,
+          siteName: orderData.siteName
+        },
+        to: emailData.to,
+        cc: emailData.cc,
+        subject: emailData.subject,
+        message: emailData.message,
+        emailSettings: {
+          subject: emailData.subject,
+          message: emailData.message,
+          cc: emailData.cc
+        }
+      });
+      
+      return {
+        success: true,
+        messageId: response.messageId
+      };
     } catch (error) {
       console.error('Email send error:', error);
       throw new Error('이메일 발송 중 오류가 발생했습니다.');
