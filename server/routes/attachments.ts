@@ -43,9 +43,19 @@ router.get('/attachments/:id/download', async (req, res) => {
         message: 'Authentication required'
       });
     }
-    // 1. 첨부파일 정보 조회
+    // 1. 첨부파일 정보 조회 (fileData 컬럼이 없을 수 있으므로 명시적으로 선택)
     const [attachment] = await db
-      .select()
+      .select({
+        id: attachments.id,
+        orderId: attachments.orderId,
+        originalName: attachments.originalName,
+        storedName: attachments.storedName,
+        filePath: attachments.filePath,
+        fileSize: attachments.fileSize,
+        mimeType: attachments.mimeType,
+        uploadedBy: attachments.uploadedBy,
+        uploadedAt: attachments.uploadedAt
+      })
       .from(attachments)
       .where(eq(attachments.id, attachmentId));
 
@@ -56,103 +66,54 @@ router.get('/attachments/:id/download', async (req, res) => {
       });
     }
 
-    // 2. Check if file is stored in database (db:// prefix)
-    if (attachment.filePath?.startsWith('db://')) {
-      console.log('📄 PDF has db:// prefix, checking for Base64 data in database...');
-      
-      // Check if fileData exists (Base64 encoded file)
-      if (attachment.fileData) {
-        console.log('✅ Found Base64 data in database for file:', attachment.originalName);
-        
-        // Convert Base64 to Buffer
-        const fileBuffer = Buffer.from(attachment.fileData, 'base64');
-        
-        // Set headers based on file type
-        const mimeType = attachment.mimeType || 'application/octet-stream';
-        const displayName = attachment.originalName || 'document';
-        
-        res.setHeader('Content-Type', mimeType);
-        
-        // For PDFs, display inline; for other files (like Excel), download
-        if (mimeType.includes('pdf')) {
-          res.setHeader('Content-Disposition', `inline; filename*=UTF-8''${encodeURIComponent(displayName)}`);
-        } else {
-          res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(displayName)}`);
-        }
-        
-        res.setHeader('Content-Length', fileBuffer.length.toString());
-        
-        // Send the file buffer
-        res.send(fileBuffer);
-        return;
+    // 2. 파일 시스템에서 파일 찾기
+    console.log('📄 Looking for file in filesystem...');
+    
+    let fileName = attachment.filePath;
+    if (fileName?.startsWith('db://')) {
+      console.log('📄 PDF has db:// prefix, converting to filesystem path...');
+      fileName = fileName.replace('db://', '');
+    }
+    
+    const possiblePaths = [
+      path.join(process.cwd(), 'attached_assets', fileName),
+      path.join(process.cwd(), 'uploads', fileName),
+      path.join(process.cwd(), 'uploads', 'temp-pdf', fileName),
+      path.join(process.cwd(), fileName)
+    ];
+    
+    let foundPath: string | null = null;
+    for (const testPath of possiblePaths) {
+      if (fs.existsSync(testPath)) {
+        foundPath = testPath;
+        console.log(`✅ Found PDF file at: ${testPath}`);
+        break;
       }
-      
-      // Fallback: Try to find the file in the filesystem (for backwards compatibility)
-      console.log('⚠️ No Base64 data found, looking for file in filesystem...');
-      const fileName = attachment.filePath.replace('db://', '');
-      const possiblePaths = [
-        path.join(process.cwd(), 'attached_assets', fileName),
-        path.join(process.cwd(), 'uploads', fileName),
-        path.join(process.cwd(), 'uploads', 'temp-pdf', fileName),
-        path.join(process.cwd(), fileName)
-      ];
-      
-      let foundPath: string | null = null;
-      for (const testPath of possiblePaths) {
-        if (fs.existsSync(testPath)) {
-          foundPath = testPath;
-          console.log(`✅ Found PDF file at: ${testPath}`);
-          break;
-        }
-      }
-      
-      if (!foundPath) {
-        console.error('PDF file not found in any expected location:', fileName);
-        return res.status(404).json({ 
-          error: '파일을 찾을 수 없습니다. PDF 파일이 생성되지 않았거나 삭제되었습니다.',
-          fileName: attachment.originalName,
-          detail: 'PDF 파일을 다시 생성해주세요.'
-        });
-      }
-      
+    }
+    
+    if (foundPath) {
       // Send the file
-      const mimeType = 'application/pdf';
+      const mimeType = attachment.mimeType || 'application/pdf';
       const displayName = attachment.originalName || fileName;
       res.setHeader('Content-Type', mimeType);
-      res.setHeader('Content-Disposition', `inline; filename*=UTF-8''${encodeURIComponent(displayName)}`);
+      
+      // For PDFs, display inline; for other files, download
+      if (mimeType.includes('pdf')) {
+        res.setHeader('Content-Disposition', `inline; filename*=UTF-8''${encodeURIComponent(displayName)}`);
+      } else {
+        res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(displayName)}`);
+      }
       
       const fileStream = fs.createReadStream(foundPath);
       fileStream.pipe(res);
-      
     } else {
-      // File is stored in filesystem
-      const filePath = path.join(process.cwd(), attachment.filePath);
-      
-      // 3. 파일 존재 여부 확인
-      if (!fs.existsSync(filePath)) {
-        console.error(`File not found: ${filePath}`);
-        return res.status(404).json({ 
-          error: '파일을 찾을 수 없습니다.',
-          fileName: attachment.originalName
-        });
-      }
-
-      // 4. 파일 전송
-      const fileName = attachment.originalName || attachment.fileName;
-      
-      // Set headers based on file type
-      const mimeType = attachment.mimeType || 'application/octet-stream';
-      res.setHeader('Content-Type', mimeType);
-      
-      // For PDFs, display inline in browser; for others, download
-      if (mimeType.includes('pdf')) {
-        res.setHeader('Content-Disposition', `inline; filename*=UTF-8''${encodeURIComponent(fileName)}`);
-      } else {
-        res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(fileName)}`);
-      }
-      
-      const fileStream = fs.createReadStream(filePath);
-      fileStream.pipe(res);
+      // No file found in any location
+      console.error(`File not found in any expected location for attachment ${attachmentId}`);
+      return res.status(404).json({ 
+        error: '파일을 찾을 수 없습니다.',
+        fileName: attachment.originalName || 'Unknown file',
+        attachmentId
+      });
     }
     
   } catch (error) {

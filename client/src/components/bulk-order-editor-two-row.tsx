@@ -21,7 +21,7 @@ import { cn } from '@/lib/utils';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
 import { queryClient } from '@/lib/queryClient';
-import { EmailComposeModal } from '@/components/email-compose-modal';
+import { EmailSendDialog } from '@/components/email-send-dialog';
 
 interface OrderItem {
   itemName?: string;
@@ -629,23 +629,20 @@ export function BulkOrderEditorTwoRow({ orders, onOrderUpdate, onOrderRemove, on
 
       {/* 이메일 작성 모달 */}
       {showEmailModal && savedOrderData && (
-        <EmailComposeModal
-          isOpen={showEmailModal}
-          onClose={handleEmailModalClose}
-          onSend={handleEmailSend}
-          orderData={savedOrderData?.originalOrder || savedOrderData}
-          initialTo={[
-            {
-              email: savedOrderData?.originalOrder?.vendorEmail || '',
-              name: savedOrderData?.originalOrder?.vendorName || ''
-            }
-          ]}
-          initialCc={savedOrderData?.originalOrder?.deliveryEmail ? [
-            {
-              email: savedOrderData?.originalOrder?.deliveryEmail,
-              name: savedOrderData?.originalOrder?.deliveryPlace || ''
-            }
-          ] : []}
+        <EmailSendDialog
+          open={showEmailModal}
+          onOpenChange={(open) => {
+            if (!open) handleEmailModalClose();
+          }}
+          orderData={{
+            orderNumber: savedOrderData.orderNumber || 'BULK-ORDER',
+            vendorName: savedOrderData?.originalOrder?.vendorName || 'Unknown',
+            vendorEmail: savedOrderData?.originalOrder?.vendorEmail || '',
+            orderDate: new Date().toLocaleDateString(),
+            totalAmount: savedOrderData.totalAmount || 0,
+            siteName: savedOrderData?.originalOrder?.projectName || '일괄 발주서'
+          }}
+          onSendEmail={handleEmailSend}
         />
       )}
     </div>

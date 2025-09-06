@@ -190,10 +190,10 @@ export class OptimizedOrdersService {
         vendorName: vendors.name,
         projectName: projects.projectName,
         userName: users.name,
-        // PDF attachment status - use correct column name for mime_type
+        // PDF attachment status - use correct column names
         hasPdf: sql<boolean>`EXISTS(SELECT 1 FROM attachments WHERE attachments.order_id = ${purchaseOrders.id} AND attachments.mime_type = 'application/pdf')`,
-        // Email sent status - get from email_send_history table  
-        emailSentAt: sql<string | null>`(SELECT MAX(sent_at) FROM email_send_history WHERE order_id = ${purchaseOrders.id})`,
+        // Email sent status - temporarily disabled until email_send_history table is created
+        emailSentAt: sql<string | null>`NULL`,
       })
       .from(purchaseOrders)
       .leftJoin(vendors, eq(purchaseOrders.vendorId, vendors.id))

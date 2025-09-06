@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Download, Filter, ChevronUp, ChevronDown, FileText, Eye, Edit, Mail, Clock, CheckCircle, XCircle, AlertCircle, Calendar, Building, Users, DollarSign, Send, ChevronsUpDown, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
+import { Plus, Search, Download, Filter, ChevronUp, ChevronDown, FileText, Eye, Edit, Mail, Clock, CheckCircle, XCircle, AlertCircle, Calendar, Building, Users, DollarSign, Send, ChevronsUpDown, ChevronLeft, ChevronRight, Trash2, Info, Circle, PlayCircle, MailCheck, Truck } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -835,6 +835,40 @@ export default function OrdersProfessionalFast() {
                   Query: {data.performance.queryTime} {data.performance.cacheHit && '(cached)'}
                 </p>
               )}
+            </div>
+          </div>
+          
+          {/* 발주 상태 구분 설명 */}
+          <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+            <div className="flex items-center gap-2 mb-3">
+              <Info className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <h3 className="text-sm font-semibold text-blue-900 dark:text-blue-100">발주 상태 구분</h3>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+              <div className="flex items-center gap-2">
+                <Circle className="h-3 w-3 text-gray-500" fill="currentColor" />
+                <span className="text-gray-700 dark:text-gray-300">
+                  <strong>Draft:</strong> 임시저장
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <PlayCircle className="h-3 w-3 text-blue-500" />
+                <span className="text-gray-700 dark:text-gray-300">
+                  <strong>Created:</strong> 발주서 생성
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <MailCheck className="h-3 w-3 text-green-500" />
+                <span className="text-gray-700 dark:text-gray-300">
+                  <strong>Sent:</strong> 발송 완료
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Truck className="h-3 w-3 text-purple-500" />
+                <span className="text-gray-700 dark:text-gray-300">
+                  <strong>Delivered:</strong> 납품 완료
+                </span>
+              </div>
             </div>
           </div>
         </div>

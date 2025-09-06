@@ -30,6 +30,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { VendorValidationModal } from './vendor-validation-modal';
+import { EmailSendDialog } from './email-send-dialog';
 
 interface ProcessingStep {
   id: string;
@@ -117,6 +118,9 @@ export function ExcelAutomationWizard() {
     selectedVendorEmail: string;
   }>>([]);
   const [emailResults, setEmailResults] = useState<any>(null);
+  // EmailSendDialog 상태
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [currentOrderForEmail, setCurrentOrderForEmail] = useState<any>(null);
 
   // 파일 드롭 핸들러
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
@@ -308,30 +312,51 @@ export function ExcelAutomationWizard() {
     }
   };
 
-  const handleSendEmails = async () => {
+  // 이메일 모달 열기
+  const handleOpenEmailDialog = () => {
     if (!automationData?.emailPreview) return;
+    
+    // 첫 번째 발주서 정보를 기반으로 이메일 데이터 생성
+    const orderData = {
+      orderNumber: `AUTO-${Date.now()}`,
+      vendorName: selectedVendors[0]?.selectedVendorEmail ? 
+        selectedVendors.find(v => v.selectedVendorEmail === automationData.emailPreview.recipients[0])?.originalName || 'Unknown' : 
+        'Multiple Vendors',
+      vendorEmail: automationData.emailPreview.recipients[0],
+      orderDate: new Date().toLocaleDateString(),
+      totalAmount: 0, // Excel 자동화에서는 총액이 없으므로 0
+      siteName: '자동화 발주서'
+    };
+    
+    setCurrentOrderForEmail(orderData);
+    setEmailDialogOpen(true);
+  };
 
+  // EmailSendDialog에서 실제 이메일 발송
+  const handleSendEmailFromDialog = async (emailData: any) => {
+    if (!automationData?.emailPreview) return;
+    
     setIsProcessing(true);
     setError(null);
-
     try {
       const response = await fetch('/api/excel-automation/send-emails', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include', // 인증 쿠키 포함
+        credentials: 'include',
         body: JSON.stringify({
           processedFilePath: `uploads/${automationData.emailPreview.attachmentInfo.processedFile}`,
-          recipients: automationData.emailPreview.recipients,
+          recipients: emailData.to, // 사용자가 입력한 수신자
           emailOptions: {
-            subject: automationData.emailPreview.subject,
-            orderNumber: `AUTO-${Date.now()}`,
-            additionalMessage: '자동화 시스템을 통해 발송된 발주서입니다.'
+            subject: emailData.subject,
+            orderNumber: currentOrderForEmail?.orderNumber || `AUTO-${Date.now()}`,
+            additionalMessage: emailData.message || '자동화 시스템을 통해 발송된 발주서입니다.',
+            cc: emailData.cc || []
           }
         }),
       });
-
+      
       if (response.status === 401) {
         setError('인증이 만료되었습니다. 페이지를 새로고침하고 다시 로그인해주세요.');
         return;
@@ -343,16 +368,16 @@ export function ExcelAutomationWizard() {
       }
 
       const result = await response.json();
-
       if (result.success) {
         setEmailResults(result.data);
-        setCurrentStep(2);
+        setCurrentStep(2); // 결과 단계로 이동
+        setEmailDialogOpen(false);
       } else {
         throw new Error(result.error);
       }
-
     } catch (error) {
       setError(error instanceof Error ? error.message : '이메일 발송 실패');
+      throw error; // EmailSendDialog에서 에러를 표시할 수 있도록
     } finally {
       setIsProcessing(false);
     }
@@ -665,11 +690,11 @@ export function ExcelAutomationWizard() {
                   </Button>
                 )}
                 <Button 
-                  onClick={handleSendEmails}
+                  onClick={handleOpenEmailDialog}
                   disabled={!automationData.emailPreview.canProceed || isProcessing}
                 >
                   <Send className="h-4 w-4 mr-2" />
-                  {isProcessing ? '발송 중...' : '이메일 발송'}
+                  이메일 발송
                 </Button>
               </div>
             </div>
@@ -787,5 +812,20 @@ export function ExcelAutomationWizard() {
     );
   }
 
-  return null;
+  return (
+    <>
+      {/* EmailSendDialog */}
+      {currentOrderForEmail && (
+        <EmailSendDialog
+          open={emailDialogOpen}
+          onOpenChange={(open) => {
+            setEmailDialogOpen(open);
+            if (!open) setCurrentOrderForEmail(null);
+          }}
+          orderData={currentOrderForEmail}
+          onSendEmail={handleSendEmailFromDialog}
+        />
+      )}
+    </>
+  );
 }

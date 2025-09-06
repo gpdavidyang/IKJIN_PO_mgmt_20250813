@@ -93,72 +93,40 @@ export class PDFGenerationService {
       let attachmentId: number;
 
       if (process.env.VERCEL) {
-        // Vercel 환경: PDF 데이터를 Base64로 DB에 직접 저장
-        const base64Data = pdfBuffer.toString('base64');
+        // Vercel 환경: 임시 파일 저장 후 DB에 메타데이터만 저장
+        const tempFilePath = path.join('/tmp', fileName);
+        fs.writeFileSync(tempFilePath, pdfBuffer);
         
-        let attachment;
-        try {
-          [attachment] = await db.db.insert(attachments).values({
-            orderId,
-            originalName: fileName,
-            storedName: fileName,
-            filePath: `db://${fileName}`, // DB 저장 위치 표시
-            fileSize: pdfBuffer.length,
-            mimeType: 'application/pdf',
-            uploadedBy: userId,
-            fileData: base64Data // PDF 데이터를 Base64로 DB에 저장
-          }).returning();
-        } catch (error) {
-          // Fallback: save without fileData for older schema compatibility
-          console.warn('Failed to save with fileData, using fallback:', error);
-          [attachment] = await db.db.insert(attachments).values({
-            orderId,
-            originalName: fileName,
-            storedName: fileName,
-            filePath: `db://${fileName}`,
-            fileSize: pdfBuffer.length,
-            mimeType: 'application/pdf',
-            uploadedBy: userId,
-          }).returning();
-        }
+        // DB에 메타데이터만 저장 (fileData 없이)
+        const [attachment] = await db.db.insert(attachments).values({
+          orderId,
+          originalName: fileName,
+          storedName: fileName,
+          filePath: tempFilePath, // 임시 파일 경로
+          fileSize: pdfBuffer.length,
+          mimeType: 'application/pdf',
+          uploadedBy: userId,
+        }).returning();
         
         attachmentId = attachment.id;
-        filePath = `db://${fileName}`;
+        filePath = tempFilePath;
         
-        console.log(`✅ [PDFGenerator] PDF 생성 완료 (DB 저장): ${fileName}, Attachment ID: ${attachment.id}, 크기: ${Math.round(base64Data.length / 1024)}KB`);
+        console.log(`✅ [PDFGenerator] PDF 생성 완료 (Vercel 임시 저장): ${fileName}, Attachment ID: ${attachment.id}, 파일 크기: ${Math.round(pdfBuffer.length / 1024)}KB`);
       } else {
-        // 로컬 환경: 파일 시스템에 저장 + Base64 백업
+        // 로컬 환경: 파일 시스템에 저장
         filePath = path.join(tempDir, fileName);
         fs.writeFileSync(filePath, pdfBuffer);
         
-        // Also save Base64 data as backup for Vercel deployment
-        const base64Data = pdfBuffer.toString('base64');
-        
-        let attachment;
-        try {
-          [attachment] = await db.db.insert(attachments).values({
-            orderId,
-            originalName: fileName,
-            storedName: fileName,
-            filePath: `db://${fileName}`, // Changed to use db:// prefix for consistency
-            fileSize: pdfBuffer.length,
-            mimeType: 'application/pdf',
-            uploadedBy: userId,
-            fileData: base64Data // Save Base64 data for Vercel compatibility
-          }).returning();
-        } catch (error) {
-          // Fallback: save without fileData for older schema compatibility
-          console.warn('Failed to save with fileData, using fallback:', error);
-          [attachment] = await db.db.insert(attachments).values({
-            orderId,
-            originalName: fileName,
-            storedName: fileName,
-            filePath: filePath, // Use original filesystem path as fallback
-            fileSize: pdfBuffer.length,
-            mimeType: 'application/pdf',
-            uploadedBy: userId,
-          }).returning();
-        }
+        // DB에 메타데이터 저장 (fileData 없이)
+        const [attachment] = await db.db.insert(attachments).values({
+          orderId,
+          originalName: fileName,
+          storedName: fileName,
+          filePath: filePath, // 파일시스템 경로 사용
+          fileSize: pdfBuffer.length,
+          mimeType: 'application/pdf',
+          uploadedBy: userId,
+        }).returning();
         
         attachmentId = attachment.id;
         console.log(`✅ [PDFGenerator] PDF 생성 완료: ${filePath}, Attachment ID: ${attachment.id}`);
@@ -485,8 +453,8 @@ export class PDFGenerationService {
    */
   private static async convertHTMLToPDFFromString(htmlContent: string): Promise<Buffer> {
     if (process.env.VERCEL) {
-      // Vercel 환경: PDFKit으로 직접 PDF 생성 (브라우저 불필요)
-      return await this.generatePDFWithPDFKit(htmlContent);
+      // Vercel 환경에서는 HTML을 PDF로 변환할 수 없으므로 오류 발생
+      throw new Error('HTML to PDF conversion not supported in Vercel environment');
     } else {
       // 로컬 환경: 기존 Playwright 사용
       try {
@@ -517,9 +485,9 @@ export class PDFGenerationService {
           await browser.close();
         }
       } catch (playwrightError) {
-        console.warn('⚠️ Playwright 실패, PDFKit으로 대체:', playwrightError);
-        // 로컬에서도 Playwright 실패 시 PDFKit 사용
-        return await this.generatePDFWithPDFKit(htmlContent);
+        console.warn('⚠️ Playwright 실패, 오류 발생:', playwrightError);
+        // PDFKit은 구조화된 데이터만 처리할 수 있으므로 HTML을 처리할 수 없음
+        throw new Error(`PDF 생성 실패: ${playwrightError instanceof Error ? playwrightError.message : 'Playwright 오류'}`);
       }
     }
   }

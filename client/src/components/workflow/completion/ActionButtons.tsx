@@ -13,7 +13,7 @@ import {
   Archive
 } from 'lucide-react';
 import PDFPreviewModal from '../preview/PDFPreviewModal';
-import EmailPreviewModal from '../preview/EmailPreviewModal';
+import { EmailSendDialog } from '@/components/email-send-dialog';
 
 interface ActionButtonsProps {
   orderData?: any; // 전체 orderData 객체를 받도록 수정
@@ -200,17 +200,25 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         onDownload={onDownloadPDF}
       />
 
-      {/* 이메일 미리보기 모달 */}
-      <EmailPreviewModal
-        orderData={orderData}
-        isOpen={showEmailPreview}
-        onClose={() => setShowEmailPreview(false)}
-        onSend={(emailData) => {
+      {/* 이메일 발송 모달 */}
+      <EmailSendDialog
+        open={showEmailPreview}
+        onOpenChange={(open) => {
+          if (!open) setShowEmailPreview(false);
+        }}
+        orderData={{
+          orderNumber: orderData?.orderNumber || 'WORKFLOW-ORDER',
+          vendorName: orderData?.vendorName || 'Unknown',
+          vendorEmail: orderData?.vendorEmail || '',
+          orderDate: new Date().toLocaleDateString(),
+          totalAmount: orderData?.totalAmount || 0,
+          siteName: orderData?.projectName || '워크플로우 발주서'
+        }}
+        onSendEmail={async (emailData) => {
           console.log('이메일 발송:', emailData);
           if (onSendEmail) {
             onSendEmail();
           }
-          setShowEmailPreview(false);
         }}
       />
     </Card>

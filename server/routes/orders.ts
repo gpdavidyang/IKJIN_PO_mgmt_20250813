@@ -1851,17 +1851,19 @@ router.get("/orders/download-pdf/:timestamp", async (req, res) => {
 
 router.post("/orders/send-email", requireAuth, async (req, res) => {
   try {
-    const { orderData, pdfUrl, recipients, emailSettings } = req.body;
+    const { orderData, pdfUrl, recipients, emailSettings, to, cc, bcc, subject, message } = req.body;
     
-    console.log('📧 이메일 발송 요청:', { orderData, pdfUrl, recipients, emailSettings });
+    console.log('📧 이메일 발송 요청:', { orderData, pdfUrl, recipients, to, cc, bcc, subject, message });
     
-    if (!recipients || recipients.length === 0) {
+    // recipients 또는 to 필드 중 하나를 사용
+    const recipientEmails = recipients || to;
+    if (!recipientEmails || recipientEmails.length === 0) {
       return res.status(400).json({ error: '수신자가 필요합니다.' });
     }
 
     // 기본 이메일 발송 (PDF 첨부)
     const emailOptions = {
-      to: recipients,
+      to: recipientEmails,
       cc: emailSettings?.cc,
       subject: emailSettings?.subject || `발주서 - ${orderData.orderNumber || ''}`,
       orderNumber: orderData.orderNumber,
@@ -2041,7 +2043,7 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
       attachmentsCount: attachments.length
     });
 
-    const result = await emailService.sendEmail({
+    const result = await POEmailService.sendEmail({
       to: emailOptions.to,
       cc: emailOptions.cc,
       subject: emailOptions.subject,
@@ -2137,12 +2139,13 @@ router.post("/orders/send-email-simple", requireAuth, async (req, res) => {
       fs.writeFileSync(excelPath, `발주서 상세 내용\n\n${body}`);
     }
 
-    // 이메일 발송
-    const result = await emailService.sendPurchaseOrderEmail({
-      orderData: emailData,
-      excelFilePath: excelPath,
-      recipients: toEmails,
+    // 이메일 발송 (POEmailService 사용)
+    const result = await POEmailService.sendPOWithOriginalFormat(excelPath, {
+      to: toEmails,
       cc: ccEmails,
+      subject: subject || `발주서 - ${emailData.orderNumber}`,
+      body: body || `발주서를 첨부합니다.\n\n발주번호: ${emailData.orderNumber}\n프로젝트: ${emailData.projectName}\n거래처: ${emailData.vendorName}`,
+      orderData: emailData,
       userId: (req as any).user?.id,
       orderId: orderData?.orderId
     });
@@ -2197,7 +2200,7 @@ router.post("/orders/send-email-with-excel", requireAuth, async (req, res) => {
     }
 
     // POEmailService를 사용하여 원본 형식 유지 이메일 발송
-    const result = await emailService.sendPOWithOriginalFormat(
+    const result = await POEmailService.sendPOWithOriginalFormat(
       localExcelPath,
       {
         to: emailSettings.to,
@@ -2260,11 +2263,12 @@ router.post("/test-email-smtp", async (req, res) => {
     const testExcelPath = path.join(__dirname, '../../uploads/smtp-test.txt');
     fs.writeFileSync(testExcelPath, 'SMTP Test File - ' + new Date().toISOString());
 
-    const result = await emailService.sendPurchaseOrderEmail({
-      orderData: testOrderData,
-      excelFilePath: testExcelPath,
-      recipients: [recipientEmail],
+    const result = await POEmailService.sendPOWithOriginalFormat(testExcelPath, {
+      to: [recipientEmail],
       cc: [],
+      subject: 'SMTP 테스트 - 발주서',
+      body: 'SMTP 설정 테스트 이메일입니다.',
+      orderData: testOrderData,
       userId: 'system-test',
       orderId: 9999
     });
