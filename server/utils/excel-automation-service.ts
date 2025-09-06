@@ -400,6 +400,7 @@ export class ExcelAutomationService {
       savedOrderNumbers?: string[];
       additionalMessage?: string;
       pdfFilePath?: string;
+      orderId?: number;  // 발주서 ID 추가
     } = {}
   ): Promise<EmailSendResult> {
     DebugLogger.logFunctionEntry('ExcelAutomationService.sendEmails', {
@@ -417,15 +418,27 @@ export class ExcelAutomationService {
         try {
           console.log(`📧 이메일 발송 중: ${email}`);
           
-          const sendResult = await emailService.sendPOWithOriginalFormat(
-            processedFilePath,
-            {
-              to: email,
-              subject: emailOptions.subject || `발주서 - ${new Date().toLocaleDateString('ko-KR')}`,
-              orderNumber: emailOptions.orderNumber,
-              additionalMessage: emailOptions.additionalMessage
-            }
-          );
+          // orderId가 있으면 품목 정보를 포함한 이메일 발송, 없으면 기본 이메일 발송
+          const sendResult = emailOptions.orderId
+            ? await emailService.sendPOWithOrderItemsFromDB(
+                processedFilePath,
+                emailOptions.orderId,
+                {
+                  to: email,
+                  subject: emailOptions.subject || `발주서 - ${new Date().toLocaleDateString('ko-KR')}`,
+                  orderNumber: emailOptions.orderNumber,
+                  additionalMessage: emailOptions.additionalMessage
+                }
+              )
+            : await emailService.sendPOWithOriginalFormat(
+                processedFilePath,
+                {
+                  to: email,
+                  subject: emailOptions.subject || `발주서 - ${new Date().toLocaleDateString('ko-KR')}`,
+                  orderNumber: emailOptions.orderNumber,
+                  additionalMessage: emailOptions.additionalMessage
+                }
+              );
 
           if (sendResult.success) {
             emailResults.push({
@@ -469,15 +482,31 @@ export class ExcelAutomationService {
         const orderNumbersToUpdate = emailOptions.savedOrderNumbers || 
           (emailOptions.orderNumber ? [emailOptions.orderNumber] : []);
         
+        console.log(`🔄 [Excel자동화] 발주서 상태 업데이트 시도:`, {
+          resultSuccess: result.success,
+          sentEmails: result.sentEmails,
+          savedOrderNumbers: emailOptions.savedOrderNumbers?.length || 0,
+          singleOrderNumber: emailOptions.orderNumber || 'none',
+          orderNumbersToUpdate: orderNumbersToUpdate.length
+        });
+        
         if (orderNumbersToUpdate.length > 0) {
           try {
             await this.updateMultipleOrderStatusToSent(orderNumbersToUpdate);
-            console.log(`📋 발주서 상태 업데이트 완료: ${orderNumbersToUpdate.length}개 발주서 → sent`);
+            console.log(`✅ [Excel자동화] 발주서 상태 업데이트 완료: ${orderNumbersToUpdate.length}개 발주서 → sent`);
+            console.log(`📋 업데이트된 발주번호들:`, orderNumbersToUpdate);
           } catch (updateError) {
-            console.error(`❌ 발주서 상태 업데이트 실패:`, updateError);
+            console.error(`❌ [Excel자동화] 발주서 상태 업데이트 실패:`, updateError);
             // 상태 업데이트 실패는 이메일 발송 성공에 영향을 주지 않음
           }
+        } else {
+          console.log(`⚠️ [Excel자동화] 업데이트할 발주번호가 없음`);
         }
+      } else {
+        console.log(`⚠️ [Excel자동화] 발주서 상태 업데이트 조건 미충족:`, {
+          resultSuccess: result.success,
+          sentEmails: result.sentEmails
+        });
       }
 
       DebugLogger.logFunctionExit('ExcelAutomationService.sendEmails', result);

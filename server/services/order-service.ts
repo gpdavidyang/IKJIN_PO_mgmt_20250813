@@ -30,8 +30,9 @@ export class OrderService {
         orderData.orderNumber = this.generateOrderNumber();
       }
 
-      // Set default status and approval level
-      orderData.status = orderData.status || 'draft';
+      // Set default orderStatus and approvalStatus (using new dual status system)
+      orderData.orderStatus = orderData.orderStatus || 'draft';
+      orderData.approvalStatus = orderData.approvalStatus || 'not_required';
       orderData.approvalLevel = orderData.approvalLevel || 1;
       orderData.currentApproverRole = orderData.currentApproverRole || 'field_worker';
 

@@ -11,11 +11,24 @@ const __dirname = dirname(__filename);
 import { UnifiedExcelPdfService } from '../services/unified-excel-pdf-service';
 import { POTemplateProcessor } from './po-template-processor';
 import { removeAllInputSheets } from './excel-input-sheet-remover';
+import * as database from '../db';
+import { purchaseOrderItems } from '@shared/schema';
+import { eq } from 'drizzle-orm';
 
 export interface EmailAttachment {
   filename: string;
   path: string;
   contentType?: string;
+}
+
+export interface OrderItemSummary {
+  itemName?: string;
+  specification?: string;
+  unit?: string;
+  quantity: number;
+  unitPrice: number;
+  totalAmount: number;
+  remarks?: string;
 }
 
 export interface POEmailOptions {
@@ -29,10 +42,13 @@ export interface POEmailOptions {
   dueDate?: string;
   totalAmount?: number;
   additionalMessage?: string;
+  orderItems?: OrderItemSummary[];
+  specialRequirements?: string;
 }
 
 export class POEmailService {
   private transporter: nodemailer.Transporter;
+  private db = database.db;
 
   constructor() {
     this.transporter = nodemailer.createTransport({
@@ -47,6 +63,60 @@ export class POEmailService {
         rejectUnauthorized: false
       }
     });
+  }
+
+  /**
+   * 발주서 ID로 품목 정보 조회
+   */
+  async getOrderItemsByOrderId(orderId: number): Promise<OrderItemSummary[]> {
+    try {
+      const items = await this.db
+        .select()
+        .from(purchaseOrderItems)
+        .where(eq(purchaseOrderItems.orderId, orderId));
+
+      return items.map(item => ({
+        itemName: item.itemName || undefined,
+        specification: item.specification || undefined,
+        unit: item.unit || undefined,
+        quantity: item.quantity || 0,
+        unitPrice: item.unitPrice || 0,
+        totalAmount: item.totalAmount || 0,
+        remarks: item.remarks || undefined
+      }));
+    } catch (error) {
+      console.error('품목 정보 조회 실패:', error);
+      return [];
+    }
+  }
+
+  /**
+   * 발주서 정보와 품목을 포함한 상세 이메일 발송 (원본 형식 유지)
+   */
+  async sendPOWithOrderItemsFromDB(
+    originalFilePath: string,
+    orderId: number,
+    emailOptions: Omit<POEmailOptions, 'orderItems'>
+  ): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    try {
+      // 데이터베이스에서 품목 정보 조회
+      const orderItems = await this.getOrderItemsByOrderId(orderId);
+      
+      // 옵션에 품목 정보 추가
+      const enhancedOptions: POEmailOptions = {
+        ...emailOptions,
+        orderItems
+      };
+
+      // 기존 원본 형식 유지 발송 메서드 호출
+      return await this.sendPOWithOriginalFormat(originalFilePath, enhancedOptions);
+    } catch (error) {
+      console.error('❌ 발주서 상세 정보 이메일 발송 오류:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
   }
 
   /**
@@ -166,7 +236,7 @@ export class POEmailService {
       console.error('❌ 원본 형식 유지 이메일 발송 오류:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : String(error)
       };
     }
   }
@@ -201,7 +271,14 @@ export class POEmailService {
 
       // 2. PDF 변환
       const pdfPath = path.join(uploadsDir, `po-sheets-${timestamp}.pdf`);
-      const pdfResult = await convertExcelToPdf(extractedPath, pdfPath, ['갑지', '을지']);
+      const pdfResult = await UnifiedExcelPdfService.convertExcelToPDF(extractedPath, {
+        outputPath: pdfPath,
+        quality: 'high',
+        orientation: 'landscape',
+        excludeSheets: ['Input', 'Settings'],
+        watermark: `발주서 - ${emailOptions.orderNumber || ''}`,
+        retryCount: 2
+      });
 
       if (!pdfResult.success) {
         return {
@@ -325,6 +402,10 @@ export class POEmailService {
       }).format(amount);
     };
 
+    const formatNumber = (num: number) => {
+      return new Intl.NumberFormat('ko-KR').format(num);
+    };
+
     const formatDate = (dateString: string) => {
       try {
         const date = new Date(dateString);
@@ -336,6 +417,55 @@ export class POEmailService {
       } catch {
         return dateString;
       }
+    };
+
+    const generateOrderItemsTable = (items: OrderItemSummary[]) => {
+      if (!items || items.length === 0) return '';
+
+      const itemRows = items.map((item, index) => `
+        <tr>
+          <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${index + 1}</td>
+          <td style="border: 1px solid #ddd; padding: 8px;">${item.itemName || '-'}</td>
+          <td style="border: 1px solid #ddd; padding: 8px;">${item.specification || '-'}</td>
+          <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${item.unit || '-'}</td>
+          <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${formatNumber(item.quantity)}</td>
+          <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${formatCurrency(item.unitPrice)}</td>
+          <td style="border: 1px solid #ddd; padding: 8px; text-align: right;"><strong>${formatCurrency(item.totalAmount)}</strong></td>
+          <td style="border: 1px solid #ddd; padding: 8px;">${item.remarks || '-'}</td>
+        </tr>
+      `).join('');
+
+      const totalAmount = items.reduce((sum, item) => sum + item.totalAmount, 0);
+
+      return `
+        <div style="margin: 20px 0;">
+          <h3 style="color: #333; margin-bottom: 10px;">📋 발주 품목 상세</h3>
+          <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+            <thead>
+              <tr style="background-color: #f8f9fa;">
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">번호</th>
+                <th style="border: 1px solid #ddd; padding: 8px;">품목명</th>
+                <th style="border: 1px solid #ddd; padding: 8px;">규격</th>
+                <th style="border: 1px solid #ddd; padding: 8px;">단위</th>
+                <th style="border: 1px solid #ddd; padding: 8px;">수량</th>
+                <th style="border: 1px solid #ddd; padding: 8px;">단가</th>
+                <th style="border: 1px solid #ddd; padding: 8px;">금액</th>
+                <th style="border: 1px solid #ddd; padding: 8px;">비고</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemRows}
+              <tr style="background-color: #e9ecef; font-weight: bold;">
+                <td colspan="6" style="border: 1px solid #ddd; padding: 8px; text-align: right;">합계</td>
+                <td style="border: 1px solid #ddd; padding: 8px; text-align: right; color: #dc3545;">
+                  ${formatCurrency(totalAmount)}
+                </td>
+                <td style="border: 1px solid #ddd; padding: 8px;"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      `;
     };
 
     return `
@@ -445,6 +575,8 @@ export class POEmailService {
                 ` : ''}
               </table>
             ` : ''}
+
+            ${options.orderItems && options.orderItems.length > 0 ? generateOrderItemsTable(options.orderItems) : ''}
             
             <div class="attachments">
               <h3>📎 첨부파일</h3>
@@ -455,8 +587,15 @@ export class POEmailService {
               <p><small>* 갑지와 을지 시트가 포함되어 있습니다.</small></p>
             </div>
             
-            ${options.additionalMessage ? `
+            ${options.specialRequirements ? `
               <div style="background-color: #fff3cd; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                <h3>⚠️ 특이사항</h3>
+                <p>${options.specialRequirements}</p>
+              </div>
+            ` : ''}
+
+            ${options.additionalMessage ? `
+              <div style="background-color: #e7f3ff; padding: 15px; border-radius: 5px; margin: 20px 0;">
                 <h3>📝 추가 안내사항</h3>
                 <p>${options.additionalMessage}</p>
               </div>

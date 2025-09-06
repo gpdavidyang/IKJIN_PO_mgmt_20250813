@@ -66,7 +66,7 @@ router.get("/orders", async (req, res) => {
     // console.log('📥 GET /api/orders - Request query:', req.query);
 
     const filters = {
-      status: status as string,
+      orderStatus: status as string,  // Use orderStatus instead of legacy status
       projectId: projectId ? parseInt(projectId as string) : undefined,
       vendorId: vendorId ? parseInt(vendorId as string) : undefined,
       startDate: startDate ? new Date(startDate as string) : undefined,
@@ -110,7 +110,7 @@ router.get("/orders/export", requireAuth, async (req: any, res) => {
     
     const filters = {
       userId: user?.role === "admin" && req.query.userId && req.query.userId !== "all" ? req.query.userId : (user?.role === "admin" ? undefined : userId),
-      status: req.query.status && req.query.status !== "all" ? req.query.status : undefined,
+      orderStatus: req.query.status && req.query.status !== "all" ? req.query.status : undefined,  // Use orderStatus instead of legacy status
       vendorId: vendorId,
       projectId: projectId,
       startDate: req.query.startDate ? new Date(req.query.startDate) : undefined,
@@ -2014,9 +2014,34 @@ router.get("/orders/download-pdf/:timestamp", async (req, res) => {
 
 router.post("/orders/send-email", requireAuth, async (req, res) => {
   try {
-    const { orderData, pdfUrl, recipients, emailSettings, to, cc, bcc, subject, message } = req.body;
+    const { 
+      orderData, 
+      pdfUrl, 
+      excelUrl, 
+      recipients, 
+      emailSettings, 
+      to, 
+      cc, 
+      bcc, 
+      subject, 
+      message, 
+      attachPdf = true, 
+      attachExcel = false 
+    } = req.body;
     
-    console.log('📧 이메일 발송 요청:', { orderData, pdfUrl, recipients, to, cc, bcc, subject, message });
+    console.log('📧 이메일 발송 요청:', { 
+      orderData, 
+      pdfUrl, 
+      excelUrl, 
+      recipients, 
+      to, 
+      cc, 
+      bcc, 
+      subject, 
+      message, 
+      attachPdf, 
+      attachExcel 
+    });
     
     // recipients 또는 to 필드 중 하나를 사용
     const recipientEmails = recipients || to;
@@ -2024,7 +2049,7 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
       return res.status(400).json({ error: '수신자가 필요합니다.' });
     }
 
-    // 기본 이메일 발송 (PDF 첨부)
+    // 기본 이메일 발송 옵션
     const emailOptions = {
       to: recipientEmails,
       cc: emailSettings?.cc,
@@ -2035,21 +2060,48 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
       additionalMessage: emailSettings?.message
     };
 
-    // PDF 파일이 있으면 첨부
+    // 첨부파일 처리
     let attachments = [];
-    if (pdfUrl) {
+    let attachmentsList = [];
+    
+    // PDF 파일 첨부 (attachPdf가 true이고 pdfUrl이 있으면)
+    if (attachPdf && pdfUrl) {
       const pdfPath = path.join(__dirname, '../../', pdfUrl.replace(/^\//, ''));
+      console.log('📎 PDF 첨부 시도:', pdfPath);
       if (fs.existsSync(pdfPath)) {
         attachments.push({
           filename: `발주서_${orderData.orderNumber || Date.now()}.pdf`,
           path: pdfPath,
           contentType: 'application/pdf'
         });
+        attachmentsList.push('발주서.pdf (PDF 파일)');
+        console.log('✅ PDF 첨부 성공');
+      } else {
+        console.log('❌ PDF 파일을 찾을 수 없음:', pdfPath);
       }
     }
+    
+    // Excel 파일 첨부 (attachExcel이 true이고 excelUrl이 있으면)
+    if (attachExcel && excelUrl) {
+      const excelPath = path.join(__dirname, '../../', excelUrl.replace(/^\//, ''));
+      console.log('📎 Excel 첨부 시도:', excelPath);
+      if (fs.existsSync(excelPath)) {
+        attachments.push({
+          filename: `발주서_${orderData.orderNumber || Date.now()}.xlsx`,
+          path: excelPath,
+          contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        });
+        attachmentsList.push('발주서.xlsx (Excel 파일)');
+        console.log('✅ Excel 첨부 성공');
+      } else {
+        console.log('❌ Excel 파일을 찾을 수 없음:', excelPath);
+      }
+    }
+    
+    console.log(`📎 총 ${attachments.length}개 첨부파일:`, attachmentsList);
 
     // EmailService의 generateEmailContent를 위한 별도 메서드 생성
-    const generateEmailContent = (options: any): string => {
+    const generateEmailContent = (options: any, attachmentsList: string[] = []): string => {
       const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('ko-KR', {
           style: 'currency',
@@ -2166,12 +2218,14 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
                 </table>
               ` : ''}
               
-              <div class="attachments">
-                <h3>📎 첨부파일</h3>
-                <ul>
-                  <li>발주서.pdf (PDF 파일)</li>
-                </ul>
-              </div>
+              ${attachmentsList.length > 0 ? `
+                <div class="attachments">
+                  <h3>📎 첨부파일</h3>
+                  <ul>
+                    ${attachmentsList.map(attachment => `<li>${attachment}</li>`).join('')}
+                  </ul>
+                </div>
+              ` : ''}
               
               ${options.additionalMessage ? `
                 <div style="background-color: #fff3cd; padding: 15px; border-radius: 5px; margin: 20px 0;">
@@ -2207,7 +2261,7 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
     });
 
     // 간단한 이메일 발송 (첨부 파일 없이 또는 PDF만 첨부)
-    const emailHtml = generateEmailContent(emailOptions);
+    const emailHtml = generateEmailContent(emailOptions, attachmentsList);
     
     // 동적 SMTP 설정을 사용하여 이메일 발송
     const emailSettingsService = new EmailSettingsService();
@@ -2253,12 +2307,15 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
         // 이메일 발송 성공 시 발주서 상태를 'sent'로 업데이트
         if (orderData && orderData.orderNumber) {
           try {
+            console.log(`🔄 발주서 상태 업데이트 시도: ${orderData.orderNumber} → sent`);
             await updateOrderStatusAfterEmail(orderData.orderNumber);
-            console.log(`📋 발주서 상태 업데이트 완료: ${orderData.orderNumber} → sent`);
+            console.log(`✅ 발주서 상태 업데이트 완료: ${orderData.orderNumber} → sent`);
           } catch (updateError) {
             console.error(`❌ 발주서 상태 업데이트 실패: ${orderData.orderNumber}`, updateError);
             // 상태 업데이트 실패는 이메일 발송 성공에 영향을 주지 않음
           }
+        } else {
+          console.log(`⚠️ 발주서 정보가 없어 상태 업데이트를 건너뜀:`, { orderData });
         }
         
         res.json({ success: true, messageId: info.messageId });
@@ -2374,12 +2431,18 @@ router.post("/orders/send-email-simple", requireAuth, async (req, res) => {
     // 이메일 발송 성공 시 발주서 상태를 'sent'로 업데이트
     if (result.success && emailData && emailData.orderNumber) {
       try {
+        console.log(`🔄 [간편발송] 발주서 상태 업데이트 시도: ${emailData.orderNumber} → sent`);
         await updateOrderStatusAfterEmail(emailData.orderNumber);
-        console.log(`📋 발주서 상태 업데이트 완료: ${emailData.orderNumber} → sent`);
+        console.log(`✅ [간편발송] 발주서 상태 업데이트 완료: ${emailData.orderNumber} → sent`);
       } catch (updateError) {
-        console.error(`❌ 발주서 상태 업데이트 실패: ${emailData.orderNumber}`, updateError);
+        console.error(`❌ [간편발송] 발주서 상태 업데이트 실패: ${emailData.orderNumber}`, updateError);
         // 상태 업데이트 실패는 이메일 발송 성공에 영향을 주지 않음
       }
+    } else {
+      console.log(`⚠️ [간편발송] 발주서 정보가 없어 상태 업데이트를 건너뜀:`, { 
+        resultSuccess: result.success, 
+        emailData: emailData?.orderNumber || 'no orderNumber'
+      });
     }
     
     res.json({ success: true, ...result });

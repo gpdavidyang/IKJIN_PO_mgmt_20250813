@@ -133,7 +133,7 @@ export class EmailService {
       }
     } 
     
-    // filePath가 없으면 orders 엔드포인트 사용 (PDF 없이 이메일만 발송)
+    // filePath가 없으면 orders 엔드포인트 사용 (첨부파일 포함 이메일 발송)
     try {
       const response = await apiRequest('POST', '/api/orders/send-email', {
         orderData: {
@@ -147,6 +147,8 @@ export class EmailService {
         cc: emailData.cc,
         subject: emailData.subject,
         message: emailData.message,
+        attachPdf: emailData.attachPDF,
+        attachExcel: emailData.attachExcel,
         emailSettings: {
           subject: emailData.subject,
           message: emailData.message,

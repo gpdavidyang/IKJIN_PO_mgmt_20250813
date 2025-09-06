@@ -887,7 +887,7 @@ export class DatabaseStorage implements IStorage {
     page?: number;
     limit?: number;
   } = {}): Promise<{ orders: (PurchaseOrder & { vendor?: Vendor; user?: User; items?: PurchaseOrderItem[] })[], total: number }> {
-    const { userId, status, vendorId, templateId, projectId, startDate, endDate, minAmount, maxAmount, searchText, majorCategory, middleCategory, minorCategory, page = 1, limit = 50 } = filters;
+    const { userId, status, orderStatus, vendorId, templateId, projectId, startDate, endDate, minAmount, maxAmount, searchText, majorCategory, middleCategory, minorCategory, page = 1, limit = 50 } = filters;
     
     // Debug logging removed for performance
     
@@ -897,8 +897,10 @@ export class DatabaseStorage implements IStorage {
       whereConditions.push(eq(purchaseOrders.userId, userId));
     }
     
-    if (status && status !== 'all' && status !== '') {
-      whereConditions.push(sql`${purchaseOrders.status} = ${status}`);
+    // Use orderStatus instead of legacy status field
+    const statusParam = orderStatus || status;  // Accept both for backward compatibility
+    if (statusParam && statusParam !== 'all' && statusParam !== '') {
+      whereConditions.push(sql`${purchaseOrders.orderStatus} = ${statusParam}`);
     }
     
     if (vendorId && vendorId !== 'all') {
@@ -2447,8 +2449,8 @@ export class DatabaseStorage implements IStorage {
       if (nextApprover) {
         updateData.currentApproverRole = nextApprover;
       } else {
-        // Final approval - order completed
-        updateData.status = 'approved';
+        // Final approval - order completed using new dual status system
+        updateData.approvalStatus = 'approved';  // Use new approvalStatus instead of legacy status
         updateData.currentApproverRole = null;
         updateData.isApproved = true;
         updateData.approvedBy = userId;

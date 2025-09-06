@@ -6,6 +6,22 @@ import path from 'path';
 import fs from 'fs';
 import jwt from 'jsonwebtoken';
 
+// Import auth middleware
+const requireAuth = (req: any, res: any, next: any) => {
+  if (!req.isAuthenticated || !req.isAuthenticated()) {
+    return res.status(401).json({ message: "Authentication required" });
+  }
+  next();
+};
+
+// Admin only middleware
+const requireAdmin = (req: any, res: any, next: any) => {
+  if (!req.user || req.user.role !== 'admin') {
+    return res.status(403).json({ message: "Admin access required" });
+  }
+  next();
+};
+
 const router = Router();
 
 /**
@@ -157,6 +173,102 @@ router.get('/attachments/:id/download', async (req, res) => {
     console.error('Attachment download error:', error);
     res.status(500).json({ 
       error: '파일 다운로드 중 오류가 발생했습니다.',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+/**
+ * DELETE /api/attachments/:id
+ * 첨부파일 삭제 엔드포인트 (Admin Only)
+ */
+router.delete('/attachments/:id', requireAuth, requireAdmin, async (req, res) => {
+  const attachmentId = parseInt(req.params.id);
+
+  try {
+    console.log(`🗑️ Admin ${req.user.name} (ID: ${req.user.id}) requesting deletion of attachment ${attachmentId}`);
+
+    // 1. 첨부파일 정보 조회
+    const [attachment] = await db
+      .select({
+        id: attachments.id,
+        orderId: attachments.orderId,
+        originalName: attachments.originalName,
+        storedName: attachments.storedName,
+        filePath: attachments.filePath,
+        fileSize: attachments.fileSize,
+        mimeType: attachments.mimeType,
+        uploadedBy: attachments.uploadedBy,
+        uploadedAt: attachments.uploadedAt,
+        fileData: attachments.fileData
+      })
+      .from(attachments)
+      .where(eq(attachments.id, attachmentId));
+
+    if (!attachment) {
+      return res.status(404).json({ 
+        error: '첨부파일을 찾을 수 없습니다.',
+        attachmentId 
+      });
+    }
+
+    console.log(`📄 Found attachment: ${attachment.originalName} (Order: ${attachment.orderId})`);
+
+    // 2. 파일 시스템에서 실제 파일 삭제 시도
+    if (attachment.filePath && !attachment.filePath.startsWith('db://')) {
+      let fileName = attachment.filePath;
+      
+      const possiblePaths = [];
+      
+      // If it's already an absolute path, use it directly
+      if (path.isAbsolute(fileName)) {
+        possiblePaths.push(fileName);
+      } else {
+        // Try relative paths
+        possiblePaths.push(
+          path.join(process.cwd(), 'attached_assets', fileName),
+          path.join(process.cwd(), 'uploads', fileName),
+          path.join(process.cwd(), 'uploads', 'temp-pdf', fileName),
+          path.join(process.cwd(), fileName)
+        );
+      }
+      
+      // Try to delete physical file
+      for (const testPath of possiblePaths) {
+        if (fs.existsSync(testPath)) {
+          try {
+            fs.unlinkSync(testPath);
+            console.log(`🗑️ Deleted physical file at: ${testPath}`);
+            break;
+          } catch (fileError) {
+            console.warn(`⚠️ Failed to delete physical file at ${testPath}:`, fileError.message);
+          }
+        }
+      }
+    }
+
+    // 3. 데이터베이스에서 첨부파일 레코드 삭제
+    const deletedRows = await db
+      .delete(attachments)
+      .where(eq(attachments.id, attachmentId));
+
+    console.log(`✅ Deleted attachment record from database (affected rows: ${deletedRows})`);
+
+    // 4. 성공 응답
+    return res.json({
+      success: true,
+      message: '첨부파일이 성공적으로 삭제되었습니다.',
+      deletedAttachment: {
+        id: attachment.id,
+        originalName: attachment.originalName,
+        orderId: attachment.orderId
+      }
+    });
+
+  } catch (error) {
+    console.error('Attachment deletion error:', error);
+    res.status(500).json({ 
+      error: '첨부파일 삭제 중 오류가 발생했습니다.',
       message: error instanceof Error ? error.message : 'Unknown error'
     });
   }

@@ -332,7 +332,7 @@ export const purchaseOrders = pgTable("purchase_orders", {
   orderDate: date("order_date").notNull(),
   deliveryDate: date("delivery_date"),
   
-  // 기존 status 필드 (하위 호환성)
+  // DEPRECATED: 기존 status 필드 - 하위 호환성만을 위해 유지, 새 코드에서는 orderStatus/approvalStatus 사용
   status: purchaseOrderStatusEnum("status").notNull().default("pending"),
   
   // 새로운 이중 상태 시스템 필드

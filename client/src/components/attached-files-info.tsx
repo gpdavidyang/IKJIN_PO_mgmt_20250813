@@ -8,11 +8,25 @@ import {
   Calendar,
   User,
   FileText,
-  Info
+  Info,
+  Trash2
 } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "@/components/ui/theme-provider";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 interface AttachedFilesInfoProps {
   attachments: Array<{
@@ -29,10 +43,15 @@ interface AttachedFilesInfoProps {
 }
 
 export function AttachedFilesInfo({ attachments, orderId }: AttachedFilesInfoProps) {
+  const { user } = useAuth();
   const { toast } = useToast();
   const { theme } = useTheme();
   const isDarkMode = theme === 'dark';
   const [downloading, setDownloading] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState<number | null>(null);
+  
+  // Check if user is admin
+  const isAdmin = user?.role === 'admin';
 
   console.log('🔍 AttachedFilesInfo - COMPONENT CALLED!', { attachments, orderId });
   console.log('🔍 AttachedFilesInfo - received attachments:', attachments);
@@ -120,6 +139,40 @@ export function AttachedFilesInfo({ attachments, orderId }: AttachedFilesInfoPro
       });
     } finally {
       setDownloading(null);
+    }
+  };
+
+  const handleDelete = async (attachment: any) => {
+    if (!isAdmin) {
+      toast({
+        title: "권한 없음",
+        description: "관리자만 파일을 삭제할 수 있습니다.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setDeleting(attachment.id);
+    try {
+      await apiRequest("DELETE", `/api/attachments/${attachment.id}`);
+      
+      // Invalidate queries to refresh the data
+      await queryClient.invalidateQueries({ queryKey: ["order", orderId] });
+      await queryClient.invalidateQueries({ queryKey: ["orders-optimized"] });
+      
+      toast({
+        title: "파일 삭제 완료",
+        description: `${attachment.originalName} 파일이 삭제되었습니다.`,
+      });
+    } catch (error) {
+      console.error('Delete error:', error);
+      toast({
+        title: "파일 삭제 실패",
+        description: error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleting(null);
     }
   };
 
@@ -261,6 +314,59 @@ export function AttachedFilesInfo({ attachments, orderId }: AttachedFilesInfoPro
                     </>
                   )}
                 </Button>
+                
+                {/* Admin Delete Button */}
+                {isAdmin && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        disabled={deleting === file.id}
+                        className={`h-8 px-3 text-xs transition-colors ${
+                          isDarkMode 
+                            ? 'border-red-600 text-red-400 hover:bg-red-900/20 hover:border-red-500' 
+                            : 'border-red-300 text-red-700 hover:bg-red-50 hover:border-red-400'
+                        }`}
+                      >
+                        {deleting === file.id ? (
+                          <>
+                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current mr-1"></div>
+                            삭제 중...
+                          </>
+                        ) : (
+                          <>
+                            <Trash2 className="h-3 w-3 mr-1" />
+                            삭제
+                          </>
+                        )}
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className={isDarkMode ? 'bg-gray-800 border-gray-700' : ''}>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle className={isDarkMode ? 'text-white' : ''}>
+                          파일 삭제 확인
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className={isDarkMode ? 'text-gray-400' : ''}>
+                          <strong>{file.originalName}</strong> 파일을 삭제하시겠습니까?
+                          <br />
+                          이 작업은 되돌릴 수 없으며, 파일이 영구적으로 삭제됩니다.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel className={isDarkMode ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : ''}>
+                          취소
+                        </AlertDialogCancel>
+                        <AlertDialogAction 
+                          onClick={() => handleDelete(file)}
+                          className="bg-red-600 hover:bg-red-700 text-white"
+                        >
+                          삭제
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
               </div>
             </div>
           </div>
