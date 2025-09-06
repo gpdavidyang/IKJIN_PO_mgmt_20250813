@@ -6,7 +6,7 @@
 import { Router } from "express";
 import { storage } from "../storage";
 import { requireAuth, requireAdmin, requireOrderManager } from "../local-auth";
-import { insertPurchaseOrderSchema } from "@shared/schema";
+import { insertPurchaseOrderSchema, purchaseOrders } from "@shared/schema";
 import { upload } from "../utils/multer-config";
 import { decodeKoreanFilename } from "../utils/korean-filename";
 import { OrderService } from "../services/order-service";
@@ -17,6 +17,8 @@ import ApprovalRoutingService from "../services/approval-routing-service";
 import { PDFGenerationService } from "../services/pdf-generation-service";
 import { EnhancedPDFGenerationService } from "../services/pdf-generation-service-enhanced";
 import { ProfessionalPDFGenerationService } from "../services/professional-pdf-generation-service";
+import * as database from "../db";
+import { eq } from "drizzle-orm";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -1634,7 +1636,12 @@ router.post("/orders/:id/regenerate-pdf", requireAuth, async (req, res) => {
     }
 
     // Get order details to verify it exists
-    const order = await storage.getPurchaseOrderWithDetails(orderId);
+    const [order] = await database.db
+      .select()
+      .from(purchaseOrders)
+      .where(eq(purchaseOrders.id, orderId))
+      .limit(1);
+    
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }

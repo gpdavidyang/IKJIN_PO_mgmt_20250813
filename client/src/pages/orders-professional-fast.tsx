@@ -777,7 +777,7 @@ export default function OrdersProfessionalFast() {
     const statusMap: { [key: string]: string } = {
       'draft': '임시저장',
       'created': '발주생성',
-      'sent': '발주발송',
+      'sent': '발주완료',
       'delivered': '납품완료'
     };
     return statusMap[status] || status || '-';
@@ -860,7 +860,7 @@ export default function OrdersProfessionalFast() {
               <div className="flex items-center gap-2">
                 <MailCheck className="h-3 w-3 text-green-500" />
                 <span className="text-gray-700 dark:text-gray-300">
-                  <strong>Sent:</strong> 발송 완료
+                  <strong>Sent:</strong> 발주 완료
                 </span>
               </div>
               <div className="flex items-center gap-2">
@@ -905,7 +905,7 @@ export default function OrdersProfessionalFast() {
                   <SelectItem value="all">모든 발주상태</SelectItem>
                   <SelectItem value="draft">임시저장</SelectItem>
                   <SelectItem value="created">발주생성</SelectItem>
-                  <SelectItem value="sent">발주발송</SelectItem>
+                  <SelectItem value="sent">발주완료</SelectItem>
                   <SelectItem value="delivered">납품완료</SelectItem>
                 </SelectContent>
               </Select>
@@ -1254,10 +1254,13 @@ export default function OrdersProfessionalFast() {
                           
                           {/* PDF button - only for non-draft status (created, sent, delivered) */}
                           {(() => {
-                            const currentOrderStatus = order.orderStatus || order.status;
-                            const isDraft = currentOrderStatus === 'draft' || currentOrderStatus === '임시저장';
-                            const isValidForPdf = ['created', 'sent', 'delivered', 'approved', 'completed'].includes(currentOrderStatus);
-                            return !isDraft && isValidForPdf;
+                            // orderStatus를 우선 확인 (새로운 발주 상태 필드)
+                            if (order.orderStatus) {
+                              // draft 상태면 PDF 버튼 숨김
+                              return order.orderStatus !== 'draft' && ['created', 'sent', 'delivered'].includes(order.orderStatus);
+                            }
+                            // orderStatus가 없으면 기존 status 필드 확인
+                            return order.status !== 'draft' && ['approved', 'sent', 'completed'].includes(order.status);
                           })() && (
                             <button
                               onClick={() => handlePDFDownload(order)}

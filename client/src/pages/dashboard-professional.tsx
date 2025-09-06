@@ -317,7 +317,7 @@ export default function DashboardProfessional() {
     const statusMap: { [key: string]: string } = {
       'draft': '임시저장',
       'created': '발주생성',
-      'sent': '발주발송',
+      'sent': '발주완료',
       'delivered': '납품완료'
     };
     return statusMap[status] || status || '-';

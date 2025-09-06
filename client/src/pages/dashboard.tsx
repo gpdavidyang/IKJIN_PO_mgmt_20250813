@@ -519,16 +519,40 @@ export default function Dashboard() {
                       className={`flex items-center justify-between p-1 rounded cursor-pointer transition-colors ${
                         isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
                       }`}
-                      onClick={() => navigate(`/orders/${order.id}`)}
                     >
-                      <div className="min-w-0 flex-1">
+                      <div className="min-w-0 flex-1" onClick={() => navigate(`/orders/${order.id}`)}>
                         <div className={`text-xs font-medium truncate transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{order.orderNumber}</div>
                         <div className={`text-xs transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{order.vendor?.name}</div>
                       </div>
-                      <div className="text-right">
-                        <div className={`text-xs font-semibold transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
-                          {formatKoreanWon(order.totalAmount || 0).replace('₩', '').replace(',000,000', 'M')}
+                      <div className="flex items-center gap-2">
+                        <div className="text-right">
+                          <div className={`text-xs font-semibold transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                            {formatKoreanWon(order.totalAmount || 0).replace('₩', '').replace(',000,000', 'M')}
+                          </div>
                         </div>
+                        {/* PDF 아이콘 - draft 상태가 아닌 경우만 표시 */}
+                        {(() => {
+                          const currentOrderStatus = order.orderStatus || order.status;
+                          if (order.orderStatus) {
+                            return order.orderStatus !== 'draft' && ['created', 'sent', 'delivered'].includes(order.orderStatus);
+                          }
+                          return order.status !== 'draft' && ['approved', 'sent', 'completed'].includes(order.status);
+                        })() && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              window.open(`/api/orders/${order.id}/download-pdf`, '_blank');
+                            }}
+                            className={`p-1 rounded transition-colors ${
+                              isDarkMode 
+                                ? 'text-orange-400 hover:bg-orange-900/20 hover:text-orange-300' 
+                                : 'text-orange-500 hover:bg-orange-50 hover:text-orange-700'
+                            }`}
+                            title="PDF 다운로드"
+                          >
+                            <FileText className="h-3 w-3" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}
