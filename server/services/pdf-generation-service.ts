@@ -93,25 +93,25 @@ export class PDFGenerationService {
       let attachmentId: number;
 
       if (process.env.VERCEL) {
-        // Vercel 환경: 임시 파일 저장 후 DB에 메타데이터만 저장
-        const tempFilePath = path.join('/tmp', fileName);
-        fs.writeFileSync(tempFilePath, pdfBuffer);
+        // Vercel 환경: DB에 파일 데이터 저장
+        const base64Data = pdfBuffer.toString('base64');
         
-        // DB에 메타데이터만 저장 (fileData 없이)
+        // DB에 파일 데이터와 메타데이터 저장
         const [attachment] = await db.insert(attachments).values({
           orderId,
           originalName: fileName,
           storedName: fileName,
-          filePath: tempFilePath, // 임시 파일 경로
+          filePath: `db://${fileName}`, // DB 저장 표시
           fileSize: pdfBuffer.length,
           mimeType: 'application/pdf',
           uploadedBy: userId,
+          fileData: base64Data, // Base64 encoded PDF data
         }).returning();
         
         attachmentId = attachment.id;
-        filePath = tempFilePath;
+        filePath = `db://${fileName}`;
         
-        console.log(`✅ [PDFGenerator] PDF 생성 완료 (Vercel 임시 저장): ${fileName}, Attachment ID: ${attachment.id}, 파일 크기: ${Math.round(pdfBuffer.length / 1024)}KB`);
+        console.log(`✅ [PDFGenerator] PDF 생성 완료 (Vercel DB 저장): ${fileName}, Attachment ID: ${attachment.id}, 파일 크기: ${Math.round(pdfBuffer.length / 1024)}KB`);
       } else {
         // 로컬 환경: 파일 시스템에 저장
         filePath = path.join(tempDir, fileName);
