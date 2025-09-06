@@ -2208,22 +2208,36 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
     // NEW: Process selectedAttachments from frontend modal
     if (selectedAttachments && Array.isArray(selectedAttachments) && selectedAttachments.length > 0) {
       console.log('📎 처리할 선택된 첨부파일 IDs:', selectedAttachments);
+      console.log('📎 attachPdf:', attachPdf, 'attachExcel:', attachExcel);
+      console.log('📎 pdfUrl:', pdfUrl, 'excelUrl:', excelUrl);
       
       // Track which attachment IDs have already been processed by the old logic
       const processedAttachmentIds = new Set();
       
-      // Extract attachment IDs from PDF and Excel URLs if they were processed by old logic
+      // Only mark as processed if BOTH the flag is true AND attachment was actually added
+      // This prevents skipping attachments when the old logic didn't actually process them
       if (attachPdf && pdfUrl && pdfUrl.includes('/api/attachments/') && pdfUrl.includes('/download')) {
         const pdfAttachmentIdMatch = pdfUrl.match(/\/api\/attachments\/(\d+)\/download/);
-        if (pdfAttachmentIdMatch) {
-          processedAttachmentIds.add(parseInt(pdfAttachmentIdMatch[1]));
+        if (pdfAttachmentIdMatch && attachments.length > 0) {
+          // Only mark as processed if we actually added a PDF
+          const pdfId = parseInt(pdfAttachmentIdMatch[1]);
+          console.log('🔍 PDF already processed by old logic, ID:', pdfId);
+          processedAttachmentIds.add(pdfId);
         }
       }
       
       if (attachExcel && excelUrl && excelUrl.includes('/api/attachments/') && excelUrl.includes('/download')) {
         const excelAttachmentIdMatch = excelUrl.match(/\/api\/attachments\/(\d+)\/download/);
         if (excelAttachmentIdMatch) {
-          processedAttachmentIds.add(parseInt(excelAttachmentIdMatch[1]));
+          const excelId = parseInt(excelAttachmentIdMatch[1]);
+          // Check if Excel was actually processed by checking attachments array
+          const excelProcessed = attachmentsList.some(item => item.includes('Excel'));
+          if (excelProcessed) {
+            console.log('🔍 Excel already processed by old logic, ID:', excelId);
+            processedAttachmentIds.add(excelId);
+          } else {
+            console.log('⚠️ Excel URL exists but not processed by old logic, will process in selectedAttachments');
+          }
         }
       }
       
