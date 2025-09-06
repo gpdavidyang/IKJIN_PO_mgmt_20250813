@@ -335,9 +335,9 @@ export class POTemplateProcessorMock {
               site: orderData.siteName
             };
             
-            const pdfResult = await ProfessionalPDFGenerationService.generatePurchaseOrderPDF(
+            // Professional PDF Generation Service는 orderId와 userId만 필요함
+            const pdfResult = await ProfessionalPDFGenerationService.generateProfessionalPurchaseOrderPDF(
               orderId,
-              pdfData,
               userId
             );
             

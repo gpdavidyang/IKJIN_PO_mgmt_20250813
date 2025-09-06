@@ -139,14 +139,18 @@ export class ExcelAutomationService {
 
       // 2.5. 처리된 Excel 파일을 각 발주서에 첨부파일로 저장
       console.log(`🔍 [DEBUG] 2.5단계: 처리된 Excel 파일 첨부 시작`);
+      console.log(`📊 [DEBUG] saveResult:`, JSON.stringify(saveResult, null, 2));
       const originalFileName = path.basename(filePath);
       
       // 발주서 ID들 조회
       if (saveResult.savedOrderNumbers && saveResult.savedOrderNumbers.length > 0) {
+        console.log(`📋 [DEBUG] 발주서 번호들:`, saveResult.savedOrderNumbers);
         try {
           const orders = await db.select({ id: purchaseOrders.id, orderNumber: purchaseOrders.orderNumber })
             .from(purchaseOrders)
             .where(inArray(purchaseOrders.orderNumber, saveResult.savedOrderNumbers));
+          
+          console.log(`🔍 [DEBUG] 조회된 발주서들:`, orders);
           
           // Input 시트가 제거된 처리된 Excel 파일 생성
           const processedExcelPath = filePath.replace(/\.(xlsx?)$/i, '_processed.$1');
