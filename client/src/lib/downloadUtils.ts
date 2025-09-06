@@ -70,7 +70,7 @@ export const downloadAttachment = async (attachmentId: number, filename: string)
     // Fallback: Try blob download as last resort
     try {
       console.log('🔄 Trying fallback blob download...');
-      const token = localStorage.getItem('token') || document.cookie.match(/auth_token=([^;]+]/)?.[1];
+      const token = localStorage.getItem('token') || document.cookie.match(/auth_token=([^;]+)/)?.[1];
       
       const response = await fetch(`/api/attachments/${attachmentId}/download?download=true`, {
         method: 'GET',
