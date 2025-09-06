@@ -508,6 +508,18 @@ export class ProfessionalPDFGenerationService {
    * 전문적인 HTML 템플릿 생성
    */
   private static generateProfessionalHTMLTemplate(data: ComprehensivePurchaseOrderData): string {
+    // Read logo file and convert to base64
+    let logoBase64 = '';
+    try {
+      const logoPath = path.join(process.cwd(), 'assets', 'company-logo.png');
+      if (fs.existsSync(logoPath)) {
+        const logoBuffer = fs.readFileSync(logoPath);
+        logoBase64 = logoBuffer.toString('base64');
+      }
+    } catch (error) {
+      console.error('Failed to load logo:', error);
+    }
+    
     const formatDate = (date?: Date | null) => {
       if (!date) return '-';
       return format(new Date(date), 'yyyy년 MM월 dd일', { locale: ko });
@@ -930,7 +942,10 @@ export class ProfessionalPDFGenerationService {
     <!-- HEADER -->
     <div class="header" style="display: grid; grid-template-columns: 150px 1fr; gap: 20px; align-items: center;">
       <div class="logo-area" style="display: flex; align-items: center; justify-content: center;">
-        <img src="file://${path.join(process.cwd(), 'assets', 'company-logo.png')}" alt="Company Logo" style="max-width: 120px; max-height: 60px; object-fit: contain;" />
+        ${logoBase64 ? 
+          `<img src="data:image/png;base64,${logoBase64}" alt="Company Logo" style="max-width: 120px; max-height: 60px; object-fit: contain;" />` :
+          `<div style="width: 120px; height: 60px; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; font-size: 10pt; color: #999;">LOGO</div>`
+        }
       </div>
       <div class="header-center" style="text-align: center;">
         <h1>구매 발주서</h1>
