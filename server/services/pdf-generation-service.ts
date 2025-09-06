@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import * as db from '../db';
+import { db } from '../db';
 import { attachments } from '../../shared/schema';
 import { eq } from 'drizzle-orm';
 
@@ -98,7 +98,7 @@ export class PDFGenerationService {
         fs.writeFileSync(tempFilePath, pdfBuffer);
         
         // DB에 메타데이터만 저장 (fileData 없이)
-        const [attachment] = await db.db.insert(attachments).values({
+        const [attachment] = await db.insert(attachments).values({
           orderId,
           originalName: fileName,
           storedName: fileName,
@@ -118,7 +118,7 @@ export class PDFGenerationService {
         fs.writeFileSync(filePath, pdfBuffer);
         
         // DB에 메타데이터 저장 (fileData 없이)
-        const [attachment] = await db.db.insert(attachments).values({
+        const [attachment] = await db.insert(attachments).values({
           orderId,
           originalName: fileName,
           storedName: fileName,
@@ -662,7 +662,7 @@ export class PDFGenerationService {
             fs.unlinkSync(attachment.filePath);
           }
           // DB 레코드 삭제
-          await db.db.delete(attachments).where(eq(attachments.id, attachment.id));
+          await db.delete(attachments).where(eq(attachments.id, attachment.id));
         }
       }
       

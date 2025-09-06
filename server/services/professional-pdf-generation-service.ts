@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import * as db from '../db';
+import { db } from '../db';
 import { attachments, users, companies, vendors, projects, purchaseOrders, purchaseOrderItems, emailSendHistory } from '../../shared/schema';
 import { eq, desc } from 'drizzle-orm';
 
@@ -491,7 +491,7 @@ export class ProfessionalPDFGenerationService {
 
       if (process.env.VERCEL) {
         // Vercel 환경: Base64만 저장
-        const [attachment] = await db.db.insert(attachments).values({
+        const [attachment] = await db.insert(attachments).values({
           orderId,
           originalName: fileName,
           storedName: fileName,
@@ -517,7 +517,7 @@ export class ProfessionalPDFGenerationService {
         filePath = path.join(tempDir, fileName);
         fs.writeFileSync(filePath, pdfBuffer);
         
-        const [attachment] = await db.db.insert(attachments).values({
+        const [attachment] = await db.insert(attachments).values({
           orderId,
           originalName: fileName,
           storedName: fileName,

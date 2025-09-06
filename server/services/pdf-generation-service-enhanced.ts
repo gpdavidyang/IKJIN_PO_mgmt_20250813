@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import * as db from '../db';
+import { db } from '../db';
 import { attachments, users, companies, vendors, projects } from '../../shared/schema';
 import { eq } from 'drizzle-orm';
 
@@ -139,7 +139,7 @@ export class EnhancedPDFGenerationService {
         let attachment;
         try {
           // fileData 컬럼이 있는 경우 시도
-          [attachment] = await db.db.insert(attachments).values({
+          [attachment] = await db.insert(attachments).values({
             orderId,
             originalName: fileName,
             storedName: fileName,
@@ -154,7 +154,7 @@ export class EnhancedPDFGenerationService {
         } catch (error) {
           console.warn('⚠️ [Enhanced PDFGenerator] fileData 컬럼 없음, 기본 저장 방식 사용:', error.message);
           // fileData 컬럼이 없는 경우 fallback
-          [attachment] = await db.db.insert(attachments).values({
+          [attachment] = await db.insert(attachments).values({
             orderId,
             originalName: fileName,
             storedName: fileName,
@@ -185,7 +185,7 @@ export class EnhancedPDFGenerationService {
         
         try {
           // fileData 컬럼이 있는 경우 Base64도 함께 저장
-          [attachment] = await db.db.insert(attachments).values({
+          [attachment] = await db.insert(attachments).values({
             orderId,
             originalName: fileName,
             storedName: fileName,
@@ -200,7 +200,7 @@ export class EnhancedPDFGenerationService {
         } catch (error) {
           console.warn('⚠️ [Enhanced PDFGenerator] fileData 컬럼 없음, 파일 경로만 저장:', error.message);
           // fileData 컬럼이 없는 경우 파일 경로만 저장
-          [attachment] = await db.db.insert(attachments).values({
+          [attachment] = await db.insert(attachments).values({
             orderId,
             originalName: fileName,
             storedName: fileName,
