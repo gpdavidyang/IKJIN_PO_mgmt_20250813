@@ -1323,10 +1323,6 @@ export default function OrdersProfessionalFast() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getOrderStatusColor(order.orderStatus || 'draft')}`}>
                           {getOrderStatusText(order.orderStatus || 'draft')}
-                          {/* Debug info - 임시 */}
-                          <span className="ml-1 text-xs text-gray-400" title={`orderStatus: ${order.orderStatus}, status: ${order.status}`}>
-                            {order.orderStatus ? `(${order.orderStatus})` : `(legacy: ${order.status})`}
-                          </span>
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
