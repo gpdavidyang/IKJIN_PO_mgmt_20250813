@@ -220,6 +220,20 @@ export default function OrdersProfessionalFast() {
     gcTime: 600000, // 10분 동안 메모리에 캐시 유지
   });
 
+  // 발주 상태 통계 조회
+  const { data: statusStats } = useQuery({
+    queryKey: ["order-status-stats"],
+    queryFn: async () => {
+      const response = await fetch(`/api/dashboard/order-status-stats`, {
+        credentials: 'include',
+      });
+      if (!response.ok) throw new Error('Failed to fetch order status statistics');
+      return response.json();
+    },
+    staleTime: 60000, // 1분 동안 캐시 유지
+    gcTime: 300000, // 5분 동안 메모리에 캐시 유지
+  });
+
   const statusChangeMutation = useMutation({
     mutationFn: async ({ orderId, status }: { orderId: string; status: string }) => {
       await apiRequest("PUT", `/api/orders/${orderId}/status`, { status });
@@ -840,37 +854,118 @@ export default function OrdersProfessionalFast() {
             </div>
           </div>
           
-          {/* 발주 상태 구분 설명 */}
-          <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-            <div className="flex items-center gap-2 mb-3">
+          {/* 발주 상태 통계 카드 */}
+          <div className="mt-6">
+            <div className="flex items-center gap-2 mb-4">
               <Info className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-              <h3 className="text-sm font-semibold text-blue-900 dark:text-blue-100">발주 상태 구분</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">발주 상태 현황</h3>
+              {statusStats?.total && (
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  (총 {statusStats.total.toLocaleString()}건)
+                </span>
+              )}
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-              <div className="flex items-center gap-2">
-                <Circle className="h-3 w-3 text-gray-500" fill="currentColor" />
-                <span className="text-gray-700 dark:text-gray-300">
-                  <strong>Draft:</strong> 임시저장
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <PlayCircle className="h-3 w-3 text-blue-500" />
-                <span className="text-gray-700 dark:text-gray-300">
-                  <strong>Created:</strong> 발주서 생성
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <MailCheck className="h-3 w-3 text-green-500" />
-                <span className="text-gray-700 dark:text-gray-300">
-                  <strong>Sent:</strong> 발주 완료
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Truck className="h-3 w-3 text-purple-500" />
-                <span className="text-gray-700 dark:text-gray-300">
-                  <strong>Delivered:</strong> 납품 완료
-                </span>
-              </div>
+            
+            {/* 통계 카드 그리드 */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {statusStats?.stats?.map((stat: any) => {
+                const getStatusInfo = (status: string) => {
+                  switch (status) {
+                    case 'draft':
+                      return {
+                        icon: Circle,
+                        iconColor: 'text-gray-500',
+                        bgColor: 'bg-gray-50 dark:bg-gray-800',
+                        borderColor: 'border-gray-200 dark:border-gray-700',
+                        label: '임시저장',
+                        description: '작성 중인 발주서'
+                      };
+                    case 'created':
+                      return {
+                        icon: PlayCircle,
+                        iconColor: 'text-blue-500',
+                        bgColor: 'bg-blue-50 dark:bg-blue-900/20',
+                        borderColor: 'border-blue-200 dark:border-blue-800',
+                        label: '발주생성',
+                        description: '발주서 생성 완료'
+                      };
+                    case 'sent':
+                      return {
+                        icon: MailCheck,
+                        iconColor: 'text-green-500',
+                        bgColor: 'bg-green-50 dark:bg-green-900/20',
+                        borderColor: 'border-green-200 dark:border-green-800',
+                        label: '발주완료',
+                        description: '거래처에 발주 전송'
+                      };
+                    case 'delivered':
+                      return {
+                        icon: Truck,
+                        iconColor: 'text-purple-500',
+                        bgColor: 'bg-purple-50 dark:bg-purple-900/20',
+                        borderColor: 'border-purple-200 dark:border-purple-800',
+                        label: '납품완료',
+                        description: '납품 및 검수 완료'
+                      };
+                    default:
+                      return {
+                        icon: Circle,
+                        iconColor: 'text-gray-500',
+                        bgColor: 'bg-gray-50 dark:bg-gray-800',
+                        borderColor: 'border-gray-200 dark:border-gray-700',
+                        label: '기타',
+                        description: '-'
+                      };
+                  }
+                };
+
+                const statusInfo = getStatusInfo(stat.status);
+                const StatusIcon = statusInfo.icon;
+
+                return (
+                  <div
+                    key={stat.status}
+                    className={`p-4 rounded-lg border transition-all duration-200 hover:shadow-md cursor-pointer ${statusInfo.bgColor} ${statusInfo.borderColor}`}
+                    onClick={() => handleFilterChange("orderStatus", stat.status)}
+                    title={`${statusInfo.label} 상태의 발주서 필터링`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <StatusIcon className={`h-5 w-5 ${statusInfo.iconColor}`} />
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            {statusInfo.label}
+                          </span>
+                        </div>
+                        <div className="mb-1">
+                          <span className="text-2xl font-bold text-gray-900 dark:text-white">
+                            {stat.count.toLocaleString()}
+                          </span>
+                          <span className="text-sm text-gray-500 dark:text-gray-400 ml-1">건</span>
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                          {statusInfo.description}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+                            <div
+                              className={`h-1.5 rounded-full transition-all duration-300 ${
+                                stat.status === 'draft' ? 'bg-gray-500' :
+                                stat.status === 'created' ? 'bg-blue-500' :
+                                stat.status === 'sent' ? 'bg-green-500' : 'bg-purple-500'
+                              }`}
+                              style={{ width: `${stat.percentage}%` }}
+                            />
+                          </div>
+                          <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                            {stat.percentage}%
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
