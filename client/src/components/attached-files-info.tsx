@@ -27,6 +27,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { downloadAttachment, showDownloadSuccessMessage } from "@/lib/downloadUtils";
 
 interface AttachedFilesInfoProps {
   attachments: Array<{
@@ -101,35 +102,8 @@ export function AttachedFilesInfo({ attachments, orderId }: AttachedFilesInfoPro
   const handleDownload = async (attachment: any) => {
     setDownloading(attachment.id);
     try {
-      // Get token from localStorage or cookie
-      const token = localStorage.getItem('token') || document.cookie.match(/auth_token=([^;]+)/)?.[1];
-      
-      const response = await fetch(`/api/attachments/${attachment.id}/download`, {
-        method: 'GET',
-        headers: {
-          'Authorization': token ? `Bearer ${token}` : '',
-        },
-        credentials: 'include', // Include cookies
-      });
-
-      if (!response.ok) {
-        throw new Error('파일 다운로드에 실패했습니다');
-      }
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = attachment.originalName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-
-      toast({
-        title: "다운로드 완료",
-        description: `${attachment.originalName} 파일이 다운로드되었습니다.`,
-      });
+      await downloadAttachment(attachment.id, attachment.originalName);
+      showDownloadSuccessMessage(attachment.originalName, toast);
     } catch (error) {
       console.error('Download error:', error);
       toast({

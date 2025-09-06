@@ -38,6 +38,7 @@ import { EmailSendDialog } from "@/components/email-send-dialog";
 import { AttachedFilesInfo } from "@/components/attached-files-info";
 import { format } from "date-fns";
 import { formatKoreanWon } from "@/lib/utils";
+import { downloadAttachment, showDownloadSuccessMessage } from "@/lib/downloadUtils";
 
 export default function OrderDetailProfessional() {
   const { user } = useAuth();
@@ -493,38 +494,10 @@ export default function OrderDetailProfessional() {
                     );
                     
                     if (pdfAttachment) {
-                      // Use fetch with credentials to download
-                      const url = `/api/attachments/${pdfAttachment.id}/download?download=true`;
-                      
                       try {
-                        const token = localStorage.getItem('token') || document.cookie.match(/auth_token=([^;]+)/)?.[1];
-                        
-                        const response = await fetch(url, {
-                          method: 'GET',
-                          headers: {
-                            'Authorization': token ? `Bearer ${token}` : '',
-                          },
-                          credentials: 'include', // Include cookies
-                        });
-                        
-                        if (!response.ok) {
-                          throw new Error('PDF 다운로드에 실패했습니다');
-                        }
-                        
-                        const blob = await response.blob();
-                        const blobUrl = window.URL.createObjectURL(blob);
-                        const link = document.createElement('a');
-                        link.href = blobUrl;
-                        link.download = pdfAttachment.originalName || `발주서_${order.orderNumber}.pdf`;
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                        window.URL.revokeObjectURL(blobUrl);
-                        
-                        toast({
-                          title: "PDF 다운로드 완료",
-                          description: "PDF 파일이 다운로드 폴더에 저장되었습니다.",
-                        });
+                        const filename = pdfAttachment.originalName || `발주서_${order.orderNumber}.pdf`;
+                        await downloadAttachment(pdfAttachment.id, filename);
+                        showDownloadSuccessMessage(filename, toast);
                       } catch (error) {
                         console.error('PDF download error:', error);
                         toast({
