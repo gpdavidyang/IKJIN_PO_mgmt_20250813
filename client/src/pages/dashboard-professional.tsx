@@ -9,7 +9,6 @@ import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { formatKoreanWon } from "@/lib/utils";
 import { getStatusText } from "@/lib/statusUtils";
-import { getOrderStatusText, getApprovalStatusText, getOrderStatusColor, getApprovalStatusColor } from "@/lib/status-styles";
 import { apiRequest } from "@/lib/queryClient";
 import { EmailSendDialog } from "@/components/email-send-dialog";
 import { EmailHistoryModal } from "@/components/email-history-modal";
@@ -312,6 +311,50 @@ export default function DashboardProfessional() {
 
   // REMOVED: Debug logging that caused infinite loops
   // All console.log statements removed to prevent render loops
+
+  // 발주 상태 텍스트
+  const getOrderStatusText = (status: string) => {
+    const statusMap: { [key: string]: string } = {
+      'draft': '임시저장',
+      'created': '발주생성',
+      'sent': '발주발송',
+      'delivered': '납품완료'
+    };
+    return statusMap[status] || status || '-';
+  };
+
+  // 승인 상태 텍스트
+  const getApprovalStatusText = (status: string) => {
+    const statusMap: { [key: string]: string } = {
+      'not_required': '승인불필요',
+      'pending': '승인대기',
+      'approved': '승인완료',
+      'rejected': '반려'
+    };
+    return statusMap[status] || status || '-';
+  };
+
+  // 발주 상태 색상
+  const getOrderStatusColor = (status: string) => {
+    switch(status) {
+      case 'draft': return 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-500/25 dark:text-gray-200 dark:border-gray-400/50';
+      case 'created': return 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-500/25 dark:text-blue-200 dark:border-blue-400/50';
+      case 'sent': return 'bg-indigo-100 text-indigo-800 border-indigo-300 dark:bg-indigo-500/25 dark:text-indigo-200 dark:border-indigo-400/50';
+      case 'delivered': return 'bg-green-100 text-green-800 border-green-300 dark:bg-green-500/25 dark:text-green-200 dark:border-green-400/50';
+      default: return 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-500/25 dark:text-gray-200 dark:border-gray-400/50';
+    }
+  };
+
+  // 승인 상태 색상
+  const getApprovalStatusColor = (status: string) => {
+    switch(status) {
+      case 'not_required': return 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-500/25 dark:text-gray-200 dark:border-gray-400/50';
+      case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-500/25 dark:text-yellow-200 dark:border-yellow-400/50';
+      case 'approved': return 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-500/25 dark:text-blue-200 dark:border-blue-400/50';
+      case 'rejected': return 'bg-red-100 text-red-800 border-red-300 dark:bg-red-500/25 dark:text-red-200 dark:border-red-400/50';
+      default: return 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-500/25 dark:text-gray-200 dark:border-gray-400/50';
+    }
+  };
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: isDarkMode ? '#111827' : '#f9fafb' }}>
