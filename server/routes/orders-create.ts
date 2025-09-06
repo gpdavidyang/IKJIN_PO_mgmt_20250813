@@ -3,7 +3,7 @@ import { db } from '../db';
 import { purchaseOrders, orderHistory, attachments } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 import { requireAuth } from '../local-auth';
-import { PDFGenerationService } from '../services/pdf-generation-service';
+import { ProfessionalPDFGenerationService } from '../services/professional-pdf-generation-service';
 import { z } from 'zod';
 
 const router = Router();
@@ -59,37 +59,11 @@ router.post('/orders/:id/create-order', requireAuth, async (req, res) => {
       return res.status(404).json({ error: '발주서 정보를 불러올 수 없습니다.' });
     }
 
-    // 3. PDF 생성
-    console.log(`📄 Creating order PDF for order ${order.orderNumber}...`);
+    // 3. PDF 생성 (새로운 전문적인 포맷 사용)
+    console.log(`📄 Creating professional order PDF for order ${order.orderNumber}...`);
     
-    const pdfData = {
-      orderNumber: order.orderNumber,
-      orderDate: new Date(order.orderDate),
-      deliveryDate: order.deliveryDate ? new Date(order.deliveryDate) : null,
-      projectName: fullOrderData.project?.projectName,
-      vendorName: fullOrderData.vendor?.name,
-      vendorContact: fullOrderData.vendor?.contactPerson,
-      vendorEmail: fullOrderData.vendor?.email,
-      items: fullOrderData.items.map(item => ({
-        category: item.majorCategory || '',
-        subCategory1: item.middleCategory || '',
-        subCategory2: item.minorCategory || '',
-        name: item.itemName,
-        specification: item.specification || '',
-        quantity: Number(item.quantity),
-        unit: item.unit || '개',
-        unitPrice: Number(item.unitPrice),
-        price: Number(item.totalAmount),
-        deliveryLocation: fullOrderData.project?.location || ''
-      })),
-      totalAmount: Number(order.totalAmount),
-      notes: order.notes || '',
-      site: fullOrderData.project?.projectName
-    };
-
-    const pdfResult = await PDFGenerationService.generatePurchaseOrderPDF(
+    const pdfResult = await ProfessionalPDFGenerationService.generateProfessionalPurchaseOrderPDF(
       orderId,
-      pdfData,
       userId
     );
 
