@@ -48,7 +48,7 @@ export interface ComprehensivePurchaseOrderData {
     businessType?: string;
   };
   
-  // === 프로젝트 정보 ===
+  // === 현장 정보 ===
   project: {
     name: string;
     code?: string;
@@ -225,7 +225,7 @@ export class ProfessionalPDFGenerationService {
           vendorAddress: vendors.address,
           vendorBusinessType: vendors.businessType,
           
-          // 프로젝트 정보
+          // 현장 정보
           projectName: projects.projectName,
           projectCode: projects.projectCode,
           projectClientName: projects.clientName,
@@ -350,7 +350,7 @@ export class ProfessionalPDFGenerationService {
         },
 
         project: {
-          name: orderData.projectName || '프로젝트명 없음',
+          name: orderData.projectName || '현장명 없음',
           code: orderData.projectCode,
           clientName: orderData.projectClientName,
           location: orderData.projectLocation,
@@ -383,7 +383,7 @@ export class ProfessionalPDFGenerationService {
             item.majorCategory,
             item.middleCategory,
             item.minorCategory
-          ].filter(Boolean).join(' > '),
+          ].filter(Boolean).join(' | '),
         })),
 
         financial: {
@@ -573,17 +573,37 @@ export class ProfessionalPDFGenerationService {
       return new Intl.NumberFormat('ko-KR').format(num);
     };
 
+    // 특이사항 포맷팅 함수 (카테고리는 파이프로, 납품처 정보는 글머리표로)
+    const formatRemarks = (item: any) => {
+      let result = '';
+      
+      // 카테고리 정보가 있으면 파이프로 구분하여 추가
+      if (item.categoryPath && item.categoryPath !== '-') {
+        result += item.categoryPath + '<br/>';
+      }
+      
+      // 기존 remarks에서 납품처 정보를 글머리표로 포맷팅
+      if (item.remarks && item.remarks !== '-') {
+        const formattedRemarks = item.remarks
+          .replace(/납품처:/g, '• 납품처:')
+          .replace(/이메일:/g, '<br/>• 이메일:');
+        result += formattedRemarks;
+      }
+      
+      return result || '-';
+    };
+
     // 품목 행 생성
     const itemRows = data.items.map((item) => `
       <tr>
         <td class="text-center">${item.sequenceNo}</td>
-        <td class="text-small">${item.categoryPath || '-'}</td>
         <td class="text-small">${item.name}</td>
         <td class="text-small">${item.specification || '-'}</td>
         <td class="text-center">${formatNumber(item.quantity)}</td>
         <td class="text-center">${item.unit || '-'}</td>
         <td class="text-right">${formatCurrency(item.unitPrice)}</td>
         <td class="text-right">${formatCurrency(item.totalPrice)}</td>
+        <td class="text-small">${formatRemarks(item)}</td>
       </tr>
     `).join('');
 
@@ -955,14 +975,14 @@ export class ProfessionalPDFGenerationService {
       <h1 style="margin-bottom: 8px;">구매 발주서</h1>
       <div class="order-number" style="margin-bottom: 5px;">발주번호: ${data.orderNumber}</div>
       <div style="font-size: 6pt; color: #666; line-height: 1.2;">
-        생성일: ${formatDate(data.metadata.generatedAt)} | 문서ID: ${data.metadata.documentId.substring(0, 10)}
+        생성일: ${formatDate(data.metadata.generatedAt)}
       </div>
     </div>
     
     <!-- COMPANY & VENDOR INFO -->
     <div class="info-grid">
       <div class="info-box">
-        <h3>📋 발주업체 정보</h3>
+        <h3>발주업체 정보</h3>
         <div class="info-row">
           <span class="info-label">업체명</span>
           <span class="info-value">${data.issuerCompany.name}</span>
@@ -986,7 +1006,7 @@ export class ProfessionalPDFGenerationService {
       </div>
       
       <div class="info-box">
-        <h3>🏢 수주업체 정보</h3>
+        <h3>수주업체 정보</h3>
         <div class="info-row">
           <span class="info-label">업체명</span>
           <span class="info-value">${data.vendorCompany.name}</span>
@@ -1012,7 +1032,7 @@ export class ProfessionalPDFGenerationService {
       <!-- PROJECT INFO (FULL WIDTH) -->
       <div class="project-info">
         <div class="info-box">
-          <h3>🏗️ 프로젝트</h3>
+          <h3>현장</h3>
           <div class="info-row">
             <span class="info-label">현장명</span>
             <span class="info-value">${data.project.name}</span>
@@ -1028,7 +1048,7 @@ export class ProfessionalPDFGenerationService {
         </div>
         
         <div class="info-box">
-          <h3>📅 일정</h3>
+          <h3>일정</h3>
           <div class="info-row">
             <span class="info-label">발주일</span>
             <span class="info-value">${formatDate(data.orderDate)}</span>
@@ -1044,7 +1064,7 @@ export class ProfessionalPDFGenerationService {
         </div>
         
         <div class="info-box">
-          <h3>👤 담당자</h3>
+          <h3>담당자</h3>
           <div class="info-row">
             <span class="info-label">작성자</span>
             <span class="info-value">${data.creator.name}</span>
@@ -1063,18 +1083,18 @@ export class ProfessionalPDFGenerationService {
     
     <!-- ITEMS SECTION -->
     <div class="items-section">
-      <div class="items-header">📦 발주 품목 (총 ${data.items.length}개 품목)</div>
+      <div class="items-header">발주 품목 (총 ${data.items.length}개 품목)</div>
       <table>
         <thead>
           <tr>
             <th style="width: 5%">순번</th>
-            <th style="width: 18%">분류</th>
-            <th style="width: 20%">품목명</th>
-            <th style="width: 15%">규격</th>
+            <th style="width: 22%">품목명</th>
+            <th style="width: 17%">규격</th>
             <th style="width: 8%">수량</th>
             <th style="width: 6%">단위</th>
-            <th style="width: 14%">단가</th>
-            <th style="width: 14%">금액</th>
+            <th style="width: 12%">단가</th>
+            <th style="width: 12%">금액</th>
+            <th style="width: 23%">특이사항</th>
           </tr>
         </thead>
         <tbody>
@@ -1105,7 +1125,7 @@ export class ProfessionalPDFGenerationService {
     <!-- ATTACHMENTS & COMMUNICATION -->
     <div class="comm-grid">
       <div class="comm-box">
-        <h4>📎 첨부파일 (${data.attachments.count}개)</h4>
+        <h4>첨부파일 (${data.attachments.count}개)</h4>
         ${data.attachments.hasAttachments ? 
           data.attachments.fileNames.slice(0, 3).map(name => 
             `<div class="attachment-item">${name.length > 30 ? name.substring(0, 30) + '...' : name}</div>`
@@ -1117,7 +1137,7 @@ export class ProfessionalPDFGenerationService {
       </div>
       
       <div class="comm-box">
-        <h4>📧 이메일 발송 이력 (${data.communication.totalEmailsSent}회)</h4>
+        <h4>이메일 발송 이력 (${data.communication.totalEmailsSent}회)</h4>
         ${data.communication.emailHistory.length > 0 ?
           data.communication.emailHistory.slice(0, 2).map(email =>
             `<div class="email-item">${formatDateTime(email.sentAt)} | ${email.recipient.split('@')[0]}@...</div>`
@@ -1132,7 +1152,7 @@ export class ProfessionalPDFGenerationService {
     <!-- NOTES -->
     ${data.metadata.notes ? `
     <div style="margin: 8px 0; padding: 6px; border: 1px solid #d1d5db; background: #fffbeb; font-size: 7pt;">
-      <strong>📝 특이사항:</strong> ${data.metadata.notes}
+      <strong>특이사항:</strong> ${data.metadata.notes}
     </div>
     ` : ''}
     
@@ -1149,7 +1169,7 @@ export class ProfessionalPDFGenerationService {
       <div class="doc-metadata">
         <div>Template ${data.metadata.templateVersion}</div>
         <div class="center">본 문서는 전자적으로 생성되었습니다</div>
-        <div class="right">Doc ID: ${data.metadata.documentId}</div>
+        <div class="right"></div>
       </div>
     </div>
   </div>
@@ -1222,8 +1242,16 @@ export class ProfessionalPDFGenerationService {
         doc.on('end', () => resolve(Buffer.concat(buffers)));
         doc.on('error', reject);
 
-        // 폰트 설정
-        doc.font('Helvetica');
+        // 폰트 설정 - 한글 지원을 위해 기본 폰트 사용
+        // PDFKit의 기본 폰트는 한글을 지원하지 않으므로, 시스템 폰트를 사용하거나 
+        // 한글 폰트 파일을 직접 로드해야 함
+        // 현재는 Helvetica를 사용하되, 향후 한글 폰트 추가 필요
+        try {
+          // 한글 폰트 시도 (없으면 기본 폰트 사용)
+          doc.font('Helvetica');
+        } catch (error) {
+          console.warn('⚠️ [ProfessionalPDF] 폰트 설정 실패, 기본 폰트 사용:', error);
+        }
         
         const formatDate = (date?: Date | null) => {
           if (!date) return '-';
@@ -1241,7 +1269,7 @@ export class ProfessionalPDFGenerationService {
         // 제목 및 발주서 번호 (왼쪽 정렬)
         doc.fontSize(16).text('구매 발주서', 20, doc.y);
         doc.fontSize(12).text(`발주번호: ${orderData.orderNumber}`, 20, doc.y);
-        doc.fontSize(6).text(`생성일: ${formatDate(orderData.metadata.generatedAt)} | 문서ID: ${orderData.metadata.documentId.substring(0, 10)}`, 20, doc.y);
+        doc.fontSize(6).text(`생성일: ${formatDate(orderData.metadata.generatedAt)}`, 20, doc.y);
         
         // 구분선
         doc.moveTo(20, doc.y + 5).lineTo(575, doc.y + 5).stroke();
@@ -1266,8 +1294,8 @@ export class ProfessionalPDFGenerationService {
         doc.text(`담당자: ${orderData.vendorCompany.contactPerson || '-'}`, 200, infoY + 36);
         doc.text(`연락처: ${orderData.vendorCompany.phone || '-'}`, 200, infoY + 48);
         
-        // 우측 열 - 프로젝트/일정
-        doc.text('【프로젝트】', 380, infoY);
+        // 우측 열 - 현장/일정
+        doc.text('【현장】', 380, infoY);
         doc.text(`현장명: ${orderData.project.name}`, 380, infoY + 12);
         doc.text(`발주일: ${formatDate(orderData.orderDate)}`, 380, infoY + 24);
         doc.text(`납기일: ${formatDate(orderData.deliveryDate)}`, 380, infoY + 36);
@@ -1290,14 +1318,13 @@ export class ProfessionalPDFGenerationService {
         doc.rect(20, tableTop, 555, 15).fill('#e5e7eb');
         doc.fillColor('black');
         doc.text('No', 25, tableTop + 3);
-        doc.text('분류', 50, tableTop + 3);
-        doc.text('품목명', 120, tableTop + 3);
-        doc.text('규격', 220, tableTop + 3);
-        doc.text('수량', 280, tableTop + 3);
-        doc.text('단위', 320, tableTop + 3);
-        doc.text('단가', 350, tableTop + 3);
+        doc.text('품목명', 50, tableTop + 3);
+        doc.text('규격', 180, tableTop + 3);
+        doc.text('수량', 260, tableTop + 3);
+        doc.text('단위', 300, tableTop + 3);
+        doc.text('단가', 340, tableTop + 3);
         doc.text('금액', 420, tableTop + 3);
-        doc.text('비고', 490, tableTop + 3);
+        doc.text('특이사항', 500, tableTop + 3);
         
         doc.rect(20, tableTop, 555, 15).stroke();
         
@@ -1313,14 +1340,30 @@ export class ProfessionalPDFGenerationService {
           
           doc.fontSize(6);
           doc.text(`${item.sequenceNo}`, 25, currentY + 3);
-          doc.text((item.categoryPath || '-').substring(0, 15), 50, currentY + 3);
-          doc.text(item.name.substring(0, 20), 120, currentY + 3);
-          doc.text((item.specification || '-').substring(0, 12), 220, currentY + 3);
-          doc.text(item.quantity.toString(), 280, currentY + 3);
-          doc.text(item.unit || '-', 320, currentY + 3);
-          doc.text(formatCurrency(item.unitPrice), 350, currentY + 3);
+          doc.text(item.name.substring(0, 25), 50, currentY + 3);
+          doc.text((item.specification || '-').substring(0, 15), 180, currentY + 3);
+          doc.text(item.quantity.toString(), 260, currentY + 3);
+          doc.text(item.unit || '-', 300, currentY + 3);
+          doc.text(formatCurrency(item.unitPrice), 340, currentY + 3);
           doc.text(formatCurrency(item.totalPrice), 420, currentY + 3);
-          doc.text((item.remarks || '-').substring(0, 8), 490, currentY + 3);
+          // 특이사항 포맷팅 (카테고리 + 납품처 정보)
+          const formatRemarksForPDF = (item: any) => {
+            let result = '';
+            // 카테고리 정보 추가
+            if (item.categoryPath && item.categoryPath !== '-') {
+              result += item.categoryPath.substring(0, 15) + '\\n';
+            }
+            // 납품처 정보 포맷팅
+            if (item.remarks && item.remarks !== '-') {
+              const formattedRemarks = item.remarks
+                .replace(/납품처:/g, '• 납품처:')
+                .replace(/이메일:/g, '\\n• 이메일:')
+                .substring(0, 20);
+              result += formattedRemarks;
+            }
+            return result || '-';
+          };
+          doc.text(formatRemarksForPDF(item), 500, currentY + 3);
           
           doc.rect(20, currentY, 555, rowHeight).stroke();
           currentY += rowHeight;

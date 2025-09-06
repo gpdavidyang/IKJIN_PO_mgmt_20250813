@@ -150,6 +150,7 @@ export class ExcelAutomationService {
         success: true,
         data: {
           savedOrders: saveResult.savedOrders,
+          savedOrderNumbers: saveResult.savedOrderNumbers,
           vendorValidation,
           emailPreview
         }
@@ -396,6 +397,7 @@ export class ExcelAutomationService {
     emailOptions: {
       subject?: string;
       orderNumber?: string;
+      savedOrderNumbers?: string[];
       additionalMessage?: string;
       pdfFilePath?: string;
     } = {}
@@ -462,6 +464,22 @@ export class ExcelAutomationService {
         emailResults
       };
 
+      // 이메일 발송 성공 시 발주서 상태를 'sent'로 업데이트
+      if (result.success && result.sentEmails > 0) {
+        const orderNumbersToUpdate = emailOptions.savedOrderNumbers || 
+          (emailOptions.orderNumber ? [emailOptions.orderNumber] : []);
+        
+        if (orderNumbersToUpdate.length > 0) {
+          try {
+            await this.updateMultipleOrderStatusToSent(orderNumbersToUpdate);
+            console.log(`📋 발주서 상태 업데이트 완료: ${orderNumbersToUpdate.length}개 발주서 → sent`);
+          } catch (updateError) {
+            console.error(`❌ 발주서 상태 업데이트 실패:`, updateError);
+            // 상태 업데이트 실패는 이메일 발송 성공에 영향을 주지 않음
+          }
+        }
+      }
+
       DebugLogger.logFunctionExit('ExcelAutomationService.sendEmails', result);
       return result;
 
@@ -477,6 +495,38 @@ export class ExcelAutomationService {
         emailResults: []
       };
     }
+  }
+
+  /**
+   * 발주서 상태를 'sent'로 업데이트하는 헬퍼 메소드
+   */
+  private static async updateOrderStatusToSent(orderNumber: string): Promise<void> {
+    const { db } = await import('../db');
+    const { purchaseOrders } = await import('@shared/schema');
+    const { eq } = await import('drizzle-orm');
+
+    await db.update(purchaseOrders)
+      .set({
+        orderStatus: 'sent',
+        updatedAt: new Date()
+      })
+      .where(eq(purchaseOrders.orderNumber, orderNumber));
+  }
+
+  /**
+   * 여러 발주서의 상태를 'sent'로 업데이트하는 헬퍼 메소드
+   */
+  private static async updateMultipleOrderStatusToSent(orderNumbers: string[]): Promise<void> {
+    const { db } = await import('../db');
+    const { purchaseOrders } = await import('@shared/schema');
+    const { inArray } = await import('drizzle-orm');
+
+    await db.update(purchaseOrders)
+      .set({
+        orderStatus: 'sent',
+        updatedAt: new Date()
+      })
+      .where(inArray(purchaseOrders.orderNumber, orderNumbers));
   }
 
   /**

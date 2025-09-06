@@ -259,6 +259,7 @@ router.post('/send-emails', requireAuth, async (req: any, res) => {
     const { 
       processedFilePath,
       recipients,
+      savedOrderNumbers = [],
       emailOptions = {}
     } = req.body;
 
@@ -288,7 +289,10 @@ router.post('/send-emails', requireAuth, async (req: any, res) => {
     const sendResult = await ExcelAutomationService.sendEmails(
       processedFilePath,
       recipients,
-      emailOptions
+      {
+        ...emailOptions,
+        savedOrderNumbers // 발주번호들을 함께 전달
+      }
     );
 
     res.json({

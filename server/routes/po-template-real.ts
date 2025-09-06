@@ -663,6 +663,27 @@ router.post('/send-email', simpleAuth, async (req: any, res) => {
       });
     }
 
+    // 이메일 발송 성공 시 발주서 상태를 'sent'로 업데이트 (orderNumber가 있는 경우)
+    if (emailResult.success && orderNumber) {
+      try {
+        const { db } = await import('../db');
+        const { purchaseOrders } = await import('@shared/schema');
+        const { eq } = await import('drizzle-orm');
+        
+        await db.update(purchaseOrders)
+          .set({
+            orderStatus: 'sent',
+            updatedAt: new Date()
+          })
+          .where(eq(purchaseOrders.orderNumber, orderNumber));
+          
+        console.log(`📋 발주서 상태 업데이트 완료: ${orderNumber} → sent`);
+      } catch (updateError) {
+        console.error(`❌ 발주서 상태 업데이트 실패: ${orderNumber}`, updateError);
+        // 상태 업데이트 실패는 이메일 발송 성공에 영향을 주지 않음
+      }
+    }
+
     res.json({
       success: true,
       message: emailResult.mockMode ? '이메일 발송 완료 (Mock 모드)' : '이메일 발송 완료',

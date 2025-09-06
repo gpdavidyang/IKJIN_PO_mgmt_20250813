@@ -36,6 +36,17 @@ const router = Router();
 // Email service instance
 const emailService = new POEmailService();
 
+// Helper function to update order status after successful email sending
+async function updateOrderStatusAfterEmail(orderNumber: string): Promise<void> {
+  const { db } = database;
+  await db.update(purchaseOrders)
+    .set({
+      orderStatus: 'sent',
+      updatedAt: new Date()
+    })
+    .where(eq(purchaseOrders.orderNumber, orderNumber));
+}
+
 // Get all orders with filters and pagination
 router.get("/orders", async (req, res) => {
   try {
@@ -2238,6 +2249,18 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
       try {
         const info = await transporter.sendMail(mailOptions);
         console.log('📧 이메일 발송 성공:', info.messageId);
+        
+        // 이메일 발송 성공 시 발주서 상태를 'sent'로 업데이트
+        if (orderData && orderData.orderNumber) {
+          try {
+            await updateOrderStatusAfterEmail(orderData.orderNumber);
+            console.log(`📋 발주서 상태 업데이트 완료: ${orderData.orderNumber} → sent`);
+          } catch (updateError) {
+            console.error(`❌ 발주서 상태 업데이트 실패: ${orderData.orderNumber}`, updateError);
+            // 상태 업데이트 실패는 이메일 발송 성공에 영향을 주지 않음
+          }
+        }
+        
         res.json({ success: true, messageId: info.messageId });
       } catch (emailError) {
         console.error('📧 이메일 발송 실패:', emailError);
@@ -2347,6 +2370,18 @@ router.post("/orders/send-email-simple", requireAuth, async (req, res) => {
     }
 
     console.log('📧 이메일 발송 성공:', result);
+    
+    // 이메일 발송 성공 시 발주서 상태를 'sent'로 업데이트
+    if (result.success && emailData && emailData.orderNumber) {
+      try {
+        await updateOrderStatusAfterEmail(emailData.orderNumber);
+        console.log(`📋 발주서 상태 업데이트 완료: ${emailData.orderNumber} → sent`);
+      } catch (updateError) {
+        console.error(`❌ 발주서 상태 업데이트 실패: ${emailData.orderNumber}`, updateError);
+        // 상태 업데이트 실패는 이메일 발송 성공에 영향을 주지 않음
+      }
+    }
+    
     res.json({ success: true, ...result });
 
   } catch (error) {
@@ -2402,6 +2437,18 @@ router.post("/orders/send-email-with-excel", requireAuth, async (req, res) => {
 
     if (result.success) {
       console.log('📧 엑셀 이메일 발송 성공');
+      
+      // 이메일 발송 성공 시 발주서 상태를 'sent'로 업데이트
+      if (emailSettings && emailSettings.orderNumber) {
+        try {
+          await updateOrderStatusAfterEmail(emailSettings.orderNumber);
+          console.log(`📋 발주서 상태 업데이트 완료: ${emailSettings.orderNumber} → sent`);
+        } catch (updateError) {
+          console.error(`❌ 발주서 상태 업데이트 실패: ${emailSettings.orderNumber}`, updateError);
+          // 상태 업데이트 실패는 이메일 발송 성공에 영향을 주지 않음
+        }
+      }
+      
       res.json({ success: true, messageId: result.messageId });
     } else {
       console.error('📧 엑셀 이메일 발송 실패:', result.error);

@@ -205,11 +205,12 @@ export class POTemplateProcessorMock {
   static async saveToDatabase(
     orders: POTemplateOrder[],
     userId: string
-  ): Promise<{ success: boolean; savedOrders: number; error?: string }> {
+  ): Promise<{ success: boolean; savedOrders: number; savedOrderNumbers: string[]; error?: string }> {
     console.log(`🔍 [DB] saveToDatabase 시작: ${orders.length}개 발주서, 사용자 ID: ${userId}`);
     
     try {
       let savedOrders = 0;
+      const savedOrderNumbers: string[] = [];
 
       console.log(`🔍 [DB] 트랜잭션 시작`);
       await db.transaction(async (tx: PgTransaction<any, any, any>) => {
@@ -260,7 +261,7 @@ export class POTemplateProcessorMock {
             console.log(`✅ [DB] 프로젝트 기존 발견: ID ${projectId}`);
           }
           
-          // 3. 발주서 생성 - Excel 자동화로 생성되므로 'sent' 상태로 설정 (dual status 적용)
+          // 3. 발주서 생성 - Excel 자동화로 생성되므로 초기에는 'created' 상태로 설정 (이메일 발송 후 'sent'로 변경됨)
           const newOrder = await tx.insert(purchaseOrders).values({
             orderNumber: orderData.orderNumber,
             projectId,
@@ -269,14 +270,16 @@ export class POTemplateProcessorMock {
             orderDate: orderData.orderDate,
             deliveryDate: orderData.dueDate,
             totalAmount: orderData.totalAmount,
-            status: 'sent', // Legacy status for backward compatibility
-            orderStatus: 'sent', // New dual status - sent because Excel automation completes email sending
+            status: 'approved', // Legacy status for backward compatibility
+            orderStatus: 'created', // New dual status - created initially, will be updated to 'sent' after email
             approvalStatus: 'not_required', // Excel automation bypasses approval
             approvalBypassReason: 'excel_automation', // Reason for bypassing
-            notes: `PO Template에서 자동 생성 및 발송됨`
-          }).returning({ id: purchaseOrders.id });
+            notes: `PO Template에서 자동 생성됨`
+          }).returning({ id: purchaseOrders.id, orderNumber: purchaseOrders.orderNumber });
 
           const orderId = newOrder[0].id;
+          const orderNumber = newOrder[0].orderNumber;
+          savedOrderNumbers.push(orderNumber);
 
           // 4. 발주서 아이템들 생성
           const itemsForPDF = [];
@@ -354,13 +357,15 @@ export class POTemplateProcessorMock {
 
       return {
         success: true,
-        savedOrders
+        savedOrders,
+        savedOrderNumbers
       };
       
     } catch (error) {
       return {
         success: false,
         savedOrders: 0,
+        savedOrderNumbers: [],
         error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
