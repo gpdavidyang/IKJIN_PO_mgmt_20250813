@@ -417,81 +417,161 @@ router.post('/save', simpleAuth, async (req: any, res) => {
             });
           }
           
-          // PDF 파일 생성 및 저장
+          // PDF 파일 생성 및 저장 - gatherComprehensiveOrderData 사용
+          let pdfBuffer: Buffer;
+          let pdfBase64: string;
+          
           try {
             console.log('📄 PDF 생성 시작:', orderNumber);
+            console.log('📊 포괄적 데이터 수집 시도 - Order ID:', newOrder[0].id);
             
-            // 회사 정보 조회 (발주업체)
-            const companyList = await db.select().from(companies).limit(1);
-            const company = companyList[0];
+            // ProfessionalPDFGenerationService의 gatherComprehensiveOrderData 사용
+            const comprehensiveData = await ProfessionalPDFGenerationService.gatherComprehensiveOrderData(newOrder[0].id);
             
-            // Professional PDF 생성을 위한 데이터 준비
-            const pdfOrderData: any = {
-              orderNumber,
-              orderDate: parsedOrderDate,
-              deliveryDate: parsedDeliveryDate ? parsedDeliveryDate : null,
-              orderStatus: 'created',
-              approvalStatus: 'pending',
+            if (comprehensiveData) {
+              console.log('✅ 포괄적 데이터 수집 성공');
+              // PDF 생성
+              pdfBuffer = await ProfessionalPDFGenerationService.generateProfessionalPDF(comprehensiveData);
+              pdfBase64 = pdfBuffer.toString('base64');
+            } else {
+              // fallback: 직접 데이터 구성
+              console.log('⚠️ 포괄적 데이터 수집 실패, fallback 모드 사용');
               
-              issuerCompany: {
-                name: company?.companyName || '익진테크',
-                businessNumber: company?.businessNumber || '123-45-67890',
-                representative: company?.representativeName || '대표이사',
-                address: company?.address || '서울특별시 강남구',
-                phone: company?.phoneNumber || '02-1234-5678',
-                fax: company?.faxNumber || '02-1234-5679',
-                email: company?.email || 'info@ikjintech.com'
-              },
+              // 회사 정보 조회 (발주업체)
+              const companyList = await db.select().from(companies).limit(1);
+              const company = companyList[0];
               
-              vendorCompany: {
-                name: orderData.vendorName,
-                contactPerson: vendor[0]?.contactPerson || '',
-                phone: vendor[0]?.mainContact || '',
-                email: vendor[0]?.email || '',
-                address: vendor[0]?.address || ''
-              },
+              // Professional PDF 생성을 위한 데이터 준비
+              const pdfOrderData: any = {
+                orderNumber,
+                orderDate: parsedOrderDate,
+                deliveryDate: parsedDeliveryDate ? parsedDeliveryDate : null,
+                orderStatus: 'created',
+                approvalStatus: 'pending',
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                
+                issuerCompany: {
+                  name: company?.companyName || '익진테크',
+                  businessNumber: company?.businessNumber || '123-45-67890',
+                  representative: company?.representativeName || '대표이사',
+                  address: company?.address || '서울특별시 강남구',
+                  phone: company?.phoneNumber || '02-1234-5678',
+                  fax: company?.faxNumber || '02-1234-5679',
+                  email: company?.email || 'info@ikjintech.com',
+                  website: company?.website || ''
+                },
+                
+                vendorCompany: {
+                  name: orderData.vendorName,
+                  businessNumber: vendor[0]?.businessNumber || '',
+                  representative: vendor[0]?.representative || '',
+                  contactPerson: vendor[0]?.contactPerson || '',
+                  phone: vendor[0]?.phone || vendor[0]?.mainContact || '',
+                  fax: vendor[0]?.fax || '',
+                  email: vendor[0]?.email || '',
+                  address: vendor[0]?.address || '',
+                  contactPhone: vendor[0]?.mainContact || '',
+                  contactEmail: vendor[0]?.email || '',
+                  businessType: vendor[0]?.businessType || ''
+                },
+                
+                project: {
+                  name: orderData.siteName,
+                  code: project[0]?.projectCode || '',
+                  clientName: project[0]?.clientName || '',
+                  location: project[0]?.location || '',
+                  startDate: project[0]?.startDate,
+                  endDate: project[0]?.endDate,
+                  projectManager: '',
+                  projectManagerContact: '',
+                  orderManager: '',
+                  orderManagerContact: '',
+                  totalBudget: project[0]?.totalBudget || 0
+                },
+                
+                creator: {
+                  name: req.user?.name || '시스템',
+                  email: req.user?.email || '',
+                  phone: req.user?.phoneNumber || '',
+                  position: req.user?.position || '',
+                  role: req.user?.role || '',
+                  department: ''
+                },
+                
+                items: orderData.items.map((item: any, idx: number) => ({
+                  sequenceNo: idx + 1,
+                  majorCategory: item.majorCategory || '',
+                  middleCategory: item.middleCategory || '',
+                  minorCategory: item.minorCategory || '',
+                  itemCode: '',
+                  name: item.itemName,
+                  specification: item.specification || '',
+                  quantity: parseFloat(item.quantity) || 0,
+                  unit: item.unit || 'EA',
+                  unitPrice: parseFloat(item.unitPrice) || 0,
+                  totalPrice: parseFloat(item.totalAmount) || 0,
+                  deliveryLocation: orderData.deliveryName || orderData.vendorName,
+                  remarks: item.remarks || '',
+                  categoryPath: [item.majorCategory, item.middleCategory, item.minorCategory].filter(c => c).join(' > ')
+                })),
+                
+                financial: {
+                  subtotalAmount: orderData.totalAmount,
+                  vatRate: 0.1,
+                  vatAmount: Math.round(orderData.totalAmount * 0.1),
+                  totalAmount: Math.round(orderData.totalAmount * 1.1),
+                  discountAmount: 0,
+                  currencyCode: 'KRW'
+                },
+                
+                terms: {
+                  paymentTerms: '월말 현금 지급',
+                  deliveryTerms: '지정 장소 납품',
+                  warrantyPeriod: '1년',
+                  penaltyRate: '',
+                  qualityStandard: '',
+                  inspectionMethod: ''
+                },
+                
+                attachments: {
+                  count: 0,
+                  hasAttachments: false,
+                  fileNames: [],
+                  totalSize: 0
+                },
+                
+                communication: {
+                  emailHistory: [],
+                  lastEmailSent: undefined,
+                  totalEmailsSent: 0
+                },
+                
+                approval: {
+                  currentStatus: 'pending',
+                  approvalLevel: 0,
+                  approvers: [],
+                  requestedAt: new Date(),
+                  completedAt: undefined
+                },
+                
+                metadata: {
+                  notes: orderData.remarks || '',
+                  specialInstructions: orderData.internalRemarks || '',
+                  riskFactors: '',
+                  complianceNotes: '',
+                  revisionNumber: 1,
+                  documentId: `DOC-${orderNumber}`,
+                  generatedAt: new Date(),
+                  generatedBy: req.user?.name || 'System',
+                  templateVersion: 'v2.0.0'
+                }
+              };
               
-              project: {
-                name: orderData.siteName,
-                code: project[0]?.projectCode || '',
-                location: project[0]?.location || ''
-              },
-              
-              creator: {
-                name: req.user?.name || '시스템',
-                email: req.user?.email || '',
-                position: req.user?.position || ''
-              },
-              
-              items: orderData.items.map((item: any, idx: number) => ({
-                sequenceNo: idx + 1,
-                majorCategory: item.majorCategory || '',
-                middleCategory: item.middleCategory || '',
-                minorCategory: item.minorCategory || '',
-                name: item.itemName,
-                specification: item.specification || '',
-                quantity: parseFloat(item.quantity) || 0,
-                unit: item.unit || 'EA',
-                unitPrice: parseFloat(item.unitPrice) || 0,
-                totalPrice: parseFloat(item.totalAmount) || 0,
-                deliveryLocation: orderData.deliveryName || orderData.vendorName,
-                remarks: item.remarks || ''
-              })),
-              
-              financial: {
-                subtotalAmount: orderData.totalAmount,
-                vatRate: 10,
-                vatAmount: Math.round(orderData.totalAmount * 0.1),
-                totalAmount: Math.round(orderData.totalAmount * 1.1)
-              },
-              
-              notes: orderData.remarks || '',
-              internalNotes: orderData.internalRemarks || ''
-            };
-            
-            // PDF 생성
-            const pdfBuffer = await ProfessionalPDFGenerationService.generateProfessionalPDF(pdfOrderData);
-            const pdfBase64 = pdfBuffer.toString('base64');
+              // PDF 생성
+              pdfBuffer = await ProfessionalPDFGenerationService.generateProfessionalPDF(pdfOrderData);
+              pdfBase64 = pdfBuffer.toString('base64');
+            }
             
             // PDF를 attachments 테이블에 저장 (한글 파일명 인코딩 처리)
             const pdfOriginalName = `PO_Professional_${orderNumber}_${Date.now()}.pdf`;
