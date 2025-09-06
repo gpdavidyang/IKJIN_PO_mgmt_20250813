@@ -38,8 +38,7 @@ const emailService = new POEmailService();
 
 // Helper function to update order status after successful email sending
 async function updateOrderStatusAfterEmail(orderNumber: string): Promise<void> {
-  const { db } = database;
-  await db.update(purchaseOrders)
+  await database.db.update(purchaseOrders)
     .set({
       orderStatus: 'sent',
       updatedAt: new Date()
@@ -2026,7 +2025,8 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
       subject, 
       message, 
       attachPdf = true, 
-      attachExcel = false 
+      attachExcel = false,
+      selectedAttachments = [] // NEW: Handle selectedAttachments from frontend
     } = req.body;
     
     console.log('📧 이메일 발송 요청:', { 
@@ -2040,7 +2040,8 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
       subject, 
       message, 
       attachPdf, 
-      attachExcel 
+      attachExcel,
+      selectedAttachments 
     });
     
     // recipients 또는 to 필드 중 하나를 사용
@@ -2076,7 +2077,7 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
           
           try {
             // Fetch attachment from database
-            const [attachment] = await db
+            const [attachment] = await database.db
               .select({
                 id: attachmentsTable.id,
                 originalName: attachmentsTable.originalName,
@@ -2146,7 +2147,7 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
           
           try {
             // Fetch attachment from database
-            const [attachment] = await db
+            const [attachment] = await database.db
               .select({
                 id: attachmentsTable.id,
                 originalName: attachmentsTable.originalName,
@@ -2200,6 +2201,64 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
           console.log('✅ Excel 첨부 성공 (직접 경로)');
         } else {
           console.log('❌ Excel 파일을 찾을 수 없음:', excelPath);
+        }
+      }
+    }
+
+    // NEW: Process selectedAttachments from frontend modal
+    if (selectedAttachments && Array.isArray(selectedAttachments) && selectedAttachments.length > 0) {
+      console.log('📎 처리할 선택된 첨부파일 IDs:', selectedAttachments);
+      
+      for (const attachmentId of selectedAttachments) {
+        try {
+          const [attachment] = await database.db
+            .select({
+              id: attachmentsTable.id,
+              originalName: attachmentsTable.originalName,
+              filePath: attachmentsTable.filePath,
+              mimeType: attachmentsTable.mimeType,
+              fileData: attachmentsTable.fileData
+            })
+            .from(attachmentsTable)
+            .where(eq(attachmentsTable.id, attachmentId));
+            
+          if (attachment) {
+            // Check if this attachment is already added by the old logic (avoid duplicates)
+            const alreadyAdded = attachments.some(att => 
+              att.filename === attachment.originalName ||
+              (att.path && att.path === attachment.filePath)
+            );
+            
+            if (!alreadyAdded) {
+              if (attachment.fileData) {
+                // Use Base64 data from database
+                attachments.push({
+                  filename: attachment.originalName,
+                  content: Buffer.from(attachment.fileData, 'base64'),
+                  contentType: attachment.mimeType || 'application/octet-stream'
+                });
+                attachmentsList.push(attachment.originalName);
+                console.log('✅ 선택된 첨부파일 추가 성공 (DB Base64):', attachment.originalName);
+              } else if (attachment.filePath && fs.existsSync(attachment.filePath)) {
+                // Use file path
+                attachments.push({
+                  filename: attachment.originalName,
+                  path: attachment.filePath,
+                  contentType: attachment.mimeType || 'application/octet-stream'
+                });
+                attachmentsList.push(attachment.originalName);
+                console.log('✅ 선택된 첨부파일 추가 성공 (파일 경로):', attachment.originalName);
+              } else {
+                console.log('❌ 선택된 첨부파일 처리 실패 (데이터 없음):', attachment.originalName);
+              }
+            } else {
+              console.log('⚠️ 선택된 첨부파일 중복 스킵:', attachment.originalName);
+            }
+          } else {
+            console.log('❌ 선택된 첨부파일 정보 없음, ID:', attachmentId);
+          }
+        } catch (error) {
+          console.error('❌ 선택된 첨부파일 처리 오류, ID:', attachmentId, error);
         }
       }
     }

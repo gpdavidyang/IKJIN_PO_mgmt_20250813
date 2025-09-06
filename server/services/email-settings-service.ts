@@ -19,11 +19,11 @@ export class EmailSettingsService {
   async getDefaultSettings(): Promise<EmailSetting | null> {
     try {
       // 캐시 확인
-      if (this.isCacheValid()) {
+      if (EmailSettingsService.isCacheValid()) {
         return EmailSettingsService.settingsCache;
       }
 
-      const db = await database.getDB();
+      const db = database.db;
       const result = await db
         .select()
         .from(emailSettings)
@@ -49,7 +49,7 @@ export class EmailSettingsService {
    */
   async getAllSettings(): Promise<EmailSetting[]> {
     try {
-      const db = await database.getDB();
+      const db = database.db;
       const result = await db
         .select()
         .from(emailSettings)
@@ -70,7 +70,7 @@ export class EmailSettingsService {
       // 비밀번호 암호화
       const encryptedPassword = EmailSettingsEncryption.encrypt(data.smtpPass);
 
-      const db = await database.getDB();
+      const db = database.db;
       
       // 기본 설정 설정 시 기존 기본 설정 해제
       if (data.isDefault) {
@@ -104,7 +104,7 @@ export class EmailSettingsService {
    */
   async updateSettings(id: number, data: Partial<Omit<InsertEmailSetting, 'smtpPass'> & { smtpPass?: string }>, updatedBy?: string): Promise<EmailSetting> {
     try {
-      const db = await database.getDB();
+      const db = database.db;
 
       // 업데이트할 데이터 준비
       const updateData: Partial<InsertEmailSetting> = {
@@ -150,7 +150,7 @@ export class EmailSettingsService {
    */
   async deleteSettings(id: number): Promise<boolean> {
     try {
-      const db = await database.getDB();
+      const db = database.db;
       const result = await db.delete(emailSettings).where(eq(emailSettings.id, id)).returning();
       
       // 캐시 무효화
@@ -281,7 +281,7 @@ export class EmailSettingsService {
       let setting: EmailSetting | null;
 
       if (settingId) {
-        const db = await database.getDB();
+        const db = database.db;
         const result = await db
           .select()
           .from(emailSettings)
@@ -332,7 +332,7 @@ export class EmailSettingsService {
   /**
    * 캐시 유효성 확인
    */
-  private isCacheValid(): boolean {
+  private static isCacheValid(): boolean {
     return (
       EmailSettingsService.settingsCache !== null &&
       Date.now() - EmailSettingsService.cacheTimestamp < EmailSettingsService.CACHE_TTL
@@ -352,7 +352,7 @@ export class EmailSettingsService {
    */
   private async updateTestResult(settingId: number, testResult: any): Promise<void> {
     try {
-      const db = await database.getDB();
+      const db = database.db;
       await db
         .update(emailSettings)
         .set({
