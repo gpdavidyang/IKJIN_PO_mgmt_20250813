@@ -484,14 +484,13 @@ export class ProfessionalPDFGenerationService {
         pdfBuffer = await this.convertHTMLToPDFFromString(htmlContent);
       }
       
-      // 파일 저장 및 DB 등록
+      // 파일 저장 및 DB 등록 (항상 Base64로 DB에 저장하여 Vercel 호환성 보장)
+      const base64Data = pdfBuffer.toString('base64');
       let filePath = '';
       let attachmentId: number;
 
       if (process.env.VERCEL) {
-        // Vercel 환경: Base64로 DB에 저장
-        const base64Data = pdfBuffer.toString('base64');
-        
+        // Vercel 환경: Base64만 저장
         const [attachment] = await db.db.insert(attachments).values({
           orderId,
           originalName: fileName,
@@ -508,7 +507,7 @@ export class ProfessionalPDFGenerationService {
         
         console.log(`✅ [ProfessionalPDF] PDF 생성 완료 (Vercel): ${fileName}, 크기: ${Math.round(pdfBuffer.length / 1024)}KB`);
       } else {
-        // 로컬 환경: 파일 시스템에 저장
+        // 로컬 환경: 파일 시스템 + Base64 둘 다 저장 (개발 편의성 + 배포 호환성)
         const tempDir = path.join(this.uploadDir, 'professional', String(new Date().getFullYear()));
         
         if (!fs.existsSync(tempDir)) {
@@ -526,10 +525,11 @@ export class ProfessionalPDFGenerationService {
           fileSize: pdfBuffer.length,
           mimeType: 'application/pdf',
           uploadedBy: userId,
+          fileData: base64Data // 로컬에서도 Base64 저장하여 배포 시 호환성 보장
         }).returning();
         
         attachmentId = attachment.id;
-        console.log(`✅ [ProfessionalPDF] PDF 생성 완료 (로컬): ${filePath}`);
+        console.log(`✅ [ProfessionalPDF] PDF 생성 완료 (로컬): ${filePath}, DB에도 Base64 저장`);
       }
 
       return {
