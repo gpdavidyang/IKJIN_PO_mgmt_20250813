@@ -18,6 +18,7 @@ import { removeAllInputSheets } from './excel-input-sheet-remover';
 import { DebugLogger } from './debug-logger';
 // 통합 Excel PDF 서비스로 교체
 import { UnifiedExcelPdfService } from '../services/unified-excel-pdf-service';
+import { ExcelAttachmentService } from './excel-attachment-service';
 import fs from 'fs';
 import path from 'path';
 
@@ -135,6 +136,58 @@ export class ExcelAutomationService {
       }
 
       console.log(`✅ [DEBUG] DB 저장 성공: ${saveResult.savedOrders}개 발주서 저장됨`);
+
+      // 2.5. 처리된 Excel 파일을 각 발주서에 첨부파일로 저장
+      console.log(`🔍 [DEBUG] 2.5단계: 처리된 Excel 파일 첨부 시작`);
+      const originalFileName = path.basename(filePath);
+      
+      // 발주서 ID들 조회
+      if (saveResult.savedOrderNumbers && saveResult.savedOrderNumbers.length > 0) {
+        try {
+          const orders = await db.select({ id: purchaseOrders.id, orderNumber: purchaseOrders.orderNumber })
+            .from(purchaseOrders)
+            .where(inArray(purchaseOrders.orderNumber, saveResult.savedOrderNumbers));
+          
+          // Input 시트가 제거된 처리된 Excel 파일 생성
+          const processedExcelPath = filePath.replace(/\.(xlsx?)$/i, '_processed.$1');
+          const removeResult = await removeAllInputSheets(filePath, processedExcelPath);
+          
+          if (removeResult.success && fs.existsSync(processedExcelPath)) {
+            console.log(`✅ [DEBUG] Input 시트 제거 완료: ${processedExcelPath}`);
+            
+            // 각 발주서에 처리된 Excel 파일 첨부
+            for (const order of orders) {
+              const attachResult = await ExcelAttachmentService.saveProcessedExcelFile(
+                order.id,
+                processedExcelPath,
+                originalFileName,
+                userId
+              );
+              
+              if (attachResult.success) {
+                console.log(`✅ [DEBUG] 발주서 ${order.orderNumber}에 Excel 첨부파일 저장 완료: ID ${attachResult.attachmentId}`);
+              } else {
+                console.warn(`⚠️ [DEBUG] 발주서 ${order.orderNumber}에 Excel 첨부파일 저장 실패: ${attachResult.error}`);
+              }
+            }
+            
+            // 임시 파일 정리
+            try {
+              fs.unlinkSync(processedExcelPath);
+              console.log(`🧹 [DEBUG] 임시 처리된 Excel 파일 정리 완료: ${processedExcelPath}`);
+            } catch (cleanupError) {
+              console.warn(`⚠️ [DEBUG] 임시 파일 정리 실패:`, cleanupError);
+            }
+            
+          } else {
+            console.warn(`⚠️ [DEBUG] Input 시트 제거 실패: ${removeResult.error}`);
+          }
+          
+        } catch (error) {
+          console.warn('Excel 첨부파일 저장 실패:', error);
+        }
+      }
+      console.log(`🔍 [DEBUG] 2.5단계 완료: Excel 첨부파일 처리 완료`);
 
       // 3. 거래처명 검증 및 이메일 추출
       console.log(`🔍 [DEBUG] 3단계: 거래처 검증 시작`);

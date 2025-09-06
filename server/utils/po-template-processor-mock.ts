@@ -5,7 +5,7 @@ import { vendors, projects, purchaseOrders, purchaseOrderItems } from "@shared/s
 import { eq } from "drizzle-orm";
 import { DebugLogger } from './debug-logger';
 import type { PgTransaction } from 'drizzle-orm/pg-core';
-import { PDFGenerationService } from '../services/pdf-generation-service';
+import { ProfessionalPDFGenerationService } from '../services/professional-pdf-generation-service';
 
 export interface POTemplateItem {
   itemName: string;
@@ -335,7 +335,7 @@ export class POTemplateProcessorMock {
               site: orderData.siteName
             };
             
-            const pdfResult = await PDFGenerationService.generatePurchaseOrderPDF(
+            const pdfResult = await ProfessionalPDFGenerationService.generatePurchaseOrderPDF(
               orderId,
               pdfData,
               userId
