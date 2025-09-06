@@ -39,6 +39,7 @@ __export(schema_exports, {
   companies: () => companies,
   emailSendHistory: () => emailSendHistory,
   emailSendHistoryRelations: () => emailSendHistoryRelations,
+  emailSettings: () => emailSettings,
   handsontableConfigs: () => handsontableConfigs,
   handsontableConfigsRelations: () => handsontableConfigsRelations,
   insertAISuggestionSchema: () => insertAISuggestionSchema,
@@ -53,6 +54,7 @@ __export(schema_exports, {
   insertCategoryMappingSchema: () => insertCategoryMappingSchema,
   insertCompanySchema: () => insertCompanySchema,
   insertEmailSendHistorySchema: () => insertEmailSendHistorySchema,
+  insertEmailSettingsSchema: () => insertEmailSettingsSchema,
   insertHandsontableConfigSchema: () => insertHandsontableConfigSchema,
   insertInvoiceSchema: () => insertInvoiceSchema,
   insertItemCategorySchema: () => insertItemCategorySchema,
@@ -146,7 +148,7 @@ import {
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-var sessions, uiTerms, itemCategories, userRoleEnum, purchaseOrderStatusEnum, orderStatusEnum, approvalStatusEnum, projectStatusEnum, projectTypeEnum, invoiceStatusEnum, itemReceiptStatusEnum, verificationActionEnum, approvalStepStatusEnum, approvalAuthorities, users, companies, vendors, items, terminology, projects, projectMembers, projectHistory, orderTemplates, templateFields, handsontableConfigs, templateVersions, purchaseOrders, purchaseOrderItems, attachments, orderHistory, emailSendHistory, invoices, itemReceipts, verificationLogs, usersRelations, vendorsRelations, itemsRelations, projectsRelations, projectMembersRelations, projectHistoryRelations, orderTemplatesRelations, purchaseOrdersRelations, purchaseOrderItemsRelations, attachmentsRelations, orderHistoryRelations, invoicesRelations, itemReceiptsRelations, verificationLogsRelations, templateFieldsRelations, handsontableConfigsRelations, templateVersionsRelations, itemCategoriesRelations, emailSendHistoryRelations, insertCompanySchema, insertVendorSchema, insertItemSchema, insertProjectSchema, insertOrderTemplateSchema, insertItemCategorySchema, insertPurchaseOrderSchema, insertPurchaseOrderItemSchema, insertAttachmentSchema, insertOrderHistorySchema, insertInvoiceSchema, insertItemReceiptSchema, insertVerificationLogSchema, insertEmailSendHistorySchema, insertTemplateFieldSchema, insertHandsontableConfigSchema, insertTemplateVersionSchema, insertProjectMemberSchema, insertProjectHistorySchema, insertUiTermSchema, insertTerminologySchema, insertUITermSchema, insertApprovalAuthoritySchema, approvalWorkflowSettings, approvalStepTemplates, approvalStepInstances2, insertApprovalWorkflowSettingsSchema, insertApprovalStepTemplateSchema, insertApprovalStepInstanceSchema, auditLogLevelEnum, auditEventTypeEnum, systemAuditLogs, auditSettings, archivedAuditLogs, auditAlertRules, systemAuditLogsRelations, auditSettingsRelations, auditAlertRulesRelations, insertSystemAuditLogSchema, insertAuditSettingsSchema, insertArchivedAuditLogSchema, insertAuditAlertRuleSchema, validationSessions, validationResults, aiSuggestions, vendorMappings, categoryMappings, validationSessionsRelations, validationResultsRelations, aiSuggestionsRelations, vendorMappingsRelations, categoryMappingsRelations, insertValidationSessionSchema, insertValidationResultSchema, insertAISuggestionSchema, insertVendorMappingSchema, insertCategoryMappingSchema;
+var sessions, uiTerms, itemCategories, userRoleEnum, purchaseOrderStatusEnum, orderStatusEnum, approvalStatusEnum, projectStatusEnum, projectTypeEnum, invoiceStatusEnum, itemReceiptStatusEnum, verificationActionEnum, approvalStepStatusEnum, emailSettings, approvalAuthorities, users, companies, vendors, items, terminology, projects, projectMembers, projectHistory, orderTemplates, templateFields, handsontableConfigs, templateVersions, purchaseOrders, purchaseOrderItems, attachments, orderHistory, emailSendHistory, invoices, itemReceipts, verificationLogs, usersRelations, vendorsRelations, itemsRelations, projectsRelations, projectMembersRelations, projectHistoryRelations, orderTemplatesRelations, purchaseOrdersRelations, purchaseOrderItemsRelations, attachmentsRelations, orderHistoryRelations, invoicesRelations, itemReceiptsRelations, verificationLogsRelations, templateFieldsRelations, handsontableConfigsRelations, templateVersionsRelations, itemCategoriesRelations, emailSendHistoryRelations, insertCompanySchema, insertVendorSchema, insertItemSchema, insertProjectSchema, insertOrderTemplateSchema, insertItemCategorySchema, insertPurchaseOrderSchema, insertPurchaseOrderItemSchema, insertAttachmentSchema, insertOrderHistorySchema, insertInvoiceSchema, insertItemReceiptSchema, insertVerificationLogSchema, insertEmailSendHistorySchema, insertTemplateFieldSchema, insertHandsontableConfigSchema, insertTemplateVersionSchema, insertProjectMemberSchema, insertProjectHistorySchema, insertUiTermSchema, insertTerminologySchema, insertUITermSchema, insertApprovalAuthoritySchema, approvalWorkflowSettings, approvalStepTemplates, approvalStepInstances2, insertApprovalWorkflowSettingsSchema, insertApprovalStepTemplateSchema, insertApprovalStepInstanceSchema, auditLogLevelEnum, auditEventTypeEnum, systemAuditLogs, auditSettings, archivedAuditLogs, auditAlertRules, systemAuditLogsRelations, auditSettingsRelations, auditAlertRulesRelations, insertSystemAuditLogSchema, insertAuditSettingsSchema, insertArchivedAuditLogSchema, insertAuditAlertRuleSchema, validationSessions, validationResults, aiSuggestions, vendorMappings, categoryMappings, validationSessionsRelations, validationResultsRelations, aiSuggestionsRelations, vendorMappingsRelations, categoryMappingsRelations, insertValidationSessionSchema, insertValidationResultSchema, insertAISuggestionSchema, insertVendorMappingSchema, insertCategoryMappingSchema, insertEmailSettingsSchema;
 var init_schema = __esm({
   "shared/schema.ts"() {
     "use strict";
@@ -194,6 +196,30 @@ var init_schema = __esm({
     itemReceiptStatusEnum = pgEnum("item_receipt_status", ["pending", "approved", "rejected"]);
     verificationActionEnum = pgEnum("verification_action", ["invoice_uploaded", "item_verified", "quality_checked"]);
     approvalStepStatusEnum = pgEnum("approval_step_status", ["pending", "approved", "rejected", "skipped"]);
+    emailSettings = pgTable("email_settings", {
+      id: serial("id").primaryKey(),
+      smtpHost: varchar("smtp_host", { length: 255 }).notNull(),
+      smtpPort: integer("smtp_port").notNull().default(587),
+      smtpUser: varchar("smtp_user", { length: 255 }).notNull(),
+      smtpPass: text("smtp_pass").notNull(),
+      // 암호화된 비밀번호 저장
+      fromName: varchar("from_name", { length: 100 }),
+      isActive: boolean("is_active").default(true),
+      isDefault: boolean("is_default").default(false),
+      // 기본 설정 여부
+      description: text("description"),
+      createdAt: timestamp("created_at").defaultNow(),
+      updatedAt: timestamp("updated_at").defaultNow(),
+      createdBy: varchar("created_by"),
+      // 설정 생성자
+      lastTestedAt: timestamp("last_tested_at"),
+      // 마지막 테스트 시간
+      testResult: jsonb("test_result")
+      // 테스트 결과 저장
+    }, (table) => [
+      index("idx_email_settings_active").on(table.isActive),
+      index("idx_email_settings_default").on(table.isDefault)
+    ]);
     approvalAuthorities = pgTable("approval_authorities", {
       id: serial("id").primaryKey(),
       role: userRoleEnum("role").notNull(),
@@ -422,7 +448,7 @@ var init_schema = __esm({
       templateId: integer("template_id").references(() => orderTemplates.id),
       orderDate: date("order_date").notNull(),
       deliveryDate: date("delivery_date"),
-      // 기존 status 필드 (하위 호환성)
+      // DEPRECATED: 기존 status 필드 - 하위 호환성만을 위해 유지, 새 코드에서는 orderStatus/approvalStatus 사용
       status: purchaseOrderStatusEnum("status").notNull().default("pending"),
       // 새로운 이중 상태 시스템 필드
       orderStatus: orderStatusEnum("order_status").default("draft"),
@@ -1294,6 +1320,13 @@ var init_schema = __esm({
       createdAt: true,
       lastUsedAt: true
     });
+    insertEmailSettingsSchema = createInsertSchema(emailSettings).omit({
+      id: true,
+      createdAt: true,
+      updatedAt: true,
+      lastTestedAt: true,
+      testResult: true
+    });
   }
 });
 
@@ -1530,83 +1563,732 @@ var init_excel_input_sheet_remover = __esm({
   }
 });
 
-// server/services/pdf-generation-service.ts
-import * as fs6 from "fs";
-import * as path4 from "path";
-import { format } from "date-fns";
-import { ko } from "date-fns/locale";
-import { eq as eq5 } from "drizzle-orm";
-var PDFGenerationService;
-var init_pdf_generation_service = __esm({
-  "server/services/pdf-generation-service.ts"() {
+// server/utils/email-settings-encryption.ts
+import crypto from "crypto";
+var EmailSettingsEncryption;
+var init_email_settings_encryption = __esm({
+  "server/utils/email-settings-encryption.ts"() {
+    "use strict";
+    EmailSettingsEncryption = class {
+      static {
+        this.algorithm = "aes-256-gcm";
+      }
+      static {
+        this.keyLength = 32;
+      }
+      static {
+        // 256 bits
+        this.ivLength = 16;
+      }
+      // 128 bits
+      /**
+       * 암호화 키 생성 (환경 변수 기반)
+       */
+      static getEncryptionKey() {
+        const secret = process.env.ENCRYPTION_SECRET || "default-secret-key-change-in-production";
+        return crypto.scryptSync(secret, "salt", this.keyLength);
+      }
+      /**
+       * 비밀번호 암호화
+       * @param plainText 평문 비밀번호
+       * @returns 암호화된 문자열 (iv:tag:encrypted 형태)
+       */
+      static encrypt(plainText) {
+        try {
+          const key = this.getEncryptionKey();
+          const iv = crypto.randomBytes(this.ivLength);
+          const cipher = crypto.createCipherGCM(this.algorithm, key, iv);
+          cipher.setAAD(Buffer.from("email-settings", "utf8"));
+          let encrypted = cipher.update(plainText, "utf8", "hex");
+          encrypted += cipher.final("hex");
+          const tag = cipher.getAuthTag();
+          return `${iv.toString("hex")}:${tag.toString("hex")}:${encrypted}`;
+        } catch (error) {
+          console.error("\uC554\uD638\uD654 \uC2E4\uD328:", error);
+          throw new Error("\uBE44\uBC00\uBC88\uD638 \uC554\uD638\uD654\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4");
+        }
+      }
+      /**
+       * 비밀번호 복호화
+       * @param encryptedText 암호화된 문자열 (iv:tag:encrypted 형태)
+       * @returns 평문 비밀번호
+       */
+      static decrypt(encryptedText) {
+        try {
+          const parts = encryptedText.split(":");
+          if (parts.length !== 3) {
+            throw new Error("\uC798\uBABB\uB41C \uC554\uD638\uD654 \uD615\uC2DD");
+          }
+          const [ivHex, tagHex, encrypted] = parts;
+          const key = this.getEncryptionKey();
+          const iv = Buffer.from(ivHex, "hex");
+          const tag = Buffer.from(tagHex, "hex");
+          const decipher = crypto.createDecipherGCM(this.algorithm, key, iv);
+          decipher.setAuthTag(tag);
+          decipher.setAAD(Buffer.from("email-settings", "utf8"));
+          let decrypted = decipher.update(encrypted, "hex", "utf8");
+          decrypted += decipher.final("utf8");
+          return decrypted;
+        } catch (error) {
+          console.error("\uBCF5\uD638\uD654 \uC2E4\uD328:", error);
+          throw new Error("\uBE44\uBC00\uBC88\uD638 \uBCF5\uD638\uD654\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4");
+        }
+      }
+      /**
+       * 암호화 테스트 함수
+       */
+      static test() {
+        try {
+          const testPassword = "test-password-123";
+          const encrypted = this.encrypt(testPassword);
+          const decrypted = this.decrypt(encrypted);
+          return testPassword === decrypted;
+        } catch (error) {
+          console.error("\uC554\uD638\uD654 \uD14C\uC2A4\uD2B8 \uC2E4\uD328:", error);
+          return false;
+        }
+      }
+      /**
+       * 안전한 비밀번호 비교
+       * @param plainText 평문 비밀번호
+       * @param encryptedText 암호화된 비밀번호
+       * @returns 일치 여부
+       */
+      static compare(plainText, encryptedText) {
+        try {
+          const decrypted = this.decrypt(encryptedText);
+          return plainText === decrypted;
+        } catch (error) {
+          return false;
+        }
+      }
+      /**
+       * 이메일 설정 마스킹 (UI 표시용)
+       * @param email 이메일 주소
+       * @returns 마스킹된 이메일
+       */
+      static maskEmail(email) {
+        if (!email || !email.includes("@")) {
+          return "***@***.***";
+        }
+        const [local, domain] = email.split("@");
+        const maskedLocal = local.length > 2 ? local.charAt(0) + "*".repeat(local.length - 2) + local.charAt(local.length - 1) : local;
+        return `${maskedLocal}@${domain}`;
+      }
+      /**
+       * 호스트 정보 마스킹 (보안을 위해)
+       * @param host SMTP 호스트
+       * @returns 마스킹된 호스트
+       */
+      static maskHost(host) {
+        if (!host) return "***";
+        if (host.includes(".")) {
+          const parts = host.split(".");
+          return parts.map(
+            (part, index2) => index2 === 0 || index2 === parts.length - 1 ? part : "*".repeat(part.length)
+          ).join(".");
+        }
+        return host.length > 4 ? host.substring(0, 2) + "*".repeat(host.length - 4) + host.substring(host.length - 2) : host;
+      }
+    };
+    if (process.env.NODE_ENV !== "production") {
+      if (EmailSettingsEncryption.test()) {
+        console.log("\u2705 \uC774\uBA54\uC77C \uC124\uC815 \uC554\uD638\uD654 \uAE30\uB2A5 \uC815\uC0C1 \uC791\uB3D9");
+      } else {
+        console.warn("\u26A0\uFE0F \uC774\uBA54\uC77C \uC124\uC815 \uC554\uD638\uD654 \uAE30\uB2A5 \uD14C\uC2A4\uD2B8 \uC2E4\uD328");
+      }
+    }
+  }
+});
+
+// server/services/email-settings-service.ts
+var email_settings_service_exports = {};
+__export(email_settings_service_exports, {
+  EmailSettingsService: () => EmailSettingsService
+});
+import { eq as eq7, desc as desc4 } from "drizzle-orm";
+import nodemailer2 from "nodemailer";
+var EmailSettingsService;
+var init_email_settings_service = __esm({
+  "server/services/email-settings-service.ts"() {
     "use strict";
     init_db();
     init_schema();
-    PDFGenerationService = class {
+    init_email_settings_encryption();
+    EmailSettingsService = class _EmailSettingsService {
       static {
-        this.uploadDir = process.env.VERCEL ? "/tmp/pdf" : path4.join(process.cwd(), "uploads/pdf");
+        this.settingsCache = null;
+      }
+      static {
+        this.cacheTimestamp = 0;
+      }
+      static {
+        this.CACHE_TTL = 5 * 60 * 1e3;
+      }
+      // 5분 캐시
+      /**
+       * 기본 설정 가져오기 (활성 + 기본 설정)
+       */
+      async getDefaultSettings() {
+        try {
+          if (_EmailSettingsService.isCacheValid()) {
+            return _EmailSettingsService.settingsCache;
+          }
+          const db2 = db;
+          const result = await db2.select().from(emailSettings).where(eq7(emailSettings.isActive, true)).orderBy(desc4(emailSettings.isDefault), desc4(emailSettings.updatedAt)).limit(1);
+          const setting = result[0] || null;
+          _EmailSettingsService.settingsCache = setting;
+          _EmailSettingsService.cacheTimestamp = Date.now();
+          return setting;
+        } catch (error) {
+          console.error("\uAE30\uBCF8 \uC774\uBA54\uC77C \uC124\uC815 \uC870\uD68C \uC2E4\uD328:", error);
+          return null;
+        }
       }
       /**
-       * 발주서 PDF 생성 및 첨부파일 등록
+       * 모든 설정 조회
        */
-      static async generatePurchaseOrderPDF(orderId, orderData, userId) {
+      async getAllSettings() {
         try {
-          console.log(`\u{1F4C4} [PDFGenerator] \uBC1C\uC8FC\uC11C PDF \uC0DD\uC131 \uC2DC\uC791: Order ID ${orderId}`);
-          const timestamp2 = Date.now();
-          const fileName = `PO_${orderData.orderNumber}_${timestamp2}.pdf`;
-          let pdfBuffer;
-          const tempDir = path4.join(this.uploadDir, String((/* @__PURE__ */ new Date()).getFullYear()), String((/* @__PURE__ */ new Date()).getMonth() + 1).padStart(2, "0"));
-          if (process.env.VERCEL) {
-            console.log("\u{1F4C4} [PDFGenerator] Vercel \uD658\uACBD: PDFKit\uC73C\uB85C PDF \uC9C1\uC811 \uC0DD\uC131");
-            pdfBuffer = await this.generatePDFWithPDFKit(orderData);
-          } else {
-            console.log("\u{1F4C4} [PDFGenerator] \uB85C\uCEEC \uD658\uACBD: HTML \uD15C\uD50C\uB9BF\uC73C\uB85C PDF \uC0DD\uC131");
-            console.log(`\u{1F4C1} [PDFGenerator] \uB514\uB809\uD1A0\uB9AC \uC0DD\uC131 \uC911: ${tempDir}`);
-            if (!fs6.existsSync(tempDir)) {
-              try {
-                fs6.mkdirSync(tempDir, { recursive: true });
-                console.log(`\u2705 [PDFGenerator] \uB514\uB809\uD1A0\uB9AC \uC0DD\uC131 \uC644\uB8CC: ${tempDir}`);
-              } catch (dirError) {
-                console.error(`\u274C [PDFGenerator] \uB514\uB809\uD1A0\uB9AC \uC0DD\uC131 \uC2E4\uD328: ${tempDir}`, dirError);
-                throw new Error(`\uB514\uB809\uD1A0\uB9AC \uC0DD\uC131 \uC2E4\uD328: ${dirError instanceof Error ? dirError.message : "Unknown error"}`);
-              }
+          const db2 = db;
+          const result = await db2.select().from(emailSettings).orderBy(desc4(emailSettings.isDefault), desc4(emailSettings.updatedAt));
+          return result;
+        } catch (error) {
+          console.error("\uC774\uBA54\uC77C \uC124\uC815 \uBAA9\uB85D \uC870\uD68C \uC2E4\uD328:", error);
+          return [];
+        }
+      }
+      /**
+       * 새 설정 생성
+       */
+      async createSettings(data, createdBy) {
+        try {
+          const encryptedPassword = EmailSettingsEncryption.encrypt(data.smtpPass);
+          const db2 = db;
+          if (data.isDefault) {
+            await db2.update(emailSettings).set({ isDefault: false, updatedAt: /* @__PURE__ */ new Date() }).where(eq7(emailSettings.isDefault, true));
+          }
+          const insertData = {
+            ...data,
+            smtpPass: encryptedPassword,
+            createdBy
+          };
+          const result = await db2.insert(emailSettings).values(insertData).returning();
+          const newSetting = result[0];
+          this.invalidateCache();
+          return newSetting;
+        } catch (error) {
+          console.error("\uC774\uBA54\uC77C \uC124\uC815 \uC0DD\uC131 \uC2E4\uD328:", error);
+          throw new Error("\uC774\uBA54\uC77C \uC124\uC815 \uC0DD\uC131\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4");
+        }
+      }
+      /**
+       * 설정 업데이트
+       */
+      async updateSettings(id, data, updatedBy) {
+        try {
+          const db2 = db;
+          const updateData = {
+            ...data,
+            updatedAt: /* @__PURE__ */ new Date()
+          };
+          if (data.smtpPass && data.smtpPass !== "********") {
+            updateData.smtpPass = EmailSettingsEncryption.encrypt(data.smtpPass);
+          }
+          if (data.isDefault === true) {
+            await db2.update(emailSettings).set({ isDefault: false, updatedAt: /* @__PURE__ */ new Date() }).where(eq7(emailSettings.isDefault, true));
+          }
+          const result = await db2.update(emailSettings).set(updateData).where(eq7(emailSettings.id, id)).returning();
+          if (result.length === 0) {
+            throw new Error("\uC5C5\uB370\uC774\uD2B8\uD560 \uC124\uC815\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4");
+          }
+          this.invalidateCache();
+          return result[0];
+        } catch (error) {
+          console.error("\uC774\uBA54\uC77C \uC124\uC815 \uC5C5\uB370\uC774\uD2B8 \uC2E4\uD328:", error);
+          throw new Error("\uC774\uBA54\uC77C \uC124\uC815 \uC5C5\uB370\uC774\uD2B8\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4");
+        }
+      }
+      /**
+       * 설정 삭제
+       */
+      async deleteSettings(id) {
+        try {
+          const db2 = db;
+          const result = await db2.delete(emailSettings).where(eq7(emailSettings.id, id)).returning();
+          this.invalidateCache();
+          return result.length > 0;
+        } catch (error) {
+          console.error("\uC774\uBA54\uC77C \uC124\uC815 \uC0AD\uC81C \uC2E4\uD328:", error);
+          return false;
+        }
+      }
+      /**
+       * SMTP 연결 테스트
+       */
+      async testSMTPConnection(setting, testEmail) {
+        try {
+          const decryptedPassword = EmailSettingsEncryption.decrypt(setting.smtpPass);
+          const transporter2 = nodemailer2.createTransport({
+            host: setting.smtpHost,
+            port: setting.smtpPort,
+            secure: setting.smtpPort === 465,
+            auth: {
+              user: setting.smtpUser,
+              pass: decryptedPassword
+            },
+            tls: {
+              rejectUnauthorized: false
             }
-            const htmlContent = this.generateHTMLTemplate(orderData);
+          });
+          await transporter2.verify();
+          const info = await transporter2.sendMail({
+            from: setting.fromName ? `"${setting.fromName}" <${setting.smtpUser}>` : setting.smtpUser,
+            to: testEmail,
+            subject: "[IKJIN] \uC774\uBA54\uC77C \uC124\uC815 \uD14C\uC2A4\uD2B8",
+            html: `
+          <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px;">
+            <h2 style="color: #3b82f6;">\uC774\uBA54\uC77C \uC124\uC815 \uD14C\uC2A4\uD2B8 \uC644\uB8CC</h2>
+            <p>IKJIN \uAD6C\uB9E4 \uBC1C\uC8FC \uAD00\uB9AC \uC2DC\uC2A4\uD15C\uC758 \uC774\uBA54\uC77C \uC124\uC815\uC774 \uC815\uC0C1\uC801\uC73C\uB85C \uC791\uB3D9\uD569\uB2C8\uB2E4.</p>
+            <hr style="margin: 20px 0; border: 1px solid #e5e7eb;">
+            <div style="background: #f9fafb; padding: 15px; border-radius: 5px;">
+              <h3 style="margin-top: 0; color: #374151;">\uC124\uC815 \uC815\uBCF4</h3>
+              <p><strong>SMTP \uC11C\uBC84:</strong> ${EmailSettingsEncryption.maskHost(setting.smtpHost)}</p>
+              <p><strong>\uD3EC\uD2B8:</strong> ${setting.smtpPort}</p>
+              <p><strong>\uBC1C\uC1A1\uC790:</strong> ${EmailSettingsEncryption.maskEmail(setting.smtpUser)}</p>
+              <p><strong>\uD14C\uC2A4\uD2B8 \uC2DC\uAC04:</strong> ${(/* @__PURE__ */ new Date()).toLocaleString("ko-KR")}</p>
+            </div>
+          </div>
+        `
+          });
+          await this.updateTestResult(setting.id, {
+            success: true,
+            messageId: info.messageId,
+            testedAt: /* @__PURE__ */ new Date(),
+            testEmail
+          });
+          return {
+            success: true,
+            messageId: info.messageId
+          };
+        } catch (error) {
+          console.error("SMTP \uC5F0\uACB0 \uD14C\uC2A4\uD2B8 \uC2E4\uD328:", error);
+          await this.updateTestResult(setting.id, {
+            success: false,
+            error: error.message,
+            testedAt: /* @__PURE__ */ new Date(),
+            testEmail
+          });
+          return {
+            success: false,
+            error: error.message
+          };
+        }
+      }
+      /**
+       * 환경 변수에서 현재 설정 읽기 (백워드 호환성)
+       */
+      getSettingsFromEnv() {
+        return {
+          smtpHost: process.env.SMTP_HOST || "smtp.naver.com",
+          smtpPort: parseInt(process.env.SMTP_PORT || "587"),
+          smtpUser: process.env.SMTP_USER || "",
+          // smtpPass는 평문으로 반환 (암호화는 저장 시)
+          fromName: "IKJIN \uAD6C\uB9E4 \uBC1C\uC8FC \uC2DC\uC2A4\uD15C",
+          description: "\uD658\uACBD \uBCC0\uC218\uC5D0\uC11C \uAC00\uC838\uC628 \uAE30\uBCF8 \uC124\uC815",
+          isActive: true,
+          isDefault: true
+        };
+      }
+      /**
+       * UI용 마스킹된 설정 반환
+       */
+      getMaskedSettings(setting) {
+        return {
+          ...setting,
+          smtpPass: "********",
+          smtpUser: EmailSettingsEncryption.maskEmail(setting.smtpUser),
+          smtpHost: EmailSettingsEncryption.maskHost(setting.smtpHost)
+        };
+      }
+      /**
+       * 실제 SMTP 설정 반환 (이메일 발송용)
+       */
+      async getDecryptedSettings(settingId) {
+        try {
+          let setting;
+          if (settingId) {
+            const db2 = db;
+            const result = await db2.select().from(emailSettings).where(eq7(emailSettings.id, settingId)).limit(1);
+            setting = result[0] || null;
+          } else {
+            setting = await this.getDefaultSettings();
+          }
+          if (!setting) {
+            return {
+              host: process.env.SMTP_HOST || "smtp.naver.com",
+              port: parseInt(process.env.SMTP_PORT || "587"),
+              secure: parseInt(process.env.SMTP_PORT || "587") === 465,
+              auth: {
+                user: process.env.SMTP_USER || "",
+                pass: process.env.SMTP_PASS || ""
+              },
+              tls: {
+                rejectUnauthorized: false
+              }
+            };
+          }
+          const decryptedPassword = EmailSettingsEncryption.decrypt(setting.smtpPass);
+          return {
+            host: setting.smtpHost,
+            port: setting.smtpPort,
+            secure: setting.smtpPort === 465,
+            auth: {
+              user: setting.smtpUser,
+              pass: decryptedPassword
+            },
+            tls: {
+              rejectUnauthorized: false
+            }
+          };
+        } catch (error) {
+          console.error("SMTP \uC124\uC815 \uBCF5\uD638\uD654 \uC2E4\uD328:", error);
+          return null;
+        }
+      }
+      /**
+       * 캐시 유효성 확인
+       */
+      static isCacheValid() {
+        return _EmailSettingsService.settingsCache !== null && Date.now() - _EmailSettingsService.cacheTimestamp < _EmailSettingsService.CACHE_TTL;
+      }
+      /**
+       * 캐시 무효화
+       */
+      invalidateCache() {
+        _EmailSettingsService.settingsCache = null;
+        _EmailSettingsService.cacheTimestamp = 0;
+      }
+      /**
+       * 테스트 결과 업데이트
+       */
+      async updateTestResult(settingId, testResult) {
+        try {
+          const db2 = db;
+          await db2.update(emailSettings).set({
+            lastTestedAt: /* @__PURE__ */ new Date(),
+            testResult,
+            updatedAt: /* @__PURE__ */ new Date()
+          }).where(eq7(emailSettings.id, settingId));
+        } catch (error) {
+          console.error("\uD14C\uC2A4\uD2B8 \uACB0\uACFC \uC5C5\uB370\uC774\uD2B8 \uC2E4\uD328:", error);
+        }
+      }
+    };
+  }
+});
+
+// server/services/professional-pdf-generation-service.ts
+import * as fs8 from "fs";
+import * as path6 from "path";
+import { format as format3 } from "date-fns";
+import { ko as ko3 } from "date-fns/locale";
+import { eq as eq8, desc as desc5 } from "drizzle-orm";
+var ProfessionalPDFGenerationService;
+var init_professional_pdf_generation_service = __esm({
+  "server/services/professional-pdf-generation-service.ts"() {
+    "use strict";
+    init_db();
+    init_schema();
+    ProfessionalPDFGenerationService = class {
+      static {
+        this.uploadDir = process.env.VERCEL ? "/tmp/pdf" : path6.join(process.cwd(), "uploads/pdf");
+      }
+      static {
+        this.TEMPLATE_VERSION = "v2.0.0";
+      }
+      static {
+        this.VAT_RATE = 0.1;
+      }
+      // 10% 부가세
+      /**
+       * 시스템 이메일 설정 가져오기 (DB 우선, 환경변수 fallback)
+       */
+      static async getSystemEmail() {
+        try {
+          const { EmailSettingsService: EmailSettingsService2 } = await Promise.resolve().then(() => (init_email_settings_service(), email_settings_service_exports));
+          const emailService4 = new EmailSettingsService2();
+          const settings = await emailService4.getDefaultSettings();
+          if (settings && settings.smtpUser) {
+            return settings.smtpUser;
+          }
+          return process.env.SMTP_USER || null;
+        } catch (error) {
+          console.warn("\u26A0\uFE0F [ProfessionalPDF] \uC2DC\uC2A4\uD15C \uC774\uBA54\uC77C \uC870\uD68C \uC2E4\uD328, \uD658\uACBD\uBCC0\uC218 \uC0AC\uC6A9:", error);
+          return process.env.SMTP_USER || null;
+        }
+      }
+      /**
+       * 발주서 ID로부터 포괄적인 데이터 수집
+       */
+      static async gatherComprehensiveOrderData(orderId) {
+        try {
+          console.log(`\u{1F4CA} [ProfessionalPDF] \uD3EC\uAD04\uC801 \uB370\uC774\uD130 \uC218\uC9D1 \uC2DC\uC791: Order ID ${orderId}`);
+          const orderQuery = await db.db.select({
+            // Purchase Order 정보
+            orderNumber: purchaseOrders.orderNumber,
+            orderDate: purchaseOrders.orderDate,
+            deliveryDate: purchaseOrders.deliveryDate,
+            orderStatus: purchaseOrders.orderStatus,
+            approvalStatus: purchaseOrders.approvalStatus,
+            totalAmount: purchaseOrders.totalAmount,
+            notes: purchaseOrders.notes,
+            approvalLevel: purchaseOrders.approvalLevel,
+            createdAt: purchaseOrders.createdAt,
+            updatedAt: purchaseOrders.updatedAt,
+            // 거래처 정보
+            vendorName: vendors.name,
+            vendorBusinessNumber: vendors.businessNumber,
+            vendorContactPerson: vendors.contactPerson,
+            vendorEmail: vendors.email,
+            vendorPhone: vendors.phone,
+            vendorAddress: vendors.address,
+            vendorBusinessType: vendors.businessType,
+            // 현장 정보
+            projectName: projects.projectName,
+            projectCode: projects.projectCode,
+            projectClientName: projects.clientName,
+            projectLocation: projects.location,
+            projectStartDate: projects.startDate,
+            projectEndDate: projects.endDate,
+            projectTotalBudget: projects.totalBudget,
+            // 작성자 정보
+            creatorName: users.name,
+            creatorEmail: users.email,
+            creatorPhone: users.phoneNumber,
+            creatorPosition: users.position,
+            creatorRole: users.role
+          }).from(purchaseOrders).leftJoin(vendors, eq8(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq8(purchaseOrders.projectId, projects.id)).leftJoin(users, eq8(purchaseOrders.userId, users.id)).where(eq8(purchaseOrders.id, orderId)).limit(1);
+          const companyQuery = await db.db.select({
+            companyName: companies.companyName,
+            companyBusinessNumber: companies.businessNumber,
+            companyAddress: companies.address,
+            companyContactPerson: companies.contactPerson,
+            companyPhone: companies.phone,
+            companyEmail: companies.email,
+            companyFax: companies.fax,
+            companyWebsite: companies.website,
+            companyRepresentative: companies.representative
+          }).from(companies).where(eq8(companies.isActive, true)).limit(1);
+          if (!orderQuery || orderQuery.length === 0) {
+            console.error(`\u274C [ProfessionalPDF] \uBC1C\uC8FC\uC11C \uC815\uBCF4 \uC5C6\uC74C: Order ID ${orderId}`);
+            return null;
+          }
+          const orderData = orderQuery[0];
+          const companyData = companyQuery.length > 0 ? companyQuery[0] : {
+            companyName: "\uBC1C\uC8FC\uC5C5\uCCB4",
+            companyBusinessNumber: null,
+            companyAddress: null,
+            companyContactPerson: null,
+            companyPhone: null,
+            companyEmail: null,
+            companyFax: null,
+            companyWebsite: null,
+            companyRepresentative: null
+          };
+          const itemsQuery = await db.db.select().from(purchaseOrderItems).where(eq8(purchaseOrderItems.orderId, orderId));
+          const attachmentsQuery = await db.db.select().from(attachments).where(eq8(attachments.orderId, orderId));
+          let emailHistoryQuery = [];
+          try {
+            emailHistoryQuery = await db.db.select().from(emailSendHistory).where(eq8(emailSendHistory.orderId, orderId)).orderBy(desc5(emailSendHistory.sentAt)).limit(5);
+          } catch (error) {
+            if (error.code !== "42P01") {
+              console.error("\u274C [ProfessionalPDF] \uC774\uBA54\uC77C \uC774\uB825 \uC870\uD68C \uC624\uB958:", error);
+            }
+          }
+          const subtotalAmount = Number(orderData.totalAmount) || 0;
+          const vatAmount = Math.round(subtotalAmount * this.VAT_RATE);
+          const totalAmount = subtotalAmount + vatAmount;
+          const comprehensiveData = {
+            orderNumber: orderData.orderNumber,
+            orderDate: orderData.orderDate,
+            deliveryDate: orderData.deliveryDate,
+            orderStatus: orderData.orderStatus || "draft",
+            approvalStatus: orderData.approvalStatus || "not_required",
+            createdAt: orderData.createdAt,
+            updatedAt: orderData.updatedAt,
+            issuerCompany: {
+              name: companyData.companyName || "\uBC1C\uC8FC\uC5C5\uCCB4",
+              businessNumber: companyData.companyBusinessNumber,
+              representative: companyData.companyRepresentative,
+              address: companyData.companyAddress,
+              phone: companyData.companyPhone,
+              email: await this.getSystemEmail() || companyData.companyEmail,
+              fax: companyData.companyFax,
+              website: companyData.companyWebsite
+            },
+            vendorCompany: {
+              name: orderData.vendorName || "\uAC70\uB798\uCC98\uBA85 \uC5C6\uC74C",
+              businessNumber: orderData.vendorBusinessNumber,
+              address: orderData.vendorAddress,
+              phone: orderData.vendorPhone,
+              email: orderData.vendorEmail,
+              contactPerson: orderData.vendorContactPerson,
+              businessType: orderData.vendorBusinessType
+            },
+            project: {
+              name: orderData.projectName || "\uD604\uC7A5\uBA85 \uC5C6\uC74C",
+              code: orderData.projectCode,
+              clientName: orderData.projectClientName,
+              location: orderData.projectLocation,
+              startDate: orderData.projectStartDate,
+              endDate: orderData.projectEndDate,
+              totalBudget: Number(orderData.projectTotalBudget) || void 0
+            },
+            creator: {
+              name: orderData.creatorName || "\uC791\uC131\uC790 \uC815\uBCF4 \uC5C6\uC74C",
+              email: orderData.creatorEmail,
+              phone: orderData.creatorPhone,
+              position: orderData.creatorPosition,
+              role: orderData.creatorRole
+            },
+            items: itemsQuery.map((item, index2) => ({
+              sequenceNo: index2 + 1,
+              majorCategory: item.majorCategory,
+              middleCategory: item.middleCategory,
+              minorCategory: item.minorCategory,
+              name: item.itemName,
+              specification: item.specification,
+              quantity: Number(item.quantity),
+              unit: item.unit,
+              unitPrice: Number(item.unitPrice),
+              totalPrice: Number(item.totalAmount),
+              remarks: item.notes,
+              categoryPath: [
+                item.majorCategory,
+                item.middleCategory,
+                item.minorCategory
+              ].filter(Boolean).join(" | ")
+            })),
+            financial: {
+              subtotalAmount,
+              vatRate: this.VAT_RATE,
+              vatAmount,
+              totalAmount,
+              currencyCode: "KRW"
+            },
+            terms: {
+              paymentTerms: "\uACC4\uC57D\uC11C\uC5D0 \uB530\uB984",
+              deliveryTerms: "\uD604\uC7A5 \uC9C1\uB0A9",
+              warrantyPeriod: "1\uB144",
+              qualityStandard: "KS \uAE30\uC900",
+              inspectionMethod: "\uD604\uC7A5 \uAC80\uC218"
+            },
+            attachments: {
+              count: attachmentsQuery.length,
+              hasAttachments: attachmentsQuery.length > 0,
+              fileNames: attachmentsQuery.map((att) => att.originalName),
+              totalSize: attachmentsQuery.reduce((sum2, att) => sum2 + (att.fileSize || 0), 0)
+            },
+            communication: {
+              emailHistory: emailHistoryQuery.map((email) => ({
+                sentAt: email.sentAt,
+                recipient: email.recipientEmail,
+                subject: email.subject,
+                status: email.status
+              })),
+              lastEmailSent: emailHistoryQuery[0]?.sentAt,
+              totalEmailsSent: emailHistoryQuery.length
+            },
+            approval: {
+              currentStatus: orderData.approvalStatus || "not_required",
+              approvalLevel: orderData.approvalLevel || 1,
+              approvers: [
+                { role: "field_worker", status: "approved" },
+                { role: "project_manager", status: "pending" },
+                { role: "hq_management", status: "pending" },
+                { role: "executive", status: "pending" },
+                { role: "admin", status: "pending" }
+              ]
+            },
+            metadata: {
+              notes: orderData.notes,
+              documentId: `DOC_${orderId}_${Date.now()}`,
+              generatedAt: /* @__PURE__ */ new Date(),
+              generatedBy: orderData.creatorName || "System",
+              templateVersion: this.TEMPLATE_VERSION
+            }
+          };
+          console.log(`\u2705 [ProfessionalPDF] \uB370\uC774\uD130 \uC218\uC9D1 \uC644\uB8CC: ${itemsQuery.length}\uAC1C \uD488\uBAA9, ${attachmentsQuery.length}\uAC1C \uCCA8\uBD80\uD30C\uC77C`);
+          return comprehensiveData;
+        } catch (error) {
+          console.error("\u274C [ProfessionalPDF] \uB370\uC774\uD130 \uC218\uC9D1 \uC624\uB958:", error);
+          return null;
+        }
+      }
+      /**
+       * 전문적인 발주서 PDF 생성
+       */
+      static async generateProfessionalPurchaseOrderPDF(orderId, userId) {
+        try {
+          console.log(`\u{1F4C4} [ProfessionalPDF] \uC804\uBB38\uC801 \uBC1C\uC8FC\uC11C PDF \uC0DD\uC131 \uC2DC\uC791: Order ID ${orderId}`);
+          const orderData = await this.gatherComprehensiveOrderData(orderId);
+          if (!orderData) {
+            return {
+              success: false,
+              error: "\uBC1C\uC8FC\uC11C \uB370\uC774\uD130\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
+            };
+          }
+          const timestamp2 = Date.now();
+          const fileName = `PO_Professional_${orderData.orderNumber}_${timestamp2}.pdf`;
+          let pdfBuffer;
+          if (process.env.VERCEL) {
+            console.log("\u{1F4C4} [ProfessionalPDF] Vercel \uD658\uACBD: PDFKit\uC73C\uB85C PDF \uC9C1\uC811 \uC0DD\uC131");
+            pdfBuffer = await this.generateProfessionalPDFWithPDFKit(orderData);
+          } else {
+            console.log("\u{1F4C4} [ProfessionalPDF] \uB85C\uCEEC \uD658\uACBD: HTML \uD15C\uD50C\uB9BF\uC73C\uB85C PDF \uC0DD\uC131");
+            const htmlContent = this.generateProfessionalHTMLTemplate(orderData);
             pdfBuffer = await this.convertHTMLToPDFFromString(htmlContent);
           }
+          const base64Data = pdfBuffer.toString("base64");
           let filePath = "";
           let attachmentId;
+          console.log(`\u{1F50D} [ProfessionalPDF] Environment check - VERCEL: ${process.env.VERCEL}, Base64 size: ${base64Data.length} chars`);
           if (process.env.VERCEL) {
-            const tempFilePath = path4.join("/tmp", fileName);
-            fs6.writeFileSync(tempFilePath, pdfBuffer);
+            console.log("\u{1F4DD} [ProfessionalPDF] Saving to database with Base64 data...");
             const [attachment] = await db.insert(attachments).values({
               orderId,
               originalName: fileName,
               storedName: fileName,
-              filePath: tempFilePath,
-              // 임시 파일 경로
+              filePath: `professional://${fileName}`,
               fileSize: pdfBuffer.length,
               mimeType: "application/pdf",
-              uploadedBy: userId
+              uploadedBy: userId,
+              fileData: base64Data
             }).returning();
             attachmentId = attachment.id;
-            filePath = tempFilePath;
-            console.log(`\u2705 [PDFGenerator] PDF \uC0DD\uC131 \uC644\uB8CC (Vercel \uC784\uC2DC \uC800\uC7A5): ${fileName}, Attachment ID: ${attachment.id}, \uD30C\uC77C \uD06C\uAE30: ${Math.round(pdfBuffer.length / 1024)}KB`);
+            filePath = `professional://${fileName}`;
+            console.log(`\u2705 [ProfessionalPDF] PDF \uC0DD\uC131 \uC644\uB8CC (Vercel): ${fileName}, \uD06C\uAE30: ${Math.round(pdfBuffer.length / 1024)}KB`);
           } else {
-            filePath = path4.join(tempDir, fileName);
-            fs6.writeFileSync(filePath, pdfBuffer);
+            const tempDir = path6.join(this.uploadDir, "professional", String((/* @__PURE__ */ new Date()).getFullYear()));
+            if (!fs8.existsSync(tempDir)) {
+              fs8.mkdirSync(tempDir, { recursive: true });
+            }
+            filePath = path6.join(tempDir, fileName);
+            fs8.writeFileSync(filePath, pdfBuffer);
             const [attachment] = await db.insert(attachments).values({
               orderId,
               originalName: fileName,
               storedName: fileName,
               filePath,
-              // 파일시스템 경로 사용
               fileSize: pdfBuffer.length,
               mimeType: "application/pdf",
-              uploadedBy: userId
+              uploadedBy: userId,
+              fileData: base64Data
+              // 로컬에서도 Base64 저장하여 배포 시 호환성 보장
             }).returning();
             attachmentId = attachment.id;
-            console.log(`\u2705 [PDFGenerator] PDF \uC0DD\uC131 \uC644\uB8CC: ${filePath}, Attachment ID: ${attachment.id}`);
+            console.log(`\u2705 [ProfessionalPDF] PDF \uC0DD\uC131 \uC644\uB8CC (\uB85C\uCEEC): ${filePath}, DB\uC5D0\uB3C4 Base64 \uC800\uC7A5`);
           }
           return {
             success: true,
@@ -1615,7 +2297,7 @@ var init_pdf_generation_service = __esm({
             pdfBuffer: process.env.VERCEL ? pdfBuffer : void 0
           };
         } catch (error) {
-          console.error("\u274C [PDFGenerator] PDF \uC0DD\uC131 \uC624\uB958:", error);
+          console.error("\u274C [ProfessionalPDF] PDF \uC0DD\uC131 \uC624\uB958:", error);
           return {
             success: false,
             error: error instanceof Error ? error.message : "PDF \uC0DD\uC131 \uC911 \uC624\uB958 \uBC1C\uC0DD"
@@ -1623,12 +2305,16 @@ var init_pdf_generation_service = __esm({
         }
       }
       /**
-       * HTML 템플릿 생성
+       * 전문적인 HTML 템플릿 생성
        */
-      static generateHTMLTemplate(data) {
+      static generateProfessionalHTMLTemplate(data) {
         const formatDate = (date2) => {
           if (!date2) return "-";
-          return format(new Date(date2), "yyyy\uB144 MM\uC6D4 dd\uC77C", { locale: ko });
+          return format3(new Date(date2), "yyyy\uB144 MM\uC6D4 dd\uC77C", { locale: ko3 });
+        };
+        const formatDateTime = (date2) => {
+          if (!date2) return "-";
+          return format3(new Date(date2), "yyyy.MM.dd HH:mm", { locale: ko3 });
         };
         const formatCurrency = (amount) => {
           return new Intl.NumberFormat("ko-KR", {
@@ -1636,21 +2322,44 @@ var init_pdf_generation_service = __esm({
             currency: "KRW"
           }).format(amount);
         };
-        const itemRows = data.items.map((item, index2) => `
+        const formatNumber = (num) => {
+          return new Intl.NumberFormat("ko-KR").format(num);
+        };
+        const formatRemarks = (item) => {
+          let result = "";
+          if (item.categoryPath && item.categoryPath !== "-") {
+            result += item.categoryPath + "<br/>";
+          }
+          if (item.remarks && item.remarks !== "-") {
+            const formattedRemarks = item.remarks.replace(/납품처:/g, "\u2022 \uB0A9\uD488\uCC98:").replace(/이메일:/g, "<br/>\u2022 \uC774\uBA54\uC77C:");
+            result += formattedRemarks;
+          }
+          return result || "-";
+        };
+        const itemRows = data.items.map((item) => `
       <tr>
-        <td class="text-center">${index2 + 1}</td>
-        <td>${item.category || "-"}</td>
-        <td>${item.subCategory1 || "-"}</td>
-        <td>${item.subCategory2 || "-"}</td>
-        <td>${item.item || item.name}</td>
-        <td>${item.specification || "-"}</td>
-        <td class="text-right">${item.quantity}</td>
-        <td class="text-center">${item.unit}</td>
+        <td class="text-center">${item.sequenceNo}</td>
+        <td class="text-small">${item.name}</td>
+        <td class="text-small">${item.specification || "-"}</td>
+        <td class="text-center">${formatNumber(item.quantity)}</td>
+        <td class="text-center">${item.unit || "-"}</td>
         <td class="text-right">${formatCurrency(item.unitPrice)}</td>
-        <td class="text-right">${formatCurrency(item.price)}</td>
-        <td>${item.deliveryLocation || "-"}</td>
+        <td class="text-right">${formatCurrency(item.totalPrice)}</td>
+        <td class="text-small">${formatRemarks(item)}</td>
       </tr>
     `).join("");
+        const approverBoxes = data.approval.approvers.map((approver) => {
+          const statusIcon = approver.status === "approved" ? "\u2713" : approver.status === "rejected" ? "\u2717" : "\u25CB";
+          const statusClass = approver.status === "approved" ? "approved" : approver.status === "rejected" ? "rejected" : "pending";
+          return `
+        <div class="approval-box ${statusClass}">
+          <div class="approval-title">${this.getRoleDisplayName(approver.role)}</div>
+          <div class="approval-status">${statusIcon}</div>
+          <div class="approval-name">${approver.name || "-"}</div>
+          ${approver.approvedAt ? `<div class="approval-date">${formatDate(approver.approvedAt)}</div>` : ""}
+        </div>
+      `;
+        }).join("");
         return `
 <!DOCTYPE html>
 <html lang="ko">
@@ -1661,7 +2370,7 @@ var init_pdf_generation_service = __esm({
   <style>
     @page {
       size: A4;
-      margin: 15mm;
+      margin: 8mm;
     }
     
     * {
@@ -1672,211 +2381,523 @@ var init_pdf_generation_service = __esm({
     
     body {
       font-family: 'Malgun Gothic', 'Arial', sans-serif;
-      font-size: 10pt;
-      line-height: 1.5;
-      color: #333;
+      font-size: 8pt;
+      line-height: 1.2;
+      color: #000;
     }
     
     .container {
       max-width: 210mm;
       margin: 0 auto;
-      padding: 20px;
     }
     
+    /* === HEADER SECTION === */
     .header {
+      display: grid;
+      grid-template-columns: 100px 1fr 100px;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 3px solid #1e40af;
+      margin-bottom: 12px;
+      align-items: center;
+    }
+    
+    .header-center {
       text-align: center;
-      margin-bottom: 30px;
     }
     
-    .header h1 {
-      font-size: 24pt;
+    .header-center h1 {
+      font-size: 18pt;
       font-weight: bold;
-      margin-bottom: 5px;
+      margin-bottom: 2px;
     }
     
-    .header .subtitle {
-      font-size: 11pt;
-      color: #666;
+    .header-center .order-number {
+      font-size: 12pt;
+      font-weight: bold;
+      color: #1e40af;
     }
     
-    .info-section {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 20px;
-    }
-    
-    .info-group {
-      flex: 1;
-    }
-    
-    .info-item {
-      margin-bottom: 5px;
-    }
-    
-    .info-item strong {
+    .status-badge {
       display: inline-block;
-      width: 100px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 7pt;
+      font-weight: bold;
+      margin: 2px 0;
+    }
+    
+    .status-draft { background: #fef3c7; color: #92400e; }
+    .status-approved { background: #d1fae5; color: #065f46; }
+    .status-sent { background: #dbeafe; color: #1e40af; }
+    
+    /* === INFO GRID === */
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    
+    .info-box {
+      border: 1px solid #d1d5db;
+      background: #f9fafb;
+      padding: 6px;
+    }
+    
+    .info-box h3 {
+      font-size: 9pt;
+      font-weight: bold;
+      margin-bottom: 4px;
+      padding-bottom: 2px;
+      border-bottom: 1px solid #d1d5db;
+      color: #1f2937;
+    }
+    
+    .info-row {
+      display: grid;
+      grid-template-columns: 60px 1fr;
+      gap: 4px;
+      margin-bottom: 1px;
+      font-size: 7pt;
+    }
+    
+    .info-label {
+      font-weight: bold;
+      color: #374151;
+    }
+    
+    .info-value {
+      color: #111827;
+    }
+    
+    /* === PROJECT INFO FULL WIDTH === */
+    .project-info {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin: 8px 0;
+    }
+    
+    /* === ITEMS TABLE === */
+    .items-section {
+      margin: 10px 0;
+    }
+    
+    .items-header {
+      background: #1e40af;
+      color: white;
+      padding: 4px 8px;
+      font-weight: bold;
+      font-size: 9pt;
     }
     
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 20px;
+      font-size: 7pt;
+      margin-bottom: 8px;
     }
     
     th, td {
-      border: 1px solid #ddd;
-      padding: 5px;
-      font-size: 9pt;
+      border: 1px solid #d1d5db;
+      padding: 2px 4px;
+      vertical-align: middle;
     }
     
     th {
-      background-color: #f5f5f5;
+      background-color: #f3f4f6;
       font-weight: bold;
       text-align: center;
+      font-size: 7pt;
     }
     
-    .text-center {
-      text-align: center;
-    }
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
+    .text-small { font-size: 6pt; }
     
-    .text-right {
-      text-align: right;
-    }
-    
-    .total-row {
-      background-color: #f9f9f9;
-      font-weight: bold;
-    }
-    
-    .notes-section {
-      margin: 20px 0;
-      padding: 10px;
-      border: 1px solid #ddd;
-      background-color: #fafafa;
-    }
-    
-    .signature-section {
-      margin-top: 30px;
-      display: flex;
-      justify-content: space-between;
-    }
-    
-    .signature-box {
-      width: 18%;
-      border: 1px solid #ddd;
-      padding: 5px;
-      text-align: center;
-    }
-    
-    .signature-box .title {
-      font-weight: bold;
-      margin-bottom: 5px;
-    }
-    
-    .signature-box .signature-area {
-      height: 50px;
-      border-top: 1px solid #ddd;
+    .financial-summary {
       margin-top: 5px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
     }
     
-    .footer {
+    .financial-row {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 10px;
+      padding: 3px 8px;
+      border-bottom: 1px solid #e2e8f0;
+      font-size: 8pt;
+    }
+    
+    .financial-row:last-child {
+      border-bottom: none;
+      font-weight: bold;
+      background: #e2e8f0;
+    }
+    
+    /* === TERMS & CONDITIONS === */
+    .terms-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin: 8px 0;
+    }
+    
+    .terms-box {
+      border: 1px solid #d1d5db;
+      padding: 4px;
+      background: #fffbeb;
+    }
+    
+    .terms-box h4 {
+      font-size: 8pt;
+      font-weight: bold;
+      margin-bottom: 3px;
+      color: #92400e;
+    }
+    
+    .terms-content {
+      font-size: 7pt;
+      color: #451a03;
+    }
+    
+    /* === ATTACHMENTS & COMMUNICATION === */
+    .comm-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin: 8px 0;
+    }
+    
+    .comm-box {
+      border: 1px solid #d1d5db;
+      padding: 4px;
+      background: #f0f9ff;
+      font-size: 7pt;
+    }
+    
+    .comm-box h4 {
+      font-size: 8pt;
+      font-weight: bold;
+      margin-bottom: 3px;
+      color: #1e40af;
+    }
+    
+    .attachment-item {
+      background: #e0e7ff;
+      padding: 2px 4px;
+      margin: 1px 0;
+      border-radius: 2px;
+      font-size: 6pt;
+    }
+    
+    .email-item {
+      background: #f0f9ff;
+      padding: 2px 4px;
+      margin: 1px 0;
+      border-radius: 2px;
+      font-size: 6pt;
+    }
+    
+    
+    /* Approval styles removed */
+    .removed-approval-header {
+      background: #1e40af;
+      color: white;
+      padding: 4px 8px;
+      font-weight: bold;
+      font-size: 9pt;
+    }
+    
+    .approval-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 1px;
+      padding: 4px;
+    }
+    
+    .approval-box {
+      border: 1px solid #d1d5db;
+      padding: 4px;
       text-align: center;
-      margin-top: 40px;
-      padding-top: 20px;
-      border-top: 2px solid #333;
+      background: white;
+      min-height: 50px;
+    }
+    
+    .approval-box.approved {
+      background: #d1fae5;
+      border-color: #10b981;
+    }
+    
+    .approval-box.rejected {
+      background: #fee2e2;
+      border-color: #ef4444;
+    }
+    
+    .approval-box.pending {
+      background: #fef3c7;
+      border-color: #f59e0b;
+    }
+    
+    .approval-title {
+      font-size: 7pt;
+      font-weight: bold;
+      margin-bottom: 2px;
+    }
+    
+    .approval-status {
+      font-size: 12pt;
+      font-weight: bold;
+      margin: 3px 0;
+    }
+    
+    .approval-name {
+      font-size: 6pt;
+      margin-bottom: 1px;
+    }
+    
+    .approval-date {
+      font-size: 6pt;
+      color: #666;
+    }
+    
+    /* === FOOTER === */
+    .footer {
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 2px solid #374151;
+      font-size: 7pt;
+      color: #374151;
     }
     
     .company-info {
-      margin-top: 10px;
-      font-size: 9pt;
-      color: #666;
+      text-align: center;
+      margin-bottom: 6px;
+    }
+    
+    .company-info .name {
+      font-size: 10pt;
+      font-weight: bold;
+      margin-bottom: 2px;
+    }
+    
+    .doc-metadata {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 10px;
+      align-items: center;
+      font-size: 6pt;
+      color: #6b7280;
+      border-top: 1px solid #e5e7eb;
+      padding-top: 4px;
+    }
+    
+    .doc-metadata .center {
+      text-align: center;
+    }
+    
+    .doc-metadata .right {
+      text-align: right;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="header">
-      <h1>\uAD6C\uB9E4 \uBC1C\uC8FC\uC11C</h1>
-      <div class="subtitle">Purchase Order</div>
-    </div>
-    
-    <div class="info-section">
-      <div class="info-group">
-        <div class="info-item"><strong>\uBC1C\uC8FC\uC11C \uBC88\uD638:</strong> ${data.orderNumber}</div>
-        <div class="info-item"><strong>\uC791\uC131\uC77C:</strong> ${formatDate(data.orderDate)}</div>
-        <div class="info-item"><strong>\uD604\uC7A5:</strong> ${data.site || "-"}</div>
-        <div class="info-item"><strong>\uD504\uB85C\uC81D\uD2B8:</strong> ${data.projectName || "-"}</div>
-      </div>
-      <div class="info-group">
-        <div class="info-item"><strong>\uB0A9\uD488 \uD76C\uB9DD\uC77C:</strong> ${formatDate(data.deliveryDate)}</div>
-        <div class="info-item"><strong>\uAC70\uB798\uCC98:</strong> ${data.vendorName || "-"}</div>
-        <div class="info-item"><strong>\uC790\uC7AC \uC778\uC218\uC790:</strong> ${data.receiver || "-"}</div>
-        <div class="info-item"><strong>\uBCF8\uC0AC \uB2F4\uB2F9\uC790:</strong> ${data.manager || "-"}</div>
+    <!-- HEADER -->
+    <div class="header" style="text-align: left; padding: 20px 0;">
+      <h1 style="margin-bottom: 8px;">\uAD6C\uB9E4 \uBC1C\uC8FC\uC11C</h1>
+      <div class="order-number" style="margin-bottom: 5px;">\uBC1C\uC8FC\uBC88\uD638: ${data.orderNumber}</div>
+      <div style="font-size: 6pt; color: #666; line-height: 1.2;">
+        \uC0DD\uC131\uC77C: ${formatDate(data.metadata.generatedAt)}
       </div>
     </div>
     
-    <table>
-      <thead>
-        <tr>
-          <th style="width: 5%">No</th>
-          <th style="width: 10%">\uB300\uBD84\uB958</th>
-          <th style="width: 10%">\uC911\uBD84\uB958</th>
-          <th style="width: 10%">\uC18C\uBD84\uB958</th>
-          <th style="width: 15%">\uD488\uBAA9\uBA85</th>
-          <th style="width: 12%">\uADDC\uACA9</th>
-          <th style="width: 8%">\uC218\uB7C9</th>
-          <th style="width: 5%">\uB2E8\uC704</th>
-          <th style="width: 10%">\uB2E8\uAC00</th>
-          <th style="width: 10%">\uAE08\uC561</th>
-          <th style="width: 5%">\uB0A9\uD488\uCC98</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${itemRows}
-        <tr class="total-row">
-          <td colspan="9" class="text-center">\uD569\uACC4</td>
-          <td class="text-right">${formatCurrency(data.totalAmount)}</td>
-          <td></td>
-        </tr>
-      </tbody>
-    </table>
+    <!-- COMPANY & VENDOR INFO -->
+    <div class="info-grid">
+      <div class="info-box">
+        <h3>\uBC1C\uC8FC\uC5C5\uCCB4 \uC815\uBCF4</h3>
+        <div class="info-row">
+          <span class="info-label">\uC5C5\uCCB4\uBA85</span>
+          <span class="info-value">${data.issuerCompany.name}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">\uC0AC\uC5C5\uC790\uBC88\uD638</span>
+          <span class="info-value">${data.issuerCompany.businessNumber || "-"}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">\uB300\uD45C\uC790</span>
+          <span class="info-value">${data.issuerCompany.representative || "-"}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">\uC8FC\uC18C</span>
+          <span class="info-value">${data.issuerCompany.address || "-"}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">\uC5F0\uB77D\uCC98</span>
+          <span class="info-value">${data.issuerCompany.phone || "-"}</span>
+        </div>
+      </div>
+      
+      <div class="info-box">
+        <h3>\uC218\uC8FC\uC5C5\uCCB4 \uC815\uBCF4</h3>
+        <div class="info-row">
+          <span class="info-label">\uC5C5\uCCB4\uBA85</span>
+          <span class="info-value">${data.vendorCompany.name}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">\uC0AC\uC5C5\uC790\uBC88\uD638</span>
+          <span class="info-value">${data.vendorCompany.businessNumber || "-"}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">\uB300\uD45C\uC790</span>
+          <span class="info-value">${data.vendorCompany.representative || "-"}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">\uB2F4\uB2F9\uC790</span>
+          <span class="info-value">${data.vendorCompany.contactPerson || "-"}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">\uC5F0\uB77D\uCC98</span>
+          <span class="info-value">${data.vendorCompany.phone || "-"}</span>
+        </div>
+      </div>
+      
+      <!-- PROJECT INFO (FULL WIDTH) -->
+      <div class="project-info">
+        <div class="info-box">
+          <h3>\uD604\uC7A5</h3>
+          <div class="info-row">
+            <span class="info-label">\uD604\uC7A5\uBA85</span>
+            <span class="info-value">${data.project.name}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">\uD604\uC7A5\uCF54\uB4DC</span>
+            <span class="info-value">${data.project.code || "-"}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">\uBC1C\uC8FC\uCC98</span>
+            <span class="info-value">${data.project.clientName || "-"}</span>
+          </div>
+        </div>
+        
+        <div class="info-box">
+          <h3>\uC77C\uC815</h3>
+          <div class="info-row">
+            <span class="info-label">\uBC1C\uC8FC\uC77C</span>
+            <span class="info-value">${formatDate(data.orderDate)}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">\uB0A9\uAE30\uC77C</span>
+            <span class="info-value">${formatDate(data.deliveryDate)}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">\uB4F1\uB85D\uC77C</span>
+            <span class="info-value">${formatDate(data.createdAt)}</span>
+          </div>
+        </div>
+        
+        <div class="info-box">
+          <h3>\uB2F4\uB2F9\uC790</h3>
+          <div class="info-row">
+            <span class="info-label">\uC791\uC131\uC790</span>
+            <span class="info-value">${data.creator.name}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">\uC9C1\uCC45</span>
+            <span class="info-value">${data.creator.position || data.creator.role || "-"}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">\uC5F0\uB77D\uCC98</span>
+            <span class="info-value">${data.creator.phone || "-"}</span>
+          </div>
+        </div>
+      </div>
+    </div>
     
-    ${data.notes ? `
-    <div class="notes-section">
-      <strong>\uD2B9\uC774\uC0AC\uD56D:</strong>
-      <div style="margin-top: 5px;">${data.notes}</div>
+    <!-- ITEMS SECTION -->
+    <div class="items-section">
+      <div class="items-header">\uBC1C\uC8FC \uD488\uBAA9 (\uCD1D ${data.items.length}\uAC1C \uD488\uBAA9)</div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 5%">\uC21C\uBC88</th>
+            <th style="width: 22%">\uD488\uBAA9\uBA85</th>
+            <th style="width: 17%">\uADDC\uACA9</th>
+            <th style="width: 8%">\uC218\uB7C9</th>
+            <th style="width: 6%">\uB2E8\uC704</th>
+            <th style="width: 12%">\uB2E8\uAC00</th>
+            <th style="width: 12%">\uAE08\uC561</th>
+            <th style="width: 23%">\uD2B9\uC774\uC0AC\uD56D</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${itemRows}
+        </tbody>
+      </table>
+      
+      <!-- FINANCIAL SUMMARY -->
+      <div class="financial-summary">
+        <div class="financial-row">
+          <span>\uC18C\uACC4 (\uBD80\uAC00\uC138 \uBCC4\uB3C4)</span>
+          <span></span>
+          <span>${formatCurrency(data.financial.subtotalAmount)}</span>
+        </div>
+        <div class="financial-row">
+          <span>\uBD80\uAC00\uC138 (${(data.financial.vatRate * 100).toFixed(0)}%)</span>
+          <span></span>
+          <span>${formatCurrency(data.financial.vatAmount)}</span>
+        </div>
+        <div class="financial-row">
+          <span>\uCD1D \uAE08\uC561</span>
+          <span></span>
+          <span>${formatCurrency(data.financial.totalAmount)}</span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- ATTACHMENTS & COMMUNICATION -->
+    <div class="comm-grid">
+      <div class="comm-box">
+        <h4>\uCCA8\uBD80\uD30C\uC77C (${data.attachments.count}\uAC1C)</h4>
+        ${data.attachments.hasAttachments ? data.attachments.fileNames.slice(0, 3).map(
+          (name) => `<div class="attachment-item">${name.length > 30 ? name.substring(0, 30) + "..." : name}</div>`
+        ).join("") + (data.attachments.count > 3 ? `<div class="attachment-item">... \uC678 ${data.attachments.count - 3}\uAC1C</div>` : "") : '<div style="color: #666;">\uCCA8\uBD80\uD30C\uC77C \uC5C6\uC74C</div>'}
+        ${data.attachments.totalSize > 0 ? `<div style="margin-top: 3px; font-size: 6pt; color: #666;">\uCD1D \uD06C\uAE30: ${Math.round(data.attachments.totalSize / 1024)}KB</div>` : ""}
+      </div>
+      
+      <div class="comm-box">
+        <h4>\uC774\uBA54\uC77C \uBC1C\uC1A1 \uC774\uB825 (${data.communication.totalEmailsSent}\uD68C)</h4>
+        ${data.communication.emailHistory.length > 0 ? data.communication.emailHistory.slice(0, 2).map(
+          (email) => `<div class="email-item">${formatDateTime(email.sentAt)} | ${email.recipient.split("@")[0]}@...</div>`
+        ).join("") + (data.communication.totalEmailsSent > 2 ? `<div class="email-item">... \uC678 ${data.communication.totalEmailsSent - 2}\uD68C</div>` : "") : '<div style="color: #666;">\uBC1C\uC1A1 \uC774\uB825 \uC5C6\uC74C</div>'}
+        ${data.communication.lastEmailSent ? `<div style="margin-top: 3px; font-size: 6pt; color: #666;">\uCD5C\uC885 \uBC1C\uC1A1: ${formatDate(data.communication.lastEmailSent)}</div>` : ""}
+      </div>
+    </div>
+    
+    <!-- NOTES -->
+    ${data.metadata.notes ? `
+    <div style="margin: 8px 0; padding: 6px; border: 1px solid #d1d5db; background: #fffbeb; font-size: 7pt;">
+      <strong>\uD2B9\uC774\uC0AC\uD56D:</strong> ${data.metadata.notes}
     </div>
     ` : ""}
     
-    <div class="signature-section">
-      <div class="signature-box">
-        <div class="title">\uB2F4\uB2F9</div>
-        <div class="signature-area"></div>
-      </div>
-      <div class="signature-box">
-        <div class="title">\uACF5\uBB34</div>
-        <div class="signature-area"></div>
-      </div>
-      <div class="signature-box">
-        <div class="title">\uD300\uC7A5</div>
-        <div class="signature-area"></div>
-      </div>
-      <div class="signature-box">
-        <div class="title">\uC784\uC6D0</div>
-        <div class="signature-area"></div>
-      </div>
-      <div class="signature-box">
-        <div class="title">\uC0AC\uC7A5</div>
-        <div class="signature-area"></div>
-      </div>
-    </div>
-    
+    <!-- FOOTER -->
     <div class="footer">
-      <strong>${data.companyName || "\uD68C\uC0AC\uBA85"}</strong>
       <div class="company-info">
-        <div>${data.companyAddress || "\uC8FC\uC18C: \uC11C\uC6B8\uD2B9\uBCC4\uC2DC"}</div>
-        <div>\uC804\uD654: ${data.companyPhone || "02-0000-0000"} | \uD329\uC2A4: ${data.companyFax || "02-0000-0001"}</div>
+        <div class="name">${data.issuerCompany.name}</div>
+        ${data.issuerCompany.representative ? `<div>\uB300\uD45C\uC790: ${data.issuerCompany.representative}</div>` : ""}
+        <div>${data.issuerCompany.address || ""}</div>
+        <div>TEL: ${data.issuerCompany.phone || ""} | EMAIL: ${data.issuerCompany.email || ""}</div>
+        ${data.issuerCompany.businessNumber ? `<div>\uC0AC\uC5C5\uC790\uB4F1\uB85D\uBC88\uD638: ${data.issuerCompany.businessNumber}</div>` : ""}
+      </div>
+      
+      <div class="doc-metadata">
+        <div>Template ${data.metadata.templateVersion}</div>
+        <div class="center">\uBCF8 \uBB38\uC11C\uB294 \uC804\uC790\uC801\uC73C\uB85C \uC0DD\uC131\uB418\uC5C8\uC2B5\uB2C8\uB2E4</div>
+        <div class="right"></div>
       </div>
     </div>
   </div>
@@ -1885,41 +2906,18 @@ var init_pdf_generation_service = __esm({
     `;
       }
       /**
-       * HTML을 PDF로 변환 (Playwright 사용 - 파일 기반)
-       */
-      static async convertHTMLToPDF(htmlPath) {
-        const { chromium: chromium2 } = await import("playwright");
-        const browser = await chromium2.launch({ headless: true });
-        const page = await browser.newPage();
-        try {
-          await page.goto(`file://${path4.resolve(htmlPath)}`, {
-            waitUntil: "networkidle"
-          });
-          const pdfBuffer = await page.pdf({
-            format: "A4",
-            printBackground: true,
-            margin: {
-              top: "15mm",
-              right: "15mm",
-              bottom: "15mm",
-              left: "15mm"
-            }
-          });
-          return pdfBuffer;
-        } finally {
-          await browser.close();
-        }
-      }
-      /**
-       * PDF를 순수 JavaScript로 생성 (브라우저 의존성 제거)
+       * HTML을 PDF로 변환
        */
       static async convertHTMLToPDFFromString(htmlContent) {
         if (process.env.VERCEL) {
-          throw new Error("HTML to PDF conversion not supported in Vercel environment");
+          throw new Error("HTML to PDF conversion not supported in Vercel - use PDFKit instead");
         } else {
           try {
             const { chromium: chromium2 } = await import("playwright");
-            const browser = await chromium2.launch({ headless: true });
+            const browser = await chromium2.launch({
+              headless: true,
+              args: ["--no-sandbox", "--disable-dev-shm-usage"]
+            });
             const page = await browser.newPage();
             try {
               await page.setContent(htmlContent, {
@@ -1929,10 +2927,10 @@ var init_pdf_generation_service = __esm({
                 format: "A4",
                 printBackground: true,
                 margin: {
-                  top: "15mm",
-                  right: "15mm",
-                  bottom: "15mm",
-                  left: "15mm"
+                  top: "8mm",
+                  right: "8mm",
+                  bottom: "8mm",
+                  left: "8mm"
                 }
               });
               return pdfBuffer;
@@ -1940,33 +2938,34 @@ var init_pdf_generation_service = __esm({
               await browser.close();
             }
           } catch (playwrightError) {
-            console.warn("\u26A0\uFE0F Playwright \uC2E4\uD328, \uC624\uB958 \uBC1C\uC0DD:", playwrightError);
+            console.warn("\u26A0\uFE0F Playwright \uC2E4\uD328, PDFKit\uC73C\uB85C \uB300\uCCB4:", playwrightError);
             throw new Error(`PDF \uC0DD\uC131 \uC2E4\uD328: ${playwrightError instanceof Error ? playwrightError.message : "Playwright \uC624\uB958"}`);
           }
         }
       }
       /**
-       * PDFKit으로 발주서 PDF 직접 생성 (브라우저 의존성 제거)
+       * PDFKit으로 전문적인 발주서 PDF 생성
        */
-      static async generatePDFWithPDFKit(orderData) {
+      static async generateProfessionalPDFWithPDFKit(orderData) {
         const PDFKitDocument = (await import("pdfkit")).default;
         return new Promise((resolve2, reject) => {
           try {
             const doc = new PDFKitDocument({
               size: "A4",
-              margins: { top: 50, bottom: 50, left: 50, right: 50 }
+              margins: { top: 20, bottom: 20, left: 20, right: 20 }
             });
             const buffers = [];
             doc.on("data", buffers.push.bind(buffers));
             doc.on("end", () => resolve2(Buffer.concat(buffers)));
             doc.on("error", reject);
-            doc.font("Helvetica");
-            doc.fontSize(20).text("\uAD6C\uB9E4 \uBC1C\uC8FC\uC11C", { align: "center" });
-            doc.fontSize(12).text("Purchase Order", { align: "center" });
-            doc.moveDown(2);
+            try {
+              doc.font("Helvetica");
+            } catch (error) {
+              console.warn("\u26A0\uFE0F [ProfessionalPDF] \uD3F0\uD2B8 \uC124\uC815 \uC2E4\uD328, \uAE30\uBCF8 \uD3F0\uD2B8 \uC0AC\uC6A9:", error);
+            }
             const formatDate = (date2) => {
               if (!date2) return "-";
-              return format(new Date(date2), "yyyy\uB144 MM\uC6D4 dd\uC77C", { locale: ko });
+              return format3(new Date(date2), "yyyy\uB144 MM\uC6D4 dd\uC77C", { locale: ko3 });
             };
             const formatCurrency = (amount) => {
               return new Intl.NumberFormat("ko-KR", {
@@ -1974,71 +2973,159 @@ var init_pdf_generation_service = __esm({
                 currency: "KRW"
               }).format(amount);
             };
-            const startY = doc.y;
-            doc.fontSize(10);
-            doc.text(`\uBC1C\uC8FC\uC11C \uBC88\uD638: ${orderData.orderNumber}`, 50, startY);
-            doc.text(`\uC791\uC131\uC77C: ${formatDate(orderData.orderDate)}`, 50, startY + 20);
-            doc.text(`\uAC70\uB798\uCC98: ${orderData.vendorName || "-"}`, 50, startY + 40);
-            doc.text(`\uB2F4\uB2F9\uC790: ${orderData.vendorContact || "-"}`, 50, startY + 60);
-            doc.text(`\uD504\uB85C\uC81D\uD2B8: ${orderData.projectName || "-"}`, 300, startY);
-            doc.text(`\uD604\uC7A5: ${orderData.site || "-"}`, 300, startY + 20);
-            doc.text(`\uB0A9\uAE30\uC77C: ${formatDate(orderData.deliveryDate)}`, 300, startY + 40);
-            doc.text(`\uCD1D \uAE08\uC561: ${formatCurrency(orderData.totalAmount)}`, 300, startY + 60);
-            doc.moveDown(5);
-            doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
+            doc.fontSize(16).text("\uAD6C\uB9E4 \uBC1C\uC8FC\uC11C", 20, doc.y);
+            doc.fontSize(12).text(`\uBC1C\uC8FC\uBC88\uD638: ${orderData.orderNumber}`, 20, doc.y);
+            doc.fontSize(6).text(`\uC0DD\uC131\uC77C: ${formatDate(orderData.metadata.generatedAt)}`, 20, doc.y);
+            doc.moveTo(20, doc.y + 5).lineTo(575, doc.y + 5).stroke();
             doc.moveDown(1);
+            const infoY = doc.y;
+            const colWidth = 180;
+            doc.fontSize(8);
+            doc.text("\u3010\uBC1C\uC8FC\uC5C5\uCCB4\u3011", 20, infoY);
+            doc.text(`\uC5C5\uCCB4\uBA85: ${orderData.issuerCompany.name}`, 20, infoY + 12);
+            doc.text(`\uC0AC\uC5C5\uC790: ${orderData.issuerCompany.businessNumber || "-"}`, 20, infoY + 24);
+            doc.text(`\uC5F0\uB77D\uCC98: ${orderData.issuerCompany.phone || "-"}`, 20, infoY + 36);
+            doc.text(`\uC8FC\uC18C: ${orderData.issuerCompany.address || "-"}`, 20, infoY + 48);
+            doc.text("\u3010\uC218\uC8FC\uC5C5\uCCB4\u3011", 200, infoY);
+            doc.text(`\uC5C5\uCCB4\uBA85: ${orderData.vendorCompany.name}`, 200, infoY + 12);
+            doc.text(`\uC0AC\uC5C5\uC790: ${orderData.vendorCompany.businessNumber || "-"}`, 200, infoY + 24);
+            doc.text(`\uB2F4\uB2F9\uC790: ${orderData.vendorCompany.contactPerson || "-"}`, 200, infoY + 36);
+            doc.text(`\uC5F0\uB77D\uCC98: ${orderData.vendorCompany.phone || "-"}`, 200, infoY + 48);
+            doc.text("\u3010\uD604\uC7A5\u3011", 380, infoY);
+            doc.text(`\uD604\uC7A5\uBA85: ${orderData.project.name}`, 380, infoY + 12);
+            doc.text(`\uBC1C\uC8FC\uC77C: ${formatDate(orderData.orderDate)}`, 380, infoY + 24);
+            doc.text(`\uB0A9\uAE30\uC77C: ${formatDate(orderData.deliveryDate)}`, 380, infoY + 36);
+            doc.text(`\uC791\uC131\uC790: ${orderData.creator.name}`, 380, infoY + 48);
+            doc.y = infoY + 70;
+            doc.moveTo(20, doc.y).lineTo(575, doc.y).stroke();
+            doc.moveDown(1);
+            doc.fontSize(9).text(`\uBC1C\uC8FC \uD488\uBAA9 (\uCD1D ${orderData.items.length}\uAC1C)`, 20);
+            doc.moveDown(0.5);
             const tableTop = doc.y;
-            doc.fontSize(9);
-            doc.rect(50, tableTop, 495, 15).fill("#f0f0f0");
+            doc.fontSize(7);
+            doc.rect(20, tableTop, 555, 15).fill("#e5e7eb");
             doc.fillColor("black");
-            doc.text("No", 55, tableTop + 3);
-            doc.text("\uD488\uBAA9\uBA85", 90, tableTop + 3);
-            doc.text("\uADDC\uACA9", 220, tableTop + 3);
-            doc.text("\uC218\uB7C9", 290, tableTop + 3);
-            doc.text("\uB2E8\uC704", 330, tableTop + 3);
-            doc.text("\uB2E8\uAC00", 370, tableTop + 3);
-            doc.text("\uAE08\uC561", 430, tableTop + 3);
-            doc.text("\uB0A9\uD488\uCC98", 490, tableTop + 3);
-            doc.rect(50, tableTop, 495, 15).stroke();
-            doc.moveDown(1.2);
-            let currentY = doc.y;
-            orderData.items.forEach((item, index2) => {
-              const rowHeight = 20;
+            doc.text("No", 25, tableTop + 3);
+            doc.text("\uD488\uBAA9\uBA85", 50, tableTop + 3);
+            doc.text("\uADDC\uACA9", 180, tableTop + 3);
+            doc.text("\uC218\uB7C9", 260, tableTop + 3);
+            doc.text("\uB2E8\uC704", 300, tableTop + 3);
+            doc.text("\uB2E8\uAC00", 340, tableTop + 3);
+            doc.text("\uAE08\uC561", 420, tableTop + 3);
+            doc.text("\uD2B9\uC774\uC0AC\uD56D", 500, tableTop + 3);
+            doc.rect(20, tableTop, 555, 15).stroke();
+            let currentY = tableTop + 15;
+            orderData.items.slice(0, 15).forEach((item, index2) => {
+              const rowHeight = 16;
               if (index2 % 2 === 0) {
-                doc.rect(50, currentY, 495, rowHeight).fill("#f9f9f9");
+                doc.rect(20, currentY, 555, rowHeight).fill("#f9fafb");
                 doc.fillColor("black");
               }
-              doc.text(`${index2 + 1}`, 55, currentY + 5);
-              doc.text(item.name.substring(0, 15) + (item.name.length > 15 ? "..." : ""), 90, currentY + 5);
-              doc.text((item.specification || "-").substring(0, 8), 220, currentY + 5);
-              doc.text(item.quantity.toString(), 290, currentY + 5);
-              doc.text(item.unit, 330, currentY + 5);
-              doc.text(formatCurrency(item.unitPrice), 370, currentY + 5);
-              doc.text(formatCurrency(item.price), 430, currentY + 5);
-              doc.text(item.deliveryLocation?.substring(0, 6) || "-", 490, currentY + 5);
-              doc.rect(50, currentY, 495, rowHeight).stroke();
+              doc.fontSize(6);
+              doc.text(`${item.sequenceNo}`, 25, currentY + 3);
+              doc.text(item.name.substring(0, 25), 50, currentY + 3);
+              doc.text((item.specification || "-").substring(0, 15), 180, currentY + 3);
+              doc.text(item.quantity.toString(), 260, currentY + 3);
+              doc.text(item.unit || "-", 300, currentY + 3);
+              doc.text(formatCurrency(item.unitPrice), 340, currentY + 3);
+              doc.text(formatCurrency(item.totalPrice), 420, currentY + 3);
+              const formatRemarksForPDF = (item2) => {
+                let result = "";
+                if (item2.categoryPath && item2.categoryPath !== "-") {
+                  result += item2.categoryPath.substring(0, 15) + "\\n";
+                }
+                if (item2.remarks && item2.remarks !== "-") {
+                  const formattedRemarks = item2.remarks.replace(/납품처:/g, "\u2022 \uB0A9\uD488\uCC98:").replace(/이메일:/g, "\\n\u2022 \uC774\uBA54\uC77C:").substring(0, 20);
+                  result += formattedRemarks;
+                }
+                return result || "-";
+              };
+              doc.text(formatRemarksForPDF(item), 500, currentY + 3);
+              doc.rect(20, currentY, 555, rowHeight).stroke();
               currentY += rowHeight;
             });
-            doc.rect(50, currentY, 495, 20).fill("#e0e0e0");
-            doc.fillColor("black");
-            doc.fontSize(10).text("\uD569\uACC4", 55, currentY + 5);
-            doc.text(formatCurrency(orderData.totalAmount), 430, currentY + 5);
-            doc.rect(50, currentY, 495, 20).stroke();
-            doc.moveDown(2);
-            if (orderData.notes) {
-              doc.fontSize(10).text("\uD2B9\uC774\uC0AC\uD56D:", 50, doc.y);
-              doc.fontSize(9).text(orderData.notes, 50, doc.y + 15);
-              doc.moveDown(2);
+            if (orderData.items.length > 15) {
+              doc.rect(20, currentY, 555, 16).fill("#fef3c7");
+              doc.fillColor("black");
+              doc.fontSize(7).text(`... \uC678 ${orderData.items.length - 15}\uAC1C \uD488\uBAA9 (\uBCC4\uB3C4 \uCCA8\uBD80\uC790\uB8CC \uCC38\uACE0)`, 25, currentY + 3);
+              doc.rect(20, currentY, 555, 16).stroke();
+              currentY += 16;
             }
+            doc.rect(20, currentY, 555, 20).fill("#e3f2fd");
+            doc.fillColor("black");
+            doc.fontSize(8);
+            doc.text("\uC18C\uACC4 (\uBD80\uAC00\uC138\uBCC4\uB3C4)", 25, currentY + 5);
+            doc.text(formatCurrency(orderData.financial.subtotalAmount), 420, currentY + 5);
+            doc.rect(20, currentY, 555, 20).stroke();
+            currentY += 20;
+            doc.rect(20, currentY, 555, 20).fill("#e3f2fd");
+            doc.fillColor("black");
+            doc.text(`\uBD80\uAC00\uC138 (${(orderData.financial.vatRate * 100).toFixed(0)}%)`, 25, currentY + 5);
+            doc.text(formatCurrency(orderData.financial.vatAmount), 420, currentY + 5);
+            doc.rect(20, currentY, 555, 20).stroke();
+            currentY += 20;
+            doc.rect(20, currentY, 555, 20).fill("#1e40af");
+            doc.fillColor("white");
+            doc.fontSize(9).text("\uCD1D \uAE08\uC561", 25, currentY + 5);
+            doc.text(formatCurrency(orderData.financial.totalAmount), 420, currentY + 5);
+            doc.rect(20, currentY, 555, 20).stroke();
+            doc.fillColor("black");
             doc.moveDown(2);
+            doc.fontSize(7);
+            if (orderData.attachments.hasAttachments) {
+              doc.text(`\uCCA8\uBD80\uD30C\uC77C: ${orderData.attachments.count}\uAC1C (${Math.round(orderData.attachments.totalSize / 1024)}KB)`, 20);
+              orderData.attachments.fileNames.slice(0, 3).forEach((fileName, index2) => {
+                doc.text(`  ${index2 + 1}. ${fileName.length > 40 ? fileName.substring(0, 40) + "..." : fileName}`, 20, doc.y + 8);
+              });
+              if (orderData.attachments.count > 3) {
+                doc.text(`  ... \uC678 ${orderData.attachments.count - 3}\uAC1C \uD30C\uC77C`, 20, doc.y + 8);
+              }
+              doc.moveDown(1);
+            }
+            if (orderData.communication.totalEmailsSent > 0) {
+              doc.text(`\uC774\uBA54\uC77C \uBC1C\uC1A1: \uCD1D ${orderData.communication.totalEmailsSent}\uD68C`, 20);
+              doc.text(`\uCD5C\uADFC \uBC1C\uC1A1: ${formatDate(orderData.communication.lastEmailSent)}`, 20, doc.y + 8);
+              doc.moveDown(1);
+            }
+            if (orderData.metadata.notes) {
+              doc.text("\uD2B9\uC774\uC0AC\uD56D:", 20);
+              doc.text(orderData.metadata.notes, 20, doc.y + 8);
+              doc.moveDown(1);
+            }
+            doc.moveDown(1);
             const signY = doc.y;
-            const signBoxWidth = 80;
-            const signBoxHeight = 50;
-            ["\uB2F4\uB2F9", "\uACF5\uBB34", "\uD300\uC7A5", "\uC784\uC6D0", "\uC0AC\uC7A5"].forEach((title, index2) => {
-              const x = 50 + index2 * 95;
-              doc.rect(x, signY, signBoxWidth, signBoxHeight).stroke();
-              doc.fontSize(9).text(title, x + 30, signY + 5);
+            const signBoxWidth = 105;
+            const signBoxHeight = 40;
+            doc.fontSize(8).text("\uACB0\uC7AC", 20, signY);
+            doc.moveDown(0.5);
+            const finalSignY = doc.y;
+            const roles = ["\uB2F4\uB2F9", "\uAC80\uD1A0", "\uD300\uC7A5", "\uC784\uC6D0", "\uB300\uD45C"];
+            roles.forEach((role, index2) => {
+              const x = 20 + index2 * 110;
+              doc.rect(x, finalSignY, signBoxWidth, signBoxHeight).stroke();
+              doc.fontSize(7).text(role, x + 45, finalSignY + 5);
+              const approver = orderData.approval.approvers[index2];
+              if (approver) {
+                const statusText = approver.status === "approved" ? "\uC2B9\uC778" : approver.status === "rejected" ? "\uBC18\uB824" : "\uB300\uAE30";
+                doc.text(statusText, x + 40, finalSignY + 15);
+                if (approver.approvedAt) {
+                  doc.text(formatDate(approver.approvedAt), x + 35, finalSignY + 25);
+                }
+              }
             });
+            doc.y = finalSignY + signBoxHeight + 15;
+            doc.fontSize(8);
+            doc.text(orderData.issuerCompany.name, { align: "center" });
+            if (orderData.issuerCompany.representative) {
+              doc.text(`\uB300\uD45C\uC790: ${orderData.issuerCompany.representative}`, { align: "center" });
+            }
+            doc.fontSize(6);
+            doc.text(orderData.issuerCompany.address || "", { align: "center" });
+            doc.text(`TEL: ${orderData.issuerCompany.phone || ""} | EMAIL: ${orderData.issuerCompany.email || ""}`, { align: "center" });
+            doc.text(`\uC0AC\uC5C5\uC790\uB4F1\uB85D\uBC88\uD638: ${orderData.issuerCompany.businessNumber || ""}`, { align: "center" });
+            doc.moveDown(1);
+            doc.fontSize(6);
+            doc.text(`\uBB38\uC11C ID: ${orderData.metadata.documentId} | Template: ${orderData.metadata.templateVersion} | Generated: ${formatDate(orderData.metadata.generatedAt)}`, { align: "center" });
             doc.end();
           } catch (error) {
             reject(error);
@@ -2046,27 +3133,31 @@ var init_pdf_generation_service = __esm({
         });
       }
       /**
-       * 기존 발주서에 대해 PDF 재생성
+       * 역할 표시명 반환
        */
-      static async regeneratePDF(orderId, orderData, userId) {
-        try {
-          const existingAttachments = await db.select().from(attachments).where(eq5(attachments.orderId, orderId));
-          for (const attachment of existingAttachments) {
-            if (attachment.mimeType === "application/pdf" && attachment.originalName.startsWith("PO_")) {
-              if (fs6.existsSync(attachment.filePath)) {
-                fs6.unlinkSync(attachment.filePath);
-              }
-              await db.delete(attachments).where(eq5(attachments.id, attachment.id));
-            }
-          }
-          return await this.generatePurchaseOrderPDF(orderId, orderData, userId);
-        } catch (error) {
-          console.error("\u274C [PDFGenerator] PDF \uC7AC\uC0DD\uC131 \uC624\uB958:", error);
-          return {
-            success: false,
-            error: error instanceof Error ? error.message : "PDF \uC7AC\uC0DD\uC131 \uC911 \uC624\uB958 \uBC1C\uC0DD"
-          };
-        }
+      static getRoleDisplayName(role) {
+        const roleMap = {
+          "field_worker": "\uB2F4\uB2F9",
+          "project_manager": "\uAC80\uD1A0",
+          "hq_management": "\uD300\uC7A5",
+          "executive": "\uC784\uC6D0",
+          "admin": "\uB300\uD45C"
+        };
+        return roleMap[role] || role;
+      }
+      /**
+       * 상태 표시명 반환
+       */
+      static getStatusDisplayName(status) {
+        const statusMap = {
+          "draft": "\uCD08\uC548",
+          "created": "\uC0DD\uC131",
+          "pending": "\uAC80\uD1A0\uC911",
+          "approved": "\uC2B9\uC778",
+          "sent": "\uBC1C\uC1A1",
+          "delivered": "\uB0A9\uD488"
+        };
+        return statusMap[status || "draft"] || status || "\uCD08\uC548";
       }
     };
   }
@@ -2123,7 +3214,7 @@ __export(po_template_processor_mock_exports, {
   POTemplateProcessorMock: () => POTemplateProcessorMock
 });
 import XLSX4 from "xlsx";
-import { eq as eq9 } from "drizzle-orm";
+import { eq as eq11 } from "drizzle-orm";
 var POTemplateProcessorMock;
 var init_po_template_processor_mock = __esm({
   "server/utils/po-template-processor-mock.ts"() {
@@ -2132,7 +3223,7 @@ var init_po_template_processor_mock = __esm({
     init_db();
     init_schema();
     init_debug_logger();
-    init_pdf_generation_service();
+    init_professional_pdf_generation_service();
     POTemplateProcessorMock = class {
       /**
        * Excel 파일에서 Input 시트를 파싱하여 발주서 데이터 추출
@@ -2259,13 +3350,14 @@ var init_po_template_processor_mock = __esm({
         console.log(`\u{1F50D} [DB] saveToDatabase \uC2DC\uC791: ${orders.length}\uAC1C \uBC1C\uC8FC\uC11C, \uC0AC\uC6A9\uC790 ID: ${userId}`);
         try {
           let savedOrders = 0;
+          const savedOrderNumbers = [];
           console.log(`\u{1F50D} [DB] \uD2B8\uB79C\uC7AD\uC158 \uC2DC\uC791`);
           await db.transaction(async (tx) => {
             console.log(`\u{1F50D} [DB] \uD2B8\uB79C\uC7AD\uC158 \uB0B4\uBD80 \uC9C4\uC785 \uC131\uACF5`);
             for (const orderData of orders) {
               console.log(`\u{1F50D} [DB] \uBC1C\uC8FC\uC11C \uCC98\uB9AC \uC911: ${orderData.orderNumber}, \uAC70\uB798\uCC98: ${orderData.vendorName}`);
               console.log(`\u{1F50D} [DB] \uAC70\uB798\uCC98 \uC870\uD68C: ${orderData.vendorName}`);
-              let vendor = await tx.select().from(vendors).where(eq9(vendors.name, orderData.vendorName)).limit(1);
+              let vendor = await tx.select().from(vendors).where(eq11(vendors.name, orderData.vendorName)).limit(1);
               let vendorId;
               if (vendor.length === 0) {
                 console.log(`\u{1F50D} [DB] \uAC70\uB798\uCC98 \uC0DD\uC131: ${orderData.vendorName}`);
@@ -2283,7 +3375,7 @@ var init_po_template_processor_mock = __esm({
                 console.log(`\u2705 [DB] \uAC70\uB798\uCC98 \uAE30\uC874 \uBC1C\uACAC: ID ${vendorId}`);
               }
               console.log(`\u{1F50D} [DB] \uD504\uB85C\uC81D\uD2B8 \uC870\uD68C: ${orderData.siteName}`);
-              let project = await tx.select().from(projects).where(eq9(projects.projectName, orderData.siteName)).limit(1);
+              let project = await tx.select().from(projects).where(eq11(projects.projectName, orderData.siteName)).limit(1);
               let projectId;
               if (project.length === 0) {
                 console.log(`\u{1F50D} [DB] \uD504\uB85C\uC81D\uD2B8 \uC0DD\uC131: ${orderData.siteName}`);
@@ -2312,17 +3404,19 @@ var init_po_template_processor_mock = __esm({
                 orderDate: orderData.orderDate,
                 deliveryDate: orderData.dueDate,
                 totalAmount: orderData.totalAmount,
-                status: "sent",
+                status: "approved",
                 // Legacy status for backward compatibility
-                orderStatus: "sent",
-                // New dual status - sent because Excel automation completes email sending
+                orderStatus: "created",
+                // New dual status - created initially, will be updated to 'sent' after email
                 approvalStatus: "not_required",
                 // Excel automation bypasses approval
                 approvalBypassReason: "excel_automation",
                 // Reason for bypassing
-                notes: `PO Template\uC5D0\uC11C \uC790\uB3D9 \uC0DD\uC131 \uBC0F \uBC1C\uC1A1\uB428`
-              }).returning({ id: purchaseOrders.id });
+                notes: `PO Template\uC5D0\uC11C \uC790\uB3D9 \uC0DD\uC131\uB428`
+              }).returning({ id: purchaseOrders.id, orderNumber: purchaseOrders.orderNumber });
               const orderId = newOrder[0].id;
+              const orderNumber = newOrder[0].orderNumber;
+              savedOrderNumbers.push(orderNumber);
               const itemsForPDF = [];
               for (const item of orderData.items) {
                 await tx.insert(purchaseOrderItems).values({
@@ -2354,8 +3448,8 @@ var init_po_template_processor_mock = __esm({
               }
               try {
                 console.log(`\u{1F4C4} [DB] PDF \uC0DD\uC131 \uC2DC\uC791: \uBC1C\uC8FC\uC11C ${orderData.orderNumber}`);
-                const vendorInfo = await tx.select().from(vendors).where(eq9(vendors.id, vendorId)).limit(1);
-                const projectInfo = await tx.select().from(projects).where(eq9(projects.id, projectId)).limit(1);
+                const vendorInfo = await tx.select().from(vendors).where(eq11(vendors.id, vendorId)).limit(1);
+                const projectInfo = await tx.select().from(projects).where(eq11(projects.id, projectId)).limit(1);
                 const pdfData = {
                   orderNumber: orderData.orderNumber,
                   orderDate: new Date(orderData.orderDate),
@@ -2369,9 +3463,8 @@ var init_po_template_processor_mock = __esm({
                   notes: `PO Template\uC5D0\uC11C \uC790\uB3D9 \uC0DD\uC131\uB428`,
                   site: orderData.siteName
                 };
-                const pdfResult = await PDFGenerationService.generatePurchaseOrderPDF(
+                const pdfResult = await ProfessionalPDFGenerationService.generateProfessionalPurchaseOrderPDF(
                   orderId,
-                  pdfData,
                   userId
                 );
                 if (pdfResult.success) {
@@ -2387,12 +3480,14 @@ var init_po_template_processor_mock = __esm({
           });
           return {
             success: true,
-            savedOrders
+            savedOrders,
+            savedOrderNumbers
           };
         } catch (error) {
           return {
             success: false,
             savedOrders: 0,
+            savedOrderNumbers: [],
             error: error instanceof Error ? error.message : "Unknown error"
           };
         }
@@ -2520,9 +3615,9 @@ var po_email_service_enhanced_exports = {};
 __export(po_email_service_enhanced_exports, {
   POEmailService: () => POEmailService2
 });
-import nodemailer4 from "nodemailer";
-import path15 from "path";
-import fs18 from "fs";
+import nodemailer5 from "nodemailer";
+import path16 from "path";
+import fs19 from "fs";
 import { fileURLToPath as fileURLToPath5 } from "url";
 import { dirname as dirname2 } from "path";
 var __filename5, __dirname5, POEmailService2;
@@ -2573,7 +3668,7 @@ var init_po_email_service_enhanced = __esm({
             SMTP_PASS: process.env.SMTP_PASS ? "***" : "NOT SET"
           });
         }
-        this.transporter = nodemailer4.createTransport(smtpConfig);
+        this.transporter = nodemailer5.createTransport(smtpConfig);
         this.verifyConnection();
       }
       async verifyConnection() {
@@ -2619,8 +3714,8 @@ var init_po_email_service_enhanced = __esm({
             }
           }
           const timestamp2 = Date.now();
-          const uploadsDir = path15.join(__dirname5, "../../uploads");
-          const processedPath = path15.join(uploadsDir, `po-advanced-format-${timestamp2}.xlsx`);
+          const uploadsDir = path16.join(__dirname5, "../../uploads");
+          const processedPath = path16.join(uploadsDir, `po-advanced-format-${timestamp2}.xlsx`);
           const removeResult = await removeAllInputSheets(
             originalFilePath,
             processedPath
@@ -2634,7 +3729,7 @@ var init_po_email_service_enhanced = __esm({
           console.log(`\u{1F4C4} \uACE0\uAE09 \uD615\uC2DD \uBCF4\uC874 \uD30C\uC77C \uC0DD\uC131: ${processedPath}`);
           console.log(`\u{1F3AF} Input \uC2DC\uD2B8 \uC81C\uAC70 \uC644\uB8CC`);
           console.log(`\u{1F4CB} \uB0A8\uC740 \uC2DC\uD2B8: ${removeResult.remainingSheets.join(", ")}`);
-          const pdfPath = path15.join(uploadsDir, `po-advanced-format-${timestamp2}.pdf`);
+          const pdfPath = path16.join(uploadsDir, `po-advanced-format-${timestamp2}.pdf`);
           let pdfResult = { success: false, error: "" };
           try {
             const enhancedResult = await EnhancedExcelToPDFConverter.convertExcelToPDF(processedPath, {
@@ -2662,7 +3757,7 @@ var init_po_email_service_enhanced = __esm({
             pdfResult.error = pdfError instanceof Error ? pdfError.message : "PDF conversion error";
           }
           const attachments3 = [];
-          if (fs18.existsSync(processedPath)) {
+          if (fs19.existsSync(processedPath)) {
             attachments3.push({
               filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`,
               path: processedPath,
@@ -2670,7 +3765,7 @@ var init_po_email_service_enhanced = __esm({
             });
             console.log(`\u{1F4CE} Excel \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00: \uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`);
           }
-          if (pdfResult.success && fs18.existsSync(pdfPath)) {
+          if (pdfResult.success && fs19.existsSync(pdfPath)) {
             attachments3.push({
               filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`,
               path: pdfPath,
@@ -2930,12 +4025,12 @@ var init_po_email_service_enhanced = __esm({
         setTimeout(() => {
           filePaths.forEach((filePath) => {
             try {
-              if (fs18.existsSync(filePath)) {
-                fs18.unlinkSync(filePath);
-                console.log(`\u{1F5D1}\uFE0F \uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C: ${path15.basename(filePath)}`);
+              if (fs19.existsSync(filePath)) {
+                fs19.unlinkSync(filePath);
+                console.log(`\u{1F5D1}\uFE0F \uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C: ${path16.basename(filePath)}`);
               }
             } catch (error) {
-              console.warn(`\u26A0\uFE0F \uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328: ${path15.basename(filePath)}`, error);
+              console.warn(`\u26A0\uFE0F \uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328: ${path16.basename(filePath)}`, error);
             }
           });
         }, 5e3);
@@ -2949,7 +4044,7 @@ import dotenv2 from "dotenv";
 import express4 from "express";
 import session from "express-session";
 import cookieParser from "cookie-parser";
-import crypto2 from "crypto";
+import crypto3 from "crypto";
 
 // server/routes/index.ts
 import { Router as Router38 } from "express";
@@ -3345,13 +4440,14 @@ var DatabaseStorage = class {
   }
   // Purchase order operations
   async getPurchaseOrders(filters = {}) {
-    const { userId, status, vendorId, templateId, projectId, startDate, endDate, minAmount, maxAmount, searchText, majorCategory, middleCategory, minorCategory, page = 1, limit = 50 } = filters;
+    const { userId, status, orderStatus, vendorId, templateId, projectId, startDate, endDate, minAmount, maxAmount, searchText, majorCategory, middleCategory, minorCategory, page = 1, limit = 50 } = filters;
     let whereConditions = [];
     if (userId && userId !== "all") {
       whereConditions.push(eq(purchaseOrders.userId, userId));
     }
-    if (status && status !== "all" && status !== "") {
-      whereConditions.push(sql2`${purchaseOrders.status} = ${status}`);
+    const statusParam = orderStatus || status;
+    if (statusParam && statusParam !== "all" && statusParam !== "") {
+      whereConditions.push(sql2`${purchaseOrders.orderStatus} = ${statusParam}`);
     }
     if (vendorId && vendorId !== "all") {
       whereConditions.push(eq(purchaseOrders.vendorId, vendorId));
@@ -4315,7 +5411,7 @@ var DatabaseStorage = class {
       if (nextApprover) {
         updateData.currentApproverRole = nextApprover;
       } else {
-        updateData.status = "approved";
+        updateData.approvalStatus = "approved";
         updateData.currentApproverRole = null;
         updateData.isApproved = true;
         updateData.approvedBy = userId;
@@ -6321,7 +7417,8 @@ var OrderService = class {
       if (!orderData.orderNumber) {
         orderData.orderNumber = this.generateOrderNumber();
       }
-      orderData.status = orderData.status || "draft";
+      orderData.orderStatus = orderData.orderStatus || "draft";
+      orderData.approvalStatus = orderData.approvalStatus || "not_required";
       orderData.approvalLevel = orderData.approvalLevel || 1;
       orderData.currentApproverRole = orderData.currentApproverRole || "field_worker";
       const result = await storage.createPurchaseOrder(orderData);
@@ -7243,10 +8340,14 @@ var POTemplateProcessor = class _POTemplateProcessor {
 
 // server/utils/po-email-service.ts
 init_excel_input_sheet_remover();
+init_db();
+init_schema();
+import { eq as eq4 } from "drizzle-orm";
 var __filename = fileURLToPath(import.meta.url);
 var __dirname = dirname(__filename);
 var POEmailService = class {
   constructor() {
+    this.db = db;
     this.transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || "smtp.naver.com",
       port: parseInt(process.env.SMTP_PORT || "587"),
@@ -7260,6 +8361,45 @@ var POEmailService = class {
         rejectUnauthorized: false
       }
     });
+  }
+  /**
+   * 발주서 ID로 품목 정보 조회
+   */
+  async getOrderItemsByOrderId(orderId) {
+    try {
+      const items3 = await this.db.select().from(purchaseOrderItems).where(eq4(purchaseOrderItems.orderId, orderId));
+      return items3.map((item) => ({
+        itemName: item.itemName || void 0,
+        specification: item.specification || void 0,
+        unit: item.unit || void 0,
+        quantity: item.quantity || 0,
+        unitPrice: item.unitPrice || 0,
+        totalAmount: item.totalAmount || 0,
+        remarks: item.remarks || void 0
+      }));
+    } catch (error) {
+      console.error("\uD488\uBAA9 \uC815\uBCF4 \uC870\uD68C \uC2E4\uD328:", error);
+      return [];
+    }
+  }
+  /**
+   * 발주서 정보와 품목을 포함한 상세 이메일 발송 (원본 형식 유지)
+   */
+  async sendPOWithOrderItemsFromDB(originalFilePath, orderId, emailOptions) {
+    try {
+      const orderItems = await this.getOrderItemsByOrderId(orderId);
+      const enhancedOptions = {
+        ...emailOptions,
+        orderItems
+      };
+      return await this.sendPOWithOriginalFormat(originalFilePath, enhancedOptions);
+    } catch (error) {
+      console.error("\u274C \uBC1C\uC8FC\uC11C \uC0C1\uC138 \uC815\uBCF4 \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC624\uB958:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error"
+      };
+    }
   }
   /**
    * Input 시트만 제거한 원본 형식 유지 엑셀과 PDF로 첨부하여 이메일 발송
@@ -7350,7 +8490,7 @@ var POEmailService = class {
       console.error("\u274C \uC6D0\uBCF8 \uD615\uC2DD \uC720\uC9C0 \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC624\uB958:", error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : "Unknown error"
+        error: error instanceof Error ? error.message : String(error)
       };
     }
   }
@@ -7376,7 +8516,14 @@ var POEmailService = class {
         };
       }
       const pdfPath = path3.join(uploadsDir, `po-sheets-${timestamp2}.pdf`);
-      const pdfResult = await convertExcelToPdf(extractedPath, pdfPath, ["\uAC11\uC9C0", "\uC744\uC9C0"]);
+      const pdfResult = await UnifiedExcelPdfService.convertExcelToPDF(extractedPath, {
+        outputPath: pdfPath,
+        quality: "high",
+        orientation: "landscape",
+        excludeSheets: ["Input", "Settings"],
+        watermark: `\uBC1C\uC8FC\uC11C - ${emailOptions.orderNumber || ""}`,
+        retryCount: 2
+      });
       if (!pdfResult.success) {
         return {
           success: false,
@@ -7469,6 +8616,9 @@ var POEmailService = class {
         currency: "KRW"
       }).format(amount);
     };
+    const formatNumber = (num) => {
+      return new Intl.NumberFormat("ko-KR").format(num);
+    };
     const formatDate = (dateString) => {
       try {
         const date2 = new Date(dateString);
@@ -7480,6 +8630,51 @@ var POEmailService = class {
       } catch {
         return dateString;
       }
+    };
+    const generateOrderItemsTable = (items3) => {
+      if (!items3 || items3.length === 0) return "";
+      const itemRows = items3.map((item, index2) => `
+        <tr>
+          <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${index2 + 1}</td>
+          <td style="border: 1px solid #ddd; padding: 8px;">${item.itemName || "-"}</td>
+          <td style="border: 1px solid #ddd; padding: 8px;">${item.specification || "-"}</td>
+          <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${item.unit || "-"}</td>
+          <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${formatNumber(item.quantity)}</td>
+          <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${formatCurrency(item.unitPrice)}</td>
+          <td style="border: 1px solid #ddd; padding: 8px; text-align: right;"><strong>${formatCurrency(item.totalAmount)}</strong></td>
+          <td style="border: 1px solid #ddd; padding: 8px;">${item.remarks || "-"}</td>
+        </tr>
+      `).join("");
+      const totalAmount = items3.reduce((sum2, item) => sum2 + item.totalAmount, 0);
+      return `
+        <div style="margin: 20px 0;">
+          <h3 style="color: #333; margin-bottom: 10px;">\u{1F4CB} \uBC1C\uC8FC \uD488\uBAA9 \uC0C1\uC138</h3>
+          <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+            <thead>
+              <tr style="background-color: #f8f9fa;">
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">\uBC88\uD638</th>
+                <th style="border: 1px solid #ddd; padding: 8px;">\uD488\uBAA9\uBA85</th>
+                <th style="border: 1px solid #ddd; padding: 8px;">\uADDC\uACA9</th>
+                <th style="border: 1px solid #ddd; padding: 8px;">\uB2E8\uC704</th>
+                <th style="border: 1px solid #ddd; padding: 8px;">\uC218\uB7C9</th>
+                <th style="border: 1px solid #ddd; padding: 8px;">\uB2E8\uAC00</th>
+                <th style="border: 1px solid #ddd; padding: 8px;">\uAE08\uC561</th>
+                <th style="border: 1px solid #ddd; padding: 8px;">\uBE44\uACE0</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemRows}
+              <tr style="background-color: #e9ecef; font-weight: bold;">
+                <td colspan="6" style="border: 1px solid #ddd; padding: 8px; text-align: right;">\uD569\uACC4</td>
+                <td style="border: 1px solid #ddd; padding: 8px; text-align: right; color: #dc3545;">
+                  ${formatCurrency(totalAmount)}
+                </td>
+                <td style="border: 1px solid #ddd; padding: 8px;"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      `;
     };
     return `
       <!DOCTYPE html>
@@ -7588,6 +8783,8 @@ var POEmailService = class {
                 ` : ""}
               </table>
             ` : ""}
+
+            ${options.orderItems && options.orderItems.length > 0 ? generateOrderItemsTable(options.orderItems) : ""}
             
             <div class="attachments">
               <h3>\u{1F4CE} \uCCA8\uBD80\uD30C\uC77C</h3>
@@ -7598,8 +8795,15 @@ var POEmailService = class {
               <p><small>* \uAC11\uC9C0\uC640 \uC744\uC9C0 \uC2DC\uD2B8\uAC00 \uD3EC\uD568\uB418\uC5B4 \uC788\uC2B5\uB2C8\uB2E4.</small></p>
             </div>
             
-            ${options.additionalMessage ? `
+            ${options.specialRequirements ? `
               <div style="background-color: #fff3cd; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                <h3>\u26A0\uFE0F \uD2B9\uC774\uC0AC\uD56D</h3>
+                <p>${options.specialRequirements}</p>
+              </div>
+            ` : ""}
+
+            ${options.additionalMessage ? `
+              <div style="background-color: #e7f3ff; padding: 15px; border-radius: 5px; margin: 20px 0;">
                 <h3>\u{1F4DD} \uCD94\uAC00 \uC548\uB0B4\uC0AC\uD56D</h3>
                 <p>${options.additionalMessage}</p>
               </div>
@@ -7656,7 +8860,7 @@ var POEmailService = class {
 // server/services/approval-routing-service.ts
 init_db();
 init_schema();
-import { eq as eq4, and as and4, lte as lte3, asc as asc2, desc as desc3 } from "drizzle-orm";
+import { eq as eq5, and as and4, lte as lte3, asc as asc2, desc as desc3 } from "drizzle-orm";
 var ApprovalRoutingService = class {
   /**
    * 주문에 대한 최적의 승인 경로를 결정합니다
@@ -7692,7 +8896,7 @@ var ApprovalRoutingService = class {
   static async handleDirectApproval(context, settings) {
     const directApprovalRoles = settings.directApprovalRoles || [];
     const canDirectApprove = directApprovalRoles.includes(context.currentUserRole);
-    const directApprovalUsers = await db.select({ id: users.id, name: users.name }).from(users).where(eq4(users.role, context.currentUserRole)).limit(10);
+    const directApprovalUsers = await db.select({ id: users.id, name: users.name }).from(users).where(eq5(users.role, context.currentUserRole)).limit(10);
     return {
       approvalMode: "direct",
       canDirectApprove,
@@ -7736,8 +8940,8 @@ var ApprovalRoutingService = class {
   static async findAppropriateStagedTemplate(companyId, orderAmount, priority) {
     const templates = await db.select().from(approvalStepTemplates).where(
       and4(
-        eq4(approvalStepTemplates.companyId, companyId),
-        eq4(approvalStepTemplates.isActive, true),
+        eq5(approvalStepTemplates.companyId, companyId),
+        eq5(approvalStepTemplates.isActive, true),
         lte3(approvalStepTemplates.minAmount, orderAmount.toString())
         // maxAmount가 null이거나 orderAmount보다 크거나 같은 경우
       )
@@ -7756,8 +8960,8 @@ var ApprovalRoutingService = class {
   static async checkSkippableSteps(currentUserRole, orderAmount, approvalSteps) {
     const userAuthority = await db.select().from(approvalAuthorities).where(
       and4(
-        eq4(approvalAuthorities.role, currentUserRole),
-        eq4(approvalAuthorities.isActive, true)
+        eq5(approvalAuthorities.role, currentUserRole),
+        eq5(approvalAuthorities.isActive, true)
       )
     ).limit(1);
     if (!userAuthority.length) {
@@ -7796,9 +9000,9 @@ var ApprovalRoutingService = class {
   static async getNextApprovalStep(orderId) {
     const nextStep = await db.select().from(approvalStepInstances2).where(
       and4(
-        eq4(approvalStepInstances2.orderId, orderId),
-        eq4(approvalStepInstances2.status, "pending"),
-        eq4(approvalStepInstances2.isActive, true)
+        eq5(approvalStepInstances2.orderId, orderId),
+        eq5(approvalStepInstances2.status, "pending"),
+        eq5(approvalStepInstances2.isActive, true)
       )
     ).orderBy(asc2(approvalStepInstances2.stepOrder)).limit(1);
     return nextStep[0] || null;
@@ -7809,9 +9013,9 @@ var ApprovalRoutingService = class {
   static async isApprovalComplete(orderId) {
     const pendingSteps = await db.select().from(approvalStepInstances2).where(
       and4(
-        eq4(approvalStepInstances2.orderId, orderId),
-        eq4(approvalStepInstances2.status, "pending"),
-        eq4(approvalStepInstances2.isActive, true)
+        eq5(approvalStepInstances2.orderId, orderId),
+        eq5(approvalStepInstances2.status, "pending"),
+        eq5(approvalStepInstances2.isActive, true)
       )
     );
     return pendingSteps.length === 0;
@@ -7822,8 +9026,8 @@ var ApprovalRoutingService = class {
   static async getApprovalProgress(orderId) {
     const allSteps = await db.select().from(approvalStepInstances2).where(
       and4(
-        eq4(approvalStepInstances2.orderId, orderId),
-        eq4(approvalStepInstances2.isActive, true)
+        eq5(approvalStepInstances2.orderId, orderId),
+        eq5(approvalStepInstances2.isActive, true)
       )
     ).orderBy(asc2(approvalStepInstances2.stepOrder));
     const completedSteps = allSteps.filter(
@@ -7843,8 +9047,8 @@ var ApprovalRoutingService = class {
   static async getWorkflowSettings(companyId) {
     const settings = await db.select().from(approvalWorkflowSettings).where(
       and4(
-        eq4(approvalWorkflowSettings.companyId, companyId),
-        eq4(approvalWorkflowSettings.isActive, true)
+        eq5(approvalWorkflowSettings.companyId, companyId),
+        eq5(approvalWorkflowSettings.isActive, true)
       )
     ).orderBy(desc3(approvalWorkflowSettings.createdAt)).limit(1);
     return settings[0] || null;
@@ -7852,8 +9056,542 @@ var ApprovalRoutingService = class {
 };
 var approval_routing_service_default = ApprovalRoutingService;
 
-// server/routes/orders.ts
-init_pdf_generation_service();
+// server/services/pdf-generation-service.ts
+init_db();
+init_schema();
+import * as fs6 from "fs";
+import * as path4 from "path";
+import { format } from "date-fns";
+import { ko } from "date-fns/locale";
+import { eq as eq6 } from "drizzle-orm";
+var PDFGenerationService = class {
+  static {
+    this.uploadDir = process.env.VERCEL ? "/tmp/pdf" : path4.join(process.cwd(), "uploads/pdf");
+  }
+  /**
+   * 발주서 PDF 생성 및 첨부파일 등록
+   */
+  static async generatePurchaseOrderPDF(orderId, orderData, userId) {
+    try {
+      console.log(`\u{1F4C4} [PDFGenerator] \uBC1C\uC8FC\uC11C PDF \uC0DD\uC131 \uC2DC\uC791: Order ID ${orderId}`);
+      const timestamp2 = Date.now();
+      const fileName = `PO_${orderData.orderNumber}_${timestamp2}.pdf`;
+      let pdfBuffer;
+      const tempDir = path4.join(this.uploadDir, String((/* @__PURE__ */ new Date()).getFullYear()), String((/* @__PURE__ */ new Date()).getMonth() + 1).padStart(2, "0"));
+      if (process.env.VERCEL) {
+        console.log("\u{1F4C4} [PDFGenerator] Vercel \uD658\uACBD: PDFKit\uC73C\uB85C PDF \uC9C1\uC811 \uC0DD\uC131");
+        pdfBuffer = await this.generatePDFWithPDFKit(orderData);
+      } else {
+        console.log("\u{1F4C4} [PDFGenerator] \uB85C\uCEEC \uD658\uACBD: HTML \uD15C\uD50C\uB9BF\uC73C\uB85C PDF \uC0DD\uC131");
+        console.log(`\u{1F4C1} [PDFGenerator] \uB514\uB809\uD1A0\uB9AC \uC0DD\uC131 \uC911: ${tempDir}`);
+        if (!fs6.existsSync(tempDir)) {
+          try {
+            fs6.mkdirSync(tempDir, { recursive: true });
+            console.log(`\u2705 [PDFGenerator] \uB514\uB809\uD1A0\uB9AC \uC0DD\uC131 \uC644\uB8CC: ${tempDir}`);
+          } catch (dirError) {
+            console.error(`\u274C [PDFGenerator] \uB514\uB809\uD1A0\uB9AC \uC0DD\uC131 \uC2E4\uD328: ${tempDir}`, dirError);
+            throw new Error(`\uB514\uB809\uD1A0\uB9AC \uC0DD\uC131 \uC2E4\uD328: ${dirError instanceof Error ? dirError.message : "Unknown error"}`);
+          }
+        }
+        const htmlContent = this.generateHTMLTemplate(orderData);
+        pdfBuffer = await this.convertHTMLToPDFFromString(htmlContent);
+      }
+      let filePath = "";
+      let attachmentId;
+      if (process.env.VERCEL) {
+        const base64Data = pdfBuffer.toString("base64");
+        const [attachment] = await db.insert(attachments).values({
+          orderId,
+          originalName: fileName,
+          storedName: fileName,
+          filePath: `db://${fileName}`,
+          // DB 저장 표시
+          fileSize: pdfBuffer.length,
+          mimeType: "application/pdf",
+          uploadedBy: userId,
+          fileData: base64Data
+          // Base64 encoded PDF data
+        }).returning();
+        attachmentId = attachment.id;
+        filePath = `db://${fileName}`;
+        console.log(`\u2705 [PDFGenerator] PDF \uC0DD\uC131 \uC644\uB8CC (Vercel DB \uC800\uC7A5): ${fileName}, Attachment ID: ${attachment.id}, \uD30C\uC77C \uD06C\uAE30: ${Math.round(pdfBuffer.length / 1024)}KB`);
+      } else {
+        filePath = path4.join(tempDir, fileName);
+        fs6.writeFileSync(filePath, pdfBuffer);
+        const [attachment] = await db.insert(attachments).values({
+          orderId,
+          originalName: fileName,
+          storedName: fileName,
+          filePath,
+          // 파일시스템 경로 사용
+          fileSize: pdfBuffer.length,
+          mimeType: "application/pdf",
+          uploadedBy: userId
+        }).returning();
+        attachmentId = attachment.id;
+        console.log(`\u2705 [PDFGenerator] PDF \uC0DD\uC131 \uC644\uB8CC: ${filePath}, Attachment ID: ${attachment.id}`);
+      }
+      return {
+        success: true,
+        pdfPath: filePath,
+        attachmentId,
+        pdfBuffer: process.env.VERCEL ? pdfBuffer : void 0
+      };
+    } catch (error) {
+      console.error("\u274C [PDFGenerator] PDF \uC0DD\uC131 \uC624\uB958:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "PDF \uC0DD\uC131 \uC911 \uC624\uB958 \uBC1C\uC0DD"
+      };
+    }
+  }
+  /**
+   * HTML 템플릿 생성
+   */
+  static generateHTMLTemplate(data) {
+    const formatDate = (date2) => {
+      if (!date2) return "-";
+      return format(new Date(date2), "yyyy\uB144 MM\uC6D4 dd\uC77C", { locale: ko });
+    };
+    const formatCurrency = (amount) => {
+      return new Intl.NumberFormat("ko-KR", {
+        style: "currency",
+        currency: "KRW"
+      }).format(amount);
+    };
+    const itemRows = data.items.map((item, index2) => `
+      <tr>
+        <td class="text-center">${index2 + 1}</td>
+        <td>${item.category || "-"}</td>
+        <td>${item.subCategory1 || "-"}</td>
+        <td>${item.subCategory2 || "-"}</td>
+        <td>${item.item || item.name}</td>
+        <td>${item.specification || "-"}</td>
+        <td class="text-right">${item.quantity}</td>
+        <td class="text-center">${item.unit}</td>
+        <td class="text-right">${formatCurrency(item.unitPrice)}</td>
+        <td class="text-right">${formatCurrency(item.price)}</td>
+        <td>${item.deliveryLocation || "-"}</td>
+      </tr>
+    `).join("");
+    return `
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>\uAD6C\uB9E4 \uBC1C\uC8FC\uC11C - ${data.orderNumber}</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 15mm;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Malgun Gothic', 'Arial', sans-serif;
+      font-size: 10pt;
+      line-height: 1.5;
+      color: #333;
+    }
+    
+    .container {
+      max-width: 210mm;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    
+    .header h1 {
+      font-size: 24pt;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    
+    .header .subtitle {
+      font-size: 11pt;
+      color: #666;
+    }
+    
+    .info-section {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    
+    .info-group {
+      flex: 1;
+    }
+    
+    .info-item {
+      margin-bottom: 5px;
+    }
+    
+    .info-item strong {
+      display: inline-block;
+      width: 100px;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    
+    th, td {
+      border: 1px solid #ddd;
+      padding: 5px;
+      font-size: 9pt;
+    }
+    
+    th {
+      background-color: #f5f5f5;
+      font-weight: bold;
+      text-align: center;
+    }
+    
+    .text-center {
+      text-align: center;
+    }
+    
+    .text-right {
+      text-align: right;
+    }
+    
+    .total-row {
+      background-color: #f9f9f9;
+      font-weight: bold;
+    }
+    
+    .notes-section {
+      margin: 20px 0;
+      padding: 10px;
+      border: 1px solid #ddd;
+      background-color: #fafafa;
+    }
+    
+    .signature-section {
+      margin-top: 30px;
+      display: flex;
+      justify-content: space-between;
+    }
+    
+    .signature-box {
+      width: 18%;
+      border: 1px solid #ddd;
+      padding: 5px;
+      text-align: center;
+    }
+    
+    .signature-box .title {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    
+    .signature-box .signature-area {
+      height: 50px;
+      border-top: 1px solid #ddd;
+      margin-top: 5px;
+    }
+    
+    .footer {
+      text-align: center;
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 2px solid #333;
+    }
+    
+    .company-info {
+      margin-top: 10px;
+      font-size: 9pt;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>\uAD6C\uB9E4 \uBC1C\uC8FC\uC11C</h1>
+      <div class="subtitle">Purchase Order</div>
+    </div>
+    
+    <div class="info-section">
+      <div class="info-group">
+        <div class="info-item"><strong>\uBC1C\uC8FC\uC11C \uBC88\uD638:</strong> ${data.orderNumber}</div>
+        <div class="info-item"><strong>\uC791\uC131\uC77C:</strong> ${formatDate(data.orderDate)}</div>
+        <div class="info-item"><strong>\uD604\uC7A5:</strong> ${data.site || "-"}</div>
+        <div class="info-item"><strong>\uD504\uB85C\uC81D\uD2B8:</strong> ${data.projectName || "-"}</div>
+      </div>
+      <div class="info-group">
+        <div class="info-item"><strong>\uB0A9\uD488 \uD76C\uB9DD\uC77C:</strong> ${formatDate(data.deliveryDate)}</div>
+        <div class="info-item"><strong>\uAC70\uB798\uCC98:</strong> ${data.vendorName || "-"}</div>
+        <div class="info-item"><strong>\uC790\uC7AC \uC778\uC218\uC790:</strong> ${data.receiver || "-"}</div>
+        <div class="info-item"><strong>\uBCF8\uC0AC \uB2F4\uB2F9\uC790:</strong> ${data.manager || "-"}</div>
+      </div>
+    </div>
+    
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 5%">No</th>
+          <th style="width: 10%">\uB300\uBD84\uB958</th>
+          <th style="width: 10%">\uC911\uBD84\uB958</th>
+          <th style="width: 10%">\uC18C\uBD84\uB958</th>
+          <th style="width: 15%">\uD488\uBAA9\uBA85</th>
+          <th style="width: 12%">\uADDC\uACA9</th>
+          <th style="width: 8%">\uC218\uB7C9</th>
+          <th style="width: 5%">\uB2E8\uC704</th>
+          <th style="width: 10%">\uB2E8\uAC00</th>
+          <th style="width: 10%">\uAE08\uC561</th>
+          <th style="width: 5%">\uB0A9\uD488\uCC98</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${itemRows}
+        <tr class="total-row">
+          <td colspan="9" class="text-center">\uD569\uACC4</td>
+          <td class="text-right">${formatCurrency(data.totalAmount)}</td>
+          <td></td>
+        </tr>
+      </tbody>
+    </table>
+    
+    ${data.notes ? `
+    <div class="notes-section">
+      <strong>\uD2B9\uC774\uC0AC\uD56D:</strong>
+      <div style="margin-top: 5px;">${data.notes}</div>
+    </div>
+    ` : ""}
+    
+    <div class="signature-section">
+      <div class="signature-box">
+        <div class="title">\uB2F4\uB2F9</div>
+        <div class="signature-area"></div>
+      </div>
+      <div class="signature-box">
+        <div class="title">\uACF5\uBB34</div>
+        <div class="signature-area"></div>
+      </div>
+      <div class="signature-box">
+        <div class="title">\uD300\uC7A5</div>
+        <div class="signature-area"></div>
+      </div>
+      <div class="signature-box">
+        <div class="title">\uC784\uC6D0</div>
+        <div class="signature-area"></div>
+      </div>
+      <div class="signature-box">
+        <div class="title">\uC0AC\uC7A5</div>
+        <div class="signature-area"></div>
+      </div>
+    </div>
+    
+    <div class="footer">
+      <strong>${data.companyName || "\uD68C\uC0AC\uBA85"}</strong>
+      <div class="company-info">
+        <div>${data.companyAddress || "\uC8FC\uC18C: \uC11C\uC6B8\uD2B9\uBCC4\uC2DC"}</div>
+        <div>\uC804\uD654: ${data.companyPhone || "02-0000-0000"} | \uD329\uC2A4: ${data.companyFax || "02-0000-0001"}</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+    `;
+  }
+  /**
+   * HTML을 PDF로 변환 (Playwright 사용 - 파일 기반)
+   */
+  static async convertHTMLToPDF(htmlPath) {
+    const { chromium: chromium2 } = await import("playwright");
+    const browser = await chromium2.launch({ headless: true });
+    const page = await browser.newPage();
+    try {
+      await page.goto(`file://${path4.resolve(htmlPath)}`, {
+        waitUntil: "networkidle"
+      });
+      const pdfBuffer = await page.pdf({
+        format: "A4",
+        printBackground: true,
+        margin: {
+          top: "15mm",
+          right: "15mm",
+          bottom: "15mm",
+          left: "15mm"
+        }
+      });
+      return pdfBuffer;
+    } finally {
+      await browser.close();
+    }
+  }
+  /**
+   * PDF를 순수 JavaScript로 생성 (브라우저 의존성 제거)
+   */
+  static async convertHTMLToPDFFromString(htmlContent) {
+    if (process.env.VERCEL) {
+      throw new Error("HTML to PDF conversion not supported in Vercel environment");
+    } else {
+      try {
+        const { chromium: chromium2 } = await import("playwright");
+        const browser = await chromium2.launch({ headless: true });
+        const page = await browser.newPage();
+        try {
+          await page.setContent(htmlContent, {
+            waitUntil: "networkidle"
+          });
+          const pdfBuffer = await page.pdf({
+            format: "A4",
+            printBackground: true,
+            margin: {
+              top: "15mm",
+              right: "15mm",
+              bottom: "15mm",
+              left: "15mm"
+            }
+          });
+          return pdfBuffer;
+        } finally {
+          await browser.close();
+        }
+      } catch (playwrightError) {
+        console.warn("\u26A0\uFE0F Playwright \uC2E4\uD328, \uC624\uB958 \uBC1C\uC0DD:", playwrightError);
+        throw new Error(`PDF \uC0DD\uC131 \uC2E4\uD328: ${playwrightError instanceof Error ? playwrightError.message : "Playwright \uC624\uB958"}`);
+      }
+    }
+  }
+  /**
+   * PDFKit으로 발주서 PDF 직접 생성 (브라우저 의존성 제거)
+   */
+  static async generatePDFWithPDFKit(orderData) {
+    const PDFKitDocument = (await import("pdfkit")).default;
+    return new Promise((resolve2, reject) => {
+      try {
+        const doc = new PDFKitDocument({
+          size: "A4",
+          margins: { top: 50, bottom: 50, left: 50, right: 50 }
+        });
+        const buffers = [];
+        doc.on("data", buffers.push.bind(buffers));
+        doc.on("end", () => resolve2(Buffer.concat(buffers)));
+        doc.on("error", reject);
+        doc.font("Helvetica");
+        doc.fontSize(20).text("\uAD6C\uB9E4 \uBC1C\uC8FC\uC11C", { align: "center" });
+        doc.fontSize(12).text("Purchase Order", { align: "center" });
+        doc.moveDown(2);
+        const formatDate = (date2) => {
+          if (!date2) return "-";
+          return format(new Date(date2), "yyyy\uB144 MM\uC6D4 dd\uC77C", { locale: ko });
+        };
+        const formatCurrency = (amount) => {
+          return new Intl.NumberFormat("ko-KR", {
+            style: "currency",
+            currency: "KRW"
+          }).format(amount);
+        };
+        const startY = doc.y;
+        doc.fontSize(10);
+        doc.text(`\uBC1C\uC8FC\uC11C \uBC88\uD638: ${orderData.orderNumber}`, 50, startY);
+        doc.text(`\uC791\uC131\uC77C: ${formatDate(orderData.orderDate)}`, 50, startY + 20);
+        doc.text(`\uAC70\uB798\uCC98: ${orderData.vendorName || "-"}`, 50, startY + 40);
+        doc.text(`\uB2F4\uB2F9\uC790: ${orderData.vendorContact || "-"}`, 50, startY + 60);
+        doc.text(`\uD504\uB85C\uC81D\uD2B8: ${orderData.projectName || "-"}`, 300, startY);
+        doc.text(`\uD604\uC7A5: ${orderData.site || "-"}`, 300, startY + 20);
+        doc.text(`\uB0A9\uAE30\uC77C: ${formatDate(orderData.deliveryDate)}`, 300, startY + 40);
+        doc.text(`\uCD1D \uAE08\uC561: ${formatCurrency(orderData.totalAmount)}`, 300, startY + 60);
+        doc.moveDown(5);
+        doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
+        doc.moveDown(1);
+        const tableTop = doc.y;
+        doc.fontSize(9);
+        doc.rect(50, tableTop, 495, 15).fill("#f0f0f0");
+        doc.fillColor("black");
+        doc.text("No", 55, tableTop + 3);
+        doc.text("\uD488\uBAA9\uBA85", 90, tableTop + 3);
+        doc.text("\uADDC\uACA9", 220, tableTop + 3);
+        doc.text("\uC218\uB7C9", 290, tableTop + 3);
+        doc.text("\uB2E8\uC704", 330, tableTop + 3);
+        doc.text("\uB2E8\uAC00", 370, tableTop + 3);
+        doc.text("\uAE08\uC561", 430, tableTop + 3);
+        doc.text("\uB0A9\uD488\uCC98", 490, tableTop + 3);
+        doc.rect(50, tableTop, 495, 15).stroke();
+        doc.moveDown(1.2);
+        let currentY = doc.y;
+        orderData.items.forEach((item, index2) => {
+          const rowHeight = 20;
+          if (index2 % 2 === 0) {
+            doc.rect(50, currentY, 495, rowHeight).fill("#f9f9f9");
+            doc.fillColor("black");
+          }
+          doc.text(`${index2 + 1}`, 55, currentY + 5);
+          doc.text(item.name.substring(0, 15) + (item.name.length > 15 ? "..." : ""), 90, currentY + 5);
+          doc.text((item.specification || "-").substring(0, 8), 220, currentY + 5);
+          doc.text(item.quantity.toString(), 290, currentY + 5);
+          doc.text(item.unit, 330, currentY + 5);
+          doc.text(formatCurrency(item.unitPrice), 370, currentY + 5);
+          doc.text(formatCurrency(item.price), 430, currentY + 5);
+          doc.text(item.deliveryLocation?.substring(0, 6) || "-", 490, currentY + 5);
+          doc.rect(50, currentY, 495, rowHeight).stroke();
+          currentY += rowHeight;
+        });
+        doc.rect(50, currentY, 495, 20).fill("#e0e0e0");
+        doc.fillColor("black");
+        doc.fontSize(10).text("\uD569\uACC4", 55, currentY + 5);
+        doc.text(formatCurrency(orderData.totalAmount), 430, currentY + 5);
+        doc.rect(50, currentY, 495, 20).stroke();
+        doc.moveDown(2);
+        if (orderData.notes) {
+          doc.fontSize(10).text("\uD2B9\uC774\uC0AC\uD56D:", 50, doc.y);
+          doc.fontSize(9).text(orderData.notes, 50, doc.y + 15);
+          doc.moveDown(2);
+        }
+        doc.moveDown(2);
+        const signY = doc.y;
+        const signBoxWidth = 80;
+        const signBoxHeight = 50;
+        ["\uB2F4\uB2F9", "\uACF5\uBB34", "\uD300\uC7A5", "\uC784\uC6D0", "\uC0AC\uC7A5"].forEach((title, index2) => {
+          const x = 50 + index2 * 95;
+          doc.rect(x, signY, signBoxWidth, signBoxHeight).stroke();
+          doc.fontSize(9).text(title, x + 30, signY + 5);
+        });
+        doc.end();
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+  /**
+   * 기존 발주서에 대해 PDF 재생성
+   */
+  static async regeneratePDF(orderId, orderData, userId) {
+    try {
+      const existingAttachments = await db.db.select().from(attachments).where(eq6(attachments.orderId, orderId));
+      for (const attachment of existingAttachments) {
+        if (attachment.mimeType === "application/pdf" && attachment.originalName.startsWith("PO_")) {
+          if (fs6.existsSync(attachment.filePath)) {
+            fs6.unlinkSync(attachment.filePath);
+          }
+          await db.delete(attachments).where(eq6(attachments.id, attachment.id));
+        }
+      }
+      return await this.generatePurchaseOrderPDF(orderId, orderData, userId);
+    } catch (error) {
+      console.error("\u274C [PDFGenerator] PDF \uC7AC\uC0DD\uC131 \uC624\uB958:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "PDF \uC7AC\uC0DD\uC131 \uC911 \uC624\uB958 \uBC1C\uC0DD"
+      };
+    }
+  }
+};
 
 // server/services/pdf-generation-service-enhanced.ts
 init_db();
@@ -8509,1157 +10247,26 @@ var EnhancedPDFGenerationService = class {
   }
 };
 
-// server/services/professional-pdf-generation-service.ts
-init_db();
-init_schema();
-import * as fs8 from "fs";
-import * as path6 from "path";
-import { format as format3 } from "date-fns";
-import { ko as ko3 } from "date-fns/locale";
-import { eq as eq6, desc as desc4 } from "drizzle-orm";
-var ProfessionalPDFGenerationService = class {
-  static {
-    this.uploadDir = process.env.VERCEL ? "/tmp/pdf" : path6.join(process.cwd(), "uploads/pdf");
-  }
-  static {
-    this.TEMPLATE_VERSION = "v2.0.0";
-  }
-  static {
-    this.VAT_RATE = 0.1;
-  }
-  // 10% 부가세
-  /**
-   * 발주서 ID로부터 포괄적인 데이터 수집
-   */
-  static async gatherComprehensiveOrderData(orderId) {
-    try {
-      console.log(`\u{1F4CA} [ProfessionalPDF] \uD3EC\uAD04\uC801 \uB370\uC774\uD130 \uC218\uC9D1 \uC2DC\uC791: Order ID ${orderId}`);
-      const orderQuery = await db.select({
-        // Purchase Order 정보
-        orderNumber: purchaseOrders.orderNumber,
-        orderDate: purchaseOrders.orderDate,
-        deliveryDate: purchaseOrders.deliveryDate,
-        orderStatus: purchaseOrders.orderStatus,
-        approvalStatus: purchaseOrders.approvalStatus,
-        totalAmount: purchaseOrders.totalAmount,
-        notes: purchaseOrders.notes,
-        approvalLevel: purchaseOrders.approvalLevel,
-        createdAt: purchaseOrders.createdAt,
-        updatedAt: purchaseOrders.updatedAt,
-        // 거래처 정보
-        vendorName: vendors.name,
-        vendorBusinessNumber: vendors.businessNumber,
-        vendorContactPerson: vendors.contactPerson,
-        vendorEmail: vendors.email,
-        vendorPhone: vendors.phone,
-        vendorAddress: vendors.address,
-        vendorBusinessType: vendors.businessType,
-        // 프로젝트 정보
-        projectName: projects.projectName,
-        projectCode: projects.projectCode,
-        projectClientName: projects.clientName,
-        projectLocation: projects.location,
-        projectStartDate: projects.startDate,
-        projectEndDate: projects.endDate,
-        projectTotalBudget: projects.totalBudget,
-        // 작성자 정보
-        creatorName: users.name,
-        creatorEmail: users.email,
-        creatorPhone: users.phoneNumber,
-        creatorPosition: users.position,
-        creatorRole: users.role
-      }).from(purchaseOrders).leftJoin(vendors, eq6(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq6(purchaseOrders.projectId, projects.id)).leftJoin(users, eq6(purchaseOrders.userId, users.id)).where(eq6(purchaseOrders.id, orderId)).limit(1);
-      const companyQuery = await db.select({
-        companyName: companies.companyName,
-        companyBusinessNumber: companies.businessNumber,
-        companyAddress: companies.address,
-        companyContactPerson: companies.contactPerson,
-        companyPhone: companies.phone,
-        companyEmail: companies.email,
-        companyFax: companies.fax,
-        companyWebsite: companies.website,
-        companyRepresentative: companies.representative
-      }).from(companies).where(eq6(companies.isActive, true)).limit(1);
-      if (!orderQuery || orderQuery.length === 0) {
-        console.error(`\u274C [ProfessionalPDF] \uBC1C\uC8FC\uC11C \uC815\uBCF4 \uC5C6\uC74C: Order ID ${orderId}`);
-        return null;
-      }
-      const orderData = orderQuery[0];
-      const companyData = companyQuery.length > 0 ? companyQuery[0] : {
-        companyName: "\uBC1C\uC8FC\uC5C5\uCCB4",
-        companyBusinessNumber: null,
-        companyAddress: null,
-        companyContactPerson: null,
-        companyPhone: null,
-        companyEmail: null,
-        companyFax: null,
-        companyWebsite: null,
-        companyRepresentative: null
-      };
-      const itemsQuery = await db.select().from(purchaseOrderItems).where(eq6(purchaseOrderItems.orderId, orderId));
-      const attachmentsQuery = await db.select().from(attachments).where(eq6(attachments.orderId, orderId));
-      let emailHistoryQuery = [];
-      try {
-        emailHistoryQuery = await db.select().from(emailSendHistory).where(eq6(emailSendHistory.orderId, orderId)).orderBy(desc4(emailSendHistory.sentAt)).limit(5);
-      } catch (error) {
-        if (error.code !== "42P01") {
-          console.error("\u274C [ProfessionalPDF] \uC774\uBA54\uC77C \uC774\uB825 \uC870\uD68C \uC624\uB958:", error);
-        }
-      }
-      const subtotalAmount = Number(orderData.totalAmount) || 0;
-      const vatAmount = Math.round(subtotalAmount * this.VAT_RATE);
-      const totalAmount = subtotalAmount + vatAmount;
-      const comprehensiveData = {
-        orderNumber: orderData.orderNumber,
-        orderDate: orderData.orderDate,
-        deliveryDate: orderData.deliveryDate,
-        orderStatus: orderData.orderStatus || "draft",
-        approvalStatus: orderData.approvalStatus || "not_required",
-        createdAt: orderData.createdAt,
-        updatedAt: orderData.updatedAt,
-        issuerCompany: {
-          name: companyData.companyName || "\uBC1C\uC8FC\uC5C5\uCCB4",
-          businessNumber: companyData.companyBusinessNumber,
-          representative: companyData.companyRepresentative,
-          address: companyData.companyAddress,
-          phone: companyData.companyPhone,
-          email: companyData.companyEmail,
-          fax: companyData.companyFax,
-          website: companyData.companyWebsite
-        },
-        vendorCompany: {
-          name: orderData.vendorName || "\uAC70\uB798\uCC98\uBA85 \uC5C6\uC74C",
-          businessNumber: orderData.vendorBusinessNumber,
-          address: orderData.vendorAddress,
-          phone: orderData.vendorPhone,
-          email: orderData.vendorEmail,
-          contactPerson: orderData.vendorContactPerson,
-          businessType: orderData.vendorBusinessType
-        },
-        project: {
-          name: orderData.projectName || "\uD504\uB85C\uC81D\uD2B8\uBA85 \uC5C6\uC74C",
-          code: orderData.projectCode,
-          clientName: orderData.projectClientName,
-          location: orderData.projectLocation,
-          startDate: orderData.projectStartDate,
-          endDate: orderData.projectEndDate,
-          totalBudget: Number(orderData.projectTotalBudget) || void 0
-        },
-        creator: {
-          name: orderData.creatorName || "\uC791\uC131\uC790 \uC815\uBCF4 \uC5C6\uC74C",
-          email: orderData.creatorEmail,
-          phone: orderData.creatorPhone,
-          position: orderData.creatorPosition,
-          role: orderData.creatorRole
-        },
-        items: itemsQuery.map((item, index2) => ({
-          sequenceNo: index2 + 1,
-          majorCategory: item.majorCategory,
-          middleCategory: item.middleCategory,
-          minorCategory: item.minorCategory,
-          name: item.itemName,
-          specification: item.specification,
-          quantity: Number(item.quantity),
-          unit: item.unit,
-          unitPrice: Number(item.unitPrice),
-          totalPrice: Number(item.totalAmount),
-          remarks: item.notes,
-          categoryPath: [
-            item.majorCategory,
-            item.middleCategory,
-            item.minorCategory
-          ].filter(Boolean).join(" > ")
-        })),
-        financial: {
-          subtotalAmount,
-          vatRate: this.VAT_RATE,
-          vatAmount,
-          totalAmount,
-          currencyCode: "KRW"
-        },
-        terms: {
-          paymentTerms: "\uACC4\uC57D\uC11C\uC5D0 \uB530\uB984",
-          deliveryTerms: "\uD604\uC7A5 \uC9C1\uB0A9",
-          warrantyPeriod: "1\uB144",
-          qualityStandard: "KS \uAE30\uC900",
-          inspectionMethod: "\uD604\uC7A5 \uAC80\uC218"
-        },
-        attachments: {
-          count: attachmentsQuery.length,
-          hasAttachments: attachmentsQuery.length > 0,
-          fileNames: attachmentsQuery.map((att) => att.originalName),
-          totalSize: attachmentsQuery.reduce((sum2, att) => sum2 + (att.fileSize || 0), 0)
-        },
-        communication: {
-          emailHistory: emailHistoryQuery.map((email) => ({
-            sentAt: email.sentAt,
-            recipient: email.recipientEmail,
-            subject: email.subject,
-            status: email.status
-          })),
-          lastEmailSent: emailHistoryQuery[0]?.sentAt,
-          totalEmailsSent: emailHistoryQuery.length
-        },
-        approval: {
-          currentStatus: orderData.approvalStatus || "not_required",
-          approvalLevel: orderData.approvalLevel || 1,
-          approvers: [
-            { role: "field_worker", status: "approved" },
-            { role: "project_manager", status: "pending" },
-            { role: "hq_management", status: "pending" },
-            { role: "executive", status: "pending" },
-            { role: "admin", status: "pending" }
-          ]
-        },
-        metadata: {
-          notes: orderData.notes,
-          documentId: `DOC_${orderId}_${Date.now()}`,
-          generatedAt: /* @__PURE__ */ new Date(),
-          generatedBy: orderData.creatorName || "System",
-          templateVersion: this.TEMPLATE_VERSION
-        }
-      };
-      console.log(`\u2705 [ProfessionalPDF] \uB370\uC774\uD130 \uC218\uC9D1 \uC644\uB8CC: ${itemsQuery.length}\uAC1C \uD488\uBAA9, ${attachmentsQuery.length}\uAC1C \uCCA8\uBD80\uD30C\uC77C`);
-      return comprehensiveData;
-    } catch (error) {
-      console.error("\u274C [ProfessionalPDF] \uB370\uC774\uD130 \uC218\uC9D1 \uC624\uB958:", error);
-      return null;
-    }
-  }
-  /**
-   * 전문적인 발주서 PDF 생성
-   */
-  static async generateProfessionalPurchaseOrderPDF(orderId, userId) {
-    try {
-      console.log(`\u{1F4C4} [ProfessionalPDF] \uC804\uBB38\uC801 \uBC1C\uC8FC\uC11C PDF \uC0DD\uC131 \uC2DC\uC791: Order ID ${orderId}`);
-      const orderData = await this.gatherComprehensiveOrderData(orderId);
-      if (!orderData) {
-        return {
-          success: false,
-          error: "\uBC1C\uC8FC\uC11C \uB370\uC774\uD130\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
-        };
-      }
-      const timestamp2 = Date.now();
-      const fileName = `PO_Professional_${orderData.orderNumber}_${timestamp2}.pdf`;
-      let pdfBuffer;
-      if (process.env.VERCEL) {
-        console.log("\u{1F4C4} [ProfessionalPDF] Vercel \uD658\uACBD: PDFKit\uC73C\uB85C PDF \uC9C1\uC811 \uC0DD\uC131");
-        pdfBuffer = await this.generateProfessionalPDFWithPDFKit(orderData);
-      } else {
-        console.log("\u{1F4C4} [ProfessionalPDF] \uB85C\uCEEC \uD658\uACBD: HTML \uD15C\uD50C\uB9BF\uC73C\uB85C PDF \uC0DD\uC131");
-        const htmlContent = this.generateProfessionalHTMLTemplate(orderData);
-        pdfBuffer = await this.convertHTMLToPDFFromString(htmlContent);
-      }
-      let filePath = "";
-      let attachmentId;
-      if (process.env.VERCEL) {
-        const base64Data = pdfBuffer.toString("base64");
-        const [attachment] = await db.insert(attachments).values({
-          orderId,
-          originalName: fileName,
-          storedName: fileName,
-          filePath: `professional://${fileName}`,
-          fileSize: pdfBuffer.length,
-          mimeType: "application/pdf",
-          uploadedBy: userId,
-          fileData: base64Data
-        }).returning();
-        attachmentId = attachment.id;
-        filePath = `professional://${fileName}`;
-        console.log(`\u2705 [ProfessionalPDF] PDF \uC0DD\uC131 \uC644\uB8CC (Vercel): ${fileName}, \uD06C\uAE30: ${Math.round(pdfBuffer.length / 1024)}KB`);
-      } else {
-        const tempDir = path6.join(this.uploadDir, "professional", String((/* @__PURE__ */ new Date()).getFullYear()));
-        if (!fs8.existsSync(tempDir)) {
-          fs8.mkdirSync(tempDir, { recursive: true });
-        }
-        filePath = path6.join(tempDir, fileName);
-        fs8.writeFileSync(filePath, pdfBuffer);
-        const [attachment] = await db.insert(attachments).values({
-          orderId,
-          originalName: fileName,
-          storedName: fileName,
-          filePath,
-          fileSize: pdfBuffer.length,
-          mimeType: "application/pdf",
-          uploadedBy: userId
-        }).returning();
-        attachmentId = attachment.id;
-        console.log(`\u2705 [ProfessionalPDF] PDF \uC0DD\uC131 \uC644\uB8CC (\uB85C\uCEEC): ${filePath}`);
-      }
-      return {
-        success: true,
-        pdfPath: filePath,
-        attachmentId,
-        pdfBuffer: process.env.VERCEL ? pdfBuffer : void 0
-      };
-    } catch (error) {
-      console.error("\u274C [ProfessionalPDF] PDF \uC0DD\uC131 \uC624\uB958:", error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : "PDF \uC0DD\uC131 \uC911 \uC624\uB958 \uBC1C\uC0DD"
-      };
-    }
-  }
-  /**
-   * 전문적인 HTML 템플릿 생성
-   */
-  static generateProfessionalHTMLTemplate(data) {
-    const formatDate = (date2) => {
-      if (!date2) return "-";
-      return format3(new Date(date2), "yyyy\uB144 MM\uC6D4 dd\uC77C", { locale: ko3 });
-    };
-    const formatDateTime = (date2) => {
-      if (!date2) return "-";
-      return format3(new Date(date2), "yyyy.MM.dd HH:mm", { locale: ko3 });
-    };
-    const formatCurrency = (amount) => {
-      return new Intl.NumberFormat("ko-KR", {
-        style: "currency",
-        currency: "KRW"
-      }).format(amount);
-    };
-    const formatNumber = (num) => {
-      return new Intl.NumberFormat("ko-KR").format(num);
-    };
-    const itemRows = data.items.map((item) => `
-      <tr>
-        <td class="text-center">${item.sequenceNo}</td>
-        <td class="text-small">${item.categoryPath || "-"}</td>
-        <td class="text-small">${item.name}</td>
-        <td class="text-small">${item.specification || "-"}</td>
-        <td class="text-center">${formatNumber(item.quantity)}</td>
-        <td class="text-center">${item.unit || "-"}</td>
-        <td class="text-right">${formatCurrency(item.unitPrice)}</td>
-        <td class="text-right">${formatCurrency(item.totalPrice)}</td>
-      </tr>
-    `).join("");
-    const approverBoxes = data.approval.approvers.map((approver) => {
-      const statusIcon = approver.status === "approved" ? "\u2713" : approver.status === "rejected" ? "\u2717" : "\u25CB";
-      const statusClass = approver.status === "approved" ? "approved" : approver.status === "rejected" ? "rejected" : "pending";
-      return `
-        <div class="approval-box ${statusClass}">
-          <div class="approval-title">${this.getRoleDisplayName(approver.role)}</div>
-          <div class="approval-status">${statusIcon}</div>
-          <div class="approval-name">${approver.name || "-"}</div>
-          ${approver.approvedAt ? `<div class="approval-date">${formatDate(approver.approvedAt)}</div>` : ""}
-        </div>
-      `;
-    }).join("");
-    return `
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>\uAD6C\uB9E4 \uBC1C\uC8FC\uC11C - ${data.orderNumber}</title>
-  <style>
-    @page {
-      size: A4;
-      margin: 8mm;
-    }
-    
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    
-    body {
-      font-family: 'Malgun Gothic', 'Arial', sans-serif;
-      font-size: 8pt;
-      line-height: 1.2;
-      color: #000;
-    }
-    
-    .container {
-      max-width: 210mm;
-      margin: 0 auto;
-    }
-    
-    /* === HEADER SECTION === */
-    .header {
-      display: grid;
-      grid-template-columns: 100px 1fr 100px;
-      gap: 10px;
-      padding: 8px 0;
-      border-bottom: 3px solid #1e40af;
-      margin-bottom: 12px;
-      align-items: center;
-    }
-    
-    .header-center {
-      text-align: center;
-    }
-    
-    .header-center h1 {
-      font-size: 18pt;
-      font-weight: bold;
-      margin-bottom: 2px;
-    }
-    
-    .header-center .order-number {
-      font-size: 12pt;
-      font-weight: bold;
-      color: #1e40af;
-    }
-    
-    .status-badge {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-size: 7pt;
-      font-weight: bold;
-      margin: 2px 0;
-    }
-    
-    .status-draft { background: #fef3c7; color: #92400e; }
-    .status-approved { background: #d1fae5; color: #065f46; }
-    .status-sent { background: #dbeafe; color: #1e40af; }
-    
-    /* === INFO GRID === */
-    .info-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin-bottom: 10px;
-    }
-    
-    .info-box {
-      border: 1px solid #d1d5db;
-      background: #f9fafb;
-      padding: 6px;
-    }
-    
-    .info-box h3 {
-      font-size: 9pt;
-      font-weight: bold;
-      margin-bottom: 4px;
-      padding-bottom: 2px;
-      border-bottom: 1px solid #d1d5db;
-      color: #1f2937;
-    }
-    
-    .info-row {
-      display: grid;
-      grid-template-columns: 60px 1fr;
-      gap: 4px;
-      margin-bottom: 1px;
-      font-size: 7pt;
-    }
-    
-    .info-label {
-      font-weight: bold;
-      color: #374151;
-    }
-    
-    .info-value {
-      color: #111827;
-    }
-    
-    /* === PROJECT INFO FULL WIDTH === */
-    .project-info {
-      grid-column: 1 / -1;
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-      margin: 8px 0;
-    }
-    
-    /* === ITEMS TABLE === */
-    .items-section {
-      margin: 10px 0;
-    }
-    
-    .items-header {
-      background: #1e40af;
-      color: white;
-      padding: 4px 8px;
-      font-weight: bold;
-      font-size: 9pt;
-    }
-    
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 7pt;
-      margin-bottom: 8px;
-    }
-    
-    th, td {
-      border: 1px solid #d1d5db;
-      padding: 2px 4px;
-      vertical-align: middle;
-    }
-    
-    th {
-      background-color: #f3f4f6;
-      font-weight: bold;
-      text-align: center;
-      font-size: 7pt;
-    }
-    
-    .text-center { text-align: center; }
-    .text-right { text-align: right; }
-    .text-small { font-size: 6pt; }
-    
-    .financial-summary {
-      margin-top: 5px;
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-    }
-    
-    .financial-row {
-      display: grid;
-      grid-template-columns: 1fr auto auto;
-      gap: 10px;
-      padding: 3px 8px;
-      border-bottom: 1px solid #e2e8f0;
-      font-size: 8pt;
-    }
-    
-    .financial-row:last-child {
-      border-bottom: none;
-      font-weight: bold;
-      background: #e2e8f0;
-    }
-    
-    /* === TERMS & CONDITIONS === */
-    .terms-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 6px;
-      margin: 8px 0;
-    }
-    
-    .terms-box {
-      border: 1px solid #d1d5db;
-      padding: 4px;
-      background: #fffbeb;
-    }
-    
-    .terms-box h4 {
-      font-size: 8pt;
-      font-weight: bold;
-      margin-bottom: 3px;
-      color: #92400e;
-    }
-    
-    .terms-content {
-      font-size: 7pt;
-      color: #451a03;
-    }
-    
-    /* === ATTACHMENTS & COMMUNICATION === */
-    .comm-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px;
-      margin: 8px 0;
-    }
-    
-    .comm-box {
-      border: 1px solid #d1d5db;
-      padding: 4px;
-      background: #f0f9ff;
-      font-size: 7pt;
-    }
-    
-    .comm-box h4 {
-      font-size: 8pt;
-      font-weight: bold;
-      margin-bottom: 3px;
-      color: #1e40af;
-    }
-    
-    .attachment-item {
-      background: #e0e7ff;
-      padding: 2px 4px;
-      margin: 1px 0;
-      border-radius: 2px;
-      font-size: 6pt;
-    }
-    
-    .email-item {
-      background: #f0f9ff;
-      padding: 2px 4px;
-      margin: 1px 0;
-      border-radius: 2px;
-      font-size: 6pt;
-    }
-    
-    
-    /* Approval styles removed */
-    .removed-approval-header {
-      background: #1e40af;
-      color: white;
-      padding: 4px 8px;
-      font-weight: bold;
-      font-size: 9pt;
-    }
-    
-    .approval-grid {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 1px;
-      padding: 4px;
-    }
-    
-    .approval-box {
-      border: 1px solid #d1d5db;
-      padding: 4px;
-      text-align: center;
-      background: white;
-      min-height: 50px;
-    }
-    
-    .approval-box.approved {
-      background: #d1fae5;
-      border-color: #10b981;
-    }
-    
-    .approval-box.rejected {
-      background: #fee2e2;
-      border-color: #ef4444;
-    }
-    
-    .approval-box.pending {
-      background: #fef3c7;
-      border-color: #f59e0b;
-    }
-    
-    .approval-title {
-      font-size: 7pt;
-      font-weight: bold;
-      margin-bottom: 2px;
-    }
-    
-    .approval-status {
-      font-size: 12pt;
-      font-weight: bold;
-      margin: 3px 0;
-    }
-    
-    .approval-name {
-      font-size: 6pt;
-      margin-bottom: 1px;
-    }
-    
-    .approval-date {
-      font-size: 6pt;
-      color: #666;
-    }
-    
-    /* === FOOTER === */
-    .footer {
-      margin-top: 10px;
-      padding-top: 8px;
-      border-top: 2px solid #374151;
-      font-size: 7pt;
-      color: #374151;
-    }
-    
-    .company-info {
-      text-align: center;
-      margin-bottom: 6px;
-    }
-    
-    .company-info .name {
-      font-size: 10pt;
-      font-weight: bold;
-      margin-bottom: 2px;
-    }
-    
-    .doc-metadata {
-      display: grid;
-      grid-template-columns: 1fr auto 1fr;
-      gap: 10px;
-      align-items: center;
-      font-size: 6pt;
-      color: #6b7280;
-      border-top: 1px solid #e5e7eb;
-      padding-top: 4px;
-    }
-    
-    .doc-metadata .center {
-      text-align: center;
-    }
-    
-    .doc-metadata .right {
-      text-align: right;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <!-- HEADER -->
-    <div class="header" style="text-align: left; padding: 20px 0;">
-      <h1 style="margin-bottom: 8px;">\uAD6C\uB9E4 \uBC1C\uC8FC\uC11C</h1>
-      <div class="order-number" style="margin-bottom: 5px;">\uBC1C\uC8FC\uBC88\uD638: ${data.orderNumber}</div>
-      <div style="font-size: 8pt; color: #666;">
-        \uC0DD\uC131\uC77C: ${formatDate(data.metadata.generatedAt)} | \uBB38\uC11CID: ${data.metadata.documentId.substring(0, 10)}
-      </div>
-    </div>
-    
-    <!-- COMPANY & VENDOR INFO -->
-    <div class="info-grid">
-      <div class="info-box">
-        <h3>\u{1F4CB} \uBC1C\uC8FC\uC5C5\uCCB4 \uC815\uBCF4</h3>
-        <div class="info-row">
-          <span class="info-label">\uC5C5\uCCB4\uBA85</span>
-          <span class="info-value">${data.issuerCompany.name}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">\uC0AC\uC5C5\uC790\uBC88\uD638</span>
-          <span class="info-value">${data.issuerCompany.businessNumber || "-"}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">\uB300\uD45C\uC790</span>
-          <span class="info-value">${data.issuerCompany.representative || "-"}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">\uC8FC\uC18C</span>
-          <span class="info-value">${data.issuerCompany.address || "-"}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">\uC5F0\uB77D\uCC98</span>
-          <span class="info-value">${data.issuerCompany.phone || "-"}</span>
-        </div>
-      </div>
-      
-      <div class="info-box">
-        <h3>\u{1F3E2} \uC218\uC8FC\uC5C5\uCCB4 \uC815\uBCF4</h3>
-        <div class="info-row">
-          <span class="info-label">\uC5C5\uCCB4\uBA85</span>
-          <span class="info-value">${data.vendorCompany.name}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">\uC0AC\uC5C5\uC790\uBC88\uD638</span>
-          <span class="info-value">${data.vendorCompany.businessNumber || "-"}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">\uB300\uD45C\uC790</span>
-          <span class="info-value">${data.vendorCompany.representative || "-"}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">\uB2F4\uB2F9\uC790</span>
-          <span class="info-value">${data.vendorCompany.contactPerson || "-"}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">\uC5F0\uB77D\uCC98</span>
-          <span class="info-value">${data.vendorCompany.phone || "-"}</span>
-        </div>
-      </div>
-      
-      <!-- PROJECT INFO (FULL WIDTH) -->
-      <div class="project-info">
-        <div class="info-box">
-          <h3>\u{1F3D7}\uFE0F \uD504\uB85C\uC81D\uD2B8</h3>
-          <div class="info-row">
-            <span class="info-label">\uD604\uC7A5\uBA85</span>
-            <span class="info-value">${data.project.name}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">\uD604\uC7A5\uCF54\uB4DC</span>
-            <span class="info-value">${data.project.code || "-"}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">\uBC1C\uC8FC\uCC98</span>
-            <span class="info-value">${data.project.clientName || "-"}</span>
-          </div>
-        </div>
-        
-        <div class="info-box">
-          <h3>\u{1F4C5} \uC77C\uC815</h3>
-          <div class="info-row">
-            <span class="info-label">\uBC1C\uC8FC\uC77C</span>
-            <span class="info-value">${formatDate(data.orderDate)}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">\uB0A9\uAE30\uC77C</span>
-            <span class="info-value">${formatDate(data.deliveryDate)}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">\uB4F1\uB85D\uC77C</span>
-            <span class="info-value">${formatDate(data.createdAt)}</span>
-          </div>
-        </div>
-        
-        <div class="info-box">
-          <h3>\u{1F464} \uB2F4\uB2F9\uC790</h3>
-          <div class="info-row">
-            <span class="info-label">\uC791\uC131\uC790</span>
-            <span class="info-value">${data.creator.name}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">\uC9C1\uCC45</span>
-            <span class="info-value">${data.creator.position || data.creator.role || "-"}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">\uC5F0\uB77D\uCC98</span>
-            <span class="info-value">${data.creator.phone || "-"}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <!-- ITEMS SECTION -->
-    <div class="items-section">
-      <div class="items-header">\u{1F4E6} \uBC1C\uC8FC \uD488\uBAA9 (\uCD1D ${data.items.length}\uAC1C \uD488\uBAA9)</div>
-      <table>
-        <thead>
-          <tr>
-            <th style="width: 5%">\uC21C\uBC88</th>
-            <th style="width: 18%">\uBD84\uB958</th>
-            <th style="width: 20%">\uD488\uBAA9\uBA85</th>
-            <th style="width: 15%">\uADDC\uACA9</th>
-            <th style="width: 8%">\uC218\uB7C9</th>
-            <th style="width: 6%">\uB2E8\uC704</th>
-            <th style="width: 14%">\uB2E8\uAC00</th>
-            <th style="width: 14%">\uAE08\uC561</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${itemRows}
-        </tbody>
-      </table>
-      
-      <!-- FINANCIAL SUMMARY -->
-      <div class="financial-summary">
-        <div class="financial-row">
-          <span>\uC18C\uACC4 (\uBD80\uAC00\uC138 \uBCC4\uB3C4)</span>
-          <span></span>
-          <span>${formatCurrency(data.financial.subtotalAmount)}</span>
-        </div>
-        <div class="financial-row">
-          <span>\uBD80\uAC00\uC138 (${(data.financial.vatRate * 100).toFixed(0)}%)</span>
-          <span></span>
-          <span>${formatCurrency(data.financial.vatAmount)}</span>
-        </div>
-        <div class="financial-row">
-          <span>\uCD1D \uAE08\uC561</span>
-          <span></span>
-          <span>${formatCurrency(data.financial.totalAmount)}</span>
-        </div>
-      </div>
-    </div>
-    
-    <!-- TERMS & CONDITIONS -->
-    <div class="terms-grid">
-      <div class="terms-box">
-        <h4>\u{1F4B3} \uACB0\uC81C \uC870\uAC74</h4>
-        <div class="terms-content">${data.terms.paymentTerms || "\uBCC4\uB3C4 \uD611\uC758"}</div>
-      </div>
-      <div class="terms-box">
-        <h4>\u{1F69A} \uB0A9\uD488 \uC870\uAC74</h4>
-        <div class="terms-content">${data.terms.deliveryTerms || "\uD604\uC7A5 \uC9C1\uB0A9"}</div>
-      </div>
-      <div class="terms-box">
-        <h4>\u{1F527} \uD488\uC9C8 \uAE30\uC900</h4>
-        <div class="terms-content">${data.terms.qualityStandard || "KS \uAE30\uC900"}</div>
-      </div>
-    </div>
-    
-    <!-- ATTACHMENTS & COMMUNICATION -->
-    <div class="comm-grid">
-      <div class="comm-box">
-        <h4>\u{1F4CE} \uCCA8\uBD80\uD30C\uC77C (${data.attachments.count}\uAC1C)</h4>
-        ${data.attachments.hasAttachments ? data.attachments.fileNames.slice(0, 3).map(
-      (name) => `<div class="attachment-item">${name.length > 30 ? name.substring(0, 30) + "..." : name}</div>`
-    ).join("") + (data.attachments.count > 3 ? `<div class="attachment-item">... \uC678 ${data.attachments.count - 3}\uAC1C</div>` : "") : '<div style="color: #666;">\uCCA8\uBD80\uD30C\uC77C \uC5C6\uC74C</div>'}
-        ${data.attachments.totalSize > 0 ? `<div style="margin-top: 3px; font-size: 6pt; color: #666;">\uCD1D \uD06C\uAE30: ${Math.round(data.attachments.totalSize / 1024)}KB</div>` : ""}
-      </div>
-      
-      <div class="comm-box">
-        <h4>\u{1F4E7} \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC774\uB825 (${data.communication.totalEmailsSent}\uD68C)</h4>
-        ${data.communication.emailHistory.length > 0 ? data.communication.emailHistory.slice(0, 2).map(
-      (email) => `<div class="email-item">${formatDateTime(email.sentAt)} | ${email.recipient.split("@")[0]}@...</div>`
-    ).join("") + (data.communication.totalEmailsSent > 2 ? `<div class="email-item">... \uC678 ${data.communication.totalEmailsSent - 2}\uD68C</div>` : "") : '<div style="color: #666;">\uBC1C\uC1A1 \uC774\uB825 \uC5C6\uC74C</div>'}
-        ${data.communication.lastEmailSent ? `<div style="margin-top: 3px; font-size: 6pt; color: #666;">\uCD5C\uC885 \uBC1C\uC1A1: ${formatDate(data.communication.lastEmailSent)}</div>` : ""}
-      </div>
-    </div>
-    
-    <!-- NOTES -->
-    ${data.metadata.notes ? `
-    <div style="margin: 8px 0; padding: 6px; border: 1px solid #d1d5db; background: #fffbeb; font-size: 7pt;">
-      <strong>\u{1F4DD} \uD2B9\uC774\uC0AC\uD56D:</strong> ${data.metadata.notes}
-    </div>
-    ` : ""}
-    
-    <!-- FOOTER -->
-    <div class="footer">
-      <div class="company-info">
-        <div class="name">${data.issuerCompany.name}</div>
-        ${data.issuerCompany.representative ? `<div>\uB300\uD45C\uC790: ${data.issuerCompany.representative}</div>` : ""}
-        <div>${data.issuerCompany.address || ""}</div>
-        <div>TEL: ${data.issuerCompany.phone || ""} | EMAIL: ${data.issuerCompany.email || ""}</div>
-        ${data.issuerCompany.businessNumber ? `<div>\uC0AC\uC5C5\uC790\uB4F1\uB85D\uBC88\uD638: ${data.issuerCompany.businessNumber}</div>` : ""}
-      </div>
-      
-      <div class="doc-metadata">
-        <div>Template ${data.metadata.templateVersion}</div>
-        <div class="center">\uBCF8 \uBB38\uC11C\uB294 \uC804\uC790\uC801\uC73C\uB85C \uC0DD\uC131\uB418\uC5C8\uC2B5\uB2C8\uB2E4</div>
-        <div class="right">Doc ID: ${data.metadata.documentId}</div>
-      </div>
-    </div>
-  </div>
-</body>
-</html>
-    `;
-  }
-  /**
-   * HTML을 PDF로 변환
-   */
-  static async convertHTMLToPDFFromString(htmlContent) {
-    if (process.env.VERCEL) {
-      throw new Error("HTML to PDF conversion not supported in Vercel - use PDFKit instead");
-    } else {
-      try {
-        const { chromium: chromium2 } = await import("playwright");
-        const browser = await chromium2.launch({
-          headless: true,
-          args: ["--no-sandbox", "--disable-dev-shm-usage"]
-        });
-        const page = await browser.newPage();
-        try {
-          await page.setContent(htmlContent, {
-            waitUntil: "networkidle"
-          });
-          const pdfBuffer = await page.pdf({
-            format: "A4",
-            printBackground: true,
-            margin: {
-              top: "8mm",
-              right: "8mm",
-              bottom: "8mm",
-              left: "8mm"
-            }
-          });
-          return pdfBuffer;
-        } finally {
-          await browser.close();
-        }
-      } catch (playwrightError) {
-        console.warn("\u26A0\uFE0F Playwright \uC2E4\uD328, PDFKit\uC73C\uB85C \uB300\uCCB4:", playwrightError);
-        throw new Error(`PDF \uC0DD\uC131 \uC2E4\uD328: ${playwrightError instanceof Error ? playwrightError.message : "Playwright \uC624\uB958"}`);
-      }
-    }
-  }
-  /**
-   * PDFKit으로 전문적인 발주서 PDF 생성
-   */
-  static async generateProfessionalPDFWithPDFKit(orderData) {
-    const PDFKitDocument = (await import("pdfkit")).default;
-    return new Promise((resolve2, reject) => {
-      try {
-        const doc = new PDFKitDocument({
-          size: "A4",
-          margins: { top: 20, bottom: 20, left: 20, right: 20 }
-        });
-        const buffers = [];
-        doc.on("data", buffers.push.bind(buffers));
-        doc.on("end", () => resolve2(Buffer.concat(buffers)));
-        doc.on("error", reject);
-        doc.font("Helvetica");
-        const formatDate = (date2) => {
-          if (!date2) return "-";
-          return format3(new Date(date2), "yyyy\uB144 MM\uC6D4 dd\uC77C", { locale: ko3 });
-        };
-        const formatCurrency = (amount) => {
-          return new Intl.NumberFormat("ko-KR", {
-            style: "currency",
-            currency: "KRW"
-          }).format(amount);
-        };
-        doc.fontSize(16).text("\uAD6C\uB9E4 \uBC1C\uC8FC\uC11C", 20, doc.y);
-        doc.fontSize(12).text(`\uBC1C\uC8FC\uBC88\uD638: ${orderData.orderNumber}`, 20, doc.y);
-        doc.fontSize(8).text(`\uC0DD\uC131\uC77C: ${formatDate(orderData.metadata.generatedAt)} | \uBB38\uC11CID: ${orderData.metadata.documentId.substring(0, 10)}`, 20, doc.y);
-        doc.moveTo(20, doc.y + 5).lineTo(575, doc.y + 5).stroke();
-        doc.moveDown(1);
-        const infoY = doc.y;
-        const colWidth = 180;
-        doc.fontSize(8);
-        doc.text("\u3010\uBC1C\uC8FC\uC5C5\uCCB4\u3011", 20, infoY);
-        doc.text(`\uC5C5\uCCB4\uBA85: ${orderData.issuerCompany.name}`, 20, infoY + 12);
-        doc.text(`\uC0AC\uC5C5\uC790: ${orderData.issuerCompany.businessNumber || "-"}`, 20, infoY + 24);
-        doc.text(`\uC5F0\uB77D\uCC98: ${orderData.issuerCompany.phone || "-"}`, 20, infoY + 36);
-        doc.text(`\uC8FC\uC18C: ${orderData.issuerCompany.address || "-"}`, 20, infoY + 48);
-        doc.text("\u3010\uC218\uC8FC\uC5C5\uCCB4\u3011", 200, infoY);
-        doc.text(`\uC5C5\uCCB4\uBA85: ${orderData.vendorCompany.name}`, 200, infoY + 12);
-        doc.text(`\uC0AC\uC5C5\uC790: ${orderData.vendorCompany.businessNumber || "-"}`, 200, infoY + 24);
-        doc.text(`\uB2F4\uB2F9\uC790: ${orderData.vendorCompany.contactPerson || "-"}`, 200, infoY + 36);
-        doc.text(`\uC5F0\uB77D\uCC98: ${orderData.vendorCompany.phone || "-"}`, 200, infoY + 48);
-        doc.text("\u3010\uD504\uB85C\uC81D\uD2B8\u3011", 380, infoY);
-        doc.text(`\uD604\uC7A5\uBA85: ${orderData.project.name}`, 380, infoY + 12);
-        doc.text(`\uBC1C\uC8FC\uC77C: ${formatDate(orderData.orderDate)}`, 380, infoY + 24);
-        doc.text(`\uB0A9\uAE30\uC77C: ${formatDate(orderData.deliveryDate)}`, 380, infoY + 36);
-        doc.text(`\uC791\uC131\uC790: ${orderData.creator.name}`, 380, infoY + 48);
-        doc.y = infoY + 70;
-        doc.moveTo(20, doc.y).lineTo(575, doc.y).stroke();
-        doc.moveDown(1);
-        doc.fontSize(9).text(`\uBC1C\uC8FC \uD488\uBAA9 (\uCD1D ${orderData.items.length}\uAC1C)`, 20);
-        doc.moveDown(0.5);
-        const tableTop = doc.y;
-        doc.fontSize(7);
-        doc.rect(20, tableTop, 555, 15).fill("#e5e7eb");
-        doc.fillColor("black");
-        doc.text("No", 25, tableTop + 3);
-        doc.text("\uBD84\uB958", 50, tableTop + 3);
-        doc.text("\uD488\uBAA9\uBA85", 120, tableTop + 3);
-        doc.text("\uADDC\uACA9", 220, tableTop + 3);
-        doc.text("\uC218\uB7C9", 280, tableTop + 3);
-        doc.text("\uB2E8\uC704", 320, tableTop + 3);
-        doc.text("\uB2E8\uAC00", 350, tableTop + 3);
-        doc.text("\uAE08\uC561", 420, tableTop + 3);
-        doc.text("\uBE44\uACE0", 490, tableTop + 3);
-        doc.rect(20, tableTop, 555, 15).stroke();
-        let currentY = tableTop + 15;
-        orderData.items.slice(0, 15).forEach((item, index2) => {
-          const rowHeight = 16;
-          if (index2 % 2 === 0) {
-            doc.rect(20, currentY, 555, rowHeight).fill("#f9fafb");
-            doc.fillColor("black");
-          }
-          doc.fontSize(6);
-          doc.text(`${item.sequenceNo}`, 25, currentY + 3);
-          doc.text((item.categoryPath || "-").substring(0, 15), 50, currentY + 3);
-          doc.text(item.name.substring(0, 20), 120, currentY + 3);
-          doc.text((item.specification || "-").substring(0, 12), 220, currentY + 3);
-          doc.text(item.quantity.toString(), 280, currentY + 3);
-          doc.text(item.unit || "-", 320, currentY + 3);
-          doc.text(formatCurrency(item.unitPrice), 350, currentY + 3);
-          doc.text(formatCurrency(item.totalPrice), 420, currentY + 3);
-          doc.text((item.remarks || "-").substring(0, 8), 490, currentY + 3);
-          doc.rect(20, currentY, 555, rowHeight).stroke();
-          currentY += rowHeight;
-        });
-        if (orderData.items.length > 15) {
-          doc.rect(20, currentY, 555, 16).fill("#fef3c7");
-          doc.fillColor("black");
-          doc.fontSize(7).text(`... \uC678 ${orderData.items.length - 15}\uAC1C \uD488\uBAA9 (\uBCC4\uB3C4 \uCCA8\uBD80\uC790\uB8CC \uCC38\uACE0)`, 25, currentY + 3);
-          doc.rect(20, currentY, 555, 16).stroke();
-          currentY += 16;
-        }
-        doc.rect(20, currentY, 555, 20).fill("#e3f2fd");
-        doc.fillColor("black");
-        doc.fontSize(8);
-        doc.text("\uC18C\uACC4 (\uBD80\uAC00\uC138\uBCC4\uB3C4)", 25, currentY + 5);
-        doc.text(formatCurrency(orderData.financial.subtotalAmount), 420, currentY + 5);
-        doc.rect(20, currentY, 555, 20).stroke();
-        currentY += 20;
-        doc.rect(20, currentY, 555, 20).fill("#e3f2fd");
-        doc.fillColor("black");
-        doc.text(`\uBD80\uAC00\uC138 (${(orderData.financial.vatRate * 100).toFixed(0)}%)`, 25, currentY + 5);
-        doc.text(formatCurrency(orderData.financial.vatAmount), 420, currentY + 5);
-        doc.rect(20, currentY, 555, 20).stroke();
-        currentY += 20;
-        doc.rect(20, currentY, 555, 20).fill("#1e40af");
-        doc.fillColor("white");
-        doc.fontSize(9).text("\uCD1D \uAE08\uC561", 25, currentY + 5);
-        doc.text(formatCurrency(orderData.financial.totalAmount), 420, currentY + 5);
-        doc.rect(20, currentY, 555, 20).stroke();
-        doc.fillColor("black");
-        doc.moveDown(2);
-        doc.fontSize(7);
-        if (orderData.attachments.hasAttachments) {
-          doc.text(`\uCCA8\uBD80\uD30C\uC77C: ${orderData.attachments.count}\uAC1C (${Math.round(orderData.attachments.totalSize / 1024)}KB)`, 20);
-          orderData.attachments.fileNames.slice(0, 3).forEach((fileName, index2) => {
-            doc.text(`  ${index2 + 1}. ${fileName.length > 40 ? fileName.substring(0, 40) + "..." : fileName}`, 20, doc.y + 8);
-          });
-          if (orderData.attachments.count > 3) {
-            doc.text(`  ... \uC678 ${orderData.attachments.count - 3}\uAC1C \uD30C\uC77C`, 20, doc.y + 8);
-          }
-          doc.moveDown(1);
-        }
-        if (orderData.communication.totalEmailsSent > 0) {
-          doc.text(`\uC774\uBA54\uC77C \uBC1C\uC1A1: \uCD1D ${orderData.communication.totalEmailsSent}\uD68C`, 20);
-          doc.text(`\uCD5C\uADFC \uBC1C\uC1A1: ${formatDate(orderData.communication.lastEmailSent)}`, 20, doc.y + 8);
-          doc.moveDown(1);
-        }
-        if (orderData.metadata.notes) {
-          doc.text("\uD2B9\uC774\uC0AC\uD56D:", 20);
-          doc.text(orderData.metadata.notes, 20, doc.y + 8);
-          doc.moveDown(1);
-        }
-        doc.moveDown(1);
-        const signY = doc.y;
-        const signBoxWidth = 105;
-        const signBoxHeight = 40;
-        doc.fontSize(8).text("\uACB0\uC7AC", 20, signY);
-        doc.moveDown(0.5);
-        const finalSignY = doc.y;
-        const roles = ["\uB2F4\uB2F9", "\uAC80\uD1A0", "\uD300\uC7A5", "\uC784\uC6D0", "\uB300\uD45C"];
-        roles.forEach((role, index2) => {
-          const x = 20 + index2 * 110;
-          doc.rect(x, finalSignY, signBoxWidth, signBoxHeight).stroke();
-          doc.fontSize(7).text(role, x + 45, finalSignY + 5);
-          const approver = orderData.approval.approvers[index2];
-          if (approver) {
-            const statusText = approver.status === "approved" ? "\uC2B9\uC778" : approver.status === "rejected" ? "\uBC18\uB824" : "\uB300\uAE30";
-            doc.text(statusText, x + 40, finalSignY + 15);
-            if (approver.approvedAt) {
-              doc.text(formatDate(approver.approvedAt), x + 35, finalSignY + 25);
-            }
-          }
-        });
-        doc.y = finalSignY + signBoxHeight + 15;
-        doc.fontSize(8);
-        doc.text(orderData.issuerCompany.name, { align: "center" });
-        if (orderData.issuerCompany.representative) {
-          doc.text(`\uB300\uD45C\uC790: ${orderData.issuerCompany.representative}`, { align: "center" });
-        }
-        doc.fontSize(6);
-        doc.text(orderData.issuerCompany.address || "", { align: "center" });
-        doc.text(`TEL: ${orderData.issuerCompany.phone || ""} | \uC0AC\uC5C5\uC790: ${orderData.issuerCompany.businessNumber || ""}`, { align: "center" });
-        doc.moveDown(1);
-        doc.fontSize(6);
-        doc.text(`\uBB38\uC11C ID: ${orderData.metadata.documentId} | Template: ${orderData.metadata.templateVersion} | Generated: ${formatDate(orderData.metadata.generatedAt)}`, { align: "center" });
-        doc.end();
-      } catch (error) {
-        reject(error);
-      }
-    });
-  }
-  /**
-   * 역할 표시명 반환
-   */
-  static getRoleDisplayName(role) {
-    const roleMap = {
-      "field_worker": "\uB2F4\uB2F9",
-      "project_manager": "\uAC80\uD1A0",
-      "hq_management": "\uD300\uC7A5",
-      "executive": "\uC784\uC6D0",
-      "admin": "\uB300\uD45C"
-    };
-    return roleMap[role] || role;
-  }
-  /**
-   * 상태 표시명 반환
-   */
-  static getStatusDisplayName(status) {
-    const statusMap = {
-      "draft": "\uCD08\uC548",
-      "created": "\uC0DD\uC131",
-      "pending": "\uAC80\uD1A0\uC911",
-      "approved": "\uC2B9\uC778",
-      "sent": "\uBC1C\uC1A1",
-      "delivered": "\uB0A9\uD488"
-    };
-    return statusMap[status || "draft"] || status || "\uCD08\uC548";
-  }
-};
-
 // server/routes/orders.ts
+init_professional_pdf_generation_service();
 init_db();
-import { eq as eq7 } from "drizzle-orm";
+init_email_settings_service();
+import { eq as eq9 } from "drizzle-orm";
 import fs9 from "fs";
 import path7 from "path";
 import { fileURLToPath as fileURLToPath2 } from "url";
 import * as XLSX3 from "xlsx";
-import nodemailer2 from "nodemailer";
+import nodemailer3 from "nodemailer";
 var __filename2 = fileURLToPath2(import.meta.url);
 var __dirname2 = path7.dirname(__filename2);
 var router3 = Router3();
 var emailService = new POEmailService();
+async function updateOrderStatusAfterEmail(orderNumber) {
+  await db.update(purchaseOrders).set({
+    orderStatus: "sent",
+    updatedAt: /* @__PURE__ */ new Date()
+  }).where(eq9(purchaseOrders.orderNumber, orderNumber));
+}
 router3.get("/orders", async (req, res) => {
   try {
     const {
@@ -9675,7 +10282,8 @@ router3.get("/orders", async (req, res) => {
       search
     } = req.query;
     const filters = {
-      status,
+      orderStatus: status,
+      // Use orderStatus instead of legacy status
       projectId: projectId ? parseInt(projectId) : void 0,
       vendorId: vendorId ? parseInt(vendorId) : void 0,
       startDate: startDate ? new Date(startDate) : void 0,
@@ -9704,7 +10312,8 @@ router3.get("/orders/export", requireAuth, async (req, res) => {
     const projectId = projectIdParam && projectIdParam !== "all" && projectIdParam !== "" ? parseInt(projectIdParam) : void 0;
     const filters = {
       userId: user?.role === "admin" && req.query.userId && req.query.userId !== "all" ? req.query.userId : user?.role === "admin" ? void 0 : userId,
-      status: req.query.status && req.query.status !== "all" ? req.query.status : void 0,
+      orderStatus: req.query.status && req.query.status !== "all" ? req.query.status : void 0,
+      // Use orderStatus instead of legacy status
       vendorId,
       projectId,
       startDate: req.query.startDate ? new Date(req.query.startDate) : void 0,
@@ -11010,7 +11619,7 @@ router3.post("/orders/:id/regenerate-pdf", requireAuth, async (req, res) => {
     if (!userId) {
       return res.status(401).json({ message: "User not authenticated" });
     }
-    const [order] = await db.select().from(purchaseOrders).where(eq7(purchaseOrders.id, orderId)).limit(1);
+    const [order] = await db.select().from(purchaseOrders).where(eq9(purchaseOrders.id, orderId)).limit(1);
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
@@ -11292,33 +11901,234 @@ router3.get("/orders/download-pdf/:timestamp", async (req, res) => {
 });
 router3.post("/orders/send-email", requireAuth, async (req, res) => {
   try {
-    const { orderData, pdfUrl, recipients, emailSettings, to, cc, bcc, subject, message } = req.body;
-    console.log("\u{1F4E7} \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC694\uCCAD:", { orderData, pdfUrl, recipients, to, cc, bcc, subject, message });
+    const {
+      orderData,
+      pdfUrl,
+      excelUrl,
+      recipients,
+      emailSettings: emailSettings2,
+      to,
+      cc,
+      bcc,
+      subject,
+      message,
+      attachPdf = true,
+      attachExcel = false,
+      selectedAttachments = []
+      // NEW: Handle selectedAttachments from frontend
+    } = req.body;
+    console.log("\u{1F4E7} \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC694\uCCAD:", {
+      orderData,
+      pdfUrl,
+      excelUrl,
+      recipients,
+      to,
+      cc,
+      bcc,
+      subject,
+      message,
+      attachPdf,
+      attachExcel,
+      selectedAttachments
+    });
     const recipientEmails = recipients || to;
     if (!recipientEmails || recipientEmails.length === 0) {
       return res.status(400).json({ error: "\uC218\uC2E0\uC790\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4." });
     }
     const emailOptions = {
       to: recipientEmails,
-      cc: emailSettings?.cc,
-      subject: emailSettings?.subject || `\uBC1C\uC8FC\uC11C - ${orderData.orderNumber || ""}`,
+      cc: cc || emailSettings2?.cc,
+      subject: subject || emailSettings2?.subject || `\uBC1C\uC8FC\uC11C - ${orderData.orderNumber || ""}`,
       orderNumber: orderData.orderNumber,
       vendorName: orderData.vendorName,
       totalAmount: orderData.totalAmount,
-      additionalMessage: emailSettings?.message
+      additionalMessage: message || emailSettings2?.message
     };
     let attachments3 = [];
-    if (pdfUrl) {
-      const pdfPath = path7.join(__dirname2, "../../", pdfUrl.replace(/^\//, ""));
-      if (fs9.existsSync(pdfPath)) {
-        attachments3.push({
-          filename: `\uBC1C\uC8FC\uC11C_${orderData.orderNumber || Date.now()}.pdf`,
-          path: pdfPath,
-          contentType: "application/pdf"
-        });
+    let attachmentsList = [];
+    if (attachPdf && pdfUrl) {
+      if (pdfUrl.includes("/api/attachments/") && pdfUrl.includes("/download")) {
+        const attachmentIdMatch = pdfUrl.match(/\/api\/attachments\/(\d+)\/download/);
+        if (attachmentIdMatch) {
+          const attachmentId = parseInt(attachmentIdMatch[1]);
+          console.log("\u{1F4CE} PDF \uCCA8\uBD80 \uC2DC\uB3C4 (DB\uC5D0\uC11C):", attachmentId);
+          try {
+            const [attachment] = await db.select({
+              id: attachments.id,
+              originalName: attachments.originalName,
+              filePath: attachments.filePath,
+              mimeType: attachments.mimeType,
+              fileData: attachments.fileData
+            }).from(attachments).where(eq9(attachments.id, attachmentId));
+            if (attachment) {
+              if (attachment.fileData) {
+                attachments3.push({
+                  filename: attachment.originalName || `\uBC1C\uC8FC\uC11C_${orderData.orderNumber || Date.now()}.pdf`,
+                  content: Buffer.from(attachment.fileData, "base64"),
+                  contentType: attachment.mimeType || "application/pdf"
+                });
+                attachmentsList.push("\uBC1C\uC8FC\uC11C.pdf (PDF \uD30C\uC77C)");
+                console.log("\u2705 PDF \uCCA8\uBD80 \uC131\uACF5 (DB Base64)");
+              } else if (attachment.filePath && fs9.existsSync(attachment.filePath)) {
+                attachments3.push({
+                  filename: attachment.originalName || `\uBC1C\uC8FC\uC11C_${orderData.orderNumber || Date.now()}.pdf`,
+                  path: attachment.filePath,
+                  contentType: attachment.mimeType || "application/pdf"
+                });
+                attachmentsList.push("\uBC1C\uC8FC\uC11C.pdf (PDF \uD30C\uC77C)");
+                console.log("\u2705 PDF \uCCA8\uBD80 \uC131\uACF5 (\uD30C\uC77C \uACBD\uB85C)");
+              } else {
+                console.log("\u274C PDF \uCCA8\uBD80 \uC2E4\uD328: \uD30C\uC77C \uB370\uC774\uD130 \uC5C6\uC74C");
+              }
+            } else {
+              console.log("\u274C PDF \uCCA8\uBD80 \uC2E4\uD328: \uCCA8\uBD80\uD30C\uC77C \uC815\uBCF4 \uC5C6\uC74C");
+            }
+          } catch (error) {
+            console.error("\u274C PDF \uCCA8\uBD80 \uC624\uB958:", error);
+          }
+        }
+      } else {
+        const pdfPath = path7.join(__dirname2, "../../", pdfUrl.replace(/^\//, ""));
+        console.log("\u{1F4CE} PDF \uCCA8\uBD80 \uC2DC\uB3C4 (\uC9C1\uC811 \uACBD\uB85C):", pdfPath);
+        if (fs9.existsSync(pdfPath)) {
+          attachments3.push({
+            filename: `\uBC1C\uC8FC\uC11C_${orderData.orderNumber || Date.now()}.pdf`,
+            path: pdfPath,
+            contentType: "application/pdf"
+          });
+          attachmentsList.push("\uBC1C\uC8FC\uC11C.pdf (PDF \uD30C\uC77C)");
+          console.log("\u2705 PDF \uCCA8\uBD80 \uC131\uACF5 (\uC9C1\uC811 \uACBD\uB85C)");
+        } else {
+          console.log("\u274C PDF \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC74C:", pdfPath);
+        }
       }
     }
-    const generateEmailContent = (options) => {
+    if (attachExcel && excelUrl) {
+      if (excelUrl.includes("/api/attachments/") && excelUrl.includes("/download")) {
+        const attachmentIdMatch = excelUrl.match(/\/api\/attachments\/(\d+)\/download/);
+        if (attachmentIdMatch) {
+          const attachmentId = parseInt(attachmentIdMatch[1]);
+          console.log("\u{1F4CE} Excel \uCCA8\uBD80 \uC2DC\uB3C4 (DB\uC5D0\uC11C):", attachmentId);
+          try {
+            const [attachment] = await db.select({
+              id: attachments.id,
+              originalName: attachments.originalName,
+              filePath: attachments.filePath,
+              mimeType: attachments.mimeType,
+              fileData: attachments.fileData
+            }).from(attachments).where(eq9(attachments.id, attachmentId));
+            if (attachment) {
+              if (attachment.fileData) {
+                attachments3.push({
+                  filename: attachment.originalName || `\uBC1C\uC8FC\uC11C_${orderData.orderNumber || Date.now()}.xlsx`,
+                  content: Buffer.from(attachment.fileData, "base64"),
+                  contentType: attachment.mimeType || "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                });
+                attachmentsList.push("\uBC1C\uC8FC\uC11C.xlsx (Excel \uD30C\uC77C)");
+                console.log("\u2705 Excel \uCCA8\uBD80 \uC131\uACF5 (DB Base64)");
+              } else if (attachment.filePath && fs9.existsSync(attachment.filePath)) {
+                attachments3.push({
+                  filename: attachment.originalName || `\uBC1C\uC8FC\uC11C_${orderData.orderNumber || Date.now()}.xlsx`,
+                  path: attachment.filePath,
+                  contentType: attachment.mimeType || "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                });
+                attachmentsList.push("\uBC1C\uC8FC\uC11C.xlsx (Excel \uD30C\uC77C)");
+                console.log("\u2705 Excel \uCCA8\uBD80 \uC131\uACF5 (\uD30C\uC77C \uACBD\uB85C)");
+              } else {
+                console.log("\u274C Excel \uCCA8\uBD80 \uC2E4\uD328: \uD30C\uC77C \uB370\uC774\uD130 \uC5C6\uC74C");
+              }
+            } else {
+              console.log("\u274C Excel \uCCA8\uBD80 \uC2E4\uD328: \uCCA8\uBD80\uD30C\uC77C \uC815\uBCF4 \uC5C6\uC74C");
+            }
+          } catch (error) {
+            console.error("\u274C Excel \uCCA8\uBD80 \uC624\uB958:", error);
+          }
+        }
+      } else {
+        const excelPath = path7.join(__dirname2, "../../", excelUrl.replace(/^\//, ""));
+        console.log("\u{1F4CE} Excel \uCCA8\uBD80 \uC2DC\uB3C4 (\uC9C1\uC811 \uACBD\uB85C):", excelPath);
+        if (fs9.existsSync(excelPath)) {
+          attachments3.push({
+            filename: `\uBC1C\uC8FC\uC11C_${orderData.orderNumber || Date.now()}.xlsx`,
+            path: excelPath,
+            contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          });
+          attachmentsList.push("\uBC1C\uC8FC\uC11C.xlsx (Excel \uD30C\uC77C)");
+          console.log("\u2705 Excel \uCCA8\uBD80 \uC131\uACF5 (\uC9C1\uC811 \uACBD\uB85C)");
+        } else {
+          console.log("\u274C Excel \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC74C:", excelPath);
+        }
+      }
+    }
+    if (selectedAttachments && Array.isArray(selectedAttachments) && selectedAttachments.length > 0) {
+      console.log("\u{1F4CE} \uCC98\uB9AC\uD560 \uC120\uD0DD\uB41C \uCCA8\uBD80\uD30C\uC77C IDs:", selectedAttachments);
+      console.log("\u{1F4CE} attachPdf:", attachPdf, "attachExcel:", attachExcel);
+      console.log("\u{1F4CE} pdfUrl:", pdfUrl, "excelUrl:", excelUrl);
+      const processedAttachmentIds = /* @__PURE__ */ new Set();
+      if (attachPdf && pdfUrl && pdfUrl.includes("/api/attachments/") && pdfUrl.includes("/download")) {
+        const pdfAttachmentIdMatch = pdfUrl.match(/\/api\/attachments\/(\d+)\/download/);
+        if (pdfAttachmentIdMatch && attachments3.length > 0) {
+          const pdfId = parseInt(pdfAttachmentIdMatch[1]);
+          console.log("\u{1F50D} PDF already processed by old logic, ID:", pdfId);
+          processedAttachmentIds.add(pdfId);
+        }
+      }
+      if (attachExcel && excelUrl && excelUrl.includes("/api/attachments/") && excelUrl.includes("/download")) {
+        const excelAttachmentIdMatch = excelUrl.match(/\/api\/attachments\/(\d+)\/download/);
+        if (excelAttachmentIdMatch) {
+          const excelId = parseInt(excelAttachmentIdMatch[1]);
+          const excelProcessed = attachmentsList.some((item) => item.includes("Excel"));
+          if (excelProcessed) {
+            console.log("\u{1F50D} Excel already processed by old logic, ID:", excelId);
+            processedAttachmentIds.add(excelId);
+          } else {
+            console.log("\u26A0\uFE0F Excel URL exists but not processed by old logic, will process in selectedAttachments");
+          }
+        }
+      }
+      for (const attachmentId of selectedAttachments) {
+        try {
+          if (processedAttachmentIds.has(attachmentId)) {
+            console.log("\u26A0\uFE0F \uCCA8\uBD80\uD30C\uC77C \uC774\uBBF8 \uCC98\uB9AC\uB428 (\uAE30\uC874 \uB85C\uC9C1):", attachmentId);
+            continue;
+          }
+          const [attachment] = await db.select({
+            id: attachments.id,
+            originalName: attachments.originalName,
+            filePath: attachments.filePath,
+            mimeType: attachments.mimeType,
+            fileData: attachments.fileData
+          }).from(attachments).where(eq9(attachments.id, attachmentId));
+          if (attachment) {
+            if (attachment.fileData) {
+              attachments3.push({
+                filename: attachment.originalName,
+                content: Buffer.from(attachment.fileData, "base64"),
+                contentType: attachment.mimeType || "application/octet-stream"
+              });
+              attachmentsList.push(attachment.originalName);
+              console.log("\u2705 \uC120\uD0DD\uB41C \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00 \uC131\uACF5 (DB Base64):", attachment.originalName);
+            } else if (attachment.filePath && fs9.existsSync(attachment.filePath)) {
+              attachments3.push({
+                filename: attachment.originalName,
+                path: attachment.filePath,
+                contentType: attachment.mimeType || "application/octet-stream"
+              });
+              attachmentsList.push(attachment.originalName);
+              console.log("\u2705 \uC120\uD0DD\uB41C \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00 \uC131\uACF5 (\uD30C\uC77C \uACBD\uB85C):", attachment.originalName);
+            } else {
+              console.log("\u274C \uC120\uD0DD\uB41C \uCCA8\uBD80\uD30C\uC77C \uCC98\uB9AC \uC2E4\uD328 (\uB370\uC774\uD130 \uC5C6\uC74C):", attachment.originalName);
+            }
+          } else {
+            console.log("\u274C \uC120\uD0DD\uB41C \uCCA8\uBD80\uD30C\uC77C \uC815\uBCF4 \uC5C6\uC74C, ID:", attachmentId);
+          }
+        } catch (error) {
+          console.error("\u274C \uC120\uD0DD\uB41C \uCCA8\uBD80\uD30C\uC77C \uCC98\uB9AC \uC624\uB958, ID:", attachmentId, error);
+        }
+      }
+    }
+    console.log(`\u{1F4CE} \uCD1D ${attachments3.length}\uAC1C \uCCA8\uBD80\uD30C\uC77C:`, attachmentsList);
+    const generateEmailContent = (options, attachmentsList2 = []) => {
       const formatCurrency = (amount) => {
         return new Intl.NumberFormat("ko-KR", {
           style: "currency",
@@ -11433,12 +12243,14 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
                 </table>
               ` : ""}
               
-              <div class="attachments">
-                <h3>\u{1F4CE} \uCCA8\uBD80\uD30C\uC77C</h3>
-                <ul>
-                  <li>\uBC1C\uC8FC\uC11C.pdf (PDF \uD30C\uC77C)</li>
-                </ul>
-              </div>
+              ${attachmentsList2.length > 0 ? `
+                <div class="attachments">
+                  <h3>\u{1F4CE} \uCCA8\uBD80\uD30C\uC77C</h3>
+                  <ul>
+                    ${attachmentsList2.map((attachment) => `<li>${attachment}</li>`).join("")}
+                  </ul>
+                </div>
+              ` : ""}
               
               ${options.additionalMessage ? `
                 <div style="background-color: #fff3cd; padding: 15px; border-radius: 5px; margin: 20px 0;">
@@ -11471,21 +12283,15 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
       subject: emailOptions.subject,
       attachmentsCount: attachments3.length
     });
-    const emailHtml = generateEmailContent(emailOptions);
-    const transporter2 = nodemailer2.createTransport({
-      host: process.env.SMTP_HOST || "smtp.naver.com",
-      port: parseInt(process.env.SMTP_PORT) || 587,
-      secure: false,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-      },
-      tls: {
-        rejectUnauthorized: false
-      }
-    });
+    const emailHtml = generateEmailContent(emailOptions, attachmentsList);
+    const emailSettingsService = new EmailSettingsService();
+    const smtpConfig = await emailSettingsService.getDecryptedSettings();
+    if (!smtpConfig) {
+      throw new Error("\uC774\uBA54\uC77C \uC124\uC815\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4. \uAD00\uB9AC\uC790 \uC124\uC815\uC5D0\uC11C SMTP \uC815\uBCF4\uB97C \uD655\uC778\uD574\uC8FC\uC138\uC694.");
+    }
+    const transporter2 = nodemailer3.createTransport(smtpConfig);
     const mailOptions = {
-      from: process.env.SMTP_USER || "david1611@naver.com",
+      from: smtpConfig.auth.user,
       to: Array.isArray(emailOptions.to) ? emailOptions.to.join(", ") : emailOptions.to,
       cc: emailOptions.cc ? Array.isArray(emailOptions.cc) ? emailOptions.cc.join(", ") : emailOptions.cc : void 0,
       subject: emailOptions.subject || `\uBC1C\uC8FC\uC11C - ${orderData.orderNumber || ""}`,
@@ -11509,6 +12315,17 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
       try {
         const info = await transporter2.sendMail(mailOptions);
         console.log("\u{1F4E7} \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC131\uACF5:", info.messageId);
+        if (orderData && orderData.orderNumber) {
+          try {
+            console.log(`\u{1F504} \uBC1C\uC8FC\uC11C \uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8 \uC2DC\uB3C4: ${orderData.orderNumber} \u2192 sent`);
+            await updateOrderStatusAfterEmail(orderData.orderNumber);
+            console.log(`\u2705 \uBC1C\uC8FC\uC11C \uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8 \uC644\uB8CC: ${orderData.orderNumber} \u2192 sent`);
+          } catch (updateError) {
+            console.error(`\u274C \uBC1C\uC8FC\uC11C \uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8 \uC2E4\uD328: ${orderData.orderNumber}`, updateError);
+          }
+        } else {
+          console.log(`\u26A0\uFE0F \uBC1C\uC8FC\uC11C \uC815\uBCF4\uAC00 \uC5C6\uC5B4 \uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8\uB97C \uAC74\uB108\uB700:`, { orderData });
+        }
         res.json({ success: true, messageId: info.messageId });
       } catch (emailError) {
         console.error("\u{1F4E7} \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC2E4\uD328:", emailError);
@@ -11600,6 +12417,20 @@ ${body}`);
       }
     }
     console.log("\u{1F4E7} \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC131\uACF5:", result);
+    if (result.success && emailData && emailData.orderNumber) {
+      try {
+        console.log(`\u{1F504} [\uAC04\uD3B8\uBC1C\uC1A1] \uBC1C\uC8FC\uC11C \uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8 \uC2DC\uB3C4: ${emailData.orderNumber} \u2192 sent`);
+        await updateOrderStatusAfterEmail(emailData.orderNumber);
+        console.log(`\u2705 [\uAC04\uD3B8\uBC1C\uC1A1] \uBC1C\uC8FC\uC11C \uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8 \uC644\uB8CC: ${emailData.orderNumber} \u2192 sent`);
+      } catch (updateError) {
+        console.error(`\u274C [\uAC04\uD3B8\uBC1C\uC1A1] \uBC1C\uC8FC\uC11C \uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8 \uC2E4\uD328: ${emailData.orderNumber}`, updateError);
+      }
+    } else {
+      console.log(`\u26A0\uFE0F [\uAC04\uD3B8\uBC1C\uC1A1] \uBC1C\uC8FC\uC11C \uC815\uBCF4\uAC00 \uC5C6\uC5B4 \uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8\uB97C \uAC74\uB108\uB700:`, {
+        resultSuccess: result.success,
+        emailData: emailData?.orderNumber || "no orderNumber"
+      });
+    }
     res.json({ success: true, ...result });
   } catch (error) {
     console.error("\uC774\uBA54\uC77C \uBC1C\uC1A1 \uC624\uB958:", error);
@@ -11611,9 +12442,9 @@ ${body}`);
 });
 router3.post("/orders/send-email-with-excel", requireAuth, async (req, res) => {
   try {
-    const { emailSettings, excelFilePath, orderData } = req.body;
-    console.log("\u{1F4E7} \uC5D1\uC140 \uD30C\uC77C \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC694\uCCAD:", { emailSettings, excelFilePath });
-    if (!emailSettings.to) {
+    const { emailSettings: emailSettings2, excelFilePath, orderData } = req.body;
+    console.log("\u{1F4E7} \uC5D1\uC140 \uD30C\uC77C \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC694\uCCAD:", { emailSettings: emailSettings2, excelFilePath });
+    if (!emailSettings2.to) {
       return res.status(400).json({ error: "\uC218\uC2E0\uC790\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4." });
     }
     if (!excelFilePath) {
@@ -11628,17 +12459,25 @@ router3.post("/orders/send-email-with-excel", requireAuth, async (req, res) => {
     const result = await emailService.sendPOWithOriginalFormat(
       localExcelPath,
       {
-        to: emailSettings.to,
-        cc: emailSettings.cc,
-        subject: emailSettings.subject,
-        orderNumber: emailSettings.orderNumber,
-        vendorName: emailSettings.vendorName,
-        totalAmount: emailSettings.totalAmount,
-        additionalMessage: emailSettings.message
+        to: emailSettings2.to,
+        cc: emailSettings2.cc,
+        subject: emailSettings2.subject,
+        orderNumber: emailSettings2.orderNumber,
+        vendorName: emailSettings2.vendorName,
+        totalAmount: emailSettings2.totalAmount,
+        additionalMessage: emailSettings2.message
       }
     );
     if (result.success) {
       console.log("\u{1F4E7} \uC5D1\uC140 \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC131\uACF5");
+      if (emailSettings2 && emailSettings2.orderNumber) {
+        try {
+          await updateOrderStatusAfterEmail(emailSettings2.orderNumber);
+          console.log(`\u{1F4CB} \uBC1C\uC8FC\uC11C \uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8 \uC644\uB8CC: ${emailSettings2.orderNumber} \u2192 sent`);
+        } catch (updateError) {
+          console.error(`\u274C \uBC1C\uC8FC\uC11C \uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8 \uC2E4\uD328: ${emailSettings2.orderNumber}`, updateError);
+        }
+      }
       res.json({ success: true, messageId: result.messageId });
     } else {
       console.error("\u{1F4E7} \uC5D1\uC140 \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC2E4\uD328:", result.error);
@@ -12236,7 +13075,11 @@ router6.get("/dashboard/urgent-orders", async (req, res) => {
 });
 router6.get("/orders-optimized", async (req, res) => {
   try {
-    console.log("\u{1F680} Orders-optimized via dashboard router");
+    console.log("\u{1F680} Orders-optimized via dashboard router", {
+      query: req.query,
+      sortBy: req.query.sortBy,
+      sortOrder: req.query.sortOrder
+    });
     const { db: db2 } = await Promise.resolve().then(() => (init_db(), db_exports));
     if (!db2) {
       throw new Error("Database connection not available");
@@ -12246,8 +13089,36 @@ router6.get("/orders-optimized", async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const offset = (page - 1) * limit;
+    const sortBy = req.query.sortBy || "createdAt";
+    const sortOrder = (req.query.sortOrder || "desc").toLowerCase();
+    const sortDirection = sortOrder === "asc" ? "ASC" : "DESC";
+    const getSortField = (field) => {
+      switch (field) {
+        case "orderNumber":
+          return "po.order_number";
+        case "status":
+          return "po.status";
+        case "orderStatus":
+          return "po.order_status";
+        case "approvalStatus":
+          return "po.approval_status";
+        case "vendorName":
+          return "v.name";
+        case "projectName":
+          return "p.project_name";
+        case "orderDate":
+          return "po.order_date";
+        case "totalAmount":
+          return "po.total_amount";
+        case "createdAt":
+        default:
+          return "po.created_at";
+      }
+    };
+    const sortField = getSortField(sortBy);
+    console.log("\u{1F504} Sorting by:", sortField, sortDirection);
     const ordersResult = await db2.execute(
-      sql4`SELECT 
+      sql4.raw(`SELECT 
         po.id,
         po.order_number as "orderNumber",
         po.status,
@@ -12261,8 +13132,8 @@ router6.get("/orders-optimized", async (req, res) => {
       FROM purchase_orders po
       LEFT JOIN vendors v ON po.vendor_id = v.id
       LEFT JOIN projects p ON po.project_id = p.id
-      ORDER BY po.created_at DESC
-      LIMIT ${limit} OFFSET ${offset}`
+      ORDER BY ${sortField} ${sortDirection}
+      LIMIT ${limit} OFFSET ${offset}`)
     );
     const countResult = await db2.execute(
       sql4`SELECT COUNT(*) as total FROM purchase_orders`
@@ -12479,7 +13350,7 @@ var companies_default = router7;
 import { Router as Router8 } from "express";
 init_db();
 init_schema();
-import { eq as eq8, and as and5 } from "drizzle-orm";
+import { eq as eq10, and as and5 } from "drizzle-orm";
 var router8 = Router8();
 router8.get("/users", requireAuth, requireAdmin, async (req, res) => {
   try {
@@ -12572,8 +13443,8 @@ router8.get("/approval-workflow-settings", requireAuth, requireAdmin, async (req
   try {
     const settings = await db.select().from(approvalWorkflowSettings).where(
       and5(
-        eq8(approvalWorkflowSettings.isActive, true),
-        eq8(approvalWorkflowSettings.companyId, 1)
+        eq10(approvalWorkflowSettings.isActive, true),
+        eq10(approvalWorkflowSettings.companyId, 1)
       )
     ).limit(1);
     if (settings.length === 0) {
@@ -12610,7 +13481,7 @@ router8.put("/approval-workflow-settings", requireAuth, requireAdmin, async (req
       requireAllStages,
       skipLowerStages
     } = req.body;
-    const existing = await db.select().from(approvalWorkflowSettings).where(eq8(approvalWorkflowSettings.companyId, 1)).limit(1);
+    const existing = await db.select().from(approvalWorkflowSettings).where(eq10(approvalWorkflowSettings.companyId, 1)).limit(1);
     if (existing.length === 0) {
       const [newSettings] = await db.insert(approvalWorkflowSettings).values({
         companyId: 1,
@@ -12631,7 +13502,7 @@ router8.put("/approval-workflow-settings", requireAuth, requireAdmin, async (req
         requireAllStages,
         skipLowerStages,
         updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq8(approvalWorkflowSettings.id, existing[0].id)).returning();
+      }).where(eq10(approvalWorkflowSettings.id, existing[0].id)).returning();
       res.json(updatedSettings);
     }
   } catch (error) {
@@ -12644,18 +13515,19 @@ var admin_default = router8;
 // server/routes/excel-automation.ts
 import { Router as Router9 } from "express";
 import multer2 from "multer";
-import path9 from "path";
-import fs11 from "fs";
+import path10 from "path";
+import fs12 from "fs";
 
 // server/utils/excel-automation-service.ts
 init_db();
 init_schema();
 init_po_template_processor_mock();
+import { eq as eq13, inArray as inArray2 } from "drizzle-orm";
 
 // server/utils/vendor-validation.ts
 init_db();
 init_schema();
-import { eq as eq10, sql as sql6 } from "drizzle-orm";
+import { eq as eq12, sql as sql6 } from "drizzle-orm";
 function levenshteinDistance(str1, str2) {
   const matrix = [];
   if (str1.length === 0) return str2.length;
@@ -12775,7 +13647,7 @@ async function validateVendorName(vendorName, vendorType = "\uAC70\uB798\uCC98")
         phone: vendors.phone,
         contactPerson: vendors.contactPerson,
         aliases: vendors.aliases
-      }).from(vendors).where(eq10(vendors.name, vendorName)).limit(1);
+      }).from(vendors).where(eq12(vendors.name, vendorName)).limit(1);
       const aliasMatchQuery = db.select({
         id: vendors.id,
         name: vendors.name,
@@ -12791,7 +13663,7 @@ async function validateVendorName(vendorName, vendorType = "\uAC70\uB798\uCC98")
         phone: vendors.phone,
         contactPerson: vendors.contactPerson,
         aliases: vendors.aliases
-      }).from(vendors).where(eq10(vendors.isActive, true));
+      }).from(vendors).where(eq12(vendors.isActive, true));
       exactMatch = await Promise.race([exactMatchQuery, dbTimeout]);
       aliasMatch = await Promise.race([aliasMatchQuery, dbTimeout]);
       allVendors = await Promise.race([allVendorsQuery, dbTimeout]);
@@ -13001,8 +13873,104 @@ async function validateMultipleVendors(vendorData) {
 // server/utils/excel-automation-service.ts
 init_excel_input_sheet_remover();
 init_debug_logger();
+
+// server/utils/excel-attachment-service.ts
+init_db();
+init_schema();
 import fs10 from "fs";
 import path8 from "path";
+var ExcelAttachmentService = class {
+  /**
+   * 처리된 Excel 파일을 attachments 테이블에 저장
+   * @param orderId 발주서 ID
+   * @param processedExcelPath 처리된 Excel 파일 경로 (Input 시트 제거됨)
+   * @param originalFileName 원본 파일명
+   * @param uploadedBy 업로드한 사용자 ID
+   */
+  static async saveProcessedExcelFile(orderId, processedExcelPath, originalFileName, uploadedBy) {
+    try {
+      console.log(`\u{1F4CE} Excel \uCCA8\uBD80\uD30C\uC77C \uC800\uC7A5 \uC2DC\uC791: ${processedExcelPath}`);
+      if (!fs10.existsSync(processedExcelPath)) {
+        return {
+          success: false,
+          error: `\uCC98\uB9AC\uB41C Excel \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4: ${processedExcelPath}`
+        };
+      }
+      const stats = fs10.statSync(processedExcelPath);
+      const fileName = path8.basename(processedExcelPath);
+      const fileBuffer = fs10.readFileSync(processedExcelPath);
+      const base64Data = fileBuffer.toString("base64");
+      const [attachment] = await db.insert(attachments).values({
+        orderId,
+        originalName: originalFileName,
+        storedName: fileName,
+        filePath: `db://${fileName}`,
+        // Base64 저장 표시
+        fileSize: stats.size,
+        mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        uploadedBy,
+        uploadedAt: /* @__PURE__ */ new Date(),
+        fileData: base64Data
+        // Base64 데이터 저장
+      }).returning({ id: attachments.id });
+      console.log(`\u2705 Excel \uCCA8\uBD80\uD30C\uC77C \uC800\uC7A5 \uC644\uB8CC: ID ${attachment.id}, \uD06C\uAE30: ${Math.round(stats.size / 1024)}KB`);
+      return {
+        success: true,
+        attachmentId: attachment.id
+      };
+    } catch (error) {
+      console.error("\u274C Excel \uCCA8\uBD80\uD30C\uC77C \uC800\uC7A5 \uC2E4\uD328:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error"
+      };
+    }
+  }
+  /**
+   * 원본 Excel 파일도 첨부파일로 저장 (필요시)
+   */
+  static async saveOriginalExcelFile(orderId, originalExcelPath, originalFileName, uploadedBy) {
+    try {
+      console.log(`\u{1F4CE} \uC6D0\uBCF8 Excel \uCCA8\uBD80\uD30C\uC77C \uC800\uC7A5 \uC2DC\uC791: ${originalExcelPath}`);
+      if (!fs10.existsSync(originalExcelPath)) {
+        return {
+          success: false,
+          error: `\uC6D0\uBCF8 Excel \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4: ${originalExcelPath}`
+        };
+      }
+      const stats = fs10.statSync(originalExcelPath);
+      const fileName = `original_${path8.basename(originalExcelPath)}`;
+      const fileBuffer = fs10.readFileSync(originalExcelPath);
+      const base64Data = fileBuffer.toString("base64");
+      const [attachment] = await db.insert(attachments).values({
+        orderId,
+        originalName: `[\uC6D0\uBCF8] ${originalFileName}`,
+        storedName: fileName,
+        filePath: `db://${fileName}`,
+        fileSize: stats.size,
+        mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        uploadedBy,
+        uploadedAt: /* @__PURE__ */ new Date(),
+        fileData: base64Data
+      }).returning({ id: attachments.id });
+      console.log(`\u2705 \uC6D0\uBCF8 Excel \uCCA8\uBD80\uD30C\uC77C \uC800\uC7A5 \uC644\uB8CC: ID ${attachment.id}`);
+      return {
+        success: true,
+        attachmentId: attachment.id
+      };
+    } catch (error) {
+      console.error("\u274C \uC6D0\uBCF8 Excel \uCCA8\uBD80\uD30C\uC77C \uC800\uC7A5 \uC2E4\uD328:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error"
+      };
+    }
+  }
+};
+
+// server/utils/excel-automation-service.ts
+import fs11 from "fs";
+import path9 from "path";
 var ExcelAutomationService = class {
   /**
    * 1단계: Excel 파일 업로드 및 파싱, DB 저장
@@ -13047,16 +14015,69 @@ var ExcelAutomationService = class {
         };
       }
       console.log(`\u2705 [DEBUG] DB \uC800\uC7A5 \uC131\uACF5: ${saveResult.savedOrders}\uAC1C \uBC1C\uC8FC\uC11C \uC800\uC7A5\uB428`);
+      console.log(`\u{1F50D} [DEBUG] 2.5\uB2E8\uACC4: \uCC98\uB9AC\uB41C Excel \uD30C\uC77C \uCCA8\uBD80 \uC2DC\uC791`);
+      console.log(`\u{1F4CA} [DEBUG] saveResult:`, JSON.stringify(saveResult, null, 2));
+      const originalFileName = path9.basename(filePath);
+      if (saveResult.savedOrderNumbers && saveResult.savedOrderNumbers.length > 0) {
+        console.log(`\u{1F4CB} [DEBUG] \uBC1C\uC8FC\uC11C \uBC88\uD638\uB4E4:`, saveResult.savedOrderNumbers);
+        try {
+          const orders = await db.select({ id: purchaseOrders.id, orderNumber: purchaseOrders.orderNumber }).from(purchaseOrders).where(inArray2(purchaseOrders.orderNumber, saveResult.savedOrderNumbers));
+          console.log(`\u{1F50D} [DEBUG] \uC870\uD68C\uB41C \uBC1C\uC8FC\uC11C\uB4E4:`, orders);
+          const processedExcelPath = filePath.replace(/\.(xlsx?)$/i, "_processed.$1");
+          const removeResult = await removeAllInputSheets(filePath, processedExcelPath);
+          if (removeResult.success && fs11.existsSync(processedExcelPath)) {
+            console.log(`\u2705 [DEBUG] Input \uC2DC\uD2B8 \uC81C\uAC70 \uC644\uB8CC: ${processedExcelPath}`);
+            for (const order of orders) {
+              const attachResult = await ExcelAttachmentService.saveProcessedExcelFile(
+                order.id,
+                processedExcelPath,
+                originalFileName,
+                userId
+              );
+              if (attachResult.success) {
+                console.log(`\u2705 [DEBUG] \uBC1C\uC8FC\uC11C ${order.orderNumber}\uC5D0 Excel \uCCA8\uBD80\uD30C\uC77C \uC800\uC7A5 \uC644\uB8CC: ID ${attachResult.attachmentId}`);
+              } else {
+                console.warn(`\u26A0\uFE0F [DEBUG] \uBC1C\uC8FC\uC11C ${order.orderNumber}\uC5D0 Excel \uCCA8\uBD80\uD30C\uC77C \uC800\uC7A5 \uC2E4\uD328: ${attachResult.error}`);
+              }
+            }
+            try {
+              fs11.unlinkSync(processedExcelPath);
+              console.log(`\u{1F9F9} [DEBUG] \uC784\uC2DC \uCC98\uB9AC\uB41C Excel \uD30C\uC77C \uC815\uB9AC \uC644\uB8CC: ${processedExcelPath}`);
+            } catch (cleanupError) {
+              console.warn(`\u26A0\uFE0F [DEBUG] \uC784\uC2DC \uD30C\uC77C \uC815\uB9AC \uC2E4\uD328:`, cleanupError);
+            }
+          } else {
+            console.warn(`\u26A0\uFE0F [DEBUG] Input \uC2DC\uD2B8 \uC81C\uAC70 \uC2E4\uD328: ${removeResult.error}`);
+          }
+        } catch (error) {
+          console.warn("Excel \uCCA8\uBD80\uD30C\uC77C \uC800\uC7A5 \uC2E4\uD328:", error);
+        }
+      }
+      console.log(`\u{1F50D} [DEBUG] 2.5\uB2E8\uACC4 \uC644\uB8CC: Excel \uCCA8\uBD80\uD30C\uC77C \uCC98\uB9AC \uC644\uB8CC`);
       console.log(`\u{1F50D} [DEBUG] 3\uB2E8\uACC4: \uAC70\uB798\uCC98 \uAC80\uC99D \uC2DC\uC791`);
       const vendorValidation = await this.validateVendorsFromExcel(filePath);
       console.log(`\u{1F50D} [DEBUG] 3\uB2E8\uACC4 \uC644\uB8CC: \uC720\uD6A8 \uAC70\uB798\uCC98 ${vendorValidation.validVendors.length}\uAC1C, \uBB34\uD6A8 \uAC70\uB798\uCC98 ${vendorValidation.invalidVendors.length}\uAC1C`);
       console.log(`\u{1F50D} [DEBUG] 4\uB2E8\uACC4: \uC774\uBA54\uC77C \uBBF8\uB9AC\uBCF4\uAE30 \uC0DD\uC131 \uC2DC\uC791`);
       const emailPreview = await this.generateEmailPreview(filePath, vendorValidation);
       console.log(`\u{1F50D} [DEBUG] 4\uB2E8\uACC4 \uC644\uB8CC: \uC218\uC2E0\uC790 ${emailPreview.recipients.length}\uBA85`);
+      const orderIds = [];
+      if (saveResult.savedOrderNumbers && saveResult.savedOrderNumbers.length > 0) {
+        try {
+          const orders = await db.select({ id: purchaseOrders.id, orderNumber: purchaseOrders.orderNumber }).from(purchaseOrders).where(eq13(purchaseOrders.orderNumber, saveResult.savedOrderNumbers[0]));
+          if (orders.length > 0) {
+            orderIds.push(orders[0].id);
+          }
+        } catch (error) {
+          console.warn("\uBC1C\uC8FC\uC11C ID \uC870\uD68C \uC2E4\uD328:", error);
+        }
+      }
       const result = {
         success: true,
         data: {
           savedOrders: saveResult.savedOrders,
+          savedOrderNumbers: saveResult.savedOrderNumbers,
+          orderIds,
+          // 첫 번째 발주서 ID 추가
           vendorValidation,
           emailPreview
         }
@@ -13177,8 +14198,8 @@ var ExcelAutomationService = class {
         new Set(vendorValidation.validVendors.map((v) => v.email))
       ).filter((email) => email && email.trim());
       const timestamp2 = Date.now();
-      const processedPath = path8.join(
-        path8.dirname(filePath),
+      const processedPath = path9.join(
+        path9.dirname(filePath),
         `processed-${timestamp2}.xlsx`
       );
       await removeAllInputSheets(filePath, processedPath);
@@ -13207,15 +14228,15 @@ var ExcelAutomationService = class {
       } catch (pdfError) {
         console.error("\u26A0\uFE0F \uD1B5\uD569 PDF \uC11C\uBE44\uC2A4 \uC2E4\uD328 - Excel \uD30C\uC77C\uB9CC \uCCA8\uBD80\uB429\uB2C8\uB2E4:", pdfError);
       }
-      const stats = fs10.statSync(processedPath);
-      const pdfStats = pdfConversionSuccess && fs10.existsSync(pdfPath) ? fs10.statSync(pdfPath) : null;
+      const stats = fs11.statSync(processedPath);
+      const pdfStats = pdfConversionSuccess && fs11.existsSync(pdfPath) ? fs11.statSync(pdfPath) : null;
       const emailPreview = {
         recipients,
-        subject: `\uBC1C\uC8FC\uC11C - ${path8.basename(filePath, path8.extname(filePath))} (${(/* @__PURE__ */ new Date()).toLocaleDateString("ko-KR")})`,
+        subject: `\uBC1C\uC8FC\uC11C - ${path9.basename(filePath, path9.extname(filePath))} (${(/* @__PURE__ */ new Date()).toLocaleDateString("ko-KR")})`,
         attachmentInfo: {
-          originalFile: path8.basename(filePath),
-          processedFile: path8.basename(processedPath),
-          processedPdfFile: pdfStats ? path8.basename(pdfPath) : void 0,
+          originalFile: path9.basename(filePath),
+          processedFile: path9.basename(processedPath),
+          processedPdfFile: pdfStats ? path9.basename(pdfPath) : void 0,
           fileSize: stats.size,
           pdfFileSize: pdfStats ? pdfStats.size : void 0
         },
@@ -13251,13 +14272,22 @@ var ExcelAutomationService = class {
       emailOptions
     });
     try {
-      const emailService3 = new POEmailService();
+      const emailService4 = new POEmailService();
       const emailResults = [];
       const failedEmails = [];
       for (const email of recipients) {
         try {
           console.log(`\u{1F4E7} \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC911: ${email}`);
-          const sendResult = await emailService3.sendPOWithOriginalFormat(
+          const sendResult = emailOptions.orderId ? await emailService4.sendPOWithOrderItemsFromDB(
+            processedFilePath,
+            emailOptions.orderId,
+            {
+              to: email,
+              subject: emailOptions.subject || `\uBC1C\uC8FC\uC11C - ${(/* @__PURE__ */ new Date()).toLocaleDateString("ko-KR")}`,
+              orderNumber: emailOptions.orderNumber,
+              additionalMessage: emailOptions.additionalMessage
+            }
+          ) : await emailService4.sendPOWithOriginalFormat(
             processedFilePath,
             {
               to: email,
@@ -13296,6 +14326,32 @@ var ExcelAutomationService = class {
         failedEmails,
         emailResults
       };
+      if (result.success && result.sentEmails > 0) {
+        const orderNumbersToUpdate = emailOptions.savedOrderNumbers || (emailOptions.orderNumber ? [emailOptions.orderNumber] : []);
+        console.log(`\u{1F504} [Excel\uC790\uB3D9\uD654] \uBC1C\uC8FC\uC11C \uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8 \uC2DC\uB3C4:`, {
+          resultSuccess: result.success,
+          sentEmails: result.sentEmails,
+          savedOrderNumbers: emailOptions.savedOrderNumbers?.length || 0,
+          singleOrderNumber: emailOptions.orderNumber || "none",
+          orderNumbersToUpdate: orderNumbersToUpdate.length
+        });
+        if (orderNumbersToUpdate.length > 0) {
+          try {
+            await this.updateMultipleOrderStatusToSent(orderNumbersToUpdate);
+            console.log(`\u2705 [Excel\uC790\uB3D9\uD654] \uBC1C\uC8FC\uC11C \uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8 \uC644\uB8CC: ${orderNumbersToUpdate.length}\uAC1C \uBC1C\uC8FC\uC11C \u2192 sent`);
+            console.log(`\u{1F4CB} \uC5C5\uB370\uC774\uD2B8\uB41C \uBC1C\uC8FC\uBC88\uD638\uB4E4:`, orderNumbersToUpdate);
+          } catch (updateError) {
+            console.error(`\u274C [Excel\uC790\uB3D9\uD654] \uBC1C\uC8FC\uC11C \uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8 \uC2E4\uD328:`, updateError);
+          }
+        } else {
+          console.log(`\u26A0\uFE0F [Excel\uC790\uB3D9\uD654] \uC5C5\uB370\uC774\uD2B8\uD560 \uBC1C\uC8FC\uBC88\uD638\uAC00 \uC5C6\uC74C`);
+        }
+      } else {
+        console.log(`\u26A0\uFE0F [Excel\uC790\uB3D9\uD654] \uBC1C\uC8FC\uC11C \uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8 \uC870\uAC74 \uBBF8\uCDA9\uC871:`, {
+          resultSuccess: result.success,
+          sentEmails: result.sentEmails
+        });
+      }
       DebugLogger.logFunctionExit("ExcelAutomationService.sendEmails", result);
       return result;
     } catch (error) {
@@ -13312,6 +14368,30 @@ var ExcelAutomationService = class {
     }
   }
   /**
+   * 발주서 상태를 'sent'로 업데이트하는 헬퍼 메소드
+   */
+  static async updateOrderStatusToSent(orderNumber) {
+    const { db: db2 } = await Promise.resolve().then(() => (init_db(), db_exports));
+    const { purchaseOrders: purchaseOrders3 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
+    const { eq: eq35 } = await import("drizzle-orm");
+    await db2.update(purchaseOrders3).set({
+      orderStatus: "sent",
+      updatedAt: /* @__PURE__ */ new Date()
+    }).where(eq35(purchaseOrders3.orderNumber, orderNumber));
+  }
+  /**
+   * 여러 발주서의 상태를 'sent'로 업데이트하는 헬퍼 메소드
+   */
+  static async updateMultipleOrderStatusToSent(orderNumbers) {
+    const { db: db2 } = await Promise.resolve().then(() => (init_db(), db_exports));
+    const { purchaseOrders: purchaseOrders3 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
+    const { inArray: inArray7 } = await import("drizzle-orm");
+    await db2.update(purchaseOrders3).set({
+      orderStatus: "sent",
+      updatedAt: /* @__PURE__ */ new Date()
+    }).where(inArray7(purchaseOrders3.orderNumber, orderNumbers));
+  }
+  /**
    * 거래처 선택 결과를 반영하여 이메일 미리보기 업데이트
    */
   static async updateEmailPreviewWithVendorSelection(filePath, selectedVendors) {
@@ -13324,8 +14404,8 @@ var ExcelAutomationService = class {
         new Set(selectedVendors.map((v) => v.selectedVendorEmail))
       ).filter((email) => email && email.trim());
       const timestamp2 = Date.now();
-      const processedPath = path8.join(
-        path8.dirname(filePath),
+      const processedPath = path9.join(
+        path9.dirname(filePath),
         `processed-${timestamp2}.xlsx`
       );
       await removeAllInputSheets(filePath, processedPath);
@@ -13354,15 +14434,15 @@ var ExcelAutomationService = class {
       } catch (pdfError) {
         console.error("\u26A0\uFE0F \uD1B5\uD569 PDF \uC11C\uBE44\uC2A4 \uC2E4\uD328 - Excel \uD30C\uC77C\uB9CC \uCCA8\uBD80\uB429\uB2C8\uB2E4:", pdfError);
       }
-      const stats = fs10.statSync(processedPath);
-      const pdfStats = pdfConversionSuccess && fs10.existsSync(pdfPath) ? fs10.statSync(pdfPath) : null;
+      const stats = fs11.statSync(processedPath);
+      const pdfStats = pdfConversionSuccess && fs11.existsSync(pdfPath) ? fs11.statSync(pdfPath) : null;
       return {
         recipients,
-        subject: `\uBC1C\uC8FC\uC11C - ${path8.basename(filePath, path8.extname(filePath))} (${(/* @__PURE__ */ new Date()).toLocaleDateString("ko-KR")})`,
+        subject: `\uBC1C\uC8FC\uC11C - ${path9.basename(filePath, path9.extname(filePath))} (${(/* @__PURE__ */ new Date()).toLocaleDateString("ko-KR")})`,
         attachmentInfo: {
-          originalFile: path8.basename(filePath),
-          processedFile: path8.basename(processedPath),
-          processedPdfFile: pdfStats ? path8.basename(pdfPath) : void 0,
+          originalFile: path9.basename(filePath),
+          processedFile: path9.basename(processedPath),
+          processedPdfFile: pdfStats ? path9.basename(pdfPath) : void 0,
           fileSize: stats.size,
           pdfFileSize: pdfStats ? pdfStats.size : void 0
         },
@@ -13389,8 +14469,8 @@ init_debug_logger();
 var storage2 = multer2.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir2 = process.env.VERCEL ? "/tmp" : "uploads";
-    if (!process.env.VERCEL && !fs11.existsSync(uploadDir2)) {
-      fs11.mkdirSync(uploadDir2, { recursive: true });
+    if (!process.env.VERCEL && !fs12.existsSync(uploadDir2)) {
+      fs12.mkdirSync(uploadDir2, { recursive: true });
     }
     cb(null, uploadDir2);
   },
@@ -13477,8 +14557,8 @@ router9.post("/upload-and-process", requireAuth, upload2.single("file"), async (
     const result = await ExcelAutomationService.processExcelUpload(filePath, userId);
     console.log(`\u2705 [API] ExcelAutomationService.processExcelUpload \uC644\uB8CC:`, result.success ? "\uC131\uACF5" : "\uC2E4\uD328");
     if (!result.success) {
-      if (fs11.existsSync(filePath)) {
-        fs11.unlinkSync(filePath);
+      if (fs12.existsSync(filePath)) {
+        fs12.unlinkSync(filePath);
       }
       clearTimeout(timeoutHandler);
       if (!responseHandled) {
@@ -13504,9 +14584,9 @@ router9.post("/upload-and-process", requireAuth, upload2.single("file"), async (
   } catch (error) {
     clearTimeout(timeoutHandler);
     console.error("\u274C [API] Excel \uC790\uB3D9\uD654 \uCC98\uB9AC \uC624\uB958:", error);
-    if (req.file?.path && fs11.existsSync(req.file.path)) {
+    if (req.file?.path && fs12.existsSync(req.file.path)) {
       console.log(`\u{1F5D1}\uFE0F [API] \uC624\uB958\uB85C \uC778\uD55C \uC784\uC2DC \uD30C\uC77C \uC815\uB9AC: ${req.file.path}`);
-      fs11.unlinkSync(req.file.path);
+      fs12.unlinkSync(req.file.path);
     }
     let errorMessage = "\uC11C\uBC84 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4.";
     let statusCode = 500;
@@ -13578,6 +14658,8 @@ router9.post("/send-emails", requireAuth, async (req, res) => {
     const {
       processedFilePath,
       recipients,
+      savedOrderNumbers = [],
+      orderIds = [],
       emailOptions = {}
     } = req.body;
     if (!processedFilePath) {
@@ -13592,7 +14674,7 @@ router9.post("/send-emails", requireAuth, async (req, res) => {
         error: "\uC774\uBA54\uC77C \uC218\uC2E0\uC790\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4."
       });
     }
-    if (!fs11.existsSync(processedFilePath)) {
+    if (!fs12.existsSync(processedFilePath)) {
       return res.status(400).json({
         success: false,
         error: "\uCC98\uB9AC\uB41C \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
@@ -13602,7 +14684,13 @@ router9.post("/send-emails", requireAuth, async (req, res) => {
     const sendResult = await ExcelAutomationService.sendEmails(
       processedFilePath,
       recipients,
-      emailOptions
+      {
+        ...emailOptions,
+        savedOrderNumbers,
+        // 발주번호들을 함께 전달
+        orderId: orderIds.length > 0 ? orderIds[0] : void 0
+        // 첫 번째 발주서 ID 전달
+      }
     );
     res.json({
       success: sendResult.success,
@@ -13621,7 +14709,7 @@ router9.post("/send-emails", requireAuth, async (req, res) => {
 router9.post("/validate-vendors", requireAuth, async (req, res) => {
   try {
     const { filePath } = req.body;
-    if (!filePath || !fs11.existsSync(filePath)) {
+    if (!filePath || !fs12.existsSync(filePath)) {
       return res.status(400).json({
         success: false,
         error: "\uC720\uD6A8\uD55C \uD30C\uC77C \uACBD\uB85C\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4."
@@ -13645,8 +14733,8 @@ router9.post("/validate-vendors", requireAuth, async (req, res) => {
 router9.get("/download/:filename", requireAuth, (req, res) => {
   try {
     const filename = req.params.filename;
-    const filePath = path9.join("uploads", filename);
-    if (!fs11.existsSync(filePath)) {
+    const filePath = path10.join("uploads", filename);
+    if (!fs12.existsSync(filePath)) {
       return res.status(404).json({
         success: false,
         error: "\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
@@ -13751,8 +14839,8 @@ router9.delete("/cleanup", requireAuth, async (req, res) => {
     const errors = [];
     for (const filePath of filePaths) {
       try {
-        if (fs11.existsSync(filePath)) {
-          fs11.unlinkSync(filePath);
+        if (fs12.existsSync(filePath)) {
+          fs12.unlinkSync(filePath);
           deletedCount++;
           console.log(`\u{1F5D1}\uFE0F \uD30C\uC77C \uC0AD\uC81C: ${filePath}`);
         }
@@ -13785,23 +14873,23 @@ init_po_template_processor_mock();
 init_debug_logger();
 import { Router as Router10 } from "express";
 import multer3 from "multer";
-import path13 from "path";
-import fs15 from "fs";
+import path14 from "path";
+import fs16 from "fs";
 import { fileURLToPath as fileURLToPath4 } from "url";
 
 // server/utils/po-email-service-mock.ts
 init_po_template_processor_mock();
-import nodemailer3 from "nodemailer";
-import path10 from "path";
-import fs12 from "fs";
+import nodemailer4 from "nodemailer";
+import path11 from "path";
+import fs13 from "fs";
 import { fileURLToPath as fileURLToPath3 } from "url";
 var __filename3 = fileURLToPath3(import.meta.url);
-var __dirname3 = path10.dirname(__filename3);
+var __dirname3 = path11.dirname(__filename3);
 var POEmailServiceMock = class {
   constructor() {
     this.transporter = null;
     if (process.env.SMTP_USER && process.env.SMTP_PASS) {
-      this.transporter = nodemailer3.createTransport({
+      this.transporter = nodemailer4.createTransport({
         host: process.env.SMTP_HOST || "smtp.naver.com",
         port: parseInt(process.env.SMTP_PORT || "587"),
         secure: false,
@@ -13822,8 +14910,8 @@ var POEmailServiceMock = class {
   async sendPOWithAttachments(originalFilePath, emailOptions) {
     try {
       const timestamp2 = Date.now();
-      const uploadsDir = path10.join(__dirname3, "../../uploads");
-      const extractedPath = path10.join(uploadsDir, `po-sheets-${timestamp2}.xlsx`);
+      const uploadsDir = path11.join(__dirname3, "../../uploads");
+      const extractedPath = path11.join(uploadsDir, `po-sheets-${timestamp2}.xlsx`);
       const extractResult = POTemplateProcessorMock.extractSheetsToFile(
         originalFilePath,
         extractedPath,
@@ -13836,7 +14924,7 @@ var POEmailServiceMock = class {
           error: `\uC2DC\uD2B8 \uCD94\uCD9C \uC2E4\uD328: ${extractResultData.error}`
         };
       }
-      const pdfPath = path10.join(uploadsDir, `po-sheets-${timestamp2}.pdf`);
+      const pdfPath = path11.join(uploadsDir, `po-sheets-${timestamp2}.pdf`);
       const pdfResult = await this.createDummyPDF(pdfPath);
       if (!pdfResult.success) {
         return {
@@ -13845,14 +14933,14 @@ var POEmailServiceMock = class {
         };
       }
       const attachments3 = [];
-      if (fs12.existsSync(extractedPath)) {
+      if (fs13.existsSync(extractedPath)) {
         attachments3.push({
           filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`,
           path: extractedPath,
           contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         });
       }
-      if (fs12.existsSync(pdfPath)) {
+      if (fs13.existsSync(pdfPath)) {
         attachments3.push({
           filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`,
           path: pdfPath,
@@ -13944,12 +15032,12 @@ var POEmailServiceMock = class {
     console.log("  \uC81C\uBAA9:", options.subject);
     console.log("  \uCCA8\uBD80\uD30C\uC77C:", options.attachments?.length || 0, "\uAC1C");
     console.log("  \uBC1C\uC1A1 \uC2DC\uAC04:", mockLog.timestamp);
-    const logDir = path10.join(__dirname3, "../../logs");
-    if (!fs12.existsSync(logDir)) {
-      fs12.mkdirSync(logDir, { recursive: true });
+    const logDir = path11.join(__dirname3, "../../logs");
+    if (!fs13.existsSync(logDir)) {
+      fs13.mkdirSync(logDir, { recursive: true });
     }
-    const logFile = path10.join(logDir, `mock-email-${Date.now()}.json`);
-    fs12.writeFileSync(logFile, JSON.stringify(mockLog, null, 2));
+    const logFile = path11.join(logDir, `mock-email-${Date.now()}.json`);
+    fs13.writeFileSync(logFile, JSON.stringify(mockLog, null, 2));
     return {
       success: true,
       messageId: `mock-${Date.now()}@po-management.local`,
@@ -14028,7 +15116,7 @@ trailer
 startxref
 456
 %%EOF`;
-      fs12.writeFileSync(pdfPath, pdfContent);
+      fs13.writeFileSync(pdfPath, pdfContent);
       return { success: true };
     } catch (error) {
       return {
@@ -14042,7 +15130,7 @@ startxref
    */
   getFileSize(filePath) {
     try {
-      const stats = fs12.statSync(filePath);
+      const stats = fs13.statSync(filePath);
       const bytes = stats.size;
       if (bytes === 0) return "0 Bytes";
       const k = 1024;
@@ -14236,9 +15324,9 @@ startxref
   cleanupTempFiles(filePaths) {
     filePaths.forEach((filePath) => {
       try {
-        if (fs12.existsSync(filePath)) {
-          fs12.unlinkSync(filePath);
-          console.log(`\u2705 \uC784\uC2DC \uD30C\uC77C \uC815\uB9AC: ${path10.basename(filePath)}`);
+        if (fs13.existsSync(filePath)) {
+          fs13.unlinkSync(filePath);
+          console.log(`\u2705 \uC784\uC2DC \uD30C\uC77C \uC815\uB9AC: ${path11.basename(filePath)}`);
         }
       } catch (error) {
         console.error(`\u274C \uD30C\uC77C \uC815\uB9AC \uC2E4\uD328: ${filePath}`, error);
@@ -14274,15 +15362,15 @@ startxref
 
 // server/utils/excel-to-pdf-mock.ts
 import XLSX5 from "xlsx";
-import path11 from "path";
-import fs13 from "fs";
+import path12 from "path";
+import fs14 from "fs";
 var ExcelToPdfConverterMock = class {
   /**
    * Excel 파일을 PDF로 변환 (Mock 버전)
    */
   static async convertToPdf(excelPath, options = {}) {
     try {
-      if (!fs13.existsSync(excelPath)) {
+      if (!fs14.existsSync(excelPath)) {
         return {
           success: false,
           error: "Excel \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
@@ -14311,7 +15399,7 @@ var ExcelToPdfConverterMock = class {
    */
   static async convertSheetsToPdf(excelPath, sheetNames, options = {}) {
     try {
-      if (!fs13.existsSync(excelPath)) {
+      if (!fs14.existsSync(excelPath)) {
         return {
           success: false,
           error: "Excel \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
@@ -14415,8 +15503,8 @@ trailer
 startxref
 589
 %%EOF`;
-      fs13.writeFileSync(pdfPath, pdfContent);
-      console.log(`\u{1F4C4} Mock PDF \uC0DD\uC131 \uC644\uB8CC: ${path11.basename(pdfPath)}`);
+      fs14.writeFileSync(pdfPath, pdfContent);
+      console.log(`\u{1F4C4} Mock PDF \uC0DD\uC131 \uC644\uB8CC: ${path12.basename(pdfPath)}`);
       return { success: true };
     } catch (error) {
       return {
@@ -14580,8 +15668,8 @@ async function convertExcelToPdfMock(excelPath, outputPath, sheetsOnly) {
 
 // server/utils/po-template-validator.ts
 import XLSX6 from "xlsx";
-import fs14 from "fs";
-import path12 from "path";
+import fs15 from "fs";
+import path13 from "path";
 var POTemplateValidator = class {
   static {
     this.REQUIRED_COLUMNS = [
@@ -14698,12 +15786,12 @@ var POTemplateValidator = class {
       }
     };
     try {
-      if (!fs14.existsSync(filePath)) {
+      if (!fs15.existsSync(filePath)) {
         result.isValid = false;
         result.errors.push("\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.");
         return result;
       }
-      const ext = path12.extname(filePath).toLowerCase();
+      const ext = path13.extname(filePath).toLowerCase();
       if (![".xlsx", ".xlsm", ".xls"].includes(ext)) {
         result.isValid = false;
         result.errors.push("\uC9C0\uC6D0\uD558\uC9C0 \uC54A\uB294 \uD30C\uC77C \uD615\uC2DD\uC785\uB2C8\uB2E4. Excel \uD30C\uC77C(.xlsx, .xlsm, .xls)\uB9CC \uC9C0\uC6D0\uB429\uB2C8\uB2E4.");
@@ -14940,7 +16028,7 @@ var POTemplateValidator = class {
       errors: []
     };
     try {
-      if (!fs14.existsSync(filePath)) {
+      if (!fs15.existsSync(filePath)) {
         result.isValid = false;
         result.errors.push("\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.");
         return result;
@@ -14972,26 +16060,26 @@ var POTemplateValidator = class {
 // server/routes/po-template-real.ts
 init_db();
 init_schema();
-import { eq as eq11 } from "drizzle-orm";
+import { eq as eq14 } from "drizzle-orm";
 var router10 = Router10();
 router10.get("/test", (req, res) => {
   res.json({ message: "PO Template router is working!", timestamp: /* @__PURE__ */ new Date() });
 });
 var __filename4 = fileURLToPath4(import.meta.url);
-var __dirname4 = path13.dirname(__filename4);
+var __dirname4 = path14.dirname(__filename4);
 var storage3 = multer3.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir2 = process.env.VERCEL ? "/tmp" : path13.join(__dirname4, "../../uploads");
-    if (!process.env.VERCEL && !fs15.existsSync(uploadDir2)) {
-      fs15.mkdirSync(uploadDir2, { recursive: true });
+    const uploadDir2 = process.env.VERCEL ? "/tmp" : path14.join(__dirname4, "../../uploads");
+    if (!process.env.VERCEL && !fs16.existsSync(uploadDir2)) {
+      fs16.mkdirSync(uploadDir2, { recursive: true });
     }
     cb(null, uploadDir2);
   },
   filename: (req, file, cb) => {
     const timestamp2 = Date.now();
     const originalName = Buffer.from(file.originalname, "latin1").toString("utf8");
-    const extension = path13.extname(originalName);
-    const basename = path13.basename(originalName, extension);
+    const extension = path14.extname(originalName);
+    const basename = path14.basename(originalName, extension);
     cb(null, `${timestamp2}-${basename}${extension}`);
   }
 });
@@ -15115,7 +16203,7 @@ router10.post("/upload", simpleAuth, upload3.single("file"), async (req, res) =>
     });
     if (!quickValidation.isValid) {
       console.error("\u274C [\uC11C\uBC84] \uC720\uD6A8\uC131 \uAC80\uC0AC \uC2E4\uD328");
-      fs15.unlinkSync(filePath);
+      fs16.unlinkSync(filePath);
       clearTimeout(timeoutId);
       return responseHandler.send(400, {
         success: false,
@@ -15134,7 +16222,7 @@ router10.post("/upload", simpleAuth, upload3.single("file"), async (req, res) =>
     });
     if (!parseResult.success) {
       console.error("\u274C [\uC11C\uBC84] \uD30C\uC2F1 \uC2E4\uD328:", parseResult.error);
-      fs15.unlinkSync(filePath);
+      fs16.unlinkSync(filePath);
       clearTimeout(timeoutId);
       return responseHandler.send(400, {
         success: false,
@@ -15175,9 +16263,9 @@ router10.post("/upload", simpleAuth, upload3.single("file"), async (req, res) =>
       endpoint: "/api/po-template/upload",
       elapsedTime: Date.now() - startTime
     });
-    if (req.file && fs15.existsSync(req.file.path)) {
+    if (req.file && fs16.existsSync(req.file.path)) {
       console.log("\u{1F5D1}\uFE0F [\uC11C\uBC84] \uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C:", req.file.path);
-      fs15.unlinkSync(req.file.path);
+      fs16.unlinkSync(req.file.path);
     }
     clearTimeout(timeoutId);
     responseHandler.send(500, {
@@ -15203,7 +16291,7 @@ router10.post("/save", simpleAuth, async (req, res) => {
       try {
         let savedOrders = 0;
         for (const orderData of orders) {
-          let vendor = await db.select().from(vendors).where(eq11(vendors.name, orderData.vendorName)).limit(1);
+          let vendor = await db.select().from(vendors).where(eq14(vendors.name, orderData.vendorName)).limit(1);
           let vendorId;
           if (vendor.length === 0) {
             const newVendor = await db.insert(vendors).values({
@@ -15216,7 +16304,7 @@ router10.post("/save", simpleAuth, async (req, res) => {
           } else {
             vendorId = vendor[0].id;
           }
-          let project = await db.select().from(projects).where(eq11(projects.projectName, orderData.siteName)).limit(1);
+          let project = await db.select().from(projects).where(eq14(projects.projectName, orderData.siteName)).limit(1);
           let projectId;
           if (project.length === 0) {
             const newProject = await db.insert(projects).values({
@@ -15232,7 +16320,7 @@ router10.post("/save", simpleAuth, async (req, res) => {
           let suffix = 1;
           while (true) {
             try {
-              const existing = await db.select().from(purchaseOrders).where(eq11(purchaseOrders.orderNumber, orderNumber));
+              const existing = await db.select().from(purchaseOrders).where(eq14(purchaseOrders.orderNumber, orderNumber));
               if (existing.length === 0) {
                 break;
               }
@@ -15365,12 +16453,12 @@ router10.post("/extract-sheets", simpleAuth, async (req, res) => {
     if (!filePath) {
       return res.status(400).json({ error: "\uD30C\uC77C \uACBD\uB85C\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4." });
     }
-    if (!fs15.existsSync(filePath)) {
+    if (!fs16.existsSync(filePath)) {
       return res.status(400).json({ error: "\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4." });
     }
     const timestamp2 = Date.now();
-    const extractedPath = path13.join(
-      path13.dirname(filePath),
+    const extractedPath = path14.join(
+      path14.dirname(filePath),
       `extracted-${timestamp2}.xlsx`
     );
     const extractResult = await POTemplateProcessorMock.extractSheetsToFile(
@@ -15486,11 +16574,11 @@ router10.post("/send-email", simpleAuth, async (req, res) => {
         error: "\uD544\uC218 \uB370\uC774\uD130\uAC00 \uB204\uB77D\uB418\uC5C8\uC2B5\uB2C8\uB2E4. (filePath, to, subject \uD544\uC218)"
       });
     }
-    if (!fs15.existsSync(filePath)) {
+    if (!fs16.existsSync(filePath)) {
       return res.status(400).json({ error: "\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4." });
     }
-    const emailService3 = new POEmailServiceMock();
-    const emailResult = await emailService3.sendPOWithAttachments(filePath, {
+    const emailService4 = new POEmailServiceMock();
+    const emailResult = await emailService4.sendPOWithAttachments(filePath, {
       to,
       cc,
       bcc,
@@ -15507,6 +16595,20 @@ router10.post("/send-email", simpleAuth, async (req, res) => {
         error: "\uC774\uBA54\uC77C \uBC1C\uC1A1 \uC2E4\uD328",
         details: emailResult.error
       });
+    }
+    if (emailResult.success && orderNumber) {
+      try {
+        const { db: db2 } = await Promise.resolve().then(() => (init_db(), db_exports));
+        const { purchaseOrders: purchaseOrders3 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
+        const { eq: eq35 } = await import("drizzle-orm");
+        await db2.update(purchaseOrders3).set({
+          orderStatus: "sent",
+          updatedAt: /* @__PURE__ */ new Date()
+        }).where(eq35(purchaseOrders3.orderNumber, orderNumber));
+        console.log(`\u{1F4CB} \uBC1C\uC8FC\uC11C \uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8 \uC644\uB8CC: ${orderNumber} \u2192 sent`);
+      } catch (updateError) {
+        console.error(`\u274C \uBC1C\uC8FC\uC11C \uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8 \uC2E4\uD328: ${orderNumber}`, updateError);
+      }
     }
     res.json({
       success: true,
@@ -15532,12 +16634,12 @@ router10.post("/convert-to-pdf", simpleAuth, async (req, res) => {
     if (!filePath) {
       return res.status(400).json({ error: "\uD30C\uC77C \uACBD\uB85C\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4." });
     }
-    if (!fs15.existsSync(filePath)) {
+    if (!fs16.existsSync(filePath)) {
       return res.status(400).json({ error: "\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4." });
     }
     const timestamp2 = Date.now();
-    const pdfPath = outputPath || path13.join(
-      path13.dirname(filePath),
+    const pdfPath = outputPath || path14.join(
+      path14.dirname(filePath),
       `po-sheets-${timestamp2}.pdf`
     );
     const pdfResult = await convertExcelToPdfMock(filePath, pdfPath, ["\uAC11\uC9C0", "\uC744\uC9C0"]);
@@ -15590,7 +16692,7 @@ router10.post("/process-complete", simpleAuth, upload3.single("file"), async (re
     const validation = await POTemplateValidator.validatePOTemplateFile(filePath);
     results.validation = validation;
     if (!validation.isValid) {
-      fs15.unlinkSync(filePath);
+      fs16.unlinkSync(filePath);
       return res.status(400).json({
         error: "\uC720\uD6A8\uC131 \uAC80\uC0AC \uC2E4\uD328",
         details: validation.errors.join(", "),
@@ -15601,7 +16703,7 @@ router10.post("/process-complete", simpleAuth, upload3.single("file"), async (re
     const parseResult = POTemplateProcessorMock.parseInputSheet(filePath);
     results.parsing = parseResult;
     if (!parseResult.success) {
-      fs15.unlinkSync(filePath);
+      fs16.unlinkSync(filePath);
       return res.status(400).json({
         error: "\uD30C\uC2F1 \uC2E4\uD328",
         details: parseResult.error,
@@ -15613,8 +16715,8 @@ router10.post("/process-complete", simpleAuth, upload3.single("file"), async (re
     results.saving = saveResult;
     console.log("\u{1F4CB} 4\uB2E8\uACC4: \uAC11\uC9C0/\uC744\uC9C0 \uC2DC\uD2B8 \uCD94\uCD9C");
     const timestamp2 = Date.now();
-    const extractedPath = path13.join(
-      path13.dirname(filePath),
+    const extractedPath = path14.join(
+      path14.dirname(filePath),
       `extracted-${timestamp2}.xlsx`
     );
     const extractResult = await POTemplateProcessorMock.extractSheetsToFile(
@@ -15625,8 +16727,8 @@ router10.post("/process-complete", simpleAuth, upload3.single("file"), async (re
     results.extraction = extractResult;
     if (generatePDF) {
       console.log("\u{1F4C4} 5\uB2E8\uACC4: PDF \uBCC0\uD658");
-      const pdfPath = path13.join(
-        path13.dirname(filePath),
+      const pdfPath = path14.join(
+        path14.dirname(filePath),
         `po-sheets-${timestamp2}.pdf`
       );
       const pdfResult = await convertExcelToPdfMock(extractedPath, pdfPath);
@@ -15634,8 +16736,8 @@ router10.post("/process-complete", simpleAuth, upload3.single("file"), async (re
     }
     if (sendEmail && emailTo && emailSubject) {
       console.log("\u{1F4E7} 6\uB2E8\uACC4: \uC774\uBA54\uC77C \uBC1C\uC1A1");
-      const emailService3 = new POEmailServiceMock();
-      const emailResult = await emailService3.sendPOWithAttachments(extractedPath, {
+      const emailService4 = new POEmailServiceMock();
+      const emailResult = await emailService4.sendPOWithAttachments(extractedPath, {
         to: emailTo,
         subject: emailSubject,
         orderNumber: parseResult.orders[0]?.orderNumber,
@@ -15667,8 +16769,8 @@ router10.post("/process-complete", simpleAuth, upload3.single("file"), async (re
     });
   } catch (error) {
     console.error("\uD1B5\uD569 \uCC98\uB9AC \uC624\uB958:", error);
-    if (req.file && fs15.existsSync(req.file.path)) {
-      fs15.unlinkSync(req.file.path);
+    if (req.file && fs16.existsSync(req.file.path)) {
+      fs16.unlinkSync(req.file.path);
     }
     res.status(500).json({
       error: "\uC11C\uBC84 \uC624\uB958",
@@ -15678,8 +16780,8 @@ router10.post("/process-complete", simpleAuth, upload3.single("file"), async (re
 });
 router10.get("/test-email", simpleAuth, async (req, res) => {
   try {
-    const emailService3 = new POEmailServiceMock();
-    const testResult = await emailService3.testConnection();
+    const emailService4 = new POEmailServiceMock();
+    const testResult = await emailService4.testConnection();
     res.json({
       success: true,
       message: testResult.mockMode ? "\uC774\uBA54\uC77C Mock \uBAA8\uB4DC \uC815\uC0C1" : "\uC774\uBA54\uC77C \uC11C\uBC84 \uC5F0\uACB0 \uC131\uACF5",
@@ -15716,7 +16818,7 @@ router10.saveToDatabase = async function(orders, userId) {
     try {
       let savedOrders = 0;
       for (const orderData of orders) {
-        let vendor = await db.select().from(vendors).where(eq11(vendors.name, orderData.vendorName)).limit(1);
+        let vendor = await db.select().from(vendors).where(eq14(vendors.name, orderData.vendorName)).limit(1);
         let vendorId;
         if (vendor.length === 0) {
           const newVendor = await db.insert(vendors).values({
@@ -15729,7 +16831,7 @@ router10.saveToDatabase = async function(orders, userId) {
         } else {
           vendorId = vendor[0].id;
         }
-        let project = await db.select().from(projects).where(eq11(projects.projectName, orderData.siteName)).limit(1);
+        let project = await db.select().from(projects).where(eq14(projects.projectName, orderData.siteName)).limit(1);
         let projectId;
         if (project.length === 0) {
           const newProject = await db.insert(projects).values({
@@ -15802,7 +16904,7 @@ var po_template_real_default = router10;
 import { Router as Router11 } from "express";
 init_db();
 init_schema();
-import { eq as eq12, sql as sql7, and as and6, gte as gte4, lte as lte4, inArray as inArray2 } from "drizzle-orm";
+import { eq as eq15, sql as sql8, and as and6, gte as gte4, lte as lte4, inArray as inArray3 } from "drizzle-orm";
 import * as XLSX7 from "xlsx";
 var formatKoreanWon = (amount) => {
   return `\u20A9${amount.toLocaleString("ko-KR")}`;
@@ -15812,19 +16914,19 @@ router11.get("/debug-data", async (req, res) => {
   try {
     console.log("Debug data endpoint called");
     const orderCount = await db.select({
-      count: sql7`count(*)`
+      count: sql8`count(*)`
     }).from(purchaseOrders);
     const itemCount = await db.select({
-      count: sql7`count(*)`
+      count: sql8`count(*)`
     }).from(purchaseOrderItems);
     const itemsWithCategories = await db.select({
-      count: sql7`count(*)`,
-      withMajor: sql7`count(${items.majorCategory})`,
-      withMiddle: sql7`count(${items.middleCategory})`,
-      withMinor: sql7`count(${items.minorCategory})`
+      count: sql8`count(*)`,
+      withMajor: sql8`count(${items.majorCategory})`,
+      withMiddle: sql8`count(${items.middleCategory})`,
+      withMinor: sql8`count(${items.minorCategory})`
     }).from(items);
     const vendorCount = await db.select({
-      count: sql7`count(*)`
+      count: sql8`count(*)`
     }).from(vendors);
     const sampleOrders = await db.select().from(purchaseOrders).limit(3);
     const sampleItems = await db.select().from(purchaseOrderItems).limit(3);
@@ -15865,7 +16967,7 @@ router11.get("/debug-processing", async (req, res) => {
       totalAmount: purchaseOrders.totalAmount,
       projectName: projects.projectName,
       vendorName: vendors.name
-    }).from(purchaseOrders).leftJoin(projects, eq12(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq12(purchaseOrders.vendorId, vendors.id)).limit(10);
+    }).from(purchaseOrders).leftJoin(projects, eq15(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq15(purchaseOrders.vendorId, vendors.id)).limit(10);
     res.json({
       totalOrders: allOrders.length,
       ordersWithoutJoins: allOrders,
@@ -15916,16 +17018,16 @@ router11.get("/by-category", async (req, res) => {
       orderStatus: purchaseOrders.status,
       specification: purchaseOrderItems.specification,
       unitPrice: purchaseOrderItems.unitPrice
-    }).from(purchaseOrderItems).innerJoin(purchaseOrders, eq12(purchaseOrderItems.orderId, purchaseOrders.id));
+    }).from(purchaseOrderItems).innerJoin(purchaseOrders, eq15(purchaseOrderItems.orderId, purchaseOrders.id));
     const filters = [...dateFilters];
     if (majorCategory && majorCategory !== "all") {
-      filters.push(eq12(purchaseOrderItems.majorCategory, majorCategory));
+      filters.push(eq15(purchaseOrderItems.majorCategory, majorCategory));
     }
     if (middleCategory && middleCategory !== "all") {
-      filters.push(eq12(purchaseOrderItems.middleCategory, middleCategory));
+      filters.push(eq15(purchaseOrderItems.middleCategory, middleCategory));
     }
     if (minorCategory && minorCategory !== "all") {
-      filters.push(eq12(purchaseOrderItems.minorCategory, minorCategory));
+      filters.push(eq15(purchaseOrderItems.minorCategory, minorCategory));
     }
     if (filters.length > 0) {
       query = query.where(and6(...filters));
@@ -16023,7 +17125,7 @@ router11.get("/by-project", requireAuth, async (req, res) => {
     const { startDate, endDate, projectId } = req.query;
     const filters = parseDateFilters(startDate, endDate);
     if (projectId) {
-      filters.push(eq12(purchaseOrders.projectId, parseInt(projectId)));
+      filters.push(eq15(purchaseOrders.projectId, parseInt(projectId)));
     }
     const ordersWithProjects = await db.select({
       projectId: projects.id,
@@ -16037,7 +17139,7 @@ router11.get("/by-project", requireAuth, async (req, res) => {
       orderStatus: purchaseOrders.status,
       vendorId: purchaseOrders.vendorId,
       vendorName: vendors.name
-    }).from(purchaseOrders).innerJoin(projects, eq12(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq12(purchaseOrders.vendorId, vendors.id)).where(filters.length > 0 ? and6(...filters) : void 0);
+    }).from(purchaseOrders).innerJoin(projects, eq15(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq15(purchaseOrders.vendorId, vendors.id)).where(filters.length > 0 ? and6(...filters) : void 0);
     const projectReport = ordersWithProjects.reduce((acc, order) => {
       const projectKey = order.projectId;
       if (!acc[projectKey]) {
@@ -16119,7 +17221,7 @@ router11.get("/by-vendor", async (req, res) => {
       projectName: projects.projectName,
       originalVendorId: purchaseOrders.vendorId
       // Add original vendorId for null check
-    }).from(purchaseOrders).leftJoin(vendors, eq12(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq12(purchaseOrders.projectId, projects.id));
+    }).from(purchaseOrders).leftJoin(vendors, eq15(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq15(purchaseOrders.projectId, projects.id));
     if (filters.length > 0) {
       vendorQuery = vendorQuery.where(and6(...filters));
     }
@@ -16132,7 +17234,7 @@ router11.get("/by-vendor", async (req, res) => {
       majorCategory: purchaseOrderItems.majorCategory,
       quantity: purchaseOrderItems.quantity,
       totalAmount: purchaseOrderItems.totalAmount
-    }).from(purchaseOrderItems).where(inArray2(purchaseOrderItems.orderId, orderIds));
+    }).from(purchaseOrderItems).where(inArray3(purchaseOrderItems.orderId, orderIds));
     const vendorReport = ordersWithVendors.reduce((acc, order) => {
       const vendorKey = order.vendorId || "unassigned";
       if (!acc[vendorKey]) {
@@ -16460,21 +17562,21 @@ router11.get("/processing", requireAuth, async (req, res) => {
       );
     }
     if (status && status !== "all" && status !== "") {
-      filters.push(eq12(purchaseOrders.status, status));
+      filters.push(eq15(purchaseOrders.status, status));
     }
     if (projectId && projectId !== "all" && projectId !== "") {
-      filters.push(eq12(purchaseOrders.projectId, parseInt(projectId)));
+      filters.push(eq15(purchaseOrders.projectId, parseInt(projectId)));
     }
     if (vendorId && vendorId !== "all" && vendorId !== "") {
-      filters.push(eq12(purchaseOrders.vendorId, parseInt(vendorId)));
+      filters.push(eq15(purchaseOrders.vendorId, parseInt(vendorId)));
     }
     console.log(`Processing report filters count: ${filters.length}`);
-    let ordersQuery = db.select().from(purchaseOrders).leftJoin(projects, eq12(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq12(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq12(purchaseOrders.userId, users.id));
+    let ordersQuery = db.select().from(purchaseOrders).leftJoin(projects, eq15(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq15(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq15(purchaseOrders.userId, users.id));
     if (filters.length > 0) {
       ordersQuery = ordersQuery.where(and6(...filters));
     }
     if (search && search !== "") {
-      const searchFilter = sql7`(
+      const searchFilter = sql8`(
         ${purchaseOrders.orderNumber} ILIKE ${`%${search}%`} OR
         ${vendors.name} ILIKE ${`%${search}%`} OR
         ${projects.projectName} ILIKE ${`%${search}%`} OR
@@ -16541,17 +17643,17 @@ router11.get("/processing", requireAuth, async (req, res) => {
         totalAmount: purchaseOrderItems.totalAmount,
         unit: purchaseOrderItems.unit,
         notes: purchaseOrderItems.notes
-      }).from(purchaseOrderItems).where(inArray2(purchaseOrderItems.orderId, orderIds));
+      }).from(purchaseOrderItems).where(inArray3(purchaseOrderItems.orderId, orderIds));
       const ordersWithItems = flatOrders.map((order) => ({
         ...order,
         items: orderItems.filter((item) => item.orderId === order.id)
       }));
-      let countQuery = db.select({ count: sql7`count(*)` }).from(purchaseOrders).leftJoin(projects, eq12(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq12(purchaseOrders.vendorId, vendors.id));
+      let countQuery = db.select({ count: sql8`count(*)` }).from(purchaseOrders).leftJoin(projects, eq15(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq15(purchaseOrders.vendorId, vendors.id));
       if (filters.length > 0) {
         countQuery = countQuery.where(and6(...filters));
       }
       if (search && search !== "") {
-        const searchFilter = sql7`(
+        const searchFilter = sql8`(
           ${purchaseOrders.orderNumber} ILIKE ${`%${search}%`} OR
           ${vendors.name} ILIKE ${`%${search}%`} OR
           ${projects.projectName} ILIKE ${`%${search}%`} OR
@@ -16603,32 +17705,32 @@ router11.get("/summary", requireAuth, async (req, res) => {
     const { startDate, endDate } = req.query;
     const dateFilters = parseDateFilters(startDate, endDate);
     const ordersSummary = await db.select({
-      totalOrders: sql7`count(*)`,
-      totalAmount: sql7`sum(${purchaseOrders.totalAmount})`,
-      avgAmount: sql7`avg(${purchaseOrders.totalAmount})`
+      totalOrders: sql8`count(*)`,
+      totalAmount: sql8`sum(${purchaseOrders.totalAmount})`,
+      avgAmount: sql8`avg(${purchaseOrders.totalAmount})`
     }).from(purchaseOrders).where(dateFilters.length > 0 ? and6(...dateFilters) : void 0);
     const statusBreakdown = await db.select({
       status: purchaseOrders.status,
-      count: sql7`count(*)`,
-      totalAmount: sql7`sum(${purchaseOrders.totalAmount})`
+      count: sql8`count(*)`,
+      totalAmount: sql8`sum(${purchaseOrders.totalAmount})`
     }).from(purchaseOrders).where(and6(...dateFilters)).groupBy(purchaseOrders.status);
     const topVendors = await db.select({
       vendorId: vendors.id,
       vendorName: vendors.name,
-      orderCount: sql7`count(${purchaseOrders.id})`,
-      totalAmount: sql7`sum(${purchaseOrders.totalAmount})`
-    }).from(purchaseOrders).innerJoin(vendors, eq12(purchaseOrders.vendorId, vendors.id)).where(and6(...dateFilters)).groupBy(vendors.id, vendors.name).orderBy(sql7`sum(${purchaseOrders.totalAmount}) desc`).limit(10);
+      orderCount: sql8`count(${purchaseOrders.id})`,
+      totalAmount: sql8`sum(${purchaseOrders.totalAmount})`
+    }).from(purchaseOrders).innerJoin(vendors, eq15(purchaseOrders.vendorId, vendors.id)).where(and6(...dateFilters)).groupBy(vendors.id, vendors.name).orderBy(sql8`sum(${purchaseOrders.totalAmount}) desc`).limit(10);
     const topProjects = await db.select({
       projectId: projects.id,
       projectName: projects.projectName,
-      orderCount: sql7`count(${purchaseOrders.id})`,
-      totalAmount: sql7`sum(${purchaseOrders.totalAmount})`
-    }).from(purchaseOrders).innerJoin(projects, eq12(purchaseOrders.projectId, projects.id)).where(and6(...dateFilters)).groupBy(projects.id, projects.projectName).orderBy(sql7`sum(${purchaseOrders.totalAmount}) desc`).limit(10);
+      orderCount: sql8`count(${purchaseOrders.id})`,
+      totalAmount: sql8`sum(${purchaseOrders.totalAmount})`
+    }).from(purchaseOrders).innerJoin(projects, eq15(purchaseOrders.projectId, projects.id)).where(and6(...dateFilters)).groupBy(projects.id, projects.projectName).orderBy(sql8`sum(${purchaseOrders.totalAmount}) desc`).limit(10);
     const monthlyTrend = await db.select({
-      month: sql7`to_char(${purchaseOrders.orderDate}, 'YYYY-MM')`,
-      orderCount: sql7`count(*)`,
-      totalAmount: sql7`sum(${purchaseOrders.totalAmount})`
-    }).from(purchaseOrders).where(and6(...dateFilters)).groupBy(sql7`to_char(${purchaseOrders.orderDate}, 'YYYY-MM')`).orderBy(sql7`to_char(${purchaseOrders.orderDate}, 'YYYY-MM')`);
+      month: sql8`to_char(${purchaseOrders.orderDate}, 'YYYY-MM')`,
+      orderCount: sql8`count(*)`,
+      totalAmount: sql8`sum(${purchaseOrders.totalAmount})`
+    }).from(purchaseOrders).where(and6(...dateFilters)).groupBy(sql8`to_char(${purchaseOrders.orderDate}, 'YYYY-MM')`).orderBy(sql8`to_char(${purchaseOrders.orderDate}, 'YYYY-MM')`);
     res.json({
       period: {
         startDate: startDate || "all",
@@ -16655,8 +17757,8 @@ init_db();
 init_schema();
 import * as XLSX8 from "xlsx";
 import Papa from "papaparse";
-import { eq as eq13 } from "drizzle-orm";
-import fs16 from "fs";
+import { eq as eq16 } from "drizzle-orm";
+import fs17 from "fs";
 var ImportExportService = class {
   // Parse Excel file
   static parseExcelFile(filePath) {
@@ -16669,7 +17771,7 @@ var ImportExportService = class {
   // Parse CSV file
   static parseCSVFile(filePath) {
     return new Promise((resolve2, reject) => {
-      const fileContent = fs16.readFileSync(filePath, "utf8");
+      const fileContent = fs17.readFileSync(filePath, "utf8");
       Papa.parse(fileContent, {
         header: true,
         complete: (results) => {
@@ -16927,7 +18029,7 @@ var ImportExportService = class {
   }
   // Export Methods
   static async exportVendors(format4) {
-    const vendorData = await db.select().from(vendors).where(eq13(vendors.isActive, true));
+    const vendorData = await db.select().from(vendors).where(eq16(vendors.isActive, true));
     const exportData = vendorData.map((vendor) => ({
       "\uAC70\uB798\uCC98\uBA85": vendor.name,
       "\uAC70\uB798\uCC98\uCF54\uB4DC": vendor.vendorCode || "",
@@ -16954,7 +18056,7 @@ var ImportExportService = class {
     }
   }
   static async exportItems(format4) {
-    const itemData = await db.select().from(items).where(eq13(items.isActive, true));
+    const itemData = await db.select().from(items).where(eq16(items.isActive, true));
     const exportData = itemData.map((item) => ({
       "\uD488\uBAA9\uBA85": item.name,
       "\uADDC\uACA9": item.specification || "",
@@ -16980,7 +18082,7 @@ var ImportExportService = class {
     }
   }
   static async exportProjects(format4) {
-    const projectData = await db.select().from(projects).where(eq13(projects.isActive, true));
+    const projectData = await db.select().from(projects).where(eq16(projects.isActive, true));
     const typeMap = {
       "commercial": "\uC0C1\uC5C5\uC2DC\uC124",
       "residential": "\uC8FC\uAC70\uC2DC\uC124",
@@ -17040,7 +18142,7 @@ var ImportExportService = class {
       middleCategory: purchaseOrderItems.middleCategory,
       minorCategory: purchaseOrderItems.minorCategory,
       itemNotes: purchaseOrderItems.notes
-    }).from(purchaseOrders).leftJoin(purchaseOrderItems, eq13(purchaseOrders.id, purchaseOrderItems.orderId)).where(eq13(purchaseOrders.isActive, true));
+    }).from(purchaseOrders).leftJoin(purchaseOrderItems, eq16(purchaseOrders.id, purchaseOrderItems.orderId)).where(eq16(purchaseOrders.isActive, true));
     const statusMap = {
       "pending": "\uB300\uAE30",
       "approved": "\uC2B9\uC778",
@@ -17161,8 +18263,8 @@ var ImportExportService = class {
 
 // server/routes/import-export.ts
 import multer4 from "multer";
-import fs17 from "fs";
-import path14 from "path";
+import fs18 from "fs";
+import path15 from "path";
 var upload4 = multer4({
   dest: "uploads/",
   limits: {
@@ -17184,7 +18286,7 @@ var upload4 = multer4({
 });
 var router12 = Router12();
 var getFileType = (filename) => {
-  const ext = path14.extname(filename).toLowerCase();
+  const ext = path15.extname(filename).toLowerCase();
   return ext === ".csv" ? "csv" : "excel";
 };
 router12.post("/import/vendors", requireAuth, upload4.single("file"), async (req, res) => {
@@ -17194,7 +18296,7 @@ router12.post("/import/vendors", requireAuth, upload4.single("file"), async (req
     }
     const fileType = getFileType(req.file.filename);
     const result = await ImportExportService.importVendors(req.file.path, fileType);
-    fs17.unlinkSync(req.file.path);
+    fs18.unlinkSync(req.file.path);
     res.json({
       message: "Vendor import completed",
       imported: result.imported,
@@ -17213,7 +18315,7 @@ router12.post("/import/items", requireAuth, upload4.single("file"), async (req, 
     }
     const fileType = getFileType(req.file.filename);
     const result = await ImportExportService.importItems(req.file.path, fileType);
-    fs17.unlinkSync(req.file.path);
+    fs18.unlinkSync(req.file.path);
     res.json({
       message: "Item import completed",
       imported: result.imported,
@@ -17232,7 +18334,7 @@ router12.post("/import/projects", requireAuth, upload4.single("file"), async (re
     }
     const fileType = getFileType(req.file.filename);
     const result = await ImportExportService.importProjects(req.file.path, fileType);
-    fs17.unlinkSync(req.file.path);
+    fs18.unlinkSync(req.file.path);
     res.json({
       message: "Project import completed",
       imported: result.imported,
@@ -17251,7 +18353,7 @@ router12.post("/import/purchase_orders", requireAuth, upload4.single("file"), as
     }
     const fileType = getFileType(req.file.filename);
     const result = await ImportExportService.importPurchaseOrders(req.file.path, fileType);
-    fs17.unlinkSync(req.file.path);
+    fs18.unlinkSync(req.file.path);
     res.json({
       message: "Purchase order import completed",
       imported: result.imported,
@@ -17348,7 +18450,7 @@ var import_export_default = router12;
 init_db();
 init_schema();
 import { Router as Router13 } from "express";
-import { eq as eq14, desc as desc5, sql as sql8 } from "drizzle-orm";
+import { eq as eq17, desc as desc6, sql as sql9 } from "drizzle-orm";
 import { z as z2 } from "zod";
 var router13 = Router13();
 var createEmailHistorySchema = z2.object({
@@ -17375,7 +18477,7 @@ router13.get("/orders/:orderId/email-history", requireAuth, async (req, res) => 
       return res.status(400).json({ error: "Invalid order ID" });
     }
     const order = await db.query.purchaseOrders.findFirst({
-      where: eq14(purchaseOrders.id, orderId)
+      where: eq17(purchaseOrders.id, orderId)
     });
     if (!order) {
       return res.status(404).json({ error: "Order not found" });
@@ -17400,7 +18502,7 @@ router13.get("/orders/:orderId/email-history", requireAuth, async (req, res) => 
       trackingId: emailSendHistory.trackingId,
       emailProvider: emailSendHistory.emailProvider,
       messageId: emailSendHistory.messageId
-    }).from(emailSendHistory).leftJoin(users, eq14(emailSendHistory.sentBy, users.id)).where(eq14(emailSendHistory.orderId, orderId)).orderBy(desc5(emailSendHistory.sentAt));
+    }).from(emailSendHistory).leftJoin(users, eq17(emailSendHistory.sentBy, users.id)).where(eq17(emailSendHistory.orderId, orderId)).orderBy(desc6(emailSendHistory.sentAt));
     res.json(emailHistory);
   } catch (error) {
     console.error("Error fetching email history:", error);
@@ -17418,13 +18520,13 @@ router13.post("/email-history", requireAuth, async (req, res) => {
       attachments: validatedData.attachments || null
     }).returning();
     const order = await db.query.purchaseOrders.findFirst({
-      where: eq14(purchaseOrders.id, validatedData.orderId)
+      where: eq17(purchaseOrders.id, validatedData.orderId)
     });
     if (order && order.status === "approved") {
       await db.update(purchaseOrders).set({
         status: "sent",
         updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq14(purchaseOrders.id, validatedData.orderId));
+      }).where(eq17(purchaseOrders.id, validatedData.orderId));
     }
     res.json(newEmailHistory);
   } catch (error) {
@@ -17445,18 +18547,18 @@ router13.get("/orders-email-status", requireAuth, async (req, res) => {
         lastSentAt: emailSendHistory.sentAt,
         recipientEmail: emailSendHistory.recipientEmail,
         openedAt: emailSendHistory.openedAt
-      }).from(purchaseOrders).leftJoin(emailSendHistory, eq14(purchaseOrders.id, emailSendHistory.orderId)).orderBy(desc5(purchaseOrders.id));
+      }).from(purchaseOrders).leftJoin(emailSendHistory, eq17(purchaseOrders.id, emailSendHistory.orderId)).orderBy(desc6(purchaseOrders.id));
       res.json(orders);
     } catch (dbError) {
       console.error("Database query error:", dbError);
       const orders = await db.select({
         id: purchaseOrders.id,
         orderNumber: purchaseOrders.orderNumber,
-        emailStatus: sql8`null`.as("email_status"),
-        lastSentAt: sql8`null`.as("last_sent_at"),
-        recipientEmail: sql8`null`.as("recipient_email"),
-        openedAt: sql8`null`.as("opened_at")
-      }).from(purchaseOrders).orderBy(desc5(purchaseOrders.id));
+        emailStatus: sql9`null`.as("email_status"),
+        lastSentAt: sql9`null`.as("last_sent_at"),
+        recipientEmail: sql9`null`.as("recipient_email"),
+        openedAt: sql9`null`.as("opened_at")
+      }).from(purchaseOrders).orderBy(desc6(purchaseOrders.id));
       res.json(orders);
     }
   } catch (error) {
@@ -17485,7 +18587,7 @@ router13.put("/email-tracking/:trackingId", async (req, res) => {
     if (req.headers["user-agent"]) {
       updateData.userAgent = req.headers["user-agent"];
     }
-    const [updated] = await db.update(emailSendHistory).set(updateData).where(eq14(emailSendHistory.trackingId, trackingId)).returning();
+    const [updated] = await db.update(emailSendHistory).set(updateData).where(eq17(emailSendHistory.trackingId, trackingId)).returning();
     if (!updated) {
       return res.status(404).json({ error: "Email not found" });
     }
@@ -17525,7 +18627,7 @@ router13.get("/email-history/:id", requireAuth, async (req, res) => {
       trackingId: emailSendHistory.trackingId,
       emailProvider: emailSendHistory.emailProvider,
       messageId: emailSendHistory.messageId
-    }).from(emailSendHistory).leftJoin(purchaseOrders, eq14(emailSendHistory.orderId, purchaseOrders.id)).leftJoin(vendors, eq14(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq14(emailSendHistory.sentBy, users.id)).where(eq14(emailSendHistory.id, emailId));
+    }).from(emailSendHistory).leftJoin(purchaseOrders, eq17(emailSendHistory.orderId, purchaseOrders.id)).leftJoin(vendors, eq17(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq17(emailSendHistory.sentBy, users.id)).where(eq17(emailSendHistory.id, emailId));
     if (!email || email.length === 0) {
       return res.status(404).json({ error: "Email not found" });
     }
@@ -17809,7 +18911,7 @@ import { Router as Router14 } from "express";
 // server/utils/optimized-orders-query.ts
 init_db();
 init_schema();
-import { eq as eq15, desc as desc6, asc as asc3, ilike as ilike3, and as and8, or as or3, between as between2, count as count3, sql as sql9, gte as gte5, lte as lte5 } from "drizzle-orm";
+import { eq as eq18, desc as desc7, asc as asc3, ilike as ilike3, and as and8, or as or3, between as between2, count as count3, sql as sql10, gte as gte5, lte as lte5 } from "drizzle-orm";
 var OptimizedOrdersService = class _OptimizedOrdersService {
   /**
    * 정렬 필드에 따른 ORDER BY 절 생성
@@ -17821,6 +18923,10 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
           return purchaseOrders.orderNumber;
         case "status":
           return purchaseOrders.status;
+        case "orderStatus":
+          return purchaseOrders.orderStatus;
+        case "approvalStatus":
+          return purchaseOrders.approvalStatus;
         case "vendorName":
           return vendors.name;
         case "projectName":
@@ -17838,7 +18944,7 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
       }
     };
     const sortField = getSortField(sortBy || "createdAt");
-    return sortOrder === "asc" ? asc3(sortField) : desc6(sortField);
+    return sortOrder === "asc" ? asc3(sortField) : desc7(sortField);
   }
   /**
    * High-performance order listing with metadata
@@ -17864,22 +18970,22 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
     } = filters;
     const whereConditions = [];
     if (userId && userId !== "all") {
-      whereConditions.push(eq15(purchaseOrders.userId, userId));
+      whereConditions.push(eq18(purchaseOrders.userId, userId));
     }
     if (status && status !== "all" && status !== "") {
-      whereConditions.push(sql9`${purchaseOrders.status} = ${status}`);
+      whereConditions.push(sql10`${purchaseOrders.status} = ${status}`);
     }
     if (orderStatus && orderStatus !== "all" && orderStatus !== "") {
-      whereConditions.push(sql9`${purchaseOrders.orderStatus} = ${orderStatus}`);
+      whereConditions.push(sql10`${purchaseOrders.orderStatus} = ${orderStatus}`);
     }
     if (approvalStatus && approvalStatus !== "all" && approvalStatus !== "") {
-      whereConditions.push(sql9`${purchaseOrders.approvalStatus} = ${approvalStatus}`);
+      whereConditions.push(sql10`${purchaseOrders.approvalStatus} = ${approvalStatus}`);
     }
     if (vendorId && vendorId !== "all") {
-      whereConditions.push(eq15(purchaseOrders.vendorId, vendorId));
+      whereConditions.push(eq18(purchaseOrders.vendorId, vendorId));
     }
     if (projectId && projectId !== "all") {
-      whereConditions.push(eq15(purchaseOrders.projectId, projectId));
+      whereConditions.push(eq18(purchaseOrders.projectId, projectId));
     }
     if (startDate && endDate) {
       whereConditions.push(between2(purchaseOrders.orderDate, startDate, endDate));
@@ -17890,14 +18996,18 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
     if (maxAmount) {
       whereConditions.push(lte5(purchaseOrders.totalAmount, maxAmount));
     }
-    if (searchText) {
-      const searchPattern = `%${searchText.toLowerCase()}%`;
+    if (searchText && searchText.trim()) {
+      const trimmedSearchText = searchText.trim();
+      const searchPattern = `%${trimmedSearchText.toLowerCase()}%`;
+      const itemSearchSubquery = db.select({ orderId: purchaseOrderItems.orderId }).from(purchaseOrderItems).where(ilike3(purchaseOrderItems.itemName, searchPattern));
       whereConditions.push(
         or3(
           ilike3(purchaseOrders.orderNumber, searchPattern),
           ilike3(vendors.name, searchPattern),
           ilike3(projects.projectName, searchPattern),
-          ilike3(users.name, searchPattern)
+          ilike3(users.name, searchPattern),
+          // 품목명으로 검색: 해당 품목을 포함하는 발주서 조회
+          sql10`${purchaseOrders.id} IN (SELECT "order_id" FROM ${purchaseOrderItems} WHERE LOWER("item_name") LIKE ${searchPattern.toLowerCase()})`
         )
       );
     }
@@ -17923,11 +19033,11 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
       projectName: projects.projectName,
       userName: users.name,
       // PDF attachment status - use correct column names (database uses snake_case)
-      hasPdf: sql9`EXISTS(SELECT 1 FROM attachments WHERE attachments.order_id = ${purchaseOrders.id} AND attachments.mime_type = 'application/pdf')`,
+      hasPdf: sql10`EXISTS(SELECT 1 FROM attachments WHERE attachments.order_id = ${purchaseOrders.id} AND attachments.mime_type = 'application/pdf')`,
       // Email sent status - temporarily disabled until email_send_history table is created
-      emailSentAt: sql9`NULL`
-    }).from(purchaseOrders).leftJoin(vendors, eq15(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq15(purchaseOrders.projectId, projects.id)).leftJoin(users, eq15(purchaseOrders.userId, users.id)).where(whereClause).orderBy(_OptimizedOrdersService.getOrderByClause(sortBy, sortOrder)).limit(limit).offset((page - 1) * limit);
-    const countQuery = db.select({ count: count3() }).from(purchaseOrders).leftJoin(vendors, eq15(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq15(purchaseOrders.projectId, projects.id)).leftJoin(users, eq15(purchaseOrders.userId, users.id)).where(whereClause);
+      emailSentAt: sql10`NULL`
+    }).from(purchaseOrders).leftJoin(vendors, eq18(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq18(purchaseOrders.projectId, projects.id)).leftJoin(users, eq18(purchaseOrders.userId, users.id)).where(whereClause).orderBy(_OptimizedOrdersService.getOrderByClause(sortBy, sortOrder)).limit(limit).offset((page - 1) * limit);
+    const countQuery = db.select({ count: count3() }).from(purchaseOrders).leftJoin(vendors, eq18(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq18(purchaseOrders.projectId, projects.id)).leftJoin(users, eq18(purchaseOrders.userId, users.id)).where(whereClause);
     const [orders, [{ count: totalCount }]] = await Promise.all([
       ordersQuery,
       countQuery
@@ -17959,19 +19069,19 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
       db.select({
         id: vendors.id,
         name: vendors.name
-      }).from(vendors).where(eq15(vendors.isActive, true)).orderBy(asc3(vendors.name)),
+      }).from(vendors).where(eq18(vendors.isActive, true)).orderBy(asc3(vendors.name)),
       // Only active projects
       db.select({
         id: projects.id,
         projectName: projects.projectName,
         projectCode: projects.projectCode
-      }).from(projects).where(eq15(projects.isActive, true)).orderBy(asc3(projects.projectName)),
+      }).from(projects).where(eq18(projects.isActive, true)).orderBy(asc3(projects.projectName)),
       // Only active users
       db.select({
         id: users.id,
         name: users.name,
         email: users.email
-      }).from(users).where(eq15(users.isActive, true)).orderBy(asc3(users.name))
+      }).from(users).where(eq18(users.isActive, true)).orderBy(asc3(users.name))
     ]);
     return {
       vendors: vendorsList,
@@ -18005,7 +19115,7 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
     const result = await db.update(purchaseOrders).set({
       status,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(sql9`${purchaseOrders.id} = ANY(${orderIds})`).returning();
+    }).where(sql10`${purchaseOrders.id} = ANY(${orderIds})`).returning();
     return result;
   }
   /**
@@ -18013,12 +19123,12 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
    * Uses materialized view for better performance
    */
   static async getOrderStatistics(userId) {
-    const whereClause = userId ? eq15(purchaseOrders.userId, userId) : void 0;
+    const whereClause = userId ? eq18(purchaseOrders.userId, userId) : void 0;
     const stats = await db.select({
       status: purchaseOrders.status,
       count: count3(),
-      totalAmount: sql9`COALESCE(SUM(${purchaseOrders.totalAmount}), 0)`,
-      avgAmount: sql9`COALESCE(AVG(${purchaseOrders.totalAmount}), 0)`
+      totalAmount: sql10`COALESCE(SUM(${purchaseOrders.totalAmount}), 0)`,
+      avgAmount: sql10`COALESCE(AVG(${purchaseOrders.totalAmount}), 0)`
     }).from(purchaseOrders).where(whereClause).groupBy(purchaseOrders.status);
     return stats;
   }
@@ -18504,12 +19614,12 @@ var item_receipts_default = router19;
 import { Router as Router19 } from "express";
 init_db();
 init_schema();
-import { eq as eq17, and as and10, desc as desc7, sql as sql11, inArray as inArray4 } from "drizzle-orm";
+import { eq as eq20, and as and10, desc as desc8, sql as sql12, inArray as inArray5 } from "drizzle-orm";
 
 // server/services/notification-service.ts
 init_db();
 init_schema();
-import { eq as eq16, and as and9, inArray as inArray3, sql as sql10 } from "drizzle-orm";
+import { eq as eq19, and as and9, inArray as inArray4, sql as sql11 } from "drizzle-orm";
 var NotificationService = class {
   /**
    * 승인 요청 시 알림 발송
@@ -18602,8 +19712,8 @@ var NotificationService = class {
       maxAmount: approvalAuthorities.maxAmount
     }).from(approvalAuthorities).where(
       and9(
-        eq16(approvalAuthorities.isActive, true),
-        sql10`CAST(${approvalAuthorities.maxAmount} AS DECIMAL) >= ${orderAmount}`
+        eq19(approvalAuthorities.isActive, true),
+        sql11`CAST(${approvalAuthorities.maxAmount} AS DECIMAL) >= ${orderAmount}`
       )
     );
     if (authorities.length === 0) {
@@ -18611,14 +19721,14 @@ var NotificationService = class {
         id: users.id,
         name: users.name,
         role: users.role
-      }).from(users).where(eq16(users.role, "admin")).limit(10);
+      }).from(users).where(eq19(users.role, "admin")).limit(10);
     }
     const eligibleRoles = authorities.map((auth) => auth.role);
     return await db.select({
       id: users.id,
       name: users.name,
       role: users.role
-    }).from(users).where(inArray3(users.role, eligibleRoles)).limit(20);
+    }).from(users).where(inArray4(users.role, eligibleRoles)).limit(20);
   }
   /**
    * 발주서 관련 정보 조회
@@ -18634,7 +19744,7 @@ var NotificationService = class {
       projectName: projects.projectName,
       vendorName: vendors.name,
       requesterName: users.name
-    }).from(purchaseOrders).leftJoin(projects, eq16(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq16(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq16(purchaseOrders.userId, users.id)).where(eq16(purchaseOrders.id, orderId)).limit(1);
+    }).from(purchaseOrders).leftJoin(projects, eq19(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq19(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq19(purchaseOrders.userId, users.id)).where(eq19(purchaseOrders.id, orderId)).limit(1);
     return result[0] || null;
   }
   /**
@@ -18648,14 +19758,14 @@ var NotificationService = class {
       stakeholders.add(orderInfo.userId);
     }
     if (orderInfo.projectId) {
-      const projectMembers3 = await db.select({ userId: users.id }).from(users).where(eq16(users.role, "project_manager")).limit(5);
+      const projectMembers3 = await db.select({ userId: users.id }).from(users).where(eq19(users.role, "project_manager")).limit(5);
       projectMembers3.forEach((member) => stakeholders.add(member.userId));
     }
     if (stakeholders.size === 0) return [];
     return await db.select({
       id: users.id,
       name: users.name
-    }).from(users).where(inArray3(users.id, Array.from(stakeholders))).limit(10);
+    }).from(users).where(inArray4(users.id, Array.from(stakeholders))).limit(10);
   }
   /**
    * 발주 금액에 따른 우선순위 결정
@@ -18683,10 +19793,10 @@ var NotificationService = class {
     try {
       const result = await db.select().from(notifications).where(
         and9(
-          eq16(notifications.userId, userId),
-          eq16(notifications.isActive, true)
+          eq19(notifications.userId, userId),
+          eq19(notifications.isActive, true)
         )
-      ).orderBy(sql10`${notifications.createdAt} DESC`).limit(limit);
+      ).orderBy(sql11`${notifications.createdAt} DESC`).limit(limit);
       return result.map((notification) => ({
         ...notification,
         metadata: notification.metadata ? JSON.parse(notification.metadata) : null,
@@ -18708,8 +19818,8 @@ var NotificationService = class {
         updatedAt: /* @__PURE__ */ new Date()
       }).where(
         and9(
-          eq16(notifications.id, notificationId),
-          eq16(notifications.userId, userId)
+          eq19(notifications.id, notificationId),
+          eq19(notifications.userId, userId)
         )
       ).returning();
       return result.length > 0;
@@ -18728,9 +19838,9 @@ var NotificationService = class {
         updatedAt: /* @__PURE__ */ new Date()
       }).where(
         and9(
-          eq16(notifications.userId, userId),
-          eq16(notifications.isRead, false),
-          eq16(notifications.isActive, true)
+          eq19(notifications.userId, userId),
+          eq19(notifications.isRead, false),
+          eq19(notifications.isActive, true)
         )
       ).returning();
       return result.length;
@@ -18747,8 +19857,8 @@ async function checkApprovalPermission(userRole, orderAmount) {
   try {
     const authority = await db.select().from(approvalAuthorities).where(
       and10(
-        eq17(approvalAuthorities.role, userRole),
-        eq17(approvalAuthorities.isActive, true)
+        eq20(approvalAuthorities.role, userRole),
+        eq20(approvalAuthorities.isActive, true)
       )
     ).limit(1);
     if (authority.length === 0) {
@@ -18775,9 +19885,9 @@ router20.get("/approvals/history", requireAuth, requireRole(["admin", "executive
       comments: orderHistory.notes,
       amount: purchaseOrders.totalAmount,
       createdAt: orderHistory.performedAt
-    }).from(orderHistory).leftJoin(purchaseOrders, eq17(orderHistory.orderId, purchaseOrders.id)).leftJoin(users, eq17(orderHistory.performedBy, users.id)).where(
-      inArray4(orderHistory.action, ["approved", "rejected"])
-    ).orderBy(desc7(orderHistory.performedAt)).limit(50);
+    }).from(orderHistory).leftJoin(purchaseOrders, eq20(orderHistory.orderId, purchaseOrders.id)).leftJoin(users, eq20(orderHistory.performedBy, users.id)).where(
+      inArray5(orderHistory.action, ["approved", "rejected"])
+    ).orderBy(desc8(orderHistory.performedAt)).limit(50);
     const allHistory = approvalHistory.map((record) => ({
       ...record,
       orderTitle: record.orderTitle || `\uBC1C\uC8FC\uC11C #${record.orderId}`,
@@ -18819,7 +19929,7 @@ router20.get("/approvals/pending", requireAuth, requireRole(["admin", "executive
       // Vendor information
       vendorId: vendors.id,
       vendorName: vendors.name
-    }).from(purchaseOrders).leftJoin(projects, eq17(purchaseOrders.projectId, projects.id)).leftJoin(users, eq17(purchaseOrders.userId, users.id)).leftJoin(vendors, eq17(purchaseOrders.vendorId, vendors.id)).where(eq17(purchaseOrders.status, "pending")).orderBy(desc7(purchaseOrders.createdAt));
+    }).from(purchaseOrders).leftJoin(projects, eq20(purchaseOrders.projectId, projects.id)).leftJoin(users, eq20(purchaseOrders.userId, users.id)).leftJoin(vendors, eq20(purchaseOrders.vendorId, vendors.id)).where(eq20(purchaseOrders.status, "pending")).orderBy(desc8(purchaseOrders.createdAt));
     const formattedOrders = pendingOrders.map((order) => ({
       id: order.id,
       orderNumber: order.orderNumber,
@@ -18853,13 +19963,13 @@ router20.get("/approvals/stats", requireAuth, requireRole(["admin", "executive",
     console.log("\u{1F4CA} Fetching approval stats from database...");
     const [totalStats, pendingStats, approvedStats, rejectedStats] = await Promise.all([
       // 전체 발주서 수
-      db.select({ count: sql11`count(*)` }).from(purchaseOrders),
+      db.select({ count: sql12`count(*)` }).from(purchaseOrders),
       // 승인 대기 수
-      db.select({ count: sql11`count(*)` }).from(purchaseOrders).where(eq17(purchaseOrders.status, "pending")),
+      db.select({ count: sql12`count(*)` }).from(purchaseOrders).where(eq20(purchaseOrders.status, "pending")),
       // 승인 완료 수
-      db.select({ count: sql11`count(*)` }).from(purchaseOrders).where(eq17(purchaseOrders.status, "approved")),
+      db.select({ count: sql12`count(*)` }).from(purchaseOrders).where(eq20(purchaseOrders.status, "approved")),
       // 반려 수
-      db.select({ count: sql11`count(*)` }).from(purchaseOrders).where(eq17(purchaseOrders.status, "rejected"))
+      db.select({ count: sql12`count(*)` }).from(purchaseOrders).where(eq20(purchaseOrders.status, "rejected"))
     ]);
     const totalCount = totalStats[0]?.count || 0;
     const pendingCount = pendingStats[0]?.count || 0;
@@ -18867,10 +19977,10 @@ router20.get("/approvals/stats", requireAuth, requireRole(["admin", "executive",
     const rejectedCount = rejectedStats[0]?.count || 0;
     const approvalRate = totalCount > 0 ? approvedCount / (approvedCount + rejectedCount) * 100 : 0;
     const monthlyStatsQuery = await db.select({
-      month: sql11`to_char(created_at, 'YYYY-MM')`,
+      month: sql12`to_char(created_at, 'YYYY-MM')`,
       status: purchaseOrders.status,
-      count: sql11`count(*)`
-    }).from(purchaseOrders).where(sql11`created_at >= NOW() - INTERVAL '3 months'`).groupBy(sql11`to_char(created_at, 'YYYY-MM')`, purchaseOrders.status).orderBy(sql11`to_char(created_at, 'YYYY-MM') DESC`);
+      count: sql12`count(*)`
+    }).from(purchaseOrders).where(sql12`created_at >= NOW() - INTERVAL '3 months'`).groupBy(sql12`to_char(created_at, 'YYYY-MM')`, purchaseOrders.status).orderBy(sql12`to_char(created_at, 'YYYY-MM') DESC`);
     const monthlyStats = [];
     const monthlyData = {};
     monthlyStatsQuery.forEach((row) => {
@@ -18915,7 +20025,7 @@ router20.post("/approvals/:id/process", requireAuth, requireRole(["admin", "exec
     const { action, comments } = req.body;
     const user = req.user;
     console.log(`\u{1F4CB} Processing approval ${id} with action: ${action} by ${user.name} (${user.role})`);
-    const existingOrder = await db.select().from(purchaseOrders).where(eq17(purchaseOrders.id, id)).limit(1);
+    const existingOrder = await db.select().from(purchaseOrders).where(eq20(purchaseOrders.id, id)).limit(1);
     if (existingOrder.length === 0) {
       return res.status(404).json({ message: "\uBC1C\uC8FC\uC11C\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
     }
@@ -18930,7 +20040,7 @@ router20.post("/approvals/:id/process", requireAuth, requireRole(["admin", "exec
     await db.update(purchaseOrders).set({
       status: newStatus,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq17(purchaseOrders.id, id));
+    }).where(eq20(purchaseOrders.id, id));
     const historyEntry = {
       orderId: id,
       action: action === "approve" ? "approved" : "rejected",
@@ -19018,7 +20128,7 @@ router20.post("/approvals/:orderId/reject", requireAuth, requireRole(["admin", "
 });
 async function processApproval(req, res, orderId, action, note, user) {
   try {
-    const existingOrder = await db.select().from(purchaseOrders).where(eq17(purchaseOrders.id, orderId)).limit(1);
+    const existingOrder = await db.select().from(purchaseOrders).where(eq20(purchaseOrders.id, orderId)).limit(1);
     if (existingOrder.length === 0) {
       throw new Error("\uBC1C\uC8FC\uC11C\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4");
     }
@@ -19031,7 +20141,7 @@ async function processApproval(req, res, orderId, action, note, user) {
     await db.update(purchaseOrders).set({
       status: newStatus,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq17(purchaseOrders.id, orderId));
+    }).where(eq20(purchaseOrders.id, orderId));
     const historyEntry = {
       orderId,
       action: action === "approve" ? "approved" : "rejected",
@@ -19077,7 +20187,7 @@ router20.post("/approvals/:orderId/start-workflow", requireAuth, requireRole(["a
       totalAmount: purchaseOrders.totalAmount,
       status: purchaseOrders.status,
       userId: purchaseOrders.userId
-    }).from(purchaseOrders).where(eq17(purchaseOrders.id, orderId)).limit(1);
+    }).from(purchaseOrders).where(eq20(purchaseOrders.id, orderId)).limit(1);
     if (orderInfo.length === 0) {
       return res.status(404).json({ message: "\uBC1C\uC8FC\uC11C\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
     }
@@ -19116,7 +20226,7 @@ router20.post("/approvals/:orderId/start-workflow", requireAuth, requireRole(["a
       await db.update(purchaseOrders).set({
         status: "pending",
         updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq17(purchaseOrders.id, orderId));
+      }).where(eq20(purchaseOrders.id, orderId));
       await NotificationService.sendApprovalRequestNotification({
         orderId,
         action: "approval_requested",
@@ -19170,7 +20280,7 @@ router20.post("/approvals/:orderId/step/:stepId", requireAuth, requireRole(["adm
     const { action, comments } = req.body;
     const user = req.user;
     console.log(`\u{1F504} Processing approval step ${stepId} for order ${orderId} with action: ${action}`);
-    const stepInstance = await db.select().from(approvalStepInstances2).where(eq17(approvalStepInstances2.id, stepId)).limit(1);
+    const stepInstance = await db.select().from(approvalStepInstances2).where(eq20(approvalStepInstances2.id, stepId)).limit(1);
     if (stepInstance.length === 0) {
       return res.status(404).json({ message: "\uC2B9\uC778 \uB2E8\uACC4\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
     }
@@ -19187,7 +20297,7 @@ router20.post("/approvals/:orderId/step/:stepId", requireAuth, requireRole(["adm
       approvedAt: /* @__PURE__ */ new Date(),
       comments: comments || "",
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq17(approvalStepInstances2.id, stepId));
+    }).where(eq20(approvalStepInstances2.id, stepId));
     const isComplete = await ApprovalRoutingService.isApprovalComplete(orderId);
     const progress = await ApprovalRoutingService.getApprovalProgress(orderId);
     let finalOrderStatus = "pending";
@@ -19198,8 +20308,8 @@ router20.post("/approvals/:orderId/step/:stepId", requireAuth, requireRole(["adm
         updatedAt: /* @__PURE__ */ new Date()
       }).where(
         and10(
-          eq17(approvalStepInstances2.orderId, orderId),
-          eq17(approvalStepInstances2.status, "pending")
+          eq20(approvalStepInstances2.orderId, orderId),
+          eq20(approvalStepInstances2.status, "pending")
         )
       );
     } else if (isComplete) {
@@ -19209,7 +20319,7 @@ router20.post("/approvals/:orderId/step/:stepId", requireAuth, requireRole(["adm
       await db.update(purchaseOrders).set({
         status: finalOrderStatus,
         updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq17(purchaseOrders.id, orderId));
+      }).where(eq20(purchaseOrders.id, orderId));
       await db.insert(orderHistory).values({
         orderId,
         action: finalOrderStatus === "approved" ? "approved" : "rejected",
@@ -19827,12 +20937,12 @@ var test_accounts_default = router24;
 init_db();
 init_schema();
 import { Router as Router24 } from "express";
-import { eq as eq19, and as and12 } from "drizzle-orm";
+import { eq as eq22, and as and12 } from "drizzle-orm";
 
 // server/utils/category-mapping-validator.ts
 init_db();
 init_schema();
-import { eq as eq18 } from "drizzle-orm";
+import { eq as eq21 } from "drizzle-orm";
 async function validateCategoryMapping(request) {
   console.log("\u{1F50D} \uBD84\uB958 \uB9E4\uD551 \uAC80\uC99D \uC2DC\uC791:", request);
   const result = {
@@ -19847,7 +20957,7 @@ async function validateCategoryMapping(request) {
     confidence: 0
   };
   try {
-    const allCategories = await db.select().from(itemCategories).where(eq18(itemCategories.isActive, true));
+    const allCategories = await db.select().from(itemCategories).where(eq21(itemCategories.isActive, true));
     const majorCategories = allCategories.filter((c) => c.categoryType === "major");
     const middleCategories = allCategories.filter((c) => c.categoryType === "middle");
     const minorCategories = allCategories.filter((c) => c.categoryType === "minor");
@@ -20097,7 +21207,7 @@ router25.get("/hierarchy", async (req, res) => {
 router25.get("/", async (req, res) => {
   try {
     console.log("\u{1F4CB} Fetching all categories...");
-    const categories = await db.select().from(itemCategories).where(eq19(itemCategories.isActive, true)).orderBy(itemCategories.displayOrder, itemCategories.categoryName);
+    const categories = await db.select().from(itemCategories).where(eq22(itemCategories.isActive, true)).orderBy(itemCategories.displayOrder, itemCategories.categoryName);
     const majorCategories = categories.filter((c) => c.categoryType === "major");
     const middleCategories = categories.filter((c) => c.categoryType === "middle");
     const minorCategories = categories.filter((c) => c.categoryType === "minor");
@@ -20163,11 +21273,11 @@ router25.get("/:type", async (req, res) => {
     const { parentId } = req.query;
     console.log(`\u{1F4CB} Fetching ${type} categories...`);
     let query = db.select().from(itemCategories).where(and12(
-      eq19(itemCategories.categoryType, type),
-      eq19(itemCategories.isActive, true)
+      eq22(itemCategories.categoryType, type),
+      eq22(itemCategories.isActive, true)
     ));
     if (parentId) {
-      query = query.where(eq19(itemCategories.parentId, parseInt(parentId)));
+      query = query.where(eq22(itemCategories.parentId, parseInt(parentId)));
     }
     const categories = await query.orderBy(itemCategories.displayOrder, itemCategories.categoryName);
     res.json({
@@ -20218,7 +21328,7 @@ router25.put("/:id", async (req, res) => {
       displayOrder,
       isActive,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq19(itemCategories.id, parseInt(id))).returning();
+    }).where(eq22(itemCategories.id, parseInt(id))).returning();
     if (updatedCategory.length === 0) {
       return res.status(404).json({
         success: false,
@@ -20246,7 +21356,7 @@ router25.delete("/:id", async (req, res) => {
     const updatedCategory = await db.update(itemCategories).set({
       isActive: false,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq19(itemCategories.id, parseInt(id))).returning();
+    }).where(eq22(itemCategories.id, parseInt(id))).returning();
     if (updatedCategory.length === 0) {
       return res.status(404).json({
         success: false,
@@ -20329,7 +21439,7 @@ var categories_default = router25;
 init_db();
 init_schema();
 import { Router as Router25 } from "express";
-import { eq as eq20, and as and13, desc as desc8, asc as asc5 } from "drizzle-orm";
+import { eq as eq23, and as and13, desc as desc9, asc as asc5 } from "drizzle-orm";
 import { z as z4 } from "zod";
 var router26 = Router25();
 router26.get("/workflow-settings/:companyId", requireAuth, async (req, res) => {
@@ -20337,10 +21447,10 @@ router26.get("/workflow-settings/:companyId", requireAuth, async (req, res) => {
     const { companyId } = req.params;
     const settings = await db.select().from(approvalWorkflowSettings).where(
       and13(
-        eq20(approvalWorkflowSettings.companyId, parseInt(companyId)),
-        eq20(approvalWorkflowSettings.isActive, true)
+        eq23(approvalWorkflowSettings.companyId, parseInt(companyId)),
+        eq23(approvalWorkflowSettings.isActive, true)
       )
-    ).orderBy(desc8(approvalWorkflowSettings.createdAt)).limit(1);
+    ).orderBy(desc9(approvalWorkflowSettings.createdAt)).limit(1);
     return res.json({
       success: true,
       data: settings[0] || null
@@ -20360,8 +21470,8 @@ router26.post("/workflow-settings", requireAuth, requireAdmin, async (req, res) 
     });
     const existingSettings = await db.select().from(approvalWorkflowSettings).where(
       and13(
-        eq20(approvalWorkflowSettings.companyId, validatedData.companyId),
-        eq20(approvalWorkflowSettings.isActive, true)
+        eq23(approvalWorkflowSettings.companyId, validatedData.companyId),
+        eq23(approvalWorkflowSettings.isActive, true)
       )
     ).limit(1);
     let result;
@@ -20369,7 +21479,7 @@ router26.post("/workflow-settings", requireAuth, requireAdmin, async (req, res) 
       result = await db.update(approvalWorkflowSettings).set({
         ...validatedData,
         updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq20(approvalWorkflowSettings.id, existingSettings[0].id)).returning();
+      }).where(eq23(approvalWorkflowSettings.id, existingSettings[0].id)).returning();
     } else {
       result = await db.insert(approvalWorkflowSettings).values(validatedData).returning();
     }
@@ -20396,16 +21506,16 @@ router26.get("/step-templates/:companyId", requireAuth, async (req, res) => {
     const { templateName } = req.query;
     let query = db.select().from(approvalStepTemplates).where(
       and13(
-        eq20(approvalStepTemplates.companyId, parseInt(companyId)),
-        eq20(approvalStepTemplates.isActive, true)
+        eq23(approvalStepTemplates.companyId, parseInt(companyId)),
+        eq23(approvalStepTemplates.isActive, true)
       )
     );
     if (templateName) {
       query = query.where(
         and13(
-          eq20(approvalStepTemplates.companyId, parseInt(companyId)),
-          eq20(approvalStepTemplates.isActive, true),
-          eq20(approvalStepTemplates.templateName, templateName)
+          eq23(approvalStepTemplates.companyId, parseInt(companyId)),
+          eq23(approvalStepTemplates.isActive, true),
+          eq23(approvalStepTemplates.templateName, templateName)
         )
       );
     }
@@ -20452,7 +21562,7 @@ router26.put("/step-templates/:id", requireAuth, requireAdmin, async (req, res) 
     const result = await db.update(approvalStepTemplates).set({
       ...validatedData,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq20(approvalStepTemplates.id, parseInt(id))).returning();
+    }).where(eq23(approvalStepTemplates.id, parseInt(id))).returning();
     if (result.length === 0) {
       return res.status(404).json({ error: "\uC2B9\uC778 \uB2E8\uACC4 \uD15C\uD50C\uB9BF\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
     }
@@ -20479,7 +21589,7 @@ router26.delete("/step-templates/:id", requireAuth, requireAdmin, async (req, re
     const result = await db.update(approvalStepTemplates).set({
       isActive: false,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq20(approvalStepTemplates.id, parseInt(id))).returning();
+    }).where(eq23(approvalStepTemplates.id, parseInt(id))).returning();
     if (result.length === 0) {
       return res.status(404).json({ error: "\uC2B9\uC778 \uB2E8\uACC4 \uD15C\uD50C\uB9BF\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
     }
@@ -20499,8 +21609,8 @@ router26.get("/step-instances/:orderId", requireAuth, async (req, res) => {
     const { orderId } = req.params;
     const instances = await db.select().from(approvalStepInstances2).where(
       and13(
-        eq20(approvalStepInstances2.orderId, parseInt(orderId)),
-        eq20(approvalStepInstances2.isActive, true)
+        eq23(approvalStepInstances2.orderId, parseInt(orderId)),
+        eq23(approvalStepInstances2.isActive, true)
       )
     ).orderBy(asc5(approvalStepInstances2.stepOrder));
     return res.json({
@@ -20524,9 +21634,9 @@ router26.post("/step-instances", requireAuth, async (req, res) => {
     }
     const templates = await db.select().from(approvalStepTemplates).where(
       and13(
-        eq20(approvalStepTemplates.companyId, companyId),
-        eq20(approvalStepTemplates.templateName, templateName),
-        eq20(approvalStepTemplates.isActive, true)
+        eq23(approvalStepTemplates.companyId, companyId),
+        eq23(approvalStepTemplates.templateName, templateName),
+        eq23(approvalStepTemplates.isActive, true)
       )
     ).orderBy(asc5(approvalStepTemplates.stepOrder));
     if (templates.length === 0) {
@@ -20570,7 +21680,7 @@ router26.put("/step-instances/:id", requireAuth, async (req, res) => {
     };
     if (comments) updateData.comments = comments;
     if (rejectionReason) updateData.rejectionReason = rejectionReason;
-    const result = await db.update(approvalStepInstances2).set(updateData).where(eq20(approvalStepInstances2.id, parseInt(id))).returning();
+    const result = await db.update(approvalStepInstances2).set(updateData).where(eq23(approvalStepInstances2.id, parseInt(id))).returning();
     if (result.length === 0) {
       return res.status(404).json({ error: "\uC2B9\uC778 \uB2E8\uACC4 \uC778\uC2A4\uD134\uC2A4\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
     }
@@ -20591,7 +21701,7 @@ var approval_settings_default = router26;
 import { Router as Router26 } from "express";
 init_db();
 init_schema();
-import { eq as eq21, and as and14, desc as desc9 } from "drizzle-orm";
+import { eq as eq24, and as and14, desc as desc10 } from "drizzle-orm";
 import { z as z5 } from "zod";
 var router27 = Router26();
 router27.get("/approval-authorities", requireAuth, requireRole(["admin"]), async (req, res) => {
@@ -20605,7 +21715,7 @@ router27.get("/approval-authorities", requireAuth, requireRole(["admin"]), async
       isActive: approvalAuthorities.isActive,
       createdAt: approvalAuthorities.createdAt,
       updatedAt: approvalAuthorities.updatedAt
-    }).from(approvalAuthorities).orderBy(desc9(approvalAuthorities.maxAmount));
+    }).from(approvalAuthorities).orderBy(desc10(approvalAuthorities.maxAmount));
     const formattedAuthorities = authorities.map((auth) => ({
       ...auth,
       maxAmount: parseFloat(auth.maxAmount),
@@ -20628,8 +21738,8 @@ router27.post("/approval-authorities", requireAuth, requireRole(["admin"]), asyn
     const validatedData = insertApprovalAuthoritySchema.parse(req.body);
     const existingAuthority = await db.select().from(approvalAuthorities).where(
       and14(
-        eq21(approvalAuthorities.role, validatedData.role),
-        eq21(approvalAuthorities.isActive, true)
+        eq24(approvalAuthorities.role, validatedData.role),
+        eq24(approvalAuthorities.isActive, true)
       )
     ).limit(1);
     if (existingAuthority.length > 0) {
@@ -20668,7 +21778,7 @@ router27.put("/approval-authorities/:id", requireAuth, requireRole(["admin"]), a
     const result = await db.update(approvalAuthorities).set({
       ...validatedData,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq21(approvalAuthorities.id, id)).returning();
+    }).where(eq24(approvalAuthorities.id, id)).returning();
     if (result.length === 0) {
       return res.status(404).json({
         message: "\uC2B9\uC778 \uAD8C\uD55C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4"
@@ -20703,7 +21813,7 @@ router27.delete("/approval-authorities/:id", requireAuth, requireRole(["admin"])
     const result = await db.update(approvalAuthorities).set({
       isActive: false,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq21(approvalAuthorities.id, id)).returning();
+    }).where(eq24(approvalAuthorities.id, id)).returning();
     if (result.length === 0) {
       return res.status(404).json({
         message: "\uC2B9\uC778 \uAD8C\uD55C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4"
@@ -20727,8 +21837,8 @@ router27.get("/approval-authorities/role/:role", requireAuth, requireRole(["admi
     console.log(`\u{1F4CB} Fetching approval authority for role: ${role}`);
     const authority = await db.select().from(approvalAuthorities).where(
       and14(
-        eq21(approvalAuthorities.role, role),
-        eq21(approvalAuthorities.isActive, true)
+        eq24(approvalAuthorities.role, role),
+        eq24(approvalAuthorities.isActive, true)
       )
     ).limit(1);
     if (authority.length === 0) {
@@ -20769,8 +21879,8 @@ router27.post("/approval-authorities/check-permission", requireAuth, requireRole
     }
     const authority = await db.select().from(approvalAuthorities).where(
       and14(
-        eq21(approvalAuthorities.role, checkRole),
-        eq21(approvalAuthorities.isActive, true)
+        eq24(approvalAuthorities.role, checkRole),
+        eq24(approvalAuthorities.isActive, true)
       )
     ).limit(1);
     let canApprove = false;
@@ -20918,24 +22028,24 @@ var notifications_default = router28;
 init_db();
 init_schema();
 import { Router as Router28 } from "express";
-import { eq as eq22, and as and15, desc as desc10, count as count4 } from "drizzle-orm";
-init_pdf_generation_service();
+import { eq as eq25, and as and15, desc as desc11, count as count4 } from "drizzle-orm";
 import multer5 from "multer";
-import path16 from "path";
-import fs19 from "fs/promises";
+import path17 from "path";
+import fs20 from "fs/promises";
+import { readFileSync } from "fs";
 import { z as z6 } from "zod";
 var router29 = Router28();
 var storage4 = multer5.diskStorage({
   destination: async (req, file, cb) => {
-    const uploadDir2 = process.env.VERCEL ? path16.join("/tmp", "uploads", "excel-simple") : path16.join(process.cwd(), "uploads", "excel-simple");
-    await fs19.mkdir(uploadDir2, { recursive: true });
+    const uploadDir2 = process.env.VERCEL ? path17.join("/tmp", "uploads", "excel-simple") : path17.join(process.cwd(), "uploads", "excel-simple");
+    await fs20.mkdir(uploadDir2, { recursive: true });
     cb(null, uploadDir2);
   },
   filename: (req, file, cb) => {
     const timestamp2 = Date.now();
     const decodedName = decodeKoreanFilename(file.originalname);
-    const ext = path16.extname(decodedName);
-    const basename = path16.basename(decodedName, ext);
+    const ext = path17.extname(decodedName);
+    const basename = path17.basename(decodedName, ext);
     cb(null, `${timestamp2}-${basename}${ext}`);
   }
 });
@@ -20948,7 +22058,7 @@ var upload5 = multer5({
   fileFilter: (req, file, cb) => {
     const decodedName = decodeKoreanFilename(file.originalname);
     file.originalname = decodedName;
-    const ext = path16.extname(decodedName).toLowerCase();
+    const ext = path17.extname(decodedName).toLowerCase();
     if ([".xlsx", ".xls", ".xlsm"].includes(ext)) {
       cb(null, true);
     } else {
@@ -21029,7 +22139,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload5.single("excelFi
     let defaultProject;
     try {
       console.log("\u{1F50D} Fetching default project...");
-      defaultProject = await db.select().from(projects).where(eq22(projects.projectName, "\uAE30\uBCF8 \uD504\uB85C\uC81D\uD2B8")).then((rows) => rows[0]);
+      defaultProject = await db.select().from(projects).where(eq25(projects.projectName, "\uAE30\uBCF8 \uD504\uB85C\uC81D\uD2B8")).then((rows) => rows[0]);
       console.log("\u2705 Default project fetch successful");
     } catch (error) {
       console.error("\u274C Error fetching default project:", error);
@@ -21055,7 +22165,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload5.single("excelFi
       try {
         let vendor = null;
         if (orderData.vendorName) {
-          const existingVendor = await db.select().from(vendors).where(eq22(vendors.name, orderData.vendorName)).then((rows) => rows[0]);
+          const existingVendor = await db.select().from(vendors).where(eq25(vendors.name, orderData.vendorName)).then((rows) => rows[0]);
           if (existingVendor) {
             vendor = existingVendor;
           } else {
@@ -21071,7 +22181,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload5.single("excelFi
         }
         let project = defaultProject;
         if (orderData.projectName) {
-          const existingProject = await db.select().from(projects).where(eq22(projects.projectName, orderData.projectName)).then((rows) => rows[0]);
+          const existingProject = await db.select().from(projects).where(eq25(projects.projectName, orderData.projectName)).then((rows) => rows[0]);
           if (existingProject) {
             project = existingProject;
           }
@@ -21086,7 +22196,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload5.single("excelFi
           const orderCount = await db.select().from(purchaseOrders).then((rows) => rows.length);
           const sequenceNumber = orderCount + 1 + attempts;
           orderNumber = `PO-${year}-${String(sequenceNumber).padStart(5, "0")}`;
-          const existingOrder = await db.select().from(purchaseOrders).where(eq22(purchaseOrders.orderNumber, orderNumber)).then((rows) => rows[0]);
+          const existingOrder = await db.select().from(purchaseOrders).where(eq25(purchaseOrders.orderNumber, orderNumber)).then((rows) => rows[0]);
           if (!existingOrder) {
             break;
           }
@@ -21215,6 +22325,16 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload5.single("excelFi
           });
           try {
             const relativePath = process.env.VERCEL ? req.file.filename : req.file.path;
+            let fileData;
+            if (process.env.VERCEL) {
+              try {
+                const fileBuffer = readFileSync(req.file.path);
+                fileData = fileBuffer.toString("base64");
+                console.log(`\u{1F4CE} File data encoded for Vercel: ${Math.round(fileBuffer.length / 1024)}KB -> ${Math.round(fileData.length / 1024)}KB base64`);
+              } catch (fileReadError) {
+                console.error("\u274C Failed to read file for Vercel storage:", fileReadError);
+              }
+            }
             const [savedAttachment] = await db.insert(attachments).values({
               orderId: newOrder.id,
               originalName: decodedOriginalName,
@@ -21223,7 +22343,9 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload5.single("excelFi
               fileSize: req.file.size,
               mimeType: req.file.mimetype,
               uploadedBy: req.user.id,
-              uploadedAt: /* @__PURE__ */ new Date()
+              uploadedAt: /* @__PURE__ */ new Date(),
+              ...fileData && { fileData }
+              // Include fileData only if available
             }).returning();
             console.log(`\u2705 Excel file attachment saved with ID ${savedAttachment.id} for order ${newOrder.orderNumber}`);
           } catch (attachmentError) {
@@ -21269,19 +22391,19 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload5.single("excelFi
       console.log(`\u{1F4E7} Preparing to send ${emailsToSend.length} emails...`);
       try {
         const { POEmailService: POEmailService3 } = await Promise.resolve().then(() => (init_po_email_service_enhanced(), po_email_service_enhanced_exports));
-        const emailService3 = new POEmailService3();
+        const emailService4 = new POEmailService3();
         for (const emailInfo of emailsToSend) {
           try {
             let excelAttachment = null;
             if (req.file) {
-              const attachment = await db.select().from(attachments).where(eq22(attachments.orderId, emailInfo.orderId)).then((rows) => rows[0]);
+              const attachment = await db.select().from(attachments).where(eq25(attachments.orderId, emailInfo.orderId)).then((rows) => rows[0]);
               if (attachment) {
-                excelAttachment = process.env.VERCEL ? path16.join("/tmp", "uploads", "excel-simple", attachment.storedName) : attachment.filePath;
+                excelAttachment = process.env.VERCEL ? path17.join("/tmp", "uploads", "excel-simple", attachment.storedName) : attachment.filePath;
               }
             }
-            if (excelAttachment && fs19.existsSync(excelAttachment)) {
+            if (excelAttachment && fs20.existsSync(excelAttachment)) {
               console.log(`\u{1F4CE} Sending email with attachment for order ${emailInfo.orderNumber}`);
-              const result = await emailService3.sendPOWithOriginalFormat(
+              const result = await emailService4.sendPOWithOriginalFormat(
                 excelAttachment,
                 {
                   to: emailInfo.vendorEmail,
@@ -21295,7 +22417,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload5.single("excelFi
               );
               if (result.success) {
                 console.log(`\u2705 Email sent successfully for order ${emailInfo.orderNumber}`);
-                await db.update(purchaseOrders).set({ status: "sent" }).where(eq22(purchaseOrders.id, emailInfo.orderId));
+                await db.update(purchaseOrders).set({ status: "sent" }).where(eq25(purchaseOrders.id, emailInfo.orderId));
                 await db.insert(orderHistory).values({
                   orderId: emailInfo.orderId,
                   userId: req.user.id,
@@ -21350,10 +22472,10 @@ router29.get("/orders/simple-upload-history", requireAuth, async (req, res) => {
       projectName: projects.projectName,
       vendorName: vendors.name,
       itemCount: count4(purchaseOrderItems.id)
-    }).from(purchaseOrders).leftJoin(projects, eq22(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq22(purchaseOrders.vendorId, vendors.id)).leftJoin(purchaseOrderItems, eq22(purchaseOrderItems.orderId, purchaseOrders.id)).leftJoin(orderHistory, eq22(orderHistory.orderId, purchaseOrders.id)).where(
+    }).from(purchaseOrders).leftJoin(projects, eq25(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq25(purchaseOrders.vendorId, vendors.id)).leftJoin(purchaseOrderItems, eq25(purchaseOrderItems.orderId, purchaseOrders.id)).leftJoin(orderHistory, eq25(orderHistory.orderId, purchaseOrders.id)).where(
       and15(
-        eq22(purchaseOrders.userId, req.user.id),
-        eq22(orderHistory.action, "created")
+        eq25(purchaseOrders.userId, req.user.id),
+        eq25(orderHistory.action, "created")
       )
     ).groupBy(
       purchaseOrders.id,
@@ -21363,7 +22485,7 @@ router29.get("/orders/simple-upload-history", requireAuth, async (req, res) => {
       purchaseOrders.status,
       projects.projectName,
       vendors.name
-    ).orderBy(desc10(purchaseOrders.createdAt)).limit(50);
+    ).orderBy(desc11(purchaseOrders.createdAt)).limit(50);
     res.json(history);
   } catch (error) {
     console.error("Error fetching upload history:", error);
@@ -21389,7 +22511,7 @@ router29.get("/orders/drafts", requireAuth, async (req, res) => {
       userId: purchaseOrders.userId,
       userName: users.name,
       notes: purchaseOrders.notes
-    }).from(purchaseOrders).leftJoin(projects, eq22(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq22(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq22(purchaseOrders.userId, users.id)).where(eq22(purchaseOrders.status, "draft")).orderBy(desc10(purchaseOrders.createdAt));
+    }).from(purchaseOrders).leftJoin(projects, eq25(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq25(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq25(purchaseOrders.userId, users.id)).where(eq25(purchaseOrders.status, "draft")).orderBy(desc11(purchaseOrders.createdAt));
     console.log(`\u{1F4DD} Found ${drafts.length} draft orders`);
     res.json({
       success: true,
@@ -21434,7 +22556,7 @@ import { Router as Router30 } from "express";
 // server/services/audit-service.ts
 init_db();
 init_schema();
-import { eq as eq23, and as and16, or as or5, gte as gte6, lte as lte6, desc as desc11, asc as asc7, sql as sql13, inArray as inArray5 } from "drizzle-orm";
+import { eq as eq26, and as and16, or as or5, gte as gte6, lte as lte6, desc as desc12, asc as asc7, sql as sql14, inArray as inArray6 } from "drizzle-orm";
 var AuditService = class {
   /**
    * 감사 로그 조회
@@ -21454,19 +22576,19 @@ var AuditService = class {
       sortOrder = "desc"
     } = params;
     const conditions = [];
-    if (userId) conditions.push(eq23(systemAuditLogs.userId, userId));
-    if (eventType) conditions.push(eq23(systemAuditLogs.eventType, eventType));
-    if (eventCategory) conditions.push(eq23(systemAuditLogs.eventCategory, eventCategory));
-    if (entityType) conditions.push(eq23(systemAuditLogs.entityType, entityType));
-    if (entityId) conditions.push(eq23(systemAuditLogs.entityId, entityId));
+    if (userId) conditions.push(eq26(systemAuditLogs.userId, userId));
+    if (eventType) conditions.push(eq26(systemAuditLogs.eventType, eventType));
+    if (eventCategory) conditions.push(eq26(systemAuditLogs.eventCategory, eventCategory));
+    if (entityType) conditions.push(eq26(systemAuditLogs.entityType, entityType));
+    if (entityId) conditions.push(eq26(systemAuditLogs.entityId, entityId));
     if (startDate) conditions.push(gte6(systemAuditLogs.createdAt, startDate));
     if (endDate) conditions.push(lte6(systemAuditLogs.createdAt, endDate));
     const orderByColumn = sortBy === "eventType" ? systemAuditLogs.eventType : sortBy === "userName" ? systemAuditLogs.userName : systemAuditLogs.createdAt;
-    const orderByDirection = sortOrder === "asc" ? asc7 : desc11;
+    const orderByDirection = sortOrder === "asc" ? asc7 : desc12;
     const query = db.select().from(systemAuditLogs).where(conditions.length > 0 ? and16(...conditions) : void 0).orderBy(orderByDirection(orderByColumn)).limit(limit).offset(offset);
     const [logs, countResult] = await Promise.all([
       query,
-      db.select({ count: sql13`count(*)` }).from(systemAuditLogs).where(conditions.length > 0 ? and16(...conditions) : void 0)
+      db.select({ count: sql14`count(*)` }).from(systemAuditLogs).where(conditions.length > 0 ? and16(...conditions) : void 0)
     ]);
     return {
       logs,
@@ -21483,23 +22605,23 @@ var AuditService = class {
     startDate.setDate(startDate.getDate() - days);
     const activities = await db.select({
       eventType: systemAuditLogs.eventType,
-      count: sql13`count(*)`
+      count: sql14`count(*)`
     }).from(systemAuditLogs).where(
       and16(
-        eq23(systemAuditLogs.userId, userId),
+        eq26(systemAuditLogs.userId, userId),
         gte6(systemAuditLogs.createdAt, startDate)
       )
     ).groupBy(systemAuditLogs.eventType);
     const lastLogin = await db.select().from(systemAuditLogs).where(
       and16(
-        eq23(systemAuditLogs.userId, userId),
-        eq23(systemAuditLogs.eventType, "login")
+        eq26(systemAuditLogs.userId, userId),
+        eq26(systemAuditLogs.eventType, "login")
       )
-    ).orderBy(desc11(systemAuditLogs.createdAt)).limit(1);
-    const failedLogins = await db.select({ count: sql13`count(*)` }).from(systemAuditLogs).where(
+    ).orderBy(desc12(systemAuditLogs.createdAt)).limit(1);
+    const failedLogins = await db.select({ count: sql14`count(*)` }).from(systemAuditLogs).where(
       and16(
-        eq23(systemAuditLogs.userId, userId),
-        eq23(systemAuditLogs.eventType, "login_failed"),
+        eq26(systemAuditLogs.userId, userId),
+        eq26(systemAuditLogs.eventType, "login_failed"),
         gte6(systemAuditLogs.createdAt, startDate)
       )
     );
@@ -21518,39 +22640,39 @@ var AuditService = class {
     startDate.setHours(startDate.getHours() - hours);
     const categoryStats = await db.select({
       category: systemAuditLogs.eventCategory,
-      count: sql13`count(*)`
+      count: sql14`count(*)`
     }).from(systemAuditLogs).where(gte6(systemAuditLogs.createdAt, startDate)).groupBy(systemAuditLogs.eventCategory);
     const eventStats = await db.select({
       eventType: systemAuditLogs.eventType,
-      count: sql13`count(*)`
+      count: sql14`count(*)`
     }).from(systemAuditLogs).where(gte6(systemAuditLogs.createdAt, startDate)).groupBy(systemAuditLogs.eventType);
     const hourlyActivity = await db.select({
-      hour: sql13`date_trunc('hour', ${systemAuditLogs.createdAt})`,
-      count: sql13`count(*)`
-    }).from(systemAuditLogs).where(gte6(systemAuditLogs.createdAt, startDate)).groupBy(sql13`date_trunc('hour', ${systemAuditLogs.createdAt})`).orderBy(sql13`date_trunc('hour', ${systemAuditLogs.createdAt})`);
+      hour: sql14`date_trunc('hour', ${systemAuditLogs.createdAt})`,
+      count: sql14`count(*)`
+    }).from(systemAuditLogs).where(gte6(systemAuditLogs.createdAt, startDate)).groupBy(sql14`date_trunc('hour', ${systemAuditLogs.createdAt})`).orderBy(sql14`date_trunc('hour', ${systemAuditLogs.createdAt})`);
     const activeUsers = await db.select({
-      count: sql13`count(distinct ${systemAuditLogs.userId})`
+      count: sql14`count(distinct ${systemAuditLogs.userId})`
     }).from(systemAuditLogs).where(gte6(systemAuditLogs.createdAt, startDate));
     const errors = await db.select().from(systemAuditLogs).where(
       and16(
         or5(
-          eq23(systemAuditLogs.eventType, "system_error"),
-          eq23(systemAuditLogs.eventType, "security_alert"),
-          eq23(systemAuditLogs.eventType, "login_failed")
+          eq26(systemAuditLogs.eventType, "system_error"),
+          eq26(systemAuditLogs.eventType, "security_alert"),
+          eq26(systemAuditLogs.eventType, "login_failed")
         ),
         gte6(systemAuditLogs.createdAt, startDate)
       )
-    ).orderBy(desc11(systemAuditLogs.createdAt)).limit(10);
+    ).orderBy(desc12(systemAuditLogs.createdAt)).limit(10);
     const securityEvents = await db.select().from(systemAuditLogs).where(
       and16(
         or5(
-          eq23(systemAuditLogs.eventType, "login_failed"),
-          eq23(systemAuditLogs.eventType, "security_alert"),
-          eq23(systemAuditLogs.eventCategory, "security")
+          eq26(systemAuditLogs.eventType, "login_failed"),
+          eq26(systemAuditLogs.eventType, "security_alert"),
+          eq26(systemAuditLogs.eventCategory, "security")
         ),
         gte6(systemAuditLogs.createdAt, startDate)
       )
-    ).orderBy(desc11(systemAuditLogs.createdAt)).limit(10);
+    ).orderBy(desc12(systemAuditLogs.createdAt)).limit(10);
     return {
       categoryStats,
       eventStats,
@@ -21578,7 +22700,7 @@ var AuditService = class {
         ...settings,
         updatedBy: userId,
         updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq23(auditSettings.id, existingSettings.id)).returning();
+      }).where(eq26(auditSettings.id, existingSettings.id)).returning();
       await logAuditEvent("settings_change", "system", {
         userId,
         entityType: "audit_settings",
@@ -21627,7 +22749,7 @@ var AuditService = class {
     }));
     await db.insert(archivedAuditLogs).values(archiveData);
     const logIds = logsToArchive.map((log) => log.id);
-    await db.delete(systemAuditLogs).where(inArray5(systemAuditLogs.id, logIds));
+    await db.delete(systemAuditLogs).where(inArray6(systemAuditLogs.id, logIds));
     return { archived: logsToArchive.length };
   }
   /**
@@ -21636,10 +22758,10 @@ var AuditService = class {
   static async getArchivedLogs(params) {
     const { userId, startDate, endDate, limit = 50, offset = 0 } = params;
     const conditions = [];
-    if (userId) conditions.push(eq23(archivedAuditLogs.userId, userId));
+    if (userId) conditions.push(eq26(archivedAuditLogs.userId, userId));
     if (startDate) conditions.push(gte6(archivedAuditLogs.createdAt, startDate));
     if (endDate) conditions.push(lte6(archivedAuditLogs.createdAt, endDate));
-    const logs = await db.select().from(archivedAuditLogs).where(conditions.length > 0 ? and16(...conditions) : void 0).orderBy(desc11(archivedAuditLogs.createdAt)).limit(limit).offset(offset);
+    const logs = await db.select().from(archivedAuditLogs).where(conditions.length > 0 ? and16(...conditions) : void 0).orderBy(desc12(archivedAuditLogs.createdAt)).limit(limit).offset(offset);
     return logs;
   }
   /**
@@ -21651,11 +22773,11 @@ var AuditService = class {
     startDate.setDate(startDate.getDate() - days);
     const eventTypes = includeFailures ? ["login", "logout", "login_failed", "session_expired"] : ["login", "logout"];
     const conditions = [
-      inArray5(systemAuditLogs.eventType, eventTypes),
+      inArray6(systemAuditLogs.eventType, eventTypes),
       gte6(systemAuditLogs.createdAt, startDate)
     ];
     if (userId) {
-      conditions.push(eq23(systemAuditLogs.userId, userId));
+      conditions.push(eq26(systemAuditLogs.userId, userId));
     }
     const history = await db.select({
       id: systemAuditLogs.id,
@@ -21667,7 +22789,7 @@ var AuditService = class {
       userAgent: systemAuditLogs.userAgent,
       details: systemAuditLogs.additionalDetails,
       createdAt: systemAuditLogs.createdAt
-    }).from(systemAuditLogs).where(and16(...conditions)).orderBy(desc11(systemAuditLogs.createdAt)).limit(100);
+    }).from(systemAuditLogs).where(and16(...conditions)).orderBy(desc12(systemAuditLogs.createdAt)).limit(100);
     const sessions2 = [];
     let currentSession = null;
     for (const event of history) {
@@ -21712,13 +22834,13 @@ var AuditService = class {
     const startDate = /* @__PURE__ */ new Date();
     startDate.setDate(startDate.getDate() - days);
     const conditions = [
-      inArray5(systemAuditLogs.eventType, ["data_create", "data_update", "data_delete"]),
+      inArray6(systemAuditLogs.eventType, ["data_create", "data_update", "data_delete"]),
       gte6(systemAuditLogs.createdAt, startDate)
     ];
-    if (entityType) conditions.push(eq23(systemAuditLogs.entityType, entityType));
-    if (entityId) conditions.push(eq23(systemAuditLogs.entityId, entityId));
-    if (userId) conditions.push(eq23(systemAuditLogs.userId, userId));
-    const changes = await db.select().from(systemAuditLogs).where(and16(...conditions)).orderBy(desc11(systemAuditLogs.createdAt)).limit(100);
+    if (entityType) conditions.push(eq26(systemAuditLogs.entityType, entityType));
+    if (entityId) conditions.push(eq26(systemAuditLogs.entityId, entityId));
+    if (userId) conditions.push(eq26(systemAuditLogs.userId, userId));
+    const changes = await db.select().from(systemAuditLogs).where(and16(...conditions)).orderBy(desc12(systemAuditLogs.createdAt)).limit(100);
     return changes;
   }
   /**
@@ -21729,13 +22851,13 @@ var AuditService = class {
     const startDate = /* @__PURE__ */ new Date();
     startDate.setDate(startDate.getDate() - days);
     const conditions = [
-      eq23(systemAuditLogs.eventType, "data_delete"),
+      eq26(systemAuditLogs.eventType, "data_delete"),
       gte6(systemAuditLogs.createdAt, startDate)
     ];
     if (entityType) {
-      conditions.push(eq23(systemAuditLogs.entityType, entityType));
+      conditions.push(eq26(systemAuditLogs.entityType, entityType));
     }
-    const deletions = await db.select().from(systemAuditLogs).where(and16(...conditions)).orderBy(desc11(systemAuditLogs.createdAt));
+    const deletions = await db.select().from(systemAuditLogs).where(and16(...conditions)).orderBy(desc12(systemAuditLogs.createdAt));
     const records = deletions.map((deletion) => ({
       id: deletion.id,
       entityType: deletion.entityType,
@@ -21764,12 +22886,12 @@ var AuditService = class {
     const events = await db.select().from(systemAuditLogs).where(
       and16(
         or5(
-          inArray5(systemAuditLogs.eventType, securityEventTypes),
-          eq23(systemAuditLogs.eventCategory, "security")
+          inArray6(systemAuditLogs.eventType, securityEventTypes),
+          eq26(systemAuditLogs.eventCategory, "security")
         ),
         gte6(systemAuditLogs.createdAt, startDate)
       )
-    ).orderBy(desc11(systemAuditLogs.createdAt));
+    ).orderBy(desc12(systemAuditLogs.createdAt));
     const categorizedEvents = events.map((event) => {
       let eventSeverity = "low";
       if (event.eventType === "security_alert" || event.eventType === "permission_change") {
@@ -21791,7 +22913,7 @@ var AuditService = class {
    * 알림 규칙 조회
    */
   static async getAlertRules() {
-    return await db.select().from(auditAlertRules).where(eq23(auditAlertRules.isActive, true)).orderBy(desc11(auditAlertRules.severity));
+    return await db.select().from(auditAlertRules).where(eq26(auditAlertRules.isActive, true)).orderBy(desc12(auditAlertRules.severity));
   }
   /**
    * 알림 규칙 생성/업데이트
@@ -21801,7 +22923,7 @@ var AuditService = class {
       return await db.update(auditAlertRules).set({
         ...rule,
         updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq23(auditAlertRules.id, rule.id)).returning();
+      }).where(eq26(auditAlertRules.id, rule.id)).returning();
     } else {
       return await db.insert(auditAlertRules).values({
         ...rule,
@@ -22120,15 +23242,15 @@ var audit_default = router31;
 
 // server/routes/email-test.ts
 import express2 from "express";
-import path18 from "path";
+import path19 from "path";
 
 // server/services/email-service.ts
 init_db();
 init_schema();
-import nodemailer5 from "nodemailer";
-import path17 from "path";
-import fs20 from "fs/promises";
-var transporter = nodemailer5.createTransport({
+import nodemailer6 from "nodemailer";
+import path18 from "path";
+import fs21 from "fs/promises";
+var transporter = nodemailer6.createTransport({
   host: process.env.SMTP_HOST || "smtp.naver.com",
   port: parseInt(process.env.SMTP_PORT || "587"),
   secure: false,
@@ -22221,7 +23343,7 @@ var emailTemplates = {
 async function sendPurchaseOrderEmail(params) {
   const { orderData, excelFilePath, recipients, cc = [], userId, orderId } = params;
   try {
-    await fs20.access(excelFilePath);
+    await fs21.access(excelFilePath);
     const mailOptions = {
       from: `"(\uC8FC)\uC775\uC9C4\uC5D4\uC9C0\uB2C8\uC5B4\uB9C1" <${process.env.SMTP_USER}>`,
       to: recipients.join(", "),
@@ -22233,7 +23355,7 @@ async function sendPurchaseOrderEmail(params) {
       html: emailTemplates.purchaseOrder.html(orderData),
       attachments: [
         {
-          filename: path17.basename(excelFilePath),
+          filename: path18.basename(excelFilePath),
           path: excelFilePath,
           contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         }
@@ -22244,7 +23366,7 @@ async function sendPurchaseOrderEmail(params) {
     if (orderId && userId) {
       try {
         const trackingId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        const fileStats = await fs20.stat(excelFilePath);
+        const fileStats = await fs21.stat(excelFilePath);
         await db.insert(emailSendHistory).values({
           orderId,
           sentBy: userId,
@@ -22254,7 +23376,7 @@ async function sendPurchaseOrderEmail(params) {
           subject: mailOptions.subject,
           body: mailOptions.html,
           attachments: [{
-            filename: path17.basename(excelFilePath),
+            filename: path18.basename(excelFilePath),
             path: excelFilePath,
             size: fileStats.size
           }],
@@ -22398,9 +23520,9 @@ router32.post("/send-test", async (req, res) => {
       userName: "Test User",
       userPhone: "010-1234-5678"
     };
-    const dummyFilePath = path18.join(process.cwd(), "uploads", "test-email.xlsx");
+    const dummyFilePath = path19.join(process.cwd(), "uploads", "test-email.xlsx");
     const fs23 = __require("fs");
-    const uploadsDir = path18.join(process.cwd(), "uploads");
+    const uploadsDir = path19.join(process.cwd(), "uploads");
     if (!fs23.existsSync(uploadsDir)) {
       fs23.mkdirSync(uploadsDir, { recursive: true });
     }
@@ -22517,10 +23639,8 @@ router32.post("/simple", async (req, res) => {
 var email_test_default = router32;
 
 // server/routes/email-settings.ts
-init_po_email_service_enhanced();
+init_email_settings_service();
 import express3 from "express";
-import fs21 from "fs/promises";
-import path19 from "path";
 import { z as z8 } from "zod";
 var router33 = express3.Router();
 var EmailSettingsSchema = z8.object({
@@ -22529,7 +23649,7 @@ var EmailSettingsSchema = z8.object({
   smtpUser: z8.string().email("\uC62C\uBC14\uB978 \uC774\uBA54\uC77C \uD615\uC2DD\uC774 \uC544\uB2D9\uB2C8\uB2E4"),
   smtpPass: z8.string().min(1, "\uBE44\uBC00\uBC88\uD638\uB294 \uD544\uC218\uC785\uB2C8\uB2E4")
 });
-var envPath = path19.resolve(process.cwd(), ".env");
+var emailService3 = new EmailSettingsService();
 router33.get("/", async (req, res) => {
   try {
     if (!req.isAuthenticated() || req.user?.role !== "admin") {
@@ -22538,13 +23658,20 @@ router33.get("/", async (req, res) => {
         message: "\uAD00\uB9AC\uC790 \uAD8C\uD55C\uC774 \uD544\uC694\uD569\uB2C8\uB2E4"
       });
     }
-    const settings = {
-      smtpHost: process.env.SMTP_HOST || "",
-      smtpPort: process.env.SMTP_PORT || "",
-      smtpUser: process.env.SMTP_USER || "",
-      // 비밀번호는 마스킹 처리
-      smtpPass: process.env.SMTP_PASS ? "********" : ""
-    };
+    const emailService4 = new EmailSettingsService();
+    const dbSettings = await emailService4.getDefaultSettings();
+    let settings;
+    if (dbSettings) {
+      settings = emailService4.getMaskedSettings(dbSettings);
+    } else {
+      const envSettings = emailService4.getSettingsFromEnv();
+      settings = {
+        smtpHost: envSettings.smtpHost || "",
+        smtpPort: envSettings.smtpPort?.toString() || "",
+        smtpUser: envSettings.smtpUser || "",
+        smtpPass: process.env.SMTP_PASS ? "********" : ""
+      };
+    }
     res.json({
       success: true,
       data: settings
@@ -22574,61 +23701,48 @@ router33.put("/", async (req, res) => {
       });
     }
     const { smtpHost, smtpPort, smtpUser, smtpPass } = validationResult.data;
-    let envContent = "";
-    try {
-      envContent = await fs21.readFile(envPath, "utf-8");
-    } catch (error) {
-      console.log(".env \uD30C\uC77C\uC774 \uC5C6\uC2B5\uB2C8\uB2E4. \uC0C8\uB85C \uC0DD\uC131\uD569\uB2C8\uB2E4.");
+    const userId = req.user?.id || "system";
+    const existingSettings = await emailService3.getDefaultSettings();
+    let updatedSettings;
+    if (existingSettings) {
+      updatedSettings = await emailService3.updateSettings(existingSettings.id, {
+        smtpHost,
+        smtpPort: parseInt(smtpPort),
+        smtpUser,
+        smtpPass: smtpPass !== "********" ? smtpPass : void 0,
+        // 마스킹된 값이면 변경하지 않음
+        isDefault: true,
+        isActive: true
+      }, userId);
+    } else {
+      updatedSettings = await emailService3.createSettings({
+        smtpHost,
+        smtpPort: parseInt(smtpPort),
+        smtpUser,
+        smtpPass,
+        fromName: "IKJIN \uAD6C\uB9E4 \uBC1C\uC8FC \uC2DC\uC2A4\uD15C",
+        description: "\uC6F9 UI\uC5D0\uC11C \uC124\uC815\uB41C SMTP \uAD6C\uC131",
+        isActive: true,
+        isDefault: true
+      }, userId);
     }
-    const envLines = envContent.split("\n");
-    const updatedLines = [];
-    let smtpHostUpdated = false;
-    let smtpPortUpdated = false;
-    let smtpUserUpdated = false;
-    let smtpPassUpdated = false;
-    for (const line of envLines) {
-      if (line.startsWith("SMTP_HOST=")) {
-        updatedLines.push(`SMTP_HOST=${smtpHost}`);
-        smtpHostUpdated = true;
-      } else if (line.startsWith("SMTP_PORT=")) {
-        updatedLines.push(`SMTP_PORT=${smtpPort}`);
-        smtpPortUpdated = true;
-      } else if (line.startsWith("SMTP_USER=")) {
-        updatedLines.push(`SMTP_USER=${smtpUser}`);
-        smtpUserUpdated = true;
-      } else if (line.startsWith("SMTP_PASS=")) {
-        updatedLines.push(`SMTP_PASS=${smtpPass}`);
-        smtpPassUpdated = true;
-      } else {
-        updatedLines.push(line);
-      }
-    }
-    if (!smtpHostUpdated) {
-      updatedLines.push(`SMTP_HOST=${smtpHost}`);
-    }
-    if (!smtpPortUpdated) {
-      updatedLines.push(`SMTP_PORT=${smtpPort}`);
-    }
-    if (!smtpUserUpdated) {
-      updatedLines.push(`SMTP_USER=${smtpUser}`);
-    }
-    if (!smtpPassUpdated) {
-      updatedLines.push(`SMTP_PASS=${smtpPass}`);
-    }
-    await fs21.writeFile(envPath, updatedLines.join("\n"));
     process.env.SMTP_HOST = smtpHost;
     process.env.SMTP_PORT = smtpPort;
     process.env.SMTP_USER = smtpUser;
-    process.env.SMTP_PASS = smtpPass;
+    if (smtpPass !== "********") {
+      process.env.SMTP_PASS = smtpPass;
+    }
     res.json({
       success: true,
-      message: "\uC774\uBA54\uC77C \uC124\uC815\uC774 \uC5C5\uB370\uC774\uD2B8\uB418\uC5C8\uC2B5\uB2C8\uB2E4. \uC11C\uBC84\uB97C \uC7AC\uC2DC\uC791\uD574\uC57C \uBCC0\uACBD\uC0AC\uD56D\uC774 \uC644\uC804\uD788 \uC801\uC6A9\uB429\uB2C8\uB2E4."
+      message: "\uC774\uBA54\uC77C \uC124\uC815\uC774 \uB370\uC774\uD130\uBCA0\uC774\uC2A4\uC5D0 \uC800\uC7A5\uB418\uACE0 \uC989\uC2DC \uC801\uC6A9\uB418\uC5C8\uC2B5\uB2C8\uB2E4.",
+      data: emailService3.getMaskedSettings(updatedSettings)
     });
   } catch (error) {
     console.error("\uC774\uBA54\uC77C \uC124\uC815 \uC5C5\uB370\uC774\uD2B8 \uC624\uB958:", error);
     res.status(500).json({
       success: false,
-      message: "\uC774\uBA54\uC77C \uC124\uC815\uC744 \uC5C5\uB370\uC774\uD2B8\uD558\uB294 \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4"
+      message: "\uC774\uBA54\uC77C \uC124\uC815\uC744 \uC5C5\uB370\uC774\uD2B8\uD558\uB294 \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4",
+      error: error instanceof Error ? error.message : "Unknown error"
     });
   }
 });
@@ -22647,41 +23761,37 @@ router33.post("/test", async (req, res) => {
         message: "\uC720\uD6A8\uD55C \uD14C\uC2A4\uD2B8 \uC774\uBA54\uC77C \uC8FC\uC18C\uB97C \uC785\uB825\uD574\uC8FC\uC138\uC694"
       });
     }
-    const emailService3 = new POEmailService2();
-    const result = await emailService3.sendEmail({
-      to: testEmail,
-      subject: "[\uC2DC\uC2A4\uD15C \uD14C\uC2A4\uD2B8] \uC774\uBA54\uC77C \uC124\uC815 \uD655\uC778",
-      text: "\uC774\uBA54\uC77C \uC124\uC815\uC774 \uC62C\uBC14\uB974\uAC8C \uAD6C\uC131\uB418\uC5C8\uC2B5\uB2C8\uB2E4.",
-      html: `
-        <div style="font-family: Arial, sans-serif; padding: 20px;">
-          <h2>\uC774\uBA54\uC77C \uC124\uC815 \uD14C\uC2A4\uD2B8</h2>
-          <p>\uC774\uBA54\uC77C\uC774 \uC815\uC0C1\uC801\uC73C\uB85C \uBC1C\uC1A1\uB418\uC5C8\uC2B5\uB2C8\uB2E4.</p>
-          <hr>
-          <p style="color: #666; font-size: 12px;">
-            SMTP \uC11C\uBC84: ${process.env.SMTP_HOST}<br>
-            \uBC1C\uC1A1\uC790: ${process.env.SMTP_USER}<br>
-            \uBC1C\uC1A1 \uC2DC\uAC04: ${(/* @__PURE__ */ new Date()).toLocaleString("ko-KR")}
-          </p>
-        </div>
-      `
-    });
-    if (result.success) {
+    const currentSettings = await emailService3.getDefaultSettings();
+    if (!currentSettings) {
+      return res.status(404).json({
+        success: false,
+        message: "\uD65C\uC131\uD654\uB41C \uC774\uBA54\uC77C \uC124\uC815\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4. \uBA3C\uC800 \uC124\uC815\uC744 \uC800\uC7A5\uD574\uC8FC\uC138\uC694."
+      });
+    }
+    const testResult = await emailService3.testSMTPConnection(currentSettings, testEmail);
+    if (testResult.success) {
       res.json({
         success: true,
-        message: "\uD14C\uC2A4\uD2B8 \uC774\uBA54\uC77C\uC774 \uBC1C\uC1A1\uB418\uC5C8\uC2B5\uB2C8\uB2E4"
+        message: "\uD14C\uC2A4\uD2B8 \uC774\uBA54\uC77C\uC774 \uC131\uACF5\uC801\uC73C\uB85C \uBC1C\uC1A1\uB418\uC5C8\uC2B5\uB2C8\uB2E4",
+        data: {
+          messageId: testResult.messageId,
+          testEmail,
+          testedAt: (/* @__PURE__ */ new Date()).toISOString()
+        }
       });
     } else {
       res.status(500).json({
         success: false,
-        message: "\uD14C\uC2A4\uD2B8 \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC2E4\uD328",
-        error: result.error
+        message: "\uD14C\uC2A4\uD2B8 \uC774\uBA54\uC77C \uBC1C\uC1A1\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4",
+        error: testResult.error
       });
     }
   } catch (error) {
     console.error("\uC774\uBA54\uC77C \uD14C\uC2A4\uD2B8 \uC624\uB958:", error);
     res.status(500).json({
       success: false,
-      message: "\uC774\uBA54\uC77C \uD14C\uC2A4\uD2B8 \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4"
+      message: "\uC774\uBA54\uC77C \uD14C\uC2A4\uD2B8 \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4",
+      error: error instanceof Error ? error.message : "Unknown error"
     });
   }
 });
@@ -22693,15 +23803,15 @@ import { Router as Router31 } from "express";
 // server/services/approval-authority-service.ts
 init_db();
 init_schema();
-import { eq as eq24, and as and17, gte as gte7 } from "drizzle-orm";
+import { eq as eq27, and as and17, gte as gte7 } from "drizzle-orm";
 var ApprovalAuthorityService = class {
   /**
    * Check user's approval authority for a given amount
    */
   async checkAuthority(user, orderAmount) {
     const authority = await db.select().from(approvalAuthorities).where(and17(
-      eq24(approvalAuthorities.role, user.role),
-      eq24(approvalAuthorities.isActive, true)
+      eq27(approvalAuthorities.role, user.role),
+      eq27(approvalAuthorities.isActive, true)
     )).limit(1);
     if (!authority || authority.length === 0) {
       return {
@@ -22749,16 +23859,16 @@ var ApprovalAuthorityService = class {
   async findNextApprover(orderAmount) {
     const authorities = await db.select().from(approvalAuthorities).where(and17(
       gte7(approvalAuthorities.maxAmount, orderAmount.toString()),
-      eq24(approvalAuthorities.isActive, true)
+      eq27(approvalAuthorities.isActive, true)
     )).orderBy(approvalAuthorities.maxAmount);
     if (authorities.length === 0) {
-      const executive = await db.select().from(users).where(eq24(users.role, "executive")).limit(1);
+      const executive = await db.select().from(users).where(eq27(users.role, "executive")).limit(1);
       return executive[0]?.id;
     }
     const lowestAuthority = authorities[0];
     const approver = await db.select().from(users).where(and17(
-      eq24(users.role, lowestAuthority.role),
-      eq24(users.isActive, true)
+      eq27(users.role, lowestAuthority.role),
+      eq27(users.isActive, true)
     )).limit(1);
     return approver[0]?.id;
   }
@@ -22773,7 +23883,7 @@ var ApprovalAuthorityService = class {
       canDirectApprove: approvalAuthorities.canDirectApprove,
       directApproveLimit: approvalAuthorities.directApproveLimit
     }).from(approvalAuthorities).where(and17(
-      eq24(approvalAuthorities.isActive, true),
+      eq27(approvalAuthorities.isActive, true),
       gte7(approvalAuthorities.maxAmount, orderAmount.toString())
     )).orderBy(approvalAuthorities.maxAmount);
     for (const auth of authorities) {
@@ -22783,9 +23893,9 @@ var ApprovalAuthorityService = class {
         email: users.email,
         role: users.role
       }).from(users).where(and17(
-        eq24(users.role, auth.role),
-        eq24(users.isActive, true),
-        companyId ? eq24(users.companyId, companyId) : void 0
+        eq27(users.role, auth.role),
+        eq27(users.isActive, true),
+        companyId ? eq27(users.companyId, companyId) : void 0
       ));
       if (usersInRole.length > 0) {
         approvers.push({
@@ -22832,8 +23942,8 @@ var ApprovalAuthorityService = class {
     }
     if (order.vendorId) {
       const recentOrders = await db.select().from(purchaseOrders).where(and17(
-        eq24(purchaseOrders.vendorId, order.vendorId),
-        eq24(purchaseOrders.orderStatus, "delivered")
+        eq27(purchaseOrders.vendorId, order.vendorId),
+        eq27(purchaseOrders.orderStatus, "delivered")
         // Check orders from last 30 days
       )).limit(1);
       if (recentOrders.length > 0) {
@@ -22866,7 +23976,7 @@ var ApprovalAuthorityService = class {
         updateData.rejectionReason = comments;
         updateData.orderStatus = "draft";
       }
-      await db.update(purchaseOrders).set(updateData).where(eq24(purchaseOrders.id, orderId));
+      await db.update(purchaseOrders).set(updateData).where(eq27(purchaseOrders.id, orderId));
       return true;
     } catch (error) {
       console.error("Error processing approval:", error);
@@ -22879,13 +23989,13 @@ var approvalAuthorityService = new ApprovalAuthorityService();
 // server/services/workflow-engine.ts
 init_db();
 init_schema();
-import { eq as eq26 } from "drizzle-orm";
+import { eq as eq29 } from "drizzle-orm";
 
 // server/services/websocket-service.ts
 init_db();
 init_schema();
 import { Server as SocketIOServer } from "socket.io";
-import { eq as eq25 } from "drizzle-orm";
+import { eq as eq28 } from "drizzle-orm";
 var WebSocketService = class _WebSocketService {
   constructor() {
     this.io = null;
@@ -22911,7 +24021,7 @@ var WebSocketService = class _WebSocketService {
       console.log("\u{1F50C} WebSocket connection established:", socket.id);
       socket.on("authenticate", async (data) => {
         try {
-          const user = await db.select().from(users).where(eq25(users.id, data.userId)).then((rows) => rows[0]);
+          const user = await db.select().from(users).where(eq28(users.id, data.userId)).then((rows) => rows[0]);
           if (user) {
             const webSocketUser = {
               id: user.id,
@@ -23064,7 +24174,7 @@ var WorkflowEngine = class {
    * Process the next step in the workflow automatically
    */
   async processNextStep(orderId, userId) {
-    const order = await db.select().from(purchaseOrders).where(eq26(purchaseOrders.id, orderId)).limit(1);
+    const order = await db.select().from(purchaseOrders).where(eq29(purchaseOrders.id, orderId)).limit(1);
     if (!order || order.length === 0) {
       throw new Error(`Order ${orderId} not found`);
     }
@@ -23111,7 +24221,7 @@ var WorkflowEngine = class {
    * Track workflow progress for an order
    */
   async trackWorkflowProgress(orderId) {
-    const order = await db.select().from(purchaseOrders).where(eq26(purchaseOrders.id, orderId)).limit(1);
+    const order = await db.select().from(purchaseOrders).where(eq29(purchaseOrders.id, orderId)).limit(1);
     if (!order || order.length === 0) {
       throw new Error(`Order ${orderId} not found`);
     }
@@ -23121,7 +24231,7 @@ var WorkflowEngine = class {
       event: orderHistory.changeType,
       actor: orderHistory.userId,
       details: orderHistory.changedData
-    }).from(orderHistory).where(eq26(orderHistory.orderId, orderId)).orderBy(orderHistory.changedAt);
+    }).from(orderHistory).where(eq29(orderHistory.orderId, orderId)).orderBy(orderHistory.changedAt);
     const { currentStep, nextStep, estimatedCompletion } = this.determineWorkflowSteps(
       currentOrder.orderStatus,
       currentOrder.approvalStatus
@@ -23151,7 +24261,7 @@ var WorkflowEngine = class {
       nextApproverId: purchaseOrders.nextApproverId,
       createdBy: purchaseOrders.createdBy,
       vendorId: purchaseOrders.vendorId
-    }).from(purchaseOrders).where(eq26(purchaseOrders.id, orderId)).limit(1);
+    }).from(purchaseOrders).where(eq29(purchaseOrders.id, orderId)).limit(1);
     if (!order || order.length === 0) return;
     const currentOrder = order[0];
     switch (event) {
@@ -23184,14 +24294,14 @@ var WorkflowEngine = class {
       orderStatus: purchaseOrders.orderStatus,
       approvalStatus: purchaseOrders.approvalStatus,
       userId: purchaseOrders.userId
-    }).from(purchaseOrders).where(eq26(purchaseOrders.id, orderId)).limit(1);
+    }).from(purchaseOrders).where(eq29(purchaseOrders.id, orderId)).limit(1);
     if (!beforeOrder || beforeOrder.length === 0) return;
     await db.update(purchaseOrders).set({
       orderStatus,
       approvalStatus,
       ...additionalData,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq26(purchaseOrders.id, orderId));
+    }).where(eq29(purchaseOrders.id, orderId));
     const updatedBy = await this.getUserAsWebSocketUser(beforeOrder[0].userId);
     if (updatedBy) {
       const event = {
@@ -23224,9 +24334,9 @@ var WorkflowEngine = class {
       id: purchaseOrders.id,
       orderNumber: purchaseOrders.orderNumber,
       vendorId: purchaseOrders.vendorId
-    }).from(purchaseOrders).where(eq26(purchaseOrders.id, orderId)).limit(1);
+    }).from(purchaseOrders).where(eq29(purchaseOrders.id, orderId)).limit(1);
     if (!order || order.length === 0) return;
-    const vendor = await db.select().from(vendors).where(eq26(vendors.id, order[0].vendorId)).limit(1);
+    const vendor = await db.select().from(vendors).where(eq29(vendors.id, order[0].vendorId)).limit(1);
     if (vendor[0]?.email) {
       try {
         console.log(`Email would be sent to ${vendor[0].email} for order ${order[0].orderNumber}`);
@@ -23303,7 +24413,7 @@ var WorkflowEngine = class {
    * Get user details
    */
   async getUser(userId) {
-    const user = await db.select().from(users).where(eq26(users.id, userId)).limit(1);
+    const user = await db.select().from(users).where(eq29(users.id, userId)).limit(1);
     if (!user || user.length === 0) {
       throw new Error(`User ${userId} not found`);
     }
@@ -23319,7 +24429,7 @@ var WorkflowEngine = class {
       orderNumber: purchaseOrders.orderNumber,
       totalAmount: purchaseOrders.totalAmount,
       userId: purchaseOrders.userId
-    }).from(purchaseOrders).where(eq26(purchaseOrders.id, orderId)).limit(1);
+    }).from(purchaseOrders).where(eq29(purchaseOrders.id, orderId)).limit(1);
     if (order[0] && approver) {
       const requestedBy = await this.getUserAsWebSocketUser(order[0].userId);
       if (requestedBy) {
@@ -23386,7 +24496,7 @@ var workflowEngine = new WorkflowEngine();
 // server/routes/workflow.ts
 init_db();
 init_schema();
-import { eq as eq27 } from "drizzle-orm";
+import { eq as eq30 } from "drizzle-orm";
 var router34 = Router31();
 router34.post("/api/orders/check-approval-authority", async (req, res) => {
   try {
@@ -23398,7 +24508,7 @@ router34.post("/api/orders/check-approval-authority", async (req, res) => {
     if (!amount || amount <= 0) {
       return res.status(400).json({ message: "Invalid amount" });
     }
-    const user = await db.select().from(users).where(eq27(users.id, userId)).limit(1);
+    const user = await db.select().from(users).where(eq30(users.id, userId)).limit(1);
     if (!user || user.length === 0) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -23433,7 +24543,7 @@ router34.post("/api/orders/create-with-workflow", async (req, res) => {
       return res.status(401).json({ message: "User not authenticated" });
     }
     const orderData = req.body;
-    const user = await db.select().from(users).where(eq27(users.id, userId)).limit(1);
+    const user = await db.select().from(users).where(eq30(users.id, userId)).limit(1);
     if (!user || user.length === 0) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -23570,7 +24680,7 @@ router34.post("/api/orders/:id/confirm-delivery", async (req, res) => {
       deliveredBy: userId,
       notes: notes || void 0,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq27(purchaseOrders.id, orderId));
+    }).where(eq30(purchaseOrders.id, orderId));
     await workflowEngine.sendNotifications(orderId, "delivery_completed");
     res.json({
       message: "Delivery confirmed",
@@ -23611,7 +24721,7 @@ var workflow_default = router34;
 import { Router as Router32 } from "express";
 import multer6 from "multer";
 import xlsx from "xlsx";
-import crypto from "crypto";
+import crypto2 from "crypto";
 var router35 = Router32();
 var storage5 = multer6.memoryStorage();
 var upload6 = multer6({
@@ -23764,7 +24874,7 @@ ${incorrectFields.map((f) => `  \u2022 ${f}`).join("\n")}
       const warnings = [];
       let status = "valid";
       const rowString = JSON.stringify(row);
-      const hash = crypto.createHash("sha256").update(rowString).digest("hex");
+      const hash = crypto2.createHash("sha256").update(rowString).digest("hex");
       if (hashes.has(hash)) {
         warnings.push(`\uC911\uBCF5\uB41C \uB370\uC774\uD130 (\uB3D9\uC77C\uD55C \uB0B4\uC6A9\uC774 \uC774\uBBF8 \uC874\uC7AC)`);
         duplicates.push({ row: rowNumber, data: row });
@@ -23900,7 +25010,7 @@ var excel_smart_upload_simple_default = router35;
 init_db();
 init_schema();
 import { Router as Router33 } from "express";
-import { eq as eq28 } from "drizzle-orm";
+import { eq as eq31 } from "drizzle-orm";
 import { z as z9 } from "zod";
 var router36 = Router33();
 router36.post("/orders/check-approval-authority", requireAuth, async (req, res) => {
@@ -23909,7 +25019,7 @@ router36.post("/orders/check-approval-authority", requireAuth, async (req, res) 
       orderAmount: z9.number().positive()
     });
     const { orderAmount } = schema.parse(req.body);
-    const user = await db.select().from(users).where(eq28(users.id, req.user.id)).then((rows) => rows[0]);
+    const user = await db.select().from(users).where(eq31(users.id, req.user.id)).then((rows) => rows[0]);
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
@@ -23957,7 +25067,7 @@ router36.post("/orders/create-with-workflow", requireAuth, async (req, res) => {
       sendEmail: z9.boolean().optional()
     });
     const { orderData, sendEmail } = schema.parse(req.body);
-    const user = await db.select().from(users).where(eq28(users.id, req.user.id)).then((rows) => rows[0]);
+    const user = await db.select().from(users).where(eq31(users.id, req.user.id)).then((rows) => rows[0]);
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
@@ -24032,7 +25142,7 @@ router36.get("/orders/workflow-status/:id", requireAuth, async (req, res) => {
     if (isNaN(orderId)) {
       return res.status(400).json({ error: "Invalid order ID" });
     }
-    const order = await db.select().from(purchaseOrders).where(eq28(purchaseOrders.id, orderId)).then((rows) => rows[0]);
+    const order = await db.select().from(purchaseOrders).where(eq31(purchaseOrders.id, orderId)).then((rows) => rows[0]);
     if (!order) {
       return res.status(404).json({ error: "Order not found" });
     }
@@ -24058,7 +25168,7 @@ router36.post("/orders/:id/confirm-delivery", requireAuth, async (req, res) => {
       receivedBy: z9.string().optional()
     });
     const { deliveryNotes, actualDeliveryDate, receivedBy } = schema.parse(req.body);
-    const order = await db.select().from(purchaseOrders).where(eq28(purchaseOrders.id, orderId)).then((rows) => rows[0]);
+    const order = await db.select().from(purchaseOrders).where(eq31(purchaseOrders.id, orderId)).then((rows) => rows[0]);
     if (!order) {
       return res.status(404).json({ error: "Order not found" });
     }
@@ -24078,7 +25188,7 @@ router36.post("/orders/:id/confirm-delivery", requireAuth, async (req, res) => {
 
 \uBC30\uC1A1 \uBA54\uBAA8: ${deliveryNotes}` : deliveryNotes : order.notes,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq28(purchaseOrders.id, orderId)).returning();
+    }).where(eq31(purchaseOrders.id, orderId)).returning();
     await db.insert(orderHistory).values({
       orderId,
       userId: req.user.id,
@@ -24173,8 +25283,8 @@ var orders_workflow_default = router36;
 init_db();
 init_schema();
 import { Router as Router34 } from "express";
-import { eq as eq29 } from "drizzle-orm";
-init_pdf_generation_service();
+import { eq as eq32 } from "drizzle-orm";
+init_professional_pdf_generation_service();
 var router37 = Router34();
 router37.post("/orders/:id/create-order", requireAuth, async (req, res) => {
   const orderId = parseInt(req.params.id);
@@ -24183,7 +25293,7 @@ router37.post("/orders/:id/create-order", requireAuth, async (req, res) => {
     return res.status(401).json({ error: "\uC778\uC99D\uC774 \uD544\uC694\uD569\uB2C8\uB2E4." });
   }
   try {
-    const [order] = await db.select().from(purchaseOrders).where(eq29(purchaseOrders.id, orderId));
+    const [order] = await db.select().from(purchaseOrders).where(eq32(purchaseOrders.id, orderId));
     if (!order) {
       return res.status(404).json({
         error: "\uBC1C\uC8FC\uC11C\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.",
@@ -24197,7 +25307,7 @@ router37.post("/orders/:id/create-order", requireAuth, async (req, res) => {
       });
     }
     const fullOrderData = await db.query.purchaseOrders.findFirst({
-      where: eq29(purchaseOrders.id, orderId),
+      where: eq32(purchaseOrders.id, orderId),
       with: {
         vendor: true,
         project: true,
@@ -24208,34 +25318,9 @@ router37.post("/orders/:id/create-order", requireAuth, async (req, res) => {
     if (!fullOrderData) {
       return res.status(404).json({ error: "\uBC1C\uC8FC\uC11C \uC815\uBCF4\uB97C \uBD88\uB7EC\uC62C \uC218 \uC5C6\uC2B5\uB2C8\uB2E4." });
     }
-    console.log(`\u{1F4C4} Creating order PDF for order ${order.orderNumber}...`);
-    const pdfData = {
-      orderNumber: order.orderNumber,
-      orderDate: new Date(order.orderDate),
-      deliveryDate: order.deliveryDate ? new Date(order.deliveryDate) : null,
-      projectName: fullOrderData.project?.projectName,
-      vendorName: fullOrderData.vendor?.name,
-      vendorContact: fullOrderData.vendor?.contactPerson,
-      vendorEmail: fullOrderData.vendor?.email,
-      items: fullOrderData.items.map((item) => ({
-        category: item.majorCategory || "",
-        subCategory1: item.middleCategory || "",
-        subCategory2: item.minorCategory || "",
-        name: item.itemName,
-        specification: item.specification || "",
-        quantity: Number(item.quantity),
-        unit: item.unit || "\uAC1C",
-        unitPrice: Number(item.unitPrice),
-        price: Number(item.totalAmount),
-        deliveryLocation: fullOrderData.project?.location || ""
-      })),
-      totalAmount: Number(order.totalAmount),
-      notes: order.notes || "",
-      site: fullOrderData.project?.projectName
-    };
-    const pdfResult = await PDFGenerationService.generatePurchaseOrderPDF(
+    console.log(`\u{1F4C4} Creating professional order PDF for order ${order.orderNumber}...`);
+    const pdfResult = await ProfessionalPDFGenerationService.generateProfessionalPurchaseOrderPDF(
       orderId,
-      pdfData,
       userId
     );
     if (!pdfResult.success) {
@@ -24251,7 +25336,7 @@ router37.post("/orders/:id/create-order", requireAuth, async (req, res) => {
       status: "approved",
       // 레거시 호환성
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq29(purchaseOrders.id, orderId)).returning();
+    }).where(eq32(purchaseOrders.id, orderId)).returning();
     await db.insert(orderHistory).values({
       orderId,
       userId,
@@ -24295,7 +25380,7 @@ router37.get("/orders/:id/permissions", requireAuth, async (req, res) => {
       orderStatus: purchaseOrders.orderStatus,
       approvalStatus: purchaseOrders.approvalStatus,
       userId: purchaseOrders.userId
-    }).from(purchaseOrders).where(eq29(purchaseOrders.id, orderId));
+    }).from(purchaseOrders).where(eq32(purchaseOrders.id, orderId));
     if (!order) {
       return res.status(404).json({ error: "\uBC1C\uC8FC\uC11C\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4." });
     }
@@ -24323,7 +25408,7 @@ var orders_create_default = router37;
 // server/routes/health.ts
 init_db();
 import { Router as Router35 } from "express";
-import { sql as sql14 } from "drizzle-orm";
+import { sql as sql15 } from "drizzle-orm";
 var router38 = Router35();
 router38.get("/health", (req, res) => {
   res.json({
@@ -24364,7 +25449,7 @@ router38.get("/health/database", async (req, res) => {
     if (!db) {
       throw new Error("Database instance not initialized");
     }
-    const result = await db.execute(sql14`SELECT 1 as test`);
+    const result = await db.execute(sql15`SELECT 1 as test`);
     if (result) {
       status.database.connected = true;
     }
@@ -24431,7 +25516,7 @@ router38.get("/health/system", async (req, res) => {
   };
   if (process.env.DATABASE_URL && db) {
     try {
-      await db.execute(sql14`SELECT 1`);
+      await db.execute(sql15`SELECT 1`);
       results.database = true;
     } catch (error) {
       console.error("Database health check failed:", error);
@@ -24454,7 +25539,7 @@ var health_default = router38;
 init_db();
 init_schema();
 import { Router as Router36 } from "express";
-import { eq as eq30, sql as sql15, desc as desc13 } from "drizzle-orm";
+import { eq as eq33, sql as sql16, desc as desc14 } from "drizzle-orm";
 var router39 = Router36();
 router39.get("/debug/recent-drafts", async (req, res) => {
   try {
@@ -24468,7 +25553,7 @@ router39.get("/debug/recent-drafts", async (req, res) => {
       vendorId: purchaseOrders.vendorId,
       totalAmount: purchaseOrders.totalAmount,
       vendorName: vendors.name
-    }).from(purchaseOrders).leftJoin(vendors, eq30(purchaseOrders.vendorId, vendors.id)).where(eq30(purchaseOrders.status, "draft")).orderBy(desc13(purchaseOrders.createdAt)).limit(20);
+    }).from(purchaseOrders).leftJoin(vendors, eq33(purchaseOrders.vendorId, vendors.id)).where(eq33(purchaseOrders.status, "draft")).orderBy(desc14(purchaseOrders.createdAt)).limit(20);
     const allRecentOrders = await db.select({
       id: purchaseOrders.id,
       orderNumber: purchaseOrders.orderNumber,
@@ -24478,8 +25563,8 @@ router39.get("/debug/recent-drafts", async (req, res) => {
       vendorId: purchaseOrders.vendorId,
       totalAmount: purchaseOrders.totalAmount,
       vendorName: vendors.name
-    }).from(purchaseOrders).leftJoin(vendors, eq30(purchaseOrders.vendorId, vendors.id)).where(sql15`${purchaseOrders.createdAt} > ${oneHourAgo}`).orderBy(desc13(purchaseOrders.createdAt)).limit(50);
-    const jbVendor = await db.select().from(vendors).where(sql15`${vendors.name} LIKE '%제이비엔지니어링%'`).limit(5);
+    }).from(purchaseOrders).leftJoin(vendors, eq33(purchaseOrders.vendorId, vendors.id)).where(sql16`${purchaseOrders.createdAt} > ${oneHourAgo}`).orderBy(desc14(purchaseOrders.createdAt)).limit(50);
+    const jbVendor = await db.select().from(vendors).where(sql16`${vendors.name} LIKE '%제이비엔지니어링%'`).limit(5);
     res.json({
       recentDrafts,
       recentDraftsCount: recentDrafts.length,
@@ -24500,7 +25585,7 @@ var debug_default = router39;
 init_db();
 init_schema();
 import { Router as Router37 } from "express";
-import { eq as eq31 } from "drizzle-orm";
+import { eq as eq34 } from "drizzle-orm";
 import path20 from "path";
 import fs22 from "fs";
 import jwt2 from "jsonwebtoken";
@@ -24540,7 +25625,7 @@ router40.get("/attachments/:id/download", async (req, res) => {
       uploadedBy: attachments.uploadedBy,
       uploadedAt: attachments.uploadedAt,
       fileData: attachments.fileData
-    }).from(attachments).where(eq31(attachments.id, attachmentId));
+    }).from(attachments).where(eq34(attachments.id, attachmentId));
     if (!attachment) {
       return res.status(404).json({
         error: "\uCCA8\uBD80\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.",
@@ -24571,12 +25656,18 @@ router40.get("/attachments/:id/download", async (req, res) => {
       console.log("\u{1F4C4} PDF has db:// prefix, converting to filesystem path...");
       fileName = fileName.replace("db://", "");
     }
-    const possiblePaths = [
-      path20.join(process.cwd(), "attached_assets", fileName),
-      path20.join(process.cwd(), "uploads", fileName),
-      path20.join(process.cwd(), "uploads", "temp-pdf", fileName),
-      path20.join(process.cwd(), fileName)
-    ];
+    const possiblePaths = [];
+    if (path20.isAbsolute(fileName)) {
+      console.log("\u{1F4C4} Using absolute path directly:", fileName);
+      possiblePaths.push(fileName);
+    } else {
+      possiblePaths.push(
+        path20.join(process.cwd(), "attached_assets", fileName),
+        path20.join(process.cwd(), "uploads", fileName),
+        path20.join(process.cwd(), "uploads", "temp-pdf", fileName),
+        path20.join(process.cwd(), fileName)
+      );
+    }
     let foundPath = null;
     for (const testPath of possiblePaths) {
       if (fs22.existsSync(testPath)) {
@@ -24608,6 +25699,82 @@ router40.get("/attachments/:id/download", async (req, res) => {
     console.error("Attachment download error:", error);
     res.status(500).json({
       error: "\uD30C\uC77C \uB2E4\uC6B4\uB85C\uB4DC \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4.",
+      message: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+router40.delete("/attachments/:id", requireAuth, async (req, res) => {
+  const attachmentId = parseInt(req.params.id);
+  try {
+    const { user } = req;
+    console.log("\u{1F5D1}\uFE0F Attachment delete request received");
+    console.log("\u{1F464} User info:", { id: user?.id, role: user?.role, name: user?.name });
+    if (!user || user.role !== "admin") {
+      return res.status(403).json({
+        error: "Admin access required",
+        message: "Only administrators can delete attachments"
+      });
+    }
+    console.log(`\u{1F5D1}\uFE0F Admin ${user.name} (ID: ${user.id}) requesting deletion of attachment ${attachmentId}`);
+    const [attachment] = await db.select({
+      id: attachments.id,
+      orderId: attachments.orderId,
+      originalName: attachments.originalName,
+      storedName: attachments.storedName,
+      filePath: attachments.filePath,
+      fileSize: attachments.fileSize,
+      mimeType: attachments.mimeType,
+      uploadedBy: attachments.uploadedBy,
+      uploadedAt: attachments.uploadedAt,
+      fileData: attachments.fileData
+    }).from(attachments).where(eq34(attachments.id, attachmentId));
+    if (!attachment) {
+      return res.status(404).json({
+        error: "\uCCA8\uBD80\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.",
+        attachmentId
+      });
+    }
+    console.log(`\u{1F4C4} Found attachment: ${attachment.originalName} (Order: ${attachment.orderId})`);
+    if (attachment.filePath && !attachment.filePath.startsWith("db://")) {
+      let fileName = attachment.filePath;
+      const possiblePaths = [];
+      if (path20.isAbsolute(fileName)) {
+        possiblePaths.push(fileName);
+      } else {
+        possiblePaths.push(
+          path20.join(process.cwd(), "attached_assets", fileName),
+          path20.join(process.cwd(), "uploads", fileName),
+          path20.join(process.cwd(), "uploads", "temp-pdf", fileName),
+          path20.join(process.cwd(), fileName)
+        );
+      }
+      for (const testPath of possiblePaths) {
+        if (fs22.existsSync(testPath)) {
+          try {
+            fs22.unlinkSync(testPath);
+            console.log(`\u{1F5D1}\uFE0F Deleted physical file at: ${testPath}`);
+            break;
+          } catch (fileError) {
+            console.warn(`\u26A0\uFE0F Failed to delete physical file at ${testPath}:`, fileError.message);
+          }
+        }
+      }
+    }
+    const deletedRows = await db.delete(attachments).where(eq34(attachments.id, attachmentId));
+    console.log(`\u2705 Deleted attachment record from database (affected rows: ${deletedRows})`);
+    return res.json({
+      success: true,
+      message: "\uCCA8\uBD80\uD30C\uC77C\uC774 \uC131\uACF5\uC801\uC73C\uB85C \uC0AD\uC81C\uB418\uC5C8\uC2B5\uB2C8\uB2E4.",
+      deletedAttachment: {
+        id: attachment.id,
+        originalName: attachment.originalName,
+        orderId: attachment.orderId
+      }
+    });
+  } catch (error) {
+    console.error("Attachment deletion error:", error);
+    res.status(500).json({
+      error: "\uCCA8\uBD80\uD30C\uC77C \uC0AD\uC81C \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4.",
       message: error instanceof Error ? error.message : "Unknown error"
     });
   }
@@ -24712,7 +25879,7 @@ app.use(session({
   },
   // Force session regeneration to ensure data persistence
   genid: () => {
-    return crypto2.randomUUID();
+    return crypto3.randomUUID();
   }
 }));
 console.log("\u2705 Session middleware configured globally");

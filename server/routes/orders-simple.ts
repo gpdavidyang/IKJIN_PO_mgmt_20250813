@@ -6,6 +6,7 @@ import { requireAuth } from '../local-auth';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs/promises';
+import { readFileSync } from 'fs';
 import { z } from 'zod';
 import { PDFGenerationService } from '../services/pdf-generation-service';
 import { decodeKoreanFilename } from '../utils/korean-filename';
@@ -394,6 +395,19 @@ router.post('/orders/bulk-create-simple', requireAuth, upload.single('excelFile'
             const relativePath = process.env.VERCEL 
               ? req.file.filename  // Just store filename for Vercel
               : req.file.path;     // Full path for local development
+
+            // Read file data for Vercel environment (like PDF generation services)
+            let fileData: string | undefined;
+            if (process.env.VERCEL) {
+              try {
+                const fileBuffer = readFileSync(req.file.path);
+                fileData = fileBuffer.toString('base64');
+                console.log(`📎 File data encoded for Vercel: ${Math.round(fileBuffer.length / 1024)}KB -> ${Math.round(fileData.length / 1024)}KB base64`);
+              } catch (fileReadError) {
+                console.error('❌ Failed to read file for Vercel storage:', fileReadError);
+                // Continue without fileData as fallback
+              }
+            }
               
             const [savedAttachment] = await db.insert(attachments).values({
               orderId: newOrder.id,
@@ -403,7 +417,8 @@ router.post('/orders/bulk-create-simple', requireAuth, upload.single('excelFile'
               fileSize: req.file.size,
               mimeType: req.file.mimetype,
               uploadedBy: req.user.id,
-              uploadedAt: new Date()
+              uploadedAt: new Date(),
+              ...(fileData && { fileData }) // Include fileData only if available
             }).returning();
             
             console.log(`✅ Excel file attachment saved with ID ${savedAttachment.id} for order ${newOrder.orderNumber}`);

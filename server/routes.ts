@@ -38,6 +38,7 @@ import { z } from "zod";
 import nodemailer from "nodemailer";
 import XLSX from "xlsx";
 import path from "path";
+import { readFileSync } from "fs";
 import { upload, logoUpload, uploadDir, excelUpload } from "./utils/multer-config";
 import { decodeKoreanFilename } from "./utils/korean-filename";
 import { 
@@ -1571,6 +1572,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
             console.log("🔧 FIXED KOREAN FILENAME:", attachment.originalName);
           }
+
+          // Read file data for Vercel environment (like PDF generation services)
+          if (process.env.VERCEL) {
+            try {
+              const fileBuffer = readFileSync(file.path);
+              const fileData = fileBuffer.toString('base64');
+              attachment.fileData = fileData;
+              console.log(`📎 File data encoded for Vercel: ${Math.round(fileBuffer.length / 1024)}KB -> ${Math.round(fileData.length / 1024)}KB base64`);
+            } catch (fileReadError) {
+              console.error('❌ Failed to read file for Vercel storage:', fileReadError);
+              // Continue without fileData as fallback
+            }
+          }
           
           await storage.createAttachment(attachment);
           console.log("📎 Attachment created:", attachment.fileName);
@@ -1803,14 +1817,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const attachments = await Promise.all(
         req.files.map(async (file: any) => {
-          const attachment = await storage.createAttachment({
+          const attachmentData: any = {
             orderId,
             fileName: file.filename,
             originalName: file.originalname,
             fileSize: file.size,
             mimeType: file.mimetype,
             filePath: file.path,
-          });
+          };
+
+          // Read file data for Vercel environment (like PDF generation services)
+          if (process.env.VERCEL) {
+            try {
+              const fileBuffer = readFileSync(file.path);
+              const fileData = fileBuffer.toString('base64');
+              attachmentData.fileData = fileData;
+              console.log(`📎 File data encoded for Vercel: ${Math.round(fileBuffer.length / 1024)}KB -> ${Math.round(fileData.length / 1024)}KB base64`);
+            } catch (fileReadError) {
+              console.error('❌ Failed to read file for Vercel storage:', fileReadError);
+              // Continue without fileData as fallback
+            }
+          }
+
+          const attachment = await storage.createAttachment(attachmentData);
           return attachment;
         })
       );
