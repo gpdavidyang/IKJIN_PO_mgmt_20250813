@@ -17,6 +17,8 @@ router.get('/attachments/:id/download', async (req, res) => {
   const attachmentId = parseInt(req.params.id);
   const forceDownload = req.query.download === 'true'; // ?download=true 파라미터로 강제 다운로드
 
+  console.log(`📥 Attachment download request: ID=${attachmentId}, forceDownload=${forceDownload}, query=${JSON.stringify(req.query)}`);
+
   try {
     // Check authentication - cookie, query param, or session
     let authenticated = false;
@@ -99,11 +101,10 @@ router.get('/attachments/:id/download', async (req, res) => {
         res.setHeader('Content-Length', buffer.length);
         
         // 강제 다운로드 요청이거나 PDF가 아닌 경우 attachment로, 그렇지 않으면 inline
-        if (forceDownload || !mimeType.includes('pdf')) {
-          res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(displayName)}`);
-        } else {
-          res.setHeader('Content-Disposition', `inline; filename*=UTF-8''${encodeURIComponent(displayName)}`);
-        }
+        const disposition = (forceDownload || !mimeType.includes('pdf')) ? 'attachment' : 'inline';
+        const contentDisposition = `${disposition}; filename*=UTF-8''${encodeURIComponent(displayName)}`;
+        console.log(`📄 Setting Content-Disposition: ${contentDisposition} (mimeType: ${mimeType}, forceDownload: ${forceDownload})`);
+        res.setHeader('Content-Disposition', contentDisposition);
         
         return res.send(buffer);
       } catch (error) {
@@ -153,11 +154,10 @@ router.get('/attachments/:id/download', async (req, res) => {
       res.setHeader('Content-Type', mimeType);
       
       // 강제 다운로드 요청이거나 PDF가 아닌 경우 attachment로, 그렇지 않으면 inline
-      if (forceDownload || !mimeType.includes('pdf')) {
-        res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(displayName)}`);
-      } else {
-        res.setHeader('Content-Disposition', `inline; filename*=UTF-8''${encodeURIComponent(displayName)}`);
-      }
+      const disposition = (forceDownload || !mimeType.includes('pdf')) ? 'attachment' : 'inline';
+      const contentDisposition = `${disposition}; filename*=UTF-8''${encodeURIComponent(displayName)}`;
+      console.log(`📄 Setting Content-Disposition: ${contentDisposition} (mimeType: ${mimeType}, forceDownload: ${forceDownload})`);
+      res.setHeader('Content-Disposition', contentDisposition);
       
       const fileStream = fs.createReadStream(foundPath);
       fileStream.pipe(res);
