@@ -488,8 +488,11 @@ export class ProfessionalPDFGenerationService {
       const base64Data = pdfBuffer.toString('base64');
       let filePath = '';
       let attachmentId: number;
+      
+      console.log(`🔍 [ProfessionalPDF] Environment check - VERCEL: ${process.env.VERCEL}, Base64 size: ${base64Data.length} chars`);
 
       if (process.env.VERCEL) {
+        console.log('📝 [ProfessionalPDF] Saving to database with Base64 data...');
         // Vercel 환경: Base64만 저장
         const [attachment] = await db.insert(attachments).values({
           orderId,
