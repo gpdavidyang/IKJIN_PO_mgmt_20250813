@@ -43,7 +43,7 @@ router.get('/attachments/:id/download', async (req, res) => {
         message: 'Authentication required'
       });
     }
-    // 1. 첨부파일 정보 조회 (fileData 컬럼이 없을 수 있으므로 명시적으로 선택)
+    // 1. 첨부파일 정보 조회 (fileData 컬럼 포함)
     const [attachment] = await db
       .select({
         id: attachments.id,
@@ -54,7 +54,8 @@ router.get('/attachments/:id/download', async (req, res) => {
         fileSize: attachments.fileSize,
         mimeType: attachments.mimeType,
         uploadedBy: attachments.uploadedBy,
-        uploadedAt: attachments.uploadedAt
+        uploadedAt: attachments.uploadedAt,
+        fileData: attachments.fileData
       })
       .from(attachments)
       .where(eq(attachments.id, attachmentId));
@@ -66,7 +67,34 @@ router.get('/attachments/:id/download', async (req, res) => {
       });
     }
 
-    // 2. 파일 시스템에서 파일 찾기
+    // 2. 먼저 Base64 데이터가 있는지 확인
+    if (attachment.fileData) {
+      console.log('📄 Serving file from Base64 data in database');
+      const mimeType = attachment.mimeType || 'application/pdf';
+      const displayName = attachment.originalName || 'file';
+      
+      try {
+        // Base64 데이터를 Buffer로 변환
+        const buffer = Buffer.from(attachment.fileData, 'base64');
+        
+        res.setHeader('Content-Type', mimeType);
+        res.setHeader('Content-Length', buffer.length);
+        
+        // For PDFs, display inline; for other files, download
+        if (mimeType.includes('pdf')) {
+          res.setHeader('Content-Disposition', `inline; filename*=UTF-8''${encodeURIComponent(displayName)}`);
+        } else {
+          res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(displayName)}`);
+        }
+        
+        return res.send(buffer);
+      } catch (error) {
+        console.error('Error decoding Base64 data:', error);
+        // 계속해서 파일 시스템 검색 시도
+      }
+    }
+
+    // 3. Base64 데이터가 없으면 파일 시스템에서 파일 찾기
     console.log('📄 Looking for file in filesystem...');
     
     let fileName = attachment.filePath;
