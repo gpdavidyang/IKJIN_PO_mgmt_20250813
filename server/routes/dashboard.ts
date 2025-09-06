@@ -82,6 +82,8 @@ router.get("/orders-optimized", async (req, res) => {
         po.id,
         po.order_number as "orderNumber",
         po.status,
+        po.order_status as "orderStatus",
+        po.approval_status as "approvalStatus",
         po.total_amount as "totalAmount",
         po.order_date as "orderDate",
         po.created_at as "createdAt",

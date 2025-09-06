@@ -14,7 +14,7 @@ async function testProfessionalPDFGeneration() {
   try {
     // Test data collection first
     console.log('📊 Step 1: Testing comprehensive data collection...');
-    const testOrderId = 1; // Use existing order ID
+    const testOrderId = 25; // Use existing order ID
     
     const comprehensiveData = await ProfessionalPDFGenerationService.gatherComprehensiveOrderData(testOrderId);
     
@@ -144,24 +144,22 @@ function showUsageInstructions() {
 }
 
 // Main execution
-if (require.main === module) {
-  console.log('🎯 PROFESSIONAL PDF GENERATION SYSTEM TEST\n');
+console.log('🎯 PROFESSIONAL PDF GENERATION SYSTEM TEST\n');
+
+showFeatureComparison();
+showUsageInstructions();
+
+console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+console.log('🧪 Running Live Test...\n');
+
+testProfessionalPDFGeneration().then(() => {
+  console.log('\n✅ Test completed successfully!');
+  console.log('📄 Professional PDF generation system is ready for use.');
   
-  showFeatureComparison();
-  showUsageInstructions();
-  
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log('🧪 Running Live Test...\n');
-  
-  testProfessionalPDFGeneration().then(() => {
-    console.log('\n✅ Test completed successfully!');
-    console.log('📄 Professional PDF generation system is ready for use.');
-    
-    process.exit(0);
-  }).catch((error) => {
-    console.error('\n❌ Test failed:', error.message);
-    process.exit(1);
-  });
-}
+  process.exit(0);
+}).catch((error) => {
+  console.error('\n❌ Test failed:', error.message);
+  process.exit(1);
+});
 
 export { testProfessionalPDFGeneration };

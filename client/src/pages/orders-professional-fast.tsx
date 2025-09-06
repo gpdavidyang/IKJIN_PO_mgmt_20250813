@@ -1252,11 +1252,13 @@ export default function OrdersProfessionalFast() {
                             </button>
                           )}
                           
-                          {/* PDF button - only for created, sent, delivered status (never for draft) */}
-                          {((order.orderStatus && order.orderStatus !== 'draft' && 
-                            (order.orderStatus === 'created' || order.orderStatus === 'sent' || order.orderStatus === 'delivered')) ||
-                            (!order.orderStatus && order.status !== 'draft' && 
-                            (order.status === 'approved' || order.status === 'sent' || order.status === 'completed'))) && (
+                          {/* PDF button - only for non-draft status (created, sent, delivered) */}
+                          {(() => {
+                            const currentOrderStatus = order.orderStatus || order.status;
+                            const isDraft = currentOrderStatus === 'draft' || currentOrderStatus === '임시저장';
+                            const isValidForPdf = ['created', 'sent', 'delivered', 'approved', 'completed'].includes(currentOrderStatus);
+                            return !isDraft && isValidForPdf;
+                          })() && (
                             <button
                               onClick={() => handlePDFDownload(order)}
                               className="p-1.5 text-orange-500 hover:text-orange-700 hover:bg-orange-50 dark:text-orange-400 dark:hover:text-orange-300 dark:hover:bg-orange-900/20 rounded-md transition-all duration-200"

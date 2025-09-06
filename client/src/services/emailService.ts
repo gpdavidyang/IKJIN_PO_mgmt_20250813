@@ -157,15 +157,9 @@ export class EmailService {
     sheets: string[] = ['갑지', '을지']
   ): Promise<{ success: boolean; extractedPath?: string; error?: string }> {
     try {
-      return await apiRequest(`${this.BASE_URL}/extract-sheets`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          filePath,
-          sheets
-        }),
+      return await apiRequest('POST', `${this.BASE_URL}/extract-sheets`, {
+        filePath,
+        sheets
       });
     } catch (error) {
       console.error('Sheet extraction error:', error);
@@ -181,15 +175,9 @@ export class EmailService {
     sheets?: string[]
   ): Promise<{ success: boolean; pdfPath?: string; error?: string }> {
     try {
-      return await apiRequest(`${this.BASE_URL}/convert-to-pdf`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          excelPath,
-          sheets
-        }),
+      return await apiRequest('POST', `${this.BASE_URL}/convert-to-pdf`, {
+        excelPath,
+        sheets
       });
     } catch (error) {
       console.error('PDF conversion error:', error);
@@ -227,10 +215,7 @@ export class EmailService {
     });
 
     try {
-      return await apiRequest(`${this.BASE_URL}/process-complete`, {
-        method: 'POST',
-        body: formData, // Content-Type은 자동으로 설정됨
-      });
+      return await apiRequest('POST', `${this.BASE_URL}/process-complete`, formData);
     } catch (error) {
       console.error('Complete process error:', error);
       throw new Error('통합 처리 중 오류가 발생했습니다.');
