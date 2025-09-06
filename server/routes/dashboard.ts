@@ -93,7 +93,7 @@ router.get("/orders-optimized", async (req, res) => {
       LEFT JOIN vendors v ON po.vendor_id = v.id
       LEFT JOIN projects p ON po.project_id = p.id
       ORDER BY po.created_at DESC
-      LIMIT 20`
+      LIMIT ${limit} OFFSET ${offset}`
     );
     
     const countResult = await db.execute(

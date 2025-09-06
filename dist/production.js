@@ -9085,14 +9085,9 @@ var ProfessionalPDFGenerationService = class {
       font-size: 6pt;
     }
     
-    /* === APPROVAL SECTION === */
-    .approval-section {
-      margin: 10px 0;
-      border: 2px solid #1e40af;
-      background: #f8fafc;
-    }
     
-    .approval-header {
+    /* Approval styles removed */
+    .removed-approval-header {
       background: #1e40af;
       color: white;
       padding: 4px 8px;
@@ -9195,19 +9190,17 @@ var ProfessionalPDFGenerationService = class {
 <body>
   <div class="container">
     <!-- HEADER -->
-    <div class="header">
-      <div class="logo-area">
-        Company<br>Logo
+    <div class="header" style="display: grid; grid-template-columns: 150px 1fr; gap: 20px; align-items: center;">
+      <div class="logo-area" style="display: flex; align-items: center; justify-content: center;">
+        <img src="file://${path6.join(process.cwd(), "assets", "company-logo.png")}" alt="Company Logo" style="max-width: 120px; max-height: 60px; object-fit: contain;" />
       </div>
-      <div class="header-center">
+      <div class="header-center" style="text-align: center;">
         <h1>\uAD6C\uB9E4 \uBC1C\uC8FC\uC11C</h1>
         <div class="order-number">${data.orderNumber}</div>
         <div class="status-badge status-${data.orderStatus}">${this.getStatusDisplayName(data.orderStatus)}</div>
-      </div>
-      <div class="qr-area">
-        <div>QR Code</div>
-        <div>${data.metadata.documentId.substring(0, 10)}...</div>
-        <div>${formatDate(data.metadata.generatedAt)}</div>
+        <div style="font-size: 8pt; color: #666; margin-top: 5px;">
+          \uC0DD\uC131\uC77C: ${formatDate(data.metadata.generatedAt)} | \uBB38\uC11CID: ${data.metadata.documentId.substring(0, 10)}
+        </div>
       </div>
     </div>
     
@@ -9386,14 +9379,6 @@ var ProfessionalPDFGenerationService = class {
       (email) => `<div class="email-item">${formatDateTime(email.sentAt)} | ${email.recipient.split("@")[0]}@...</div>`
     ).join("") + (data.communication.totalEmailsSent > 2 ? `<div class="email-item">... \uC678 ${data.communication.totalEmailsSent - 2}\uD68C</div>` : "") : '<div style="color: #666;">\uBC1C\uC1A1 \uC774\uB825 \uC5C6\uC74C</div>'}
         ${data.communication.lastEmailSent ? `<div style="margin-top: 3px; font-size: 6pt; color: #666;">\uCD5C\uC885 \uBC1C\uC1A1: ${formatDate(data.communication.lastEmailSent)}</div>` : ""}
-      </div>
-    </div>
-    
-    <!-- APPROVAL SECTION -->
-    <div class="approval-section">
-      <div class="approval-header">\u2705 \uACB0\uC7AC \uD604\uD669 (Level ${data.approval.approvalLevel})</div>
-      <div class="approval-grid">
-        ${approverBoxes}
       </div>
     </div>
     
@@ -11485,37 +11470,53 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
       subject: emailOptions.subject,
       attachmentsCount: attachments3.length
     });
-    const tempDir = path7.join(__dirname2, "../../uploads/temp");
-    if (!fs9.existsSync(tempDir)) {
-      fs9.mkdirSync(tempDir, { recursive: true });
-    }
-    const tempFilePath = path7.join(tempDir, `email_temp_${Date.now()}.html`);
-    fs9.writeFileSync(tempFilePath, generateEmailContent(emailOptions));
-    const result = await emailService.sendPOWithOriginalFormat(tempFilePath, {
-      to: emailOptions.to,
-      cc: emailOptions.cc,
-      subject: emailOptions.subject,
-      body: generateEmailContent(emailOptions),
-      orderData: {
-        orderNumber: orderData.orderNumber,
-        vendorName: orderData.vendorName,
-        totalAmount: orderData.totalAmount
+    const emailHtml = generateEmailContent(emailOptions);
+    const nodemailer5 = __require("nodemailer");
+    const transporter2 = nodemailer5.createTransport({
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false,
+      auth: {
+        user: process.env.EMAIL_USER || "test@example.com",
+        pass: process.env.EMAIL_PASSWORD || "test"
       },
-      userId: req.user?.id || "system",
-      orderId: orderData.orderId
+      tls: {
+        rejectUnauthorized: false
+      }
     });
-    try {
-      fs9.unlinkSync(tempFilePath);
-    } catch (err) {
-      console.warn("\uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328:", err);
-    }
-    console.log("\u{1F4E7} sendPOWithOriginalFormat \uACB0\uACFC:", result);
-    if (result.success) {
-      console.log("\u{1F4E7} \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC131\uACF5");
-      res.json({ success: true, messageId: result.messageId });
+    const mailOptions = {
+      from: process.env.EMAIL_USER || "noreply@example.com",
+      to: Array.isArray(emailOptions.to) ? emailOptions.to.join(", ") : emailOptions.to,
+      cc: emailOptions.cc ? Array.isArray(emailOptions.cc) ? emailOptions.cc.join(", ") : emailOptions.cc : void 0,
+      subject: emailOptions.subject || `\uBC1C\uC8FC\uC11C - ${orderData.orderNumber || ""}`,
+      html: emailHtml,
+      attachments: attachments3
+    };
+    if (process.env.NODE_ENV === "development" || !process.env.EMAIL_USER) {
+      console.log("\u{1F4E7} [\uAC1C\uBC1C \uBAA8\uB4DC] \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC2DC\uBBAC\uB808\uC774\uC158:", {
+        to: mailOptions.to,
+        cc: mailOptions.cc,
+        subject: mailOptions.subject,
+        attachmentsCount: attachments3.length
+      });
+      res.json({
+        success: true,
+        messageId: `mock-${Date.now()}`,
+        mockMode: true,
+        message: "\uAC1C\uBC1C \uD658\uACBD: \uC774\uBA54\uC77C\uC774 \uC2E4\uC81C\uB85C \uBC1C\uC1A1\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4."
+      });
     } else {
-      console.error("\u{1F4E7} \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC2E4\uD328:", result.error);
-      res.status(500).json({ error: result.error });
+      try {
+        const info = await transporter2.sendMail(mailOptions);
+        console.log("\u{1F4E7} \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC131\uACF5:", info.messageId);
+        res.json({ success: true, messageId: info.messageId });
+      } catch (emailError) {
+        console.error("\u{1F4E7} \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC2E4\uD328:", emailError);
+        res.status(500).json({
+          error: "\uC774\uBA54\uC77C \uBC1C\uC1A1 \uC2E4\uD328",
+          details: emailError instanceof Error ? emailError.message : "Unknown error"
+        });
+      }
     }
   } catch (error) {
     console.error("\uC774\uBA54\uC77C \uBC1C\uC1A1 \uC624\uB958:", error);
@@ -11795,6 +11796,48 @@ router3.get("/orders/:orderId/attachments/:attachmentId/download", requireAuth, 
     res.status(500).json({
       error: "\uD30C\uC77C \uB2E4\uC6B4\uB85C\uB4DC \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4.",
       details: error instanceof Error ? error.message : "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"
+    });
+  }
+});
+router3.post("/orders/:id/complete-delivery", requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const user = await storage.getUser(userId);
+    const orderId = parseInt(req.params.id);
+    const order = await storage.getPurchaseOrder(orderId);
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+    if (user?.role !== "admin" && order.userId !== user?.id) {
+      return res.status(403).json({ message: "Access denied - insufficient permissions" });
+    }
+    const currentStatus = order.orderStatus || order.status;
+    if (currentStatus !== "created" && currentStatus !== "sent") {
+      return res.status(400).json({
+        message: "\uC8FC\uBB38\uC774 \uBC1C\uC8FC\uC0DD\uC131 \uB610\uB294 \uBC1C\uC1A1\uB428 \uC0C1\uD0DC\uAC00 \uC544\uB2D9\uB2C8\uB2E4. \uB0A9\uD488\uAC80\uC218\uC644\uB8CC\uB294 \uBC1C\uC8FC\uC0DD\uC131 \uB610\uB294 \uBC1C\uC1A1\uB41C \uC8FC\uBB38\uC5D0\uC11C\uB9CC \uAC00\uB2A5\uD569\uB2C8\uB2E4."
+      });
+    }
+    const updatedOrder = await storage.updatePurchaseOrder(orderId, {
+      status: "completed",
+      orderStatus: "delivered",
+      updatedAt: /* @__PURE__ */ new Date()
+    });
+    await db.insert(orderHistory).values({
+      orderId,
+      action: "delivery_completed",
+      details: "\uB0A9\uD488\uAC80\uC218\uC644\uB8CC",
+      userId,
+      timestamp: /* @__PURE__ */ new Date()
+    });
+    res.json({
+      message: "\uB0A9\uD488\uAC80\uC218\uAC00 \uC644\uB8CC\uB418\uC5C8\uC2B5\uB2C8\uB2E4.",
+      order: updatedOrder
+    });
+  } catch (error) {
+    console.error("Error completing delivery:", error);
+    res.status(500).json({
+      message: "\uB0A9\uD488\uAC80\uC218 \uC644\uB8CC \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4.",
+      error: error instanceof Error ? error.message : "Unknown error"
     });
   }
 });
@@ -12219,7 +12262,7 @@ router6.get("/orders-optimized", async (req, res) => {
       LEFT JOIN vendors v ON po.vendor_id = v.id
       LEFT JOIN projects p ON po.project_id = p.id
       ORDER BY po.created_at DESC
-      LIMIT 20`
+      LIMIT ${limit} OFFSET ${offset}`
     );
     const countResult = await db2.execute(
       sql4`SELECT COUNT(*) as total FROM purchase_orders`

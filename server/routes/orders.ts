@@ -2193,43 +2193,64 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
       attachmentsCount: attachments.length
     });
 
-    // 임시 파일 생성 (POEmailService.sendPOWithOriginalFormat이 파일 경로를 요구하므로)
-    const tempDir = path.join(__dirname, '../../uploads/temp');
-    if (!fs.existsSync(tempDir)) {
-      fs.mkdirSync(tempDir, { recursive: true });
-    }
-    const tempFilePath = path.join(tempDir, `email_temp_${Date.now()}.html`);
-    fs.writeFileSync(tempFilePath, generateEmailContent(emailOptions));
-
-    const result = await emailService.sendPOWithOriginalFormat(tempFilePath, {
-      to: emailOptions.to,
-      cc: emailOptions.cc,
-      subject: emailOptions.subject,
-      body: generateEmailContent(emailOptions),
-      orderData: {
-        orderNumber: orderData.orderNumber,
-        vendorName: orderData.vendorName,
-        totalAmount: orderData.totalAmount
+    // 간단한 이메일 발송 (첨부 파일 없이 또는 PDF만 첨부)
+    const emailHtml = generateEmailContent(emailOptions);
+    
+    // nodemailer를 직접 사용하여 이메일 발송
+    const nodemailer = require('nodemailer');
+    
+    // 이메일 전송 설정
+    const transporter = nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false,
+      auth: {
+        user: process.env.EMAIL_USER || 'test@example.com',
+        pass: process.env.EMAIL_PASSWORD || 'test'
       },
-      userId: (req as any).user?.id || 'system',
-      orderId: orderData.orderId
+      tls: {
+        rejectUnauthorized: false
+      }
     });
-
-    // 임시 파일 정리
-    try {
-      fs.unlinkSync(tempFilePath);
-    } catch (err) {
-      console.warn('임시 파일 삭제 실패:', err);
-    }
-
-    console.log('📧 sendPOWithOriginalFormat 결과:', result);
-
-    if (result.success) {
-      console.log('📧 이메일 발송 성공');
-      res.json({ success: true, messageId: result.messageId });
+    
+    // 이메일 옵션 설정
+    const mailOptions = {
+      from: process.env.EMAIL_USER || 'noreply@example.com',
+      to: Array.isArray(emailOptions.to) ? emailOptions.to.join(', ') : emailOptions.to,
+      cc: emailOptions.cc ? (Array.isArray(emailOptions.cc) ? emailOptions.cc.join(', ') : emailOptions.cc) : undefined,
+      subject: emailOptions.subject || `발주서 - ${orderData.orderNumber || ''}`,
+      html: emailHtml,
+      attachments: attachments
+    };
+    
+    // 개발 환경에서는 실제 이메일 발송 대신 로그만 출력
+    if (process.env.NODE_ENV === 'development' || !process.env.EMAIL_USER) {
+      console.log('📧 [개발 모드] 이메일 발송 시뮬레이션:', {
+        to: mailOptions.to,
+        cc: mailOptions.cc,
+        subject: mailOptions.subject,
+        attachmentsCount: attachments.length
+      });
+      
+      res.json({ 
+        success: true, 
+        messageId: `mock-${Date.now()}`,
+        mockMode: true,
+        message: '개발 환경: 이메일이 실제로 발송되지 않았습니다.'
+      });
     } else {
-      console.error('📧 이메일 발송 실패:', result.error);
-      res.status(500).json({ error: result.error });
+      // 실제 이메일 발송
+      try {
+        const info = await transporter.sendMail(mailOptions);
+        console.log('📧 이메일 발송 성공:', info.messageId);
+        res.json({ success: true, messageId: info.messageId });
+      } catch (emailError) {
+        console.error('📧 이메일 발송 실패:', emailError);
+        res.status(500).json({ 
+          error: '이메일 발송 실패',
+          details: emailError instanceof Error ? emailError.message : 'Unknown error'
+        });
+      }
     }
 
   } catch (error) {
@@ -2628,7 +2649,7 @@ router.post("/orders/:id/complete-delivery", requireAuth, async (req: any, res) 
     });
 
     // Add to order history
-    await storage.addOrderHistory({
+    await storage.createOrderHistory({
       orderId: orderId,
       action: 'delivery_completed',
       details: '납품검수완료',
