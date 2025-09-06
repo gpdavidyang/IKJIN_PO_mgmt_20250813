@@ -186,13 +186,14 @@ export class OptimizedOrdersService {
         approvalLevel: purchaseOrders.approvalLevel,
         currentApproverRole: purchaseOrders.currentApproverRole,
         createdAt: purchaseOrders.createdAt,
-        emailSentAt: purchaseOrders.emailSentAt,
         // Joined fields
         vendorName: vendors.name,
         projectName: projects.projectName,
         userName: users.name,
-        // PDF attachment status
-        hasPdf: sql<boolean>`EXISTS(SELECT 1 FROM attachments WHERE attachments."orderId" = ${purchaseOrders.id} AND attachments."mimeType" = 'application/pdf')`,
+        // PDF attachment status - use correct column name for mime_type
+        hasPdf: sql<boolean>`EXISTS(SELECT 1 FROM attachments WHERE attachments.order_id = ${purchaseOrders.id} AND attachments.mime_type = 'application/pdf')`,
+        // Email sent status - get from email_send_history table  
+        emailSentAt: sql<string | null>`(SELECT MAX(sent_at) FROM email_send_history WHERE order_id = ${purchaseOrders.id})`,
       })
       .from(purchaseOrders)
       .leftJoin(vendors, eq(purchaseOrders.vendorId, vendors.id))
