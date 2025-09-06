@@ -3,55 +3,121 @@
  */
 
 /**
- * Reliable download function using fetch with blob
+ * Reliable download function using multiple approaches
  * @param attachmentId - The ID of the attachment to download
  * @param filename - The filename for the download
  * @returns Promise<boolean> - true if download was successful
  */
 export const downloadAttachment = async (attachmentId: number, filename: string): Promise<boolean> => {
+  console.log(`🔽 Starting download for attachment ${attachmentId}, filename: ${filename}`);
+  
   try {
-    // Get token from localStorage or cookie for authentication
-    const token = localStorage.getItem('token') || document.cookie.match(/auth_token=([^;]+)/)?.[1];
+    // Method 1: Try direct window.location with authentication cookie
+    // This is the most reliable way for actual file downloads
+    const downloadUrl = `/api/attachments/${attachmentId}/download?download=true`;
     
-    // Fetch the file with authentication
-    const response = await fetch(`/api/attachments/${attachmentId}/download?download=true`, {
-      method: 'GET',
+    // First check if file exists
+    const token = localStorage.getItem('token') || document.cookie.match(/auth_token=([^;]+)/)?.[1];
+    const checkResponse = await fetch(downloadUrl, {
+      method: 'HEAD',
       headers: {
         'Authorization': token ? `Bearer ${token}` : '',
       },
-      credentials: 'include', // Include cookies
+      credentials: 'include',
     });
     
-    if (!response.ok) {
-      throw new Error(`다운로드 실패: ${response.status}`);
+    if (!checkResponse.ok) {
+      console.error(`❌ File check failed: ${checkResponse.status}`);
+      throw new Error(`파일을 찾을 수 없습니다: ${checkResponse.status}`);
     }
     
-    // Get the blob from response
-    const blob = await response.blob();
+    console.log('✅ File exists, attempting download...');
     
-    // Create a blob URL
-    const blobUrl = window.URL.createObjectURL(blob);
+    // Method 2: Create hidden form and submit (most compatible)
+    const form = document.createElement('form');
+    form.method = 'GET';
+    form.action = downloadUrl;
+    form.style.display = 'none';
     
-    // Create a temporary anchor element and trigger download
-    const link = document.createElement('a');
-    link.href = blobUrl;
-    link.download = filename || 'download';
-    link.style.display = 'none';
+    // Add auth token as query parameter if available
+    if (token) {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'token';
+      input.value = token;
+      form.appendChild(input);
+    }
     
-    // Append to body, click, and remove
-    document.body.appendChild(link);
-    link.click();
+    document.body.appendChild(form);
+    console.log('📝 Submitting download form...');
+    form.submit();
     
-    // Clean up
+    // Clean up form after submission
     setTimeout(() => {
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(blobUrl);
-    }, 100);
+      document.body.removeChild(form);
+      console.log('🧹 Cleaned up download form');
+    }, 1000);
     
+    // Give the download time to start
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    console.log('✅ Download initiated successfully');
     return true;
+    
   } catch (error) {
-    console.error('Download error:', error);
-    throw error;
+    console.error('❌ Download error:', error);
+    
+    // Fallback: Try blob download as last resort
+    try {
+      console.log('🔄 Trying fallback blob download...');
+      const token = localStorage.getItem('token') || document.cookie.match(/auth_token=([^;]+]/)?.[1];
+      
+      const response = await fetch(`/api/attachments/${attachmentId}/download?download=true`, {
+        method: 'GET',
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        throw new Error(`다운로드 실패: ${response.status}`);
+      }
+      
+      const blob = await response.blob();
+      console.log(`📦 Blob received, size: ${blob.size} bytes, type: ${blob.type}`);
+      
+      // Try using FileSaver.js approach
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = filename;
+      a.setAttribute('download', filename); // Force download attribute
+      
+      document.body.appendChild(a);
+      
+      // Try multiple click methods
+      if (typeof a.click === 'function') {
+        a.click();
+      } else {
+        const evt = document.createEvent('MouseEvents');
+        evt.initEvent('click', true, true);
+        a.dispatchEvent(evt);
+      }
+      
+      setTimeout(() => {
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        console.log('🧹 Cleaned up blob download');
+      }, 100);
+      
+      console.log('✅ Blob download completed');
+      return true;
+    } catch (fallbackError) {
+      console.error('❌ Fallback download also failed:', fallbackError);
+      throw error; // Throw original error
+    }
   }
 };
 

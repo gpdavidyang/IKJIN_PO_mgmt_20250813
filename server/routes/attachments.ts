@@ -18,18 +18,34 @@ router.get('/attachments/:id/download', async (req, res) => {
   const forceDownload = req.query.download === 'true'; // ?download=true 파라미터로 강제 다운로드
 
   try {
-    // Check authentication - cookie only
+    // Check authentication - cookie, query param, or session
     let authenticated = false;
     
-    // Try JWT from cookie
-    const token = req.cookies?.auth_token;
+    // Try JWT from cookie first
+    let token = req.cookies?.auth_token;
+    
+    // If no cookie token, try query parameter (for form submission)
+    if (!token && req.query.token) {
+      token = req.query.token as string;
+      console.log('📝 Using token from query parameter');
+    }
+    
+    // If no token in cookie or query, try Authorization header
+    if (!token) {
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7);
+        console.log('📝 Using token from Authorization header');
+      }
+    }
+    
     if (token) {
       try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
         authenticated = true;
-        console.log('✅ Attachment download authenticated via cookie token');
+        console.log('✅ Attachment download authenticated via JWT token');
       } catch (err) {
-        console.log('❌ Invalid cookie token for attachment download:', err.message);
+        console.log('❌ Invalid JWT token for attachment download:', err.message);
       }
     }
     
