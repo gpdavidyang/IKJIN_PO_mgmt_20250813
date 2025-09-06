@@ -182,25 +182,38 @@ export default function OrdersProfessionalFast() {
     debouncedSearch(filters.searchText);
   }, [filters.searchText, debouncedSearch]);
 
-  // 최적화된 단일 API 호출
+  // 최적화된 단일 API 호출 - 정렬 지원 개선
+  const queryFilters = useMemo(() => ({ 
+    ...filters, 
+    searchText: debouncedSearchText 
+  }), [filters, debouncedSearchText]);
+
   const { data, isLoading, error } = useQuery<OrdersResponse>({
-    queryKey: ["orders-optimized", { ...filters, searchText: debouncedSearchText }],
+    queryKey: ["orders-optimized", queryFilters],
     queryFn: async () => {
+      console.log('🔄 Fetching orders with filters:', queryFilters); // 디버깅용
+      
       const params = new URLSearchParams();
-      Object.entries({ ...filters, searchText: debouncedSearchText }).forEach(([key, value]) => {
+      Object.entries(queryFilters).forEach(([key, value]) => {
         if (value !== "" && value !== null && value !== undefined) {
           params.append(key, value.toString());
         }
       });
+      
+      console.log('🔍 API request URL:', `/api/orders-optimized?${params.toString()}`); // 디버깅용
       
       const response = await fetch(`/api/orders-optimized?${params}`, {
         credentials: 'include',
       });
       
       if (!response.ok) throw new Error('Failed to fetch orders');
-      return response.json();
+      const result = await response.json();
+      
+      console.log('✅ Received orders:', result.orders?.length, 'orders, sortBy:', queryFilters.sortBy, 'sortOrder:', queryFilters.sortOrder); // 디버깅용
+      
+      return result;
     },
-    staleTime: 5000, // 5초로 단축하여 빠른 업데이트 지원
+    staleTime: 1000, // 1초로 단축하여 정렬 변경 시 즉시 반응
     gcTime: 60000, // 1분 동안 메모리에 캐시 유지
     refetchOnWindowFocus: true, // 윈도우 포커스 시 자동 refetch
     refetchOnMount: true // 컴포넌트 마운트 시 자동 refetch
@@ -575,13 +588,25 @@ export default function OrdersProfessionalFast() {
 
   // 정렬 처리 함수
   const handleSort = useCallback((field: string) => {
+    console.log('🔄 Sorting by:', field, 'current sortBy:', filters.sortBy, 'current sortOrder:', filters.sortOrder);
+    
     setFilters(prev => ({
       ...prev,
       sortBy: field,
       sortOrder: prev.sortBy === field && prev.sortOrder === "desc" ? "asc" : "desc",
       page: 1
     }));
-  }, []);
+  }, [filters.sortBy, filters.sortOrder]);
+
+  // 정렬 아이콘 표시 함수
+  const getSortIcon = useCallback((field: string) => {
+    if (filters.sortBy === field) {
+      return filters.sortOrder === "asc" ? 
+        <ChevronUp className="h-3 w-3 text-blue-600" /> : 
+        <ChevronDown className="h-3 w-3 text-blue-600" />;
+    }
+    return <ChevronsUpDown className="h-3 w-3" />;
+  }, [filters.sortBy, filters.sortOrder]);
 
   // Pagination handlers
   const handlePageChange = useCallback((newPage: number) => {
@@ -600,15 +625,53 @@ export default function OrdersProfessionalFast() {
     if (!selectedOrder) return;
 
     try {
+      // 첨부파일이 필요한 경우, 발주서 상세 정보를 가져와서 attachments 정보 확인
+      let pdfUrl = '';
+      let excelUrl = '';
+      
+      if (emailData.attachPDF || emailData.attachExcel) {
+        console.log('📎 첨부파일 정보 조회 중...', selectedOrder.id);
+        const response = await apiRequest('GET', `/api/orders/${selectedOrder.id}`);
+        
+        if (response && response.attachments && Array.isArray(response.attachments)) {
+          console.log('📎 첨부파일 목록:', response.attachments);
+          
+          if (emailData.attachPDF) {
+            const pdfAttachment = response.attachments.find(
+              (att: any) => att.mimeType?.includes('pdf') || att.originalName?.toLowerCase().endsWith('.pdf')
+            );
+            if (pdfAttachment) {
+              pdfUrl = `/api/attachments/${pdfAttachment.id}/download`;
+              console.log('📎 PDF 첨부파일 URL:', pdfUrl);
+            }
+          }
+          
+          if (emailData.attachExcel) {
+            const excelAttachment = response.attachments.find(
+              (att: any) => att.mimeType?.includes('spreadsheet') || 
+                          att.originalName?.toLowerCase().endsWith('.xlsx') ||
+                          att.originalName?.toLowerCase().endsWith('.xls')
+            );
+            if (excelAttachment) {
+              excelUrl = `/api/attachments/${excelAttachment.id}/download`;
+              console.log('📎 Excel 첨부파일 URL:', excelUrl);
+            }
+          }
+        }
+      }
+
       const orderData = {
         orderNumber: selectedOrder.orderNumber,
         vendorName: selectedOrder.vendorName || '',
         orderDate: selectedOrder.orderDate,
         totalAmount: selectedOrder.totalAmount,
         siteName: selectedOrder.projectName,
-        filePath: selectedOrder.filePath || ''
+        filePath: selectedOrder.filePath || '',
+        pdfUrl: pdfUrl,
+        excelUrl: excelUrl
       };
 
+      console.log('📧 이메일 발송 데이터:', { orderData, emailData });
       await EmailService.sendPurchaseOrderEmail(orderData, emailData);
       
       toast({
@@ -616,6 +679,7 @@ export default function OrdersProfessionalFast() {
         description: `${selectedOrder.vendorName}에게 발주서 ${selectedOrder.orderNumber}를 전송했습니다.`,
       });
     } catch (error) {
+      console.error('이메일 발송 오류:', error);
       toast({
         title: "이메일 발송 실패",
         description: error instanceof Error ? error.message : "이메일 발송 중 오류가 발생했습니다.",
@@ -1183,7 +1247,7 @@ export default function OrdersProfessionalFast() {
                       className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-100 transition-colors"
                     >
                       발주번호
-                      <ChevronsUpDown className="h-3 w-3" />
+                      {getSortIcon("orderNumber")}
                     </button>
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -1192,7 +1256,7 @@ export default function OrdersProfessionalFast() {
                       className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-100 transition-colors"
                     >
                       거래처
-                      <ChevronsUpDown className="h-3 w-3" />
+                      {getSortIcon("vendorName")}
                     </button>
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -1201,7 +1265,7 @@ export default function OrdersProfessionalFast() {
                       className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200"
                     >
                       현장
-                      <ChevronsUpDown className="h-3 w-3" />
+                      {getSortIcon("projectName")}
                     </button>
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -1210,7 +1274,7 @@ export default function OrdersProfessionalFast() {
                       className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200"
                     >
                       발주일
-                      <ChevronsUpDown className="h-3 w-3" />
+                      {getSortIcon("orderDate")}
                     </button>
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -1219,7 +1283,7 @@ export default function OrdersProfessionalFast() {
                       className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200"
                     >
                       등록일
-                      <ChevronsUpDown className="h-3 w-3" />
+                      {getSortIcon("createdAt")}
                     </button>
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -1228,7 +1292,7 @@ export default function OrdersProfessionalFast() {
                       className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200"
                     >
                       금액
-                      <ChevronsUpDown className="h-3 w-3" />
+                      {getSortIcon("totalAmount")}
                     </button>
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -1237,7 +1301,7 @@ export default function OrdersProfessionalFast() {
                       className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200"
                     >
                       발주상태
-                      <ChevronsUpDown className="h-3 w-3" />
+                      {getSortIcon("orderStatus")}
                     </button>
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">이메일</th>

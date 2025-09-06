@@ -260,6 +260,7 @@ router.post('/send-emails', requireAuth, async (req: any, res) => {
       processedFilePath,
       recipients,
       savedOrderNumbers = [],
+      orderIds = [],
       emailOptions = {}
     } = req.body;
 
@@ -291,7 +292,8 @@ router.post('/send-emails', requireAuth, async (req: any, res) => {
       recipients,
       {
         ...emailOptions,
-        savedOrderNumbers // 발주번호들을 함께 전달
+        savedOrderNumbers, // 발주번호들을 함께 전달
+        orderId: orderIds.length > 0 ? orderIds[0] : undefined // 첫 번째 발주서 ID 전달
       }
     );
 

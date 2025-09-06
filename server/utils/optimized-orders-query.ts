@@ -68,6 +68,10 @@ export class OptimizedOrdersService {
           return purchaseOrders.orderNumber;
         case 'status':
           return purchaseOrders.status;
+        case 'orderStatus':
+          return purchaseOrders.orderStatus;
+        case 'approvalStatus':
+          return purchaseOrders.approvalStatus;
         case 'vendorName':
           return vendors.name;
         case 'projectName':
@@ -154,14 +158,24 @@ export class OptimizedOrdersService {
     }
 
     // Search text handling (optimized with indexes)
-    if (searchText) {
-      const searchPattern = `%${searchText.toLowerCase()}%`;
+    if (searchText && searchText.trim()) {
+      const trimmedSearchText = searchText.trim();
+      const searchPattern = `%${trimmedSearchText.toLowerCase()}%`;
+      
+      // 품목명 검색을 위한 서브쿼리
+      const itemSearchSubquery = db
+        .select({ orderId: purchaseOrderItems.orderId })
+        .from(purchaseOrderItems)
+        .where(ilike(purchaseOrderItems.itemName, searchPattern));
+      
       whereConditions.push(
         or(
           ilike(purchaseOrders.orderNumber, searchPattern),
           ilike(vendors.name, searchPattern),
           ilike(projects.projectName, searchPattern),
-          ilike(users.name, searchPattern)
+          ilike(users.name, searchPattern),
+          // 품목명으로 검색: 해당 품목을 포함하는 발주서 조회
+          sql`${purchaseOrders.id} IN (SELECT "order_id" FROM ${purchaseOrderItems} WHERE LOWER("item_name") LIKE ${searchPattern.toLowerCase()})`
         )
       );
     }

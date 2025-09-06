@@ -6,7 +6,7 @@
 import { Router } from "express";
 import { storage } from "../storage";
 import { requireAuth, requireAdmin, requireOrderManager } from "../local-auth";
-import { insertPurchaseOrderSchema, purchaseOrders } from "@shared/schema";
+import { insertPurchaseOrderSchema, purchaseOrders, attachments as attachmentsTable } from "@shared/schema";
 import { upload } from "../utils/multer-config";
 import { decodeKoreanFilename } from "../utils/korean-filename";
 import { OrderService } from "../services/order-service";
@@ -2066,35 +2066,141 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
     
     // PDF 파일 첨부 (attachPdf가 true이고 pdfUrl이 있으면)
     if (attachPdf && pdfUrl) {
-      const pdfPath = path.join(__dirname, '../../', pdfUrl.replace(/^\//, ''));
-      console.log('📎 PDF 첨부 시도:', pdfPath);
-      if (fs.existsSync(pdfPath)) {
-        attachments.push({
-          filename: `발주서_${orderData.orderNumber || Date.now()}.pdf`,
-          path: pdfPath,
-          contentType: 'application/pdf'
-        });
-        attachmentsList.push('발주서.pdf (PDF 파일)');
-        console.log('✅ PDF 첨부 성공');
+      // Check if pdfUrl is an attachment API URL or direct file path
+      if (pdfUrl.includes('/api/attachments/') && pdfUrl.includes('/download')) {
+        // Extract attachment ID from URL like /api/attachments/123/download
+        const attachmentIdMatch = pdfUrl.match(/\/api\/attachments\/(\d+)\/download/);
+        if (attachmentIdMatch) {
+          const attachmentId = parseInt(attachmentIdMatch[1]);
+          console.log('📎 PDF 첨부 시도 (DB에서):', attachmentId);
+          
+          try {
+            // Fetch attachment from database
+            const [attachment] = await db
+              .select({
+                id: attachmentsTable.id,
+                originalName: attachmentsTable.originalName,
+                filePath: attachmentsTable.filePath,
+                mimeType: attachmentsTable.mimeType,
+                fileData: attachmentsTable.fileData
+              })
+              .from(attachmentsTable)
+              .where(eq(attachmentsTable.id, attachmentId));
+              
+            if (attachment) {
+              if (attachment.fileData) {
+                // Use Base64 data from database
+                attachments.push({
+                  filename: attachment.originalName || `발주서_${orderData.orderNumber || Date.now()}.pdf`,
+                  content: Buffer.from(attachment.fileData, 'base64'),
+                  contentType: attachment.mimeType || 'application/pdf'
+                });
+                attachmentsList.push('발주서.pdf (PDF 파일)');
+                console.log('✅ PDF 첨부 성공 (DB Base64)');
+              } else if (attachment.filePath && fs.existsSync(attachment.filePath)) {
+                // Use file path
+                attachments.push({
+                  filename: attachment.originalName || `발주서_${orderData.orderNumber || Date.now()}.pdf`,
+                  path: attachment.filePath,
+                  contentType: attachment.mimeType || 'application/pdf'
+                });
+                attachmentsList.push('발주서.pdf (PDF 파일)');
+                console.log('✅ PDF 첨부 성공 (파일 경로)');
+              } else {
+                console.log('❌ PDF 첨부 실패: 파일 데이터 없음');
+              }
+            } else {
+              console.log('❌ PDF 첨부 실패: 첨부파일 정보 없음');
+            }
+          } catch (error) {
+            console.error('❌ PDF 첨부 오류:', error);
+          }
+        }
       } else {
-        console.log('❌ PDF 파일을 찾을 수 없음:', pdfPath);
+        // Handle direct file path (legacy support)
+        const pdfPath = path.join(__dirname, '../../', pdfUrl.replace(/^\//, ''));
+        console.log('📎 PDF 첨부 시도 (직접 경로):', pdfPath);
+        if (fs.existsSync(pdfPath)) {
+          attachments.push({
+            filename: `발주서_${orderData.orderNumber || Date.now()}.pdf`,
+            path: pdfPath,
+            contentType: 'application/pdf'
+          });
+          attachmentsList.push('발주서.pdf (PDF 파일)');
+          console.log('✅ PDF 첨부 성공 (직접 경로)');
+        } else {
+          console.log('❌ PDF 파일을 찾을 수 없음:', pdfPath);
+        }
       }
     }
     
     // Excel 파일 첨부 (attachExcel이 true이고 excelUrl이 있으면)
     if (attachExcel && excelUrl) {
-      const excelPath = path.join(__dirname, '../../', excelUrl.replace(/^\//, ''));
-      console.log('📎 Excel 첨부 시도:', excelPath);
-      if (fs.existsSync(excelPath)) {
-        attachments.push({
-          filename: `발주서_${orderData.orderNumber || Date.now()}.xlsx`,
-          path: excelPath,
-          contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        });
-        attachmentsList.push('발주서.xlsx (Excel 파일)');
-        console.log('✅ Excel 첨부 성공');
+      // Check if excelUrl is an attachment API URL or direct file path
+      if (excelUrl.includes('/api/attachments/') && excelUrl.includes('/download')) {
+        // Extract attachment ID from URL like /api/attachments/123/download
+        const attachmentIdMatch = excelUrl.match(/\/api\/attachments\/(\d+)\/download/);
+        if (attachmentIdMatch) {
+          const attachmentId = parseInt(attachmentIdMatch[1]);
+          console.log('📎 Excel 첨부 시도 (DB에서):', attachmentId);
+          
+          try {
+            // Fetch attachment from database
+            const [attachment] = await db
+              .select({
+                id: attachmentsTable.id,
+                originalName: attachmentsTable.originalName,
+                filePath: attachmentsTable.filePath,
+                mimeType: attachmentsTable.mimeType,
+                fileData: attachmentsTable.fileData
+              })
+              .from(attachmentsTable)
+              .where(eq(attachmentsTable.id, attachmentId));
+              
+            if (attachment) {
+              if (attachment.fileData) {
+                // Use Base64 data from database
+                attachments.push({
+                  filename: attachment.originalName || `발주서_${orderData.orderNumber || Date.now()}.xlsx`,
+                  content: Buffer.from(attachment.fileData, 'base64'),
+                  contentType: attachment.mimeType || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                });
+                attachmentsList.push('발주서.xlsx (Excel 파일)');
+                console.log('✅ Excel 첨부 성공 (DB Base64)');
+              } else if (attachment.filePath && fs.existsSync(attachment.filePath)) {
+                // Use file path
+                attachments.push({
+                  filename: attachment.originalName || `발주서_${orderData.orderNumber || Date.now()}.xlsx`,
+                  path: attachment.filePath,
+                  contentType: attachment.mimeType || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                });
+                attachmentsList.push('발주서.xlsx (Excel 파일)');
+                console.log('✅ Excel 첨부 성공 (파일 경로)');
+              } else {
+                console.log('❌ Excel 첨부 실패: 파일 데이터 없음');
+              }
+            } else {
+              console.log('❌ Excel 첨부 실패: 첨부파일 정보 없음');
+            }
+          } catch (error) {
+            console.error('❌ Excel 첨부 오류:', error);
+          }
+        }
       } else {
-        console.log('❌ Excel 파일을 찾을 수 없음:', excelPath);
+        // Handle direct file path (legacy support)
+        const excelPath = path.join(__dirname, '../../', excelUrl.replace(/^\//, ''));
+        console.log('📎 Excel 첨부 시도 (직접 경로):', excelPath);
+        if (fs.existsSync(excelPath)) {
+          attachments.push({
+            filename: `발주서_${orderData.orderNumber || Date.now()}.xlsx`,
+            path: excelPath,
+            contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+          });
+          attachmentsList.push('발주서.xlsx (Excel 파일)');
+          console.log('✅ Excel 첨부 성공 (직접 경로)');
+        } else {
+          console.log('❌ Excel 파일을 찾을 수 없음:', excelPath);
+        }
       }
     }
     

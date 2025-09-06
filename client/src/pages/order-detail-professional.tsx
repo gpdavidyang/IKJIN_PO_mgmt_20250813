@@ -283,14 +283,50 @@ export default function OrderDetailProfessional() {
         filePath: order.filePath || ''
       };
 
-      // EmailService를 import하고 사용 (기존 orders-professional.tsx에서 사용하는 방식과 동일)
+      // Extract PDF and Excel attachment URLs if they exist
+      let pdfUrl = '';
+      let excelUrl = '';
+      
+      if (order.attachments && order.attachments.length > 0) {
+        // Find PDF attachment
+        const pdfAttachment = order.attachments.find(
+          (att: any) => att.mimeType?.includes('pdf') || att.originalName?.toLowerCase().endsWith('.pdf')
+        );
+        if (pdfAttachment) {
+          pdfUrl = `/api/attachments/${pdfAttachment.id}/download`;
+          console.log('🔗 Found PDF attachment for email:', pdfUrl);
+        }
+
+        // Find Excel attachment
+        const excelAttachment = order.attachments.find(
+          (att: any) => att.mimeType?.includes('excel') || 
+                       att.mimeType?.includes('spreadsheet') ||
+                       att.originalName?.toLowerCase().endsWith('.xlsx') ||
+                       att.originalName?.toLowerCase().endsWith('.xls')
+        );
+        if (excelAttachment) {
+          excelUrl = `/api/attachments/${excelAttachment.id}/download`;
+          console.log('🔗 Found Excel attachment for email:', excelUrl);
+        }
+      }
+
+      console.log('📧 Email attachment info:', { 
+        attachPdf: emailData.attachPDF, 
+        attachExcel: emailData.attachExcel, 
+        pdfUrl, 
+        excelUrl,
+        hasAttachments: order.attachments?.length || 0
+      });
+
       const response = await fetch('/api/orders/send-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           orderData,
           ...emailData,
-          orderId: order.id
+          orderId: order.id,
+          pdfUrl: pdfUrl,
+          excelUrl: excelUrl
         })
       });
 

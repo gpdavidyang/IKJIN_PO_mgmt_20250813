@@ -146,11 +146,28 @@ export class ExcelAutomationService {
       const emailPreview = await this.generateEmailPreview(filePath, vendorValidation);
       console.log(`🔍 [DEBUG] 4단계 완료: 수신자 ${emailPreview.recipients.length}명`);
 
+      // 발주번호로 발주서 ID들을 조회 (이메일에서 품목 정보를 포함하기 위해)
+      const orderIds: number[] = [];
+      if (saveResult.savedOrderNumbers && saveResult.savedOrderNumbers.length > 0) {
+        try {
+          const orders = await db.select({ id: purchaseOrders.id, orderNumber: purchaseOrders.orderNumber })
+            .from(purchaseOrders)
+            .where(eq(purchaseOrders.orderNumber, saveResult.savedOrderNumbers[0])); // 첫 번째 발주서 ID만 사용
+          
+          if (orders.length > 0) {
+            orderIds.push(orders[0].id);
+          }
+        } catch (error) {
+          console.warn('발주서 ID 조회 실패:', error);
+        }
+      }
+
       const result = {
         success: true,
         data: {
           savedOrders: saveResult.savedOrders,
           savedOrderNumbers: saveResult.savedOrderNumbers,
+          orderIds, // 첫 번째 발주서 ID 추가
           vendorValidation,
           emailPreview
         }

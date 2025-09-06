@@ -88,6 +88,8 @@ export class EmailService {
       totalAmount: number;
       siteName?: string;
       filePath?: string;
+      pdfUrl?: string;
+      excelUrl?: string;
     },
     emailData: EmailData
   ): Promise<EmailSendResponse> {
@@ -135,7 +137,7 @@ export class EmailService {
     
     // filePath가 없으면 orders 엔드포인트 사용 (첨부파일 포함 이메일 발송)
     try {
-      const response = await apiRequest('POST', '/api/orders/send-email', {
+      const requestData: any = {
         orderData: {
           orderNumber: orderData.orderNumber,
           vendorName: orderData.vendorName,
@@ -154,7 +156,21 @@ export class EmailService {
           message: emailData.message,
           cc: emailData.cc
         }
-      });
+      };
+      
+      // 실제 파일 URL이 있으면 추가
+      if (emailData.attachPDF && orderData.pdfUrl) {
+        requestData.pdfUrl = orderData.pdfUrl;
+        console.log('📎 PDF URL 추가:', orderData.pdfUrl);
+      }
+      
+      if (emailData.attachExcel && orderData.excelUrl) {
+        requestData.excelUrl = orderData.excelUrl;
+        console.log('📎 Excel URL 추가:', orderData.excelUrl);
+      }
+      
+      console.log('📧 이메일 API 요청 데이터:', requestData);
+      const response = await apiRequest('POST', '/api/orders/send-email', requestData);
       
       return {
         success: true,
