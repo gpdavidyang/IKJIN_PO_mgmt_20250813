@@ -33,7 +33,7 @@ async function testProfessionalPDFGeneration() {
     
     // Test PDF generation
     console.log('\n📄 Step 2: Testing professional PDF generation...');
-    const testUserId = 'test-user';
+    const testUserId = 'test_admin_001'; // Use valid user ID from database
     
     const pdfResult = await ProfessionalPDFGenerationService.generateProfessionalPurchaseOrderPDF(
       testOrderId,

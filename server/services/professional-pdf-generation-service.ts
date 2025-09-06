@@ -255,13 +255,21 @@ export class ProfessionalPDFGenerationService {
         .from(attachments)
         .where(eq(attachments.orderId, orderId));
 
-      // 이메일 발송 이력 조회
-      const emailHistoryQuery = await db.db
-        .select()
-        .from(emailSendHistory)
-        .where(eq(emailSendHistory.orderId, orderId))
-        .orderBy(desc(emailSendHistory.sentAt))
-        .limit(5);
+      // 이메일 발송 이력 조회 (테이블이 있는 경우만)
+      let emailHistoryQuery: any[] = [];
+      try {
+        emailHistoryQuery = await db.db
+          .select()
+          .from(emailSendHistory)
+          .where(eq(emailSendHistory.orderId, orderId))
+          .orderBy(desc(emailSendHistory.sentAt))
+          .limit(5);
+      } catch (error: any) {
+        // 테이블이 없는 경우 무시
+        if (error.code !== '42P01') {
+          console.error('❌ [ProfessionalPDF] 이메일 이력 조회 오류:', error);
+        }
+      }
 
       // 금액 계산
       const subtotalAmount = Number(orderData.totalAmount) || 0;
