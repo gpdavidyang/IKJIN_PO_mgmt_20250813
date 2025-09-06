@@ -10,8 +10,9 @@ import { POEmailServiceMock } from '../utils/po-email-service-mock.js';
 import { convertExcelToPdfMock } from '../utils/excel-to-pdf-mock.js';
 import { POTemplateValidator } from '../utils/po-template-validator.js';
 import { db } from '../db.js';
-import { purchaseOrders, purchaseOrderItems, vendors, projects } from '@shared/schema';
+import { purchaseOrders, purchaseOrderItems, vendors, projects, attachments, companies } from '@shared/schema';
 import { eq } from 'drizzle-orm';
+import { ProfessionalPDFGenerationService } from '../services/professional-pdf-generation-service.js';
 const router = Router();
 
 // 테스트용 엔드포인트
@@ -35,10 +36,13 @@ const storage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     const timestamp = Date.now();
+    // 한글 파일명 처리: latin1으로 잘못 인코딩된 파일명을 UTF-8로 변환
     const originalName = Buffer.from(file.originalname, 'latin1').toString('utf8');
     const extension = path.extname(originalName);
     const basename = path.basename(originalName, extension);
-    cb(null, `${timestamp}-${basename}${extension}`);
+    // 파일 시스템 저장시는 영문+타임스탬프 사용, 원본 파일명은 DB에 별도 저장
+    const safeBasename = basename.replace(/[^a-zA-Z0-9가-힣_-]/g, '_');
+    cb(null, `${timestamp}-${safeBasename}${extension}`);
   }
 });
 
@@ -225,9 +229,9 @@ router.post('/upload', simpleAuth, upload.single('file'), async (req: any, res) 
       data: {
         fileName: req.file.originalname,
         filePath,
-        totalOrders: parseResult.totalOrders,
-        totalItems: parseResult.totalItems,
-        orders: parseResult.orders,
+        totalOrders: parseResult.data?.totalOrders || 0,
+        totalItems: parseResult.data?.totalItems || 0,
+        orders: parseResult.data?.orders || [],
         validation: detailedValidation
       }
     };
@@ -272,12 +276,13 @@ router.post('/upload', simpleAuth, upload.single('file'), async (req: any, res) 
 });
 
 /**
- * 실제 DB 또는 Mock DB에 저장
+ * 실제 DB 또는 Mock DB에 저장 + PDF/Excel 파일 생성 및 저장
  */
 router.post('/save', simpleAuth, async (req: any, res) => {
-  console.log('🔥🔥🔥 /save 엔드포인트 호출됨 - 새로운 디버깅 코드 적용됨');
+  console.log('🔥🔥🔥 /save 엔드포인트 호출됨 - PDF/Excel 파일 생성 포함');
   try {
     const { orders } = req.body;
+    let extractedFilePath: string | undefined;
     
     if (!orders || !Array.isArray(orders)) {
       return res.status(400).json({ error: '발주서 데이터가 누락되었습니다.' });
@@ -412,6 +417,131 @@ router.post('/save', simpleAuth, async (req: any, res) => {
             });
           }
           
+          // PDF 파일 생성 및 저장
+          try {
+            console.log('📄 PDF 생성 시작:', orderNumber);
+            
+            // 회사 정보 조회 (발주업체)
+            const companyList = await db.select().from(companies).limit(1);
+            const company = companyList[0];
+            
+            // Professional PDF 생성을 위한 데이터 준비
+            const pdfOrderData: any = {
+              orderNumber,
+              orderDate: parsedOrderDate,
+              deliveryDate: parsedDeliveryDate ? parsedDeliveryDate : null,
+              orderStatus: 'created',
+              approvalStatus: 'pending',
+              
+              issuerCompany: {
+                name: company?.companyName || '익진테크',
+                businessNumber: company?.businessNumber || '123-45-67890',
+                representative: company?.representativeName || '대표이사',
+                address: company?.address || '서울특별시 강남구',
+                phone: company?.phoneNumber || '02-1234-5678',
+                fax: company?.faxNumber || '02-1234-5679',
+                email: company?.email || 'info@ikjintech.com'
+              },
+              
+              vendorCompany: {
+                name: orderData.vendorName,
+                contactPerson: vendor[0]?.contactPerson || '',
+                phone: vendor[0]?.mainContact || '',
+                email: vendor[0]?.email || '',
+                address: vendor[0]?.address || ''
+              },
+              
+              project: {
+                name: orderData.siteName,
+                code: project[0]?.projectCode || '',
+                location: project[0]?.location || ''
+              },
+              
+              creator: {
+                name: req.user?.name || '시스템',
+                email: req.user?.email || '',
+                position: req.user?.position || ''
+              },
+              
+              items: orderData.items.map((item: any, idx: number) => ({
+                sequenceNo: idx + 1,
+                majorCategory: item.majorCategory || '',
+                middleCategory: item.middleCategory || '',
+                minorCategory: item.minorCategory || '',
+                name: item.itemName,
+                specification: item.specification || '',
+                quantity: parseFloat(item.quantity) || 0,
+                unit: item.unit || 'EA',
+                unitPrice: parseFloat(item.unitPrice) || 0,
+                totalPrice: parseFloat(item.totalAmount) || 0,
+                deliveryLocation: orderData.deliveryName || orderData.vendorName,
+                remarks: item.remarks || ''
+              })),
+              
+              financial: {
+                subtotalAmount: orderData.totalAmount,
+                vatRate: 10,
+                vatAmount: Math.round(orderData.totalAmount * 0.1),
+                totalAmount: Math.round(orderData.totalAmount * 1.1)
+              },
+              
+              notes: orderData.remarks || '',
+              internalNotes: orderData.internalRemarks || ''
+            };
+            
+            // PDF 생성
+            const pdfBuffer = await ProfessionalPDFGenerationService.generateProfessionalPDF(pdfOrderData);
+            const pdfBase64 = pdfBuffer.toString('base64');
+            
+            // PDF를 attachments 테이블에 저장 (한글 파일명 인코딩 처리)
+            const pdfOriginalName = `${orderNumber}_발주서_전문.pdf`;
+            const pdfStoredName = `${orderNumber}_${Date.now()}_professional.pdf`;
+            
+            await db.insert(attachments).values({
+              orderId: newOrder[0].id,
+              originalName: pdfOriginalName,  // 한글 포함 파일명
+              storedName: pdfStoredName,  // 영문 저장용 파일명
+              filePath: `uploads/pdf/${pdfStoredName}`,
+              fileSize: pdfBuffer.length,
+              mimeType: 'application/pdf',
+              uploadedBy: req.user?.id || 'system',
+              fileData: pdfBase64
+            });
+            
+            console.log('✅ PDF 생성 및 저장 완료:', orderNumber);
+          } catch (pdfError) {
+            console.error('❌ PDF 생성 실패 (계속 진행):', pdfError);
+          }
+          
+          // Excel 파일 저장 (Input 시트 제거된 파일)
+          if (extractedFilePath && fs.existsSync(extractedFilePath)) {
+            try {
+              console.log('📊 Excel 파일 저장 시작:', extractedFilePath);
+              
+              const excelBuffer = fs.readFileSync(extractedFilePath);
+              const excelBase64 = excelBuffer.toString('base64');
+              
+              // Excel 파일명 한글 인코딩 처리
+              const excelOriginalName = `${orderNumber}_갑지을지.xlsx`;
+              const excelStoredName = `${orderNumber}_${Date.now()}_extracted.xlsx`;
+              
+              await db.insert(attachments).values({
+                orderId: newOrder[0].id,
+                originalName: excelOriginalName,  // 한글 포함 파일명
+                storedName: excelStoredName,  // 영문 저장용 파일명
+                filePath: extractedFilePath,
+                fileSize: excelBuffer.length,
+                mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                uploadedBy: req.user?.id || 'system',
+                fileData: excelBase64
+              });
+              
+              console.log('✅ Excel 파일 저장 완료:', orderNumber);
+            } catch (excelError) {
+              console.error('❌ Excel 파일 저장 실패 (계속 진행):', excelError);
+            }
+          }
+          
           savedOrders++;
         }
         
@@ -518,7 +648,8 @@ router.post('/extract-sheets', simpleAuth, async (req: any, res) => {
       message: '시트 추출 완료',
       data: {
         extractedPath,
-        extractedSheets: extractResult.extractedSheets
+        extractedSheets: extractResult.extractedSheets,
+        extractedFilePath: extractedPath  // Add this for frontend compatibility
       }
     });
 

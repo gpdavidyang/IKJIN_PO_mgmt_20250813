@@ -41,8 +41,8 @@ export default function CreateOrderExcel() {
   const [processingSteps, setProcessingSteps] = useState<ProcessingStep[]>([
     { id: 'upload', title: '파일 업로드', description: '엑셀 파일을 서버로 업로드', status: 'pending' },
     { id: 'parse', title: 'Input 시트 파싱', description: '엑셀 파일의 Input 시트 데이터 분석', status: 'pending' },
-    { id: 'save', title: '데이터베이스 저장', description: '발주서 정보를 데이터베이스에 저장', status: 'pending' },
     { id: 'extract', title: '갑지/을지 추출', description: '갑지/을지 시트를 별도 파일로 추출', status: 'pending' },
+    { id: 'save', title: '데이터베이스 저장', description: '발주서 정보 및 PDF/Excel 파일을 DB에 저장', status: 'pending' },
   ]);
 
   const handleDrag = (e: React.DragEvent) => {
@@ -121,25 +121,7 @@ export default function CreateOrderExcel() {
       // Step 2: Save to database
       updateProcessingStep('save', 'processing');
       
-      const saveResponse = await fetch('/api/po-template/save', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ orders: uploadData.data.orders }),
-      });
-
-      const saveData = await saveResponse.json();
-      
-      if (!saveResponse.ok) {
-        updateProcessingStep('save', 'error', saveData.error || '데이터베이스 저장 실패');
-        setProcessing(false);
-        return;
-      }
-
-      updateProcessingStep('save', 'completed', `발주서 ${saveData.data.savedOrders}개 저장 완료`);
-
-      // Step 3: Extract sheets
+      // Step 3: Extract sheets first to get the extracted file path
       updateProcessingStep('extract', 'processing');
       
       const extractResponse = await fetch('/api/po-template/extract-sheets', {
@@ -154,9 +136,38 @@ export default function CreateOrderExcel() {
       
       if (!extractResponse.ok) {
         updateProcessingStep('extract', 'error', extractData.error || '시트 추출 실패');
-      } else {
-        updateProcessingStep('extract', 'completed', `${extractData.data.extractedSheets.join(', ')} 시트 추출 완료`);
+        setProcessing(false);
+        return;
       }
+
+      updateProcessingStep('extract', 'completed', `${extractData.data.extractedSheets.join(', ')} 시트 추출 완료`);
+      
+      // Get the extracted file path for saving
+      const extractedFilePath = extractData.data?.extractedFilePath || uploadData.data.filePath.replace('.xlsx', '_extracted.xlsx');
+      
+      // Step 2: Save to database with extracted file path
+      updateProcessingStep('save', 'processing');
+      
+      const saveResponse = await fetch('/api/po-template/save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          orders: uploadData.data.orders,
+          extractedFilePath: extractedFilePath 
+        }),
+      });
+
+      const saveData = await saveResponse.json();
+      
+      if (!saveResponse.ok) {
+        updateProcessingStep('save', 'error', saveData.error || '데이터베이스 저장 실패');
+        setProcessing(false);
+        return;
+      }
+
+      updateProcessingStep('save', 'completed', `발주서 ${saveData.data.savedOrders}개 저장 완료 (PDF/Excel 파일 포함)`);
 
       setUploadResult(uploadData);
       

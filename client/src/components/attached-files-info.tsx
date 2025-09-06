@@ -102,8 +102,8 @@ export function AttachedFilesInfo({ attachments, orderId }: AttachedFilesInfoPro
   const handleDownload = async (attachment: any) => {
     setDownloading(attachment.id);
     try {
-      await downloadAttachment(attachment.id, attachment.originalName);
-      showDownloadSuccessMessage(attachment.originalName, toast);
+      await downloadAttachment(attachment.id, attachment.originalName, attachment.mimeType);
+      showDownloadSuccessMessage(attachment.originalName, toast, attachment.mimeType);
     } catch (error) {
       console.error('Download error:', error);
       toast({

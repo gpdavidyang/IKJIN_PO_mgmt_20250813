@@ -166,6 +166,9 @@ export interface ComprehensivePurchaseOrderData {
  * 건설업계 표준에 맞는 정보 집약적인 발주서 생성
  */
 export class ProfessionalPDFGenerationService {
+  static async generateProfessionalPDF(orderData: ComprehensivePurchaseOrderData): Promise<Buffer> {
+    return this.generatePDF(orderData);
+  }
   private static uploadDir = process.env.VERCEL 
     ? '/tmp/pdf'
     : path.join(process.cwd(), 'uploads/pdf');
@@ -632,6 +635,7 @@ export class ProfessionalPDFGenerationService {
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>구매 발주서 - ${data.orderNumber}</title>
   <style>
@@ -647,7 +651,7 @@ export class ProfessionalPDFGenerationService {
     }
     
     body {
-      font-family: 'Malgun Gothic', 'Arial', sans-serif;
+      font-family: 'Malgun Gothic', 'Nanum Gothic', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Arial', sans-serif;
       font-size: 8pt;
       line-height: 1.2;
       color: #000;
@@ -1246,9 +1250,9 @@ export class ProfessionalPDFGenerationService {
         doc.on('end', () => resolve(Buffer.concat(buffers)));
         doc.on('error', reject);
 
-        // 폰트 설정 - 간단하게 기본 폰트 사용
-        // Vercel에서는 시스템 폰트가 없으므로 기본 Helvetica 사용
-        console.log('📝 [ProfessionalPDF] PDFKit 기본 폰트로 PDF 생성');
+        // 폰트 설정 - 한글 지원을 위한 설정
+        // PDFKit은 기본적으로 한글을 지원하지 않으므로 대체 문자 사용
+        console.log('📝 [ProfessionalPDF] PDFKit으로 PDF 생성 (한글은 영문으로 대체)');
         
         const formatDate = (date?: Date | null) => {
           if (!date) return '-';
@@ -1264,9 +1268,10 @@ export class ProfessionalPDFGenerationService {
         
         // === 헤더 섹션 ===
         // 제목 및 발주서 번호 (왼쪽 정렬)
-        doc.fontSize(16).text('구매 발주서', 20, doc.y);
-        doc.fontSize(12).text(`발주번호: ${orderData.orderNumber}`, 20, doc.y);
-        doc.fontSize(6).text(`생성일: ${formatDate(orderData.metadata.generatedAt)}`, 20, doc.y);
+        // 한글 대신 영문 사용 (PDFKit 한글 폰트 제한)
+        doc.fontSize(16).text('PURCHASE ORDER', 20, doc.y);
+        doc.fontSize(12).text(`Order No: ${orderData.orderNumber}`, 20, doc.y);
+        doc.fontSize(6).text(`Generated: ${formatDate(orderData.metadata?.generatedAt || new Date())}`, 20, doc.y);
         
         // 구분선
         doc.moveTo(20, doc.y + 5).lineTo(575, doc.y + 5).stroke();
