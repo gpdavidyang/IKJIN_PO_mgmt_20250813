@@ -112,10 +112,13 @@ export const companies = pgTable("companies", {
   id: serial("id").primaryKey(),
   companyName: varchar("company_name", { length: 255 }).notNull(),
   businessNumber: varchar("business_number", { length: 50 }),
+  representative: varchar("representative", { length: 100 }), // 대표자명
   address: text("address"),
   contactPerson: varchar("contact_person", { length: 100 }), // Match actual DB schema
   phone: varchar("phone", { length: 50 }),
   email: varchar("email", { length: 255 }),
+  fax: varchar("fax", { length: 50 }), // 팩스번호
+  website: varchar("website", { length: 255 }), // 웹사이트
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

@@ -72,8 +72,19 @@ export default function OrderDetailProfessional() {
         title: "발주서 승인",
         description: "발주서가 성공적으로 승인되었습니다.",
       });
+      // Invalidate all order-related queries for immediate UI update
       queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
       queryClient.invalidateQueries({ queryKey: [`/api/orders/${orderId}`] });
+      queryClient.invalidateQueries({ queryKey: ["orders-optimized"] });
+      queryClient.invalidateQueries({ queryKey: ["orders-metadata"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+      
+      // Force refetch with no cache for critical queries
+      queryClient.refetchQueries({ 
+        queryKey: ["orders-optimized"], 
+        type: 'active',
+        exact: false 
+      });
     },
     onError: (error) => {
       toast({
@@ -93,8 +104,19 @@ export default function OrderDetailProfessional() {
         title: "발주서 발송",
         description: "발주서가 성공적으로 발송되었습니다.",
       });
+      // Invalidate all order-related queries for immediate UI update
       queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
       queryClient.invalidateQueries({ queryKey: [`/api/orders/${orderId}`] });
+      queryClient.invalidateQueries({ queryKey: ["orders-optimized"] });
+      queryClient.invalidateQueries({ queryKey: ["orders-metadata"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+      
+      // Force refetch with no cache for critical queries
+      queryClient.refetchQueries({ 
+        queryKey: ["orders-optimized"], 
+        type: 'active',
+        exact: false 
+      });
     },
     onError: (error) => {
       toast({
@@ -130,23 +152,57 @@ export default function OrderDetailProfessional() {
     mutationFn: async () => {
       return await apiRequest("POST", `/api/orders/${orderId}/complete-delivery`);
     },
+    // Optimistic update - 즉시 UI 업데이트
+    onMutate: async () => {
+      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+      await queryClient.cancelQueries({ queryKey: [`/api/orders/${orderId}`] });
+      
+      // Snapshot the previous value
+      const previousOrder = queryClient.getQueryData([`/api/orders/${orderId}`]);
+      
+      // Optimistically update the cache
+      queryClient.setQueryData([`/api/orders/${orderId}`], (old: any) => ({
+        ...old,
+        status: 'completed',
+        orderStatus: 'delivered'
+      }));
+      
+      // Return a context object with the snapshotted value
+      return { previousOrder };
+    },
     onSuccess: (data) => {
       toast({
         title: "납품검수완료",
         description: "발주서가 납품완료 상태로 변경되었습니다.",
       });
       
-      // Invalidate queries to refetch updated data
+      // Invalidate all order-related queries for immediate UI update
       queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
       queryClient.invalidateQueries({ queryKey: [`/api/orders/${orderId}`] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/unified"] });
+      queryClient.invalidateQueries({ queryKey: ["orders-optimized"] });
+      queryClient.invalidateQueries({ queryKey: ["orders-metadata"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+      
+      // Force refetch with no cache for critical queries
+      queryClient.refetchQueries({ 
+        queryKey: ["orders-optimized"], 
+        type: 'active',
+        exact: false 
+      });
     },
-    onError: (error: any) => {
+    // If the mutation fails, use the context returned from onMutate to roll back
+    onError: (error: any, newOrder, context: any) => {
+      queryClient.setQueryData([`/api/orders/${orderId}`], context?.previousOrder);
       toast({
         title: "납품검수완료 실패",
         description: error.message || "납품검수완료 처리 중 오류가 발생했습니다.",
         variant: "destructive",
       });
+    },
+    // Always refetch after error or success:
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/orders/${orderId}`] });
     }
   });
 

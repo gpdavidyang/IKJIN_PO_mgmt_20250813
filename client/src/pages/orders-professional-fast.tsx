@@ -200,8 +200,10 @@ export default function OrdersProfessionalFast() {
       if (!response.ok) throw new Error('Failed to fetch orders');
       return response.json();
     },
-    staleTime: 30000, // 30초 동안 캐시 유지
+    staleTime: 5000, // 5초로 단축하여 빠른 업데이트 지원
     gcTime: 60000, // 1분 동안 메모리에 캐시 유지
+    refetchOnWindowFocus: true, // 윈도우 포커스 시 자동 refetch
+    refetchOnMount: true // 컴포넌트 마운트 시 자동 refetch
   });
 
   // 메타데이터 prefetch (드롭다운 데이터)
