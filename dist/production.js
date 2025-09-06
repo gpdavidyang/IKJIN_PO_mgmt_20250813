@@ -2001,6 +2001,9 @@ var init_professional_pdf_generation_service = __esm({
     init_db();
     init_schema();
     ProfessionalPDFGenerationService = class {
+      static async generateProfessionalPDF(orderData) {
+        return this.generatePDF(orderData);
+      }
       static {
         this.uploadDir = process.env.VERCEL ? "/tmp/pdf" : path6.join(process.cwd(), "uploads/pdf");
       }
@@ -2365,6 +2368,7 @@ var init_professional_pdf_generation_service = __esm({
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>\uAD6C\uB9E4 \uBC1C\uC8FC\uC11C - ${data.orderNumber}</title>
   <style>
@@ -2380,7 +2384,7 @@ var init_professional_pdf_generation_service = __esm({
     }
     
     body {
-      font-family: 'Malgun Gothic', 'Arial', sans-serif;
+      font-family: 'Malgun Gothic', 'Nanum Gothic', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Arial', sans-serif;
       font-size: 8pt;
       line-height: 1.2;
       color: #000;
@@ -2952,17 +2956,14 @@ var init_professional_pdf_generation_service = __esm({
           try {
             const doc = new PDFKitDocument({
               size: "A4",
-              margins: { top: 20, bottom: 20, left: 20, right: 20 }
+              margins: { top: 20, bottom: 20, left: 20, right: 20 },
+              autoFirstPage: true
             });
             const buffers = [];
             doc.on("data", buffers.push.bind(buffers));
             doc.on("end", () => resolve2(Buffer.concat(buffers)));
             doc.on("error", reject);
-            try {
-              doc.font("Helvetica");
-            } catch (error) {
-              console.warn("\u26A0\uFE0F [ProfessionalPDF] \uD3F0\uD2B8 \uC124\uC815 \uC2E4\uD328, \uAE30\uBCF8 \uD3F0\uD2B8 \uC0AC\uC6A9:", error);
-            }
+            console.log("\u{1F4DD} [ProfessionalPDF] PDFKit\uC73C\uB85C PDF \uC0DD\uC131 (\uD55C\uAE00\uC740 \uC601\uBB38\uC73C\uB85C \uB300\uCCB4)");
             const formatDate = (date2) => {
               if (!date2) return "-";
               return format3(new Date(date2), "yyyy\uB144 MM\uC6D4 dd\uC77C", { locale: ko3 });
@@ -2973,9 +2974,9 @@ var init_professional_pdf_generation_service = __esm({
                 currency: "KRW"
               }).format(amount);
             };
-            doc.fontSize(16).text("\uAD6C\uB9E4 \uBC1C\uC8FC\uC11C", 20, doc.y);
-            doc.fontSize(12).text(`\uBC1C\uC8FC\uBC88\uD638: ${orderData.orderNumber}`, 20, doc.y);
-            doc.fontSize(6).text(`\uC0DD\uC131\uC77C: ${formatDate(orderData.metadata.generatedAt)}`, 20, doc.y);
+            doc.fontSize(16).text("PURCHASE ORDER", 20, doc.y);
+            doc.fontSize(12).text(`Order No: ${orderData.orderNumber}`, 20, doc.y);
+            doc.fontSize(6).text(`Generated: ${formatDate(orderData.metadata?.generatedAt || /* @__PURE__ */ new Date())}`, 20, doc.y);
             doc.moveTo(20, doc.y + 5).lineTo(575, doc.y + 5).stroke();
             doc.moveDown(1);
             const infoY = doc.y;
@@ -16060,6 +16061,7 @@ var POTemplateValidator = class {
 // server/routes/po-template-real.ts
 init_db();
 init_schema();
+init_professional_pdf_generation_service();
 import { eq as eq14 } from "drizzle-orm";
 var router10 = Router10();
 router10.get("/test", (req, res) => {
@@ -16080,7 +16082,8 @@ var storage3 = multer3.diskStorage({
     const originalName = Buffer.from(file.originalname, "latin1").toString("utf8");
     const extension = path14.extname(originalName);
     const basename = path14.basename(originalName, extension);
-    cb(null, `${timestamp2}-${basename}${extension}`);
+    const safeBasename = basename.replace(/[^a-zA-Z0-9가-힣_-]/g, "_");
+    cb(null, `${timestamp2}-${safeBasename}${extension}`);
   }
 });
 var upload3 = multer3({
@@ -16240,9 +16243,9 @@ router10.post("/upload", simpleAuth, upload3.single("file"), async (req, res) =>
       data: {
         fileName: req.file.originalname,
         filePath,
-        totalOrders: parseResult.totalOrders,
-        totalItems: parseResult.totalItems,
-        orders: parseResult.orders,
+        totalOrders: parseResult.data?.totalOrders || 0,
+        totalItems: parseResult.data?.totalItems || 0,
+        orders: parseResult.data?.orders || [],
         validation: detailedValidation
       }
     };
@@ -16281,9 +16284,10 @@ router10.post("/upload", simpleAuth, upload3.single("file"), async (req, res) =>
   }
 });
 router10.post("/save", simpleAuth, async (req, res) => {
-  console.log("\u{1F525}\u{1F525}\u{1F525} /save \uC5D4\uB4DC\uD3EC\uC778\uD2B8 \uD638\uCD9C\uB428 - \uC0C8\uB85C\uC6B4 \uB514\uBC84\uAE45 \uCF54\uB4DC \uC801\uC6A9\uB428");
+  console.log("\u{1F525}\u{1F525}\u{1F525} /save \uC5D4\uB4DC\uD3EC\uC778\uD2B8 \uD638\uCD9C\uB428 - PDF/Excel \uD30C\uC77C \uC0DD\uC131 \uD3EC\uD568");
   try {
     const { orders } = req.body;
+    let extractedFilePath;
     if (!orders || !Array.isArray(orders)) {
       return res.status(400).json({ error: "\uBC1C\uC8FC\uC11C \uB370\uC774\uD130\uAC00 \uB204\uB77D\uB418\uC5C8\uC2B5\uB2C8\uB2E4." });
     }
@@ -16392,6 +16396,109 @@ router10.post("/save", simpleAuth, async (req, res) => {
               notes: item.notes
             });
           }
+          try {
+            console.log("\u{1F4C4} PDF \uC0DD\uC131 \uC2DC\uC791:", orderNumber);
+            const companyList = await db.select().from(companies).limit(1);
+            const company = companyList[0];
+            const pdfOrderData = {
+              orderNumber,
+              orderDate: parsedOrderDate,
+              deliveryDate: parsedDeliveryDate ? parsedDeliveryDate : null,
+              orderStatus: "created",
+              approvalStatus: "pending",
+              issuerCompany: {
+                name: company?.companyName || "\uC775\uC9C4\uD14C\uD06C",
+                businessNumber: company?.businessNumber || "123-45-67890",
+                representative: company?.representativeName || "\uB300\uD45C\uC774\uC0AC",
+                address: company?.address || "\uC11C\uC6B8\uD2B9\uBCC4\uC2DC \uAC15\uB0A8\uAD6C",
+                phone: company?.phoneNumber || "02-1234-5678",
+                fax: company?.faxNumber || "02-1234-5679",
+                email: company?.email || "info@ikjintech.com"
+              },
+              vendorCompany: {
+                name: orderData.vendorName,
+                contactPerson: vendor[0]?.contactPerson || "",
+                phone: vendor[0]?.mainContact || "",
+                email: vendor[0]?.email || "",
+                address: vendor[0]?.address || ""
+              },
+              project: {
+                name: orderData.siteName,
+                code: project[0]?.projectCode || "",
+                location: project[0]?.location || ""
+              },
+              creator: {
+                name: req.user?.name || "\uC2DC\uC2A4\uD15C",
+                email: req.user?.email || "",
+                position: req.user?.position || ""
+              },
+              items: orderData.items.map((item, idx) => ({
+                sequenceNo: idx + 1,
+                majorCategory: item.majorCategory || "",
+                middleCategory: item.middleCategory || "",
+                minorCategory: item.minorCategory || "",
+                name: item.itemName,
+                specification: item.specification || "",
+                quantity: parseFloat(item.quantity) || 0,
+                unit: item.unit || "EA",
+                unitPrice: parseFloat(item.unitPrice) || 0,
+                totalPrice: parseFloat(item.totalAmount) || 0,
+                deliveryLocation: orderData.deliveryName || orderData.vendorName,
+                remarks: item.remarks || ""
+              })),
+              financial: {
+                subtotalAmount: orderData.totalAmount,
+                vatRate: 10,
+                vatAmount: Math.round(orderData.totalAmount * 0.1),
+                totalAmount: Math.round(orderData.totalAmount * 1.1)
+              },
+              notes: orderData.remarks || "",
+              internalNotes: orderData.internalRemarks || ""
+            };
+            const pdfBuffer = await ProfessionalPDFGenerationService.generateProfessionalPDF(pdfOrderData);
+            const pdfBase64 = pdfBuffer.toString("base64");
+            const pdfOriginalName = `${orderNumber}_\uBC1C\uC8FC\uC11C_\uC804\uBB38.pdf`;
+            const pdfStoredName = `${orderNumber}_${Date.now()}_professional.pdf`;
+            await db.insert(attachments).values({
+              orderId: newOrder[0].id,
+              originalName: pdfOriginalName,
+              // 한글 포함 파일명
+              storedName: pdfStoredName,
+              // 영문 저장용 파일명
+              filePath: `uploads/pdf/${pdfStoredName}`,
+              fileSize: pdfBuffer.length,
+              mimeType: "application/pdf",
+              uploadedBy: req.user?.id || "system",
+              fileData: pdfBase64
+            });
+            console.log("\u2705 PDF \uC0DD\uC131 \uBC0F \uC800\uC7A5 \uC644\uB8CC:", orderNumber);
+          } catch (pdfError) {
+            console.error("\u274C PDF \uC0DD\uC131 \uC2E4\uD328 (\uACC4\uC18D \uC9C4\uD589):", pdfError);
+          }
+          if (extractedFilePath && fs16.existsSync(extractedFilePath)) {
+            try {
+              console.log("\u{1F4CA} Excel \uD30C\uC77C \uC800\uC7A5 \uC2DC\uC791:", extractedFilePath);
+              const excelBuffer = fs16.readFileSync(extractedFilePath);
+              const excelBase64 = excelBuffer.toString("base64");
+              const excelOriginalName = `${orderNumber}_\uAC11\uC9C0\uC744\uC9C0.xlsx`;
+              const excelStoredName = `${orderNumber}_${Date.now()}_extracted.xlsx`;
+              await db.insert(attachments).values({
+                orderId: newOrder[0].id,
+                originalName: excelOriginalName,
+                // 한글 포함 파일명
+                storedName: excelStoredName,
+                // 영문 저장용 파일명
+                filePath: extractedFilePath,
+                fileSize: excelBuffer.length,
+                mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                uploadedBy: req.user?.id || "system",
+                fileData: excelBase64
+              });
+              console.log("\u2705 Excel \uD30C\uC77C \uC800\uC7A5 \uC644\uB8CC:", orderNumber);
+            } catch (excelError) {
+              console.error("\u274C Excel \uD30C\uC77C \uC800\uC7A5 \uC2E4\uD328 (\uACC4\uC18D \uC9C4\uD589):", excelError);
+            }
+          }
           savedOrders++;
         }
         res.json({
@@ -16477,7 +16584,9 @@ router10.post("/extract-sheets", simpleAuth, async (req, res) => {
       message: "\uC2DC\uD2B8 \uCD94\uCD9C \uC644\uB8CC",
       data: {
         extractedPath,
-        extractedSheets: extractResult.extractedSheets
+        extractedSheets: extractResult.extractedSheets,
+        extractedFilePath: extractedPath
+        // Add this for frontend compatibility
       }
     });
   } catch (error) {
@@ -25592,16 +25701,29 @@ import jwt2 from "jsonwebtoken";
 var router40 = Router37();
 router40.get("/attachments/:id/download", async (req, res) => {
   const attachmentId = parseInt(req.params.id);
+  const forceDownload = req.query.download === "true";
+  console.log(`\u{1F4E5} Attachment download request: ID=${attachmentId}, forceDownload=${forceDownload}, query=${JSON.stringify(req.query)}`);
   try {
     let authenticated = false;
-    const token = req.cookies?.auth_token;
+    let token = req.cookies?.auth_token;
+    if (!token && req.query.token) {
+      token = req.query.token;
+      console.log("\u{1F4DD} Using token from query parameter");
+    }
+    if (!token) {
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith("Bearer ")) {
+        token = authHeader.substring(7);
+        console.log("\u{1F4DD} Using token from Authorization header");
+      }
+    }
     if (token) {
       try {
         const decoded = jwt2.verify(token, process.env.JWT_SECRET || "your-secret-key");
         authenticated = true;
-        console.log("\u2705 Attachment download authenticated via cookie token");
+        console.log("\u2705 Attachment download authenticated via JWT token");
       } catch (err) {
-        console.log("\u274C Invalid cookie token for attachment download:", err.message);
+        console.log("\u274C Invalid JWT token for attachment download:", err.message);
       }
     }
     if (!authenticated && req.isAuthenticated && req.isAuthenticated()) {
@@ -25640,11 +25762,10 @@ router40.get("/attachments/:id/download", async (req, res) => {
         const buffer = Buffer.from(attachment.fileData, "base64");
         res.setHeader("Content-Type", mimeType);
         res.setHeader("Content-Length", buffer.length);
-        if (mimeType.includes("pdf")) {
-          res.setHeader("Content-Disposition", `inline; filename*=UTF-8''${encodeURIComponent(displayName)}`);
-        } else {
-          res.setHeader("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent(displayName)}`);
-        }
+        const disposition = forceDownload || !mimeType.includes("pdf") ? "attachment" : "inline";
+        const contentDisposition = `${disposition}; filename*=UTF-8''${encodeURIComponent(displayName)}`;
+        console.log(`\u{1F4C4} Setting Content-Disposition: ${contentDisposition} (mimeType: ${mimeType}, forceDownload: ${forceDownload})`);
+        res.setHeader("Content-Disposition", contentDisposition);
         return res.send(buffer);
       } catch (error) {
         console.error("Error decoding Base64 data:", error);
@@ -25680,11 +25801,10 @@ router40.get("/attachments/:id/download", async (req, res) => {
       const mimeType = attachment.mimeType || "application/pdf";
       const displayName = attachment.originalName || fileName;
       res.setHeader("Content-Type", mimeType);
-      if (mimeType.includes("pdf")) {
-        res.setHeader("Content-Disposition", `inline; filename*=UTF-8''${encodeURIComponent(displayName)}`);
-      } else {
-        res.setHeader("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent(displayName)}`);
-      }
+      const disposition = forceDownload || !mimeType.includes("pdf") ? "attachment" : "inline";
+      const contentDisposition = `${disposition}; filename*=UTF-8''${encodeURIComponent(displayName)}`;
+      console.log(`\u{1F4C4} Setting Content-Disposition: ${contentDisposition} (mimeType: ${mimeType}, forceDownload: ${forceDownload})`);
+      res.setHeader("Content-Disposition", contentDisposition);
       const fileStream = fs22.createReadStream(foundPath);
       fileStream.pipe(res);
     } else {

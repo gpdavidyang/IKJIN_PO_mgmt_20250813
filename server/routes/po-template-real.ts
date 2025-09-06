@@ -281,8 +281,8 @@ router.post('/upload', simpleAuth, upload.single('file'), async (req: any, res) 
 router.post('/save', simpleAuth, async (req: any, res) => {
   console.log('🔥🔥🔥 /save 엔드포인트 호출됨 - PDF/Excel 파일 생성 포함');
   try {
-    const { orders } = req.body;
-    let extractedFilePath: string | undefined;
+    const { orders, extractedFilePath } = req.body;
+    console.log('📋 받은 extractedFilePath:', extractedFilePath);
     
     if (!orders || !Array.isArray(orders)) {
       return res.status(400).json({ error: '발주서 데이터가 누락되었습니다.' });
@@ -494,8 +494,8 @@ router.post('/save', simpleAuth, async (req: any, res) => {
             const pdfBase64 = pdfBuffer.toString('base64');
             
             // PDF를 attachments 테이블에 저장 (한글 파일명 인코딩 처리)
-            const pdfOriginalName = `${orderNumber}_발주서_전문.pdf`;
-            const pdfStoredName = `${orderNumber}_${Date.now()}_professional.pdf`;
+            const pdfOriginalName = `PO_Professional_${orderNumber}_${Date.now()}.pdf`;
+            const pdfStoredName = `PO_Professional_${orderNumber}_${Date.now()}.pdf`;
             
             await db.insert(attachments).values({
               orderId: newOrder[0].id,
