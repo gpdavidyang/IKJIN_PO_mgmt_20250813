@@ -190,7 +190,7 @@ export class OptimizedOrdersService {
         vendorName: vendors.name,
         projectName: projects.projectName,
         userName: users.name,
-        // PDF attachment status - use correct column names
+        // PDF attachment status - use correct column names (database uses snake_case)
         hasPdf: sql<boolean>`EXISTS(SELECT 1 FROM attachments WHERE attachments.order_id = ${purchaseOrders.id} AND attachments.mime_type = 'application/pdf')`,
         // Email sent status - temporarily disabled until email_send_history table is created
         emailSentAt: sql<string | null>`NULL`,
@@ -219,40 +219,19 @@ export class OptimizedOrdersService {
       countQuery
     ]);
 
-    // Calculate correct orderStatus and approvalStatus based on actual conditions
+    // Use database orderStatus and approvalStatus fields directly, with fallbacks
     const processedOrders = orders.map(order => {
-      let computedOrderStatus: string;
-      let computedApprovalStatus: string;
+      // Use database orderStatus field directly - no fallback computation needed
+      // The database now has explicit orderStatus values
+      const finalOrderStatus = order.orderStatus || 'draft';
 
-      // Calculate orderStatus based on the plan document logic
-      if (order.status === 'draft') {
-        computedOrderStatus = 'draft'; // 임시저장
-      } else if (order.hasPdf && !order.emailSentAt) {
-        computedOrderStatus = 'created'; // 발주생성 (PDF 있음 + 이메일 미발송)
-      } else if (order.emailSentAt) {
-        computedOrderStatus = 'sent'; // 발주완료 (이메일 발송됨)
-      } else if (order.status === 'completed') {
-        computedOrderStatus = 'delivered'; // 납품완료
-      } else {
-        // Fallback: PDF 없고 이메일 미발송인 경우 임시저장으로 처리
-        computedOrderStatus = 'draft';
-      }
-
-      // Calculate approvalStatus
-      if (order.status === 'pending') {
-        computedApprovalStatus = 'pending'; // 승인대기
-      } else if (order.status === 'approved') {
-        computedApprovalStatus = 'approved'; // 승인완료
-      } else if (order.status === 'rejected') {
-        computedApprovalStatus = 'rejected'; // 반려
-      } else {
-        computedApprovalStatus = 'not_required'; // 승인불필요
-      }
+      // Use database approvalStatus field directly - no fallback computation needed  
+      const finalApprovalStatus = order.approvalStatus || 'not_required';
 
       return {
         ...order,
-        orderStatus: computedOrderStatus,
-        approvalStatus: computedApprovalStatus,
+        orderStatus: finalOrderStatus,
+        approvalStatus: finalApprovalStatus,
       };
     });
 

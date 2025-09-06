@@ -16,6 +16,7 @@ import { POEmailService } from "../utils/po-email-service";
 import ApprovalRoutingService from "../services/approval-routing-service";
 import { PDFGenerationService } from "../services/pdf-generation-service";
 import { EnhancedPDFGenerationService } from "../services/pdf-generation-service-enhanced";
+import { ProfessionalPDFGenerationService } from "../services/professional-pdf-generation-service";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -1673,6 +1674,105 @@ router.post("/orders/:id/regenerate-pdf", requireAuth, async (req, res) => {
   }
 });
 
+// === PROFESSIONAL PDF GENERATION ROUTES ===
+
+// Generate Professional PDF for specific order (enhanced layout with comprehensive data)
+router.post("/orders/:id/generate-professional-pdf", requireAuth, async (req, res) => {
+  try {
+    const orderId = parseInt(req.params.id);
+    const userId = req.user?.id;
+
+    console.log(`📄 [Professional PDF] 전문적 PDF 생성 요청: Order ID ${orderId}, User ID ${userId}`);
+
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false,
+        message: "사용자 인증이 필요합니다" 
+      });
+    }
+
+    // Generate professional PDF
+    const result = await ProfessionalPDFGenerationService.generateProfessionalPurchaseOrderPDF(
+      orderId, 
+      userId
+    );
+
+    if (result.success) {
+      console.log(`✅ [Professional PDF] PDF 생성 성공: ${result.pdfPath}`);
+      
+      res.json({
+        success: true,
+        message: "전문적 발주서 PDF가 성공적으로 생성되었습니다",
+        attachmentId: result.attachmentId,
+        pdfPath: result.pdfPath,
+        downloadUrl: `/api/attachments/${result.attachmentId}`
+      });
+    } else {
+      console.error(`❌ [Professional PDF] PDF 생성 실패: ${result.error}`);
+      
+      res.status(500).json({
+        success: false,
+        message: "전문적 PDF 생성에 실패했습니다",
+        error: result.error
+      });
+    }
+  } catch (error) {
+    console.error("❌ [Professional PDF] 서버 오류:", error);
+    res.status(500).json({
+      success: false,
+      message: "서버 오류로 인한 PDF 생성 실패",
+      error: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+// Test Professional PDF generation (development only)
+if (process.env.NODE_ENV === 'development') {
+  router.post("/orders/test-professional-pdf", async (req, res) => {
+    try {
+      console.log('🧪 [Professional PDF] 테스트 PDF 생성 시작');
+      
+      const { orderId = 1, userId = "test-user" } = req.body;
+      
+      // Generate test professional PDF
+      const result = await ProfessionalPDFGenerationService.generateProfessionalPurchaseOrderPDF(
+        orderId, 
+        userId
+      );
+
+      if (result.success) {
+        console.log(`✅ [Professional PDF] 테스트 PDF 생성 성공`);
+        
+        res.json({
+          success: true,
+          message: "테스트 전문적 PDF 생성 완료",
+          attachmentId: result.attachmentId,
+          pdfPath: result.pdfPath,
+          fileSize: result.pdfBuffer?.length || 0,
+          downloadUrl: `/api/attachments/${result.attachmentId}`
+        });
+      } else {
+        console.error(`❌ [Professional PDF] 테스트 PDF 생성 실패: ${result.error}`);
+        
+        res.status(500).json({
+          success: false,
+          message: "테스트 PDF 생성 실패",
+          error: result.error
+        });
+      }
+    } catch (error) {
+      console.error('❌ [Professional PDF] 테스트 오류:', error);
+      res.status(500).json({
+        success: false,
+        message: "테스트 PDF 생성 중 오류 발생",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+  
+  console.log('🧪 Development mode: Professional PDF test endpoint available at /api/orders/test-professional-pdf');
+}
+
 // Remove test endpoint in production
 if (process.env.NODE_ENV === 'development') {
   console.log('🧪 Development mode: PDF test endpoint available at /api/orders/test-pdf');
@@ -2051,7 +2151,7 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
     const tempFilePath = path.join(tempDir, `email_temp_${Date.now()}.html`);
     fs.writeFileSync(tempFilePath, generateEmailContent(emailOptions));
 
-    const result = await POEmailService.sendPOWithOriginalFormat(tempFilePath, {
+    const result = await emailService.sendPOWithOriginalFormat(tempFilePath, {
       to: emailOptions.to,
       cc: emailOptions.cc,
       subject: emailOptions.subject,
@@ -2161,7 +2261,7 @@ router.post("/orders/send-email-simple", requireAuth, async (req, res) => {
     }
 
     // 이메일 발송 (POEmailService 사용)
-    const result = await POEmailService.sendPOWithOriginalFormat(excelPath, {
+    const result = await emailService.sendPOWithOriginalFormat(excelPath, {
       to: toEmails,
       cc: ccEmails,
       subject: subject || `발주서 - ${emailData.orderNumber}`,
@@ -2221,7 +2321,7 @@ router.post("/orders/send-email-with-excel", requireAuth, async (req, res) => {
     }
 
     // POEmailService를 사용하여 원본 형식 유지 이메일 발송
-    const result = await POEmailService.sendPOWithOriginalFormat(
+    const result = await emailService.sendPOWithOriginalFormat(
       localExcelPath,
       {
         to: emailSettings.to,
@@ -2284,7 +2384,7 @@ router.post("/test-email-smtp", async (req, res) => {
     const testExcelPath = path.join(__dirname, '../../uploads/smtp-test.txt');
     fs.writeFileSync(testExcelPath, 'SMTP Test File - ' + new Date().toISOString());
 
-    const result = await POEmailService.sendPOWithOriginalFormat(testExcelPath, {
+    const result = await emailService.sendPOWithOriginalFormat(testExcelPath, {
       to: [recipientEmail],
       cc: [],
       subject: 'SMTP 테스트 - 발주서',

@@ -77,7 +77,6 @@ const ApprovalAuthorities = createLazyComponent(() => import("@/pages/approval-a
 const ExcelAutomationTest = createLazyComponent(() => import("@/pages/excel-automation-test"), 'ExcelAutomationTest');
 const ImportExport = createLazyComponent(() => import("@/pages/import-export"), 'ImportExport');
 const AuditManagement = createLazyComponent(() => import("@/pages/audit-management"), 'AuditManagement');
-const ExcelSmartUpload = createLazyComponent(() => import("@/pages/excel-smart-upload-simple"), 'ExcelSmartUploadSimple');
 const AccessibilityExample = createLazyComponent(
   () => import("@/components/examples/accessibility-example").then(module => ({
     default: module.AccessibilityExample
@@ -301,11 +300,6 @@ const Layout = React.memo(function Layout() {
               <Route path="/create-order/excel">
                 <Suspense fallback={<FormLoadingFallback />}>
                   <CreateOrderExcel />
-                </Suspense>
-              </Route>
-              <Route path="/excel-smart-upload">
-                <Suspense fallback={<FormLoadingFallback />}>
-                  <ExcelSmartUpload />
                 </Suspense>
               </Route>
               <Route path="/create-order/simple">
