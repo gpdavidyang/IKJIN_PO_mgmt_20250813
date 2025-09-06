@@ -574,8 +574,10 @@ router.post('/save', simpleAuth, async (req: any, res) => {
             }
             
             // PDF를 attachments 테이블에 저장 (한글 파일명 인코딩 처리)
-            const pdfOriginalName = `PO_Professional_${orderNumber}_${Date.now()}.pdf`;
-            const pdfStoredName = `PO_Professional_${orderNumber}_${Date.now()}.pdf`;
+            // orderNumber가 이미 PO-로 시작하므로 중복 제거
+            const cleanOrderNumber = orderNumber.startsWith('PO-') ? orderNumber.substring(3) : orderNumber;
+            const pdfOriginalName = `PO_Professional_${cleanOrderNumber}_${Date.now()}.pdf`;
+            const pdfStoredName = `PO_Professional_${cleanOrderNumber}_${Date.now()}.pdf`;
             
             await db.insert(attachments).values({
               orderId: newOrder[0].id,

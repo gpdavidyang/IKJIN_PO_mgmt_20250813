@@ -172,9 +172,15 @@ export class ProfessionalPDFGenerationService {
       console.log('📄 [ProfessionalPDF] Vercel 환경: PDFKit으로 PDF 생성');
       return await this.generateProfessionalPDFWithPDFKit(orderData);
     } else {
-      console.log('📄 [ProfessionalPDF] 로컬 환경: HTML 템플릿으로 PDF 생성');
-      const htmlContent = this.generateProfessionalHTMLTemplate(orderData);
-      return await this.convertHTMLToPDFFromString(htmlContent);
+      console.log('📄 [ProfessionalPDF] 로컬 환경: HTML 템플릿으로 PDF 생성 시도');
+      try {
+        const htmlContent = this.generateProfessionalHTMLTemplate(orderData);
+        return await this.convertHTMLToPDFFromString(htmlContent);
+      } catch (htmlError) {
+        console.warn('⚠️ [ProfessionalPDF] HTML 템플릿 생성 실패, PDFKit으로 대체:', htmlError);
+        console.log('📄 [ProfessionalPDF] 로컬 환경에서 PDFKit으로 대체 실행');
+        return await this.generateProfessionalPDFWithPDFKit(orderData);
+      }
     }
   }
   private static uploadDir = process.env.VERCEL 
@@ -481,7 +487,9 @@ export class ProfessionalPDFGenerationService {
       }
 
       const timestamp = Date.now();
-      const fileName = `PO_Professional_${orderData.orderNumber}_${timestamp}.pdf`;
+      // orderNumber가 이미 PO-로 시작하므로 중복 제거
+      const cleanOrderNumber = orderData.orderNumber.startsWith('PO-') ? orderData.orderNumber.substring(3) : orderData.orderNumber;
+      const fileName = `PO_Professional_${cleanOrderNumber}_${timestamp}.pdf`;
 
       // PDF 생성
       let pdfBuffer: Buffer;
@@ -1259,8 +1267,13 @@ export class ProfessionalPDFGenerationService {
         doc.on('error', reject);
 
         // 폰트 설정 - 한글 지원을 위한 설정
-        // PDFKit은 기본적으로 한글을 지원하지 않으므로 대체 문자 사용
-        console.log('📝 [ProfessionalPDF] PDFKit으로 PDF 생성 (한글은 영문으로 대체)');
+        console.log('📝 [ProfessionalPDF] PDFKit으로 PDF 생성 (한글 텍스트 포함)');
+        
+        // 한글 텍스트를 안전하게 처리하는 함수
+        const safeText = (text: string) => {
+          // 한글이 포함된 텍스트도 그대로 유지 (PDFKit이 처리할 수 있도록)
+          return text || '';
+        };
         
         const formatDate = (date?: Date | null) => {
           if (!date) return '-';
@@ -1276,10 +1289,9 @@ export class ProfessionalPDFGenerationService {
         
         // === 헤더 섹션 ===
         // 제목 및 발주서 번호 (왼쪽 정렬)
-        // 한글 대신 영문 사용 (PDFKit 한글 폰트 제한)
-        doc.fontSize(16).text('PURCHASE ORDER', 20, doc.y);
-        doc.fontSize(12).text(`Order No: ${orderData.orderNumber}`, 20, doc.y);
-        doc.fontSize(6).text(`Generated: ${formatDate(orderData.metadata?.generatedAt || new Date())}`, 20, doc.y);
+        doc.fontSize(16).text(safeText('구매 발주서'), 20, doc.y);
+        doc.fontSize(12).text(safeText(`발주번호: ${orderData.orderNumber}`), 20, doc.y);
+        doc.fontSize(6).text(safeText(`생성일시: ${formatDate(orderData.metadata?.generatedAt || new Date())}`), 20, doc.y);
         
         // 구분선
         doc.moveTo(20, doc.y + 5).lineTo(575, doc.y + 5).stroke();
@@ -1291,25 +1303,25 @@ export class ProfessionalPDFGenerationService {
         doc.fontSize(8);
         
         // 좌측 열 - 발주업체
-        doc.text('【발주업체】', 20, infoY);
-        doc.text(`업체명: ${orderData.issuerCompany.name}`, 20, infoY + 12);
-        doc.text(`사업자: ${orderData.issuerCompany.businessNumber || '-'}`, 20, infoY + 24);
-        doc.text(`연락처: ${orderData.issuerCompany.phone || '-'}`, 20, infoY + 36);
-        doc.text(`주소: ${orderData.issuerCompany.address || '-'}`, 20, infoY + 48);
+        doc.text(safeText('【발주업체】'), 20, infoY);
+        doc.text(safeText(`업체명: ${orderData.issuerCompany.name}`), 20, infoY + 12);
+        doc.text(safeText(`사업자번호: ${orderData.issuerCompany.businessNumber || '-'}`), 20, infoY + 24);
+        doc.text(safeText(`연락처: ${orderData.issuerCompany.phone || '-'}`), 20, infoY + 36);
+        doc.text(safeText(`주소: ${orderData.issuerCompany.address || '-'}`), 20, infoY + 48);
         
         // 중간 열 - 수주업체
-        doc.text('【수주업체】', 200, infoY);
-        doc.text(`업체명: ${orderData.vendorCompany.name}`, 200, infoY + 12);
-        doc.text(`사업자: ${orderData.vendorCompany.businessNumber || '-'}`, 200, infoY + 24);
-        doc.text(`담당자: ${orderData.vendorCompany.contactPerson || '-'}`, 200, infoY + 36);
-        doc.text(`연락처: ${orderData.vendorCompany.phone || '-'}`, 200, infoY + 48);
+        doc.text(safeText('【수주업체】'), 200, infoY);
+        doc.text(safeText(`업체명: ${orderData.vendorCompany.name}`), 200, infoY + 12);
+        doc.text(safeText(`사업자번호: ${orderData.vendorCompany.businessNumber || '-'}`), 200, infoY + 24);
+        doc.text(safeText(`담당자: ${orderData.vendorCompany.contactPerson || '-'}`), 200, infoY + 36);
+        doc.text(safeText(`연락처: ${orderData.vendorCompany.phone || '-'}`), 200, infoY + 48);
         
         // 우측 열 - 현장/일정
-        doc.text('【현장】', 380, infoY);
-        doc.text(`현장명: ${orderData.project.name}`, 380, infoY + 12);
-        doc.text(`발주일: ${formatDate(orderData.orderDate)}`, 380, infoY + 24);
-        doc.text(`납기일: ${formatDate(orderData.deliveryDate)}`, 380, infoY + 36);
-        doc.text(`작성자: ${orderData.creator.name}`, 380, infoY + 48);
+        doc.text(safeText('【현장정보】'), 380, infoY);
+        doc.text(safeText(`현장명: ${orderData.project.name}`), 380, infoY + 12);
+        doc.text(safeText(`발주일: ${formatDate(orderData.orderDate)}`), 380, infoY + 24);
+        doc.text(safeText(`납기일: ${formatDate(orderData.deliveryDate)}`), 380, infoY + 36);
+        doc.text(safeText(`작성자: ${orderData.creator.name}`), 380, infoY + 48);
         
         doc.y = infoY + 70;
         
@@ -1318,7 +1330,7 @@ export class ProfessionalPDFGenerationService {
         doc.moveDown(1);
         
         // === 품목 테이블 ===
-        doc.fontSize(9).text(`발주 품목 (총 ${orderData.items.length}개)`, 20);
+        doc.fontSize(9).text(safeText(`발주 품목 (총 ${orderData.items.length}개)`), 20);
         doc.moveDown(0.5);
         
         const tableTop = doc.y;
@@ -1328,13 +1340,13 @@ export class ProfessionalPDFGenerationService {
         doc.rect(20, tableTop, 555, 15).fill('#e5e7eb');
         doc.fillColor('black');
         doc.text('No', 25, tableTop + 3);
-        doc.text('품목명', 50, tableTop + 3);
-        doc.text('규격', 180, tableTop + 3);
-        doc.text('수량', 260, tableTop + 3);
-        doc.text('단위', 300, tableTop + 3);
-        doc.text('단가', 340, tableTop + 3);
-        doc.text('금액', 420, tableTop + 3);
-        doc.text('특이사항', 500, tableTop + 3);
+        doc.text(safeText('품목명'), 50, tableTop + 3);
+        doc.text(safeText('규격'), 180, tableTop + 3);
+        doc.text(safeText('수량'), 260, tableTop + 3);
+        doc.text(safeText('단위'), 300, tableTop + 3);
+        doc.text(safeText('단가'), 340, tableTop + 3);
+        doc.text(safeText('금액'), 420, tableTop + 3);
+        doc.text(safeText('특이사항'), 500, tableTop + 3);
         
         doc.rect(20, tableTop, 555, 15).stroke();
         
@@ -1350,12 +1362,12 @@ export class ProfessionalPDFGenerationService {
           
           doc.fontSize(6);
           doc.text(`${item.sequenceNo}`, 25, currentY + 3);
-          doc.text(item.name.substring(0, 25), 50, currentY + 3);
-          doc.text((item.specification || '-').substring(0, 15), 180, currentY + 3);
-          doc.text(item.quantity.toString(), 260, currentY + 3);
-          doc.text(item.unit || '-', 300, currentY + 3);
-          doc.text(formatCurrency(item.unitPrice), 340, currentY + 3);
-          doc.text(formatCurrency(item.totalPrice), 420, currentY + 3);
+          doc.text(safeText(item.name.substring(0, 25)), 50, currentY + 3);
+          doc.text(safeText((item.specification || '-').substring(0, 15)), 180, currentY + 3);
+          doc.text(safeText(item.quantity.toString()), 260, currentY + 3);
+          doc.text(safeText(item.unit || '-'), 300, currentY + 3);
+          doc.text(safeText(formatCurrency(item.unitPrice)), 340, currentY + 3);
+          doc.text(safeText(formatCurrency(item.totalPrice)), 420, currentY + 3);
           // 특이사항 포맷팅 (카테고리 + 납품처 정보)
           const formatRemarksForPDF = (item: any) => {
             let result = '';
@@ -1373,7 +1385,7 @@ export class ProfessionalPDFGenerationService {
             }
             return result || '-';
           };
-          doc.text(formatRemarksForPDF(item), 500, currentY + 3);
+          doc.text(safeText(formatRemarksForPDF(item)), 500, currentY + 3);
           
           doc.rect(20, currentY, 555, rowHeight).stroke();
           currentY += rowHeight;
@@ -1383,7 +1395,7 @@ export class ProfessionalPDFGenerationService {
         if (orderData.items.length > 15) {
           doc.rect(20, currentY, 555, 16).fill('#fef3c7');
           doc.fillColor('black');
-          doc.fontSize(7).text(`... 외 ${orderData.items.length - 15}개 품목 (별도 첨부자료 참고)`, 25, currentY + 3);
+          doc.fontSize(7).text(safeText(`... 외 ${orderData.items.length - 15}개 품목 (별도 첨부자료 참고)`), 25, currentY + 3);
           doc.rect(20, currentY, 555, 16).stroke();
           currentY += 16;
         }
@@ -1392,22 +1404,22 @@ export class ProfessionalPDFGenerationService {
         doc.rect(20, currentY, 555, 20).fill('#e3f2fd');
         doc.fillColor('black');
         doc.fontSize(8);
-        doc.text('소계 (부가세별도)', 25, currentY + 5);
-        doc.text(formatCurrency(orderData.financial.subtotalAmount), 420, currentY + 5);
+        doc.text(safeText('소계 (부가세별도)'), 25, currentY + 5);
+        doc.text(safeText(formatCurrency(orderData.financial.subtotalAmount)), 420, currentY + 5);
         doc.rect(20, currentY, 555, 20).stroke();
         currentY += 20;
         
         doc.rect(20, currentY, 555, 20).fill('#e3f2fd');
         doc.fillColor('black');
-        doc.text(`부가세 (${(orderData.financial.vatRate * 100).toFixed(0)}%)`, 25, currentY + 5);
-        doc.text(formatCurrency(orderData.financial.vatAmount), 420, currentY + 5);
+        doc.text(safeText(`부가세 (${(orderData.financial.vatRate * 100).toFixed(0)}%)`), 25, currentY + 5);
+        doc.text(safeText(formatCurrency(orderData.financial.vatAmount)), 420, currentY + 5);
         doc.rect(20, currentY, 555, 20).stroke();
         currentY += 20;
         
         doc.rect(20, currentY, 555, 20).fill('#1e40af');
         doc.fillColor('white');
-        doc.fontSize(9).text('총 금액', 25, currentY + 5);
-        doc.text(formatCurrency(orderData.financial.totalAmount), 420, currentY + 5);
+        doc.fontSize(9).text(safeText('총 금액'), 25, currentY + 5);
+        doc.text(safeText(formatCurrency(orderData.financial.totalAmount)), 420, currentY + 5);
         doc.rect(20, currentY, 555, 20).stroke();
         
         doc.fillColor('black');
@@ -1418,27 +1430,27 @@ export class ProfessionalPDFGenerationService {
         
         // 첨부파일 정보
         if (orderData.attachments.hasAttachments) {
-          doc.text(`첨부파일: ${orderData.attachments.count}개 (${Math.round(orderData.attachments.totalSize / 1024)}KB)`, 20);
+          doc.text(safeText(`첨부파일: ${orderData.attachments.count}개 (${Math.round(orderData.attachments.totalSize / 1024)}KB)`), 20);
           orderData.attachments.fileNames.slice(0, 3).forEach((fileName, index) => {
-            doc.text(`  ${index + 1}. ${fileName.length > 40 ? fileName.substring(0, 40) + '...' : fileName}`, 20, doc.y + 8);
+            doc.text(safeText(`  ${index + 1}. ${fileName.length > 40 ? fileName.substring(0, 40) + '...' : fileName}`), 20, doc.y + 8);
           });
           if (orderData.attachments.count > 3) {
-            doc.text(`  ... 외 ${orderData.attachments.count - 3}개 파일`, 20, doc.y + 8);
+            doc.text(safeText(`  ... 외 ${orderData.attachments.count - 3}개 파일`), 20, doc.y + 8);
           }
           doc.moveDown(1);
         }
         
         // 이메일 발송 이력
         if (orderData.communication.totalEmailsSent > 0) {
-          doc.text(`이메일 발송: 총 ${orderData.communication.totalEmailsSent}회`, 20);
-          doc.text(`최근 발송: ${formatDate(orderData.communication.lastEmailSent)}`, 20, doc.y + 8);
+          doc.text(safeText(`이메일 발송: 총 ${orderData.communication.totalEmailsSent}회`), 20);
+          doc.text(safeText(`최근 발송: ${formatDate(orderData.communication.lastEmailSent)}`), 20, doc.y + 8);
           doc.moveDown(1);
         }
         
         // 특이사항
         if (orderData.metadata.notes) {
-          doc.text('특이사항:', 20);
-          doc.text(orderData.metadata.notes, 20, doc.y + 8);
+          doc.text(safeText('특이사항:'), 20);
+          doc.text(safeText(orderData.metadata.notes), 20, doc.y + 8);
           doc.moveDown(1);
         }
         
@@ -1449,7 +1461,7 @@ export class ProfessionalPDFGenerationService {
         const signBoxHeight = 40;
         
         // 결재선 제목
-        doc.fontSize(8).text('결재', 20, signY);
+        doc.fontSize(8).text(safeText('결재'), 20, signY);
         doc.moveDown(0.5);
         
         const finalSignY = doc.y;
@@ -1458,16 +1470,16 @@ export class ProfessionalPDFGenerationService {
         roles.forEach((role, index) => {
           const x = 20 + (index * 110);
           doc.rect(x, finalSignY, signBoxWidth, signBoxHeight).stroke();
-          doc.fontSize(7).text(role, x + 45, finalSignY + 5);
+          doc.fontSize(7).text(safeText(role), x + 45, finalSignY + 5);
           
           // 승인 상태 표시
           const approver = orderData.approval.approvers[index];
           if (approver) {
             const statusText = approver.status === 'approved' ? '승인' : 
                              approver.status === 'rejected' ? '반려' : '대기';
-            doc.text(statusText, x + 40, finalSignY + 15);
+            doc.text(safeText(statusText), x + 40, finalSignY + 15);
             if (approver.approvedAt) {
-              doc.text(formatDate(approver.approvedAt), x + 35, finalSignY + 25);
+              doc.text(safeText(formatDate(approver.approvedAt)), x + 35, finalSignY + 25);
             }
           }
         });
@@ -1475,18 +1487,18 @@ export class ProfessionalPDFGenerationService {
         // === 하단 정보 ===
         doc.y = finalSignY + signBoxHeight + 15;
         doc.fontSize(8);
-        doc.text(orderData.issuerCompany.name, { align: 'center' });
+        doc.text(safeText(orderData.issuerCompany.name), { align: 'center' });
         if (orderData.issuerCompany.representative) {
-          doc.text(`대표자: ${orderData.issuerCompany.representative}`, { align: 'center' });
+          doc.text(safeText(`대표자: ${orderData.issuerCompany.representative}`), { align: 'center' });
         }
         doc.fontSize(6);
-        doc.text(orderData.issuerCompany.address || '', { align: 'center' });
-        doc.text(`TEL: ${orderData.issuerCompany.phone || ''} | EMAIL: ${orderData.issuerCompany.email || ''}`, { align: 'center' });
-        doc.text(`사업자등록번호: ${orderData.issuerCompany.businessNumber || ''}`, { align: 'center' });
+        doc.text(safeText(orderData.issuerCompany.address || ''), { align: 'center' });
+        doc.text(safeText(`TEL: ${orderData.issuerCompany.phone || ''} | EMAIL: ${orderData.issuerCompany.email || ''}`), { align: 'center' });
+        doc.text(safeText(`사업자등록번호: ${orderData.issuerCompany.businessNumber || ''}`), { align: 'center' });
         
         doc.moveDown(1);
         doc.fontSize(6);
-        doc.text(`문서 ID: ${orderData.metadata.documentId} | Template: ${orderData.metadata.templateVersion} | Generated: ${formatDate(orderData.metadata.generatedAt)}`, { align: 'center' });
+        doc.text(safeText(`문서 ID: ${orderData.metadata.documentId} | Template: ${orderData.metadata.templateVersion} | Generated: ${formatDate(orderData.metadata.generatedAt)}`), { align: 'center' });
         
         doc.end();
         
