@@ -2052,12 +2052,12 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
     // 기본 이메일 발송 옵션
     const emailOptions = {
       to: recipientEmails,
-      cc: emailSettings?.cc,
-      subject: emailSettings?.subject || `발주서 - ${orderData.orderNumber || ''}`,
+      cc: cc || emailSettings?.cc,
+      subject: subject || emailSettings?.subject || `발주서 - ${orderData.orderNumber || ''}`,
       orderNumber: orderData.orderNumber,
       vendorName: orderData.vendorName,
       totalAmount: orderData.totalAmount,
-      additionalMessage: emailSettings?.message
+      additionalMessage: message || emailSettings?.message
     };
 
     // 첨부파일 처리

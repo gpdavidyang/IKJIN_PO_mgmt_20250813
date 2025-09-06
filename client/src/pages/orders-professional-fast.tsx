@@ -1535,7 +1535,8 @@ export default function OrdersProfessionalFast() {
               vendorEmail: selectedOrder.vendor?.email,
               orderDate: new Date(selectedOrder.orderDate).toLocaleDateString(),
               totalAmount: selectedOrder.totalAmount,
-              siteName: selectedOrder.projectName
+              siteName: selectedOrder.projectName,
+              orderId: selectedOrder.id
             }}
             onSendEmail={handleSendEmail}
           />

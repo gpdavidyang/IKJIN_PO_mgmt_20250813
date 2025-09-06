@@ -1075,7 +1075,8 @@ export default function DashboardProfessional() {
               vendorEmail: selectedOrder.vendor?.email,
               orderDate: new Date(selectedOrder.orderDate || selectedOrder.createdAt).toLocaleDateString(),
               totalAmount: selectedOrder.totalAmount,
-              siteName: selectedOrder.project?.projectName || selectedOrder.project?.name
+              siteName: selectedOrder.project?.projectName || selectedOrder.project?.name,
+              orderId: selectedOrder.id
             }}
             onSendEmail={handleSendEmail}
           />

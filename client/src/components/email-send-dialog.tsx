@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,8 +6,19 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Mail, Send, X, Check, AlertTriangle } from 'lucide-react';
+import { Mail, Send, X, Check, AlertTriangle, FileText, File, Loader2 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
+import { apiRequest } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
+
+interface AttachmentInfo {
+  id: number;
+  originalName: string;
+  filePath: string;
+  fileSize?: number;
+  mimeType?: string;
+  isSelected?: boolean;
+}
 
 interface EmailSendDialogProps {
   open: boolean;
@@ -19,6 +30,7 @@ interface EmailSendDialogProps {
     orderDate: string;
     totalAmount: number;
     siteName?: string;
+    orderId?: number; // Added to fetch attachments
   };
   onSendEmail: (emailData: EmailData) => Promise<void>;
 }
@@ -30,22 +42,96 @@ interface EmailData {
   message?: string;
   attachPDF: boolean;
   attachExcel: boolean;
+  selectedAttachments?: number[]; // Added for dynamic attachment selection
 }
 
 export function EmailSendDialog({ open, onOpenChange, orderData, onSendEmail }: EmailSendDialogProps) {
+  const { toast } = useToast();
   const [emailData, setEmailData] = useState<EmailData>({
     to: orderData.vendorEmail ? [orderData.vendorEmail] : [''],
     cc: [],
     subject: `발주서 전송 - ${orderData.orderNumber}`,
     message: '',
     attachPDF: true,
-    attachExcel: true
+    attachExcel: true,
+    selectedAttachments: []
   });
   
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [newEmail, setNewEmail] = useState('');
   const [newCcEmail, setNewCcEmail] = useState('');
+  const [attachments, setAttachments] = useState<AttachmentInfo[]>([]);
+  const [attachmentsLoading, setAttachmentsLoading] = useState(false);
+
+  // Fetch attachments when dialog opens
+  useEffect(() => {
+    if (open && orderData.orderId) {
+      fetchAttachments();
+    }
+  }, [open, orderData.orderId]);
+
+  const fetchAttachments = async () => {
+    if (!orderData.orderId) return;
+    
+    setAttachmentsLoading(true);
+    try {
+      console.log('📎 Fetching attachments for order:', orderData.orderId);
+      const response = await apiRequest('GET', `/api/orders/${orderData.orderId}`);
+      
+      if (response.attachments && Array.isArray(response.attachments)) {
+        const attachmentInfos: AttachmentInfo[] = response.attachments.map((att: any) => ({
+          id: att.id,
+          originalName: att.originalName,
+          filePath: att.filePath,
+          fileSize: att.fileSize,
+          mimeType: att.mimeType,
+          isSelected: false
+        }));
+        
+        setAttachments(attachmentInfos);
+        
+        // Auto-select PDF and Excel files based on current logic
+        const pdfIds = attachmentInfos
+          .filter(att => att.mimeType?.includes('pdf') || att.originalName?.toLowerCase().endsWith('.pdf'))
+          .map(att => att.id);
+        
+        const excelIds = attachmentInfos
+          .filter(att => 
+            att.mimeType?.includes('excel') || 
+            att.mimeType?.includes('spreadsheet') ||
+            att.originalName?.toLowerCase().endsWith('.xlsx') ||
+            att.originalName?.toLowerCase().endsWith('.xls')
+          )
+          .map(att => att.id);
+          
+        setEmailData(prev => ({
+          ...prev,
+          attachPDF: pdfIds.length > 0,
+          attachExcel: excelIds.length > 0,
+          selectedAttachments: [...pdfIds, ...excelIds]
+        }));
+        
+        console.log('📎 Loaded attachments:', { 
+          total: attachmentInfos.length, 
+          pdfs: pdfIds.length, 
+          excels: excelIds.length 
+        });
+      } else {
+        setAttachments([]);
+        console.log('📎 No attachments found for order:', orderData.orderId);
+      }
+    } catch (error) {
+      console.error('❌ Failed to fetch attachments:', error);
+      toast({
+        title: "첨부파일 조회 실패",
+        description: "첨부파일 정보를 불러오는데 실패했습니다.",
+        variant: "destructive"
+      });
+    } finally {
+      setAttachmentsLoading(false);
+    }
+  };
 
   // 이메일 유효성 검사
   const isValidEmail = (email: string) => {
@@ -90,6 +176,42 @@ export function EmailSendDialog({ open, onOpenChange, orderData, onSendEmail }: 
     }));
   };
 
+  // 첨부파일 선택/해제
+  const toggleAttachment = (attachmentId: number) => {
+    setEmailData(prev => {
+      const currentSelected = prev.selectedAttachments || [];
+      const isSelected = currentSelected.includes(attachmentId);
+      
+      const newSelected = isSelected 
+        ? currentSelected.filter(id => id !== attachmentId)
+        : [...currentSelected, attachmentId];
+        
+      return {
+        ...prev,
+        selectedAttachments: newSelected
+      };
+    });
+  };
+
+  // 파일 크기 포맷팅
+  const formatFileSize = (bytes?: number) => {
+    if (!bytes) return '';
+    const mb = bytes / (1024 * 1024);
+    return mb > 1 ? `${mb.toFixed(1)}MB` : `${Math.round(bytes / 1024)}KB`;
+  };
+
+  // 파일 타입 아이콘 결정
+  const getFileIcon = (mimeType?: string, fileName?: string) => {
+    if (mimeType?.includes('pdf') || fileName?.toLowerCase().endsWith('.pdf')) {
+      return <FileText className="h-4 w-4 text-red-500" />;
+    }
+    if (mimeType?.includes('excel') || mimeType?.includes('spreadsheet') || 
+        fileName?.toLowerCase().endsWith('.xlsx') || fileName?.toLowerCase().endsWith('.xls')) {
+      return <File className="h-4 w-4 text-green-600" />;
+    }
+    return <File className="h-4 w-4 text-gray-500" />;
+  };
+
   // 유효성 검사
   const validateForm = () => {
     const newErrors: string[] = [];
@@ -122,6 +244,16 @@ export function EmailSendDialog({ open, onOpenChange, orderData, onSendEmail }: 
 
     setIsLoading(true);
     try {
+      console.log('📧 Sending email with data:', {
+        to: emailData.to,
+        cc: emailData.cc,
+        subject: emailData.subject,
+        message: emailData.message,
+        selectedAttachments: emailData.selectedAttachments,
+        attachPDF: emailData.attachPDF,
+        attachExcel: emailData.attachExcel
+      });
+      
       await onSendEmail(emailData);
       onOpenChange(false);
       // 성공 알림은 부모 컴포넌트에서 처리
@@ -244,36 +376,81 @@ ${orderData.vendorName} 담당자님께 발주서를 전송드립니다.
             />
           </div>
 
-          {/* 첨부파일 옵션 */}
+          {/* 첨부파일 선택 */}
           <div className="space-y-3">
-            <Label>첨부파일</Label>
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="attach-excel"
-                  checked={emailData.attachExcel}
-                  onCheckedChange={(checked) => 
-                    setEmailData(prev => ({ ...prev, attachExcel: checked as boolean }))
-                  }
-                />
-                <Label htmlFor="attach-excel">Excel 파일 (갑지/을지)</Label>
+            <Label className="text-base font-medium">첨부파일</Label>
+            
+            {attachmentsLoading ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                첨부파일 정보를 불러오는 중...
               </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="attach-pdf"
-                  checked={emailData.attachPDF}
-                  onCheckedChange={(checked) => 
-                    setEmailData(prev => ({ ...prev, attachPDF: checked as boolean }))
-                  }
-                />
-                <Label htmlFor="attach-pdf">PDF 파일</Label>
+            ) : attachments.length === 0 ? (
+              <div className="text-sm text-muted-foreground p-4 border border-dashed rounded-lg text-center">
+                <FileText className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                이 발주서에 첨부된 파일이 없습니다.
               </div>
-            </div>
+            ) : (
+              <div className="space-y-2 max-h-64 overflow-y-auto border rounded-lg p-3">
+                <div className="text-xs font-medium text-muted-foreground mb-2">
+                  총 {attachments.length}개의 파일이 첨부되어 있습니다
+                </div>
+                {attachments.map((attachment) => {
+                  const isSelected = emailData.selectedAttachments?.includes(attachment.id) || false;
+                  return (
+                    <div 
+                      key={attachment.id} 
+                      className={`flex items-center space-x-3 p-2 rounded-md hover:bg-gray-50 transition-colors ${
+                        isSelected ? 'bg-blue-50 border border-blue-200' : 'border border-gray-200'
+                      }`}
+                    >
+                      <Checkbox
+                        id={`attach-${attachment.id}`}
+                        checked={isSelected}
+                        onCheckedChange={() => toggleAttachment(attachment.id)}
+                      />
+                      <div className="flex items-center space-x-2 flex-1 min-w-0">
+                        {getFileIcon(attachment.mimeType, attachment.originalName)}
+                        <div className="flex-1 min-w-0">
+                          <Label 
+                            htmlFor={`attach-${attachment.id}`}
+                            className="text-sm font-medium cursor-pointer block truncate"
+                            title={attachment.originalName}
+                          >
+                            {attachment.originalName}
+                          </Label>
+                          {attachment.fileSize && (
+                            <div className="text-xs text-muted-foreground">
+                              {formatFileSize(attachment.fileSize)}
+                              {attachment.mimeType && (
+                                <span className="ml-2">• {attachment.mimeType.split('/')[1]?.toUpperCase()}</span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                
+                {/* 선택된 파일 개수 표시 */}
+                {(emailData.selectedAttachments?.length || 0) > 0 && (
+                  <div className="pt-2 border-t border-gray-200">
+                    <div className="text-xs text-blue-600 font-medium">
+                      ✓ {emailData.selectedAttachments?.length}개 파일이 선택되었습니다
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* 메시지 */}
           <div className="space-y-2">
             <Label htmlFor="message">메시지 (선택)</Label>
+            <div className="text-xs text-muted-foreground mb-1">
+              이 메시지는 이메일 본문에 포함되어 수신자에게 전달됩니다.
+            </div>
             <Textarea
               id="message"
               value={emailData.message || defaultMessage}

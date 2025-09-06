@@ -313,6 +313,7 @@ export default function OrderDetailProfessional() {
       console.log('📧 Email attachment info:', { 
         attachPdf: emailData.attachPDF, 
         attachExcel: emailData.attachExcel, 
+        selectedAttachments: emailData.selectedAttachments,
         pdfUrl, 
         excelUrl,
         hasAttachments: order.attachments?.length || 0
@@ -326,7 +327,8 @@ export default function OrderDetailProfessional() {
           ...emailData,
           orderId: order.id,
           pdfUrl: pdfUrl,
-          excelUrl: excelUrl
+          excelUrl: excelUrl,
+          selectedAttachments: emailData.selectedAttachments
         })
       });
 
@@ -975,7 +977,8 @@ export default function OrderDetailProfessional() {
               vendorEmail: order.vendor?.email,
               orderDate: order.orderDate ? new Date(order.orderDate).toLocaleDateString() : '',
               totalAmount: order.totalAmount,
-              siteName: order.project?.projectName || order.projectName || ''
+              siteName: order.project?.projectName || order.projectName || '',
+              orderId: order.id
             }}
             onSendEmail={handleSendEmail}
           />

@@ -57,10 +57,14 @@ router.get("/dashboard/urgent-orders", async (req, res) => {
   }
 });
 
-// TEMPORARY FIX: Add orders-optimized to dashboard routes (working router)
+// TEMPORARY FIX: Add orders-optimized to dashboard routes (working router) - WITH SORTING
 router.get("/orders-optimized", async (req, res) => {
   try {
-    console.log('🚀 Orders-optimized via dashboard router');
+    console.log('🚀 Orders-optimized via dashboard router', {
+      query: req.query,
+      sortBy: req.query.sortBy,
+      sortOrder: req.query.sortOrder
+    });
     
     const { db } = await import("../db");
     
@@ -76,9 +80,42 @@ router.get("/orders-optimized", async (req, res) => {
     const limit = parseInt(req.query.limit as string) || 20;
     const offset = (page - 1) * limit;
     
-    // Raw SQL query for orders (using exact dashboard pattern)
+    // Sorting logic
+    const sortBy = req.query.sortBy as string || 'createdAt';
+    const sortOrder = (req.query.sortOrder as string || 'desc').toLowerCase();
+    const sortDirection = sortOrder === 'asc' ? 'ASC' : 'DESC';
+    
+    // Map frontend sort field names to database columns
+    const getSortField = (field: string): string => {
+      switch (field) {
+        case 'orderNumber':
+          return 'po.order_number';
+        case 'status':
+          return 'po.status';
+        case 'orderStatus':
+          return 'po.order_status';
+        case 'approvalStatus':
+          return 'po.approval_status';
+        case 'vendorName':
+          return 'v.name';
+        case 'projectName':
+          return 'p.project_name';
+        case 'orderDate':
+          return 'po.order_date';
+        case 'totalAmount':
+          return 'po.total_amount';
+        case 'createdAt':
+        default:
+          return 'po.created_at';
+      }
+    };
+    
+    const sortField = getSortField(sortBy);
+    console.log('🔄 Sorting by:', sortField, sortDirection);
+    
+    // Raw SQL query for orders with dynamic sorting
     const ordersResult = await db.execute(
-      sql`SELECT 
+      sql.raw(`SELECT 
         po.id,
         po.order_number as "orderNumber",
         po.status,
@@ -92,8 +129,8 @@ router.get("/orders-optimized", async (req, res) => {
       FROM purchase_orders po
       LEFT JOIN vendors v ON po.vendor_id = v.id
       LEFT JOIN projects p ON po.project_id = p.id
-      ORDER BY po.created_at DESC
-      LIMIT ${limit} OFFSET ${offset}`
+      ORDER BY ${sortField} ${sortDirection}
+      LIMIT ${limit} OFFSET ${offset}`)
     );
     
     const countResult = await db.execute(
