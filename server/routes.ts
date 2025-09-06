@@ -5,6 +5,7 @@ import { login, logout, getCurrentUser, requireAuth, requireAdmin, requireOrderM
 import { User as BaseUser } from "@shared/schema";
 import { seedData } from "./seed-data";
 import { OrderService } from "./services/order-service";
+import { OptimizedOrdersService } from "./utils/optimized-orders-query";
 
 // Extend User type to ensure id field is available
 interface User extends BaseUser {
@@ -597,21 +598,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const [
         stats,
         monthlyStats,
-        orders,
+        ordersData,
         activeProjectsCount,
         newProjectsThisMonth,
         categoryStats
       ] = await Promise.all([
         storage.getDashboardStats(isAdmin ? undefined : userId),
         storage.getMonthlyOrderStats(isAdmin ? undefined : userId),
-        storage.getPurchaseOrders({}),
+        OptimizedOrdersService.getOrdersWithMetadata({ limit: 50, sortBy: 'createdAt', sortOrder: 'desc' }),
         storage.getActiveProjectsCount(isAdmin ? undefined : userId),
         storage.getNewProjectsThisMonth(isAdmin ? undefined : userId),
         storage.getCategoryOrderStats(isAdmin ? undefined : userId)
       ]);
 
       // Get recent projects from orders data
-      const orderList = orders.orders || [];
+      const orderList = ordersData.orders || [];
       const recentProjects = orderList.slice(0, 5).map((order: any) => ({
         id: order.projectId,
         projectName: order.projectName,
@@ -662,7 +663,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         projectStats,
         statusStats,
         categoryStats,
-        orders,
+        recentOrders: orderList.slice(0, 10), // 최근 발주 내역 10개
         activeProjectsCount: { count: activeProjectsCount },
         newProjectsThisMonth: { count: newProjectsThisMonth },
         recentProjects,

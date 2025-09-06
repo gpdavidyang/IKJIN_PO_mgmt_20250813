@@ -233,20 +233,20 @@ export class OptimizedDashboardQueries {
         totalAmount: item.amount // Add alias for compatibility
       }));
 
-      // Get separated status statistics - use the legacy 'status' field for all statuses
+      // Get order status statistics - use the new 'orderStatus' field for order lifecycle
       const statusStats = await db
         .select({
-          status: purchaseOrders.status,
+          status: purchaseOrders.orderStatus,
           count: count(),
           amount: sql<number>`COALESCE(SUM(${purchaseOrders.totalAmount}), 0)`
         })
         .from(purchaseOrders)
-        .groupBy(purchaseOrders.status)
+        .groupBy(purchaseOrders.orderStatus)
         .orderBy(desc(count()));
 
-      // Define all possible order statuses from the legacy status field
-      // purchaseOrderStatusEnum = ["draft", "pending", "approved", "sent", "completed"]
-      const allOrderStatuses = ['draft', 'pending', 'approved', 'sent', 'completed'];
+      // Define all possible order statuses from the orderStatus field
+      // orderStatusEnum = ["draft", "created", "sent", "delivered"]
+      const allOrderStatuses = ['draft', 'created', 'sent', 'delivered'];
       
       // No filtering needed - include all statuses
       const existingStatusStats = statusStats;
