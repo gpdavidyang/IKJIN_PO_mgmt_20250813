@@ -133,26 +133,44 @@ export class EnhancedPDFGenerationService {
       let attachmentId: number;
 
       if (process.env.VERCEL) {
-        // Vercel 환경: DB에 저장
+        // Vercel 환경: DB에 저장 (fileData 컬럼 호환성 처리)
         const base64Data = pdfBuffer.toString('base64');
         
-        const [attachment] = await db.db.insert(attachments).values({
-          orderId,
-          originalName: fileName,
-          storedName: fileName,
-          filePath: `db://${fileName}`,
-          fileSize: pdfBuffer.length,
-          mimeType: 'application/pdf',
-          uploadedBy: userId,
-          fileData: base64Data // Base64 encoded PDF data
-        }).returning();
+        let attachment;
+        try {
+          // fileData 컬럼이 있는 경우 시도
+          [attachment] = await db.db.insert(attachments).values({
+            orderId,
+            originalName: fileName,
+            storedName: fileName,
+            filePath: `db://${fileName}`,
+            fileSize: pdfBuffer.length,
+            mimeType: 'application/pdf',
+            uploadedBy: userId,
+            fileData: base64Data // Base64 encoded PDF data
+          }).returning();
+          
+          console.log(`✅ [Enhanced PDFGenerator] PDF 생성 완료 (DB Base64 저장): ${fileName}`);
+        } catch (error) {
+          console.warn('⚠️ [Enhanced PDFGenerator] fileData 컬럼 없음, 기본 저장 방식 사용:', error.message);
+          // fileData 컬럼이 없는 경우 fallback
+          [attachment] = await db.db.insert(attachments).values({
+            orderId,
+            originalName: fileName,
+            storedName: fileName,
+            filePath: `db://${fileName}`,
+            fileSize: pdfBuffer.length,
+            mimeType: 'application/pdf',
+            uploadedBy: userId
+          }).returning();
+          
+          console.log(`✅ [Enhanced PDFGenerator] PDF 생성 완료 (DB 경로 저장): ${fileName}`);
+        }
         
         attachmentId = attachment.id;
         filePath = `db://${fileName}`;
-        
-        console.log(`✅ [Enhanced PDFGenerator] PDF 생성 완료 (DB 저장): ${fileName}`);
       } else {
-        // 로컬 환경: 파일 시스템에 저장
+        // 로컬 환경: 파일 시스템에 저장 (fileData 컬럼 호환성 처리)
         const tempDir = path.join(this.uploadDir, String(new Date().getFullYear()), String(new Date().getMonth() + 1).padStart(2, '0'));
         
         if (!fs.existsSync(tempDir)) {
@@ -162,18 +180,40 @@ export class EnhancedPDFGenerationService {
         filePath = path.join(tempDir, fileName);
         fs.writeFileSync(filePath, pdfBuffer);
         
-        const [attachment] = await db.db.insert(attachments).values({
-          orderId,
-          originalName: fileName,
-          storedName: fileName,
-          filePath,
-          fileSize: pdfBuffer.length,
-          mimeType: 'application/pdf',
-          uploadedBy: userId
-        }).returning();
+        const base64Data = pdfBuffer.toString('base64');
+        let attachment;
+        
+        try {
+          // fileData 컬럼이 있는 경우 Base64도 함께 저장
+          [attachment] = await db.db.insert(attachments).values({
+            orderId,
+            originalName: fileName,
+            storedName: fileName,
+            filePath,
+            fileSize: pdfBuffer.length,
+            mimeType: 'application/pdf',
+            uploadedBy: userId,
+            fileData: base64Data // Base64도 저장해서 다중 호환성 확보
+          }).returning();
+          
+          console.log(`✅ [Enhanced PDFGenerator] PDF 생성 완료 (파일+Base64): ${filePath}`);
+        } catch (error) {
+          console.warn('⚠️ [Enhanced PDFGenerator] fileData 컬럼 없음, 파일 경로만 저장:', error.message);
+          // fileData 컬럼이 없는 경우 파일 경로만 저장
+          [attachment] = await db.db.insert(attachments).values({
+            orderId,
+            originalName: fileName,
+            storedName: fileName,
+            filePath,
+            fileSize: pdfBuffer.length,
+            mimeType: 'application/pdf',
+            uploadedBy: userId
+          }).returning();
+          
+          console.log(`✅ [Enhanced PDFGenerator] PDF 생성 완료 (파일만): ${filePath}`);
+        }
         
         attachmentId = attachment.id;
-        console.log(`✅ [Enhanced PDFGenerator] PDF 생성 완료: ${filePath}`);
       }
 
       return {

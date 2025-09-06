@@ -313,7 +313,7 @@ router.post("/orders", requireAuth, upload.array('attachments'), async (req, res
         const fileBuffer = require('fs').readFileSync(file.path);
         const base64Data = fileBuffer.toString('base64');
         
-        await storage.createAttachment({
+        const attachmentData: any = {
           orderId: order.id,
           originalName: decodedFilename,
           storedName: file.filename,
@@ -321,8 +321,19 @@ router.post("/orders", requireAuth, upload.array('attachments'), async (req, res
           fileSize: file.size,
           mimeType: file.mimetype,
           uploadedBy: userId,
-          fileData: base64Data // Store Base64 data for Vercel compatibility
-        });
+        };
+        
+        // Only add fileData if the column exists (for Vercel compatibility)
+        try {
+          attachmentData.fileData = base64Data;
+          await storage.createAttachment(attachmentData);
+        } catch (error) {
+          // Fallback: try without fileData field
+          console.warn('Failed to save with fileData, falling back to filesystem path:', error);
+          attachmentData.filePath = file.path;
+          delete attachmentData.fileData;
+          await storage.createAttachment(attachmentData);
+        }
       }
     }
 

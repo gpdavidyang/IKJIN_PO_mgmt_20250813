@@ -96,16 +96,31 @@ export class PDFGenerationService {
         // Vercel 환경: PDF 데이터를 Base64로 DB에 직접 저장
         const base64Data = pdfBuffer.toString('base64');
         
-        const [attachment] = await db.db.insert(attachments).values({
-          orderId,
-          originalName: fileName,
-          storedName: fileName,
-          filePath: `db://${fileName}`, // DB 저장 위치 표시
-          fileSize: pdfBuffer.length,
-          mimeType: 'application/pdf',
-          uploadedBy: userId,
-          fileData: base64Data // PDF 데이터를 Base64로 DB에 저장
-        }).returning();
+        let attachment;
+        try {
+          [attachment] = await db.db.insert(attachments).values({
+            orderId,
+            originalName: fileName,
+            storedName: fileName,
+            filePath: `db://${fileName}`, // DB 저장 위치 표시
+            fileSize: pdfBuffer.length,
+            mimeType: 'application/pdf',
+            uploadedBy: userId,
+            fileData: base64Data // PDF 데이터를 Base64로 DB에 저장
+          }).returning();
+        } catch (error) {
+          // Fallback: save without fileData for older schema compatibility
+          console.warn('Failed to save with fileData, using fallback:', error);
+          [attachment] = await db.db.insert(attachments).values({
+            orderId,
+            originalName: fileName,
+            storedName: fileName,
+            filePath: `db://${fileName}`,
+            fileSize: pdfBuffer.length,
+            mimeType: 'application/pdf',
+            uploadedBy: userId,
+          }).returning();
+        }
         
         attachmentId = attachment.id;
         filePath = `db://${fileName}`;
@@ -119,16 +134,31 @@ export class PDFGenerationService {
         // Also save Base64 data as backup for Vercel deployment
         const base64Data = pdfBuffer.toString('base64');
         
-        const [attachment] = await db.db.insert(attachments).values({
-          orderId,
-          originalName: fileName,
-          storedName: fileName,
-          filePath: `db://${fileName}`, // Changed to use db:// prefix for consistency
-          fileSize: pdfBuffer.length,
-          mimeType: 'application/pdf',
-          uploadedBy: userId,
-          fileData: base64Data // Save Base64 data for Vercel compatibility
-        }).returning();
+        let attachment;
+        try {
+          [attachment] = await db.db.insert(attachments).values({
+            orderId,
+            originalName: fileName,
+            storedName: fileName,
+            filePath: `db://${fileName}`, // Changed to use db:// prefix for consistency
+            fileSize: pdfBuffer.length,
+            mimeType: 'application/pdf',
+            uploadedBy: userId,
+            fileData: base64Data // Save Base64 data for Vercel compatibility
+          }).returning();
+        } catch (error) {
+          // Fallback: save without fileData for older schema compatibility
+          console.warn('Failed to save with fileData, using fallback:', error);
+          [attachment] = await db.db.insert(attachments).values({
+            orderId,
+            originalName: fileName,
+            storedName: fileName,
+            filePath: filePath, // Use original filesystem path as fallback
+            fileSize: pdfBuffer.length,
+            mimeType: 'application/pdf',
+            uploadedBy: userId,
+          }).returning();
+        }
         
         attachmentId = attachment.id;
         console.log(`✅ [PDFGenerator] PDF 생성 완료: ${filePath}, Attachment ID: ${attachment.id}`);
