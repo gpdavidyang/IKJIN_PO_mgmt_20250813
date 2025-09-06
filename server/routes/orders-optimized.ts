@@ -45,11 +45,64 @@ router.get("/orders-optimized", async (req, res) => {
       timestamp: new Date().toISOString()
     });
 
-    // Single optimized query for orders with email status
-    const result = await OptimizedOrdersService.getOrdersWithEmailStatus(filters);
+    // TEMPORARY FIX: Use simplified fallback if OptimizedOrdersService fails
+    let result, metadata;
     
-    // Get metadata for dropdowns (cached)
-    const metadata = await OptimizedOrdersService.getOrderMetadata();
+    try {
+      // Try the optimized service first
+      result = await OptimizedOrdersService.getOrdersWithEmailStatus(filters);
+      metadata = await OptimizedOrdersService.getOrderMetadata();
+    } catch (optimizedError) {
+      console.error("⚠️ OptimizedOrdersService failed, using fallback:", optimizedError.message);
+      
+      // Fallback to simple query similar to dashboard
+      const { db } = require("../db");
+      const { purchaseOrders, vendors, projects } = require("@shared/schema");
+      const { eq, desc, count } = require("drizzle-orm");
+      
+      const page = filters.page || 1;
+      const limit = filters.limit || 20;
+      const offset = (page - 1) * limit;
+      
+      // Simple query without complex joins
+      const orders = await db
+        .select()
+        .from(purchaseOrders)
+        .orderBy(desc(purchaseOrders.createdAt))
+        .limit(limit)
+        .offset(offset);
+        
+      const [{ count: total }] = await db
+        .select({ count: count() })
+        .from(purchaseOrders);
+      
+      // Minimal metadata
+      const vendors_list = await db.select().from(vendors);
+      const projects_list = await db.select().from(projects);
+      
+      result = {
+        orders: orders.map(order => ({
+          ...order,
+          vendorName: 'Loading...',
+          projectName: 'Loading...',
+          userName: 'Loading...',
+          emailStatus: null,
+          lastSentAt: null,
+          totalEmailsSent: 0,
+          openedAt: null
+        })),
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      };
+      
+      metadata = {
+        vendors: vendors_list,
+        projects: projects_list,
+        users: []
+      };
+    }
     
     const response = {
       ...result,
@@ -75,7 +128,8 @@ router.get("/orders-optimized", async (req, res) => {
     console.error("❌ Error in optimized orders endpoint:", error);
     res.status(500).json({ 
       message: "Failed to fetch orders",
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   } finally {
     endTimer();
