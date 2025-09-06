@@ -94,8 +94,6 @@ export class PDFGenerationService {
 
       if (process.env.VERCEL) {
         // Vercel 환경: PDF 데이터를 Base64로 DB에 직접 저장
-        // Temporarily disabled fileData column due to schema migration issues
-        // TODO: Re-enable after db:push completes successfully
         const base64Data = pdfBuffer.toString('base64');
         
         const [attachment] = await db.db.insert(attachments).values({
@@ -106,7 +104,7 @@ export class PDFGenerationService {
           fileSize: pdfBuffer.length,
           mimeType: 'application/pdf',
           uploadedBy: userId,
-          // fileData: base64Data // Temporarily commented out - PDF 데이터를 Base64로 DB에 저장
+          fileData: base64Data // PDF 데이터를 Base64로 DB에 저장
         }).returning();
         
         attachmentId = attachment.id;
@@ -114,18 +112,22 @@ export class PDFGenerationService {
         
         console.log(`✅ [PDFGenerator] PDF 생성 완료 (DB 저장): ${fileName}, Attachment ID: ${attachment.id}, 크기: ${Math.round(base64Data.length / 1024)}KB`);
       } else {
-        // 로컬 환경: 파일 시스템에 저장
+        // 로컬 환경: 파일 시스템에 저장 + Base64 백업
         filePath = path.join(tempDir, fileName);
         fs.writeFileSync(filePath, pdfBuffer);
+        
+        // Also save Base64 data as backup for Vercel deployment
+        const base64Data = pdfBuffer.toString('base64');
         
         const [attachment] = await db.db.insert(attachments).values({
           orderId,
           originalName: fileName,
           storedName: fileName,
-          filePath,
+          filePath: `db://${fileName}`, // Changed to use db:// prefix for consistency
           fileSize: pdfBuffer.length,
           mimeType: 'application/pdf',
-          uploadedBy: userId
+          uploadedBy: userId,
+          fileData: base64Data // Save Base64 data for Vercel compatibility
         }).returning();
         
         attachmentId = attachment.id;

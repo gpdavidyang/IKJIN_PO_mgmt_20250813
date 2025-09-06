@@ -58,11 +58,37 @@ router.get('/attachments/:id/download', async (req, res) => {
 
     // 2. Check if file is stored in database (db:// prefix)
     if (attachment.filePath?.startsWith('db://')) {
-      // PDF was meant to be stored in database but fileData column is disabled
-      // Try to find the file in the filesystem using the stored name
-      console.log('📄 PDF has db:// prefix, but fileData column is disabled. Looking for file in filesystem...');
+      console.log('📄 PDF has db:// prefix, checking for Base64 data in database...');
       
-      // Extract the filename from the db:// path
+      // Check if fileData exists (Base64 encoded file)
+      if (attachment.fileData) {
+        console.log('✅ Found Base64 data in database for file:', attachment.originalName);
+        
+        // Convert Base64 to Buffer
+        const fileBuffer = Buffer.from(attachment.fileData, 'base64');
+        
+        // Set headers based on file type
+        const mimeType = attachment.mimeType || 'application/octet-stream';
+        const displayName = attachment.originalName || 'document';
+        
+        res.setHeader('Content-Type', mimeType);
+        
+        // For PDFs, display inline; for other files (like Excel), download
+        if (mimeType.includes('pdf')) {
+          res.setHeader('Content-Disposition', `inline; filename*=UTF-8''${encodeURIComponent(displayName)}`);
+        } else {
+          res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(displayName)}`);
+        }
+        
+        res.setHeader('Content-Length', fileBuffer.length.toString());
+        
+        // Send the file buffer
+        res.send(fileBuffer);
+        return;
+      }
+      
+      // Fallback: Try to find the file in the filesystem (for backwards compatibility)
+      console.log('⚠️ No Base64 data found, looking for file in filesystem...');
       const fileName = attachment.filePath.replace('db://', '');
       const possiblePaths = [
         path.join(process.cwd(), 'attached_assets', fileName),

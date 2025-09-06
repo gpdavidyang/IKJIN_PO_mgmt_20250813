@@ -309,14 +309,19 @@ router.post("/orders", requireAuth, upload.array('attachments'), async (req, res
           stored: file.filename
         });
 
+        // Read file content for Base64 storage (Vercel compatibility)
+        const fileBuffer = require('fs').readFileSync(file.path);
+        const base64Data = fileBuffer.toString('base64');
+        
         await storage.createAttachment({
           orderId: order.id,
           originalName: decodedFilename,
           storedName: file.filename,
-          filePath: file.path,
+          filePath: `db://${file.filename}`, // Use db:// prefix for database storage
           fileSize: file.size,
           mimeType: file.mimetype,
-          uploadedBy: userId
+          uploadedBy: userId,
+          fileData: base64Data // Store Base64 data for Vercel compatibility
         });
       }
     }

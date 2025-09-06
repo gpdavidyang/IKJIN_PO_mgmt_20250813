@@ -144,6 +144,7 @@ export class EnhancedPDFGenerationService {
           fileSize: pdfBuffer.length,
           mimeType: 'application/pdf',
           uploadedBy: userId,
+          fileData: base64Data // Base64 encoded PDF data
         }).returning();
         
         attachmentId = attachment.id;

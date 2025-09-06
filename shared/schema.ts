@@ -390,7 +390,7 @@ export const attachments = pgTable("attachments", {
   mimeType: varchar("mime_type", { length: 100 }),
   uploadedBy: varchar("uploaded_by", { length: 50 }),
   uploadedAt: timestamp("uploaded_at").defaultNow(),
-  // fileData: text("file_data"), // Base64 encoded PDF data for Vercel/cloud storage - TEMPORARILY DISABLED
+  fileData: text("file_data"), // Base64 encoded PDF data for Vercel/cloud storage
 });
 
 // Order history/audit log table
