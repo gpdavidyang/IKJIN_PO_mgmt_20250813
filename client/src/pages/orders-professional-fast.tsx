@@ -14,7 +14,7 @@ import { getStatusText } from "@/lib/statusUtils";
 import { EmailSendDialog } from "@/components/email-send-dialog";
 import { EmailService } from "@/services/emailService";
 import { EmailHistoryModal } from "@/components/email-history-modal";
-import PDFPreviewModal from "@/components/workflow/preview/PDFPreviewModal";
+// import PDFPreviewModal from "@/components/workflow/preview/PDFPreviewModal"; // 모달 대신 직접 다운로드
 import { BulkDeleteDialog } from "@/components/orders/bulk-delete-dialog";
 import { formatKoreanWon } from "@/lib/utils";
 import { debounce } from "lodash";
@@ -101,9 +101,9 @@ export default function OrdersProfessionalFast() {
   const [emailHistoryModalOpen, setEmailHistoryModalOpen] = useState(false);
   const [selectedOrderForHistory, setSelectedOrderForHistory] = useState<Order | null>(null);
 
-  // PDF preview modal state
-  const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
-  const [selectedOrderForPDF, setSelectedOrderForPDF] = useState<Order | null>(null);
+  // PDF preview modal state - 제거 (직접 다운로드로 변경)
+  // const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
+  // const [selectedOrderForPDF, setSelectedOrderForPDF] = useState<Order | null>(null);
 
   // For bulk selection - moved after other state declarations to avoid initialization issues
   const [selectedOrders, setSelectedOrders] = useState<Set<number>>(new Set());
@@ -613,11 +613,72 @@ export default function OrdersProfessionalFast() {
     setEmailHistoryModalOpen(true);
   }, []);
 
-  // PDF preview handler
-  const handlePDFPreview = useCallback((order: Order) => {
-    setSelectedOrderForPDF(order);
-    setPdfPreviewOpen(true);
-  }, []);
+  // PDF 다운로드 handler (모달 대신 바로 다운로드)
+  const handlePDFDownload = useCallback(async (order: Order) => {
+    try {
+      // attachments에서 PDF 찾기
+      console.log('Fetching order details for ID:', order.id);
+      const response = await apiRequest('GET', `/api/orders/${order.id}`);
+      
+      console.log('API Response:', response); // 디버깅용
+      
+      // response가 null이거나 undefined인 경우 처리
+      if (!response) {
+        console.error('API returned no data for order:', order.id);
+        toast({
+          title: "데이터 오류",
+          description: "발주서 정보를 가져올 수 없습니다.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const orderData = response;
+      
+      // attachments 배열 확인
+      if (!orderData.attachments || !Array.isArray(orderData.attachments)) {
+        console.log('No attachments array in order data');
+        toast({
+          title: "PDF 파일이 없습니다",
+          description: "발주서 상세에서 PDF를 생성해주세요.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const pdfAttachment = orderData.attachments.find(
+        (att: any) => att.mimeType?.includes('pdf') || att.originalName?.toLowerCase().endsWith('.pdf')
+      );
+      
+      if (pdfAttachment) {
+        console.log('Found PDF attachment:', pdfAttachment);
+        // PDF 다운로드 - 새 탭에서 열기
+        const url = `/api/attachments/${pdfAttachment.id}/download`;
+        window.open(url, '_blank');
+        
+        toast({
+          title: "PDF 다운로드",
+          description: `발주서 ${order.orderNumber}의 PDF를 다운로드합니다.`,
+        });
+      } else {
+        console.log('No PDF attachment found in:', orderData.attachments);
+        toast({
+          title: "PDF 파일이 없습니다",
+          description: "발주서 상세에서 PDF를 생성해주세요.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('PDF download error:', error);
+      // 에러 메시지 개선
+      const errorMessage = error instanceof Error ? error.message : "알 수 없는 오류";
+      toast({
+        title: "다운로드 실패",
+        description: `PDF 다운로드 중 오류가 발생했습니다: ${errorMessage}`,
+        variant: "destructive",
+      });
+    }
+  }, [toast]);
 
   // Download handler
   const handleDownloadOrder = useCallback(async (orderId: string) => {
@@ -1208,9 +1269,9 @@ export default function OrdersProfessionalFast() {
                           {(order.orderStatus === 'created' || order.orderStatus === 'sent' || order.orderStatus === 'delivered' ||
                             (!order.orderStatus && (order.status === 'approved' || order.status === 'sent' || order.status === 'completed'))) && (
                             <button
-                              onClick={() => handlePDFPreview(order)}
+                              onClick={() => handlePDFDownload(order)}
                               className="p-1.5 text-orange-500 hover:text-orange-700 hover:bg-orange-50 dark:text-orange-400 dark:hover:text-orange-300 dark:hover:bg-orange-900/20 rounded-md transition-all duration-200"
-                              title="PDF 보기"
+                              title="PDF 다운로드"
                             >
                               <FileText className="h-4 w-4" />
                             </button>
@@ -1331,43 +1392,7 @@ export default function OrdersProfessionalFast() {
           />
         )}
 
-        {/* PDF Preview Modal */}
-        {selectedOrderForPDF && (
-          <PDFPreviewModal
-            orderData={{
-              id: selectedOrderForPDF.id,
-              orderNumber: selectedOrderForPDF.orderNumber,
-              projectName: selectedOrderForPDF.projectName,
-              vendorName: selectedOrderForPDF.vendorName,
-              totalAmount: selectedOrderForPDF.totalAmount,
-              orderDate: selectedOrderForPDF.orderDate,
-              deliveryDate: selectedOrderForPDF.deliveryDate,
-              status: selectedOrderForPDF.status,
-              filePath: selectedOrderForPDF.filePath,
-              items: selectedOrderForPDF.items || [],
-              notes: selectedOrderForPDF.notes || selectedOrderForPDF.remarks,
-              createdBy: selectedOrderForPDF.user?.name || selectedOrderForPDF.createdBy
-            }}
-            isOpen={pdfPreviewOpen}
-            onClose={() => {
-              setPdfPreviewOpen(false);
-              setSelectedOrderForPDF(null);
-            }}
-            onDownload={(pdfUrl) => {
-              const link = document.createElement('a');
-              link.href = pdfUrl;
-              link.download = `발주서_${selectedOrderForPDF.orderNumber}.pdf`;
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-              
-              toast({
-                title: "PDF 다운로드 완료",
-                description: `발주서 ${selectedOrderForPDF.orderNumber}의 PDF가 다운로드되었습니다.`,
-              });
-            }}
-          />
-        )}
+        {/* PDF Preview Modal - 제거 (직접 다운로드로 변경) */}
 
         {/* Bulk Delete Dialog */}
         {isAdmin && (

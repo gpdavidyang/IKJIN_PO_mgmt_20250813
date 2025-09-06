@@ -1,4 +1,4 @@
-import { FileText, Package, Users, Clock, Building, Plus, AlertCircle, BarChart3, TrendingUp, ShoppingCart, Activity, FolderTree, ChevronRight, DollarSign, ArrowUp, ArrowDown, Calendar, Eye, ChevronsUpDown, Send, Mail, Edit } from "lucide-react";
+import { FileText, Package, Users, Clock, Building, Plus, AlertCircle, BarChart3, TrendingUp, ShoppingCart, Activity, FolderTree, ChevronRight, DollarSign, ArrowUp, ArrowDown, Calendar, Eye, ChevronsUpDown, Send, Mail, Edit, History } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useDashboardData } from "@/hooks/use-enhanced-queries";
 import { useEffect, useState, useMemo, useCallback } from "react";
@@ -9,10 +9,11 @@ import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { formatKoreanWon } from "@/lib/utils";
 import { getStatusText } from "@/lib/statusUtils";
+import { getOrderStatusText, getApprovalStatusText, getOrderStatusColor, getApprovalStatusColor } from "@/lib/status-styles";
+import { apiRequest } from "@/lib/queryClient";
 import { EmailSendDialog } from "@/components/email-send-dialog";
 import { EmailHistoryModal } from "@/components/email-history-modal";
 import { EmailService } from "@/services/emailService";
-import PDFPreviewModal from "@/components/workflow/preview/PDFPreviewModal";
 
 // Import modals
 import { MonthlyTrendModal } from "@/components/modals/monthly-trend-modal";
@@ -43,9 +44,6 @@ export default function DashboardProfessional() {
   const [emailHistoryModalOpen, setEmailHistoryModalOpen] = useState(false);
   const [selectedOrderForHistory, setSelectedOrderForHistory] = useState<any>(null);
   
-  // PDF preview modal state
-  const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
-  const [selectedOrderForPDF, setSelectedOrderForPDF] = useState<any>(null);
 
   // Check if dark mode is active - MEMOIZED to prevent recalculation
   const isDarkMode = useMemo(() => {
@@ -178,14 +176,69 @@ export default function DashboardProfessional() {
     }
   }, [recentOrders]);
 
-  // PDF preview handler - MEMOIZED
-  const handlePDFPreview = useCallback((order: any) => {
-    const fullOrder = recentOrders.find((o: any) => o.id === order.id);
-    if (fullOrder) {
-      setSelectedOrderForPDF(fullOrder);
-      setPdfPreviewOpen(true);
+  // PDF download handler - direct download like orders-professional-fast
+  const handlePDFDownload = useCallback(async (order: any) => {
+    try {
+      // Fetch order details to get attachments
+      console.log('Fetching order details for ID:', order.id);
+      const response = await apiRequest('GET', `/api/orders/${order.id}`);
+      
+      console.log('API Response:', response);
+      
+      if (!response) {
+        console.error('API returned no data for order:', order.id);
+        toast({
+          title: "데이터 오류",
+          description: "발주서 정보를 가져올 수 없습니다.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const orderData = response;
+      
+      if (!orderData.attachments || !Array.isArray(orderData.attachments)) {
+        console.log('No attachments array in order data');
+        toast({
+          title: "PDF 파일이 없습니다",
+          description: "발주서 상세에서 PDF를 생성해주세요.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const pdfAttachment = orderData.attachments.find(
+        (att: any) => att.mimeType?.includes('pdf') || att.originalName?.toLowerCase().endsWith('.pdf')
+      );
+      
+      if (pdfAttachment) {
+        console.log('Found PDF attachment:', pdfAttachment);
+        // PDF 다운로드 - 새 탭에서 열기
+        const url = `/api/attachments/${pdfAttachment.id}/download`;
+        window.open(url, '_blank');
+        
+        toast({
+          title: "PDF 다운로드",
+          description: `발주서 ${order.orderNumber}의 PDF를 다운로드합니다.`,
+        });
+      } else {
+        console.log('No PDF attachment found in:', orderData.attachments);
+        toast({
+          title: "PDF 파일이 없습니다",
+          description: "발주서 상세에서 PDF를 생성해주세요.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('PDF download error:', error);
+      const errorMessage = error instanceof Error ? error.message : "알 수 없는 오류";
+      toast({
+        title: "다운로드 실패",
+        description: `PDF 다운로드 중 오류가 발생했습니다: ${errorMessage}`,
+        variant: "destructive",
+      });
     }
-  }, [recentOrders]);
+  }, [toast]);
 
 
   // Show loading while checking authentication
@@ -604,7 +657,23 @@ export default function DashboardProfessional() {
                     <button 
                       className={`flex items-center gap-1 transition-colors ${isDarkMode ? 'hover:text-gray-300' : 'hover:text-gray-700'}`}
                     >
-                      상태
+                      등록일
+                      <ChevronsUpDown className="h-3 w-3" />
+                    </button>
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>
+                    <button 
+                      className={`flex items-center gap-1 transition-colors ${isDarkMode ? 'hover:text-gray-300' : 'hover:text-gray-700'}`}
+                    >
+                      발주상태
+                      <ChevronsUpDown className="h-3 w-3" />
+                    </button>
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>
+                    <button 
+                      className={`flex items-center gap-1 transition-colors ${isDarkMode ? 'hover:text-gray-300' : 'hover:text-gray-700'}`}
+                    >
+                      승인상태
                       <ChevronsUpDown className="h-3 w-3" />
                     </button>
                   </th>
@@ -698,9 +767,37 @@ export default function DashboardProfessional() {
                         {formatKoreanWon(order.totalAmount)}
                       </div>
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}>
+                      {order.createdAt ? new Date(order.createdAt).toLocaleDateString('ko-KR') : '-'}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(order.status)}`}>
-                        {getStatusText(order.status)}
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getOrderStatusColor(
+                        order.status === 'draft' ? 'draft' :
+                        order.status === 'pending' || order.status === 'approved' ? 'created' :
+                        order.status === 'sent' ? 'sent' :
+                        order.status === 'completed' ? 'delivered' : 'draft'
+                      )}`}>
+                        {getOrderStatusText(
+                          order.status === 'draft' ? 'draft' :
+                          order.status === 'pending' || order.status === 'approved' ? 'created' :
+                          order.status === 'sent' ? 'sent' :
+                          order.status === 'completed' ? 'delivered' : 'draft'
+                        )}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getApprovalStatusColor(
+                        order.status === 'pending' ? 'pending' :
+                        order.status === 'approved' ? 'approved' :
+                        order.status === 'rejected' ? 'rejected' :
+                        'not_required'
+                      )}`}>
+                        {getApprovalStatusText(
+                          order.status === 'pending' ? 'pending' :
+                          order.status === 'approved' ? 'approved' :
+                          order.status === 'rejected' ? 'rejected' :
+                          'not_required'
+                        )}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -708,17 +805,17 @@ export default function DashboardProfessional() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
                       <div className="flex items-center justify-center gap-1">
-                        {/* 상세보기 */}
+                        {/* Always show detail view button */}
                         <button
                           onClick={() => navigate(`/orders/${order.id}`)}
-                          className="p-1 rounded transition-colors"
+                          className="p-1.5 rounded-md transition-all duration-200"
                           style={{ 
                             color: isDarkMode ? '#60a5fa' : '#2563eb',
                             backgroundColor: 'transparent'
                           }}
                           onMouseEnter={(e) => {
-                            e.currentTarget.style.color = isDarkMode ? '#3b82f6' : '#1d4ed8';
-                            e.currentTarget.style.backgroundColor = isDarkMode ? 'rgba(59, 130, 246, 0.1)' : 'rgba(37, 99, 235, 0.1)';
+                            e.currentTarget.style.color = isDarkMode ? '#93c5fd' : '#1d4ed8';
+                            e.currentTarget.style.backgroundColor = isDarkMode ? 'rgba(59, 130, 246, 0.2)' : 'rgba(37, 99, 235, 0.1)';
                           }}
                           onMouseLeave={(e) => {
                             e.currentTarget.style.color = isDarkMode ? '#60a5fa' : '#2563eb';
@@ -729,68 +826,114 @@ export default function DashboardProfessional() {
                           <Eye className="h-4 w-4" />
                         </button>
                         
-                        {/* 수정 */}
-                        <button
-                          onClick={() => navigate(`/orders/${order.id}/edit`)}
-                          className="p-1 rounded transition-colors"
-                          style={{ 
-                            color: isDarkMode ? '#34d399' : '#059669',
-                            backgroundColor: 'transparent'
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.color = isDarkMode ? '#10b981' : '#047857';
-                            e.currentTarget.style.backgroundColor = isDarkMode ? 'rgba(16, 185, 129, 0.1)' : 'rgba(5, 150, 105, 0.1)';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.color = isDarkMode ? '#34d399' : '#059669';
-                            e.currentTarget.style.backgroundColor = 'transparent';
-                          }}
-                          title="수정"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </button>
+                        {/* Edit button - only for draft and created status */}
+                        {(order.orderStatus === 'draft' || order.orderStatus === 'created' || 
+                          (!order.orderStatus && order.status !== 'sent' && order.status !== 'delivered')) && (
+                          <button
+                            onClick={() => navigate(`/orders/${order.id}/edit`)}
+                            className="p-1.5 rounded-md transition-all duration-200"
+                            style={{ 
+                              color: isDarkMode ? '#34d399' : '#059669',
+                              backgroundColor: 'transparent'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.color = isDarkMode ? '#6ee7b7' : '#047857';
+                              e.currentTarget.style.backgroundColor = isDarkMode ? 'rgba(16, 185, 129, 0.2)' : 'rgba(5, 150, 105, 0.1)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.color = isDarkMode ? '#34d399' : '#059669';
+                              e.currentTarget.style.backgroundColor = 'transparent';
+                            }}
+                            title="수정"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </button>
+                        )}
                         
-                        {/* PDF 보기 */}
-                        <button
-                          onClick={() => handlePDFPreview(order)}
-                          className="p-1 rounded transition-colors"
-                          style={{ 
-                            color: isDarkMode ? '#fb923c' : '#ea580c',
-                            backgroundColor: 'transparent'
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.color = isDarkMode ? '#f97316' : '#c2410c';
-                            e.currentTarget.style.backgroundColor = isDarkMode ? 'rgba(249, 115, 22, 0.1)' : 'rgba(234, 88, 12, 0.1)';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.color = isDarkMode ? '#fb923c' : '#ea580c';
-                            e.currentTarget.style.backgroundColor = 'transparent';
-                          }}
-                          title="PDF 보기"
-                        >
-                          <FileText className="h-4 w-4" />
-                        </button>
+                        {/* PDF button - only for created, sent, delivered status */}
+                        {(order.orderStatus === 'created' || order.orderStatus === 'sent' || order.orderStatus === 'delivered' ||
+                          (!order.orderStatus && (order.status === 'approved' || order.status === 'sent' || order.status === 'completed'))) && (
+                          <button
+                            onClick={() => handlePDFDownload(order)}
+                            className="p-1.5 rounded-md transition-all duration-200"
+                            style={{ 
+                              color: isDarkMode ? '#fb923c' : '#ea580c',
+                              backgroundColor: 'transparent'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.color = isDarkMode ? '#fdba74' : '#c2410c';
+                              e.currentTarget.style.backgroundColor = isDarkMode ? 'rgba(249, 115, 22, 0.2)' : 'rgba(234, 88, 12, 0.1)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.color = isDarkMode ? '#fb923c' : '#ea580c';
+                              e.currentTarget.style.backgroundColor = 'transparent';
+                            }}
+                            title="PDF 다운로드"
+                          >
+                            <FileText className="h-4 w-4" />
+                          </button>
+                        )}
                         
-                        {/* 이메일 */}
-                        <button
-                          onClick={() => handleEmailSend(order)}
-                          className="p-1 rounded transition-colors"
-                          style={{ 
-                            color: isDarkMode ? '#a855f7' : '#7c3aed',
-                            backgroundColor: 'transparent'
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.color = isDarkMode ? '#9333ea' : '#6d28d9';
-                            e.currentTarget.style.backgroundColor = isDarkMode ? 'rgba(147, 51, 234, 0.1)' : 'rgba(124, 58, 237, 0.1)';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.color = isDarkMode ? '#a855f7' : '#7c3aed';
-                            e.currentTarget.style.backgroundColor = 'transparent';
-                          }}
-                          title="이메일 전송"
-                        >
-                          <Mail className="h-4 w-4" />
-                        </button>
+                        {/* Email button - only for created status */}
+                        {(order.orderStatus === 'created' || 
+                          (!order.orderStatus && order.status === 'approved')) && (
+                          <button
+                            onClick={() => handleEmailSend(order)}
+                            className="p-1.5 rounded-md transition-all duration-200"
+                            style={{ 
+                              color: isDarkMode ? '#a855f7' : '#7c3aed',
+                              backgroundColor: 'transparent'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.color = isDarkMode ? '#c084fc' : '#6d28d9';
+                              e.currentTarget.style.backgroundColor = isDarkMode ? 'rgba(147, 51, 234, 0.2)' : 'rgba(124, 58, 237, 0.1)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.color = isDarkMode ? '#a855f7' : '#7c3aed';
+                              e.currentTarget.style.backgroundColor = 'transparent';
+                            }}
+                            title="이메일 전송"
+                          >
+                            <Mail className="h-4 w-4" />
+                          </button>
+                        )}
+                        
+                        {/* Email history button - show if emails have been sent */}
+                        {order.totalEmailsSent > 0 && (
+                          <button
+                            onClick={() => handleViewEmailHistory(order)}
+                            className="p-1.5 rounded-md transition-all duration-200"
+                            style={{ 
+                              color: isDarkMode ? '#94a3b8' : '#64748b',
+                              backgroundColor: 'transparent'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.color = isDarkMode ? '#cbd5e1' : '#475569';
+                              e.currentTarget.style.backgroundColor = isDarkMode ? 'rgba(148, 163, 184, 0.2)' : 'rgba(100, 116, 139, 0.1)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.color = isDarkMode ? '#94a3b8' : '#64748b';
+                              e.currentTarget.style.backgroundColor = 'transparent';
+                            }}
+                            title={`이메일 이력 (${order.totalEmailsSent}건)`}
+                          >
+                            <History className="h-4 w-4" />
+                          </button>
+                        )}
+                        
+                        {/* Draft indicator */}
+                        {order.orderStatus === 'draft' && (
+                          <span 
+                            className="text-xs px-2 py-1 rounded" 
+                            style={{ 
+                              color: isDarkMode ? '#fbbf24' : '#d97706',
+                              backgroundColor: isDarkMode ? 'rgba(251, 191, 36, 0.1)' : 'rgba(217, 119, 6, 0.1)'
+                            }}
+                            title="임시저장 상태"
+                          >
+                            📝
+                          </span>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -928,40 +1071,6 @@ export default function DashboardProfessional() {
           />
         )}
 
-        {/* PDF Preview Modal */}
-        {selectedOrderForPDF && (
-          <PDFPreviewModal
-            orderData={{
-              id: selectedOrderForPDF.id,
-              orderNumber: selectedOrderForPDF.orderNumber,
-              projectName: selectedOrderForPDF.project?.projectName || selectedOrderForPDF.project?.name,
-              vendorName: selectedOrderForPDF.vendor?.name,
-              totalAmount: selectedOrderForPDF.totalAmount,
-              orderDate: selectedOrderForPDF.orderDate || selectedOrderForPDF.createdAt,
-              deliveryDate: selectedOrderForPDF.deliveryDate,
-              status: selectedOrderForPDF.status,
-              filePath: selectedOrderForPDF.filePath,
-              // Additional data that might be needed for PDF generation
-              items: selectedOrderForPDF.items || [],
-              notes: selectedOrderForPDF.notes || selectedOrderForPDF.remarks,
-              createdBy: selectedOrderForPDF.user?.name || selectedOrderForPDF.createdBy
-            }}
-            isOpen={pdfPreviewOpen}
-            onClose={() => {
-              setPdfPreviewOpen(false);
-              setSelectedOrderForPDF(null);
-            }}
-            onDownload={(pdfUrl) => {
-              // Custom download handler if needed
-              const link = document.createElement('a');
-              link.href = pdfUrl;
-              link.download = `발주서_${selectedOrderForPDF.orderNumber}.pdf`;
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-            }}
-          />
-        )}
       </div>
     </div>
   );

@@ -82,11 +82,15 @@ export function AttachedFilesInfo({ attachments, orderId }: AttachedFilesInfoPro
   const handleDownload = async (attachment: any) => {
     setDownloading(attachment.id);
     try {
+      // Get token from localStorage or cookie
+      const token = localStorage.getItem('token') || document.cookie.match(/auth_token=([^;]+)/)?.[1];
+      
       const response = await fetch(`/api/attachments/${attachment.id}/download`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': token ? `Bearer ${token}` : '',
         },
+        credentials: 'include', // Include cookies
       });
 
       if (!response.ok) {

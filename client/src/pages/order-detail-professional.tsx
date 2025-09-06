@@ -362,8 +362,9 @@ export default function OrderDetailProfessional() {
                     );
                     
                     if (pdfAttachment) {
-                      // Open PDF in new tab
-                      window.open(`/api/attachments/${pdfAttachment.id}/download`, '_blank');
+                      // Open PDF in new tab - cookies will be sent automatically
+                      const url = `/api/attachments/${pdfAttachment.id}/download`;
+                      window.open(url, '_blank');
                     } else {
                       // PDF not found - show helpful message
                       toast({
@@ -376,7 +377,7 @@ export default function OrderDetailProfessional() {
                   title="새 탭에서 PDF 열기"
                 >
                   <ExternalLink className="h-4 w-4" />
-                  PDF 보기
+                  PDF 다운로드
                 </Button>
               )}
               
