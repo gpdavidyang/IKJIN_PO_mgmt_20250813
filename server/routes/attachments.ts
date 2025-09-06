@@ -5,22 +5,7 @@ import { eq } from 'drizzle-orm';
 import path from 'path';
 import fs from 'fs';
 import jwt from 'jsonwebtoken';
-
-// Import auth middleware
-const requireAuth = (req: any, res: any, next: any) => {
-  if (!req.isAuthenticated || !req.isAuthenticated()) {
-    return res.status(401).json({ message: "Authentication required" });
-  }
-  next();
-};
-
-// Admin only middleware
-const requireAdmin = (req: any, res: any, next: any) => {
-  if (!req.user || req.user.role !== 'admin') {
-    return res.status(403).json({ message: "Admin access required" });
-  }
-  next();
-};
+import { requireAuth } from '../local-auth';
 
 const router = Router();
 
@@ -182,11 +167,23 @@ router.get('/attachments/:id/download', async (req, res) => {
  * DELETE /api/attachments/:id
  * 첨부파일 삭제 엔드포인트 (Admin Only)
  */
-router.delete('/attachments/:id', requireAuth, requireAdmin, async (req, res) => {
+router.delete('/attachments/:id', requireAuth, async (req: any, res) => {
   const attachmentId = parseInt(req.params.id);
 
   try {
-    console.log(`🗑️ Admin ${req.user.name} (ID: ${req.user.id}) requesting deletion of attachment ${attachmentId}`);
+    const { user } = req;
+    console.log('🗑️ Attachment delete request received');
+    console.log('👤 User info:', { id: user?.id, role: user?.role, name: user?.name });
+    
+    // Check if user is admin
+    if (!user || user.role !== 'admin') {
+      return res.status(403).json({ 
+        error: 'Admin access required',
+        message: 'Only administrators can delete attachments' 
+      });
+    }
+
+    console.log(`🗑️ Admin ${user.name} (ID: ${user.id}) requesting deletion of attachment ${attachmentId}`);
 
     // 1. 첨부파일 정보 조회
     const [attachment] = await db
