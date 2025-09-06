@@ -126,6 +126,30 @@ export default function OrderDetailProfessional() {
     },
   });
 
+  const completeDeliveryMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("POST", `/api/orders/${orderId}/complete-delivery`);
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "납품검수완료",
+        description: "발주서가 납품완료 상태로 변경되었습니다.",
+      });
+      
+      // Invalidate queries to refetch updated data
+      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/orders/${orderId}`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/unified"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "납품검수완료 실패",
+        description: error.message || "납품검수완료 처리 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    }
+  });
+
   // Professional status colors
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -176,6 +200,17 @@ export default function OrderDetailProfessional() {
   const handleSend = () => {
     if (confirm("이 발주서를 거래처에 발송하시겠습니까?")) {
       sendMutation.mutate();
+    }
+  };
+
+  const handleCompleteDelivery = () => {
+    if (confirm(
+      "납품검수를 완료하시겠습니까?\n\n" +
+      "• 발주서 상태가 '납품완료'로 변경됩니다\n" +
+      "• 이 작업은 되돌릴 수 없습니다\n" +
+      "• 납품이 완전히 검수되었을 때만 진행하세요"
+    )) {
+      completeDeliveryMutation.mutate();
     }
   };
 
@@ -265,14 +300,16 @@ export default function OrderDetailProfessional() {
   const actualStatus = order.orderStatus || order.status;
   const isDraft = actualStatus === 'draft';
   const isCreated = actualStatus === 'created';
-  const isSent = actualStatus === 'sent' || actualStatus === 'delivered';
+  const isSent = actualStatus === 'sent';
+  const isDelivered = actualStatus === 'delivered';
   
   // Permission checks based on status
   const canCreateOrder = isDraft && (user?.role === "admin" || order.userId === user?.id);
-  const canGeneratePDF = isCreated || isSent;
+  const canGeneratePDF = isCreated || isSent || isDelivered;
   const canSendEmail = isCreated && (user?.role === "admin" || order.userId === user?.id);
   const canEdit = isDraft || (isCreated && (user?.role === "admin" || order.userId === user?.id));
   const canApprove = user?.role === "admin" && order.approvalStatus === "pending";
+  const canCompleteDelivery = isSent && (user?.role === "admin" || order.userId === user?.id);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -393,6 +430,18 @@ export default function OrderDetailProfessional() {
                 >
                   <Mail className="h-4 w-4" />
                   이메일 발송
+                </Button>
+              )}
+              
+              {/* Complete Delivery button - only for sent status */}
+              {canCompleteDelivery && (
+                <Button 
+                  onClick={handleCompleteDelivery}
+                  disabled={completeDeliveryMutation.isPending}
+                  className="bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-2"
+                >
+                  <CheckCircle className="h-4 w-4" />
+                  {completeDeliveryMutation.isPending ? '처리 중...' : '납품검수완료'}
                 </Button>
               )}
             </div>

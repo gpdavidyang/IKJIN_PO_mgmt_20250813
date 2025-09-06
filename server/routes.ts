@@ -1724,6 +1724,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Complete delivery - change status to delivered
+  app.post('/api/orders/:id/complete-delivery', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      const orderId = parseInt(req.params.id);
+      
+      // Get current order
+      const order = await storage.getPurchaseOrder(orderId);
+      if (!order) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+
+      // Check permissions - admin or order owner
+      if (user?.role !== "admin" && order.userId !== user?.id) {
+        return res.status(403).json({ message: "Access denied - insufficient permissions" });
+      }
+
+      // Check current status - can only complete delivery from 'sent' status
+      if (order.status !== 'sent' && order.orderStatus !== 'sent') {
+        return res.status(400).json({ 
+          message: "주문이 발송됨 상태가 아닙니다. 납품검수완료는 발송된 주문에서만 가능합니다." 
+        });
+      }
+
+      // Update order status to completed/delivered
+      const updatedOrder = await storage.updatePurchaseOrder(orderId, {
+        status: 'completed',
+        orderStatus: 'delivered',
+        updatedAt: new Date()
+      });
+
+      // Add to order history
+      await storage.addOrderHistory({
+        orderId: orderId,
+        action: 'delivery_completed',
+        details: '납품검수완료',
+        userId: userId,
+        timestamp: new Date()
+      });
+
+      res.json({ 
+        message: "납품검수가 완료되었습니다.",
+        order: updatedOrder
+      });
+    } catch (error) {
+      console.error("Error completing delivery:", error);
+      res.status(500).json({ 
+        message: "납품검수완료 처리 중 오류가 발생했습니다.",
+        error: error.message 
+      });
+    }
+  });
+
   // File upload for orders
   app.post('/api/orders/:id/attachments', requireAuth, upload.array('files'), async (req: any, res) => {
     console.log('🎯🎯🎯 ATTACHMENTS ROUTE REACHED 🎯🎯🎯');
