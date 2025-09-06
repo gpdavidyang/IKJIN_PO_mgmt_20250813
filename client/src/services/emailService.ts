@@ -57,23 +57,10 @@ export class EmailService {
     }
   ): Promise<EmailSendResponse> {
     try {
-      const response = await apiRequest(`${this.BASE_URL}/send-email-original-format`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          filePath,
-          ...emailOptions,
-        }),
+      const result = await apiRequest('POST', `${this.BASE_URL}/send-email-original-format`, {
+        filePath,
+        ...emailOptions,
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || '이메일 발송 실패');
-      }
-
-      const result = await response.json();
       
       return {
         success: true,
@@ -140,13 +127,7 @@ export class EmailService {
     }
 
     try {
-      return await apiRequest(`${this.BASE_URL}/send-email`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(emailRequest),
-      });
+      return await apiRequest('POST', `${this.BASE_URL}/send-email`, emailRequest);
     } catch (error) {
       console.error('Email send error:', error);
       throw new Error('이메일 발송 중 오류가 발생했습니다.');
@@ -158,7 +139,7 @@ export class EmailService {
    */
   static async testEmailConnection(): Promise<{ success: boolean; message: string }> {
     try {
-      return await apiRequest(`${this.BASE_URL}/test-email`);
+      return await apiRequest('GET', `${this.BASE_URL}/test-email`);
     } catch (error) {
       console.error('Email connection test error:', error);
       return {

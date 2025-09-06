@@ -338,114 +338,131 @@ router.post("/orders", requireAuth, upload.array('attachments'), async (req, res
       }
     }
 
-    // Generate enhanced PDF for the order
+    // Generate PROFESSIONAL PDF for the order (NEW: Enhanced layout with comprehensive data)
     try {
-      console.log("🔧🔧🔧 ORDERS.TS - Generating enhanced PDF for order:", order.id);
+      console.log("🔧🔧🔧 ORDERS.TS - Generating PROFESSIONAL PDF for order:", order.id);
       
-      // Get vendor, project, company, and user details for enhanced PDF
-      const vendor = orderData.vendorId ? await storage.getVendor(orderData.vendorId) : null;
-      const project = await storage.getProject(orderData.projectId);
-      const companies = await storage.getCompanies();
-      const company = companies && companies.length > 0 ? companies[0] : null;
-      const user = await storage.getUser(userId);
-      
-      // Get attachments count
-      const orderAttachments = await storage.getAttachments(order.id);
-      const attachmentCount = orderAttachments?.length || 0;
-      const hasAttachments = attachmentCount > 0;
-      
-      const enhancedPdfData = {
-        // 기본 발주 정보
-        orderNumber: order.orderNumber,
-        orderDate: order.orderDate,
-        deliveryDate: order.deliveryDate,
-        status: order.status,
-        approvalStatus: order.approvalStatus,
-        
-        // 프로젝트/현장 정보
-        projectName: project?.name,
-        projectCode: project?.code,
-        projectAddress: project?.address,
-        siteManager: project?.manager,
-        siteContact: project?.contactPhone,
-        
-        // 거래처 상세 정보
-        vendorName: vendor?.name,
-        vendorRegistrationNumber: vendor?.registrationNumber,
-        vendorRepresentative: vendor?.representative,
-        vendorAddress: vendor?.address,
-        vendorPhone: vendor?.phone,
-        vendorFax: vendor?.fax,
-        vendorEmail: vendor?.email,
-        vendorContact: vendor?.contactPerson,
-        vendorContactPhone: vendor?.contactPhone,
-        
-        // 발주업체 상세 정보
-        companyName: company?.name,
-        companyRegistrationNumber: company?.registrationNumber,
-        companyRepresentative: company?.representative,
-        companyAddress: company?.address,
-        companyPhone: company?.phone,
-        companyFax: company?.fax,
-        companyEmail: company?.email,
-        
-        // 작성자/담당자 정보
-        createdBy: userId,
-        createdByName: user?.name || user?.username,
-        createdByEmail: user?.email,
-        createdByPhone: user?.phone,
-        createdByPosition: user?.position,
-        createdByDepartment: user?.department,
-        createdAt: order.createdAt,
-        
-        // 수신자 정보
-        receiverName: req.body.receiver,
-        receiverEmail: req.body.receiverEmail,
-        receiverPhone: req.body.receiverPhone,
-        managerName: req.body.manager,
-        managerEmail: req.body.managerEmail,
-        managerPhone: req.body.managerPhone,
-        
-        // 품목 정보
-        items: items.map(item => ({
-          category: item.category,
-          subCategory1: item.subCategory1,
-          subCategory2: item.subCategory2,
-          itemCode: item.itemCode,
-          name: item.name || item.item,
-          specification: item.specification,
-          quantity: parseFloat(item.quantity),
-          unit: item.unit,
-          unitPrice: parseFloat(item.unitPrice),
-          price: parseFloat(item.quantity) * parseFloat(item.unitPrice),
-          deliveryLocation: item.deliveryLocation,
-          remarks: item.remarks
-        })),
-        
-        // 금액 정보
-        subtotalAmount: totalAmount / 1.1, // VAT 제외 금액
-        taxAmount: totalAmount - (totalAmount / 1.1), // VAT
-        totalAmount,
-        
-        // 기타 정보
-        notes: orderData.notes,
-        paymentTerms: orderData.paymentTerms || '월말 현금',
-        deliveryTerms: orderData.deliveryTerms || '현장 인도',
-        attachmentCount,
-        hasAttachments,
-        attachmentNames: orderAttachments?.map(a => a.originalName) || []
-      };
-      
-      const pdfResult = await EnhancedPDFGenerationService.generateEnhancedPurchaseOrderPDF(
+      // Use the new Professional PDF Generation Service
+      // This service automatically gathers all comprehensive data from the database
+      const pdfResult = await ProfessionalPDFGenerationService.generateProfessionalPurchaseOrderPDF(
         order.id,
-        enhancedPdfData,
         userId
       );
       
       if (pdfResult.success) {
-        console.log("✅ ORDERS.TS - PDF generated successfully:", pdfResult.pdfPath);
+        console.log("✅ ORDERS.TS - PROFESSIONAL PDF generated successfully:", pdfResult.pdfPath);
+        console.log("📄 PDF Attachment ID:", pdfResult.attachmentId);
       } else {
-        console.error("⚠️ ORDERS.TS - PDF generation failed:", pdfResult.error);
+        console.error("⚠️ ORDERS.TS - PROFESSIONAL PDF generation failed:", pdfResult.error);
+        
+        // Fallback to Enhanced PDF if Professional fails
+        console.log("🔄 Attempting fallback to Enhanced PDF...");
+        
+        // Get vendor, project, company, and user details for enhanced PDF
+        const vendor = orderData.vendorId ? await storage.getVendor(orderData.vendorId) : null;
+        const project = await storage.getProject(orderData.projectId);
+        const companies = await storage.getCompanies();
+        const company = companies && companies.length > 0 ? companies[0] : null;
+        const user = await storage.getUser(userId);
+        
+        // Get attachments count
+        const orderAttachments = await storage.getAttachments(order.id);
+        const attachmentCount = orderAttachments?.length || 0;
+        const hasAttachments = attachmentCount > 0;
+        
+        const enhancedPdfData = {
+          // 기본 발주 정보
+          orderNumber: order.orderNumber,
+          orderDate: order.orderDate,
+          deliveryDate: order.deliveryDate,
+          status: order.status,
+          approvalStatus: order.approvalStatus,
+          
+          // 프로젝트/현장 정보
+          projectName: project?.name,
+          projectCode: project?.code,
+          projectAddress: project?.address,
+          siteManager: project?.manager,
+          siteContact: project?.contactPhone,
+          
+          // 거래처 상세 정보
+          vendorName: vendor?.name,
+          vendorRegistrationNumber: vendor?.registrationNumber,
+          vendorRepresentative: vendor?.representative,
+          vendorAddress: vendor?.address,
+          vendorPhone: vendor?.phone,
+          vendorFax: vendor?.fax,
+          vendorEmail: vendor?.email,
+          vendorContact: vendor?.contactPerson,
+          vendorContactPhone: vendor?.contactPhone,
+          
+          // 발주업체 상세 정보
+          companyName: company?.name,
+          companyRegistrationNumber: company?.registrationNumber,
+          companyRepresentative: company?.representative,
+          companyAddress: company?.address,
+          companyPhone: company?.phone,
+          companyFax: company?.fax,
+          companyEmail: company?.email,
+          
+          // 작성자/담당자 정보
+          createdBy: userId,
+          createdByName: user?.name || user?.username,
+          createdByEmail: user?.email,
+          createdByPhone: user?.phone,
+          createdByPosition: user?.position,
+          createdByDepartment: user?.department,
+          createdAt: order.createdAt,
+          
+          // 수신자 정보
+          receiverName: req.body.receiver,
+          receiverEmail: req.body.receiverEmail,
+          receiverPhone: req.body.receiverPhone,
+          managerName: req.body.manager,
+          managerEmail: req.body.managerEmail,
+          managerPhone: req.body.managerPhone,
+          
+          // 품목 정보
+          items: items.map(item => ({
+            category: item.category,
+            subCategory1: item.subCategory1,
+            subCategory2: item.subCategory2,
+            itemCode: item.itemCode,
+            name: item.name || item.item,
+            specification: item.specification,
+            quantity: parseFloat(item.quantity),
+            unit: item.unit,
+            unitPrice: parseFloat(item.unitPrice),
+            price: parseFloat(item.quantity) * parseFloat(item.unitPrice),
+            deliveryLocation: item.deliveryLocation,
+            remarks: item.remarks
+          })),
+          
+          // 금액 정보
+          subtotalAmount: totalAmount / 1.1, // VAT 제외 금액
+          taxAmount: totalAmount - (totalAmount / 1.1), // VAT
+          totalAmount,
+          
+          // 기타 정보
+          notes: orderData.notes,
+          paymentTerms: orderData.paymentTerms || '월말 현금',
+          deliveryTerms: orderData.deliveryTerms || '현장 인도',
+          attachmentCount,
+          hasAttachments,
+          attachmentNames: orderAttachments?.map(a => a.originalName) || []
+        };
+        
+        const fallbackResult = await EnhancedPDFGenerationService.generateEnhancedPurchaseOrderPDF(
+          order.id,
+          enhancedPdfData,
+          userId
+        );
+        
+        if (fallbackResult.success) {
+          console.log("✅ ORDERS.TS - Fallback Enhanced PDF generated successfully:", fallbackResult.pdfPath);
+        } else {
+          console.error("⚠️ ORDERS.TS - Fallback Enhanced PDF also failed:", fallbackResult.error);
+        }
       }
     } catch (pdfError) {
       console.error("❌ ORDERS.TS - Error generating PDF:", pdfError);
@@ -1606,7 +1623,7 @@ router.post("/orders/generate-pdf", requireAuth, async (req, res) => {
   return await generatePDFLogic(req, res);
 });
 
-// Regenerate PDF for specific order and save to DB
+// Regenerate PDF for specific order and save to DB (Now uses PROFESSIONAL PDF)
 router.post("/orders/:id/regenerate-pdf", requireAuth, async (req, res) => {
   try {
     const orderId = parseInt(req.params.id);
@@ -1616,54 +1633,80 @@ router.post("/orders/:id/regenerate-pdf", requireAuth, async (req, res) => {
       return res.status(401).json({ message: "User not authenticated" });
     }
 
-    // Get order details with related data
+    // Get order details to verify it exists
     const order = await storage.getPurchaseOrderWithDetails(orderId);
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
 
-    // Prepare PDF data
-    const pdfData = {
-      orderNumber: order.orderNumber,
-      orderDate: order.orderDate,
-      deliveryDate: order.deliveryDate,
-      projectName: order.project?.projectName,
-      vendorName: order.vendor?.name,
-      vendorContact: order.vendor?.contactPerson,
-      vendorEmail: order.vendor?.email,
-      items: (order.items || []).map((item: any) => ({
-        category: item.majorCategory || '',
-        subCategory1: item.middleCategory || '',
-        subCategory2: item.minorCategory || '',
-        name: item.itemName,
-        specification: item.specification || '',
-        quantity: item.quantity || 0,
-        unit: item.unit || '개',
-        unitPrice: item.unitPrice || 0,
-        price: item.totalAmount || 0,
-        deliveryLocation: ''
-      })),
-      totalAmount: order.totalAmount,
-      notes: order.notes
-    };
+    console.log(`📄 [Regenerate PDF] Starting PROFESSIONAL PDF regeneration for Order ID ${orderId}`);
 
-    // Regenerate PDF (this will replace existing auto-generated PDFs)
-    const result = await PDFGenerationService.regeneratePDF(orderId, pdfData, userId);
+    // Use the new Professional PDF Generation Service
+    // This service automatically gathers all comprehensive data from the database
+    const result = await ProfessionalPDFGenerationService.generateProfessionalPurchaseOrderPDF(
+      orderId,
+      userId
+    );
 
-    if (result.success) {
-      res.json({
-        success: true,
-        message: "PDF가 성공적으로 재생성되어 저장되었습니다",
-        attachmentId: result.attachmentId,
-        pdfPath: result.pdfPath
-      });
-    } else {
-      res.status(500).json({
-        success: false,
-        message: "PDF 재생성 실패",
-        error: result.error
-      });
+    // If Professional PDF fails, fallback to the old method
+    if (!result.success) {
+      console.log(`⚠️ [Regenerate PDF] Professional PDF failed, falling back to basic PDF`);
+      
+      // Prepare basic PDF data
+      const pdfData = {
+        orderNumber: order.orderNumber,
+        orderDate: order.orderDate,
+        deliveryDate: order.deliveryDate,
+        projectName: order.project?.projectName,
+        vendorName: order.vendor?.name,
+        vendorContact: order.vendor?.contactPerson,
+        vendorEmail: order.vendor?.email,
+        items: (order.items || []).map((item: any) => ({
+          category: item.majorCategory || '',
+          subCategory1: item.middleCategory || '',
+          subCategory2: item.minorCategory || '',
+          name: item.itemName,
+          specification: item.specification || '',
+          quantity: item.quantity || 0,
+          unit: item.unit || '개',
+          unitPrice: item.unitPrice || 0,
+          price: item.totalAmount || 0,
+          deliveryLocation: ''
+        })),
+        totalAmount: order.totalAmount,
+        notes: order.notes
+      };
+
+      // Fallback to basic PDF
+      const fallbackResult = await PDFGenerationService.regeneratePDF(orderId, pdfData, userId);
+      
+      if (fallbackResult.success) {
+        console.log(`✅ [Regenerate PDF] Fallback basic PDF generated successfully`);
+        return res.json({
+          success: true,
+          message: "PDF가 성공적으로 재생성되어 저장되었습니다 (기본 레이아웃)",
+          attachmentId: fallbackResult.attachmentId,
+          pdfPath: fallbackResult.pdfPath
+        });
+      } else {
+        console.error(`❌ [Regenerate PDF] Both Professional and Basic PDF generation failed`);
+        return res.status(500).json({
+          success: false,
+          message: "PDF 재생성 실패",
+          error: fallbackResult.error
+        });
+      }
     }
+
+    // Professional PDF was successful!
+    console.log(`✅ [Regenerate PDF] PROFESSIONAL PDF generated successfully`);
+    res.json({
+      success: true,
+      message: "전문적 PDF가 성공적으로 재생성되어 저장되었습니다",
+      attachmentId: result.attachmentId,
+      pdfPath: result.pdfPath,
+      downloadUrl: `/api/attachments/${result.attachmentId}`
+    });
   } catch (error) {
     console.error("PDF regeneration error:", error);
     res.status(500).json({
