@@ -910,19 +910,6 @@ export default function OrdersProfessionalFast() {
                 </SelectContent>
               </Select>
 
-              {/* 승인 상태 필터 */}
-              <Select value={filters.approvalStatus || "all"} onValueChange={(value) => handleFilterChange("approvalStatus", value)}>
-                <SelectTrigger className="w-40 h-10 bg-white dark:bg-gray-700">
-                  <SelectValue placeholder="승인 상태" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">모든 승인상태</SelectItem>
-                  <SelectItem value="not_required">승인불필요</SelectItem>
-                  <SelectItem value="pending">승인대기</SelectItem>
-                  <SelectItem value="approved">승인완료</SelectItem>
-                  <SelectItem value="rejected">반려</SelectItem>
-                </SelectContent>
-              </Select>
 
               <Select value={filters.projectId || "all"} onValueChange={(value) => handleFilterChange("projectId", value)}>
                 <SelectTrigger className="w-48 h-10 bg-white dark:bg-gray-700">
@@ -1154,15 +1141,6 @@ export default function OrdersProfessionalFast() {
                       <ChevronsUpDown className="h-3 w-3" />
                     </button>
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    <button
-                      onClick={() => handleSort("approvalStatus")}
-                      className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200"
-                    >
-                      승인상태
-                      <ChevronsUpDown className="h-3 w-3" />
-                    </button>
-                  </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">이메일</th>
                   <th className="px-6 py-4 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">액션</th>
                 </tr>
@@ -1170,7 +1148,7 @@ export default function OrdersProfessionalFast() {
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={isAdmin ? 11 : 10} className="px-6 py-12 text-center">
+                    <td colSpan={isAdmin ? 10 : 9} className="px-6 py-12 text-center">
                       <div className="flex justify-center">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
                       </div>
@@ -1178,7 +1156,7 @@ export default function OrdersProfessionalFast() {
                   </tr>
                 ) : orders.length === 0 ? (
                   <tr>
-                    <td colSpan={isAdmin ? 11 : 10} className="px-6 py-12 text-center">
+                    <td colSpan={isAdmin ? 10 : 9} className="px-6 py-12 text-center">
                       <div className="text-gray-500 dark:text-gray-400">
                         <FileText className="h-12 w-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
                         <p className="text-sm">발주서가 없습니다.</p>
@@ -1246,11 +1224,6 @@ export default function OrdersProfessionalFast() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getOrderStatusColor(order.orderStatus || 'draft')}`}>
                           {getOrderStatusText(order.orderStatus || 'draft')}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getApprovalStatusColor(order.approvalStatus || 'not_required')}`}>
-                          {getApprovalStatusText(order.approvalStatus || 'not_required')}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
