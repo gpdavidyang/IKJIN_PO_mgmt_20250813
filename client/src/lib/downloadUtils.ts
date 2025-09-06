@@ -12,25 +12,34 @@ export const downloadAttachment = async (attachmentId: number, filename: string)
   console.log(`🔽 Starting download for attachment ${attachmentId}, filename: ${filename}`);
   
   try {
-    // Build the download URL with forced download parameter
+    // Build URLs - one for download, one for viewing
     const baseUrl = window.location.origin;
     const downloadUrl = `${baseUrl}/api/attachments/${attachmentId}/download?download=true`;
+    const viewUrl = `${baseUrl}/api/attachments/${attachmentId}/download`; // Without download=true, it will open inline
     
-    console.log('📎 Full download URL:', downloadUrl);
+    console.log('📎 Download URL:', downloadUrl);
+    console.log('👁️ View URL:', viewUrl);
     
-    // Create a temporary anchor element for download
-    // This is more reliable than window.location for forced downloads
-    const link = document.createElement('a');
-    link.href = downloadUrl;
-    link.download = filename; // Suggest filename to browser
-    link.style.display = 'none';
+    // 1. First, open in new tab for viewing
+    window.open(viewUrl, '_blank');
+    console.log('✅ Opened PDF in new tab for viewing');
     
-    // Add to document, click, and remove
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // 2. Then trigger download after a short delay
+    setTimeout(() => {
+      // Create a temporary anchor element for download
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = filename; // Suggest filename to browser
+      link.style.display = 'none';
+      
+      // Add to document, click, and remove
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      console.log('✅ Download triggered via anchor element');
+    }, 500); // Small delay to ensure new tab opens first
     
-    console.log('✅ Download triggered via anchor element');
     return true;
     
   } catch (error) {
@@ -46,7 +55,7 @@ export const downloadAttachment = async (attachmentId: number, filename: string)
  */
 export const showDownloadSuccessMessage = (filename: string, toast: any) => {
   toast({
-    title: "다운로드 완료",
-    description: `${filename} 파일이 다운로드 폴더에 저장되었습니다.`,
+    title: "다운로드 및 미리보기",
+    description: `${filename} 파일이 새 탭에서 열리고 다운로드 폴더에 저장됩니다.`,
   });
 };
