@@ -45,64 +45,70 @@ router.get("/orders-optimized", async (req, res) => {
       timestamp: new Date().toISOString()
     });
 
-    // TEMPORARY FIX: Use simplified fallback if OptimizedOrdersService fails
-    let result, metadata;
+    // SIMPLIFIED APPROACH: Use dashboard-like pattern directly
+    console.log("🔄 Using simplified dashboard-like query pattern");
     
-    try {
-      // Try the optimized service first
-      result = await OptimizedOrdersService.getOrdersWithEmailStatus(filters);
-      metadata = await OptimizedOrdersService.getOrderMetadata();
-    } catch (optimizedError) {
-      console.error("⚠️ OptimizedOrdersService failed, using fallback:", optimizedError.message);
+    const { db } = require("../db");
+    const { purchaseOrders, vendors, projects, users } = require("@shared/schema");
+    const { eq, desc, count, sql } = require("drizzle-orm");
+    
+    const page = filters.page || 1;
+    const limit = filters.limit || 20;
+    const offset = (page - 1) * limit;
+    
+    // Simple query without complex optimizations that might fail
+    const orders = await db
+      .select({
+        id: purchaseOrders.id,
+        orderNumber: purchaseOrders.orderNumber,
+        status: purchaseOrders.status,
+        orderStatus: purchaseOrders.orderStatus,
+        approvalStatus: purchaseOrders.approvalStatus,
+        totalAmount: purchaseOrders.totalAmount,
+        orderDate: purchaseOrders.orderDate,
+        deliveryDate: purchaseOrders.deliveryDate,
+        userId: purchaseOrders.userId,
+        vendorId: purchaseOrders.vendorId,
+        projectId: purchaseOrders.projectId,
+        approvalLevel: purchaseOrders.approvalLevel,
+        currentApproverRole: purchaseOrders.currentApproverRole,
+        createdAt: purchaseOrders.createdAt
+      })
+      .from(purchaseOrders)
+      .orderBy(desc(purchaseOrders.createdAt))
+      .limit(limit)
+      .offset(offset);
       
-      // Fallback to simple query similar to dashboard
-      const { db } = require("../db");
-      const { purchaseOrders, vendors, projects } = require("@shared/schema");
-      const { eq, desc, count } = require("drizzle-orm");
-      
-      const page = filters.page || 1;
-      const limit = filters.limit || 20;
-      const offset = (page - 1) * limit;
-      
-      // Simple query without complex joins
-      const orders = await db
-        .select()
-        .from(purchaseOrders)
-        .orderBy(desc(purchaseOrders.createdAt))
-        .limit(limit)
-        .offset(offset);
-        
-      const [{ count: total }] = await db
-        .select({ count: count() })
-        .from(purchaseOrders);
-      
-      // Minimal metadata
-      const vendors_list = await db.select().from(vendors);
-      const projects_list = await db.select().from(projects);
-      
-      result = {
-        orders: orders.map(order => ({
-          ...order,
-          vendorName: 'Loading...',
-          projectName: 'Loading...',
-          userName: 'Loading...',
-          emailStatus: null,
-          lastSentAt: null,
-          totalEmailsSent: 0,
-          openedAt: null
-        })),
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit)
-      };
-      
-      metadata = {
-        vendors: vendors_list,
-        projects: projects_list,
-        users: []
-      };
-    }
+    const [{ count: total }] = await db
+      .select({ count: count() })
+      .from(purchaseOrders);
+    
+    // Get metadata
+    const vendors_list = await db.select().from(vendors).limit(100);
+    const projects_list = await db.select().from(projects).limit(100);
+    
+    const result = {
+      orders: orders.map(order => ({
+        ...order,
+        vendorName: 'Loading...',
+        projectName: 'Loading...',
+        userName: 'Loading...',
+        emailStatus: null,
+        lastSentAt: null,
+        totalEmailsSent: 0,
+        openedAt: null
+      })),
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    };
+    
+    const metadata = {
+      vendors: vendors_list,
+      projects: projects_list,
+      users: []
+    };
     
     const response = {
       ...result,
