@@ -167,7 +167,15 @@ export interface ComprehensivePurchaseOrderData {
  */
 export class ProfessionalPDFGenerationService {
   static async generateProfessionalPDF(orderData: ComprehensivePurchaseOrderData): Promise<Buffer> {
-    return this.generatePDF(orderData);
+    // 환경에 따라 다른 PDF 생성 방식 사용
+    if (process.env.VERCEL) {
+      console.log('📄 [ProfessionalPDF] Vercel 환경: PDFKit으로 PDF 생성');
+      return await this.generateProfessionalPDFWithPDFKit(orderData);
+    } else {
+      console.log('📄 [ProfessionalPDF] 로컬 환경: HTML 템플릿으로 PDF 생성');
+      const htmlContent = this.generateProfessionalHTMLTemplate(orderData);
+      return await this.convertHTMLToPDFFromString(htmlContent);
+    }
   }
   private static uploadDir = process.env.VERCEL 
     ? '/tmp/pdf'
