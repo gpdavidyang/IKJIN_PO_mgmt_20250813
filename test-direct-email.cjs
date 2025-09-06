@@ -1,18 +1,24 @@
 const nodemailer = require('nodemailer');
+require('dotenv').config();
 
-// 이메일 전송 설정
+// 네이버 SMTP 설정 사용
 const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
+  host: process.env.SMTP_HOST || 'smtp.naver.com',
+  port: parseInt(process.env.SMTP_PORT) || 587,
   secure: false,
   auth: {
-    user: process.env.EMAIL_USER || 'test@example.com',
-    pass: process.env.EMAIL_PASSWORD || 'test'
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS
   },
   tls: {
     rejectUnauthorized: false
   }
 });
+
+console.log('📧 네이버 SMTP 설정:');
+console.log('🔗 호스트:', process.env.SMTP_HOST);
+console.log('🔌 포트:', process.env.SMTP_PORT);
+console.log('👤 사용자:', process.env.SMTP_USER);
 
 // HTML 이메일 내용 생성
 const generateEmailContent = (options) => {
@@ -199,47 +205,53 @@ async function sendTestEmail() {
   });
 
   const mailOptions = {
-    from: process.env.EMAIL_USER || 'noreply@ikjin.com',
+    from: process.env.SMTP_USER || 'david1611@naver.com',
     to: 'davidswyang@gmail.com',
-    subject: `【IKJIN 테스트】 발주서 - ${orderData.orderNumber}`,
-    html: emailHtml
+    subject: `【IKJIN 테스트 첨부파일】 발주서 - ${orderData.orderNumber}`,
+    html: emailHtml,
+    attachments: [
+      {
+        filename: '발주서_테스트.txt',
+        path: './test-attachment.txt',
+        contentType: 'text/plain; charset=utf-8'
+      }
+    ]
   };
 
-  // 개발 환경에서는 실제 이메일 발송 대신 로그만 출력
-  if (process.env.NODE_ENV === 'development' || !process.env.EMAIL_USER) {
-    console.log('🧪 [테스트 모드] 이메일 발송 시뮬레이션:');
-    console.log('📧 수신자:', mailOptions.to);
-    console.log('📄 제목:', mailOptions.subject);
-    console.log('📋 내용 길이:', mailOptions.html.length, '문자');
-    console.log('✅ 이메일 발송이 성공적으로 시뮬레이션되었습니다.');
-    console.log('📝 실제 발송을 위해서는 EMAIL_USER, EMAIL_PASSWORD 환경변수를 설정하세요.');
+  console.log('📧 이메일 발송 준비:');
+  console.log('📤 발신자:', mailOptions.from);
+  console.log('📨 수신자:', mailOptions.to);
+  console.log('📄 제목:', mailOptions.subject);
+  console.log('📋 내용 길이:', mailOptions.html.length, '문자');
+  console.log('📎 첨부 파일:', mailOptions.attachments.length, '개');
+  console.log('   - 파일명:', mailOptions.attachments[0].filename);
+
+  // 실제 이메일 발송
+  try {
+    console.log('🚀 네이버 SMTP를 통해 이메일 발송 중...');
+    const info = await transporter.sendMail(mailOptions);
+    
+    console.log('✅ 이메일 발송 성공!');
+    console.log('📧 Message ID:', info.messageId);
+    console.log('📬 Response:', info.response);
     
     return {
       success: true,
-      messageId: 'test-' + Date.now(),
-      mockMode: true,
-      message: '테스트 모드: 이메일이 실제로 발송되지 않았습니다.'
+      messageId: info.messageId,
+      response: info.response,
+      mockMode: false
     };
-  } else {
-    // 실제 이메일 발송
-    try {
-      const info = await transporter.sendMail(mailOptions);
-      console.log('✅ 이메일 발송 성공:', info.messageId);
-      console.log('📧 수신자:', mailOptions.to);
-      console.log('📄 제목:', mailOptions.subject);
-      
-      return {
-        success: true,
-        messageId: info.messageId,
-        mockMode: false
-      };
-    } catch (error) {
-      console.error('❌ 이메일 발송 실패:', error.message);
-      return {
-        success: false,
-        error: error.message
-      };
-    }
+  } catch (error) {
+    console.error('❌ 이메일 발송 실패:');
+    console.error('🔴 에러 메시지:', error.message);
+    console.error('🔴 에러 코드:', error.code);
+    console.error('🔴 전체 에러:', error);
+    
+    return {
+      success: false,
+      error: error.message,
+      code: error.code
+    };
   }
 }
 

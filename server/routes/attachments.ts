@@ -103,12 +103,21 @@ router.get('/attachments/:id/download', async (req, res) => {
       fileName = fileName.replace('db://', '');
     }
     
-    const possiblePaths = [
-      path.join(process.cwd(), 'attached_assets', fileName),
-      path.join(process.cwd(), 'uploads', fileName),
-      path.join(process.cwd(), 'uploads', 'temp-pdf', fileName),
-      path.join(process.cwd(), fileName)
-    ];
+    const possiblePaths = [];
+    
+    // If it's already an absolute path, use it directly
+    if (path.isAbsolute(fileName)) {
+      console.log('📄 Using absolute path directly:', fileName);
+      possiblePaths.push(fileName);
+    } else {
+      // Try relative paths
+      possiblePaths.push(
+        path.join(process.cwd(), 'attached_assets', fileName),
+        path.join(process.cwd(), 'uploads', fileName),
+        path.join(process.cwd(), 'uploads', 'temp-pdf', fileName),
+        path.join(process.cwd(), fileName)
+      );
+    }
     
     let foundPath: string | null = null;
     for (const testPath of possiblePaths) {

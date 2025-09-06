@@ -231,11 +231,17 @@ var init_schema = __esm({
       id: serial("id").primaryKey(),
       companyName: varchar("company_name", { length: 255 }).notNull(),
       businessNumber: varchar("business_number", { length: 50 }),
+      representative: varchar("representative", { length: 100 }),
+      // 대표자명
       address: text("address"),
       contactPerson: varchar("contact_person", { length: 100 }),
       // Match actual DB schema
       phone: varchar("phone", { length: 50 }),
       email: varchar("email", { length: 255 }),
+      fax: varchar("fax", { length: 50 }),
+      // 팩스번호
+      website: varchar("website", { length: 255 }),
+      // 웹사이트
       isActive: boolean("is_active").default(true),
       createdAt: timestamp("created_at").defaultNow(),
       updatedAt: timestamp("updated_at").defaultNow()
@@ -2514,7 +2520,7 @@ var po_email_service_enhanced_exports = {};
 __export(po_email_service_enhanced_exports, {
   POEmailService: () => POEmailService2
 });
-import nodemailer3 from "nodemailer";
+import nodemailer4 from "nodemailer";
 import path15 from "path";
 import fs18 from "fs";
 import { fileURLToPath as fileURLToPath5 } from "url";
@@ -2567,7 +2573,7 @@ var init_po_email_service_enhanced = __esm({
             SMTP_PASS: process.env.SMTP_PASS ? "***" : "NOT SET"
           });
         }
-        this.transporter = nodemailer3.createTransport(smtpConfig);
+        this.transporter = nodemailer4.createTransport(smtpConfig);
         this.verifyConnection();
       }
       async verifyConnection() {
@@ -8561,20 +8567,35 @@ var ProfessionalPDFGenerationService = class {
         creatorEmail: users.email,
         creatorPhone: users.phoneNumber,
         creatorPosition: users.position,
-        creatorRole: users.role,
-        // 회사 정보
+        creatorRole: users.role
+      }).from(purchaseOrders).leftJoin(vendors, eq6(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq6(purchaseOrders.projectId, projects.id)).leftJoin(users, eq6(purchaseOrders.userId, users.id)).where(eq6(purchaseOrders.id, orderId)).limit(1);
+      const companyQuery = await db.select({
         companyName: companies.companyName,
         companyBusinessNumber: companies.businessNumber,
         companyAddress: companies.address,
         companyContactPerson: companies.contactPerson,
         companyPhone: companies.phone,
-        companyEmail: companies.email
-      }).from(purchaseOrders).leftJoin(vendors, eq6(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq6(purchaseOrders.projectId, projects.id)).leftJoin(users, eq6(purchaseOrders.userId, users.id)).leftJoin(companies, eq6(projects.id, projects.id)).where(eq6(purchaseOrders.id, orderId)).limit(1);
+        companyEmail: companies.email,
+        companyFax: companies.fax,
+        companyWebsite: companies.website,
+        companyRepresentative: companies.representative
+      }).from(companies).where(eq6(companies.isActive, true)).limit(1);
       if (!orderQuery || orderQuery.length === 0) {
         console.error(`\u274C [ProfessionalPDF] \uBC1C\uC8FC\uC11C \uC815\uBCF4 \uC5C6\uC74C: Order ID ${orderId}`);
         return null;
       }
       const orderData = orderQuery[0];
+      const companyData = companyQuery.length > 0 ? companyQuery[0] : {
+        companyName: "\uBC1C\uC8FC\uC5C5\uCCB4",
+        companyBusinessNumber: null,
+        companyAddress: null,
+        companyContactPerson: null,
+        companyPhone: null,
+        companyEmail: null,
+        companyFax: null,
+        companyWebsite: null,
+        companyRepresentative: null
+      };
       const itemsQuery = await db.select().from(purchaseOrderItems).where(eq6(purchaseOrderItems.orderId, orderId));
       const attachmentsQuery = await db.select().from(attachments).where(eq6(attachments.orderId, orderId));
       let emailHistoryQuery = [];
@@ -8597,12 +8618,14 @@ var ProfessionalPDFGenerationService = class {
         createdAt: orderData.createdAt,
         updatedAt: orderData.updatedAt,
         issuerCompany: {
-          name: orderData.companyName || "\uBC1C\uC8FC\uC5C5\uCCB4",
-          businessNumber: orderData.companyBusinessNumber,
-          representative: orderData.companyContactPerson,
-          address: orderData.companyAddress,
-          phone: orderData.companyPhone,
-          email: orderData.companyEmail
+          name: companyData.companyName || "\uBC1C\uC8FC\uC5C5\uCCB4",
+          businessNumber: companyData.companyBusinessNumber,
+          representative: companyData.companyRepresentative,
+          address: companyData.companyAddress,
+          phone: companyData.companyPhone,
+          email: companyData.companyEmail,
+          fax: companyData.companyFax,
+          website: companyData.companyWebsite
         },
         vendorCompany: {
           name: orderData.vendorName || "\uAC70\uB798\uCC98\uBA85 \uC5C6\uC74C",
@@ -8864,16 +8887,6 @@ var ProfessionalPDFGenerationService = class {
       align-items: center;
     }
     
-    .logo-area {
-      border: 1px dashed #ccc;
-      height: 60px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 7pt;
-      color: #666;
-    }
-    
     .header-center {
       text-align: center;
     }
@@ -8888,17 +8901,6 @@ var ProfessionalPDFGenerationService = class {
       font-size: 12pt;
       font-weight: bold;
       color: #1e40af;
-    }
-    
-    .qr-area {
-      border: 1px dashed #ccc;
-      height: 60px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      font-size: 7pt;
-      color: #666;
     }
     
     .status-badge {
@@ -9190,17 +9192,11 @@ var ProfessionalPDFGenerationService = class {
 <body>
   <div class="container">
     <!-- HEADER -->
-    <div class="header" style="display: grid; grid-template-columns: 150px 1fr; gap: 20px; align-items: center;">
-      <div class="logo-area" style="display: flex; align-items: center; justify-content: center;">
-        <img src="file://${path6.join(process.cwd(), "assets", "company-logo.png")}" alt="Company Logo" style="max-width: 120px; max-height: 60px; object-fit: contain;" />
-      </div>
-      <div class="header-center" style="text-align: center;">
-        <h1>\uAD6C\uB9E4 \uBC1C\uC8FC\uC11C</h1>
-        <div class="order-number">${data.orderNumber}</div>
-        <div class="status-badge status-${data.orderStatus}">${this.getStatusDisplayName(data.orderStatus)}</div>
-        <div style="font-size: 8pt; color: #666; margin-top: 5px;">
-          \uC0DD\uC131\uC77C: ${formatDate(data.metadata.generatedAt)} | \uBB38\uC11CID: ${data.metadata.documentId.substring(0, 10)}
-        </div>
+    <div class="header" style="text-align: left; padding: 20px 0;">
+      <h1 style="margin-bottom: 8px;">\uAD6C\uB9E4 \uBC1C\uC8FC\uC11C</h1>
+      <div class="order-number" style="margin-bottom: 5px;">\uBC1C\uC8FC\uBC88\uD638: ${data.orderNumber}</div>
+      <div style="font-size: 8pt; color: #666;">
+        \uC0DD\uC131\uC77C: ${formatDate(data.metadata.generatedAt)} | \uBB38\uC11CID: ${data.metadata.documentId.substring(0, 10)}
       </div>
     </div>
     
@@ -9393,6 +9389,7 @@ var ProfessionalPDFGenerationService = class {
     <div class="footer">
       <div class="company-info">
         <div class="name">${data.issuerCompany.name}</div>
+        ${data.issuerCompany.representative ? `<div>\uB300\uD45C\uC790: ${data.issuerCompany.representative}</div>` : ""}
         <div>${data.issuerCompany.address || ""}</div>
         <div>TEL: ${data.issuerCompany.phone || ""} | EMAIL: ${data.issuerCompany.email || ""}</div>
         ${data.issuerCompany.businessNumber ? `<div>\uC0AC\uC5C5\uC790\uB4F1\uB85D\uBC88\uD638: ${data.issuerCompany.businessNumber}</div>` : ""}
@@ -9465,7 +9462,7 @@ var ProfessionalPDFGenerationService = class {
         doc.font("Helvetica");
         const formatDate = (date2) => {
           if (!date2) return "-";
-          return format3(new Date(date2), "yyyy.MM.dd", { locale: ko3 });
+          return format3(new Date(date2), "yyyy\uB144 MM\uC6D4 dd\uC77C", { locale: ko3 });
         };
         const formatCurrency = (amount) => {
           return new Intl.NumberFormat("ko-KR", {
@@ -9473,9 +9470,9 @@ var ProfessionalPDFGenerationService = class {
             currency: "KRW"
           }).format(amount);
         };
-        doc.fontSize(16).text("\uAD6C\uB9E4 \uBC1C\uC8FC\uC11C", { align: "center" });
-        doc.fontSize(12).text(`Order No: ${orderData.orderNumber}`, { align: "center" });
-        doc.fontSize(8).text(`\uC0C1\uD0DC: ${this.getStatusDisplayName(orderData.orderStatus)} | \uC0DD\uC131: ${formatDate(orderData.metadata.generatedAt)}`, { align: "center" });
+        doc.fontSize(16).text("\uAD6C\uB9E4 \uBC1C\uC8FC\uC11C", 20, doc.y);
+        doc.fontSize(12).text(`\uBC1C\uC8FC\uBC88\uD638: ${orderData.orderNumber}`, 20, doc.y);
+        doc.fontSize(8).text(`\uC0DD\uC131\uC77C: ${formatDate(orderData.metadata.generatedAt)} | \uBB38\uC11CID: ${orderData.metadata.documentId.substring(0, 10)}`, 20, doc.y);
         doc.moveTo(20, doc.y + 5).lineTo(575, doc.y + 5).stroke();
         doc.moveDown(1);
         const infoY = doc.y;
@@ -9607,6 +9604,9 @@ var ProfessionalPDFGenerationService = class {
         doc.y = finalSignY + signBoxHeight + 15;
         doc.fontSize(8);
         doc.text(orderData.issuerCompany.name, { align: "center" });
+        if (orderData.issuerCompany.representative) {
+          doc.text(`\uB300\uD45C\uC790: ${orderData.issuerCompany.representative}`, { align: "center" });
+        }
         doc.fontSize(6);
         doc.text(orderData.issuerCompany.address || "", { align: "center" });
         doc.text(`TEL: ${orderData.issuerCompany.phone || ""} | \uC0AC\uC5C5\uC790: ${orderData.issuerCompany.businessNumber || ""}`, { align: "center" });
@@ -9655,6 +9655,7 @@ import fs9 from "fs";
 import path7 from "path";
 import { fileURLToPath as fileURLToPath2 } from "url";
 import * as XLSX3 from "xlsx";
+import nodemailer2 from "nodemailer";
 var __filename2 = fileURLToPath2(import.meta.url);
 var __dirname2 = path7.dirname(__filename2);
 var router3 = Router3();
@@ -11471,21 +11472,20 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
       attachmentsCount: attachments3.length
     });
     const emailHtml = generateEmailContent(emailOptions);
-    const nodemailer5 = __require("nodemailer");
-    const transporter2 = nodemailer5.createTransport({
-      host: "smtp.gmail.com",
-      port: 587,
+    const transporter2 = nodemailer2.createTransport({
+      host: process.env.SMTP_HOST || "smtp.naver.com",
+      port: parseInt(process.env.SMTP_PORT) || 587,
       secure: false,
       auth: {
-        user: process.env.EMAIL_USER || "test@example.com",
-        pass: process.env.EMAIL_PASSWORD || "test"
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
       },
       tls: {
         rejectUnauthorized: false
       }
     });
     const mailOptions = {
-      from: process.env.EMAIL_USER || "noreply@example.com",
+      from: process.env.SMTP_USER || "david1611@naver.com",
       to: Array.isArray(emailOptions.to) ? emailOptions.to.join(", ") : emailOptions.to,
       cc: emailOptions.cc ? Array.isArray(emailOptions.cc) ? emailOptions.cc.join(", ") : emailOptions.cc : void 0,
       subject: emailOptions.subject || `\uBC1C\uC8FC\uC11C - ${orderData.orderNumber || ""}`,
@@ -11822,7 +11822,7 @@ router3.post("/orders/:id/complete-delivery", requireAuth, async (req, res) => {
       orderStatus: "delivered",
       updatedAt: /* @__PURE__ */ new Date()
     });
-    await db.insert(orderHistory).values({
+    await storage.createOrderHistory({
       orderId,
       action: "delivery_completed",
       details: "\uB0A9\uD488\uAC80\uC218\uC644\uB8CC",
@@ -12300,6 +12300,54 @@ router6.get("/orders-optimized", async (req, res) => {
       message: "Failed to fetch orders",
       error: error.message,
       stack: error.stack
+    });
+  }
+});
+router6.get("/dashboard/order-status-stats", async (req, res) => {
+  try {
+    const { db: db2 } = await Promise.resolve().then(() => (init_db(), db_exports));
+    if (!db2) {
+      throw new Error("Database connection not available");
+    }
+    const statsResult = await db2.execute(
+      sql4`SELECT 
+        po.order_status as status,
+        COUNT(*) as count,
+        COALESCE(SUM(po.total_amount), 0) as totalAmount
+      FROM purchase_orders po
+      WHERE po.order_status IS NOT NULL
+      GROUP BY po.order_status
+      ORDER BY po.order_status`
+    );
+    const totalResult = await db2.execute(
+      sql4`SELECT COUNT(*) as total FROM purchase_orders WHERE order_status IS NOT NULL`
+    );
+    const total = parseInt(totalResult.rows[0]?.total || "0");
+    const stats = statsResult.rows.map((row) => ({
+      status: row.status,
+      count: parseInt(row.count || "0"),
+      totalAmount: parseFloat(row.totalAmount || "0"),
+      percentage: total > 0 ? Math.round(parseInt(row.count || "0") / total * 100) : 0
+    }));
+    const allStatuses = ["draft", "created", "sent", "delivered"];
+    const completeStats = allStatuses.map((status) => {
+      const existing = stats.find((s) => s.status === status);
+      return existing || {
+        status,
+        count: 0,
+        totalAmount: 0,
+        percentage: 0
+      };
+    });
+    res.json({
+      stats: completeStats,
+      total
+    });
+  } catch (error) {
+    console.error("\u274C Order status stats error:", error);
+    res.status(500).json({
+      message: "Failed to fetch order status statistics",
+      error: error.message
     });
   }
 });
@@ -13743,7 +13791,7 @@ import { fileURLToPath as fileURLToPath4 } from "url";
 
 // server/utils/po-email-service-mock.ts
 init_po_template_processor_mock();
-import nodemailer2 from "nodemailer";
+import nodemailer3 from "nodemailer";
 import path10 from "path";
 import fs12 from "fs";
 import { fileURLToPath as fileURLToPath3 } from "url";
@@ -13753,7 +13801,7 @@ var POEmailServiceMock = class {
   constructor() {
     this.transporter = null;
     if (process.env.SMTP_USER && process.env.SMTP_PASS) {
-      this.transporter = nodemailer2.createTransport({
+      this.transporter = nodemailer3.createTransport({
         host: process.env.SMTP_HOST || "smtp.naver.com",
         port: parseInt(process.env.SMTP_PORT || "587"),
         secure: false,
@@ -22077,10 +22125,10 @@ import path18 from "path";
 // server/services/email-service.ts
 init_db();
 init_schema();
-import nodemailer4 from "nodemailer";
+import nodemailer5 from "nodemailer";
 import path17 from "path";
 import fs20 from "fs/promises";
-var transporter = nodemailer4.createTransport({
+var transporter = nodemailer5.createTransport({
   host: process.env.SMTP_HOST || "smtp.naver.com",
   port: parseInt(process.env.SMTP_PORT || "587"),
   secure: false,

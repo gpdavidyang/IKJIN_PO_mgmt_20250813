@@ -794,7 +794,8 @@ export default function OrdersProfessionalFast() {
       'draft': '임시저장',
       'created': '발주생성',
       'sent': '발주완료',
-      'delivered': '납품완료'
+      'delivered': '납품완료',
+      'completed': '납품완료'  // legacy status 지원
     };
     return statusMap[status] || status || '-';
   };
@@ -817,6 +818,7 @@ export default function OrdersProfessionalFast() {
       case 'created': return 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-500/25 dark:text-blue-200 dark:border-blue-400/50';
       case 'sent': return 'bg-indigo-100 text-indigo-800 border-indigo-300 dark:bg-indigo-500/25 dark:text-indigo-200 dark:border-indigo-400/50';
       case 'delivered': return 'bg-green-100 text-green-800 border-green-300 dark:bg-green-500/25 dark:text-green-200 dark:border-green-400/50';
+      case 'completed': return 'bg-green-100 text-green-800 border-green-300 dark:bg-green-500/25 dark:text-green-200 dark:border-green-400/50';
       default: return 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-500/25 dark:text-gray-200 dark:border-gray-400/50';
     }
   };
@@ -887,7 +889,7 @@ export default function OrdersProfessionalFast() {
                         bgColor: 'bg-blue-50 dark:bg-blue-900/20',
                         borderColor: 'border-blue-200 dark:border-blue-800',
                         label: '발주생성',
-                        description: '발주서 생성 완료'
+                        description: '발주 시스템 내 생성(PDF 생성)'
                       };
                     case 'sent':
                       return {
@@ -896,7 +898,7 @@ export default function OrdersProfessionalFast() {
                         bgColor: 'bg-green-50 dark:bg-green-900/20',
                         borderColor: 'border-green-200 dark:border-green-800',
                         label: '발주완료',
-                        description: '거래처에 발주 전송'
+                        description: '거래처에 이메일 전송'
                       };
                     case 'delivered':
                       return {
@@ -905,7 +907,7 @@ export default function OrdersProfessionalFast() {
                         bgColor: 'bg-purple-50 dark:bg-purple-900/20',
                         borderColor: 'border-purple-200 dark:border-purple-800',
                         label: '납품완료',
-                        description: '납품 및 검수 완료'
+                        description: '납품(수령) 및 검수 완료'
                       };
                     default:
                       return {
@@ -1321,6 +1323,10 @@ export default function OrdersProfessionalFast() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getOrderStatusColor(order.orderStatus || 'draft')}`}>
                           {getOrderStatusText(order.orderStatus || 'draft')}
+                          {/* Debug info - 임시 */}
+                          <span className="ml-1 text-xs text-gray-400" title={`orderStatus: ${order.orderStatus}, status: ${order.status}`}>
+                            {order.orderStatus ? `(${order.orderStatus})` : `(legacy: ${order.status})`}
+                          </span>
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -1377,6 +1383,18 @@ export default function OrdersProfessionalFast() {
                               title="이메일 전송"
                             >
                               <Mail className="h-4 w-4" />
+                            </button>
+                          )}
+                          
+                          {/* Email History button - for sent, delivered, and completed status */}
+                          {(order.orderStatus === 'sent' || order.orderStatus === 'delivered' ||
+                            (!order.orderStatus && (order.status === 'sent' || order.status === 'delivered' || order.status === 'completed'))) && (
+                            <button
+                              onClick={() => handleViewEmailHistory(order)}
+                              className="p-1.5 text-indigo-500 hover:text-indigo-700 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:text-indigo-300 dark:hover:bg-indigo-900/20 rounded-md transition-all duration-200"
+                              title="이메일 기록"
+                            >
+                              <MailCheck className="h-4 w-4" />
                             </button>
                           )}
                         </div>

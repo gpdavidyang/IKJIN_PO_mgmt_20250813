@@ -174,6 +174,27 @@ export class ProfessionalPDFGenerationService {
   private static readonly VAT_RATE = 0.1; // 10% 부가세
 
   /**
+   * 시스템 이메일 설정 가져오기 (DB 우선, 환경변수 fallback)
+   */
+  private static async getSystemEmail(): Promise<string | null> {
+    try {
+      const { EmailSettingsService } = await import('../services/email-settings-service');
+      const emailService = new EmailSettingsService();
+      const settings = await emailService.getDefaultSettings();
+      
+      if (settings && settings.smtpUser) {
+        return settings.smtpUser;
+      }
+      
+      // Fallback to environment variable
+      return process.env.SMTP_USER || null;
+    } catch (error) {
+      console.warn('⚠️ [ProfessionalPDF] 시스템 이메일 조회 실패, 환경변수 사용:', error);
+      return process.env.SMTP_USER || null;
+    }
+  }
+
+  /**
    * 발주서 ID로부터 포괄적인 데이터 수집
    */
   static async gatherComprehensiveOrderData(orderId: number): Promise<ComprehensivePurchaseOrderData | null> {
@@ -219,21 +240,29 @@ export class ProfessionalPDFGenerationService {
           creatorPhone: users.phoneNumber,
           creatorPosition: users.position,
           creatorRole: users.role,
-          
-          // 회사 정보
+        })
+        .from(purchaseOrders)
+        .leftJoin(vendors, eq(purchaseOrders.vendorId, vendors.id))
+        .leftJoin(projects, eq(purchaseOrders.projectId, projects.id))
+        .leftJoin(users, eq(purchaseOrders.userId, users.id))
+        .where(eq(purchaseOrders.id, orderId))
+        .limit(1);
+
+      // 회사 정보 별도 조회 (첫 번째 활성화된 회사)
+      const companyQuery = await db.db
+        .select({
           companyName: companies.companyName,
           companyBusinessNumber: companies.businessNumber,
           companyAddress: companies.address,
           companyContactPerson: companies.contactPerson,
           companyPhone: companies.phone,
           companyEmail: companies.email,
+          companyFax: companies.fax,
+          companyWebsite: companies.website,
+          companyRepresentative: companies.representative,
         })
-        .from(purchaseOrders)
-        .leftJoin(vendors, eq(purchaseOrders.vendorId, vendors.id))
-        .leftJoin(projects, eq(purchaseOrders.projectId, projects.id))
-        .leftJoin(users, eq(purchaseOrders.userId, users.id))
-        .leftJoin(companies, eq(projects.id, projects.id)) // 임시: 회사 정보 연결 로직 개선 필요
-        .where(eq(purchaseOrders.id, orderId))
+        .from(companies)
+        .where(eq(companies.isActive, true))
         .limit(1);
 
       if (!orderQuery || orderQuery.length === 0) {
@@ -242,6 +271,19 @@ export class ProfessionalPDFGenerationService {
       }
 
       const orderData = orderQuery[0];
+
+      // 회사 정보 가져오기 (없으면 기본값)
+      const companyData = companyQuery.length > 0 ? companyQuery[0] : {
+        companyName: '발주업체',
+        companyBusinessNumber: null,
+        companyAddress: null,
+        companyContactPerson: null,
+        companyPhone: null,
+        companyEmail: null,
+        companyFax: null,
+        companyWebsite: null,
+        companyRepresentative: null,
+      };
 
       // 품목 정보 조회
       const itemsQuery = await db.db
@@ -287,12 +329,14 @@ export class ProfessionalPDFGenerationService {
         updatedAt: orderData.updatedAt,
 
         issuerCompany: {
-          name: orderData.companyName || '발주업체',
-          businessNumber: orderData.companyBusinessNumber,
-          representative: orderData.companyContactPerson,
-          address: orderData.companyAddress,
-          phone: orderData.companyPhone,
-          email: orderData.companyEmail,
+          name: companyData.companyName || '발주업체',
+          businessNumber: companyData.companyBusinessNumber,
+          representative: companyData.companyRepresentative,
+          address: companyData.companyAddress,
+          phone: companyData.companyPhone,
+          email: await this.getSystemEmail() || companyData.companyEmail,
+          fax: companyData.companyFax,
+          website: companyData.companyWebsite,
         },
 
         vendorCompany: {
@@ -907,11 +951,10 @@ export class ProfessionalPDFGenerationService {
 <body>
   <div class="container">
     <!-- HEADER -->
-    <div class="header" style="text-align: center; padding: 20px 0;">
-      <h1>구매 발주서</h1>
-      <div class="order-number">${data.orderNumber}</div>
-      <div class="status-badge status-${data.orderStatus}">${this.getStatusDisplayName(data.orderStatus)}</div>
-      <div style="font-size: 8pt; color: #666; margin-top: 5px;">
+    <div class="header" style="text-align: left; padding: 20px 0;">
+      <h1 style="margin-bottom: 8px;">구매 발주서</h1>
+      <div class="order-number" style="margin-bottom: 5px;">발주번호: ${data.orderNumber}</div>
+      <div style="font-size: 6pt; color: #666; line-height: 1.2;">
         생성일: ${formatDate(data.metadata.generatedAt)} | 문서ID: ${data.metadata.documentId.substring(0, 10)}
       </div>
     </div>
@@ -1059,22 +1102,6 @@ export class ProfessionalPDFGenerationService {
       </div>
     </div>
     
-    <!-- TERMS & CONDITIONS -->
-    <div class="terms-grid">
-      <div class="terms-box">
-        <h4>💳 결제 조건</h4>
-        <div class="terms-content">${data.terms.paymentTerms || '별도 협의'}</div>
-      </div>
-      <div class="terms-box">
-        <h4>🚚 납품 조건</h4>
-        <div class="terms-content">${data.terms.deliveryTerms || '현장 직납'}</div>
-      </div>
-      <div class="terms-box">
-        <h4>🔧 품질 기준</h4>
-        <div class="terms-content">${data.terms.qualityStandard || 'KS 기준'}</div>
-      </div>
-    </div>
-    
     <!-- ATTACHMENTS & COMMUNICATION -->
     <div class="comm-grid">
       <div class="comm-box">
@@ -1113,6 +1140,7 @@ export class ProfessionalPDFGenerationService {
     <div class="footer">
       <div class="company-info">
         <div class="name">${data.issuerCompany.name}</div>
+        ${data.issuerCompany.representative ? `<div>대표자: ${data.issuerCompany.representative}</div>` : ''}
         <div>${data.issuerCompany.address || ''}</div>
         <div>TEL: ${data.issuerCompany.phone || ''} | EMAIL: ${data.issuerCompany.email || ''}</div>
         ${data.issuerCompany.businessNumber ? `<div>사업자등록번호: ${data.issuerCompany.businessNumber}</div>` : ''}
@@ -1199,7 +1227,7 @@ export class ProfessionalPDFGenerationService {
         
         const formatDate = (date?: Date | null) => {
           if (!date) return '-';
-          return format(new Date(date), 'yyyy.MM.dd', { locale: ko });
+          return format(new Date(date), 'yyyy년 MM월 dd일', { locale: ko });
         };
 
         const formatCurrency = (amount: number) => {
@@ -1210,10 +1238,10 @@ export class ProfessionalPDFGenerationService {
         };
         
         // === 헤더 섹션 ===
-        // 제목 및 발주서 번호
-        doc.fontSize(16).text('구매 발주서', { align: 'center' });
-        doc.fontSize(12).text(`Order No: ${orderData.orderNumber}`, { align: 'center' });
-        doc.fontSize(8).text(`상태: ${this.getStatusDisplayName(orderData.orderStatus)} | 생성: ${formatDate(orderData.metadata.generatedAt)}`, { align: 'center' });
+        // 제목 및 발주서 번호 (왼쪽 정렬)
+        doc.fontSize(16).text('구매 발주서', 20, doc.y);
+        doc.fontSize(12).text(`발주번호: ${orderData.orderNumber}`, 20, doc.y);
+        doc.fontSize(6).text(`생성일: ${formatDate(orderData.metadata.generatedAt)} | 문서ID: ${orderData.metadata.documentId.substring(0, 10)}`, 20, doc.y);
         
         // 구분선
         doc.moveTo(20, doc.y + 5).lineTo(575, doc.y + 5).stroke();
@@ -1395,9 +1423,13 @@ export class ProfessionalPDFGenerationService {
         doc.y = finalSignY + signBoxHeight + 15;
         doc.fontSize(8);
         doc.text(orderData.issuerCompany.name, { align: 'center' });
+        if (orderData.issuerCompany.representative) {
+          doc.text(`대표자: ${orderData.issuerCompany.representative}`, { align: 'center' });
+        }
         doc.fontSize(6);
         doc.text(orderData.issuerCompany.address || '', { align: 'center' });
-        doc.text(`TEL: ${orderData.issuerCompany.phone || ''} | 사업자: ${orderData.issuerCompany.businessNumber || ''}`, { align: 'center' });
+        doc.text(`TEL: ${orderData.issuerCompany.phone || ''} | EMAIL: ${orderData.issuerCompany.email || ''}`, { align: 'center' });
+        doc.text(`사업자등록번호: ${orderData.issuerCompany.businessNumber || ''}`, { align: 'center' });
         
         doc.moveDown(1);
         doc.fontSize(6);

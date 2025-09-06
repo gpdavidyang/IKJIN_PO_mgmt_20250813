@@ -316,8 +316,122 @@ async function generateMissingPDFs() {
    - Feature flag로 새 기능 비활성화
    - 레거시 status 필드만 사용하도록 전환
 
+---
+
+## 발주서 상태별 액션 아이콘 표기 기준 (2025-09-06 구현완료)
+
+### 개요
+발주서 관리 목록에서 각 발주서 상태에 따라 표시되는 액션 아이콘들의 표기 기준을 정의합니다.
+
+### 발주서 상태별 액션 아이콘 구성
+
+#### 1. 임시저장 (draft)
+- **상세** (Eye 아이콘) - 파란색
+- **수정** (Edit 아이콘) - 초록색
+
+#### 2. 발주생성 (created)
+- **상세** (Eye 아이콘) - 파란색
+- **수정** (Edit 아이콘) - 초록색
+- **PDF** (FileText 아이콘) - 주황색
+- **이메일작성** (Mail 아이콘) - 보라색
+
+#### 3. 발주완료 (sent)
+- **상세** (Eye 아이콘) - 파란색
+- **PDF** (FileText 아이콘) - 주황색
+- **이메일기록** (MailCheck 아이콘) - 인디고색
+
+#### 4. 납품완료 (delivered)
+- **상세** (Eye 아이콘) - 파란색
+- **PDF** (FileText 아이콘) - 주황색
+- **이메일기록** (MailCheck 아이콘) - 인디고색
+
+### 아이콘 세부 사양
+
+#### 색상 체계
+- **Eye (상세)**: `text-blue-500` - 모든 상태에서 공통
+- **Edit (수정)**: `text-green-500` - draft, created 상태에서만 표시
+- **FileText (PDF)**: `text-orange-500` - created, sent, delivered 상태에서 표시
+- **Mail (이메일작성)**: `text-purple-500` - created 상태에서만 표시
+- **MailCheck (이메일기록)**: `text-indigo-500` - sent, delivered 상태에서 표시
+
+#### 툴팁 텍스트
+- **상세보기**: "상세보기"
+- **수정**: "수정"
+- **PDF 다운로드**: "PDF 다운로드"
+- **이메일 전송**: "이메일 전송"
+- **이메일 기록**: "이메일 기록"
+
+### 이메일 기록 기능
+
+#### 기능 개요
+발주완료(sent) 및 납품완료(delivered) 상태의 발주서에서 이메일 기록 아이콘을 클릭하면 `EmailHistoryModal`이 표시됩니다.
+
+#### 이메일 기록 화면 구성
+1. **이메일 발송 이력 탭**
+   - 발송 시점별 탭 구분 (MM/dd HH:mm 형태)
+   - 최대 5개 탭 표시, 초과 시 "+N more" 표시
+
+2. **이메일 상세 정보**
+   - 발송 시간: yyyy년 MM월 dd일 HH:mm:ss
+   - 발송자: 이름 (이메일주소)
+   - 수신자: 이름 <이메일주소>
+   - 참조: CC 이메일 (해당 시)
+   - 상태: 발송됨/열람됨/클릭됨/실패/반송됨 (색상별 뱃지)
+
+3. **추적 정보**
+   - 열람 시간: 수신자가 이메일을 연 시간
+   - 클릭 시간: 수신자가 링크를 클릭한 시간
+   - 오류 메시지: 발송 실패 시 상세 내용
+
+4. **첨부 파일 목록**
+   - 파일명과 크기 (MB 단위)
+
+5. **이메일 내용**
+   - 제목: 발송된 이메일 제목
+   - 본문: HTML 형태 이메일 내용 (스크롤 가능)
+
+6. **재발송 기능**
+   - 실패한 이메일의 경우 "재발송" 버튼 제공
+
+### 구현 세부사항
+
+#### 파일 위치
+- **메인 구현**: `/client/src/pages/orders-professional-fast.tsx` (라인 1383-1393)
+- **모달 컴포넌트**: `/client/src/components/email-history-modal.tsx`
+
+#### 조건부 렌더링 로직
+```typescript
+// 이메일 기록 버튼 - sent, delivered 상태에서만 표시
+{(order.orderStatus === 'sent' || order.orderStatus === 'delivered' ||
+  (!order.orderStatus && (order.status === 'sent' || order.status === 'delivered'))) && (
+  <button
+    onClick={() => handleViewEmailHistory(order)}
+    className="p-1.5 text-indigo-500 hover:text-indigo-700 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:text-indigo-300 dark:hover:bg-indigo-900/20 rounded-md transition-all duration-200"
+    title="이메일 기록"
+  >
+    <MailCheck className="h-4 w-4" />
+  </button>
+)}
+```
+
+#### 하위 호환성
+- 새로운 `orderStatus` 필드와 기존 `status` 필드 모두 지원
+- 기존 데이터와의 완벽한 호환성 보장
+
+### 버전 이력
+- **2025-09-06**: 이메일 기록 기능 추가 (sent, delivered 상태)
+- **이전**: 기본 액션 아이콘 체계 구축
+
+### 참고사항
+- 모든 아이콘은 Lucide React 라이브러리 사용
+- 다크모드 지원 포함
+- 호버 효과 및 접근성 고려된 디자인
+
+---
+
 ## 참고 문서
 - [데이터베이스 스키마](./shared/schema.ts)
 - [PDF 생성 서비스](./server/services/pdf-generation-service.ts)
 - [발주서 API 라우트](./server/routes/orders.ts)
 - [발주서 상세 페이지](./client/src/pages/order-detail-professional.tsx)
+- [이메일 기록 모달](./client/src/components/email-history-modal.tsx)
