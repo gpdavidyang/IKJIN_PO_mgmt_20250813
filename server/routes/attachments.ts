@@ -15,6 +15,7 @@ const router = Router();
  */
 router.get('/attachments/:id/download', async (req, res) => {
   const attachmentId = parseInt(req.params.id);
+  const forceDownload = req.query.download === 'true'; // ?download=true 파라미터로 강제 다운로드
 
   try {
     // Check authentication - cookie only
@@ -81,11 +82,11 @@ router.get('/attachments/:id/download', async (req, res) => {
         res.setHeader('Content-Type', mimeType);
         res.setHeader('Content-Length', buffer.length);
         
-        // For PDFs, display inline; for other files, download
-        if (mimeType.includes('pdf')) {
-          res.setHeader('Content-Disposition', `inline; filename*=UTF-8''${encodeURIComponent(displayName)}`);
-        } else {
+        // 강제 다운로드 요청이거나 PDF가 아닌 경우 attachment로, 그렇지 않으면 inline
+        if (forceDownload || !mimeType.includes('pdf')) {
           res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(displayName)}`);
+        } else {
+          res.setHeader('Content-Disposition', `inline; filename*=UTF-8''${encodeURIComponent(displayName)}`);
         }
         
         return res.send(buffer);
@@ -135,11 +136,11 @@ router.get('/attachments/:id/download', async (req, res) => {
       const displayName = attachment.originalName || fileName;
       res.setHeader('Content-Type', mimeType);
       
-      // For PDFs, display inline; for other files, download
-      if (mimeType.includes('pdf')) {
-        res.setHeader('Content-Disposition', `inline; filename*=UTF-8''${encodeURIComponent(displayName)}`);
-      } else {
+      // 강제 다운로드 요청이거나 PDF가 아닌 경우 attachment로, 그렇지 않으면 inline
+      if (forceDownload || !mimeType.includes('pdf')) {
         res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(displayName)}`);
+      } else {
+        res.setHeader('Content-Disposition', `inline; filename*=UTF-8''${encodeURIComponent(displayName)}`);
       }
       
       const fileStream = fs.createReadStream(foundPath);

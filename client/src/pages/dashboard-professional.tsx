@@ -175,14 +175,13 @@ export default function DashboardProfessional() {
     }
   }, [recentOrders]);
 
-  // PDF download handler - direct download like orders-professional-fast
+  // PDF download handler - Professional PDF service with direct download
   const handlePDFDownload = useCallback(async (order: any) => {
     try {
-      // Fetch order details to get attachments
-      console.log('Fetching order details for ID:', order.id);
-      const response = await apiRequest('GET', `/api/orders/${order.id}`);
+      console.log('🔄 Professional PDF 다운로드 시작:', order.id);
       
-      console.log('API Response:', response);
+      // 먼저 기존 PDF 첨부파일 확인
+      const response = await apiRequest('GET', `/api/orders/${order.id}`);
       
       if (!response) {
         console.error('API returned no data for order:', order.id);
@@ -195,33 +194,72 @@ export default function DashboardProfessional() {
       }
       
       const orderData = response;
+      let pdfAttachment = null;
       
-      if (!orderData.attachments || !Array.isArray(orderData.attachments)) {
-        console.log('No attachments array in order data');
-        toast({
-          title: "PDF 파일이 없습니다",
-          description: "발주서 상세에서 PDF를 생성해주세요.",
-          variant: "destructive",
-        });
-        return;
+      // 기존 Professional PDF 찾기
+      if (orderData.attachments && Array.isArray(orderData.attachments)) {
+        pdfAttachment = orderData.attachments.find(
+          (att: any) => (att.mimeType?.includes('pdf') || att.originalName?.toLowerCase().endsWith('.pdf')) &&
+                       (att.originalName?.includes('Professional') || att.filePath?.includes('professional'))
+        );
       }
       
-      const pdfAttachment = orderData.attachments.find(
-        (att: any) => att.mimeType?.includes('pdf') || att.originalName?.toLowerCase().endsWith('.pdf')
-      );
+      // Professional PDF가 없으면 새로 생성
+      if (!pdfAttachment) {
+        console.log('📄 Professional PDF 파일 없음, 새로 생성 중...');
+        toast({
+          title: "PDF 생성 중",
+          description: "전문적인 발주서 PDF를 생성하고 있습니다...",
+        });
+        
+        try {
+          const pdfResponse = await apiRequest('POST', `/api/orders/${order.id}/generate-professional-pdf`);
+          
+          if (pdfResponse.success && pdfResponse.attachmentId) {
+            console.log('✅ Professional PDF 생성 성공:', pdfResponse);
+            pdfAttachment = { id: pdfResponse.attachmentId };
+          } else {
+            throw new Error(pdfResponse.error || 'PDF 생성 실패');
+          }
+        } catch (pdfError) {
+          console.error('❌ Professional PDF 생성 실패:', pdfError);
+          toast({
+            title: "PDF 생성 실패",
+            description: "전문적인 PDF 생성에 실패했습니다. 기본 PDF를 시도합니다.",
+            variant: "destructive",
+          });
+          
+          // 기본 PDF 찾기 시도
+          if (orderData.attachments && Array.isArray(orderData.attachments)) {
+            pdfAttachment = orderData.attachments.find(
+              (att: any) => att.mimeType?.includes('pdf') || att.originalName?.toLowerCase().endsWith('.pdf')
+            );
+          }
+        }
+      }
       
+      // PDF 다운로드 실행
       if (pdfAttachment) {
-        console.log('Found PDF attachment:', pdfAttachment);
-        // PDF 다운로드 - 새 탭에서 열기
-        const url = `/api/attachments/${pdfAttachment.id}/download`;
-        window.open(url, '_blank');
+        console.log('📥 PDF 다운로드 시작:', pdfAttachment);
+        
+        // 브라우저 기본 다운로드 방식 사용
+        const downloadUrl = `/api/attachments/${pdfAttachment.id}/download?download=true`;
+        
+        // 임시 링크 생성하여 다운로드
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = `발주서_${order.orderNumber}.pdf`;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
         
         toast({
           title: "PDF 다운로드",
-          description: `발주서 ${order.orderNumber}의 PDF를 다운로드합니다.`,
+          description: `발주서 ${order.orderNumber}의 전문적인 PDF를 다운로드합니다.`,
         });
       } else {
-        console.log('No PDF attachment found in:', orderData.attachments);
+        console.log('❌ PDF 파일을 찾을 수 없음');
         toast({
           title: "PDF 파일이 없습니다",
           description: "발주서 상세에서 PDF를 생성해주세요.",

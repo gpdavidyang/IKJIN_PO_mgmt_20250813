@@ -1245,15 +1245,81 @@ export class ProfessionalPDFGenerationService {
         doc.on('end', () => resolve(Buffer.concat(buffers)));
         doc.on('error', reject);
 
-        // 폰트 설정 - 한글 지원을 위해 기본 폰트 사용
-        // PDFKit의 기본 폰트는 한글을 지원하지 않으므로, 시스템 폰트를 사용하거나 
-        // 한글 폰트 파일을 직접 로드해야 함
-        // 현재는 Helvetica를 사용하되, 향후 한글 폰트 추가 필요
+        // 폰트 설정 - 한글 지원을 위한 폰트 등록
+        let koreanFont = 'Helvetica'; // 기본값
+        
         try {
-          // 한글 폰트 시도 (없으면 기본 폰트 사용)
-          doc.font('Helvetica');
+          // macOS의 기본 한글 폰트 시도 (Apple SD Gothic Neo)
+          if (process.platform === 'darwin') {
+            const macFonts = [
+              '/System/Library/Fonts/AppleSDGothicNeo.ttc',
+              '/System/Library/Fonts/Helvetica.ttc',
+              '/Library/Fonts/Arial Unicode MS.ttf'
+            ];
+            
+            for (const fontPath of macFonts) {
+              try {
+                if (require('fs').existsSync(fontPath)) {
+                  doc.registerFont('Korean', fontPath);
+                  koreanFont = 'Korean';
+                  console.log(`✅ [ProfessionalPDF] macOS 한글 폰트 로드 성공: ${fontPath}`);
+                  break;
+                }
+              } catch (macError) {
+                console.warn(`⚠️ [ProfessionalPDF] macOS 폰트 로드 실패 ${fontPath}:`, macError.message);
+              }
+            }
+          }
+          
+          // Linux의 기본 한글 폰트 시도
+          if (process.platform === 'linux') {
+            const linuxFonts = [
+              '/usr/share/fonts/truetype/nanum/NanumGothic.ttf',
+              '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'
+            ];
+            
+            for (const fontPath of linuxFonts) {
+              try {
+                if (require('fs').existsSync(fontPath)) {
+                  doc.registerFont('Korean', fontPath);
+                  koreanFont = 'Korean';
+                  console.log(`✅ [ProfessionalPDF] Linux 한글 폰트 로드 성공: ${fontPath}`);
+                  break;
+                }
+              } catch (linuxError) {
+                console.warn(`⚠️ [ProfessionalPDF] Linux 폰트 로드 실패 ${fontPath}:`, linuxError.message);
+              }
+            }
+          }
+          
+          // Windows의 기본 한글 폰트 시도
+          if (process.platform === 'win32') {
+            const winFonts = [
+              'C:\\Windows\\Fonts\\malgun.ttf',  // 맑은 고딕
+              'C:\\Windows\\Fonts\\gulim.ttc'    // 굴림
+            ];
+            
+            for (const fontPath of winFonts) {
+              try {
+                if (require('fs').existsSync(fontPath)) {
+                  doc.registerFont('Korean', fontPath);
+                  koreanFont = 'Korean';
+                  console.log(`✅ [ProfessionalPDF] Windows 한글 폰트 로드 성공: ${fontPath}`);
+                  break;
+                }
+              } catch (winError) {
+                console.warn(`⚠️ [ProfessionalPDF] Windows 폰트 로드 실패 ${fontPath}:`, winError.message);
+              }
+            }
+          }
+          
+          // 폰트 설정
+          doc.font(koreanFont);
+          console.log(`📝 [ProfessionalPDF] 사용 폰트: ${koreanFont}`);
+          
         } catch (error) {
           console.warn('⚠️ [ProfessionalPDF] 폰트 설정 실패, 기본 폰트 사용:', error);
+          doc.font('Helvetica');
         }
         
         const formatDate = (date?: Date | null) => {
