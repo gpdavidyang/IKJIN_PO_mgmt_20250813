@@ -45,54 +45,66 @@ router.get("/orders-optimized", async (req, res) => {
       timestamp: new Date().toISOString()
     });
 
-    // SIMPLIFIED APPROACH: Use dashboard-like pattern directly
-    console.log("🔄 Using simplified dashboard-like query pattern");
+    // USE RAW SQL QUERIES like dashboard (this works!)
+    console.log("🔄 Using raw SQL pattern like dashboard");
     
     const { db } = require("../db");
-    const { purchaseOrders, vendors, projects, users } = require("@shared/schema");
-    const { eq, desc, count, sql } = require("drizzle-orm");
+    const { sql } = require("drizzle-orm");
     
     const page = filters.page || 1;
     const limit = filters.limit || 20;
     const offset = (page - 1) * limit;
     
-    // Simple query without complex optimizations that might fail
-    const orders = await db
-      .select({
-        id: purchaseOrders.id,
-        orderNumber: purchaseOrders.orderNumber,
-        status: purchaseOrders.status,
-        orderStatus: purchaseOrders.orderStatus,
-        approvalStatus: purchaseOrders.approvalStatus,
-        totalAmount: purchaseOrders.totalAmount,
-        orderDate: purchaseOrders.orderDate,
-        deliveryDate: purchaseOrders.deliveryDate,
-        userId: purchaseOrders.userId,
-        vendorId: purchaseOrders.vendorId,
-        projectId: purchaseOrders.projectId,
-        approvalLevel: purchaseOrders.approvalLevel,
-        currentApproverRole: purchaseOrders.currentApproverRole,
-        createdAt: purchaseOrders.createdAt
-      })
-      .from(purchaseOrders)
-      .orderBy(desc(purchaseOrders.createdAt))
-      .limit(limit)
-      .offset(offset);
-      
-    const [{ count: total }] = await db
-      .select({ count: count() })
-      .from(purchaseOrders);
+    // Raw SQL query for orders (like dashboard pattern)
+    const ordersResult = await db.execute(
+      sql`SELECT 
+        po.id,
+        po.order_number as "orderNumber",
+        po.status,
+        po.order_status as "orderStatus",
+        po.approval_status as "approvalStatus", 
+        po.total_amount as "totalAmount",
+        po.order_date as "orderDate",
+        po.delivery_date as "deliveryDate",
+        po.user_id as "userId",
+        po.vendor_id as "vendorId", 
+        po.project_id as "projectId",
+        po.approval_level as "approvalLevel",
+        po.current_approver_role as "currentApproverRole",
+        po.created_at as "createdAt",
+        v.name as "vendorName",
+        p.project_name as "projectName",
+        u.name as "userName"
+      FROM purchase_orders po
+      LEFT JOIN vendors v ON po.vendor_id = v.id
+      LEFT JOIN projects p ON po.project_id = p.id
+      LEFT JOIN users u ON po.user_id = u.id
+      ORDER BY po.created_at DESC
+      LIMIT ${limit} OFFSET ${offset}`
+    );
     
-    // Get metadata
-    const vendors_list = await db.select().from(vendors).limit(100);
-    const projects_list = await db.select().from(projects).limit(100);
+    // Raw SQL for count
+    const countResult = await db.execute(
+      sql`SELECT COUNT(*) as total FROM purchase_orders`
+    );
+    
+    // Raw SQL for metadata
+    const vendorsResult = await db.execute(
+      sql`SELECT id, name FROM vendors ORDER BY name LIMIT 100`
+    );
+    
+    const projectsResult = await db.execute(
+      sql`SELECT id, project_name FROM projects ORDER BY project_name LIMIT 100`
+    );
+    
+    const orders = ordersResult.rows || [];
+    const total = parseInt(countResult.rows[0]?.total || 0);
+    const vendors_list = vendorsResult.rows || [];
+    const projects_list = projectsResult.rows || [];
     
     const result = {
       orders: orders.map(order => ({
         ...order,
-        vendorName: 'Loading...',
-        projectName: 'Loading...',
-        userName: 'Loading...',
         emailStatus: null,
         lastSentAt: null,
         totalEmailsSent: 0,
