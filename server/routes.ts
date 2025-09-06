@@ -1742,10 +1742,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Access denied - insufficient permissions" });
       }
 
-      // Check current status - can only complete delivery from 'sent' status
-      if (order.status !== 'sent' && order.orderStatus !== 'sent') {
+      // Check current status - can complete delivery from 'created' or 'sent' status
+      const currentStatus = order.orderStatus || order.status;
+      if (currentStatus !== 'created' && currentStatus !== 'sent') {
         return res.status(400).json({ 
-          message: "주문이 발송됨 상태가 아닙니다. 납품검수완료는 발송된 주문에서만 가능합니다." 
+          message: "주문이 발주생성 또는 발송됨 상태가 아닙니다. 납품검수완료는 발주생성 또는 발송된 주문에서만 가능합니다." 
         });
       }
 

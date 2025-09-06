@@ -309,7 +309,7 @@ export default function OrderDetailProfessional() {
   const canSendEmail = isCreated && (user?.role === "admin" || order.userId === user?.id);
   const canEdit = isDraft || (isCreated && (user?.role === "admin" || order.userId === user?.id));
   const canApprove = user?.role === "admin" && order.approvalStatus === "pending";
-  const canCompleteDelivery = isSent && (user?.role === "admin" || order.userId === user?.id);
+  const canCompleteDelivery = (isCreated || isSent) && (user?.role === "admin" || order.userId === user?.id);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -433,7 +433,7 @@ export default function OrderDetailProfessional() {
                 </Button>
               )}
               
-              {/* Complete Delivery button - only for sent status */}
+              {/* Complete Delivery button - for created and sent status */}
               {canCompleteDelivery && (
                 <Button 
                   onClick={handleCompleteDelivery}
