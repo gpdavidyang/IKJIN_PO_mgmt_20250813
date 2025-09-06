@@ -24,6 +24,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { z } from "zod";
 import * as XLSX from "xlsx";
+import nodemailer from "nodemailer";
 
 // ES 모듈에서 __dirname 대체
 const __filename = fileURLToPath(import.meta.url);
@@ -2196,17 +2197,14 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
     // 간단한 이메일 발송 (첨부 파일 없이 또는 PDF만 첨부)
     const emailHtml = generateEmailContent(emailOptions);
     
-    // nodemailer를 직접 사용하여 이메일 발송
-    const nodemailer = require('nodemailer');
-    
-    // 이메일 전송 설정
+    // 네이버 SMTP를 사용하여 이메일 발송
     const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 587,
+      host: process.env.SMTP_HOST || 'smtp.naver.com',
+      port: parseInt(process.env.SMTP_PORT) || 587,
       secure: false,
       auth: {
-        user: process.env.EMAIL_USER || 'test@example.com',
-        pass: process.env.EMAIL_PASSWORD || 'test'
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
       },
       tls: {
         rejectUnauthorized: false
@@ -2215,7 +2213,7 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
     
     // 이메일 옵션 설정
     const mailOptions = {
-      from: process.env.EMAIL_USER || 'noreply@example.com',
+      from: process.env.SMTP_USER || 'david1611@naver.com',
       to: Array.isArray(emailOptions.to) ? emailOptions.to.join(', ') : emailOptions.to,
       cc: emailOptions.cc ? (Array.isArray(emailOptions.cc) ? emailOptions.cc.join(', ') : emailOptions.cc) : undefined,
       subject: emailOptions.subject || `발주서 - ${orderData.orderNumber || ''}`,
