@@ -508,18 +508,6 @@ export class ProfessionalPDFGenerationService {
    * 전문적인 HTML 템플릿 생성
    */
   private static generateProfessionalHTMLTemplate(data: ComprehensivePurchaseOrderData): string {
-    // Read logo file and convert to base64
-    let logoBase64 = '';
-    try {
-      const logoPath = path.join(process.cwd(), 'assets', 'company-logo.png');
-      if (fs.existsSync(logoPath)) {
-        const logoBuffer = fs.readFileSync(logoPath);
-        logoBase64 = logoBuffer.toString('base64');
-      }
-    } catch (error) {
-      console.error('Failed to load logo:', error);
-    }
-    
     const formatDate = (date?: Date | null) => {
       if (!date) return '-';
       return format(new Date(date), 'yyyy년 MM월 dd일', { locale: ko });
@@ -614,16 +602,6 @@ export class ProfessionalPDFGenerationService {
       align-items: center;
     }
     
-    .logo-area {
-      border: 1px dashed #ccc;
-      height: 60px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 7pt;
-      color: #666;
-    }
-    
     .header-center {
       text-align: center;
     }
@@ -638,17 +616,6 @@ export class ProfessionalPDFGenerationService {
       font-size: 12pt;
       font-weight: bold;
       color: #1e40af;
-    }
-    
-    .qr-area {
-      border: 1px dashed #ccc;
-      height: 60px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      font-size: 7pt;
-      color: #666;
     }
     
     .status-badge {
@@ -940,20 +907,12 @@ export class ProfessionalPDFGenerationService {
 <body>
   <div class="container">
     <!-- HEADER -->
-    <div class="header" style="display: grid; grid-template-columns: 150px 1fr; gap: 20px; align-items: center;">
-      <div class="logo-area" style="display: flex; align-items: center; justify-content: center;">
-        ${logoBase64 ? 
-          `<img src="data:image/png;base64,${logoBase64}" alt="Company Logo" style="max-width: 120px; max-height: 60px; object-fit: contain;" />` :
-          `<div style="width: 120px; height: 60px; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; font-size: 10pt; color: #999;">LOGO</div>`
-        }
-      </div>
-      <div class="header-center" style="text-align: center;">
-        <h1>구매 발주서</h1>
-        <div class="order-number">${data.orderNumber}</div>
-        <div class="status-badge status-${data.orderStatus}">${this.getStatusDisplayName(data.orderStatus)}</div>
-        <div style="font-size: 8pt; color: #666; margin-top: 5px;">
-          생성일: ${formatDate(data.metadata.generatedAt)} | 문서ID: ${data.metadata.documentId.substring(0, 10)}
-        </div>
+    <div class="header" style="text-align: center; padding: 20px 0;">
+      <h1>구매 발주서</h1>
+      <div class="order-number">${data.orderNumber}</div>
+      <div class="status-badge status-${data.orderStatus}">${this.getStatusDisplayName(data.orderStatus)}</div>
+      <div style="font-size: 8pt; color: #666; margin-top: 5px;">
+        생성일: ${formatDate(data.metadata.generatedAt)} | 문서ID: ${data.metadata.documentId.substring(0, 10)}
       </div>
     </div>
     
