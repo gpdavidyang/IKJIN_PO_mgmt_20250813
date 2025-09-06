@@ -1,8 +1,7 @@
 import express, { Request, Response } from "express";
-import fs from "fs/promises";
-import path from "path";
 import { z } from "zod";
-import { POEmailService } from "../utils/po-email-service-enhanced";
+import { EmailSettingsService } from "../services/email-settings-service";
+import { EmailSettingsEncryption } from "../utils/email-settings-encryption";
 
 const router = express.Router();
 
@@ -14,8 +13,8 @@ const EmailSettingsSchema = z.object({
   smtpPass: z.string().min(1, "비밀번호는 필수입니다")
 });
 
-// .env 파일 경로
-const envPath = path.resolve(process.cwd(), ".env");
+// 이메일 설정 서비스 인스턴스
+const emailService = new EmailSettingsService();
 
 /**
  * 현재 이메일 설정 조회
@@ -30,13 +29,24 @@ router.get("/", async (req: Request, res: Response) => {
       });
     }
 
-    const settings = {
-      smtpHost: process.env.SMTP_HOST || "",
-      smtpPort: process.env.SMTP_PORT || "",
-      smtpUser: process.env.SMTP_USER || "",
-      // 비밀번호는 마스킹 처리
-      smtpPass: process.env.SMTP_PASS ? "********" : ""
-    };
+    const emailService = new EmailSettingsService();
+    const dbSettings = await emailService.getDefaultSettings();
+
+    let settings;
+    
+    if (dbSettings) {
+      // DB에서 설정 가져오기 (마스킹 처리)
+      settings = emailService.getMaskedSettings(dbSettings);
+    } else {
+      // DB에 설정이 없으면 환경 변수에서 가져오기
+      const envSettings = emailService.getSettingsFromEnv();
+      settings = {
+        smtpHost: envSettings.smtpHost || "",
+        smtpPort: envSettings.smtpPort?.toString() || "",
+        smtpUser: envSettings.smtpUser || "",
+        smtpPass: process.env.SMTP_PASS ? "********" : ""
+      };
+    }
 
     res.json({
       success: true,
@@ -75,73 +85,55 @@ router.put("/", async (req: Request, res: Response) => {
     }
 
     const { smtpHost, smtpPort, smtpUser, smtpPass } = validationResult.data;
+    const userId = req.user?.id || 'system';
 
-    // .env 파일 읽기
-    let envContent = "";
-    try {
-      envContent = await fs.readFile(envPath, "utf-8");
-    } catch (error) {
-      console.log(".env 파일이 없습니다. 새로 생성합니다.");
+    // 기존 설정 확인
+    const existingSettings = await emailService.getDefaultSettings();
+    
+    let updatedSettings;
+    if (existingSettings) {
+      // 기존 설정 업데이트
+      updatedSettings = await emailService.updateSettings(existingSettings.id, {
+        smtpHost,
+        smtpPort: parseInt(smtpPort),
+        smtpUser,
+        smtpPass: smtpPass !== '********' ? smtpPass : undefined, // 마스킹된 값이면 변경하지 않음
+        isDefault: true,
+        isActive: true,
+      }, userId);
+    } else {
+      // 새 설정 생성
+      updatedSettings = await emailService.createSettings({
+        smtpHost,
+        smtpPort: parseInt(smtpPort),
+        smtpUser,
+        smtpPass,
+        fromName: 'IKJIN 구매 발주 시스템',
+        description: '웹 UI에서 설정된 SMTP 구성',
+        isActive: true,
+        isDefault: true,
+      }, userId);
     }
 
-    // 환경 변수 업데이트
-    const envLines = envContent.split("\n");
-    const updatedLines: string[] = [];
-    let smtpHostUpdated = false;
-    let smtpPortUpdated = false;
-    let smtpUserUpdated = false;
-    let smtpPassUpdated = false;
-
-    for (const line of envLines) {
-      if (line.startsWith("SMTP_HOST=")) {
-        updatedLines.push(`SMTP_HOST=${smtpHost}`);
-        smtpHostUpdated = true;
-      } else if (line.startsWith("SMTP_PORT=")) {
-        updatedLines.push(`SMTP_PORT=${smtpPort}`);
-        smtpPortUpdated = true;
-      } else if (line.startsWith("SMTP_USER=")) {
-        updatedLines.push(`SMTP_USER=${smtpUser}`);
-        smtpUserUpdated = true;
-      } else if (line.startsWith("SMTP_PASS=")) {
-        updatedLines.push(`SMTP_PASS=${smtpPass}`);
-        smtpPassUpdated = true;
-      } else {
-        updatedLines.push(line);
-      }
-    }
-
-    // 없는 환경 변수 추가
-    if (!smtpHostUpdated) {
-      updatedLines.push(`SMTP_HOST=${smtpHost}`);
-    }
-    if (!smtpPortUpdated) {
-      updatedLines.push(`SMTP_PORT=${smtpPort}`);
-    }
-    if (!smtpUserUpdated) {
-      updatedLines.push(`SMTP_USER=${smtpUser}`);
-    }
-    if (!smtpPassUpdated) {
-      updatedLines.push(`SMTP_PASS=${smtpPass}`);
-    }
-
-    // .env 파일 쓰기
-    await fs.writeFile(envPath, updatedLines.join("\n"));
-
-    // 현재 프로세스의 환경 변수도 업데이트
+    // 환경 변수도 동시에 업데이트 (런타임 적용)
     process.env.SMTP_HOST = smtpHost;
     process.env.SMTP_PORT = smtpPort;
     process.env.SMTP_USER = smtpUser;
-    process.env.SMTP_PASS = smtpPass;
+    if (smtpPass !== '********') {
+      process.env.SMTP_PASS = smtpPass;
+    }
 
     res.json({
       success: true,
-      message: "이메일 설정이 업데이트되었습니다. 서버를 재시작해야 변경사항이 완전히 적용됩니다."
+      message: "이메일 설정이 데이터베이스에 저장되고 즉시 적용되었습니다.",
+      data: emailService.getMaskedSettings(updatedSettings)
     });
   } catch (error) {
     console.error("이메일 설정 업데이트 오류:", error);
     res.status(500).json({
       success: false,
-      message: "이메일 설정을 업데이트하는 중 오류가 발생했습니다"
+      message: "이메일 설정을 업데이트하는 중 오류가 발생했습니다",
+      error: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 });
@@ -168,43 +160,42 @@ router.post("/test", async (req: Request, res: Response) => {
       });
     }
 
-    // 이메일 서비스로 테스트 발송
-    const emailService = new POEmailService();
-    const result = await emailService.sendEmail({
-      to: testEmail,
-      subject: "[시스템 테스트] 이메일 설정 확인",
-      text: "이메일 설정이 올바르게 구성되었습니다.",
-      html: `
-        <div style="font-family: Arial, sans-serif; padding: 20px;">
-          <h2>이메일 설정 테스트</h2>
-          <p>이메일이 정상적으로 발송되었습니다.</p>
-          <hr>
-          <p style="color: #666; font-size: 12px;">
-            SMTP 서버: ${process.env.SMTP_HOST}<br>
-            발송자: ${process.env.SMTP_USER}<br>
-            발송 시간: ${new Date().toLocaleString("ko-KR")}
-          </p>
-        </div>
-      `
-    });
+    // 현재 활성 설정 가져오기
+    const currentSettings = await emailService.getDefaultSettings();
+    
+    if (!currentSettings) {
+      return res.status(404).json({
+        success: false,
+        message: "활성화된 이메일 설정을 찾을 수 없습니다. 먼저 설정을 저장해주세요."
+      });
+    }
 
-    if (result.success) {
+    // SMTP 연결 및 테스트 이메일 발송
+    const testResult = await emailService.testSMTPConnection(currentSettings, testEmail);
+
+    if (testResult.success) {
       res.json({
         success: true,
-        message: "테스트 이메일이 발송되었습니다"
+        message: "테스트 이메일이 성공적으로 발송되었습니다",
+        data: {
+          messageId: testResult.messageId,
+          testEmail,
+          testedAt: new Date().toISOString()
+        }
       });
     } else {
       res.status(500).json({
         success: false,
-        message: "테스트 이메일 발송 실패",
-        error: result.error
+        message: "테스트 이메일 발송에 실패했습니다",
+        error: testResult.error
       });
     }
   } catch (error) {
     console.error("이메일 테스트 오류:", error);
     res.status(500).json({
       success: false,
-      message: "이메일 테스트 중 오류가 발생했습니다"
+      message: "이메일 테스트 중 오류가 발생했습니다",
+      error: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 });

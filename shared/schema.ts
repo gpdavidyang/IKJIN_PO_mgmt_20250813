@@ -72,6 +72,27 @@ export const itemReceiptStatusEnum = pgEnum("item_receipt_status", ["pending", "
 export const verificationActionEnum = pgEnum("verification_action", ["invoice_uploaded", "item_verified", "quality_checked"]);
 export const approvalStepStatusEnum = pgEnum("approval_step_status", ["pending", "approved", "rejected", "skipped"]);
 
+// Email settings table for dynamic SMTP configuration
+export const emailSettings = pgTable("email_settings", {
+  id: serial("id").primaryKey(),
+  smtpHost: varchar("smtp_host", { length: 255 }).notNull(),
+  smtpPort: integer("smtp_port").notNull().default(587),
+  smtpUser: varchar("smtp_user", { length: 255 }).notNull(),
+  smtpPass: text("smtp_pass").notNull(), // 암호화된 비밀번호 저장
+  fromName: varchar("from_name", { length: 100 }),
+  isActive: boolean("is_active").default(true),
+  isDefault: boolean("is_default").default(false), // 기본 설정 여부
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdBy: varchar("created_by"), // 설정 생성자
+  lastTestedAt: timestamp("last_tested_at"), // 마지막 테스트 시간
+  testResult: jsonb("test_result"), // 테스트 결과 저장
+}, (table) => [
+  index("idx_email_settings_active").on(table.isActive),
+  index("idx_email_settings_default").on(table.isDefault),
+]);
+
 // Approval authority settings table for role-based amount limits
 export const approvalAuthorities = pgTable("approval_authorities", {
   id: serial("id").primaryKey(),
@@ -1365,3 +1386,14 @@ export const insertCategoryMappingSchema = createInsertSchema(categoryMappings).
 export type CategoryMapping = typeof categoryMappings.$inferSelect;
 export type InsertCategoryMapping = z.infer<typeof insertCategoryMappingSchema>;
 export type InsertAuditAlertRule = z.infer<typeof insertAuditAlertRuleSchema>;
+
+// Email Settings Schema and Types
+export const insertEmailSettingsSchema = createInsertSchema(emailSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  lastTestedAt: true,
+  testResult: true,
+});
+export type EmailSetting = typeof emailSettings.$inferSelect;
+export type InsertEmailSetting = z.infer<typeof insertEmailSettingsSchema>;

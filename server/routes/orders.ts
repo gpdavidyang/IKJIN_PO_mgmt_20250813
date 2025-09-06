@@ -25,6 +25,7 @@ import { fileURLToPath } from "url";
 import { z } from "zod";
 import * as XLSX from "xlsx";
 import nodemailer from "nodemailer";
+import { EmailSettingsService } from "../services/email-settings-service";
 
 // ES 모듈에서 __dirname 대체
 const __filename = fileURLToPath(import.meta.url);
@@ -2197,23 +2198,19 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
     // 간단한 이메일 발송 (첨부 파일 없이 또는 PDF만 첨부)
     const emailHtml = generateEmailContent(emailOptions);
     
-    // 네이버 SMTP를 사용하여 이메일 발송
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'smtp.naver.com',
-      port: parseInt(process.env.SMTP_PORT) || 587,
-      secure: false,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-      },
-      tls: {
-        rejectUnauthorized: false
-      }
-    });
+    // 동적 SMTP 설정을 사용하여 이메일 발송
+    const emailSettingsService = new EmailSettingsService();
+    const smtpConfig = await emailSettingsService.getDecryptedSettings();
+    
+    if (!smtpConfig) {
+      throw new Error('이메일 설정을 찾을 수 없습니다. 관리자 설정에서 SMTP 정보를 확인해주세요.');
+    }
+    
+    const transporter = nodemailer.createTransport(smtpConfig);
     
     // 이메일 옵션 설정
     const mailOptions = {
-      from: process.env.SMTP_USER || 'david1611@naver.com',
+      from: smtpConfig.auth.user,
       to: Array.isArray(emailOptions.to) ? emailOptions.to.join(', ') : emailOptions.to,
       cc: emailOptions.cc ? (Array.isArray(emailOptions.cc) ? emailOptions.cc.join(', ') : emailOptions.cc) : undefined,
       subject: emailOptions.subject || `발주서 - ${orderData.orderNumber || ''}`,
