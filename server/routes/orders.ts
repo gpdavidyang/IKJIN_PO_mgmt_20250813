@@ -2209,8 +2209,32 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
     if (selectedAttachments && Array.isArray(selectedAttachments) && selectedAttachments.length > 0) {
       console.log('📎 처리할 선택된 첨부파일 IDs:', selectedAttachments);
       
+      // Track which attachment IDs have already been processed by the old logic
+      const processedAttachmentIds = new Set();
+      
+      // Extract attachment IDs from PDF and Excel URLs if they were processed by old logic
+      if (attachPdf && pdfUrl && pdfUrl.includes('/api/attachments/') && pdfUrl.includes('/download')) {
+        const pdfAttachmentIdMatch = pdfUrl.match(/\/api\/attachments\/(\d+)\/download/);
+        if (pdfAttachmentIdMatch) {
+          processedAttachmentIds.add(parseInt(pdfAttachmentIdMatch[1]));
+        }
+      }
+      
+      if (attachExcel && excelUrl && excelUrl.includes('/api/attachments/') && excelUrl.includes('/download')) {
+        const excelAttachmentIdMatch = excelUrl.match(/\/api\/attachments\/(\d+)\/download/);
+        if (excelAttachmentIdMatch) {
+          processedAttachmentIds.add(parseInt(excelAttachmentIdMatch[1]));
+        }
+      }
+      
       for (const attachmentId of selectedAttachments) {
         try {
+          // Skip if this attachment was already processed by the old logic
+          if (processedAttachmentIds.has(attachmentId)) {
+            console.log('⚠️ 첨부파일 이미 처리됨 (기존 로직):', attachmentId);
+            continue;
+          }
+          
           const [attachment] = await database.db
             .select({
               id: attachmentsTable.id,
@@ -2223,36 +2247,26 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
             .where(eq(attachmentsTable.id, attachmentId));
             
           if (attachment) {
-            // Check if this attachment is already added by the old logic (avoid duplicates)
-            const alreadyAdded = attachments.some(att => 
-              att.filename === attachment.originalName ||
-              (att.path && att.path === attachment.filePath)
-            );
-            
-            if (!alreadyAdded) {
-              if (attachment.fileData) {
-                // Use Base64 data from database
-                attachments.push({
-                  filename: attachment.originalName,
-                  content: Buffer.from(attachment.fileData, 'base64'),
-                  contentType: attachment.mimeType || 'application/octet-stream'
-                });
-                attachmentsList.push(attachment.originalName);
-                console.log('✅ 선택된 첨부파일 추가 성공 (DB Base64):', attachment.originalName);
-              } else if (attachment.filePath && fs.existsSync(attachment.filePath)) {
-                // Use file path
-                attachments.push({
-                  filename: attachment.originalName,
-                  path: attachment.filePath,
-                  contentType: attachment.mimeType || 'application/octet-stream'
-                });
-                attachmentsList.push(attachment.originalName);
-                console.log('✅ 선택된 첨부파일 추가 성공 (파일 경로):', attachment.originalName);
-              } else {
-                console.log('❌ 선택된 첨부파일 처리 실패 (데이터 없음):', attachment.originalName);
-              }
+            if (attachment.fileData) {
+              // Use Base64 data from database
+              attachments.push({
+                filename: attachment.originalName,
+                content: Buffer.from(attachment.fileData, 'base64'),
+                contentType: attachment.mimeType || 'application/octet-stream'
+              });
+              attachmentsList.push(attachment.originalName);
+              console.log('✅ 선택된 첨부파일 추가 성공 (DB Base64):', attachment.originalName);
+            } else if (attachment.filePath && fs.existsSync(attachment.filePath)) {
+              // Use file path
+              attachments.push({
+                filename: attachment.originalName,
+                path: attachment.filePath,
+                contentType: attachment.mimeType || 'application/octet-stream'
+              });
+              attachmentsList.push(attachment.originalName);
+              console.log('✅ 선택된 첨부파일 추가 성공 (파일 경로):', attachment.originalName);
             } else {
-              console.log('⚠️ 선택된 첨부파일 중복 스킵:', attachment.originalName);
+              console.log('❌ 선택된 첨부파일 처리 실패 (데이터 없음):', attachment.originalName);
             }
           } else {
             console.log('❌ 선택된 첨부파일 정보 없음, ID:', attachmentId);
