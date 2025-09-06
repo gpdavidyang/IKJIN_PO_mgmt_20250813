@@ -32,6 +32,7 @@ import {
   AlertCircle
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { downloadAttachment, showDownloadSuccessMessage } from "@/lib/downloadUtils";
 import { InvoiceManager } from "@/components/invoice-manager";
 import { ReceiptManager } from "@/components/receipt-manager";
 import { EmailSendDialog } from "@/components/email-send-dialog";

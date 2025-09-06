@@ -2,80 +2,51 @@
  * Utility functions for reliable file downloads
  */
 
-// Helper function to attempt download using multiple methods for better browser compatibility
-export const tryMultipleDownloadMethods = (url: string, filename: string): boolean => {
-  try {
-    // Method 1: Try using window.open (most reliable for downloads)
-    const downloadWindow = window.open(url, '_blank');
-    if (downloadWindow) {
-      // Close the window after a short delay if it opened successfully
-      setTimeout(() => {
-        try {
-          downloadWindow.close();
-        } catch (e) {
-          // Ignore errors when closing - the download should have started
-        }
-      }, 1000);
-      return true;
-    }
-    
-    // Method 2: Fallback to hidden iframe approach
-    const iframe = document.createElement('iframe');
-    iframe.style.display = 'none';
-    iframe.src = url;
-    document.body.appendChild(iframe);
-    
-    // Remove iframe after download starts
-    setTimeout(() => {
-      try {
-        document.body.removeChild(iframe);
-      } catch (e) {
-        // Ignore removal errors
-      }
-    }, 2000);
-    
-    return true;
-  } catch (error) {
-    console.error('All download methods failed:', error);
-    
-    // Method 3: Last resort - direct navigation
-    try {
-      window.location.href = url;
-      return true;
-    } catch (finalError) {
-      console.error('Final download method failed:', finalError);
-      return false;
-    }
-  }
-};
-
 /**
- * Reliable download function that verifies file exists before attempting download
+ * Reliable download function using fetch with blob
  * @param attachmentId - The ID of the attachment to download
  * @param filename - The filename for the download
- * @returns Promise<boolean> - true if download was attempted successfully
+ * @returns Promise<boolean> - true if download was successful
  */
 export const downloadAttachment = async (attachmentId: number, filename: string): Promise<boolean> => {
   try {
-    // First verify the file exists by making a HEAD request
-    const verifyResponse = await fetch(`/api/attachments/${attachmentId}/download`, {
-      method: 'HEAD',
-      credentials: 'include', // This will automatically include cookies
+    // Get token from localStorage or cookie for authentication
+    const token = localStorage.getItem('token') || document.cookie.match(/auth_token=([^;]+)/)?.[1];
+    
+    // Fetch the file with authentication
+    const response = await fetch(`/api/attachments/${attachmentId}/download?download=true`, {
+      method: 'GET',
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : '',
+      },
+      credentials: 'include', // Include cookies
     });
     
-    if (!verifyResponse.ok) {
-      throw new Error('파일을 찾을 수 없습니다');
+    if (!response.ok) {
+      throw new Error(`다운로드 실패: ${response.status}`);
     }
     
-    // Use direct browser navigation for reliable downloads
-    const downloadUrl = `/api/attachments/${attachmentId}/download?download=true`;
+    // Get the blob from response
+    const blob = await response.blob();
     
-    // Try multiple download methods for better browser compatibility
-    const downloadAttempted = tryMultipleDownloadMethods(downloadUrl, filename);
+    // Create a blob URL
+    const blobUrl = window.URL.createObjectURL(blob);
     
-    if (!downloadAttempted) {
-      throw new Error('다운로드를 시작할 수 없습니다');
-    }
+    // Create a temporary anchor element and trigger download
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = filename || 'download';
+    link.style.display = 'none';
+    
+    // Append to body, click, and remove
+    document.body.appendChild(link);
+    link.click();
+    
+    // Clean up
+    setTimeout(() => {
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    }, 100);
     
     return true;
   } catch (error) {
@@ -90,11 +61,8 @@ export const downloadAttachment = async (attachmentId: number, filename: string)
  * @param toast - Toast function from useToast hook
  */
 export const showDownloadSuccessMessage = (filename: string, toast: any) => {
-  // Show success message after a short delay to allow download to start
-  setTimeout(() => {
-    toast({
-      title: "다운로드 시작",
-      description: `${filename} 파일 다운로드가 시작되었습니다. 다운로드 폴더를 확인해주세요.`,
-    });
-  }, 500);
+  toast({
+    title: "다운로드 완료",
+    description: `${filename} 파일이 다운로드 폴더에 저장되었습니다.`,
+  });
 };
