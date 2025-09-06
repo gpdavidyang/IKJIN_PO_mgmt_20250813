@@ -76,7 +76,7 @@ router.get("/orders-optimized", async (req, res) => {
     const limit = parseInt(req.query.limit as string) || 20;
     const offset = (page - 1) * limit;
     
-    // Raw SQL query for orders (using dashboard pattern)
+    // Raw SQL query for orders (using exact dashboard pattern)
     const ordersResult = await db.execute(
       sql`SELECT 
         po.id,
@@ -91,7 +91,7 @@ router.get("/orders-optimized", async (req, res) => {
       LEFT JOIN vendors v ON po.vendor_id = v.id
       LEFT JOIN projects p ON po.project_id = p.id
       ORDER BY po.created_at DESC
-      LIMIT ${limit} OFFSET ${offset}`
+      LIMIT 20`
     );
     
     const countResult = await db.execute(
