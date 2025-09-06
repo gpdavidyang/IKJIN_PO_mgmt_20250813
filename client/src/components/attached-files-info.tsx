@@ -156,9 +156,10 @@ export function AttachedFilesInfo({ attachments, orderId }: AttachedFilesInfoPro
     try {
       await apiRequest("DELETE", `/api/attachments/${attachment.id}`);
       
-      // Invalidate queries to refresh the data
-      await queryClient.invalidateQueries({ queryKey: ["order", orderId] });
+      // Invalidate queries to refresh the data - match the query key used in order detail pages
+      await queryClient.invalidateQueries({ queryKey: [`/api/orders/${orderId}`] });
       await queryClient.invalidateQueries({ queryKey: ["orders-optimized"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
       
       toast({
         title: "파일 삭제 완료",
