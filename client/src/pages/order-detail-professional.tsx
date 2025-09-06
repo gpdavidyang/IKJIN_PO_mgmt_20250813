@@ -486,16 +486,53 @@ export default function OrderDetailProfessional() {
               {canGeneratePDF && (
                 <Button 
                   variant="outline" 
-                  onClick={() => {
+                  onClick={async () => {
                     // Find PDF attachment from existing attachments
                     const pdfAttachment = order.attachments?.find(
                       (att: any) => att.mimeType?.includes('pdf') || att.originalName?.toLowerCase().endsWith('.pdf')
                     );
                     
                     if (pdfAttachment) {
-                      // Open PDF in new tab - cookies will be sent automatically
-                      const url = `/api/attachments/${pdfAttachment.id}/download`;
-                      window.open(url, '_blank');
+                      // Use fetch with credentials to download
+                      const url = `/api/attachments/${pdfAttachment.id}/download?download=true`;
+                      
+                      try {
+                        const token = localStorage.getItem('token') || document.cookie.match(/auth_token=([^;]+)/)?.[1];
+                        
+                        const response = await fetch(url, {
+                          method: 'GET',
+                          headers: {
+                            'Authorization': token ? `Bearer ${token}` : '',
+                          },
+                          credentials: 'include', // Include cookies
+                        });
+                        
+                        if (!response.ok) {
+                          throw new Error('PDF 다운로드에 실패했습니다');
+                        }
+                        
+                        const blob = await response.blob();
+                        const blobUrl = window.URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = blobUrl;
+                        link.download = pdfAttachment.originalName || `발주서_${order.orderNumber}.pdf`;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        window.URL.revokeObjectURL(blobUrl);
+                        
+                        toast({
+                          title: "PDF 다운로드 완료",
+                          description: "PDF 파일이 다운로드 폴더에 저장되었습니다.",
+                        });
+                      } catch (error) {
+                        console.error('PDF download error:', error);
+                        toast({
+                          title: "PDF 다운로드 실패",
+                          description: error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다.",
+                          variant: "destructive",
+                        });
+                      }
                     } else {
                       // PDF not found - show helpful message
                       toast({
