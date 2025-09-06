@@ -401,7 +401,8 @@ export default function Dashboard() {
                 <AdvancedPieChart
                   data={[
                     { name: '임시저장', value: orderStatusStats.find((s: any) => s.status === 'draft')?.count || 0, status: 'draft' },
-                    { name: '발주생성', value: orderStatusStats.find((s: any) => s.status === 'created')?.count || 0, status: 'created' },
+                    { name: '승인대기', value: orderStatusStats.find((s: any) => s.status === 'pending')?.count || 0, status: 'pending' },
+                    { name: '승인완료', value: orderStatusStats.find((s: any) => s.status === 'approved')?.count || 0, status: 'approved' },
                     { name: '발주완료', value: orderStatusStats.find((s: any) => s.status === 'sent')?.count || 0, status: 'sent' },
                     { name: '납품검수완료', value: orderStatusStats.find((s: any) => s.status === 'completed')?.count || 0, status: 'completed' }
                   ]}
@@ -415,7 +416,8 @@ export default function Dashboard() {
                   outerRadius={45}
                   colors={[
                     '#6b7280', // draft - gray
-                    '#f59e0b', // created - yellow/warning
+                    '#f59e0b', // pending - yellow/warning
+                    '#10b981', // approved - green
                     '#3b82f6', // sent - blue
                     '#8b5cf6'  // completed - purple
                   ]}

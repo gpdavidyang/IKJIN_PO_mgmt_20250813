@@ -233,7 +233,7 @@ export class OptimizedDashboardQueries {
         totalAmount: item.amount // Add alias for compatibility
       }));
 
-      // Get separated status statistics
+      // Get separated status statistics - use the legacy 'status' field for all statuses
       const statusStats = await db
         .select({
           status: purchaseOrders.status,
@@ -244,13 +244,12 @@ export class OptimizedDashboardQueries {
         .groupBy(purchaseOrders.status)
         .orderBy(desc(count()));
 
-      // Define all possible order statuses
-      const allOrderStatuses = ['draft', 'created', 'sent', 'completed'];
+      // Define all possible order statuses from the legacy status field
+      // purchaseOrderStatusEnum = ["draft", "pending", "approved", "sent", "completed"]
+      const allOrderStatuses = ['draft', 'pending', 'approved', 'sent', 'completed'];
       
-      // Filter and ensure all statuses are present (with 0 if missing)
-      const existingStatusStats = statusStats.filter(item => 
-        allOrderStatuses.includes(item.status)
-      );
+      // No filtering needed - include all statuses
+      const existingStatusStats = statusStats;
       
       // Create a map for quick lookup
       const statusMap = new Map(existingStatusStats.map(item => [item.status, item]));

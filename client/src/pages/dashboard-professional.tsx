@@ -692,7 +692,7 @@ export default function DashboardProfessional() {
                     <button 
                       className={`flex items-center gap-1 transition-colors ${isDarkMode ? 'hover:text-gray-300' : 'hover:text-gray-700'}`}
                     >
-                      금액
+                      등록일
                       <ChevronsUpDown className="h-3 w-3" />
                     </button>
                   </th>
@@ -700,7 +700,7 @@ export default function DashboardProfessional() {
                     <button 
                       className={`flex items-center gap-1 transition-colors ${isDarkMode ? 'hover:text-gray-300' : 'hover:text-gray-700'}`}
                     >
-                      등록일
+                      금액
                       <ChevronsUpDown className="h-3 w-3" />
                     </button>
                   </th>
@@ -805,13 +805,13 @@ export default function DashboardProfessional() {
                       {order.orderDate ? new Date(order.orderDate).toLocaleDateString('ko-KR') : 
                        order.createdAt ? new Date(order.createdAt).toLocaleDateString('ko-KR') : '-'}
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}>
+                      {order.createdAt ? new Date(order.createdAt).toLocaleDateString('ko-KR') : '-'}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-semibold" style={{ color: isDarkMode ? '#60a5fa' : '#2563eb' }}>
                         {formatKoreanWon(order.totalAmount)}
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm" style={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}>
-                      {order.createdAt ? new Date(order.createdAt).toLocaleDateString('ko-KR') : '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getOrderStatusColor(

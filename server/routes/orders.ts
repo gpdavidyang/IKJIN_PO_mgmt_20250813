@@ -15,6 +15,7 @@ import { ExcelToPDFConverter } from "../utils/excel-to-pdf-converter";
 import { POEmailService } from "../utils/po-email-service";
 import ApprovalRoutingService from "../services/approval-routing-service";
 import { PDFGenerationService } from "../services/pdf-generation-service";
+import { EnhancedPDFGenerationService } from "../services/pdf-generation-service-enhanced";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -320,45 +321,107 @@ router.post("/orders", requireAuth, upload.array('attachments'), async (req, res
       }
     }
 
-    // Generate PDF for the order
+    // Generate enhanced PDF for the order
     try {
-      console.log("🔧🔧🔧 ORDERS.TS - Generating PDF for order:", order.id);
+      console.log("🔧🔧🔧 ORDERS.TS - Generating enhanced PDF for order:", order.id);
       
-      // Get vendor and project details for PDF
+      // Get vendor, project, company, and user details for enhanced PDF
       const vendor = orderData.vendorId ? await storage.getVendor(orderData.vendorId) : null;
       const project = await storage.getProject(orderData.projectId);
+      const companies = await storage.getCompanies();
+      const company = companies && companies.length > 0 ? companies[0] : null;
+      const user = await storage.getUser(userId);
       
-      const pdfData = {
+      // Get attachments count
+      const orderAttachments = await storage.getAttachments(order.id);
+      const attachmentCount = orderAttachments?.length || 0;
+      const hasAttachments = attachmentCount > 0;
+      
+      const enhancedPdfData = {
+        // 기본 발주 정보
         orderNumber: order.orderNumber,
         orderDate: order.orderDate,
         deliveryDate: order.deliveryDate,
+        status: order.status,
+        approvalStatus: order.approvalStatus,
+        
+        // 프로젝트/현장 정보
         projectName: project?.name,
+        projectCode: project?.code,
+        projectAddress: project?.address,
+        siteManager: project?.manager,
+        siteContact: project?.contactPhone,
+        
+        // 거래처 상세 정보
         vendorName: vendor?.name,
-        vendorContact: vendor?.contactPerson,
+        vendorRegistrationNumber: vendor?.registrationNumber,
+        vendorRepresentative: vendor?.representative,
+        vendorAddress: vendor?.address,
+        vendorPhone: vendor?.phone,
+        vendorFax: vendor?.fax,
         vendorEmail: vendor?.email,
+        vendorContact: vendor?.contactPerson,
+        vendorContactPhone: vendor?.contactPhone,
+        
+        // 발주업체 상세 정보
+        companyName: company?.name,
+        companyRegistrationNumber: company?.registrationNumber,
+        companyRepresentative: company?.representative,
+        companyAddress: company?.address,
+        companyPhone: company?.phone,
+        companyFax: company?.fax,
+        companyEmail: company?.email,
+        
+        // 작성자/담당자 정보
+        createdBy: userId,
+        createdByName: user?.name || user?.username,
+        createdByEmail: user?.email,
+        createdByPhone: user?.phone,
+        createdByPosition: user?.position,
+        createdByDepartment: user?.department,
+        createdAt: order.createdAt,
+        
+        // 수신자 정보
+        receiverName: req.body.receiver,
+        receiverEmail: req.body.receiverEmail,
+        receiverPhone: req.body.receiverPhone,
+        managerName: req.body.manager,
+        managerEmail: req.body.managerEmail,
+        managerPhone: req.body.managerPhone,
+        
+        // 품목 정보
         items: items.map(item => ({
           category: item.category,
           subCategory1: item.subCategory1,
           subCategory2: item.subCategory2,
-          item: item.item,
+          itemCode: item.itemCode,
           name: item.name || item.item,
           specification: item.specification,
           quantity: parseFloat(item.quantity),
           unit: item.unit,
           unitPrice: parseFloat(item.unitPrice),
           price: parseFloat(item.quantity) * parseFloat(item.unitPrice),
-          deliveryLocation: item.deliveryLocation
+          deliveryLocation: item.deliveryLocation,
+          remarks: item.remarks
         })),
+        
+        // 금액 정보
+        subtotalAmount: totalAmount / 1.1, // VAT 제외 금액
+        taxAmount: totalAmount - (totalAmount / 1.1), // VAT
         totalAmount,
+        
+        // 기타 정보
         notes: orderData.notes,
-        receiver: req.body.receiver,
-        manager: req.body.manager,
-        site: req.body.site
+        paymentTerms: orderData.paymentTerms || '월말 현금',
+        deliveryTerms: orderData.deliveryTerms || '현장 인도',
+        attachmentCount,
+        hasAttachments,
+        attachmentNames: orderAttachments?.map(a => a.originalName) || []
       };
       
-      const pdfResult = await PDFGenerationService.generatePurchaseOrderPDF(
+      const pdfResult = await EnhancedPDFGenerationService.generateEnhancedPurchaseOrderPDF(
         order.id,
-        pdfData,
+        enhancedPdfData,
         userId
       );
       

@@ -1288,13 +1288,6 @@ export default function OrdersProfessionalFast() {
                               <Mail className="h-4 w-4" />
                             </button>
                           )}
-                          
-                          {/* Draft indicator */}
-                          {order.orderStatus === 'draft' && (
-                            <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded" title="임시저장 상태">
-                              📝
-                            </span>
-                          )}
                         </div>
                       </td>
                     </tr>
