@@ -57,4 +57,87 @@ router.get("/dashboard/urgent-orders", async (req, res) => {
   }
 });
 
+// TEMPORARY FIX: Add orders-optimized to dashboard routes (working router)
+router.get("/orders-optimized", async (req, res) => {
+  try {
+    console.log('🚀 Orders-optimized via dashboard router');
+    
+    const { db } = await import("../db");
+    
+    if (!db) {
+      throw new Error("Database connection not available");
+    }
+    
+    // Test DB connection
+    await db.execute(sql`SELECT 1`);
+    console.log('✅ DB verified via dashboard router');
+    
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const offset = (page - 1) * limit;
+    
+    // Raw SQL query for orders (using dashboard pattern)
+    const ordersResult = await db.execute(
+      sql`SELECT 
+        po.id,
+        po.order_number as "orderNumber",
+        po.status,
+        po.total_amount as "totalAmount",
+        po.order_date as "orderDate",
+        po.created_at as "createdAt",
+        v.name as "vendorName",
+        p.project_name as "projectName"
+      FROM purchase_orders po
+      LEFT JOIN vendors v ON po.vendor_id = v.id
+      LEFT JOIN projects p ON po.project_id = p.id
+      ORDER BY po.created_at DESC
+      LIMIT ${limit} OFFSET ${offset}`
+    );
+    
+    const countResult = await db.execute(
+      sql`SELECT COUNT(*) as total FROM purchase_orders`
+    );
+    
+    const vendorsResult = await db.execute(
+      sql`SELECT id, name FROM vendors ORDER BY name LIMIT 100`
+    );
+    
+    const projectsResult = await db.execute(
+      sql`SELECT id, project_name FROM projects ORDER BY project_name LIMIT 100`
+    );
+    
+    const orders = ordersResult.rows || [];
+    const total = parseInt(countResult.rows[0]?.total || 0);
+    
+    const response = {
+      orders: orders.map(order => ({
+        ...order,
+        emailStatus: null,
+        lastSentAt: null,
+        totalEmailsSent: 0
+      })),
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+      metadata: {
+        vendors: vendorsResult.rows || [],
+        projects: projectsResult.rows || [],
+        users: []
+      }
+    };
+    
+    console.log('✅ Success:', orders.length, 'orders returned');
+    res.json(response);
+    
+  } catch (error) {
+    console.error("❌ Dashboard orders-optimized error:", error);
+    res.status(500).json({ 
+      message: "Failed to fetch orders",
+      error: error.message,
+      stack: error.stack
+    });
+  }
+});
+
 export default router;
