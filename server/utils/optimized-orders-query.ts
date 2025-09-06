@@ -46,12 +46,14 @@ export interface OrderWithMetadata {
   projectId: number | null;
   approvalLevel: number;
   currentApproverRole: string | null;
+  emailSentAt?: string | null; // 이메일 발송일
   // Joined data
   vendorName: string | null;
   projectName: string | null;
   userName: string | null;
   // Computed fields
   itemCount?: number;
+  hasPdf?: boolean; // PDF 생성 여부
 }
 
 export class OptimizedOrdersService {
@@ -184,10 +186,13 @@ export class OptimizedOrdersService {
         approvalLevel: purchaseOrders.approvalLevel,
         currentApproverRole: purchaseOrders.currentApproverRole,
         createdAt: purchaseOrders.createdAt,
+        emailSentAt: purchaseOrders.emailSentAt,
         // Joined fields
         vendorName: vendors.name,
         projectName: projects.projectName,
         userName: users.name,
+        // PDF attachment status
+        hasPdf: sql<boolean>`EXISTS(SELECT 1 FROM attachments WHERE attachments."orderId" = ${purchaseOrders.id} AND attachments."mimeType" = 'application/pdf')`,
       })
       .from(purchaseOrders)
       .leftJoin(vendors, eq(purchaseOrders.vendorId, vendors.id))
@@ -213,9 +218,45 @@ export class OptimizedOrdersService {
       countQuery
     ]);
 
+    // Calculate correct orderStatus and approvalStatus based on actual conditions
+    const processedOrders = orders.map(order => {
+      let computedOrderStatus: string;
+      let computedApprovalStatus: string;
+
+      // Calculate orderStatus based on the plan document logic
+      if (order.status === 'draft') {
+        computedOrderStatus = 'draft'; // 임시저장
+      } else if (order.hasPdf && !order.emailSentAt) {
+        computedOrderStatus = 'created'; // 발주생성 (PDF 있음 + 이메일 미발송)
+      } else if (order.emailSentAt) {
+        computedOrderStatus = 'sent'; // 발주완료 (이메일 발송됨)
+      } else if (order.status === 'completed') {
+        computedOrderStatus = 'delivered'; // 납품완료
+      } else {
+        // Fallback: PDF 없고 이메일 미발송인 경우 임시저장으로 처리
+        computedOrderStatus = 'draft';
+      }
+
+      // Calculate approvalStatus
+      if (order.status === 'pending') {
+        computedApprovalStatus = 'pending'; // 승인대기
+      } else if (order.status === 'approved') {
+        computedApprovalStatus = 'approved'; // 승인완료
+      } else if (order.status === 'rejected') {
+        computedApprovalStatus = 'rejected'; // 반려
+      } else {
+        computedApprovalStatus = 'not_required'; // 승인불필요
+      }
+
+      return {
+        ...order,
+        orderStatus: computedOrderStatus,
+        approvalStatus: computedApprovalStatus,
+      };
+    });
 
     return {
-      orders: orders as OrderWithMetadata[],
+      orders: processedOrders as OrderWithMetadata[],
       total: totalCount,
       page,
       limit,

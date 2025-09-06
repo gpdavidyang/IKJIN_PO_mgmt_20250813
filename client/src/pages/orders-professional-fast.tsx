@@ -1210,33 +1210,13 @@ export default function OrdersProfessionalFast() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getOrderStatusColor(
-                          order.status === 'draft' ? 'draft' :
-                          order.status === 'pending' || order.status === 'approved' ? 'created' :
-                          order.status === 'sent' ? 'sent' :
-                          order.status === 'completed' ? 'delivered' : 'draft'
-                        )}`}>
-                          {getOrderStatusText(
-                            order.status === 'draft' ? 'draft' :
-                            order.status === 'pending' || order.status === 'approved' ? 'created' :
-                            order.status === 'sent' ? 'sent' :
-                            order.status === 'completed' ? 'delivered' : 'draft'
-                          )}
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getOrderStatusColor(order.orderStatus || 'draft')}`}>
+                          {getOrderStatusText(order.orderStatus || 'draft')}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getApprovalStatusColor(
-                          order.status === 'pending' ? 'pending' :
-                          order.status === 'approved' ? 'approved' :
-                          order.status === 'rejected' ? 'rejected' :
-                          'not_required'
-                        )}`}>
-                          {getApprovalStatusText(
-                            order.status === 'pending' ? 'pending' :
-                            order.status === 'approved' ? 'approved' :
-                            order.status === 'rejected' ? 'rejected' :
-                            'not_required'
-                          )}
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getApprovalStatusColor(order.approvalStatus || 'not_required')}`}>
+                          {getApprovalStatusText(order.approvalStatus || 'not_required')}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
