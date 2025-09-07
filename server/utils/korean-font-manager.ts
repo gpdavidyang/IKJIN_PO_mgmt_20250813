@@ -23,12 +23,16 @@ export class KoreanFontManager {
   private static readonly FONT_PRIORITIES: FontInfo[] = [
     {
       name: 'NotoSansKR',
-      path: path.join(process.cwd(), 'fonts', 'NotoSansKR-Regular.ttf'),
+      path: process.env.VERCEL 
+        ? path.join('/var/task', 'fonts', 'NotoSansKR-Regular.ttf')
+        : path.join(process.cwd(), 'fonts', 'NotoSansKR-Regular.ttf'),
       available: false
     },
     {
       name: 'NanumGothic', 
-      path: path.join(process.cwd(), 'fonts', 'NanumGothic-Regular.ttf'),
+      path: process.env.VERCEL
+        ? path.join('/var/task', 'fonts', 'NanumGothic-Regular.ttf')
+        : path.join(process.cwd(), 'fonts', 'NanumGothic-Regular.ttf'),
       available: false
     },
     // Fallback 시스템 폰트 (로컬 환경용)
