@@ -26,24 +26,40 @@ async function throwIfResNotOk(res: Response) {
 }
 
 export async function apiRequest(
-  method: string,
-  url: string,
+  optionsOrMethod: string | { endpoint: string; method: string; data?: unknown },
+  url?: string,
   data?: unknown | undefined,
 ): Promise<any> {
+  // Support both old and new call signatures
+  let actualMethod: string;
+  let actualUrl: string;
+  let actualData: unknown | undefined;
+  
+  if (typeof optionsOrMethod === 'object') {
+    // New signature: apiRequest({ endpoint, method, data })
+    actualMethod = optionsOrMethod.method;
+    actualUrl = optionsOrMethod.endpoint;
+    actualData = optionsOrMethod.data;
+  } else {
+    // Old signature: apiRequest(method, url, data)
+    actualMethod = optionsOrMethod;
+    actualUrl = url!;
+    actualData = data;
+  }
   const headers: Record<string, string> = {};
   
   // Only set Content-Type for JSON data, not for FormData
-  if (data && !(data instanceof FormData)) {
+  if (actualData && !(actualData instanceof FormData)) {
     headers["Content-Type"] = "application/json";
   }
   
   // Backend uses httpOnly cookies for JWT authentication
   // No need to manually set Authorization header
   
-  const res = await fetch(url, {
-    method,
+  const res = await fetch(actualUrl, {
+    method: actualMethod,
     headers,
-    body: data instanceof FormData ? data : (data ? JSON.stringify(data) : undefined),
+    body: actualData instanceof FormData ? actualData : (actualData ? JSON.stringify(actualData) : undefined),
     credentials: "include", // Keep cookie-based auth as fallback
   });
 
