@@ -19,7 +19,7 @@ import { ExcelLikeOrderForm } from "./excel-like-order-form";
 import { useTheme } from "@/components/ui/theme-provider";
 
 const orderItemSchema = z.object({
-  itemId: z.number().min(1, "품목을 선택하세요"),
+  itemId: z.number().optional(),
   itemName: z.string().min(1, "품목명을 입력하세요"),
   specification: z.string().optional(),
   majorCategory: z.string().optional(),
@@ -841,21 +841,12 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
                     <TableRow key={index}>
                       <TableCell className="py-1">
                         <div className="min-w-[180px]">
-                          <Select
-                            value={item.itemId ? item.itemId.toString() : ""}
-                            onValueChange={(value) => handleItemSelect(index, parseInt(value))}
-                          >
-                            <SelectTrigger className={`h-8 transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}>
-                              <SelectValue placeholder="품목을 선택하세요" />
-                            </SelectTrigger>
-                            <SelectContent className={`transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
-                              {itemsData?.map((dbItem: any) => (
-                                <SelectItem key={dbItem.id} value={dbItem.id.toString()}>
-                                  {dbItem.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <Input
+                            className={`h-8 transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}
+                            placeholder="품목명을 입력하세요"
+                            value={item.itemName}
+                            onChange={(e) => updateOrderItem(index, "itemName", e.target.value)}
+                          />
                         </div>
                       </TableCell>
                       <TableCell className="py-1">
