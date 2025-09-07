@@ -314,6 +314,10 @@ router.post("/orders", requireAuth, upload.array('attachments'), async (req, res
 
     // Handle file attachments
     if (req.files && req.files.length > 0) {
+      const fs = require('fs');
+      const path = require('path');
+      const { removeAllInputSheets } = require('../utils/excel-input-sheet-remover');
+      
       for (const file of req.files as Express.Multer.File[]) {
         const decodedFilename = decodeKoreanFilename(file.originalname);
         console.log("🔧🔧🔧 ORDERS.TS - Processing file:", {
@@ -322,8 +326,37 @@ router.post("/orders", requireAuth, upload.array('attachments'), async (req, res
           stored: file.filename
         });
 
-        // Read file content for Base64 storage (Vercel compatibility)
-        const fileBuffer = require('fs').readFileSync(file.path);
+        let fileToStore = file.path;
+        let fileBuffer: Buffer;
+        
+        // Excel 파일인 경우 Input 시트 제거 처리
+        if (file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+            file.originalname.toLowerCase().endsWith('.xlsx')) {
+          console.log("📊 Excel 파일 감지, Input 시트 제거 처리 시작...");
+          
+          const processedPath = file.path.replace(/\.(xlsx?)$/i, '_processed.$1');
+          const removeResult = await removeAllInputSheets(file.path, processedPath);
+          
+          if (removeResult.success && fs.existsSync(processedPath)) {
+            console.log(`✅ Input 시트 제거 완료: ${removeResult.removedSheets.join(', ')}`);
+            fileToStore = processedPath;
+            fileBuffer = fs.readFileSync(processedPath);
+            
+            // 원본 파일 삭제
+            try {
+              fs.unlinkSync(file.path);
+            } catch (e) {
+              console.warn('원본 파일 삭제 실패:', e);
+            }
+          } else {
+            console.warn('⚠️ Input 시트 제거 실패, 원본 파일 사용:', removeResult.error);
+            fileBuffer = fs.readFileSync(file.path);
+          }
+        } else {
+          // Excel이 아닌 파일은 원본 그대로 사용
+          fileBuffer = fs.readFileSync(file.path);
+        }
+
         const base64Data = fileBuffer.toString('base64');
         
         const attachmentData: any = {
@@ -331,7 +364,7 @@ router.post("/orders", requireAuth, upload.array('attachments'), async (req, res
           originalName: decodedFilename,
           storedName: file.filename,
           filePath: `db://${file.filename}`, // Use db:// prefix for database storage
-          fileSize: file.size,
+          fileSize: fileBuffer.length,
           mimeType: file.mimetype,
           uploadedBy: userId,
         };
@@ -343,9 +376,18 @@ router.post("/orders", requireAuth, upload.array('attachments'), async (req, res
         } catch (error) {
           // Fallback: try without fileData field
           console.warn('Failed to save with fileData, falling back to filesystem path:', error);
-          attachmentData.filePath = file.path;
+          attachmentData.filePath = fileToStore;
           delete attachmentData.fileData;
           await storage.createAttachment(attachmentData);
+        }
+        
+        // 처리된 파일이 임시 파일인 경우 정리
+        if (fileToStore !== file.path && fs.existsSync(fileToStore)) {
+          try {
+            fs.unlinkSync(fileToStore);
+          } catch (e) {
+            console.warn('처리된 임시 파일 삭제 실패:', e);
+          }
         }
       }
     }

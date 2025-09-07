@@ -1,5 +1,7 @@
 var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
 var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
   get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
 }) : x)(function(x) {
@@ -13,6 +15,15 @@ var __export = (target, all) => {
   for (var name in all)
     __defProp(target, name, { get: all[name], enumerable: true });
 };
+var __copyProps = (to, from, except, desc17) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc17 = __getOwnPropDesc(from, key)) || desc17.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
 // shared/schema.ts
 var schema_exports = {};
@@ -1406,6 +1417,10 @@ var init_db = __esm({
 });
 
 // server/utils/excel-input-sheet-remover.ts
+var excel_input_sheet_remover_exports = {};
+__export(excel_input_sheet_remover_exports, {
+  removeAllInputSheets: () => removeAllInputSheets
+});
 import JSZip from "jszip";
 import fs3 from "fs";
 import { DOMParser, XMLSerializer } from "xmldom";
@@ -9184,6 +9199,9 @@ router3.post("/orders", requireAuth, upload.array("attachments"), async (req, re
     const order = await storage.createPurchaseOrder(orderData);
     console.log("\u{1F527}\u{1F527}\u{1F527} ORDERS.TS - Created order:", order);
     if (req.files && req.files.length > 0) {
+      const fs21 = __require("fs");
+      const path19 = __require("path");
+      const { removeAllInputSheets: removeAllInputSheets2 } = (init_excel_input_sheet_remover(), __toCommonJS(excel_input_sheet_remover_exports));
       for (const file of req.files) {
         const decodedFilename = decodeKoreanFilename(file.originalname);
         console.log("\u{1F527}\u{1F527}\u{1F527} ORDERS.TS - Processing file:", {
@@ -9191,7 +9209,28 @@ router3.post("/orders", requireAuth, upload.array("attachments"), async (req, re
           decoded: decodedFilename,
           stored: file.filename
         });
-        const fileBuffer = __require("fs").readFileSync(file.path);
+        let fileToStore = file.path;
+        let fileBuffer;
+        if (file.mimetype === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" || file.originalname.toLowerCase().endsWith(".xlsx")) {
+          console.log("\u{1F4CA} Excel \uD30C\uC77C \uAC10\uC9C0, Input \uC2DC\uD2B8 \uC81C\uAC70 \uCC98\uB9AC \uC2DC\uC791...");
+          const processedPath = file.path.replace(/\.(xlsx?)$/i, "_processed.$1");
+          const removeResult = await removeAllInputSheets2(file.path, processedPath);
+          if (removeResult.success && fs21.existsSync(processedPath)) {
+            console.log(`\u2705 Input \uC2DC\uD2B8 \uC81C\uAC70 \uC644\uB8CC: ${removeResult.removedSheets.join(", ")}`);
+            fileToStore = processedPath;
+            fileBuffer = fs21.readFileSync(processedPath);
+            try {
+              fs21.unlinkSync(file.path);
+            } catch (e) {
+              console.warn("\uC6D0\uBCF8 \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328:", e);
+            }
+          } else {
+            console.warn("\u26A0\uFE0F Input \uC2DC\uD2B8 \uC81C\uAC70 \uC2E4\uD328, \uC6D0\uBCF8 \uD30C\uC77C \uC0AC\uC6A9:", removeResult.error);
+            fileBuffer = fs21.readFileSync(file.path);
+          }
+        } else {
+          fileBuffer = fs21.readFileSync(file.path);
+        }
         const base64Data = fileBuffer.toString("base64");
         const attachmentData = {
           orderId: order.id,
@@ -9199,7 +9238,7 @@ router3.post("/orders", requireAuth, upload.array("attachments"), async (req, re
           storedName: file.filename,
           filePath: `db://${file.filename}`,
           // Use db:// prefix for database storage
-          fileSize: file.size,
+          fileSize: fileBuffer.length,
           mimeType: file.mimetype,
           uploadedBy: userId
         };
@@ -9208,9 +9247,16 @@ router3.post("/orders", requireAuth, upload.array("attachments"), async (req, re
           await storage.createAttachment(attachmentData);
         } catch (error) {
           console.warn("Failed to save with fileData, falling back to filesystem path:", error);
-          attachmentData.filePath = file.path;
+          attachmentData.filePath = fileToStore;
           delete attachmentData.fileData;
           await storage.createAttachment(attachmentData);
+        }
+        if (fileToStore !== file.path && fs21.existsSync(fileToStore)) {
+          try {
+            fs21.unlinkSync(fileToStore);
+          } catch (e) {
+            console.warn("\uCC98\uB9AC\uB41C \uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328:", e);
+          }
         }
       }
     }
@@ -21180,21 +21226,8 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload5.single("excelFi
           createdAt: /* @__PURE__ */ new Date(),
           updatedAt: /* @__PURE__ */ new Date()
         }).returning();
-        const itemsForPDF = [];
         if (orderData.items.length > 0) {
           const itemsToInsert = orderData.items.filter((item) => item.itemName).map((item) => {
-            itemsForPDF.push({
-              category: orderData.majorCategory || "",
-              subCategory1: orderData.middleCategory || "",
-              subCategory2: orderData.minorCategory || "",
-              name: item.itemName,
-              specification: item.specification || "",
-              quantity: item.quantity || 0,
-              unit: item.unit || "\uAC1C",
-              unitPrice: item.unitPrice || 0,
-              price: (item.quantity || 0) * (item.unitPrice || 0),
-              deliveryLocation: orderData.deliveryPlace || ""
-            });
             return {
               orderId: newOrder.id,
               itemName: item.itemName,
@@ -21215,32 +21248,19 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload5.single("excelFi
           }
         }
         try {
-          console.log(`\u{1F4C4} Generating PDF for order ${newOrder.orderNumber}`);
-          const pdfData = {
-            orderNumber: newOrder.orderNumber,
-            orderDate: new Date(newOrder.orderDate),
-            deliveryDate: orderData.deliveryDate ? new Date(orderData.deliveryDate) : null,
-            projectName: project.projectName,
-            vendorName: vendor?.name || orderData.vendorName,
-            vendorContact: vendor?.contactPerson,
-            vendorEmail: vendor?.email || orderData.vendorEmail,
-            items: itemsForPDF,
-            totalAmount,
-            notes: newOrder.notes,
-            site: project.projectName
-          };
-          const pdfResult = await ProfessionalPDFGenerationService.generatePurchaseOrderPDF(
+          console.log(`\u{1F4C4} Generating Professional PDF for order ${newOrder.orderNumber}`);
+          const pdfResult = await ProfessionalPDFGenerationService.generateProfessionalPurchaseOrderPDF(
             newOrder.id,
-            pdfData,
             req.user.id
           );
           if (pdfResult.success) {
-            console.log(`\u2705 PDF generated successfully for order ${newOrder.orderNumber}`);
+            console.log(`\u2705 Professional PDF generated successfully for order ${newOrder.orderNumber}`);
+            console.log(`\u{1F4C4} PDF Attachment ID: ${pdfResult.attachmentId}`);
           } else {
-            console.error(`\u26A0\uFE0F PDF generation failed for order ${newOrder.orderNumber}:`, pdfResult.error);
+            console.error(`\u26A0\uFE0F Professional PDF generation failed for order ${newOrder.orderNumber}:`, pdfResult.error);
           }
         } catch (pdfError) {
-          console.error(`\u274C Error generating PDF for order ${newOrder.orderNumber}:`, pdfError);
+          console.error(`\u274C Error generating Professional PDF for order ${newOrder.orderNumber}:`, pdfError);
         }
         if (req.file) {
           const decodedOriginalName = req.file.originalname;

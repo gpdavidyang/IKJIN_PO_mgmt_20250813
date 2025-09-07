@@ -302,25 +302,10 @@ router.post('/orders/bulk-create-simple', requireAuth, upload.single('excelFile'
           .returning();
 
         // Create order items
-        const itemsForPDF = [];
         if (orderData.items.length > 0) {
           const itemsToInsert = orderData.items
             .filter(item => item.itemName) // Only insert items with names
             .map(item => {
-              // Collect items for PDF generation
-              itemsForPDF.push({
-                category: orderData.majorCategory || '',
-                subCategory1: orderData.middleCategory || '',
-                subCategory2: orderData.minorCategory || '',
-                name: item.itemName!,
-                specification: item.specification || '',
-                quantity: item.quantity || 0,
-                unit: item.unit || '개',
-                unitPrice: item.unitPrice || 0,
-                price: (item.quantity || 0) * (item.unitPrice || 0),
-                deliveryLocation: orderData.deliveryPlace || ''
-              });
-              
               return {
                 orderId: newOrder.id,
                 itemName: item.itemName!,
@@ -341,37 +326,25 @@ router.post('/orders/bulk-create-simple', requireAuth, upload.single('excelFile'
           }
         }
 
-        // Generate PDF for the order
+        // Generate Professional PDF for the order
         try {
-          console.log(`📄 Generating PDF for order ${newOrder.orderNumber}`);
+          console.log(`📄 Generating Professional PDF for order ${newOrder.orderNumber}`);
           
-          const pdfData = {
-            orderNumber: newOrder.orderNumber,
-            orderDate: new Date(newOrder.orderDate),
-            deliveryDate: orderData.deliveryDate ? new Date(orderData.deliveryDate) : null,
-            projectName: project.projectName,
-            vendorName: vendor?.name || orderData.vendorName,
-            vendorContact: vendor?.contactPerson,
-            vendorEmail: vendor?.email || orderData.vendorEmail,
-            items: itemsForPDF,
-            totalAmount,
-            notes: newOrder.notes,
-            site: project.projectName
-          };
-          
-          const pdfResult = await PDFGenerationService.generatePurchaseOrderPDF(
+          // Use the Professional PDF Generation Service
+          // This service automatically gathers all comprehensive data from the database
+          const pdfResult = await PDFGenerationService.generateProfessionalPurchaseOrderPDF(
             newOrder.id,
-            pdfData,
             req.user.id
           );
           
           if (pdfResult.success) {
-            console.log(`✅ PDF generated successfully for order ${newOrder.orderNumber}`);
+            console.log(`✅ Professional PDF generated successfully for order ${newOrder.orderNumber}`);
+            console.log(`📄 PDF Attachment ID: ${pdfResult.attachmentId}`);
           } else {
-            console.error(`⚠️ PDF generation failed for order ${newOrder.orderNumber}:`, pdfResult.error);
+            console.error(`⚠️ Professional PDF generation failed for order ${newOrder.orderNumber}:`, pdfResult.error);
           }
         } catch (pdfError) {
-          console.error(`❌ Error generating PDF for order ${newOrder.orderNumber}:`, pdfError);
+          console.error(`❌ Error generating Professional PDF for order ${newOrder.orderNumber}:`, pdfError);
           // Continue without PDF - don't fail the entire order creation
         }
 
