@@ -345,7 +345,8 @@ router.post('/send-emails', requireAuth, async (req: any, res) => {
       {
         ...emailOptions,
         savedOrderNumbers, // 발주번호들을 함께 전달
-        orderId: orderIds.length > 0 ? orderIds[0] : undefined // 첫 번째 발주서 ID 전달
+        orderId: orderIds.length > 0 ? orderIds[0] : undefined, // 첫 번째 발주서 ID 전달
+        senderUserId: req.user?.id // 현재 사용자 ID 전달
       }
     );
 

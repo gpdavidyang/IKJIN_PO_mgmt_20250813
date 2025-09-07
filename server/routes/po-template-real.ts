@@ -915,23 +915,52 @@ router.post('/send-email', simpleAuth, async (req: any, res) => {
       });
     }
 
-    // 이메일 발송 성공 시 발주서 상태를 'sent'로 업데이트 (orderNumber가 있는 경우)
+    // 이메일 발송 성공 시 발주서 상태를 'sent'로 업데이트 및 이메일 기록 저장
     if (emailResult.success && orderNumber) {
       try {
         const { db } = await import('../db');
-        const { purchaseOrders } = await import('@shared/schema');
+        const { purchaseOrders, emailSendHistory } = await import('@shared/schema');
         const { eq } = await import('drizzle-orm');
         
-        await db.update(purchaseOrders)
-          .set({
-            orderStatus: 'sent',
-            updatedAt: new Date()
-          })
-          .where(eq(purchaseOrders.orderNumber, orderNumber));
+        // 발주서 정보 조회
+        const order = await db.select().from(purchaseOrders)
+          .where(eq(purchaseOrders.orderNumber, orderNumber))
+          .limit(1);
+        
+        if (order.length > 0) {
+          // 발주서 상태 업데이트
+          await db.update(purchaseOrders)
+            .set({
+              orderStatus: 'sent',
+              updatedAt: new Date()
+            })
+            .where(eq(purchaseOrders.orderNumber, orderNumber));
+            
+          console.log(`📋 발주서 상태 업데이트 완료: ${orderNumber} → sent`);
           
-        console.log(`📋 발주서 상태 업데이트 완료: ${orderNumber} → sent`);
+          // 이메일 발송 기록 저장
+          const recipients = Array.isArray(to) ? to : [to];
+          const ccRecipients = cc ? (Array.isArray(cc) ? cc : [cc]) : [];
+          
+          await db.insert(emailSendHistory).values({
+            orderId: order[0].id,
+            senderUserId: req.user?.id || 0, // 사용자 ID
+            recipients: recipients,
+            cc: ccRecipients,
+            bcc: bcc ? (Array.isArray(bcc) ? bcc : [bcc]) : [],
+            subject: subject,
+            message: additionalMessage || '',
+            attachments: ['갑지/을지 시트 (Excel)', '갑지/을지 시트 (PDF)'],
+            status: 'sent',
+            sentAt: new Date(),
+            messageId: emailResult.messageId || `mock-${Date.now()}`,
+            error: null
+          });
+          
+          console.log(`📧 이메일 발송 기록 저장 완료: 발주번호 ${orderNumber}`);
+        }
       } catch (updateError) {
-        console.error(`❌ 발주서 상태 업데이트 실패: ${orderNumber}`, updateError);
+        console.error(`❌ 발주서 상태/이메일 기록 업데이트 실패: ${orderNumber}`, updateError);
         // 상태 업데이트 실패는 이메일 발송 성공에 영향을 주지 않음
       }
     }
@@ -1111,6 +1140,44 @@ router.post('/process-complete', simpleAuth, upload.single('file'), async (req: 
       });
       
       results.email = emailResult;
+      
+      // 이메일 발송 성공 시 이메일 기록 저장
+      if (emailResult.success && parseResult.orders[0]?.orderNumber) {
+        try {
+          const { db } = await import('../db');
+          const { purchaseOrders, emailSendHistory } = await import('@shared/schema');
+          const { eq } = await import('drizzle-orm');
+          
+          // 발주서 정보 조회
+          const order = await db.select().from(purchaseOrders)
+            .where(eq(purchaseOrders.orderNumber, parseResult.orders[0].orderNumber))
+            .limit(1);
+          
+          if (order.length > 0) {
+            // 이메일 발송 기록 저장
+            const recipients = Array.isArray(emailTo) ? emailTo : [emailTo];
+            
+            await db.insert(emailSendHistory).values({
+              orderId: order[0].id,
+              senderUserId: req.user?.id || 0,
+              recipients: recipients,
+              cc: [],
+              bcc: [],
+              subject: emailSubject,
+              message: emailMessage || '',
+              attachments: ['갑지/을지 시트 (Excel)', '갑지/을지 시트 (PDF)'],
+              status: 'sent',
+              sentAt: new Date(),
+              messageId: emailResult.messageId || `mock-${Date.now()}`,
+              error: null
+            });
+            
+            console.log(`📧 이메일 발송 기록 저장 완료: 발주번호 ${parseResult.orders[0].orderNumber}`);
+          }
+        } catch (recordError) {
+          console.error(`❌ 이메일 기록 저장 실패:`, recordError);
+        }
+      }
     }
 
     console.log('✅ 모든 단계 완료');

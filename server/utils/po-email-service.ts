@@ -12,7 +12,7 @@ import { UnifiedExcelPdfService } from '../services/unified-excel-pdf-service';
 import { POTemplateProcessor } from './po-template-processor';
 import { removeAllInputSheets } from './excel-input-sheet-remover';
 import * as database from '../db';
-import { purchaseOrderItems } from '@shared/schema';
+import { purchaseOrderItems, emailSendHistory } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 
 export interface EmailAttachment {
@@ -130,7 +130,8 @@ export class POEmailService {
    */
   async sendPOWithOriginalFormat(
     originalFilePath: string,
-    emailOptions: POEmailOptions
+    emailOptions: POEmailOptions,
+    orderInfo?: { orderId?: number; senderUserId?: string }
   ): Promise<{ success: boolean; messageId?: string; error?: string }> {
     try {
       const timestamp = Date.now();
@@ -239,6 +240,9 @@ export class POEmailService {
         subject: emailOptions.subject || `발주서 전송 - ${emailOptions.orderNumber || ''}`,
         html: emailContent,
         attachments
+      }, {
+        ...orderInfo,
+        orderNumber: emailOptions.orderNumber
       });
 
       // 6. 임시 파일 정리
@@ -363,7 +367,7 @@ export class POEmailService {
     text?: string;
     html?: string;
     attachments?: EmailAttachment[];
-  }): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  }, orderInfo?: { orderId?: number; senderUserId?: string; orderNumber?: string }): Promise<{ success: boolean; messageId?: string; error?: string }> {
     try {
       console.log('🔍 POEmailService.sendEmail 호출됨:', {
         to: options.to,
@@ -394,6 +398,45 @@ export class POEmailService {
 
       console.log('✅ POEmailService.sendEmail 성공:', info.messageId);
       
+      // 이메일 발송 이력 저장
+      if (orderInfo?.orderId && orderInfo?.senderUserId) {
+        try {
+          const toArray = Array.isArray(options.to) ? options.to : [options.to];
+          const ccArray = options.cc ? (Array.isArray(options.cc) ? options.cc : [options.cc]) : [];
+          const bccArray = options.bcc ? (Array.isArray(options.bcc) ? options.bcc : [options.bcc]) : [];
+          
+          const attachmentFiles = options.attachments?.map(att => ({
+            filename: att.filename,
+            path: att.path,
+            contentType: att.contentType || 'application/octet-stream',
+            size: att.path ? (fs.existsSync(att.path) ? fs.statSync(att.path).size : 0) : 0
+          })) || [];
+
+          await this.db.insert(emailSendHistory).values({
+            orderId: orderInfo.orderId,
+            orderNumber: orderInfo.orderNumber || null,
+            senderUserId: orderInfo.senderUserId,
+            recipients: toArray,
+            cc: ccArray.length > 0 ? ccArray : null,
+            bcc: bccArray.length > 0 ? bccArray : null,
+            subject: options.subject,
+            messageContent: options.html || options.text || '',
+            attachmentFiles: attachmentFiles.length > 0 ? attachmentFiles : null,
+            status: 'sent',
+            sentCount: 1,
+            failedCount: 0,
+            sentAt: new Date(),
+            createdAt: new Date(),
+            updatedAt: new Date()
+          });
+          
+          console.log('✅ 이메일 발송 이력 저장 성공');
+        } catch (historyError) {
+          console.error('⚠️ 이메일 발송 이력 저장 실패:', historyError);
+          // 이력 저장 실패는 이메일 발송 성공에 영향을 주지 않음
+        }
+      }
+      
       return {
         success: true,
         messageId: info.messageId
@@ -401,6 +444,38 @@ export class POEmailService {
 
     } catch (error) {
       console.error('❌ POEmailService.sendEmail 실패:', error);
+      
+      // 이메일 발송 실패 이력 저장
+      if (orderInfo?.orderId && orderInfo?.senderUserId) {
+        try {
+          const toArray = Array.isArray(options.to) ? options.to : [options.to];
+          const ccArray = options.cc ? (Array.isArray(options.cc) ? options.cc : [options.cc]) : [];
+          const bccArray = options.bcc ? (Array.isArray(options.bcc) ? options.bcc : [options.bcc]) : [];
+
+          await this.db.insert(emailSendHistory).values({
+            orderId: orderInfo.orderId,
+            orderNumber: orderInfo.orderNumber || null,
+            senderUserId: orderInfo.senderUserId,
+            recipients: toArray,
+            cc: ccArray.length > 0 ? ccArray : null,
+            bcc: bccArray.length > 0 ? bccArray : null,
+            subject: options.subject,
+            messageContent: options.html || options.text || '',
+            attachmentFiles: null,
+            status: 'failed',
+            sentCount: 0,
+            failedCount: 1,
+            errorMessage: error instanceof Error ? error.message : 'Unknown error',
+            sentAt: null,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          });
+          
+          console.log('✅ 이메일 발송 실패 이력 저장 성공');
+        } catch (historyError) {
+          console.error('⚠️ 이메일 발송 실패 이력 저장 실패:', historyError);
+        }
+      }
       
       return {
         success: false,

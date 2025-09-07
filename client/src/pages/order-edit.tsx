@@ -37,6 +37,17 @@ import { format } from "date-fns";
 import { AttachedFilesInfo } from "@/components/attached-files-info";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { OrderPreviewSimple } from "@/components/order-preview-simple";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { OrderStatus, ApprovalStatus } from "@/lib/statusUtils";
 
 export default function OrderEdit() {
   const { user } = useAuth();
@@ -48,6 +59,8 @@ export default function OrderEdit() {
   const isDarkMode = theme === 'dark';
   const [showPreview, setShowPreview] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [showPdfGenerateDialog, setShowPdfGenerateDialog] = useState(false);
+  const [savedOrderId, setSavedOrderId] = useState<number | null>(null);
   
   console.log('OrderEdit params:', params);
   console.log('OrderEdit orderId:', orderId, typeof orderId);
@@ -192,7 +205,15 @@ export default function OrderEdit() {
       });
       queryClient.invalidateQueries({ queryKey: [`/api/orders/${orderId}`] });
       queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
-      navigate(`/orders/${orderId}`);
+      
+      // Check if we should suggest PDF regeneration
+      const orderStatus = order?.orderStatus;
+      if (orderStatus === 'draft' || orderStatus === 'created') {
+        setSavedOrderId(Number(orderId));
+        setShowPdfGenerateDialog(true);
+      } else {
+        navigate(`/orders/${orderId}`);
+      }
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {
@@ -213,6 +234,65 @@ export default function OrderEdit() {
       });
     },
   });
+
+  // PDF 생성 함수 - 단계별 토스트 메시지 포함
+  const generatePDFForOrder = async (orderId: number) => {
+    setIsGeneratingPdf(true);
+    
+    // Step 1: 시작
+    toast({
+      title: "PDF 생성 시작",
+      description: "수정된 발주서 데이터를 준비하고 있습니다...",
+    });
+    
+    try {
+      // Step 2: 생성 중
+      setTimeout(() => {
+        toast({
+          title: "PDF 생성 중",
+          description: "ProfessionalPDFGenerationService를 사용하여 PDF를 생성하고 있습니다...",
+        });
+      }, 1000);
+      
+      const result = await apiRequest("POST", `/api/orders/${orderId}/regenerate-pdf`);
+      
+      if (result.success) {
+        // Step 3: DB 저장
+        toast({
+          title: "데이터베이스 저장 완료",
+          description: "생성된 PDF가 첨부파일로 저장되었습니다.",
+        });
+        
+        // 발주서 데이터 새로고침
+        queryClient.invalidateQueries({ queryKey: [`/api/orders/${orderId}`] });
+        
+        // Step 4: 최종 완료
+        setTimeout(() => {
+          toast({
+            title: "✅ PDF 발주서 생성 완료",
+            description: "변경사항이 반영된 PDF 발주서가 성공적으로 생성되었습니다.",
+            duration: 5000,
+          });
+        }, 500);
+        
+        // Navigate to order detail page after successful generation
+        setTimeout(() => {
+          navigate(`/orders/${orderId}`);
+        }, 1500);
+      } else {
+        throw new Error(result.message || "PDF 생성 실패");
+      }
+    } catch (error: any) {
+      toast({
+        title: "❌ PDF 생성 실패",
+        description: error.message || "PDF 생성 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingPdf(false);
+      setShowPdfGenerateDialog(false);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -1240,6 +1320,34 @@ export default function OrderEdit() {
           </DialogContent>
         </Dialog>
       )}
+      
+      {/* PDF 생성 확인 다이얼로그 */}
+      <AlertDialog open={showPdfGenerateDialog} onOpenChange={setShowPdfGenerateDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>PDF 발주서 생성</AlertDialogTitle>
+            <AlertDialogDescription>
+              변경된 정보가 반영된 PDF 발주서를 지금 생성하시겠습니까?
+              생성된 PDF는 첨부파일로 저장되며 언제든지 다운로드할 수 있습니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => navigate(`/orders/${orderId}`)}>
+              나중에
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={async () => {
+                if (savedOrderId) {
+                  await generatePDFForOrder(savedOrderId);
+                }
+              }}
+              disabled={isGeneratingPdf}
+            >
+              {isGeneratingPdf ? "생성 중..." : "생성"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

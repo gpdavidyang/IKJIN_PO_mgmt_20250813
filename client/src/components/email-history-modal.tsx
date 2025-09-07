@@ -134,14 +134,22 @@ export function EmailHistoryModal({
                         <Mail className="h-4 w-4 text-gray-500" />
                         <span className="text-gray-600">수신자:</span>
                         <span className="font-medium">
-                          {email.recipientName ? `${email.recipientName} <${email.recipientEmail}>` : email.recipientEmail}
+                          {Array.isArray(email.recipients) 
+                            ? email.recipients.join(", ")
+                            : (typeof email.recipients === 'string' ? email.recipients : 'N/A')
+                          }
                         </span>
                       </div>
-                      {email.ccEmails && (
+                      {email.cc && email.cc.length > 0 && (
                         <div className="flex items-center gap-2 text-sm">
                           <Mail className="h-4 w-4 text-gray-500" />
                           <span className="text-gray-600">참조:</span>
-                          <span className="font-medium">{email.ccEmails}</span>
+                          <span className="font-medium">
+                            {Array.isArray(email.cc) 
+                              ? email.cc.join(", ")
+                              : email.cc
+                            }
+                          </span>
                         </div>
                       )}
                     </div>

@@ -154,21 +154,24 @@ export async function sendPurchaseOrderEmail(params: {
         
         await db.insert(emailSendHistory).values({
           orderId,
-          sentBy: userId,
-          recipientEmail: recipients.join(", "),
-          recipientName: orderData.vendorName,
-          ccEmails: cc.length > 0 ? cc.join(", ") : null,
+          orderNumber: orderData.orderNumber,
+          senderUserId: userId,
+          recipients: recipients,
+          cc: cc.length > 0 ? cc : null,
+          bcc: null,
           subject: mailOptions.subject,
-          body: mailOptions.html,
-          attachments: [{
+          messageContent: mailOptions.html,
+          attachmentFiles: [{
             filename: path.basename(excelFilePath),
             path: excelFilePath,
             size: fileStats.size
           }],
           status: 'sent',
-          emailProvider: 'naver',
-          messageId: info.messageId,
-          trackingId
+          sentCount: 1,
+          failedCount: 0,
+          sentAt: new Date(),
+          createdAt: new Date(),
+          updatedAt: new Date()
         });
       } catch (historyError) {
         console.error("⚠️ 이메일 이력 저장 실패:", historyError);
@@ -193,20 +196,24 @@ export async function sendPurchaseOrderEmail(params: {
         
         await db.insert(emailSendHistory).values({
           orderId,
-          sentBy: userId,
-          recipientEmail: recipients.join(", "),
-          recipientName: orderData.vendorName,
-          ccEmails: cc.length > 0 ? cc.join(", ") : null,
+          orderNumber: orderData.orderNumber,
+          senderUserId: userId,
+          recipients: recipients,
+          cc: cc.length > 0 ? cc : null,
+          bcc: null,
           subject: emailTemplates.purchaseOrder.subject(
             orderData.orderNumber,
             orderData.projectName
           ),
-          body: emailTemplates.purchaseOrder.html(orderData),
-          attachments: null,
+          messageContent: emailTemplates.purchaseOrder.html(orderData),
+          attachmentFiles: null,
           status: 'failed',
+          sentCount: 0,
+          failedCount: 1,
           errorMessage: error.message,
-          emailProvider: 'naver',
-          trackingId
+          sentAt: null,
+          createdAt: new Date(),
+          updatedAt: new Date()
         });
       } catch (historyError) {
         console.error("⚠️ 이메일 실패 이력 저장 실패:", historyError);

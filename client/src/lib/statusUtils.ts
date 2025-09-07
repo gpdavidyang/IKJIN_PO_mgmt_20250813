@@ -102,7 +102,9 @@ export const canSendEmail = (orderStatus: OrderStatus, approvalStatus: ApprovalS
 };
 
 export const canViewEmailHistory = (orderStatus: OrderStatus): boolean => {
-  return orderStatus === 'sent' || orderStatus === 'delivered';
+  // Allow viewing email history for created, sent, and delivered orders
+  // as emails can be sent from any of these states
+  return orderStatus === 'created' || orderStatus === 'sent' || orderStatus === 'delivered';
 };
 
 export const canApproveOrder = (approvalStatus: ApprovalStatus, userRole?: string): boolean => {

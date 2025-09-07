@@ -37,6 +37,7 @@ import { AttachedFilesInfo } from "@/components/attached-files-info";
 import { format } from "date-fns";
 import { formatKoreanWon } from "@/lib/utils";
 import { useTheme } from "@/components/ui/theme-provider";
+import { OrderStatus, ApprovalStatus } from "@/lib/statusUtils";
 
 export default function OrderDetail() {
   const { user } = useAuth();
@@ -146,7 +147,62 @@ export default function OrderDetail() {
     },
   });
 
-  // PDF preview - show existing PDF or generate if not exists
+  // PDF 생성 전용 함수 - 단계별 진행 상황 표시
+  const handlePdfGeneration = async () => {
+    setIsGeneratingPdf(true);
+    
+    // Step 1: PDF 생성 시작
+    toast({
+      title: "PDF 생성 시작",
+      description: "발주서 데이터를 준비하고 있습니다...",
+    });
+    
+    try {
+      // Step 2: PDF 생성 중
+      setTimeout(() => {
+        toast({
+          title: "PDF 생성 중",
+          description: "ProfessionalPDFGenerationService를 사용하여 PDF를 생성하고 있습니다...",
+        });
+      }, 1000);
+      
+      // ProfessionalPDFGenerationService를 사용하여 PDF 생성 및 DB 저장
+      const result = await apiRequest("POST", `/api/orders/${orderId}/regenerate-pdf`);
+      
+      if (result.success) {
+        // Step 3: DB 저장 완료
+        toast({
+          title: "데이터베이스 저장 완료",
+          description: "생성된 PDF가 첨부파일로 저장되었습니다.",
+        });
+        
+        // 발주서 데이터 새로고침 - 새로 생성된 PDF가 첨부파일 목록에 나타나도록
+        await queryClient.invalidateQueries({ queryKey: [`/api/orders/${orderId}`] });
+        
+        // Step 4: 최종 완료
+        setTimeout(() => {
+          toast({
+            title: "✅ PDF 발주서 생성 완료",
+            description: "PDF 발주서가 성공적으로 생성되었습니다. 하단 첨부파일에서 확인하세요.",
+            duration: 5000,
+          });
+        }, 500);
+        
+      } else {
+        throw new Error(result.message || "PDF 생성 실패");
+      }
+    } catch (error) {
+      toast({
+        title: "❌ PDF 생성 실패",
+        description: error.message || "PDF 생성 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
+  
+  // Keep the old function for preview modal (if needed)
   const handlePdfPreview = async () => {
     // Check if PDF already exists
     const existingPdf = order?.attachments?.find((attachment: any) => 
@@ -159,34 +215,9 @@ export default function OrderDetail() {
       setShowPreview(true);
       return;
     }
-
-    // No existing PDF, generate new one
-    setIsGeneratingPdf(true);
-    try {
-      // Call server to regenerate and save PDF
-      const result = await apiRequest("POST", `/api/orders/${orderId}/regenerate-pdf`);
-      
-      if (result.success) {
-        toast({
-          title: "PDF 생성 완료",
-          description: "PDF가 생성되어 첨부파일에 저장되었습니다.",
-        });
-        
-        // Refresh order data to show the new PDF
-        queryClient.invalidateQueries({ queryKey: [`/api/orders/${orderId}`] });
-        
-        // Show preview
-        setShowPreview(true);
-      }
-    } catch (error) {
-      toast({
-        title: "PDF 생성 실패",
-        description: error.message || "PDF 생성 중 오류가 발생했습니다.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsGeneratingPdf(false);
-    }
+    
+    // If no PDF exists, call generation function
+    await handlePdfGeneration();
   };
 
   const getStatusBadge = (status: string) => {
@@ -301,6 +332,9 @@ export default function OrderDetail() {
   const canEdit = order.status !== "sent" && order.status !== "received";
   // Admin은 모든 상태에서 삭제 가능, 다른 role은 sent/received 상태가 아닌 경우만 가능
   const canDelete = user?.role === "admin" || (user?.role === "hq_management" && order.status !== "sent" && order.status !== "received");
+  
+  // PDF 생성 가능 조건: draft 또는 created 상태일 때만
+  const canGeneratePDF = order.orderStatus === 'draft' || order.orderStatus === 'created';
 
   // 디버깅용 로그
   console.log('Delete button visibility check:', {
@@ -393,32 +427,28 @@ export default function OrderDetail() {
             <Button 
               variant="outline" 
               size="sm" 
-              onClick={handlePdfPreview}
-              disabled={isGeneratingPdf}
-              className={`h-8 px-3 text-xs transition-colors ${isDarkMode ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+              onClick={handlePdfGeneration}
+              disabled={isGeneratingPdf || !canGeneratePDF}
+              className={`h-8 px-3 text-xs transition-colors ${
+                !canGeneratePDF 
+                  ? 'opacity-50 cursor-not-allowed' 
+                  : isDarkMode 
+                    ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
+                    : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+              }`}
+              title={!canGeneratePDF ? "발주완료 또는 납품완료 상태에서는 PDF를 재생성할 수 없습니다" : "PDF 발주서를 새로 생성합니다"}
             >
               {isGeneratingPdf ? (
                 <>
                   <div className="animate-spin h-3 w-3 mr-1 border border-gray-300 border-t-transparent rounded-full"></div>
                   생성 중...
                 </>
-              ) : (() => {
-                const existingPdf = order?.attachments?.find((attachment: any) => 
-                  attachment.mimeType === 'application/pdf' &&
-                  attachment.originalName?.startsWith('PO_')
-                );
-                return existingPdf ? (
-                  <>
-                    <Eye className="h-4 w-4 mr-1" />
-                    PDF 미리보기
-                  </>
-                ) : (
-                  <>
-                    <Eye className="h-4 w-4 mr-1" />
-                    PDF 생성 및 미리보기
-                  </>
-                );
-              })()}
+              ) : (
+                <>
+                  <FileText className="h-4 w-4 mr-1" />
+                  PDF 발주서 생성
+                </>
+              )}
             </Button>
             {canDelete && (
               <Button 

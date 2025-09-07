@@ -648,12 +648,13 @@ export default function OrdersProfessionalFast() {
       }
 
       const orderData = {
+        orderId: selectedOrder.id, // Add orderId for proper backend handling
         orderNumber: selectedOrder.orderNumber,
         vendorName: selectedOrder.vendorName || '',
         orderDate: selectedOrder.orderDate,
         totalAmount: selectedOrder.totalAmount,
         siteName: selectedOrder.projectName,
-        filePath: selectedOrder.filePath || '',
+        // filePath: selectedOrder.filePath || '', // REMOVED: Forces orders path to handle selectedAttachmentIds
         attachmentUrls: attachmentUrls
       };
 

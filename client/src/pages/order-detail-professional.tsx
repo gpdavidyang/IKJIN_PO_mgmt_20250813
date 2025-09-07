@@ -62,6 +62,7 @@ export default function OrderDetailProfessional() {
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [emailHistoryModalOpen, setEmailHistoryModalOpen] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const orderId = parseInt(params.id);
 
   const { data: order, isLoading } = useQuery({
@@ -263,6 +264,61 @@ export default function OrderDetailProfessional() {
     return statusMap[status] || status;
   };
 
+  // PDF 생성 전용 함수 - 단계별 진행 상황 표시
+  const handlePdfGeneration = async () => {
+    setIsGeneratingPdf(true);
+    
+    // Step 1: PDF 생성 시작
+    toast({
+      title: "PDF 생성 시작",
+      description: "발주서 데이터를 준비하고 있습니다...",
+    });
+    
+    try {
+      // Step 2: PDF 생성 중
+      setTimeout(() => {
+        toast({
+          title: "PDF 생성 중",
+          description: "ProfessionalPDFGenerationService를 사용하여 PDF를 생성하고 있습니다...",
+        });
+      }, 1000);
+      
+      // ProfessionalPDFGenerationService를 사용하여 PDF 생성 및 DB 저장
+      const result = await apiRequest("POST", `/api/orders/${orderId}/regenerate-pdf`);
+      
+      if (result.success) {
+        // Step 3: DB 저장 완료
+        toast({
+          title: "데이터베이스 저장 완료",
+          description: "생성된 PDF가 첨부파일로 저장되었습니다.",
+        });
+        
+        // 발주서 데이터 새로고침 - 새로 생성된 PDF가 첨부파일 목록에 나타나도록
+        await queryClient.invalidateQueries({ queryKey: [`/api/orders/${orderId}`] });
+        
+        // Step 4: 최종 완료
+        setTimeout(() => {
+          toast({
+            title: "✅ PDF 발주서 생성 완료",
+            description: "PDF 발주서가 성공적으로 생성되었습니다. 하단 첨부파일에서 확인하세요.",
+            duration: 5000,
+          });
+        }, 500);
+        
+      } else {
+        throw new Error(result.message || "PDF 생성 실패");
+      }
+    } catch (error: any) {
+      toast({
+        title: "❌ PDF 생성 실패",
+        description: error.message || "PDF 생성 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
+
   const handleApprove = () => {
     if (confirm("이 발주서를 승인하시겠습니까?")) {
       approveMutation.mutate();
@@ -305,12 +361,13 @@ export default function OrderDetailProfessional() {
       }
 
       const orderData = {
+        orderId: order.id, // Add orderId for proper backend handling
         orderNumber: order.orderNumber,
         vendorName: order.vendor?.name || order.vendorName || '',
         orderDate: order.orderDate,
         totalAmount: order.totalAmount,
         siteName: order.project?.projectName || order.projectName || '',
-        filePath: order.filePath || '',
+        // filePath: order.filePath || '', // REMOVED: Forces orders path to handle selectedAttachmentIds
         attachmentUrls: attachmentUrls
       };
 
@@ -414,7 +471,8 @@ export default function OrderDetailProfessional() {
   
   // Permission checks based on separate order and approval statuses
   const canCreateOrder = orderStatus === 'draft' && (user?.role === "admin" || order.userId === user?.id);
-  const canGeneratePDF = canGeneratePDFBase(orderStatus);
+  // PDF 생성 가능 조건: draft 또는 created 상태일 때만
+  const canGeneratePDF = orderStatus === 'draft' || orderStatus === 'created';
   const canSendEmail = canSendEmailBase(orderStatus, approvalStatus) && (user?.role === "admin" || order.userId === user?.id);
   const canViewEmailHistory = canViewEmailHistoryBase(orderStatus) && (user?.role === "admin" || order.userId === user?.id);
   const canEdit = canEditOrderBase(orderStatus, approvalStatus) && (user?.role === "admin" || order.userId === user?.id);
@@ -498,42 +556,30 @@ export default function OrderDetailProfessional() {
                 </Button>
               )}
               
-              {/* PDF View button - only for created/sent status */}
+              {/* PDF Generation button - only for draft/created status */}
               {canGeneratePDF && (
                 <Button 
                   variant="outline" 
-                  onClick={async () => {
-                    // Find PDF attachment from existing attachments
-                    const pdfAttachment = order.attachments?.find(
-                      (att: any) => att.mimeType?.includes('pdf') || att.originalName?.toLowerCase().endsWith('.pdf')
-                    );
-                    
-                    if (pdfAttachment) {
-                      try {
-                        const filename = pdfAttachment.originalName || `발주서_${order.orderNumber}.pdf`;
-                        await downloadAttachment(pdfAttachment.id, filename);
-                        showDownloadSuccessMessage(filename, toast);
-                      } catch (error) {
-                        console.error('PDF download error:', error);
-                        toast({
-                          title: "PDF 다운로드 실패",
-                          description: error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다.",
-                          variant: "destructive",
-                        });
-                      }
-                    } else {
-                      // PDF not found - show helpful message
-                      toast({
-                        title: "PDF 파일이 없습니다",
-                        description: "관리자에 의해 삭제되었거나 PDF가 생성이 안 된 발주서입니다.",
-                      });
-                    }
-                  }}
-                  className="flex items-center gap-2"
-                  title="새 탭에서 PDF 열기"
+                  onClick={handlePdfGeneration}
+                  disabled={isGeneratingPdf || !canGeneratePDF}
+                  className={`flex items-center gap-2 ${
+                    !canGeneratePDF 
+                      ? 'opacity-50 cursor-not-allowed' 
+                      : ''
+                  }`}
+                  title={!canGeneratePDF ? "발주완료 또는 납품완료 상태에서는 PDF를 재생성할 수 없습니다" : "PDF 발주서를 새로 생성합니다"}
                 >
-                  <ExternalLink className="h-4 w-4" />
-                  PDF 다운로드
+                  {isGeneratingPdf ? (
+                    <>
+                      <div className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-transparent rounded-full"></div>
+                      생성 중...
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="h-4 w-4" />
+                      PDF 발주서 생성
+                    </>
+                  )}
                 </Button>
               )}
               

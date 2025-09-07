@@ -12,27 +12,14 @@ const router = Router();
 const createEmailHistorySchema = z.object({
   orderId: z.number(),
   orderNumber: z.string().optional(),
-  recipients: z.array(z.object({
-    email: z.string().email(),
-    name: z.string().optional(),
-  })),
-  cc: z.array(z.object({
-    email: z.string().email(),
-    name: z.string().optional(),
-  })).optional(),
-  bcc: z.array(z.object({
-    email: z.string().email(),
-    name: z.string().optional(),
-  })).optional(),
+  recipients: z.array(z.string()),
+  cc: z.array(z.string()).optional(),
+  bcc: z.array(z.string()).optional(),
   subject: z.string(),
-  messageContent: z.string(),
-  attachmentFiles: z.array(z.object({
-    filename: z.string(),
-    path: z.string(),
-    size: z.number(),
-  })).optional(),
+  message: z.string(),
+  attachments: z.array(z.string()).optional(),
   status: z.string().default('pending'),
-  errorMessage: z.string().optional(),
+  error: z.string().optional(),
 });
 
 // Get email history for a specific order
@@ -65,12 +52,10 @@ router.get("/orders/:orderId/email-history", requireAuth, async (req, res) => {
         cc: emailSendHistory.cc,
         bcc: emailSendHistory.bcc,
         subject: emailSendHistory.subject,
-        body: emailSendHistory.messageContent,
-        attachments: emailSendHistory.attachmentFiles,
+        body: emailSendHistory.message,
+        attachments: emailSendHistory.attachments,
         status: emailSendHistory.status,
-        errorMessage: emailSendHistory.errorMessage,
-        sentCount: emailSendHistory.sentCount,
-        failedCount: emailSendHistory.failedCount,
+        errorMessage: emailSendHistory.error,
         createdAt: emailSendHistory.createdAt,
         updatedAt: emailSendHistory.updatedAt,
       })
@@ -96,7 +81,7 @@ router.post("/email-history", requireAuth, async (req, res) => {
       .values({
         ...validatedData,
         senderUserId: req.user!.id,
-        attachmentFiles: validatedData.attachmentFiles || null,
+        attachments: validatedData.attachments || null,
       })
       .returning();
 
@@ -218,12 +203,10 @@ router.get("/email-history/:id", requireAuth, async (req, res) => {
         cc: emailSendHistory.cc,
         bcc: emailSendHistory.bcc,
         subject: emailSendHistory.subject,
-        messageContent: emailSendHistory.messageContent,
-        attachmentFiles: emailSendHistory.attachmentFiles,
+        messageContent: emailSendHistory.message,
+        attachmentFiles: emailSendHistory.attachments,
         status: emailSendHistory.status,
-        errorMessage: emailSendHistory.errorMessage,
-        sentCount: emailSendHistory.sentCount,
-        failedCount: emailSendHistory.failedCount,
+        errorMessage: emailSendHistory.error,
         createdAt: emailSendHistory.createdAt,
         updatedAt: emailSendHistory.updatedAt,
       })
@@ -307,12 +290,10 @@ router.get("/email-history", requireAuth, async (req, res) => {
         recipients: emailSendHistory.recipients,
         cc: emailSendHistory.cc,
         subject: emailSendHistory.subject,
-        messageContent: emailSendHistory.messageContent,
-        attachmentFiles: emailSendHistory.attachmentFiles,
+        messageContent: emailSendHistory.message,
+        attachmentFiles: emailSendHistory.attachments,
         status: emailSendHistory.status,
-        errorMessage: emailSendHistory.errorMessage,
-        sentCount: emailSendHistory.sentCount,
-        failedCount: emailSendHistory.failedCount,
+        errorMessage: emailSendHistory.error,
         createdAt: emailSendHistory.createdAt,
       })
       .from(emailSendHistory)

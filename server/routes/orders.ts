@@ -2245,11 +2245,14 @@ router.post("/orders/send-email-simple", requireAuth, async (req, res) => {
       to: toEmails,
       cc: ccEmails,
       subject: subject || `발주서 - ${emailData.orderNumber}`,
-      body: body || `발주서를 첨부합니다.\n\n발주번호: ${emailData.orderNumber}\n프로젝트: ${emailData.projectName}\n거래처: ${emailData.vendorName}`,
-      orderData: emailData,
-      userId: (req as any).user?.id,
-      orderId: orderData?.orderId,
+      orderNumber: emailData.orderNumber,
+      vendorName: emailData.vendorName,
+      totalAmount: emailData.totalAmount,
+      additionalMessage: body || `발주서를 첨부합니다.\n\n발주번호: ${emailData.orderNumber}\n프로젝트: ${emailData.projectName}\n거래처: ${emailData.vendorName}`,
       additionalAttachments: attachments // Pass additional attachments
+    }, {
+      orderId: orderData?.orderId,
+      senderUserId: (req as any).user?.id
     });
 
     // 임시 파일 삭제
@@ -2330,6 +2333,10 @@ router.post("/orders/send-email-with-excel", requireAuth, async (req, res) => {
         vendorName: emailSettings.vendorName,
         totalAmount: emailSettings.totalAmount,
         additionalMessage: emailSettings.message
+      },
+      {
+        orderId: orderData?.id,
+        senderUserId: (req as any).user?.id
       }
     );
 
@@ -2399,10 +2406,12 @@ router.post("/test-email-smtp", async (req, res) => {
       to: [recipientEmail],
       cc: [],
       subject: 'SMTP 테스트 - 발주서',
-      body: 'SMTP 설정 테스트 이메일입니다.',
-      orderData: testOrderData,
-      userId: 'system-test',
-      orderId: 9999
+      orderNumber: 'TEST-001',
+      vendorName: '테스트 거래처',
+      additionalMessage: 'SMTP 설정 테스트 이메일입니다.'
+    }, {
+      orderId: 9999,
+      senderUserId: 'system-test'
     });
 
     // 임시 파일 삭제

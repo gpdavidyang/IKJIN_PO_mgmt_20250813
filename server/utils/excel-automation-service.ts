@@ -536,6 +536,7 @@ export class ExcelAutomationService {
       additionalMessage?: string;
       pdfFilePath?: string;
       orderId?: number;  // 발주서 ID 추가
+      senderUserId?: number;  // 발송자 사용자 ID 추가
     } = {}
   ): Promise<EmailSendResult> {
     DebugLogger.logFunctionEntry('ExcelAutomationService.sendEmails', {
@@ -553,7 +554,7 @@ export class ExcelAutomationService {
         try {
           console.log(`📧 이메일 발송 중: ${email}`);
           
-          // 단일 메서드로 통합하여 이메일 발송 (orderId 정보는 이메일 내용에 포함)
+          // 단일 메서드로 통합하여 이메일 발송 (orderId와 senderUserId 정보 포함)
           const sendResult = await emailService.sendPOWithOriginalFormat(
             processedFilePath,
             {
@@ -561,6 +562,10 @@ export class ExcelAutomationService {
               subject: emailOptions.subject || `발주서 - ${new Date().toLocaleDateString('ko-KR')}`,
               orderNumber: emailOptions.orderNumber,
               additionalMessage: emailOptions.additionalMessage
+            },
+            {
+              orderId: emailOptions.orderId,
+              senderUserId: emailOptions.senderUserId || 0 // 전달받은 사용자 ID 사용
             }
           );
 

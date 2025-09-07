@@ -105,12 +105,13 @@ export default function DashboardProfessional() {
       }
 
       const orderData = {
+        orderId: selectedOrder.id, // Add orderId for proper backend handling
         orderNumber: selectedOrder.orderNumber,
         vendorName: selectedOrder.vendor?.name || '',
         orderDate: selectedOrder.orderDate,
         totalAmount: selectedOrder.totalAmount,
         siteName: selectedOrder.project?.projectName || selectedOrder.project?.name,
-        filePath: selectedOrder.filePath || '',
+        // filePath: selectedOrder.filePath || '', // REMOVED: Forces orders path to handle selectedAttachmentIds
         attachmentUrls: attachmentUrls
       };
 

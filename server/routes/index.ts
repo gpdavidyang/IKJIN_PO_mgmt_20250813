@@ -61,7 +61,7 @@ router.use("/api/excel-automation", excelAutomationRoutes);
 router.use("/api/po-template", poTemplateRoutes);
 router.use("/api/reports", reportRoutes);
 router.use("/api", importExportRoutes);
-router.use("/api", emailHistoryRoutes);
+router.use("/api/email-history", emailHistoryRoutes);
 router.use("/api/excel-template", excelTemplateRoutes);
 router.use("/api", ordersOptimizedRoutes);
 router.use("/api", ordersCreateRoutes); // Order creation with PDF generation

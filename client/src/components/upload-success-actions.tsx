@@ -54,12 +54,13 @@ export function UploadSuccessActions({ uploadResult, extractedFiles }: UploadSuc
       }
 
       const orderData = {
+        orderId: selectedOrder.orderId, // Add orderId for proper backend handling
         orderNumber: selectedOrder.orderNumber,
         vendorName: selectedOrder.vendorName,
         orderDate: selectedOrder.orderDate,
         totalAmount: selectedOrder.totalAmount,
         siteName: selectedOrder.siteName,
-        filePath: extractedFiles?.excelPath || uploadResult.filePath,
+        // filePath: extractedFiles?.excelPath || uploadResult.filePath, // REMOVED: Forces orders path to handle selectedAttachmentIds
         attachmentUrls: attachmentUrls
       };
 
