@@ -1105,6 +1105,7 @@ export class ProfessionalPDFGenerationService {
    */
   private static async generateProfessionalPDFWithPDFKit(orderData: ComprehensivePurchaseOrderData): Promise<Buffer> {
     const PDFKitDocument = (await import('pdfkit')).default;
+    const fs = await import('fs');
     
     return new Promise((resolve, reject) => {
       try {
@@ -1119,12 +1120,51 @@ export class ProfessionalPDFGenerationService {
         doc.on('end', () => resolve(Buffer.concat(buffers)));
         doc.on('error', reject);
 
-        // 폰트 설정 - 한글 지원을 위한 설정
-        console.log('📝 [ProfessionalPDF] PDFKit으로 PDF 생성 (한글 텍스트 포함)');
+        // 한글 폰트 등록 - 한글 지원을 위한 설정
+        console.log('📝 [ProfessionalPDF] PDFKit으로 PDF 생성 (한글 폰트 등록)');
+        
+        // 한글 폰트 경로 설정 (크로스 플랫폼 지원)
+        let koreanFontPath = null;
+        const possibleFonts = [
+          '/System/Library/Fonts/Supplemental/AppleGothic.ttf', // macOS
+          '/System/Library/Fonts/Supplemental/AppleMyungjo.ttf', // macOS 명조
+          'C:\\Windows\\Fonts\\malgun.ttf', // Windows
+          'C:\\Windows\\Fonts\\gulim.ttf', // Windows 굴림
+          '/usr/share/fonts/truetype/nanum/NanumGothic.ttf', // Linux
+          '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc' // Linux Noto
+        ];
+        
+        // 사용 가능한 폰트 찾기
+        for (const fontPath of possibleFonts) {
+          try {
+            if (fs.existsSync(fontPath)) {
+              koreanFontPath = fontPath;
+              console.log(`✅ [ProfessionalPDF] 한글 폰트 발견: ${fontPath}`);
+              break;
+            }
+          } catch (error) {
+            // 파일 시스템 에러 무시하고 다음 폰트 시도
+            continue;
+          }
+        }
+        
+        // 한글 폰트 등록
+        if (koreanFontPath) {
+          try {
+            doc.registerFont('Korean', koreanFontPath);
+            doc.font('Korean'); // 기본 폰트를 한글 폰트로 설정
+            console.log(`✅ [ProfessionalPDF] 한글 폰트 등록 완료: ${koreanFontPath}`);
+          } catch (fontError) {
+            console.warn('⚠️ [ProfessionalPDF] 한글 폰트 등록 실패, 기본 폰트 사용:', fontError);
+            doc.font('Helvetica'); // 기본 폰트로 대체
+          }
+        } else {
+          console.warn('⚠️ [ProfessionalPDF] 한글 폰트를 찾을 수 없음, 기본 폰트 사용');
+          doc.font('Helvetica'); // 기본 폰트로 대체
+        }
         
         // 한글 텍스트를 안전하게 처리하는 함수
         const safeText = (text: string) => {
-          // 한글이 포함된 텍스트도 그대로 유지 (PDFKit이 처리할 수 있도록)
           return text || '';
         };
         

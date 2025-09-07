@@ -8,8 +8,12 @@ export const getStatusText = (status: string): string => {
       return "승인대기";
     case "approved":
       return "승인완료";
+    case "created":
+      return "발주생성";
     case "sent":
       return "발송됨";
+    case "delivered":
+      return "납품완료";
     case "completed":
       return "발주완료";
     case "rejected":
@@ -27,8 +31,12 @@ export const getStatusColor = (status: string): string => {
       return "bg-yellow-100 text-yellow-800";
     case "approved":
       return "bg-blue-100 text-blue-800";
+    case "created":
+      return "bg-blue-100 text-blue-800";
     case "sent":
       return "bg-purple-100 text-purple-800";
+    case "delivered":
+      return "bg-green-100 text-green-800";
     case "completed":
       return "bg-green-100 text-green-800";
     case "rejected":

@@ -3,8 +3,8 @@
  * A flexible component that can be used in dashboard, management pages, and other contexts
  */
 
-import { useState, useMemo } from "react";
-import { Clock, FileText, Eye, Edit, Mail, Trash2, Download, Building, Users, DollarSign, CheckCircle, XCircle, AlertCircle, Circle, PlayCircle, MailCheck, Truck } from "lucide-react";
+import { useState, useMemo, useCallback } from "react";
+import { Clock, FileText, Eye, Edit, Mail, Trash2, Download, Building, Users, DollarSign, CheckCircle, XCircle, AlertCircle, Circle, PlayCircle, MailCheck, Truck, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 import { formatKoreanWon, formatDate } from "@/lib/utils";
 import { getStatusText, getStatusColor } from "@/lib/statusUtils";
 import { Badge } from "@/components/ui/badge";
@@ -107,6 +107,109 @@ function CompactOrderItem({
         )}
       </div>
     </div>
+  );
+}
+
+/**
+ * Compact table mode for dashboard - enhanced with sorting and status
+ */
+function CompactTableOrderItem({ 
+  order, 
+  onOrderClick, 
+  isDarkMode,
+  sortBy,
+  sortOrder,
+  onSort
+}: { 
+  order: UnifiedOrder; 
+  onOrderClick?: (orderId: number) => void;
+  isDarkMode: boolean;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  onSort?: (field: string) => void;
+}) {
+  const canShowPDF = useMemo(() => {
+    const currentOrderStatus = order.orderStatus || order.status;
+    if (order.orderStatus) {
+      return order.orderStatus !== 'draft' && ['created', 'sent', 'delivered'].includes(order.orderStatus);
+    }
+    return order.status !== 'draft' && ['approved', 'sent', 'completed'].includes(order.status);
+  }, [order.orderStatus, order.status]);
+
+  const getSortIcon = (field: string) => {
+    if (sortBy !== field) {
+      return <ChevronsUpDown className="h-3 w-3 opacity-50" />;
+    }
+    return sortOrder === 'asc' ? 
+      <ChevronUp className="h-3 w-3" /> : 
+      <ChevronDown className="h-3 w-3" />;
+  };
+
+  return (
+    <tr className={`hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${
+      isDarkMode ? 'border-gray-700' : 'border-gray-200'
+    }`}>
+      {/* 발주번호 */}
+      <td className="px-3 py-2">
+        <button
+          onClick={() => onOrderClick?.(order.id)}
+          className={`text-xs font-medium transition-colors ${
+            isDarkMode 
+              ? 'text-blue-400 hover:text-blue-300' 
+              : 'text-blue-600 hover:text-blue-700'
+          }`}
+        >
+          {order.orderNumber}
+        </button>
+      </td>
+      
+      {/* 거래처 */}
+      <td className={`px-3 py-2 text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+        <div className="truncate max-w-[120px]" title={order.vendor?.name || order.vendorName}>
+          {order.vendor?.name || order.vendorName || '-'}
+        </div>
+      </td>
+
+      {/* 금액 */}
+      <td className={`px-3 py-2 text-xs font-medium text-right ${
+        isDarkMode ? 'text-gray-100' : 'text-gray-900'
+      }`}>
+        {formatKoreanWon(order.totalAmount || 0).replace('₩', '').replace(',000,000', 'M')}
+      </td>
+
+      {/* 발주상태 */}
+      <td className="px-3 py-2">
+        <Badge 
+          variant="secondary"
+          className={cn(
+            "text-xs px-2 py-0",
+            getStatusColor(order.orderStatus || order.status)
+          )}
+        >
+          {getStatusText(order.orderStatus || order.status)}
+        </Badge>
+      </td>
+
+      {/* 액션 */}
+      <td className="px-3 py-2 text-center">
+        {canShowPDF && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              window.open(`/api/orders/${order.id}/download-pdf`, '_blank');
+            }}
+            className={`p-1 rounded transition-colors ${
+              isDarkMode 
+                ? 'text-orange-400 hover:bg-orange-900/20 hover:text-orange-300' 
+                : 'text-orange-500 hover:bg-orange-50 hover:text-orange-700'
+            }`}
+            title="PDF 다운로드"
+          >
+            <FileText className="h-3 w-3" />
+          </button>
+        )}
+      </td>
+    </tr>
   );
 }
 
@@ -339,7 +442,10 @@ export function UnifiedOrdersList({
   className = "",
   enableSelection = false,
   selectedOrders = [],
-  onSelectionChange
+  onSelectionChange,
+  sortBy,
+  sortOrder,
+  onSort
 }: UnifiedOrdersListProps) {
   const { theme } = useTheme();
   const isDarkMode = theme === 'dark';
@@ -376,6 +482,16 @@ export function UnifiedOrdersList({
       navigate(`/orders/${orderId}`);
     }
   };
+
+  // Sort icon helper for compact-table mode
+  const getSortIcon = useCallback((field: string) => {
+    if (sortBy !== field) {
+      return <ChevronsUpDown className="h-3 w-3 opacity-50" />;
+    }
+    return sortOrder === 'asc' ? 
+      <ChevronUp className="h-3 w-3" /> : 
+      <ChevronDown className="h-3 w-3" />;
+  }, [sortBy, sortOrder]);
 
   // Loading state
   if (shouldFetchData && isLoading) {
@@ -421,6 +537,94 @@ export function UnifiedOrdersList({
                 isDarkMode={isDarkMode}
               />
             ))}
+          </div>
+        );
+
+      case 'compact-table':
+        return (
+          <div className={`overflow-x-auto rounded-lg border ${
+            isDarkMode ? 'border-gray-700' : 'border-gray-200'
+          }`}>
+            <table className="w-full min-w-full">
+              <thead className={`${
+                isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'
+              } border-b`}>
+                <tr>
+                  <th className={`px-3 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-500'
+                  }`}>
+                    <button
+                      onClick={() => onSort?.("orderNumber")}
+                      className={`flex items-center gap-1 transition-colors ${
+                        isDarkMode ? 'hover:text-gray-100' : 'hover:text-gray-700'
+                      }`}
+                    >
+                      발주번호
+                      {getSortIcon("orderNumber")}
+                    </button>
+                  </th>
+                  <th className={`px-3 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-500'
+                  }`}>
+                    <button
+                      onClick={() => onSort?.("vendorName")}
+                      className={`flex items-center gap-1 transition-colors ${
+                        isDarkMode ? 'hover:text-gray-100' : 'hover:text-gray-700'
+                      }`}
+                    >
+                      거래처
+                      {getSortIcon("vendorName")}
+                    </button>
+                  </th>
+                  <th className={`px-3 py-3 text-right text-xs font-medium uppercase tracking-wider ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-500'
+                  }`}>
+                    <button
+                      onClick={() => onSort?.("totalAmount")}
+                      className={`flex items-center gap-1 transition-colors ${
+                        isDarkMode ? 'hover:text-gray-100' : 'hover:text-gray-700'
+                      }`}
+                    >
+                      금액
+                      {getSortIcon("totalAmount")}
+                    </button>
+                  </th>
+                  <th className={`px-3 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-500'
+                  }`}>
+                    <button
+                      onClick={() => onSort?.("orderStatus")}
+                      className={`flex items-center gap-1 transition-colors ${
+                        isDarkMode ? 'hover:text-gray-100' : 'hover:text-gray-700'
+                      }`}
+                    >
+                      발주상태
+                      {getSortIcon("orderStatus")}
+                    </button>
+                  </th>
+                  <th className={`px-3 py-3 text-center text-xs font-medium uppercase tracking-wider ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-500'
+                  }`}>
+                    액션
+                  </th>
+                </tr>
+              </thead>
+              <tbody className={`divide-y ${
+                isDarkMode ? 'bg-gray-800 divide-gray-700' : 'bg-white divide-gray-200'
+              }`}>
+                {orders.map((order) => (
+                  <CompactTableOrderItem
+                    key={order.id}
+                    order={order}
+                    onOrderClick={handleOrderClick}
+                    isDarkMode={isDarkMode}
+                    sortBy={sortBy}
+                    sortOrder={sortOrder}
+                    onSort={onSort}
+                  />
+                ))}
+              </tbody>
+            </table>
           </div>
         );
 

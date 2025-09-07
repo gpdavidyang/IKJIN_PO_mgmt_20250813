@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Mail, Send, X, Check, AlertTriangle, FileText, File, Loader2 } from 'lucide-react';
+import { Mail, Send, X, Check, AlertTriangle, FileText, File, Loader2, Info } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
@@ -73,7 +73,7 @@ export function EmailSendDialog({ open, onOpenChange, orderData, onSendEmail }: 
     setAttachmentsLoading(true);
     try {
       console.log('📎 Fetching attachments for order:', orderData.orderId);
-      const response = await apiRequest(`/orders/${orderData.orderId}/attachments`);
+      const response = await apiRequest("GET", `/api/orders/${orderData.orderId}/attachments`);
       
       if (Array.isArray(response)) {
         const attachmentInfos: AttachmentInfo[] = response.map((att: any) => ({
@@ -280,6 +280,14 @@ ${orderData.vendorName} 담당자님께 발주서를 전송드립니다.
             {orderData.vendorName}에게 발주서 {orderData.orderNumber}를 이메일로 전송합니다.
           </DialogDescription>
         </DialogHeader>
+
+        {/* 발주서 상태 안내 문구 */}
+        <Alert className="border-blue-200 bg-blue-50">
+          <Info className="h-4 w-4 text-blue-600" />
+          <AlertDescription className="text-blue-800">
+            <strong>📧 안내:</strong> 발주생성이 되었더라도 발주 이메일 전송 버튼이 클릭되어야 '발주완료' 상태로 변경됩니다.
+          </AlertDescription>
+        </Alert>
 
         <div className="space-y-4">
           {/* 오류 메시지 */}

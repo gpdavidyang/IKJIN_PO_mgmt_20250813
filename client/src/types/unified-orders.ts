@@ -32,7 +32,7 @@ export interface UnifiedOrder {
 }
 
 // Display modes for the unified component
-export type OrderDisplayMode = 'compact' | 'detailed' | 'full';
+export type OrderDisplayMode = 'compact' | 'compact-table' | 'detailed' | 'full';
 
 // Filter options for orders
 export interface UnifiedOrderFilters {
@@ -98,6 +98,11 @@ export interface UnifiedOrdersListProps {
   enableSelection?: boolean;
   selectedOrders?: number[];
   onSelectionChange?: (selectedIds: number[]) => void;
+  
+  // Sorting support for compact-table mode
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  onSort?: (field: string) => void;
 }
 
 // Hook configuration

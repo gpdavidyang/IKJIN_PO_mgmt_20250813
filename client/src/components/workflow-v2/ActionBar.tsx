@@ -77,7 +77,7 @@ const ActionBar: React.FC<ActionBarProps> = ({
       
       setLoadingAttachments(true);
       try {
-        const response = await apiRequest(`/orders/${orderData.id}/attachments`);
+        const response = await apiRequest("GET", `/api/orders/${orderData.id}/attachments`);
         setAvailableAttachments(response);
         
         // 기본적으로 모든 PDF와 Excel 파일을 선택된 상태로 설정

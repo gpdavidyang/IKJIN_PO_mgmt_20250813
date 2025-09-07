@@ -1,7 +1,7 @@
 import { FileText, Package, Users, Clock, Building, Plus, AlertCircle, BarChart3, TrendingUp, ShoppingCart, Activity, FolderTree, ChevronRight, DollarSign } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useDashboardData } from "@/hooks/use-enhanced-queries";
-import { useEffect } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
@@ -34,6 +34,20 @@ export default function Dashboard() {
   // Dark mode detection
   const isDarkMode = theme === 'dark';
 
+  // Sorting state for recent orders
+  const [recentOrdersSorting, setRecentOrdersSorting] = useState({
+    sortBy: 'createdAt',
+    sortOrder: 'desc' as 'asc' | 'desc'
+  });
+
+  // Handle sorting for recent orders
+  const handleRecentOrdersSort = useCallback((field: string) => {
+    setRecentOrdersSorting(prev => ({
+      sortBy: field,
+      sortOrder: prev.sortBy === field && prev.sortOrder === 'desc' ? 'asc' : 'desc'
+    }));
+  }, []);
+
   // Redirect to login if not authenticated
   useEffect(() => {
     if (!authLoading && !user) {
@@ -64,7 +78,50 @@ export default function Dashboard() {
 
   // Extract data from unified response with fallbacks
   const stats = dashboardData?.statistics || {};
-  const recentOrders = dashboardData?.recentOrders || [];
+  const rawRecentOrders = dashboardData?.recentOrders || [];
+  
+  // Sort recent orders based on current sorting state
+  const recentOrders = useMemo(() => {
+    if (!rawRecentOrders.length) return [];
+    
+    const sorted = [...rawRecentOrders].sort((a, b) => {
+      const { sortBy, sortOrder } = recentOrdersSorting;
+      let valueA, valueB;
+      
+      switch (sortBy) {
+        case 'orderNumber':
+          valueA = a.orderNumber || '';
+          valueB = b.orderNumber || '';
+          break;
+        case 'vendorName':
+          valueA = a.vendor?.name || a.vendorName || '';
+          valueB = b.vendor?.name || b.vendorName || '';
+          break;
+        case 'totalAmount':
+          valueA = a.totalAmount || 0;
+          valueB = b.totalAmount || 0;
+          break;
+        case 'orderStatus':
+          valueA = a.orderStatus || a.status || '';
+          valueB = b.orderStatus || b.status || '';
+          break;
+        case 'createdAt':
+        default:
+          valueA = new Date(a.createdAt || a.orderDate).getTime();
+          valueB = new Date(b.createdAt || b.orderDate).getTime();
+          break;
+      }
+      
+      if (typeof valueA === 'string') {
+        const comparison = valueA.localeCompare(valueB);
+        return sortOrder === 'asc' ? comparison : -comparison;
+      } else {
+        return sortOrder === 'asc' ? valueA - valueB : valueB - valueA;
+      }
+    });
+    
+    return sorted;
+  }, [rawRecentOrders, recentOrdersSorting]);
   
   // For compatibility with existing code - use actual API data
   const monthlyStats = dashboardData?.monthlyStats || [];
@@ -511,13 +568,16 @@ export default function Dashboard() {
                 전체보기
               </button>
             </div>
-            <div className="h-[120px] overflow-y-auto">
+            <div className="h-[140px] overflow-y-auto">
               <UnifiedOrdersList
-                mode="compact"
+                mode="compact-table"
                 maxItems={6}
                 orders={recentOrders}
                 onOrderClick={(orderId) => navigate(`/orders/${orderId}`)}
                 showActions={false}
+                sortBy={recentOrdersSorting.sortBy}
+                sortOrder={recentOrdersSorting.sortOrder}
+                onSort={handleRecentOrdersSort}
               />
             </div>
           </div>

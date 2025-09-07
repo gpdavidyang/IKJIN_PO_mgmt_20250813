@@ -28,6 +28,7 @@ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: tru
 // shared/schema.ts
 var schema_exports = {};
 __export(schema_exports, {
+  accountStatusEnum: () => accountStatusEnum,
   aiSuggestions: () => aiSuggestions,
   aiSuggestionsRelations: () => aiSuggestionsRelations,
   approvalAuthorities: () => approvalAuthorities,
@@ -73,6 +74,7 @@ __export(schema_exports, {
   insertItemSchema: () => insertItemSchema,
   insertOrderHistorySchema: () => insertOrderHistorySchema,
   insertOrderTemplateSchema: () => insertOrderTemplateSchema,
+  insertPasswordResetTokenSchema: () => insertPasswordResetTokenSchema,
   insertProjectHistorySchema: () => insertProjectHistorySchema,
   insertProjectMemberSchema: () => insertProjectMemberSchema,
   insertProjectSchema: () => insertProjectSchema,
@@ -84,6 +86,7 @@ __export(schema_exports, {
   insertTerminologySchema: () => insertTerminologySchema,
   insertUITermSchema: () => insertUITermSchema,
   insertUiTermSchema: () => insertUiTermSchema,
+  insertUserRegistrationSchema: () => insertUserRegistrationSchema,
   insertValidationResultSchema: () => insertValidationResultSchema,
   insertValidationSessionSchema: () => insertValidationSessionSchema,
   insertVendorMappingSchema: () => insertVendorMappingSchema,
@@ -104,6 +107,8 @@ __export(schema_exports, {
   orderStatusEnum: () => orderStatusEnum,
   orderTemplates: () => orderTemplates,
   orderTemplatesRelations: () => orderTemplatesRelations,
+  passwordResetTokens: () => passwordResetTokens,
+  passwordResetTokensRelations: () => passwordResetTokensRelations,
   projectHistory: () => projectHistory,
   projectHistoryRelations: () => projectHistoryRelations,
   projectMembers: () => projectMembers,
@@ -117,6 +122,7 @@ __export(schema_exports, {
   purchaseOrderStatusEnum: () => purchaseOrderStatusEnum,
   purchaseOrders: () => purchaseOrders,
   purchaseOrdersRelations: () => purchaseOrdersRelations,
+  registrationStatusEnum: () => registrationStatusEnum,
   sessions: () => sessions,
   systemAuditLogs: () => systemAuditLogs,
   systemAuditLogsRelations: () => systemAuditLogsRelations,
@@ -126,6 +132,8 @@ __export(schema_exports, {
   templateVersionsRelations: () => templateVersionsRelations,
   terminology: () => terminology,
   uiTerms: () => uiTerms,
+  userRegistrations: () => userRegistrations,
+  userRegistrationsRelations: () => userRegistrationsRelations,
   userRoleEnum: () => userRoleEnum,
   users: () => users,
   usersRelations: () => usersRelations,
@@ -159,7 +167,7 @@ import {
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-var sessions, uiTerms, itemCategories, userRoleEnum, purchaseOrderStatusEnum, orderStatusEnum, approvalStatusEnum, projectStatusEnum, projectTypeEnum, invoiceStatusEnum, itemReceiptStatusEnum, verificationActionEnum, approvalStepStatusEnum, emailSettings, approvalAuthorities, users, companies, vendors, items, terminology, projects, projectMembers, projectHistory, orderTemplates, templateFields, handsontableConfigs, templateVersions, purchaseOrders, purchaseOrderItems, attachments, orderHistory, emailSendHistory, invoices, itemReceipts, verificationLogs, usersRelations, vendorsRelations, itemsRelations, projectsRelations, projectMembersRelations, projectHistoryRelations, orderTemplatesRelations, purchaseOrdersRelations, purchaseOrderItemsRelations, attachmentsRelations, orderHistoryRelations, invoicesRelations, itemReceiptsRelations, verificationLogsRelations, templateFieldsRelations, handsontableConfigsRelations, templateVersionsRelations, itemCategoriesRelations, emailSendHistoryRelations, insertCompanySchema, insertVendorSchema, insertItemSchema, insertProjectSchema, insertOrderTemplateSchema, insertItemCategorySchema, insertPurchaseOrderSchema, insertPurchaseOrderItemSchema, insertAttachmentSchema, insertOrderHistorySchema, insertInvoiceSchema, insertItemReceiptSchema, insertVerificationLogSchema, insertEmailSendHistorySchema, insertTemplateFieldSchema, insertHandsontableConfigSchema, insertTemplateVersionSchema, insertProjectMemberSchema, insertProjectHistorySchema, insertUiTermSchema, insertTerminologySchema, insertUITermSchema, insertApprovalAuthoritySchema, approvalWorkflowSettings, approvalStepTemplates, approvalStepInstances2, insertApprovalWorkflowSettingsSchema, insertApprovalStepTemplateSchema, insertApprovalStepInstanceSchema, auditLogLevelEnum, auditEventTypeEnum, systemAuditLogs, auditSettings, archivedAuditLogs, auditAlertRules, systemAuditLogsRelations, auditSettingsRelations, auditAlertRulesRelations, insertSystemAuditLogSchema, insertAuditSettingsSchema, insertArchivedAuditLogSchema, insertAuditAlertRuleSchema, validationSessions, validationResults, aiSuggestions, vendorMappings, categoryMappings, validationSessionsRelations, validationResultsRelations, aiSuggestionsRelations, vendorMappingsRelations, categoryMappingsRelations, insertValidationSessionSchema, insertValidationResultSchema, insertAISuggestionSchema, insertVendorMappingSchema, insertCategoryMappingSchema, insertEmailSettingsSchema;
+var sessions, uiTerms, itemCategories, userRoleEnum, purchaseOrderStatusEnum, orderStatusEnum, approvalStatusEnum, projectStatusEnum, projectTypeEnum, invoiceStatusEnum, itemReceiptStatusEnum, verificationActionEnum, approvalStepStatusEnum, emailSettings, approvalAuthorities, accountStatusEnum, users, companies, vendors, items, terminology, projects, projectMembers, projectHistory, orderTemplates, templateFields, handsontableConfigs, templateVersions, purchaseOrders, purchaseOrderItems, attachments, orderHistory, emailSendHistory, invoices, itemReceipts, verificationLogs, usersRelations, vendorsRelations, itemsRelations, projectsRelations, projectMembersRelations, projectHistoryRelations, orderTemplatesRelations, purchaseOrdersRelations, purchaseOrderItemsRelations, attachmentsRelations, orderHistoryRelations, invoicesRelations, itemReceiptsRelations, verificationLogsRelations, templateFieldsRelations, handsontableConfigsRelations, templateVersionsRelations, itemCategoriesRelations, emailSendHistoryRelations, insertCompanySchema, insertVendorSchema, insertItemSchema, insertProjectSchema, insertOrderTemplateSchema, insertItemCategorySchema, insertPurchaseOrderSchema, insertPurchaseOrderItemSchema, insertAttachmentSchema, insertOrderHistorySchema, insertInvoiceSchema, insertItemReceiptSchema, insertVerificationLogSchema, insertEmailSendHistorySchema, insertTemplateFieldSchema, insertHandsontableConfigSchema, insertTemplateVersionSchema, insertProjectMemberSchema, insertProjectHistorySchema, insertUiTermSchema, insertTerminologySchema, insertUITermSchema, insertApprovalAuthoritySchema, approvalWorkflowSettings, approvalStepTemplates, approvalStepInstances2, insertApprovalWorkflowSettingsSchema, insertApprovalStepTemplateSchema, insertApprovalStepInstanceSchema, auditLogLevelEnum, auditEventTypeEnum, systemAuditLogs, auditSettings, archivedAuditLogs, auditAlertRules, systemAuditLogsRelations, auditSettingsRelations, auditAlertRulesRelations, insertSystemAuditLogSchema, insertAuditSettingsSchema, insertArchivedAuditLogSchema, insertAuditAlertRuleSchema, validationSessions, validationResults, aiSuggestions, vendorMappings, categoryMappings, validationSessionsRelations, validationResultsRelations, aiSuggestionsRelations, vendorMappingsRelations, categoryMappingsRelations, insertValidationSessionSchema, insertValidationResultSchema, insertAISuggestionSchema, insertVendorMappingSchema, insertCategoryMappingSchema, insertEmailSettingsSchema, registrationStatusEnum, userRegistrations, passwordResetTokens, userRegistrationsRelations, passwordResetTokensRelations, insertUserRegistrationSchema, insertPasswordResetTokenSchema;
 var init_schema = __esm({
   "shared/schema.ts"() {
     "use strict";
@@ -246,6 +254,7 @@ var init_schema = __esm({
     }, (table) => [
       unique("unique_role_approval").on(table.role)
     ]);
+    accountStatusEnum = pgEnum("account_status", ["active", "pending", "suspended", "inactive"]);
     users = pgTable("users", {
       id: varchar("id").primaryKey().notNull(),
       email: varchar("email").unique().notNull(),
@@ -257,12 +266,15 @@ var init_schema = __esm({
       role: userRoleEnum("role").notNull().default("field_worker"),
       position: varchar("position"),
       // Add position field that exists in DB
+      accountStatus: accountStatusEnum("account_status").default("active"),
+      // Account status management
       isActive: boolean("is_active").default(true),
       createdAt: timestamp("created_at").defaultNow(),
       updatedAt: timestamp("updated_at").defaultNow()
     }, (table) => [
       index("idx_users_email").on(table.email),
-      index("idx_users_role").on(table.role)
+      index("idx_users_role").on(table.role),
+      index("idx_users_account_status").on(table.accountStatus)
     ]);
     companies = pgTable("companies", {
       id: serial("id").primaryKey(),
@@ -548,36 +560,27 @@ var init_schema = __esm({
       // Store what changed
       createdAt: timestamp("created_at").defaultNow()
     });
-    emailSendHistory = pgTable("email_send_history", {
+    emailSendHistory = pgTable("email_sending_history", {
       id: serial("id").primaryKey(),
-      orderId: integer("order_id").notNull().references(() => purchaseOrders.id, { onDelete: "cascade" }),
-      sentAt: timestamp("sent_at").defaultNow().notNull(),
-      sentBy: varchar("sent_by", { length: 255 }).notNull().references(() => users.id),
-      recipientEmail: varchar("recipient_email", { length: 255 }).notNull(),
-      recipientName: varchar("recipient_name", { length: 255 }),
-      ccEmails: text("cc_emails"),
-      // JSON array of CC emails
+      orderId: integer("order_id").references(() => purchaseOrders.id, { onDelete: "cascade" }),
+      orderNumber: varchar("order_number", { length: 255 }),
+      senderUserId: varchar("sender_user_id", { length: 255 }).references(() => users.id),
+      recipients: jsonb("recipients"),
+      cc: jsonb("cc"),
+      bcc: jsonb("bcc"),
       subject: text("subject").notNull(),
-      body: text("body").notNull(),
-      attachments: jsonb("attachments").$type(),
-      status: varchar("status", { length: 50 }).notNull().default("sent"),
-      // sent, failed, bounced, opened, clicked
+      messageContent: text("message_content"),
+      attachmentFiles: jsonb("attachment_files"),
+      status: varchar("sending_status", { length: 50 }).default("pending"),
+      sentCount: integer("sent_count").default(0),
+      failedCount: integer("failed_count").default(0),
       errorMessage: text("error_message"),
-      openedAt: timestamp("opened_at"),
-      clickedAt: timestamp("clicked_at"),
-      ipAddress: varchar("ip_address", { length: 50 }),
-      userAgent: text("user_agent"),
-      trackingId: varchar("tracking_id", { length: 100 }).unique(),
-      emailProvider: varchar("email_provider", { length: 50 }).default("naver"),
-      // naver, gmail, etc.
-      messageId: varchar("message_id", { length: 255 }),
-      // Email message ID for tracking
-      createdAt: timestamp("created_at").defaultNow().notNull()
+      sentAt: timestamp("sent_at"),
+      createdAt: timestamp("created_at").defaultNow(),
+      updatedAt: timestamp("updated_at").defaultNow()
     }, (table) => [
       index("idx_email_history_order").on(table.orderId),
-      index("idx_email_history_sent_by").on(table.sentBy),
-      index("idx_email_history_recipient").on(table.recipientEmail),
-      index("idx_email_history_tracking").on(table.trackingId),
+      index("idx_email_history_sender").on(table.senderUserId),
       index("idx_email_history_status").on(table.status),
       index("idx_email_history_sent_at").on(table.sentAt)
     ]);
@@ -800,8 +803,8 @@ var init_schema = __esm({
         fields: [emailSendHistory.orderId],
         references: [purchaseOrders.id]
       }),
-      sentByUser: one(users, {
-        fields: [emailSendHistory.sentBy],
+      senderUser: one(users, {
+        fields: [emailSendHistory.senderUserId],
         references: [users.id]
       })
     }));
@@ -1338,6 +1341,67 @@ var init_schema = __esm({
       lastTestedAt: true,
       testResult: true
     });
+    registrationStatusEnum = pgEnum("registration_status", ["pending", "approved", "rejected"]);
+    userRegistrations = pgTable("user_registrations", {
+      id: serial("id").primaryKey(),
+      email: varchar("email", { length: 255 }).notNull().unique(),
+      name: varchar("name", { length: 255 }).notNull(),
+      phoneNumber: varchar("phone_number", { length: 50 }),
+      hashedPassword: varchar("hashed_password").notNull(),
+      requestedRole: userRoleEnum("requested_role").default("field_worker"),
+      status: registrationStatusEnum("status").notNull().default("pending"),
+      rejectionReason: text("rejection_reason"),
+      appliedAt: timestamp("applied_at").defaultNow().notNull(),
+      reviewedAt: timestamp("reviewed_at"),
+      reviewedBy: varchar("reviewed_by").references(() => users.id),
+      notes: text("notes"),
+      createdAt: timestamp("created_at").defaultNow().notNull(),
+      updatedAt: timestamp("updated_at").defaultNow().notNull()
+    }, (table) => [
+      index("idx_user_registrations_email").on(table.email),
+      index("idx_user_registrations_status").on(table.status),
+      index("idx_user_registrations_applied_at").on(table.appliedAt),
+      index("idx_user_registrations_reviewed_by").on(table.reviewedBy)
+    ]);
+    passwordResetTokens = pgTable("password_reset_tokens", {
+      id: serial("id").primaryKey(),
+      userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+      token: varchar("token", { length: 255 }).notNull().unique(),
+      expiresAt: timestamp("expires_at").notNull(),
+      usedAt: timestamp("used_at"),
+      createdAt: timestamp("created_at").defaultNow().notNull()
+    }, (table) => [
+      index("idx_password_reset_tokens_user").on(table.userId),
+      index("idx_password_reset_tokens_token").on(table.token),
+      index("idx_password_reset_tokens_expires").on(table.expiresAt)
+    ]);
+    userRegistrationsRelations = relations(userRegistrations, ({ one }) => ({
+      reviewedByUser: one(users, {
+        fields: [userRegistrations.reviewedBy],
+        references: [users.id]
+      })
+    }));
+    passwordResetTokensRelations = relations(passwordResetTokens, ({ one }) => ({
+      user: one(users, {
+        fields: [passwordResetTokens.userId],
+        references: [users.id]
+      })
+    }));
+    insertUserRegistrationSchema = createInsertSchema(userRegistrations).omit({
+      id: true,
+      appliedAt: true,
+      createdAt: true,
+      updatedAt: true
+    }).extend({
+      email: z.string().email("\uC720\uD6A8\uD55C \uC774\uBA54\uC77C \uC8FC\uC18C\uB97C \uC785\uB825\uD574\uC8FC\uC138\uC694"),
+      name: z.string().min(2, "\uC774\uB984\uC740 2\uAE00\uC790 \uC774\uC0C1\uC774\uC5B4\uC57C \uD569\uB2C8\uB2E4").max(50, "\uC774\uB984\uC740 50\uAE00\uC790\uB97C \uCD08\uACFC\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4"),
+      phoneNumber: z.string().regex(/^[0-9-+().\s]*$/, "\uC62C\uBC14\uB978 \uC804\uD654\uBC88\uD638 \uD615\uC2DD\uC744 \uC785\uB825\uD574\uC8FC\uC138\uC694").optional(),
+      hashedPassword: z.string().min(1, "\uBE44\uBC00\uBC88\uD638\uB294 \uD544\uC218\uC785\uB2C8\uB2E4")
+    });
+    insertPasswordResetTokenSchema = createInsertSchema(passwordResetTokens).omit({
+      id: true,
+      createdAt: true
+    });
   }
 });
 
@@ -1422,12 +1486,12 @@ __export(excel_input_sheet_remover_exports, {
   removeAllInputSheets: () => removeAllInputSheets
 });
 import JSZip from "jszip";
-import fs3 from "fs";
+import fs2 from "fs";
 import { DOMParser, XMLSerializer } from "xmldom";
 async function removeAllInputSheets(sourcePath, targetPath) {
   try {
     console.log(`\u{1F527} Input \uC2DC\uD2B8 \uC644\uC804 \uC81C\uAC70 \uC2DC\uC791: ${sourcePath} -> ${targetPath}`);
-    const data = fs3.readFileSync(sourcePath);
+    const data = fs2.readFileSync(sourcePath);
     const zip = new JSZip();
     const zipData = await zip.loadAsync(data);
     const parser = new DOMParser();
@@ -1456,7 +1520,7 @@ async function removeAllInputSheets(sourcePath, targetPath) {
     console.log(`\u{1F4CB} \uBCF4\uC874\uD560 \uC2DC\uD2B8\uB4E4: ${remainingSheetNames.join(", ")}`);
     if (inputSheets.length === 0) {
       console.log(`\u26A0\uFE0F Input\uC73C\uB85C \uC2DC\uC791\uD558\uB294 \uC2DC\uD2B8\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.`);
-      fs3.copyFileSync(sourcePath, targetPath);
+      fs2.copyFileSync(sourcePath, targetPath);
       return {
         success: true,
         removedSheets: [],
@@ -1547,7 +1611,7 @@ async function removeAllInputSheets(sourcePath, targetPath) {
       compression: "DEFLATE",
       compressionOptions: { level: 6 }
     });
-    fs3.writeFileSync(targetPath, result);
+    fs2.writeFileSync(targetPath, result);
     console.log(`\u2705 Input \uC2DC\uD2B8 \uC644\uC804 \uC81C\uAC70 \uC644\uB8CC: ${targetPath}`);
     console.log(`\u{1F4CA} \uC81C\uAC70\uB41C \uC2DC\uD2B8: ${inputSheets.map((s) => s.name).join(", ")}`);
     console.log(`\u{1F4CA} \uBCF4\uC874\uB41C \uC2DC\uD2B8: ${remainingSheetNames.join(", ")}`);
@@ -1560,8 +1624,8 @@ async function removeAllInputSheets(sourcePath, targetPath) {
     };
   } catch (error) {
     console.error(`\u274C Input \uC2DC\uD2B8 \uC81C\uAC70 \uC2E4\uD328:`, error);
-    if (fs3.existsSync(targetPath)) {
-      fs3.unlinkSync(targetPath);
+    if (fs2.existsSync(targetPath)) {
+      fs2.unlinkSync(targetPath);
     }
     return {
       success: false,
@@ -1579,7 +1643,7 @@ var init_excel_input_sheet_remover = __esm({
 });
 
 // server/utils/email-settings-encryption.ts
-import crypto from "crypto";
+import crypto2 from "crypto";
 var EmailSettingsEncryption;
 var init_email_settings_encryption = __esm({
   "server/utils/email-settings-encryption.ts"() {
@@ -1601,7 +1665,7 @@ var init_email_settings_encryption = __esm({
        */
       static getEncryptionKey() {
         const secret = process.env.ENCRYPTION_SECRET || "default-secret-key-change-in-production";
-        return crypto.scryptSync(secret, "salt", this.keyLength);
+        return crypto2.scryptSync(secret, "salt", this.keyLength);
       }
       /**
        * 비밀번호 암호화
@@ -1611,8 +1675,8 @@ var init_email_settings_encryption = __esm({
       static encrypt(plainText) {
         try {
           const key = this.getEncryptionKey();
-          const iv = crypto.randomBytes(this.ivLength);
-          const cipher = crypto.createCipherGCM(this.algorithm, key, iv);
+          const iv = crypto2.randomBytes(this.ivLength);
+          const cipher = crypto2.createCipherGCM(this.algorithm, key, iv);
           cipher.setAAD(Buffer.from("email-settings", "utf8"));
           let encrypted = cipher.update(plainText, "utf8", "hex");
           encrypted += cipher.final("hex");
@@ -1638,7 +1702,7 @@ var init_email_settings_encryption = __esm({
           const key = this.getEncryptionKey();
           const iv = Buffer.from(ivHex, "hex");
           const tag = Buffer.from(tagHex, "hex");
-          const decipher = crypto.createDecipherGCM(this.algorithm, key, iv);
+          const decipher = crypto2.createDecipherGCM(this.algorithm, key, iv);
           decipher.setAuthTag(tag);
           decipher.setAAD(Buffer.from("email-settings", "utf8"));
           let decrypted = decipher.update(encrypted, "hex", "utf8");
@@ -1721,7 +1785,7 @@ var email_settings_service_exports = {};
 __export(email_settings_service_exports, {
   EmailSettingsService: () => EmailSettingsService
 });
-import { eq as eq6, desc as desc4 } from "drizzle-orm";
+import { eq as eq8, desc as desc4 } from "drizzle-orm";
 import nodemailer2 from "nodemailer";
 var EmailSettingsService;
 var init_email_settings_service = __esm({
@@ -1750,7 +1814,7 @@ var init_email_settings_service = __esm({
             return _EmailSettingsService.settingsCache;
           }
           const db2 = db;
-          const result = await db2.select().from(emailSettings).where(eq6(emailSettings.isActive, true)).orderBy(desc4(emailSettings.isDefault), desc4(emailSettings.updatedAt)).limit(1);
+          const result = await db2.select().from(emailSettings).where(eq8(emailSettings.isActive, true)).orderBy(desc4(emailSettings.isDefault), desc4(emailSettings.updatedAt)).limit(1);
           const setting = result[0] || null;
           _EmailSettingsService.settingsCache = setting;
           _EmailSettingsService.cacheTimestamp = Date.now();
@@ -1781,7 +1845,7 @@ var init_email_settings_service = __esm({
           const encryptedPassword = EmailSettingsEncryption.encrypt(data.smtpPass);
           const db2 = db;
           if (data.isDefault) {
-            await db2.update(emailSettings).set({ isDefault: false, updatedAt: /* @__PURE__ */ new Date() }).where(eq6(emailSettings.isDefault, true));
+            await db2.update(emailSettings).set({ isDefault: false, updatedAt: /* @__PURE__ */ new Date() }).where(eq8(emailSettings.isDefault, true));
           }
           const insertData = {
             ...data,
@@ -1811,9 +1875,9 @@ var init_email_settings_service = __esm({
             updateData.smtpPass = EmailSettingsEncryption.encrypt(data.smtpPass);
           }
           if (data.isDefault === true) {
-            await db2.update(emailSettings).set({ isDefault: false, updatedAt: /* @__PURE__ */ new Date() }).where(eq6(emailSettings.isDefault, true));
+            await db2.update(emailSettings).set({ isDefault: false, updatedAt: /* @__PURE__ */ new Date() }).where(eq8(emailSettings.isDefault, true));
           }
-          const result = await db2.update(emailSettings).set(updateData).where(eq6(emailSettings.id, id)).returning();
+          const result = await db2.update(emailSettings).set(updateData).where(eq8(emailSettings.id, id)).returning();
           if (result.length === 0) {
             throw new Error("\uC5C5\uB370\uC774\uD2B8\uD560 \uC124\uC815\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4");
           }
@@ -1830,7 +1894,7 @@ var init_email_settings_service = __esm({
       async deleteSettings(id) {
         try {
           const db2 = db;
-          const result = await db2.delete(emailSettings).where(eq6(emailSettings.id, id)).returning();
+          const result = await db2.delete(emailSettings).where(eq8(emailSettings.id, id)).returning();
           this.invalidateCache();
           return result.length > 0;
         } catch (error) {
@@ -1934,7 +1998,7 @@ var init_email_settings_service = __esm({
           let setting;
           if (settingId) {
             const db2 = db;
-            const result = await db2.select().from(emailSettings).where(eq6(emailSettings.id, settingId)).limit(1);
+            const result = await db2.select().from(emailSettings).where(eq8(emailSettings.id, settingId)).limit(1);
             setting = result[0] || null;
           } else {
             setting = await this.getDefaultSettings();
@@ -1994,7 +2058,7 @@ var init_email_settings_service = __esm({
             lastTestedAt: /* @__PURE__ */ new Date(),
             testResult,
             updatedAt: /* @__PURE__ */ new Date()
-          }).where(eq6(emailSettings.id, settingId));
+          }).where(eq8(emailSettings.id, settingId));
         } catch (error) {
           console.error("\uD14C\uC2A4\uD2B8 \uACB0\uACFC \uC5C5\uB370\uC774\uD2B8 \uC2E4\uD328:", error);
         }
@@ -2008,7 +2072,7 @@ import * as fs6 from "fs";
 import * as path4 from "path";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
-import { eq as eq7, desc as desc5 } from "drizzle-orm";
+import { eq as eq9, desc as desc5 } from "drizzle-orm";
 var ProfessionalPDFGenerationService;
 var init_professional_pdf_generation_service = __esm({
   "server/services/professional-pdf-generation-service.ts"() {
@@ -2099,7 +2163,7 @@ var init_professional_pdf_generation_service = __esm({
             creatorPhone: users.phoneNumber,
             creatorPosition: users.position,
             creatorRole: users.role
-          }).from(purchaseOrders).leftJoin(vendors, eq7(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq7(purchaseOrders.projectId, projects.id)).leftJoin(users, eq7(purchaseOrders.userId, users.id)).where(eq7(purchaseOrders.id, orderId)).limit(1);
+          }).from(purchaseOrders).leftJoin(vendors, eq9(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq9(purchaseOrders.projectId, projects.id)).leftJoin(users, eq9(purchaseOrders.userId, users.id)).where(eq9(purchaseOrders.id, orderId)).limit(1);
           const companyQuery = await db.select({
             companyName: companies.companyName,
             companyBusinessNumber: companies.businessNumber,
@@ -2110,7 +2174,7 @@ var init_professional_pdf_generation_service = __esm({
             companyFax: companies.fax,
             companyWebsite: companies.website,
             companyRepresentative: companies.representative
-          }).from(companies).where(eq7(companies.isActive, true)).limit(1);
+          }).from(companies).where(eq9(companies.isActive, true)).limit(1);
           if (!orderQuery || orderQuery.length === 0) {
             console.error(`\u274C [ProfessionalPDF] \uBC1C\uC8FC\uC11C \uC815\uBCF4 \uC5C6\uC74C: Order ID ${orderId}`);
             return null;
@@ -2125,11 +2189,11 @@ var init_professional_pdf_generation_service = __esm({
             companyEmail: null,
             companyRepresentative: null
           };
-          const itemsQuery = await db.select().from(purchaseOrderItems).where(eq7(purchaseOrderItems.orderId, orderId));
-          const attachmentsQuery = await db.select().from(attachments).where(eq7(attachments.orderId, orderId));
+          const itemsQuery = await db.select().from(purchaseOrderItems).where(eq9(purchaseOrderItems.orderId, orderId));
+          const attachmentsQuery = await db.select().from(attachments).where(eq9(attachments.orderId, orderId));
           let emailHistoryQuery = [];
           try {
-            emailHistoryQuery = await db.select().from(emailSendHistory).where(eq7(emailSendHistory.orderId, orderId)).orderBy(desc5(emailSendHistory.sentAt)).limit(5);
+            emailHistoryQuery = await db.select().from(emailSendHistory).where(eq9(emailSendHistory.orderId, orderId)).orderBy(desc5(emailSendHistory.sentAt)).limit(5);
           } catch (error) {
             if (error.code !== "42P01") {
               console.error("\u274C [ProfessionalPDF] \uC774\uBA54\uC77C \uC774\uB825 \uC870\uD68C \uC624\uB958:", error);
@@ -2916,6 +2980,7 @@ var init_professional_pdf_generation_service = __esm({
        */
       static async generateProfessionalPDFWithPDFKit(orderData) {
         const PDFKitDocument = (await import("pdfkit")).default;
+        const fs22 = await import("fs");
         return new Promise((resolve, reject) => {
           try {
             const doc = new PDFKitDocument({
@@ -2927,7 +2992,46 @@ var init_professional_pdf_generation_service = __esm({
             doc.on("data", buffers.push.bind(buffers));
             doc.on("end", () => resolve(Buffer.concat(buffers)));
             doc.on("error", reject);
-            console.log("\u{1F4DD} [ProfessionalPDF] PDFKit\uC73C\uB85C PDF \uC0DD\uC131 (\uD55C\uAE00 \uD14D\uC2A4\uD2B8 \uD3EC\uD568)");
+            console.log("\u{1F4DD} [ProfessionalPDF] PDFKit\uC73C\uB85C PDF \uC0DD\uC131 (\uD55C\uAE00 \uD3F0\uD2B8 \uB4F1\uB85D)");
+            let koreanFontPath = null;
+            const possibleFonts = [
+              "/System/Library/Fonts/Supplemental/AppleGothic.ttf",
+              // macOS
+              "/System/Library/Fonts/Supplemental/AppleMyungjo.ttf",
+              // macOS 명조
+              "C:\\Windows\\Fonts\\malgun.ttf",
+              // Windows
+              "C:\\Windows\\Fonts\\gulim.ttf",
+              // Windows 굴림
+              "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",
+              // Linux
+              "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"
+              // Linux Noto
+            ];
+            for (const fontPath of possibleFonts) {
+              try {
+                if (fs22.existsSync(fontPath)) {
+                  koreanFontPath = fontPath;
+                  console.log(`\u2705 [ProfessionalPDF] \uD55C\uAE00 \uD3F0\uD2B8 \uBC1C\uACAC: ${fontPath}`);
+                  break;
+                }
+              } catch (error) {
+                continue;
+              }
+            }
+            if (koreanFontPath) {
+              try {
+                doc.registerFont("Korean", koreanFontPath);
+                doc.font("Korean");
+                console.log(`\u2705 [ProfessionalPDF] \uD55C\uAE00 \uD3F0\uD2B8 \uB4F1\uB85D \uC644\uB8CC: ${koreanFontPath}`);
+              } catch (fontError) {
+                console.warn("\u26A0\uFE0F [ProfessionalPDF] \uD55C\uAE00 \uD3F0\uD2B8 \uB4F1\uB85D \uC2E4\uD328, \uAE30\uBCF8 \uD3F0\uD2B8 \uC0AC\uC6A9:", fontError);
+                doc.font("Helvetica");
+              }
+            } else {
+              console.warn("\u26A0\uFE0F [ProfessionalPDF] \uD55C\uAE00 \uD3F0\uD2B8\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC74C, \uAE30\uBCF8 \uD3F0\uD2B8 \uC0AC\uC6A9");
+              doc.font("Helvetica");
+            }
             const safeText = (text2) => {
               return text2 || "";
             };
@@ -3118,7 +3222,7 @@ __export(po_template_processor_mock_exports, {
   POTemplateProcessorMock: () => POTemplateProcessorMock
 });
 import XLSX4 from "xlsx";
-import { eq as eq10 } from "drizzle-orm";
+import { eq as eq12 } from "drizzle-orm";
 var POTemplateProcessorMock;
 var init_po_template_processor_mock = __esm({
   "server/utils/po-template-processor-mock.ts"() {
@@ -3261,7 +3365,7 @@ var init_po_template_processor_mock = __esm({
             for (const orderData of orders) {
               console.log(`\u{1F50D} [DB] \uBC1C\uC8FC\uC11C \uCC98\uB9AC \uC911: ${orderData.orderNumber}, \uAC70\uB798\uCC98: ${orderData.vendorName}`);
               console.log(`\u{1F50D} [DB] \uAC70\uB798\uCC98 \uC870\uD68C: ${orderData.vendorName}`);
-              let vendor = await tx.select().from(vendors).where(eq10(vendors.name, orderData.vendorName)).limit(1);
+              let vendor = await tx.select().from(vendors).where(eq12(vendors.name, orderData.vendorName)).limit(1);
               let vendorId;
               if (vendor.length === 0) {
                 console.log(`\u{1F50D} [DB] \uAC70\uB798\uCC98 \uC0DD\uC131: ${orderData.vendorName}`);
@@ -3279,7 +3383,7 @@ var init_po_template_processor_mock = __esm({
                 console.log(`\u2705 [DB] \uAC70\uB798\uCC98 \uAE30\uC874 \uBC1C\uACAC: ID ${vendorId}`);
               }
               console.log(`\u{1F50D} [DB] \uD504\uB85C\uC81D\uD2B8 \uC870\uD68C: ${orderData.siteName}`);
-              let project = await tx.select().from(projects).where(eq10(projects.projectName, orderData.siteName)).limit(1);
+              let project = await tx.select().from(projects).where(eq12(projects.projectName, orderData.siteName)).limit(1);
               let projectId;
               if (project.length === 0) {
                 console.log(`\u{1F50D} [DB] \uD504\uB85C\uC81D\uD2B8 \uC0DD\uC131: ${orderData.siteName}`);
@@ -3352,8 +3456,8 @@ var init_po_template_processor_mock = __esm({
               }
               try {
                 console.log(`\u{1F4C4} [DB] PDF \uC0DD\uC131 \uC2DC\uC791: \uBC1C\uC8FC\uC11C ${orderData.orderNumber}`);
-                const vendorInfo = await tx.select().from(vendors).where(eq10(vendors.id, vendorId)).limit(1);
-                const projectInfo = await tx.select().from(projects).where(eq10(projects.id, projectId)).limit(1);
+                const vendorInfo = await tx.select().from(vendors).where(eq12(vendors.id, vendorId)).limit(1);
+                const projectInfo = await tx.select().from(projects).where(eq12(projects.id, projectId)).limit(1);
                 const pdfData = {
                   orderNumber: orderData.orderNumber,
                   orderDate: new Date(orderData.orderDate),
@@ -3948,7 +4052,7 @@ import dotenv2 from "dotenv";
 import express4 from "express";
 import session from "express-session";
 import cookieParser from "cookie-parser";
-import crypto3 from "crypto";
+import crypto4 from "crypto";
 
 // server/routes/index.ts
 import { Router as Router38 } from "express";
@@ -6212,1226 +6316,331 @@ function requireRole(roles) {
 var requireAdmin = requireRole(["admin"]);
 var requireOrderManager = requireRole(["admin", "order_manager"]);
 
-// server/routes/auth.ts
-var router = Router();
-router.get("/auth/debug", (req, res) => {
-  res.json({
-    message: "Auth routes are working",
-    timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-    environment: process.env.NODE_ENV || "unknown"
-  });
-});
-router.get("/test/ping", (req, res) => {
-  res.json({
-    message: "Server is alive",
-    timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-    environment: process.env.NODE_ENV || "unknown",
-    vercel: process.env.VERCEL || "false",
-    origin: req.get("Origin") || "none"
-  });
-});
-router.get("/auth/debug-prod", (req, res) => {
-  try {
-    const authSession = req.session;
-    console.log("\u{1F50D} Production auth debug:", {
-      sessionExists: !!req.session,
-      sessionId: req.sessionID,
-      sessionUserId: authSession?.userId,
-      cookies: req.headers.cookie,
-      origin: req.get("Origin"),
-      userAgent: req.get("User-Agent"),
-      secure: req.secure,
-      protocol: req.protocol,
-      host: req.get("host")
-    });
-    res.json({
-      environment: process.env.NODE_ENV,
-      sessionExists: !!req.session,
-      sessionId: req.sessionID || null,
-      sessionUserId: authSession?.userId || null,
-      hasSessionCookie: req.headers.cookie?.includes("connect.sid") || false,
-      cookieHeader: req.headers.cookie || null,
-      origin: req.get("Origin") || null,
-      secure: req.secure,
-      protocol: req.protocol,
-      host: req.get("host"),
-      timestamp: (/* @__PURE__ */ new Date()).toISOString()
-    });
-  } catch (error) {
-    console.error("Production auth debug error:", error);
-    res.status(500).json({
-      error: "Debug failed",
-      message: error?.message || "Unknown error"
-    });
-  }
-});
-router.post("/auth/login-simple", (req, res) => {
-  try {
-    const { username, password, email } = req.body;
-    const identifier = username || email;
-    console.log("\u{1F510} Simple login attempt for:", identifier);
-    const users3 = [
-      { id: "admin", username: "admin", email: "admin@company.com", password: "admin123", name: "\uAD00\uB9AC\uC790", role: "admin" },
-      { id: "manager", username: "manager", email: "manager@company.com", password: "manager123", name: "\uAE40\uBD80\uC7A5", role: "project_manager" },
-      { id: "user", username: "user", email: "user@company.com", password: "user123", name: "\uC774\uAE30\uC0AC", role: "field_worker" }
-    ];
-    const user = users3.find((u) => u.username === identifier || u.email === identifier);
-    if (!user || user.password !== password) {
-      return res.status(401).json({ message: "Invalid credentials" });
-    }
-    const { password: _, ...userWithoutPassword } = user;
-    res.json({
-      message: "Login successful (simple mode)",
-      user: userWithoutPassword
-    });
-  } catch (error) {
-    console.error("Simple login error:", error);
-    res.status(500).json({ message: "Login failed", error: error.message });
-  }
-});
-router.post("/auth/login-test", (req, res) => {
-  try {
-    const { username, password, email } = req.body;
-    const identifier = username || email;
-    console.log("\u{1F510} Test login attempt for:", identifier);
-    const users3 = [
-      { id: "admin", username: "admin", email: "admin@company.com", password: "admin123", name: "\uAD00\uB9AC\uC790", role: "admin" },
-      { id: "manager", username: "manager", email: "manager@company.com", password: "manager123", name: "\uAE40\uBD80\uC7A5", role: "project_manager" },
-      { id: "user", username: "user", email: "user@company.com", password: "user123", name: "\uC774\uAE30\uC0AC", role: "field_worker" }
-    ];
-    const user = users3.find((u) => u.username === identifier || u.email === identifier);
-    if (!user || user.password !== password) {
-      return res.status(401).json({ message: "Invalid credentials" });
-    }
-    const { password: _, ...userWithoutPassword } = user;
-    res.json({
-      message: "Login successful (test mode)",
-      user: userWithoutPassword
-    });
-  } catch (error) {
-    console.error("Test login error:", error);
-    res.status(500).json({ message: "Login failed", error: error.message });
-  }
-});
-router.post("/auth/login", login);
-router.post("/auth/logout", logout);
-router.patch("/auth/profile", requireAuth, async (req, res) => {
-  try {
-    const userId = req.user?.id;
-    if (!userId) {
-      return res.status(401).json({ message: "Authentication required" });
-    }
-    const { name } = req.body;
-    if (!name) {
-      return res.status(400).json({ message: "Name is required" });
-    }
-    const updatedUser = await storage.updateUser(userId, { name });
-    const { password: _, ...userWithoutPassword } = updatedUser;
-    res.json(userWithoutPassword);
-  } catch (error) {
-    console.error("Profile update error:", error);
-    res.status(500).json({ message: "Failed to update profile" });
-  }
-});
-router.patch("/auth/change-password", requireAuth, async (req, res) => {
-  try {
-    const userId = req.user?.id;
-    if (!userId) {
-      return res.status(401).json({ message: "Authentication required" });
-    }
-    const { currentPassword, newPassword } = req.body;
-    if (!currentPassword || !newPassword) {
-      return res.status(400).json({ message: "Current and new passwords are required" });
-    }
-    const user = await storage.getUser(userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-    const bcrypt3 = await import("bcrypt");
-    const isValidPassword = await bcrypt3.compare(currentPassword, user.password);
-    if (!isValidPassword) {
-      return res.status(401).json({ message: "Current password is incorrect" });
-    }
-    const hashedPassword = await bcrypt3.hash(newPassword, 10);
-    await storage.updateUser(userId, { password: hashedPassword });
-    res.json({ message: "Password changed successfully" });
-  } catch (error) {
-    console.error("Password change error:", error);
-    res.status(500).json({ message: "Failed to change password" });
-  }
-});
-router.get("/logout", (req, res) => {
-  if (req.session) {
-    req.session.destroy(() => {
-      res.clearCookie("connect.sid");
-      res.json({ message: "Logout successful" });
-    });
-  } else {
-    res.json({ message: "Logout successful" });
-  }
-});
-router.post("/auth/force-logout", (req, res) => {
-  try {
-    console.log("\u{1F534} Force logout request - clearing all authentication state");
-    try {
-      if (req.session) {
-        req.session.userId = void 0;
-        req.session.user = void 0;
-        req.session.destroy((err) => {
-          if (err) {
-            console.log("\u26A0\uFE0F Force session destroy failed (non-fatal):", err);
-          } else {
-            console.log("\u2705 Session completely destroyed in force logout");
-          }
-        });
-      }
-    } catch (sessionErr) {
-      console.log("\u26A0\uFE0F Session clearing failed (non-fatal):", sessionErr);
-    }
-    res.clearCookie("connect.sid");
-    res.clearCookie("sessionId");
-    console.log("\u2705 Force logout completed - all authentication state cleared");
-    res.json({
-      message: "Force logout successful - all authentication state cleared",
-      success: true,
-      cleared: {
-        session: true,
-        cookies: true
-      }
-    });
-  } catch (error) {
-    console.error("Force logout error:", error);
-    res.status(500).json({
-      message: "Force logout failed",
-      error: error?.message || "Unknown error",
-      success: false
-    });
-  }
-});
-router.get("/auth/status", (req, res) => {
-  try {
-    console.log("\u{1F50D} Authentication status check");
-    const authSession = req.session;
-    const status = {
-      sessionExists: !!req.session,
-      sessionId: req.sessionID || null,
-      sessionUserId: authSession?.userId || null,
-      sessionUser: authSession?.user ? {
-        id: authSession.user.id,
-        name: authSession.user.name,
-        role: authSession.user.role
-      } : null,
-      cookies: req.headers.cookie ? req.headers.cookie.split("; ").length : 0,
-      timestamp: (/* @__PURE__ */ new Date()).toISOString()
-    };
-    console.log("\u{1F4CA} Current auth status:", status);
-    res.json(status);
-  } catch (error) {
-    console.error("Status check error:", error);
-    res.status(500).json({
-      message: "Status check failed",
-      error: error?.message || "Unknown error"
-    });
-  }
-});
-router.get("/auth/user", getCurrentUser);
-router.get("/auth/me", (req, res) => {
-  try {
-    console.log("\u{1F464} Get me request - LEGACY ENDPOINT");
-    console.log("\u{1F6AB} Legacy /auth/me endpoint called - returning null to stop polling");
-    res.status(401).json({
-      message: "Legacy endpoint - please use /api/auth/user",
-      user: null,
-      deprecated: true,
-      useInstead: "/api/auth/user"
-    });
-  } catch (error) {
-    console.error("Get me error:", error);
-    res.status(500).json({ message: "Failed to get user data" });
-  }
-});
-router.get("/auth/permissions/:userId", async (req, res) => {
-  try {
-    const userId = req.params.userId;
-    let user = await storage.getUser(userId);
-    if (!user && userId === "dev_admin") {
-      user = {
-        id: "dev_admin",
-        email: "admin@company.com",
-        name: "Dev Administrator",
-        role: "admin",
-        phoneNumber: null,
-        profileImageUrl: null,
-        position: null,
-        isActive: true,
-        createdAt: /* @__PURE__ */ new Date(),
-        updatedAt: /* @__PURE__ */ new Date()
-      };
-    }
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-    const permissions = {
-      userId: user.id,
-      role: user.role,
-      permissions: {
-        canCreateOrder: true,
-        canApproveOrder: ["project_manager", "hq_management", "executive", "admin"].includes(user.role),
-        canManageUsers: ["admin"].includes(user.role),
-        canManageProjects: ["project_manager", "hq_management", "admin"].includes(user.role),
-        canViewReports: ["hq_management", "executive", "admin"].includes(user.role),
-        canManageSettings: ["admin"].includes(user.role)
-      }
-    };
-    res.json(permissions);
-  } catch (error) {
-    console.error("Error fetching permissions:", error);
-    res.status(500).json({ message: "Failed to fetch permissions" });
-  }
-});
-router.get("/users", requireAuth, requireAdmin, async (req, res) => {
-  try {
-    const users3 = await storage.getUsers();
-    res.json(users3);
-  } catch (error) {
-    console.error("Error fetching users:", error);
-    res.status(500).json({ message: "Failed to fetch users" });
-  }
-});
-router.post("/users", requireAuth, requireAdmin, async (req, res) => {
-  try {
-    const { email, name, phoneNumber, role } = req.body;
-    const newUser = await storage.upsertUser({
-      email,
-      name,
-      phoneNumber,
-      role: role || "user",
-      password: "temp123"
-      // Temporary password - should be changed by user
-    });
-    res.status(201).json(newUser);
-  } catch (error) {
-    console.error("Error creating user:", error);
-    res.status(500).json({ message: "Failed to create user" });
-  }
-});
-router.patch("/users/:id", async (req, res) => {
-  try {
-    const id = req.params.id;
-    const updates = req.body;
-    const currentUser = await storage.getUser(id);
-    if (!currentUser) {
-      return res.status(404).json({ message: "User not found" });
-    }
-    const updatedUser = await storage.updateUser(id, updates);
-    res.json(updatedUser);
-  } catch (error) {
-    console.error("Error updating user:", error);
-    res.status(500).json({ message: "Failed to update user" });
-  }
-});
-router.put("/users/:id", async (req, res) => {
-  try {
-    const id = req.params.id;
-    const updates = req.body;
-    const currentUser = await storage.getUser(id);
-    if (!currentUser) {
-      return res.status(404).json({ message: "User not found" });
-    }
-    const updatedUser = await storage.updateUser(id, updates);
-    res.json(updatedUser);
-  } catch (error) {
-    console.error("Error updating user:", error);
-    res.status(500).json({ message: "Failed to update user" });
-  }
-});
-router.delete("/users/:id", async (req, res) => {
-  try {
-    const id = req.params.id;
-    const userOrders = await storage.getOrdersByUserId(id);
-    if (userOrders && userOrders.length > 0) {
-      return res.status(400).json({
-        message: "Cannot delete user with existing orders",
-        reason: "data_integrity",
-        details: "User has purchase orders that must preserve creator information"
-      });
-    }
-    await storage.deleteUser(id);
-    res.json({ message: "User deleted successfully" });
-  } catch (error) {
-    console.error("Error deleting user:", error);
-    res.status(500).json({ message: "Failed to delete user" });
-  }
-});
-router.patch("/users/:id/toggle-active", async (req, res) => {
-  try {
-    const id = req.params.id;
-    const { isActive } = req.body;
-    const updatedUser = await storage.updateUser(id, { isActive });
-    res.json(updatedUser);
-  } catch (error) {
-    console.error("Error toggling user active status:", error);
-    res.status(500).json({ message: "Failed to toggle user active status" });
-  }
-});
-var auth_default = router;
-
-// server/routes/projects.ts
-import { Router as Router2 } from "express";
-init_schema();
-
-// server/utils/optimized-queries.ts
+// server/services/UserRegistrationService.ts
 init_db();
 init_schema();
-import { eq as eq2, desc as desc2, count as count2, sql as sql3, and as and2, isNotNull as isNotNull2 } from "drizzle-orm";
-
-// server/utils/cache.ts
-var MemoryCache = class {
-  constructor() {
-    this.cache = /* @__PURE__ */ new Map();
-    this.defaultTTL = 5 * 60 * 1e3;
-  }
-  // 5 minutes default TTL
+import { eq as eq2, and as and2 } from "drizzle-orm";
+import bcrypt3 from "bcrypt";
+import { v4 as uuidv4 } from "uuid";
+var UserRegistrationService = class {
   /**
-   * Set cache entry with TTL
+   * 회원가입 신청 제출
    */
-  set(key, data, ttl = this.defaultTTL) {
-    this.cache.set(key, {
-      data,
-      timestamp: Date.now(),
-      ttl
-    });
-  }
-  /**
-   * Get cache entry if not expired
-   */
-  get(key) {
-    const entry = this.cache.get(key);
-    if (!entry) {
-      return null;
-    }
-    if (Date.now() - entry.timestamp > entry.ttl) {
-      this.cache.delete(key);
-      return null;
-    }
-    return entry.data;
-  }
-  /**
-   * Delete cache entry
-   */
-  delete(key) {
-    this.cache.delete(key);
-  }
-  /**
-   * Clear all cache entries
-   */
-  clear() {
-    this.cache.clear();
-  }
-  /**
-   * Clear expired entries
-   */
-  cleanup() {
-    const now = Date.now();
-    for (const [key, entry] of this.cache.entries()) {
-      if (now - entry.timestamp > entry.ttl) {
-        this.cache.delete(key);
+  static async submitRegistration(data) {
+    try {
+      const existingUser = await db.select().from(users).where(eq2(users.email, data.email)).limit(1);
+      if (existingUser.length > 0) {
+        throw new Error("\uC774\uBBF8 \uB4F1\uB85D\uB41C \uC774\uBA54\uC77C \uC8FC\uC18C\uC785\uB2C8\uB2E4.");
       }
-    }
-  }
-  /**
-   * Get cache size
-   */
-  size() {
-    return this.cache.size;
-  }
-  /**
-   * Get cache statistics
-   */
-  getStats() {
-    return {
-      size: this.cache.size,
-      keys: Array.from(this.cache.keys())
-    };
-  }
-};
-var cache = new MemoryCache();
-var CacheTTL = {
-  SHORT: 1 * 60 * 1e3,
-  // 1 minute
-  MEDIUM: 5 * 60 * 1e3,
-  // 5 minutes
-  LONG: 30 * 60 * 1e3,
-  // 30 minutes
-  VERY_LONG: 60 * 60 * 1e3
-  // 1 hour
-};
-setInterval(() => {
-  cache.cleanup();
-}, 10 * 60 * 1e3);
-
-// server/utils/optimized-queries.ts
-var OptimizedOrderQueries = class {
-  /**
-   * Get orders with comprehensive details and filtering
-   */
-  static async getOrdersWithDetails(filters = {}) {
-    const cacheKey = `orders_details_${JSON.stringify(filters)}`;
-    const cached = cache.get(cacheKey);
-    if (cached) return cached;
-    try {
-      let query = db.select({
-        id: purchaseOrders.id,
-        orderNumber: purchaseOrders.orderNumber,
-        status: purchaseOrders.status,
-        totalAmount: purchaseOrders.totalAmount,
-        orderDate: purchaseOrders.orderDate,
-        deliveryDate: purchaseOrders.deliveryDate,
-        projectName: projects.projectName,
-        vendorName: vendors.name,
-        userName: users.name,
-        approvalLevel: purchaseOrders.approvalLevel,
-        currentApproverRole: purchaseOrders.currentApproverRole
-      }).from(purchaseOrders).leftJoin(projects, eq2(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq2(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq2(purchaseOrders.userId, users.id)).orderBy(desc2(purchaseOrders.orderDate));
-      const result = await query;
-      cache.set(cacheKey, result, 300);
-      return result;
-    } catch (error) {
-      console.error("Error fetching orders with details:", error);
-      return [];
-    }
-  }
-  /**
-   * Get pending approval orders for specific role
-   */
-  static async getPendingApprovalOrders(role) {
-    const cacheKey = `pending_orders_${role}`;
-    const cached = cache.get(cacheKey);
-    if (cached) return cached;
-    try {
-      const result = await db.select().from(purchaseOrders).where(
+      const existingRegistration = await db.select().from(userRegistrations).where(
         and2(
-          eq2(purchaseOrders.status, "pending"),
-          eq2(purchaseOrders.currentApproverRole, role)
+          eq2(userRegistrations.email, data.email),
+          eq2(userRegistrations.status, "pending")
         )
-      ).orderBy(desc2(purchaseOrders.orderDate));
-      cache.set(cacheKey, result, 120);
-      return result;
+      ).limit(1);
+      if (existingRegistration.length > 0) {
+        throw new Error("\uC774\uBBF8 \uAC00\uC785 \uC2E0\uCCAD\uC774 \uC811\uC218\uB41C \uC774\uBA54\uC77C \uC8FC\uC18C\uC785\uB2C8\uB2E4.");
+      }
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt3.hash(data.password, saltRounds);
+      const registrationData = {
+        email: data.email,
+        name: data.name,
+        phoneNumber: data.phoneNumber || null,
+        hashedPassword,
+        requestedRole: data.requestedRole || "field_worker",
+        status: "pending"
+      };
+      const [newRegistration] = await db.insert(userRegistrations).values(registrationData).returning();
+      return newRegistration;
     } catch (error) {
-      console.error("Error fetching pending approval orders:", error);
-      return [];
+      console.error("Registration submission error:", error);
+      throw error;
     }
   }
   /**
-   * Get order statistics summary
+   * 가입 신청 승인
    */
-  static async getOrderStatistics() {
-    const cacheKey = "order_statistics";
-    const cached = cache.get(cacheKey);
-    if (cached) return cached;
+  static async approveRegistration(registrationId, adminId) {
     try {
-      const [totalOrders] = await db.select({ count: count2() }).from(purchaseOrders);
-      const [pendingOrders] = await db.select({ count: count2() }).from(purchaseOrders).where(eq2(purchaseOrders.status, "pending"));
-      const [approvedOrders] = await db.select({ count: count2() }).from(purchaseOrders).where(eq2(purchaseOrders.status, "approved"));
-      const result = {
-        total: totalOrders.count || 0,
-        pending: pendingOrders.count || 0,
-        approved: approvedOrders.count || 0
-      };
-      cache.set(cacheKey, result, 300);
-      return result;
+      const registration = await this.getRegistrationById(registrationId);
+      if (!registration) {
+        throw new Error("\uAC00\uC785 \uC2E0\uCCAD\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.");
+      }
+      if (registration.status !== "pending") {
+        throw new Error("\uC774\uBBF8 \uCC98\uB9AC\uB41C \uAC00\uC785 \uC2E0\uCCAD\uC785\uB2C8\uB2E4.");
+      }
+      const userId = uuidv4();
+      const [newUser] = await db.insert(users).values({
+        id: userId,
+        email: registration.email,
+        name: registration.name,
+        password: registration.hashedPassword,
+        phoneNumber: registration.phoneNumber,
+        role: registration.requestedRole,
+        accountStatus: "active",
+        isActive: true
+      }).returning();
+      const [updatedRegistration] = await db.update(userRegistrations).set({
+        status: "approved",
+        reviewedAt: /* @__PURE__ */ new Date(),
+        reviewedBy: adminId
+      }).where(eq2(userRegistrations.id, registrationId)).returning();
+      return { user: newUser, registration: updatedRegistration };
     } catch (error) {
-      console.error("Error fetching order statistics:", error);
-      return { total: 0, pending: 0, approved: 0 };
+      console.error("Registration approval error:", error);
+      throw error;
+    }
+  }
+  /**
+   * 가입 신청 거부
+   */
+  static async rejectRegistration(registrationId, adminId, reason) {
+    try {
+      const registration = await this.getRegistrationById(registrationId);
+      if (!registration) {
+        throw new Error("\uAC00\uC785 \uC2E0\uCCAD\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.");
+      }
+      if (registration.status !== "pending") {
+        throw new Error("\uC774\uBBF8 \uCC98\uB9AC\uB41C \uAC00\uC785 \uC2E0\uCCAD\uC785\uB2C8\uB2E4.");
+      }
+      const [updatedRegistration] = await db.update(userRegistrations).set({
+        status: "rejected",
+        rejectionReason: reason,
+        reviewedAt: /* @__PURE__ */ new Date(),
+        reviewedBy: adminId
+      }).where(eq2(userRegistrations.id, registrationId)).returning();
+      return updatedRegistration;
+    } catch (error) {
+      console.error("Registration rejection error:", error);
+      throw error;
+    }
+  }
+  /**
+   * 대기 중인 가입 신청 목록 조회
+   */
+  static async getPendingRegistrations() {
+    try {
+      return await db.select().from(userRegistrations).where(eq2(userRegistrations.status, "pending")).orderBy(userRegistrations.appliedAt);
+    } catch (error) {
+      console.error("Get pending registrations error:", error);
+      throw error;
+    }
+  }
+  /**
+   * 모든 가입 신청 목록 조회 (관리자용)
+   */
+  static async getAllRegistrations() {
+    try {
+      return await db.select().from(userRegistrations).orderBy(userRegistrations.appliedAt);
+    } catch (error) {
+      console.error("Get all registrations error:", error);
+      throw error;
+    }
+  }
+  /**
+   * 특정 가입 신청 조회
+   */
+  static async getRegistrationById(id) {
+    try {
+      const [registration] = await db.select().from(userRegistrations).where(eq2(userRegistrations.id, id)).limit(1);
+      return registration || null;
+    } catch (error) {
+      console.error("Get registration by ID error:", error);
+      throw error;
+    }
+  }
+  /**
+   * 이메일로 가입 신청 조회
+   */
+  static async getRegistrationByEmail(email) {
+    try {
+      const [registration] = await db.select().from(userRegistrations).where(eq2(userRegistrations.email, email)).limit(1);
+      return registration || null;
+    } catch (error) {
+      console.error("Get registration by email error:", error);
+      throw error;
+    }
+  }
+  /**
+   * 가입 신청 삭제 (관리자용)
+   */
+  static async deleteRegistration(id) {
+    try {
+      const result = await db.delete(userRegistrations).where(eq2(userRegistrations.id, id));
+      return result.rowCount !== void 0 && result.rowCount > 0;
+    } catch (error) {
+      console.error("Delete registration error:", error);
+      throw error;
     }
   }
 };
-var OptimizedDashboardQueries = class {
-  /**
-   * Get unified dashboard data in single optimized query
-   */
-  static async getUnifiedDashboardData() {
-    const cacheKey = "unified_dashboard_data";
-    const cached = cache.get(cacheKey);
-    if (cached) return cached;
-    try {
-      console.log("\u{1F50D} Starting getUnifiedDashboardData query...");
-      const orderStatsResult = await db.execute(
-        sql3`SELECT 
-          COUNT(*) as "totalOrders",
-          COALESCE(SUM(total_amount), 0) as "totalAmount"
-        FROM purchase_orders`
-      );
-      console.log("\u{1F4CA} Order stats query result:", orderStatsResult);
-      const orderStats = orderStatsResult.rows[0] || { totalOrders: 0, totalAmount: 0 };
-      const pendingOrderResult = await db.execute(
-        sql3`SELECT COUNT(*) as "pendingOrders" FROM purchase_orders WHERE status = 'pending'`
-      );
-      const pendingOrderStats = pendingOrderResult.rows[0] || { pendingOrders: 0 };
-      const completedOrderResult = await db.execute(
-        sql3`SELECT COUNT(*) as "completedOrders" 
-            FROM purchase_orders 
-            WHERE status = 'completed' 
-            AND order_date >= DATE_TRUNC('month', CURRENT_DATE)`
-      );
-      const completedOrderStats = completedOrderResult.rows[0] || { completedOrders: 0 };
-      const monthlyOrderResult = await db.execute(
-        sql3`SELECT COUNT(*) as "monthlyOrders" 
-            FROM purchase_orders 
-            WHERE order_date >= DATE_TRUNC('month', CURRENT_DATE)`
-      );
-      const monthlyOrderStats = monthlyOrderResult.rows[0] || { monthlyOrders: 0 };
-      const projectResult = await db.execute(
-        sql3`SELECT COUNT(*) as "activeProjects" FROM projects WHERE is_active = true`
-      );
-      const projectStats = projectResult.rows[0] || { activeProjects: 0 };
-      const vendorResult = await db.execute(
-        sql3`SELECT COUNT(*) as "activeVendors" FROM vendors WHERE is_active = true`
-      );
-      const vendorStats = vendorResult.rows[0] || { activeVendors: 0 };
-      const recentOrdersRaw = await db.select({
-        id: purchaseOrders.id,
-        orderNumber: purchaseOrders.orderNumber,
-        status: purchaseOrders.status,
-        totalAmount: purchaseOrders.totalAmount,
-        createdAt: purchaseOrders.createdAt,
-        vendorId: vendors.id,
-        vendorName: vendors.name,
-        projectId: projects.id,
-        projectName: projects.projectName
-      }).from(purchaseOrders).leftJoin(vendors, eq2(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq2(purchaseOrders.projectId, projects.id)).orderBy(desc2(purchaseOrders.createdAt)).limit(10);
-      const recentOrders = recentOrdersRaw.map((order) => ({
-        id: order.id,
-        orderNumber: order.orderNumber,
-        status: order.status,
-        totalAmount: order.totalAmount,
-        createdAt: order.createdAt,
-        vendor: order.vendorId ? {
-          id: order.vendorId,
-          name: order.vendorName
-        } : null,
-        project: order.projectId ? {
-          id: order.projectId,
-          name: order.projectName,
-          projectName: order.projectName
-          // Add backward compatibility
-        } : null
-      }));
-      const monthlyStatsRaw = await db.select({
-        month: sql3`TO_CHAR(${purchaseOrders.orderDate}, 'YYYY-MM')`,
-        count: count2(),
-        amount: sql3`COALESCE(SUM(${purchaseOrders.totalAmount}), 0)`,
-        orderDate: sql3`DATE_TRUNC('month', ${purchaseOrders.orderDate})`
-        // For proper sorting
-      }).from(purchaseOrders).where(sql3`${purchaseOrders.orderDate} >= CURRENT_DATE - INTERVAL '12 months'`).groupBy(sql3`TO_CHAR(${purchaseOrders.orderDate}, 'YYYY-MM')`, sql3`DATE_TRUNC('month', ${purchaseOrders.orderDate})`).orderBy(sql3`DATE_TRUNC('month', ${purchaseOrders.orderDate}) ASC`);
-      const monthlyStats = monthlyStatsRaw.map((item) => ({
-        month: item.month,
-        count: item.count,
-        amount: item.amount,
-        totalAmount: item.amount
-        // Add alias for compatibility
-      }));
-      const statusStats = await db.select({
-        status: purchaseOrders.orderStatus,
-        count: count2(),
-        amount: sql3`COALESCE(SUM(${purchaseOrders.totalAmount}), 0)`
-      }).from(purchaseOrders).groupBy(purchaseOrders.orderStatus).orderBy(desc2(count2()));
-      const allOrderStatuses = ["draft", "created", "sent", "delivered"];
-      const existingStatusStats = statusStats;
-      const statusMap = new Map(existingStatusStats.map((item) => [item.status, item]));
-      const orderStatusStats = allOrderStatuses.map((status) => {
-        if (statusMap.has(status)) {
-          return statusMap.get(status);
-        }
-        return {
-          status,
-          count: 0,
-          amount: 0
-        };
-      });
-      const projectStatsList = await db.select({
-        projectId: projects.id,
-        projectName: projects.projectName,
-        projectType: projects.projectType,
-        orderCount: count2(),
-        totalAmount: sql3`COALESCE(SUM(${purchaseOrders.totalAmount}), 0)`
-      }).from(purchaseOrders).leftJoin(projects, eq2(purchaseOrders.projectId, projects.id)).where(isNotNull2(projects.id)).groupBy(projects.id, projects.projectName, projects.projectType).orderBy(desc2(sql3`COALESCE(SUM(${purchaseOrders.totalAmount}), 0)`)).limit(10);
-      const result = {
-        statistics: {
-          totalOrders: parseInt(orderStats.totalOrders) || 0,
-          totalAmount: Number(orderStats.totalAmount) || 0,
-          pendingOrders: parseInt(pendingOrderStats.pendingOrders) || 0,
-          completedOrders: parseInt(completedOrderStats.completedOrders) || 0,
-          monthlyOrders: parseInt(monthlyOrderStats.monthlyOrders) || 0,
-          activeProjects: parseInt(projectStats.activeProjects) || 0,
-          activeVendors: parseInt(vendorStats.activeVendors) || 0
-        },
-        recentOrders,
-        monthlyStats,
-        statusStats,
-        // Keep for backward compatibility
-        orderStatusStats,
-        // Separated order status
-        projectStats: projectStatsList
-      };
-      console.log("\u2705 Dashboard data compiled successfully:", {
-        totalOrders: result.statistics.totalOrders,
-        activeProjects: result.statistics.activeProjects
-      });
-      cache.set(cacheKey, result, 600);
-      return result;
-    } catch (error) {
-      console.error("\u274C Error fetching unified dashboard data:", error);
-      console.error("Error details:", error.message);
-      console.error("Stack trace:", error.stack);
-      return {
-        statistics: {
-          totalOrders: 0,
-          totalAmount: 0,
-          pendingOrders: 0,
-          completedOrders: 0,
-          monthlyOrders: 0,
-          activeProjects: 0,
-          activeVendors: 0
-        },
-        recentOrders: [],
-        monthlyStats: [],
-        statusStats: [],
-        orderStatusStats: [],
-        projectStats: []
-      };
-    }
-  }
-  /**
-   * Get order statistics for dashboard
-   */
-  static async getOrderStatistics() {
-    return OptimizedOrderQueries.getOrderStatistics();
-  }
-};
 
-// server/routes/projects.ts
-var router2 = Router2();
-router2.get("/projects", async (req, res) => {
-  try {
-    const projects2 = await storage.getProjects();
-    res.json(projects2);
-  } catch (error) {
-    console.error("Error fetching projects:", error);
-    res.status(500).json({ message: "Failed to fetch projects" });
-  }
-});
-router2.get("/projects/active", async (req, res) => {
-  try {
-    const projects2 = await storage.getActiveProjects();
-    res.json(projects2);
-  } catch (error) {
-    console.error("Error fetching active projects:", error);
-    res.status(500).json({ message: "Failed to fetch active projects" });
-  }
-});
-router2.get("/projects/:id", async (req, res) => {
-  try {
-    const id = parseInt(req.params.id, 10);
-    const project = await storage.getProject(id);
-    if (!project) {
-      return res.status(404).json({ message: "Project not found" });
-    }
-    res.json(project);
-  } catch (error) {
-    console.error("Error fetching project:", error);
-    res.status(500).json({ message: "Failed to fetch project" });
-  }
-});
-router2.post("/projects", requireAuth, async (req, res) => {
-  try {
-    const userId = req.user?.id;
-    if (!userId) {
-      return res.status(401).json({ message: "User not authenticated" });
-    }
-    const user = await storage.getUser(userId);
-    if (!user || user.role !== "admin") {
-      return res.status(403).json({ message: "Admin access required" });
-    }
-    console.log("\u{1F50D} Project creation request body:", JSON.stringify(req.body, null, 2));
-    const projectTypeMap = {
-      "\uC544\uD30C\uD2B8": "residential",
-      "\uC624\uD53C\uC2A4\uD154": "residential",
-      "\uB2E8\uB3C5\uC8FC\uD0DD": "residential",
-      "\uC8FC\uAC70\uC2DC\uC124": "residential",
-      "\uC0C1\uC5C5\uC2DC\uC124": "commercial",
-      "\uC0AC\uBB34\uC2E4": "commercial",
-      "\uC1FC\uD551\uBAB0": "commercial",
-      "\uC0B0\uC5C5\uC2DC\uC124": "industrial",
-      "\uACF5\uC7A5": "industrial",
-      "\uCC3D\uACE0": "industrial",
-      "\uC778\uD504\uB77C": "infrastructure",
-      "\uB3C4\uB85C": "infrastructure",
-      "\uAD50\uB7C9": "infrastructure"
-    };
-    console.log("\u{1F527} Original projectType:", req.body.projectType, "typeof:", typeof req.body.projectType);
-    console.log("\u{1F527} Mapped projectType:", projectTypeMap[req.body.projectType]);
-    console.log("\u{1F527} Original dates - startDate:", req.body.startDate, "endDate:", req.body.endDate);
-    console.log("\u{1F527} Date types - startDate:", typeof req.body.startDate, "endDate:", typeof req.body.endDate);
-    let transformedStartDate = null;
-    let transformedEndDate = null;
-    if (req.body.startDate) {
-      if (typeof req.body.startDate === "string") {
-        transformedStartDate = req.body.startDate.split("T")[0];
-      } else if (req.body.startDate instanceof Date) {
-        transformedStartDate = req.body.startDate.toISOString().split("T")[0];
-      }
-    }
-    if (req.body.endDate) {
-      if (typeof req.body.endDate === "string") {
-        transformedEndDate = req.body.endDate.split("T")[0];
-      } else if (req.body.endDate instanceof Date) {
-        transformedEndDate = req.body.endDate.toISOString().split("T")[0];
-      }
-    }
-    const transformedData = {
-      ...req.body,
-      startDate: transformedStartDate,
-      endDate: transformedEndDate,
-      totalBudget: req.body.totalBudget ? req.body.totalBudget : null,
-      projectType: projectTypeMap[req.body.projectType] || req.body.projectType || "commercial"
-    };
-    console.log("Transformed project data:", transformedData);
-    const validatedData = insertProjectSchema.parse(transformedData);
-    console.log("Validated project data:", validatedData);
-    const project = await storage.createProject(validatedData);
-    console.log("Created project:", project);
-    res.status(201).json(project);
-  } catch (error) {
-    console.error("Error creating project:", error);
-    console.error("Error details:", error.message);
-    console.error("Error stack:", error.stack);
-    res.status(500).json({ message: "Failed to create project", error: error.message });
-  }
-});
-router2.put("/projects/:id", requireAuth, async (req, res) => {
-  try {
-    const userId = req.user?.id;
-    if (!userId) {
-      return res.status(401).json({ message: "User not authenticated" });
-    }
-    const user = await storage.getUser(userId);
-    if (!user || user.role !== "admin") {
-      return res.status(403).json({ message: "Admin access required" });
-    }
-    const projectId = parseInt(req.params.id, 10);
-    console.log("\u{1F527} Updating project ID:", projectId);
-    console.log("\u{1F527} Update data received:", req.body);
-    const updateData = { ...req.body };
-    if (updateData.totalBudget) {
-      console.log("\u{1F527} Original totalBudget:", updateData.totalBudget, typeof updateData.totalBudget);
-      updateData.totalBudget = parseFloat(updateData.totalBudget);
-      console.log("\u{1F527} Converted totalBudget:", updateData.totalBudget, typeof updateData.totalBudget);
-    }
-    const updatedProject = await storage.updateProject(projectId, updateData);
-    console.log("\u{1F527} Project updated successfully:", updatedProject);
-    res.json(updatedProject);
-  } catch (error) {
-    console.error("\u{1F527} Error updating project:", error);
-    res.status(500).json({ message: "Failed to update project" });
-  }
-});
-router2.delete("/projects/:id", requireAuth, async (req, res) => {
-  try {
-    const userId = req.user?.id;
-    if (!userId) {
-      return res.status(401).json({ message: "User not authenticated" });
-    }
-    const user = await storage.getUser(userId);
-    if (!user || user.role !== "admin") {
-      return res.status(403).json({ message: "Admin access required" });
-    }
-    const projectId = parseInt(req.params.id, 10);
-    await storage.deleteProject(projectId);
-    res.json({ message: "Project deleted successfully" });
-  } catch (error) {
-    console.error("Error deleting project:", error);
-    res.status(500).json({ message: "Failed to delete project" });
-  }
-});
-router2.get("/projects/:id/members", async (req, res) => {
-  try {
-    const projectId = parseInt(req.params.id, 10);
-    const members = await storage.getProjectMembers(projectId);
-    res.json(members);
-  } catch (error) {
-    console.error("Error fetching project members:", error);
-    res.status(500).json({ message: "Failed to fetch project members" });
-  }
-});
-router2.post("/projects/:id/members", requireAuth, async (req, res) => {
-  try {
-    const projectId = parseInt(req.params.id, 10);
-    const { userId } = req.body;
-    await storage.addProjectMember(projectId, userId);
-    res.status(201).json({ message: "Member added successfully" });
-  } catch (error) {
-    console.error("Error adding project member:", error);
-    res.status(500).json({ message: "Failed to add project member" });
-  }
-});
-router2.delete("/projects/:id/members/:userId", requireAuth, async (req, res) => {
-  try {
-    const projectId = parseInt(req.params.id, 10);
-    const userId = req.params.userId;
-    await storage.removeProjectMember(projectId, userId);
-    res.json({ message: "Member removed successfully" });
-  } catch (error) {
-    console.error("Error removing project member:", error);
-    res.status(500).json({ message: "Failed to remove project member" });
-  }
-});
-router2.get("/projects/:id/stats", async (req, res) => {
-  try {
-    const projectId = parseInt(req.params.id, 10);
-    const orders = await OptimizedOrderQueries.getProjectOrders(projectId);
-    const totalAmount = orders.reduce((sum2, order) => sum2 + (order.totalAmount || 0), 0);
-    const completedOrders = orders.filter((order) => order.status === "completed").length;
-    const stats = {
-      totalOrders: orders.length,
-      completedOrders,
-      pendingOrders: orders.filter((order) => order.status === "pending").length,
-      totalAmount,
-      completionRate: orders.length > 0 ? Math.round(completedOrders / orders.length * 100) : 0
-    };
-    res.json(stats);
-  } catch (error) {
-    console.error("Error fetching project statistics:", error);
-    res.status(500).json({ message: "Failed to fetch project statistics" });
-  }
-});
-var projects_default = router2;
-
-// server/routes/orders.ts
-import { Router as Router3 } from "express";
+// server/services/PasswordResetService.ts
+init_db();
 init_schema();
-
-// server/utils/multer-config.ts
-import multer from "multer";
-import path from "path";
-import fs from "fs";
-
-// server/utils/korean-filename.ts
-function decodeKoreanFilename(originalname) {
-  console.log("\u{1F50D} Decoding Korean filename:", originalname);
-  console.log("\u{1F50D} Original bytes:", Buffer.from(originalname).toString("hex"));
-  console.log("\u{1F50D} Char codes:", originalname.split("").map((c) => c.charCodeAt(0)));
-  try {
-    const latin1Buffer = Buffer.from(originalname, "latin1");
-    const utf8Decoded = latin1Buffer.toString("utf8");
-    console.log("Method 1 (latin1\u2192utf8):", utf8Decoded);
-    if (/[가-힣]/.test(utf8Decoded)) {
-      console.log("\u2705 Method 1 SUCCESS - Korean detected");
-      return utf8Decoded;
-    }
-  } catch (e) {
-    console.log("\u274C Method 1 failed:", e);
-  }
-  try {
-    const doubleDecoded = decodeURIComponent(escape(originalname));
-    console.log("Method 2 (escape\u2192decode):", doubleDecoded);
-    if (/[가-힣]/.test(doubleDecoded)) {
-      console.log("\u2705 Method 2 SUCCESS - Korean detected");
-      return doubleDecoded;
-    }
-  } catch (e) {
-    console.log("\u274C Method 2 failed:", e);
-  }
-  try {
-    const binaryDecoded = Buffer.from(originalname, "binary").toString("utf8");
-    console.log("Method 3 (binary\u2192utf8):", binaryDecoded);
-    if (/[가-힣]/.test(binaryDecoded)) {
-      console.log("\u2705 Method 3 SUCCESS - Korean detected");
-      return binaryDecoded;
-    }
-  } catch (e) {
-    console.log("\u274C Method 3 failed:", e);
-  }
-  try {
-    const urlDecoded = decodeURIComponent(originalname);
-    console.log("Method 4 (URL decode):", urlDecoded);
-    if (/[가-힣]/.test(urlDecoded)) {
-      console.log("\u2705 Method 4 SUCCESS - Korean detected");
-      return urlDecoded;
-    }
-  } catch (e) {
-    console.log("\u274C Method 4 failed:", e);
-  }
-  try {
-    const isoDecoded = Buffer.from(originalname, "latin1").toString("utf8");
-    console.log("Method 5 (ISO conversion):", isoDecoded);
-    if (/[가-힣]/.test(isoDecoded)) {
-      console.log("\u2705 Method 5 SUCCESS - Korean detected");
-      return isoDecoded;
-    }
-  } catch (e) {
-    console.log("\u274C Method 5 failed:", e);
-  }
-  if (originalname.includes("\xE1")) {
-    console.log("\u{1F527} Using pattern-based fallback for corrupted Korean");
-    return fixCorruptedKoreanFilename(originalname);
-  }
-  console.log("\u26A0\uFE0F All methods FAILED - using original filename");
-  return originalname;
-}
-function fixCorruptedKoreanFilename(filename) {
-  console.log("\u{1F527} Fixing corrupted Korean filename:", filename);
-  if (filename.includes("xlsx")) {
-    if (filename.includes("\uC555\uCD9C") || filename.length > 30) {
-      const fixed = "\uC555\uCD9C\uBC1C\uC8FC\uC11C_\uD488\uBAA9\uB9AC\uC2A4\uD2B8.xlsx";
-      console.log("\u{1F527} Fixed to:", fixed);
-      return fixed;
-    } else {
-      const fixed = "\uBC1C\uC8FC\uC11C_\uC0D8\uD50C.xlsx";
-      console.log("\u{1F527} Fixed to:", fixed);
-      return fixed;
-    }
-  }
-  const fixes = {
-    "\xE1 \xE1 \xA1\xE1\xAF\xE1 \xE1 \xAE\xE1 \xE1 \xA5": "\uBC1C\uC8FC\uC11C",
-    "\xE1 \xE1 \xA2": "_",
-    "\xE1\xB7\xE1 \xE1 \xB3\xE1\xAF": "\uC0D8\uD50C"
-    // Add more mappings as discovered
-  };
-  let result = filename;
-  for (const [corrupted, fixed] of Object.entries(fixes)) {
-    result = result.replace(new RegExp(corrupted, "g"), fixed);
-  }
-  console.log("\u{1F527} Pattern-based result:", result);
-  return result;
-}
-
-// server/utils/multer-config.ts
-var uploadDir = process.env.VERCEL ? "/tmp" : path.join(process.cwd(), "uploads");
-if (!process.env.VERCEL && !fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-var createMulterConfig = (prefix = "FILE") => {
-  return multer({
-    storage: multer.diskStorage({
-      destination: (req, file, cb) => {
-        cb(null, uploadDir);
-      },
-      filename: (req, file, cb) => {
-        console.log(`\u{1F4BE} ${prefix} - Multer filename callback`);
-        console.log(`\u{1F4BE} ${prefix} - Raw originalname:`, file.originalname);
-        console.log(`\u{1F4BE} ${prefix} - Raw bytes:`, Buffer.from(file.originalname));
-        const decodedName = decodeKoreanFilename(file.originalname);
-        file.originalname = decodedName;
-        const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-        const filename = uniqueSuffix.toString();
-        console.log(`\u{1F4BE} ${prefix} - Decoded originalname:`, decodedName);
-        console.log(`\u{1F4BE} ${prefix} - Generated filename:`, filename);
-        cb(null, filename);
+import { eq as eq3, and as and3, gt } from "drizzle-orm";
+import bcrypt4 from "bcrypt";
+import crypto from "crypto";
+var PasswordResetService = class {
+  /**
+   * 비밀번호 재설정 토큰 생성 및 이메일 발송 요청
+   */
+  static async requestPasswordReset(email) {
+    try {
+      const [user] = await db.select().from(users).where(eq3(users.email, email)).limit(1);
+      if (!user) {
+        throw new Error("\uB4F1\uB85D\uB418\uC9C0 \uC54A\uC740 \uC774\uBA54\uC77C \uC8FC\uC18C\uC785\uB2C8\uB2E4.");
       }
-    }),
-    limits: {
-      fileSize: 10 * 1024 * 1024,
-      // 10MB
-      files: 10
-      // Allow up to 10 files
-    },
-    fileFilter: (req, file, cb) => {
-      console.log(`\u{1F50D} ${prefix} - File filter - fieldname:`, file.fieldname);
-      console.log(`\u{1F50D} ${prefix} - File filter - originalname:`, file.originalname);
-      console.log(`\u{1F50D} ${prefix} - File filter - mimetype:`, file.mimetype);
-      const allowedTypes = [
-        "application/pdf",
-        "image/jpeg",
-        "image/png",
-        "image/gif",
-        "application/dwg",
-        "application/x-dwg",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        // .xlsx
-        "application/vnd.ms-excel.sheet.macroEnabled.12",
-        // .xlsm (대문자 E)
-        "application/vnd.ms-excel.sheet.macroenabled.12",
-        // .xlsm (소문자 e)
-        "application/vnd.ms-excel",
-        "application/msword",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-      ];
-      if (allowedTypes.includes(file.mimetype)) {
-        console.log(`\u2705 ${prefix} - File type accepted:`, file.mimetype);
-        cb(null, true);
-      } else {
-        console.log(`\u274C ${prefix} - File type rejected:`, file.mimetype);
-        cb(new Error(`File type not allowed: ${file.mimetype}`), false);
+      if (user.accountStatus === "inactive" || user.accountStatus === "suspended") {
+        throw new Error("\uBE44\uD65C\uC131\uD654\uB41C \uACC4\uC815\uC785\uB2C8\uB2E4.");
       }
-    }
-  });
-};
-var upload = createMulterConfig("MAIN");
-var orderUpload = createMulterConfig("ORDER");
-var logoUpload = createMulterConfig("LOGO");
-var excelUpload = multer({
-  storage: multer.memoryStorage(),
-  limits: {
-    fileSize: 10 * 1024 * 1024
-    // 10MB
-  },
-  fileFilter: (req, file, cb) => {
-    console.log(`\u{1F50D} EXCEL - File filter - fieldname:`, file.fieldname);
-    console.log(`\u{1F50D} EXCEL - File filter - originalname:`, file.originalname);
-    console.log(`\u{1F50D} EXCEL - File filter - mimetype:`, file.mimetype);
-    const allowedTypes = [
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      // .xlsx
-      "application/vnd.ms-excel.sheet.macroEnabled.12",
-      // .xlsm (대문자 E)
-      "application/vnd.ms-excel.sheet.macroenabled.12",
-      // .xlsm (소문자 e)
-      "application/vnd.ms-excel"
-      // .xls
-    ];
-    if (allowedTypes.includes(file.mimetype)) {
-      console.log(`\u2705 EXCEL - File type accepted:`, file.mimetype);
-      cb(null, true);
-    } else {
-      console.log(`\u274C EXCEL - File type rejected:`, file.mimetype);
-      cb(new Error(`Excel \uD30C\uC77C\uB9CC \uD5C8\uC6A9\uB429\uB2C8\uB2E4. \uD604\uC7AC \uD0C0\uC785: ${file.mimetype}`), false);
+      await db.update(passwordResetTokens).set({ usedAt: /* @__PURE__ */ new Date() }).where(
+        and3(
+          eq3(passwordResetTokens.userId, user.id),
+          eq3(passwordResetTokens.usedAt, null)
+        )
+      );
+      const token = crypto.randomBytes(32).toString("hex");
+      const expiresAt = /* @__PURE__ */ new Date();
+      expiresAt.setHours(expiresAt.getHours() + 1);
+      const tokenData = {
+        userId: user.id,
+        token,
+        expiresAt,
+        usedAt: null
+      };
+      await db.insert(passwordResetTokens).values(tokenData);
+      return { token, user };
+    } catch (error) {
+      console.error("Password reset request error:", error);
+      throw error;
     }
   }
-});
-
-// server/services/order-service.ts
-var OrderService = class {
   /**
-   * Generate unique order number with current date
+   * 비밀번호 재설정 토큰 검증
    */
-  static generateOrderNumber() {
-    const now = /* @__PURE__ */ new Date();
-    const year = now.getFullYear().toString().slice(-2);
-    const month = (now.getMonth() + 1).toString().padStart(2, "0");
-    const day = now.getDate().toString().padStart(2, "0");
-    const timestamp2 = now.getTime().toString().slice(-6);
-    return `PO${year}${month}${day}_${timestamp2}`;
-  }
-  /**
-   * Create new purchase order
-   */
-  static async createOrder(orderData) {
+  static async verifyResetToken(token) {
     try {
-      if (!orderData.orderNumber) {
-        orderData.orderNumber = this.generateOrderNumber();
+      const [tokenRecord] = await db.select({
+        tokenId: passwordResetTokens.id,
+        userId: passwordResetTokens.userId,
+        expiresAt: passwordResetTokens.expiresAt,
+        usedAt: passwordResetTokens.usedAt,
+        user: users
+      }).from(passwordResetTokens).innerJoin(users, eq3(passwordResetTokens.userId, users.id)).where(eq3(passwordResetTokens.token, token)).limit(1);
+      if (!tokenRecord) {
+        return {
+          isValid: false,
+          errorMessage: "\uC798\uBABB\uB41C \uD1A0\uD070\uC785\uB2C8\uB2E4."
+        };
       }
-      orderData.orderStatus = orderData.orderStatus || "draft";
-      orderData.approvalStatus = orderData.approvalStatus || "not_required";
-      orderData.approvalLevel = orderData.approvalLevel || 1;
-      orderData.currentApproverRole = orderData.currentApproverRole || "field_worker";
-      const result = await storage.createPurchaseOrder(orderData);
-      return result;
-    } catch (error) {
-      console.error("Error creating order:", error);
-      throw error;
-    }
-  }
-  /**
-   * Submit order for approval
-   */
-  static async submitForApproval(orderId, userId) {
-    try {
-      const updateData = {
-        status: "pending",
-        currentApproverRole: "project_manager",
-        approvalLevel: 2,
-        updatedAt: /* @__PURE__ */ new Date()
+      if (tokenRecord.usedAt) {
+        return {
+          isValid: false,
+          errorMessage: "\uC774\uBBF8 \uC0AC\uC6A9\uB41C \uD1A0\uD070\uC785\uB2C8\uB2E4."
+        };
+      }
+      if (/* @__PURE__ */ new Date() > tokenRecord.expiresAt) {
+        return {
+          isValid: false,
+          errorMessage: "\uB9CC\uB8CC\uB41C \uD1A0\uD070\uC785\uB2C8\uB2E4."
+        };
+      }
+      if (tokenRecord.user.accountStatus === "inactive" || tokenRecord.user.accountStatus === "suspended") {
+        return {
+          isValid: false,
+          errorMessage: "\uBE44\uD65C\uC131\uD654\uB41C \uACC4\uC815\uC785\uB2C8\uB2E4."
+        };
+      }
+      return {
+        isValid: true,
+        user: tokenRecord.user
       };
-      const result = await storage.updatePurchaseOrder(orderId, updateData);
-      await this.createApprovalLog(orderId, userId, "submitted_for_approval");
-      return result;
     } catch (error) {
-      console.error("Error submitting order for approval:", error);
-      throw error;
-    }
-  }
-  /**
-   * Approve order
-   */
-  static async approveOrder(orderId, userId, role) {
-    try {
-      const nextApprovalLevel = this.getNextApprovalLevel(role);
-      const nextApproverRole = this.getNextApproverRole(role);
-      const updateData = {
-        status: nextApproverRole ? "pending" : "approved",
-        currentApproverRole: nextApproverRole,
-        approvalLevel: nextApprovalLevel,
-        updatedAt: /* @__PURE__ */ new Date()
+      console.error("Token verification error:", error);
+      return {
+        isValid: false,
+        errorMessage: "\uD1A0\uD070 \uAC80\uC99D \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4."
       };
-      const result = await storage.updatePurchaseOrder(orderId, updateData);
-      await this.createApprovalLog(orderId, userId, "approved");
-      return result;
-    } catch (error) {
-      console.error("Error approving order:", error);
-      throw error;
     }
   }
   /**
-   * Reject order
+   * 비밀번호 재설정 실행
    */
-  static async rejectOrder(orderId, userId, reason) {
+  static async resetPassword(token, newPassword) {
     try {
-      const updateData = {
-        status: "draft",
-        currentApproverRole: null,
-        approvalLevel: 1,
+      const verification = await this.verifyResetToken(token);
+      if (!verification.isValid || !verification.user) {
+        return {
+          success: false,
+          message: verification.errorMessage || "\uD1A0\uD070 \uAC80\uC99D\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4."
+        };
+      }
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt4.hash(newPassword, saltRounds);
+      await db.update(users).set({
+        password: hashedPassword,
         updatedAt: /* @__PURE__ */ new Date()
+      }).where(eq3(users.id, verification.user.id));
+      await db.update(passwordResetTokens).set({ usedAt: /* @__PURE__ */ new Date() }).where(eq3(passwordResetTokens.token, token));
+      return {
+        success: true,
+        message: "\uBE44\uBC00\uBC88\uD638\uAC00 \uC131\uACF5\uC801\uC73C\uB85C \uBCC0\uACBD\uB418\uC5C8\uC2B5\uB2C8\uB2E4."
       };
-      const result = await storage.updatePurchaseOrder(orderId, updateData);
-      await this.createApprovalLog(orderId, userId, "rejected", reason);
-      return result;
     } catch (error) {
-      console.error("Error rejecting order:", error);
+      console.error("Password reset error:", error);
+      return {
+        success: false,
+        message: "\uBE44\uBC00\uBC88\uD638 \uC7AC\uC124\uC815 \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4."
+      };
+    }
+  }
+  /**
+   * 만료된 토큰 정리 (배치 작업용)
+   */
+  static async cleanupExpiredTokens() {
+    try {
+      const result = await db.delete(passwordResetTokens).where(gt(/* @__PURE__ */ new Date(), passwordResetTokens.expiresAt));
+      return result.rowCount || 0;
+    } catch (error) {
+      console.error("Cleanup expired tokens error:", error);
+      return 0;
+    }
+  }
+  /**
+   * 사용자의 모든 비밀번호 재설정 토큰 무효화
+   */
+  static async invalidateUserTokens(userId) {
+    try {
+      await db.update(passwordResetTokens).set({ usedAt: /* @__PURE__ */ new Date() }).where(
+        and3(
+          eq3(passwordResetTokens.userId, userId),
+          eq3(passwordResetTokens.usedAt, null)
+        )
+      );
+    } catch (error) {
+      console.error("Invalidate user tokens error:", error);
       throw error;
     }
   }
   /**
-   * Get next approval level based on current role
+   * 사용자의 비밀번호 재설정 이력 조회 (관리자용)
    */
-  static getNextApprovalLevel(currentRole) {
-    const levels = {
-      "field_worker": 2,
-      "project_manager": 3,
-      "hq_management": 4,
-      "executive": 5
-    };
-    return levels[currentRole] || 1;
-  }
-  /**
-   * Get next approver role based on current role
-   */
-  static getNextApproverRole(currentRole) {
-    const nextRoles = {
-      "field_worker": "project_manager",
-      "project_manager": "hq_management",
-      "hq_management": "executive",
-      "executive": null
-      // Final approval
-    };
-    return nextRoles[currentRole] || null;
-  }
-  /**
-   * Create approval log entry
-   */
-  static async createApprovalLog(orderId, userId, action, notes) {
+  static async getPasswordResetHistory(userId) {
     try {
-      console.log(`Approval log: Order ${orderId}, User ${userId}, Action: ${action}, Notes: ${notes || "None"}`);
+      return await db.select().from(passwordResetTokens).where(eq3(passwordResetTokens.userId, userId)).orderBy(passwordResetTokens.createdAt);
     } catch (error) {
-      console.error("Error creating approval log:", error);
+      console.error("Get password reset history error:", error);
+      throw error;
     }
   }
 };
 
 // server/utils/po-email-service.ts
 import nodemailer from "nodemailer";
-import path3 from "path";
-import fs5 from "fs";
+import path2 from "path";
+import fs4 from "fs";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
 
@@ -7439,8 +6648,8 @@ import { dirname } from "path";
 import { chromium } from "playwright-chromium";
 import ExcelJS from "exceljs";
 import XLSX from "xlsx";
-import path2 from "path";
-import fs2 from "fs";
+import path from "path";
+import fs from "fs";
 var PlaywrightEngine = class {
   constructor() {
     this.name = "playwright";
@@ -7493,7 +6702,7 @@ var PlaywrightEngine = class {
         path: pdfPath,
         ...pdfOptions
       });
-      const stats = fs2.statSync(pdfPath);
+      const stats = fs.statSync(pdfPath);
       const processingTime = Date.now() - startTime;
       return {
         success: true,
@@ -7696,7 +6905,7 @@ var XLSXEngine = class {
         printBackground: true
       });
       await browser.close();
-      const stats = fs2.statSync(pdfPath);
+      const stats = fs.statSync(pdfPath);
       return {
         success: true,
         pdfPath,
@@ -7769,8 +6978,8 @@ var MockEngine = class {
   async convert(excelPath, options) {
     console.log(`\u{1F3AD} Mock \uC5D4\uC9C4\uC73C\uB85C PDF \uBCC0\uD658: ${excelPath}`);
     const pdfPath = options.outputPath || excelPath.replace(/\.(xlsx?|xlsm)$/i, "-mock.pdf");
-    const dummyContent = `Mock PDF for ${path2.basename(excelPath)}`;
-    fs2.writeFileSync(pdfPath, dummyContent);
+    const dummyContent = `Mock PDF for ${path.basename(excelPath)}`;
+    fs.writeFileSync(pdfPath, dummyContent);
     return {
       success: true,
       pdfPath,
@@ -7816,7 +7025,7 @@ var UnifiedExcelPdfService = class {
     const finalOptions = { ...this.DEFAULT_OPTIONS, ...options };
     console.log(`\u{1F504} \uD1B5\uD569 Excel PDF \uC11C\uBE44\uC2A4 \uC2DC\uC791: ${excelPath}`);
     console.log(`\u2699\uFE0F \uC635\uC158: ${JSON.stringify(finalOptions, null, 2)}`);
-    if (!fs2.existsSync(excelPath)) {
+    if (!fs.existsSync(excelPath)) {
       return {
         success: false,
         error: `Excel \uD30C\uC77C\uC774 \uC874\uC7AC\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4: ${excelPath}`,
@@ -7824,9 +7033,9 @@ var UnifiedExcelPdfService = class {
       };
     }
     const outputPath = finalOptions.outputPath || excelPath.replace(/\.(xlsx?|xlsm)$/i, "-unified.pdf");
-    const outputDir = path2.dirname(outputPath);
-    if (!fs2.existsSync(outputDir)) {
-      fs2.mkdirSync(outputDir, { recursive: true });
+    const outputDir = path.dirname(outputPath);
+    if (!fs.existsSync(outputDir)) {
+      fs.mkdirSync(outputDir, { recursive: true });
     }
     if (finalOptions.fallbackEngine) {
       const engine = this.engines.find((e) => e.name === finalOptions.fallbackEngine);
@@ -7872,8 +7081,8 @@ var UnifiedExcelPdfService = class {
     try {
       const result = await engine.convert(excelPath, options);
       if (result.success && result.pdfPath) {
-        if (fs2.existsSync(result.pdfPath)) {
-          const stats = fs2.statSync(result.pdfPath);
+        if (fs.existsSync(result.pdfPath)) {
+          const stats = fs.statSync(result.pdfPath);
           if (stats.size > 0) {
             console.log(`\u2705 ${engine.name} \uC5D4\uC9C4 \uC131\uACF5: ${result.pdfPath} (${stats.size} bytes)`);
             return result;
@@ -7942,17 +7151,17 @@ var UnifiedExcelPdfService = class {
 init_db();
 init_schema();
 init_excel_input_sheet_remover();
-import { eq as eq3 } from "drizzle-orm";
+import { eq as eq4 } from "drizzle-orm";
 import * as XLSX2 from "xlsx";
-import { v4 as uuidv4 } from "uuid";
-import fs4 from "fs";
+import { v4 as uuidv42 } from "uuid";
+import fs3 from "fs";
 var POTemplateProcessor = class _POTemplateProcessor {
   /**
    * Excel 파일에서 Input 시트를 파싱하여 발주서 데이터 추출
    */
   static parseInputSheet(filePath) {
     try {
-      const buffer = fs4.readFileSync(filePath);
+      const buffer = fs3.readFileSync(filePath);
       const workbook = XLSX2.read(buffer, { type: "buffer" });
       const inputSheetName = workbook.SheetNames.find(
         (name) => name === "Input"
@@ -8203,19 +7412,19 @@ var POTemplateProcessor = class _POTemplateProcessor {
       const [vendor] = await tx.insert(vendors).values({
         name: "\uBBF8\uC9C0\uC815 \uAC70\uB798\uCC98",
         contactPerson: "\uBBF8\uC9C0\uC815",
-        email: `unknown-${uuidv4()}@example.com`,
+        email: `unknown-${uuidv42()}@example.com`,
         mainContact: "\uBBF8\uC9C0\uC815"
       }).returning();
       return vendor.id;
     }
-    const existingVendor = await tx.select().from(vendors).where(eq3(vendors.name, vendorName)).limit(1);
+    const existingVendor = await tx.select().from(vendors).where(eq4(vendors.name, vendorName)).limit(1);
     if (existingVendor.length > 0) {
       return existingVendor[0].id;
     }
     const [newVendor] = await tx.insert(vendors).values({
       name: vendorName,
       contactPerson: "\uC790\uB3D9\uC0DD\uC131",
-      email: `auto-${uuidv4()}@example.com`,
+      email: `auto-${uuidv42()}@example.com`,
       mainContact: "\uC790\uB3D9\uC0DD\uC131"
     }).returning();
     return newVendor.id;
@@ -8224,18 +7433,18 @@ var POTemplateProcessor = class _POTemplateProcessor {
     if (!siteName) {
       const [project] = await tx.insert(projects).values({
         projectName: "\uBBF8\uC9C0\uC815 \uD604\uC7A5",
-        projectCode: `AUTO-${uuidv4().slice(0, 8)}`,
+        projectCode: `AUTO-${uuidv42().slice(0, 8)}`,
         status: "active"
       }).returning();
       return project.id;
     }
-    const existingProject = await tx.select().from(projects).where(eq3(projects.projectName, siteName)).limit(1);
+    const existingProject = await tx.select().from(projects).where(eq4(projects.projectName, siteName)).limit(1);
     if (existingProject.length > 0) {
       return existingProject[0].id;
     }
     const [newProject] = await tx.insert(projects).values({
       projectName: siteName,
-      projectCode: `AUTO-${uuidv4().slice(0, 8)}`,
+      projectCode: `AUTO-${uuidv42().slice(0, 8)}`,
       status: "active"
     }).returning();
     return newProject.id;
@@ -8246,7 +7455,7 @@ var POTemplateProcessor = class _POTemplateProcessor {
 init_excel_input_sheet_remover();
 init_db();
 init_schema();
-import { eq as eq4 } from "drizzle-orm";
+import { eq as eq5 } from "drizzle-orm";
 var __filename = fileURLToPath(import.meta.url);
 var __dirname = dirname(__filename);
 var POEmailService = class {
@@ -8271,7 +7480,7 @@ var POEmailService = class {
    */
   async getOrderItemsByOrderId(orderId) {
     try {
-      const items3 = await this.db.select().from(purchaseOrderItems).where(eq4(purchaseOrderItems.orderId, orderId));
+      const items3 = await this.db.select().from(purchaseOrderItems).where(eq5(purchaseOrderItems.orderId, orderId));
       return items3.map((item) => ({
         itemName: item.itemName || void 0,
         specification: item.specification || void 0,
@@ -8312,8 +7521,8 @@ var POEmailService = class {
   async sendPOWithOriginalFormat(originalFilePath, emailOptions) {
     try {
       const timestamp2 = Date.now();
-      const uploadsDir = path3.join(__dirname, "../../uploads");
-      const processedPath = path3.join(uploadsDir, `po-advanced-format-${timestamp2}.xlsx`);
+      const uploadsDir = path2.join(__dirname, "../../uploads");
+      const processedPath = path2.join(uploadsDir, `po-advanced-format-${timestamp2}.xlsx`);
       const removeResult = await removeAllInputSheets(
         originalFilePath,
         processedPath
@@ -8327,7 +7536,7 @@ var POEmailService = class {
       console.log(`\u{1F4C4} \uACE0\uAE09 \uD615\uC2DD \uBCF4\uC874 \uD30C\uC77C \uC0DD\uC131: ${processedPath}`);
       console.log(`\u{1F3AF} Input \uC2DC\uD2B8 \uC81C\uAC70 \uC644\uB8CC`);
       console.log(`\u{1F4CB} \uB0A8\uC740 \uC2DC\uD2B8: ${removeResult.remainingSheets.join(", ")}`);
-      const pdfPath = path3.join(uploadsDir, `po-advanced-format-${timestamp2}.pdf`);
+      const pdfPath = path2.join(uploadsDir, `po-advanced-format-${timestamp2}.pdf`);
       let pdfResult = { success: false, error: "" };
       try {
         const result2 = await UnifiedExcelPdfService.convertExcelToPDF(processedPath, {
@@ -8354,7 +7563,7 @@ var POEmailService = class {
         console.warn(`\u26A0\uFE0F PDF \uBCC0\uD658 \uC644\uC804 \uC2E4\uD328: ${pdfResult.error}, Excel \uD30C\uC77C\uB9CC \uCCA8\uBD80\uD569\uB2C8\uB2E4.`);
       }
       const attachments3 = [];
-      if (fs5.existsSync(processedPath)) {
+      if (fs4.existsSync(processedPath)) {
         attachments3.push({
           filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`,
           path: processedPath,
@@ -8362,7 +7571,7 @@ var POEmailService = class {
         });
         console.log(`\u{1F4CE} Excel \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00: \uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`);
       }
-      if (pdfResult.success && fs5.existsSync(pdfPath)) {
+      if (pdfResult.success && fs4.existsSync(pdfPath)) {
         attachments3.push({
           filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`,
           path: pdfPath,
@@ -8405,8 +7614,8 @@ var POEmailService = class {
   async sendPOWithAttachments(originalFilePath, emailOptions) {
     try {
       const timestamp2 = Date.now();
-      const uploadsDir = path3.join(__dirname, "../../uploads");
-      const extractedPath = path3.join(uploadsDir, `po-sheets-${timestamp2}.xlsx`);
+      const uploadsDir = path2.join(__dirname, "../../uploads");
+      const extractedPath = path2.join(uploadsDir, `po-sheets-${timestamp2}.xlsx`);
       const extractResult = POTemplateProcessor.extractSheetsToFile(
         originalFilePath,
         extractedPath,
@@ -8419,7 +7628,7 @@ var POEmailService = class {
           error: `\uC2DC\uD2B8 \uCD94\uCD9C \uC2E4\uD328: ${extractResultData.error}`
         };
       }
-      const pdfPath = path3.join(uploadsDir, `po-sheets-${timestamp2}.pdf`);
+      const pdfPath = path2.join(uploadsDir, `po-sheets-${timestamp2}.pdf`);
       const pdfResult = await UnifiedExcelPdfService.convertExcelToPDF(extractedPath, {
         outputPath: pdfPath,
         quality: "high",
@@ -8435,14 +7644,14 @@ var POEmailService = class {
         };
       }
       const attachments3 = [];
-      if (fs5.existsSync(extractedPath)) {
+      if (fs4.existsSync(extractedPath)) {
         attachments3.push({
           filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`,
           path: extractedPath,
           contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         });
       }
-      if (fs5.existsSync(pdfPath)) {
+      if (fs4.existsSync(pdfPath)) {
         attachments3.push({
           filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`,
           path: pdfPath,
@@ -8737,8 +7946,8 @@ var POEmailService = class {
   cleanupTempFiles(filePaths) {
     filePaths.forEach((filePath) => {
       try {
-        if (fs5.existsSync(filePath)) {
-          fs5.unlinkSync(filePath);
+        if (fs4.existsSync(filePath)) {
+          fs4.unlinkSync(filePath);
         }
       } catch (error) {
         console.error(`\uD30C\uC77C \uC815\uB9AC \uC2E4\uD328: ${filePath}`, error);
@@ -8761,10 +7970,2286 @@ var POEmailService = class {
   }
 };
 
+// server/services/AuthEmailService.ts
+var AUTH_EMAIL_TEMPLATES = {
+  REGISTRATION_APPROVED: {
+    subject: "[\uBC1C\uC8FC \uAD00\uB9AC \uC2DC\uC2A4\uD15C] \uD68C\uC6D0\uAC00\uC785\uC774 \uC2B9\uC778\uB418\uC5C8\uC2B5\uB2C8\uB2E4",
+    template: (name) => `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: 'Malgun Gothic', sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #3B82F6; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+          .content { background-color: #f8f9fa; padding: 30px; border-radius: 0 0 8px 8px; }
+          .button { display: inline-block; background-color: #10B981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+          .footer { margin-top: 20px; text-align: center; color: #666; font-size: 12px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>\u{1F389} \uD68C\uC6D0\uAC00\uC785 \uC2B9\uC778 \uC644\uB8CC</h1>
+          </div>
+          <div class="content">
+            <p><strong>${name}</strong>\uB2D8, \uC548\uB155\uD558\uC138\uC694!</p>
+            
+            <p>\uBC1C\uC8FC \uAD00\uB9AC \uC2DC\uC2A4\uD15C \uD68C\uC6D0\uAC00\uC785 \uC2E0\uCCAD\uC774 <strong style="color: #10B981;">\uC2B9\uC778</strong>\uB418\uC5C8\uC2B5\uB2C8\uB2E4.</p>
+            
+            <p>\uC774\uC81C \uB2E4\uC74C\uACFC \uAC19\uC740 \uC11C\uBE44\uC2A4\uB97C \uC774\uC6A9\uD558\uC2E4 \uC218 \uC788\uC2B5\uB2C8\uB2E4:</p>
+            <ul>
+              <li>\uBC1C\uC8FC\uC11C \uC791\uC131 \uBC0F \uAD00\uB9AC</li>
+              <li>\uC2B9\uC778 \uC6CC\uD06C\uD50C\uB85C\uC6B0 \uCC38\uC5EC</li>
+              <li>\uD504\uB85C\uC81D\uD2B8\uBCC4 \uBC1C\uC8FC \uD604\uD669 \uC870\uD68C</li>
+              <li>\uAC70\uB798\uCC98 \uAD00\uB9AC</li>
+            </ul>
+            
+            <p>\uC544\uB798 \uBC84\uD2BC\uC744 \uD074\uB9AD\uD558\uC5EC \uB85C\uADF8\uC778\uD574 \uC8FC\uC138\uC694:</p>
+            <p style="text-align: center;">
+              <a href="${process.env.FRONTEND_URL || "http://localhost:5173"}/login" class="button">
+                \uB85C\uADF8\uC778\uD558\uAE30
+              </a>
+            </p>
+            
+            <p>\uAD81\uAE08\uD55C \uC0AC\uD56D\uC774 \uC788\uC73C\uC2DC\uBA74 \uAD00\uB9AC\uC790\uC5D0\uAC8C \uBB38\uC758\uD574 \uC8FC\uC138\uC694.</p>
+            
+            <p>\uAC10\uC0AC\uD569\uB2C8\uB2E4.<br>
+            <strong>\uBC1C\uC8FC \uAD00\uB9AC \uC2DC\uC2A4\uD15C \uD300</strong></p>
+          </div>
+          <div class="footer">
+            <p>\uC774 \uBA54\uC77C\uC740 \uBC1C\uC8FC \uAD00\uB9AC \uC2DC\uC2A4\uD15C\uC5D0\uC11C \uC790\uB3D9\uC73C\uB85C \uBC1C\uC1A1\uB41C \uBA54\uC77C\uC785\uB2C8\uB2E4.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `
+  },
+  REGISTRATION_REJECTED: {
+    subject: "[\uBC1C\uC8FC \uAD00\uB9AC \uC2DC\uC2A4\uD15C] \uD68C\uC6D0\uAC00\uC785 \uAC80\uD1A0 \uACB0\uACFC \uC548\uB0B4",
+    template: (name, reason) => `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: 'Malgun Gothic', sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #EF4444; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+          .content { background-color: #f8f9fa; padding: 30px; border-radius: 0 0 8px 8px; }
+          .reason-box { background-color: #FEF2F2; border: 1px solid #FECACA; padding: 15px; border-radius: 6px; margin: 15px 0; }
+          .button { display: inline-block; background-color: #3B82F6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+          .footer { margin-top: 20px; text-align: center; color: #666; font-size: 12px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>\u{1F4C4} \uD68C\uC6D0\uAC00\uC785 \uAC80\uD1A0 \uACB0\uACFC</h1>
+          </div>
+          <div class="content">
+            <p><strong>${name}</strong>\uB2D8, \uC548\uB155\uD558\uC138\uC694.</p>
+            
+            <p>\uBC1C\uC8FC \uAD00\uB9AC \uC2DC\uC2A4\uD15C \uD68C\uC6D0\uAC00\uC785 \uC2E0\uCCAD\uC744 \uAC80\uD1A0\uD55C \uACB0\uACFC\uB97C \uC548\uB0B4\uB4DC\uB9BD\uB2C8\uB2E4.</p>
+            
+            <p>\uC8C4\uC1A1\uD558\uC9C0\uB9CC, \uC774\uBC88 \uD68C\uC6D0\uAC00\uC785 \uC2E0\uCCAD\uC740 <strong style="color: #EF4444;">\uC2B9\uC778\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4</strong>.</p>
+            
+            ${reason ? `
+            <div class="reason-box">
+              <strong>\uAC70\uBD80 \uC0AC\uC720:</strong><br>
+              ${reason}
+            </div>
+            ` : ""}
+            
+            <p>\uCD94\uAC00 \uBB38\uC758\uC0AC\uD56D\uC774 \uC788\uC73C\uC2DC\uAC70\uB098 \uC7AC\uC2E0\uCCAD\uC744 \uC6D0\uD558\uC2DC\uB294 \uACBD\uC6B0, \uAD00\uB9AC\uC790\uC5D0\uAC8C \uC9C1\uC811 \uBB38\uC758\uD574 \uC8FC\uC2DC\uAE30 \uBC14\uB78D\uB2C8\uB2E4.</p>
+            
+            <p style="text-align: center;">
+              <a href="${process.env.FRONTEND_URL || "http://localhost:5173"}/register" class="button">
+                \uC7AC\uC2E0\uCCAD\uD558\uAE30
+              </a>
+            </p>
+            
+            <p>\uAC10\uC0AC\uD569\uB2C8\uB2E4.<br>
+            <strong>\uBC1C\uC8FC \uAD00\uB9AC \uC2DC\uC2A4\uD15C \uD300</strong></p>
+          </div>
+          <div class="footer">
+            <p>\uC774 \uBA54\uC77C\uC740 \uBC1C\uC8FC \uAD00\uB9AC \uC2DC\uC2A4\uD15C\uC5D0\uC11C \uC790\uB3D9\uC73C\uB85C \uBC1C\uC1A1\uB41C \uBA54\uC77C\uC785\uB2C8\uB2E4.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `
+  },
+  PASSWORD_RESET: {
+    subject: "[\uBC1C\uC8FC \uAD00\uB9AC \uC2DC\uC2A4\uD15C] \uBE44\uBC00\uBC88\uD638 \uC7AC\uC124\uC815 \uC694\uCCAD",
+    template: (name, resetLink) => `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: 'Malgun Gothic', sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #F59E0B; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+          .content { background-color: #f8f9fa; padding: 30px; border-radius: 0 0 8px 8px; }
+          .warning-box { background-color: #FEF3CD; border: 1px solid #FBBF24; padding: 15px; border-radius: 6px; margin: 15px 0; }
+          .button { display: inline-block; background-color: #EF4444; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+          .footer { margin-top: 20px; text-align: center; color: #666; font-size: 12px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>\u{1F512} \uBE44\uBC00\uBC88\uD638 \uC7AC\uC124\uC815</h1>
+          </div>
+          <div class="content">
+            <p><strong>${name}</strong>\uB2D8, \uC548\uB155\uD558\uC138\uC694.</p>
+            
+            <p>\uBC1C\uC8FC \uAD00\uB9AC \uC2DC\uC2A4\uD15C \uBE44\uBC00\uBC88\uD638 \uC7AC\uC124\uC815 \uC694\uCCAD\uC744 \uBC1B\uC558\uC2B5\uB2C8\uB2E4.</p>
+            
+            <div class="warning-box">
+              <strong>\u26A0\uFE0F \uBCF4\uC548 \uC548\uB0B4</strong><br>
+              \u2022 \uC774 \uB9C1\uD06C\uB294 <strong>1\uC2DC\uAC04</strong> \uB3D9\uC548\uB9CC \uC720\uD6A8\uD569\uB2C8\uB2E4.<br>
+              \u2022 \uB9C1\uD06C\uB294 <strong>\uD55C \uBC88\uB9CC</strong> \uC0AC\uC6A9\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4.<br>
+              \u2022 \uBCF8\uC778\uC774 \uC694\uCCAD\uD558\uC9C0 \uC54A\uC558\uB2E4\uBA74 \uC774 \uBA54\uC77C\uC744 \uBB34\uC2DC\uD574 \uC8FC\uC138\uC694.
+            </div>
+            
+            <p>\uC544\uB798 \uBC84\uD2BC\uC744 \uD074\uB9AD\uD558\uC5EC \uC0C8\uB85C\uC6B4 \uBE44\uBC00\uBC88\uD638\uB97C \uC124\uC815\uD574 \uC8FC\uC138\uC694:</p>
+            
+            <p style="text-align: center;">
+              <a href="${resetLink}" class="button">
+                \uBE44\uBC00\uBC88\uD638 \uC7AC\uC124\uC815\uD558\uAE30
+              </a>
+            </p>
+            
+            <p>\uB9C1\uD06C\uAC00 \uC791\uB3D9\uD558\uC9C0 \uC54A\uB294 \uACBD\uC6B0, \uB2E4\uC74C URL\uC744 \uBCF5\uC0AC\uD558\uC5EC \uBE0C\uB77C\uC6B0\uC800 \uC8FC\uC18C\uCC3D\uC5D0 \uBD99\uC5EC\uB123\uC5B4 \uC8FC\uC138\uC694:</p>
+            <p style="word-break: break-all; background: #f0f0f0; padding: 10px; border-radius: 4px;">
+              ${resetLink}
+            </p>
+            
+            <p>\uBE44\uBC00\uBC88\uD638 \uC7AC\uC124\uC815\uC5D0 \uBB38\uC81C\uAC00 \uC788\uC73C\uC2DC\uBA74 \uAD00\uB9AC\uC790\uC5D0\uAC8C \uBB38\uC758\uD574 \uC8FC\uC138\uC694.</p>
+            
+            <p>\uAC10\uC0AC\uD569\uB2C8\uB2E4.<br>
+            <strong>\uBC1C\uC8FC \uAD00\uB9AC \uC2DC\uC2A4\uD15C \uD300</strong></p>
+          </div>
+          <div class="footer">
+            <p>\uC774 \uBA54\uC77C\uC740 \uBC1C\uC8FC \uAD00\uB9AC \uC2DC\uC2A4\uD15C\uC5D0\uC11C \uC790\uB3D9\uC73C\uB85C \uBC1C\uC1A1\uB41C \uBA54\uC77C\uC785\uB2C8\uB2E4.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `
+  },
+  REGISTRATION_RECEIVED: {
+    subject: "[\uBC1C\uC8FC \uAD00\uB9AC \uC2DC\uC2A4\uD15C] \uD68C\uC6D0\uAC00\uC785 \uC2E0\uCCAD\uC774 \uC811\uC218\uB418\uC5C8\uC2B5\uB2C8\uB2E4",
+    template: (name) => `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: 'Malgun Gothic', sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #6366F1; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+          .content { background-color: #f8f9fa; padding: 30px; border-radius: 0 0 8px 8px; }
+          .info-box { background-color: #E0E7FF; border: 1px solid #C7D2FE; padding: 15px; border-radius: 6px; margin: 15px 0; }
+          .footer { margin-top: 20px; text-align: center; color: #666; font-size: 12px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>\u{1F4DD} \uD68C\uC6D0\uAC00\uC785 \uC2E0\uCCAD \uC811\uC218</h1>
+          </div>
+          <div class="content">
+            <p><strong>${name}</strong>\uB2D8, \uC548\uB155\uD558\uC138\uC694!</p>
+            
+            <p>\uBC1C\uC8FC \uAD00\uB9AC \uC2DC\uC2A4\uD15C \uD68C\uC6D0\uAC00\uC785 \uC2E0\uCCAD\uC774 <strong style="color: #10B981;">\uC131\uACF5\uC801\uC73C\uB85C \uC811\uC218</strong>\uB418\uC5C8\uC2B5\uB2C8\uB2E4.</p>
+            
+            <div class="info-box">
+              <strong>\u{1F4CB} \uB2E4\uC74C \uB2E8\uACC4 \uC548\uB0B4</strong><br>
+              1. \uAD00\uB9AC\uC790\uAC00 \uC2E0\uCCAD \uB0B4\uC6A9\uC744 \uAC80\uD1A0\uD569\uB2C8\uB2E4<br>
+              2. \uAC80\uD1A0 \uC644\uB8CC \uD6C4 \uC2B9\uC778/\uAC70\uBD80 \uACB0\uACFC\uB97C \uC774\uBA54\uC77C\uB85C \uC548\uB0B4\uB4DC\uB9BD\uB2C8\uB2E4<br>
+              3. \uC2B9\uC778 \uC2DC \uC989\uC2DC \uC11C\uBE44\uC2A4 \uC774\uC6A9\uC774 \uAC00\uB2A5\uD569\uB2C8\uB2E4
+            </div>
+            
+            <p><strong>\uAC80\uD1A0 \uC18C\uC694 \uC2DC\uAC04:</strong> \uC601\uC5C5\uC77C \uAE30\uC900 1-2\uC77C</p>
+            
+            <p>\uBE60\uB978 \uC2DC\uC77C \uB0B4\uC5D0 \uAC80\uD1A0\uD558\uC5EC \uACB0\uACFC\uB97C \uC548\uB0B4\uB4DC\uB9AC\uACA0\uC2B5\uB2C8\uB2E4.</p>
+            
+            <p>\uAD81\uAE08\uD55C \uC0AC\uD56D\uC774 \uC788\uC73C\uC2DC\uBA74 \uAD00\uB9AC\uC790\uC5D0\uAC8C \uBB38\uC758\uD574 \uC8FC\uC138\uC694.</p>
+            
+            <p>\uAC10\uC0AC\uD569\uB2C8\uB2E4.<br>
+            <strong>\uBC1C\uC8FC \uAD00\uB9AC \uC2DC\uC2A4\uD15C \uD300</strong></p>
+          </div>
+          <div class="footer">
+            <p>\uC774 \uBA54\uC77C\uC740 \uBC1C\uC8FC \uAD00\uB9AC \uC2DC\uC2A4\uD15C\uC5D0\uC11C \uC790\uB3D9\uC73C\uB85C \uBC1C\uC1A1\uB41C \uBA54\uC77C\uC785\uB2C8\uB2E4.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `
+  }
+};
+var AuthEmailService = class extends POEmailService {
+  /**
+   * 회원가입 접수 알림 이메일 발송
+   */
+  static async sendRegistrationReceived(registration) {
+    try {
+      const template = AUTH_EMAIL_TEMPLATES.REGISTRATION_RECEIVED;
+      const htmlContent = template.template(registration.name);
+      return await this.sendEmail({
+        to: registration.email,
+        subject: template.subject,
+        html: htmlContent
+      });
+    } catch (error) {
+      console.error("Send registration received email error:", error);
+      return false;
+    }
+  }
+  /**
+   * 회원가입 승인 알림 이메일 발송
+   */
+  static async sendRegistrationApproved(user) {
+    try {
+      const template = AUTH_EMAIL_TEMPLATES.REGISTRATION_APPROVED;
+      const htmlContent = template.template(user.name);
+      return await this.sendEmail({
+        to: user.email,
+        subject: template.subject,
+        html: htmlContent
+      });
+    } catch (error) {
+      console.error("Send registration approved email error:", error);
+      return false;
+    }
+  }
+  /**
+   * 회원가입 거부 알림 이메일 발송
+   */
+  static async sendRegistrationRejected(registration, reason) {
+    try {
+      const template = AUTH_EMAIL_TEMPLATES.REGISTRATION_REJECTED;
+      const htmlContent = template.template(registration.name, reason);
+      return await this.sendEmail({
+        to: registration.email,
+        subject: template.subject,
+        html: htmlContent
+      });
+    } catch (error) {
+      console.error("Send registration rejected email error:", error);
+      return false;
+    }
+  }
+  /**
+   * 비밀번호 재설정 링크 이메일 발송
+   */
+  static async sendPasswordReset(user, resetToken) {
+    try {
+      const template = AUTH_EMAIL_TEMPLATES.PASSWORD_RESET;
+      const resetLink = `${process.env.FRONTEND_URL || "http://localhost:5173"}/reset-password?token=${resetToken}`;
+      const htmlContent = template.template(user.name, resetLink);
+      return await this.sendEmail({
+        to: user.email,
+        subject: template.subject,
+        html: htmlContent
+      });
+    } catch (error) {
+      console.error("Send password reset email error:", error);
+      return false;
+    }
+  }
+  /**
+   * 관리자에게 새 회원가입 신청 알림
+   */
+  static async notifyAdminOfNewRegistration(registration) {
+    try {
+      const adminEmails = process.env.ADMIN_EMAILS?.split(",") || ["admin@company.com"];
+      const subject = `[\uBC1C\uC8FC \uAD00\uB9AC \uC2DC\uC2A4\uD15C] \uC0C8 \uD68C\uC6D0\uAC00\uC785 \uC2E0\uCCAD - ${registration.name}`;
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: 'Malgun Gothic', sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background-color: #1F2937; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+            .content { background-color: #f8f9fa; padding: 30px; border-radius: 0 0 8px 8px; }
+            .info-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+            .info-table th, .info-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            .info-table th { background-color: #f0f0f0; }
+            .button { display: inline-block; background-color: #3B82F6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>\u{1F514} \uC0C8 \uD68C\uC6D0\uAC00\uC785 \uC2E0\uCCAD</h1>
+            </div>
+            <div class="content">
+              <p>\uAD00\uB9AC\uC790\uB2D8, \uC548\uB155\uD558\uC138\uC694.</p>
+              
+              <p>\uC0C8\uB85C\uC6B4 \uD68C\uC6D0\uAC00\uC785 \uC2E0\uCCAD\uC774 \uC811\uC218\uB418\uC5C8\uC2B5\uB2C8\uB2E4.</p>
+              
+              <table class="info-table">
+                <tr><th>\uC774\uB984</th><td>${registration.name}</td></tr>
+                <tr><th>\uC774\uBA54\uC77C</th><td>${registration.email}</td></tr>
+                <tr><th>\uC804\uD654\uBC88\uD638</th><td>${registration.phoneNumber || "\uBBF8\uC785\uB825"}</td></tr>
+                <tr><th>\uC694\uCCAD \uAD8C\uD55C</th><td>${registration.requestedRole}</td></tr>
+                <tr><th>\uC2E0\uCCAD\uC77C\uC2DC</th><td>${registration.appliedAt.toLocaleString("ko-KR")}</td></tr>
+              </table>
+              
+              <p>\uAD00\uB9AC\uC790 \uD398\uC774\uC9C0\uC5D0\uC11C \uC2E0\uCCAD\uC744 \uAC80\uD1A0\uD558\uACE0 \uC2B9\uC778/\uAC70\uBD80\uB97C \uACB0\uC815\uD574 \uC8FC\uC138\uC694.</p>
+              
+              <p style="text-align: center;">
+                <a href="${process.env.FRONTEND_URL || "http://localhost:5173"}/admin" class="button">
+                  \uAD00\uB9AC\uC790 \uD398\uC774\uC9C0\uB85C \uC774\uB3D9
+                </a>
+              </p>
+              
+              <p><strong>\uBC1C\uC8FC \uAD00\uB9AC \uC2DC\uC2A4\uD15C</strong></p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+      let allSent = true;
+      for (const adminEmail of adminEmails) {
+        const sent = await this.sendEmail({
+          to: adminEmail.trim(),
+          subject,
+          html: htmlContent
+        });
+        if (!sent) allSent = false;
+      }
+      return allSent;
+    } catch (error) {
+      console.error("Notify admin of new registration error:", error);
+      return false;
+    }
+  }
+};
+
+// server/routes/auth.ts
+import { z as z3 } from "zod";
+
+// server/middleware/security.ts
+import { z as z2 } from "zod";
+var RateLimitStore = class {
+  constructor() {
+    this.store = /* @__PURE__ */ new Map();
+    this.cleanupInterval = setInterval(() => {
+      const now = Date.now();
+      for (const [key, value] of this.store.entries()) {
+        if (now > value.resetTime) {
+          this.store.delete(key);
+        }
+      }
+    }, 5 * 60 * 1e3);
+  }
+  increment(key, windowMs) {
+    const now = Date.now();
+    const existing = this.store.get(key);
+    if (!existing || now > existing.resetTime) {
+      const entry = { count: 1, resetTime: now + windowMs };
+      this.store.set(key, entry);
+      return entry;
+    }
+    existing.count++;
+    return existing;
+  }
+  cleanup() {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+    }
+  }
+};
+var rateLimitStore = new RateLimitStore();
+function createRateLimit(options) {
+  const {
+    windowMs,
+    maxRequests,
+    message = "Too many requests, please try again later.",
+    keyGenerator = (req) => req.ip || "unknown"
+  } = options;
+  return (req, res, next) => {
+    try {
+      const key = keyGenerator(req);
+      const { count: count5, resetTime } = rateLimitStore.increment(key, windowMs);
+      res.setHeader("X-RateLimit-Limit", maxRequests.toString());
+      res.setHeader("X-RateLimit-Remaining", Math.max(0, maxRequests - count5).toString());
+      res.setHeader("X-RateLimit-Reset", Math.ceil(resetTime / 1e3).toString());
+      if (count5 > maxRequests) {
+        return res.status(429).json({
+          error: "Too Many Requests",
+          message,
+          retryAfter: Math.ceil((resetTime - Date.now()) / 1e3)
+        });
+      }
+      next();
+    } catch (error) {
+      console.error("Rate limiting error:", error);
+      next();
+    }
+  };
+}
+var authRateLimit = createRateLimit({
+  windowMs: 15 * 60 * 1e3,
+  // 15 minutes
+  maxRequests: 5,
+  // 5 attempts per 15 minutes
+  message: "Too many authentication attempts. Please try again in 15 minutes.",
+  keyGenerator: (req) => {
+    const identifier = req.body?.email || req.body?.username || req.body?.userId || "";
+    return `auth:${req.ip}:${identifier}`;
+  }
+});
+var registrationRateLimit = createRateLimit({
+  windowMs: 60 * 60 * 1e3,
+  // 1 hour
+  maxRequests: 3,
+  // 3 registrations per hour per IP
+  message: "Too many registration attempts. Please try again in 1 hour."
+});
+var passwordResetRateLimit = createRateLimit({
+  windowMs: 60 * 60 * 1e3,
+  // 1 hour
+  maxRequests: 3,
+  // 3 password reset requests per hour
+  message: "Too many password reset attempts. Please try again in 1 hour.",
+  keyGenerator: (req) => `password-reset:${req.ip}:${req.body?.email || ""}`
+});
+var generalRateLimit = createRateLimit({
+  windowMs: 15 * 60 * 1e3,
+  // 15 minutes
+  maxRequests: 1e3,
+  // 1000 requests per 15 minutes
+  message: "API rate limit exceeded. Please slow down your requests."
+});
+function securityHeaders(req, res, next) {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("X-XSS-Protection", "1; mode=block");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Permissions-Policy", "geolocation=(), microphone=(), camera=()");
+  res.setHeader(
+    "Content-Security-Policy",
+    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self';"
+  );
+  next();
+}
+function sanitizeInput(req, res, next) {
+  try {
+    if (req.body && typeof req.body === "object") {
+      sanitizeObject(req.body);
+    }
+    if (req.query && typeof req.query === "object") {
+      sanitizeObject(req.query);
+    }
+    next();
+  } catch (error) {
+    console.error("Input sanitization error:", error);
+    res.status(400).json({
+      error: "Invalid input",
+      message: "Request contains invalid characters"
+    });
+  }
+}
+function sanitizeObject(obj) {
+  for (const key in obj) {
+    if (typeof obj[key] === "string") {
+      obj[key] = obj[key].replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "").replace(/javascript:/gi, "").replace(/on\w+=/gi, "").trim();
+    } else if (typeof obj[key] === "object" && obj[key] !== null) {
+      sanitizeObject(obj[key]);
+    }
+  }
+}
+var secureValidationSchemas = {
+  // User ID validation
+  userId: z2.string().min(1, "\uC0AC\uC6A9\uC790 ID\uB294 \uD544\uC218\uC785\uB2C8\uB2E4").max(50, "\uC0AC\uC6A9\uC790 ID\uB294 50\uC790\uB97C \uCD08\uACFC\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4").regex(/^[a-zA-Z0-9._-]+$/, "\uC0AC\uC6A9\uC790 ID\uB294 \uC601\uBB38\uC790, \uC22B\uC790, '.', '_', '-'\uB9CC \uD3EC\uD568\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4"),
+  // Email validation
+  email: z2.string().email("\uC62C\uBC14\uB978 \uC774\uBA54\uC77C \uD615\uC2DD\uC774 \uC544\uB2D9\uB2C8\uB2E4").max(254, "\uC774\uBA54\uC77C\uC774 \uB108\uBB34 \uAE41\uB2C8\uB2E4").toLowerCase().refine((email) => {
+    const dangerousPatterns = [
+      /[<>]/,
+      // HTML brackets
+      /javascript:/i,
+      // JavaScript protocol
+      /data:/i
+      // Data protocol
+    ];
+    return !dangerousPatterns.some((pattern) => pattern.test(email));
+  }, "\uC774\uBA54\uC77C\uC5D0 \uD5C8\uC6A9\uB418\uC9C0 \uC54A\uC740 \uBB38\uC790\uAC00 \uD3EC\uD568\uB418\uC5B4 \uC788\uC2B5\uB2C8\uB2E4"),
+  // Strong password validation
+  password: z2.string().min(8, "\uBE44\uBC00\uBC88\uD638\uB294 \uCD5C\uC18C 8\uC790 \uC774\uC0C1\uC774\uC5B4\uC57C \uD569\uB2C8\uB2E4").max(128, "\uBE44\uBC00\uBC88\uD638\uAC00 \uB108\uBB34 \uAE41\uB2C8\uB2E4").regex(
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+    "\uBE44\uBC00\uBC88\uD638\uB294 \uB300\uBB38\uC790, \uC18C\uBB38\uC790, \uC22B\uC790\uB97C \uAC01\uAC01 \uCD5C\uC18C 1\uAC1C\uC529 \uD3EC\uD568\uD574\uC57C \uD569\uB2C8\uB2E4"
+  ).refine((password) => {
+    const weakPasswords = ["password", "12345678", "qwerty123", "admin123"];
+    return !weakPasswords.includes(password.toLowerCase());
+  }, "\uB108\uBB34 \uAC04\uB2E8\uD55C \uBE44\uBC00\uBC88\uD638\uC785\uB2C8\uB2E4"),
+  // Name validation
+  name: z2.string().min(2, "\uC774\uB984\uC740 \uCD5C\uC18C 2\uAE00\uC790 \uC774\uC0C1\uC774\uC5B4\uC57C \uD569\uB2C8\uB2E4").max(50, "\uC774\uB984\uC740 50\uAE00\uC790\uB97C \uCD08\uACFC\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4").regex(/^[가-힣a-zA-Z\s.-]+$/, "\uC774\uB984\uC5D0\uB294 \uD55C\uAE00, \uC601\uBB38, \uACF5\uBC31, '.', '-'\uB9CC \uD3EC\uD568\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4"),
+  // Phone number validation (Korean format)
+  phoneNumber: z2.string().regex(/^01[0-9]-?[0-9]{3,4}-?[0-9]{4}$/, "\uC62C\uBC14\uB978 \uD734\uB300\uD3F0 \uBC88\uD638 \uD615\uC2DD\uC774 \uC544\uB2D9\uB2C8\uB2E4").transform((phone) => phone.replace(/-/g, "")),
+  // Remove hyphens
+  // Generic text validation
+  safeText: (minLength = 1, maxLength = 1e3) => z2.string().min(minLength, `\uCD5C\uC18C ${minLength}\uAE00\uC790 \uC774\uC0C1\uC774\uC5B4\uC57C \uD569\uB2C8\uB2E4`).max(maxLength, `\uCD5C\uB300 ${maxLength}\uAE00\uC790\uB97C \uCD08\uACFC\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4`).refine((text2) => {
+    const dangerousPatterns = [
+      /<script/i,
+      // Script tags
+      /javascript:/i,
+      // JavaScript protocol
+      /on\w+=/i,
+      // Event handlers
+      /data:/i
+      // Data protocol
+    ];
+    return !dangerousPatterns.some((pattern) => pattern.test(text2));
+  }, "\uD5C8\uC6A9\uB418\uC9C0 \uC54A\uC740 \uBB38\uC790\uB098 \uD328\uD134\uC774 \uD3EC\uD568\uB418\uC5B4 \uC788\uC2B5\uB2C8\uB2E4")
+};
+function logSecurityEvent(event, details, req, severity = "medium") {
+  const logEntry = {
+    timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+    event,
+    severity,
+    ip: req.ip,
+    userAgent: req.get("User-Agent"),
+    userId: req.user?.id || "anonymous",
+    details,
+    path: req.path,
+    method: req.method
+  };
+  console.log(`[SECURITY ${severity.toUpperCase()}]`, JSON.stringify(logEntry));
+  if (severity === "high" && process.env.NODE_ENV === "production") {
+  }
+}
+
+// server/routes/auth.ts
+var router = Router();
+router.use(securityHeaders);
+router.use(sanitizeInput);
+router.get("/auth/debug", (req, res) => {
+  res.json({
+    message: "Auth routes are working",
+    timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+    environment: process.env.NODE_ENV || "unknown"
+  });
+});
+router.get("/test/ping", (req, res) => {
+  res.json({
+    message: "Server is alive",
+    timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+    environment: process.env.NODE_ENV || "unknown",
+    vercel: process.env.VERCEL || "false",
+    origin: req.get("Origin") || "none"
+  });
+});
+router.get("/auth/debug-prod", (req, res) => {
+  try {
+    const authSession = req.session;
+    console.log("\u{1F50D} Production auth debug:", {
+      sessionExists: !!req.session,
+      sessionId: req.sessionID,
+      sessionUserId: authSession?.userId,
+      cookies: req.headers.cookie,
+      origin: req.get("Origin"),
+      userAgent: req.get("User-Agent"),
+      secure: req.secure,
+      protocol: req.protocol,
+      host: req.get("host")
+    });
+    res.json({
+      environment: process.env.NODE_ENV,
+      sessionExists: !!req.session,
+      sessionId: req.sessionID || null,
+      sessionUserId: authSession?.userId || null,
+      hasSessionCookie: req.headers.cookie?.includes("connect.sid") || false,
+      cookieHeader: req.headers.cookie || null,
+      origin: req.get("Origin") || null,
+      secure: req.secure,
+      protocol: req.protocol,
+      host: req.get("host"),
+      timestamp: (/* @__PURE__ */ new Date()).toISOString()
+    });
+  } catch (error) {
+    console.error("Production auth debug error:", error);
+    res.status(500).json({
+      error: "Debug failed",
+      message: error?.message || "Unknown error"
+    });
+  }
+});
+router.post("/auth/login-simple", (req, res) => {
+  try {
+    const { username, password, email } = req.body;
+    const identifier = username || email;
+    console.log("\u{1F510} Simple login attempt for:", identifier);
+    const users3 = [
+      { id: "admin", username: "admin", email: "admin@company.com", password: "admin123", name: "\uAD00\uB9AC\uC790", role: "admin" },
+      { id: "manager", username: "manager", email: "manager@company.com", password: "manager123", name: "\uAE40\uBD80\uC7A5", role: "project_manager" },
+      { id: "user", username: "user", email: "user@company.com", password: "user123", name: "\uC774\uAE30\uC0AC", role: "field_worker" }
+    ];
+    const user = users3.find((u) => u.username === identifier || u.email === identifier);
+    if (!user || user.password !== password) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+    const { password: _, ...userWithoutPassword } = user;
+    res.json({
+      message: "Login successful (simple mode)",
+      user: userWithoutPassword
+    });
+  } catch (error) {
+    console.error("Simple login error:", error);
+    res.status(500).json({ message: "Login failed", error: error.message });
+  }
+});
+router.post("/auth/login-test", (req, res) => {
+  try {
+    const { username, password, email } = req.body;
+    const identifier = username || email;
+    console.log("\u{1F510} Test login attempt for:", identifier);
+    const users3 = [
+      { id: "admin", username: "admin", email: "admin@company.com", password: "admin123", name: "\uAD00\uB9AC\uC790", role: "admin" },
+      { id: "manager", username: "manager", email: "manager@company.com", password: "manager123", name: "\uAE40\uBD80\uC7A5", role: "project_manager" },
+      { id: "user", username: "user", email: "user@company.com", password: "user123", name: "\uC774\uAE30\uC0AC", role: "field_worker" }
+    ];
+    const user = users3.find((u) => u.username === identifier || u.email === identifier);
+    if (!user || user.password !== password) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+    const { password: _, ...userWithoutPassword } = user;
+    res.json({
+      message: "Login successful (test mode)",
+      user: userWithoutPassword
+    });
+  } catch (error) {
+    console.error("Test login error:", error);
+    res.status(500).json({ message: "Login failed", error: error.message });
+  }
+});
+router.post("/auth/login", authRateLimit, login);
+router.post("/auth/logout", logout);
+router.patch("/auth/profile", requireAuth, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    const { name } = req.body;
+    if (!name) {
+      return res.status(400).json({ message: "Name is required" });
+    }
+    const updatedUser = await storage.updateUser(userId, { name });
+    const { password: _, ...userWithoutPassword } = updatedUser;
+    res.json(userWithoutPassword);
+  } catch (error) {
+    console.error("Profile update error:", error);
+    res.status(500).json({ message: "Failed to update profile" });
+  }
+});
+router.patch("/auth/change-password", requireAuth, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: "Current and new passwords are required" });
+    }
+    const user = await storage.getUser(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    const bcrypt5 = await import("bcrypt");
+    const isValidPassword = await bcrypt5.compare(currentPassword, user.password);
+    if (!isValidPassword) {
+      return res.status(401).json({ message: "Current password is incorrect" });
+    }
+    const hashedPassword = await bcrypt5.hash(newPassword, 10);
+    await storage.updateUser(userId, { password: hashedPassword });
+    res.json({ message: "Password changed successfully" });
+  } catch (error) {
+    console.error("Password change error:", error);
+    res.status(500).json({ message: "Failed to change password" });
+  }
+});
+router.get("/logout", (req, res) => {
+  if (req.session) {
+    req.session.destroy(() => {
+      res.clearCookie("connect.sid");
+      res.json({ message: "Logout successful" });
+    });
+  } else {
+    res.json({ message: "Logout successful" });
+  }
+});
+router.post("/auth/force-logout", (req, res) => {
+  try {
+    console.log("\u{1F534} Force logout request - clearing all authentication state");
+    try {
+      if (req.session) {
+        req.session.userId = void 0;
+        req.session.user = void 0;
+        req.session.destroy((err) => {
+          if (err) {
+            console.log("\u26A0\uFE0F Force session destroy failed (non-fatal):", err);
+          } else {
+            console.log("\u2705 Session completely destroyed in force logout");
+          }
+        });
+      }
+    } catch (sessionErr) {
+      console.log("\u26A0\uFE0F Session clearing failed (non-fatal):", sessionErr);
+    }
+    res.clearCookie("connect.sid");
+    res.clearCookie("sessionId");
+    console.log("\u2705 Force logout completed - all authentication state cleared");
+    res.json({
+      message: "Force logout successful - all authentication state cleared",
+      success: true,
+      cleared: {
+        session: true,
+        cookies: true
+      }
+    });
+  } catch (error) {
+    console.error("Force logout error:", error);
+    res.status(500).json({
+      message: "Force logout failed",
+      error: error?.message || "Unknown error",
+      success: false
+    });
+  }
+});
+router.get("/auth/status", (req, res) => {
+  try {
+    console.log("\u{1F50D} Authentication status check");
+    const authSession = req.session;
+    const status = {
+      sessionExists: !!req.session,
+      sessionId: req.sessionID || null,
+      sessionUserId: authSession?.userId || null,
+      sessionUser: authSession?.user ? {
+        id: authSession.user.id,
+        name: authSession.user.name,
+        role: authSession.user.role
+      } : null,
+      cookies: req.headers.cookie ? req.headers.cookie.split("; ").length : 0,
+      timestamp: (/* @__PURE__ */ new Date()).toISOString()
+    };
+    console.log("\u{1F4CA} Current auth status:", status);
+    res.json(status);
+  } catch (error) {
+    console.error("Status check error:", error);
+    res.status(500).json({
+      message: "Status check failed",
+      error: error?.message || "Unknown error"
+    });
+  }
+});
+router.get("/auth/user", getCurrentUser);
+router.get("/auth/me", (req, res) => {
+  try {
+    console.log("\u{1F464} Get me request - LEGACY ENDPOINT");
+    console.log("\u{1F6AB} Legacy /auth/me endpoint called - returning null to stop polling");
+    res.status(401).json({
+      message: "Legacy endpoint - please use /api/auth/user",
+      user: null,
+      deprecated: true,
+      useInstead: "/api/auth/user"
+    });
+  } catch (error) {
+    console.error("Get me error:", error);
+    res.status(500).json({ message: "Failed to get user data" });
+  }
+});
+router.get("/auth/permissions/:userId", async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    let user = await storage.getUser(userId);
+    if (!user && userId === "dev_admin") {
+      user = {
+        id: "dev_admin",
+        email: "admin@company.com",
+        name: "Dev Administrator",
+        role: "admin",
+        phoneNumber: null,
+        profileImageUrl: null,
+        position: null,
+        isActive: true,
+        createdAt: /* @__PURE__ */ new Date(),
+        updatedAt: /* @__PURE__ */ new Date()
+      };
+    }
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    const permissions = {
+      userId: user.id,
+      role: user.role,
+      permissions: {
+        canCreateOrder: true,
+        canApproveOrder: ["project_manager", "hq_management", "executive", "admin"].includes(user.role),
+        canManageUsers: ["admin"].includes(user.role),
+        canManageProjects: ["project_manager", "hq_management", "admin"].includes(user.role),
+        canViewReports: ["hq_management", "executive", "admin"].includes(user.role),
+        canManageSettings: ["admin"].includes(user.role)
+      }
+    };
+    res.json(permissions);
+  } catch (error) {
+    console.error("Error fetching permissions:", error);
+    res.status(500).json({ message: "Failed to fetch permissions" });
+  }
+});
+router.get("/users", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const users3 = await storage.getUsers();
+    res.json(users3);
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    res.status(500).json({ message: "Failed to fetch users" });
+  }
+});
+router.post("/users", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { email, name, phoneNumber, role } = req.body;
+    const newUser = await storage.upsertUser({
+      email,
+      name,
+      phoneNumber,
+      role: role || "user",
+      password: "temp123"
+      // Temporary password - should be changed by user
+    });
+    res.status(201).json(newUser);
+  } catch (error) {
+    console.error("Error creating user:", error);
+    res.status(500).json({ message: "Failed to create user" });
+  }
+});
+router.patch("/users/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const updates = req.body;
+    const currentUser = await storage.getUser(id);
+    if (!currentUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    const updatedUser = await storage.updateUser(id, updates);
+    res.json(updatedUser);
+  } catch (error) {
+    console.error("Error updating user:", error);
+    res.status(500).json({ message: "Failed to update user" });
+  }
+});
+router.put("/users/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const updates = req.body;
+    const currentUser = await storage.getUser(id);
+    if (!currentUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    const updatedUser = await storage.updateUser(id, updates);
+    res.json(updatedUser);
+  } catch (error) {
+    console.error("Error updating user:", error);
+    res.status(500).json({ message: "Failed to update user" });
+  }
+});
+router.delete("/users/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const userOrders = await storage.getOrdersByUserId(id);
+    if (userOrders && userOrders.length > 0) {
+      return res.status(400).json({
+        message: "Cannot delete user with existing orders",
+        reason: "data_integrity",
+        details: "User has purchase orders that must preserve creator information"
+      });
+    }
+    await storage.deleteUser(id);
+    res.json({ message: "User deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting user:", error);
+    res.status(500).json({ message: "Failed to delete user" });
+  }
+});
+router.patch("/users/:id/toggle-active", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const { isActive } = req.body;
+    const updatedUser = await storage.updateUser(id, { isActive });
+    res.json(updatedUser);
+  } catch (error) {
+    console.error("Error toggling user active status:", error);
+    res.status(500).json({ message: "Failed to toggle user active status" });
+  }
+});
+var registrationSchema = z3.object({
+  email: secureValidationSchemas.email,
+  name: secureValidationSchemas.name,
+  phoneNumber: secureValidationSchemas.phoneNumber.optional().or(z3.literal("")),
+  password: secureValidationSchemas.password,
+  requestedRole: z3.enum(["field_worker", "project_manager", "hq_management", "executive"]).optional()
+});
+router.post("/auth/register", registrationRateLimit, async (req, res) => {
+  try {
+    logSecurityEvent("REGISTRATION_ATTEMPT", { email: req.body.email }, req, "low");
+    const validationResult = registrationSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      logSecurityEvent("REGISTRATION_VALIDATION_FAILED", {
+        email: req.body.email,
+        errors: validationResult.error.issues
+      }, req, "medium");
+      return res.status(400).json({
+        message: "\uC785\uB825 \uB370\uC774\uD130\uAC00 \uC720\uD6A8\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4",
+        errors: validationResult.error.issues.map((issue) => ({
+          field: issue.path.join("."),
+          message: issue.message
+        }))
+      });
+    }
+    const { email, name, phoneNumber, password, requestedRole } = validationResult.data;
+    const registration = await UserRegistrationService.submitRegistration({
+      email,
+      name,
+      phoneNumber: phoneNumber || void 0,
+      password,
+      requestedRole
+    });
+    await AuthEmailService.sendRegistrationReceived(registration);
+    await AuthEmailService.notifyAdminOfNewRegistration(registration);
+    try {
+      await logAuditEvent({
+        eventType: "data_create",
+        eventCategory: "auth",
+        entityType: "user_registration",
+        entityId: registration.id.toString(),
+        action: "registration_submitted",
+        additionalDetails: {
+          email: registration.email,
+          name: registration.name,
+          requestedRole: registration.requestedRole
+        },
+        ipAddress: req.ip,
+        userAgent: req.get("User-Agent"),
+        requestMethod: req.method,
+        requestPath: req.path
+      });
+    } catch (auditError) {
+      console.error("Audit logging failed:", auditError);
+    }
+    logSecurityEvent("REGISTRATION_SUCCESS", {
+      email: registration.email,
+      registrationId: registration.id
+    }, req, "low");
+    res.status(201).json({
+      message: "\uD68C\uC6D0\uAC00\uC785 \uC2E0\uCCAD\uC774 \uC131\uACF5\uC801\uC73C\uB85C \uC811\uC218\uB418\uC5C8\uC2B5\uB2C8\uB2E4. \uAD00\uB9AC\uC790 \uC2B9\uC778 \uD6C4 \uC774\uBA54\uC77C\uB85C \uACB0\uACFC\uB97C \uC548\uB0B4\uB4DC\uB9BD\uB2C8\uB2E4.",
+      registrationId: registration.id
+    });
+  } catch (error) {
+    console.error("Registration error:", error);
+    logSecurityEvent("REGISTRATION_ERROR", {
+      email: req.body.email,
+      error: error.message
+    }, req, "high");
+    try {
+      await logAuditEvent({
+        eventType: "error",
+        eventCategory: "auth",
+        entityType: "user_registration",
+        action: "registration_failed",
+        errorMessage: error.message,
+        additionalDetails: {
+          email: req.body.email,
+          name: req.body.name
+        },
+        ipAddress: req.ip,
+        userAgent: req.get("User-Agent"),
+        requestMethod: req.method,
+        requestPath: req.path
+      });
+    } catch (auditError) {
+      console.error("Audit logging failed:", auditError);
+    }
+    res.status(400).json({
+      message: error.message || "\uD68C\uC6D0\uAC00\uC785 \uCC98\uB9AC \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4"
+    });
+  }
+});
+router.get("/admin/pending-registrations", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const registrations = await UserRegistrationService.getPendingRegistrations();
+    res.json(registrations);
+  } catch (error) {
+    console.error("Get pending registrations error:", error);
+    res.status(500).json({ message: "\uAC00\uC785 \uC2E0\uCCAD \uBAA9\uB85D\uC744 \uAC00\uC838\uC624\uB294 \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4" });
+  }
+});
+router.get("/admin/registrations", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const registrations = await UserRegistrationService.getAllRegistrations();
+    res.json(registrations);
+  } catch (error) {
+    console.error("Get all registrations error:", error);
+    res.status(500).json({ message: "\uAC00\uC785 \uC2E0\uCCAD \uBAA9\uB85D\uC744 \uAC00\uC838\uC624\uB294 \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4" });
+  }
+});
+router.post("/admin/approve-registration/:id", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const registrationId = parseInt(req.params.id);
+    const adminId = req.user?.id;
+    if (!adminId) {
+      return res.status(401).json({ message: "\uC778\uC99D\uC774 \uD544\uC694\uD569\uB2C8\uB2E4" });
+    }
+    if (isNaN(registrationId)) {
+      return res.status(400).json({ message: "\uC720\uD6A8\uD558\uC9C0 \uC54A\uC740 \uAC00\uC785 \uC2E0\uCCAD ID\uC785\uB2C8\uB2E4" });
+    }
+    const result = await UserRegistrationService.approveRegistration(registrationId, adminId);
+    await AuthEmailService.sendRegistrationApproved(result.user);
+    try {
+      await logAuditEvent({
+        userId: adminId,
+        eventType: "approval_grant",
+        eventCategory: "auth",
+        entityType: "user_registration",
+        entityId: registrationId.toString(),
+        action: "registration_approved",
+        additionalDetails: {
+          approvedUserId: result.user.id,
+          approvedUserEmail: result.user.email,
+          approvedUserName: result.user.name,
+          approvedUserRole: result.user.role
+        },
+        ipAddress: req.ip,
+        userAgent: req.get("User-Agent"),
+        requestMethod: req.method,
+        requestPath: req.path
+      });
+    } catch (auditError) {
+      console.error("Audit logging failed:", auditError);
+    }
+    res.json({
+      message: "\uAC00\uC785 \uC2E0\uCCAD\uC774 \uC2B9\uC778\uB418\uC5C8\uC2B5\uB2C8\uB2E4",
+      user: result.user,
+      registration: result.registration
+    });
+  } catch (error) {
+    console.error("Approve registration error:", error);
+    res.status(400).json({ message: error.message || "\uAC00\uC785 \uC2B9\uC778 \uCC98\uB9AC \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4" });
+  }
+});
+router.post("/admin/reject-registration/:id", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const registrationId = parseInt(req.params.id);
+    const adminId = req.user?.id;
+    const { reason } = req.body;
+    if (!adminId) {
+      return res.status(401).json({ message: "\uC778\uC99D\uC774 \uD544\uC694\uD569\uB2C8\uB2E4" });
+    }
+    if (isNaN(registrationId)) {
+      return res.status(400).json({ message: "\uC720\uD6A8\uD558\uC9C0 \uC54A\uC740 \uAC00\uC785 \uC2E0\uCCAD ID\uC785\uB2C8\uB2E4" });
+    }
+    const registration = await UserRegistrationService.rejectRegistration(
+      registrationId,
+      adminId,
+      reason
+    );
+    await AuthEmailService.sendRegistrationRejected(registration, reason);
+    try {
+      await logAuditEvent({
+        userId: adminId,
+        eventType: "approval_reject",
+        eventCategory: "auth",
+        entityType: "user_registration",
+        entityId: registrationId.toString(),
+        action: "registration_rejected",
+        additionalDetails: {
+          rejectedUserEmail: registration.email,
+          rejectedUserName: registration.name,
+          rejectionReason: reason
+        },
+        ipAddress: req.ip,
+        userAgent: req.get("User-Agent"),
+        requestMethod: req.method,
+        requestPath: req.path
+      });
+    } catch (auditError) {
+      console.error("Audit logging failed:", auditError);
+    }
+    res.json({
+      message: "\uAC00\uC785 \uC2E0\uCCAD\uC774 \uAC70\uBD80\uB418\uC5C8\uC2B5\uB2C8\uB2E4",
+      registration
+    });
+  } catch (error) {
+    console.error("Reject registration error:", error);
+    res.status(400).json({ message: error.message || "\uAC00\uC785 \uAC70\uBD80 \uCC98\uB9AC \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4" });
+  }
+});
+router.delete("/admin/registration/:id", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const registrationId = parseInt(req.params.id);
+    const adminId = req.user?.id;
+    if (!adminId) {
+      return res.status(401).json({ message: "\uC778\uC99D\uC774 \uD544\uC694\uD569\uB2C8\uB2E4" });
+    }
+    if (isNaN(registrationId)) {
+      return res.status(400).json({ message: "\uC720\uD6A8\uD558\uC9C0 \uC54A\uC740 \uAC00\uC785 \uC2E0\uCCAD ID\uC785\uB2C8\uB2E4" });
+    }
+    const deleted = await UserRegistrationService.deleteRegistration(registrationId);
+    if (!deleted) {
+      return res.status(404).json({ message: "\uAC00\uC785 \uC2E0\uCCAD\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
+    }
+    try {
+      await logAuditEvent({
+        userId: adminId,
+        eventType: "data_delete",
+        eventCategory: "auth",
+        entityType: "user_registration",
+        entityId: registrationId.toString(),
+        action: "registration_deleted",
+        ipAddress: req.ip,
+        userAgent: req.get("User-Agent"),
+        requestMethod: req.method,
+        requestPath: req.path
+      });
+    } catch (auditError) {
+      console.error("Audit logging failed:", auditError);
+    }
+    res.json({ message: "\uAC00\uC785 \uC2E0\uCCAD\uC774 \uC0AD\uC81C\uB418\uC5C8\uC2B5\uB2C8\uB2E4" });
+  } catch (error) {
+    console.error("Delete registration error:", error);
+    res.status(400).json({ message: error.message || "\uAC00\uC785 \uC2E0\uCCAD \uC0AD\uC81C \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4" });
+  }
+});
+var forgotPasswordSchema = z3.object({
+  email: z3.string().email("\uC720\uD6A8\uD55C \uC774\uBA54\uC77C \uC8FC\uC18C\uB97C \uC785\uB825\uD574\uC8FC\uC138\uC694")
+});
+var resetPasswordSchema = z3.object({
+  token: z3.string().min(1, "\uD1A0\uD070\uC774 \uD544\uC694\uD569\uB2C8\uB2E4"),
+  newPassword: z3.string().min(8, "\uBE44\uBC00\uBC88\uD638\uB294 8\uAE00\uC790 \uC774\uC0C1\uC774\uC5B4\uC57C \uD569\uB2C8\uB2E4").max(128, "\uBE44\uBC00\uBC88\uD638\uB294 128\uAE00\uC790\uB97C \uCD08\uACFC\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4").regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, "\uBE44\uBC00\uBC88\uD638\uB294 \uB300\uBB38\uC790, \uC18C\uBB38\uC790, \uC22B\uC790\uB97C \uD3EC\uD568\uD574\uC57C \uD569\uB2C8\uB2E4")
+});
+router.post("/auth/forgot-password", passwordResetRateLimit, async (req, res) => {
+  try {
+    const validationResult = forgotPasswordSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      return res.status(400).json({
+        message: "\uC720\uD6A8\uD55C \uC774\uBA54\uC77C \uC8FC\uC18C\uB97C \uC785\uB825\uD574\uC8FC\uC138\uC694",
+        errors: validationResult.error.issues.map((issue) => ({
+          field: issue.path.join("."),
+          message: issue.message
+        }))
+      });
+    }
+    const { email } = validationResult.data;
+    try {
+      const { token, user } = await PasswordResetService.requestPasswordReset(email);
+      const emailSent = await AuthEmailService.sendPasswordReset(user, token);
+      if (!emailSent) {
+        console.error("Failed to send password reset email");
+      }
+      try {
+        await logAuditEvent({
+          userId: user.id,
+          eventType: "password_change",
+          eventCategory: "auth",
+          entityType: "password_reset_token",
+          action: "password_reset_requested",
+          additionalDetails: {
+            email: user.email,
+            emailSent
+          },
+          ipAddress: req.ip,
+          userAgent: req.get("User-Agent"),
+          requestMethod: req.method,
+          requestPath: req.path
+        });
+      } catch (auditError) {
+        console.error("Audit logging failed:", auditError);
+      }
+      res.json({
+        message: "\uBE44\uBC00\uBC88\uD638 \uC7AC\uC124\uC815 \uB9C1\uD06C\uB97C \uC774\uBA54\uC77C\uB85C \uBC1C\uC1A1\uD588\uC2B5\uB2C8\uB2E4. \uC774\uBA54\uC77C\uC744 \uD655\uC778\uD574 \uC8FC\uC138\uC694."
+      });
+    } catch (error) {
+      console.error("Password reset request error:", error);
+      try {
+        await logAuditEvent({
+          eventType: "error",
+          eventCategory: "auth",
+          action: "password_reset_request_failed",
+          errorMessage: error.message,
+          additionalDetails: {
+            email,
+            failureReason: error.message
+          },
+          ipAddress: req.ip,
+          userAgent: req.get("User-Agent"),
+          requestMethod: req.method,
+          requestPath: req.path
+        });
+      } catch (auditError) {
+        console.error("Audit logging failed:", auditError);
+      }
+      res.json({
+        message: "\uBE44\uBC00\uBC88\uD638 \uC7AC\uC124\uC815 \uB9C1\uD06C\uB97C \uC774\uBA54\uC77C\uB85C \uBC1C\uC1A1\uD588\uC2B5\uB2C8\uB2E4. \uC774\uBA54\uC77C\uC744 \uD655\uC778\uD574 \uC8FC\uC138\uC694."
+      });
+    }
+  } catch (error) {
+    console.error("Forgot password error:", error);
+    res.status(500).json({ message: "\uCC98\uB9AC \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4" });
+  }
+});
+router.get("/auth/verify-reset-token/:token", async (req, res) => {
+  try {
+    const token = req.params.token;
+    if (!token) {
+      return res.status(400).json({
+        valid: false,
+        message: "\uD1A0\uD070\uC774 \uD544\uC694\uD569\uB2C8\uB2E4"
+      });
+    }
+    const verification = await PasswordResetService.verifyResetToken(token);
+    if (!verification.isValid) {
+      return res.status(400).json({
+        valid: false,
+        message: verification.errorMessage || "\uC720\uD6A8\uD558\uC9C0 \uC54A\uC740 \uD1A0\uD070\uC785\uB2C8\uB2E4"
+      });
+    }
+    try {
+      await logAuditEvent({
+        userId: verification.user?.id,
+        eventType: "password_change",
+        eventCategory: "auth",
+        entityType: "password_reset_token",
+        action: "reset_token_verified",
+        additionalDetails: {
+          tokenValid: verification.isValid,
+          userEmail: verification.user?.email
+        },
+        ipAddress: req.ip,
+        userAgent: req.get("User-Agent"),
+        requestMethod: req.method,
+        requestPath: req.path
+      });
+    } catch (auditError) {
+      console.error("Audit logging failed:", auditError);
+    }
+    res.json({
+      valid: true,
+      message: "\uC720\uD6A8\uD55C \uD1A0\uD070\uC785\uB2C8\uB2E4",
+      user: {
+        id: verification.user?.id,
+        email: verification.user?.email,
+        name: verification.user?.name
+      }
+    });
+  } catch (error) {
+    console.error("Verify reset token error:", error);
+    res.status(500).json({
+      valid: false,
+      message: "\uD1A0\uD070 \uAC80\uC99D \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4"
+    });
+  }
+});
+router.post("/auth/reset-password", async (req, res) => {
+  try {
+    const validationResult = resetPasswordSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      return res.status(400).json({
+        message: "\uC785\uB825 \uB370\uC774\uD130\uAC00 \uC720\uD6A8\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4",
+        errors: validationResult.error.issues.map((issue) => ({
+          field: issue.path.join("."),
+          message: issue.message
+        }))
+      });
+    }
+    const { token, newPassword } = validationResult.data;
+    const verification = await PasswordResetService.verifyResetToken(token);
+    if (!verification.isValid || !verification.user) {
+      return res.status(400).json({
+        success: false,
+        message: verification.errorMessage || "\uC720\uD6A8\uD558\uC9C0 \uC54A\uC740 \uD1A0\uD070\uC785\uB2C8\uB2E4"
+      });
+    }
+    const result = await PasswordResetService.resetPassword(token, newPassword);
+    try {
+      await logAuditEvent({
+        userId: verification.user.id,
+        eventType: "password_change",
+        eventCategory: "auth",
+        entityType: "user",
+        entityId: verification.user.id,
+        action: result.success ? "password_reset_completed" : "password_reset_failed",
+        additionalDetails: {
+          userEmail: verification.user.email,
+          success: result.success,
+          failureReason: result.success ? null : result.message
+        },
+        ipAddress: req.ip,
+        userAgent: req.get("User-Agent"),
+        requestMethod: req.method,
+        requestPath: req.path
+      });
+    } catch (auditError) {
+      console.error("Audit logging failed:", auditError);
+    }
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+    res.json({
+      success: true,
+      message: "\uBE44\uBC00\uBC88\uD638\uAC00 \uC131\uACF5\uC801\uC73C\uB85C \uBCC0\uACBD\uB418\uC5C8\uC2B5\uB2C8\uB2E4. \uC0C8\uB85C\uC6B4 \uBE44\uBC00\uBC88\uD638\uB85C \uB85C\uADF8\uC778\uD574 \uC8FC\uC138\uC694."
+    });
+  } catch (error) {
+    console.error("Reset password error:", error);
+    res.status(500).json({
+      success: false,
+      message: "\uBE44\uBC00\uBC88\uD638 \uC7AC\uC124\uC815 \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4"
+    });
+  }
+});
+router.get("/admin/users/:userId/password-reset-history", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    if (!userId) {
+      return res.status(400).json({ message: "\uC0AC\uC6A9\uC790 ID\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4" });
+    }
+    const history = await PasswordResetService.getPasswordResetHistory(userId);
+    res.json(history);
+  } catch (error) {
+    console.error("Get password reset history error:", error);
+    res.status(500).json({ message: "\uBE44\uBC00\uBC88\uD638 \uC7AC\uC124\uC815 \uC774\uB825 \uC870\uD68C \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4" });
+  }
+});
+router.post("/admin/cleanup-expired-tokens", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const adminId = req.user?.id;
+    const cleanedCount = await PasswordResetService.cleanupExpiredTokens();
+    try {
+      await logAuditEvent({
+        userId: adminId,
+        eventType: "data_delete",
+        eventCategory: "auth",
+        entityType: "password_reset_token",
+        action: "expired_tokens_cleaned",
+        additionalDetails: {
+          cleanedTokensCount: cleanedCount
+        },
+        ipAddress: req.ip,
+        userAgent: req.get("User-Agent"),
+        requestMethod: req.method,
+        requestPath: req.path
+      });
+    } catch (auditError) {
+      console.error("Audit logging failed:", auditError);
+    }
+    res.json({
+      message: `${cleanedCount}\uAC1C\uC758 \uB9CC\uB8CC\uB41C \uD1A0\uD070\uC774 \uC815\uB9AC\uB418\uC5C8\uC2B5\uB2C8\uB2E4`,
+      cleanedCount
+    });
+  } catch (error) {
+    console.error("Cleanup expired tokens error:", error);
+    res.status(500).json({ message: "\uD1A0\uD070 \uC815\uB9AC \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4" });
+  }
+});
+router.post("/admin/users/:userId/invalidate-tokens", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const adminId = req.user?.id;
+    if (!userId) {
+      return res.status(400).json({ message: "\uC0AC\uC6A9\uC790 ID\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4" });
+    }
+    await PasswordResetService.invalidateUserTokens(userId);
+    try {
+      await logAuditEvent({
+        userId: adminId,
+        eventType: "security_alert",
+        eventCategory: "auth",
+        entityType: "password_reset_token",
+        entityId: userId,
+        action: "user_tokens_invalidated",
+        additionalDetails: {
+          targetUserId: userId
+        },
+        ipAddress: req.ip,
+        userAgent: req.get("User-Agent"),
+        requestMethod: req.method,
+        requestPath: req.path
+      });
+    } catch (auditError) {
+      console.error("Audit logging failed:", auditError);
+    }
+    res.json({ message: "\uC0AC\uC6A9\uC790\uC758 \uBAA8\uB4E0 \uBE44\uBC00\uBC88\uD638 \uC7AC\uC124\uC815 \uD1A0\uD070\uC774 \uBB34\uD6A8\uD654\uB418\uC5C8\uC2B5\uB2C8\uB2E4" });
+  } catch (error) {
+    console.error("Invalidate user tokens error:", error);
+    res.status(500).json({ message: "\uD1A0\uD070 \uBB34\uD6A8\uD654 \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4" });
+  }
+});
+var auth_default = router;
+
+// server/routes/projects.ts
+import { Router as Router2 } from "express";
+init_schema();
+
+// server/utils/optimized-queries.ts
+init_db();
+init_schema();
+import { eq as eq6, desc as desc2, count as count2, sql as sql3, and as and5, isNotNull as isNotNull2 } from "drizzle-orm";
+
+// server/utils/cache.ts
+var MemoryCache = class {
+  constructor() {
+    this.cache = /* @__PURE__ */ new Map();
+    this.defaultTTL = 5 * 60 * 1e3;
+  }
+  // 5 minutes default TTL
+  /**
+   * Set cache entry with TTL
+   */
+  set(key, data, ttl = this.defaultTTL) {
+    this.cache.set(key, {
+      data,
+      timestamp: Date.now(),
+      ttl
+    });
+  }
+  /**
+   * Get cache entry if not expired
+   */
+  get(key) {
+    const entry = this.cache.get(key);
+    if (!entry) {
+      return null;
+    }
+    if (Date.now() - entry.timestamp > entry.ttl) {
+      this.cache.delete(key);
+      return null;
+    }
+    return entry.data;
+  }
+  /**
+   * Delete cache entry
+   */
+  delete(key) {
+    this.cache.delete(key);
+  }
+  /**
+   * Clear all cache entries
+   */
+  clear() {
+    this.cache.clear();
+  }
+  /**
+   * Clear expired entries
+   */
+  cleanup() {
+    const now = Date.now();
+    for (const [key, entry] of this.cache.entries()) {
+      if (now - entry.timestamp > entry.ttl) {
+        this.cache.delete(key);
+      }
+    }
+  }
+  /**
+   * Get cache size
+   */
+  size() {
+    return this.cache.size;
+  }
+  /**
+   * Get cache statistics
+   */
+  getStats() {
+    return {
+      size: this.cache.size,
+      keys: Array.from(this.cache.keys())
+    };
+  }
+};
+var cache = new MemoryCache();
+var CacheTTL = {
+  SHORT: 1 * 60 * 1e3,
+  // 1 minute
+  MEDIUM: 5 * 60 * 1e3,
+  // 5 minutes
+  LONG: 30 * 60 * 1e3,
+  // 30 minutes
+  VERY_LONG: 60 * 60 * 1e3
+  // 1 hour
+};
+setInterval(() => {
+  cache.cleanup();
+}, 10 * 60 * 1e3);
+
+// server/utils/optimized-queries.ts
+var OptimizedOrderQueries = class {
+  /**
+   * Get orders with comprehensive details and filtering
+   */
+  static async getOrdersWithDetails(filters = {}) {
+    const cacheKey = `orders_details_${JSON.stringify(filters)}`;
+    const cached = cache.get(cacheKey);
+    if (cached) return cached;
+    try {
+      let query = db.select({
+        id: purchaseOrders.id,
+        orderNumber: purchaseOrders.orderNumber,
+        status: purchaseOrders.status,
+        totalAmount: purchaseOrders.totalAmount,
+        orderDate: purchaseOrders.orderDate,
+        deliveryDate: purchaseOrders.deliveryDate,
+        projectName: projects.projectName,
+        vendorName: vendors.name,
+        userName: users.name,
+        approvalLevel: purchaseOrders.approvalLevel,
+        currentApproverRole: purchaseOrders.currentApproverRole
+      }).from(purchaseOrders).leftJoin(projects, eq6(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq6(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq6(purchaseOrders.userId, users.id)).orderBy(desc2(purchaseOrders.orderDate));
+      const result = await query;
+      cache.set(cacheKey, result, 300);
+      return result;
+    } catch (error) {
+      console.error("Error fetching orders with details:", error);
+      return [];
+    }
+  }
+  /**
+   * Get pending approval orders for specific role
+   */
+  static async getPendingApprovalOrders(role) {
+    const cacheKey = `pending_orders_${role}`;
+    const cached = cache.get(cacheKey);
+    if (cached) return cached;
+    try {
+      const result = await db.select().from(purchaseOrders).where(
+        and5(
+          eq6(purchaseOrders.status, "pending"),
+          eq6(purchaseOrders.currentApproverRole, role)
+        )
+      ).orderBy(desc2(purchaseOrders.orderDate));
+      cache.set(cacheKey, result, 120);
+      return result;
+    } catch (error) {
+      console.error("Error fetching pending approval orders:", error);
+      return [];
+    }
+  }
+  /**
+   * Get order statistics summary
+   */
+  static async getOrderStatistics() {
+    const cacheKey = "order_statistics";
+    const cached = cache.get(cacheKey);
+    if (cached) return cached;
+    try {
+      const [totalOrders] = await db.select({ count: count2() }).from(purchaseOrders);
+      const [pendingOrders] = await db.select({ count: count2() }).from(purchaseOrders).where(eq6(purchaseOrders.status, "pending"));
+      const [approvedOrders] = await db.select({ count: count2() }).from(purchaseOrders).where(eq6(purchaseOrders.status, "approved"));
+      const result = {
+        total: totalOrders.count || 0,
+        pending: pendingOrders.count || 0,
+        approved: approvedOrders.count || 0
+      };
+      cache.set(cacheKey, result, 300);
+      return result;
+    } catch (error) {
+      console.error("Error fetching order statistics:", error);
+      return { total: 0, pending: 0, approved: 0 };
+    }
+  }
+};
+var OptimizedDashboardQueries = class {
+  /**
+   * Get unified dashboard data in single optimized query
+   */
+  static async getUnifiedDashboardData() {
+    const cacheKey = "unified_dashboard_data";
+    const cached = cache.get(cacheKey);
+    if (cached) return cached;
+    try {
+      console.log("\u{1F50D} Starting getUnifiedDashboardData query...");
+      const orderStatsResult = await db.execute(
+        sql3`SELECT 
+          COUNT(*) as "totalOrders",
+          COALESCE(SUM(total_amount), 0) as "totalAmount"
+        FROM purchase_orders`
+      );
+      console.log("\u{1F4CA} Order stats query result:", orderStatsResult);
+      const orderStats = orderStatsResult.rows[0] || { totalOrders: 0, totalAmount: 0 };
+      const pendingOrderResult = await db.execute(
+        sql3`SELECT COUNT(*) as "pendingOrders" FROM purchase_orders WHERE status = 'pending'`
+      );
+      const pendingOrderStats = pendingOrderResult.rows[0] || { pendingOrders: 0 };
+      const completedOrderResult = await db.execute(
+        sql3`SELECT COUNT(*) as "completedOrders" 
+            FROM purchase_orders 
+            WHERE status = 'completed' 
+            AND order_date >= DATE_TRUNC('month', CURRENT_DATE)`
+      );
+      const completedOrderStats = completedOrderResult.rows[0] || { completedOrders: 0 };
+      const monthlyOrderResult = await db.execute(
+        sql3`SELECT COUNT(*) as "monthlyOrders" 
+            FROM purchase_orders 
+            WHERE order_date >= DATE_TRUNC('month', CURRENT_DATE)`
+      );
+      const monthlyOrderStats = monthlyOrderResult.rows[0] || { monthlyOrders: 0 };
+      const projectResult = await db.execute(
+        sql3`SELECT COUNT(*) as "activeProjects" FROM projects WHERE is_active = true`
+      );
+      const projectStats = projectResult.rows[0] || { activeProjects: 0 };
+      const vendorResult = await db.execute(
+        sql3`SELECT COUNT(*) as "activeVendors" FROM vendors WHERE is_active = true`
+      );
+      const vendorStats = vendorResult.rows[0] || { activeVendors: 0 };
+      const recentOrdersRaw = await db.select({
+        id: purchaseOrders.id,
+        orderNumber: purchaseOrders.orderNumber,
+        status: purchaseOrders.status,
+        totalAmount: purchaseOrders.totalAmount,
+        createdAt: purchaseOrders.createdAt,
+        vendorId: vendors.id,
+        vendorName: vendors.name,
+        projectId: projects.id,
+        projectName: projects.projectName
+      }).from(purchaseOrders).leftJoin(vendors, eq6(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq6(purchaseOrders.projectId, projects.id)).orderBy(desc2(purchaseOrders.createdAt)).limit(10);
+      const recentOrders = recentOrdersRaw.map((order) => ({
+        id: order.id,
+        orderNumber: order.orderNumber,
+        status: order.status,
+        totalAmount: order.totalAmount,
+        createdAt: order.createdAt,
+        vendor: order.vendorId ? {
+          id: order.vendorId,
+          name: order.vendorName
+        } : null,
+        project: order.projectId ? {
+          id: order.projectId,
+          name: order.projectName,
+          projectName: order.projectName
+          // Add backward compatibility
+        } : null
+      }));
+      const monthlyStatsRaw = await db.select({
+        month: sql3`TO_CHAR(${purchaseOrders.orderDate}, 'YYYY-MM')`,
+        count: count2(),
+        amount: sql3`COALESCE(SUM(${purchaseOrders.totalAmount}), 0)`,
+        orderDate: sql3`DATE_TRUNC('month', ${purchaseOrders.orderDate})`
+        // For proper sorting
+      }).from(purchaseOrders).where(sql3`${purchaseOrders.orderDate} >= CURRENT_DATE - INTERVAL '12 months'`).groupBy(sql3`TO_CHAR(${purchaseOrders.orderDate}, 'YYYY-MM')`, sql3`DATE_TRUNC('month', ${purchaseOrders.orderDate})`).orderBy(sql3`DATE_TRUNC('month', ${purchaseOrders.orderDate}) ASC`);
+      const monthlyStats = monthlyStatsRaw.map((item) => ({
+        month: item.month,
+        count: item.count,
+        amount: item.amount,
+        totalAmount: item.amount
+        // Add alias for compatibility
+      }));
+      const statusStats = await db.select({
+        status: purchaseOrders.orderStatus,
+        count: count2(),
+        amount: sql3`COALESCE(SUM(${purchaseOrders.totalAmount}), 0)`
+      }).from(purchaseOrders).groupBy(purchaseOrders.orderStatus).orderBy(desc2(count2()));
+      const allOrderStatuses = ["draft", "created", "sent", "delivered"];
+      const existingStatusStats = statusStats;
+      const statusMap = new Map(existingStatusStats.map((item) => [item.status, item]));
+      const orderStatusStats = allOrderStatuses.map((status) => {
+        if (statusMap.has(status)) {
+          return statusMap.get(status);
+        }
+        return {
+          status,
+          count: 0,
+          amount: 0
+        };
+      });
+      const projectStatsList = await db.select({
+        projectId: projects.id,
+        projectName: projects.projectName,
+        projectType: projects.projectType,
+        orderCount: count2(),
+        totalAmount: sql3`COALESCE(SUM(${purchaseOrders.totalAmount}), 0)`
+      }).from(purchaseOrders).leftJoin(projects, eq6(purchaseOrders.projectId, projects.id)).where(isNotNull2(projects.id)).groupBy(projects.id, projects.projectName, projects.projectType).orderBy(desc2(sql3`COALESCE(SUM(${purchaseOrders.totalAmount}), 0)`)).limit(10);
+      const result = {
+        statistics: {
+          totalOrders: parseInt(orderStats.totalOrders) || 0,
+          totalAmount: Number(orderStats.totalAmount) || 0,
+          pendingOrders: parseInt(pendingOrderStats.pendingOrders) || 0,
+          completedOrders: parseInt(completedOrderStats.completedOrders) || 0,
+          monthlyOrders: parseInt(monthlyOrderStats.monthlyOrders) || 0,
+          activeProjects: parseInt(projectStats.activeProjects) || 0,
+          activeVendors: parseInt(vendorStats.activeVendors) || 0
+        },
+        recentOrders,
+        monthlyStats,
+        statusStats,
+        // Keep for backward compatibility
+        orderStatusStats,
+        // Separated order status
+        projectStats: projectStatsList
+      };
+      console.log("\u2705 Dashboard data compiled successfully:", {
+        totalOrders: result.statistics.totalOrders,
+        activeProjects: result.statistics.activeProjects
+      });
+      cache.set(cacheKey, result, 600);
+      return result;
+    } catch (error) {
+      console.error("\u274C Error fetching unified dashboard data:", error);
+      console.error("Error details:", error.message);
+      console.error("Stack trace:", error.stack);
+      return {
+        statistics: {
+          totalOrders: 0,
+          totalAmount: 0,
+          pendingOrders: 0,
+          completedOrders: 0,
+          monthlyOrders: 0,
+          activeProjects: 0,
+          activeVendors: 0
+        },
+        recentOrders: [],
+        monthlyStats: [],
+        statusStats: [],
+        orderStatusStats: [],
+        projectStats: []
+      };
+    }
+  }
+  /**
+   * Get order statistics for dashboard
+   */
+  static async getOrderStatistics() {
+    return OptimizedOrderQueries.getOrderStatistics();
+  }
+};
+
+// server/routes/projects.ts
+var router2 = Router2();
+router2.get("/projects", async (req, res) => {
+  try {
+    const projects2 = await storage.getProjects();
+    res.json(projects2);
+  } catch (error) {
+    console.error("Error fetching projects:", error);
+    res.status(500).json({ message: "Failed to fetch projects" });
+  }
+});
+router2.get("/projects/active", async (req, res) => {
+  try {
+    const projects2 = await storage.getActiveProjects();
+    res.json(projects2);
+  } catch (error) {
+    console.error("Error fetching active projects:", error);
+    res.status(500).json({ message: "Failed to fetch active projects" });
+  }
+});
+router2.get("/projects/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const project = await storage.getProject(id);
+    if (!project) {
+      return res.status(404).json({ message: "Project not found" });
+    }
+    res.json(project);
+  } catch (error) {
+    console.error("Error fetching project:", error);
+    res.status(500).json({ message: "Failed to fetch project" });
+  }
+});
+router2.post("/projects", requireAuth, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: "User not authenticated" });
+    }
+    const user = await storage.getUser(userId);
+    if (!user || user.role !== "admin") {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+    console.log("\u{1F50D} Project creation request body:", JSON.stringify(req.body, null, 2));
+    const projectTypeMap = {
+      "\uC544\uD30C\uD2B8": "residential",
+      "\uC624\uD53C\uC2A4\uD154": "residential",
+      "\uB2E8\uB3C5\uC8FC\uD0DD": "residential",
+      "\uC8FC\uAC70\uC2DC\uC124": "residential",
+      "\uC0C1\uC5C5\uC2DC\uC124": "commercial",
+      "\uC0AC\uBB34\uC2E4": "commercial",
+      "\uC1FC\uD551\uBAB0": "commercial",
+      "\uC0B0\uC5C5\uC2DC\uC124": "industrial",
+      "\uACF5\uC7A5": "industrial",
+      "\uCC3D\uACE0": "industrial",
+      "\uC778\uD504\uB77C": "infrastructure",
+      "\uB3C4\uB85C": "infrastructure",
+      "\uAD50\uB7C9": "infrastructure"
+    };
+    console.log("\u{1F527} Original projectType:", req.body.projectType, "typeof:", typeof req.body.projectType);
+    console.log("\u{1F527} Mapped projectType:", projectTypeMap[req.body.projectType]);
+    console.log("\u{1F527} Original dates - startDate:", req.body.startDate, "endDate:", req.body.endDate);
+    console.log("\u{1F527} Date types - startDate:", typeof req.body.startDate, "endDate:", typeof req.body.endDate);
+    let transformedStartDate = null;
+    let transformedEndDate = null;
+    if (req.body.startDate) {
+      if (typeof req.body.startDate === "string") {
+        transformedStartDate = req.body.startDate.split("T")[0];
+      } else if (req.body.startDate instanceof Date) {
+        transformedStartDate = req.body.startDate.toISOString().split("T")[0];
+      }
+    }
+    if (req.body.endDate) {
+      if (typeof req.body.endDate === "string") {
+        transformedEndDate = req.body.endDate.split("T")[0];
+      } else if (req.body.endDate instanceof Date) {
+        transformedEndDate = req.body.endDate.toISOString().split("T")[0];
+      }
+    }
+    const transformedData = {
+      ...req.body,
+      startDate: transformedStartDate,
+      endDate: transformedEndDate,
+      totalBudget: req.body.totalBudget ? req.body.totalBudget : null,
+      projectType: projectTypeMap[req.body.projectType] || req.body.projectType || "commercial"
+    };
+    console.log("Transformed project data:", transformedData);
+    const validatedData = insertProjectSchema.parse(transformedData);
+    console.log("Validated project data:", validatedData);
+    const project = await storage.createProject(validatedData);
+    console.log("Created project:", project);
+    res.status(201).json(project);
+  } catch (error) {
+    console.error("Error creating project:", error);
+    console.error("Error details:", error.message);
+    console.error("Error stack:", error.stack);
+    res.status(500).json({ message: "Failed to create project", error: error.message });
+  }
+});
+router2.put("/projects/:id", requireAuth, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: "User not authenticated" });
+    }
+    const user = await storage.getUser(userId);
+    if (!user || user.role !== "admin") {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+    const projectId = parseInt(req.params.id, 10);
+    console.log("\u{1F527} Updating project ID:", projectId);
+    console.log("\u{1F527} Update data received:", req.body);
+    const updateData = { ...req.body };
+    if (updateData.totalBudget) {
+      console.log("\u{1F527} Original totalBudget:", updateData.totalBudget, typeof updateData.totalBudget);
+      updateData.totalBudget = parseFloat(updateData.totalBudget);
+      console.log("\u{1F527} Converted totalBudget:", updateData.totalBudget, typeof updateData.totalBudget);
+    }
+    const updatedProject = await storage.updateProject(projectId, updateData);
+    console.log("\u{1F527} Project updated successfully:", updatedProject);
+    res.json(updatedProject);
+  } catch (error) {
+    console.error("\u{1F527} Error updating project:", error);
+    res.status(500).json({ message: "Failed to update project" });
+  }
+});
+router2.delete("/projects/:id", requireAuth, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: "User not authenticated" });
+    }
+    const user = await storage.getUser(userId);
+    if (!user || user.role !== "admin") {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+    const projectId = parseInt(req.params.id, 10);
+    await storage.deleteProject(projectId);
+    res.json({ message: "Project deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting project:", error);
+    res.status(500).json({ message: "Failed to delete project" });
+  }
+});
+router2.get("/projects/:id/members", async (req, res) => {
+  try {
+    const projectId = parseInt(req.params.id, 10);
+    const members = await storage.getProjectMembers(projectId);
+    res.json(members);
+  } catch (error) {
+    console.error("Error fetching project members:", error);
+    res.status(500).json({ message: "Failed to fetch project members" });
+  }
+});
+router2.post("/projects/:id/members", requireAuth, async (req, res) => {
+  try {
+    const projectId = parseInt(req.params.id, 10);
+    const { userId } = req.body;
+    await storage.addProjectMember(projectId, userId);
+    res.status(201).json({ message: "Member added successfully" });
+  } catch (error) {
+    console.error("Error adding project member:", error);
+    res.status(500).json({ message: "Failed to add project member" });
+  }
+});
+router2.delete("/projects/:id/members/:userId", requireAuth, async (req, res) => {
+  try {
+    const projectId = parseInt(req.params.id, 10);
+    const userId = req.params.userId;
+    await storage.removeProjectMember(projectId, userId);
+    res.json({ message: "Member removed successfully" });
+  } catch (error) {
+    console.error("Error removing project member:", error);
+    res.status(500).json({ message: "Failed to remove project member" });
+  }
+});
+router2.get("/projects/:id/stats", async (req, res) => {
+  try {
+    const projectId = parseInt(req.params.id, 10);
+    const orders = await OptimizedOrderQueries.getProjectOrders(projectId);
+    const totalAmount = orders.reduce((sum2, order) => sum2 + (order.totalAmount || 0), 0);
+    const completedOrders = orders.filter((order) => order.status === "completed").length;
+    const stats = {
+      totalOrders: orders.length,
+      completedOrders,
+      pendingOrders: orders.filter((order) => order.status === "pending").length,
+      totalAmount,
+      completionRate: orders.length > 0 ? Math.round(completedOrders / orders.length * 100) : 0
+    };
+    res.json(stats);
+  } catch (error) {
+    console.error("Error fetching project statistics:", error);
+    res.status(500).json({ message: "Failed to fetch project statistics" });
+  }
+});
+var projects_default = router2;
+
+// server/routes/orders.ts
+import { Router as Router3 } from "express";
+init_schema();
+
+// server/utils/multer-config.ts
+import multer from "multer";
+import path3 from "path";
+import fs5 from "fs";
+
+// server/utils/korean-filename.ts
+function decodeKoreanFilename(originalname) {
+  console.log("\u{1F50D} Decoding Korean filename:", originalname);
+  console.log("\u{1F50D} Original bytes:", Buffer.from(originalname).toString("hex"));
+  console.log("\u{1F50D} Char codes:", originalname.split("").map((c) => c.charCodeAt(0)));
+  try {
+    const latin1Buffer = Buffer.from(originalname, "latin1");
+    const utf8Decoded = latin1Buffer.toString("utf8");
+    console.log("Method 1 (latin1\u2192utf8):", utf8Decoded);
+    if (/[가-힣]/.test(utf8Decoded)) {
+      console.log("\u2705 Method 1 SUCCESS - Korean detected");
+      return utf8Decoded;
+    }
+  } catch (e) {
+    console.log("\u274C Method 1 failed:", e);
+  }
+  try {
+    const doubleDecoded = decodeURIComponent(escape(originalname));
+    console.log("Method 2 (escape\u2192decode):", doubleDecoded);
+    if (/[가-힣]/.test(doubleDecoded)) {
+      console.log("\u2705 Method 2 SUCCESS - Korean detected");
+      return doubleDecoded;
+    }
+  } catch (e) {
+    console.log("\u274C Method 2 failed:", e);
+  }
+  try {
+    const binaryDecoded = Buffer.from(originalname, "binary").toString("utf8");
+    console.log("Method 3 (binary\u2192utf8):", binaryDecoded);
+    if (/[가-힣]/.test(binaryDecoded)) {
+      console.log("\u2705 Method 3 SUCCESS - Korean detected");
+      return binaryDecoded;
+    }
+  } catch (e) {
+    console.log("\u274C Method 3 failed:", e);
+  }
+  try {
+    const urlDecoded = decodeURIComponent(originalname);
+    console.log("Method 4 (URL decode):", urlDecoded);
+    if (/[가-힣]/.test(urlDecoded)) {
+      console.log("\u2705 Method 4 SUCCESS - Korean detected");
+      return urlDecoded;
+    }
+  } catch (e) {
+    console.log("\u274C Method 4 failed:", e);
+  }
+  try {
+    const isoDecoded = Buffer.from(originalname, "latin1").toString("utf8");
+    console.log("Method 5 (ISO conversion):", isoDecoded);
+    if (/[가-힣]/.test(isoDecoded)) {
+      console.log("\u2705 Method 5 SUCCESS - Korean detected");
+      return isoDecoded;
+    }
+  } catch (e) {
+    console.log("\u274C Method 5 failed:", e);
+  }
+  if (originalname.includes("\xE1")) {
+    console.log("\u{1F527} Using pattern-based fallback for corrupted Korean");
+    return fixCorruptedKoreanFilename(originalname);
+  }
+  console.log("\u26A0\uFE0F All methods FAILED - using original filename");
+  return originalname;
+}
+function fixCorruptedKoreanFilename(filename) {
+  console.log("\u{1F527} Fixing corrupted Korean filename:", filename);
+  if (filename.includes("xlsx")) {
+    if (filename.includes("\uC555\uCD9C") || filename.length > 30) {
+      const fixed = "\uC555\uCD9C\uBC1C\uC8FC\uC11C_\uD488\uBAA9\uB9AC\uC2A4\uD2B8.xlsx";
+      console.log("\u{1F527} Fixed to:", fixed);
+      return fixed;
+    } else {
+      const fixed = "\uBC1C\uC8FC\uC11C_\uC0D8\uD50C.xlsx";
+      console.log("\u{1F527} Fixed to:", fixed);
+      return fixed;
+    }
+  }
+  const fixes = {
+    "\xE1 \xE1 \xA1\xE1\xAF\xE1 \xE1 \xAE\xE1 \xE1 \xA5": "\uBC1C\uC8FC\uC11C",
+    "\xE1 \xE1 \xA2": "_",
+    "\xE1\xB7\xE1 \xE1 \xB3\xE1\xAF": "\uC0D8\uD50C"
+    // Add more mappings as discovered
+  };
+  let result = filename;
+  for (const [corrupted, fixed] of Object.entries(fixes)) {
+    result = result.replace(new RegExp(corrupted, "g"), fixed);
+  }
+  console.log("\u{1F527} Pattern-based result:", result);
+  return result;
+}
+
+// server/utils/multer-config.ts
+var uploadDir = process.env.VERCEL ? "/tmp" : path3.join(process.cwd(), "uploads");
+if (!process.env.VERCEL && !fs5.existsSync(uploadDir)) {
+  fs5.mkdirSync(uploadDir, { recursive: true });
+}
+var createMulterConfig = (prefix = "FILE") => {
+  return multer({
+    storage: multer.diskStorage({
+      destination: (req, file, cb) => {
+        cb(null, uploadDir);
+      },
+      filename: (req, file, cb) => {
+        console.log(`\u{1F4BE} ${prefix} - Multer filename callback`);
+        console.log(`\u{1F4BE} ${prefix} - Raw originalname:`, file.originalname);
+        console.log(`\u{1F4BE} ${prefix} - Raw bytes:`, Buffer.from(file.originalname));
+        const decodedName = decodeKoreanFilename(file.originalname);
+        file.originalname = decodedName;
+        const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+        const filename = uniqueSuffix.toString();
+        console.log(`\u{1F4BE} ${prefix} - Decoded originalname:`, decodedName);
+        console.log(`\u{1F4BE} ${prefix} - Generated filename:`, filename);
+        cb(null, filename);
+      }
+    }),
+    limits: {
+      fileSize: 10 * 1024 * 1024,
+      // 10MB
+      files: 10
+      // Allow up to 10 files
+    },
+    fileFilter: (req, file, cb) => {
+      console.log(`\u{1F50D} ${prefix} - File filter - fieldname:`, file.fieldname);
+      console.log(`\u{1F50D} ${prefix} - File filter - originalname:`, file.originalname);
+      console.log(`\u{1F50D} ${prefix} - File filter - mimetype:`, file.mimetype);
+      const allowedTypes = [
+        "application/pdf",
+        "image/jpeg",
+        "image/png",
+        "image/gif",
+        "application/dwg",
+        "application/x-dwg",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        // .xlsx
+        "application/vnd.ms-excel.sheet.macroEnabled.12",
+        // .xlsm (대문자 E)
+        "application/vnd.ms-excel.sheet.macroenabled.12",
+        // .xlsm (소문자 e)
+        "application/vnd.ms-excel",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      ];
+      if (allowedTypes.includes(file.mimetype)) {
+        console.log(`\u2705 ${prefix} - File type accepted:`, file.mimetype);
+        cb(null, true);
+      } else {
+        console.log(`\u274C ${prefix} - File type rejected:`, file.mimetype);
+        cb(new Error(`File type not allowed: ${file.mimetype}`), false);
+      }
+    }
+  });
+};
+var upload = createMulterConfig("MAIN");
+var orderUpload = createMulterConfig("ORDER");
+var logoUpload = createMulterConfig("LOGO");
+var excelUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024
+    // 10MB
+  },
+  fileFilter: (req, file, cb) => {
+    console.log(`\u{1F50D} EXCEL - File filter - fieldname:`, file.fieldname);
+    console.log(`\u{1F50D} EXCEL - File filter - originalname:`, file.originalname);
+    console.log(`\u{1F50D} EXCEL - File filter - mimetype:`, file.mimetype);
+    const allowedTypes = [
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      // .xlsx
+      "application/vnd.ms-excel.sheet.macroEnabled.12",
+      // .xlsm (대문자 E)
+      "application/vnd.ms-excel.sheet.macroenabled.12",
+      // .xlsm (소문자 e)
+      "application/vnd.ms-excel"
+      // .xls
+    ];
+    if (allowedTypes.includes(file.mimetype)) {
+      console.log(`\u2705 EXCEL - File type accepted:`, file.mimetype);
+      cb(null, true);
+    } else {
+      console.log(`\u274C EXCEL - File type rejected:`, file.mimetype);
+      cb(new Error(`Excel \uD30C\uC77C\uB9CC \uD5C8\uC6A9\uB429\uB2C8\uB2E4. \uD604\uC7AC \uD0C0\uC785: ${file.mimetype}`), false);
+    }
+  }
+});
+
+// server/services/order-service.ts
+var OrderService = class {
+  /**
+   * Generate unique order number with current date
+   */
+  static generateOrderNumber() {
+    const now = /* @__PURE__ */ new Date();
+    const year = now.getFullYear().toString().slice(-2);
+    const month = (now.getMonth() + 1).toString().padStart(2, "0");
+    const day = now.getDate().toString().padStart(2, "0");
+    const timestamp2 = now.getTime().toString().slice(-6);
+    return `PO${year}${month}${day}_${timestamp2}`;
+  }
+  /**
+   * Create new purchase order
+   */
+  static async createOrder(orderData) {
+    try {
+      if (!orderData.orderNumber) {
+        orderData.orderNumber = this.generateOrderNumber();
+      }
+      orderData.orderStatus = orderData.orderStatus || "draft";
+      orderData.approvalStatus = orderData.approvalStatus || "not_required";
+      orderData.approvalLevel = orderData.approvalLevel || 1;
+      orderData.currentApproverRole = orderData.currentApproverRole || "field_worker";
+      const result = await storage.createPurchaseOrder(orderData);
+      return result;
+    } catch (error) {
+      console.error("Error creating order:", error);
+      throw error;
+    }
+  }
+  /**
+   * Submit order for approval
+   */
+  static async submitForApproval(orderId, userId) {
+    try {
+      const updateData = {
+        status: "pending",
+        currentApproverRole: "project_manager",
+        approvalLevel: 2,
+        updatedAt: /* @__PURE__ */ new Date()
+      };
+      const result = await storage.updatePurchaseOrder(orderId, updateData);
+      await this.createApprovalLog(orderId, userId, "submitted_for_approval");
+      return result;
+    } catch (error) {
+      console.error("Error submitting order for approval:", error);
+      throw error;
+    }
+  }
+  /**
+   * Approve order
+   */
+  static async approveOrder(orderId, userId, role) {
+    try {
+      const nextApprovalLevel = this.getNextApprovalLevel(role);
+      const nextApproverRole = this.getNextApproverRole(role);
+      const updateData = {
+        status: nextApproverRole ? "pending" : "approved",
+        currentApproverRole: nextApproverRole,
+        approvalLevel: nextApprovalLevel,
+        updatedAt: /* @__PURE__ */ new Date()
+      };
+      const result = await storage.updatePurchaseOrder(orderId, updateData);
+      await this.createApprovalLog(orderId, userId, "approved");
+      return result;
+    } catch (error) {
+      console.error("Error approving order:", error);
+      throw error;
+    }
+  }
+  /**
+   * Reject order
+   */
+  static async rejectOrder(orderId, userId, reason) {
+    try {
+      const updateData = {
+        status: "draft",
+        currentApproverRole: null,
+        approvalLevel: 1,
+        updatedAt: /* @__PURE__ */ new Date()
+      };
+      const result = await storage.updatePurchaseOrder(orderId, updateData);
+      await this.createApprovalLog(orderId, userId, "rejected", reason);
+      return result;
+    } catch (error) {
+      console.error("Error rejecting order:", error);
+      throw error;
+    }
+  }
+  /**
+   * Get next approval level based on current role
+   */
+  static getNextApprovalLevel(currentRole) {
+    const levels = {
+      "field_worker": 2,
+      "project_manager": 3,
+      "hq_management": 4,
+      "executive": 5
+    };
+    return levels[currentRole] || 1;
+  }
+  /**
+   * Get next approver role based on current role
+   */
+  static getNextApproverRole(currentRole) {
+    const nextRoles = {
+      "field_worker": "project_manager",
+      "project_manager": "hq_management",
+      "hq_management": "executive",
+      "executive": null
+      // Final approval
+    };
+    return nextRoles[currentRole] || null;
+  }
+  /**
+   * Create approval log entry
+   */
+  static async createApprovalLog(orderId, userId, action, notes) {
+    try {
+      console.log(`Approval log: Order ${orderId}, User ${userId}, Action: ${action}, Notes: ${notes || "None"}`);
+    } catch (error) {
+      console.error("Error creating approval log:", error);
+    }
+  }
+};
+
 // server/services/approval-routing-service.ts
 init_db();
 init_schema();
-import { eq as eq5, and as and4, lte as lte3, asc as asc2, desc as desc3 } from "drizzle-orm";
+import { eq as eq7, and as and6, lte as lte3, asc as asc2, desc as desc3 } from "drizzle-orm";
 var ApprovalRoutingService = class {
   /**
    * 주문에 대한 최적의 승인 경로를 결정합니다
@@ -8800,7 +10285,7 @@ var ApprovalRoutingService = class {
   static async handleDirectApproval(context, settings) {
     const directApprovalRoles = settings.directApprovalRoles || [];
     const canDirectApprove = directApprovalRoles.includes(context.currentUserRole);
-    const directApprovalUsers = await db.select({ id: users.id, name: users.name }).from(users).where(eq5(users.role, context.currentUserRole)).limit(10);
+    const directApprovalUsers = await db.select({ id: users.id, name: users.name }).from(users).where(eq7(users.role, context.currentUserRole)).limit(10);
     return {
       approvalMode: "direct",
       canDirectApprove,
@@ -8843,9 +10328,9 @@ var ApprovalRoutingService = class {
    */
   static async findAppropriateStagedTemplate(companyId, orderAmount, priority) {
     const templates = await db.select().from(approvalStepTemplates).where(
-      and4(
-        eq5(approvalStepTemplates.companyId, companyId),
-        eq5(approvalStepTemplates.isActive, true),
+      and6(
+        eq7(approvalStepTemplates.companyId, companyId),
+        eq7(approvalStepTemplates.isActive, true),
         lte3(approvalStepTemplates.minAmount, orderAmount.toString())
         // maxAmount가 null이거나 orderAmount보다 크거나 같은 경우
       )
@@ -8863,9 +10348,9 @@ var ApprovalRoutingService = class {
    */
   static async checkSkippableSteps(currentUserRole, orderAmount, approvalSteps) {
     const userAuthority = await db.select().from(approvalAuthorities).where(
-      and4(
-        eq5(approvalAuthorities.role, currentUserRole),
-        eq5(approvalAuthorities.isActive, true)
+      and6(
+        eq7(approvalAuthorities.role, currentUserRole),
+        eq7(approvalAuthorities.isActive, true)
       )
     ).limit(1);
     if (!userAuthority.length) {
@@ -8903,10 +10388,10 @@ var ApprovalRoutingService = class {
    */
   static async getNextApprovalStep(orderId) {
     const nextStep = await db.select().from(approvalStepInstances2).where(
-      and4(
-        eq5(approvalStepInstances2.orderId, orderId),
-        eq5(approvalStepInstances2.status, "pending"),
-        eq5(approvalStepInstances2.isActive, true)
+      and6(
+        eq7(approvalStepInstances2.orderId, orderId),
+        eq7(approvalStepInstances2.status, "pending"),
+        eq7(approvalStepInstances2.isActive, true)
       )
     ).orderBy(asc2(approvalStepInstances2.stepOrder)).limit(1);
     return nextStep[0] || null;
@@ -8916,10 +10401,10 @@ var ApprovalRoutingService = class {
    */
   static async isApprovalComplete(orderId) {
     const pendingSteps = await db.select().from(approvalStepInstances2).where(
-      and4(
-        eq5(approvalStepInstances2.orderId, orderId),
-        eq5(approvalStepInstances2.status, "pending"),
-        eq5(approvalStepInstances2.isActive, true)
+      and6(
+        eq7(approvalStepInstances2.orderId, orderId),
+        eq7(approvalStepInstances2.status, "pending"),
+        eq7(approvalStepInstances2.isActive, true)
       )
     );
     return pendingSteps.length === 0;
@@ -8929,9 +10414,9 @@ var ApprovalRoutingService = class {
    */
   static async getApprovalProgress(orderId) {
     const allSteps = await db.select().from(approvalStepInstances2).where(
-      and4(
-        eq5(approvalStepInstances2.orderId, orderId),
-        eq5(approvalStepInstances2.isActive, true)
+      and6(
+        eq7(approvalStepInstances2.orderId, orderId),
+        eq7(approvalStepInstances2.isActive, true)
       )
     ).orderBy(asc2(approvalStepInstances2.stepOrder));
     const completedSteps = allSteps.filter(
@@ -8950,9 +10435,9 @@ var ApprovalRoutingService = class {
    */
   static async getWorkflowSettings(companyId) {
     const settings = await db.select().from(approvalWorkflowSettings).where(
-      and4(
-        eq5(approvalWorkflowSettings.companyId, companyId),
-        eq5(approvalWorkflowSettings.isActive, true)
+      and6(
+        eq7(approvalWorkflowSettings.companyId, companyId),
+        eq7(approvalWorkflowSettings.isActive, true)
       )
     ).orderBy(desc3(approvalWorkflowSettings.createdAt)).limit(1);
     return settings[0] || null;
@@ -8964,7 +10449,7 @@ var approval_routing_service_default = ApprovalRoutingService;
 init_professional_pdf_generation_service();
 init_db();
 init_email_settings_service();
-import { eq as eq8 } from "drizzle-orm";
+import { eq as eq10 } from "drizzle-orm";
 import fs7 from "fs";
 import path5 from "path";
 import { fileURLToPath as fileURLToPath2 } from "url";
@@ -8978,7 +10463,7 @@ async function updateOrderStatusAfterEmail(orderNumber) {
   await db.update(purchaseOrders).set({
     orderStatus: "sent",
     updatedAt: /* @__PURE__ */ new Date()
-  }).where(eq8(purchaseOrders.orderNumber, orderNumber));
+  }).where(eq10(purchaseOrders.orderNumber, orderNumber));
 }
 router3.get("/orders", async (req, res) => {
   try {
@@ -10344,7 +11829,7 @@ router3.post("/orders/:id/regenerate-pdf", requireAuth, async (req, res) => {
     if (!userId) {
       return res.status(401).json({ message: "User not authenticated" });
     }
-    const [order] = await db.select().from(purchaseOrders).where(eq8(purchaseOrders.id, orderId)).limit(1);
+    const [order] = await db.select().from(purchaseOrders).where(eq10(purchaseOrders.id, orderId)).limit(1);
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
@@ -10649,7 +12134,7 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
               filePath: attachments.filePath,
               mimeType: attachments.mimeType,
               fileData: attachments.fileData
-            }).from(attachments).where(eq8(attachments.id, attachmentId));
+            }).from(attachments).where(eq10(attachments.id, attachmentId));
             if (attachment) {
               if (attachment.fileData) {
                 attachments3.push({
@@ -10706,7 +12191,7 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
               filePath: attachments.filePath,
               mimeType: attachments.mimeType,
               fileData: attachments.fileData
-            }).from(attachments).where(eq8(attachments.id, attachmentId));
+            }).from(attachments).where(eq10(attachments.id, attachmentId));
             if (attachment) {
               if (attachment.fileData) {
                 attachments3.push({
@@ -10788,7 +12273,7 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
             filePath: attachments.filePath,
             mimeType: attachments.mimeType,
             fileData: attachments.fileData
-          }).from(attachments).where(eq8(attachments.id, attachmentId));
+          }).from(attachments).where(eq10(attachments.id, attachmentId));
           if (attachment) {
             if (attachment.fileData) {
               attachments3.push({
@@ -11794,107 +13279,6 @@ router6.get("/dashboard/urgent-orders", async (req, res) => {
     res.status(500).json({ message: "Failed to fetch urgent orders" });
   }
 });
-router6.get("/orders-optimized", async (req, res) => {
-  try {
-    console.log("\u{1F680} Orders-optimized via dashboard router", {
-      query: req.query,
-      sortBy: req.query.sortBy,
-      sortOrder: req.query.sortOrder
-    });
-    const { db: db2 } = await Promise.resolve().then(() => (init_db(), db_exports));
-    if (!db2) {
-      throw new Error("Database connection not available");
-    }
-    await db2.execute(sql4`SELECT 1`);
-    console.log("\u2705 DB verified via dashboard router");
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
-    const offset = (page - 1) * limit;
-    const sortBy = req.query.sortBy || "createdAt";
-    const sortOrder = (req.query.sortOrder || "desc").toLowerCase();
-    const sortDirection = sortOrder === "asc" ? "ASC" : "DESC";
-    const getSortField = (field) => {
-      switch (field) {
-        case "orderNumber":
-          return "po.order_number";
-        case "status":
-          return "po.status";
-        case "orderStatus":
-          return "po.order_status";
-        case "approvalStatus":
-          return "po.approval_status";
-        case "vendorName":
-          return "v.name";
-        case "projectName":
-          return "p.project_name";
-        case "orderDate":
-          return "po.order_date";
-        case "totalAmount":
-          return "po.total_amount";
-        case "createdAt":
-        default:
-          return "po.created_at";
-      }
-    };
-    const sortField = getSortField(sortBy);
-    console.log("\u{1F504} Sorting by:", sortField, sortDirection);
-    const ordersResult = await db2.execute(
-      sql4.raw(`SELECT 
-        po.id,
-        po.order_number as "orderNumber",
-        po.status,
-        po.order_status as "orderStatus",
-        po.approval_status as "approvalStatus",
-        po.total_amount as "totalAmount",
-        po.order_date as "orderDate",
-        po.created_at as "createdAt",
-        v.name as "vendorName",
-        p.project_name as "projectName"
-      FROM purchase_orders po
-      LEFT JOIN vendors v ON po.vendor_id = v.id
-      LEFT JOIN projects p ON po.project_id = p.id
-      ORDER BY ${sortField} ${sortDirection}
-      LIMIT ${limit} OFFSET ${offset}`)
-    );
-    const countResult = await db2.execute(
-      sql4`SELECT COUNT(*) as total FROM purchase_orders`
-    );
-    const vendorsResult = await db2.execute(
-      sql4`SELECT id, name FROM vendors ORDER BY name LIMIT 100`
-    );
-    const projectsResult = await db2.execute(
-      sql4`SELECT id, project_name FROM projects ORDER BY project_name LIMIT 100`
-    );
-    const orders = ordersResult.rows || [];
-    const total = parseInt(countResult.rows[0]?.total || 0);
-    const response = {
-      orders: orders.map((order) => ({
-        ...order,
-        emailStatus: null,
-        lastSentAt: null,
-        totalEmailsSent: 0
-      })),
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-      metadata: {
-        vendors: vendorsResult.rows || [],
-        projects: projectsResult.rows || [],
-        users: []
-      }
-    };
-    console.log("\u2705 Success:", orders.length, "orders returned");
-    res.json(response);
-  } catch (error) {
-    console.error("\u274C Dashboard orders-optimized error:", error);
-    res.status(500).json({
-      message: "Failed to fetch orders",
-      error: error.message,
-      stack: error.stack
-    });
-  }
-});
 router6.get("/dashboard/order-status-stats", async (req, res) => {
   try {
     const { db: db2 } = await Promise.resolve().then(() => (init_db(), db_exports));
@@ -12071,7 +13455,7 @@ var companies_default = router7;
 import { Router as Router8 } from "express";
 init_db();
 init_schema();
-import { eq as eq9, and as and5 } from "drizzle-orm";
+import { eq as eq11, and as and7 } from "drizzle-orm";
 var router8 = Router8();
 router8.get("/users", requireAuth, requireAdmin, async (req, res) => {
   try {
@@ -12163,9 +13547,9 @@ router8.delete("/templates/:id", requireAuth, async (req, res) => {
 router8.get("/approval-workflow-settings", requireAuth, requireAdmin, async (req, res) => {
   try {
     const settings = await db.select().from(approvalWorkflowSettings).where(
-      and5(
-        eq9(approvalWorkflowSettings.isActive, true),
-        eq9(approvalWorkflowSettings.companyId, 1)
+      and7(
+        eq11(approvalWorkflowSettings.isActive, true),
+        eq11(approvalWorkflowSettings.companyId, 1)
       )
     ).limit(1);
     if (settings.length === 0) {
@@ -12202,7 +13586,7 @@ router8.put("/approval-workflow-settings", requireAuth, requireAdmin, async (req
       requireAllStages,
       skipLowerStages
     } = req.body;
-    const existing = await db.select().from(approvalWorkflowSettings).where(eq9(approvalWorkflowSettings.companyId, 1)).limit(1);
+    const existing = await db.select().from(approvalWorkflowSettings).where(eq11(approvalWorkflowSettings.companyId, 1)).limit(1);
     if (existing.length === 0) {
       const [newSettings] = await db.insert(approvalWorkflowSettings).values({
         companyId: 1,
@@ -12223,7 +13607,7 @@ router8.put("/approval-workflow-settings", requireAuth, requireAdmin, async (req
         requireAllStages,
         skipLowerStages,
         updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq9(approvalWorkflowSettings.id, existing[0].id)).returning();
+      }).where(eq11(approvalWorkflowSettings.id, existing[0].id)).returning();
       res.json(updatedSettings);
     }
   } catch (error) {
@@ -12243,12 +13627,12 @@ import fs10 from "fs";
 init_db();
 init_schema();
 init_po_template_processor_mock();
-import { eq as eq12, inArray as inArray2 } from "drizzle-orm";
+import { eq as eq14, inArray as inArray2 } from "drizzle-orm";
 
 // server/utils/vendor-validation.ts
 init_db();
 init_schema();
-import { eq as eq11, sql as sql6 } from "drizzle-orm";
+import { eq as eq13, sql as sql6 } from "drizzle-orm";
 function levenshteinDistance(str1, str2) {
   const matrix = [];
   if (str1.length === 0) return str2.length;
@@ -12368,7 +13752,7 @@ async function validateVendorName(vendorName, vendorType = "\uAC70\uB798\uCC98")
         phone: vendors.phone,
         contactPerson: vendors.contactPerson,
         aliases: vendors.aliases
-      }).from(vendors).where(eq11(vendors.name, vendorName)).limit(1);
+      }).from(vendors).where(eq13(vendors.name, vendorName)).limit(1);
       const aliasMatchQuery = db.select({
         id: vendors.id,
         name: vendors.name,
@@ -12384,7 +13768,7 @@ async function validateVendorName(vendorName, vendorType = "\uAC70\uB798\uCC98")
         phone: vendors.phone,
         contactPerson: vendors.contactPerson,
         aliases: vendors.aliases
-      }).from(vendors).where(eq11(vendors.isActive, true));
+      }).from(vendors).where(eq13(vendors.isActive, true));
       exactMatch = await Promise.race([exactMatchQuery, dbTimeout]);
       aliasMatch = await Promise.race([aliasMatchQuery, dbTimeout]);
       allVendors = await Promise.race([allVendorsQuery, dbTimeout]);
@@ -12784,7 +14168,7 @@ var ExcelAutomationService = class {
       const orderIds = [];
       if (saveResult.savedOrderNumbers && saveResult.savedOrderNumbers.length > 0) {
         try {
-          const orders = await db.select({ id: purchaseOrders.id, orderNumber: purchaseOrders.orderNumber }).from(purchaseOrders).where(eq12(purchaseOrders.orderNumber, saveResult.savedOrderNumbers[0]));
+          const orders = await db.select({ id: purchaseOrders.id, orderNumber: purchaseOrders.orderNumber }).from(purchaseOrders).where(eq14(purchaseOrders.orderNumber, saveResult.savedOrderNumbers[0]));
           if (orders.length > 0) {
             orderIds.push(orders[0].id);
           }
@@ -13094,11 +14478,11 @@ var ExcelAutomationService = class {
   static async updateOrderStatusToSent(orderNumber) {
     const { db: db2 } = await Promise.resolve().then(() => (init_db(), db_exports));
     const { purchaseOrders: purchaseOrders3 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-    const { eq: eq36 } = await import("drizzle-orm");
+    const { eq: eq38 } = await import("drizzle-orm");
     await db2.update(purchaseOrders3).set({
       orderStatus: "sent",
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq36(purchaseOrders3.orderNumber, orderNumber));
+    }).where(eq38(purchaseOrders3.orderNumber, orderNumber));
   }
   /**
    * 여러 발주서의 상태를 'sent'로 업데이트하는 헬퍼 메소드
@@ -14145,89 +15529,90 @@ var ExcelToPdfConverterMock = class {
     }
   }
   /**
-   * Mock PDF 생성 (간단한 PDF 구조)
+   * PDFKit을 사용한 한글 지원 PDF 생성
    */
   static async createMockPdf(htmlContent, pdfPath) {
     try {
-      const pdfContent = `%PDF-1.4
-1 0 obj
-<<
-/Type /Catalog
-/Pages 2 0 R
->>
-endobj
-
-2 0 obj
-<<
-/Type /Pages
-/Kids [3 0 R]
-/Count 1
->>
-endobj
-
-3 0 obj
-<<
-/Type /Page
-/Parent 2 0 R
-/MediaBox [0 0 612 792]
-/Contents 4 0 R
-/Resources <<
-/Font <<
-/F1 5 0 R
->>
->>
->>
-endobj
-
-4 0 obj
-<<
-/Length 200
->>
-stream
-BT
-/F1 12 Tf
-50 700 Td
-(\uBC1C\uC8FC\uC11C PDF \uBCC0\uD658 \uC644\uB8CC) Tj
-0 -20 Td
-(\uC774 \uD30C\uC77C\uC740 Mock PDF\uC785\uB2C8\uB2E4.) Tj
-0 -20 Td
-(\uC2E4\uC81C \uD658\uACBD\uC5D0\uC11C\uB294 \uC644\uC804\uD55C PDF\uAC00 \uC0DD\uC131\uB429\uB2C8\uB2E4.) Tj
-0 -40 Td
-(\uC0DD\uC131 \uC2DC\uAC04: ${(/* @__PURE__ */ new Date()).toLocaleString("ko-KR")}) Tj
-0 -20 Td
-(\uD30C\uC77C \uACBD\uB85C: ${pdfPath}) Tj
-ET
-endstream
-endobj
-
-5 0 obj
-<<
-/Type /Font
-/Subtype /Type1
-/BaseFont /Helvetica
->>
-endobj
-
-xref
-0 6
-0000000000 65535 f 
-0000000009 00000 n 
-0000000058 00000 n 
-0000000115 00000 n 
-0000000274 00000 n 
-0000000524 00000 n 
-trailer
-<<
-/Size 6
-/Root 1 0 R
->>
-startxref
-589
-%%EOF`;
-      fs12.writeFileSync(pdfPath, pdfContent);
-      console.log(`\u{1F4C4} Mock PDF \uC0DD\uC131 \uC644\uB8CC: ${path10.basename(pdfPath)}`);
-      return { success: true };
+      console.log(`\u{1F4C4} PDFKit\uC73C\uB85C \uD55C\uAE00 \uC9C0\uC6D0 PDF \uC0DD\uC131 \uC2DC\uC791: ${path10.basename(pdfPath)}`);
+      const PDFDocument = (await import("pdfkit")).default;
+      const doc = new PDFDocument({
+        size: "A4",
+        margins: { top: 50, bottom: 50, left: 50, right: 50 }
+      });
+      let koreanFontPath = null;
+      const possibleFonts = [
+        "/System/Library/Fonts/Supplemental/AppleGothic.ttf",
+        // macOS
+        "/System/Library/Fonts/Supplemental/AppleMyungjo.ttf",
+        // macOS 명조
+        "C:\\Windows\\Fonts\\malgun.ttf",
+        // Windows
+        "C:\\Windows\\Fonts\\gulim.ttf",
+        // Windows 굴림
+        "/usr/share/fonts/truetype/nanum/NanumGothic.ttf"
+        // Linux
+      ];
+      for (const fontPath of possibleFonts) {
+        try {
+          if (fs12.existsSync(fontPath)) {
+            koreanFontPath = fontPath;
+            console.log(`\u2705 \uD55C\uAE00 \uD3F0\uD2B8 \uBC1C\uACAC: ${fontPath}`);
+            break;
+          }
+        } catch (error) {
+          continue;
+        }
+      }
+      if (koreanFontPath) {
+        try {
+          doc.registerFont("Korean", koreanFontPath);
+          doc.font("Korean");
+          console.log(`\u2705 \uD55C\uAE00 \uD3F0\uD2B8 \uB4F1\uB85D \uC644\uB8CC: ${koreanFontPath}`);
+        } catch (fontError) {
+          console.warn("\u26A0\uFE0F \uD55C\uAE00 \uD3F0\uD2B8 \uB4F1\uB85D \uC2E4\uD328, \uAE30\uBCF8 \uD3F0\uD2B8 \uC0AC\uC6A9:", fontError);
+          doc.font("Helvetica");
+        }
+      } else {
+        console.warn("\u26A0\uFE0F \uD55C\uAE00 \uD3F0\uD2B8\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC74C, \uAE30\uBCF8 \uD3F0\uD2B8 \uC0AC\uC6A9");
+        doc.font("Helvetica");
+      }
+      doc.fontSize(20).text("\u{1F4CB} \uAD6C\uB9E4\uBC1C\uC8FC\uC11C (\uC5D1\uC140 \uBCC0\uD658)", 50, 80);
+      doc.fontSize(12).moveDown();
+      doc.text("\u2705 Excel \uD30C\uC77C\uC774 \uC131\uACF5\uC801\uC73C\uB85C PDF\uB85C \uBCC0\uD658\uB418\uC5C8\uC2B5\uB2C8\uB2E4.");
+      doc.moveDown(0.5);
+      doc.text("\u{1F527} \uC774 PDF\uB294 \uAC1C\uC120\uB41C \uD55C\uAE00 \uD3F0\uD2B8 \uC9C0\uC6D0 \uAE30\uB2A5\uC73C\uB85C \uC0DD\uC131\uB418\uC5C8\uC2B5\uB2C8\uB2E4.");
+      doc.moveDown(0.5);
+      doc.text("\u{1F4C5} \uC0DD\uC131 \uC2DC\uAC04: " + (/* @__PURE__ */ new Date()).toLocaleString("ko-KR"));
+      doc.moveDown(0.5);
+      doc.text("\u{1F4C1} \uD30C\uC77C \uACBD\uB85C: " + path10.basename(pdfPath));
+      doc.moveDown(1);
+      doc.fontSize(14).text("\u{1F4CA} Excel \uD30C\uC77C \uC815\uBCF4:", 50, doc.y);
+      doc.fontSize(10);
+      doc.text("\u2022 \uC6D0\uBCF8 Excel \uD30C\uC77C\uC758 \uBAA8\uB4E0 \uC2DC\uD2B8\uAC00 \uCC98\uB9AC\uB418\uC5C8\uC2B5\uB2C8\uB2E4.");
+      doc.text("\u2022 \uD55C\uAE00 \uD14D\uC2A4\uD2B8\uAC00 \uC62C\uBC14\uB974\uAC8C \uD45C\uC2DC\uB429\uB2C8\uB2E4.");
+      doc.text("\u2022 \uC140 \uC11C\uC2DD\uACFC \uB808\uC774\uC544\uC6C3\uC774 \uBCF4\uC874\uB418\uC5C8\uC2B5\uB2C8\uB2E4.");
+      doc.moveDown(1);
+      doc.fontSize(14).text("\u26A0\uFE0F \uC911\uC694 \uC548\uB0B4:", 50, doc.y);
+      doc.fontSize(10);
+      doc.text("\u2022 \uC774 PDF\uB294 \uD14C\uC2A4\uD2B8 \uBAA9\uC801\uC73C\uB85C \uC0DD\uC131\uB41C Mock \uD30C\uC77C\uC785\uB2C8\uB2E4.");
+      doc.text("\u2022 \uC2E4\uC81C \uC6B4\uC601 \uD658\uACBD\uC5D0\uC11C\uB294 \uC644\uC804\uD55C Excel\u2192PDF \uBCC0\uD658\uC774 \uC218\uD589\uB429\uB2C8\uB2E4.");
+      doc.text("\u2022 \uD55C\uAE00 \uD3F0\uD2B8 \uBB38\uC81C\uAC00 \uD574\uACB0\uB418\uC5C8\uB294\uC9C0 \uD655\uC778\uD574 \uC8FC\uC138\uC694.");
+      doc.fontSize(8);
+      doc.text(`\uC2DC\uC2A4\uD15C: ${process.platform} | Node.js: ${process.version}`, 50, 700);
+      doc.text(`\uD55C\uAE00 \uD3F0\uD2B8: ${koreanFontPath ? path10.basename(koreanFontPath) : "Helvetica (\uAE30\uBCF8)"}`, 50, 715);
+      const buffers = [];
+      doc.on("data", buffers.push.bind(buffers));
+      return new Promise((resolve) => {
+        doc.on("end", () => {
+          const pdfBuffer = Buffer.concat(buffers);
+          fs12.writeFileSync(pdfPath, pdfBuffer);
+          console.log(`\u2705 \uD55C\uAE00 \uC9C0\uC6D0 Mock PDF \uC0DD\uC131 \uC644\uB8CC: ${path10.basename(pdfPath)}`);
+          resolve({ success: true });
+        });
+        doc.end();
+      });
     } catch (error) {
+      console.error("\u274C PDFKit Mock PDF \uC0DD\uC131 \uC2E4\uD328:", error);
       return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error"
@@ -14782,7 +16167,7 @@ var POTemplateValidator = class {
 init_db();
 init_schema();
 init_professional_pdf_generation_service();
-import { eq as eq13 } from "drizzle-orm";
+import { eq as eq15 } from "drizzle-orm";
 var router10 = Router10();
 router10.get("/test", (req, res) => {
   res.json({ message: "PO Template router is working!", timestamp: /* @__PURE__ */ new Date() });
@@ -15015,7 +16400,7 @@ router10.post("/save", simpleAuth, async (req, res) => {
       try {
         let savedOrders = 0;
         for (const orderData of orders) {
-          let vendor = await db.select().from(vendors).where(eq13(vendors.name, orderData.vendorName)).limit(1);
+          let vendor = await db.select().from(vendors).where(eq15(vendors.name, orderData.vendorName)).limit(1);
           let vendorId;
           if (vendor.length === 0) {
             const newVendor = await db.insert(vendors).values({
@@ -15028,7 +16413,7 @@ router10.post("/save", simpleAuth, async (req, res) => {
           } else {
             vendorId = vendor[0].id;
           }
-          let project = await db.select().from(projects).where(eq13(projects.projectName, orderData.siteName)).limit(1);
+          let project = await db.select().from(projects).where(eq15(projects.projectName, orderData.siteName)).limit(1);
           let projectId;
           if (project.length === 0) {
             const newProject = await db.insert(projects).values({
@@ -15044,7 +16429,7 @@ router10.post("/save", simpleAuth, async (req, res) => {
           let suffix = 1;
           while (true) {
             try {
-              const existing = await db.select().from(purchaseOrders).where(eq13(purchaseOrders.orderNumber, orderNumber));
+              const existing = await db.select().from(purchaseOrders).where(eq15(purchaseOrders.orderNumber, orderNumber));
               if (existing.length === 0) {
                 break;
               }
@@ -15500,11 +16885,11 @@ router10.post("/send-email", simpleAuth, async (req, res) => {
       try {
         const { db: db2 } = await Promise.resolve().then(() => (init_db(), db_exports));
         const { purchaseOrders: purchaseOrders3 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-        const { eq: eq36 } = await import("drizzle-orm");
+        const { eq: eq38 } = await import("drizzle-orm");
         await db2.update(purchaseOrders3).set({
           orderStatus: "sent",
           updatedAt: /* @__PURE__ */ new Date()
-        }).where(eq36(purchaseOrders3.orderNumber, orderNumber));
+        }).where(eq38(purchaseOrders3.orderNumber, orderNumber));
         console.log(`\u{1F4CB} \uBC1C\uC8FC\uC11C \uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8 \uC644\uB8CC: ${orderNumber} \u2192 sent`);
       } catch (updateError) {
         console.error(`\u274C \uBC1C\uC8FC\uC11C \uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8 \uC2E4\uD328: ${orderNumber}`, updateError);
@@ -15718,7 +17103,7 @@ router10.saveToDatabase = async function(orders, userId) {
     try {
       let savedOrders = 0;
       for (const orderData of orders) {
-        let vendor = await db.select().from(vendors).where(eq13(vendors.name, orderData.vendorName)).limit(1);
+        let vendor = await db.select().from(vendors).where(eq15(vendors.name, orderData.vendorName)).limit(1);
         let vendorId;
         if (vendor.length === 0) {
           const newVendor = await db.insert(vendors).values({
@@ -15731,7 +17116,7 @@ router10.saveToDatabase = async function(orders, userId) {
         } else {
           vendorId = vendor[0].id;
         }
-        let project = await db.select().from(projects).where(eq13(projects.projectName, orderData.siteName)).limit(1);
+        let project = await db.select().from(projects).where(eq15(projects.projectName, orderData.siteName)).limit(1);
         let projectId;
         if (project.length === 0) {
           const newProject = await db.insert(projects).values({
@@ -15804,7 +17189,7 @@ var po_template_real_default = router10;
 import { Router as Router11 } from "express";
 init_db();
 init_schema();
-import { eq as eq14, sql as sql8, and as and6, gte as gte4, lte as lte4, inArray as inArray3 } from "drizzle-orm";
+import { eq as eq16, sql as sql8, and as and8, gte as gte4, lte as lte4, inArray as inArray3 } from "drizzle-orm";
 import * as XLSX7 from "xlsx";
 var formatKoreanWon = (amount) => {
   return `\u20A9${amount.toLocaleString("ko-KR")}`;
@@ -15867,7 +17252,7 @@ router11.get("/debug-processing", async (req, res) => {
       totalAmount: purchaseOrders.totalAmount,
       projectName: projects.projectName,
       vendorName: vendors.name
-    }).from(purchaseOrders).leftJoin(projects, eq14(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq14(purchaseOrders.vendorId, vendors.id)).limit(10);
+    }).from(purchaseOrders).leftJoin(projects, eq16(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq16(purchaseOrders.vendorId, vendors.id)).limit(10);
     res.json({
       totalOrders: allOrders.length,
       ordersWithoutJoins: allOrders,
@@ -15918,19 +17303,19 @@ router11.get("/by-category", async (req, res) => {
       orderStatus: purchaseOrders.status,
       specification: purchaseOrderItems.specification,
       unitPrice: purchaseOrderItems.unitPrice
-    }).from(purchaseOrderItems).innerJoin(purchaseOrders, eq14(purchaseOrderItems.orderId, purchaseOrders.id));
+    }).from(purchaseOrderItems).innerJoin(purchaseOrders, eq16(purchaseOrderItems.orderId, purchaseOrders.id));
     const filters = [...dateFilters];
     if (majorCategory && majorCategory !== "all") {
-      filters.push(eq14(purchaseOrderItems.majorCategory, majorCategory));
+      filters.push(eq16(purchaseOrderItems.majorCategory, majorCategory));
     }
     if (middleCategory && middleCategory !== "all") {
-      filters.push(eq14(purchaseOrderItems.middleCategory, middleCategory));
+      filters.push(eq16(purchaseOrderItems.middleCategory, middleCategory));
     }
     if (minorCategory && minorCategory !== "all") {
-      filters.push(eq14(purchaseOrderItems.minorCategory, minorCategory));
+      filters.push(eq16(purchaseOrderItems.minorCategory, minorCategory));
     }
     if (filters.length > 0) {
-      query = query.where(and6(...filters));
+      query = query.where(and8(...filters));
     }
     const orderItemsWithCategories = await query;
     console.log("Order items with categories found:", orderItemsWithCategories.length);
@@ -16025,7 +17410,7 @@ router11.get("/by-project", requireAuth, async (req, res) => {
     const { startDate, endDate, projectId } = req.query;
     const filters = parseDateFilters(startDate, endDate);
     if (projectId) {
-      filters.push(eq14(purchaseOrders.projectId, parseInt(projectId)));
+      filters.push(eq16(purchaseOrders.projectId, parseInt(projectId)));
     }
     const ordersWithProjects = await db.select({
       projectId: projects.id,
@@ -16039,7 +17424,7 @@ router11.get("/by-project", requireAuth, async (req, res) => {
       orderStatus: purchaseOrders.status,
       vendorId: purchaseOrders.vendorId,
       vendorName: vendors.name
-    }).from(purchaseOrders).innerJoin(projects, eq14(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq14(purchaseOrders.vendorId, vendors.id)).where(filters.length > 0 ? and6(...filters) : void 0);
+    }).from(purchaseOrders).innerJoin(projects, eq16(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq16(purchaseOrders.vendorId, vendors.id)).where(filters.length > 0 ? and8(...filters) : void 0);
     const projectReport = ordersWithProjects.reduce((acc, order) => {
       const projectKey = order.projectId;
       if (!acc[projectKey]) {
@@ -16121,9 +17506,9 @@ router11.get("/by-vendor", async (req, res) => {
       projectName: projects.projectName,
       originalVendorId: purchaseOrders.vendorId
       // Add original vendorId for null check
-    }).from(purchaseOrders).leftJoin(vendors, eq14(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq14(purchaseOrders.projectId, projects.id));
+    }).from(purchaseOrders).leftJoin(vendors, eq16(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq16(purchaseOrders.projectId, projects.id));
     if (filters.length > 0) {
-      vendorQuery = vendorQuery.where(and6(...filters));
+      vendorQuery = vendorQuery.where(and8(...filters));
     }
     const ordersWithVendors = await vendorQuery;
     console.log("Orders with vendors found:", ordersWithVendors.length);
@@ -16443,7 +17828,7 @@ router11.get("/processing", requireAuth, async (req, res) => {
     if (year && year !== "all" && year !== "") {
       const yearNum = parseInt(year);
       filters.push(
-        and6(
+        and8(
           gte4(purchaseOrders.orderDate, /* @__PURE__ */ new Date(`${yearNum}-01-01`)),
           lte4(purchaseOrders.orderDate, /* @__PURE__ */ new Date(`${yearNum}-12-31`))
         )
@@ -16455,25 +17840,25 @@ router11.get("/processing", requireAuth, async (req, res) => {
       const startOfMonth = new Date(yearNum, monthNum - 1, 1);
       const endOfMonth = new Date(yearNum, monthNum, 0);
       filters.push(
-        and6(
+        and8(
           gte4(purchaseOrders.orderDate, startOfMonth),
           lte4(purchaseOrders.orderDate, endOfMonth)
         )
       );
     }
     if (status && status !== "all" && status !== "") {
-      filters.push(eq14(purchaseOrders.status, status));
+      filters.push(eq16(purchaseOrders.status, status));
     }
     if (projectId && projectId !== "all" && projectId !== "") {
-      filters.push(eq14(purchaseOrders.projectId, parseInt(projectId)));
+      filters.push(eq16(purchaseOrders.projectId, parseInt(projectId)));
     }
     if (vendorId && vendorId !== "all" && vendorId !== "") {
-      filters.push(eq14(purchaseOrders.vendorId, parseInt(vendorId)));
+      filters.push(eq16(purchaseOrders.vendorId, parseInt(vendorId)));
     }
     console.log(`Processing report filters count: ${filters.length}`);
-    let ordersQuery = db.select().from(purchaseOrders).leftJoin(projects, eq14(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq14(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq14(purchaseOrders.userId, users.id));
+    let ordersQuery = db.select().from(purchaseOrders).leftJoin(projects, eq16(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq16(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq16(purchaseOrders.userId, users.id));
     if (filters.length > 0) {
-      ordersQuery = ordersQuery.where(and6(...filters));
+      ordersQuery = ordersQuery.where(and8(...filters));
     }
     if (search && search !== "") {
       const searchFilter = sql8`(
@@ -16483,7 +17868,7 @@ router11.get("/processing", requireAuth, async (req, res) => {
         ${purchaseOrders.notes} ILIKE ${`%${search}%`}
       )`;
       if (filters.length > 0) {
-        ordersQuery = ordersQuery.where(and6(and6(...filters), searchFilter));
+        ordersQuery = ordersQuery.where(and8(and8(...filters), searchFilter));
       } else {
         ordersQuery = ordersQuery.where(searchFilter);
       }
@@ -16548,9 +17933,9 @@ router11.get("/processing", requireAuth, async (req, res) => {
         ...order,
         items: orderItems.filter((item) => item.orderId === order.id)
       }));
-      let countQuery = db.select({ count: sql8`count(*)` }).from(purchaseOrders).leftJoin(projects, eq14(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq14(purchaseOrders.vendorId, vendors.id));
+      let countQuery = db.select({ count: sql8`count(*)` }).from(purchaseOrders).leftJoin(projects, eq16(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq16(purchaseOrders.vendorId, vendors.id));
       if (filters.length > 0) {
-        countQuery = countQuery.where(and6(...filters));
+        countQuery = countQuery.where(and8(...filters));
       }
       if (search && search !== "") {
         const searchFilter = sql8`(
@@ -16560,7 +17945,7 @@ router11.get("/processing", requireAuth, async (req, res) => {
           ${purchaseOrders.notes} ILIKE ${`%${search}%`}
         )`;
         if (filters.length > 0) {
-          countQuery = countQuery.where(and6(and6(...filters), searchFilter));
+          countQuery = countQuery.where(and8(and8(...filters), searchFilter));
         } else {
           countQuery = countQuery.where(searchFilter);
         }
@@ -16608,29 +17993,29 @@ router11.get("/summary", requireAuth, async (req, res) => {
       totalOrders: sql8`count(*)`,
       totalAmount: sql8`sum(${purchaseOrders.totalAmount})`,
       avgAmount: sql8`avg(${purchaseOrders.totalAmount})`
-    }).from(purchaseOrders).where(dateFilters.length > 0 ? and6(...dateFilters) : void 0);
+    }).from(purchaseOrders).where(dateFilters.length > 0 ? and8(...dateFilters) : void 0);
     const statusBreakdown = await db.select({
       status: purchaseOrders.status,
       count: sql8`count(*)`,
       totalAmount: sql8`sum(${purchaseOrders.totalAmount})`
-    }).from(purchaseOrders).where(and6(...dateFilters)).groupBy(purchaseOrders.status);
+    }).from(purchaseOrders).where(and8(...dateFilters)).groupBy(purchaseOrders.status);
     const topVendors = await db.select({
       vendorId: vendors.id,
       vendorName: vendors.name,
       orderCount: sql8`count(${purchaseOrders.id})`,
       totalAmount: sql8`sum(${purchaseOrders.totalAmount})`
-    }).from(purchaseOrders).innerJoin(vendors, eq14(purchaseOrders.vendorId, vendors.id)).where(and6(...dateFilters)).groupBy(vendors.id, vendors.name).orderBy(sql8`sum(${purchaseOrders.totalAmount}) desc`).limit(10);
+    }).from(purchaseOrders).innerJoin(vendors, eq16(purchaseOrders.vendorId, vendors.id)).where(and8(...dateFilters)).groupBy(vendors.id, vendors.name).orderBy(sql8`sum(${purchaseOrders.totalAmount}) desc`).limit(10);
     const topProjects = await db.select({
       projectId: projects.id,
       projectName: projects.projectName,
       orderCount: sql8`count(${purchaseOrders.id})`,
       totalAmount: sql8`sum(${purchaseOrders.totalAmount})`
-    }).from(purchaseOrders).innerJoin(projects, eq14(purchaseOrders.projectId, projects.id)).where(and6(...dateFilters)).groupBy(projects.id, projects.projectName).orderBy(sql8`sum(${purchaseOrders.totalAmount}) desc`).limit(10);
+    }).from(purchaseOrders).innerJoin(projects, eq16(purchaseOrders.projectId, projects.id)).where(and8(...dateFilters)).groupBy(projects.id, projects.projectName).orderBy(sql8`sum(${purchaseOrders.totalAmount}) desc`).limit(10);
     const monthlyTrend = await db.select({
       month: sql8`to_char(${purchaseOrders.orderDate}, 'YYYY-MM')`,
       orderCount: sql8`count(*)`,
       totalAmount: sql8`sum(${purchaseOrders.totalAmount})`
-    }).from(purchaseOrders).where(and6(...dateFilters)).groupBy(sql8`to_char(${purchaseOrders.orderDate}, 'YYYY-MM')`).orderBy(sql8`to_char(${purchaseOrders.orderDate}, 'YYYY-MM')`);
+    }).from(purchaseOrders).where(and8(...dateFilters)).groupBy(sql8`to_char(${purchaseOrders.orderDate}, 'YYYY-MM')`).orderBy(sql8`to_char(${purchaseOrders.orderDate}, 'YYYY-MM')`);
     res.json({
       period: {
         startDate: startDate || "all",
@@ -16657,7 +18042,7 @@ init_db();
 init_schema();
 import * as XLSX8 from "xlsx";
 import Papa from "papaparse";
-import { eq as eq15 } from "drizzle-orm";
+import { eq as eq17 } from "drizzle-orm";
 import fs15 from "fs";
 var ImportExportService = class {
   // Parse Excel file
@@ -16929,7 +18314,7 @@ var ImportExportService = class {
   }
   // Export Methods
   static async exportVendors(format2) {
-    const vendorData = await db.select().from(vendors).where(eq15(vendors.isActive, true));
+    const vendorData = await db.select().from(vendors).where(eq17(vendors.isActive, true));
     const exportData = vendorData.map((vendor) => ({
       "\uAC70\uB798\uCC98\uBA85": vendor.name,
       "\uAC70\uB798\uCC98\uCF54\uB4DC": vendor.vendorCode || "",
@@ -16956,7 +18341,7 @@ var ImportExportService = class {
     }
   }
   static async exportItems(format2) {
-    const itemData = await db.select().from(items).where(eq15(items.isActive, true));
+    const itemData = await db.select().from(items).where(eq17(items.isActive, true));
     const exportData = itemData.map((item) => ({
       "\uD488\uBAA9\uBA85": item.name,
       "\uADDC\uACA9": item.specification || "",
@@ -16982,7 +18367,7 @@ var ImportExportService = class {
     }
   }
   static async exportProjects(format2) {
-    const projectData = await db.select().from(projects).where(eq15(projects.isActive, true));
+    const projectData = await db.select().from(projects).where(eq17(projects.isActive, true));
     const typeMap = {
       "commercial": "\uC0C1\uC5C5\uC2DC\uC124",
       "residential": "\uC8FC\uAC70\uC2DC\uC124",
@@ -17042,7 +18427,7 @@ var ImportExportService = class {
       middleCategory: purchaseOrderItems.middleCategory,
       minorCategory: purchaseOrderItems.minorCategory,
       itemNotes: purchaseOrderItems.notes
-    }).from(purchaseOrders).leftJoin(purchaseOrderItems, eq15(purchaseOrders.id, purchaseOrderItems.orderId)).where(eq15(purchaseOrders.isActive, true));
+    }).from(purchaseOrders).leftJoin(purchaseOrderItems, eq17(purchaseOrders.id, purchaseOrderItems.orderId)).where(eq17(purchaseOrders.isActive, true));
     const statusMap = {
       "pending": "\uB300\uAE30",
       "approved": "\uC2B9\uC778",
@@ -17350,25 +18735,25 @@ var import_export_default = router12;
 init_db();
 init_schema();
 import { Router as Router13 } from "express";
-import { eq as eq16, desc as desc6, sql as sql9 } from "drizzle-orm";
-import { z as z2 } from "zod";
+import { eq as eq18, desc as desc6, sql as sql9 } from "drizzle-orm";
+import { z as z4 } from "zod";
 var router13 = Router13();
-var createEmailHistorySchema = z2.object({
-  orderId: z2.number(),
-  recipientEmail: z2.string().email(),
-  recipientName: z2.string().optional(),
-  ccEmails: z2.string().optional(),
-  subject: z2.string(),
-  body: z2.string(),
-  attachments: z2.array(z2.object({
-    filename: z2.string(),
-    path: z2.string(),
-    size: z2.number()
+var createEmailHistorySchema = z4.object({
+  orderId: z4.number(),
+  recipientEmail: z4.string().email(),
+  recipientName: z4.string().optional(),
+  ccEmails: z4.string().optional(),
+  subject: z4.string(),
+  body: z4.string(),
+  attachments: z4.array(z4.object({
+    filename: z4.string(),
+    path: z4.string(),
+    size: z4.number()
   })).optional(),
-  status: z2.enum(["sent", "failed", "bounced", "opened", "clicked"]).default("sent"),
-  errorMessage: z2.string().optional(),
-  emailProvider: z2.string().default("naver"),
-  messageId: z2.string().optional()
+  status: z4.enum(["sent", "failed", "bounced", "opened", "clicked"]).default("sent"),
+  errorMessage: z4.string().optional(),
+  emailProvider: z4.string().default("naver"),
+  messageId: z4.string().optional()
 });
 router13.get("/orders/:orderId/email-history", requireAuth, async (req, res) => {
   try {
@@ -17377,7 +18762,7 @@ router13.get("/orders/:orderId/email-history", requireAuth, async (req, res) => 
       return res.status(400).json({ error: "Invalid order ID" });
     }
     const order = await db.query.purchaseOrders.findFirst({
-      where: eq16(purchaseOrders.id, orderId)
+      where: eq18(purchaseOrders.id, orderId)
     });
     if (!order) {
       return res.status(404).json({ error: "Order not found" });
@@ -17402,7 +18787,7 @@ router13.get("/orders/:orderId/email-history", requireAuth, async (req, res) => 
       trackingId: emailSendHistory.trackingId,
       emailProvider: emailSendHistory.emailProvider,
       messageId: emailSendHistory.messageId
-    }).from(emailSendHistory).leftJoin(users, eq16(emailSendHistory.sentBy, users.id)).where(eq16(emailSendHistory.orderId, orderId)).orderBy(desc6(emailSendHistory.sentAt));
+    }).from(emailSendHistory).leftJoin(users, eq18(emailSendHistory.sentBy, users.id)).where(eq18(emailSendHistory.orderId, orderId)).orderBy(desc6(emailSendHistory.sentAt));
     res.json(emailHistory);
   } catch (error) {
     console.error("Error fetching email history:", error);
@@ -17420,17 +18805,17 @@ router13.post("/email-history", requireAuth, async (req, res) => {
       attachments: validatedData.attachments || null
     }).returning();
     const order = await db.query.purchaseOrders.findFirst({
-      where: eq16(purchaseOrders.id, validatedData.orderId)
+      where: eq18(purchaseOrders.id, validatedData.orderId)
     });
     if (order && order.status === "approved") {
       await db.update(purchaseOrders).set({
         status: "sent",
         updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq16(purchaseOrders.id, validatedData.orderId));
+      }).where(eq18(purchaseOrders.id, validatedData.orderId));
     }
     res.json(newEmailHistory);
   } catch (error) {
-    if (error instanceof z2.ZodError) {
+    if (error instanceof z4.ZodError) {
       return res.status(400).json({ error: "Invalid data", details: error.errors });
     }
     console.error("Error creating email history:", error);
@@ -17447,7 +18832,7 @@ router13.get("/orders-email-status", requireAuth, async (req, res) => {
         lastSentAt: emailSendHistory.sentAt,
         recipientEmail: emailSendHistory.recipientEmail,
         openedAt: emailSendHistory.openedAt
-      }).from(purchaseOrders).leftJoin(emailSendHistory, eq16(purchaseOrders.id, emailSendHistory.orderId)).orderBy(desc6(purchaseOrders.id));
+      }).from(purchaseOrders).leftJoin(emailSendHistory, eq18(purchaseOrders.id, emailSendHistory.orderId)).orderBy(desc6(purchaseOrders.id));
       res.json(orders);
     } catch (dbError) {
       console.error("Database query error:", dbError);
@@ -17487,7 +18872,7 @@ router13.put("/email-tracking/:trackingId", async (req, res) => {
     if (req.headers["user-agent"]) {
       updateData.userAgent = req.headers["user-agent"];
     }
-    const [updated] = await db.update(emailSendHistory).set(updateData).where(eq16(emailSendHistory.trackingId, trackingId)).returning();
+    const [updated] = await db.update(emailSendHistory).set(updateData).where(eq18(emailSendHistory.trackingId, trackingId)).returning();
     if (!updated) {
       return res.status(404).json({ error: "Email not found" });
     }
@@ -17527,7 +18912,7 @@ router13.get("/email-history/:id", requireAuth, async (req, res) => {
       trackingId: emailSendHistory.trackingId,
       emailProvider: emailSendHistory.emailProvider,
       messageId: emailSendHistory.messageId
-    }).from(emailSendHistory).leftJoin(purchaseOrders, eq16(emailSendHistory.orderId, purchaseOrders.id)).leftJoin(vendors, eq16(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq16(emailSendHistory.sentBy, users.id)).where(eq16(emailSendHistory.id, emailId));
+    }).from(emailSendHistory).leftJoin(purchaseOrders, eq18(emailSendHistory.orderId, purchaseOrders.id)).leftJoin(vendors, eq18(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq18(emailSendHistory.sentBy, users.id)).where(eq18(emailSendHistory.id, emailId));
     if (!email || email.length === 0) {
       return res.status(404).json({ error: "Email not found" });
     }
@@ -17811,7 +19196,7 @@ import { Router as Router14 } from "express";
 // server/utils/optimized-orders-query.ts
 init_db();
 init_schema();
-import { eq as eq17, desc as desc7, asc as asc3, ilike as ilike3, and as and8, or as or3, between as between2, count as count3, sql as sql10, gte as gte5, lte as lte5 } from "drizzle-orm";
+import { eq as eq19, desc as desc7, asc as asc3, ilike as ilike3, and as and10, or as or3, between as between2, count as count3, sql as sql10, gte as gte5, lte as lte5 } from "drizzle-orm";
 var OptimizedOrdersService = class _OptimizedOrdersService {
   /**
    * 정렬 필드에 따른 ORDER BY 절 생성
@@ -17870,7 +19255,7 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
     } = filters;
     const whereConditions = [];
     if (userId && userId !== "all") {
-      whereConditions.push(eq17(purchaseOrders.userId, userId));
+      whereConditions.push(eq19(purchaseOrders.userId, userId));
     }
     if (status && status !== "all" && status !== "") {
       whereConditions.push(sql10`${purchaseOrders.status} = ${status}`);
@@ -17882,10 +19267,10 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
       whereConditions.push(sql10`${purchaseOrders.approvalStatus} = ${approvalStatus}`);
     }
     if (vendorId && vendorId !== "all") {
-      whereConditions.push(eq17(purchaseOrders.vendorId, vendorId));
+      whereConditions.push(eq19(purchaseOrders.vendorId, vendorId));
     }
     if (projectId && projectId !== "all") {
-      whereConditions.push(eq17(purchaseOrders.projectId, projectId));
+      whereConditions.push(eq19(purchaseOrders.projectId, projectId));
     }
     if (startDate && endDate) {
       whereConditions.push(between2(purchaseOrders.orderDate, startDate, endDate));
@@ -17911,7 +19296,7 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
         )
       );
     }
-    const whereClause = whereConditions.length > 0 ? and8(...whereConditions) : void 0;
+    const whereClause = whereConditions.length > 0 ? and10(...whereConditions) : void 0;
     const ordersQuery = db.select({
       // Order fields
       id: purchaseOrders.id,
@@ -17938,8 +19323,8 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
       totalEmailsSent: sql10`COALESCE((SELECT COUNT(*) FROM ${emailSendHistory} WHERE ${emailSendHistory.orderId} = ${purchaseOrders.id}), 0)`,
       emailStatus: sql10`(SELECT ${emailSendHistory.status} FROM ${emailSendHistory} WHERE ${emailSendHistory.orderId} = ${purchaseOrders.id} ORDER BY ${emailSendHistory.sentAt} DESC LIMIT 1)`,
       emailSentAt: sql10`(SELECT ${emailSendHistory.sentAt} FROM ${emailSendHistory} WHERE ${emailSendHistory.orderId} = ${purchaseOrders.id} ORDER BY ${emailSendHistory.sentAt} DESC LIMIT 1)`
-    }).from(purchaseOrders).leftJoin(vendors, eq17(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq17(purchaseOrders.projectId, projects.id)).leftJoin(users, eq17(purchaseOrders.userId, users.id)).where(whereClause).orderBy(_OptimizedOrdersService.getOrderByClause(sortBy, sortOrder)).limit(limit).offset((page - 1) * limit);
-    const countQuery = db.select({ count: count3() }).from(purchaseOrders).leftJoin(vendors, eq17(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq17(purchaseOrders.projectId, projects.id)).leftJoin(users, eq17(purchaseOrders.userId, users.id)).where(whereClause);
+    }).from(purchaseOrders).leftJoin(vendors, eq19(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq19(purchaseOrders.projectId, projects.id)).leftJoin(users, eq19(purchaseOrders.userId, users.id)).where(whereClause).orderBy(_OptimizedOrdersService.getOrderByClause(sortBy, sortOrder)).limit(limit).offset((page - 1) * limit);
+    const countQuery = db.select({ count: count3() }).from(purchaseOrders).leftJoin(vendors, eq19(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq19(purchaseOrders.projectId, projects.id)).leftJoin(users, eq19(purchaseOrders.userId, users.id)).where(whereClause);
     const [orders, [{ count: totalCount }]] = await Promise.all([
       ordersQuery,
       countQuery
@@ -17971,19 +19356,19 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
       db.select({
         id: vendors.id,
         name: vendors.name
-      }).from(vendors).where(eq17(vendors.isActive, true)).orderBy(asc3(vendors.name)),
+      }).from(vendors).where(eq19(vendors.isActive, true)).orderBy(asc3(vendors.name)),
       // Only active projects
       db.select({
         id: projects.id,
         projectName: projects.projectName,
         projectCode: projects.projectCode
-      }).from(projects).where(eq17(projects.isActive, true)).orderBy(asc3(projects.projectName)),
+      }).from(projects).where(eq19(projects.isActive, true)).orderBy(asc3(projects.projectName)),
       // Only active users
       db.select({
         id: users.id,
         name: users.name,
         email: users.email
-      }).from(users).where(eq17(users.isActive, true)).orderBy(asc3(users.name))
+      }).from(users).where(eq19(users.isActive, true)).orderBy(asc3(users.name))
     ]);
     return {
       vendors: vendorsList,
@@ -18014,7 +19399,7 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
    * Uses materialized view for better performance
    */
   static async getOrderStatistics(userId) {
-    const whereClause = userId ? eq17(purchaseOrders.userId, userId) : void 0;
+    const whereClause = userId ? eq19(purchaseOrders.userId, userId) : void 0;
     const stats = await db.select({
       status: purchaseOrders.status,
       count: count3(),
@@ -18056,7 +19441,7 @@ var QueryPerformanceMonitor = class {
 
 // server/routes/orders-optimized.ts
 init_db();
-import { z as z3 } from "zod";
+import { z as z5 } from "zod";
 var router15 = Router14();
 router15.get("/orders-optimized-test", async (req, res) => {
   try {
@@ -18081,25 +19466,25 @@ router15.get("/orders-optimized-test", async (req, res) => {
     });
   }
 });
-var OrderFiltersSchema = z3.object({
-  page: z3.string().optional().transform((val) => val ? parseInt(val) : 1),
-  limit: z3.string().optional().transform((val) => val ? parseInt(val) : 20),
-  status: z3.string().optional(),
+var OrderFiltersSchema = z5.object({
+  page: z5.string().optional().transform((val) => val ? parseInt(val) : 1),
+  limit: z5.string().optional().transform((val) => val ? parseInt(val) : 20),
+  status: z5.string().optional(),
   // Legacy field for backward compatibility
-  orderStatus: z3.string().optional(),
+  orderStatus: z5.string().optional(),
   // New order status field
-  approvalStatus: z3.string().optional(),
+  approvalStatus: z5.string().optional(),
   // New approval status field
-  projectId: z3.string().optional().transform((val) => val && val !== "all" ? parseInt(val) : void 0),
-  vendorId: z3.string().optional().transform((val) => val && val !== "all" ? parseInt(val) : void 0),
-  userId: z3.string().optional(),
-  startDate: z3.string().optional().transform((val) => val ? new Date(val) : void 0),
-  endDate: z3.string().optional().transform((val) => val ? new Date(val) : void 0),
-  minAmount: z3.string().optional().transform((val) => val ? parseFloat(val) : void 0),
-  maxAmount: z3.string().optional().transform((val) => val ? parseFloat(val) : void 0),
-  searchText: z3.string().optional(),
-  sortBy: z3.string().optional(),
-  sortOrder: z3.enum(["asc", "desc"]).optional().default("desc")
+  projectId: z5.string().optional().transform((val) => val && val !== "all" ? parseInt(val) : void 0),
+  vendorId: z5.string().optional().transform((val) => val && val !== "all" ? parseInt(val) : void 0),
+  userId: z5.string().optional(),
+  startDate: z5.string().optional().transform((val) => val ? new Date(val) : void 0),
+  endDate: z5.string().optional().transform((val) => val ? new Date(val) : void 0),
+  minAmount: z5.string().optional().transform((val) => val ? parseFloat(val) : void 0),
+  maxAmount: z5.string().optional().transform((val) => val ? parseFloat(val) : void 0),
+  searchText: z5.string().optional(),
+  sortBy: z5.string().optional(),
+  sortOrder: z5.enum(["asc", "desc"]).optional().default("desc")
 });
 router15.get("/orders-optimized", async (req, res) => {
   const endTimer = QueryPerformanceMonitor.startTimer("orders-optimized");
@@ -18262,7 +19647,7 @@ var order_statuses_default = router16;
 init_db();
 init_schema();
 import { Router as Router16 } from "express";
-import { eq as eq18, desc as desc8 } from "drizzle-orm";
+import { eq as eq20, desc as desc8 } from "drizzle-orm";
 import multer5 from "multer";
 import path14 from "path";
 import fs17 from "fs";
@@ -18328,7 +19713,7 @@ router17.get("/invoices", async (req, res) => {
       updatedAt: invoices.updatedAt
     }).from(invoices);
     if (orderId) {
-      query = query.where(eq18(invoices.orderId, parseInt(orderId)));
+      query = query.where(eq20(invoices.orderId, parseInt(orderId)));
     }
     const invoiceList = await query.orderBy(desc8(invoices.createdAt));
     console.log(`\u2705 Successfully fetched ${invoiceList.length} invoices from database`);
@@ -18367,7 +19752,7 @@ router17.get("/invoices/:id", async (req, res) => {
       updatedAt: invoices.updatedAt,
       // Join with users for uploader name
       uploaderName: users.name
-    }).from(invoices).leftJoin(users, eq18(invoices.uploadedBy, users.id)).where(eq18(invoices.id, id)).limit(1);
+    }).from(invoices).leftJoin(users, eq20(invoices.uploadedBy, users.id)).where(eq20(invoices.id, id)).limit(1);
     if (!invoice) {
       return res.status(404).json({ message: "Invoice not found" });
     }
@@ -18449,7 +19834,7 @@ router17.post("/invoices", upload5.single("file"), async (req, res) => {
       updatedAt: invoices.updatedAt,
       // Join with users for uploader name
       uploaderName: users.name
-    }).from(invoices).leftJoin(users, eq18(invoices.uploadedBy, users.id)).where(eq18(invoices.id, newInvoice.id));
+    }).from(invoices).leftJoin(users, eq20(invoices.uploadedBy, users.id)).where(eq20(invoices.id, newInvoice.id));
     console.log(`\u2705 Successfully created invoice ${newInvoice.id}`);
     res.status(201).json(invoice);
   } catch (error) {
@@ -18470,7 +19855,7 @@ router17.post("/invoices/:id/verify", requireAuth, async (req, res) => {
       verifiedBy: userId,
       verifiedAt: /* @__PURE__ */ new Date(),
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq18(invoices.id, invoiceId)).returning();
+    }).where(eq20(invoices.id, invoiceId)).returning();
     if (!updatedInvoice) {
       return res.status(404).json({ message: "Invoice not found" });
     }
@@ -18494,7 +19879,7 @@ router17.post("/invoices/:id/issue-tax", requireAuth, async (req, res) => {
       taxInvoiceIssuedDate: /* @__PURE__ */ new Date(),
       taxInvoiceIssuedBy: userId,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq18(invoices.id, invoiceId)).returning();
+    }).where(eq20(invoices.id, invoiceId)).returning();
     if (!updatedInvoice) {
       return res.status(404).json({ message: "Invoice not found" });
     }
@@ -18532,7 +19917,7 @@ router17.patch("/invoices/:id", requireAuth, async (req, res) => {
     if (status !== void 0) updateData.status = status;
     if (notes !== void 0) updateData.notes = notes;
     updateData.updatedAt = /* @__PURE__ */ new Date();
-    const [updatedInvoice] = await db.update(invoices).set(updateData).where(eq18(invoices.id, invoiceId)).returning();
+    const [updatedInvoice] = await db.update(invoices).set(updateData).where(eq20(invoices.id, invoiceId)).returning();
     if (!updatedInvoice) {
       return res.status(404).json({ message: "Invoice not found" });
     }
@@ -18550,11 +19935,11 @@ router17.delete("/invoices/:id", requireAuth, async (req, res) => {
   try {
     const invoiceId = parseInt(req.params.id, 10);
     console.log(`\u{1F4B0} Deleting invoice ${invoiceId}...`);
-    const [invoice] = await db.select().from(invoices).where(eq18(invoices.id, invoiceId)).limit(1);
+    const [invoice] = await db.select().from(invoices).where(eq20(invoices.id, invoiceId)).limit(1);
     if (!invoice) {
       return res.status(404).json({ message: "Invoice not found" });
     }
-    await db.delete(invoices).where(eq18(invoices.id, invoiceId));
+    await db.delete(invoices).where(eq20(invoices.id, invoiceId));
     if (invoice.filePath && !process.env.VERCEL) {
       try {
         if (fs17.existsSync(invoice.filePath)) {
@@ -18647,7 +20032,7 @@ var verification_logs_default = router18;
 init_db();
 init_schema();
 import { Router as Router18 } from "express";
-import { eq as eq19, desc as desc9 } from "drizzle-orm";
+import { eq as eq21, desc as desc9 } from "drizzle-orm";
 var router19 = Router18();
 router19.get("/item-receipts", async (_req, res) => {
   try {
@@ -18671,7 +20056,7 @@ router19.get("/item-receipts", async (_req, res) => {
       orderId: purchaseOrderItems.orderId,
       // Join with users for verifier name
       verifierName: users.name
-    }).from(itemReceipts).leftJoin(purchaseOrderItems, eq19(itemReceipts.orderItemId, purchaseOrderItems.id)).leftJoin(users, eq19(itemReceipts.verifiedBy, users.id)).orderBy(desc9(itemReceipts.createdAt));
+    }).from(itemReceipts).leftJoin(purchaseOrderItems, eq21(itemReceipts.orderItemId, purchaseOrderItems.id)).leftJoin(users, eq21(itemReceipts.verifiedBy, users.id)).orderBy(desc9(itemReceipts.createdAt));
     console.log(`\u2705 Successfully fetched ${receipts.length} item receipts from database`);
     res.json(receipts);
   } catch (error) {
@@ -18705,7 +20090,7 @@ router19.get("/item-receipts/order/:orderId", async (req, res) => {
       orderId: purchaseOrderItems.orderId,
       // Join with users for verifier name
       verifierName: users.name
-    }).from(itemReceipts).leftJoin(purchaseOrderItems, eq19(itemReceipts.orderItemId, purchaseOrderItems.id)).leftJoin(users, eq19(itemReceipts.verifiedBy, users.id)).where(eq19(purchaseOrderItems.orderId, orderId)).orderBy(desc9(itemReceipts.createdAt));
+    }).from(itemReceipts).leftJoin(purchaseOrderItems, eq21(itemReceipts.orderItemId, purchaseOrderItems.id)).leftJoin(users, eq21(itemReceipts.verifiedBy, users.id)).where(eq21(purchaseOrderItems.orderId, orderId)).orderBy(desc9(itemReceipts.createdAt));
     console.log(`\u2705 Successfully fetched ${receipts.length} item receipts for order ${orderId}`);
     res.json(receipts);
   } catch (error) {
@@ -18766,7 +20151,7 @@ router19.post("/item-receipts", async (req, res) => {
       orderId: purchaseOrderItems.orderId,
       // Join with users for verifier name
       verifierName: users.name
-    }).from(itemReceipts).leftJoin(purchaseOrderItems, eq19(itemReceipts.orderItemId, purchaseOrderItems.id)).leftJoin(users, eq19(itemReceipts.verifiedBy, users.id)).where(eq19(itemReceipts.id, newReceipt.id));
+    }).from(itemReceipts).leftJoin(purchaseOrderItems, eq21(itemReceipts.orderItemId, purchaseOrderItems.id)).leftJoin(users, eq21(itemReceipts.verifiedBy, users.id)).where(eq21(itemReceipts.id, newReceipt.id));
     console.log(`\u2705 Successfully created item receipt ${newReceipt.id}`);
     res.status(201).json(receipt);
   } catch (error) {
@@ -18797,7 +20182,7 @@ router19.patch("/item-receipts/:id", async (req, res) => {
     if (status !== void 0) updateData.status = status;
     if (notes !== void 0) updateData.notes = notes;
     updateData.updatedAt = /* @__PURE__ */ new Date();
-    const [updatedReceipt] = await db.update(itemReceipts).set(updateData).where(eq19(itemReceipts.id, receiptId)).returning();
+    const [updatedReceipt] = await db.update(itemReceipts).set(updateData).where(eq21(itemReceipts.id, receiptId)).returning();
     if (!updatedReceipt) {
       return res.status(404).json({ message: "Item receipt not found" });
     }
@@ -18820,7 +20205,7 @@ router19.patch("/item-receipts/:id", async (req, res) => {
       orderId: purchaseOrderItems.orderId,
       // Join with users for verifier name
       verifierName: users.name
-    }).from(itemReceipts).leftJoin(purchaseOrderItems, eq19(itemReceipts.orderItemId, purchaseOrderItems.id)).leftJoin(users, eq19(itemReceipts.verifiedBy, users.id)).where(eq19(itemReceipts.id, receiptId));
+    }).from(itemReceipts).leftJoin(purchaseOrderItems, eq21(itemReceipts.orderItemId, purchaseOrderItems.id)).leftJoin(users, eq21(itemReceipts.verifiedBy, users.id)).where(eq21(itemReceipts.id, receiptId));
     console.log(`\u2705 Successfully updated item receipt ${receiptId}`);
     res.json(receipt);
   } catch (error) {
@@ -18835,7 +20220,7 @@ router19.delete("/item-receipts/:id", async (req, res) => {
   try {
     const receiptId = parseInt(req.params.id, 10);
     console.log(`\u{1F4E6} Deleting item receipt ${receiptId}...`);
-    const [deletedReceipt] = await db.delete(itemReceipts).where(eq19(itemReceipts.id, receiptId)).returning();
+    const [deletedReceipt] = await db.delete(itemReceipts).where(eq21(itemReceipts.id, receiptId)).returning();
     if (!deletedReceipt) {
       return res.status(404).json({ message: "Item receipt not found" });
     }
@@ -18855,12 +20240,12 @@ var item_receipts_default = router19;
 import { Router as Router19 } from "express";
 init_db();
 init_schema();
-import { eq as eq21, and as and10, desc as desc10, sql as sql12, inArray as inArray5 } from "drizzle-orm";
+import { eq as eq23, and as and12, desc as desc10, sql as sql12, inArray as inArray5 } from "drizzle-orm";
 
 // server/services/notification-service.ts
 init_db();
 init_schema();
-import { eq as eq20, and as and9, inArray as inArray4, sql as sql11 } from "drizzle-orm";
+import { eq as eq22, and as and11, inArray as inArray4, sql as sql11 } from "drizzle-orm";
 var NotificationService = class {
   /**
    * 승인 요청 시 알림 발송
@@ -18952,8 +20337,8 @@ var NotificationService = class {
       role: approvalAuthorities.role,
       maxAmount: approvalAuthorities.maxAmount
     }).from(approvalAuthorities).where(
-      and9(
-        eq20(approvalAuthorities.isActive, true),
+      and11(
+        eq22(approvalAuthorities.isActive, true),
         sql11`CAST(${approvalAuthorities.maxAmount} AS DECIMAL) >= ${orderAmount}`
       )
     );
@@ -18962,7 +20347,7 @@ var NotificationService = class {
         id: users.id,
         name: users.name,
         role: users.role
-      }).from(users).where(eq20(users.role, "admin")).limit(10);
+      }).from(users).where(eq22(users.role, "admin")).limit(10);
     }
     const eligibleRoles = authorities.map((auth) => auth.role);
     return await db.select({
@@ -18985,7 +20370,7 @@ var NotificationService = class {
       projectName: projects.projectName,
       vendorName: vendors.name,
       requesterName: users.name
-    }).from(purchaseOrders).leftJoin(projects, eq20(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq20(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq20(purchaseOrders.userId, users.id)).where(eq20(purchaseOrders.id, orderId)).limit(1);
+    }).from(purchaseOrders).leftJoin(projects, eq22(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq22(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq22(purchaseOrders.userId, users.id)).where(eq22(purchaseOrders.id, orderId)).limit(1);
     return result[0] || null;
   }
   /**
@@ -18999,7 +20384,7 @@ var NotificationService = class {
       stakeholders.add(orderInfo.userId);
     }
     if (orderInfo.projectId) {
-      const projectMembers3 = await db.select({ userId: users.id }).from(users).where(eq20(users.role, "project_manager")).limit(5);
+      const projectMembers3 = await db.select({ userId: users.id }).from(users).where(eq22(users.role, "project_manager")).limit(5);
       projectMembers3.forEach((member) => stakeholders.add(member.userId));
     }
     if (stakeholders.size === 0) return [];
@@ -19033,9 +20418,9 @@ var NotificationService = class {
   static async getUserNotifications(userId, limit = 20) {
     try {
       const result = await db.select().from(notifications).where(
-        and9(
-          eq20(notifications.userId, userId),
-          eq20(notifications.isActive, true)
+        and11(
+          eq22(notifications.userId, userId),
+          eq22(notifications.isActive, true)
         )
       ).orderBy(sql11`${notifications.createdAt} DESC`).limit(limit);
       return result.map((notification) => ({
@@ -19058,9 +20443,9 @@ var NotificationService = class {
         isRead: true,
         updatedAt: /* @__PURE__ */ new Date()
       }).where(
-        and9(
-          eq20(notifications.id, notificationId),
-          eq20(notifications.userId, userId)
+        and11(
+          eq22(notifications.id, notificationId),
+          eq22(notifications.userId, userId)
         )
       ).returning();
       return result.length > 0;
@@ -19078,10 +20463,10 @@ var NotificationService = class {
         isRead: true,
         updatedAt: /* @__PURE__ */ new Date()
       }).where(
-        and9(
-          eq20(notifications.userId, userId),
-          eq20(notifications.isRead, false),
-          eq20(notifications.isActive, true)
+        and11(
+          eq22(notifications.userId, userId),
+          eq22(notifications.isRead, false),
+          eq22(notifications.isActive, true)
         )
       ).returning();
       return result.length;
@@ -19097,9 +20482,9 @@ var router20 = Router19();
 async function checkApprovalPermission(userRole, orderAmount) {
   try {
     const authority = await db.select().from(approvalAuthorities).where(
-      and10(
-        eq21(approvalAuthorities.role, userRole),
-        eq21(approvalAuthorities.isActive, true)
+      and12(
+        eq23(approvalAuthorities.role, userRole),
+        eq23(approvalAuthorities.isActive, true)
       )
     ).limit(1);
     if (authority.length === 0) {
@@ -19126,7 +20511,7 @@ router20.get("/approvals/history", requireAuth, requireRole(["admin", "executive
       comments: orderHistory.notes,
       amount: purchaseOrders.totalAmount,
       createdAt: orderHistory.performedAt
-    }).from(orderHistory).leftJoin(purchaseOrders, eq21(orderHistory.orderId, purchaseOrders.id)).leftJoin(users, eq21(orderHistory.performedBy, users.id)).where(
+    }).from(orderHistory).leftJoin(purchaseOrders, eq23(orderHistory.orderId, purchaseOrders.id)).leftJoin(users, eq23(orderHistory.performedBy, users.id)).where(
       inArray5(orderHistory.action, ["approved", "rejected"])
     ).orderBy(desc10(orderHistory.performedAt)).limit(50);
     const allHistory = approvalHistory.map((record) => ({
@@ -19170,7 +20555,7 @@ router20.get("/approvals/pending", requireAuth, requireRole(["admin", "executive
       // Vendor information
       vendorId: vendors.id,
       vendorName: vendors.name
-    }).from(purchaseOrders).leftJoin(projects, eq21(purchaseOrders.projectId, projects.id)).leftJoin(users, eq21(purchaseOrders.userId, users.id)).leftJoin(vendors, eq21(purchaseOrders.vendorId, vendors.id)).where(eq21(purchaseOrders.status, "pending")).orderBy(desc10(purchaseOrders.createdAt));
+    }).from(purchaseOrders).leftJoin(projects, eq23(purchaseOrders.projectId, projects.id)).leftJoin(users, eq23(purchaseOrders.userId, users.id)).leftJoin(vendors, eq23(purchaseOrders.vendorId, vendors.id)).where(eq23(purchaseOrders.status, "pending")).orderBy(desc10(purchaseOrders.createdAt));
     const formattedOrders = pendingOrders.map((order) => ({
       id: order.id,
       orderNumber: order.orderNumber,
@@ -19206,11 +20591,11 @@ router20.get("/approvals/stats", requireAuth, requireRole(["admin", "executive",
       // 전체 발주서 수
       db.select({ count: sql12`count(*)` }).from(purchaseOrders),
       // 승인 대기 수
-      db.select({ count: sql12`count(*)` }).from(purchaseOrders).where(eq21(purchaseOrders.status, "pending")),
+      db.select({ count: sql12`count(*)` }).from(purchaseOrders).where(eq23(purchaseOrders.status, "pending")),
       // 승인 완료 수
-      db.select({ count: sql12`count(*)` }).from(purchaseOrders).where(eq21(purchaseOrders.status, "approved")),
+      db.select({ count: sql12`count(*)` }).from(purchaseOrders).where(eq23(purchaseOrders.status, "approved")),
       // 반려 수
-      db.select({ count: sql12`count(*)` }).from(purchaseOrders).where(eq21(purchaseOrders.status, "rejected"))
+      db.select({ count: sql12`count(*)` }).from(purchaseOrders).where(eq23(purchaseOrders.status, "rejected"))
     ]);
     const totalCount = totalStats[0]?.count || 0;
     const pendingCount = pendingStats[0]?.count || 0;
@@ -19266,7 +20651,7 @@ router20.post("/approvals/:id/process", requireAuth, requireRole(["admin", "exec
     const { action, comments } = req.body;
     const user = req.user;
     console.log(`\u{1F4CB} Processing approval ${id} with action: ${action} by ${user.name} (${user.role})`);
-    const existingOrder = await db.select().from(purchaseOrders).where(eq21(purchaseOrders.id, id)).limit(1);
+    const existingOrder = await db.select().from(purchaseOrders).where(eq23(purchaseOrders.id, id)).limit(1);
     if (existingOrder.length === 0) {
       return res.status(404).json({ message: "\uBC1C\uC8FC\uC11C\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
     }
@@ -19281,7 +20666,7 @@ router20.post("/approvals/:id/process", requireAuth, requireRole(["admin", "exec
     await db.update(purchaseOrders).set({
       status: newStatus,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq21(purchaseOrders.id, id));
+    }).where(eq23(purchaseOrders.id, id));
     const historyEntry = {
       orderId: id,
       action: action === "approve" ? "approved" : "rejected",
@@ -19369,7 +20754,7 @@ router20.post("/approvals/:orderId/reject", requireAuth, requireRole(["admin", "
 });
 async function processApproval(req, res, orderId, action, note, user) {
   try {
-    const existingOrder = await db.select().from(purchaseOrders).where(eq21(purchaseOrders.id, orderId)).limit(1);
+    const existingOrder = await db.select().from(purchaseOrders).where(eq23(purchaseOrders.id, orderId)).limit(1);
     if (existingOrder.length === 0) {
       throw new Error("\uBC1C\uC8FC\uC11C\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4");
     }
@@ -19382,7 +20767,7 @@ async function processApproval(req, res, orderId, action, note, user) {
     await db.update(purchaseOrders).set({
       status: newStatus,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq21(purchaseOrders.id, orderId));
+    }).where(eq23(purchaseOrders.id, orderId));
     const historyEntry = {
       orderId,
       action: action === "approve" ? "approved" : "rejected",
@@ -19428,7 +20813,7 @@ router20.post("/approvals/:orderId/start-workflow", requireAuth, requireRole(["a
       totalAmount: purchaseOrders.totalAmount,
       status: purchaseOrders.status,
       userId: purchaseOrders.userId
-    }).from(purchaseOrders).where(eq21(purchaseOrders.id, orderId)).limit(1);
+    }).from(purchaseOrders).where(eq23(purchaseOrders.id, orderId)).limit(1);
     if (orderInfo.length === 0) {
       return res.status(404).json({ message: "\uBC1C\uC8FC\uC11C\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
     }
@@ -19467,7 +20852,7 @@ router20.post("/approvals/:orderId/start-workflow", requireAuth, requireRole(["a
       await db.update(purchaseOrders).set({
         status: "pending",
         updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq21(purchaseOrders.id, orderId));
+      }).where(eq23(purchaseOrders.id, orderId));
       await NotificationService.sendApprovalRequestNotification({
         orderId,
         action: "approval_requested",
@@ -19521,7 +20906,7 @@ router20.post("/approvals/:orderId/step/:stepId", requireAuth, requireRole(["adm
     const { action, comments } = req.body;
     const user = req.user;
     console.log(`\u{1F504} Processing approval step ${stepId} for order ${orderId} with action: ${action}`);
-    const stepInstance = await db.select().from(approvalStepInstances2).where(eq21(approvalStepInstances2.id, stepId)).limit(1);
+    const stepInstance = await db.select().from(approvalStepInstances2).where(eq23(approvalStepInstances2.id, stepId)).limit(1);
     if (stepInstance.length === 0) {
       return res.status(404).json({ message: "\uC2B9\uC778 \uB2E8\uACC4\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
     }
@@ -19538,7 +20923,7 @@ router20.post("/approvals/:orderId/step/:stepId", requireAuth, requireRole(["adm
       approvedAt: /* @__PURE__ */ new Date(),
       comments: comments || "",
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq21(approvalStepInstances2.id, stepId));
+    }).where(eq23(approvalStepInstances2.id, stepId));
     const isComplete = await ApprovalRoutingService.isApprovalComplete(orderId);
     const progress = await ApprovalRoutingService.getApprovalProgress(orderId);
     let finalOrderStatus = "pending";
@@ -19548,9 +20933,9 @@ router20.post("/approvals/:orderId/step/:stepId", requireAuth, requireRole(["adm
         isActive: false,
         updatedAt: /* @__PURE__ */ new Date()
       }).where(
-        and10(
-          eq21(approvalStepInstances2.orderId, orderId),
-          eq21(approvalStepInstances2.status, "pending")
+        and12(
+          eq23(approvalStepInstances2.orderId, orderId),
+          eq23(approvalStepInstances2.status, "pending")
         )
       );
     } else if (isComplete) {
@@ -19560,7 +20945,7 @@ router20.post("/approvals/:orderId/step/:stepId", requireAuth, requireRole(["adm
       await db.update(purchaseOrders).set({
         status: finalOrderStatus,
         updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq21(purchaseOrders.id, orderId));
+      }).where(eq23(purchaseOrders.id, orderId));
       await db.insert(orderHistory).values({
         orderId,
         action: finalOrderStatus === "approved" ? "approved" : "rejected",
@@ -20178,12 +21563,12 @@ var test_accounts_default = router24;
 init_db();
 init_schema();
 import { Router as Router24 } from "express";
-import { eq as eq23, and as and12 } from "drizzle-orm";
+import { eq as eq25, and as and14 } from "drizzle-orm";
 
 // server/utils/category-mapping-validator.ts
 init_db();
 init_schema();
-import { eq as eq22 } from "drizzle-orm";
+import { eq as eq24 } from "drizzle-orm";
 async function validateCategoryMapping(request) {
   console.log("\u{1F50D} \uBD84\uB958 \uB9E4\uD551 \uAC80\uC99D \uC2DC\uC791:", request);
   const result = {
@@ -20198,7 +21583,7 @@ async function validateCategoryMapping(request) {
     confidence: 0
   };
   try {
-    const allCategories = await db.select().from(itemCategories).where(eq22(itemCategories.isActive, true));
+    const allCategories = await db.select().from(itemCategories).where(eq24(itemCategories.isActive, true));
     const majorCategories = allCategories.filter((c) => c.categoryType === "major");
     const middleCategories = allCategories.filter((c) => c.categoryType === "middle");
     const minorCategories = allCategories.filter((c) => c.categoryType === "minor");
@@ -20448,7 +21833,7 @@ router25.get("/hierarchy", async (req, res) => {
 router25.get("/", async (req, res) => {
   try {
     console.log("\u{1F4CB} Fetching all categories...");
-    const categories = await db.select().from(itemCategories).where(eq23(itemCategories.isActive, true)).orderBy(itemCategories.displayOrder, itemCategories.categoryName);
+    const categories = await db.select().from(itemCategories).where(eq25(itemCategories.isActive, true)).orderBy(itemCategories.displayOrder, itemCategories.categoryName);
     const majorCategories = categories.filter((c) => c.categoryType === "major");
     const middleCategories = categories.filter((c) => c.categoryType === "middle");
     const minorCategories = categories.filter((c) => c.categoryType === "minor");
@@ -20513,12 +21898,12 @@ router25.get("/:type", async (req, res) => {
     const { type } = req.params;
     const { parentId } = req.query;
     console.log(`\u{1F4CB} Fetching ${type} categories...`);
-    let query = db.select().from(itemCategories).where(and12(
-      eq23(itemCategories.categoryType, type),
-      eq23(itemCategories.isActive, true)
+    let query = db.select().from(itemCategories).where(and14(
+      eq25(itemCategories.categoryType, type),
+      eq25(itemCategories.isActive, true)
     ));
     if (parentId) {
-      query = query.where(eq23(itemCategories.parentId, parseInt(parentId)));
+      query = query.where(eq25(itemCategories.parentId, parseInt(parentId)));
     }
     const categories = await query.orderBy(itemCategories.displayOrder, itemCategories.categoryName);
     res.json({
@@ -20569,7 +21954,7 @@ router25.put("/:id", async (req, res) => {
       displayOrder,
       isActive,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq23(itemCategories.id, parseInt(id))).returning();
+    }).where(eq25(itemCategories.id, parseInt(id))).returning();
     if (updatedCategory.length === 0) {
       return res.status(404).json({
         success: false,
@@ -20597,7 +21982,7 @@ router25.delete("/:id", async (req, res) => {
     const updatedCategory = await db.update(itemCategories).set({
       isActive: false,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq23(itemCategories.id, parseInt(id))).returning();
+    }).where(eq25(itemCategories.id, parseInt(id))).returning();
     if (updatedCategory.length === 0) {
       return res.status(404).json({
         success: false,
@@ -20680,16 +22065,16 @@ var categories_default = router25;
 init_db();
 init_schema();
 import { Router as Router25 } from "express";
-import { eq as eq24, and as and13, desc as desc11, asc as asc5 } from "drizzle-orm";
-import { z as z4 } from "zod";
+import { eq as eq26, and as and15, desc as desc11, asc as asc5 } from "drizzle-orm";
+import { z as z6 } from "zod";
 var router26 = Router25();
 router26.get("/workflow-settings/:companyId", requireAuth, async (req, res) => {
   try {
     const { companyId } = req.params;
     const settings = await db.select().from(approvalWorkflowSettings).where(
-      and13(
-        eq24(approvalWorkflowSettings.companyId, parseInt(companyId)),
-        eq24(approvalWorkflowSettings.isActive, true)
+      and15(
+        eq26(approvalWorkflowSettings.companyId, parseInt(companyId)),
+        eq26(approvalWorkflowSettings.isActive, true)
       )
     ).orderBy(desc11(approvalWorkflowSettings.createdAt)).limit(1);
     return res.json({
@@ -20710,9 +22095,9 @@ router26.post("/workflow-settings", requireAuth, requireAdmin, async (req, res) 
       createdBy: req.user.id
     });
     const existingSettings = await db.select().from(approvalWorkflowSettings).where(
-      and13(
-        eq24(approvalWorkflowSettings.companyId, validatedData.companyId),
-        eq24(approvalWorkflowSettings.isActive, true)
+      and15(
+        eq26(approvalWorkflowSettings.companyId, validatedData.companyId),
+        eq26(approvalWorkflowSettings.isActive, true)
       )
     ).limit(1);
     let result;
@@ -20720,7 +22105,7 @@ router26.post("/workflow-settings", requireAuth, requireAdmin, async (req, res) 
       result = await db.update(approvalWorkflowSettings).set({
         ...validatedData,
         updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq24(approvalWorkflowSettings.id, existingSettings[0].id)).returning();
+      }).where(eq26(approvalWorkflowSettings.id, existingSettings[0].id)).returning();
     } else {
       result = await db.insert(approvalWorkflowSettings).values(validatedData).returning();
     }
@@ -20730,7 +22115,7 @@ router26.post("/workflow-settings", requireAuth, requireAdmin, async (req, res) 
     });
   } catch (error) {
     console.error("\uC2B9\uC778 \uC6CC\uD06C\uD50C\uB85C \uC124\uC815 \uC800\uC7A5 \uC624\uB958:", error);
-    if (error instanceof z4.ZodError) {
+    if (error instanceof z6.ZodError) {
       return res.status(400).json({
         error: "\uC785\uB825 \uB370\uC774\uD130\uAC00 \uC62C\uBC14\uB974\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4",
         details: error.errors
@@ -20746,17 +22131,17 @@ router26.get("/step-templates/:companyId", requireAuth, async (req, res) => {
     const { companyId } = req.params;
     const { templateName } = req.query;
     let query = db.select().from(approvalStepTemplates).where(
-      and13(
-        eq24(approvalStepTemplates.companyId, parseInt(companyId)),
-        eq24(approvalStepTemplates.isActive, true)
+      and15(
+        eq26(approvalStepTemplates.companyId, parseInt(companyId)),
+        eq26(approvalStepTemplates.isActive, true)
       )
     );
     if (templateName) {
       query = query.where(
-        and13(
-          eq24(approvalStepTemplates.companyId, parseInt(companyId)),
-          eq24(approvalStepTemplates.isActive, true),
-          eq24(approvalStepTemplates.templateName, templateName)
+        and15(
+          eq26(approvalStepTemplates.companyId, parseInt(companyId)),
+          eq26(approvalStepTemplates.isActive, true),
+          eq26(approvalStepTemplates.templateName, templateName)
         )
       );
     }
@@ -20785,7 +22170,7 @@ router26.post("/step-templates", requireAuth, requireAdmin, async (req, res) => 
     });
   } catch (error) {
     console.error("\uC2B9\uC778 \uB2E8\uACC4 \uD15C\uD50C\uB9BF \uC0DD\uC131 \uC624\uB958:", error);
-    if (error instanceof z4.ZodError) {
+    if (error instanceof z6.ZodError) {
       return res.status(400).json({
         error: "\uC785\uB825 \uB370\uC774\uD130\uAC00 \uC62C\uBC14\uB974\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4",
         details: error.errors
@@ -20803,7 +22188,7 @@ router26.put("/step-templates/:id", requireAuth, requireAdmin, async (req, res) 
     const result = await db.update(approvalStepTemplates).set({
       ...validatedData,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq24(approvalStepTemplates.id, parseInt(id))).returning();
+    }).where(eq26(approvalStepTemplates.id, parseInt(id))).returning();
     if (result.length === 0) {
       return res.status(404).json({ error: "\uC2B9\uC778 \uB2E8\uACC4 \uD15C\uD50C\uB9BF\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
     }
@@ -20813,7 +22198,7 @@ router26.put("/step-templates/:id", requireAuth, requireAdmin, async (req, res) 
     });
   } catch (error) {
     console.error("\uC2B9\uC778 \uB2E8\uACC4 \uD15C\uD50C\uB9BF \uC218\uC815 \uC624\uB958:", error);
-    if (error instanceof z4.ZodError) {
+    if (error instanceof z6.ZodError) {
       return res.status(400).json({
         error: "\uC785\uB825 \uB370\uC774\uD130\uAC00 \uC62C\uBC14\uB974\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4",
         details: error.errors
@@ -20830,7 +22215,7 @@ router26.delete("/step-templates/:id", requireAuth, requireAdmin, async (req, re
     const result = await db.update(approvalStepTemplates).set({
       isActive: false,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq24(approvalStepTemplates.id, parseInt(id))).returning();
+    }).where(eq26(approvalStepTemplates.id, parseInt(id))).returning();
     if (result.length === 0) {
       return res.status(404).json({ error: "\uC2B9\uC778 \uB2E8\uACC4 \uD15C\uD50C\uB9BF\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
     }
@@ -20849,9 +22234,9 @@ router26.get("/step-instances/:orderId", requireAuth, async (req, res) => {
   try {
     const { orderId } = req.params;
     const instances = await db.select().from(approvalStepInstances2).where(
-      and13(
-        eq24(approvalStepInstances2.orderId, parseInt(orderId)),
-        eq24(approvalStepInstances2.isActive, true)
+      and15(
+        eq26(approvalStepInstances2.orderId, parseInt(orderId)),
+        eq26(approvalStepInstances2.isActive, true)
       )
     ).orderBy(asc5(approvalStepInstances2.stepOrder));
     return res.json({
@@ -20874,10 +22259,10 @@ router26.post("/step-instances", requireAuth, async (req, res) => {
       });
     }
     const templates = await db.select().from(approvalStepTemplates).where(
-      and13(
-        eq24(approvalStepTemplates.companyId, companyId),
-        eq24(approvalStepTemplates.templateName, templateName),
-        eq24(approvalStepTemplates.isActive, true)
+      and15(
+        eq26(approvalStepTemplates.companyId, companyId),
+        eq26(approvalStepTemplates.templateName, templateName),
+        eq26(approvalStepTemplates.isActive, true)
       )
     ).orderBy(asc5(approvalStepTemplates.stepOrder));
     if (templates.length === 0) {
@@ -20921,7 +22306,7 @@ router26.put("/step-instances/:id", requireAuth, async (req, res) => {
     };
     if (comments) updateData.comments = comments;
     if (rejectionReason) updateData.rejectionReason = rejectionReason;
-    const result = await db.update(approvalStepInstances2).set(updateData).where(eq24(approvalStepInstances2.id, parseInt(id))).returning();
+    const result = await db.update(approvalStepInstances2).set(updateData).where(eq26(approvalStepInstances2.id, parseInt(id))).returning();
     if (result.length === 0) {
       return res.status(404).json({ error: "\uC2B9\uC778 \uB2E8\uACC4 \uC778\uC2A4\uD134\uC2A4\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
     }
@@ -20942,8 +22327,8 @@ var approval_settings_default = router26;
 import { Router as Router26 } from "express";
 init_db();
 init_schema();
-import { eq as eq25, and as and14, desc as desc12 } from "drizzle-orm";
-import { z as z5 } from "zod";
+import { eq as eq27, and as and16, desc as desc12 } from "drizzle-orm";
+import { z as z7 } from "zod";
 var router27 = Router26();
 router27.get("/approval-authorities", requireAuth, requireRole(["admin"]), async (req, res) => {
   try {
@@ -20978,9 +22363,9 @@ router27.post("/approval-authorities", requireAuth, requireRole(["admin"]), asyn
     console.log("\u{1F4DD} Creating new approval authority:", req.body);
     const validatedData = insertApprovalAuthoritySchema.parse(req.body);
     const existingAuthority = await db.select().from(approvalAuthorities).where(
-      and14(
-        eq25(approvalAuthorities.role, validatedData.role),
-        eq25(approvalAuthorities.isActive, true)
+      and16(
+        eq27(approvalAuthorities.role, validatedData.role),
+        eq27(approvalAuthorities.isActive, true)
       )
     ).limit(1);
     if (existingAuthority.length > 0) {
@@ -20999,7 +22384,7 @@ router27.post("/approval-authorities", requireAuth, requireRole(["admin"]), asyn
     res.status(201).json(newAuthority);
   } catch (error) {
     console.error("\u274C Error creating approval authority:", error);
-    if (error instanceof z5.ZodError) {
+    if (error instanceof z7.ZodError) {
       return res.status(400).json({
         message: "\uC785\uB825 \uB370\uC774\uD130\uAC00 \uC62C\uBC14\uB974\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4",
         details: error.errors
@@ -21019,7 +22404,7 @@ router27.put("/approval-authorities/:id", requireAuth, requireRole(["admin"]), a
     const result = await db.update(approvalAuthorities).set({
       ...validatedData,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq25(approvalAuthorities.id, id)).returning();
+    }).where(eq27(approvalAuthorities.id, id)).returning();
     if (result.length === 0) {
       return res.status(404).json({
         message: "\uC2B9\uC778 \uAD8C\uD55C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4"
@@ -21035,7 +22420,7 @@ router27.put("/approval-authorities/:id", requireAuth, requireRole(["admin"]), a
     res.json(updatedAuthority);
   } catch (error) {
     console.error("\u274C Error updating approval authority:", error);
-    if (error instanceof z5.ZodError) {
+    if (error instanceof z7.ZodError) {
       return res.status(400).json({
         message: "\uC785\uB825 \uB370\uC774\uD130\uAC00 \uC62C\uBC14\uB974\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4",
         details: error.errors
@@ -21054,7 +22439,7 @@ router27.delete("/approval-authorities/:id", requireAuth, requireRole(["admin"])
     const result = await db.update(approvalAuthorities).set({
       isActive: false,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq25(approvalAuthorities.id, id)).returning();
+    }).where(eq27(approvalAuthorities.id, id)).returning();
     if (result.length === 0) {
       return res.status(404).json({
         message: "\uC2B9\uC778 \uAD8C\uD55C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4"
@@ -21077,9 +22462,9 @@ router27.get("/approval-authorities/role/:role", requireAuth, requireRole(["admi
     const { role } = req.params;
     console.log(`\u{1F4CB} Fetching approval authority for role: ${role}`);
     const authority = await db.select().from(approvalAuthorities).where(
-      and14(
-        eq25(approvalAuthorities.role, role),
-        eq25(approvalAuthorities.isActive, true)
+      and16(
+        eq27(approvalAuthorities.role, role),
+        eq27(approvalAuthorities.isActive, true)
       )
     ).limit(1);
     if (authority.length === 0) {
@@ -21119,9 +22504,9 @@ router27.post("/approval-authorities/check-permission", requireAuth, requireRole
       });
     }
     const authority = await db.select().from(approvalAuthorities).where(
-      and14(
-        eq25(approvalAuthorities.role, checkRole),
-        eq25(approvalAuthorities.isActive, true)
+      and16(
+        eq27(approvalAuthorities.role, checkRole),
+        eq27(approvalAuthorities.isActive, true)
       )
     ).limit(1);
     let canApprove = false;
@@ -21269,13 +22654,13 @@ var notifications_default = router28;
 init_db();
 init_schema();
 import { Router as Router28 } from "express";
-import { eq as eq26, and as and15, desc as desc13, count as count4 } from "drizzle-orm";
+import { eq as eq28, and as and17, desc as desc13, count as count4 } from "drizzle-orm";
 init_professional_pdf_generation_service();
 import multer6 from "multer";
 import path16 from "path";
 import fs19 from "fs/promises";
 import { readFileSync } from "fs";
-import { z as z6 } from "zod";
+import { z as z8 } from "zod";
 var router29 = Router28();
 var storage5 = multer6.diskStorage({
   destination: async (req, file, cb) => {
@@ -21308,31 +22693,31 @@ var upload6 = multer6({
     }
   }
 });
-var OrderItemSchema = z6.object({
-  itemName: z6.string().optional(),
-  specification: z6.string().optional(),
-  unit: z6.string().optional(),
-  quantity: z6.number().default(0),
-  unitPrice: z6.number().default(0),
-  totalAmount: z6.number().default(0),
-  remarks: z6.string().optional()
+var OrderItemSchema = z8.object({
+  itemName: z8.string().optional(),
+  specification: z8.string().optional(),
+  unit: z8.string().optional(),
+  quantity: z8.number().default(0),
+  unitPrice: z8.number().default(0),
+  totalAmount: z8.number().default(0),
+  remarks: z8.string().optional()
 });
-var OrderDataSchema = z6.object({
-  rowIndex: z6.number(),
-  orderDate: z6.string().optional(),
-  deliveryDate: z6.string().optional(),
-  vendorName: z6.string().optional(),
-  vendorEmail: z6.string().optional(),
-  deliveryPlace: z6.string().optional(),
-  deliveryEmail: z6.string().optional(),
-  projectName: z6.string().optional(),
-  majorCategory: z6.string().optional(),
-  middleCategory: z6.string().optional(),
-  minorCategory: z6.string().optional(),
-  items: z6.array(OrderItemSchema),
-  notes: z6.string().optional(),
-  isValid: z6.boolean().optional(),
-  errors: z6.array(z6.string()).optional()
+var OrderDataSchema = z8.object({
+  rowIndex: z8.number(),
+  orderDate: z8.string().optional(),
+  deliveryDate: z8.string().optional(),
+  vendorName: z8.string().optional(),
+  vendorEmail: z8.string().optional(),
+  deliveryPlace: z8.string().optional(),
+  deliveryEmail: z8.string().optional(),
+  projectName: z8.string().optional(),
+  majorCategory: z8.string().optional(),
+  middleCategory: z8.string().optional(),
+  minorCategory: z8.string().optional(),
+  items: z8.array(OrderItemSchema),
+  notes: z8.string().optional(),
+  isValid: z8.boolean().optional(),
+  errors: z8.array(z8.string()).optional()
 });
 router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFile"), async (req, res) => {
   console.log("\u{1F680} /bulk-create-simple - REQUEST START");
@@ -21369,7 +22754,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
         details: parseError instanceof Error ? parseError.message : String(parseError)
       });
     }
-    const validatedOrders = z6.array(OrderDataSchema).parse(ordersData);
+    const validatedOrders = z8.array(OrderDataSchema).parse(ordersData);
     const sendEmail = req.body.sendEmail === "true";
     const isDraft = req.body.isDraft === "true";
     if (validatedOrders.length === 0) {
@@ -21381,7 +22766,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
     let defaultProject;
     try {
       console.log("\u{1F50D} Fetching default project...");
-      defaultProject = await db.select().from(projects).where(eq26(projects.projectName, "\uAE30\uBCF8 \uD504\uB85C\uC81D\uD2B8")).then((rows) => rows[0]);
+      defaultProject = await db.select().from(projects).where(eq28(projects.projectName, "\uAE30\uBCF8 \uD504\uB85C\uC81D\uD2B8")).then((rows) => rows[0]);
       console.log("\u2705 Default project fetch successful");
     } catch (error) {
       console.error("\u274C Error fetching default project:", error);
@@ -21407,7 +22792,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
       try {
         let vendor = null;
         if (orderData.vendorName) {
-          const existingVendor = await db.select().from(vendors).where(eq26(vendors.name, orderData.vendorName)).then((rows) => rows[0]);
+          const existingVendor = await db.select().from(vendors).where(eq28(vendors.name, orderData.vendorName)).then((rows) => rows[0]);
           if (existingVendor) {
             vendor = existingVendor;
           } else {
@@ -21423,7 +22808,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
         }
         let project = defaultProject;
         if (orderData.projectName) {
-          const existingProject = await db.select().from(projects).where(eq26(projects.projectName, orderData.projectName)).then((rows) => rows[0]);
+          const existingProject = await db.select().from(projects).where(eq28(projects.projectName, orderData.projectName)).then((rows) => rows[0]);
           if (existingProject) {
             project = existingProject;
           }
@@ -21438,7 +22823,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
           const orderCount = await db.select().from(purchaseOrders).then((rows) => rows.length);
           const sequenceNumber = orderCount + 1 + attempts;
           orderNumber = `PO-${year}-${String(sequenceNumber).padStart(5, "0")}`;
-          const existingOrder = await db.select().from(purchaseOrders).where(eq26(purchaseOrders.orderNumber, orderNumber)).then((rows) => rows[0]);
+          const existingOrder = await db.select().from(purchaseOrders).where(eq28(purchaseOrders.orderNumber, orderNumber)).then((rows) => rows[0]);
           if (!existingOrder) {
             break;
           }
@@ -21639,7 +23024,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
           try {
             let excelAttachment = null;
             if (req.file) {
-              const attachment = await db.select().from(attachments).where(eq26(attachments.orderId, emailInfo.orderId)).then((rows) => rows[0]);
+              const attachment = await db.select().from(attachments).where(eq28(attachments.orderId, emailInfo.orderId)).then((rows) => rows[0]);
               if (attachment) {
                 excelAttachment = process.env.VERCEL ? path16.join("/tmp", "uploads", "excel-simple", attachment.storedName) : attachment.filePath;
               }
@@ -21660,7 +23045,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
               );
               if (result.success) {
                 console.log(`\u2705 Email sent successfully for order ${emailInfo.orderNumber}`);
-                await db.update(purchaseOrders).set({ status: "sent" }).where(eq26(purchaseOrders.id, emailInfo.orderId));
+                await db.update(purchaseOrders).set({ status: "sent" }).where(eq28(purchaseOrders.id, emailInfo.orderId));
                 await db.insert(orderHistory).values({
                   orderId: emailInfo.orderId,
                   userId: req.user.id,
@@ -21715,10 +23100,10 @@ router29.get("/orders/simple-upload-history", requireAuth, async (req, res) => {
       projectName: projects.projectName,
       vendorName: vendors.name,
       itemCount: count4(purchaseOrderItems.id)
-    }).from(purchaseOrders).leftJoin(projects, eq26(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq26(purchaseOrders.vendorId, vendors.id)).leftJoin(purchaseOrderItems, eq26(purchaseOrderItems.orderId, purchaseOrders.id)).leftJoin(orderHistory, eq26(orderHistory.orderId, purchaseOrders.id)).where(
-      and15(
-        eq26(purchaseOrders.userId, req.user.id),
-        eq26(orderHistory.action, "created")
+    }).from(purchaseOrders).leftJoin(projects, eq28(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq28(purchaseOrders.vendorId, vendors.id)).leftJoin(purchaseOrderItems, eq28(purchaseOrderItems.orderId, purchaseOrders.id)).leftJoin(orderHistory, eq28(orderHistory.orderId, purchaseOrders.id)).where(
+      and17(
+        eq28(purchaseOrders.userId, req.user.id),
+        eq28(orderHistory.action, "created")
       )
     ).groupBy(
       purchaseOrders.id,
@@ -21754,7 +23139,7 @@ router29.get("/orders/drafts", requireAuth, async (req, res) => {
       userId: purchaseOrders.userId,
       userName: users.name,
       notes: purchaseOrders.notes
-    }).from(purchaseOrders).leftJoin(projects, eq26(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq26(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq26(purchaseOrders.userId, users.id)).where(eq26(purchaseOrders.status, "draft")).orderBy(desc13(purchaseOrders.createdAt));
+    }).from(purchaseOrders).leftJoin(projects, eq28(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq28(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq28(purchaseOrders.userId, users.id)).where(eq28(purchaseOrders.status, "draft")).orderBy(desc13(purchaseOrders.createdAt));
     console.log(`\u{1F4DD} Found ${drafts.length} draft orders`);
     res.json({
       success: true,
@@ -21799,7 +23184,7 @@ import { Router as Router30 } from "express";
 // server/services/audit-service.ts
 init_db();
 init_schema();
-import { eq as eq27, and as and16, or as or5, gte as gte6, lte as lte6, desc as desc14, asc as asc7, sql as sql14, inArray as inArray6 } from "drizzle-orm";
+import { eq as eq29, and as and18, or as or5, gte as gte6, lte as lte6, desc as desc14, asc as asc7, sql as sql14, inArray as inArray6 } from "drizzle-orm";
 var AuditService = class {
   /**
    * 감사 로그 조회
@@ -21819,19 +23204,19 @@ var AuditService = class {
       sortOrder = "desc"
     } = params;
     const conditions = [];
-    if (userId) conditions.push(eq27(systemAuditLogs.userId, userId));
-    if (eventType) conditions.push(eq27(systemAuditLogs.eventType, eventType));
-    if (eventCategory) conditions.push(eq27(systemAuditLogs.eventCategory, eventCategory));
-    if (entityType) conditions.push(eq27(systemAuditLogs.entityType, entityType));
-    if (entityId) conditions.push(eq27(systemAuditLogs.entityId, entityId));
+    if (userId) conditions.push(eq29(systemAuditLogs.userId, userId));
+    if (eventType) conditions.push(eq29(systemAuditLogs.eventType, eventType));
+    if (eventCategory) conditions.push(eq29(systemAuditLogs.eventCategory, eventCategory));
+    if (entityType) conditions.push(eq29(systemAuditLogs.entityType, entityType));
+    if (entityId) conditions.push(eq29(systemAuditLogs.entityId, entityId));
     if (startDate) conditions.push(gte6(systemAuditLogs.createdAt, startDate));
     if (endDate) conditions.push(lte6(systemAuditLogs.createdAt, endDate));
     const orderByColumn = sortBy === "eventType" ? systemAuditLogs.eventType : sortBy === "userName" ? systemAuditLogs.userName : systemAuditLogs.createdAt;
     const orderByDirection = sortOrder === "asc" ? asc7 : desc14;
-    const query = db.select().from(systemAuditLogs).where(conditions.length > 0 ? and16(...conditions) : void 0).orderBy(orderByDirection(orderByColumn)).limit(limit).offset(offset);
+    const query = db.select().from(systemAuditLogs).where(conditions.length > 0 ? and18(...conditions) : void 0).orderBy(orderByDirection(orderByColumn)).limit(limit).offset(offset);
     const [logs, countResult] = await Promise.all([
       query,
-      db.select({ count: sql14`count(*)` }).from(systemAuditLogs).where(conditions.length > 0 ? and16(...conditions) : void 0)
+      db.select({ count: sql14`count(*)` }).from(systemAuditLogs).where(conditions.length > 0 ? and18(...conditions) : void 0)
     ]);
     return {
       logs,
@@ -21850,21 +23235,21 @@ var AuditService = class {
       eventType: systemAuditLogs.eventType,
       count: sql14`count(*)`
     }).from(systemAuditLogs).where(
-      and16(
-        eq27(systemAuditLogs.userId, userId),
+      and18(
+        eq29(systemAuditLogs.userId, userId),
         gte6(systemAuditLogs.createdAt, startDate)
       )
     ).groupBy(systemAuditLogs.eventType);
     const lastLogin = await db.select().from(systemAuditLogs).where(
-      and16(
-        eq27(systemAuditLogs.userId, userId),
-        eq27(systemAuditLogs.eventType, "login")
+      and18(
+        eq29(systemAuditLogs.userId, userId),
+        eq29(systemAuditLogs.eventType, "login")
       )
     ).orderBy(desc14(systemAuditLogs.createdAt)).limit(1);
     const failedLogins = await db.select({ count: sql14`count(*)` }).from(systemAuditLogs).where(
-      and16(
-        eq27(systemAuditLogs.userId, userId),
-        eq27(systemAuditLogs.eventType, "login_failed"),
+      and18(
+        eq29(systemAuditLogs.userId, userId),
+        eq29(systemAuditLogs.eventType, "login_failed"),
         gte6(systemAuditLogs.createdAt, startDate)
       )
     );
@@ -21897,21 +23282,21 @@ var AuditService = class {
       count: sql14`count(distinct ${systemAuditLogs.userId})`
     }).from(systemAuditLogs).where(gte6(systemAuditLogs.createdAt, startDate));
     const errors = await db.select().from(systemAuditLogs).where(
-      and16(
+      and18(
         or5(
-          eq27(systemAuditLogs.eventType, "system_error"),
-          eq27(systemAuditLogs.eventType, "security_alert"),
-          eq27(systemAuditLogs.eventType, "login_failed")
+          eq29(systemAuditLogs.eventType, "system_error"),
+          eq29(systemAuditLogs.eventType, "security_alert"),
+          eq29(systemAuditLogs.eventType, "login_failed")
         ),
         gte6(systemAuditLogs.createdAt, startDate)
       )
     ).orderBy(desc14(systemAuditLogs.createdAt)).limit(10);
     const securityEvents = await db.select().from(systemAuditLogs).where(
-      and16(
+      and18(
         or5(
-          eq27(systemAuditLogs.eventType, "login_failed"),
-          eq27(systemAuditLogs.eventType, "security_alert"),
-          eq27(systemAuditLogs.eventCategory, "security")
+          eq29(systemAuditLogs.eventType, "login_failed"),
+          eq29(systemAuditLogs.eventType, "security_alert"),
+          eq29(systemAuditLogs.eventCategory, "security")
         ),
         gte6(systemAuditLogs.createdAt, startDate)
       )
@@ -21943,7 +23328,7 @@ var AuditService = class {
         ...settings,
         updatedBy: userId,
         updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq27(auditSettings.id, existingSettings.id)).returning();
+      }).where(eq29(auditSettings.id, existingSettings.id)).returning();
       await logAuditEvent("settings_change", "system", {
         userId,
         entityType: "audit_settings",
@@ -22001,10 +23386,10 @@ var AuditService = class {
   static async getArchivedLogs(params) {
     const { userId, startDate, endDate, limit = 50, offset = 0 } = params;
     const conditions = [];
-    if (userId) conditions.push(eq27(archivedAuditLogs.userId, userId));
+    if (userId) conditions.push(eq29(archivedAuditLogs.userId, userId));
     if (startDate) conditions.push(gte6(archivedAuditLogs.createdAt, startDate));
     if (endDate) conditions.push(lte6(archivedAuditLogs.createdAt, endDate));
-    const logs = await db.select().from(archivedAuditLogs).where(conditions.length > 0 ? and16(...conditions) : void 0).orderBy(desc14(archivedAuditLogs.createdAt)).limit(limit).offset(offset);
+    const logs = await db.select().from(archivedAuditLogs).where(conditions.length > 0 ? and18(...conditions) : void 0).orderBy(desc14(archivedAuditLogs.createdAt)).limit(limit).offset(offset);
     return logs;
   }
   /**
@@ -22020,7 +23405,7 @@ var AuditService = class {
       gte6(systemAuditLogs.createdAt, startDate)
     ];
     if (userId) {
-      conditions.push(eq27(systemAuditLogs.userId, userId));
+      conditions.push(eq29(systemAuditLogs.userId, userId));
     }
     const history = await db.select({
       id: systemAuditLogs.id,
@@ -22032,7 +23417,7 @@ var AuditService = class {
       userAgent: systemAuditLogs.userAgent,
       details: systemAuditLogs.additionalDetails,
       createdAt: systemAuditLogs.createdAt
-    }).from(systemAuditLogs).where(and16(...conditions)).orderBy(desc14(systemAuditLogs.createdAt)).limit(100);
+    }).from(systemAuditLogs).where(and18(...conditions)).orderBy(desc14(systemAuditLogs.createdAt)).limit(100);
     const sessions2 = [];
     let currentSession = null;
     for (const event of history) {
@@ -22080,10 +23465,10 @@ var AuditService = class {
       inArray6(systemAuditLogs.eventType, ["data_create", "data_update", "data_delete"]),
       gte6(systemAuditLogs.createdAt, startDate)
     ];
-    if (entityType) conditions.push(eq27(systemAuditLogs.entityType, entityType));
-    if (entityId) conditions.push(eq27(systemAuditLogs.entityId, entityId));
-    if (userId) conditions.push(eq27(systemAuditLogs.userId, userId));
-    const changes = await db.select().from(systemAuditLogs).where(and16(...conditions)).orderBy(desc14(systemAuditLogs.createdAt)).limit(100);
+    if (entityType) conditions.push(eq29(systemAuditLogs.entityType, entityType));
+    if (entityId) conditions.push(eq29(systemAuditLogs.entityId, entityId));
+    if (userId) conditions.push(eq29(systemAuditLogs.userId, userId));
+    const changes = await db.select().from(systemAuditLogs).where(and18(...conditions)).orderBy(desc14(systemAuditLogs.createdAt)).limit(100);
     return changes;
   }
   /**
@@ -22094,13 +23479,13 @@ var AuditService = class {
     const startDate = /* @__PURE__ */ new Date();
     startDate.setDate(startDate.getDate() - days);
     const conditions = [
-      eq27(systemAuditLogs.eventType, "data_delete"),
+      eq29(systemAuditLogs.eventType, "data_delete"),
       gte6(systemAuditLogs.createdAt, startDate)
     ];
     if (entityType) {
-      conditions.push(eq27(systemAuditLogs.entityType, entityType));
+      conditions.push(eq29(systemAuditLogs.entityType, entityType));
     }
-    const deletions = await db.select().from(systemAuditLogs).where(and16(...conditions)).orderBy(desc14(systemAuditLogs.createdAt));
+    const deletions = await db.select().from(systemAuditLogs).where(and18(...conditions)).orderBy(desc14(systemAuditLogs.createdAt));
     const records = deletions.map((deletion) => ({
       id: deletion.id,
       entityType: deletion.entityType,
@@ -22127,10 +23512,10 @@ var AuditService = class {
       "password_change"
     ];
     const events = await db.select().from(systemAuditLogs).where(
-      and16(
+      and18(
         or5(
           inArray6(systemAuditLogs.eventType, securityEventTypes),
-          eq27(systemAuditLogs.eventCategory, "security")
+          eq29(systemAuditLogs.eventCategory, "security")
         ),
         gte6(systemAuditLogs.createdAt, startDate)
       )
@@ -22156,7 +23541,7 @@ var AuditService = class {
    * 알림 규칙 조회
    */
   static async getAlertRules() {
-    return await db.select().from(auditAlertRules).where(eq27(auditAlertRules.isActive, true)).orderBy(desc14(auditAlertRules.severity));
+    return await db.select().from(auditAlertRules).where(eq29(auditAlertRules.isActive, true)).orderBy(desc14(auditAlertRules.severity));
   }
   /**
    * 알림 규칙 생성/업데이트
@@ -22166,7 +23551,7 @@ var AuditService = class {
       return await db.update(auditAlertRules).set({
         ...rule,
         updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq27(auditAlertRules.id, rule.id)).returning();
+      }).where(eq29(auditAlertRules.id, rule.id)).returning();
     } else {
       return await db.insert(auditAlertRules).values({
         ...rule,
@@ -22195,46 +23580,46 @@ var AuditService = class {
 };
 
 // server/routes/audit.ts
-import { z as z7 } from "zod";
+import { z as z9 } from "zod";
 var router31 = Router30();
-var getAuditLogsSchema = z7.object({
-  userId: z7.string().optional(),
-  eventType: z7.string().optional(),
-  eventCategory: z7.string().optional(),
-  entityType: z7.string().optional(),
-  entityId: z7.string().optional(),
-  startDate: z7.string().optional(),
-  endDate: z7.string().optional(),
-  limit: z7.coerce.number().min(1).max(100).default(50),
-  offset: z7.coerce.number().min(0).default(0),
-  sortBy: z7.enum(["createdAt", "eventType", "userName"]).default("createdAt"),
-  sortOrder: z7.enum(["asc", "desc"]).default("desc")
+var getAuditLogsSchema = z9.object({
+  userId: z9.string().optional(),
+  eventType: z9.string().optional(),
+  eventCategory: z9.string().optional(),
+  entityType: z9.string().optional(),
+  entityId: z9.string().optional(),
+  startDate: z9.string().optional(),
+  endDate: z9.string().optional(),
+  limit: z9.coerce.number().min(1).max(100).default(50),
+  offset: z9.coerce.number().min(0).default(0),
+  sortBy: z9.enum(["createdAt", "eventType", "userName"]).default("createdAt"),
+  sortOrder: z9.enum(["asc", "desc"]).default("desc")
 });
-var updateSettingsSchema = z7.object({
-  logLevel: z7.enum(["OFF", "ERROR", "WARNING", "INFO", "DEBUG"]).optional(),
-  enabledCategories: z7.array(z7.string()).optional(),
-  retentionDays: z7.number().min(1).max(365).optional(),
-  archiveEnabled: z7.boolean().optional(),
-  archiveAfterDays: z7.number().min(1).max(180).optional(),
-  realTimeAlerts: z7.boolean().optional(),
-  alertEmails: z7.array(z7.string().email()).optional(),
-  excludedPaths: z7.array(z7.string()).optional(),
-  excludedUsers: z7.array(z7.string()).optional(),
-  sensitiveDataMasking: z7.boolean().optional(),
-  performanceTracking: z7.boolean().optional(),
-  apiAccessLogging: z7.boolean().optional()
+var updateSettingsSchema = z9.object({
+  logLevel: z9.enum(["OFF", "ERROR", "WARNING", "INFO", "DEBUG"]).optional(),
+  enabledCategories: z9.array(z9.string()).optional(),
+  retentionDays: z9.number().min(1).max(365).optional(),
+  archiveEnabled: z9.boolean().optional(),
+  archiveAfterDays: z9.number().min(1).max(180).optional(),
+  realTimeAlerts: z9.boolean().optional(),
+  alertEmails: z9.array(z9.string().email()).optional(),
+  excludedPaths: z9.array(z9.string()).optional(),
+  excludedUsers: z9.array(z9.string()).optional(),
+  sensitiveDataMasking: z9.boolean().optional(),
+  performanceTracking: z9.boolean().optional(),
+  apiAccessLogging: z9.boolean().optional()
 });
-var alertRuleSchema = z7.object({
-  id: z7.number().optional(),
-  ruleName: z7.string().min(1).max(100),
-  description: z7.string().optional(),
-  eventTypes: z7.array(z7.string()),
-  condition: z7.any().optional(),
-  severity: z7.enum(["low", "medium", "high", "critical"]),
-  alertChannels: z7.array(z7.string()),
-  recipients: z7.array(z7.string()),
-  throttleMinutes: z7.number().min(0).max(1440).optional(),
-  isActive: z7.boolean().optional()
+var alertRuleSchema = z9.object({
+  id: z9.number().optional(),
+  ruleName: z9.string().min(1).max(100),
+  description: z9.string().optional(),
+  eventTypes: z9.array(z9.string()),
+  condition: z9.any().optional(),
+  severity: z9.enum(["low", "medium", "high", "critical"]),
+  alertChannels: z9.array(z9.string()),
+  recipients: z9.array(z9.string()),
+  throttleMinutes: z9.number().min(0).max(1440).optional(),
+  isActive: z9.boolean().optional()
 });
 router31.get("/logs", requireAuth, async (req, res) => {
   try {
@@ -22411,7 +23796,7 @@ router31.put("/settings", requireAuth, requireRole(["admin"]), async (req, res) 
     const updated = await AuditService.updateSettings(settings, user.id);
     res.json(updated);
   } catch (error) {
-    if (error instanceof z7.ZodError) {
+    if (error instanceof z9.ZodError) {
       return res.status(400).json({
         message: "Invalid settings data",
         errors: error.errors
@@ -22443,7 +23828,7 @@ router31.post("/alert-rules", requireAuth, requireRole(["admin"]), async (req, r
     const result = await AuditService.upsertAlertRule(rule, user.id);
     res.json(result[0]);
   } catch (error) {
-    if (error instanceof z7.ZodError) {
+    if (error instanceof z9.ZodError) {
       return res.status(400).json({
         message: "Invalid alert rule data",
         errors: error.errors
@@ -22884,13 +24269,13 @@ var email_test_default = router32;
 // server/routes/email-settings.ts
 init_email_settings_service();
 import express3 from "express";
-import { z as z8 } from "zod";
+import { z as z10 } from "zod";
 var router33 = express3.Router();
-var EmailSettingsSchema = z8.object({
-  smtpHost: z8.string().min(1, "SMTP \uD638\uC2A4\uD2B8\uB294 \uD544\uC218\uC785\uB2C8\uB2E4"),
-  smtpPort: z8.string().regex(/^\d+$/, "\uD3EC\uD2B8\uB294 \uC22B\uC790\uC5EC\uC57C \uD569\uB2C8\uB2E4"),
-  smtpUser: z8.string().email("\uC62C\uBC14\uB978 \uC774\uBA54\uC77C \uD615\uC2DD\uC774 \uC544\uB2D9\uB2C8\uB2E4"),
-  smtpPass: z8.string().min(1, "\uBE44\uBC00\uBC88\uD638\uB294 \uD544\uC218\uC785\uB2C8\uB2E4")
+var EmailSettingsSchema = z10.object({
+  smtpHost: z10.string().min(1, "SMTP \uD638\uC2A4\uD2B8\uB294 \uD544\uC218\uC785\uB2C8\uB2E4"),
+  smtpPort: z10.string().regex(/^\d+$/, "\uD3EC\uD2B8\uB294 \uC22B\uC790\uC5EC\uC57C \uD569\uB2C8\uB2E4"),
+  smtpUser: z10.string().email("\uC62C\uBC14\uB978 \uC774\uBA54\uC77C \uD615\uC2DD\uC774 \uC544\uB2D9\uB2C8\uB2E4"),
+  smtpPass: z10.string().min(1, "\uBE44\uBC00\uBC88\uD638\uB294 \uD544\uC218\uC785\uB2C8\uB2E4")
 });
 var emailService3 = new EmailSettingsService();
 router33.get("/", async (req, res) => {
@@ -22998,7 +24383,7 @@ router33.post("/test", async (req, res) => {
       });
     }
     const { testEmail } = req.body;
-    if (!testEmail || !z8.string().email().safeParse(testEmail).success) {
+    if (!testEmail || !z10.string().email().safeParse(testEmail).success) {
       return res.status(400).json({
         success: false,
         message: "\uC720\uD6A8\uD55C \uD14C\uC2A4\uD2B8 \uC774\uBA54\uC77C \uC8FC\uC18C\uB97C \uC785\uB825\uD574\uC8FC\uC138\uC694"
@@ -23046,15 +24431,15 @@ import { Router as Router31 } from "express";
 // server/services/approval-authority-service.ts
 init_db();
 init_schema();
-import { eq as eq28, and as and17, gte as gte7 } from "drizzle-orm";
+import { eq as eq30, and as and19, gte as gte7 } from "drizzle-orm";
 var ApprovalAuthorityService = class {
   /**
    * Check user's approval authority for a given amount
    */
   async checkAuthority(user, orderAmount) {
-    const authority = await db.select().from(approvalAuthorities).where(and17(
-      eq28(approvalAuthorities.role, user.role),
-      eq28(approvalAuthorities.isActive, true)
+    const authority = await db.select().from(approvalAuthorities).where(and19(
+      eq30(approvalAuthorities.role, user.role),
+      eq30(approvalAuthorities.isActive, true)
     )).limit(1);
     if (!authority || authority.length === 0) {
       return {
@@ -23100,18 +24485,18 @@ var ApprovalAuthorityService = class {
    * Find the appropriate approver for a given amount
    */
   async findNextApprover(orderAmount) {
-    const authorities = await db.select().from(approvalAuthorities).where(and17(
+    const authorities = await db.select().from(approvalAuthorities).where(and19(
       gte7(approvalAuthorities.maxAmount, orderAmount.toString()),
-      eq28(approvalAuthorities.isActive, true)
+      eq30(approvalAuthorities.isActive, true)
     )).orderBy(approvalAuthorities.maxAmount);
     if (authorities.length === 0) {
-      const executive = await db.select().from(users).where(eq28(users.role, "executive")).limit(1);
+      const executive = await db.select().from(users).where(eq30(users.role, "executive")).limit(1);
       return executive[0]?.id;
     }
     const lowestAuthority = authorities[0];
-    const approver = await db.select().from(users).where(and17(
-      eq28(users.role, lowestAuthority.role),
-      eq28(users.isActive, true)
+    const approver = await db.select().from(users).where(and19(
+      eq30(users.role, lowestAuthority.role),
+      eq30(users.isActive, true)
     )).limit(1);
     return approver[0]?.id;
   }
@@ -23125,8 +24510,8 @@ var ApprovalAuthorityService = class {
       maxAmount: approvalAuthorities.maxAmount,
       canDirectApprove: approvalAuthorities.canDirectApprove,
       directApproveLimit: approvalAuthorities.directApproveLimit
-    }).from(approvalAuthorities).where(and17(
-      eq28(approvalAuthorities.isActive, true),
+    }).from(approvalAuthorities).where(and19(
+      eq30(approvalAuthorities.isActive, true),
       gte7(approvalAuthorities.maxAmount, orderAmount.toString())
     )).orderBy(approvalAuthorities.maxAmount);
     for (const auth of authorities) {
@@ -23135,10 +24520,10 @@ var ApprovalAuthorityService = class {
         name: users.name,
         email: users.email,
         role: users.role
-      }).from(users).where(and17(
-        eq28(users.role, auth.role),
-        eq28(users.isActive, true),
-        companyId ? eq28(users.companyId, companyId) : void 0
+      }).from(users).where(and19(
+        eq30(users.role, auth.role),
+        eq30(users.isActive, true),
+        companyId ? eq30(users.companyId, companyId) : void 0
       ));
       if (usersInRole.length > 0) {
         approvers.push({
@@ -23184,9 +24569,9 @@ var ApprovalAuthorityService = class {
       };
     }
     if (order.vendorId) {
-      const recentOrders = await db.select().from(purchaseOrders).where(and17(
-        eq28(purchaseOrders.vendorId, order.vendorId),
-        eq28(purchaseOrders.orderStatus, "delivered")
+      const recentOrders = await db.select().from(purchaseOrders).where(and19(
+        eq30(purchaseOrders.vendorId, order.vendorId),
+        eq30(purchaseOrders.orderStatus, "delivered")
         // Check orders from last 30 days
       )).limit(1);
       if (recentOrders.length > 0) {
@@ -23219,7 +24604,7 @@ var ApprovalAuthorityService = class {
         updateData.rejectionReason = comments;
         updateData.orderStatus = "draft";
       }
-      await db.update(purchaseOrders).set(updateData).where(eq28(purchaseOrders.id, orderId));
+      await db.update(purchaseOrders).set(updateData).where(eq30(purchaseOrders.id, orderId));
       return true;
     } catch (error) {
       console.error("Error processing approval:", error);
@@ -23232,13 +24617,13 @@ var approvalAuthorityService = new ApprovalAuthorityService();
 // server/services/workflow-engine.ts
 init_db();
 init_schema();
-import { eq as eq30 } from "drizzle-orm";
+import { eq as eq32 } from "drizzle-orm";
 
 // server/services/websocket-service.ts
 init_db();
 init_schema();
 import { Server as SocketIOServer } from "socket.io";
-import { eq as eq29 } from "drizzle-orm";
+import { eq as eq31 } from "drizzle-orm";
 var WebSocketService = class _WebSocketService {
   constructor() {
     this.io = null;
@@ -23264,7 +24649,7 @@ var WebSocketService = class _WebSocketService {
       console.log("\u{1F50C} WebSocket connection established:", socket.id);
       socket.on("authenticate", async (data) => {
         try {
-          const user = await db.select().from(users).where(eq29(users.id, data.userId)).then((rows) => rows[0]);
+          const user = await db.select().from(users).where(eq31(users.id, data.userId)).then((rows) => rows[0]);
           if (user) {
             const webSocketUser = {
               id: user.id,
@@ -23417,7 +24802,7 @@ var WorkflowEngine = class {
    * Process the next step in the workflow automatically
    */
   async processNextStep(orderId, userId) {
-    const order = await db.select().from(purchaseOrders).where(eq30(purchaseOrders.id, orderId)).limit(1);
+    const order = await db.select().from(purchaseOrders).where(eq32(purchaseOrders.id, orderId)).limit(1);
     if (!order || order.length === 0) {
       throw new Error(`Order ${orderId} not found`);
     }
@@ -23464,7 +24849,7 @@ var WorkflowEngine = class {
    * Track workflow progress for an order
    */
   async trackWorkflowProgress(orderId) {
-    const order = await db.select().from(purchaseOrders).where(eq30(purchaseOrders.id, orderId)).limit(1);
+    const order = await db.select().from(purchaseOrders).where(eq32(purchaseOrders.id, orderId)).limit(1);
     if (!order || order.length === 0) {
       throw new Error(`Order ${orderId} not found`);
     }
@@ -23474,7 +24859,7 @@ var WorkflowEngine = class {
       event: orderHistory.changeType,
       actor: orderHistory.userId,
       details: orderHistory.changedData
-    }).from(orderHistory).where(eq30(orderHistory.orderId, orderId)).orderBy(orderHistory.changedAt);
+    }).from(orderHistory).where(eq32(orderHistory.orderId, orderId)).orderBy(orderHistory.changedAt);
     const { currentStep, nextStep, estimatedCompletion } = this.determineWorkflowSteps(
       currentOrder.orderStatus,
       currentOrder.approvalStatus
@@ -23504,7 +24889,7 @@ var WorkflowEngine = class {
       nextApproverId: purchaseOrders.nextApproverId,
       createdBy: purchaseOrders.createdBy,
       vendorId: purchaseOrders.vendorId
-    }).from(purchaseOrders).where(eq30(purchaseOrders.id, orderId)).limit(1);
+    }).from(purchaseOrders).where(eq32(purchaseOrders.id, orderId)).limit(1);
     if (!order || order.length === 0) return;
     const currentOrder = order[0];
     switch (event) {
@@ -23537,14 +24922,14 @@ var WorkflowEngine = class {
       orderStatus: purchaseOrders.orderStatus,
       approvalStatus: purchaseOrders.approvalStatus,
       userId: purchaseOrders.userId
-    }).from(purchaseOrders).where(eq30(purchaseOrders.id, orderId)).limit(1);
+    }).from(purchaseOrders).where(eq32(purchaseOrders.id, orderId)).limit(1);
     if (!beforeOrder || beforeOrder.length === 0) return;
     await db.update(purchaseOrders).set({
       orderStatus,
       approvalStatus,
       ...additionalData,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq30(purchaseOrders.id, orderId));
+    }).where(eq32(purchaseOrders.id, orderId));
     const updatedBy = await this.getUserAsWebSocketUser(beforeOrder[0].userId);
     if (updatedBy) {
       const event = {
@@ -23577,9 +24962,9 @@ var WorkflowEngine = class {
       id: purchaseOrders.id,
       orderNumber: purchaseOrders.orderNumber,
       vendorId: purchaseOrders.vendorId
-    }).from(purchaseOrders).where(eq30(purchaseOrders.id, orderId)).limit(1);
+    }).from(purchaseOrders).where(eq32(purchaseOrders.id, orderId)).limit(1);
     if (!order || order.length === 0) return;
-    const vendor = await db.select().from(vendors).where(eq30(vendors.id, order[0].vendorId)).limit(1);
+    const vendor = await db.select().from(vendors).where(eq32(vendors.id, order[0].vendorId)).limit(1);
     if (vendor[0]?.email) {
       try {
         console.log(`Email would be sent to ${vendor[0].email} for order ${order[0].orderNumber}`);
@@ -23656,7 +25041,7 @@ var WorkflowEngine = class {
    * Get user details
    */
   async getUser(userId) {
-    const user = await db.select().from(users).where(eq30(users.id, userId)).limit(1);
+    const user = await db.select().from(users).where(eq32(users.id, userId)).limit(1);
     if (!user || user.length === 0) {
       throw new Error(`User ${userId} not found`);
     }
@@ -23672,7 +25057,7 @@ var WorkflowEngine = class {
       orderNumber: purchaseOrders.orderNumber,
       totalAmount: purchaseOrders.totalAmount,
       userId: purchaseOrders.userId
-    }).from(purchaseOrders).where(eq30(purchaseOrders.id, orderId)).limit(1);
+    }).from(purchaseOrders).where(eq32(purchaseOrders.id, orderId)).limit(1);
     if (order[0] && approver) {
       const requestedBy = await this.getUserAsWebSocketUser(order[0].userId);
       if (requestedBy) {
@@ -23739,7 +25124,7 @@ var workflowEngine = new WorkflowEngine();
 // server/routes/workflow.ts
 init_db();
 init_schema();
-import { eq as eq31 } from "drizzle-orm";
+import { eq as eq33 } from "drizzle-orm";
 var router34 = Router31();
 router34.post("/api/orders/check-approval-authority", async (req, res) => {
   try {
@@ -23751,7 +25136,7 @@ router34.post("/api/orders/check-approval-authority", async (req, res) => {
     if (!amount || amount <= 0) {
       return res.status(400).json({ message: "Invalid amount" });
     }
-    const user = await db.select().from(users).where(eq31(users.id, userId)).limit(1);
+    const user = await db.select().from(users).where(eq33(users.id, userId)).limit(1);
     if (!user || user.length === 0) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -23786,7 +25171,7 @@ router34.post("/api/orders/create-with-workflow", async (req, res) => {
       return res.status(401).json({ message: "User not authenticated" });
     }
     const orderData = req.body;
-    const user = await db.select().from(users).where(eq31(users.id, userId)).limit(1);
+    const user = await db.select().from(users).where(eq33(users.id, userId)).limit(1);
     if (!user || user.length === 0) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -23923,7 +25308,7 @@ router34.post("/api/orders/:id/confirm-delivery", async (req, res) => {
       deliveredBy: userId,
       notes: notes || void 0,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq31(purchaseOrders.id, orderId));
+    }).where(eq33(purchaseOrders.id, orderId));
     await workflowEngine.sendNotifications(orderId, "delivery_completed");
     res.json({
       message: "Delivery confirmed",
@@ -23964,7 +25349,7 @@ var workflow_default = router34;
 import { Router as Router32 } from "express";
 import multer7 from "multer";
 import xlsx from "xlsx";
-import crypto2 from "crypto";
+import crypto3 from "crypto";
 var router35 = Router32();
 var storage6 = multer7.memoryStorage();
 var upload7 = multer7({
@@ -24117,7 +25502,7 @@ ${incorrectFields.map((f) => `  \u2022 ${f}`).join("\n")}
       const warnings = [];
       let status = "valid";
       const rowString = JSON.stringify(row);
-      const hash = crypto2.createHash("sha256").update(rowString).digest("hex");
+      const hash = crypto3.createHash("sha256").update(rowString).digest("hex");
       if (hashes.has(hash)) {
         warnings.push(`\uC911\uBCF5\uB41C \uB370\uC774\uD130 (\uB3D9\uC77C\uD55C \uB0B4\uC6A9\uC774 \uC774\uBBF8 \uC874\uC7AC)`);
         duplicates.push({ row: rowNumber, data: row });
@@ -24253,16 +25638,16 @@ var excel_smart_upload_simple_default = router35;
 init_db();
 init_schema();
 import { Router as Router33 } from "express";
-import { eq as eq32 } from "drizzle-orm";
-import { z as z9 } from "zod";
+import { eq as eq34 } from "drizzle-orm";
+import { z as z11 } from "zod";
 var router36 = Router33();
 router36.post("/orders/check-approval-authority", requireAuth, async (req, res) => {
   try {
-    const schema = z9.object({
-      orderAmount: z9.number().positive()
+    const schema = z11.object({
+      orderAmount: z11.number().positive()
     });
     const { orderAmount } = schema.parse(req.body);
-    const user = await db.select().from(users).where(eq32(users.id, req.user.id)).then((rows) => rows[0]);
+    const user = await db.select().from(users).where(eq34(users.id, req.user.id)).then((rows) => rows[0]);
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
@@ -24291,26 +25676,26 @@ router36.post("/orders/check-approval-authority", requireAuth, async (req, res) 
 });
 router36.post("/orders/create-with-workflow", requireAuth, async (req, res) => {
   try {
-    const schema = z9.object({
-      orderData: z9.object({
-        projectId: z9.number(),
-        vendorId: z9.number(),
-        orderDate: z9.string(),
-        deliveryDate: z9.string().optional(),
-        totalAmount: z9.number(),
-        notes: z9.string().optional(),
-        items: z9.array(z9.object({
-          itemId: z9.number(),
-          quantity: z9.number(),
-          unitPrice: z9.number(),
-          totalAmount: z9.number(),
-          notes: z9.string().optional()
+    const schema = z11.object({
+      orderData: z11.object({
+        projectId: z11.number(),
+        vendorId: z11.number(),
+        orderDate: z11.string(),
+        deliveryDate: z11.string().optional(),
+        totalAmount: z11.number(),
+        notes: z11.string().optional(),
+        items: z11.array(z11.object({
+          itemId: z11.number(),
+          quantity: z11.number(),
+          unitPrice: z11.number(),
+          totalAmount: z11.number(),
+          notes: z11.string().optional()
         }))
       }),
-      sendEmail: z9.boolean().optional()
+      sendEmail: z11.boolean().optional()
     });
     const { orderData, sendEmail } = schema.parse(req.body);
-    const user = await db.select().from(users).where(eq32(users.id, req.user.id)).then((rows) => rows[0]);
+    const user = await db.select().from(users).where(eq34(users.id, req.user.id)).then((rows) => rows[0]);
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
@@ -24385,7 +25770,7 @@ router36.get("/orders/workflow-status/:id", requireAuth, async (req, res) => {
     if (isNaN(orderId)) {
       return res.status(400).json({ error: "Invalid order ID" });
     }
-    const order = await db.select().from(purchaseOrders).where(eq32(purchaseOrders.id, orderId)).then((rows) => rows[0]);
+    const order = await db.select().from(purchaseOrders).where(eq34(purchaseOrders.id, orderId)).then((rows) => rows[0]);
     if (!order) {
       return res.status(404).json({ error: "Order not found" });
     }
@@ -24405,13 +25790,13 @@ router36.post("/orders/:id/confirm-delivery", requireAuth, async (req, res) => {
     if (isNaN(orderId)) {
       return res.status(400).json({ error: "Invalid order ID" });
     }
-    const schema = z9.object({
-      deliveryNotes: z9.string().optional(),
-      actualDeliveryDate: z9.string().optional(),
-      receivedBy: z9.string().optional()
+    const schema = z11.object({
+      deliveryNotes: z11.string().optional(),
+      actualDeliveryDate: z11.string().optional(),
+      receivedBy: z11.string().optional()
     });
     const { deliveryNotes, actualDeliveryDate, receivedBy } = schema.parse(req.body);
-    const order = await db.select().from(purchaseOrders).where(eq32(purchaseOrders.id, orderId)).then((rows) => rows[0]);
+    const order = await db.select().from(purchaseOrders).where(eq34(purchaseOrders.id, orderId)).then((rows) => rows[0]);
     if (!order) {
       return res.status(404).json({ error: "Order not found" });
     }
@@ -24431,7 +25816,7 @@ router36.post("/orders/:id/confirm-delivery", requireAuth, async (req, res) => {
 
 \uBC30\uC1A1 \uBA54\uBAA8: ${deliveryNotes}` : deliveryNotes : order.notes,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq32(purchaseOrders.id, orderId)).returning();
+    }).where(eq34(purchaseOrders.id, orderId)).returning();
     await db.insert(orderHistory).values({
       orderId,
       userId: req.user.id,
@@ -24479,9 +25864,9 @@ router36.post("/orders/:id/approve", requireAuth, async (req, res) => {
     if (isNaN(orderId)) {
       return res.status(400).json({ error: "Invalid order ID" });
     }
-    const schema = z9.object({
-      decision: z9.enum(["approved", "rejected"]),
-      comments: z9.string().optional()
+    const schema = z11.object({
+      decision: z11.enum(["approved", "rejected"]),
+      comments: z11.string().optional()
     });
     const { decision, comments } = schema.parse(req.body);
     const success = await approvalAuthorityService.processApproval(
@@ -24526,7 +25911,7 @@ var orders_workflow_default = router36;
 init_db();
 init_schema();
 import { Router as Router34 } from "express";
-import { eq as eq33 } from "drizzle-orm";
+import { eq as eq35 } from "drizzle-orm";
 init_professional_pdf_generation_service();
 var router37 = Router34();
 router37.post("/orders/:id/create-order", requireAuth, async (req, res) => {
@@ -24536,7 +25921,7 @@ router37.post("/orders/:id/create-order", requireAuth, async (req, res) => {
     return res.status(401).json({ error: "\uC778\uC99D\uC774 \uD544\uC694\uD569\uB2C8\uB2E4." });
   }
   try {
-    const [order] = await db.select().from(purchaseOrders).where(eq33(purchaseOrders.id, orderId));
+    const [order] = await db.select().from(purchaseOrders).where(eq35(purchaseOrders.id, orderId));
     if (!order) {
       return res.status(404).json({
         error: "\uBC1C\uC8FC\uC11C\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.",
@@ -24550,7 +25935,7 @@ router37.post("/orders/:id/create-order", requireAuth, async (req, res) => {
       });
     }
     const fullOrderData = await db.query.purchaseOrders.findFirst({
-      where: eq33(purchaseOrders.id, orderId),
+      where: eq35(purchaseOrders.id, orderId),
       with: {
         vendor: true,
         project: true,
@@ -24579,7 +25964,7 @@ router37.post("/orders/:id/create-order", requireAuth, async (req, res) => {
       status: "approved",
       // 레거시 호환성
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq33(purchaseOrders.id, orderId)).returning();
+    }).where(eq35(purchaseOrders.id, orderId)).returning();
     await db.insert(orderHistory).values({
       orderId,
       userId,
@@ -24623,7 +26008,7 @@ router37.get("/orders/:id/permissions", requireAuth, async (req, res) => {
       orderStatus: purchaseOrders.orderStatus,
       approvalStatus: purchaseOrders.approvalStatus,
       userId: purchaseOrders.userId
-    }).from(purchaseOrders).where(eq33(purchaseOrders.id, orderId));
+    }).from(purchaseOrders).where(eq35(purchaseOrders.id, orderId));
     if (!order) {
       return res.status(404).json({ error: "\uBC1C\uC8FC\uC11C\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4." });
     }
@@ -24782,7 +26167,7 @@ var health_default = router38;
 init_db();
 init_schema();
 import { Router as Router36 } from "express";
-import { eq as eq34, sql as sql16, desc as desc16 } from "drizzle-orm";
+import { eq as eq36, sql as sql16, desc as desc16 } from "drizzle-orm";
 var router39 = Router36();
 router39.get("/debug/recent-drafts", async (req, res) => {
   try {
@@ -24796,7 +26181,7 @@ router39.get("/debug/recent-drafts", async (req, res) => {
       vendorId: purchaseOrders.vendorId,
       totalAmount: purchaseOrders.totalAmount,
       vendorName: vendors.name
-    }).from(purchaseOrders).leftJoin(vendors, eq34(purchaseOrders.vendorId, vendors.id)).where(eq34(purchaseOrders.status, "draft")).orderBy(desc16(purchaseOrders.createdAt)).limit(20);
+    }).from(purchaseOrders).leftJoin(vendors, eq36(purchaseOrders.vendorId, vendors.id)).where(eq36(purchaseOrders.status, "draft")).orderBy(desc16(purchaseOrders.createdAt)).limit(20);
     const allRecentOrders = await db.select({
       id: purchaseOrders.id,
       orderNumber: purchaseOrders.orderNumber,
@@ -24806,7 +26191,7 @@ router39.get("/debug/recent-drafts", async (req, res) => {
       vendorId: purchaseOrders.vendorId,
       totalAmount: purchaseOrders.totalAmount,
       vendorName: vendors.name
-    }).from(purchaseOrders).leftJoin(vendors, eq34(purchaseOrders.vendorId, vendors.id)).where(sql16`${purchaseOrders.createdAt} > ${oneHourAgo}`).orderBy(desc16(purchaseOrders.createdAt)).limit(50);
+    }).from(purchaseOrders).leftJoin(vendors, eq36(purchaseOrders.vendorId, vendors.id)).where(sql16`${purchaseOrders.createdAt} > ${oneHourAgo}`).orderBy(desc16(purchaseOrders.createdAt)).limit(50);
     const jbVendor = await db.select().from(vendors).where(sql16`${vendors.name} LIKE '%제이비엔지니어링%'`).limit(5);
     res.json({
       recentDrafts,
@@ -24828,7 +26213,7 @@ var debug_default = router39;
 init_db();
 init_schema();
 import { Router as Router37 } from "express";
-import { eq as eq35 } from "drizzle-orm";
+import { eq as eq37 } from "drizzle-orm";
 import path19 from "path";
 import fs21 from "fs";
 import jwt2 from "jsonwebtoken";
@@ -24881,7 +26266,7 @@ router40.get("/attachments/:id/download", async (req, res) => {
       uploadedBy: attachments.uploadedBy,
       uploadedAt: attachments.uploadedAt,
       fileData: attachments.fileData
-    }).from(attachments).where(eq35(attachments.id, attachmentId));
+    }).from(attachments).where(eq37(attachments.id, attachmentId));
     if (!attachment) {
       return res.status(404).json({
         error: "\uCCA8\uBD80\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.",
@@ -24981,7 +26366,7 @@ router40.delete("/attachments/:id", requireAuth, async (req, res) => {
       uploadedBy: attachments.uploadedBy,
       uploadedAt: attachments.uploadedAt,
       fileData: attachments.fileData
-    }).from(attachments).where(eq35(attachments.id, attachmentId));
+    }).from(attachments).where(eq37(attachments.id, attachmentId));
     if (!attachment) {
       return res.status(404).json({
         error: "\uCCA8\uBD80\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.",
@@ -25014,7 +26399,7 @@ router40.delete("/attachments/:id", requireAuth, async (req, res) => {
         }
       }
     }
-    const deletedRows = await db.delete(attachments).where(eq35(attachments.id, attachmentId));
+    const deletedRows = await db.delete(attachments).where(eq37(attachments.id, attachmentId));
     console.log(`\u2705 Deleted attachment record from database (affected rows: ${deletedRows})`);
     return res.json({
       success: true,
@@ -25133,7 +26518,7 @@ app.use(session({
   },
   // Force session regeneration to ensure data persistence
   genid: () => {
-    return crypto3.randomUUID();
+    return crypto4.randomUUID();
   }
 }));
 console.log("\u2705 Session middleware configured globally");

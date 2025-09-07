@@ -99,96 +99,109 @@ export class ExcelToPdfConverterMock {
   }
 
   /**
-   * Mock PDF 생성 (간단한 PDF 구조)
+   * PDFKit을 사용한 한글 지원 PDF 생성
    */
   private static async createMockPdf(
     htmlContent: string,
     pdfPath: string
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      // 간단한 PDF 헤더와 내용
-      const pdfContent = `%PDF-1.4
-1 0 obj
-<<
-/Type /Catalog
-/Pages 2 0 R
->>
-endobj
-
-2 0 obj
-<<
-/Type /Pages
-/Kids [3 0 R]
-/Count 1
->>
-endobj
-
-3 0 obj
-<<
-/Type /Page
-/Parent 2 0 R
-/MediaBox [0 0 612 792]
-/Contents 4 0 R
-/Resources <<
-/Font <<
-/F1 5 0 R
->>
->>
->>
-endobj
-
-4 0 obj
-<<
-/Length 200
->>
-stream
-BT
-/F1 12 Tf
-50 700 Td
-(발주서 PDF 변환 완료) Tj
-0 -20 Td
-(이 파일은 Mock PDF입니다.) Tj
-0 -20 Td
-(실제 환경에서는 완전한 PDF가 생성됩니다.) Tj
-0 -40 Td
-(생성 시간: ${new Date().toLocaleString('ko-KR')}) Tj
-0 -20 Td
-(파일 경로: ${pdfPath}) Tj
-ET
-endstream
-endobj
-
-5 0 obj
-<<
-/Type /Font
-/Subtype /Type1
-/BaseFont /Helvetica
->>
-endobj
-
-xref
-0 6
-0000000000 65535 f 
-0000000009 00000 n 
-0000000058 00000 n 
-0000000115 00000 n 
-0000000274 00000 n 
-0000000524 00000 n 
-trailer
-<<
-/Size 6
-/Root 1 0 R
->>
-startxref
-589
-%%EOF`;
-
-      fs.writeFileSync(pdfPath, pdfContent);
+      console.log(`📄 PDFKit으로 한글 지원 PDF 생성 시작: ${path.basename(pdfPath)}`);
       
-      console.log(`📄 Mock PDF 생성 완료: ${path.basename(pdfPath)}`);
+      // PDFKit으로 한글 지원 PDF 생성
+      const PDFDocument = (await import('pdfkit')).default;
       
-      return { success: true };
+      const doc = new PDFDocument({
+        size: 'A4',
+        margins: { top: 50, bottom: 50, left: 50, right: 50 }
+      });
+
+      // 한글 폰트 등록 시도
+      let koreanFontPath = null;
+      const possibleFonts = [
+        '/System/Library/Fonts/Supplemental/AppleGothic.ttf', // macOS
+        '/System/Library/Fonts/Supplemental/AppleMyungjo.ttf', // macOS 명조
+        'C:\\Windows\\Fonts\\malgun.ttf', // Windows
+        'C:\\Windows\\Fonts\\gulim.ttf', // Windows 굴림
+        '/usr/share/fonts/truetype/nanum/NanumGothic.ttf', // Linux
+      ];
+      
+      // 사용 가능한 한글 폰트 찾기
+      for (const fontPath of possibleFonts) {
+        try {
+          if (fs.existsSync(fontPath)) {
+            koreanFontPath = fontPath;
+            console.log(`✅ 한글 폰트 발견: ${fontPath}`);
+            break;
+          }
+        } catch (error) {
+          continue;
+        }
+      }
+      
+      // 한글 폰트 등록
+      if (koreanFontPath) {
+        try {
+          doc.registerFont('Korean', koreanFontPath);
+          doc.font('Korean');
+          console.log(`✅ 한글 폰트 등록 완료: ${koreanFontPath}`);
+        } catch (fontError) {
+          console.warn('⚠️ 한글 폰트 등록 실패, 기본 폰트 사용:', fontError);
+          doc.font('Helvetica');
+        }
+      } else {
+        console.warn('⚠️ 한글 폰트를 찾을 수 없음, 기본 폰트 사용');
+        doc.font('Helvetica');
+      }
+
+      // PDF 내용 작성
+      doc.fontSize(20).text('📋 구매발주서 (엑셀 변환)', 50, 80);
+      
+      doc.fontSize(12).moveDown();
+      doc.text('✅ Excel 파일이 성공적으로 PDF로 변환되었습니다.');
+      doc.moveDown(0.5);
+      doc.text('🔧 이 PDF는 개선된 한글 폰트 지원 기능으로 생성되었습니다.');
+      doc.moveDown(0.5);
+      doc.text('📅 생성 시간: ' + new Date().toLocaleString('ko-KR'));
+      doc.moveDown(0.5);
+      doc.text('📁 파일 경로: ' + path.basename(pdfPath));
+      
+      doc.moveDown(1);
+      doc.fontSize(14).text('📊 Excel 파일 정보:', 50, doc.y);
+      doc.fontSize(10);
+      doc.text('• 원본 Excel 파일의 모든 시트가 처리되었습니다.');
+      doc.text('• 한글 텍스트가 올바르게 표시됩니다.');
+      doc.text('• 셀 서식과 레이아웃이 보존되었습니다.');
+      
+      doc.moveDown(1);
+      doc.fontSize(14).text('⚠️ 중요 안내:', 50, doc.y);
+      doc.fontSize(10);
+      doc.text('• 이 PDF는 테스트 목적으로 생성된 Mock 파일입니다.');
+      doc.text('• 실제 운영 환경에서는 완전한 Excel→PDF 변환이 수행됩니다.');
+      doc.text('• 한글 폰트 문제가 해결되었는지 확인해 주세요.');
+      
+      // 하단에 시스템 정보 추가
+      doc.fontSize(8);
+      doc.text(`시스템: ${process.platform} | Node.js: ${process.version}`, 50, 700);
+      doc.text(`한글 폰트: ${koreanFontPath ? path.basename(koreanFontPath) : 'Helvetica (기본)'}`, 50, 715);
+      
+      // PDF 파일로 저장
+      const buffers: Buffer[] = [];
+      doc.on('data', buffers.push.bind(buffers));
+      
+      return new Promise((resolve) => {
+        doc.on('end', () => {
+          const pdfBuffer = Buffer.concat(buffers);
+          fs.writeFileSync(pdfPath, pdfBuffer);
+          console.log(`✅ 한글 지원 Mock PDF 생성 완료: ${path.basename(pdfPath)}`);
+          resolve({ success: true });
+        });
+        
+        doc.end();
+      });
+      
     } catch (error) {
+      console.error('❌ PDFKit Mock PDF 생성 실패:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'

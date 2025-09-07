@@ -11,20 +11,28 @@ const router = Router();
 // Schema for creating email history
 const createEmailHistorySchema = z.object({
   orderId: z.number(),
-  recipientEmail: z.string().email(),
-  recipientName: z.string().optional(),
-  ccEmails: z.string().optional(),
+  orderNumber: z.string().optional(),
+  recipients: z.array(z.object({
+    email: z.string().email(),
+    name: z.string().optional(),
+  })),
+  cc: z.array(z.object({
+    email: z.string().email(),
+    name: z.string().optional(),
+  })).optional(),
+  bcc: z.array(z.object({
+    email: z.string().email(),
+    name: z.string().optional(),
+  })).optional(),
   subject: z.string(),
-  body: z.string(),
-  attachments: z.array(z.object({
+  messageContent: z.string(),
+  attachmentFiles: z.array(z.object({
     filename: z.string(),
     path: z.string(),
     size: z.number(),
   })).optional(),
-  status: z.enum(['sent', 'failed', 'bounced', 'opened', 'clicked']).default('sent'),
+  status: z.string().default('pending'),
   errorMessage: z.string().optional(),
-  emailProvider: z.string().default('naver'),
-  messageId: z.string().optional(),
 });
 
 // Get email history for a specific order
@@ -50,25 +58,24 @@ router.get("/orders/:orderId/email-history", requireAuth, async (req, res) => {
         id: emailSendHistory.id,
         orderId: emailSendHistory.orderId,
         sentAt: emailSendHistory.sentAt,
-        sentBy: emailSendHistory.sentBy,
+        sentBy: emailSendHistory.senderUserId,
         sentByName: users.name,
         sentByEmail: users.email,
-        recipientEmail: emailSendHistory.recipientEmail,
-        recipientName: emailSendHistory.recipientName,
-        ccEmails: emailSendHistory.ccEmails,
+        recipients: emailSendHistory.recipients,
+        cc: emailSendHistory.cc,
+        bcc: emailSendHistory.bcc,
         subject: emailSendHistory.subject,
-        body: emailSendHistory.body,
-        attachments: emailSendHistory.attachments,
+        body: emailSendHistory.messageContent,
+        attachments: emailSendHistory.attachmentFiles,
         status: emailSendHistory.status,
         errorMessage: emailSendHistory.errorMessage,
-        openedAt: emailSendHistory.openedAt,
-        clickedAt: emailSendHistory.clickedAt,
-        trackingId: emailSendHistory.trackingId,
-        emailProvider: emailSendHistory.emailProvider,
-        messageId: emailSendHistory.messageId,
+        sentCount: emailSendHistory.sentCount,
+        failedCount: emailSendHistory.failedCount,
+        createdAt: emailSendHistory.createdAt,
+        updatedAt: emailSendHistory.updatedAt,
       })
       .from(emailSendHistory)
-      .leftJoin(users, eq(emailSendHistory.sentBy, users.id))
+      .leftJoin(users, eq(emailSendHistory.senderUserId, users.id))
       .where(eq(emailSendHistory.orderId, orderId))
       .orderBy(desc(emailSendHistory.sentAt));
 
@@ -83,17 +90,13 @@ router.get("/orders/:orderId/email-history", requireAuth, async (req, res) => {
 router.post("/email-history", requireAuth, async (req, res) => {
   try {
     const validatedData = createEmailHistorySchema.parse(req.body);
-    
-    // Create tracking ID
-    const trackingId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
     const [newEmailHistory] = await db
       .insert(emailSendHistory)
       .values({
         ...validatedData,
-        sentBy: req.user!.id,
-        trackingId,
-        attachments: validatedData.attachments || null,
+        senderUserId: req.user!.id,
+        attachmentFiles: validatedData.attachmentFiles || null,
       })
       .returning();
 
@@ -133,8 +136,7 @@ router.get("/orders-email-status", requireAuth, async (req, res) => {
           orderNumber: purchaseOrders.orderNumber,
           emailStatus: emailSendHistory.status,
           lastSentAt: emailSendHistory.sentAt,
-          recipientEmail: emailSendHistory.recipientEmail,
-          openedAt: emailSendHistory.openedAt,
+          recipients: emailSendHistory.recipients,
         })
         .from(purchaseOrders)
         .leftJoin(emailSendHistory, eq(purchaseOrders.id, emailSendHistory.orderId))
@@ -150,8 +152,7 @@ router.get("/orders-email-status", requireAuth, async (req, res) => {
           orderNumber: purchaseOrders.orderNumber,
           emailStatus: sql`null`.as('email_status'),
           lastSentAt: sql`null`.as('last_sent_at'),
-          recipientEmail: sql`null`.as('recipient_email'),
-          openedAt: sql`null`.as('opened_at'),
+          recipients: sql`null`.as('recipients'),
         })
         .from(purchaseOrders)
         .orderBy(desc(purchaseOrders.id));
@@ -164,46 +165,33 @@ router.get("/orders-email-status", requireAuth, async (req, res) => {
   }
 });
 
-// Update email tracking status (for open/click tracking)
-router.put("/email-tracking/:trackingId", async (req, res) => {
+// Update email status
+router.put("/email-history/:id/status", requireAuth, async (req, res) => {
   try {
-    const { trackingId } = req.params;
-    const { action } = req.body; // 'opened' or 'clicked'
+    const emailId = parseInt(req.params.id);
+    if (isNaN(emailId)) {
+      return res.status(400).json({ error: "Invalid email ID" });
+    }
+
+    const { status } = req.body;
     
-    if (!['opened', 'clicked'].includes(action)) {
-      return res.status(400).json({ error: "Invalid action" });
-    }
-
-    const updateData: any = {};
-    if (action === 'opened') {
-      updateData.openedAt = new Date();
-      updateData.status = 'opened';
-    } else if (action === 'clicked') {
-      updateData.clickedAt = new Date();
-      updateData.status = 'clicked';
-    }
-
-    // Update tracking info
-    if (req.headers['x-forwarded-for'] || req.ip) {
-      updateData.ipAddress = (req.headers['x-forwarded-for'] as string || req.ip).split(',')[0];
-    }
-    if (req.headers['user-agent']) {
-      updateData.userAgent = req.headers['user-agent'];
+    if (!['pending', 'sent', 'failed'].includes(status)) {
+      return res.status(400).json({ error: "Invalid status" });
     }
 
     const [updated] = await db
       .update(emailSendHistory)
-      .set(updateData)
-      .where(eq(emailSendHistory.trackingId, trackingId))
+      .set({ status, updatedAt: new Date() })
+      .where(eq(emailSendHistory.id, emailId))
       .returning();
 
     if (!updated) {
       return res.status(404).json({ error: "Email not found" });
     }
 
-    res.json({ success: true });
+    res.json(updated);
   } catch (error) {
-    console.error("Error updating email tracking:", error);
+    console.error("Error updating email status:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -223,29 +211,26 @@ router.get("/email-history/:id", requireAuth, async (req, res) => {
         orderNumber: purchaseOrders.orderNumber,
         vendorName: vendors.name,
         sentAt: emailSendHistory.sentAt,
-        sentBy: emailSendHistory.sentBy,
+        senderUserId: emailSendHistory.senderUserId,
         sentByName: users.name,
         sentByEmail: users.email,
-        recipientEmail: emailSendHistory.recipientEmail,
-        recipientName: emailSendHistory.recipientName,
-        ccEmails: emailSendHistory.ccEmails,
+        recipients: emailSendHistory.recipients,
+        cc: emailSendHistory.cc,
+        bcc: emailSendHistory.bcc,
         subject: emailSendHistory.subject,
-        body: emailSendHistory.body,
-        attachments: emailSendHistory.attachments,
+        messageContent: emailSendHistory.messageContent,
+        attachmentFiles: emailSendHistory.attachmentFiles,
         status: emailSendHistory.status,
         errorMessage: emailSendHistory.errorMessage,
-        openedAt: emailSendHistory.openedAt,
-        clickedAt: emailSendHistory.clickedAt,
-        ipAddress: emailSendHistory.ipAddress,
-        userAgent: emailSendHistory.userAgent,
-        trackingId: emailSendHistory.trackingId,
-        emailProvider: emailSendHistory.emailProvider,
-        messageId: emailSendHistory.messageId,
+        sentCount: emailSendHistory.sentCount,
+        failedCount: emailSendHistory.failedCount,
+        createdAt: emailSendHistory.createdAt,
+        updatedAt: emailSendHistory.updatedAt,
       })
       .from(emailSendHistory)
       .leftJoin(purchaseOrders, eq(emailSendHistory.orderId, purchaseOrders.id))
       .leftJoin(vendors, eq(purchaseOrders.vendorId, vendors.id))
-      .leftJoin(users, eq(emailSendHistory.sentBy, users.id))
+      .leftJoin(users, eq(emailSendHistory.senderUserId, users.id))
       .where(eq(emailSendHistory.id, emailId));
 
     if (!email || email.length === 0) {

@@ -724,6 +724,19 @@ export default function Admin() {
                             {getSortIcon('name', userSortField, userSortDirection)}
                           </div>
                         </TableHead>
+                        <TableHead 
+                          className={`px-3 py-3 text-xs cursor-pointer transition-colors ${
+                            isDarkMode 
+                              ? 'text-gray-400 hover:bg-gray-700' 
+                              : 'text-gray-600 hover:bg-gray-50'
+                          }`}
+                          onClick={() => handleUserSort('email')}
+                        >
+                          <div className="flex items-center gap-1">
+                            이메일
+                            {getSortIcon('email', userSortField, userSortDirection)}
+                          </div>
+                        </TableHead>
                         <TableHead className={`px-3 py-3 text-xs transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>역할</TableHead>
                         <TableHead className={`px-3 py-3 text-xs transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>연락처</TableHead>
                         <TableHead className={`px-3 py-3 text-xs transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>상태</TableHead>
@@ -740,11 +753,13 @@ export default function Admin() {
                                   {user.name?.[0] || 'U'}
                                 </AvatarFallback>
                               </Avatar>
-                              <div>
-                                <div className={`font-medium text-xs transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{user.name}</div>
-                                <div className={`text-xs transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{user.email}</div>
+                              <div className={`font-medium text-xs transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                                {user.name}
                               </div>
                             </div>
+                          </TableCell>
+                          <TableCell className={`px-3 py-3 text-xs transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
+                            {user.email}
                           </TableCell>
                           <TableCell className="px-3 py-3">
                             <RoleDisplay role={user.role} />

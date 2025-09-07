@@ -443,13 +443,21 @@ export default function Profile() {
                   <p className={`text-sm transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                     비밀번호를 변경하려면 아래 버튼을 클릭하세요.
                   </p>
-                  <Button 
-                    onClick={() => setShowPasswordForm(true)}
-                    className={`w-full transition-colors ${isDarkMode ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
-                    variant="outline"
-                  >
-                    비밀번호 변경하기
-                  </Button>
+                  <div className="space-y-2">
+                    <Button 
+                      onClick={() => setShowPasswordForm(true)}
+                      className={`w-full transition-colors ${isDarkMode ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                      variant="outline"
+                    >
+                      여기서 바로 변경하기
+                    </Button>
+                    <Button 
+                      onClick={() => navigate('/change-password')}
+                      className={`w-full transition-colors ${isDarkMode ? 'bg-blue-600 hover:bg-blue-500 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
+                    >
+                      전용 페이지에서 변경하기
+                    </Button>
+                  </div>
                 </div>
               ) : (
                 <form onSubmit={handlePasswordSubmit} className="space-y-4">

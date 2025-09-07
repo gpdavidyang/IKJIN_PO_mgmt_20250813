@@ -27,6 +27,7 @@ import { ProtectedRoute, AdminRoute } from "@/components/ProtectedRoute";
 import RegisterPage from "@/pages/register";
 import ForgotPasswordPage from "@/pages/forgot-password";
 import ResetPasswordPage from "@/pages/reset-password";
+import { ChangePasswordPage } from "@/pages/change-password";
 
 // Import dynamic loading utilities
 import {
@@ -398,6 +399,13 @@ const Layout = React.memo(function Layout() {
                 <Suspense fallback={<FormLoadingFallback />}>
                   <Profile />
                 </Suspense>
+              </Route>
+              <Route path="/change-password">
+                <ProtectedRoute>
+                  <Suspense fallback={<FormLoadingFallback />}>
+                    <ChangePasswordPage />
+                  </Suspense>
+                </ProtectedRoute>
               </Route>
               <Route path="/reports">
                 <Suspense fallback={<PageLoadingFallback />}>

@@ -183,7 +183,7 @@ export default function OrderEdit() {
 
   const updateOrderMutation = useMutation({
     mutationFn: async (data: any) => {
-      return await apiRequest("PATCH", `/api/orders/${orderId}`, data);
+      return await apiRequest("PUT", `/api/orders/${orderId}`, data);
     },
     onSuccess: () => {
       toast({
