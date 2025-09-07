@@ -55,6 +55,13 @@ export const LazyOrderForm = lazy(() =>
   }))
 );
 
+// Lazy load page components  
+export const LazyCreateStandardOrder = lazy(() => 
+  import('@/pages/create-order-standard-professional').then(module => ({ 
+    default: module.default 
+  }))
+);
+
 export const LazyVendorForm = lazy(() => 
   import('@/components/vendor-form').then(module => ({ 
     default: module.default 

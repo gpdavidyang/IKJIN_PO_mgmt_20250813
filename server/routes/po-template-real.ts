@@ -293,6 +293,8 @@ router.post('/save', simpleAuth, async (req: any, res) => {
       try {
         // 실제 DB에 저장 시도
         let savedOrders = 0;
+        const savedOrderNumbers: string[] = [];
+        const pdfGenerationStatuses: any[] = [];
         
         for (const orderData of orders) {
           // 1. 거래처 찾기 또는 생성
@@ -420,6 +422,12 @@ router.post('/save', simpleAuth, async (req: any, res) => {
           // PDF 파일 생성 및 저장 - gatherComprehensiveOrderData 사용
           let pdfBuffer: Buffer;
           let pdfBase64: string;
+          let pdfGenerationStatus = {
+            orderNumber,
+            success: false,
+            message: '',
+            attachmentId: null as number | null
+          };
           
           try {
             console.log('📄 PDF 생성 시작:', orderNumber);
@@ -579,7 +587,7 @@ router.post('/save', simpleAuth, async (req: any, res) => {
             const pdfOriginalName = `PO_Professional_${cleanOrderNumber}_${Date.now()}.pdf`;
             const pdfStoredName = `PO_Professional_${cleanOrderNumber}_${Date.now()}.pdf`;
             
-            await db.insert(attachments).values({
+            const pdfAttachment = await db.insert(attachments).values({
               orderId: newOrder[0].id,
               originalName: pdfOriginalName,  // 한글 포함 파일명
               storedName: pdfStoredName,  // 영문 저장용 파일명
@@ -588,12 +596,22 @@ router.post('/save', simpleAuth, async (req: any, res) => {
               mimeType: 'application/pdf',
               uploadedBy: req.user?.id || 'system',
               fileData: pdfBase64
-            });
+            }).returning();
+            
+            pdfGenerationStatus = {
+              orderNumber,
+              success: true,
+              message: `PDF 파일이 성공적으로 생성되었습니다 (${orderNumber}.pdf)`,
+              attachmentId: pdfAttachment[0].id
+            };
             
             console.log('✅ PDF 생성 및 저장 완료:', orderNumber);
           } catch (pdfError) {
             console.error('❌ PDF 생성 실패 (계속 진행):', pdfError);
+            pdfGenerationStatus.message = `PDF 생성 실패: ${pdfError instanceof Error ? pdfError.message : '알 수 없는 오류'}`;
           }
+          
+          pdfGenerationStatuses.push(pdfGenerationStatus);
           
           // Excel 파일 저장 (Input 시트 제거된 파일)
           if (extractedFilePath && fs.existsSync(extractedFilePath)) {
@@ -625,6 +643,7 @@ router.post('/save', simpleAuth, async (req: any, res) => {
           }
           
           savedOrders++;
+          savedOrderNumbers.push(orderNumber);
         }
         
         res.json({
@@ -632,7 +651,9 @@ router.post('/save', simpleAuth, async (req: any, res) => {
           message: '실제 DB 저장 완료',
           data: {
             savedOrders,
-            usingMockDB: false
+            savedOrderNumbers,
+            usingMockDB: false,
+            pdfGenerationStatuses
           }
         });
         

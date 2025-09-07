@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { FileSpreadsheet, Upload, Info, CheckCircle, AlertCircle, Download, AlertTriangle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface UploadResponse {
   success: boolean;
@@ -32,6 +33,7 @@ interface ProcessingStep {
 export default function CreateOrderExcel() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [file, setFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [processing, setProcessing] = useState(false);
@@ -172,10 +174,37 @@ export default function CreateOrderExcel() {
 
       updateProcessingStep('save', 'completed', `발주서 ${saveData.data.savedOrders}개 저장 완료 (PDF/Excel 파일 포함)`);
 
+      // PDF 생성 상태에 대한 toast 메시지 표시
+      if (saveData.data.pdfGenerationStatuses && saveData.data.pdfGenerationStatuses.length > 0) {
+        saveData.data.pdfGenerationStatuses.forEach((status: any) => {
+          if (status.success) {
+            toast({
+              title: "PDF 생성 성공",
+              description: status.message,
+              duration: 5000,
+            });
+          } else if (status.message) {
+            toast({
+              title: "PDF 생성 실패",
+              description: status.message,
+              variant: "destructive",
+              duration: 7000,
+            });
+          }
+        });
+      }
+
       // 저장된 발주서 번호들 저장
       if (saveData.data.savedOrderNumbers && saveData.data.savedOrderNumbers.length > 0) {
         setSavedOrderNumbers(saveData.data.savedOrderNumbers);
         console.log('저장된 발주서 번호들:', saveData.data.savedOrderNumbers);
+        
+        // DB 저장 성공 toast 메시지
+        toast({
+          title: "발주서 저장 완료",
+          description: `${saveData.data.savedOrderNumbers.length}개의 발주서가 데이터베이스에 저장되었습니다.`,
+          duration: 5000,
+        });
       }
 
       // Invalidate orders queries to refresh the orders list
