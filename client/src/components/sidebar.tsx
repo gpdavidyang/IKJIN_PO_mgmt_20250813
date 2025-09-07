@@ -42,7 +42,7 @@ const navigationSections = [
       { name: "대시보드", href: "/", icon: Home },
       { 
         name: "발주서 작성", 
-        href: "/create-order",
+        href: "/create-order-standard-professional",
         icon: Plus,
         highlight: true, // 주요 기능 강조
       },
