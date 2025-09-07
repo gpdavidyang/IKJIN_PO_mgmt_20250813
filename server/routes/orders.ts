@@ -548,24 +548,9 @@ router.post("/orders", requireAuth, upload.array('attachments'), async (req, res
           attachmentNames: orderAttachments?.map(a => a.originalName) || []
         };
         
-        const fallbackResult = await EnhancedPDFGenerationService.generateEnhancedPurchaseOrderPDF(
-          order.id,
-          enhancedPdfData,
-          userId
-        );
-        
-        if (fallbackResult.success) {
-          console.log("✅ ORDERS.TS - Fallback Enhanced PDF generated successfully:", fallbackResult.pdfPath);
-          pdfGenerationStatus = {
-            success: true,
-            message: 'PDF 파일이 생성되었습니다 (대체 방식)',
-            pdfPath: fallbackResult.pdfPath,
-            attachmentId: fallbackResult.attachmentId
-          };
-        } else {
-          console.error("⚠️ ORDERS.TS - Fallback Enhanced PDF also failed:", fallbackResult.error);
-          pdfGenerationStatus.message = 'PDF 생성에 실패했습니다. 관리자에게 문의하세요.';
-        }
+        console.error("⚠️ ORDERS.TS - PROFESSIONAL PDF generation failed:", pdfResult.error);
+        pdfGenerationStatus.message = `PDF 생성 실패: ${pdfResult.error}`;
+        // Note: Fallback PDF generation removed - using ProfessionalPDFGenerationService as primary method
       }
     } catch (pdfError) {
       console.error("❌ ORDERS.TS - Error generating PDF:", pdfError);
