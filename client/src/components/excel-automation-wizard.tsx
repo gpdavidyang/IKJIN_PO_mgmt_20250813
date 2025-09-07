@@ -8,7 +8,7 @@
  * 4. 이메일 발송 및 결과
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,7 +27,10 @@ import {
   AlertTriangle,
   Send,
   Download,
-  Trash2
+  Trash2,
+  Clock,
+  Info,
+  Loader2
 } from 'lucide-react';
 import { VendorValidationModal } from './vendor-validation-modal';
 import { EmailSendDialog } from './email-send-dialog';
@@ -90,14 +93,26 @@ export function ExcelAutomationWizard() {
   const [processingSteps, setProcessingSteps] = useState<ProcessingStep[]>([
     {
       id: 'upload',
-      title: '파일 업로드 및 파싱',
-      description: 'Excel 파일을 업로드하고 Input 시트를 파싱합니다',
+      title: '파일 업로드',
+      description: 'Excel 파일을 서버로 업로드합니다',
+      status: 'pending'
+    },
+    {
+      id: 'parse',
+      title: 'Excel 파싱',
+      description: 'Input 시트를 파싱하여 발주서 데이터를 추출합니다',
       status: 'pending'
     },
     {
       id: 'save',
       title: '데이터베이스 저장',
       description: '발주서 데이터를 데이터베이스에 저장합니다',
+      status: 'pending'
+    },
+    {
+      id: 'pdf',
+      title: 'PDF 생성',
+      description: '각 발주서에 대한 PDF 파일을 생성합니다',
       status: 'pending'
     },
     {
@@ -108,8 +123,8 @@ export function ExcelAutomationWizard() {
     },
     {
       id: 'preview',
-      title: '이메일 미리보기',
-      description: '발송할 이메일 내용과 수신자를 확인합니다',
+      title: '이메일 준비',
+      description: '발송할 이메일 내용과 수신자를 준비합니다',
       status: 'pending'
     }
   ]);
@@ -127,6 +142,13 @@ export function ExcelAutomationWizard() {
   // EmailSendDialog 상태
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [currentOrderForEmail, setCurrentOrderForEmail] = useState<any>(null);
+  
+  // Progress tracking states
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [progressDetails, setProgressDetails] = useState<Record<string, any>>({});
+  const [eventSource, setEventSource] = useState<EventSource | null>(null);
+  const [showEmailOptions, setShowEmailOptions] = useState(false);
+  const [processingComplete, setProcessingComplete] = useState(false);
 
   // 파일 드롭 핸들러
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
@@ -141,11 +163,28 @@ export function ExcelAutomationWizard() {
     setProcessingSteps(steps => steps.map(step => ({ ...step, status: 'pending' })));
 
     try {
+      // Create session and connect to SSE
+      const sessionResponse = await fetch('/api/excel-automation/create-session', {
+        method: 'POST',
+        credentials: 'include'
+      });
+      
+      if (!sessionResponse.ok) {
+        throw new Error('세션 생성 실패');
+      }
+      
+      const { sessionId: newSessionId } = await sessionResponse.json();
+      setSessionId(newSessionId);
+      
+      // Connect to SSE for real-time updates
+      connectToSSE(newSessionId);
+      
       // 1단계: 파일 업로드 및 처리
       updateStepStatus('upload', 'processing');
       
       const formData = new FormData();
       formData.append('file', file);
+      formData.append('sessionId', newSessionId);
 
       console.log('📤 [클라이언트] 파일 업로드 시작:', {
         fileName: file.name,
@@ -195,11 +234,7 @@ export function ExcelAutomationWizard() {
         throw new Error(result.error || '파일 처리 실패');
       }
 
-      updateStepStatus('upload', 'completed');
-      updateStepStatus('save', 'completed');
-      updateStepStatus('validate', 'completed');
-      updateStepStatus('preview', 'completed');
-
+      // Status updates now come via SSE, so we just store the data
       setAutomationData(result.data);
       
       // 거래처 검증이 필요한 경우 모달 표시
@@ -261,13 +296,76 @@ export function ExcelAutomationWizard() {
     }
   });
 
-  const updateStepStatus = (stepId: string, status: ProcessingStep['status']) => {
+  const updateStepStatus = (stepId: string, status: ProcessingStep['status'], description?: string) => {
     setProcessingSteps(steps =>
       steps.map(step =>
-        step.id === stepId ? { ...step, status } : step
+        step.id === stepId ? { ...step, status, description: description || step.description } : step
       )
     );
   };
+
+  // Connect to SSE for real-time progress updates
+  const connectToSSE = (sessionId: string) => {
+    // Close existing connection if any
+    if (eventSource) {
+      eventSource.close();
+    }
+    
+    const source = new EventSource(`/api/excel-automation/progress/${sessionId}`);
+    
+    source.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        console.log('📊 SSE Progress Update:', data);
+        
+        // Update step status and description
+        if (data.step && data.status) {
+          updateStepStatus(data.step, data.status, data.message);
+          
+          // Store progress details
+          if (data.details) {
+            setProgressDetails(prev => ({
+              ...prev,
+              [data.step]: data.details
+            }));
+          }
+          
+          // Check if all steps are completed
+          if (data.step === 'cleanup' && data.status === 'completed') {
+            setProcessingComplete(true);
+            setShowEmailOptions(true);
+            setIsProcessing(false);
+            // Close SSE connection after processing is complete
+            setTimeout(() => {
+              if (source) {
+                source.close();
+                setEventSource(null);
+              }
+            }, 1000); // Small delay to ensure last message is received
+          }
+        }
+      } catch (error) {
+        console.error('Error parsing SSE data:', error);
+      }
+    };
+    
+    source.onerror = (error) => {
+      console.error('SSE connection error:', error);
+      source.close();
+      setEventSource(null);
+    };
+    
+    setEventSource(source);
+  };
+
+  // Clean up EventSource on unmount
+  useEffect(() => {
+    return () => {
+      if (eventSource) {
+        eventSource.close();
+      }
+    };
+  }, [eventSource]);
 
   const handleVendorSelection = async (selections: typeof selectedVendors) => {
     if (!automationData?.filePath) return;
@@ -399,6 +497,13 @@ export function ExcelAutomationWizard() {
     setSelectedVendors([]);
     setEmailResults(null);
     setProcessingSteps(steps => steps.map(step => ({ ...step, status: 'pending' })));
+    setShowEmailOptions(false);
+    setProcessingComplete(false);
+    setProgressDetails({});
+    if (eventSource) {
+      eventSource.close();
+      setEventSource(null);
+    }
   };
 
   const formatFileSize = (bytes: number) => {
@@ -528,7 +633,32 @@ export function ExcelAutomationWizard() {
                       {renderStepIcon(step.status)}
                       <div className="flex-1">
                         <div className={`font-medium transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{step.title}</div>
-                        <div className={`text-sm transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{step.description}</div>
+                        <div className={`text-sm transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                          {step.description}
+                          {/* Show PDF generation progress */}
+                          {step.id === 'pdf' && progressDetails.pdf && (
+                            <div className="mt-1">
+                              {progressDetails.pdf.current !== undefined && progressDetails.pdf.total && (
+                                <div className="flex items-center gap-2">
+                                  <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                    <div 
+                                      className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                                      style={{ width: `${(progressDetails.pdf.current / progressDetails.pdf.total) * 100}%` }}
+                                    />
+                                  </div>
+                                  <span className="text-xs">
+                                    {progressDetails.pdf.current}/{progressDetails.pdf.total}
+                                  </span>
+                                </div>
+                              )}
+                              {progressDetails.pdf.currentItem && (
+                                <div className="text-xs mt-1 text-blue-500">
+                                  처리 중: {progressDetails.pdf.currentItem}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -542,6 +672,129 @@ export function ExcelAutomationWizard() {
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Email Options Modal - appears after processing is complete
+  if (showEmailOptions && processingComplete && automationData) {
+    return (
+      <div className="space-y-6">
+        <Card className={`transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+          <CardHeader>
+            <CardTitle className={`flex items-center gap-2 transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+              <CheckCircle2 className="h-5 w-5 text-green-500" />
+              처리 완료
+            </CardTitle>
+            <CardDescription className={`transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              발주서가 성공적으로 처리되었습니다. 이메일 발송 여부를 선택해주세요.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* 처리 결과 요약 */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className={`text-center p-4 rounded-lg transition-colors ${isDarkMode ? 'bg-green-900/20' : 'bg-green-50'}`}>
+                <div className={`text-2xl font-bold transition-colors ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
+                  {automationData.savedOrders}
+                </div>
+                <div className={`text-sm transition-colors ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
+                  저장된 발주서
+                </div>
+              </div>
+              <div className={`text-center p-4 rounded-lg transition-colors ${isDarkMode ? 'bg-blue-900/20' : 'bg-blue-50'}`}>
+                <div className={`text-2xl font-bold transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                  {automationData.pdfGeneration?.successful || 0}
+                </div>
+                <div className={`text-sm transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                  생성된 PDF
+                </div>
+              </div>
+              <div className={`text-center p-4 rounded-lg transition-colors ${isDarkMode ? 'bg-purple-900/20' : 'bg-purple-50'}`}>
+                <div className={`text-2xl font-bold transition-colors ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`}>
+                  {automationData.emailPreview?.recipients.length || 0}
+                </div>
+                <div className={`text-sm transition-colors ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`}>
+                  이메일 대상
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* 이메일 발송 옵션 */}
+            <div className="space-y-4">
+              <h3 className={`font-medium transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>
+                이메일 발송 옵션을 선택해주세요
+              </h3>
+              
+              <div className="grid gap-4">
+                {/* 지금 발송 */}
+                <Button
+                  size="lg"
+                  className="w-full justify-start"
+                  onClick={() => {
+                    setShowEmailOptions(false);
+                    setCurrentStep(1); // Go to email preview step
+                  }}
+                >
+                  <Send className="mr-2 h-5 w-5" />
+                  <div className="text-left">
+                    <div className="font-medium">지금 이메일 발송</div>
+                    <div className="text-sm opacity-80">발주서를 거래처에 즉시 이메일로 발송합니다</div>
+                  </div>
+                </Button>
+
+                {/* 나중에 발송 */}
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="w-full justify-start"
+                  onClick={() => {
+                    window.location.href = '/orders';
+                  }}
+                >
+                  <Clock className="mr-2 h-5 w-5" />
+                  <div className="text-left">
+                    <div className="font-medium">나중에 발송 (발주서 관리로 이동)</div>
+                    <div className="text-sm opacity-80">발주서 관리 화면에서 언제든지 이메일을 발송할 수 있습니다</div>
+                  </div>
+                </Button>
+
+                {/* PDF만 다운로드 */}
+                <Button
+                  variant="ghost"
+                  size="lg"
+                  className="w-full justify-start"
+                  onClick={() => {
+                    if (automationData.emailPreview?.attachmentInfo?.processedPdfFile) {
+                      const link = document.createElement('a');
+                      link.href = `/api/excel-automation/download/${automationData.emailPreview.attachmentInfo.processedPdfFile}`;
+                      link.click();
+                    }
+                    setShowEmailOptions(false);
+                    setProcessingComplete(false);
+                    handleReset();
+                  }}
+                >
+                  <Download className="mr-2 h-5 w-5" />
+                  <div className="text-left">
+                    <div className="font-medium">PDF만 다운로드</div>
+                    <div className="text-sm opacity-80">이메일 발송 없이 PDF 파일만 다운로드합니다</div>
+                  </div>
+                </Button>
+              </div>
+            </div>
+
+            {/* 안내 메시지 */}
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertDescription>
+                <strong>알림:</strong> 발주서가 데이터베이스에 성공적으로 저장되었습니다. 
+                이메일을 지금 발송하지 않더라도 발주서 관리 화면에서 언제든지 확인하고 발송할 수 있습니다.
+              </AlertDescription>
+            </Alert>
           </CardContent>
         </Card>
       </div>

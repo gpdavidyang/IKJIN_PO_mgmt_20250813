@@ -12,6 +12,7 @@ import { fileURLToPath } from 'url';
 import { ExcelAutomationService } from '../utils/excel-automation-service.js';
 import { DebugLogger } from '../utils/debug-logger.js';
 import { requireAuth } from '../local-auth.js';
+import { progressManager } from '../utils/progress-manager.js';
 
 // 파일 업로드 설정 - Vercel serverless 환경 지원
 const storage = multer.diskStorage({
@@ -69,12 +70,54 @@ const upload = multer({
 const router = Router();
 
 /**
+ * SSE endpoint for real-time progress updates
+ * GET /api/excel-automation/progress/:sessionId
+ */
+router.get('/progress/:sessionId', (req, res) => {
+  const { sessionId } = req.params;
+  
+  // Set SSE headers
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+    'Access-Control-Allow-Origin': '*'
+  });
+  
+  // Register client
+  progressManager.addClient(sessionId, res);
+  
+  // Send existing progress
+  const existingProgress = progressManager.getSessionProgress(sessionId);
+  existingProgress.forEach(update => {
+    res.write(`data: ${JSON.stringify(update)}\n\n`);
+  });
+  
+  // Handle client disconnect
+  req.on('close', () => {
+    progressManager.removeClient(sessionId, res);
+  });
+});
+
+/**
+ * Create a new upload session
+ * POST /api/excel-automation/create-session
+ */
+router.post('/create-session', requireAuth, (req, res) => {
+  const sessionId = progressManager.createSession();
+  res.json({ success: true, sessionId });
+});
+
+/**
  * 1단계: 엑셀 파일 업로드 및 초기 처리
  * POST /api/excel-automation/upload-and-process
  */
 router.post('/upload-and-process', requireAuth, upload.single('file'), async (req: any, res) => {
   console.log(`🚀 [API] Excel automation request received`);
   DebugLogger.logExecutionPath('/api/excel-automation/upload-and-process', 'ExcelAutomationService.processExcelUpload');
+  
+  // Get session ID from request body or create new one
+  const sessionId = req.body?.sessionId || progressManager.createSession();
   
   // Vercel timeout 방지를 위한 응답 보장 (55초 타임아웃 설정)
   const timeoutDuration = process.env.VERCEL ? 55000 : 120000; // Vercel: 55초, 로컬: 120초
@@ -122,9 +165,17 @@ router.post('/upload-and-process', requireAuth, upload.single('file'), async (re
 
     console.log(`📁 [API] Excel 자동화 처리 시작: ${filePath}, 사용자: ${userId}, 파일크기: ${req.file.size}bytes`);
 
+    // Send initial progress update
+    progressManager.updateStep(sessionId, 'upload', 'completed', '파일 업로드 완료', {
+      fileName: req.file.originalname,
+      fileSize: req.file.size
+    });
+
     // 통합 자동화 프로세스 실행 (필드 검증은 프론트엔드에서 수행)
     console.log(`🔄 [API] ExcelAutomationService.processExcelUpload 호출 시작`);
-    const result = await ExcelAutomationService.processExcelUpload(filePath, userId);
+    
+    // Pass sessionId to service for progress updates
+    const result = await ExcelAutomationService.processExcelUpload(filePath, userId, sessionId);
     console.log(`✅ [API] ExcelAutomationService.processExcelUpload 완료:`, result.success ? '성공' : '실패');
 
     if (!result.success) {
@@ -148,6 +199,7 @@ router.post('/upload-and-process', requireAuth, upload.single('file'), async (re
       res.json({
         success: true,
         message: 'Excel 파일 처리 완료',
+        sessionId, // Include sessionId for client reference
         data: {
           ...result.data,
           filePath,

@@ -21,6 +21,7 @@ import { UnifiedExcelPdfService } from '../services/unified-excel-pdf-service';
 import { ExcelAttachmentService } from './excel-attachment-service';
 import fs from 'fs';
 import path from 'path';
+import { progressManager } from './progress-manager';
 
 export interface ExcelAutomationResult {
   success: boolean;
@@ -91,11 +92,13 @@ export class ExcelAutomationService {
    */
   static async processExcelUpload(
     filePath: string,
-    userId: string
+    userId: string,
+    sessionId?: string
   ): Promise<ExcelAutomationResult> {
     DebugLogger.logFunctionEntry('ExcelAutomationService.processExcelUpload', {
       filePath,
-      userId
+      userId,
+      sessionId
     });
 
     console.log(`🔍 [DEBUG] Excel 자동화 프로세스 시작 - 파일: ${filePath}`);
@@ -112,6 +115,10 @@ export class ExcelAutomationService {
       }
       // 1. Excel 파일 파싱
       console.log(`🔍 [DEBUG] 1단계: Excel 파일 파싱 시작`);
+      if (sessionId) {
+        progressManager.updateStep(sessionId, 'parse', 'processing', 'Excel 파일 파싱 중...');
+      }
+      
       const parseResult = POTemplateProcessorMock.parseInputSheet(filePath);
       console.log(`🔍 [DEBUG] 1단계 완료: ${parseResult.success ? '성공' : '실패'}`);
       
@@ -124,9 +131,19 @@ export class ExcelAutomationService {
       }
 
       console.log(`✅ [DEBUG] Excel 파싱 성공: ${parseResult.totalOrders}개 발주서, ${parseResult.totalItems}개 아이템`);
+      
+      if (sessionId) {
+        progressManager.updateStep(sessionId, 'parse', 'completed', `Excel 파싱 완료: ${parseResult.totalOrders}개 발주서 발견`, {
+          total: parseResult.totalOrders
+        });
+      }
 
       // 2. DB에 발주서 데이터 저장
       console.log(`🔍 [DEBUG] 2단계: DB 저장 시작`);
+      if (sessionId) {
+        progressManager.updateStep(sessionId, 'save', 'processing', '데이터베이스에 저장 중...');
+      }
+      
       const saveResult = await POTemplateProcessorMock.saveToDatabase(
         parseResult.orders || [],
         userId
@@ -142,6 +159,12 @@ export class ExcelAutomationService {
       }
 
       console.log(`✅ [DEBUG] DB 저장 성공: ${saveResult.savedOrders}개 발주서 저장됨`);
+      
+      if (sessionId) {
+        progressManager.updateStep(sessionId, 'save', 'completed', `데이터베이스 저장 완료: ${saveResult.savedOrders}개 발주서`, {
+          total: saveResult.savedOrders
+        });
+      }
 
       // 2.5. 처리된 Excel 파일을 각 발주서에 첨부파일로 저장
       console.log(`🔍 [DEBUG] 2.5단계: 처리된 Excel 파일 첨부 시작`);
@@ -168,6 +191,16 @@ export class ExcelAutomationService {
           
           if (removeResult.success && fs.existsSync(processedExcelPath)) {
             console.log(`✅ [DEBUG] Input 시트 제거 완료: ${processedExcelPath}`);
+            
+            // PDF 생성 시작 알림
+            if (sessionId) {
+              progressManager.updateStep(sessionId, 'pdf', 'processing', `PDF 생성 시작: 총 ${orders.length}개 발주서`, {
+                current: 0,
+                total: orders.length
+              });
+            }
+            
+            let pdfProcessedCount = 0;
             
             // 각 발주서에 처리된 Excel 파일 첨부 및 PDF 생성 (발주서 번호 포함)
             for (const order of orders) {
@@ -210,9 +243,34 @@ export class ExcelAutomationService {
                   
                   if (pdfResult.success) {
                     console.log(`✅ [DEBUG] 발주서 ${order.orderNumber}에 PDF 생성 완료: ID ${pdfResult.attachmentId}`);
+                    
+                    // Update progress for each PDF completed
+                    pdfProcessedCount++;
+                    if (sessionId) {
+                      progressManager.updateStep(sessionId, 'pdf', 'processing', 
+                        `PDF 생성 중: ${order.orderNumber} 완료 (${pdfProcessedCount}/${orders.length})`, {
+                        current: pdfProcessedCount,
+                        total: orders.length,
+                        currentItem: order.orderNumber,
+                        percentage: Math.round((pdfProcessedCount / orders.length) * 100)
+                      });
+                    }
+                    
                     return { orderId: order.id, orderNumber: order.orderNumber, success: true, attachmentId: pdfResult.attachmentId };
                   } else {
                     console.warn(`⚠️ [DEBUG] 발주서 ${order.orderNumber}에 PDF 생성 실패: ${pdfResult.error}`);
+                    
+                    pdfProcessedCount++;
+                    if (sessionId) {
+                      progressManager.updateStep(sessionId, 'pdf', 'processing', 
+                        `PDF 생성 중: ${order.orderNumber} 실패 (${pdfProcessedCount}/${orders.length})`, {
+                        current: pdfProcessedCount,
+                        total: orders.length,
+                        currentItem: order.orderNumber,
+                        percentage: Math.round((pdfProcessedCount / orders.length) * 100)
+                      });
+                    }
+                    
                     return { orderId: order.id, orderNumber: order.orderNumber, success: false, error: pdfResult.error };
                   }
                 } catch (pdfError) {
@@ -248,6 +306,20 @@ export class ExcelAutomationService {
             
             console.log(`📊 [DEBUG] PDF 생성 완료: 성공 ${successfulPdfs.length}개, 실패 ${failedPdfs.length}개`);
             
+            // Send final PDF generation status
+            if (sessionId) {
+              const status = failedPdfs.length === 0 ? 'completed' : 'error';
+              const message = failedPdfs.length === 0 
+                ? `모든 PDF 생성 완료: ${successfulPdfs.length}개 성공`
+                : `PDF 생성 완료: ${successfulPdfs.length}개 성공, ${failedPdfs.length}개 실패`;
+              
+              progressManager.updateStep(sessionId, 'pdf', status, message, {
+                successful: successfulPdfs.length,
+                failed: failedPdfs.length,
+                total: pdfResults.length
+              });
+            }
+            
             if (failedPdfs.length > 0) {
               console.warn(`⚠️ [DEBUG] PDF 생성 실패 목록:`, failedPdfs.map(f => f.orderNumber).join(', '));
             }
@@ -272,8 +344,20 @@ export class ExcelAutomationService {
 
       // 3. 거래처명 검증 및 이메일 추출
       console.log(`🔍 [DEBUG] 3단계: 거래처 검증 시작`);
+      if (sessionId) {
+        progressManager.updateStep(sessionId, 'validate', 'processing', '거래처 정보 검증 중...');
+      }
+      
       const vendorValidation = await this.validateVendorsFromExcel(filePath);
       console.log(`🔍 [DEBUG] 3단계 완료: 유효 거래처 ${vendorValidation.validVendors.length}개, 무효 거래처 ${vendorValidation.invalidVendors.length}개`);
+      
+      if (sessionId) {
+        progressManager.updateStep(sessionId, 'validate', 'completed', 
+          `거래처 검증 완료: ${vendorValidation.validVendors.length}개 확인`, {
+          valid: vendorValidation.validVendors.length,
+          invalid: vendorValidation.invalidVendors.length
+        });
+      }
       
       // 4. 이메일 미리보기 생성
       console.log(`🔍 [DEBUG] 4단계: 이메일 미리보기 생성 시작`);
