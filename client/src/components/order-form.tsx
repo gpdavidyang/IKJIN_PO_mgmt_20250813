@@ -113,16 +113,25 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
     retry: 1
   });
 
-  // Fetch item categories for hierarchy
-  const { data: majorCategories } = useQuery({
-    queryKey: ['/api/item-categories/major'],
+  // Fetch categories from category management
+  const { data: categoriesResponse } = useQuery({
+    queryKey: ['/api/categories'],
+    queryFn: async () => {
+      const response = await fetch('/api/categories', {
+        credentials: 'include'
+      });
+      if (!response.ok) throw new Error('Failed to fetch categories');
+      return response.json();
+    },
     retry: 1
   });
-
-  const { data: allCategories } = useQuery({
-    queryKey: ['/api/item-categories'],
-    retry: 1
-  });
+  
+  const categories = categoriesResponse?.categories || [];
+  
+  // Extract different category types
+  const majorCategories = categories.filter((cat: any) => cat.categoryType === 'major');
+  const middleCategories = categories.filter((cat: any) => cat.categoryType === 'middle');  
+  const minorCategories = categories.filter((cat: any) => cat.categoryType === 'minor');
 
   // Fetch projects from database
   const { data: projectsData, isLoading: isLoadingProjects } = useQuery({
@@ -407,8 +416,33 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
   const updateOrderItem = (index: number, field: string, value: any) => {
     const newItems = [...orderItems];
     newItems[index] = { ...newItems[index], [field]: value };
+    
+    // 계층 구조에 따라 하위 카테고리 초기화
+    if (field === "majorCategory") {
+      newItems[index].middleCategory = "";
+      newItems[index].minorCategory = "";
+    } else if (field === "middleCategory") {
+      newItems[index].minorCategory = "";
+    }
+    
     setOrderItems(newItems);
     setValue("items", newItems);
+  };
+
+  // 대분류에 따른 중분류 필터링
+  const getMiddleCategoriesForMajor = (majorCategoryName: string) => {
+    if (!majorCategoryName) return [];
+    const majorCategory = majorCategories.find((cat: any) => cat.categoryName === majorCategoryName);
+    if (!majorCategory) return [];
+    return middleCategories.filter((cat: any) => cat.parentId === majorCategory.id);
+  };
+
+  // 중분류에 따른 소분류 필터링
+  const getMinorCategoriesForMiddle = (middleCategoryName: string) => {
+    if (!middleCategoryName) return [];
+    const middleCategory = middleCategories.find((cat: any) => cat.categoryName === middleCategoryName);
+    if (!middleCategory) return [];
+    return minorCategories.filter((cat: any) => cat.parentId === middleCategory.id);
   };
 
   const handleItemSelect = (index: number, itemId: number) => {
@@ -858,28 +892,63 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
                         />
                       </TableCell>
                       <TableCell className="py-1">
-                        <Input
-                          className={`h-8 transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}
-                          placeholder="대분류"
-                          value={item.majorCategory}
-                          onChange={(e) => updateOrderItem(index, "majorCategory", e.target.value)}
-                        />
+                        <div className="min-w-[120px]">
+                          <Select
+                            value={item.majorCategory}
+                            onValueChange={(value) => updateOrderItem(index, "majorCategory", value)}
+                          >
+                            <SelectTrigger className={`h-8 transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}>
+                              <SelectValue placeholder="대분류 선택" />
+                            </SelectTrigger>
+                            <SelectContent className={`transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
+                              {majorCategories?.map((category: any) => (
+                                <SelectItem key={category.id} value={category.categoryName}>
+                                  {category.categoryName}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </TableCell>
                       <TableCell className="py-1">
-                        <Input
-                          className={`h-8 transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}
-                          placeholder="중분류"
-                          value={item.middleCategory}
-                          onChange={(e) => updateOrderItem(index, "middleCategory", e.target.value)}
-                        />
+                        <div className="min-w-[120px]">
+                          <Select
+                            value={item.middleCategory}
+                            onValueChange={(value) => updateOrderItem(index, "middleCategory", value)}
+                            disabled={!item.majorCategory}
+                          >
+                            <SelectTrigger className={`h-8 transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}>
+                              <SelectValue placeholder="중분류 선택" />
+                            </SelectTrigger>
+                            <SelectContent className={`transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
+                              {getMiddleCategoriesForMajor(item.majorCategory)?.map((category: any) => (
+                                <SelectItem key={category.id} value={category.categoryName}>
+                                  {category.categoryName}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </TableCell>
                       <TableCell className="py-1">
-                        <Input
-                          className={`h-8 transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}
-                          placeholder="소분류"
-                          value={item.minorCategory}
-                          onChange={(e) => updateOrderItem(index, "minorCategory", e.target.value)}
-                        />
+                        <div className="min-w-[120px]">
+                          <Select
+                            value={item.minorCategory}
+                            onValueChange={(value) => updateOrderItem(index, "minorCategory", value)}
+                            disabled={!item.middleCategory}
+                          >
+                            <SelectTrigger className={`h-8 transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}>
+                              <SelectValue placeholder="소분류 선택" />
+                            </SelectTrigger>
+                            <SelectContent className={`transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
+                              {getMinorCategoriesForMiddle(item.middleCategory)?.map((category: any) => (
+                                <SelectItem key={category.id} value={category.categoryName}>
+                                  {category.categoryName}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </TableCell>
                       <TableCell className="py-1">
                         <Input
