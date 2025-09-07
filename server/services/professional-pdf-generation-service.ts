@@ -395,9 +395,17 @@ export class ProfessionalPDFGenerationService {
         console.log('📄 [ProfessionalPDF] Vercel 환경: PDFKit으로 PDF 직접 생성');
         pdfBuffer = await this.generateProfessionalPDFWithPDFKit(orderData);
       } else {
-        console.log('📄 [ProfessionalPDF] 로컬 환경: HTML 템플릿으로 PDF 생성');
-        const htmlContent = this.generateProfessionalHTMLTemplate(orderData);
-        pdfBuffer = await this.convertHTMLToPDFFromString(htmlContent);
+        try {
+          console.log('📄 [ProfessionalPDF] 로컬 환경: HTML 템플릿으로 PDF 생성 시도');
+          const htmlContent = this.generateProfessionalHTMLTemplate(orderData);
+          pdfBuffer = await this.convertHTMLToPDFFromString(htmlContent);
+          console.log('✅ [ProfessionalPDF] HTML to PDF 변환 성공');
+        } catch (htmlToPdfError) {
+          console.warn('⚠️ [ProfessionalPDF] HTML to PDF 변환 실패, PDFKit으로 대체:', htmlToPdfError);
+          console.log('📄 [ProfessionalPDF] PDFKit으로 대체 생성 중...');
+          pdfBuffer = await this.generateProfessionalPDFWithPDFKit(orderData);
+          console.log('✅ [ProfessionalPDF] PDFKit으로 PDF 생성 성공');
+        }
       }
       
       // 파일 저장 및 DB 등록 (항상 Base64로 DB에 저장하여 Vercel 호환성 보장)
@@ -1063,7 +1071,7 @@ export class ProfessionalPDFGenerationService {
       throw new Error('HTML to PDF conversion not supported in Vercel - use PDFKit instead');
     } else {
       try {
-        const { chromium } = await import('playwright');
+        const { chromium } = await import('playwright-chromium');
         
         const browser = await chromium.launch({ 
           headless: true,
@@ -1093,9 +1101,9 @@ export class ProfessionalPDFGenerationService {
           await browser.close();
         }
       } catch (playwrightError) {
-        console.warn('⚠️ Playwright 실패, PDFKit으로 대체:', playwrightError);
-        // HTML 템플릿을 사용할 수 없으므로 기본 데이터로 PDFKit 생성
-        throw new Error(`PDF 생성 실패: ${playwrightError instanceof Error ? playwrightError.message : 'Playwright 오류'}`);
+        console.warn('⚠️ Playwright 실패:', playwrightError);
+        // Playwright 오류를 상위로 전달하여 PDFKit으로 대체할 수 있도록 함
+        throw playwrightError;
       }
     }
   }

@@ -25,6 +25,7 @@ import { z } from "zod";
 import * as XLSX from "xlsx";
 import nodemailer from "nodemailer";
 import { EmailSettingsService } from "../services/email-settings-service";
+import { generateEmailTemplateData, generateEmailHTML } from "../utils/email-template-generator";
 
 // ES 모듈에서 __dirname 대체
 const __filename = fileURLToPath(import.meta.url);
@@ -2080,7 +2081,8 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
       message, 
       attachPdf = true, 
       attachExcel = false,
-      selectedAttachments = [] // NEW: Handle selectedAttachments from frontend
+      selectedAttachments = [], // NEW: Handle selectedAttachments from frontend
+      selectedAttachmentIds = [] // Also accept selectedAttachmentIds from frontend
     } = req.body;
     
     console.log('📧 이메일 발송 요청:', { 
@@ -2095,7 +2097,8 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
       message, 
       attachPdf, 
       attachExcel,
-      selectedAttachments 
+      selectedAttachments,
+      selectedAttachmentIds 
     });
     
     // recipients 또는 to 필드 중 하나를 사용
@@ -2259,9 +2262,14 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
       }
     }
 
-    // NEW: Process selectedAttachments from frontend modal
-    if (selectedAttachments && Array.isArray(selectedAttachments) && selectedAttachments.length > 0) {
-      console.log('📎 처리할 선택된 첨부파일 IDs:', selectedAttachments);
+    // NEW: Process selectedAttachments/selectedAttachmentIds from frontend modal
+    // Support both selectedAttachments and selectedAttachmentIds (frontend sends selectedAttachmentIds)
+    const attachmentIdsToProcess = (selectedAttachmentIds && selectedAttachmentIds.length > 0) 
+      ? selectedAttachmentIds 
+      : selectedAttachments;
+      
+    if (attachmentIdsToProcess && Array.isArray(attachmentIdsToProcess) && attachmentIdsToProcess.length > 0) {
+      console.log('📎 처리할 선택된 첨부파일 IDs:', attachmentIdsToProcess);
       console.log('📎 attachPdf:', attachPdf, 'attachExcel:', attachExcel);
       console.log('📎 pdfUrl:', pdfUrl, 'excelUrl:', excelUrl);
       
@@ -2295,7 +2303,7 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
         }
       }
       
-      for (const attachmentId of selectedAttachments) {
+      for (const attachmentId of attachmentIdsToProcess) {
         try {
           // Skip if this attachment was already processed by the old logic
           if (processedAttachmentIds.has(attachmentId)) {
@@ -2347,7 +2355,32 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
     
     console.log(`📎 총 ${attachments.length}개 첨부파일:`, attachmentsList);
 
-    // EmailService의 generateEmailContent를 위한 별도 메서드 생성
+    // DB에서 실제 주문 데이터를 가져와서 이메일 템플릿 생성
+    let emailHtmlContent: string;
+    
+    if (orderData.orderId) {
+      // DB에서 실제 데이터를 가져와서 템플릿 생성
+      const templateData = await generateEmailTemplateData(orderData.orderId);
+      if (templateData) {
+        // 첨부파일 목록 추가
+        templateData.attachmentsList = attachmentsList;
+        // 추가 메시지 덮어쓰기 (사용자가 입력한 경우)
+        if (message) {
+          templateData.additionalMessage = message;
+        }
+        emailHtmlContent = generateEmailHTML(templateData);
+        console.log('✅ DB 데이터 기반 이메일 템플릿 생성 완료');
+      } else {
+        // DB 데이터를 가져올 수 없는 경우 기존 방식 사용
+        console.log('⚠️ DB 데이터를 가져올 수 없어 기본 템플릿 사용');
+        emailHtmlContent = generateEmailContent(emailOptions, attachmentsList);
+      }
+    } else {
+      // orderId가 없는 경우 기존 방식 사용
+      emailHtmlContent = generateEmailContent(emailOptions, attachmentsList);
+    }
+
+    // EmailService의 generateEmailContent를 위한 별도 메서드 생성 (fallback용)
     const generateEmailContent = (options: any, attachmentsList: string[] = []): string => {
       const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('ko-KR', {
@@ -2507,8 +2540,8 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
       attachmentsCount: attachments.length
     });
 
-    // 간단한 이메일 발송 (첨부 파일 없이 또는 PDF만 첨부)
-    const emailHtml = generateEmailContent(emailOptions, attachmentsList);
+    // 이미 위에서 생성한 emailHtmlContent를 사용 (DB 데이터 기반 또는 fallback)
+    const emailHtml = emailHtmlContent;
     
     // 동적 SMTP 설정을 사용하여 이메일 발송
     const emailSettingsService = new EmailSettingsService();
@@ -2929,13 +2962,18 @@ router.get("/orders/:orderId/attachments/:attachmentId/download", requireAuth, a
       fileSize: attachment.fileSize
     });
 
-    // Set headers for download
-    const originalName = decodeKoreanFilename(attachment.originalName);
-    const encodedFilename = encodeURIComponent(originalName);
+    // Set headers for download with proper filename encoding
+    const originalName = attachment.originalName || 'download';
+    
+    // Ensure proper Korean filename encoding
+    const encodedFilename = encodeURIComponent(originalName)
+      .replace(/['()]/g, escape)
+      .replace(/\*/g, '%2A');
     
     res.setHeader('Content-Type', attachment.mimeType || 'application/octet-stream');
     res.setHeader('Content-Disposition', `attachment; filename="${originalName}"; filename*=UTF-8''${encodedFilename}`);
     res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('X-Original-Filename', originalName); // Add original filename for debugging
 
     console.log(`📤 파일 다운로드 시작: ${originalName}`);
 
