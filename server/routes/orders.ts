@@ -2397,17 +2397,91 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
         emailHtmlContent = generateEmailHTML(templateData);
         console.log('✅ DB 데이터 기반 이메일 템플릿 생성 완료');
       } else {
-        // DB 데이터를 가져올 수 없는 경우 기존 방식 사용
+        // DB 데이터를 가져올 수 없는 경우 간단한 템플릿 사용
         console.log('⚠️ DB 데이터를 가져올 수 없어 기본 템플릿 사용');
-        emailHtmlContent = generateEmailContent(emailOptions, attachmentsList);
+        emailHtmlContent = `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <meta charset="UTF-8">
+              <style>
+                body { font-family: 'Malgun Gothic', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background-color: #007bff; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center; }
+                .content { background-color: #f8f9fa; padding: 30px; border-radius: 0 0 8px 8px; }
+                .order-info { background: white; padding: 20px; border-radius: 5px; margin: 20px 0; }
+              </style>
+            </head>
+            <body>
+              <div class="header"><h2>📋 발주서 전송</h2></div>
+              <div class="content">
+                <p>안녕하세요, 발주서를 전송드립니다.</p>
+                <div class="order-info">
+                  <p><strong>발주번호:</strong> ${emailOptions.orderNumber || 'N/A'}</p>
+                  <p><strong>거래처:</strong> ${emailOptions.vendorName || 'N/A'}</p>
+                  <p><strong>메시지:</strong> ${emailOptions.additionalMessage || '없음'}</p>
+                </div>
+              </div>
+            </body>
+          </html>
+        `;
       }
     } else {
-      // orderId가 없는 경우 기존 방식 사용
-      emailHtmlContent = generateEmailContent(emailOptions, attachmentsList);
+      // orderId가 없는 경우 간단한 이메일 템플릿 사용
+      emailHtmlContent = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="UTF-8">
+            <style>
+              body {
+                font-family: 'Malgun Gothic', Arial, sans-serif;
+                line-height: 1.6;
+                color: #333;
+                max-width: 600px;
+                margin: 0 auto;
+                padding: 20px;
+              }
+              .header {
+                background-color: #007bff;
+                color: white;
+                padding: 20px;
+                border-radius: 8px 8px 0 0;
+                text-align: center;
+              }
+              .content {
+                background-color: #f8f9fa;
+                padding: 30px;
+                border-radius: 0 0 8px 8px;
+              }
+              .order-info {
+                background: white;
+                padding: 20px;
+                border-radius: 5px;
+                margin: 20px 0;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+              }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <h2>📋 발주서 전송</h2>
+            </div>
+            <div class="content">
+              <p>안녕하세요,</p>
+              <p>발주서를 전송드립니다.</p>
+              <div class="order-info">
+                <p><strong>발주번호:</strong> ${emailOptions.orderNumber || 'N/A'}</p>
+                <p><strong>거래처:</strong> ${emailOptions.vendorName || 'N/A'}</p>
+                <p><strong>메시지:</strong> ${emailOptions.additionalMessage || '없음'}</p>
+              </div>
+            </div>
+          </body>
+        </html>
+      `;
     }
 
     // EmailService의 generateEmailContent를 위한 별도 메서드 생성 (fallback용)
-    const generateEmailContent = (options: any, attachmentsList: string[] = []): string => {
+    function generateEmailContent(options: any, attachmentsList: string[] = []): string {
       const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('ko-KR', {
           style: 'currency',
@@ -2557,7 +2631,7 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
           </body>
         </html>
       `;
-    };
+    }
 
     console.log('📧 sendPOWithOriginalFormat 호출 전 옵션:', {
       to: emailOptions.to,
@@ -2571,10 +2645,26 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
     
     // 동적 SMTP 설정을 사용하여 이메일 발송
     const emailSettingsService = new EmailSettingsService();
-    const smtpConfig = await emailSettingsService.getDecryptedSettings();
+    let smtpConfig = await emailSettingsService.getDecryptedSettings();
     
+    // Fallback to environment variables if no SMTP config in database
     if (!smtpConfig) {
-      throw new Error('이메일 설정을 찾을 수 없습니다. 관리자 설정에서 SMTP 정보를 확인해주세요.');
+      console.log('⚠️ DB에서 SMTP 설정을 찾을 수 없음, 환경변수 사용');
+      
+      if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+        smtpConfig = {
+          host: process.env.SMTP_HOST,
+          port: parseInt(process.env.SMTP_PORT || '587'),
+          secure: process.env.SMTP_PORT === '465',
+          auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS
+          }
+        };
+        console.log('✅ 환경변수 SMTP 설정 사용:', { host: smtpConfig.host, user: smtpConfig.auth.user });
+      } else {
+        throw new Error('이메일 설정을 찾을 수 없습니다. 관리자 설정에서 SMTP 정보를 확인하거나 환경변수를 설정해주세요.');
+      }
     }
     
     const transporter = nodemailer.createTransport(smtpConfig);
@@ -2669,8 +2759,18 @@ router.post("/orders/send-email-simple", requireAuth, async (req, res) => {
     }
 
     // 환경 변수 확인
-    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
       console.warn('⚠️ SMTP 설정이 없어서 이메일을 발송할 수 없습니다.');
+      console.warn('필요 설정:', { SMTP_HOST: !!process.env.SMTP_HOST, SMTP_USER: !!process.env.SMTP_USER, SMTP_PASS: !!process.env.SMTP_PASS });
+      
+      // Production에서는 에러 반환
+      if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
+        return res.status(500).json({ 
+          error: 'SMTP 설정이 누락되었습니다.',
+          details: 'SMTP_HOST, SMTP_USER, SMTP_PASS 환경변수를 확인해주세요.'
+        });
+      }
+      
       // 개발 환경에서는 성공으로 처리
       return res.json({ 
         success: true, 

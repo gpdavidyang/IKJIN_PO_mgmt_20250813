@@ -48,6 +48,10 @@
     "NODE_ENV": "production",
     "VITE_ENVIRONMENT": "production",
     "VITE_ENABLE_EXCEL_UPLOAD": "true",
-    "DEPLOYMENT_VERSION": "2025-09-07-21-08"
+    "DEPLOYMENT_VERSION": "2025-09-07-21-08",
+    "SMTP_HOST": "smtp.naver.com",
+    "SMTP_PORT": "587",
+    "SMTP_USER": "david1611@naver.com",
+    "SMTP_PASS": "X5EQ2G55FG72"
   }
 }

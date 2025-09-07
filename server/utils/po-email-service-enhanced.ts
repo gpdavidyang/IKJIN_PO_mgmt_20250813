@@ -11,6 +11,8 @@ const __dirname = dirname(__filename);
 import { UnifiedExcelPdfService } from '../services/unified-excel-pdf-service';
 import { POTemplateProcessor } from './po-template-processor';
 import { removeAllInputSheets } from './excel-input-sheet-remover';
+import { EnhancedExcelToPDFConverter } from './enhanced-excel-to-pdf';
+import { ExcelToPDFConverter } from './excel-to-pdf-converter';
 
 export interface EmailAttachment {
   filename: string;

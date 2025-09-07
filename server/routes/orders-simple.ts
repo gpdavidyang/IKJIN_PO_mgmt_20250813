@@ -472,11 +472,23 @@ router.post('/orders/bulk-create-simple', requireAuth, upload.single('excelFile'
           });
         }
 
+        // Fetch attachments for this order to include in response
+        const orderAttachments = await db
+          .select()
+          .from(attachments)
+          .where(eq(attachments.orderId, newOrder.id));
+
         savedOrders.push({
           orderId: newOrder.id,
           orderNumber: newOrder.orderNumber,
           rowIndex: orderData.rowIndex,
-          emailSent: sendEmail && vendor && orderData.vendorEmail
+          emailSent: sendEmail && vendor && orderData.vendorEmail,
+          attachments: orderAttachments, // Include attachments in response
+          vendorName: vendor?.name,
+          vendorEmail: orderData.vendorEmail,
+          projectName: project.projectName,
+          totalAmount: totalAmount,
+          orderDate: orderData.orderDate || new Date().toISOString().split('T')[0]
         });
         
       } catch (error) {

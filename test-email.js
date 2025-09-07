@@ -1,8 +1,10 @@
 #!/usr/bin/env node
+/**
+ * Simple email test script to verify SMTP configuration
+ */
 
-import { POEmailServiceMock } from './server/utils/po-email-service-mock.js';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import nodemailer from 'nodemailer';
+import dotenv from 'dotenv';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

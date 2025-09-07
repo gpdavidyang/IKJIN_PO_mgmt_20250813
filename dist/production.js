@@ -2314,20 +2314,8 @@ var init_professional_pdf_generation_service = __esm({
     init_korean_font_manager();
     ProfessionalPDFGenerationService = class {
       static async generateProfessionalPDF(orderData) {
-        if (process.env.VERCEL) {
-          console.log("\u{1F4C4} [ProfessionalPDF] Vercel \uD658\uACBD: PDFKit\uC73C\uB85C PDF \uC0DD\uC131");
-          return await this.generateProfessionalPDFWithPDFKit(orderData);
-        } else {
-          console.log("\u{1F4C4} [ProfessionalPDF] \uB85C\uCEEC \uD658\uACBD: HTML \uD15C\uD50C\uB9BF\uC73C\uB85C PDF \uC0DD\uC131 \uC2DC\uB3C4");
-          try {
-            const htmlContent = this.generateProfessionalHTMLTemplate(orderData);
-            return await this.convertHTMLToPDFFromString(htmlContent);
-          } catch (htmlError) {
-            console.warn("\u26A0\uFE0F [ProfessionalPDF] HTML \uD15C\uD50C\uB9BF \uC0DD\uC131 \uC2E4\uD328, PDFKit\uC73C\uB85C \uB300\uCCB4:", htmlError);
-            console.log("\u{1F4C4} [ProfessionalPDF] \uB85C\uCEEC \uD658\uACBD\uC5D0\uC11C PDFKit\uC73C\uB85C \uB300\uCCB4 \uC2E4\uD589");
-            return await this.generateProfessionalPDFWithPDFKit(orderData);
-          }
-        }
+        console.log("\u{1F4C4} [ProfessionalPDF] \uC774\uC05C PDFKit\uC73C\uB85C PDF \uC0DD\uC131 \uC2DC\uC791");
+        return await this.generateProfessionalPDFWithPDFKit(orderData);
       }
       static {
         this.uploadDir = process.env.VERCEL ? "/tmp/pdf" : path5.join(process.cwd(), "uploads/pdf");
@@ -13032,9 +13020,23 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
     });
     const emailHtml = emailHtmlContent;
     const emailSettingsService = new EmailSettingsService();
-    const smtpConfig = await emailSettingsService.getDecryptedSettings();
+    let smtpConfig = await emailSettingsService.getDecryptedSettings();
     if (!smtpConfig) {
-      throw new Error("\uC774\uBA54\uC77C \uC124\uC815\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4. \uAD00\uB9AC\uC790 \uC124\uC815\uC5D0\uC11C SMTP \uC815\uBCF4\uB97C \uD655\uC778\uD574\uC8FC\uC138\uC694.");
+      console.log("\u26A0\uFE0F DB\uC5D0\uC11C SMTP \uC124\uC815\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC74C, \uD658\uACBD\uBCC0\uC218 \uC0AC\uC6A9");
+      if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+        smtpConfig = {
+          host: process.env.SMTP_HOST,
+          port: parseInt(process.env.SMTP_PORT || "587"),
+          secure: process.env.SMTP_PORT === "465",
+          auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS
+          }
+        };
+        console.log("\u2705 \uD658\uACBD\uBCC0\uC218 SMTP \uC124\uC815 \uC0AC\uC6A9:", { host: smtpConfig.host, user: smtpConfig.auth.user });
+      } else {
+        throw new Error("\uC774\uBA54\uC77C \uC124\uC815\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4. \uAD00\uB9AC\uC790 \uC124\uC815\uC5D0\uC11C SMTP \uC815\uBCF4\uB97C \uD655\uC778\uD558\uAC70\uB098 \uD658\uACBD\uBCC0\uC218\uB97C \uC124\uC815\uD574\uC8FC\uC138\uC694.");
+      }
     }
     const transporter2 = nodemailer3.createTransport(smtpConfig);
     const mailOptions = {
@@ -13106,8 +13108,15 @@ router3.post("/orders/send-email-simple", requireAuth, async (req, res) => {
     if (toEmails.length === 0) {
       return res.status(400).json({ error: "\uC720\uD6A8\uD55C \uC774\uBA54\uC77C \uC8FC\uC18C\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4." });
     }
-    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
       console.warn("\u26A0\uFE0F SMTP \uC124\uC815\uC774 \uC5C6\uC5B4\uC11C \uC774\uBA54\uC77C\uC744 \uBC1C\uC1A1\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.");
+      console.warn("\uD544\uC694 \uC124\uC815:", { SMTP_HOST: !!process.env.SMTP_HOST, SMTP_USER: !!process.env.SMTP_USER, SMTP_PASS: !!process.env.SMTP_PASS });
+      if (process.env.NODE_ENV === "production" || process.env.VERCEL) {
+        return res.status(500).json({
+          error: "SMTP \uC124\uC815\uC774 \uB204\uB77D\uB418\uC5C8\uC2B5\uB2C8\uB2E4.",
+          details: "SMTP_HOST, SMTP_USER, SMTP_PASS \uD658\uACBD\uBCC0\uC218\uB97C \uD655\uC778\uD574\uC8FC\uC138\uC694."
+        });
+      }
       return res.json({
         success: true,
         message: "\uC774\uBA54\uC77C \uAE30\uB2A5\uC774 \uC544\uC9C1 \uC124\uC815\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4. (\uAC1C\uBC1C \uBAA8\uB4DC)",
@@ -17376,7 +17385,7 @@ router10.post("/save", simpleAuth, async (req, res) => {
             const comprehensiveData = await ProfessionalPDFGenerationService.gatherComprehensiveOrderData(newOrder[0].id);
             if (comprehensiveData) {
               console.log("\u2705 [PDF\uC0DD\uC131] \uD3EC\uAD04\uC801 \uB370\uC774\uD130 \uC218\uC9D1 \uC131\uACF5");
-              pdfBuffer = await ProfessionalPDFGenerationService.generateProfessionalPDF(comprehensiveData);
+              pdfBuffer = await ProfessionalPDFGenerationService.generateProfessionalPDFWithPDFKit(comprehensiveData);
               pdfBase64 = pdfBuffer.toString("base64");
               console.log("\u2705 [PDF\uC0DD\uC131] PDF \uBC84\uD37C \uC0DD\uC131 \uC644\uB8CC, \uD06C\uAE30:", pdfBuffer.length, "bytes", "Base64 \uAE38\uC774:", pdfBase64.length, "chars");
             } else {
@@ -17497,7 +17506,7 @@ router10.post("/save", simpleAuth, async (req, res) => {
                   templateVersion: "v2.0.0"
                 }
               };
-              pdfBuffer = await ProfessionalPDFGenerationService.generateProfessionalPDF(pdfOrderData);
+              pdfBuffer = await ProfessionalPDFGenerationService.generateProfessionalPDFWithPDFKit(pdfOrderData);
               pdfBase64 = pdfBuffer.toString("base64");
             }
             const cleanOrderNumber = orderNumber.startsWith("PO-") ? orderNumber.substring(3) : orderNumber;
@@ -23968,11 +23977,19 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
             totalAmount
           });
         }
+        const orderAttachments = await db2.select().from(attachments).where(eq29(attachments.orderId, newOrder.id));
         savedOrders.push({
           orderId: newOrder.id,
           orderNumber: newOrder.orderNumber,
           rowIndex: orderData.rowIndex,
-          emailSent: sendEmail && vendor && orderData.vendorEmail
+          emailSent: sendEmail && vendor && orderData.vendorEmail,
+          attachments: orderAttachments,
+          // Include attachments in response
+          vendorName: vendor?.name,
+          vendorEmail: orderData.vendorEmail,
+          projectName: project.projectName,
+          totalAmount,
+          orderDate: orderData.orderDate || (/* @__PURE__ */ new Date()).toISOString().split("T")[0]
         });
       } catch (error) {
         console.error(`Error creating order for row ${orderData.rowIndex}:`, error);

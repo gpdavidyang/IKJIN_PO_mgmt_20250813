@@ -159,8 +159,16 @@ export function BulkOrderEditorTwoRow({ orders, onOrderUpdate, onOrderRemove, on
           // 이메일 발송 옵션이 선택된 경우에만 모달 표시 (4단계 완료 후)
           if (variables.sendEmail) {
             setTimeout(() => {
+              // Use the first saved order data for single order creation
+              const firstSavedOrder = data.savedOrders?.[0];
+              console.log('📋 Preparing email modal data:', {
+                apiResponse: data,
+                firstSavedOrder,
+                attachmentsCount: firstSavedOrder?.attachments?.length || 0
+              });
               setSavedOrderData({ 
                 ...data, 
+                ...firstSavedOrder, // Include order-specific data including attachments
                 originalOrder: variables.order,
                 originalIndex: variables.index 
               });
@@ -321,6 +329,9 @@ export function BulkOrderEditorTwoRow({ orders, onOrderUpdate, onOrderRemove, on
 
   const handleEmailSend = async (emailData: any) => {
     try {
+      console.log('📧 Sending email with selected attachments:', emailData.selectedAttachmentIds);
+      console.log('📎 Available attachments:', savedOrderData?.attachments);
+      
       // Build attachment URLs from selectedAttachmentIds if any
       const attachmentUrls: string[] = [];
       if (emailData.selectedAttachmentIds && emailData.selectedAttachmentIds.length > 0) {
@@ -683,41 +694,25 @@ export function BulkOrderEditorTwoRow({ orders, onOrderUpdate, onOrderRemove, on
           }}
           orderData={{
             orderNumber: savedOrderData.orderNumber || 'BULK-ORDER',
-            vendorName: savedOrderData?.originalOrder?.vendorName || 'Unknown',
-            vendorEmail: savedOrderData?.originalOrder?.vendorEmail || '',
-            orderDate: new Date().toLocaleDateString(),
+            vendorName: savedOrderData?.vendorName || savedOrderData?.originalOrder?.vendorName || 'Unknown',
+            vendorEmail: savedOrderData?.vendorEmail || savedOrderData?.originalOrder?.vendorEmail || '',
+            orderDate: savedOrderData?.orderDate || new Date().toLocaleDateString(),
             totalAmount: savedOrderData.totalAmount || 0,
-            siteName: savedOrderData?.originalOrder?.projectName || '일괄 발주서'
+            siteName: savedOrderData?.projectName || savedOrderData?.originalOrder?.projectName || '일괄 발주서',
+            orderId: savedOrderData?.orderId // Include orderId for potential fallback attachment fetching
           }}
-          attachments={[
-            // Excel file (if available from order creation)
-            ...(savedOrderData?.excelFilePath ? [{
-              id: 'bulk-excel',
-              originalName: savedOrderData.excelFilePath.split('/').pop() || `${savedOrderData.orderNumber || 'BULK-ORDER'}.xlsx`,
-              filePath: savedOrderData.excelFilePath,
-              fileSize: 0, // Size not available in bulk creation context
-              mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-              isSelected: false
-            }] : []),
-            // PDF file (if available from order creation)
-            ...(savedOrderData?.pdfFilePath ? [{
-              id: 'bulk-pdf',
-              originalName: savedOrderData.pdfFilePath.split('/').pop() || `${savedOrderData.orderNumber || 'BULK-ORDER'}.pdf`,
-              filePath: savedOrderData.pdfFilePath,
-              fileSize: 0, // Size not available in bulk creation context
-              mimeType: 'application/pdf',
-              isSelected: false
-            }] : []),
-            // Include attachments from API response if available
-            ...(savedOrderData?.attachments?.map((att: any, index: number) => ({
-              id: `attachment-${index}`,
-              originalName: att.originalName || att.fileName || `attachment-${index}`,
-              filePath: att.filePath || att.path,
+          attachments={(() => {
+            const attachments = savedOrderData?.attachments?.map((att: any) => ({
+              id: att.id, // Use actual database ID
+              originalName: att.originalName,
+              filePath: att.filePath,
               fileSize: att.fileSize || 0,
               mimeType: att.mimeType || 'application/octet-stream',
               isSelected: false
-            })) || [])
-          ]}
+            })) || [];
+            console.log('📎 Passing attachments to EmailSendDialog:', attachments);
+            return attachments;
+          })()}
           onSendEmail={handleEmailSend}
         />
       )}
