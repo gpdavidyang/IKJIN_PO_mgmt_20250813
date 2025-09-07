@@ -15,9 +15,6 @@ import { AuthEmailService } from "../services/AuthEmailService";
 import { z } from "zod";
 import bcrypt from "bcrypt";
 import { 
-  authRateLimit, 
-  registrationRateLimit, 
-  passwordResetRateLimit,
   securityHeaders,
   sanitizeInput,
   validateRequest,
@@ -188,7 +185,7 @@ router.post('/auth/login-test', (req, res) => {
 // Global state shared authentication across all users/sessions
 
 // Use database-based authentication instead of mock users
-router.post('/auth/login', authRateLimit, login);
+router.post('/auth/login', login);
 // Use database-based logout function
 router.post('/auth/logout', logout);
 
@@ -534,7 +531,7 @@ const registrationSchema = z.object({
 });
 
 // Register user endpoint
-router.post('/auth/register', registrationRateLimit, async (req, res) => {
+router.post('/auth/register', async (req, res) => {
   try {
     // Log registration attempt
     logSecurityEvent('REGISTRATION_ATTEMPT', { email: req.body.email }, req, 'low');
@@ -838,7 +835,7 @@ const resetPasswordSchema = z.object({
 });
 
 // Forgot password - send reset email
-router.post('/auth/forgot-password', passwordResetRateLimit, async (req, res) => {
+router.post('/auth/forgot-password', async (req, res) => {
   try {
     // Validate request body
     const validationResult = forgotPasswordSchema.safeParse(req.body);
