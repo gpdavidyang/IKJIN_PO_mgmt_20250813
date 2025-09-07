@@ -9,6 +9,7 @@ import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { formatKoreanWon } from "@/lib/utils";
 import { getStatusText } from "@/lib/statusUtils";
+import { getEnhancedStatusColor, getOrderStatusText, getApprovalStatusText } from "@/lib/orderStatusUtils";
 import { apiRequest } from "@/lib/queryClient";
 import { EmailSendDialog } from "@/components/email-send-dialog";
 import { EmailHistoryModal } from "@/components/email-history-modal";
@@ -42,6 +43,10 @@ export default function DashboardProfessional() {
   // Email history modal state
   const [emailHistoryModalOpen, setEmailHistoryModalOpen] = useState(false);
   const [selectedOrderForHistory, setSelectedOrderForHistory] = useState<any>(null);
+  
+  // Sorting state for recent orders table
+  const [sortField, setSortField] = useState<string>('');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   
 
   // Check if dark mode is active - MEMOIZED to prevent recalculation
@@ -360,49 +365,60 @@ export default function DashboardProfessional() {
   // REMOVED: Debug logging that caused infinite loops
   // All console.log statements removed to prevent render loops
 
-  // 발주 상태 텍스트
-  const getOrderStatusText = (status: string) => {
-    const statusMap: { [key: string]: string } = {
-      'draft': '임시저장',
-      'created': '발주생성',
-      'sent': '발주완료',
-      'delivered': '납품완료'
-    };
-    return statusMap[status] || status || '-';
-  };
-
-  // 승인 상태 텍스트
-  const getApprovalStatusText = (status: string) => {
-    const statusMap: { [key: string]: string } = {
-      'not_required': '승인불필요',
-      'pending': '승인대기',
-      'approved': '승인완료',
-      'rejected': '반려'
-    };
-    return statusMap[status] || status || '-';
-  };
-
-  // 발주 상태 색상
-  const getOrderStatusColor = (status: string) => {
-    switch(status) {
-      case 'draft': return 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-500/25 dark:text-gray-200 dark:border-gray-400/50';
-      case 'created': return 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-500/25 dark:text-blue-200 dark:border-blue-400/50';
-      case 'sent': return 'bg-indigo-100 text-indigo-800 border-indigo-300 dark:bg-indigo-500/25 dark:text-indigo-200 dark:border-indigo-400/50';
-      case 'delivered': return 'bg-green-100 text-green-800 border-green-300 dark:bg-green-500/25 dark:text-green-200 dark:border-green-400/50';
-      default: return 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-500/25 dark:text-gray-200 dark:border-gray-400/50';
+  // Sorting functions
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('desc');
     }
   };
 
-  // 승인 상태 색상
-  const getApprovalStatusColor = (status: string) => {
-    switch(status) {
-      case 'not_required': return 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-500/25 dark:text-gray-200 dark:border-gray-400/50';
-      case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-500/25 dark:text-yellow-200 dark:border-yellow-400/50';
-      case 'approved': return 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-500/25 dark:text-blue-200 dark:border-blue-400/50';
-      case 'rejected': return 'bg-red-100 text-red-800 border-red-300 dark:bg-red-500/25 dark:text-red-200 dark:border-red-400/50';
-      default: return 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-500/25 dark:text-gray-200 dark:border-gray-400/50';
+  const getSortIcon = (field: string) => {
+    if (sortField !== field) {
+      return <ChevronsUpDown className="h-3 w-3" />;
     }
+    return sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />;
   };
+
+  // Sort recent orders based on current sort settings
+  const sortedRecentOrders = useMemo(() => {
+    if (!sortField) return recentOrders;
+    
+    return [...recentOrders].sort((a, b) => {
+      let aValue = a[sortField];
+      let bValue = b[sortField];
+      
+      // Handle nested properties
+      if (sortField === 'vendorName') {
+        aValue = a.vendor?.name || '';
+        bValue = b.vendor?.name || '';
+      } else if (sortField === 'projectName') {
+        aValue = a.project?.projectName || a.project?.name || '';
+        bValue = b.project?.projectName || b.project?.name || '';
+      } else if (sortField === 'totalAmount') {
+        aValue = Number(a.totalAmount) || 0;
+        bValue = Number(b.totalAmount) || 0;
+      } else if (sortField === 'orderDate') {
+        aValue = new Date(a.orderDate || a.createdAt).getTime();
+        bValue = new Date(b.orderDate || b.createdAt).getTime();
+      } else if (sortField === 'createdAt') {
+        aValue = new Date(a.createdAt).getTime();
+        bValue = new Date(b.createdAt).getTime();
+      }
+      
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortDirection === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+      }
+      
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+      }
+      
+      return 0;
+    });
+  }, [recentOrders, sortField, sortDirection]);
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: isDarkMode ? '#111827' : '#f9fafb' }}>
@@ -706,70 +722,85 @@ export default function DashboardProfessional() {
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>
                     <button 
+                      onClick={() => handleSort('orderNumber')}
                       className={`flex items-center gap-1 transition-colors ${isDarkMode ? 'hover:text-gray-300' : 'hover:text-gray-700'}`}
                     >
                       발주번호
-                      <ChevronsUpDown className="h-3 w-3" />
+                      {getSortIcon('orderNumber')}
                     </button>
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>
                     <button 
+                      onClick={() => handleSort('vendorName')}
                       className={`flex items-center gap-1 transition-colors ${isDarkMode ? 'hover:text-gray-300' : 'hover:text-gray-700'}`}
                     >
                       거래처
-                      <ChevronsUpDown className="h-3 w-3" />
+                      {getSortIcon('vendorName')}
                     </button>
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>
                     <button 
+                      onClick={() => handleSort('projectName')}
                       className={`flex items-center gap-1 transition-colors ${isDarkMode ? 'hover:text-gray-300' : 'hover:text-gray-700'}`}
                     >
                       현장
-                      <ChevronsUpDown className="h-3 w-3" />
+                      {getSortIcon('projectName')}
                     </button>
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>
                     <button 
+                      onClick={() => handleSort('orderDate')}
                       className={`flex items-center gap-1 transition-colors ${isDarkMode ? 'hover:text-gray-300' : 'hover:text-gray-700'}`}
                     >
                       발주일
-                      <ChevronsUpDown className="h-3 w-3" />
+                      {getSortIcon('orderDate')}
                     </button>
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>
                     <button 
+                      onClick={() => handleSort('createdAt')}
                       className={`flex items-center gap-1 transition-colors ${isDarkMode ? 'hover:text-gray-300' : 'hover:text-gray-700'}`}
                     >
                       등록일
-                      <ChevronsUpDown className="h-3 w-3" />
+                      {getSortIcon('createdAt')}
                     </button>
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>
                     <button 
+                      onClick={() => handleSort('totalAmount')}
                       className={`flex items-center gap-1 transition-colors ${isDarkMode ? 'hover:text-gray-300' : 'hover:text-gray-700'}`}
                     >
                       금액
-                      <ChevronsUpDown className="h-3 w-3" />
+                      {getSortIcon('totalAmount')}
                     </button>
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>
                     <button 
+                      onClick={() => handleSort('orderStatus')}
                       className={`flex items-center gap-1 transition-colors ${isDarkMode ? 'hover:text-gray-300' : 'hover:text-gray-700'}`}
                     >
                       발주상태
-                      <ChevronsUpDown className="h-3 w-3" />
+                      {getSortIcon('orderStatus')}
                     </button>
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>
                     <button 
+                      onClick={() => handleSort('emailStatus')}
                       className={`flex items-center gap-1 transition-colors ${isDarkMode ? 'hover:text-gray-300' : 'hover:text-gray-700'}`}
                     >
-                      승인상태
-                      <ChevronsUpDown className="h-3 w-3" />
+                      이메일
+                      {getSortIcon('emailStatus')}
                     </button>
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>이메일</th>
-                  <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>액션</th>
+                  <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>
+                    <button 
+                      onClick={() => handleSort('actions')}
+                      className={`flex items-center gap-1 transition-colors justify-center ${isDarkMode ? 'hover:text-gray-300' : 'hover:text-gray-700'}`}
+                    >
+                      액션
+                      {getSortIcon('actions')}
+                    </button>
+                  </th>
                 </tr>
               </thead>
               <tbody 
@@ -777,7 +808,7 @@ export default function DashboardProfessional() {
                   backgroundColor: isDarkMode ? '#1f2937' : '#ffffff'
                 }}
               >
-                {recentOrders.slice(0, 5).map((order: any) => (
+                {sortedRecentOrders.slice(0, 5).map((order: any) => (
                   <tr 
                     key={order.id} 
                     className="transition-colors"
@@ -862,13 +893,8 @@ export default function DashboardProfessional() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getOrderStatusColor(order.orderStatus || 'draft')}`}>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getEnhancedStatusColor(order.orderStatus || 'draft')}`}>
                         {getOrderStatusText(order.orderStatus || 'draft')}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getApprovalStatusColor(order.approvalStatus || 'not_required')}`}>
-                        {getApprovalStatusText(order.approvalStatus || 'not_required')}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">

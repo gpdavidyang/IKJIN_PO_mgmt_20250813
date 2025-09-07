@@ -4851,19 +4851,7 @@ var DatabaseStorage = class {
     }).from(attachments).where(eq(attachments.id, id));
     return attachment || void 0;
   }
-  async getOrderAttachments(orderId) {
-    return await db2.select({
-      id: attachments.id,
-      orderId: attachments.orderId,
-      originalName: attachments.originalName,
-      storedName: attachments.storedName,
-      filePath: attachments.filePath,
-      fileSize: attachments.fileSize,
-      mimeType: attachments.mimeType,
-      uploadedBy: attachments.uploadedBy,
-      uploadedAt: attachments.uploadedAt
-    }).from(attachments).where(eq(attachments.orderId, orderId));
-  }
+  // getOrderAttachments - Duplicate function removed, better version exists later with error handling
   async deleteAttachment(id) {
     await db2.delete(attachments).where(eq(attachments.id, id));
   }
@@ -5380,17 +5368,7 @@ var DatabaseStorage = class {
       throw error;
     }
   }
-  async getOrdersForApproval(role) {
-    try {
-      return await db2.select().from(purchaseOrders).where(and(
-        eq(purchaseOrders.status, "pending"),
-        eq(purchaseOrders.currentApproverRole, role)
-      )).orderBy(desc(purchaseOrders.orderDate));
-    } catch (error) {
-      console.error("Error getting orders for approval:", error);
-      throw error;
-    }
-  }
+  // getOrdersForApproval - Duplicate function removed, better version exists in approval workflow section
   async approveOrder(orderId, approverId, note) {
     try {
       const [updatedOrder] = await db2.update(purchaseOrders).set({
@@ -5724,32 +5702,7 @@ var DatabaseStorage = class {
       return [];
     }
   }
-  // Attachment methods
-  async getAttachment(orderId, attachmentId) {
-    try {
-      const [attachment] = await db2.select({
-        id: attachments.id,
-        orderId: attachments.orderId,
-        originalName: attachments.originalName,
-        storedName: attachments.storedName,
-        filePath: attachments.filePath,
-        fileSize: attachments.fileSize,
-        mimeType: attachments.mimeType,
-        uploadedBy: attachments.uploadedBy,
-        uploadedAt: attachments.uploadedAt
-        // fileData: attachments.fileData, // Temporarily commented out due to schema migration
-      }).from(attachments).where(
-        and(
-          eq(attachments.id, attachmentId),
-          eq(attachments.orderId, orderId)
-        )
-      );
-      return attachment || void 0;
-    } catch (error) {
-      console.error("Error getting attachment:", error);
-      return void 0;
-    }
-  }
+  // Attachment methods - Duplicate function removed, use getAttachment(id: number) instead
   async getOrderAttachments(orderId) {
     try {
       return await db2.select({

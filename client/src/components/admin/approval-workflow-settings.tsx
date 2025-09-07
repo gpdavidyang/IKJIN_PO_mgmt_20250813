@@ -15,8 +15,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Trash2, Edit, Plus, Settings, Workflow, ChevronRight, ChevronDown } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Trash2, Edit, Plus, Settings, Workflow, ChevronRight, ChevronDown, Layers, Zap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { ApprovalWorkflowTemplateBuilder } from "./ApprovalWorkflowTemplateBuilder";
 
 interface ApprovalWorkflowSettings {
   id: number;
@@ -303,39 +305,58 @@ export function ApprovalWorkflowSettings() {
   return (
     <div className="space-y-6">
       {/* Usage Guide Section */}
-      <Card className="bg-blue-50 border-blue-200">
+      <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
         <CardHeader>
           <CardTitle className="flex items-center space-x-2 text-blue-800">
             <Workflow className="w-5 h-5" />
-            <span>승인 워크플로우란?</span>
+            <span>승인 워크플로우 관리</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-blue-700 space-y-3">
           <div className="space-y-2">
-            <p><strong>• 승인 방식 선택:</strong></p>
+            <p><strong>🚀 새로운 템플릿 빌더:</strong></p>
             <ul className="ml-4 space-y-1">
-              <li>- <strong>직접 승인:</strong> 발주서 생성 시 승인절차 없이 바로 발주서가 생성되는 방식</li>
-              <li>- <strong>단계별 승인:</strong> 현장 작업자 → 프로젝트 매니저 → 임원 등 순차적으로 승인하는 방식</li>
+              <li>- 시각적 인터페이스로 워크플로우 템플릿을 쉽게 생성하고 관리</li>
+              <li>- 금액별, 카테고리별 조건부 승인 프로세스 설정</li>
+              <li>- 자동 승인, 알림 설정, 단계 건너뛰기 등 고급 기능</li>
             </ul>
           </div>
           
           <div className="space-y-2">
-            <p><strong>• 승인 단계 템플릿:</strong></p>
+            <p><strong>📋 레거시 설정:</strong></p>
             <ul className="ml-4 space-y-1">
-              <li>- 발주 금액에 따라 다른 승인 경로를 설정할 수 있습니다</li>
-              <li>- 예: 100만원 미만은 프로젝트 매니저 승인, 100만원 이상은 임원 승인</li>
-              <li>- 각 단계별로 건너뛰기 허용 여부, 선택적 단계 여부를 설정 가능</li>
+              <li>- 기존 워크플로우 설정과의 호환성 유지</li>
+              <li>- 단순한 승인 모드 설정 (직접/단계별)</li>
+              <li>- 기본 승인 단계 템플릿 관리</li>
             </ul>
           </div>
           
-          <div className="bg-blue-100 p-3 rounded-lg">
-            <p><strong>💡 사용 팁:</strong> 먼저 기본 워크플로 설정을 선택하고, 필요에 따라 상세한 승인 단계 템플릿을 추가하세요. 
-            템플릿은 발주서 작성 시 자동으로 적용되어 적절한 승인자에게 전달됩니다.</p>
+          <div className="bg-gradient-to-r from-blue-100 to-indigo-100 p-3 rounded-lg">
+            <p><strong>💡 권장사항:</strong> 새로운 프로젝트는 <strong>템플릿 빌더</strong>를 사용하시고, 
+            기존 설정이 있는 경우 <strong>레거시 설정</strong>에서 관리하세요.</p>
           </div>
         </CardContent>
       </Card>
 
-      {/* Workflow Settings Section */}
+      {/* Main Content Tabs */}
+      <Tabs defaultValue="builder" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="builder" className="flex items-center gap-2">
+            <Zap className="h-4 w-4" />
+            템플릿 빌더 (신규)
+          </TabsTrigger>
+          <TabsTrigger value="legacy" className="flex items-center gap-2">
+            <Layers className="h-4 w-4" />
+            레거시 설정
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="builder" className="mt-6">
+          <ApprovalWorkflowTemplateBuilder />
+        </TabsContent>
+
+        <TabsContent value="legacy" className="mt-6 space-y-6">
+          {/* Workflow Settings Section */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
@@ -663,6 +684,8 @@ export function ApprovalWorkflowSettings() {
           )}
         </CardContent>
       </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

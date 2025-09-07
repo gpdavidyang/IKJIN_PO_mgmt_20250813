@@ -1442,19 +1442,7 @@ export class DatabaseStorage implements IStorage {
     return attachment || undefined;
   }
 
-  async getOrderAttachments(orderId: number): Promise<Attachment[]> {
-    return await db.select({
-      id: attachments.id,
-      orderId: attachments.orderId,
-      originalName: attachments.originalName,
-      storedName: attachments.storedName,
-      filePath: attachments.filePath,
-      fileSize: attachments.fileSize,
-      mimeType: attachments.mimeType,
-      uploadedBy: attachments.uploadedBy,
-      uploadedAt: attachments.uploadedAt,
-    }).from(attachments).where(eq(attachments.orderId, orderId));
-  }
+  // getOrderAttachments - Duplicate function removed, better version exists later with error handling
 
   async deleteAttachment(id: number): Promise<void> {
     await db.delete(attachments).where(eq(attachments.id, id));
@@ -2323,21 +2311,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getOrdersForApproval(role: string): Promise<PurchaseOrder[]> {
-    try {
-      return await db
-        .select()
-        .from(purchaseOrders)
-        .where(and(
-          eq(purchaseOrders.status, 'pending'),
-          eq(purchaseOrders.currentApproverRole, role)
-        ))
-        .orderBy(desc(purchaseOrders.orderDate));
-    } catch (error) {
-      console.error('Error getting orders for approval:', error);
-      throw error;
-    }
-  }
+  // getOrdersForApproval - Duplicate function removed, better version exists in approval workflow section
 
   async approveOrder(orderId: number, approverId: string, note?: string): Promise<PurchaseOrder> {
     try {
@@ -2828,36 +2802,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Attachment methods
-  async getAttachment(orderId: number, attachmentId: number): Promise<Attachment | undefined> {
-    try {
-      const [attachment] = await db
-        .select({
-          id: attachments.id,
-          orderId: attachments.orderId,
-          originalName: attachments.originalName,
-          storedName: attachments.storedName,
-          filePath: attachments.filePath,
-          fileSize: attachments.fileSize,
-          mimeType: attachments.mimeType,
-          uploadedBy: attachments.uploadedBy,
-          uploadedAt: attachments.uploadedAt,
-          // fileData: attachments.fileData, // Temporarily commented out due to schema migration
-        })
-        .from(attachments)
-        .where(
-          and(
-            eq(attachments.id, attachmentId),
-            eq(attachments.orderId, orderId)
-          )
-        );
-      
-      return attachment || undefined;
-    } catch (error) {
-      console.error('Error getting attachment:', error);
-      return undefined;
-    }
-  }
+  // Attachment methods - Duplicate function removed, use getAttachment(id: number) instead
 
   async getOrderAttachments(orderId: number): Promise<Attachment[]> {
     try {

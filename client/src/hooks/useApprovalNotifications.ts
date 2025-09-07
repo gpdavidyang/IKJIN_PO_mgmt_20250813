@@ -128,11 +128,17 @@ export function useApprovalNotifications(pollingInterval = 30000) {
   };
 
   const playNotificationSound = () => {
-    const audio = new Audio('/notification-sound.mp3');
-    audio.volume = 0.5;
-    audio.play().catch(e => {
-      console.log('Could not play notification sound:', e);
-    });
+    try {
+      const audio = new Audio('/notification-sound.mp3');
+      audio.volume = 0.5;
+      audio.play().catch(e => {
+        // Silently handle missing audio file in production
+        console.log('Could not play notification sound:', e);
+      });
+    } catch (e) {
+      // Silently handle missing audio file
+      console.log('Audio not available:', e);
+    }
   };
 
   const showBrowserNotification = (title: string, notification: ApprovalNotification) => {
