@@ -164,6 +164,7 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
   const [unitPriceDisplayValues, setUnitPriceDisplayValues] = useState<string[]>(['']);
 
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [isDragOver, setIsDragOver] = useState(false);
   const [selectedProjectInfo, setSelectedProjectInfo] = useState<any>(null);
   const [selectedVendorInfo, setSelectedVendorInfo] = useState<any>(null);
 
@@ -478,8 +479,8 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
     return orderItems.reduce((total, item) => total + calculateTotalAmount(item), 0);
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files || []);
+  // 공통 파일 검증 및 처리 함수
+  const processFiles = (files: File[]) => {
     const validFiles = files.filter(file => {
       const validTypes = [
         "application/pdf",
@@ -512,7 +513,54 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
       return true;
     });
     
-    setUploadedFiles(prev => [...prev, ...validFiles]);
+    if (validFiles.length > 0) {
+      setUploadedFiles(prev => [...prev, ...validFiles]);
+      toast({
+        title: "파일 업로드",
+        description: `${validFiles.length}개의 파일이 첨부되었습니다.`,
+      });
+    }
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    processFiles(files);
+    // Reset input value to allow same file selection again
+    if (event.target) {
+      event.target.value = '';
+    }
+  };
+
+  // 드래그 이벤트 핸들러들
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Only set isDragOver to false if we're leaving the drop zone entirely
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsDragOver(false);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      processFiles(files);
+    }
   };
 
   const removeFile = (index: number) => {
@@ -1047,10 +1095,37 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
             <CardTitle className={`text-lg transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>파일 첨부</CardTitle>
           </CardHeader>
           <CardContent className="pt-2">
-            <div className={`border-2 border-dashed rounded-lg p-3 text-center hover:border-primary/50 transition-colors ${isDarkMode ? 'border-gray-600 hover:border-primary/70' : 'border-gray-300'}`}>
-              <Upload className={`mx-auto h-6 w-6 mb-2 transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
-              <p className={`text-sm mb-1 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>파일을 드래그하거나 클릭하여 업로드</p>
-              <p className={`text-xs mb-2 transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>PDF, DWG, 이미지 파일 (최대 10MB)</p>
+            <div 
+              className={`border-2 border-dashed rounded-lg p-6 text-center transition-all duration-200 cursor-pointer ${
+                isDragOver 
+                  ? isDarkMode 
+                    ? 'border-blue-400 bg-blue-900/20 scale-[1.02]' 
+                    : 'border-blue-500 bg-blue-50 scale-[1.02]'
+                  : isDarkMode 
+                    ? 'border-gray-600 hover:border-blue-400/50 hover:bg-gray-700/50' 
+                    : 'border-gray-300 hover:border-blue-400/50 hover:bg-gray-50'
+              }`}
+              onDragEnter={handleDragEnter}
+              onDragLeave={handleDragLeave}
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
+              onClick={() => document.getElementById('fileUpload')?.click()}
+            >
+              <Upload className={`mx-auto h-8 w-8 mb-3 transition-all duration-200 ${
+                isDragOver 
+                  ? isDarkMode ? 'text-blue-400 scale-110' : 'text-blue-500 scale-110'
+                  : isDarkMode ? 'text-gray-500' : 'text-gray-400'
+              }`} />
+              <p className={`text-base mb-2 font-medium transition-colors ${
+                isDragOver 
+                  ? isDarkMode ? 'text-blue-400' : 'text-blue-600'
+                  : isDarkMode ? 'text-gray-300' : 'text-gray-700'
+              }`}>
+                {isDragOver ? '파일을 놓아주세요' : '파일을 드래그하거나 클릭하여 업로드'}
+              </p>
+              <p className={`text-sm mb-4 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                PDF, DWG, 이미지 파일 (최대 10MB)
+              </p>
               <input
                 type="file"
                 multiple
@@ -1061,9 +1136,13 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
               />
               <Button
                 type="button"
-                variant="outline"
+                variant={isDragOver ? "default" : "outline"}
                 size="sm"
-                onClick={() => document.getElementById('fileUpload')?.click()}
+                className={`transition-all duration-200 ${isDragOver ? 'scale-105' : ''}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  document.getElementById('fileUpload')?.click();
+                }}
               >
                 파일 선택
               </Button>
@@ -1119,7 +1198,7 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
               <Button
                 type="button"
                 variant="outline"
-                className="w-full sm:w-auto"
+                className="w-full sm:w-auto px-6 py-3 text-base font-medium"
                 onClick={onCancel}
               >
                 취소
@@ -1127,7 +1206,7 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
               <Button
                 type="button"
                 variant="secondary"
-                className="w-full sm:w-auto"
+                className="w-full sm:w-auto px-6 py-3 text-base font-medium"
                 onClick={() => {
                   // 임시 저장 로직 - 나중에 구현 가능
                   toast({
@@ -1140,14 +1219,14 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
               </Button>
               <Button
                 type="submit"
-                className="w-full sm:w-auto"
+                className="w-full sm:w-auto px-6 py-3 text-base font-medium"
                 disabled={createOrderMutation.isPending || updateOrderMutation.isPending}
               >
                 {createOrderMutation.isPending || updateOrderMutation.isPending
                   ? "저장 중..."
                   : orderId
                   ? "수정"
-                  : "발주서 제출"}
+                  : "발주서 생성"}
               </Button>
             </div>
           </div>
