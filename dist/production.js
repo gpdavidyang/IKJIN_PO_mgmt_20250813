@@ -2068,6 +2068,10 @@ var init_email_settings_service = __esm({
 });
 
 // server/services/professional-pdf-generation-service.ts
+var professional_pdf_generation_service_exports = {};
+__export(professional_pdf_generation_service_exports, {
+  ProfessionalPDFGenerationService: () => ProfessionalPDFGenerationService
+});
 import * as fs6 from "fs";
 import * as path4 from "path";
 import { format } from "date-fns";
@@ -9619,10 +9623,17 @@ var OptimizedDashboardQueries = class {
         id: purchaseOrders.id,
         orderNumber: purchaseOrders.orderNumber,
         status: purchaseOrders.status,
+        // Legacy field for backward compatibility
+        orderStatus: purchaseOrders.orderStatus,
+        // New order status field
+        approvalStatus: purchaseOrders.approvalStatus,
+        // Approval status field
         totalAmount: purchaseOrders.totalAmount,
         createdAt: purchaseOrders.createdAt,
+        orderDate: purchaseOrders.orderDate,
         vendorId: vendors.id,
         vendorName: vendors.name,
+        vendorEmail: vendors.email,
         projectId: projects.id,
         projectName: projects.projectName
       }).from(purchaseOrders).leftJoin(vendors, eq6(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq6(purchaseOrders.projectId, projects.id)).orderBy(desc2(purchaseOrders.createdAt)).limit(10);
@@ -9630,11 +9641,18 @@ var OptimizedDashboardQueries = class {
         id: order.id,
         orderNumber: order.orderNumber,
         status: order.status,
+        // Legacy status field
+        orderStatus: order.orderStatus,
+        // New order status field
+        approvalStatus: order.approvalStatus,
+        // Approval status field
         totalAmount: order.totalAmount,
         createdAt: order.createdAt,
+        orderDate: order.orderDate,
         vendor: order.vendorId ? {
           id: order.vendorId,
-          name: order.vendorName
+          name: order.vendorName,
+          email: order.vendorEmail
         } : null,
         project: order.projectId ? {
           id: order.projectId,
@@ -10470,7 +10488,9 @@ var router3 = Router3();
 var emailService = new POEmailService();
 async function updateOrderStatusAfterEmail(orderNumber) {
   await db2.update(purchaseOrders).set({
-    orderStatus: "sent",
+    orderStatus: "\uBC1C\uC8FC\uC644\uB8CC",
+    // 이메일 발송 완료 후 '발주완료' 상태로 변경
+    status: "completed",
     updatedAt: /* @__PURE__ */ new Date()
   }).where(eq10(purchaseOrders.orderNumber, orderNumber));
 }
@@ -14032,8 +14052,9 @@ var ExcelAttachmentService = class {
    * @param processedExcelPath 처리된 Excel 파일 경로 (Input 시트 제거됨)
    * @param originalFileName 원본 파일명
    * @param uploadedBy 업로드한 사용자 ID
+   * @param orderNumber 발주서 번호 (파일명 생성용)
    */
-  static async saveProcessedExcelFile(orderId, processedExcelPath, originalFileName, uploadedBy) {
+  static async saveProcessedExcelFile(orderId, processedExcelPath, originalFileName, uploadedBy, orderNumber) {
     try {
       console.log(`\u{1F4CE} Excel \uCCA8\uBD80\uD30C\uC77C \uC800\uC7A5 \uC2DC\uC791: ${processedExcelPath}`);
       if (!fs8.existsSync(processedExcelPath)) {
@@ -14043,14 +14064,23 @@ var ExcelAttachmentService = class {
         };
       }
       const stats = fs8.statSync(processedExcelPath);
-      const fileName = path6.basename(processedExcelPath);
+      let standardizedFileName;
+      if (orderNumber) {
+        const today = /* @__PURE__ */ new Date();
+        const dateStr = today.toISOString().slice(0, 10).replace(/-/g, "");
+        standardizedFileName = `IKJIN_${orderNumber}_${dateStr}.xlsx`;
+      } else {
+        standardizedFileName = originalFileName;
+      }
+      console.log(`\u{1F4DD} \uD45C\uC900\uD654\uB41C Excel \uD30C\uC77C\uBA85: ${standardizedFileName}`);
       const fileBuffer = fs8.readFileSync(processedExcelPath);
       const base64Data = fileBuffer.toString("base64");
       const [attachment] = await db2.insert(attachments).values({
         orderId,
-        originalName: originalFileName,
-        storedName: fileName,
-        filePath: `db://${fileName}`,
+        originalName: standardizedFileName,
+        // 표준화된 파일명 사용
+        storedName: standardizedFileName,
+        filePath: `db://${standardizedFileName}`,
         // Base64 저장 표시
         fileSize: stats.size,
         mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -14178,12 +14208,38 @@ var ExcelAutomationService = class {
                 order.id,
                 processedExcelPath,
                 originalFileName,
-                userId
+                userId,
+                order.orderNumber
+                // 발주서 번호 전달하여 표준화된 파일명 생성
               );
               if (attachResult.success) {
                 console.log(`\u2705 [DEBUG] \uBC1C\uC8FC\uC11C ${order.orderNumber}\uC5D0 Excel \uCCA8\uBD80\uD30C\uC77C \uC800\uC7A5 \uC644\uB8CC: ID ${attachResult.attachmentId}`);
               } else {
                 console.warn(`\u26A0\uFE0F [DEBUG] \uBC1C\uC8FC\uC11C ${order.orderNumber}\uC5D0 Excel \uCCA8\uBD80\uD30C\uC77C \uC800\uC7A5 \uC2E4\uD328: ${attachResult.error}`);
+              }
+              try {
+                console.log(`\u{1F4C4} [DEBUG] \uBC1C\uC8FC\uC11C ${order.orderNumber}\uC5D0 \uB300\uD55C PDF \uC0DD\uC131 \uC2DC\uC791...`);
+                const { ProfessionalPDFGenerationService: ProfessionalPDFGenerationService2 } = await Promise.resolve().then(() => (init_professional_pdf_generation_service(), professional_pdf_generation_service_exports));
+                const pdfResult = await ProfessionalPDFGenerationService2.generateProfessionalPurchaseOrderPDF(
+                  order.id,
+                  userId
+                );
+                if (pdfResult.success) {
+                  console.log(`\u2705 [DEBUG] \uBC1C\uC8FC\uC11C ${order.orderNumber}\uC5D0 PDF \uC0DD\uC131 \uC644\uB8CC: ID ${pdfResult.attachmentId}`);
+                } else {
+                  console.warn(`\u26A0\uFE0F [DEBUG] \uBC1C\uC8FC\uC11C ${order.orderNumber}\uC5D0 PDF \uC0DD\uC131 \uC2E4\uD328: ${pdfResult.error}`);
+                }
+              } catch (pdfError) {
+                console.error(`\u274C [DEBUG] \uBC1C\uC8FC\uC11C ${order.orderNumber} PDF \uC0DD\uC131 \uC911 \uC624\uB958:`, pdfError);
+              }
+              try {
+                await db2.update(purchaseOrders).set({
+                  orderStatus: "\uBC1C\uC8FC\uC0DD\uC131",
+                  status: "created"
+                }).where(eq14(purchaseOrders.id, order.id));
+                console.log(`\u2705 [DEBUG] \uBC1C\uC8FC\uC11C ${order.orderNumber} \uC0C1\uD0DC\uB97C '\uBC1C\uC8FC\uC0DD\uC131'\uC73C\uB85C \uC5C5\uB370\uC774\uD2B8 \uC644\uB8CC`);
+              } catch (statusError) {
+                console.warn(`\u26A0\uFE0F [DEBUG] \uBC1C\uC8FC\uC11C ${order.orderNumber} \uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8 \uC2E4\uD328:`, statusError);
               }
             }
             try {
