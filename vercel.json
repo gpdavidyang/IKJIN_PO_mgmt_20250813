@@ -11,11 +11,11 @@
     },
     {
       "src": "/assets/(.*)",
-      "dest": "dist/public/assets/$1"
+      "dest": "/dist/public/assets/$1"
     },
     {
       "src": "/PO_Excel_Template\\.xlsx",
-      "dest": "dist/public/PO_Excel_Template.xlsx",
+      "dest": "/dist/public/PO_Excel_Template.xlsx",
       "headers": {
         "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         "Content-Disposition": "attachment; filename=\"PO_Excel_Template.xlsx\""
@@ -23,11 +23,11 @@
     },
     {
       "src": "/(.*\\.(js|css|png|jpg|svg|ico|woff|woff2|xlsx|json))",
-      "dest": "dist/public/$1"
+      "dest": "/dist/public/$1"
     },
     {
-      "src": "/(create-order|create-order-standard|create-order-standard-professional|create-order/.*|orders.*|vendors.*|items.*|projects.*|dashboard.*|admin.*|users.*|profile.*|reports.*|.*)",
-      "dest": "dist/public/index.html"
+      "src": "/(.*)",
+      "dest": "/dist/public/index.html"
     }
   ],
   "functions": {
