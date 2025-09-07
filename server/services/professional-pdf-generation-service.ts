@@ -377,25 +377,10 @@ export class ProfessionalPDFGenerationService {
       const cleanOrderNumber = orderData.orderNumber.startsWith('PO-') ? orderData.orderNumber.substring(3) : orderData.orderNumber;
       const fileName = `PO_Professional_${cleanOrderNumber}_${timestamp}.pdf`;
 
-      // PDF 생성
-      let pdfBuffer: Buffer;
-      
-      if (process.env.VERCEL) {
-        console.log('📄 [ProfessionalPDF] Vercel 환경: PDFKit으로 PDF 직접 생성');
-        pdfBuffer = await this.generateProfessionalPDFWithPDFKit(orderData);
-      } else {
-        try {
-          console.log('📄 [ProfessionalPDF] 로컬 환경: HTML 템플릿으로 PDF 생성 시도');
-          const htmlContent = this.generateProfessionalHTMLTemplate(orderData);
-          pdfBuffer = await this.convertHTMLToPDFFromString(htmlContent);
-          console.log('✅ [ProfessionalPDF] HTML to PDF 변환 성공');
-        } catch (htmlToPdfError) {
-          console.warn('⚠️ [ProfessionalPDF] HTML to PDF 변환 실패, PDFKit으로 대체:', htmlToPdfError);
-          console.log('📄 [ProfessionalPDF] PDFKit으로 대체 생성 중...');
-          pdfBuffer = await this.generateProfessionalPDFWithPDFKit(orderData);
-          console.log('✅ [ProfessionalPDF] PDFKit으로 PDF 생성 성공');
-        }
-      }
+      // PDF 생성 - 항상 PDFKit 사용으로 일관된 고품질 출력 보장
+      console.log('📄 [ProfessionalPDF] 고품질 PDFKit으로 PDF 생성 (모든 환경에서 일관된 출력)');
+      const pdfBuffer = await this.generateProfessionalPDFWithPDFKit(orderData);
+      console.log('✅ [ProfessionalPDF] PDFKit으로 PDF 생성 성공');
       
       // 파일 저장 및 DB 등록 (항상 Base64로 DB에 저장하여 Vercel 호환성 보장)
       const base64Data = pdfBuffer.toString('base64');
