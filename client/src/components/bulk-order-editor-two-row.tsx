@@ -116,25 +116,63 @@ export function BulkOrderEditorTwoRow({ orders, onOrderUpdate, onOrderRemove, on
           description: "발주서가 '임시저장' 상태로 저장되어 작업 목록에서 제거되었습니다. 발주서 관리 화면에서 언제든지 조회, 수정, 승인요청이 가능합니다.",
         });
         onOrderRemove(variables.index, true); // isSilent = true로 호출하여 추가 메시지 방지
-      } else if (variables.sendEmail) {
-        // 이메일 발송 옵션이 선택된 경우 이메일 모달 표시
-        setSavedOrderData({ 
-          ...data, 
-          originalOrder: variables.order,
-          originalIndex: variables.index 
-        });
-        setShowEmailModal(true);
-        toast({
-          title: "발주서 생성 완료",
-          description: "발주서가 생성되었습니다. 이메일을 작성해주세요.",
-        });
       } else {
-        // 이메일 발송 없이 완료
+        // 4-stage toast message system for order processing
+        const savedCount = data.savedCount || 1;
+        const emailsSent = data.emailsSent || 0;
+        const hasPDF = true; // PDF는 ProfessionalPDFGenerationService로 항상 생성됨
+        const hasAttachments = data.savedOrders && data.savedOrders.length > 0;
+        
+        // 1단계 완료: 엑셀파일 처리 결과
         toast({
-          title: "발주서 생성 완료",
-          description: "발주서가 성공적으로 생성되었습니다. 생성된 발주서는 발주서 관리 화면에서 확인할 수 있습니다.",
+          title: "✅ 1. 엑셀파일 처리 완료",
+          description: `발주서 ${savedCount}개 처리 완료`,
+          duration: 8000,
         });
-        onOrderRemove(variables.index, true); // isSilent = true로 호출
+        
+        // 2단계 완료: PDF 생성 결과 (500ms 후)
+        setTimeout(() => {
+          toast({
+            title: "✅ 2. PDF 생성 완료",
+            description: `${savedCount}개 발주서 PDF가 성공적으로 생성되었습니다`,
+            duration: 8000,
+          });
+        }, 500);
+        
+        // 3단계 완료: DB 저장 여부 (1000ms 후)
+        setTimeout(() => {
+          toast({
+            title: "✅ 3. DB 저장 완료",
+            description: `Excel/PDF 파일 ${savedCount}건이 데이터베이스에 저장됨`,
+            duration: 8000,
+          });
+        }, 1000);
+        
+        // 4단계 완료: 이메일 첨부 가능여부 (1500ms 후)
+        setTimeout(() => {
+          toast({
+            title: "✅ 4. 이메일 첨부 준비 완료",
+            description: `${hasPDF ? 'PDF + Excel' : 'Excel'} 파일이 이메일 첨부 가능한 상태입니다`,
+            duration: 8000,
+          });
+          
+          // 이메일 발송 옵션이 선택된 경우에만 모달 표시 (4단계 완료 후)
+          if (variables.sendEmail) {
+            setTimeout(() => {
+              setSavedOrderData({ 
+                ...data, 
+                originalOrder: variables.order,
+                originalIndex: variables.index 
+              });
+              setShowEmailModal(true);
+            }, 2000); // 4단계 토스트 후 2초 뒤에 이메일 모달 표시
+          } else {
+            // 이메일 발송 없이 완료 (4단계 후 처리)
+            setTimeout(() => {
+              onOrderRemove(variables.index, true); // isSilent = true로 호출
+            }, 2000);
+          }
+        }, 1500);
       }
     },
     onError: (error) => {

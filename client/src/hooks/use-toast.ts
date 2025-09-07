@@ -5,7 +5,7 @@ import type {
   ToastProps,
 } from "@/components/ui/toast"
 
-const TOAST_LIMIT = 1
+const TOAST_LIMIT = 6  // 최대 6개 토스트 동시 표시 (4개 메인 + 여유분 2개)
 const TOAST_REMOVE_DELAY = 1000000
 
 type ToasterToast = ToastProps & {

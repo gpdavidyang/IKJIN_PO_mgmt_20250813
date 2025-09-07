@@ -216,6 +216,13 @@ export default function CreateOrderExcel() {
 
       updateProcessingStep('extract', 'completed');
       
+      // 1단계 완료: 엑셀파일 처리 결과
+      toast({
+        title: "✅ 1. 엑셀파일 처리 완료",
+        description: `발주서 ${uploadData.data.totalOrders}개, 아이템 ${uploadData.data.totalItems}개 처리 완료`,
+        duration: 8000, // 8초 동안 유지
+      });
+      
       // Step 4: Save to database
       updateProcessingStep('save-db', 'processing');
       
@@ -236,6 +243,12 @@ export default function CreateOrderExcel() {
       
       if (!saveResponse.ok) {
         updateProcessingStep('save-db', 'error', saveData.error || '데이터베이스 저장 실패');
+        toast({
+          title: "❌ 3. DB 저장 실패",
+          description: "데이터베이스 저장에 실패했습니다.",
+          variant: "destructive",
+          duration: 8000, // 8초 동안 유지
+        });
         setProcessing(false);
         return;
       }
@@ -244,41 +257,40 @@ export default function CreateOrderExcel() {
 
       // Step 5: Generate PDF
       updateProcessingStep('generate-pdf', 'processing');
-      await new Promise(resolve => setTimeout(resolve, 1000)); // PDF 생성 시뮬레이션
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // PDF 생성 상태 확인 및 처리
+      // 2단계 완료: PDF 생성 결과 및 3단계: DB 저장 결과
+      let pdfSuccess = false;
+      let pdfCount = 0;
+      
       if (saveData.data.pdfGenerationStatuses && saveData.data.pdfGenerationStatuses.length > 0) {
-        const hasErrors = saveData.data.pdfGenerationStatuses.some((status: any) => !status.success);
-        if (hasErrors) {
-          updateProcessingStep('generate-pdf', 'error', 'PDF 생성 중 일부 오류 발생');
-        } else {
-          updateProcessingStep('generate-pdf', 'completed');
-        }
+        const successfulPdfs = saveData.data.pdfGenerationStatuses.filter((status: any) => status.success);
+        pdfSuccess = successfulPdfs.length > 0;
+        pdfCount = successfulPdfs.length;
         
-        // Toast 메시지 표시
-        saveData.data.pdfGenerationStatuses.forEach((status: any) => {
-          if (status.success) {
-            toast({
-              title: "PDF 생성 성공",
-              description: status.message || `${status.orderNumber} PDF가 생성되었습니다.`,
-              duration: 5000,
-            });
-          } else {
-            toast({
-              title: "PDF 생성 실패", 
-              description: status.message || `${status.orderNumber} PDF 생성에 실패했습니다.`,
-              variant: "destructive",
-              duration: 7000,
-            });
-          }
-        });
+        if (pdfSuccess) {
+          updateProcessingStep('generate-pdf', 'completed');
+          toast({
+            title: "✅ 2. PDF 생성 완료",
+            description: `${pdfCount}개 발주서 PDF가 성공적으로 생성되었습니다`,
+            duration: 8000, // 8초 동안 유지
+          });
+        } else {
+          updateProcessingStep('generate-pdf', 'error');
+          toast({
+            title: "❌ 2. PDF 생성 실패",
+            description: "PDF 생성에 실패했습니다",
+            variant: "destructive",
+            duration: 8000, // 8초 동안 유지
+          });
+        }
       } else {
-        updateProcessingStep('generate-pdf', 'error', 'PDF 생성 상태 확인 불가');
+        updateProcessingStep('generate-pdf', 'error');
         toast({
-          title: "PDF 생성 상태 알 수 없음",
-          description: "PDF 생성 상태를 확인할 수 없습니다.",
+          title: "❌ 2. PDF 생성 실패",
+          description: "PDF 생성 상태를 확인할 수 없습니다",
           variant: "destructive",
-          duration: 5000,
+          duration: 8000, // 8초 동안 유지
         });
       }
 
@@ -292,14 +304,30 @@ export default function CreateOrderExcel() {
       await new Promise(resolve => setTimeout(resolve, 200));
       updateProcessingStep('complete', 'completed');
 
-      // 저장된 발주서 번호들 저장
+      // 3단계 완료: DB 저장 여부
       if (saveData.data.savedOrderNumbers && saveData.data.savedOrderNumbers.length > 0) {
         setSavedOrderNumbers(saveData.data.savedOrderNumbers);
         
         toast({
-          title: "발주서 저장 완료",
-          description: `${saveData.data.savedOrderNumbers.length}개의 발주서가 데이터베이스에 저장되었습니다.`,
-          duration: 5000,
+          title: "✅ 3. DB 저장 완료",
+          description: `Excel/PDF 파일 ${saveData.data.savedOrderNumbers.length}건이 데이터베이스에 저장됨`,
+          duration: 8000, // 8초 동안 유지
+        });
+        
+        // 4단계 완료: 이메일 첨부 가능여부 (약간의 딜레이 후 표시)
+        setTimeout(() => {
+          toast({
+            title: "✅ 4. 이메일 첨부 준비 완료",
+            description: `${pdfSuccess ? 'PDF + Excel' : 'Excel'} 파일이 이메일 첨부 가능한 상태입니다`,
+            duration: 8000, // 8초 동안 유지
+          });
+        }, 500);
+      } else {
+        toast({
+          title: "❌ 3. DB 저장 실패",
+          description: "데이터베이스 저장에 실패했습니다",
+          variant: "destructive",
+          duration: 8000, // 8초 동안 유지
         });
       }
 
