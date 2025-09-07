@@ -1028,13 +1028,13 @@ export default function CreateStandardOrder() {
                       className="hidden" 
                       id="file-upload"
                       onChange={handleFileUpload}
-                      accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif"
+                      accept="*"
                     />
                     <Label htmlFor="file-upload" className="cursor-pointer flex items-center gap-2 text-sm text-gray-600">
                       <Upload className="h-4 w-4" />
                     <span className="text-xs text-gray-600 dark:text-gray-400">파일을 선택하거나 여기에 드래그하세요</span>
                     <br />
-                    <span className="text-xs text-gray-500 dark:text-gray-500">PDF, Word, Excel, 이미지 파일 지원</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-500">모든 파일 형식 지원</span>
                   </Label>
                 </div>
                 

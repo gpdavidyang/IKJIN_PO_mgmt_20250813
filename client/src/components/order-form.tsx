@@ -1124,12 +1124,12 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
                 {isDragOver ? '파일을 놓아주세요' : '파일을 드래그하거나 클릭하여 업로드'}
               </p>
               <p className={`text-sm mb-4 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                PDF, DWG, 이미지 파일 (최대 10MB)
+                모든 파일 형식 지원 (최대 10MB)
               </p>
               <input
                 type="file"
                 multiple
-                accept=".pdf,.dwg,.jpg,.jpeg,.png,.gif"
+                accept="*"
                 onChange={handleFileUpload}
                 className="hidden"
                 id="fileUpload"
