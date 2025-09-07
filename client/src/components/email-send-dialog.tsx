@@ -33,6 +33,7 @@ interface EmailSendDialogProps {
     orderId?: number; // Added to fetch attachments
   };
   onSendEmail: (emailData: EmailData) => Promise<void>;
+  attachments?: AttachmentInfo[]; // Optional: pass attachments directly to avoid API call
 }
 
 interface EmailData {
@@ -43,7 +44,7 @@ interface EmailData {
   selectedAttachmentIds: number[];
 }
 
-export function EmailSendDialog({ open, onOpenChange, orderData, onSendEmail }: EmailSendDialogProps) {
+export function EmailSendDialog({ open, onOpenChange, orderData, onSendEmail, attachments: providedAttachments }: EmailSendDialogProps) {
   const { toast } = useToast();
   const [emailData, setEmailData] = useState<EmailData>({
     to: orderData.vendorEmail ? [orderData.vendorEmail] : [''],
@@ -60,12 +61,20 @@ export function EmailSendDialog({ open, onOpenChange, orderData, onSendEmail }: 
   const [attachments, setAttachments] = useState<AttachmentInfo[]>([]);
   const [attachmentsLoading, setAttachmentsLoading] = useState(false);
 
-  // Fetch attachments when dialog opens
+  // Use provided attachments or fetch them when dialog opens
   useEffect(() => {
-    if (open && orderData.orderId) {
-      fetchAttachments();
+    if (open) {
+      if (providedAttachments) {
+        // Use provided attachments directly
+        console.log('📎 Using provided attachments:', providedAttachments.length);
+        setAttachments(providedAttachments.map(att => ({ ...att, isSelected: false })));
+      } else if (orderData.orderId) {
+        // Fallback: fetch attachments from API
+        console.log('📎 No provided attachments, fetching from API for order:', orderData.orderId);
+        fetchAttachments();
+      }
     }
-  }, [open, orderData.orderId]);
+  }, [open, orderData.orderId, providedAttachments]);
 
   const fetchAttachments = async () => {
     if (!orderData.orderId) return;

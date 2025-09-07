@@ -51,6 +51,35 @@ router.get('/test/ping', (req, res) => {
   });
 });
 
+// JWT authentication test endpoint
+router.get('/auth/test-jwt', (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    const cookies = req.cookies;
+    const token = localStorage?.getItem ? 'frontend-only' : null;
+    
+    console.log('🧪 JWT 테스트 - 요청 정보:', {
+      hasAuthHeader: !!authHeader,
+      authHeaderValue: authHeader ? authHeader.substring(0, 20) + '...' : 'none',
+      hasCookies: !!cookies,
+      cookieKeys: Object.keys(cookies || {}),
+      hasAuthTokenCookie: !!(cookies && cookies.auth_token),
+      tokenLength: cookies?.auth_token?.length || 0
+    });
+    
+    res.json({
+      message: "JWT 테스트 엔드포인트",
+      hasAuthHeader: !!authHeader,
+      hasCookieToken: !!(cookies && cookies.auth_token),
+      cookieTokenLength: cookies?.auth_token?.length || 0,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('JWT 테스트 에러:', error);
+    res.status(500).json({ error: 'JWT 테스트 실패' });
+  }
+});
+
 // Production authentication debug endpoint
 router.get('/auth/debug-prod', (req, res) => {
   try {

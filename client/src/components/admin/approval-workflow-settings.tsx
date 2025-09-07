@@ -47,7 +47,7 @@ const roleLabels: { [key: string]: string } = {
   'admin': '관리자',
   'executive': '임원',
   'hq_management': '본사 관리자',
-  'project_manager': '프로젝트 매니저',
+  'project_manager': '현장 관리자',
   'field_worker': '현장 작업자'
 };
 
@@ -55,7 +55,7 @@ const roleOptions = [
   { value: 'admin', label: '관리자' },
   { value: 'executive', label: '임원' },
   { value: 'hq_management', label: '본사 관리자' },
-  { value: 'project_manager', label: '프로젝트 매니저' },
+  { value: 'project_manager', label: '현장 관리자' },
   { value: 'field_worker', label: '현장 작업자' }
 ];
 
@@ -315,7 +315,7 @@ export function ApprovalWorkflowSettings() {
             <p><strong>• 승인 방식 선택:</strong></p>
             <ul className="ml-4 space-y-1">
               <li>- <strong>직접 승인:</strong> 발주서 생성 시 승인절차 없이 바로 발주서가 생성되는 방식</li>
-              <li>- <strong>단계별 승인:</strong> 현장 작업자 → 프로젝트 매니저 → 임원 등 순차적으로 승인하는 방식</li>
+              <li>- <strong>단계별 승인:</strong> 현장 작업자 → 현장 관리자 → 임원 등 순차적으로 승인하는 방식</li>
             </ul>
           </div>
           
@@ -323,7 +323,7 @@ export function ApprovalWorkflowSettings() {
             <p><strong>• 승인 단계 템플릿:</strong></p>
             <ul className="ml-4 space-y-1">
               <li>- 발주 금액에 따라 다른 승인 경로를 설정할 수 있습니다</li>
-              <li>- 예: 100만원 미만은 프로젝트 매니저 승인, 100만원 이상은 임원 승인</li>
+              <li>- 예: 100만원 미만은 현장 관리자 승인, 100만원 이상은 임원 승인</li>
               <li>- 각 단계별로 건너뛰기 허용 여부, 선택적 단계 여부를 설정 가능</li>
             </ul>
           </div>

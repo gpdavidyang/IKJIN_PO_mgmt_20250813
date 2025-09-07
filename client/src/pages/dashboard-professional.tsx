@@ -1151,6 +1151,7 @@ export default function DashboardProfessional() {
               siteName: selectedOrder.project?.projectName || selectedOrder.project?.name,
               orderId: selectedOrder.id
             }}
+            attachments={selectedOrder.attachments || []}
             onSendEmail={handleSendEmail}
           />
         )}

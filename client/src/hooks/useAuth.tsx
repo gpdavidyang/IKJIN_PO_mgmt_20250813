@@ -68,6 +68,9 @@ function AuthProvider({ children }: { children: ReactNode }) {
     queryKey: ["/api/auth/user"],
     queryFn: async () => {
       try {
+        // Backend uses httpOnly cookies for JWT authentication
+        // No need to manually set Authorization header
+        
         const response = await fetch("/api/auth/user", {
           credentials: 'include',
         });
@@ -216,6 +219,9 @@ function AuthProvider({ children }: { children: ReactNode }) {
       // Extract user data from response
       const userData = response.user || response;
       
+      // JWT token is stored as httpOnly cookie by backend
+      // No need to store in localStorage
+      
       // Set the user data directly without invalidating to prevent immediate 401 calls
       queryClient.setQueryData(["/api/auth/user"], userData);
       devLog('✅ Login successful, user data set:', response);
@@ -239,6 +245,7 @@ function AuthProvider({ children }: { children: ReactNode }) {
       
       // Clear authentication indicators immediately
       localStorage.removeItem('hasAuthenticated');
+      // JWT token cookie is cleared by backend logout endpoint
       sessionStorage.removeItem('userAuthenticated');
       
       // Cancel any outgoing requests to prevent race conditions
@@ -278,6 +285,7 @@ function AuthProvider({ children }: { children: ReactNode }) {
       
       // Clear authentication indicators immediately
       localStorage.removeItem('hasAuthenticated');
+      // JWT token cookie is cleared by backend logout endpoint
       sessionStorage.removeItem('userAuthenticated');
       
       // Cancel any pending auth queries to prevent 401 errors

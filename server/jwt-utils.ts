@@ -43,15 +43,27 @@ export function verifyToken(token: string): JWTPayload | null {
  * Extract token from Authorization header or cookies
  */
 export function extractToken(authHeader?: string, cookies?: any): string | null {
+  console.log('🔍 JWT: Extracting token from:', {
+    hasAuthHeader: !!authHeader,
+    authHeaderValue: authHeader ? authHeader.substring(0, 20) + '...' : 'none',
+    hasCookies: !!cookies,
+    cookieKeys: cookies ? Object.keys(cookies) : [],
+    hasAuthTokenCookie: !!(cookies && cookies.auth_token)
+  });
+  
   // Try Authorization header first
   if (authHeader && authHeader.startsWith('Bearer ')) {
-    return authHeader.substring(7);
+    const token = authHeader.substring(7);
+    console.log('✅ JWT: Token extracted from Authorization header, length:', token.length);
+    return token;
   }
   
   // Try cookie as fallback
   if (cookies && cookies.auth_token) {
+    console.log('✅ JWT: Token extracted from cookie, length:', cookies.auth_token.length);
     return cookies.auth_token;
   }
   
+  console.log('❌ JWT: No token found in headers or cookies');
   return null;
 }

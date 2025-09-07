@@ -37,11 +37,14 @@ export async function apiRequest(
     headers["Content-Type"] = "application/json";
   }
   
+  // Backend uses httpOnly cookies for JWT authentication
+  // No need to manually set Authorization header
+  
   const res = await fetch(url, {
     method,
     headers,
     body: data instanceof FormData ? data : (data ? JSON.stringify(data) : undefined),
-    credentials: "include",
+    credentials: "include", // Keep cookie-based auth as fallback
   });
 
   await throwIfResNotOk(res);
@@ -62,7 +65,13 @@ export const getQueryFn: <T>(options: {
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
     try {
+      const headers: Record<string, string> = {};
+      
+      // Backend uses httpOnly cookies for JWT authentication
+      // No need to manually set Authorization header
+      
       const res = await fetch(queryKey[0] as string, {
+        headers,
         credentials: "include",
       });
 

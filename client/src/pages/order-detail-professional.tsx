@@ -41,7 +41,6 @@ import { EmailHistoryModal } from "@/components/email-history-modal";
 import { AttachedFilesInfo } from "@/components/attached-files-info";
 import { format } from "date-fns";
 import { formatKoreanWon } from "@/lib/utils";
-import { downloadAttachment, showDownloadSuccessMessage } from "@/lib/downloadUtils";
 
 export default function OrderDetailProfessional() {
   const { user } = useAuth();
@@ -996,6 +995,14 @@ export default function OrderDetailProfessional() {
               siteName: order.project?.projectName || order.projectName || '',
               orderId: order.id
             }}
+            attachments={order.attachments?.map(att => ({
+              id: att.id,
+              originalName: att.originalName,
+              filePath: att.filePath,
+              fileSize: att.fileSize,
+              mimeType: att.mimeType,
+              isSelected: false
+            }))}
             onSendEmail={handleSendEmail}
           />
         )}

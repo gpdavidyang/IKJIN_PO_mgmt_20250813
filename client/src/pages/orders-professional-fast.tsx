@@ -1510,6 +1510,7 @@ export default function OrdersProfessionalFast() {
               siteName: selectedOrder.projectName,
               orderId: selectedOrder.id
             }}
+            attachments={selectedOrder.attachments || []}
             onSendEmail={handleSendEmail}
           />
         )}
