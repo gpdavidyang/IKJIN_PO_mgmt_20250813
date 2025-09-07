@@ -47,7 +47,7 @@ export function useApprovalNotifications(pollingInterval = 30000) {
 
   // Handle new notifications
   useEffect(() => {
-    if (!notifications || notifications.length === 0) return;
+    if (!notifications || !Array.isArray(notifications) || notifications.length === 0) return;
 
     const currentNotificationIds = new Set(notifications.map(n => n.id));
     const newNotifications = notifications.filter(

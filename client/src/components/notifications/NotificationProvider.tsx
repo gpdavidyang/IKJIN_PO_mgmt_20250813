@@ -262,7 +262,7 @@ export function NotificationProvider({
 
   // Handle new notifications
   useEffect(() => {
-    if (!notifications || notifications.length === 0) return;
+    if (!notifications || !Array.isArray(notifications) || notifications.length === 0) return;
 
     const currentNotificationIds = new Set(notifications.map(n => n.id));
     const newNotifications = notifications.filter(
@@ -286,7 +286,7 @@ export function NotificationProvider({
   }, [notifications, playNotificationSound, showBrowserNotification, showToastNotification]);
 
   // Calculate unread count
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const unreadCount = Array.isArray(notifications) ? notifications.filter(n => !n.read).length : 0;
 
   const contextValue: NotificationContextType = {
     notifications,

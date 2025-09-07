@@ -196,7 +196,7 @@ export function useDeleteOrder() {
     optimisticUpdate: {
       queryKey: queryKeys.orders.all(),
       updater: (oldData: any, variables) => {
-        if (!oldData) return oldData;
+        if (!oldData || !Array.isArray(oldData)) return oldData;
         return oldData.filter((order: any) => order.id !== variables);
       },
     },
