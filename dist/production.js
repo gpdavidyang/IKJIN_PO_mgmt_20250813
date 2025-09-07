@@ -181,8 +181,7 @@ var init_schema = __esm({
       (table) => [index("IDX_session_expire").on(table.expire)]
     );
     uiTerms = pgTable("ui_terms", {
-      id: serial("id").primaryKey(),
-      termKey: varchar("term_key", { length: 100 }).notNull().unique(),
+      termKey: varchar("term_key", { length: 100 }).notNull().primaryKey(),
       termValue: varchar("term_value", { length: 255 }).notNull(),
       category: varchar("category", { length: 50 }).default("general"),
       description: text("description"),
@@ -935,7 +934,10 @@ var init_schema = __esm({
       id: true,
       changedAt: true
     });
-    insertUiTermSchema = createInsertSchema(uiTerms);
+    insertUiTermSchema = createInsertSchema(uiTerms).omit({
+      createdAt: true,
+      updatedAt: true
+    });
     insertTerminologySchema = createInsertSchema(terminology).omit({
       id: true,
       createdAt: true,
@@ -2316,9 +2318,17 @@ var init_professional_pdf_generation_service = __esm({
             console.log("\u{1F4C4} [ProfessionalPDF] Vercel \uD658\uACBD: PDFKit\uC73C\uB85C PDF \uC9C1\uC811 \uC0DD\uC131");
             pdfBuffer = await this.generateProfessionalPDFWithPDFKit(orderData);
           } else {
-            console.log("\u{1F4C4} [ProfessionalPDF] \uB85C\uCEEC \uD658\uACBD: HTML \uD15C\uD50C\uB9BF\uC73C\uB85C PDF \uC0DD\uC131");
-            const htmlContent = this.generateProfessionalHTMLTemplate(orderData);
-            pdfBuffer = await this.convertHTMLToPDFFromString(htmlContent);
+            try {
+              console.log("\u{1F4C4} [ProfessionalPDF] \uB85C\uCEEC \uD658\uACBD: HTML \uD15C\uD50C\uB9BF\uC73C\uB85C PDF \uC0DD\uC131 \uC2DC\uB3C4");
+              const htmlContent = this.generateProfessionalHTMLTemplate(orderData);
+              pdfBuffer = await this.convertHTMLToPDFFromString(htmlContent);
+              console.log("\u2705 [ProfessionalPDF] HTML to PDF \uBCC0\uD658 \uC131\uACF5");
+            } catch (htmlToPdfError) {
+              console.warn("\u26A0\uFE0F [ProfessionalPDF] HTML to PDF \uBCC0\uD658 \uC2E4\uD328, PDFKit\uC73C\uB85C \uB300\uCCB4:", htmlToPdfError);
+              console.log("\u{1F4C4} [ProfessionalPDF] PDFKit\uC73C\uB85C \uB300\uCCB4 \uC0DD\uC131 \uC911...");
+              pdfBuffer = await this.generateProfessionalPDFWithPDFKit(orderData);
+              console.log("\u2705 [ProfessionalPDF] PDFKit\uC73C\uB85C PDF \uC0DD\uC131 \uC131\uACF5");
+            }
           }
           const base64Data = pdfBuffer.toString("base64");
           let filePath = "";
@@ -2949,7 +2959,7 @@ var init_professional_pdf_generation_service = __esm({
           throw new Error("HTML to PDF conversion not supported in Vercel - use PDFKit instead");
         } else {
           try {
-            const { chromium: chromium2 } = await import("playwright");
+            const { chromium: chromium2 } = await import("playwright-chromium");
             const browser = await chromium2.launch({
               headless: true,
               args: ["--no-sandbox", "--disable-dev-shm-usage"]
@@ -2974,8 +2984,8 @@ var init_professional_pdf_generation_service = __esm({
               await browser.close();
             }
           } catch (playwrightError) {
-            console.warn("\u26A0\uFE0F Playwright \uC2E4\uD328, PDFKit\uC73C\uB85C \uB300\uCCB4:", playwrightError);
-            throw new Error(`PDF \uC0DD\uC131 \uC2E4\uD328: ${playwrightError instanceof Error ? playwrightError.message : "Playwright \uC624\uB958"}`);
+            console.warn("\u26A0\uFE0F Playwright \uC2E4\uD328:", playwrightError);
+            throw playwrightError;
           }
         }
       }
@@ -3276,7 +3286,7 @@ __export(po_template_processor_mock_exports, {
   POTemplateProcessorMock: () => POTemplateProcessorMock
 });
 import XLSX4 from "xlsx";
-import { eq as eq12 } from "drizzle-orm";
+import { eq as eq13 } from "drizzle-orm";
 var POTemplateProcessorMock;
 var init_po_template_processor_mock = __esm({
   "server/utils/po-template-processor-mock.ts"() {
@@ -3419,7 +3429,7 @@ var init_po_template_processor_mock = __esm({
             for (const orderData of orders) {
               console.log(`\u{1F50D} [DB] \uBC1C\uC8FC\uC11C \uCC98\uB9AC \uC911: ${orderData.orderNumber}, \uAC70\uB798\uCC98: ${orderData.vendorName}`);
               console.log(`\u{1F50D} [DB] \uAC70\uB798\uCC98 \uC870\uD68C: ${orderData.vendorName}`);
-              let vendor = await tx.select().from(vendors).where(eq12(vendors.name, orderData.vendorName)).limit(1);
+              let vendor = await tx.select().from(vendors).where(eq13(vendors.name, orderData.vendorName)).limit(1);
               let vendorId;
               if (vendor.length === 0) {
                 console.log(`\u{1F50D} [DB] \uAC70\uB798\uCC98 \uC0DD\uC131: ${orderData.vendorName}`);
@@ -3437,7 +3447,7 @@ var init_po_template_processor_mock = __esm({
                 console.log(`\u2705 [DB] \uAC70\uB798\uCC98 \uAE30\uC874 \uBC1C\uACAC: ID ${vendorId}`);
               }
               console.log(`\u{1F50D} [DB] \uD504\uB85C\uC81D\uD2B8 \uC870\uD68C: ${orderData.siteName}`);
-              let project = await tx.select().from(projects).where(eq12(projects.projectName, orderData.siteName)).limit(1);
+              let project = await tx.select().from(projects).where(eq13(projects.projectName, orderData.siteName)).limit(1);
               let projectId;
               if (project.length === 0) {
                 console.log(`\u{1F50D} [DB] \uD504\uB85C\uC81D\uD2B8 \uC0DD\uC131: ${orderData.siteName}`);
@@ -3510,8 +3520,8 @@ var init_po_template_processor_mock = __esm({
               }
               try {
                 console.log(`\u{1F4C4} [DB] PDF \uC0DD\uC131 \uC2DC\uC791: \uBC1C\uC8FC\uC11C ${orderData.orderNumber}`);
-                const vendorInfo = await tx.select().from(vendors).where(eq12(vendors.id, vendorId)).limit(1);
-                const projectInfo = await tx.select().from(projects).where(eq12(projects.id, projectId)).limit(1);
+                const vendorInfo = await tx.select().from(vendors).where(eq13(vendors.id, vendorId)).limit(1);
+                const projectInfo = await tx.select().from(projects).where(eq13(projects.id, projectId)).limit(1);
                 const pdfData = {
                   orderNumber: orderData.orderNumber,
                   orderDate: new Date(orderData.orderDate),
@@ -5074,12 +5084,20 @@ var DatabaseStorage = class {
   // UI terms operations
   async getUiTerms(category) {
     try {
+      console.log(`\u{1F50D} getUiTerms called with category: ${category}`);
       if (category) {
-        return await db2.select().from(uiTerms).where(and(eq(uiTerms.category, category), eq(uiTerms.isActive, true))).orderBy(asc(uiTerms.termKey));
+        console.log(`\u{1F4CB} Querying UI terms for category: ${category}`);
+        const result2 = await db2.select().from(uiTerms).where(and(eq(uiTerms.category, category), eq(uiTerms.isActive, true))).orderBy(asc(uiTerms.termKey));
+        console.log(`\u2705 Found ${result2.length} terms for category ${category}`);
+        result2.forEach((term) => console.log(`  - ${term.termKey}: ${term.termValue}`));
+        return result2;
       }
-      return await db2.select().from(uiTerms).where(eq(uiTerms.isActive, true)).orderBy(asc(uiTerms.termKey));
+      console.log(`\u{1F4CB} Querying all active UI terms`);
+      const result = await db2.select().from(uiTerms).where(eq(uiTerms.isActive, true)).orderBy(asc(uiTerms.termKey));
+      console.log(`\u2705 Found ${result.length} total active terms`);
+      return result;
     } catch (error) {
-      console.error("Database error in getUiTerms:", error);
+      console.error("\u274C Database error in getUiTerms:", error);
       return [];
     }
   }
@@ -9655,24 +9673,28 @@ var OptimizedDashboardQueries = class {
         sql3`SELECT COUNT(*) as "activeVendors" FROM vendors WHERE is_active = true`
       );
       const vendorStats = vendorResult.rows[0] || { activeVendors: 0 };
-      const recentOrdersRaw = await db2.select({
-        id: purchaseOrders.id,
-        orderNumber: purchaseOrders.orderNumber,
-        status: purchaseOrders.status,
-        // Legacy field for backward compatibility
-        orderStatus: purchaseOrders.orderStatus,
-        // New order status field
-        approvalStatus: purchaseOrders.approvalStatus,
-        // Approval status field
-        totalAmount: purchaseOrders.totalAmount,
-        createdAt: purchaseOrders.createdAt,
-        orderDate: purchaseOrders.orderDate,
-        vendorId: vendors.id,
-        vendorName: vendors.name,
-        vendorEmail: vendors.email,
-        projectId: projects.id,
-        projectName: projects.projectName
-      }).from(purchaseOrders).leftJoin(vendors, eq6(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq6(purchaseOrders.projectId, projects.id)).orderBy(desc2(purchaseOrders.createdAt)).limit(10);
+      const recentOrdersResult = await db2.execute(
+        sql3`SELECT 
+          po.id,
+          po.order_number as "orderNumber",
+          po.status,
+          po.order_status as "orderStatus", 
+          po.approval_status as "approvalStatus",
+          po.total_amount as "totalAmount",
+          po.created_at as "createdAt",
+          po.order_date as "orderDate",
+          v.id as "vendorId",
+          v.name as "vendorName",
+          v.email as "vendorEmail",
+          p.id as "projectId", 
+          p.project_name as "projectName"
+        FROM purchase_orders po
+        LEFT JOIN vendors v ON po.vendor_id = v.id
+        LEFT JOIN projects p ON po.project_id = p.id
+        ORDER BY po.created_at DESC
+        LIMIT 10`
+      );
+      const recentOrdersRaw = recentOrdersResult.rows;
       const recentOrders = recentOrdersRaw.map((order) => ({
         id: order.id,
         orderNumber: order.orderNumber,
@@ -10512,23 +10534,241 @@ var approval_routing_service_default = ApprovalRoutingService;
 init_professional_pdf_generation_service();
 init_db();
 init_email_settings_service();
-import { eq as eq10, and as and7, or as or3, like as like2, desc as desc6 } from "drizzle-orm";
+import { eq as eq11, and as and7, or as or3, like as like2, desc as desc6 } from "drizzle-orm";
 import fs7 from "fs";
 import path5 from "path";
 import { fileURLToPath as fileURLToPath2 } from "url";
 import * as XLSX3 from "xlsx";
 import nodemailer3 from "nodemailer";
+
+// server/utils/email-template-generator.ts
+init_db();
+init_schema();
+import { eq as eq10 } from "drizzle-orm";
+async function generateEmailTemplateData(orderId) {
+  try {
+    const [order] = await db2.select({
+      orderNumber: purchaseOrders.orderNumber,
+      vendorId: purchaseOrders.vendorId,
+      projectId: purchaseOrders.projectId,
+      orderDate: purchaseOrders.orderDate,
+      deliveryDate: purchaseOrders.deliveryDate,
+      totalAmount: purchaseOrders.totalAmount,
+      notes: purchaseOrders.notes
+    }).from(purchaseOrders).where(eq10(purchaseOrders.id, orderId));
+    if (!order) {
+      console.error(`\uC8FC\uBB38\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC74C: ${orderId}`);
+      return null;
+    }
+    let vendorName = "\uAC70\uB798\uCC98 \uBBF8\uC9C0\uC815";
+    if (order.vendorId) {
+      const [vendor] = await db2.select({ name: vendors.name }).from(vendors).where(eq10(vendors.id, order.vendorId));
+      if (vendor) {
+        vendorName = vendor.name;
+      }
+    }
+    let projectName = "\uD504\uB85C\uC81D\uD2B8 \uBBF8\uC9C0\uC815";
+    if (order.projectId) {
+      const [project] = await db2.select({ name: projects.name }).from(projects).where(eq10(projects.id, order.projectId));
+      if (project) {
+        projectName = project.name;
+      }
+    }
+    const items3 = await db2.select({
+      itemName: purchaseOrderItems.itemName,
+      specification: purchaseOrderItems.specification,
+      quantity: purchaseOrderItems.quantity,
+      unitPrice: purchaseOrderItems.unitPrice,
+      totalAmount: purchaseOrderItems.totalAmount
+    }).from(purchaseOrderItems).where(eq10(purchaseOrderItems.orderId, orderId));
+    return {
+      orderNumber: order.orderNumber,
+      vendorName,
+      projectName,
+      orderDate: order.orderDate,
+      deliveryDate: order.deliveryDate,
+      totalAmount: order.totalAmount,
+      items: items3,
+      additionalMessage: order.notes
+    };
+  } catch (error) {
+    console.error("\uC774\uBA54\uC77C \uD15C\uD50C\uB9BF \uB370\uC774\uD130 \uC0DD\uC131 \uC624\uB958:", error);
+    return null;
+  }
+}
+function generateEmailHTML(data) {
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat("ko-KR", {
+      style: "currency",
+      currency: "KRW"
+    }).format(amount);
+  };
+  const formatDate = (dateString) => {
+    if (!dateString) return "\uBBF8\uC815";
+    try {
+      const date2 = new Date(dateString);
+      return date2.toLocaleDateString("ko-KR", {
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+      });
+    } catch {
+      return dateString;
+    }
+  };
+  let itemsTable = "";
+  if (data.items && data.items.length > 0) {
+    const itemRows = data.items.map((item, index2) => `
+      <tr>
+        <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${index2 + 1}</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">${item.itemName}</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">${item.specification || "-"}</td>
+        <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${item.quantity.toLocaleString()}</td>
+        <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${formatCurrency(item.unitPrice)}</td>
+        <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${formatCurrency(item.totalAmount)}</td>
+      </tr>
+    `).join("");
+    itemsTable = `
+      <h3 style="color: #333; margin-top: 30px;">\u{1F4CB} \uBC1C\uC8FC \uD488\uBAA9 \uB0B4\uC5ED</h3>
+      <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+        <thead>
+          <tr style="background-color: #f8f9fa;">
+            <th style="padding: 10px; border: 1px solid #ddd; text-align: center;">\uBC88\uD638</th>
+            <th style="padding: 10px; border: 1px solid #ddd;">\uD488\uBAA9\uBA85</th>
+            <th style="padding: 10px; border: 1px solid #ddd;">\uADDC\uACA9</th>
+            <th style="padding: 10px; border: 1px solid #ddd; text-align: right;">\uC218\uB7C9</th>
+            <th style="padding: 10px; border: 1px solid #ddd; text-align: right;">\uB2E8\uAC00</th>
+            <th style="padding: 10px; border: 1px solid #ddd; text-align: right;">\uAE08\uC561</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${itemRows}
+        </tbody>
+        <tfoot>
+          <tr style="background-color: #f8f9fa; font-weight: bold;">
+            <td colspan="5" style="padding: 10px; border: 1px solid #ddd; text-align: right;">\uCD1D \uD569\uACC4:</td>
+            <td style="padding: 10px; border: 1px solid #ddd; text-align: right; color: #007bff;">
+              ${formatCurrency(data.totalAmount)}
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+    `;
+  }
+  let attachmentSection = "";
+  if (data.attachmentsList && data.attachmentsList.length > 0) {
+    const attachmentItems = data.attachmentsList.map(
+      (file) => `<li style="margin: 5px 0;">${file}</li>`
+    ).join("");
+    attachmentSection = `
+      <div style="margin-top: 30px; padding: 15px; background-color: #e8f4fd; border-radius: 5px;">
+        <h4 style="color: #333; margin: 0 0 10px 0;">\u{1F4CE} \uCCA8\uBD80\uD30C\uC77C</h4>
+        <ul style="margin: 0; padding-left: 20px;">
+          ${attachmentItems}
+        </ul>
+      </div>
+    `;
+  }
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="UTF-8">
+        <style>
+          body {
+            font-family: 'Malgun Gothic', 'Noto Sans KR', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+          }
+        </style>
+      </head>
+      <body>
+        <div style="background-color: #007bff; color: white; padding: 30px; border-radius: 8px 8px 0 0; text-align: center;">
+          <h1 style="margin: 0; font-size: 28px;">\u{1F4E6} \uAD6C\uB9E4 \uBC1C\uC8FC\uC11C</h1>
+          <p style="margin: 10px 0 0 0; font-size: 18px;">Purchase Order</p>
+        </div>
+        
+        <div style="background-color: #f8f9fa; padding: 30px; border-radius: 0 0 8px 8px;">
+          <p style="font-size: 16px; margin-bottom: 20px;">
+            \uC548\uB155\uD558\uC138\uC694, <strong>${data.vendorName}</strong>\uB2D8
+          </p>
+          
+          <p style="margin-bottom: 20px;">
+            \uC544\uB798\uC640 \uAC19\uC774 \uBC1C\uC8FC\uC11C\uB97C \uC1A1\uBD80\uB4DC\uB9AC\uC624\uB2C8 \uD655\uC778 \uBD80\uD0C1\uB4DC\uB9BD\uB2C8\uB2E4.
+          </p>
+          
+          <div style="background-color: white; padding: 20px; border-radius: 5px; margin: 20px 0;">
+            <h3 style="color: #333; margin-top: 0;">\u{1F4DD} \uBC1C\uC8FC \uC815\uBCF4</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; width: 30%; font-weight: bold;">\uBC1C\uC8FC\uBC88\uD638:</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">${data.orderNumber}</td>
+              </tr>
+              <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold;">\uD504\uB85C\uC81D\uD2B8:</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">${data.projectName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold;">\uBC1C\uC8FC\uC77C\uC790:</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">${formatDate(data.orderDate)}</td>
+              </tr>
+              <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold;">\uB0A9\uAE30\uC77C\uC790:</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">${formatDate(data.deliveryDate)}</td>
+              </tr>
+              <tr>
+                <td style="padding: 10px; font-weight: bold;">\uCD1D \uAE08\uC561:</td>
+                <td style="padding: 10px; font-size: 18px; color: #007bff; font-weight: bold;">
+                  ${formatCurrency(data.totalAmount)}
+                </td>
+              </tr>
+            </table>
+          </div>
+          
+          ${itemsTable}
+          
+          ${data.additionalMessage ? `
+            <div style="margin-top: 30px; padding: 15px; background-color: #fff3cd; border-radius: 5px;">
+              <h4 style="color: #333; margin: 0 0 10px 0;">\u{1F4AC} \uCD94\uAC00 \uBA54\uC2DC\uC9C0</h4>
+              <p style="margin: 0; white-space: pre-wrap;">${data.additionalMessage}</p>
+            </div>
+          ` : ""}
+          
+          ${attachmentSection}
+          
+          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; text-align: center; color: #666;">
+            <p style="margin: 5px 0;">
+              \uBCF8 \uBA54\uC77C\uC740 \uBC1C\uC8FC \uAD00\uB9AC \uC2DC\uC2A4\uD15C\uC5D0\uC11C \uC790\uB3D9\uC73C\uB85C \uBC1C\uC1A1\uB418\uC5C8\uC2B5\uB2C8\uB2E4.
+            </p>
+            <p style="margin: 5px 0;">
+              \uBB38\uC758\uC0AC\uD56D\uC774 \uC788\uC73C\uC2DC\uBA74 \uB2F4\uB2F9\uC790\uC5D0\uAC8C \uC5F0\uB77D \uBD80\uD0C1\uB4DC\uB9BD\uB2C8\uB2E4.
+            </p>
+            <p style="margin: 15px 0 0 0; font-size: 12px;">
+              \xA9 2025 IKJIN Construction. All rights reserved.
+            </p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+}
+
+// server/routes/orders.ts
 var __filename2 = fileURLToPath2(import.meta.url);
 var __dirname3 = path5.dirname(__filename2);
 var router3 = Router3();
 var emailService = new POEmailService();
 async function updateOrderStatusAfterEmail(orderNumber) {
+  console.log(`\u{1F4E7} \uC774\uBA54\uC77C \uBC1C\uC1A1 \uD6C4 \uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8: ${orderNumber} \u2192 sent`);
   await db2.update(purchaseOrders).set({
-    orderStatus: "\uBC1C\uC8FC\uC644\uB8CC",
-    // 이메일 발송 완료 후 '발주완료' 상태로 변경
-    status: "completed",
+    orderStatus: "sent",
+    // 발주상태: 이메일 발송 완료 후 'sent'로 변경
+    // approvalStatus는 이미 'approved' 또는 'not_required' 상태이므로 변경하지 않음
     updatedAt: /* @__PURE__ */ new Date()
-  }).where(eq10(purchaseOrders.orderNumber, orderNumber));
+  }).where(eq11(purchaseOrders.orderNumber, orderNumber));
 }
 router3.get("/orders", async (req, res) => {
   try {
@@ -10782,11 +11022,22 @@ router3.post("/orders", requireAuth, upload.array("attachments"), async (req, re
           fileBuffer = fs22.readFileSync(file.path);
         }
         const base64Data = fileBuffer.toString("base64");
+        let finalOriginalName = decodedFilename;
+        let finalStoredName = file.filename;
+        if (file.mimetype === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" || decodedFilename.toLowerCase().endsWith(".xlsx")) {
+          console.log("\u{1F4CB} Excel \uD30C\uC77C\uBA85 \uD45C\uC900\uD654 \uC2DC\uC791:", decodedFilename);
+          const today = /* @__PURE__ */ new Date();
+          const dateStr = today.getFullYear().toString() + (today.getMonth() + 1).toString().padStart(2, "0") + today.getDate().toString().padStart(2, "0");
+          const standardizedName = `IKJIN_${order.orderNumber}_${dateStr}.xlsx`;
+          finalOriginalName = standardizedName;
+          finalStoredName = `${Date.now()}-${standardizedName}`;
+          console.log(`\u2705 Excel \uD30C\uC77C\uBA85 \uD45C\uC900\uD654 \uC644\uB8CC: ${decodedFilename} \u2192 ${standardizedName}`);
+        }
         const attachmentData = {
           orderId: order.id,
-          originalName: decodedFilename,
-          storedName: file.filename,
-          filePath: `db://${file.filename}`,
+          originalName: finalOriginalName,
+          storedName: finalStoredName,
+          filePath: `db://${finalStoredName}`,
           // Use db:// prefix for database storage
           fileSize: fileBuffer.length,
           mimeType: file.mimetype,
@@ -11894,7 +12145,7 @@ router3.post("/orders/:id/regenerate-pdf", requireAuth, async (req, res) => {
     if (!userId) {
       return res.status(401).json({ message: "User not authenticated" });
     }
-    const [order] = await db2.select().from(purchaseOrders).where(eq10(purchaseOrders.id, orderId)).limit(1);
+    const [order] = await db2.select().from(purchaseOrders).where(eq11(purchaseOrders.id, orderId)).limit(1);
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
@@ -12145,9 +12396,9 @@ router3.get("/orders/:id/download-pdf", async (req, res) => {
     console.log(`\u{1F4C4} Order ID ${orderId}\uB85C PDF \uB2E4\uC6B4\uB85C\uB4DC \uC694\uCCAD`);
     const attachments3 = await db.select().from(attachments).where(
       and7(
-        eq10(attachments.orderId, orderId),
+        eq11(attachments.orderId, orderId),
         or3(
-          eq10(attachments.mimeType, "application/pdf"),
+          eq11(attachments.mimeType, "application/pdf"),
           like2(attachments.originalName, "%.pdf")
         )
       )
@@ -12186,8 +12437,10 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
       message,
       attachPdf = true,
       attachExcel = false,
-      selectedAttachments = []
+      selectedAttachments = [],
       // NEW: Handle selectedAttachments from frontend
+      selectedAttachmentIds = []
+      // Also accept selectedAttachmentIds from frontend
     } = req.body;
     console.log("\u{1F4E7} \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC694\uCCAD:", {
       orderData,
@@ -12201,7 +12454,8 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
       message,
       attachPdf,
       attachExcel,
-      selectedAttachments
+      selectedAttachments,
+      selectedAttachmentIds
     });
     const recipientEmails = recipients || to;
     if (!recipientEmails || recipientEmails.length === 0) {
@@ -12231,7 +12485,7 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
               filePath: attachments.filePath,
               mimeType: attachments.mimeType,
               fileData: attachments.fileData
-            }).from(attachments).where(eq10(attachments.id, attachmentId));
+            }).from(attachments).where(eq11(attachments.id, attachmentId));
             if (attachment) {
               if (attachment.fileData) {
                 attachments3.push({
@@ -12288,7 +12542,7 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
               filePath: attachments.filePath,
               mimeType: attachments.mimeType,
               fileData: attachments.fileData
-            }).from(attachments).where(eq10(attachments.id, attachmentId));
+            }).from(attachments).where(eq11(attachments.id, attachmentId));
             if (attachment) {
               if (attachment.fileData) {
                 attachments3.push({
@@ -12332,8 +12586,9 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
         }
       }
     }
-    if (selectedAttachments && Array.isArray(selectedAttachments) && selectedAttachments.length > 0) {
-      console.log("\u{1F4CE} \uCC98\uB9AC\uD560 \uC120\uD0DD\uB41C \uCCA8\uBD80\uD30C\uC77C IDs:", selectedAttachments);
+    const attachmentIdsToProcess = selectedAttachmentIds && selectedAttachmentIds.length > 0 ? selectedAttachmentIds : selectedAttachments;
+    if (attachmentIdsToProcess && Array.isArray(attachmentIdsToProcess) && attachmentIdsToProcess.length > 0) {
+      console.log("\u{1F4CE} \uCC98\uB9AC\uD560 \uC120\uD0DD\uB41C \uCCA8\uBD80\uD30C\uC77C IDs:", attachmentIdsToProcess);
       console.log("\u{1F4CE} attachPdf:", attachPdf, "attachExcel:", attachExcel);
       console.log("\u{1F4CE} pdfUrl:", pdfUrl, "excelUrl:", excelUrl);
       const processedAttachmentIds = /* @__PURE__ */ new Set();
@@ -12358,7 +12613,7 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
           }
         }
       }
-      for (const attachmentId of selectedAttachments) {
+      for (const attachmentId of attachmentIdsToProcess) {
         try {
           if (processedAttachmentIds.has(attachmentId)) {
             console.log("\u26A0\uFE0F \uCCA8\uBD80\uD30C\uC77C \uC774\uBBF8 \uCC98\uB9AC\uB428 (\uAE30\uC874 \uB85C\uC9C1):", attachmentId);
@@ -12370,7 +12625,7 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
             filePath: attachments.filePath,
             mimeType: attachments.mimeType,
             fileData: attachments.fileData
-          }).from(attachments).where(eq10(attachments.id, attachmentId));
+          }).from(attachments).where(eq11(attachments.id, attachmentId));
           if (attachment) {
             if (attachment.fileData) {
               attachments3.push({
@@ -12400,6 +12655,23 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
       }
     }
     console.log(`\u{1F4CE} \uCD1D ${attachments3.length}\uAC1C \uCCA8\uBD80\uD30C\uC77C:`, attachmentsList);
+    let emailHtmlContent;
+    if (orderData.orderId) {
+      const templateData = await generateEmailTemplateData(orderData.orderId);
+      if (templateData) {
+        templateData.attachmentsList = attachmentsList;
+        if (message) {
+          templateData.additionalMessage = message;
+        }
+        emailHtmlContent = generateEmailHTML(templateData);
+        console.log("\u2705 DB \uB370\uC774\uD130 \uAE30\uBC18 \uC774\uBA54\uC77C \uD15C\uD50C\uB9BF \uC0DD\uC131 \uC644\uB8CC");
+      } else {
+        console.log("\u26A0\uFE0F DB \uB370\uC774\uD130\uB97C \uAC00\uC838\uC62C \uC218 \uC5C6\uC5B4 \uAE30\uBCF8 \uD15C\uD50C\uB9BF \uC0AC\uC6A9");
+        emailHtmlContent = generateEmailContent(emailOptions, attachmentsList);
+      }
+    } else {
+      emailHtmlContent = generateEmailContent(emailOptions, attachmentsList);
+    }
     const generateEmailContent = (options, attachmentsList2 = []) => {
       const formatCurrency = (amount) => {
         return new Intl.NumberFormat("ko-KR", {
@@ -12555,7 +12827,7 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
       subject: emailOptions.subject,
       attachmentsCount: attachments3.length
     });
-    const emailHtml = generateEmailContent(emailOptions, attachmentsList);
+    const emailHtml = emailHtmlContent;
     const emailSettingsService = new EmailSettingsService();
     const smtpConfig = await emailSettingsService.getDecryptedSettings();
     if (!smtpConfig) {
@@ -12889,11 +13161,12 @@ router3.get("/orders/:orderId/attachments/:attachmentId/download", requireAuth, 
       filePath: attachment.filePath,
       fileSize: attachment.fileSize
     });
-    const originalName = decodeKoreanFilename(attachment.originalName);
-    const encodedFilename = encodeURIComponent(originalName);
+    const originalName = attachment.originalName || "download";
+    const encodedFilename = encodeURIComponent(originalName).replace(/['()]/g, escape).replace(/\*/g, "%2A");
     res.setHeader("Content-Type", attachment.mimeType || "application/octet-stream");
     res.setHeader("Content-Disposition", `attachment; filename="${originalName}"; filename*=UTF-8''${encodedFilename}`);
     res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("X-Original-Filename", originalName);
     console.log(`\u{1F4E4} \uD30C\uC77C \uB2E4\uC6B4\uB85C\uB4DC \uC2DC\uC791: ${originalName}`);
     if (attachment.filePath.startsWith("db://") && attachment.fileData) {
       console.log(`\u{1F4BE} DB\uC5D0\uC11C \uD30C\uC77C \uB370\uC774\uD130 \uC77D\uAE30: ${attachment.filePath}`);
@@ -13552,7 +13825,7 @@ var companies_default = router7;
 import { Router as Router8 } from "express";
 init_db();
 init_schema();
-import { eq as eq11, and as and8 } from "drizzle-orm";
+import { eq as eq12, and as and8 } from "drizzle-orm";
 var router8 = Router8();
 router8.get("/users", requireAuth, requireAdmin, async (req, res) => {
   try {
@@ -13645,8 +13918,8 @@ router8.get("/approval-workflow-settings", requireAuth, requireAdmin, async (req
   try {
     const settings = await db2.select().from(approvalWorkflowSettings).where(
       and8(
-        eq11(approvalWorkflowSettings.isActive, true),
-        eq11(approvalWorkflowSettings.companyId, 1)
+        eq12(approvalWorkflowSettings.isActive, true),
+        eq12(approvalWorkflowSettings.companyId, 1)
       )
     ).limit(1);
     if (settings.length === 0) {
@@ -13683,7 +13956,7 @@ router8.put("/approval-workflow-settings", requireAuth, requireAdmin, async (req
       requireAllStages,
       skipLowerStages
     } = req.body;
-    const existing = await db2.select().from(approvalWorkflowSettings).where(eq11(approvalWorkflowSettings.companyId, 1)).limit(1);
+    const existing = await db2.select().from(approvalWorkflowSettings).where(eq12(approvalWorkflowSettings.companyId, 1)).limit(1);
     if (existing.length === 0) {
       const [newSettings] = await db2.insert(approvalWorkflowSettings).values({
         companyId: 1,
@@ -13704,7 +13977,7 @@ router8.put("/approval-workflow-settings", requireAuth, requireAdmin, async (req
         requireAllStages,
         skipLowerStages,
         updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq11(approvalWorkflowSettings.id, existing[0].id)).returning();
+      }).where(eq12(approvalWorkflowSettings.id, existing[0].id)).returning();
       res.json(updatedSettings);
     }
   } catch (error) {
@@ -13724,12 +13997,12 @@ import fs10 from "fs";
 init_db();
 init_schema();
 init_po_template_processor_mock();
-import { eq as eq14, inArray as inArray2 } from "drizzle-orm";
+import { eq as eq15, inArray as inArray2 } from "drizzle-orm";
 
 // server/utils/vendor-validation.ts
 init_db();
 init_schema();
-import { eq as eq13, sql as sql6 } from "drizzle-orm";
+import { eq as eq14, sql as sql6 } from "drizzle-orm";
 function levenshteinDistance(str1, str2) {
   const matrix = [];
   if (str1.length === 0) return str2.length;
@@ -13849,7 +14122,7 @@ async function validateVendorName(vendorName, vendorType = "\uAC70\uB798\uCC98")
         phone: vendors.phone,
         contactPerson: vendors.contactPerson,
         aliases: vendors.aliases
-      }).from(vendors).where(eq13(vendors.name, vendorName)).limit(1);
+      }).from(vendors).where(eq14(vendors.name, vendorName)).limit(1);
       const aliasMatchQuery = db2.select({
         id: vendors.id,
         name: vendors.name,
@@ -13865,7 +14138,7 @@ async function validateVendorName(vendorName, vendorType = "\uAC70\uB798\uCC98")
         phone: vendors.phone,
         contactPerson: vendors.contactPerson,
         aliases: vendors.aliases
-      }).from(vendors).where(eq13(vendors.isActive, true));
+      }).from(vendors).where(eq14(vendors.isActive, true));
       exactMatch = await Promise.race([exactMatchQuery, dbTimeout]);
       aliasMatch = await Promise.race([aliasMatchQuery, dbTimeout]);
       allVendors = await Promise.race([allVendorsQuery, dbTimeout]);
@@ -14183,14 +14456,121 @@ var ExcelAttachmentService = class {
 // server/utils/excel-automation-service.ts
 import fs9 from "fs";
 import path7 from "path";
+
+// server/utils/progress-manager.ts
+var ProgressManager = class {
+  constructor() {
+    this.sessions = /* @__PURE__ */ new Map();
+    this.sseClients = /* @__PURE__ */ new Map();
+  }
+  /**
+   * Generate a unique session ID
+   */
+  createSession() {
+    const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    this.sessions.set(sessionId, []);
+    this.sseClients.set(sessionId, []);
+    setTimeout(() => {
+      this.cleanupSession(sessionId);
+    }, 10 * 60 * 1e3);
+    return sessionId;
+  }
+  /**
+   * Add an SSE client for a session
+   */
+  addClient(sessionId, res) {
+    const clients = this.sseClients.get(sessionId) || [];
+    clients.push(res);
+    this.sseClients.set(sessionId, clients);
+    this.sendToClient(res, {
+      sessionId,
+      step: "connection",
+      status: "completed",
+      message: "\uC5F0\uACB0\uB418\uC5C8\uC2B5\uB2C8\uB2E4",
+      timestamp: Date.now()
+    });
+  }
+  /**
+   * Remove an SSE client
+   */
+  removeClient(sessionId, res) {
+    const clients = this.sseClients.get(sessionId) || [];
+    const index2 = clients.indexOf(res);
+    if (index2 > -1) {
+      clients.splice(index2, 1);
+      this.sseClients.set(sessionId, clients);
+    }
+  }
+  /**
+   * Send progress update
+   */
+  updateProgress(update) {
+    const progress = this.sessions.get(update.sessionId) || [];
+    progress.push(update);
+    this.sessions.set(update.sessionId, progress);
+    const clients = this.sseClients.get(update.sessionId) || [];
+    clients.forEach((client) => {
+      this.sendToClient(client, update);
+    });
+  }
+  /**
+   * Send data to a specific client
+   */
+  sendToClient(res, data) {
+    try {
+      res.write(`data: ${JSON.stringify(data)}
+
+`);
+    } catch (error) {
+      console.error("Error sending SSE data:", error);
+    }
+  }
+  /**
+   * Get all progress for a session
+   */
+  getSessionProgress(sessionId) {
+    return this.sessions.get(sessionId) || [];
+  }
+  /**
+   * Clean up session data
+   */
+  cleanupSession(sessionId) {
+    const clients = this.sseClients.get(sessionId) || [];
+    clients.forEach((client) => {
+      try {
+        client.end();
+      } catch (error) {
+      }
+    });
+    this.sessions.delete(sessionId);
+    this.sseClients.delete(sessionId);
+  }
+  /**
+   * Helper method to update specific steps
+   */
+  updateStep(sessionId, step, status, message, details) {
+    this.updateProgress({
+      sessionId,
+      step,
+      status,
+      message,
+      details,
+      timestamp: Date.now()
+    });
+  }
+};
+var progressManager = new ProgressManager();
+
+// server/utils/excel-automation-service.ts
 var ExcelAutomationService = class {
   /**
    * 1단계: Excel 파일 업로드 및 파싱, DB 저장
    */
-  static async processExcelUpload(filePath, userId) {
+  static async processExcelUpload(filePath, userId, sessionId) {
     DebugLogger.logFunctionEntry("ExcelAutomationService.processExcelUpload", {
       filePath,
-      userId
+      userId,
+      sessionId
     });
     console.log(`\u{1F50D} [DEBUG] Excel \uC790\uB3D9\uD654 \uD504\uB85C\uC138\uC2A4 \uC2DC\uC791 - \uD30C\uC77C: ${filePath}`);
     try {
@@ -14203,6 +14583,9 @@ var ExcelAutomationService = class {
         throw new Error(`\uB370\uC774\uD130\uBCA0\uC774\uC2A4 \uC5F0\uACB0 \uC2E4\uD328: ${dbError instanceof Error ? dbError.message : "Unknown DB error"}`);
       }
       console.log(`\u{1F50D} [DEBUG] 1\uB2E8\uACC4: Excel \uD30C\uC77C \uD30C\uC2F1 \uC2DC\uC791`);
+      if (sessionId) {
+        progressManager.updateStep(sessionId, "parse", "processing", "Excel \uD30C\uC77C \uD30C\uC2F1 \uC911...");
+      }
       const parseResult = POTemplateProcessorMock.parseInputSheet(filePath);
       console.log(`\u{1F50D} [DEBUG] 1\uB2E8\uACC4 \uC644\uB8CC: ${parseResult.success ? "\uC131\uACF5" : "\uC2E4\uD328"}`);
       if (!parseResult.success) {
@@ -14213,7 +14596,15 @@ var ExcelAutomationService = class {
         };
       }
       console.log(`\u2705 [DEBUG] Excel \uD30C\uC2F1 \uC131\uACF5: ${parseResult.totalOrders}\uAC1C \uBC1C\uC8FC\uC11C, ${parseResult.totalItems}\uAC1C \uC544\uC774\uD15C`);
+      if (sessionId) {
+        progressManager.updateStep(sessionId, "parse", "completed", `Excel \uD30C\uC2F1 \uC644\uB8CC: ${parseResult.totalOrders}\uAC1C \uBC1C\uC8FC\uC11C \uBC1C\uACAC`, {
+          total: parseResult.totalOrders
+        });
+      }
       console.log(`\u{1F50D} [DEBUG] 2\uB2E8\uACC4: DB \uC800\uC7A5 \uC2DC\uC791`);
+      if (sessionId) {
+        progressManager.updateStep(sessionId, "save", "processing", "\uB370\uC774\uD130\uBCA0\uC774\uC2A4\uC5D0 \uC800\uC7A5 \uC911...");
+      }
       const saveResult = await POTemplateProcessorMock.saveToDatabase(
         parseResult.orders || [],
         userId
@@ -14227,9 +14618,16 @@ var ExcelAutomationService = class {
         };
       }
       console.log(`\u2705 [DEBUG] DB \uC800\uC7A5 \uC131\uACF5: ${saveResult.savedOrders}\uAC1C \uBC1C\uC8FC\uC11C \uC800\uC7A5\uB428`);
+      if (sessionId) {
+        progressManager.updateStep(sessionId, "save", "completed", `\uB370\uC774\uD130\uBCA0\uC774\uC2A4 \uC800\uC7A5 \uC644\uB8CC: ${saveResult.savedOrders}\uAC1C \uBC1C\uC8FC\uC11C`, {
+          total: saveResult.savedOrders
+        });
+      }
       console.log(`\u{1F50D} [DEBUG] 2.5\uB2E8\uACC4: \uCC98\uB9AC\uB41C Excel \uD30C\uC77C \uCCA8\uBD80 \uC2DC\uC791`);
       console.log(`\u{1F4CA} [DEBUG] saveResult:`, JSON.stringify(saveResult, null, 2));
       const originalFileName = path7.basename(filePath);
+      let pdfGenerationPromises = [];
+      let pdfResults = [];
       if (saveResult.savedOrderNumbers && saveResult.savedOrderNumbers.length > 0) {
         console.log(`\u{1F4CB} [DEBUG] \uBC1C\uC8FC\uC11C \uBC88\uD638\uB4E4:`, saveResult.savedOrderNumbers);
         try {
@@ -14239,6 +14637,13 @@ var ExcelAutomationService = class {
           const removeResult = await removeAllInputSheets(filePath, processedExcelPath);
           if (removeResult.success && fs9.existsSync(processedExcelPath)) {
             console.log(`\u2705 [DEBUG] Input \uC2DC\uD2B8 \uC81C\uAC70 \uC644\uB8CC: ${processedExcelPath}`);
+            if (sessionId) {
+              progressManager.updateStep(sessionId, "pdf", "processing", `PDF \uC0DD\uC131 \uC2DC\uC791: \uCD1D ${orders.length}\uAC1C \uBC1C\uC8FC\uC11C`, {
+                current: 0,
+                total: orders.length
+              });
+            }
+            let pdfProcessedCount = 0;
             for (const order of orders) {
               const attachResult = await ExcelAttachmentService.saveProcessedExcelFile(
                 order.id,
@@ -14253,30 +14658,90 @@ var ExcelAutomationService = class {
               } else {
                 console.warn(`\u26A0\uFE0F [DEBUG] \uBC1C\uC8FC\uC11C ${order.orderNumber}\uC5D0 Excel \uCCA8\uBD80\uD30C\uC77C \uC800\uC7A5 \uC2E4\uD328: ${attachResult.error}`);
               }
-              try {
-                console.log(`\u{1F4C4} [DEBUG] \uBC1C\uC8FC\uC11C ${order.orderNumber}\uC5D0 \uB300\uD55C PDF \uC0DD\uC131 \uC2DC\uC791...`);
-                const { ProfessionalPDFGenerationService: ProfessionalPDFGenerationService2 } = await Promise.resolve().then(() => (init_professional_pdf_generation_service(), professional_pdf_generation_service_exports));
-                const pdfResult = await ProfessionalPDFGenerationService2.generateProfessionalPurchaseOrderPDF(
-                  order.id,
-                  userId
-                );
-                if (pdfResult.success) {
-                  console.log(`\u2705 [DEBUG] \uBC1C\uC8FC\uC11C ${order.orderNumber}\uC5D0 PDF \uC0DD\uC131 \uC644\uB8CC: ID ${pdfResult.attachmentId}`);
-                } else {
-                  console.warn(`\u26A0\uFE0F [DEBUG] \uBC1C\uC8FC\uC11C ${order.orderNumber}\uC5D0 PDF \uC0DD\uC131 \uC2E4\uD328: ${pdfResult.error}`);
+              const pdfPromise = (async () => {
+                try {
+                  console.log(`\u{1F4C4} [DEBUG] \uBC1C\uC8FC\uC11C ${order.orderNumber}\uC5D0 \uB300\uD55C PDF \uC0DD\uC131 \uC2DC\uC791...`);
+                  const { ProfessionalPDFGenerationService: ProfessionalPDFGenerationService2 } = await Promise.resolve().then(() => (init_professional_pdf_generation_service(), professional_pdf_generation_service_exports));
+                  const pdfGenerationTimeout = process.env.VERCEL ? 3e4 : 6e4;
+                  const pdfResultPromise = ProfessionalPDFGenerationService2.generateProfessionalPurchaseOrderPDF(
+                    order.id,
+                    userId
+                  );
+                  const pdfResult = await Promise.race([
+                    pdfResultPromise,
+                    new Promise(
+                      (resolve) => setTimeout(() => resolve({ success: false, error: "PDF \uC0DD\uC131 \uD0C0\uC784\uC544\uC6C3" }), pdfGenerationTimeout)
+                    )
+                  ]);
+                  if (pdfResult.success) {
+                    console.log(`\u2705 [DEBUG] \uBC1C\uC8FC\uC11C ${order.orderNumber}\uC5D0 PDF \uC0DD\uC131 \uC644\uB8CC: ID ${pdfResult.attachmentId}`);
+                    pdfProcessedCount++;
+                    if (sessionId) {
+                      progressManager.updateStep(
+                        sessionId,
+                        "pdf",
+                        "processing",
+                        `PDF \uC0DD\uC131 \uC911: ${order.orderNumber} \uC644\uB8CC (${pdfProcessedCount}/${orders.length})`,
+                        {
+                          current: pdfProcessedCount,
+                          total: orders.length,
+                          currentItem: order.orderNumber,
+                          percentage: Math.round(pdfProcessedCount / orders.length * 100)
+                        }
+                      );
+                    }
+                    return { orderId: order.id, orderNumber: order.orderNumber, success: true, attachmentId: pdfResult.attachmentId };
+                  } else {
+                    console.warn(`\u26A0\uFE0F [DEBUG] \uBC1C\uC8FC\uC11C ${order.orderNumber}\uC5D0 PDF \uC0DD\uC131 \uC2E4\uD328: ${pdfResult.error}`);
+                    pdfProcessedCount++;
+                    if (sessionId) {
+                      progressManager.updateStep(
+                        sessionId,
+                        "pdf",
+                        "processing",
+                        `PDF \uC0DD\uC131 \uC911: ${order.orderNumber} \uC2E4\uD328 (${pdfProcessedCount}/${orders.length})`,
+                        {
+                          current: pdfProcessedCount,
+                          total: orders.length,
+                          currentItem: order.orderNumber,
+                          percentage: Math.round(pdfProcessedCount / orders.length * 100)
+                        }
+                      );
+                    }
+                    return { orderId: order.id, orderNumber: order.orderNumber, success: false, error: pdfResult.error };
+                  }
+                } catch (pdfError) {
+                  console.error(`\u274C [DEBUG] \uBC1C\uC8FC\uC11C ${order.orderNumber} PDF \uC0DD\uC131 \uC911 \uC624\uB958:`, pdfError);
+                  return { orderId: order.id, orderNumber: order.orderNumber, success: false, error: pdfError };
                 }
-              } catch (pdfError) {
-                console.error(`\u274C [DEBUG] \uBC1C\uC8FC\uC11C ${order.orderNumber} PDF \uC0DD\uC131 \uC911 \uC624\uB958:`, pdfError);
-              }
+              })();
+              pdfGenerationPromises.push(pdfPromise);
               try {
                 await db2.update(purchaseOrders).set({
                   orderStatus: "\uBC1C\uC8FC\uC0DD\uC131",
                   status: "created"
-                }).where(eq14(purchaseOrders.id, order.id));
+                }).where(eq15(purchaseOrders.id, order.id));
                 console.log(`\u2705 [DEBUG] \uBC1C\uC8FC\uC11C ${order.orderNumber} \uC0C1\uD0DC\uB97C '\uBC1C\uC8FC\uC0DD\uC131'\uC73C\uB85C \uC5C5\uB370\uC774\uD2B8 \uC644\uB8CC`);
               } catch (statusError) {
                 console.warn(`\u26A0\uFE0F [DEBUG] \uBC1C\uC8FC\uC11C ${order.orderNumber} \uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8 \uC2E4\uD328:`, statusError);
               }
+            }
+            console.log(`\u23F3 [DEBUG] ${pdfGenerationPromises.length}\uAC1C PDF \uC0DD\uC131 \uB300\uAE30 \uC911...`);
+            pdfResults = await Promise.all(pdfGenerationPromises);
+            const successfulPdfs = pdfResults.filter((r) => r.success);
+            const failedPdfs = pdfResults.filter((r) => !r.success);
+            console.log(`\u{1F4CA} [DEBUG] PDF \uC0DD\uC131 \uC644\uB8CC: \uC131\uACF5 ${successfulPdfs.length}\uAC1C, \uC2E4\uD328 ${failedPdfs.length}\uAC1C`);
+            if (sessionId) {
+              const status = failedPdfs.length === 0 ? "completed" : "error";
+              const message = failedPdfs.length === 0 ? `\uBAA8\uB4E0 PDF \uC0DD\uC131 \uC644\uB8CC: ${successfulPdfs.length}\uAC1C \uC131\uACF5` : `PDF \uC0DD\uC131 \uC644\uB8CC: ${successfulPdfs.length}\uAC1C \uC131\uACF5, ${failedPdfs.length}\uAC1C \uC2E4\uD328`;
+              progressManager.updateStep(sessionId, "pdf", status, message, {
+                successful: successfulPdfs.length,
+                failed: failedPdfs.length,
+                total: pdfResults.length
+              });
+            }
+            if (failedPdfs.length > 0) {
+              console.warn(`\u26A0\uFE0F [DEBUG] PDF \uC0DD\uC131 \uC2E4\uD328 \uBAA9\uB85D:`, failedPdfs.map((f) => f.orderNumber).join(", "));
             }
             try {
               fs9.unlinkSync(processedExcelPath);
@@ -14293,20 +14758,47 @@ var ExcelAutomationService = class {
       }
       console.log(`\u{1F50D} [DEBUG] 2.5\uB2E8\uACC4 \uC644\uB8CC: Excel \uCCA8\uBD80\uD30C\uC77C \uCC98\uB9AC \uC644\uB8CC`);
       console.log(`\u{1F50D} [DEBUG] 3\uB2E8\uACC4: \uAC70\uB798\uCC98 \uAC80\uC99D \uC2DC\uC791`);
+      if (sessionId) {
+        progressManager.updateStep(sessionId, "validate", "processing", "\uAC70\uB798\uCC98 \uC815\uBCF4 \uAC80\uC99D \uC911...");
+      }
       const vendorValidation = await this.validateVendorsFromExcel(filePath);
       console.log(`\u{1F50D} [DEBUG] 3\uB2E8\uACC4 \uC644\uB8CC: \uC720\uD6A8 \uAC70\uB798\uCC98 ${vendorValidation.validVendors.length}\uAC1C, \uBB34\uD6A8 \uAC70\uB798\uCC98 ${vendorValidation.invalidVendors.length}\uAC1C`);
+      if (sessionId) {
+        progressManager.updateStep(
+          sessionId,
+          "validate",
+          "completed",
+          `\uAC70\uB798\uCC98 \uAC80\uC99D \uC644\uB8CC: ${vendorValidation.validVendors.length}\uAC1C \uD655\uC778`,
+          {
+            valid: vendorValidation.validVendors.length,
+            invalid: vendorValidation.invalidVendors.length
+          }
+        );
+      }
       console.log(`\u{1F50D} [DEBUG] 4\uB2E8\uACC4: \uC774\uBA54\uC77C \uBBF8\uB9AC\uBCF4\uAE30 \uC0DD\uC131 \uC2DC\uC791`);
       const emailPreview = await this.generateEmailPreview(filePath, vendorValidation);
       console.log(`\u{1F50D} [DEBUG] 4\uB2E8\uACC4 \uC644\uB8CC: \uC218\uC2E0\uC790 ${emailPreview.recipients.length}\uBA85`);
       const orderIds = [];
       if (saveResult.savedOrderNumbers && saveResult.savedOrderNumbers.length > 0) {
         try {
-          const orders = await db2.select({ id: purchaseOrders.id, orderNumber: purchaseOrders.orderNumber }).from(purchaseOrders).where(eq14(purchaseOrders.orderNumber, saveResult.savedOrderNumbers[0]));
+          const orders = await db2.select({ id: purchaseOrders.id, orderNumber: purchaseOrders.orderNumber }).from(purchaseOrders).where(eq15(purchaseOrders.orderNumber, saveResult.savedOrderNumbers[0]));
           if (orders.length > 0) {
             orderIds.push(orders[0].id);
           }
         } catch (error) {
           console.warn("\uBC1C\uC8FC\uC11C ID \uC870\uD68C \uC2E4\uD328:", error);
+        }
+      }
+      let pdfGenerationInfo = void 0;
+      if (typeof pdfGenerationPromises !== "undefined" && pdfGenerationPromises.length > 0) {
+        if (typeof pdfResults !== "undefined") {
+          const successfulPdfs = pdfResults.filter((r) => r.success);
+          pdfGenerationInfo = {
+            total: pdfResults.length,
+            successful: successfulPdfs.length,
+            failed: pdfResults.length - successfulPdfs.length,
+            attachmentIds: successfulPdfs.map((p) => p.attachmentId).filter((id) => id !== void 0)
+          };
         }
       }
       const result = {
@@ -14317,7 +14809,8 @@ var ExcelAutomationService = class {
           orderIds,
           // 첫 번째 발주서 ID 추가
           vendorValidation,
-          emailPreview
+          emailPreview,
+          pdfGeneration: pdfGenerationInfo
         }
       };
       console.log(`\u2705 [DEBUG] \uC804\uCCB4 \uD504\uB85C\uC138\uC2A4 \uC131\uACF5 \uC644\uB8CC`);
@@ -14611,11 +15104,11 @@ var ExcelAutomationService = class {
   static async updateOrderStatusToSent(orderNumber) {
     const { db: db3 } = await Promise.resolve().then(() => (init_db(), db_exports));
     const { purchaseOrders: purchaseOrders3 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-    const { eq: eq38 } = await import("drizzle-orm");
+    const { eq: eq39 } = await import("drizzle-orm");
     await db3.update(purchaseOrders3).set({
       orderStatus: "sent",
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq38(purchaseOrders3.orderNumber, orderNumber));
+    }).where(eq39(purchaseOrders3.orderNumber, orderNumber));
   }
   /**
    * 여러 발주서의 상태를 'sent'로 업데이트하는 헬퍼 메소드
@@ -14750,9 +15243,33 @@ var upload2 = multer2({
   }
 });
 var router9 = Router9();
+router9.get("/progress/:sessionId", (req, res) => {
+  const { sessionId } = req.params;
+  res.writeHead(200, {
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache",
+    "Connection": "keep-alive",
+    "Access-Control-Allow-Origin": "*"
+  });
+  progressManager.addClient(sessionId, res);
+  const existingProgress = progressManager.getSessionProgress(sessionId);
+  existingProgress.forEach((update) => {
+    res.write(`data: ${JSON.stringify(update)}
+
+`);
+  });
+  req.on("close", () => {
+    progressManager.removeClient(sessionId, res);
+  });
+});
+router9.post("/create-session", requireAuth, (req, res) => {
+  const sessionId = progressManager.createSession();
+  res.json({ success: true, sessionId });
+});
 router9.post("/upload-and-process", requireAuth, upload2.single("file"), async (req, res) => {
   console.log(`\u{1F680} [API] Excel automation request received`);
   DebugLogger.logExecutionPath("/api/excel-automation/upload-and-process", "ExcelAutomationService.processExcelUpload");
+  const sessionId = req.body?.sessionId || progressManager.createSession();
   const timeoutDuration = process.env.VERCEL ? 55e3 : 12e4;
   let responseHandled = false;
   const timeoutHandler = setTimeout(() => {
@@ -14791,8 +15308,12 @@ router9.post("/upload-and-process", requireAuth, upload2.single("file"), async (
       });
     }
     console.log(`\u{1F4C1} [API] Excel \uC790\uB3D9\uD654 \uCC98\uB9AC \uC2DC\uC791: ${filePath}, \uC0AC\uC6A9\uC790: ${userId}, \uD30C\uC77C\uD06C\uAE30: ${req.file.size}bytes`);
+    progressManager.updateStep(sessionId, "upload", "completed", "\uD30C\uC77C \uC5C5\uB85C\uB4DC \uC644\uB8CC", {
+      fileName: req.file.originalname,
+      fileSize: req.file.size
+    });
     console.log(`\u{1F504} [API] ExcelAutomationService.processExcelUpload \uD638\uCD9C \uC2DC\uC791`);
-    const result = await ExcelAutomationService.processExcelUpload(filePath, userId);
+    const result = await ExcelAutomationService.processExcelUpload(filePath, userId, sessionId);
     console.log(`\u2705 [API] ExcelAutomationService.processExcelUpload \uC644\uB8CC:`, result.success ? "\uC131\uACF5" : "\uC2E4\uD328");
     if (!result.success) {
       if (fs10.existsSync(filePath)) {
@@ -14811,6 +15332,8 @@ router9.post("/upload-and-process", requireAuth, upload2.single("file"), async (
       res.json({
         success: true,
         message: "Excel \uD30C\uC77C \uCC98\uB9AC \uC644\uB8CC",
+        sessionId,
+        // Include sessionId for client reference
         data: {
           ...result.data,
           filePath,
@@ -16300,7 +16823,7 @@ var POTemplateValidator = class {
 init_db();
 init_schema();
 init_professional_pdf_generation_service();
-import { eq as eq15 } from "drizzle-orm";
+import { eq as eq16 } from "drizzle-orm";
 var router10 = Router10();
 router10.get("/test", (req, res) => {
   res.json({ message: "PO Template router is working!", timestamp: /* @__PURE__ */ new Date() });
@@ -16533,7 +17056,7 @@ router10.post("/save", simpleAuth, async (req, res) => {
       try {
         let savedOrders = 0;
         for (const orderData of orders) {
-          let vendor = await db2.select().from(vendors).where(eq15(vendors.name, orderData.vendorName)).limit(1);
+          let vendor = await db2.select().from(vendors).where(eq16(vendors.name, orderData.vendorName)).limit(1);
           let vendorId;
           if (vendor.length === 0) {
             const newVendor = await db2.insert(vendors).values({
@@ -16546,7 +17069,7 @@ router10.post("/save", simpleAuth, async (req, res) => {
           } else {
             vendorId = vendor[0].id;
           }
-          let project = await db2.select().from(projects).where(eq15(projects.projectName, orderData.siteName)).limit(1);
+          let project = await db2.select().from(projects).where(eq16(projects.projectName, orderData.siteName)).limit(1);
           let projectId;
           if (project.length === 0) {
             const newProject = await db2.insert(projects).values({
@@ -16562,7 +17085,7 @@ router10.post("/save", simpleAuth, async (req, res) => {
           let suffix = 1;
           while (true) {
             try {
-              const existing = await db2.select().from(purchaseOrders).where(eq15(purchaseOrders.orderNumber, orderNumber));
+              const existing = await db2.select().from(purchaseOrders).where(eq16(purchaseOrders.orderNumber, orderNumber));
               if (existing.length === 0) {
                 break;
               }
@@ -17018,11 +17541,11 @@ router10.post("/send-email", simpleAuth, async (req, res) => {
       try {
         const { db: db3 } = await Promise.resolve().then(() => (init_db(), db_exports));
         const { purchaseOrders: purchaseOrders3 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-        const { eq: eq38 } = await import("drizzle-orm");
+        const { eq: eq39 } = await import("drizzle-orm");
         await db3.update(purchaseOrders3).set({
           orderStatus: "sent",
           updatedAt: /* @__PURE__ */ new Date()
-        }).where(eq38(purchaseOrders3.orderNumber, orderNumber));
+        }).where(eq39(purchaseOrders3.orderNumber, orderNumber));
         console.log(`\u{1F4CB} \uBC1C\uC8FC\uC11C \uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8 \uC644\uB8CC: ${orderNumber} \u2192 sent`);
       } catch (updateError) {
         console.error(`\u274C \uBC1C\uC8FC\uC11C \uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8 \uC2E4\uD328: ${orderNumber}`, updateError);
@@ -17236,7 +17759,7 @@ router10.saveToDatabase = async function(orders, userId) {
     try {
       let savedOrders = 0;
       for (const orderData of orders) {
-        let vendor = await db2.select().from(vendors).where(eq15(vendors.name, orderData.vendorName)).limit(1);
+        let vendor = await db2.select().from(vendors).where(eq16(vendors.name, orderData.vendorName)).limit(1);
         let vendorId;
         if (vendor.length === 0) {
           const newVendor = await db2.insert(vendors).values({
@@ -17249,7 +17772,7 @@ router10.saveToDatabase = async function(orders, userId) {
         } else {
           vendorId = vendor[0].id;
         }
-        let project = await db2.select().from(projects).where(eq15(projects.projectName, orderData.siteName)).limit(1);
+        let project = await db2.select().from(projects).where(eq16(projects.projectName, orderData.siteName)).limit(1);
         let projectId;
         if (project.length === 0) {
           const newProject = await db2.insert(projects).values({
@@ -17322,7 +17845,7 @@ var po_template_real_default = router10;
 import { Router as Router11 } from "express";
 init_db();
 init_schema();
-import { eq as eq16, sql as sql8, and as and9, gte as gte4, lte as lte4, inArray as inArray3 } from "drizzle-orm";
+import { eq as eq17, sql as sql8, and as and9, gte as gte4, lte as lte4, inArray as inArray3 } from "drizzle-orm";
 import * as XLSX7 from "xlsx";
 var formatKoreanWon = (amount) => {
   return `\u20A9${amount.toLocaleString("ko-KR")}`;
@@ -17385,7 +17908,7 @@ router11.get("/debug-processing", async (req, res) => {
       totalAmount: purchaseOrders.totalAmount,
       projectName: projects.projectName,
       vendorName: vendors.name
-    }).from(purchaseOrders).leftJoin(projects, eq16(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq16(purchaseOrders.vendorId, vendors.id)).limit(10);
+    }).from(purchaseOrders).leftJoin(projects, eq17(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq17(purchaseOrders.vendorId, vendors.id)).limit(10);
     res.json({
       totalOrders: allOrders.length,
       ordersWithoutJoins: allOrders,
@@ -17436,16 +17959,16 @@ router11.get("/by-category", async (req, res) => {
       orderStatus: purchaseOrders.status,
       specification: purchaseOrderItems.specification,
       unitPrice: purchaseOrderItems.unitPrice
-    }).from(purchaseOrderItems).innerJoin(purchaseOrders, eq16(purchaseOrderItems.orderId, purchaseOrders.id));
+    }).from(purchaseOrderItems).innerJoin(purchaseOrders, eq17(purchaseOrderItems.orderId, purchaseOrders.id));
     const filters = [...dateFilters];
     if (majorCategory && majorCategory !== "all") {
-      filters.push(eq16(purchaseOrderItems.majorCategory, majorCategory));
+      filters.push(eq17(purchaseOrderItems.majorCategory, majorCategory));
     }
     if (middleCategory && middleCategory !== "all") {
-      filters.push(eq16(purchaseOrderItems.middleCategory, middleCategory));
+      filters.push(eq17(purchaseOrderItems.middleCategory, middleCategory));
     }
     if (minorCategory && minorCategory !== "all") {
-      filters.push(eq16(purchaseOrderItems.minorCategory, minorCategory));
+      filters.push(eq17(purchaseOrderItems.minorCategory, minorCategory));
     }
     if (filters.length > 0) {
       query = query.where(and9(...filters));
@@ -17543,7 +18066,7 @@ router11.get("/by-project", requireAuth, async (req, res) => {
     const { startDate, endDate, projectId } = req.query;
     const filters = parseDateFilters(startDate, endDate);
     if (projectId) {
-      filters.push(eq16(purchaseOrders.projectId, parseInt(projectId)));
+      filters.push(eq17(purchaseOrders.projectId, parseInt(projectId)));
     }
     const ordersWithProjects = await db2.select({
       projectId: projects.id,
@@ -17557,7 +18080,7 @@ router11.get("/by-project", requireAuth, async (req, res) => {
       orderStatus: purchaseOrders.status,
       vendorId: purchaseOrders.vendorId,
       vendorName: vendors.name
-    }).from(purchaseOrders).innerJoin(projects, eq16(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq16(purchaseOrders.vendorId, vendors.id)).where(filters.length > 0 ? and9(...filters) : void 0);
+    }).from(purchaseOrders).innerJoin(projects, eq17(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq17(purchaseOrders.vendorId, vendors.id)).where(filters.length > 0 ? and9(...filters) : void 0);
     const projectReport = ordersWithProjects.reduce((acc, order) => {
       const projectKey = order.projectId;
       if (!acc[projectKey]) {
@@ -17639,7 +18162,7 @@ router11.get("/by-vendor", async (req, res) => {
       projectName: projects.projectName,
       originalVendorId: purchaseOrders.vendorId
       // Add original vendorId for null check
-    }).from(purchaseOrders).leftJoin(vendors, eq16(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq16(purchaseOrders.projectId, projects.id));
+    }).from(purchaseOrders).leftJoin(vendors, eq17(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq17(purchaseOrders.projectId, projects.id));
     if (filters.length > 0) {
       vendorQuery = vendorQuery.where(and9(...filters));
     }
@@ -17980,16 +18503,16 @@ router11.get("/processing", requireAuth, async (req, res) => {
       );
     }
     if (status && status !== "all" && status !== "") {
-      filters.push(eq16(purchaseOrders.status, status));
+      filters.push(eq17(purchaseOrders.status, status));
     }
     if (projectId && projectId !== "all" && projectId !== "") {
-      filters.push(eq16(purchaseOrders.projectId, parseInt(projectId)));
+      filters.push(eq17(purchaseOrders.projectId, parseInt(projectId)));
     }
     if (vendorId && vendorId !== "all" && vendorId !== "") {
-      filters.push(eq16(purchaseOrders.vendorId, parseInt(vendorId)));
+      filters.push(eq17(purchaseOrders.vendorId, parseInt(vendorId)));
     }
     console.log(`Processing report filters count: ${filters.length}`);
-    let ordersQuery = db2.select().from(purchaseOrders).leftJoin(projects, eq16(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq16(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq16(purchaseOrders.userId, users.id));
+    let ordersQuery = db2.select().from(purchaseOrders).leftJoin(projects, eq17(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq17(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq17(purchaseOrders.userId, users.id));
     if (filters.length > 0) {
       ordersQuery = ordersQuery.where(and9(...filters));
     }
@@ -18066,7 +18589,7 @@ router11.get("/processing", requireAuth, async (req, res) => {
         ...order,
         items: orderItems.filter((item) => item.orderId === order.id)
       }));
-      let countQuery = db2.select({ count: sql8`count(*)` }).from(purchaseOrders).leftJoin(projects, eq16(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq16(purchaseOrders.vendorId, vendors.id));
+      let countQuery = db2.select({ count: sql8`count(*)` }).from(purchaseOrders).leftJoin(projects, eq17(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq17(purchaseOrders.vendorId, vendors.id));
       if (filters.length > 0) {
         countQuery = countQuery.where(and9(...filters));
       }
@@ -18137,13 +18660,13 @@ router11.get("/summary", requireAuth, async (req, res) => {
       vendorName: vendors.name,
       orderCount: sql8`count(${purchaseOrders.id})`,
       totalAmount: sql8`sum(${purchaseOrders.totalAmount})`
-    }).from(purchaseOrders).innerJoin(vendors, eq16(purchaseOrders.vendorId, vendors.id)).where(and9(...dateFilters)).groupBy(vendors.id, vendors.name).orderBy(sql8`sum(${purchaseOrders.totalAmount}) desc`).limit(10);
+    }).from(purchaseOrders).innerJoin(vendors, eq17(purchaseOrders.vendorId, vendors.id)).where(and9(...dateFilters)).groupBy(vendors.id, vendors.name).orderBy(sql8`sum(${purchaseOrders.totalAmount}) desc`).limit(10);
     const topProjects = await db2.select({
       projectId: projects.id,
       projectName: projects.projectName,
       orderCount: sql8`count(${purchaseOrders.id})`,
       totalAmount: sql8`sum(${purchaseOrders.totalAmount})`
-    }).from(purchaseOrders).innerJoin(projects, eq16(purchaseOrders.projectId, projects.id)).where(and9(...dateFilters)).groupBy(projects.id, projects.projectName).orderBy(sql8`sum(${purchaseOrders.totalAmount}) desc`).limit(10);
+    }).from(purchaseOrders).innerJoin(projects, eq17(purchaseOrders.projectId, projects.id)).where(and9(...dateFilters)).groupBy(projects.id, projects.projectName).orderBy(sql8`sum(${purchaseOrders.totalAmount}) desc`).limit(10);
     const monthlyTrend = await db2.select({
       month: sql8`to_char(${purchaseOrders.orderDate}, 'YYYY-MM')`,
       orderCount: sql8`count(*)`,
@@ -18175,7 +18698,7 @@ init_db();
 init_schema();
 import * as XLSX8 from "xlsx";
 import Papa from "papaparse";
-import { eq as eq17 } from "drizzle-orm";
+import { eq as eq18 } from "drizzle-orm";
 import fs15 from "fs";
 var ImportExportService = class {
   // Parse Excel file
@@ -18447,7 +18970,7 @@ var ImportExportService = class {
   }
   // Export Methods
   static async exportVendors(format2) {
-    const vendorData = await db2.select().from(vendors).where(eq17(vendors.isActive, true));
+    const vendorData = await db2.select().from(vendors).where(eq18(vendors.isActive, true));
     const exportData = vendorData.map((vendor) => ({
       "\uAC70\uB798\uCC98\uBA85": vendor.name,
       "\uAC70\uB798\uCC98\uCF54\uB4DC": vendor.vendorCode || "",
@@ -18474,7 +18997,7 @@ var ImportExportService = class {
     }
   }
   static async exportItems(format2) {
-    const itemData = await db2.select().from(items).where(eq17(items.isActive, true));
+    const itemData = await db2.select().from(items).where(eq18(items.isActive, true));
     const exportData = itemData.map((item) => ({
       "\uD488\uBAA9\uBA85": item.name,
       "\uADDC\uACA9": item.specification || "",
@@ -18500,7 +19023,7 @@ var ImportExportService = class {
     }
   }
   static async exportProjects(format2) {
-    const projectData = await db2.select().from(projects).where(eq17(projects.isActive, true));
+    const projectData = await db2.select().from(projects).where(eq18(projects.isActive, true));
     const typeMap = {
       "commercial": "\uC0C1\uC5C5\uC2DC\uC124",
       "residential": "\uC8FC\uAC70\uC2DC\uC124",
@@ -18560,7 +19083,7 @@ var ImportExportService = class {
       middleCategory: purchaseOrderItems.middleCategory,
       minorCategory: purchaseOrderItems.minorCategory,
       itemNotes: purchaseOrderItems.notes
-    }).from(purchaseOrders).leftJoin(purchaseOrderItems, eq17(purchaseOrders.id, purchaseOrderItems.orderId)).where(eq17(purchaseOrders.isActive, true));
+    }).from(purchaseOrders).leftJoin(purchaseOrderItems, eq18(purchaseOrders.id, purchaseOrderItems.orderId)).where(eq18(purchaseOrders.isActive, true));
     const statusMap = {
       "pending": "\uB300\uAE30",
       "approved": "\uC2B9\uC778",
@@ -18868,7 +19391,7 @@ var import_export_default = router12;
 init_db();
 init_schema();
 import { Router as Router13 } from "express";
-import { eq as eq18, desc as desc7, sql as sql9 } from "drizzle-orm";
+import { eq as eq19, desc as desc7, and as and10, sql as sql9 } from "drizzle-orm";
 import { z as z4 } from "zod";
 var router13 = Router13();
 var createEmailHistorySchema = z4.object({
@@ -18903,7 +19426,7 @@ router13.get("/orders/:orderId/email-history", requireAuth, async (req, res) => 
       return res.status(400).json({ error: "Invalid order ID" });
     }
     const order = await db2.query.purchaseOrders.findFirst({
-      where: eq18(purchaseOrders.id, orderId)
+      where: eq19(purchaseOrders.id, orderId)
     });
     if (!order) {
       return res.status(404).json({ error: "Order not found" });
@@ -18927,7 +19450,7 @@ router13.get("/orders/:orderId/email-history", requireAuth, async (req, res) => 
       failedCount: emailSendHistory.failedCount,
       createdAt: emailSendHistory.createdAt,
       updatedAt: emailSendHistory.updatedAt
-    }).from(emailSendHistory).leftJoin(users, eq18(emailSendHistory.senderUserId, users.id)).where(eq18(emailSendHistory.orderId, orderId)).orderBy(desc7(emailSendHistory.sentAt));
+    }).from(emailSendHistory).leftJoin(users, eq19(emailSendHistory.senderUserId, users.id)).where(eq19(emailSendHistory.orderId, orderId)).orderBy(desc7(emailSendHistory.sentAt));
     res.json(emailHistory);
   } catch (error) {
     console.error("Error fetching email history:", error);
@@ -18943,13 +19466,13 @@ router13.post("/email-history", requireAuth, async (req, res) => {
       attachmentFiles: validatedData.attachmentFiles || null
     }).returning();
     const order = await db2.query.purchaseOrders.findFirst({
-      where: eq18(purchaseOrders.id, validatedData.orderId)
+      where: eq19(purchaseOrders.id, validatedData.orderId)
     });
     if (order && order.status === "approved") {
       await db2.update(purchaseOrders).set({
         status: "sent",
         updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq18(purchaseOrders.id, validatedData.orderId));
+      }).where(eq19(purchaseOrders.id, validatedData.orderId));
     }
     res.json(newEmailHistory);
   } catch (error) {
@@ -18967,9 +19490,10 @@ router13.get("/orders-email-status", requireAuth, async (req, res) => {
         id: purchaseOrders.id,
         orderNumber: purchaseOrders.orderNumber,
         emailStatus: emailSendHistory.status,
+        // This maps to sending_status column
         lastSentAt: emailSendHistory.sentAt,
         recipients: emailSendHistory.recipients
-      }).from(purchaseOrders).leftJoin(emailSendHistory, eq18(purchaseOrders.id, emailSendHistory.orderId)).orderBy(desc7(purchaseOrders.id));
+      }).from(purchaseOrders).leftJoin(emailSendHistory, eq19(purchaseOrders.id, emailSendHistory.orderId)).orderBy(desc7(purchaseOrders.id));
       res.json(orders);
     } catch (dbError) {
       console.error("Database query error:", dbError);
@@ -18997,7 +19521,7 @@ router13.put("/email-history/:id/status", requireAuth, async (req, res) => {
     if (!["pending", "sent", "failed"].includes(status)) {
       return res.status(400).json({ error: "Invalid status" });
     }
-    const [updated] = await db2.update(emailSendHistory).set({ status, updatedAt: /* @__PURE__ */ new Date() }).where(eq18(emailSendHistory.id, emailId)).returning();
+    const [updated] = await db2.update(emailSendHistory).set({ status, updatedAt: /* @__PURE__ */ new Date() }).where(eq19(emailSendHistory.id, emailId)).returning();
     if (!updated) {
       return res.status(404).json({ error: "Email not found" });
     }
@@ -19034,13 +19558,97 @@ router13.get("/email-history/:id", requireAuth, async (req, res) => {
       failedCount: emailSendHistory.failedCount,
       createdAt: emailSendHistory.createdAt,
       updatedAt: emailSendHistory.updatedAt
-    }).from(emailSendHistory).leftJoin(purchaseOrders, eq18(emailSendHistory.orderId, purchaseOrders.id)).leftJoin(vendors, eq18(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq18(emailSendHistory.senderUserId, users.id)).where(eq18(emailSendHistory.id, emailId));
+    }).from(emailSendHistory).leftJoin(purchaseOrders, eq19(emailSendHistory.orderId, purchaseOrders.id)).leftJoin(vendors, eq19(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq19(emailSendHistory.senderUserId, users.id)).where(eq19(emailSendHistory.id, emailId));
     if (!email || email.length === 0) {
       return res.status(404).json({ error: "Email not found" });
     }
     res.json(email[0]);
   } catch (error) {
     console.error("Error fetching email detail:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+router13.get("/email-history", requireAuth, async (req, res) => {
+  try {
+    const {
+      page = "1",
+      limit = "50",
+      startDate,
+      endDate,
+      status,
+      orderNumber,
+      vendorName,
+      senderUserId
+    } = req.query;
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const offset = (pageNum - 1) * limitNum;
+    const conditions = [];
+    if (startDate) {
+      conditions.push(sql9`${emailSendHistory.sentAt} >= ${new Date(startDate)}`);
+    }
+    if (endDate) {
+      conditions.push(sql9`${emailSendHistory.sentAt} <= ${new Date(endDate)}`);
+    }
+    if (status) {
+      conditions.push(eq19(emailSendHistory.status, status));
+    }
+    if (orderNumber) {
+      conditions.push(sql9`${purchaseOrders.orderNumber} ILIKE ${`%${orderNumber}%`}`);
+    }
+    if (vendorName) {
+      conditions.push(sql9`${vendors.name} ILIKE ${`%${vendorName}%`}`);
+    }
+    if (senderUserId) {
+      conditions.push(eq19(emailSendHistory.senderUserId, senderUserId));
+    }
+    const whereClause = conditions.length > 0 ? and10(...conditions) : void 0;
+    const [{ count: count5 }] = await db2.select({ count: sql9`count(*)` }).from(emailSendHistory).leftJoin(purchaseOrders, eq19(emailSendHistory.orderId, purchaseOrders.id)).leftJoin(vendors, eq19(purchaseOrders.vendorId, vendors.id)).where(whereClause);
+    const emails = await db2.select({
+      id: emailSendHistory.id,
+      orderId: emailSendHistory.orderId,
+      orderNumber: purchaseOrders.orderNumber,
+      vendorName: vendors.name,
+      sentAt: emailSendHistory.sentAt,
+      sentByName: users.name,
+      sentByEmail: users.email,
+      recipients: emailSendHistory.recipients,
+      cc: emailSendHistory.cc,
+      subject: emailSendHistory.subject,
+      messageContent: emailSendHistory.messageContent,
+      attachmentFiles: emailSendHistory.attachmentFiles,
+      status: emailSendHistory.status,
+      errorMessage: emailSendHistory.errorMessage,
+      sentCount: emailSendHistory.sentCount,
+      failedCount: emailSendHistory.failedCount,
+      createdAt: emailSendHistory.createdAt
+    }).from(emailSendHistory).leftJoin(purchaseOrders, eq19(emailSendHistory.orderId, purchaseOrders.id)).leftJoin(vendors, eq19(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq19(emailSendHistory.senderUserId, users.id)).where(whereClause).orderBy(desc7(emailSendHistory.sentAt)).limit(limitNum).offset(offset);
+    const statusCounts = await db2.select({
+      status: emailSendHistory.status,
+      count: sql9`count(*)`
+    }).from(emailSendHistory).leftJoin(purchaseOrders, eq19(emailSendHistory.orderId, purchaseOrders.id)).leftJoin(vendors, eq19(purchaseOrders.vendorId, vendors.id)).where(whereClause).groupBy(emailSendHistory.status);
+    const totalEmails = count5;
+    const successfulEmails = statusCounts.find((s) => s.status === "sent")?.count || 0;
+    const failedEmails = statusCounts.find((s) => s.status === "failed")?.count || 0;
+    const pendingEmails = statusCounts.find((s) => s.status === "pending")?.count || 0;
+    res.json({
+      data: emails,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total: totalEmails,
+        pages: Math.ceil(totalEmails / limitNum)
+      },
+      statistics: {
+        totalEmails,
+        successfulEmails,
+        failedEmails,
+        pendingEmails,
+        successRate: totalEmails > 0 ? Math.round(successfulEmails / totalEmails * 100) : 0
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching email history:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -19318,7 +19926,7 @@ import { Router as Router14 } from "express";
 // server/utils/optimized-orders-query.ts
 init_db();
 init_schema();
-import { eq as eq19, desc as desc8, asc as asc3, ilike as ilike3, and as and11, or as or4, between as between2, count as count3, sql as sql10, gte as gte5, lte as lte5 } from "drizzle-orm";
+import { eq as eq20, desc as desc8, asc as asc3, ilike as ilike3, and as and11, or as or4, between as between2, count as count3, sql as sql10, gte as gte5, lte as lte5 } from "drizzle-orm";
 var OptimizedOrdersService = class _OptimizedOrdersService {
   /**
    * 정렬 필드에 따른 ORDER BY 절 생성
@@ -19377,7 +19985,7 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
     } = filters;
     const whereConditions = [];
     if (userId && userId !== "all") {
-      whereConditions.push(eq19(purchaseOrders.userId, userId));
+      whereConditions.push(eq20(purchaseOrders.userId, userId));
     }
     if (status && status !== "all" && status !== "") {
       whereConditions.push(sql10`${purchaseOrders.status} = ${status}`);
@@ -19389,10 +19997,10 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
       whereConditions.push(sql10`${purchaseOrders.approvalStatus} = ${approvalStatus}`);
     }
     if (vendorId && vendorId !== "all") {
-      whereConditions.push(eq19(purchaseOrders.vendorId, vendorId));
+      whereConditions.push(eq20(purchaseOrders.vendorId, vendorId));
     }
     if (projectId && projectId !== "all") {
-      whereConditions.push(eq19(purchaseOrders.projectId, projectId));
+      whereConditions.push(eq20(purchaseOrders.projectId, projectId));
     }
     if (startDate && endDate) {
       whereConditions.push(between2(purchaseOrders.orderDate, startDate, endDate));
@@ -19441,12 +20049,12 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
       userName: users.name,
       // PDF attachment status - use correct column names (database uses snake_case)
       hasPdf: sql10`EXISTS(SELECT 1 FROM attachments WHERE attachments.order_id = ${purchaseOrders.id} AND attachments.mime_type = 'application/pdf')`,
-      // Email statistics from email_send_history
-      totalEmailsSent: sql10`COALESCE((SELECT COUNT(*) FROM ${emailSendHistory} WHERE ${emailSendHistory.orderId} = ${purchaseOrders.id}), 0)`,
-      emailStatus: sql10`(SELECT ${emailSendHistory.status} FROM ${emailSendHistory} WHERE ${emailSendHistory.orderId} = ${purchaseOrders.id} ORDER BY ${emailSendHistory.sentAt} DESC LIMIT 1)`,
-      emailSentAt: sql10`(SELECT ${emailSendHistory.sentAt} FROM ${emailSendHistory} WHERE ${emailSendHistory.orderId} = ${purchaseOrders.id} ORDER BY ${emailSendHistory.sentAt} DESC LIMIT 1)`
-    }).from(purchaseOrders).leftJoin(vendors, eq19(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq19(purchaseOrders.projectId, projects.id)).leftJoin(users, eq19(purchaseOrders.userId, users.id)).where(whereClause).orderBy(_OptimizedOrdersService.getOrderByClause(sortBy, sortOrder)).limit(limit).offset((page - 1) * limit);
-    const countQuery = db2.select({ count: count3() }).from(purchaseOrders).leftJoin(vendors, eq19(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq19(purchaseOrders.projectId, projects.id)).leftJoin(users, eq19(purchaseOrders.userId, users.id)).where(whereClause);
+      // Email statistics from email_send_history - use correct column name: sending_status
+      totalEmailsSent: sql10`COALESCE((SELECT COUNT(*) FROM email_sending_history WHERE order_id = ${purchaseOrders.id}), 0)`,
+      emailStatus: sql10`(SELECT sending_status FROM email_sending_history WHERE order_id = ${purchaseOrders.id} ORDER BY sent_at DESC LIMIT 1)`,
+      emailSentAt: sql10`(SELECT sent_at FROM email_sending_history WHERE order_id = ${purchaseOrders.id} ORDER BY sent_at DESC LIMIT 1)`
+    }).from(purchaseOrders).leftJoin(vendors, eq20(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq20(purchaseOrders.projectId, projects.id)).leftJoin(users, eq20(purchaseOrders.userId, users.id)).where(whereClause).orderBy(_OptimizedOrdersService.getOrderByClause(sortBy, sortOrder)).limit(limit).offset((page - 1) * limit);
+    const countQuery = db2.select({ count: count3() }).from(purchaseOrders).leftJoin(vendors, eq20(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq20(purchaseOrders.projectId, projects.id)).leftJoin(users, eq20(purchaseOrders.userId, users.id)).where(whereClause);
     const [orders, [{ count: totalCount }]] = await Promise.all([
       ordersQuery,
       countQuery
@@ -19478,19 +20086,19 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
       db2.select({
         id: vendors.id,
         name: vendors.name
-      }).from(vendors).where(eq19(vendors.isActive, true)).orderBy(asc3(vendors.name)),
+      }).from(vendors).where(eq20(vendors.isActive, true)).orderBy(asc3(vendors.name)),
       // Only active projects
       db2.select({
         id: projects.id,
         projectName: projects.projectName,
         projectCode: projects.projectCode
-      }).from(projects).where(eq19(projects.isActive, true)).orderBy(asc3(projects.projectName)),
+      }).from(projects).where(eq20(projects.isActive, true)).orderBy(asc3(projects.projectName)),
       // Only active users
       db2.select({
         id: users.id,
         name: users.name,
         email: users.email
-      }).from(users).where(eq19(users.isActive, true)).orderBy(asc3(users.name))
+      }).from(users).where(eq20(users.isActive, true)).orderBy(asc3(users.name))
     ]);
     return {
       vendors: vendorsList,
@@ -19521,7 +20129,7 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
    * Uses materialized view for better performance
    */
   static async getOrderStatistics(userId) {
-    const whereClause = userId ? eq19(purchaseOrders.userId, userId) : void 0;
+    const whereClause = userId ? eq20(purchaseOrders.userId, userId) : void 0;
     const stats = await db2.select({
       status: purchaseOrders.status,
       count: count3(),
@@ -19769,7 +20377,7 @@ var order_statuses_default = router16;
 init_db();
 init_schema();
 import { Router as Router16 } from "express";
-import { eq as eq20, desc as desc9 } from "drizzle-orm";
+import { eq as eq21, desc as desc9 } from "drizzle-orm";
 import multer5 from "multer";
 import path14 from "path";
 import fs17 from "fs";
@@ -19835,7 +20443,7 @@ router17.get("/invoices", async (req, res) => {
       updatedAt: invoices.updatedAt
     }).from(invoices);
     if (orderId) {
-      query = query.where(eq20(invoices.orderId, parseInt(orderId)));
+      query = query.where(eq21(invoices.orderId, parseInt(orderId)));
     }
     const invoiceList = await query.orderBy(desc9(invoices.createdAt));
     console.log(`\u2705 Successfully fetched ${invoiceList.length} invoices from database`);
@@ -19874,7 +20482,7 @@ router17.get("/invoices/:id", async (req, res) => {
       updatedAt: invoices.updatedAt,
       // Join with users for uploader name
       uploaderName: users.name
-    }).from(invoices).leftJoin(users, eq20(invoices.uploadedBy, users.id)).where(eq20(invoices.id, id)).limit(1);
+    }).from(invoices).leftJoin(users, eq21(invoices.uploadedBy, users.id)).where(eq21(invoices.id, id)).limit(1);
     if (!invoice) {
       return res.status(404).json({ message: "Invoice not found" });
     }
@@ -19956,7 +20564,7 @@ router17.post("/invoices", upload5.single("file"), async (req, res) => {
       updatedAt: invoices.updatedAt,
       // Join with users for uploader name
       uploaderName: users.name
-    }).from(invoices).leftJoin(users, eq20(invoices.uploadedBy, users.id)).where(eq20(invoices.id, newInvoice.id));
+    }).from(invoices).leftJoin(users, eq21(invoices.uploadedBy, users.id)).where(eq21(invoices.id, newInvoice.id));
     console.log(`\u2705 Successfully created invoice ${newInvoice.id}`);
     res.status(201).json(invoice);
   } catch (error) {
@@ -19977,7 +20585,7 @@ router17.post("/invoices/:id/verify", requireAuth, async (req, res) => {
       verifiedBy: userId,
       verifiedAt: /* @__PURE__ */ new Date(),
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq20(invoices.id, invoiceId)).returning();
+    }).where(eq21(invoices.id, invoiceId)).returning();
     if (!updatedInvoice) {
       return res.status(404).json({ message: "Invoice not found" });
     }
@@ -20001,7 +20609,7 @@ router17.post("/invoices/:id/issue-tax", requireAuth, async (req, res) => {
       taxInvoiceIssuedDate: /* @__PURE__ */ new Date(),
       taxInvoiceIssuedBy: userId,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq20(invoices.id, invoiceId)).returning();
+    }).where(eq21(invoices.id, invoiceId)).returning();
     if (!updatedInvoice) {
       return res.status(404).json({ message: "Invoice not found" });
     }
@@ -20039,7 +20647,7 @@ router17.patch("/invoices/:id", requireAuth, async (req, res) => {
     if (status !== void 0) updateData.status = status;
     if (notes !== void 0) updateData.notes = notes;
     updateData.updatedAt = /* @__PURE__ */ new Date();
-    const [updatedInvoice] = await db2.update(invoices).set(updateData).where(eq20(invoices.id, invoiceId)).returning();
+    const [updatedInvoice] = await db2.update(invoices).set(updateData).where(eq21(invoices.id, invoiceId)).returning();
     if (!updatedInvoice) {
       return res.status(404).json({ message: "Invoice not found" });
     }
@@ -20057,11 +20665,11 @@ router17.delete("/invoices/:id", requireAuth, async (req, res) => {
   try {
     const invoiceId = parseInt(req.params.id, 10);
     console.log(`\u{1F4B0} Deleting invoice ${invoiceId}...`);
-    const [invoice] = await db2.select().from(invoices).where(eq20(invoices.id, invoiceId)).limit(1);
+    const [invoice] = await db2.select().from(invoices).where(eq21(invoices.id, invoiceId)).limit(1);
     if (!invoice) {
       return res.status(404).json({ message: "Invoice not found" });
     }
-    await db2.delete(invoices).where(eq20(invoices.id, invoiceId));
+    await db2.delete(invoices).where(eq21(invoices.id, invoiceId));
     if (invoice.filePath && !process.env.VERCEL) {
       try {
         if (fs17.existsSync(invoice.filePath)) {
@@ -20154,7 +20762,7 @@ var verification_logs_default = router18;
 init_db();
 init_schema();
 import { Router as Router18 } from "express";
-import { eq as eq21, desc as desc10 } from "drizzle-orm";
+import { eq as eq22, desc as desc10 } from "drizzle-orm";
 var router19 = Router18();
 router19.get("/item-receipts", async (_req, res) => {
   try {
@@ -20178,7 +20786,7 @@ router19.get("/item-receipts", async (_req, res) => {
       orderId: purchaseOrderItems.orderId,
       // Join with users for verifier name
       verifierName: users.name
-    }).from(itemReceipts).leftJoin(purchaseOrderItems, eq21(itemReceipts.orderItemId, purchaseOrderItems.id)).leftJoin(users, eq21(itemReceipts.verifiedBy, users.id)).orderBy(desc10(itemReceipts.createdAt));
+    }).from(itemReceipts).leftJoin(purchaseOrderItems, eq22(itemReceipts.orderItemId, purchaseOrderItems.id)).leftJoin(users, eq22(itemReceipts.verifiedBy, users.id)).orderBy(desc10(itemReceipts.createdAt));
     console.log(`\u2705 Successfully fetched ${receipts.length} item receipts from database`);
     res.json(receipts);
   } catch (error) {
@@ -20212,7 +20820,7 @@ router19.get("/item-receipts/order/:orderId", async (req, res) => {
       orderId: purchaseOrderItems.orderId,
       // Join with users for verifier name
       verifierName: users.name
-    }).from(itemReceipts).leftJoin(purchaseOrderItems, eq21(itemReceipts.orderItemId, purchaseOrderItems.id)).leftJoin(users, eq21(itemReceipts.verifiedBy, users.id)).where(eq21(purchaseOrderItems.orderId, orderId)).orderBy(desc10(itemReceipts.createdAt));
+    }).from(itemReceipts).leftJoin(purchaseOrderItems, eq22(itemReceipts.orderItemId, purchaseOrderItems.id)).leftJoin(users, eq22(itemReceipts.verifiedBy, users.id)).where(eq22(purchaseOrderItems.orderId, orderId)).orderBy(desc10(itemReceipts.createdAt));
     console.log(`\u2705 Successfully fetched ${receipts.length} item receipts for order ${orderId}`);
     res.json(receipts);
   } catch (error) {
@@ -20273,7 +20881,7 @@ router19.post("/item-receipts", async (req, res) => {
       orderId: purchaseOrderItems.orderId,
       // Join with users for verifier name
       verifierName: users.name
-    }).from(itemReceipts).leftJoin(purchaseOrderItems, eq21(itemReceipts.orderItemId, purchaseOrderItems.id)).leftJoin(users, eq21(itemReceipts.verifiedBy, users.id)).where(eq21(itemReceipts.id, newReceipt.id));
+    }).from(itemReceipts).leftJoin(purchaseOrderItems, eq22(itemReceipts.orderItemId, purchaseOrderItems.id)).leftJoin(users, eq22(itemReceipts.verifiedBy, users.id)).where(eq22(itemReceipts.id, newReceipt.id));
     console.log(`\u2705 Successfully created item receipt ${newReceipt.id}`);
     res.status(201).json(receipt);
   } catch (error) {
@@ -20304,7 +20912,7 @@ router19.patch("/item-receipts/:id", async (req, res) => {
     if (status !== void 0) updateData.status = status;
     if (notes !== void 0) updateData.notes = notes;
     updateData.updatedAt = /* @__PURE__ */ new Date();
-    const [updatedReceipt] = await db2.update(itemReceipts).set(updateData).where(eq21(itemReceipts.id, receiptId)).returning();
+    const [updatedReceipt] = await db2.update(itemReceipts).set(updateData).where(eq22(itemReceipts.id, receiptId)).returning();
     if (!updatedReceipt) {
       return res.status(404).json({ message: "Item receipt not found" });
     }
@@ -20327,7 +20935,7 @@ router19.patch("/item-receipts/:id", async (req, res) => {
       orderId: purchaseOrderItems.orderId,
       // Join with users for verifier name
       verifierName: users.name
-    }).from(itemReceipts).leftJoin(purchaseOrderItems, eq21(itemReceipts.orderItemId, purchaseOrderItems.id)).leftJoin(users, eq21(itemReceipts.verifiedBy, users.id)).where(eq21(itemReceipts.id, receiptId));
+    }).from(itemReceipts).leftJoin(purchaseOrderItems, eq22(itemReceipts.orderItemId, purchaseOrderItems.id)).leftJoin(users, eq22(itemReceipts.verifiedBy, users.id)).where(eq22(itemReceipts.id, receiptId));
     console.log(`\u2705 Successfully updated item receipt ${receiptId}`);
     res.json(receipt);
   } catch (error) {
@@ -20342,7 +20950,7 @@ router19.delete("/item-receipts/:id", async (req, res) => {
   try {
     const receiptId = parseInt(req.params.id, 10);
     console.log(`\u{1F4E6} Deleting item receipt ${receiptId}...`);
-    const [deletedReceipt] = await db2.delete(itemReceipts).where(eq21(itemReceipts.id, receiptId)).returning();
+    const [deletedReceipt] = await db2.delete(itemReceipts).where(eq22(itemReceipts.id, receiptId)).returning();
     if (!deletedReceipt) {
       return res.status(404).json({ message: "Item receipt not found" });
     }
@@ -20362,12 +20970,12 @@ var item_receipts_default = router19;
 import { Router as Router19 } from "express";
 init_db();
 init_schema();
-import { eq as eq23, and as and13, desc as desc11, sql as sql12, inArray as inArray5 } from "drizzle-orm";
+import { eq as eq24, and as and13, desc as desc11, sql as sql12, inArray as inArray5 } from "drizzle-orm";
 
 // server/services/notification-service.ts
 init_db();
 init_schema();
-import { eq as eq22, and as and12, inArray as inArray4, sql as sql11 } from "drizzle-orm";
+import { eq as eq23, and as and12, inArray as inArray4, sql as sql11 } from "drizzle-orm";
 var NotificationService = class {
   /**
    * 승인 요청 시 알림 발송
@@ -20460,7 +21068,7 @@ var NotificationService = class {
       maxAmount: approvalAuthorities.maxAmount
     }).from(approvalAuthorities).where(
       and12(
-        eq22(approvalAuthorities.isActive, true),
+        eq23(approvalAuthorities.isActive, true),
         sql11`CAST(${approvalAuthorities.maxAmount} AS DECIMAL) >= ${orderAmount}`
       )
     );
@@ -20469,7 +21077,7 @@ var NotificationService = class {
         id: users.id,
         name: users.name,
         role: users.role
-      }).from(users).where(eq22(users.role, "admin")).limit(10);
+      }).from(users).where(eq23(users.role, "admin")).limit(10);
     }
     const eligibleRoles = authorities.map((auth) => auth.role);
     return await db2.select({
@@ -20492,7 +21100,7 @@ var NotificationService = class {
       projectName: projects.projectName,
       vendorName: vendors.name,
       requesterName: users.name
-    }).from(purchaseOrders).leftJoin(projects, eq22(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq22(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq22(purchaseOrders.userId, users.id)).where(eq22(purchaseOrders.id, orderId)).limit(1);
+    }).from(purchaseOrders).leftJoin(projects, eq23(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq23(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq23(purchaseOrders.userId, users.id)).where(eq23(purchaseOrders.id, orderId)).limit(1);
     return result[0] || null;
   }
   /**
@@ -20506,7 +21114,7 @@ var NotificationService = class {
       stakeholders.add(orderInfo.userId);
     }
     if (orderInfo.projectId) {
-      const projectMembers3 = await db2.select({ userId: users.id }).from(users).where(eq22(users.role, "project_manager")).limit(5);
+      const projectMembers3 = await db2.select({ userId: users.id }).from(users).where(eq23(users.role, "project_manager")).limit(5);
       projectMembers3.forEach((member) => stakeholders.add(member.userId));
     }
     if (stakeholders.size === 0) return [];
@@ -20541,8 +21149,8 @@ var NotificationService = class {
     try {
       const result = await db2.select().from(notifications).where(
         and12(
-          eq22(notifications.userId, userId),
-          eq22(notifications.isActive, true)
+          eq23(notifications.userId, userId),
+          eq23(notifications.isActive, true)
         )
       ).orderBy(sql11`${notifications.createdAt} DESC`).limit(limit);
       return result.map((notification) => ({
@@ -20566,8 +21174,8 @@ var NotificationService = class {
         updatedAt: /* @__PURE__ */ new Date()
       }).where(
         and12(
-          eq22(notifications.id, notificationId),
-          eq22(notifications.userId, userId)
+          eq23(notifications.id, notificationId),
+          eq23(notifications.userId, userId)
         )
       ).returning();
       return result.length > 0;
@@ -20586,9 +21194,9 @@ var NotificationService = class {
         updatedAt: /* @__PURE__ */ new Date()
       }).where(
         and12(
-          eq22(notifications.userId, userId),
-          eq22(notifications.isRead, false),
-          eq22(notifications.isActive, true)
+          eq23(notifications.userId, userId),
+          eq23(notifications.isRead, false),
+          eq23(notifications.isActive, true)
         )
       ).returning();
       return result.length;
@@ -20605,8 +21213,8 @@ async function checkApprovalPermission(userRole, orderAmount) {
   try {
     const authority = await db2.select().from(approvalAuthorities).where(
       and13(
-        eq23(approvalAuthorities.role, userRole),
-        eq23(approvalAuthorities.isActive, true)
+        eq24(approvalAuthorities.role, userRole),
+        eq24(approvalAuthorities.isActive, true)
       )
     ).limit(1);
     if (authority.length === 0) {
@@ -20633,7 +21241,7 @@ router20.get("/approvals/history", requireAuth, requireRole(["admin", "executive
       comments: orderHistory.notes,
       amount: purchaseOrders.totalAmount,
       createdAt: orderHistory.performedAt
-    }).from(orderHistory).leftJoin(purchaseOrders, eq23(orderHistory.orderId, purchaseOrders.id)).leftJoin(users, eq23(orderHistory.performedBy, users.id)).where(
+    }).from(orderHistory).leftJoin(purchaseOrders, eq24(orderHistory.orderId, purchaseOrders.id)).leftJoin(users, eq24(orderHistory.performedBy, users.id)).where(
       inArray5(orderHistory.action, ["approved", "rejected"])
     ).orderBy(desc11(orderHistory.performedAt)).limit(50);
     const allHistory = approvalHistory.map((record) => ({
@@ -20677,7 +21285,7 @@ router20.get("/approvals/pending", requireAuth, requireRole(["admin", "executive
       // Vendor information
       vendorId: vendors.id,
       vendorName: vendors.name
-    }).from(purchaseOrders).leftJoin(projects, eq23(purchaseOrders.projectId, projects.id)).leftJoin(users, eq23(purchaseOrders.userId, users.id)).leftJoin(vendors, eq23(purchaseOrders.vendorId, vendors.id)).where(eq23(purchaseOrders.status, "pending")).orderBy(desc11(purchaseOrders.createdAt));
+    }).from(purchaseOrders).leftJoin(projects, eq24(purchaseOrders.projectId, projects.id)).leftJoin(users, eq24(purchaseOrders.userId, users.id)).leftJoin(vendors, eq24(purchaseOrders.vendorId, vendors.id)).where(eq24(purchaseOrders.status, "pending")).orderBy(desc11(purchaseOrders.createdAt));
     const formattedOrders = pendingOrders.map((order) => ({
       id: order.id,
       orderNumber: order.orderNumber,
@@ -20713,11 +21321,11 @@ router20.get("/approvals/stats", requireAuth, requireRole(["admin", "executive",
       // 전체 발주서 수
       db2.select({ count: sql12`count(*)` }).from(purchaseOrders),
       // 승인 대기 수
-      db2.select({ count: sql12`count(*)` }).from(purchaseOrders).where(eq23(purchaseOrders.status, "pending")),
+      db2.select({ count: sql12`count(*)` }).from(purchaseOrders).where(eq24(purchaseOrders.status, "pending")),
       // 승인 완료 수
-      db2.select({ count: sql12`count(*)` }).from(purchaseOrders).where(eq23(purchaseOrders.status, "approved")),
+      db2.select({ count: sql12`count(*)` }).from(purchaseOrders).where(eq24(purchaseOrders.status, "approved")),
       // 반려 수
-      db2.select({ count: sql12`count(*)` }).from(purchaseOrders).where(eq23(purchaseOrders.status, "rejected"))
+      db2.select({ count: sql12`count(*)` }).from(purchaseOrders).where(eq24(purchaseOrders.status, "rejected"))
     ]);
     const totalCount = totalStats[0]?.count || 0;
     const pendingCount = pendingStats[0]?.count || 0;
@@ -20773,7 +21381,7 @@ router20.post("/approvals/:id/process", requireAuth, requireRole(["admin", "exec
     const { action, comments } = req.body;
     const user = req.user;
     console.log(`\u{1F4CB} Processing approval ${id} with action: ${action} by ${user.name} (${user.role})`);
-    const existingOrder = await db2.select().from(purchaseOrders).where(eq23(purchaseOrders.id, id)).limit(1);
+    const existingOrder = await db2.select().from(purchaseOrders).where(eq24(purchaseOrders.id, id)).limit(1);
     if (existingOrder.length === 0) {
       return res.status(404).json({ message: "\uBC1C\uC8FC\uC11C\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
     }
@@ -20788,7 +21396,7 @@ router20.post("/approvals/:id/process", requireAuth, requireRole(["admin", "exec
     await db2.update(purchaseOrders).set({
       status: newStatus,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq23(purchaseOrders.id, id));
+    }).where(eq24(purchaseOrders.id, id));
     const historyEntry = {
       orderId: id,
       action: action === "approve" ? "approved" : "rejected",
@@ -20876,7 +21484,7 @@ router20.post("/approvals/:orderId/reject", requireAuth, requireRole(["admin", "
 });
 async function processApproval(req, res, orderId, action, note, user) {
   try {
-    const existingOrder = await db2.select().from(purchaseOrders).where(eq23(purchaseOrders.id, orderId)).limit(1);
+    const existingOrder = await db2.select().from(purchaseOrders).where(eq24(purchaseOrders.id, orderId)).limit(1);
     if (existingOrder.length === 0) {
       throw new Error("\uBC1C\uC8FC\uC11C\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4");
     }
@@ -20889,7 +21497,7 @@ async function processApproval(req, res, orderId, action, note, user) {
     await db2.update(purchaseOrders).set({
       status: newStatus,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq23(purchaseOrders.id, orderId));
+    }).where(eq24(purchaseOrders.id, orderId));
     const historyEntry = {
       orderId,
       action: action === "approve" ? "approved" : "rejected",
@@ -20935,7 +21543,7 @@ router20.post("/approvals/:orderId/start-workflow", requireAuth, requireRole(["a
       totalAmount: purchaseOrders.totalAmount,
       status: purchaseOrders.status,
       userId: purchaseOrders.userId
-    }).from(purchaseOrders).where(eq23(purchaseOrders.id, orderId)).limit(1);
+    }).from(purchaseOrders).where(eq24(purchaseOrders.id, orderId)).limit(1);
     if (orderInfo.length === 0) {
       return res.status(404).json({ message: "\uBC1C\uC8FC\uC11C\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
     }
@@ -20974,7 +21582,7 @@ router20.post("/approvals/:orderId/start-workflow", requireAuth, requireRole(["a
       await db2.update(purchaseOrders).set({
         status: "pending",
         updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq23(purchaseOrders.id, orderId));
+      }).where(eq24(purchaseOrders.id, orderId));
       await NotificationService.sendApprovalRequestNotification({
         orderId,
         action: "approval_requested",
@@ -21028,7 +21636,7 @@ router20.post("/approvals/:orderId/step/:stepId", requireAuth, requireRole(["adm
     const { action, comments } = req.body;
     const user = req.user;
     console.log(`\u{1F504} Processing approval step ${stepId} for order ${orderId} with action: ${action}`);
-    const stepInstance = await db2.select().from(approvalStepInstances2).where(eq23(approvalStepInstances2.id, stepId)).limit(1);
+    const stepInstance = await db2.select().from(approvalStepInstances2).where(eq24(approvalStepInstances2.id, stepId)).limit(1);
     if (stepInstance.length === 0) {
       return res.status(404).json({ message: "\uC2B9\uC778 \uB2E8\uACC4\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
     }
@@ -21045,7 +21653,7 @@ router20.post("/approvals/:orderId/step/:stepId", requireAuth, requireRole(["adm
       approvedAt: /* @__PURE__ */ new Date(),
       comments: comments || "",
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq23(approvalStepInstances2.id, stepId));
+    }).where(eq24(approvalStepInstances2.id, stepId));
     const isComplete = await ApprovalRoutingService.isApprovalComplete(orderId);
     const progress = await ApprovalRoutingService.getApprovalProgress(orderId);
     let finalOrderStatus = "pending";
@@ -21056,8 +21664,8 @@ router20.post("/approvals/:orderId/step/:stepId", requireAuth, requireRole(["adm
         updatedAt: /* @__PURE__ */ new Date()
       }).where(
         and13(
-          eq23(approvalStepInstances2.orderId, orderId),
-          eq23(approvalStepInstances2.status, "pending")
+          eq24(approvalStepInstances2.orderId, orderId),
+          eq24(approvalStepInstances2.status, "pending")
         )
       );
     } else if (isComplete) {
@@ -21067,7 +21675,7 @@ router20.post("/approvals/:orderId/step/:stepId", requireAuth, requireRole(["adm
       await db2.update(purchaseOrders).set({
         status: finalOrderStatus,
         updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq23(purchaseOrders.id, orderId));
+      }).where(eq24(purchaseOrders.id, orderId));
       await db2.insert(orderHistory).values({
         orderId,
         action: finalOrderStatus === "approved" ? "approved" : "rejected",
@@ -21685,12 +22293,12 @@ var test_accounts_default = router24;
 init_db();
 init_schema();
 import { Router as Router24 } from "express";
-import { eq as eq25, and as and15 } from "drizzle-orm";
+import { eq as eq26, and as and15 } from "drizzle-orm";
 
 // server/utils/category-mapping-validator.ts
 init_db();
 init_schema();
-import { eq as eq24 } from "drizzle-orm";
+import { eq as eq25 } from "drizzle-orm";
 async function validateCategoryMapping(request) {
   console.log("\u{1F50D} \uBD84\uB958 \uB9E4\uD551 \uAC80\uC99D \uC2DC\uC791:", request);
   const result = {
@@ -21705,7 +22313,7 @@ async function validateCategoryMapping(request) {
     confidence: 0
   };
   try {
-    const allCategories = await db2.select().from(itemCategories).where(eq24(itemCategories.isActive, true));
+    const allCategories = await db2.select().from(itemCategories).where(eq25(itemCategories.isActive, true));
     const majorCategories = allCategories.filter((c) => c.categoryType === "major");
     const middleCategories = allCategories.filter((c) => c.categoryType === "middle");
     const minorCategories = allCategories.filter((c) => c.categoryType === "minor");
@@ -21955,7 +22563,7 @@ router25.get("/hierarchy", async (req, res) => {
 router25.get("/", async (req, res) => {
   try {
     console.log("\u{1F4CB} Fetching all categories...");
-    const categories = await db2.select().from(itemCategories).where(eq25(itemCategories.isActive, true)).orderBy(itemCategories.displayOrder, itemCategories.categoryName);
+    const categories = await db2.select().from(itemCategories).where(eq26(itemCategories.isActive, true)).orderBy(itemCategories.displayOrder, itemCategories.categoryName);
     const majorCategories = categories.filter((c) => c.categoryType === "major");
     const middleCategories = categories.filter((c) => c.categoryType === "middle");
     const minorCategories = categories.filter((c) => c.categoryType === "minor");
@@ -22021,11 +22629,11 @@ router25.get("/:type", async (req, res) => {
     const { parentId } = req.query;
     console.log(`\u{1F4CB} Fetching ${type} categories...`);
     let query = db2.select().from(itemCategories).where(and15(
-      eq25(itemCategories.categoryType, type),
-      eq25(itemCategories.isActive, true)
+      eq26(itemCategories.categoryType, type),
+      eq26(itemCategories.isActive, true)
     ));
     if (parentId) {
-      query = query.where(eq25(itemCategories.parentId, parseInt(parentId)));
+      query = query.where(eq26(itemCategories.parentId, parseInt(parentId)));
     }
     const categories = await query.orderBy(itemCategories.displayOrder, itemCategories.categoryName);
     res.json({
@@ -22076,7 +22684,7 @@ router25.put("/:id", async (req, res) => {
       displayOrder,
       isActive,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq25(itemCategories.id, parseInt(id))).returning();
+    }).where(eq26(itemCategories.id, parseInt(id))).returning();
     if (updatedCategory.length === 0) {
       return res.status(404).json({
         success: false,
@@ -22104,7 +22712,7 @@ router25.delete("/:id", async (req, res) => {
     const updatedCategory = await db2.update(itemCategories).set({
       isActive: false,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq25(itemCategories.id, parseInt(id))).returning();
+    }).where(eq26(itemCategories.id, parseInt(id))).returning();
     if (updatedCategory.length === 0) {
       return res.status(404).json({
         success: false,
@@ -22187,7 +22795,7 @@ var categories_default = router25;
 init_db();
 init_schema();
 import { Router as Router25 } from "express";
-import { eq as eq26, and as and16, desc as desc12, asc as asc5 } from "drizzle-orm";
+import { eq as eq27, and as and16, desc as desc12, asc as asc5 } from "drizzle-orm";
 import { z as z6 } from "zod";
 var router26 = Router25();
 router26.get("/workflow-settings/:companyId", requireAuth, async (req, res) => {
@@ -22195,8 +22803,8 @@ router26.get("/workflow-settings/:companyId", requireAuth, async (req, res) => {
     const { companyId } = req.params;
     const settings = await db2.select().from(approvalWorkflowSettings).where(
       and16(
-        eq26(approvalWorkflowSettings.companyId, parseInt(companyId)),
-        eq26(approvalWorkflowSettings.isActive, true)
+        eq27(approvalWorkflowSettings.companyId, parseInt(companyId)),
+        eq27(approvalWorkflowSettings.isActive, true)
       )
     ).orderBy(desc12(approvalWorkflowSettings.createdAt)).limit(1);
     return res.json({
@@ -22218,8 +22826,8 @@ router26.post("/workflow-settings", requireAuth, requireAdmin, async (req, res) 
     });
     const existingSettings = await db2.select().from(approvalWorkflowSettings).where(
       and16(
-        eq26(approvalWorkflowSettings.companyId, validatedData.companyId),
-        eq26(approvalWorkflowSettings.isActive, true)
+        eq27(approvalWorkflowSettings.companyId, validatedData.companyId),
+        eq27(approvalWorkflowSettings.isActive, true)
       )
     ).limit(1);
     let result;
@@ -22227,7 +22835,7 @@ router26.post("/workflow-settings", requireAuth, requireAdmin, async (req, res) 
       result = await db2.update(approvalWorkflowSettings).set({
         ...validatedData,
         updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq26(approvalWorkflowSettings.id, existingSettings[0].id)).returning();
+      }).where(eq27(approvalWorkflowSettings.id, existingSettings[0].id)).returning();
     } else {
       result = await db2.insert(approvalWorkflowSettings).values(validatedData).returning();
     }
@@ -22254,16 +22862,16 @@ router26.get("/step-templates/:companyId", requireAuth, async (req, res) => {
     const { templateName } = req.query;
     let query = db2.select().from(approvalStepTemplates).where(
       and16(
-        eq26(approvalStepTemplates.companyId, parseInt(companyId)),
-        eq26(approvalStepTemplates.isActive, true)
+        eq27(approvalStepTemplates.companyId, parseInt(companyId)),
+        eq27(approvalStepTemplates.isActive, true)
       )
     );
     if (templateName) {
       query = query.where(
         and16(
-          eq26(approvalStepTemplates.companyId, parseInt(companyId)),
-          eq26(approvalStepTemplates.isActive, true),
-          eq26(approvalStepTemplates.templateName, templateName)
+          eq27(approvalStepTemplates.companyId, parseInt(companyId)),
+          eq27(approvalStepTemplates.isActive, true),
+          eq27(approvalStepTemplates.templateName, templateName)
         )
       );
     }
@@ -22310,7 +22918,7 @@ router26.put("/step-templates/:id", requireAuth, requireAdmin, async (req, res) 
     const result = await db2.update(approvalStepTemplates).set({
       ...validatedData,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq26(approvalStepTemplates.id, parseInt(id))).returning();
+    }).where(eq27(approvalStepTemplates.id, parseInt(id))).returning();
     if (result.length === 0) {
       return res.status(404).json({ error: "\uC2B9\uC778 \uB2E8\uACC4 \uD15C\uD50C\uB9BF\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
     }
@@ -22337,7 +22945,7 @@ router26.delete("/step-templates/:id", requireAuth, requireAdmin, async (req, re
     const result = await db2.update(approvalStepTemplates).set({
       isActive: false,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq26(approvalStepTemplates.id, parseInt(id))).returning();
+    }).where(eq27(approvalStepTemplates.id, parseInt(id))).returning();
     if (result.length === 0) {
       return res.status(404).json({ error: "\uC2B9\uC778 \uB2E8\uACC4 \uD15C\uD50C\uB9BF\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
     }
@@ -22357,8 +22965,8 @@ router26.get("/step-instances/:orderId", requireAuth, async (req, res) => {
     const { orderId } = req.params;
     const instances = await db2.select().from(approvalStepInstances2).where(
       and16(
-        eq26(approvalStepInstances2.orderId, parseInt(orderId)),
-        eq26(approvalStepInstances2.isActive, true)
+        eq27(approvalStepInstances2.orderId, parseInt(orderId)),
+        eq27(approvalStepInstances2.isActive, true)
       )
     ).orderBy(asc5(approvalStepInstances2.stepOrder));
     return res.json({
@@ -22382,9 +22990,9 @@ router26.post("/step-instances", requireAuth, async (req, res) => {
     }
     const templates = await db2.select().from(approvalStepTemplates).where(
       and16(
-        eq26(approvalStepTemplates.companyId, companyId),
-        eq26(approvalStepTemplates.templateName, templateName),
-        eq26(approvalStepTemplates.isActive, true)
+        eq27(approvalStepTemplates.companyId, companyId),
+        eq27(approvalStepTemplates.templateName, templateName),
+        eq27(approvalStepTemplates.isActive, true)
       )
     ).orderBy(asc5(approvalStepTemplates.stepOrder));
     if (templates.length === 0) {
@@ -22428,7 +23036,7 @@ router26.put("/step-instances/:id", requireAuth, async (req, res) => {
     };
     if (comments) updateData.comments = comments;
     if (rejectionReason) updateData.rejectionReason = rejectionReason;
-    const result = await db2.update(approvalStepInstances2).set(updateData).where(eq26(approvalStepInstances2.id, parseInt(id))).returning();
+    const result = await db2.update(approvalStepInstances2).set(updateData).where(eq27(approvalStepInstances2.id, parseInt(id))).returning();
     if (result.length === 0) {
       return res.status(404).json({ error: "\uC2B9\uC778 \uB2E8\uACC4 \uC778\uC2A4\uD134\uC2A4\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
     }
@@ -22449,7 +23057,7 @@ var approval_settings_default = router26;
 import { Router as Router26 } from "express";
 init_db();
 init_schema();
-import { eq as eq27, and as and17, desc as desc13 } from "drizzle-orm";
+import { eq as eq28, and as and17, desc as desc13 } from "drizzle-orm";
 import { z as z7 } from "zod";
 var router27 = Router26();
 router27.get("/approval-authorities", requireAuth, requireRole(["admin"]), async (req, res) => {
@@ -22486,8 +23094,8 @@ router27.post("/approval-authorities", requireAuth, requireRole(["admin"]), asyn
     const validatedData = insertApprovalAuthoritySchema.parse(req.body);
     const existingAuthority = await db2.select().from(approvalAuthorities).where(
       and17(
-        eq27(approvalAuthorities.role, validatedData.role),
-        eq27(approvalAuthorities.isActive, true)
+        eq28(approvalAuthorities.role, validatedData.role),
+        eq28(approvalAuthorities.isActive, true)
       )
     ).limit(1);
     if (existingAuthority.length > 0) {
@@ -22526,7 +23134,7 @@ router27.put("/approval-authorities/:id", requireAuth, requireRole(["admin"]), a
     const result = await db2.update(approvalAuthorities).set({
       ...validatedData,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq27(approvalAuthorities.id, id)).returning();
+    }).where(eq28(approvalAuthorities.id, id)).returning();
     if (result.length === 0) {
       return res.status(404).json({
         message: "\uC2B9\uC778 \uAD8C\uD55C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4"
@@ -22561,7 +23169,7 @@ router27.delete("/approval-authorities/:id", requireAuth, requireRole(["admin"])
     const result = await db2.update(approvalAuthorities).set({
       isActive: false,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq27(approvalAuthorities.id, id)).returning();
+    }).where(eq28(approvalAuthorities.id, id)).returning();
     if (result.length === 0) {
       return res.status(404).json({
         message: "\uC2B9\uC778 \uAD8C\uD55C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4"
@@ -22585,8 +23193,8 @@ router27.get("/approval-authorities/role/:role", requireAuth, requireRole(["admi
     console.log(`\u{1F4CB} Fetching approval authority for role: ${role}`);
     const authority = await db2.select().from(approvalAuthorities).where(
       and17(
-        eq27(approvalAuthorities.role, role),
-        eq27(approvalAuthorities.isActive, true)
+        eq28(approvalAuthorities.role, role),
+        eq28(approvalAuthorities.isActive, true)
       )
     ).limit(1);
     if (authority.length === 0) {
@@ -22627,8 +23235,8 @@ router27.post("/approval-authorities/check-permission", requireAuth, requireRole
     }
     const authority = await db2.select().from(approvalAuthorities).where(
       and17(
-        eq27(approvalAuthorities.role, checkRole),
-        eq27(approvalAuthorities.isActive, true)
+        eq28(approvalAuthorities.role, checkRole),
+        eq28(approvalAuthorities.isActive, true)
       )
     ).limit(1);
     let canApprove = false;
@@ -22776,13 +23384,14 @@ var notifications_default = router28;
 init_db();
 init_schema();
 import { Router as Router28 } from "express";
-import { eq as eq28, and as and18, desc as desc14, count as count4 } from "drizzle-orm";
+import { eq as eq29, and as and18, desc as desc14, count as count4 } from "drizzle-orm";
 init_professional_pdf_generation_service();
 import multer6 from "multer";
 import path16 from "path";
 import fs19 from "fs/promises";
 import { readFileSync, existsSync as existsSync2, unlinkSync } from "fs";
 import { z as z8 } from "zod";
+init_excel_input_sheet_remover();
 var router29 = Router28();
 var storage5 = multer6.diskStorage({
   destination: async (req, file, cb) => {
@@ -22888,13 +23497,12 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
     let processedExcelFile = null;
     if (req.file && (req.file.mimetype === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" || req.file.originalname.toLowerCase().endsWith(".xlsx"))) {
       console.log("\u{1F4CA} Processing Excel file for all orders...");
-      const { removeAllInputSheets: removeAllInputSheets2 } = (init_excel_input_sheet_remover(), __toCommonJS(excel_input_sheet_remover_exports));
       const decodedOriginalName = req.file.originalname;
       let fileToStore = req.file.path;
       let fileBuffer;
       let processedFileName = req.file.filename;
       const processedPath = req.file.path.replace(/\.(xlsx?)$/i, "_processed.$1");
-      const removeResult = await removeAllInputSheets2(req.file.path, processedPath);
+      const removeResult = await removeAllInputSheets(req.file.path, processedPath);
       if (removeResult.success && existsSync2(processedPath)) {
         console.log(`\u2705 Input sheets removed: ${removeResult.removedSheets.join(", ")}`);
         fileToStore = processedPath;
@@ -22921,7 +23529,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
     let defaultProject;
     try {
       console.log("\u{1F50D} Fetching default project...");
-      defaultProject = await db2.select().from(projects).where(eq28(projects.projectName, "\uAE30\uBCF8 \uD504\uB85C\uC81D\uD2B8")).then((rows) => rows[0]);
+      defaultProject = await db2.select().from(projects).where(eq29(projects.projectName, "\uAE30\uBCF8 \uD504\uB85C\uC81D\uD2B8")).then((rows) => rows[0]);
       console.log("\u2705 Default project fetch successful");
     } catch (error) {
       console.error("\u274C Error fetching default project:", error);
@@ -22947,7 +23555,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
       try {
         let vendor = null;
         if (orderData.vendorName) {
-          const existingVendor = await db2.select().from(vendors).where(eq28(vendors.name, orderData.vendorName)).then((rows) => rows[0]);
+          const existingVendor = await db2.select().from(vendors).where(eq29(vendors.name, orderData.vendorName)).then((rows) => rows[0]);
           if (existingVendor) {
             vendor = existingVendor;
           } else {
@@ -22963,7 +23571,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
         }
         let project = defaultProject;
         if (orderData.projectName) {
-          const existingProject = await db2.select().from(projects).where(eq28(projects.projectName, orderData.projectName)).then((rows) => rows[0]);
+          const existingProject = await db2.select().from(projects).where(eq29(projects.projectName, orderData.projectName)).then((rows) => rows[0]);
           if (existingProject) {
             project = existingProject;
           }
@@ -22978,7 +23586,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
           const orderCount = await db2.select().from(purchaseOrders).then((rows) => rows.length);
           const sequenceNumber = orderCount + 1 + attempts;
           orderNumber = `PO-${year}-${String(sequenceNumber).padStart(5, "0")}`;
-          const existingOrder = await db2.select().from(purchaseOrders).where(eq28(purchaseOrders.orderNumber, orderNumber)).then((rows) => rows[0]);
+          const existingOrder = await db2.select().from(purchaseOrders).where(eq29(purchaseOrders.orderNumber, orderNumber)).then((rows) => rows[0]);
           if (!existingOrder) {
             break;
           }
@@ -23070,6 +23678,13 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
         }
         if (processedExcelFile) {
           console.log(`\u{1F4CE} Saving Excel file attachment for order ${newOrder.orderNumber}`);
+          console.log("\u{1F4CB} Excel \uD30C\uC77C\uBA85 \uD45C\uC900\uD654 \uC2DC\uC791:", processedExcelFile.originalName);
+          const today = /* @__PURE__ */ new Date();
+          const dateStr = today.getFullYear().toString() + (today.getMonth() + 1).toString().padStart(2, "0") + today.getDate().toString().padStart(2, "0");
+          const standardizedName = `IKJIN_${newOrder.orderNumber}_${dateStr}.xlsx`;
+          processedExcelFile.originalName = standardizedName;
+          processedExcelFile.storedName = `${Date.now()}-${standardizedName}`;
+          console.log(`\u2705 Excel \uD30C\uC77C\uBA85 \uD45C\uC900\uD654 \uC644\uB8CC: \u2192 ${standardizedName}`);
           try {
             const relativePath = process.env.VERCEL ? processedExcelFile.storedName : processedExcelFile.filePath;
             let fileData;
@@ -23138,7 +23753,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
           try {
             let excelAttachment = null;
             if (req.file) {
-              const attachment = await db2.select().from(attachments).where(eq28(attachments.orderId, emailInfo.orderId)).then((rows) => rows[0]);
+              const attachment = await db2.select().from(attachments).where(eq29(attachments.orderId, emailInfo.orderId)).then((rows) => rows[0]);
               if (attachment) {
                 excelAttachment = process.env.VERCEL ? path16.join("/tmp", "uploads", "excel-simple", attachment.storedName) : attachment.filePath;
               }
@@ -23162,7 +23777,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
                 await db2.update(purchaseOrders).set({
                   status: "sent",
                   orderStatus: "sent"
-                }).where(eq28(purchaseOrders.id, emailInfo.orderId));
+                }).where(eq29(purchaseOrders.id, emailInfo.orderId));
                 await db2.insert(orderHistory).values({
                   orderId: emailInfo.orderId,
                   userId: req.user.id,
@@ -23227,10 +23842,10 @@ router29.get("/orders/simple-upload-history", requireAuth, async (req, res) => {
       projectName: projects.projectName,
       vendorName: vendors.name,
       itemCount: count4(purchaseOrderItems.id)
-    }).from(purchaseOrders).leftJoin(projects, eq28(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq28(purchaseOrders.vendorId, vendors.id)).leftJoin(purchaseOrderItems, eq28(purchaseOrderItems.orderId, purchaseOrders.id)).leftJoin(orderHistory, eq28(orderHistory.orderId, purchaseOrders.id)).where(
+    }).from(purchaseOrders).leftJoin(projects, eq29(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq29(purchaseOrders.vendorId, vendors.id)).leftJoin(purchaseOrderItems, eq29(purchaseOrderItems.orderId, purchaseOrders.id)).leftJoin(orderHistory, eq29(orderHistory.orderId, purchaseOrders.id)).where(
       and18(
-        eq28(purchaseOrders.userId, req.user.id),
-        eq28(orderHistory.action, "created")
+        eq29(purchaseOrders.userId, req.user.id),
+        eq29(orderHistory.action, "created")
       )
     ).groupBy(
       purchaseOrders.id,
@@ -23266,7 +23881,7 @@ router29.get("/orders/drafts", requireAuth, async (req, res) => {
       userId: purchaseOrders.userId,
       userName: users.name,
       notes: purchaseOrders.notes
-    }).from(purchaseOrders).leftJoin(projects, eq28(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq28(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq28(purchaseOrders.userId, users.id)).where(eq28(purchaseOrders.status, "draft")).orderBy(desc14(purchaseOrders.createdAt));
+    }).from(purchaseOrders).leftJoin(projects, eq29(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq29(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq29(purchaseOrders.userId, users.id)).where(eq29(purchaseOrders.status, "draft")).orderBy(desc14(purchaseOrders.createdAt));
     console.log(`\u{1F4DD} Found ${drafts.length} draft orders`);
     res.json({
       success: true,
@@ -23311,7 +23926,7 @@ import { Router as Router30 } from "express";
 // server/services/audit-service.ts
 init_db();
 init_schema();
-import { eq as eq29, and as and19, or as or6, gte as gte6, lte as lte6, desc as desc15, asc as asc7, sql as sql14, inArray as inArray6 } from "drizzle-orm";
+import { eq as eq30, and as and19, or as or6, gte as gte6, lte as lte6, desc as desc15, asc as asc7, sql as sql14, inArray as inArray6 } from "drizzle-orm";
 var AuditService = class {
   /**
    * 감사 로그 조회
@@ -23331,11 +23946,11 @@ var AuditService = class {
       sortOrder = "desc"
     } = params;
     const conditions = [];
-    if (userId) conditions.push(eq29(systemAuditLogs.userId, userId));
-    if (eventType) conditions.push(eq29(systemAuditLogs.eventType, eventType));
-    if (eventCategory) conditions.push(eq29(systemAuditLogs.eventCategory, eventCategory));
-    if (entityType) conditions.push(eq29(systemAuditLogs.entityType, entityType));
-    if (entityId) conditions.push(eq29(systemAuditLogs.entityId, entityId));
+    if (userId) conditions.push(eq30(systemAuditLogs.userId, userId));
+    if (eventType) conditions.push(eq30(systemAuditLogs.eventType, eventType));
+    if (eventCategory) conditions.push(eq30(systemAuditLogs.eventCategory, eventCategory));
+    if (entityType) conditions.push(eq30(systemAuditLogs.entityType, entityType));
+    if (entityId) conditions.push(eq30(systemAuditLogs.entityId, entityId));
     if (startDate) conditions.push(gte6(systemAuditLogs.createdAt, startDate));
     if (endDate) conditions.push(lte6(systemAuditLogs.createdAt, endDate));
     const orderByColumn = sortBy === "eventType" ? systemAuditLogs.eventType : sortBy === "userName" ? systemAuditLogs.userName : systemAuditLogs.createdAt;
@@ -23363,20 +23978,20 @@ var AuditService = class {
       count: sql14`count(*)`
     }).from(systemAuditLogs).where(
       and19(
-        eq29(systemAuditLogs.userId, userId),
+        eq30(systemAuditLogs.userId, userId),
         gte6(systemAuditLogs.createdAt, startDate)
       )
     ).groupBy(systemAuditLogs.eventType);
     const lastLogin = await db2.select().from(systemAuditLogs).where(
       and19(
-        eq29(systemAuditLogs.userId, userId),
-        eq29(systemAuditLogs.eventType, "login")
+        eq30(systemAuditLogs.userId, userId),
+        eq30(systemAuditLogs.eventType, "login")
       )
     ).orderBy(desc15(systemAuditLogs.createdAt)).limit(1);
     const failedLogins = await db2.select({ count: sql14`count(*)` }).from(systemAuditLogs).where(
       and19(
-        eq29(systemAuditLogs.userId, userId),
-        eq29(systemAuditLogs.eventType, "login_failed"),
+        eq30(systemAuditLogs.userId, userId),
+        eq30(systemAuditLogs.eventType, "login_failed"),
         gte6(systemAuditLogs.createdAt, startDate)
       )
     );
@@ -23411,9 +24026,9 @@ var AuditService = class {
     const errors = await db2.select().from(systemAuditLogs).where(
       and19(
         or6(
-          eq29(systemAuditLogs.eventType, "system_error"),
-          eq29(systemAuditLogs.eventType, "security_alert"),
-          eq29(systemAuditLogs.eventType, "login_failed")
+          eq30(systemAuditLogs.eventType, "system_error"),
+          eq30(systemAuditLogs.eventType, "security_alert"),
+          eq30(systemAuditLogs.eventType, "login_failed")
         ),
         gte6(systemAuditLogs.createdAt, startDate)
       )
@@ -23421,9 +24036,9 @@ var AuditService = class {
     const securityEvents = await db2.select().from(systemAuditLogs).where(
       and19(
         or6(
-          eq29(systemAuditLogs.eventType, "login_failed"),
-          eq29(systemAuditLogs.eventType, "security_alert"),
-          eq29(systemAuditLogs.eventCategory, "security")
+          eq30(systemAuditLogs.eventType, "login_failed"),
+          eq30(systemAuditLogs.eventType, "security_alert"),
+          eq30(systemAuditLogs.eventCategory, "security")
         ),
         gte6(systemAuditLogs.createdAt, startDate)
       )
@@ -23455,7 +24070,7 @@ var AuditService = class {
         ...settings,
         updatedBy: userId,
         updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq29(auditSettings.id, existingSettings.id)).returning();
+      }).where(eq30(auditSettings.id, existingSettings.id)).returning();
       await logAuditEvent("settings_change", "system", {
         userId,
         entityType: "audit_settings",
@@ -23513,7 +24128,7 @@ var AuditService = class {
   static async getArchivedLogs(params) {
     const { userId, startDate, endDate, limit = 50, offset = 0 } = params;
     const conditions = [];
-    if (userId) conditions.push(eq29(archivedAuditLogs.userId, userId));
+    if (userId) conditions.push(eq30(archivedAuditLogs.userId, userId));
     if (startDate) conditions.push(gte6(archivedAuditLogs.createdAt, startDate));
     if (endDate) conditions.push(lte6(archivedAuditLogs.createdAt, endDate));
     const logs = await db2.select().from(archivedAuditLogs).where(conditions.length > 0 ? and19(...conditions) : void 0).orderBy(desc15(archivedAuditLogs.createdAt)).limit(limit).offset(offset);
@@ -23532,7 +24147,7 @@ var AuditService = class {
       gte6(systemAuditLogs.createdAt, startDate)
     ];
     if (userId) {
-      conditions.push(eq29(systemAuditLogs.userId, userId));
+      conditions.push(eq30(systemAuditLogs.userId, userId));
     }
     const history = await db2.select({
       id: systemAuditLogs.id,
@@ -23592,9 +24207,9 @@ var AuditService = class {
       inArray6(systemAuditLogs.eventType, ["data_create", "data_update", "data_delete"]),
       gte6(systemAuditLogs.createdAt, startDate)
     ];
-    if (entityType) conditions.push(eq29(systemAuditLogs.entityType, entityType));
-    if (entityId) conditions.push(eq29(systemAuditLogs.entityId, entityId));
-    if (userId) conditions.push(eq29(systemAuditLogs.userId, userId));
+    if (entityType) conditions.push(eq30(systemAuditLogs.entityType, entityType));
+    if (entityId) conditions.push(eq30(systemAuditLogs.entityId, entityId));
+    if (userId) conditions.push(eq30(systemAuditLogs.userId, userId));
     const changes = await db2.select().from(systemAuditLogs).where(and19(...conditions)).orderBy(desc15(systemAuditLogs.createdAt)).limit(100);
     return changes;
   }
@@ -23606,11 +24221,11 @@ var AuditService = class {
     const startDate = /* @__PURE__ */ new Date();
     startDate.setDate(startDate.getDate() - days);
     const conditions = [
-      eq29(systemAuditLogs.eventType, "data_delete"),
+      eq30(systemAuditLogs.eventType, "data_delete"),
       gte6(systemAuditLogs.createdAt, startDate)
     ];
     if (entityType) {
-      conditions.push(eq29(systemAuditLogs.entityType, entityType));
+      conditions.push(eq30(systemAuditLogs.entityType, entityType));
     }
     const deletions = await db2.select().from(systemAuditLogs).where(and19(...conditions)).orderBy(desc15(systemAuditLogs.createdAt));
     const records = deletions.map((deletion) => ({
@@ -23642,7 +24257,7 @@ var AuditService = class {
       and19(
         or6(
           inArray6(systemAuditLogs.eventType, securityEventTypes),
-          eq29(systemAuditLogs.eventCategory, "security")
+          eq30(systemAuditLogs.eventCategory, "security")
         ),
         gte6(systemAuditLogs.createdAt, startDate)
       )
@@ -23668,7 +24283,7 @@ var AuditService = class {
    * 알림 규칙 조회
    */
   static async getAlertRules() {
-    return await db2.select().from(auditAlertRules).where(eq29(auditAlertRules.isActive, true)).orderBy(desc15(auditAlertRules.severity));
+    return await db2.select().from(auditAlertRules).where(eq30(auditAlertRules.isActive, true)).orderBy(desc15(auditAlertRules.severity));
   }
   /**
    * 알림 규칙 생성/업데이트
@@ -23678,7 +24293,7 @@ var AuditService = class {
       return await db2.update(auditAlertRules).set({
         ...rule,
         updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq29(auditAlertRules.id, rule.id)).returning();
+      }).where(eq30(auditAlertRules.id, rule.id)).returning();
     } else {
       return await db2.insert(auditAlertRules).values({
         ...rule,
@@ -24558,15 +25173,15 @@ import { Router as Router31 } from "express";
 // server/services/approval-authority-service.ts
 init_db();
 init_schema();
-import { eq as eq30, and as and20, gte as gte7 } from "drizzle-orm";
+import { eq as eq31, and as and20, gte as gte7 } from "drizzle-orm";
 var ApprovalAuthorityService = class {
   /**
    * Check user's approval authority for a given amount
    */
   async checkAuthority(user, orderAmount) {
     const authority = await db2.select().from(approvalAuthorities).where(and20(
-      eq30(approvalAuthorities.role, user.role),
-      eq30(approvalAuthorities.isActive, true)
+      eq31(approvalAuthorities.role, user.role),
+      eq31(approvalAuthorities.isActive, true)
     )).limit(1);
     if (!authority || authority.length === 0) {
       return {
@@ -24614,16 +25229,16 @@ var ApprovalAuthorityService = class {
   async findNextApprover(orderAmount) {
     const authorities = await db2.select().from(approvalAuthorities).where(and20(
       gte7(approvalAuthorities.maxAmount, orderAmount.toString()),
-      eq30(approvalAuthorities.isActive, true)
+      eq31(approvalAuthorities.isActive, true)
     )).orderBy(approvalAuthorities.maxAmount);
     if (authorities.length === 0) {
-      const executive = await db2.select().from(users).where(eq30(users.role, "executive")).limit(1);
+      const executive = await db2.select().from(users).where(eq31(users.role, "executive")).limit(1);
       return executive[0]?.id;
     }
     const lowestAuthority = authorities[0];
     const approver = await db2.select().from(users).where(and20(
-      eq30(users.role, lowestAuthority.role),
-      eq30(users.isActive, true)
+      eq31(users.role, lowestAuthority.role),
+      eq31(users.isActive, true)
     )).limit(1);
     return approver[0]?.id;
   }
@@ -24638,7 +25253,7 @@ var ApprovalAuthorityService = class {
       canDirectApprove: approvalAuthorities.canDirectApprove,
       directApproveLimit: approvalAuthorities.directApproveLimit
     }).from(approvalAuthorities).where(and20(
-      eq30(approvalAuthorities.isActive, true),
+      eq31(approvalAuthorities.isActive, true),
       gte7(approvalAuthorities.maxAmount, orderAmount.toString())
     )).orderBy(approvalAuthorities.maxAmount);
     for (const auth of authorities) {
@@ -24648,9 +25263,9 @@ var ApprovalAuthorityService = class {
         email: users.email,
         role: users.role
       }).from(users).where(and20(
-        eq30(users.role, auth.role),
-        eq30(users.isActive, true),
-        companyId ? eq30(users.companyId, companyId) : void 0
+        eq31(users.role, auth.role),
+        eq31(users.isActive, true),
+        companyId ? eq31(users.companyId, companyId) : void 0
       ));
       if (usersInRole.length > 0) {
         approvers.push({
@@ -24697,8 +25312,8 @@ var ApprovalAuthorityService = class {
     }
     if (order.vendorId) {
       const recentOrders = await db2.select().from(purchaseOrders).where(and20(
-        eq30(purchaseOrders.vendorId, order.vendorId),
-        eq30(purchaseOrders.orderStatus, "delivered")
+        eq31(purchaseOrders.vendorId, order.vendorId),
+        eq31(purchaseOrders.orderStatus, "delivered")
         // Check orders from last 30 days
       )).limit(1);
       if (recentOrders.length > 0) {
@@ -24731,7 +25346,7 @@ var ApprovalAuthorityService = class {
         updateData.rejectionReason = comments;
         updateData.orderStatus = "draft";
       }
-      await db2.update(purchaseOrders).set(updateData).where(eq30(purchaseOrders.id, orderId));
+      await db2.update(purchaseOrders).set(updateData).where(eq31(purchaseOrders.id, orderId));
       return true;
     } catch (error) {
       console.error("Error processing approval:", error);
@@ -24744,13 +25359,13 @@ var approvalAuthorityService = new ApprovalAuthorityService();
 // server/services/workflow-engine.ts
 init_db();
 init_schema();
-import { eq as eq32 } from "drizzle-orm";
+import { eq as eq33 } from "drizzle-orm";
 
 // server/services/websocket-service.ts
 init_db();
 init_schema();
 import { Server as SocketIOServer } from "socket.io";
-import { eq as eq31 } from "drizzle-orm";
+import { eq as eq32 } from "drizzle-orm";
 var WebSocketService = class _WebSocketService {
   constructor() {
     this.io = null;
@@ -24776,7 +25391,7 @@ var WebSocketService = class _WebSocketService {
       console.log("\u{1F50C} WebSocket connection established:", socket.id);
       socket.on("authenticate", async (data) => {
         try {
-          const user = await db2.select().from(users).where(eq31(users.id, data.userId)).then((rows) => rows[0]);
+          const user = await db2.select().from(users).where(eq32(users.id, data.userId)).then((rows) => rows[0]);
           if (user) {
             const webSocketUser = {
               id: user.id,
@@ -24929,7 +25544,7 @@ var WorkflowEngine = class {
    * Process the next step in the workflow automatically
    */
   async processNextStep(orderId, userId) {
-    const order = await db2.select().from(purchaseOrders).where(eq32(purchaseOrders.id, orderId)).limit(1);
+    const order = await db2.select().from(purchaseOrders).where(eq33(purchaseOrders.id, orderId)).limit(1);
     if (!order || order.length === 0) {
       throw new Error(`Order ${orderId} not found`);
     }
@@ -24976,7 +25591,7 @@ var WorkflowEngine = class {
    * Track workflow progress for an order
    */
   async trackWorkflowProgress(orderId) {
-    const order = await db2.select().from(purchaseOrders).where(eq32(purchaseOrders.id, orderId)).limit(1);
+    const order = await db2.select().from(purchaseOrders).where(eq33(purchaseOrders.id, orderId)).limit(1);
     if (!order || order.length === 0) {
       throw new Error(`Order ${orderId} not found`);
     }
@@ -24986,7 +25601,7 @@ var WorkflowEngine = class {
       event: orderHistory.changeType,
       actor: orderHistory.userId,
       details: orderHistory.changedData
-    }).from(orderHistory).where(eq32(orderHistory.orderId, orderId)).orderBy(orderHistory.changedAt);
+    }).from(orderHistory).where(eq33(orderHistory.orderId, orderId)).orderBy(orderHistory.changedAt);
     const { currentStep, nextStep, estimatedCompletion } = this.determineWorkflowSteps(
       currentOrder.orderStatus,
       currentOrder.approvalStatus
@@ -25016,7 +25631,7 @@ var WorkflowEngine = class {
       nextApproverId: purchaseOrders.nextApproverId,
       createdBy: purchaseOrders.createdBy,
       vendorId: purchaseOrders.vendorId
-    }).from(purchaseOrders).where(eq32(purchaseOrders.id, orderId)).limit(1);
+    }).from(purchaseOrders).where(eq33(purchaseOrders.id, orderId)).limit(1);
     if (!order || order.length === 0) return;
     const currentOrder = order[0];
     switch (event) {
@@ -25049,14 +25664,14 @@ var WorkflowEngine = class {
       orderStatus: purchaseOrders.orderStatus,
       approvalStatus: purchaseOrders.approvalStatus,
       userId: purchaseOrders.userId
-    }).from(purchaseOrders).where(eq32(purchaseOrders.id, orderId)).limit(1);
+    }).from(purchaseOrders).where(eq33(purchaseOrders.id, orderId)).limit(1);
     if (!beforeOrder || beforeOrder.length === 0) return;
     await db2.update(purchaseOrders).set({
       orderStatus,
       approvalStatus,
       ...additionalData,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq32(purchaseOrders.id, orderId));
+    }).where(eq33(purchaseOrders.id, orderId));
     const updatedBy = await this.getUserAsWebSocketUser(beforeOrder[0].userId);
     if (updatedBy) {
       const event = {
@@ -25089,9 +25704,9 @@ var WorkflowEngine = class {
       id: purchaseOrders.id,
       orderNumber: purchaseOrders.orderNumber,
       vendorId: purchaseOrders.vendorId
-    }).from(purchaseOrders).where(eq32(purchaseOrders.id, orderId)).limit(1);
+    }).from(purchaseOrders).where(eq33(purchaseOrders.id, orderId)).limit(1);
     if (!order || order.length === 0) return;
-    const vendor = await db2.select().from(vendors).where(eq32(vendors.id, order[0].vendorId)).limit(1);
+    const vendor = await db2.select().from(vendors).where(eq33(vendors.id, order[0].vendorId)).limit(1);
     if (vendor[0]?.email) {
       try {
         console.log(`Email would be sent to ${vendor[0].email} for order ${order[0].orderNumber}`);
@@ -25168,7 +25783,7 @@ var WorkflowEngine = class {
    * Get user details
    */
   async getUser(userId) {
-    const user = await db2.select().from(users).where(eq32(users.id, userId)).limit(1);
+    const user = await db2.select().from(users).where(eq33(users.id, userId)).limit(1);
     if (!user || user.length === 0) {
       throw new Error(`User ${userId} not found`);
     }
@@ -25184,7 +25799,7 @@ var WorkflowEngine = class {
       orderNumber: purchaseOrders.orderNumber,
       totalAmount: purchaseOrders.totalAmount,
       userId: purchaseOrders.userId
-    }).from(purchaseOrders).where(eq32(purchaseOrders.id, orderId)).limit(1);
+    }).from(purchaseOrders).where(eq33(purchaseOrders.id, orderId)).limit(1);
     if (order[0] && approver) {
       const requestedBy = await this.getUserAsWebSocketUser(order[0].userId);
       if (requestedBy) {
@@ -25251,7 +25866,7 @@ var workflowEngine = new WorkflowEngine();
 // server/routes/workflow.ts
 init_db();
 init_schema();
-import { eq as eq33 } from "drizzle-orm";
+import { eq as eq34 } from "drizzle-orm";
 var router34 = Router31();
 router34.post("/api/orders/check-approval-authority", async (req, res) => {
   try {
@@ -25263,7 +25878,7 @@ router34.post("/api/orders/check-approval-authority", async (req, res) => {
     if (!amount || amount <= 0) {
       return res.status(400).json({ message: "Invalid amount" });
     }
-    const user = await db2.select().from(users).where(eq33(users.id, userId)).limit(1);
+    const user = await db2.select().from(users).where(eq34(users.id, userId)).limit(1);
     if (!user || user.length === 0) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -25298,7 +25913,7 @@ router34.post("/api/orders/create-with-workflow", async (req, res) => {
       return res.status(401).json({ message: "User not authenticated" });
     }
     const orderData = req.body;
-    const user = await db2.select().from(users).where(eq33(users.id, userId)).limit(1);
+    const user = await db2.select().from(users).where(eq34(users.id, userId)).limit(1);
     if (!user || user.length === 0) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -25435,7 +26050,7 @@ router34.post("/api/orders/:id/confirm-delivery", async (req, res) => {
       deliveredBy: userId,
       notes: notes || void 0,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq33(purchaseOrders.id, orderId));
+    }).where(eq34(purchaseOrders.id, orderId));
     await workflowEngine.sendNotifications(orderId, "delivery_completed");
     res.json({
       message: "Delivery confirmed",
@@ -25765,7 +26380,7 @@ var excel_smart_upload_simple_default = router35;
 init_db();
 init_schema();
 import { Router as Router33 } from "express";
-import { eq as eq34 } from "drizzle-orm";
+import { eq as eq35 } from "drizzle-orm";
 import { z as z11 } from "zod";
 var router36 = Router33();
 router36.post("/orders/check-approval-authority", requireAuth, async (req, res) => {
@@ -25774,7 +26389,7 @@ router36.post("/orders/check-approval-authority", requireAuth, async (req, res) 
       orderAmount: z11.number().positive()
     });
     const { orderAmount } = schema.parse(req.body);
-    const user = await db2.select().from(users).where(eq34(users.id, req.user.id)).then((rows) => rows[0]);
+    const user = await db2.select().from(users).where(eq35(users.id, req.user.id)).then((rows) => rows[0]);
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
@@ -25822,7 +26437,7 @@ router36.post("/orders/create-with-workflow", requireAuth, async (req, res) => {
       sendEmail: z11.boolean().optional()
     });
     const { orderData, sendEmail } = schema.parse(req.body);
-    const user = await db2.select().from(users).where(eq34(users.id, req.user.id)).then((rows) => rows[0]);
+    const user = await db2.select().from(users).where(eq35(users.id, req.user.id)).then((rows) => rows[0]);
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
@@ -25897,7 +26512,7 @@ router36.get("/orders/workflow-status/:id", requireAuth, async (req, res) => {
     if (isNaN(orderId)) {
       return res.status(400).json({ error: "Invalid order ID" });
     }
-    const order = await db2.select().from(purchaseOrders).where(eq34(purchaseOrders.id, orderId)).then((rows) => rows[0]);
+    const order = await db2.select().from(purchaseOrders).where(eq35(purchaseOrders.id, orderId)).then((rows) => rows[0]);
     if (!order) {
       return res.status(404).json({ error: "Order not found" });
     }
@@ -25923,7 +26538,7 @@ router36.post("/orders/:id/confirm-delivery", requireAuth, async (req, res) => {
       receivedBy: z11.string().optional()
     });
     const { deliveryNotes, actualDeliveryDate, receivedBy } = schema.parse(req.body);
-    const order = await db2.select().from(purchaseOrders).where(eq34(purchaseOrders.id, orderId)).then((rows) => rows[0]);
+    const order = await db2.select().from(purchaseOrders).where(eq35(purchaseOrders.id, orderId)).then((rows) => rows[0]);
     if (!order) {
       return res.status(404).json({ error: "Order not found" });
     }
@@ -25943,7 +26558,7 @@ router36.post("/orders/:id/confirm-delivery", requireAuth, async (req, res) => {
 
 \uBC30\uC1A1 \uBA54\uBAA8: ${deliveryNotes}` : deliveryNotes : order.notes,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq34(purchaseOrders.id, orderId)).returning();
+    }).where(eq35(purchaseOrders.id, orderId)).returning();
     await db2.insert(orderHistory).values({
       orderId,
       userId: req.user.id,
@@ -26038,7 +26653,7 @@ var orders_workflow_default = router36;
 init_db();
 init_schema();
 import { Router as Router34 } from "express";
-import { eq as eq35 } from "drizzle-orm";
+import { eq as eq36 } from "drizzle-orm";
 init_professional_pdf_generation_service();
 var router37 = Router34();
 router37.post("/orders/:id/create-order", requireAuth, async (req, res) => {
@@ -26048,7 +26663,7 @@ router37.post("/orders/:id/create-order", requireAuth, async (req, res) => {
     return res.status(401).json({ error: "\uC778\uC99D\uC774 \uD544\uC694\uD569\uB2C8\uB2E4." });
   }
   try {
-    const [order] = await db2.select().from(purchaseOrders).where(eq35(purchaseOrders.id, orderId));
+    const [order] = await db2.select().from(purchaseOrders).where(eq36(purchaseOrders.id, orderId));
     if (!order) {
       return res.status(404).json({
         error: "\uBC1C\uC8FC\uC11C\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.",
@@ -26062,7 +26677,7 @@ router37.post("/orders/:id/create-order", requireAuth, async (req, res) => {
       });
     }
     const fullOrderData = await db2.query.purchaseOrders.findFirst({
-      where: eq35(purchaseOrders.id, orderId),
+      where: eq36(purchaseOrders.id, orderId),
       with: {
         vendor: true,
         project: true,
@@ -26091,7 +26706,7 @@ router37.post("/orders/:id/create-order", requireAuth, async (req, res) => {
       status: "approved",
       // 레거시 호환성
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq35(purchaseOrders.id, orderId)).returning();
+    }).where(eq36(purchaseOrders.id, orderId)).returning();
     await db2.insert(orderHistory).values({
       orderId,
       userId,
@@ -26135,7 +26750,7 @@ router37.get("/orders/:id/permissions", requireAuth, async (req, res) => {
       orderStatus: purchaseOrders.orderStatus,
       approvalStatus: purchaseOrders.approvalStatus,
       userId: purchaseOrders.userId
-    }).from(purchaseOrders).where(eq35(purchaseOrders.id, orderId));
+    }).from(purchaseOrders).where(eq36(purchaseOrders.id, orderId));
     if (!order) {
       return res.status(404).json({ error: "\uBC1C\uC8FC\uC11C\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4." });
     }
@@ -26294,7 +26909,7 @@ var health_default = router38;
 init_db();
 init_schema();
 import { Router as Router36 } from "express";
-import { eq as eq36, sql as sql16, desc as desc17 } from "drizzle-orm";
+import { eq as eq37, sql as sql16, desc as desc17 } from "drizzle-orm";
 var router39 = Router36();
 router39.get("/debug/recent-drafts", async (req, res) => {
   try {
@@ -26308,7 +26923,7 @@ router39.get("/debug/recent-drafts", async (req, res) => {
       vendorId: purchaseOrders.vendorId,
       totalAmount: purchaseOrders.totalAmount,
       vendorName: vendors.name
-    }).from(purchaseOrders).leftJoin(vendors, eq36(purchaseOrders.vendorId, vendors.id)).where(eq36(purchaseOrders.status, "draft")).orderBy(desc17(purchaseOrders.createdAt)).limit(20);
+    }).from(purchaseOrders).leftJoin(vendors, eq37(purchaseOrders.vendorId, vendors.id)).where(eq37(purchaseOrders.status, "draft")).orderBy(desc17(purchaseOrders.createdAt)).limit(20);
     const allRecentOrders = await db2.select({
       id: purchaseOrders.id,
       orderNumber: purchaseOrders.orderNumber,
@@ -26318,7 +26933,7 @@ router39.get("/debug/recent-drafts", async (req, res) => {
       vendorId: purchaseOrders.vendorId,
       totalAmount: purchaseOrders.totalAmount,
       vendorName: vendors.name
-    }).from(purchaseOrders).leftJoin(vendors, eq36(purchaseOrders.vendorId, vendors.id)).where(sql16`${purchaseOrders.createdAt} > ${oneHourAgo}`).orderBy(desc17(purchaseOrders.createdAt)).limit(50);
+    }).from(purchaseOrders).leftJoin(vendors, eq37(purchaseOrders.vendorId, vendors.id)).where(sql16`${purchaseOrders.createdAt} > ${oneHourAgo}`).orderBy(desc17(purchaseOrders.createdAt)).limit(50);
     const jbVendor = await db2.select().from(vendors).where(sql16`${vendors.name} LIKE '%제이비엔지니어링%'`).limit(5);
     res.json({
       recentDrafts,
@@ -26340,7 +26955,7 @@ var debug_default = router39;
 init_db();
 init_schema();
 import { Router as Router37 } from "express";
-import { eq as eq37 } from "drizzle-orm";
+import { eq as eq38 } from "drizzle-orm";
 import path19 from "path";
 import fs21 from "fs";
 import jwt2 from "jsonwebtoken";
@@ -26393,7 +27008,7 @@ router40.get("/attachments/:id/download", async (req, res) => {
       uploadedBy: attachments.uploadedBy,
       uploadedAt: attachments.uploadedAt,
       fileData: attachments.fileData
-    }).from(attachments).where(eq37(attachments.id, attachmentId));
+    }).from(attachments).where(eq38(attachments.id, attachmentId));
     if (!attachment) {
       return res.status(404).json({
         error: "\uCCA8\uBD80\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.",
@@ -26493,7 +27108,7 @@ router40.delete("/attachments/:id", requireAuth, async (req, res) => {
       uploadedBy: attachments.uploadedBy,
       uploadedAt: attachments.uploadedAt,
       fileData: attachments.fileData
-    }).from(attachments).where(eq37(attachments.id, attachmentId));
+    }).from(attachments).where(eq38(attachments.id, attachmentId));
     if (!attachment) {
       return res.status(404).json({
         error: "\uCCA8\uBD80\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.",
@@ -26526,7 +27141,7 @@ router40.delete("/attachments/:id", requireAuth, async (req, res) => {
         }
       }
     }
-    const deletedRows = await db2.delete(attachments).where(eq37(attachments.id, attachmentId));
+    const deletedRows = await db2.delete(attachments).where(eq38(attachments.id, attachmentId));
     console.log(`\u2705 Deleted attachment record from database (affected rows: ${deletedRows})`);
     return res.json({
       success: true,
