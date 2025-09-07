@@ -962,13 +962,13 @@ router.post("/orders/test-pdf", async (req, res) => {
   }
 });
 
-// Generate PDF for order - Now using ProfessionalPDFGenerationService for better layout
+// Generate PDF for order - Simplified version using ProfessionalPDFGenerationService only
 async function generatePDFLogic(req: any, res: any) {
   try {
     const { orderData, options = {} } = req.body;
     const userId = req.user?.id || 'system';
 
-    console.log(`📄 [PDF Generation] 이쁜 레이아웃 PDF 생성 시작: ${orderData?.orderNumber || 'N/A'}`);
+    console.log(`📄 [PDF Generation] Professional PDF 생성 시작: ${orderData?.orderNumber || 'N/A'}`);
 
     // Enhanced validation
     if (!orderData) {
@@ -978,747 +978,115 @@ async function generatePDFLogic(req: any, res: any) {
       });
     }
 
-    // If orderData has an ID, use ProfessionalPDFGenerationService directly
+    let result;
+    
     if (orderData.id) {
-      console.log(`📄 [PDF Generation] Order ID 존재: ${orderData.id} - ProfessionalPDFGenerationService 사용`);
-      
-      const result = await ProfessionalPDFGenerationService.generateProfessionalPurchaseOrderPDF(
-        orderData.id,
+      // Existing order - use comprehensive database data
+      console.log(`📄 [PDF Generation] Order ID 존재: ${orderData.id} - 데이터베이스에서 포괄적 데이터 사용`);
+      result = await ProfessionalPDFGenerationService.generateProfessionalPurchaseOrderPDF(
+        orderData.id, 
         userId
       );
-
-      if (result.success) {
-        return res.json({
-          success: true,
-          message: "PDF가 성공적으로 생성되었습니다.",
-          pdfPath: result.pdfPath,
-          attachmentId: result.attachmentId,
-          downloadUrl: result.attachmentId ? `/api/attachments/${result.attachmentId}` : undefined,
-          pdfBuffer: result.pdfBuffer // For Vercel compatibility
-        });
-      } else {
-        return res.status(500).json({
-          success: false,
-          error: result.error || "PDF 생성에 실패했습니다."
-        });
-      }
-    }
-
-    // Fallback: If no order ID available, continue with original logic but warn about layout quality
-    console.log(`⚠️ [PDF Generation] Order ID 없음 - 기본 레이아웃 사용 (권장하지 않음)`);
-    
-    // Validate essential fields
-    const requiredFields = ['orderNumber', 'projectName', 'vendorName'];
-    const missingFields = requiredFields.filter(field => !orderData[field]);
-    if (missingFields.length > 0) {
-      console.log(`⚠️ PDF 생성 경고: 필수 필드 누락 - ${missingFields.join(', ')}`);
-      // Continue with defaults rather than failing
-    }
-
-    console.log(`📄 PDF 생성 요청: 발주서 ${orderData.orderNumber || 'N/A'}`);
-    console.log('📄 PDF 생성 데이터:', JSON.stringify(orderData, null, 2));
-
-    // Create temporary directory for PDF generation
-    const timestamp = Date.now();
-    // Use /tmp directory for serverless environments like Vercel
-    const tempDir = process.env.VERCEL ? path.join('/tmp', 'temp-pdf') : path.join(process.cwd(), 'uploads/temp-pdf');
-    
-    // Ensure temp directory exists
-    try {
-      if (!fs.existsSync(tempDir)) {
-        fs.mkdirSync(tempDir, { recursive: true });
-        console.log(`📁 임시 디렉토리 생성: ${tempDir}`);
-      }
-    } catch (error) {
-      console.error(`⚠️ 임시 디렉토리 생성 실패: ${error}`);
-      // For serverless, /tmp should always be writable
-      if (process.env.VERCEL) {
-        throw new Error('🚀 Vercel 환경에서 /tmp 디렉토리 접근 불가');
-      }
-      throw error;
-    }
-
-    const tempHtmlPath = path.join(tempDir, `order-${timestamp}.html`);
-    const tempPdfPath = path.join(tempDir, `order-${timestamp}.pdf`);
-
-    console.log(`📄 임시 파일 경로 - HTML: ${tempHtmlPath}, PDF: ${tempPdfPath}`);
-
-    try {
-      // Get company information (발주업체 정보)
-      let companyInfo = null;
-      try {
-        const companies = await storage.getCompanies();
-        if (companies && companies.length > 0) {
-          // Get the first active company or the first company
-          companyInfo = companies.find((c: any) => c.isActive) || companies[0];
-          console.log('📄 회사 정보 조회:', companyInfo);
-        }
-      } catch (error) {
-        console.error('⚠️ 회사 정보 조회 실패:', error);
-      }
-
-      // Extract delivery place from notes if not directly provided
-      let extractedDeliveryPlace = orderData.deliveryPlace || '';
-      let extractedMajorCategory = orderData.majorCategory || '';
-      let extractedMiddleCategory = orderData.middleCategory || '';
-      let extractedMinorCategory = orderData.minorCategory || '';
-      let cleanedNotes = orderData.notes || '';
+    } else {
+      // Preview/new order - use provided data directly  
+      console.log(`📄 [PDF Generation] Preview/신규 주문 - 제공된 데이터로 직접 생성`);
       
-      // Parse notes field to extract structured data
-      if (orderData.notes) {
-        const lines = orderData.notes.split('\n');
-        const extractedData: string[] = [];
-        const structuredData: string[] = [];
-        
-        lines.forEach((line: string) => {
-          const trimmedLine = line.trim();
-          if (!trimmedLine) return; // Skip empty lines
-          
-          if (trimmedLine.startsWith('납품처: ')) {
-            if (!extractedDeliveryPlace) {
-              extractedDeliveryPlace = trimmedLine.replace('납품처: ', '').trim();
-            }
-          } else if (trimmedLine.startsWith('대분류: ')) {
-            if (!extractedMajorCategory) {
-              extractedMajorCategory = trimmedLine.replace('대분류: ', '').trim();
-            }
-            structuredData.push(`대분류: ${trimmedLine.replace('대분류: ', '').trim()}`);
-          } else if (trimmedLine.startsWith('중분류: ')) {
-            if (!extractedMiddleCategory) {
-              extractedMiddleCategory = trimmedLine.replace('중분류: ', '').trim();
-            }
-            structuredData.push(`중분류: ${trimmedLine.replace('중분류: ', '').trim()}`);
-          } else if (trimmedLine.startsWith('소분류: ')) {
-            if (!extractedMinorCategory) {
-              extractedMinorCategory = trimmedLine.replace('소분류: ', '').trim();
-            }
-            structuredData.push(`소분류: ${trimmedLine.replace('소분류: ', '').trim()}`);
-          } else if (!trimmedLine.startsWith('납품처 이메일: ')) {
-            // Keep other notes that aren't structured data
-            extractedData.push(trimmedLine);
-          }
-        });
-        
-        // Combine notes with proper formatting
-        const allNotes: string[] = [];
-        
-        // Add structured data if they weren't extracted into separate fields
-        if (!orderData.majorCategory && !orderData.middleCategory && !orderData.minorCategory && structuredData.length > 0) {
-          allNotes.push(...structuredData);
-        }
-        
-        // Add other notes
-        if (extractedData.length > 0) {
-          allNotes.push(...extractedData);
-        }
-        
-        // Join with separator
-        cleanedNotes = allNotes.length > 0 ? allNotes.join(' | ') : '';
-      }
+      // Transform orderData to ComprehensivePurchaseOrderData format
+      const comprehensiveData = {
+        orderNumber: orderData.orderNumber || 'PO-PREVIEW-001',
+        orderDate: orderData.orderDate ? new Date(orderData.orderDate) : new Date(),
+        deliveryDate: orderData.deliveryDate ? new Date(orderData.deliveryDate) : null,
+        createdAt: orderData.createdAt ? new Date(orderData.createdAt) : new Date(),
 
-      // Get creator user information for PDF
-      let creatorInfo = null;
-      if (orderData.createdById || orderData.user?.id) {
-        try {
-          const userId = orderData.createdById || orderData.user?.id;
-          const user = await storage.getUser(userId);
-          if (user) {
-            creatorInfo = {
-              name: user.name || '',
-              email: user.email || '',
-              phone: user.phone || ''
-            };
-            console.log('📄 발주 생성자 정보:', creatorInfo);
-          }
-        } catch (error) {
-          console.error('⚠️ 사용자 정보 조회 실패:', error);
-        }
-      }
+        issuerCompany: {
+          name: orderData.companyName || '(주)익진엔지니어링',
+          businessNumber: orderData.companyBusinessNumber || '123-45-67890',
+          representative: orderData.companyContactPerson || '박현호',
+          address: orderData.companyAddress || '서울시 강남구 테헤란로 124 삼원타워 9층',
+          phone: orderData.companyPhone || '02-1234-5678',
+          email: orderData.companyEmail || 'contact@ikjin.com'
+        },
 
-      // Sanitize and prepare data
-      const safeOrderData = {
-        // Company info (발주업체)
-        companyName: companyInfo?.companyName || '(주)익진엔지니어링',
-        companyBusinessNumber: companyInfo?.businessNumber || '',
-        companyAddress: companyInfo?.address || '',
-        // Use creator's info for contact person details
-        companyPhone: creatorInfo?.phone || companyInfo?.phone || '',
-        companyEmail: creatorInfo?.email || companyInfo?.email || '',
-        companyContactPerson: creatorInfo?.name || orderData.createdBy || orderData.user?.name || '시스템',
-        // Order info
-        orderNumber: orderData.orderNumber || 'PO-TEMP-001',
-        projectName: orderData.projectName || orderData.project?.projectName || '현장 미지정',
-        vendorName: orderData.vendorName || orderData.vendor?.name || '거래처 미지정',
-        vendorBusinessNumber: orderData.vendor?.businessNumber || orderData.vendorBusinessNumber || '',
-        vendorPhone: orderData.vendor?.phone || orderData.vendorPhone || '',
-        vendorEmail: orderData.vendor?.email || orderData.vendorEmail || '',
-        vendorAddress: orderData.vendor?.address || orderData.vendorAddress || '',
-        vendorContactPerson: orderData.vendor?.contactPerson || orderData.vendorContactPerson || '',
-        totalAmount: Number(orderData.totalAmount) || 0,
-        items: Array.isArray(orderData.items) ? orderData.items : [],
-        notes: cleanedNotes,
-        orderDate: orderData.orderDate || new Date().toISOString(),
-        deliveryDate: orderData.deliveryDate || null,
-        deliveryPlace: extractedDeliveryPlace,
-        createdBy: orderData.createdBy || orderData.user?.name || '시스템',
-        createdAt: orderData.createdAt || new Date().toISOString(),
-        status: orderData.status || 'draft',
-        approvedBy: orderData.approvedBy || '',
-        approvedAt: orderData.approvedAt || null,
-        paymentTerms: orderData.paymentTerms || '',
-        deliveryMethod: orderData.deliveryMethod || '',
-        majorCategory: extractedMajorCategory,
-        middleCategory: extractedMiddleCategory,
-        minorCategory: extractedMinorCategory
+        vendorCompany: {
+          name: orderData.vendorName || '거래처명',
+          businessNumber: orderData.vendorBusinessNumber || null,
+          representative: null,
+          address: orderData.vendorAddress || null,
+          phone: orderData.vendorPhone || null,
+          email: orderData.vendorEmail || null,
+          contactPerson: orderData.vendorContactPerson || null
+        },
+
+        project: {
+          name: orderData.projectName || '현장명',
+          code: orderData.projectCode || null,
+          location: orderData.deliveryPlace || null,
+        },
+
+        creator: {
+          name: orderData.createdBy || orderData.user?.name || '시스템',
+          email: orderData.user?.email || null,
+          phone: orderData.user?.phone || null
+        },
+
+        items: Array.isArray(orderData.items) ? orderData.items.map((item: any, index: number) => ({
+          sequenceNo: index + 1,
+          name: item.itemName || item.name || '',
+          specification: item.specification || '',
+          quantity: Number(item.quantity) || 0,
+          unit: item.unit || '',
+          unitPrice: Number(item.unitPrice) || 0,
+          totalPrice: Number(item.totalAmount || item.totalPrice) || 0,
+          deliveryLocation: orderData.deliveryPlace || '',
+          deliveryEmail: orderData.vendorEmail || '',
+          remarks: item.notes || ''
+        })) : [],
+
+        financial: {
+          subtotalAmount: Number(orderData.totalAmount) || 0,
+          vatRate: 0.1,
+          vatAmount: Math.round((Number(orderData.totalAmount) || 0) * 0.1),
+          totalAmount: Number(orderData.totalAmount) || 0 + Math.round((Number(orderData.totalAmount) || 0) * 0.1),
+          currencyCode: 'KRW'
+        },
+
+        metadata: {
+          notes: orderData.notes || '',
+          documentId: `DOC_PREVIEW_${Date.now()}`,
+          generatedAt: new Date(),
+          generatedBy: orderData.createdBy || '시스템',
+          templateVersion: 'v2.0.0'
+        }
       };
 
-      // Create enhanced HTML content with better error handling
-      const orderHtml = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>발주서 - ${safeOrderData.orderNumber}</title>
-  <style>
-    @page {
-      size: A4;
-      margin: 15mm 10mm;
-    }
-    body {
-      font-family: 'Noto Sans KR', 'Malgun Gothic', '맑은 고딕', sans-serif;
-      margin: 0;
-      padding: 0;
-      line-height: 1.4;
-      color: #333;
-      font-size: 11px;
-    }
-    .header {
-      text-align: center;
-      margin-bottom: 15px;
-      padding-bottom: 10px;
-      border-bottom: 2px solid #3B82F6;
-    }
-    .header h1 {
-      color: #1F2937;
-      margin: 0;
-      font-size: 24px;
-      font-weight: bold;
-    }
-    .header .subtitle {
-      margin: 5px 0 0 0;
-      color: #6B7280;
-      font-size: 12px;
-    }
-    .company-vendor-section {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 15px;
-      margin-bottom: 15px;
-    }
-    .company-box, .vendor-box {
-      border: 1px solid #D1D5DB;
-      border-radius: 6px;
-      padding: 10px;
-      background-color: #F9FAFB;
-    }
-    .box-title {
-      font-weight: bold;
-      color: #1F2937;
-      font-size: 12px;
-      margin-bottom: 8px;
-      padding-bottom: 5px;
-      border-bottom: 1px solid #E5E7EB;
-    }
-    .info-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 8px;
-      margin-bottom: 15px;
-    }
-    .info-grid.two-col {
-      grid-template-columns: 1fr 1fr;
-    }
-    .info-item {
-      padding: 6px 8px;
-      border: 1px solid #E5E7EB;
-      border-radius: 4px;
-      background-color: #FFFFFF;
-    }
-    .info-label {
-      font-weight: bold;
-      color: #6B7280;
-      margin-bottom: 2px;
-      font-size: 9px;
-    }
-    .info-value {
-      color: #1F2937;
-      font-size: 11px;
-      word-break: break-all;
-    }
-    .compact-info {
-      display: flex;
-      align-items: baseline;
-      gap: 5px;
-    }
-    .compact-label {
-      font-weight: bold;
-      color: #6B7280;
-      font-size: 9px;
-    }
-    .compact-value {
-      color: #1F2937;
-      font-size: 10px;
-    }
-    .section-title {
-      color: #374151;
-      border-bottom: 1px solid #D1D5DB;
-      padding-bottom: 5px;
-      margin: 15px 0 10px 0;
-      font-size: 13px;
-      font-weight: bold;
-    }
-    .items-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-      font-size: 10px;
-    }
-    .items-table th,
-    .items-table td {
-      border: 1px solid #D1D5DB;
-      padding: 4px 6px;
-      text-align: left;
-    }
-    .items-table th {
-      background-color: #F3F4F6;
-      font-weight: bold;
-      color: #374151;
-      text-align: center;
-      font-size: 9px;
-    }
-    .items-table tbody tr:nth-child(even) {
-      background-color: #F9FAFB;
-    }
-    .items-table .number-cell {
-      text-align: center;
-    }
-    .items-table .amount-cell {
-      text-align: right;
-    }
-    .total-row {
-      background-color: #EEF2FF !important;
-      font-weight: bold;
-    }
-    .notes-section {
-      margin-top: 15px;
-      padding: 10px;
-      background-color: #F3F4F6;
-      border-radius: 4px;
-    }
-    .notes-title {
-      margin-top: 0;
-      color: #374151;
-      font-size: 11px;
-      font-weight: bold;
-    }
-    .notes-content {
-      margin: 5px 0 0 0;
-      color: #6B7280;
-      line-height: 1.4;
-      font-size: 10px;
-    }
-    .footer {
-      margin-top: 40px;
-      text-align: center;
-      color: #9CA3AF;
-      font-size: 10px;
-      border-top: 1px solid #E5E7EB;
-      padding-top: 15px;
-    }
-    .watermark {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%) rotate(-45deg);
-      font-size: 80px;
-      color: rgba(59, 130, 246, 0.08);
-      z-index: -1;
-      pointer-events: none;
-      font-weight: bold;
-    }
-    .empty-state {
-      text-align: center;
-      color: #6B7280;
-      font-style: italic;
-      padding: 20px;
-    }
-  </style>
-</head>
-<body>
-  <div class="watermark">발주서</div>
-  
-  <div class="header">
-    <h1>구매 발주서</h1>
-    <p class="subtitle">Purchase Order</p>
-  </div>
-
-  <!-- 발주업체 및 거래처 정보 (좌우 배치) -->
-  <div class="company-vendor-section">
-    <!-- 발주업체 정보 -->
-    <div class="company-box">
-      <div class="box-title">발주업체</div>
-      <div class="compact-info">
-        <span class="compact-label">업체명:</span>
-        <span class="compact-value" style="font-weight: bold;">${safeOrderData.companyName}</span>
-      </div>
-      ${safeOrderData.companyBusinessNumber ? `
-      <div class="compact-info">
-        <span class="compact-label">사업자번호:</span>
-        <span class="compact-value">${safeOrderData.companyBusinessNumber}</span>
-      </div>
-      ` : ''}
-      ${safeOrderData.companyContactPerson ? `
-      <div class="compact-info">
-        <span class="compact-label">담당자:</span>
-        <span class="compact-value">${safeOrderData.companyContactPerson}</span>
-      </div>
-      ` : ''}
-      ${safeOrderData.companyPhone ? `
-      <div class="compact-info">
-        <span class="compact-label">연락처:</span>
-        <span class="compact-value">${safeOrderData.companyPhone}</span>
-      </div>
-      ` : ''}
-      ${safeOrderData.companyEmail ? `
-      <div class="compact-info">
-        <span class="compact-label">이메일:</span>
-        <span class="compact-value">${safeOrderData.companyEmail}</span>
-      </div>
-      ` : ''}
-      ${safeOrderData.companyAddress ? `
-      <div class="compact-info">
-        <span class="compact-label">주소:</span>
-        <span class="compact-value">${safeOrderData.companyAddress}</span>
-      </div>
-      ` : ''}
-    </div>
-
-    <!-- 거래처 정보 -->
-    <div class="vendor-box">
-      <div class="box-title">거래처</div>
-      <div class="compact-info">
-        <span class="compact-label">업체명:</span>
-        <span class="compact-value" style="font-weight: bold;">${safeOrderData.vendorName}</span>
-      </div>
-      ${safeOrderData.vendorBusinessNumber ? `
-      <div class="compact-info">
-        <span class="compact-label">사업자번호:</span>
-        <span class="compact-value">${safeOrderData.vendorBusinessNumber}</span>
-      </div>
-      ` : ''}
-      ${safeOrderData.vendorContactPerson ? `
-      <div class="compact-info">
-        <span class="compact-label">담당자:</span>
-        <span class="compact-value">${safeOrderData.vendorContactPerson}</span>
-      </div>
-      ` : ''}
-      ${safeOrderData.vendorPhone ? `
-      <div class="compact-info">
-        <span class="compact-label">연락처:</span>
-        <span class="compact-value">${safeOrderData.vendorPhone}</span>
-      </div>
-      ` : ''}
-      ${safeOrderData.vendorEmail ? `
-      <div class="compact-info">
-        <span class="compact-label">이메일:</span>
-        <span class="compact-value">${safeOrderData.vendorEmail}</span>
-      </div>
-      ` : ''}
-      ${safeOrderData.vendorAddress ? `
-      <div class="compact-info">
-        <span class="compact-label">주소:</span>
-        <span class="compact-value">${safeOrderData.vendorAddress}</span>
-      </div>
-      ` : ''}
-    </div>
-  </div>
-
-  <!-- 발주 정보 (컴팩트한 그리드) -->
-  <div class="info-grid">
-    <div class="info-item">
-      <div class="info-label">발주서 번호</div>
-      <div class="info-value">${safeOrderData.orderNumber}</div>
-    </div>
-    <div class="info-item">
-      <div class="info-label">발주일</div>
-      <div class="info-value">${new Date(safeOrderData.orderDate).toLocaleDateString('ko-KR')}</div>
-    </div>
-    <div class="info-item">
-      <div class="info-label">현장</div>
-      <div class="info-value">${safeOrderData.projectName}</div>
-    </div>
-    <div class="info-item">
-      <div class="info-label">납기일</div>
-      <div class="info-value">${safeOrderData.deliveryDate ? new Date(safeOrderData.deliveryDate).toLocaleDateString('ko-KR') : '미정'}</div>
-    </div>
-    <div class="info-item">
-      <div class="info-label">납품장소</div>
-      <div class="info-value">${safeOrderData.deliveryPlace || '미정'}</div>
-    </div>
-    <div class="info-item">
-      <div class="info-label">작성자</div>
-      <div class="info-value">${safeOrderData.createdBy}</div>
-    </div>
-  </div>
-
-  ${(safeOrderData.majorCategory || safeOrderData.middleCategory || safeOrderData.minorCategory) ? `
-  <h3 class="section-title">분류 정보</h3>
-  <div class="info-grid">
-    ${safeOrderData.majorCategory ? `
-    <div class="info-item">
-      <div class="info-label">대분류</div>
-      <div class="info-value">${safeOrderData.majorCategory}</div>
-    </div>
-    ` : ''}
-    ${safeOrderData.middleCategory ? `
-    <div class="info-item">
-      <div class="info-label">중분류</div>
-      <div class="info-value">${safeOrderData.middleCategory}</div>
-    </div>
-    ` : ''}
-    ${safeOrderData.minorCategory ? `
-    <div class="info-item">
-      <div class="info-label">소분류</div>
-      <div class="info-value">${safeOrderData.minorCategory}</div>
-    </div>
-    ` : ''}
-  </div>
-  ` : ''}
-
-  <h3 class="section-title">발주 품목</h3>
-  
-  <table class="items-table">
-    <thead>
-      <tr>
-        <th style="width: 50px;">순번</th>
-        <th>품목명</th>
-        <th>규격</th>
-        <th style="width: 80px;">수량</th>
-        <th style="width: 60px;">단위</th>
-        <th style="width: 120px;">단가</th>
-        <th style="width: 120px;">금액</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${safeOrderData.items.length > 0 ? 
-        safeOrderData.items.map((item: any, index: number) => `
-          <tr>
-            <td class="number-cell">${index + 1}</td>
-            <td>${item.name || item.itemName || item.item_name || '품목명 없음'}</td>
-            <td>${item.specification || '-'}</td>
-            <td class="amount-cell">${(item.quantity || 0).toLocaleString()}</td>
-            <td class="number-cell">${item.unit || 'EA'}</td>
-            <td class="amount-cell">₩${(item.unitPrice || item.unit_price || 0).toLocaleString()}</td>
-            <td class="amount-cell">₩${(item.totalAmount || item.total_amount || ((item.quantity || 0) * (item.unitPrice || item.unit_price || 0))).toLocaleString()}</td>
-          </tr>
-        `).join('')
-        : 
-        '<tr><td colspan="7" class="empty-state">품목 정보가 없습니다.</td></tr>'
-      }
-      <tr class="total-row">
-        <td colspan="6" class="amount-cell" style="font-weight: bold;">총 금액</td>
-        <td class="amount-cell" style="font-weight: bold;">₩${safeOrderData.totalAmount.toLocaleString()}</td>
-      </tr>
-    </tbody>
-  </table>
-
-  ${safeOrderData.notes ? `
-  <div class="notes-section">
-    <h4 class="notes-title">비고</h4>
-    <div class="notes-content">${safeOrderData.notes.replace(/\|/g, '<span style="color: #D1D5DB; margin: 0 8px;">|</span>')}</div>
-  </div>
-  ` : ''}
-
-  <div class="footer">
-    이 문서는 시스템에서 자동 생성되었습니다.<br>
-    생성일시: ${new Date().toLocaleString('ko-KR')} | 문서 ID: ${timestamp}
-  </div>
-</body>
-</html>
-      `;
-
-      // Write HTML file with error handling
-      try {
-        fs.writeFileSync(tempHtmlPath, orderHtml, 'utf8');
-        console.log(`✅ HTML 파일 생성 완료: ${tempHtmlPath}`);
-      } catch (writeError) {
-        throw new Error(`HTML 파일 생성 실패: ${writeError.message}`);
-      }
-
-      // Check if serverless environment
-      const isServerless = !!(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.NETLIFY);
-      
-      if (isServerless) {
-        // Use serverless PDF generation for Vercel and other serverless platforms
-        console.log('🚀 Serverless 환경 감지 - HTML 기반 PDF 생성');
-        
-        // Save HTML for client-side PDF generation
-        const htmlForPdf = orderHtml.replace(
-          '</head>',
-          `<script>
-            function generatePDF() {
-              window.print();
-            }
-            window.onload = function() {
-              if (window.location.search.includes('print=true')) {
-                setTimeout(generatePDF, 1000);
-              }
-            };
-          </script>
-          </head>`
-        );
-        
-        fs.writeFileSync(tempPdfPath.replace('.pdf', '.html'), htmlForPdf);
-        
-        // Return HTML path for client-side conversion
-        console.log('✅ HTML 파일 생성 완료 (클라이언트 PDF 변환용)');
-        
-        // Create a placeholder PDF message
-        fs.writeFileSync(tempPdfPath, 'PDF generation pending - use browser print');
-        
-      } else {
-        // Use Playwright for local environments
-        let browser = null;
-        try {
-          console.log('🚀 Playwright 브라우저 시작...');
-          
-          const { chromium } = await import('playwright-chromium');
-          
-          browser = await chromium.launch({
-            headless: true,
-            args: [
-              '--no-sandbox', 
-              '--disable-setuid-sandbox',
-              '--disable-dev-shm-usage',
-              '--disable-accelerated-2d-canvas',
-              '--no-first-run',
-              '--no-zygote',
-              '--disable-gpu',
-              '--disable-background-timer-throttling',
-              '--disable-backgrounding-occluded-windows',
-              '--disable-renderer-backgrounding'
-            ],
-            timeout: 60000 // 1 minute timeout
-          });
-
-          const page = await browser.newPage();
-          
-          // Set viewport and media type
-          await page.setViewportSize({ width: 1200, height: 1600 });
-          await page.emulateMedia({ media: 'print' });
-          
-          console.log('📄 HTML 콘텐츠 로딩...');
-          await page.setContent(orderHtml, { 
-            waitUntil: 'networkidle',
-            timeout: 30000
-          });
-          
-          console.log('📄 PDF 생성 중...');
-          await page.pdf({
-            path: tempPdfPath,
-            format: 'A4',
-            landscape: false,
-            printBackground: true,
-            preferCSSPageSize: true,
-            margin: {
-              top: '20mm',
-              bottom: '20mm',
-              left: '15mm',
-              right: '15mm'
-            }
-          });
-
-          console.log('✅ PDF 생성 완료');
-
-        } catch (playwrightError) {
-          console.error('❌ Playwright 오류:', playwrightError);
-          throw new Error(`PDF 생성 실패: ${playwrightError.message}`);
-        } finally {
-          if (browser) {
-            await browser.close();
-            console.log('🔒 Playwright 브라우저 종료');
-          }
-        }
-      }
-
-      // Verify PDF was created
-      if (!fs.existsSync(tempPdfPath)) {
-        throw new Error('PDF 파일이 생성되지 않았습니다.');
-      }
-
-      // Check file size
-      const stats = fs.statSync(tempPdfPath);
-      if (stats.size === 0) {
-        throw new Error('PDF 파일이 비어있습니다.');
-      }
-
-      console.log(`📊 PDF 파일 크기: ${(stats.size / 1024).toFixed(2)} KB`);
-
-      const pdfUrl = `/api/orders/download-pdf/${timestamp}`;
-
-      console.log(`✅ PDF 생성 완료: ${pdfUrl}`);
-
-      // Clean up HTML file
-      try {
-        if (fs.existsSync(tempHtmlPath)) {
-          fs.unlinkSync(tempHtmlPath);
-        }
-      } catch (cleanupError) {
-        console.warn('⚠️ HTML 파일 정리 실패:', cleanupError.message);
-      }
-
-      // Schedule PDF cleanup after 1 hour
-      setTimeout(() => {
-        try {
-          if (fs.existsSync(tempPdfPath)) {
-            fs.unlinkSync(tempPdfPath);
-            console.log(`🗑️ 임시 PDF 파일 정리 완료: ${tempPdfPath}`);
-          }
-        } catch (cleanupError) {
-          console.warn('⚠️ PDF 파일 정리 실패:', cleanupError.message);
-        }
-      }, 60 * 60 * 1000); // 1 hour
-
-      res.json({
+      const pdfBuffer = await ProfessionalPDFGenerationService.generateProfessionalPDF(comprehensiveData);
+      result = {
         success: true,
-        pdfUrl,
-        message: "PDF가 성공적으로 생성되었습니다.",
-        fileSize: stats.size
-      });
-
-    } catch (conversionError) {
-      console.error('❌ PDF 변환 오류:', conversionError);
-      
-      // Clean up temp files
-      try {
-        if (fs.existsSync(tempHtmlPath)) fs.unlinkSync(tempHtmlPath);
-        if (fs.existsSync(tempPdfPath)) fs.unlinkSync(tempPdfPath);
-      } catch (cleanupError) {
-        console.warn('⚠️ 임시 파일 정리 실패:', cleanupError.message);
-      }
-
-      res.status(500).json({
-        success: false,
-        error: "PDF 생성 중 오류가 발생했습니다.",
-        details: conversionError instanceof Error ? conversionError.message : "알 수 없는 오류"
-      });
+        pdfBuffer: pdfBuffer,
+        message: "Preview PDF가 성공적으로 생성되었습니다."
+      };
     }
 
+    if (result.success) {
+      return res.json({
+        success: true,
+        message: result.message || "PDF가 성공적으로 생성되었습니다.",
+        pdfPath: result.pdfPath,
+        attachmentId: result.attachmentId,
+        downloadUrl: result.attachmentId ? `/api/attachments/${result.attachmentId}` : undefined,
+        pdfBuffer: result.pdfBuffer // For Vercel compatibility and preview scenarios
+      });
+    } else {
+      return res.status(500).json({
+        success: false,
+        error: result.error || "PDF 생성에 실패했습니다."
+      });
+    }
   } catch (error) {
-    console.error("❌ PDF 생성 API 오류:", error);
-    res.status(500).json({ 
+    console.error('📄 [PDF Generation] 오류:', error);
+    return res.status(500).json({
       success: false,
-      error: "PDF 생성에 실패했습니다.",
+      error: "PDF 생성 중 오류가 발생했습니다.",
       details: error instanceof Error ? error.message : "알 수 없는 오류"
     });
   }

@@ -536,7 +536,7 @@ export class ProfessionalPDFGenerationService {
   <style>
     @page {
       size: A4;
-      margin: 8mm;
+      margin: 12mm;
     }
     
     * {
@@ -547,94 +547,138 @@ export class ProfessionalPDFGenerationService {
     
     body {
       font-family: 'Malgun Gothic', 'Nanum Gothic', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Arial', sans-serif;
-      font-size: 8pt;
-      line-height: 1.2;
-      color: #000;
+      font-size: 9pt;
+      line-height: 1.4;
+      color: #1a1a1a;
+      background: #fff;
     }
     
     .container {
       max-width: 210mm;
       margin: 0 auto;
+      background: #ffffff;
     }
     
-    /* === HEADER SECTION === */
+    /* === ENHANCED HEADER SECTION === */
     .header {
-      display: grid;
-      grid-template-columns: 100px 1fr 100px;
-      gap: 10px;
-      padding: 8px 0;
-      border-bottom: 3px solid #1e40af;
-      margin-bottom: 12px;
-      align-items: center;
-    }
-    
-    .header-center {
+      background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+      color: white;
+      padding: 16px 20px;
+      margin: -12mm -12mm 16px -12mm;
       text-align: center;
+      position: relative;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
     
-    .header-center h1 {
-      font-size: 18pt;
-      font-weight: bold;
-      margin-bottom: 2px;
+    .header::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 0;
+      right: 0;
+      height: 8px;
+      background: linear-gradient(to right, transparent, rgba(37, 99, 235, 0.3), transparent);
     }
     
-    .header-center .order-number {
-      font-size: 12pt;
-      font-weight: bold;
-      color: #1e40af;
+    .header h1 {
+      font-size: 24pt;
+      font-weight: 700;
+      margin-bottom: 8px;
+      letter-spacing: 2px;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+    
+    .header .order-number {
+      font-size: 14pt;
+      font-weight: 600;
+      background: rgba(255,255,255,0.2);
+      padding: 4px 12px;
+      border-radius: 12px;
+      display: inline-block;
+    }
+    
+    .header .order-date {
+      font-size: 11pt;
+      margin-top: 6px;
+      opacity: 0.9;
     }
     
     .status-badge {
       display: inline-block;
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-size: 7pt;
-      font-weight: bold;
-      margin: 2px 0;
+      padding: 4px 12px;
+      border-radius: 16px;
+      font-size: 8pt;
+      font-weight: 600;
+      margin: 4px 6px 0 0;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
     
-    .status-draft { background: #fef3c7; color: #92400e; }
-    .status-approved { background: #d1fae5; color: #065f46; }
-    .status-sent { background: #dbeafe; color: #1e40af; }
+    .status-draft { 
+      background: linear-gradient(135deg, #fbbf24, #f59e0b); 
+      color: white; 
+      box-shadow: 0 2px 4px rgba(251, 191, 36, 0.3);
+    }
+    .status-approved { 
+      background: linear-gradient(135deg, #10b981, #059669); 
+      color: white; 
+      box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+    }
+    .status-sent { 
+      background: linear-gradient(135deg, #3b82f6, #2563eb); 
+      color: white; 
+      box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+    }
     
-    /* === INFO GRID === */
+    /* === ENHANCED INFO GRID === */
     .info-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin-bottom: 10px;
+      gap: 12px;
+      margin-bottom: 16px;
     }
     
     .info-box {
-      border: 1px solid #d1d5db;
-      background: #f9fafb;
-      padding: 6px;
+      border: 1px solid #e5e7eb;
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      padding: 12px;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
     
     .info-box h3 {
-      font-size: 9pt;
-      font-weight: bold;
-      margin-bottom: 4px;
-      padding-bottom: 2px;
-      border-bottom: 1px solid #d1d5db;
-      color: #1f2937;
+      font-size: 11pt;
+      font-weight: 700;
+      margin-bottom: 8px;
+      padding-bottom: 4px;
+      border-bottom: 2px solid #2563eb;
+      color: #1e40af;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
     
     .info-row {
       display: grid;
-      grid-template-columns: 60px 1fr;
-      gap: 4px;
-      margin-bottom: 1px;
-      font-size: 7pt;
+      grid-template-columns: 80px 1fr;
+      gap: 8px;
+      margin-bottom: 4px;
+      font-size: 8pt;
+      align-items: center;
     }
     
     .info-label {
-      font-weight: bold;
-      color: #374151;
+      font-weight: 600;
+      color: #475569;
+      text-align: right;
+      padding-right: 4px;
     }
     
     .info-value {
-      color: #111827;
+      color: #1e293b;
+      font-weight: 500;
+      padding: 2px 6px;
+      background: rgba(255,255,255,0.7);
+      border-radius: 4px;
     }
     
     /* === PROJECT INFO FULL WIDTH === */
