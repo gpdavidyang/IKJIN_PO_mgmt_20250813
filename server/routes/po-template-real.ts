@@ -438,8 +438,8 @@ router.post('/save', simpleAuth, async (req: any, res) => {
             
             if (comprehensiveData) {
               console.log('✅ [PDF생성] 포괄적 데이터 수집 성공');
-              // PDF 생성 with enhanced error handling
-              pdfBuffer = await ProfessionalPDFGenerationService.generateProfessionalPDF(comprehensiveData);
+              // PDF 생성 with enhanced error handling (이쁜 PDFKit 버전)
+              pdfBuffer = await ProfessionalPDFGenerationService.generateProfessionalPDFWithPDFKit(comprehensiveData);
               pdfBase64 = pdfBuffer.toString('base64');
               console.log('✅ [PDF생성] PDF 버퍼 생성 완료, 크기:', pdfBuffer.length, 'bytes', 'Base64 길이:', pdfBase64.length, 'chars');
             } else {
@@ -577,8 +577,8 @@ router.post('/save', simpleAuth, async (req: any, res) => {
                 }
               };
               
-              // PDF 생성
-              pdfBuffer = await ProfessionalPDFGenerationService.generateProfessionalPDF(pdfOrderData);
+              // PDF 생성 (이쁜 PDFKit 버전 사용)
+              pdfBuffer = await ProfessionalPDFGenerationService.generateProfessionalPDFWithPDFKit(pdfOrderData);
               pdfBase64 = pdfBuffer.toString('base64');
             }
             

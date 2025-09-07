@@ -98,21 +98,9 @@ export interface ComprehensivePurchaseOrderData {
  */
 export class ProfessionalPDFGenerationService {
   static async generateProfessionalPDF(orderData: ComprehensivePurchaseOrderData): Promise<Buffer> {
-    // 환경에 따라 다른 PDF 생성 방식 사용
-    if (process.env.VERCEL) {
-      console.log('📄 [ProfessionalPDF] Vercel 환경: PDFKit으로 PDF 생성');
-      return await this.generateProfessionalPDFWithPDFKit(orderData);
-    } else {
-      console.log('📄 [ProfessionalPDF] 로컬 환경: HTML 템플릿으로 PDF 생성 시도');
-      try {
-        const htmlContent = this.generateProfessionalHTMLTemplate(orderData);
-        return await this.convertHTMLToPDFFromString(htmlContent);
-      } catch (htmlError) {
-        console.warn('⚠️ [ProfessionalPDF] HTML 템플릿 생성 실패, PDFKit으로 대체:', htmlError);
-        console.log('📄 [ProfessionalPDF] 로컬 환경에서 PDFKit으로 대체 실행');
-        return await this.generateProfessionalPDFWithPDFKit(orderData);
-      }
-    }
+    // 모든 환경에서 이쁜 PDFKit 버전 사용
+    console.log('📄 [ProfessionalPDF] 이쁜 PDFKit으로 PDF 생성 시작');
+    return await this.generateProfessionalPDFWithPDFKit(orderData);
   }
   private static uploadDir = process.env.VERCEL 
     ? '/tmp/pdf'
@@ -1112,7 +1100,7 @@ export class ProfessionalPDFGenerationService {
   /**
    * PDFKit으로 전문적인 발주서 PDF 생성
    */
-  private static async generateProfessionalPDFWithPDFKit(orderData: ComprehensivePurchaseOrderData): Promise<Buffer> {
+  public static async generateProfessionalPDFWithPDFKit(orderData: ComprehensivePurchaseOrderData): Promise<Buffer> {
     try {
       const PDFKitDocument = (await import('pdfkit')).default;
       const fs = await import('fs');
