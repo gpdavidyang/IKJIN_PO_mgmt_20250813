@@ -421,6 +421,13 @@ router.post("/orders", requireAuth, upload.array('attachments'), async (req, res
     }
 
     // Generate PROFESSIONAL PDF for the order (NEW: Enhanced layout with comprehensive data)
+    let pdfGenerationStatus = {
+      success: false,
+      message: '',
+      pdfPath: '',
+      attachmentId: null as number | null
+    };
+    
     try {
       console.log("🔧🔧🔧 ORDERS.TS - Generating PROFESSIONAL PDF for order:", order.id);
       
@@ -434,8 +441,15 @@ router.post("/orders", requireAuth, upload.array('attachments'), async (req, res
       if (pdfResult.success) {
         console.log("✅ ORDERS.TS - PROFESSIONAL PDF generated successfully:", pdfResult.pdfPath);
         console.log("📄 PDF Attachment ID:", pdfResult.attachmentId);
+        pdfGenerationStatus = {
+          success: true,
+          message: 'PDF 파일이 성공적으로 생성되었습니다',
+          pdfPath: pdfResult.pdfPath,
+          attachmentId: pdfResult.attachmentId
+        };
       } else {
         console.error("⚠️ ORDERS.TS - PROFESSIONAL PDF generation failed:", pdfResult.error);
+        pdfGenerationStatus.message = `PDF 생성 실패: ${pdfResult.error}`;
         
         // Fallback to Enhanced PDF if Professional fails
         console.log("🔄 Attempting fallback to Enhanced PDF...");
@@ -542,12 +556,20 @@ router.post("/orders", requireAuth, upload.array('attachments'), async (req, res
         
         if (fallbackResult.success) {
           console.log("✅ ORDERS.TS - Fallback Enhanced PDF generated successfully:", fallbackResult.pdfPath);
+          pdfGenerationStatus = {
+            success: true,
+            message: 'PDF 파일이 생성되었습니다 (대체 방식)',
+            pdfPath: fallbackResult.pdfPath,
+            attachmentId: fallbackResult.attachmentId
+          };
         } else {
           console.error("⚠️ ORDERS.TS - Fallback Enhanced PDF also failed:", fallbackResult.error);
+          pdfGenerationStatus.message = 'PDF 생성에 실패했습니다. 관리자에게 문의하세요.';
         }
       }
     } catch (pdfError) {
       console.error("❌ ORDERS.TS - Error generating PDF:", pdfError);
+      pdfGenerationStatus.message = `PDF 생성 중 오류 발생: ${pdfError instanceof Error ? pdfError.message : '알 수 없는 오류'}`;
       // Continue without PDF - don't fail the entire order creation
     }
 
@@ -585,7 +607,10 @@ router.post("/orders", requireAuth, upload.array('attachments'), async (req, res
         }
       };
 
-      res.status(201).json(orderWithApproval);
+      res.status(201).json({
+        ...orderWithApproval,
+        pdfGenerationStatus
+      });
     } catch (approvalError) {
       console.error("🔧🔧🔧 ORDERS.TS - Error setting up approval process:", approvalError);
       // Still return the order even if approval setup fails
@@ -596,7 +621,8 @@ router.post("/orders", requireAuth, upload.array('attachments'), async (req, res
           canDirectApprove: false,
           reasoning: '승인 프로세스 설정 중 오류가 발생하여 기본 설정을 사용합니다.',
           stepsCount: 0
-        }
+        },
+        pdfGenerationStatus
       });
     }
   } catch (error) {
