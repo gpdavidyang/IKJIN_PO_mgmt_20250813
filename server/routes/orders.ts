@@ -37,10 +37,12 @@ const emailService = new POEmailService();
 
 // Helper function to update order status after successful email sending
 async function updateOrderStatusAfterEmail(orderNumber: string): Promise<void> {
+  console.log(`📧 이메일 발송 후 상태 업데이트: ${orderNumber} → sent`);
+  
   await database.db.update(purchaseOrders)
     .set({
-      orderStatus: '발주완료', // 이메일 발송 완료 후 '발주완료' 상태로 변경
-      status: 'sent', // Frontend expects 'sent' status for email history button
+      orderStatus: 'sent', // 발주상태: 이메일 발송 완료 후 'sent'로 변경
+      // approvalStatus는 이미 'approved' 또는 'not_required' 상태이므로 변경하지 않음
       updatedAt: new Date()
     })
     .where(eq(purchaseOrders.orderNumber, orderNumber));

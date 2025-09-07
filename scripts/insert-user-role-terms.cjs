@@ -5,6 +5,9 @@
  * This fixes the insertUiTerm API issue and adds the required translations
  */
 
+// Load environment variables
+require('dotenv').config();
+
 const { drizzle } = require('drizzle-orm/postgres-js');
 const { pgTable, varchar, text, boolean, timestamp, serial } = require('drizzle-orm/pg-core');
 const { eq } = require('drizzle-orm');

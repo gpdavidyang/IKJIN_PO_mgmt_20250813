@@ -1,6 +1,4 @@
--- Insert Korean UI terms for user roles
--- This script adds Korean translations for all user roles in the system
-
+-- Insert Korean UI terms for user roles with UPSERT logic
 INSERT INTO ui_terms (term_key, term_value, category, description, is_active, created_at, updated_at) 
 VALUES 
   ('field_worker', '현장 작업자', 'user_roles', '현장에서 직접 작업을 수행하는 작업자', true, NOW(), NOW()),

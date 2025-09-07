@@ -41,6 +41,18 @@ import { EmailHistoryModal } from "@/components/email-history-modal";
 import { AttachedFilesInfo } from "@/components/attached-files-info";
 import { format } from "date-fns";
 import { formatKoreanWon } from "@/lib/utils";
+import { 
+  OrderStatus, 
+  ApprovalStatus,
+  canGeneratePDF as canGeneratePDFBase,
+  canSendEmail as canSendEmailBase,
+  canViewEmailHistory as canViewEmailHistoryBase,
+  canEditOrder as canEditOrderBase,
+  canApproveOrder as canApproveOrderBase,
+  canCompleteDelivery as canCompleteDeliveryBase,
+  getDisplayStatus,
+  getDisplayStatusColor
+} from "@/lib/statusUtils";
 
 export default function OrderDetailProfessional() {
   const { user } = useAuth();
@@ -396,21 +408,18 @@ export default function OrderDetailProfessional() {
     );
   }
 
-  // Determine the actual status (orderStatus is the new field, status is legacy)
-  const actualStatus = order.orderStatus || order.status;
-  const isDraft = actualStatus === 'draft';
-  const isCreated = actualStatus === 'created';
-  const isSent = actualStatus === 'sent';
-  const isDelivered = actualStatus === 'delivered';
+  // 새로운 상태 관리 시스템 사용 (STATUS_MANAGEMENT.md 기준)
+  const orderStatus = (order.orderStatus || order.status) as OrderStatus;
+  const approvalStatus = order.approvalStatus as ApprovalStatus;
   
-  // Permission checks based on status
-  const canCreateOrder = isDraft && (user?.role === "admin" || order.userId === user?.id);
-  const canGeneratePDF = isCreated || isSent || isDelivered;
-  const canSendEmail = isCreated && (user?.role === "admin" || order.userId === user?.id);
-  const canViewEmailHistory = (isSent || isDelivered) && (user?.role === "admin" || order.userId === user?.id);
-  const canEdit = isDraft || (isCreated && (user?.role === "admin" || order.userId === user?.id));
-  const canApprove = user?.role === "admin" && order.approvalStatus === "pending";
-  const canCompleteDelivery = (isCreated || isSent) && (user?.role === "admin" || order.userId === user?.id);
+  // Permission checks based on separate order and approval statuses
+  const canCreateOrder = orderStatus === 'draft' && (user?.role === "admin" || order.userId === user?.id);
+  const canGeneratePDF = canGeneratePDFBase(orderStatus);
+  const canSendEmail = canSendEmailBase(orderStatus, approvalStatus) && (user?.role === "admin" || order.userId === user?.id);
+  const canViewEmailHistory = canViewEmailHistoryBase(orderStatus) && (user?.role === "admin" || order.userId === user?.id);
+  const canEdit = canEditOrderBase(orderStatus, approvalStatus) && (user?.role === "admin" || order.userId === user?.id);
+  const canApprove = canApproveOrderBase(approvalStatus, user?.role);
+  const canCompleteDelivery = canCompleteDeliveryBase(orderStatus, approvalStatus) && (user?.role === "admin" || order.userId === user?.id);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -429,10 +438,10 @@ export default function OrderDetailProfessional() {
             <div>
               <h1 className="text-2xl font-bold text-gray-900">{order.orderNumber}</h1>
               <div className="flex items-center gap-4 mt-2">
-                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(actualStatus)}`}>
-                  {getStatusText(actualStatus)}
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getDisplayStatusColor(orderStatus, approvalStatus)}`}>
+                  {getDisplayStatus(orderStatus, approvalStatus)}
                 </span>
-                {isDraft && (
+                {orderStatus === 'draft' && (
                   <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">
                     ⚠️ 임시저장 상태 - 발주서 생성 필요
                   </span>

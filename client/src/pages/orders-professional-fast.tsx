@@ -846,60 +846,47 @@ export default function OrdersProfessionalFast() {
   const projects = metadata?.projects || data?.metadata?.projects || [];
   const users = metadata?.users || data?.metadata?.users || [];
   
-  // Email status rendering - improved with more status types
+  // Email status rendering - only realistic SMTP trackable statuses
   const renderEmailStatus = (order: Order) => {
-    // If no email status and no emails sent, show 미발송
-    if (!order.emailStatus && (!order.totalEmailsSent || order.totalEmailsSent === 0)) {
+    const emailCount = order.totalEmailsSent || 0;
+    
+    // No emails sent
+    if (!order.emailStatus && emailCount === 0) {
       return (
         <span className="text-xs text-gray-500 dark:text-gray-400">미발송</span>
       );
     }
 
-    // Show count if emails were sent
-    const emailCount = order.totalEmailsSent || 0;
-    
+    // Handle realistic email statuses based on actual system implementation
     switch (order.emailStatus) {
-      case 'sent':
-      case 'delivered':
-        return (
-          <div className="flex items-center gap-1">
-            <Send className="h-3 w-3 text-blue-600 dark:text-blue-400" />
-            <span className="text-xs text-blue-600 dark:text-blue-400">
-              발송됨 {emailCount > 1 ? `(${emailCount})` : ''}
-            </span>
-          </div>
-        );
-      case 'opened':
-      case 'read':
-        return (
-          <div className="flex items-center gap-1">
-            <Mail className="h-3 w-3 text-green-600 dark:text-green-400" />
-            <span className="text-xs text-green-600 dark:text-green-400">
-              열람됨 {emailCount > 1 ? `(${emailCount})` : ''}
-            </span>
-          </div>
-        );
       case 'pending':
         return (
           <div className="flex items-center gap-1">
-            <RefreshCw className="h-3 w-3 text-yellow-600 dark:text-yellow-400" />
+            <RefreshCw className="h-3 w-3 text-yellow-600 dark:text-yellow-400 animate-spin" />
             <span className="text-xs text-yellow-600 dark:text-yellow-400">발송중</span>
           </div>
         );
+      
       case 'failed':
         return (
           <div className="flex items-center gap-1">
             <AlertCircle className="h-3 w-3 text-red-600 dark:text-red-400" />
-            <span className="text-xs text-red-600 dark:text-red-400">실패</span>
+            <span className="text-xs text-red-600 dark:text-red-400">
+              발송실패 {emailCount > 0 ? `(${emailCount}회 시도)` : ''}
+            </span>
           </div>
         );
+      
+      case 'sent':
       default:
-        // If there's an email count but unknown status, show count with neutral state
+        // 'sent' status means successfully delivered to SMTP server
         if (emailCount > 0) {
           return (
             <div className="flex items-center gap-1">
-              <Send className="h-3 w-3 text-blue-600 dark:text-blue-400" />
-              <span className="text-xs text-blue-600 dark:text-blue-400">발송됨 ({emailCount})</span>
+              <CheckCircle className="h-3 w-3 text-green-600 dark:text-green-400" />
+              <span className="text-xs text-green-600 dark:text-green-400">
+                발송완료 {emailCount > 1 ? `(${emailCount}회)` : ''}
+              </span>
             </div>
           );
         }
