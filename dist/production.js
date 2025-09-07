@@ -15,11 +15,11 @@ var __export = (target, all) => {
   for (var name in all)
     __defProp(target, name, { get: all[name], enumerable: true });
 };
-var __copyProps = (to, from, except, desc17) => {
+var __copyProps = (to, from, except, desc18) => {
   if (from && typeof from === "object" || typeof from === "function") {
     for (let key of __getOwnPropNames(from))
       if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc17 = __getOwnPropDesc(from, key)) || desc17.enumerable });
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc18 = __getOwnPropDesc(from, key)) || desc18.enumerable });
   }
   return to;
 };
@@ -1408,12 +1408,12 @@ var init_schema = __esm({
 // server/db.ts
 var db_exports = {};
 __export(db_exports, {
-  db: () => db
+  db: () => db2
 });
 import dotenv from "dotenv";
 import pkg from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
-var DATABASE_URL, Pool, db;
+var DATABASE_URL, Pool, db2;
 var init_db = __esm({
   "server/db.ts"() {
     "use strict";
@@ -1439,7 +1439,7 @@ var init_db = __esm({
       }
     }
     ({ Pool } = pkg);
-    db = null;
+    db2 = null;
     if (!DATABASE_URL) {
       console.error("\u274C DATABASE_URL not set - database connection not initialized");
       if (!process.env.VERCEL) {
@@ -1467,7 +1467,7 @@ var init_db = __esm({
         pool.on("error", (err) => {
           console.error("\u{1F4A5} Database pool error:", err);
         });
-        db = drizzle(pool, { schema: schema_exports });
+        db2 = drizzle(pool, { schema: schema_exports });
         console.log("\u2705 Database connected successfully (PostgreSQL pool)");
       } catch (error) {
         console.error("\u274C Database connection failed:", error instanceof Error ? error.message : String(error));
@@ -1813,8 +1813,8 @@ var init_email_settings_service = __esm({
           if (_EmailSettingsService.isCacheValid()) {
             return _EmailSettingsService.settingsCache;
           }
-          const db2 = db;
-          const result = await db2.select().from(emailSettings).where(eq8(emailSettings.isActive, true)).orderBy(desc4(emailSettings.isDefault), desc4(emailSettings.updatedAt)).limit(1);
+          const db3 = db2;
+          const result = await db3.select().from(emailSettings).where(eq8(emailSettings.isActive, true)).orderBy(desc4(emailSettings.isDefault), desc4(emailSettings.updatedAt)).limit(1);
           const setting = result[0] || null;
           _EmailSettingsService.settingsCache = setting;
           _EmailSettingsService.cacheTimestamp = Date.now();
@@ -1829,8 +1829,8 @@ var init_email_settings_service = __esm({
        */
       async getAllSettings() {
         try {
-          const db2 = db;
-          const result = await db2.select().from(emailSettings).orderBy(desc4(emailSettings.isDefault), desc4(emailSettings.updatedAt));
+          const db3 = db2;
+          const result = await db3.select().from(emailSettings).orderBy(desc4(emailSettings.isDefault), desc4(emailSettings.updatedAt));
           return result;
         } catch (error) {
           console.error("\uC774\uBA54\uC77C \uC124\uC815 \uBAA9\uB85D \uC870\uD68C \uC2E4\uD328:", error);
@@ -1843,16 +1843,16 @@ var init_email_settings_service = __esm({
       async createSettings(data, createdBy) {
         try {
           const encryptedPassword = EmailSettingsEncryption.encrypt(data.smtpPass);
-          const db2 = db;
+          const db3 = db2;
           if (data.isDefault) {
-            await db2.update(emailSettings).set({ isDefault: false, updatedAt: /* @__PURE__ */ new Date() }).where(eq8(emailSettings.isDefault, true));
+            await db3.update(emailSettings).set({ isDefault: false, updatedAt: /* @__PURE__ */ new Date() }).where(eq8(emailSettings.isDefault, true));
           }
           const insertData = {
             ...data,
             smtpPass: encryptedPassword,
             createdBy
           };
-          const result = await db2.insert(emailSettings).values(insertData).returning();
+          const result = await db3.insert(emailSettings).values(insertData).returning();
           const newSetting = result[0];
           this.invalidateCache();
           return newSetting;
@@ -1866,7 +1866,7 @@ var init_email_settings_service = __esm({
        */
       async updateSettings(id, data, updatedBy) {
         try {
-          const db2 = db;
+          const db3 = db2;
           const updateData = {
             ...data,
             updatedAt: /* @__PURE__ */ new Date()
@@ -1875,9 +1875,9 @@ var init_email_settings_service = __esm({
             updateData.smtpPass = EmailSettingsEncryption.encrypt(data.smtpPass);
           }
           if (data.isDefault === true) {
-            await db2.update(emailSettings).set({ isDefault: false, updatedAt: /* @__PURE__ */ new Date() }).where(eq8(emailSettings.isDefault, true));
+            await db3.update(emailSettings).set({ isDefault: false, updatedAt: /* @__PURE__ */ new Date() }).where(eq8(emailSettings.isDefault, true));
           }
-          const result = await db2.update(emailSettings).set(updateData).where(eq8(emailSettings.id, id)).returning();
+          const result = await db3.update(emailSettings).set(updateData).where(eq8(emailSettings.id, id)).returning();
           if (result.length === 0) {
             throw new Error("\uC5C5\uB370\uC774\uD2B8\uD560 \uC124\uC815\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4");
           }
@@ -1893,8 +1893,8 @@ var init_email_settings_service = __esm({
        */
       async deleteSettings(id) {
         try {
-          const db2 = db;
-          const result = await db2.delete(emailSettings).where(eq8(emailSettings.id, id)).returning();
+          const db3 = db2;
+          const result = await db3.delete(emailSettings).where(eq8(emailSettings.id, id)).returning();
           this.invalidateCache();
           return result.length > 0;
         } catch (error) {
@@ -1997,8 +1997,8 @@ var init_email_settings_service = __esm({
         try {
           let setting;
           if (settingId) {
-            const db2 = db;
-            const result = await db2.select().from(emailSettings).where(eq8(emailSettings.id, settingId)).limit(1);
+            const db3 = db2;
+            const result = await db3.select().from(emailSettings).where(eq8(emailSettings.id, settingId)).limit(1);
             setting = result[0] || null;
           } else {
             setting = await this.getDefaultSettings();
@@ -2053,8 +2053,8 @@ var init_email_settings_service = __esm({
        */
       async updateTestResult(settingId, testResult) {
         try {
-          const db2 = db;
-          await db2.update(emailSettings).set({
+          const db3 = db2;
+          await db3.update(emailSettings).set({
             lastTestedAt: /* @__PURE__ */ new Date(),
             testResult,
             updatedAt: /* @__PURE__ */ new Date()
@@ -2129,7 +2129,7 @@ var init_professional_pdf_generation_service = __esm({
       static async gatherComprehensiveOrderData(orderId) {
         try {
           console.log(`\u{1F4CA} [ProfessionalPDF] \uD3EC\uAD04\uC801 \uB370\uC774\uD130 \uC218\uC9D1 \uC2DC\uC791: Order ID ${orderId}`);
-          const orderQuery = await db.select({
+          const orderQuery = await db2.select({
             // Purchase Order 정보
             orderNumber: purchaseOrders.orderNumber,
             orderDate: purchaseOrders.orderDate,
@@ -2164,7 +2164,7 @@ var init_professional_pdf_generation_service = __esm({
             creatorPosition: users.position,
             creatorRole: users.role
           }).from(purchaseOrders).leftJoin(vendors, eq9(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq9(purchaseOrders.projectId, projects.id)).leftJoin(users, eq9(purchaseOrders.userId, users.id)).where(eq9(purchaseOrders.id, orderId)).limit(1);
-          const companyQuery = await db.select({
+          const companyQuery = await db2.select({
             companyName: companies.companyName,
             companyBusinessNumber: companies.businessNumber,
             companyAddress: companies.address,
@@ -2189,11 +2189,11 @@ var init_professional_pdf_generation_service = __esm({
             companyEmail: null,
             companyRepresentative: null
           };
-          const itemsQuery = await db.select().from(purchaseOrderItems).where(eq9(purchaseOrderItems.orderId, orderId));
-          const attachmentsQuery = await db.select().from(attachments).where(eq9(attachments.orderId, orderId));
+          const itemsQuery = await db2.select().from(purchaseOrderItems).where(eq9(purchaseOrderItems.orderId, orderId));
+          const attachmentsQuery = await db2.select().from(attachments).where(eq9(attachments.orderId, orderId));
           let emailHistoryQuery = [];
           try {
-            emailHistoryQuery = await db.select().from(emailSendHistory).where(eq9(emailSendHistory.orderId, orderId)).orderBy(desc5(emailSendHistory.sentAt)).limit(5);
+            emailHistoryQuery = await db2.select().from(emailSendHistory).where(eq9(emailSendHistory.orderId, orderId)).orderBy(desc5(emailSendHistory.sentAt)).limit(5);
           } catch (error) {
             if (error.code !== "42P01") {
               console.error("\u274C [ProfessionalPDF] \uC774\uBA54\uC77C \uC774\uB825 \uC870\uD68C \uC624\uB958:", error);
@@ -2322,7 +2322,7 @@ var init_professional_pdf_generation_service = __esm({
           console.log(`\u{1F50D} [ProfessionalPDF] Environment check - VERCEL: ${process.env.VERCEL}, Base64 size: ${base64Data.length} chars`);
           if (process.env.VERCEL) {
             console.log("\u{1F4DD} [ProfessionalPDF] Saving to database with Base64 data...");
-            const [attachment] = await db.insert(attachments).values({
+            const [attachment] = await db2.insert(attachments).values({
               orderId,
               originalName: fileName,
               storedName: fileName,
@@ -2342,7 +2342,7 @@ var init_professional_pdf_generation_service = __esm({
             }
             filePath = path4.join(tempDir, fileName);
             fs6.writeFileSync(filePath, pdfBuffer);
-            const [attachment] = await db.insert(attachments).values({
+            const [attachment] = await db2.insert(attachments).values({
               orderId,
               originalName: fileName,
               storedName: fileName,
@@ -2997,16 +2997,24 @@ var init_professional_pdf_generation_service = __esm({
             const possibleFonts = [
               "/System/Library/Fonts/Supplemental/AppleGothic.ttf",
               // macOS
+              "/System/Library/Fonts/AppleSDGothicNeo.ttc",
+              // macOS AppleSDGothicNeo
               "/System/Library/Fonts/Supplemental/AppleMyungjo.ttf",
               // macOS 명조
+              "/System/Library/Fonts/NanumGothic.ttc",
+              // macOS Nanum Gothic
               "C:\\Windows\\Fonts\\malgun.ttf",
               // Windows
               "C:\\Windows\\Fonts\\gulim.ttf",
               // Windows 굴림
+              "C:\\Windows\\Fonts\\batang.ttc",
+              // Windows 바탕
               "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",
               // Linux
-              "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"
+              "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
               // Linux Noto
+              "/usr/share/fonts/truetype/fonts-nanum/NanumGothic.ttf"
+              // Linux Nanum alternative
             ];
             for (const fontPath of possibleFonts) {
               try {
@@ -3025,15 +3033,28 @@ var init_professional_pdf_generation_service = __esm({
                 doc.font("Korean");
                 console.log(`\u2705 [ProfessionalPDF] \uD55C\uAE00 \uD3F0\uD2B8 \uB4F1\uB85D \uC644\uB8CC: ${koreanFontPath}`);
               } catch (fontError) {
-                console.warn("\u26A0\uFE0F [ProfessionalPDF] \uD55C\uAE00 \uD3F0\uD2B8 \uB4F1\uB85D \uC2E4\uD328, \uAE30\uBCF8 \uD3F0\uD2B8 \uC0AC\uC6A9:", fontError);
-                doc.font("Helvetica");
+                console.warn("\u26A0\uFE0F [ProfessionalPDF] \uD55C\uAE00 \uD3F0\uD2B8 \uB4F1\uB85D \uC2E4\uD328:", fontError);
+                if (process.env.VERCEL) {
+                  console.log("\u{1F4DD} [ProfessionalPDF] Vercel \uD658\uACBD - \uAE30\uBCF8 \uD3F0\uD2B8 \uC0AC\uC6A9");
+                  doc.font("Helvetica");
+                } else {
+                  console.log("\u{1F4DD} [ProfessionalPDF] \uB85C\uCEEC \uD658\uACBD - \uAE30\uBCF8 \uD3F0\uD2B8 \uC0AC\uC6A9");
+                  doc.font("Helvetica");
+                }
               }
             } else {
-              console.warn("\u26A0\uFE0F [ProfessionalPDF] \uD55C\uAE00 \uD3F0\uD2B8\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC74C, \uAE30\uBCF8 \uD3F0\uD2B8 \uC0AC\uC6A9");
-              doc.font("Helvetica");
+              console.warn("\u26A0\uFE0F [ProfessionalPDF] \uD55C\uAE00 \uD3F0\uD2B8\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC74C");
+              if (process.env.VERCEL) {
+                console.log("\u{1F4DD} [ProfessionalPDF] Vercel\uC5D0\uC11C\uB294 \uD55C\uAE00 \uD3F0\uD2B8 \uB300\uC2E0 \uAE30\uBCF8 \uD3F0\uD2B8 \uC0AC\uC6A9");
+                doc.font("Helvetica");
+              } else {
+                console.log("\u{1F4DD} [ProfessionalPDF] \uB85C\uCEEC \uD658\uACBD - \uAE30\uBCF8 \uD3F0\uD2B8 \uC0AC\uC6A9");
+                doc.font("Helvetica");
+              }
             }
             const safeText = (text2) => {
-              return text2 || "";
+              if (!text2) return "";
+              return text2.replace(/[\x00-\x1F\x7F]/g, "").replace(/[\u2028\u2029]/g, "").trim();
             };
             const formatDate = (date2) => {
               if (!date2) return "-";
@@ -3360,7 +3381,7 @@ var init_po_template_processor_mock = __esm({
           let savedOrders = 0;
           const savedOrderNumbers = [];
           console.log(`\u{1F50D} [DB] \uD2B8\uB79C\uC7AD\uC158 \uC2DC\uC791`);
-          await db.transaction(async (tx) => {
+          await db2.transaction(async (tx) => {
             console.log(`\u{1F50D} [DB] \uD2B8\uB79C\uC7AD\uC158 \uB0B4\uBD80 \uC9C4\uC785 \uC131\uACF5`);
             for (const orderData of orders) {
               console.log(`\u{1F50D} [DB] \uBC1C\uC8FC\uC11C \uCC98\uB9AC \uC911: ${orderData.orderNumber}, \uAC70\uB798\uCC98: ${orderData.vendorName}`);
@@ -4067,11 +4088,11 @@ import { eq, desc, asc, ilike, and, or, between, count, sum, sql as sql2, gte, l
 var DatabaseStorage = class {
   // User operations
   async getUser(id) {
-    if (!db) {
+    if (!db2) {
       console.error("\u274C Database connection not available - DATABASE_URL not configured");
       throw new Error("Database connection not available. Please configure DATABASE_URL environment variable.");
     }
-    const [user] = await db.select().from(users).where(eq(users.id, id));
+    const [user] = await db2.select().from(users).where(eq(users.id, id));
     return user;
   }
   async getUserById(id) {
@@ -4081,7 +4102,7 @@ var DatabaseStorage = class {
   async generateStandardizedUserId() {
     const today = /* @__PURE__ */ new Date();
     const datePrefix = today.toISOString().slice(0, 10).replace(/-/g, "");
-    const existingUsers = await db.select({ id: users.id }).from(users).where(sql2`${users.id} LIKE ${"USR_" + datePrefix + "_%"}`);
+    const existingUsers = await db2.select({ id: users.id }).from(users).where(sql2`${users.id} LIKE ${"USR_" + datePrefix + "_%"}`);
     let maxSequence = 0;
     for (const user of existingUsers) {
       const match = user.id.match(/USR_\d{8}_(\d{3})$/);
@@ -4098,9 +4119,9 @@ var DatabaseStorage = class {
   async upsertUser(userData) {
     let existingUser = [];
     if (userData.id) {
-      existingUser = await db.select().from(users).where(eq(users.id, userData.id)).limit(1);
+      existingUser = await db2.select().from(users).where(eq(users.id, userData.id)).limit(1);
     } else if (userData.email) {
-      existingUser = await db.select().from(users).where(eq(users.email, userData.email)).limit(1);
+      existingUser = await db2.select().from(users).where(eq(users.email, userData.email)).limit(1);
     }
     if (existingUser.length > 0) {
       const updateData = {
@@ -4111,34 +4132,34 @@ var DatabaseStorage = class {
       if (userData.role !== void 0) updateData.role = userData.role;
       if (userData.profileImageUrl !== void 0) updateData.profileImageUrl = userData.profileImageUrl;
       const whereCondition = userData.id ? eq(users.id, userData.id) : eq(users.email, userData.email);
-      const [user2] = await db.update(users).set(updateData).where(whereCondition).returning();
+      const [user2] = await db2.update(users).set(updateData).where(whereCondition).returning();
       return user2;
     }
     const userDataWithId = {
       ...userData,
       id: userData.id || await this.generateStandardizedUserId()
     };
-    const [user] = await db.insert(users).values(userDataWithId).returning();
+    const [user] = await db2.insert(users).values(userDataWithId).returning();
     return user;
   }
   async updateUserProfile(id, profile) {
-    const [user] = await db.update(users).set({
+    const [user] = await db2.update(users).set({
       ...profile,
       updatedAt: /* @__PURE__ */ new Date()
     }).where(eq(users.id, id)).returning();
     return user;
   }
   async getUsers() {
-    return await db.select().from(users).orderBy(asc(users.createdAt));
+    return await db2.select().from(users).orderBy(asc(users.createdAt));
   }
   async getUserByEmail(email) {
     console.log("\u{1F50D} Searching for user with email:", email);
-    if (!db) {
+    if (!db2) {
       console.error("\u274C Database connection not available - DATABASE_URL not configured");
       throw new Error("Database connection not available. Please configure DATABASE_URL environment variable.");
     }
     try {
-      const result = await db.select().from(users).where(eq(users.email, email));
+      const result = await db2.select().from(users).where(eq(users.email, email));
       console.log("\u{1F50D} Database query result:", result);
       const [user] = result;
       console.log("\u{1F50D} Found user:", user ? `${user.email} (${user.role})` : "null");
@@ -4149,15 +4170,15 @@ var DatabaseStorage = class {
     }
   }
   async updateUser(id, updates) {
-    const [user] = await db.update(users).set({ ...updates, updatedAt: /* @__PURE__ */ new Date() }).where(eq(users.id, id)).returning();
+    const [user] = await db2.update(users).set({ ...updates, updatedAt: /* @__PURE__ */ new Date() }).where(eq(users.id, id)).returning();
     return user;
   }
   async updateUserRole(id, role) {
-    const [user] = await db.update(users).set({ role, updatedAt: /* @__PURE__ */ new Date() }).where(eq(users.id, id)).returning();
+    const [user] = await db2.update(users).set({ role, updatedAt: /* @__PURE__ */ new Date() }).where(eq(users.id, id)).returning();
     return user;
   }
   async toggleUserActive(id, isActive) {
-    const [user] = await db.update(users).set({
+    const [user] = await db2.update(users).set({
       isActive,
       updatedAt: /* @__PURE__ */ new Date()
     }).where(eq(users.id, id)).returning();
@@ -4165,26 +4186,26 @@ var DatabaseStorage = class {
   }
   async checkUserReferences(id) {
     try {
-      const projectsAsManager = await db.select({
+      const projectsAsManager = await db2.select({
         id: projects.id,
         name: projects.projectName,
         type: sql2`'project_manager'`
       }).from(projects).where(eq(projects.projectManagerId, id));
-      const ordersByUser = await db.select({
+      const ordersByUser = await db2.select({
         id: purchaseOrders.id,
         orderNumber: purchaseOrders.orderNumber
       }).from(purchaseOrders).where(eq(purchaseOrders.userId, id));
-      const projectMemberships = await db.select({
+      const projectMemberships = await db2.select({
         id: projects.id,
         name: projects.projectName,
         type: sql2`'project_member'`
       }).from(projectMembers).leftJoin(projects, eq(projectMembers.projectId, projects.id)).where(eq(projectMembers.userId, id));
-      const projectMembersAssignedBy = await db.select({
+      const projectMembersAssignedBy = await db2.select({
         id: projects.id,
         name: projects.projectName,
         type: sql2`'assigned_by'`
       }).from(projectMembers).leftJoin(projects, eq(projectMembers.projectId, projects.id)).where(eq(projectMembers.assignedBy, id));
-      const projectHistoryChanges = await db.select({
+      const projectHistoryChanges = await db2.select({
         id: projects.id,
         name: projects.projectName || sql2`'Unknown Project'`,
         type: sql2`'history_changed_by'`
@@ -4222,19 +4243,19 @@ var DatabaseStorage = class {
       }
       throw new Error(`\uC0AC\uC6A9\uC790\uB97C \uC0AD\uC81C\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4: ${errorDetails.join(", ")}`);
     }
-    await db.delete(users).where(eq(users.id, id));
+    await db2.delete(users).where(eq(users.id, id));
   }
   async reassignUserProjects(fromUserId, toUserId) {
-    await db.update(projects).set({ projectManagerId: toUserId, updatedAt: /* @__PURE__ */ new Date() }).where(eq(projects.projectManagerId, fromUserId));
-    await db.update(projectMembers).set({ assignedBy: toUserId, assignedAt: /* @__PURE__ */ new Date() }).where(eq(projectMembers.assignedBy, fromUserId));
-    await db.update(projectHistory).set({ changedBy: toUserId }).where(eq(projectHistory.changedBy, fromUserId));
-    await db.delete(projectMembers).where(eq(projectMembers.userId, fromUserId));
+    await db2.update(projects).set({ projectManagerId: toUserId, updatedAt: /* @__PURE__ */ new Date() }).where(eq(projects.projectManagerId, fromUserId));
+    await db2.update(projectMembers).set({ assignedBy: toUserId, assignedAt: /* @__PURE__ */ new Date() }).where(eq(projectMembers.assignedBy, fromUserId));
+    await db2.update(projectHistory).set({ changedBy: toUserId }).where(eq(projectHistory.changedBy, fromUserId));
+    await db2.delete(projectMembers).where(eq(projectMembers.userId, fromUserId));
   }
   // Vendor operations
   async getVendors() {
     try {
       console.log("\u{1F50D} Storage: Executing getVendors query...");
-      const result = await db.select().from(vendors).where(eq(vendors.isActive, true)).orderBy(asc(vendors.name));
+      const result = await db2.select().from(vendors).where(eq(vendors.isActive, true)).orderBy(asc(vendors.name));
       console.log(`\u{1F50D} Storage: getVendors returned ${result.length} vendors`);
       return result;
     } catch (error) {
@@ -4243,50 +4264,50 @@ var DatabaseStorage = class {
     }
   }
   async getVendor(id) {
-    const [vendor] = await db.select().from(vendors).where(eq(vendors.id, id));
+    const [vendor] = await db2.select().from(vendors).where(eq(vendors.id, id));
     return vendor;
   }
   async createVendor(vendor) {
-    const [newVendor] = await db.insert(vendors).values(vendor).returning();
+    const [newVendor] = await db2.insert(vendors).values(vendor).returning();
     return newVendor;
   }
   async updateVendor(id, vendor) {
-    const [updatedVendor] = await db.update(vendors).set({ ...vendor, updatedAt: /* @__PURE__ */ new Date() }).where(eq(vendors.id, id)).returning();
+    const [updatedVendor] = await db2.update(vendors).set({ ...vendor, updatedAt: /* @__PURE__ */ new Date() }).where(eq(vendors.id, id)).returning();
     return updatedVendor;
   }
   async deleteVendor(id) {
-    await db.update(vendors).set({ isActive: false }).where(eq(vendors.id, id));
+    await db2.update(vendors).set({ isActive: false }).where(eq(vendors.id, id));
   }
   // Order template operations
   async getOrderTemplates() {
-    return await db.select().from(orderTemplates).orderBy(asc(orderTemplates.templateName));
+    return await db2.select().from(orderTemplates).orderBy(asc(orderTemplates.templateName));
   }
   async getActiveOrderTemplates() {
-    return await db.select().from(orderTemplates).where(eq(orderTemplates.isActive, true)).orderBy(asc(orderTemplates.templateName));
+    return await db2.select().from(orderTemplates).where(eq(orderTemplates.isActive, true)).orderBy(asc(orderTemplates.templateName));
   }
   async getOrderTemplate(id) {
-    const [template] = await db.select().from(orderTemplates).where(eq(orderTemplates.id, id));
+    const [template] = await db2.select().from(orderTemplates).where(eq(orderTemplates.id, id));
     return template;
   }
   async createOrderTemplate(template) {
-    const [newTemplate] = await db.insert(orderTemplates).values(template).returning();
+    const [newTemplate] = await db2.insert(orderTemplates).values(template).returning();
     return newTemplate;
   }
   async updateOrderTemplate(id, template) {
-    const [updatedTemplate] = await db.update(orderTemplates).set({ ...template, updatedAt: /* @__PURE__ */ new Date() }).where(eq(orderTemplates.id, id)).returning();
+    const [updatedTemplate] = await db2.update(orderTemplates).set({ ...template, updatedAt: /* @__PURE__ */ new Date() }).where(eq(orderTemplates.id, id)).returning();
     return updatedTemplate;
   }
   async deleteOrderTemplate(id) {
-    await db.delete(orderTemplates).where(eq(orderTemplates.id, id));
+    await db2.delete(orderTemplates).where(eq(orderTemplates.id, id));
   }
   async toggleOrderTemplateStatus(id, isActive) {
-    const [updatedTemplate] = await db.update(orderTemplates).set({ isActive, updatedAt: /* @__PURE__ */ new Date() }).where(eq(orderTemplates.id, id)).returning();
+    const [updatedTemplate] = await db2.update(orderTemplates).set({ isActive, updatedAt: /* @__PURE__ */ new Date() }).where(eq(orderTemplates.id, id)).returning();
     return updatedTemplate;
   }
   // Note: Project status and type operations removed - using ENUM types directly for better performance
   // Project operations
   async getProjects() {
-    const projectList = await db.select({
+    const projectList = await db2.select({
       id: projects.id,
       projectName: projects.projectName,
       projectCode: projects.projectCode,
@@ -4311,23 +4332,23 @@ var DatabaseStorage = class {
     return projectList;
   }
   async getProject(id) {
-    const [project] = await db.select().from(projects).where(eq(projects.id, id));
+    const [project] = await db2.select().from(projects).where(eq(projects.id, id));
     return project;
   }
   async createProject(projectData) {
-    const [project] = await db.insert(projects).values(projectData).returning();
+    const [project] = await db2.insert(projects).values(projectData).returning();
     return project;
   }
   async updateProject(id, projectData) {
-    const [updatedProject] = await db.update(projects).set({ ...projectData, updatedAt: /* @__PURE__ */ new Date() }).where(eq(projects.id, id)).returning();
+    const [updatedProject] = await db2.update(projects).set({ ...projectData, updatedAt: /* @__PURE__ */ new Date() }).where(eq(projects.id, id)).returning();
     return updatedProject;
   }
   async deleteProject(id) {
-    await db.update(projects).set({ isActive: false }).where(eq(projects.id, id));
+    await db2.update(projects).set({ isActive: false }).where(eq(projects.id, id));
   }
   // Order status operations - using display view approach
   async getOrderStatuses() {
-    const result = await db.execute(sql2`
+    const result = await db2.execute(sql2`
       SELECT 
         ROW_NUMBER() OVER (ORDER BY sort_order) as id,
         status_code as code,
@@ -4343,14 +4364,14 @@ var DatabaseStorage = class {
   async getItems(filters = {}) {
     try {
       console.log("\u{1F50D} Storage: Executing getItems query...");
-      console.log("\u{1F50D} Storage: DB instance check:", typeof db, !!db);
+      console.log("\u{1F50D} Storage: DB instance check:", typeof db2, !!db2);
       console.log("\u{1F50D} Storage: Items table check:", typeof items);
       console.log("\u{1F50D} Storage: Filters:", filters);
       console.log("\u{1F50D} Storage: Testing basic query first...");
-      const testResult = await db.execute(sql2`SELECT 1 as test`);
+      const testResult = await db2.execute(sql2`SELECT 1 as test`);
       console.log("\u{1F50D} Storage: Basic query test result:", testResult);
       console.log("\u{1F50D} Storage: Testing items table exists...");
-      const tableCheck = await db.execute(sql2`SELECT COUNT(*) FROM items`);
+      const tableCheck = await db2.execute(sql2`SELECT COUNT(*) FROM items`);
       console.log("\u{1F50D} Storage: Items table count:", tableCheck);
     } catch (error) {
       console.error("\u{1F4A5} Storage: getItems pre-check failed:", error);
@@ -4366,7 +4387,7 @@ var DatabaseStorage = class {
       page = 1,
       limit = 50
     } = filters;
-    let query = db.select({
+    let query = db2.select({
       id: items.id,
       name: items.name,
       specification: items.specification,
@@ -4381,7 +4402,7 @@ var DatabaseStorage = class {
       createdAt: items.createdAt,
       updatedAt: items.updatedAt
     }).from(items);
-    let countQuery = db.select({ count: count() }).from(items);
+    let countQuery = db2.select({ count: count() }).from(items);
     const conditions = [];
     if (isActive !== void 0) {
       conditions.push(eq(items.isActive, isActive));
@@ -4414,7 +4435,7 @@ var DatabaseStorage = class {
     };
   }
   async getItem(id) {
-    const [item] = await db.select({
+    const [item] = await db2.select({
       id: items.id,
       name: items.name,
       specification: items.specification,
@@ -4432,18 +4453,18 @@ var DatabaseStorage = class {
     return item;
   }
   async createItem(itemData) {
-    const [item] = await db.insert(items).values(itemData).returning();
+    const [item] = await db2.insert(items).values(itemData).returning();
     return item;
   }
   async updateItem(id, itemData) {
-    const [item] = await db.update(items).set({ ...itemData, updatedAt: /* @__PURE__ */ new Date() }).where(eq(items.id, id)).returning();
+    const [item] = await db2.update(items).set({ ...itemData, updatedAt: /* @__PURE__ */ new Date() }).where(eq(items.id, id)).returning();
     return item;
   }
   async deleteItem(id) {
-    await db.update(items).set({ isActive: false }).where(eq(items.id, id));
+    await db2.update(items).set({ isActive: false }).where(eq(items.id, id));
   }
   async getCategories() {
-    const result = await db.selectDistinct({ category: items.category }).from(items).where(and(isNotNull(items.category), eq(items.isActive, true))).orderBy(items.category);
+    const result = await db2.selectDistinct({ category: items.category }).from(items).where(and(isNotNull(items.category), eq(items.isActive, true))).orderBy(items.category);
     return result.map((row) => row.category);
   }
   // Purchase order operations
@@ -4470,8 +4491,8 @@ var DatabaseStorage = class {
       whereConditions.push(between(purchaseOrders.orderDate, startDate, endDate));
     }
     let baseWhereClause = whereConditions.length > 0 ? and(...whereConditions) : void 0;
-    const [{ count: totalCountResult }] = await db.select({ count: count() }).from(purchaseOrders).where(baseWhereClause);
-    let allOrders = await db.select({
+    const [{ count: totalCountResult }] = await db2.select({ count: count() }).from(purchaseOrders).where(baseWhereClause);
+    let allOrders = await db2.select({
       purchase_orders: purchaseOrders,
       vendors,
       users,
@@ -4480,7 +4501,7 @@ var DatabaseStorage = class {
     }).from(purchaseOrders).leftJoin(vendors, eq(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq(purchaseOrders.userId, users.id)).leftJoin(orderTemplates, eq(purchaseOrders.templateId, orderTemplates.id)).leftJoin(projects, eq(purchaseOrders.projectId, projects.id)).where(baseWhereClause).orderBy(desc(purchaseOrders.createdAt));
     let filteredOrders = allOrders;
     if (searchText) {
-      const allOrderItems = await db.select().from(purchaseOrderItems);
+      const allOrderItems = await db2.select().from(purchaseOrderItems);
       const orderItemsMap = /* @__PURE__ */ new Map();
       allOrderItems.forEach((item) => {
         if (!orderItemsMap.has(item.orderId)) {
@@ -4534,7 +4555,7 @@ var DatabaseStorage = class {
       if (minorCategory) {
         categoryConditions.push(eq(purchaseOrderItems.minorCategory, minorCategory));
       }
-      const matchingItems = await db.select({ orderId: purchaseOrderItems.orderId }).from(purchaseOrderItems).where(and(...categoryConditions)).groupBy(purchaseOrderItems.orderId);
+      const matchingItems = await db2.select({ orderId: purchaseOrderItems.orderId }).from(purchaseOrderItems).where(and(...categoryConditions)).groupBy(purchaseOrderItems.orderId);
       const matchingOrderIds = new Set(matchingItems.map((item) => item.orderId));
       filteredOrders = filteredOrders.filter((orderRow) => {
         return matchingOrderIds.has(orderRow.purchase_orders.id);
@@ -4544,7 +4565,7 @@ var DatabaseStorage = class {
     const orders = filteredOrders.slice((page - 1) * limit, page * limit);
     const ordersWithItems = await Promise.all(
       orders.map(async (order) => {
-        const items3 = await db.select().from(purchaseOrderItems).where(eq(purchaseOrderItems.orderId, order.purchase_orders.id));
+        const items3 = await db2.select().from(purchaseOrderItems).where(eq(purchaseOrderItems.orderId, order.purchase_orders.id));
         return {
           ...order.purchase_orders,
           vendor: order.vendors || void 0,
@@ -4564,11 +4585,11 @@ var DatabaseStorage = class {
     };
   }
   async getPurchaseOrder(id) {
-    const [order] = await db.select().from(purchaseOrders).leftJoin(vendors, eq(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq(purchaseOrders.userId, users.id)).leftJoin(projects, eq(purchaseOrders.projectId, projects.id)).leftJoin(companies, eq(companies.id, 1)).where(eq(purchaseOrders.id, id));
+    const [order] = await db2.select().from(purchaseOrders).leftJoin(vendors, eq(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq(purchaseOrders.userId, users.id)).leftJoin(projects, eq(purchaseOrders.projectId, projects.id)).leftJoin(companies, eq(companies.id, 1)).where(eq(purchaseOrders.id, id));
     if (!order) return void 0;
-    const items3 = await db.select().from(purchaseOrderItems).where(eq(purchaseOrderItems.orderId, id));
+    const items3 = await db2.select().from(purchaseOrderItems).where(eq(purchaseOrderItems.orderId, id));
     console.log("Debug: Items found:", items3);
-    const orderAttachments = await db.select({
+    const orderAttachments = await db2.select({
       id: attachments.id,
       orderId: attachments.orderId,
       originalName: attachments.originalName,
@@ -4605,7 +4626,7 @@ var DatabaseStorage = class {
       currentApproverRole: nextApprover,
       approvalLevel: 1
     };
-    const [newOrder] = await db.insert(purchaseOrders).values(orderWithWorkflow).returning();
+    const [newOrder] = await db2.insert(purchaseOrders).values(orderWithWorkflow).returning();
     if (items3 && items3.length > 0) {
       await this.createPurchaseOrderItems(
         items3.map((item) => ({
@@ -4627,7 +4648,7 @@ var DatabaseStorage = class {
     return newOrder;
   }
   async updatePurchaseOrder(id, orderData) {
-    const [updatedOrder] = await db.update(purchaseOrders).set({ ...orderData, updatedAt: /* @__PURE__ */ new Date() }).where(eq(purchaseOrders.id, id)).returning();
+    const [updatedOrder] = await db2.update(purchaseOrders).set({ ...orderData, updatedAt: /* @__PURE__ */ new Date() }).where(eq(purchaseOrders.id, id)).returning();
     await this.createOrderHistory({
       orderId: id,
       userId: updatedOrder.userId,
@@ -4637,9 +4658,9 @@ var DatabaseStorage = class {
     return updatedOrder;
   }
   async recalculateOrderTotal(orderId) {
-    const items3 = await db.select().from(purchaseOrderItems).where(eq(purchaseOrderItems.orderId, orderId));
+    const items3 = await db2.select().from(purchaseOrderItems).where(eq(purchaseOrderItems.orderId, orderId));
     const totalAmount = items3.reduce((sum2, item) => sum2 + Number(item.totalAmount || 0), 0);
-    await db.update(purchaseOrders).set({
+    await db2.update(purchaseOrders).set({
       totalAmount: totalAmount.toString(),
       updatedAt: /* @__PURE__ */ new Date()
     }).where(eq(purchaseOrders.id, orderId));
@@ -4654,13 +4675,13 @@ var DatabaseStorage = class {
     console.log(`\u{1F4DD} [storage.deletePurchaseOrder] Found order: ${order.orderNumber}, status: ${order.status}`);
     try {
       console.log(`\u{1F517} [storage.deletePurchaseOrder] Deleting purchaseOrderItems for order ${id}`);
-      await db.delete(purchaseOrderItems).where(eq(purchaseOrderItems.orderId, id));
+      await db2.delete(purchaseOrderItems).where(eq(purchaseOrderItems.orderId, id));
       console.log(`\u{1F517} [storage.deletePurchaseOrder] Deleting attachments for order ${id}`);
-      await db.delete(attachments).where(eq(attachments.orderId, id));
+      await db2.delete(attachments).where(eq(attachments.orderId, id));
       console.log(`\u{1F517} [storage.deletePurchaseOrder] Deleting orderHistory for order ${id}`);
-      await db.delete(orderHistory).where(eq(orderHistory.orderId, id));
+      await db2.delete(orderHistory).where(eq(orderHistory.orderId, id));
       console.log(`\u{1F517} [storage.deletePurchaseOrder] Deleting purchaseOrder ${id}`);
-      await db.delete(purchaseOrders).where(eq(purchaseOrders.id, id));
+      await db2.delete(purchaseOrders).where(eq(purchaseOrders.id, id));
       console.log(`\u2705 [storage.deletePurchaseOrder] Successfully deleted order ${id}`);
     } catch (error) {
       console.error(`\u274C [storage.deletePurchaseOrder] Failed to delete order ${id}:`, error);
@@ -4672,7 +4693,7 @@ var DatabaseStorage = class {
       return [];
     }
     console.log(`\u{1F5D1}\uFE0F Starting bulk delete for ${orderIds.length} orders by ${deletedBy}:`, orderIds);
-    return await db.transaction(async (tx) => {
+    return await db2.transaction(async (tx) => {
       try {
         const existingOrders = [];
         for (const orderId of orderIds) {
@@ -4717,7 +4738,7 @@ var DatabaseStorage = class {
     });
   }
   async approvePurchaseOrder(id, approvedBy) {
-    const [approvedOrder] = await db.update(purchaseOrders).set({
+    const [approvedOrder] = await db2.update(purchaseOrders).set({
       isApproved: true,
       approvedBy,
       approvedAt: /* @__PURE__ */ new Date(),
@@ -4735,12 +4756,12 @@ var DatabaseStorage = class {
   // Purchase order item operations
   async createPurchaseOrderItems(items3) {
     if (items3.length === 0) return [];
-    return await db.insert(purchaseOrderItems).values(items3).returning();
+    return await db2.insert(purchaseOrderItems).values(items3).returning();
   }
   async updatePurchaseOrderItems(orderId, items3) {
-    await db.delete(purchaseOrderItems).where(eq(purchaseOrderItems.orderId, orderId));
+    await db2.delete(purchaseOrderItems).where(eq(purchaseOrderItems.orderId, orderId));
     if (items3.length === 0) return [];
-    return await db.insert(purchaseOrderItems).values(items3).returning();
+    return await db2.insert(purchaseOrderItems).values(items3).returning();
   }
   // Attachment operations
   async createAttachment(attachment) {
@@ -4750,7 +4771,7 @@ var DatabaseStorage = class {
       attachment.originalName = this.decodeKoreanFilename(attachment.originalName);
       console.log("\u{1F48E}\u{1F48E}\u{1F48E} AFTER DECODE \u{1F48E}\u{1F48E}\u{1F48E}", attachment.originalName);
     }
-    const [newAttachment] = await db.insert(attachments).values(attachment).returning();
+    const [newAttachment] = await db2.insert(attachments).values(attachment).returning();
     return newAttachment;
   }
   // Korean filename decoder
@@ -4788,7 +4809,7 @@ var DatabaseStorage = class {
     return originalName;
   }
   async getAttachment(id) {
-    const [attachment] = await db.select({
+    const [attachment] = await db2.select({
       id: attachments.id,
       orderId: attachments.orderId,
       originalName: attachments.originalName,
@@ -4802,7 +4823,7 @@ var DatabaseStorage = class {
     return attachment || void 0;
   }
   async getOrderAttachments(orderId) {
-    return await db.select({
+    return await db2.select({
       id: attachments.id,
       orderId: attachments.orderId,
       originalName: attachments.originalName,
@@ -4815,15 +4836,15 @@ var DatabaseStorage = class {
     }).from(attachments).where(eq(attachments.orderId, orderId));
   }
   async deleteAttachment(id) {
-    await db.delete(attachments).where(eq(attachments.id, id));
+    await db2.delete(attachments).where(eq(attachments.id, id));
   }
   // Order history operations
   async createOrderHistory(history) {
-    const [newHistory] = await db.insert(orderHistory).values(history).returning();
+    const [newHistory] = await db2.insert(orderHistory).values(history).returning();
     return newHistory;
   }
   async getOrderHistory(orderId) {
-    return await db.select().from(orderHistory).where(eq(orderHistory.orderId, orderId)).orderBy(desc(orderHistory.createdAt));
+    return await db2.select().from(orderHistory).where(eq(orderHistory.orderId, orderId)).orderBy(desc(orderHistory.createdAt));
   }
   // Statistics
   async getDashboardStats(userId) {
@@ -4831,21 +4852,21 @@ var DatabaseStorage = class {
     const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const firstDayOfYear = new Date(now.getFullYear(), 0, 1);
     let whereClause = userId ? eq(purchaseOrders.userId, userId) : void 0;
-    const [totalOrders] = await db.select({ count: count() }).from(purchaseOrders).where(whereClause);
-    const [monthlyOrders] = await db.select({ count: count() }).from(purchaseOrders).where(
+    const [totalOrders] = await db2.select({ count: count() }).from(purchaseOrders).where(whereClause);
+    const [monthlyOrders] = await db2.select({ count: count() }).from(purchaseOrders).where(
       userId ? and(eq(purchaseOrders.userId, userId), gte(purchaseOrders.orderDate, firstDayOfMonth)) : gte(purchaseOrders.orderDate, firstDayOfMonth)
     );
-    const [yearlyOrders] = await db.select({ count: count() }).from(purchaseOrders).where(
+    const [yearlyOrders] = await db2.select({ count: count() }).from(purchaseOrders).where(
       userId ? and(eq(purchaseOrders.userId, userId), gte(purchaseOrders.orderDate, firstDayOfYear)) : gte(purchaseOrders.orderDate, firstDayOfYear)
     );
-    const [monthlyAmountResult] = await db.select({ total: sql2`COALESCE(SUM(CAST(${purchaseOrders.totalAmount} AS NUMERIC)), 0)` }).from(purchaseOrders).where(
+    const [monthlyAmountResult] = await db2.select({ total: sql2`COALESCE(SUM(CAST(${purchaseOrders.totalAmount} AS NUMERIC)), 0)` }).from(purchaseOrders).where(
       userId ? and(eq(purchaseOrders.userId, userId), gte(purchaseOrders.orderDate, firstDayOfMonth)) : gte(purchaseOrders.orderDate, firstDayOfMonth)
     );
-    const [pendingOrders] = await db.select({ count: count() }).from(purchaseOrders).where(
+    const [pendingOrders] = await db2.select({ count: count() }).from(purchaseOrders).where(
       userId ? and(eq(purchaseOrders.userId, userId), sql2`${purchaseOrders.status} = 'pending'`) : sql2`${purchaseOrders.status} = 'pending'`
     );
-    const [totalVendors] = await db.select({ count: count() }).from(vendors).where(eq(vendors.isActive, true));
-    const [awaitingApprovalOrders] = await db.select({ count: count() }).from(purchaseOrders).where(
+    const [totalVendors] = await db2.select({ count: count() }).from(vendors).where(eq(vendors.isActive, true));
+    const [awaitingApprovalOrders] = await db2.select({ count: count() }).from(purchaseOrders).where(
       userId ? and(eq(purchaseOrders.userId, userId), sql2`${purchaseOrders.status} = 'pending'`) : sql2`${purchaseOrders.status} = 'pending'`
     );
     return {
@@ -4861,7 +4882,7 @@ var DatabaseStorage = class {
   async getMonthlyOrderStats(userId) {
     const sixMonthsAgo = /* @__PURE__ */ new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-    const orders = await db.select().from(purchaseOrders).where(
+    const orders = await db2.select().from(purchaseOrders).where(
       and(
         gte(purchaseOrders.orderDate, sixMonthsAgo),
         userId ? eq(purchaseOrders.userId, userId) : void 0
@@ -4884,7 +4905,7 @@ var DatabaseStorage = class {
   }
   async getVendorOrderStats(userId) {
     const whereClause = userId ? eq(purchaseOrders.userId, userId) : void 0;
-    const results = await db.select({
+    const results = await db2.select({
       vendorName: vendors.name,
       orders: count(purchaseOrders.id).as("orders"),
       amount: sum(purchaseOrders.totalAmount).as("amount")
@@ -4897,7 +4918,7 @@ var DatabaseStorage = class {
   }
   async getStatusOrderStats(userId) {
     const whereClause = userId ? eq(purchaseOrders.userId, userId) : void 0;
-    const results = await db.select({
+    const results = await db2.select({
       status: purchaseOrders.status,
       orders: count(purchaseOrders.id).as("orders"),
       amount: sum(purchaseOrders.totalAmount).as("amount")
@@ -4910,7 +4931,7 @@ var DatabaseStorage = class {
   }
   async getProjectOrderStats(userId) {
     const whereClause = userId ? eq(purchaseOrders.userId, userId) : void 0;
-    const results = await db.select({
+    const results = await db2.select({
       projectName: projects.projectName,
       projectCode: projects.projectCode,
       orderCount: count(purchaseOrders.id).as("orderCount"),
@@ -4927,7 +4948,7 @@ var DatabaseStorage = class {
   async generateOrderNumber() {
     const year = (/* @__PURE__ */ new Date()).getFullYear();
     const prefix = `PO-${year}-`;
-    const [lastOrder] = await db.select().from(purchaseOrders).where(ilike(purchaseOrders.orderNumber, `${prefix}%`)).orderBy(desc(purchaseOrders.orderNumber)).limit(1);
+    const [lastOrder] = await db2.select().from(purchaseOrders).where(ilike(purchaseOrders.orderNumber, `${prefix}%`)).orderBy(desc(purchaseOrders.orderNumber)).limit(1);
     let nextNumber = 1;
     if (lastOrder) {
       const lastNumber = parseInt(lastOrder.orderNumber.split("-")[2] || "0");
@@ -4937,18 +4958,18 @@ var DatabaseStorage = class {
   }
   // Invoice operations
   async getInvoices(orderId) {
-    const query = db.select().from(invoices).orderBy(desc(invoices.createdAt));
+    const query = db2.select().from(invoices).orderBy(desc(invoices.createdAt));
     if (orderId) {
       return await query.where(eq(invoices.orderId, orderId));
     }
     return await query;
   }
   async getInvoice(id) {
-    const [invoice] = await db.select().from(invoices).where(eq(invoices.id, id));
+    const [invoice] = await db2.select().from(invoices).where(eq(invoices.id, id));
     return invoice;
   }
   async createInvoice(invoiceData) {
-    const [invoice] = await db.insert(invoices).values(invoiceData).returning();
+    const [invoice] = await db2.insert(invoices).values(invoiceData).returning();
     await this.createVerificationLog({
       orderId: invoice.orderId,
       invoiceId: invoice.id,
@@ -4959,14 +4980,14 @@ var DatabaseStorage = class {
     return invoice;
   }
   async updateInvoice(id, invoiceData) {
-    const [invoice] = await db.update(invoices).set({ ...invoiceData, updatedAt: /* @__PURE__ */ new Date() }).where(eq(invoices.id, id)).returning();
+    const [invoice] = await db2.update(invoices).set({ ...invoiceData, updatedAt: /* @__PURE__ */ new Date() }).where(eq(invoices.id, id)).returning();
     return invoice;
   }
   async deleteInvoice(id) {
-    await db.delete(invoices).where(eq(invoices.id, id));
+    await db2.delete(invoices).where(eq(invoices.id, id));
   }
   async verifyInvoice(id, verifiedBy) {
-    const [invoice] = await db.update(invoices).set({
+    const [invoice] = await db2.update(invoices).set({
       status: "verified",
       verifiedBy,
       verifiedAt: /* @__PURE__ */ new Date(),
@@ -4983,19 +5004,19 @@ var DatabaseStorage = class {
   }
   // Item receipt operations
   async getItemReceipts(orderItemId) {
-    const query = db.select().from(itemReceipts).orderBy(desc(itemReceipts.createdAt));
+    const query = db2.select().from(itemReceipts).orderBy(desc(itemReceipts.createdAt));
     if (orderItemId) {
       return await query.where(eq(itemReceipts.orderItemId, orderItemId));
     }
     return await query;
   }
   async getItemReceipt(id) {
-    const [receipt] = await db.select().from(itemReceipts).where(eq(itemReceipts.id, id));
+    const [receipt] = await db2.select().from(itemReceipts).where(eq(itemReceipts.id, id));
     return receipt;
   }
   async createItemReceipt(receiptData) {
-    const [receipt] = await db.insert(itemReceipts).values(receiptData).returning();
-    const [orderItem] = await db.select().from(purchaseOrderItems).where(eq(purchaseOrderItems.id, receipt.orderItemId));
+    const [receipt] = await db2.insert(itemReceipts).values(receiptData).returning();
+    const [orderItem] = await db2.select().from(purchaseOrderItems).where(eq(purchaseOrderItems.id, receipt.orderItemId));
     if (orderItem) {
       await this.createVerificationLog({
         orderId: orderItem.orderId,
@@ -5009,11 +5030,11 @@ var DatabaseStorage = class {
     return receipt;
   }
   async updateItemReceipt(id, receiptData) {
-    const [receipt] = await db.update(itemReceipts).set({ ...receiptData, updatedAt: /* @__PURE__ */ new Date() }).where(eq(itemReceipts.id, id)).returning();
+    const [receipt] = await db2.update(itemReceipts).set({ ...receiptData, updatedAt: /* @__PURE__ */ new Date() }).where(eq(itemReceipts.id, id)).returning();
     return receipt;
   }
   async deleteItemReceipt(id) {
-    await db.delete(itemReceipts).where(eq(itemReceipts.id, id));
+    await db2.delete(itemReceipts).where(eq(itemReceipts.id, id));
   }
   // Verification log operations
   async getVerificationLogs(orderId, invoiceId) {
@@ -5021,74 +5042,74 @@ var DatabaseStorage = class {
     if (orderId) conditions.push(eq(verificationLogs.orderId, orderId));
     if (invoiceId) conditions.push(eq(verificationLogs.invoiceId, invoiceId));
     if (conditions.length > 0) {
-      return await db.select().from(verificationLogs).where(and(...conditions)).orderBy(desc(verificationLogs.createdAt));
+      return await db2.select().from(verificationLogs).where(and(...conditions)).orderBy(desc(verificationLogs.createdAt));
     }
-    return await db.select().from(verificationLogs).orderBy(desc(verificationLogs.createdAt));
+    return await db2.select().from(verificationLogs).orderBy(desc(verificationLogs.createdAt));
   }
   async createVerificationLog(logData) {
-    const [log] = await db.insert(verificationLogs).values(logData).returning();
+    const [log] = await db2.insert(verificationLogs).values(logData).returning();
     return log;
   }
   // UI terms operations
   async getUiTerms(category) {
     try {
       if (category) {
-        return await db.select().from(uiTerms).where(and(eq(uiTerms.category, category), eq(uiTerms.isActive, true))).orderBy(asc(uiTerms.termKey));
+        return await db2.select().from(uiTerms).where(and(eq(uiTerms.category, category), eq(uiTerms.isActive, true))).orderBy(asc(uiTerms.termKey));
       }
-      return await db.select().from(uiTerms).where(eq(uiTerms.isActive, true)).orderBy(asc(uiTerms.termKey));
+      return await db2.select().from(uiTerms).where(eq(uiTerms.isActive, true)).orderBy(asc(uiTerms.termKey));
     } catch (error) {
       console.error("Database error in getUiTerms:", error);
       return [];
     }
   }
   async getUiTerm(termKey) {
-    const [term] = await db.select().from(uiTerms).where(and(eq(uiTerms.termKey, termKey), eq(uiTerms.isActive, true)));
+    const [term] = await db2.select().from(uiTerms).where(and(eq(uiTerms.termKey, termKey), eq(uiTerms.isActive, true)));
     return term;
   }
   async createUiTerm(termData) {
-    const [term] = await db.insert(uiTerms).values(termData).returning();
+    const [term] = await db2.insert(uiTerms).values(termData).returning();
     return term;
   }
   async updateUiTerm(termKey, termData) {
-    const [term] = await db.update(uiTerms).set({ ...termData, updatedAt: /* @__PURE__ */ new Date() }).where(eq(uiTerms.termKey, termKey)).returning();
+    const [term] = await db2.update(uiTerms).set({ ...termData, updatedAt: /* @__PURE__ */ new Date() }).where(eq(uiTerms.termKey, termKey)).returning();
     return term;
   }
   async deleteUiTerm(termKey) {
-    await db.update(uiTerms).set({ isActive: false, updatedAt: /* @__PURE__ */ new Date() }).where(eq(uiTerms.termKey, termKey));
+    await db2.update(uiTerms).set({ isActive: false, updatedAt: /* @__PURE__ */ new Date() }).where(eq(uiTerms.termKey, termKey));
   }
   // Terminology operations
   async getTerminology() {
-    return await db.select().from(terminology).orderBy(asc(terminology.category), asc(terminology.termKey));
+    return await db2.select().from(terminology).orderBy(asc(terminology.category), asc(terminology.termKey));
   }
   async getTerm(id) {
-    const [term] = await db.select().from(terminology).where(eq(terminology.id, id));
+    const [term] = await db2.select().from(terminology).where(eq(terminology.id, id));
     return term || void 0;
   }
   async createTerm(termData) {
-    const [term] = await db.insert(terminology).values(termData).returning();
+    const [term] = await db2.insert(terminology).values(termData).returning();
     return term;
   }
   async updateTerm(id, termData) {
-    const [term] = await db.update(terminology).set({ ...termData, updatedAt: /* @__PURE__ */ new Date() }).where(eq(terminology.id, id)).returning();
+    const [term] = await db2.update(terminology).set({ ...termData, updatedAt: /* @__PURE__ */ new Date() }).where(eq(terminology.id, id)).returning();
     return term;
   }
   async deleteTerm(id) {
-    await db.delete(terminology).where(eq(terminology.id, id));
+    await db2.delete(terminology).where(eq(terminology.id, id));
   }
   // Company operations
   async getCompanies() {
     try {
       console.log("\u{1F50D} Storage: Executing getCompanies query...");
-      console.log("\u{1F50D} Storage: DB instance check:", typeof db, !!db);
+      console.log("\u{1F50D} Storage: DB instance check:", typeof db2, !!db2);
       console.log("\u{1F50D} Storage: Companies table check:", typeof companies);
       console.log("\u{1F50D} Storage: Testing basic query first...");
-      const testResult = await db.execute(sql2`SELECT 1 as test`);
+      const testResult = await db2.execute(sql2`SELECT 1 as test`);
       console.log("\u{1F50D} Storage: Basic query test result:", testResult);
       console.log("\u{1F50D} Storage: Testing companies table exists...");
-      const tableCheck = await db.execute(sql2`SELECT COUNT(*) FROM companies`);
+      const tableCheck = await db2.execute(sql2`SELECT COUNT(*) FROM companies`);
       console.log("\u{1F50D} Storage: Companies table count:", tableCheck);
       console.log("\u{1F50D} Storage: Trying simplified companies query...");
-      const result = await db.select().from(companies).limit(10);
+      const result = await db2.select().from(companies).limit(10);
       console.log(`\u{1F50D} Storage: getCompanies returned ${result.length} companies`);
       return result;
     } catch (error) {
@@ -5101,11 +5122,11 @@ var DatabaseStorage = class {
     }
   }
   async getCompany(id) {
-    const [company] = await db.select().from(companies).where(and(eq(companies.id, id), eq(companies.isActive, true)));
+    const [company] = await db2.select().from(companies).where(and(eq(companies.id, id), eq(companies.isActive, true)));
     return company;
   }
   async createCompany(companyData) {
-    const [company] = await db.insert(companies).values({
+    const [company] = await db2.insert(companies).values({
       ...companyData,
       createdAt: /* @__PURE__ */ new Date(),
       updatedAt: /* @__PURE__ */ new Date()
@@ -5113,11 +5134,11 @@ var DatabaseStorage = class {
     return company;
   }
   async updateCompany(id, companyData) {
-    const [company] = await db.update(companies).set({ ...companyData, updatedAt: /* @__PURE__ */ new Date() }).where(eq(companies.id, id)).returning();
+    const [company] = await db2.update(companies).set({ ...companyData, updatedAt: /* @__PURE__ */ new Date() }).where(eq(companies.id, id)).returning();
     return company;
   }
   async deleteCompany(id) {
-    await db.update(companies).set({ isActive: false, updatedAt: /* @__PURE__ */ new Date() }).where(eq(companies.id, id));
+    await db2.update(companies).set({ isActive: false, updatedAt: /* @__PURE__ */ new Date() }).where(eq(companies.id, id));
   }
   // Enhanced dashboard statistics
   async getActiveProjectsCount(userId) {
@@ -5132,7 +5153,7 @@ var DatabaseStorage = class {
           eq(projects.orderManagerId, userId)
         ));
       }
-      const [result] = await db.select({ count: sql2`count(*)` }).from(projects).where(and(...conditions));
+      const [result] = await db2.select({ count: sql2`count(*)` }).from(projects).where(and(...conditions));
       return Number(result.count);
     } catch (error) {
       console.error("Error getting active projects count:", error);
@@ -5154,7 +5175,7 @@ var DatabaseStorage = class {
           eq(projects.orderManagerId, userId)
         ));
       }
-      const [result] = await db.select({ count: sql2`count(*)` }).from(projects).where(and(...conditions));
+      const [result] = await db2.select({ count: sql2`count(*)` }).from(projects).where(and(...conditions));
       return Number(result.count);
     } catch (error) {
       console.error("Error getting new projects this month:", error);
@@ -5176,7 +5197,7 @@ var DatabaseStorage = class {
           eq(projects.orderManagerId, userId)
         ));
       }
-      return await db.select({
+      return await db2.select({
         id: projects.id,
         projectName: projects.projectName,
         projectCode: projects.projectCode,
@@ -5202,7 +5223,7 @@ var DatabaseStorage = class {
       if (userId) {
         conditions.push(eq(purchaseOrders.userId, userId));
       }
-      return await db.select({
+      return await db2.select({
         id: purchaseOrders.id,
         orderNumber: purchaseOrders.orderNumber,
         requestedDeliveryDate: purchaseOrders.deliveryDate,
@@ -5245,7 +5266,7 @@ var DatabaseStorage = class {
   // Project members operations
   async getProjectMembers(projectId) {
     try {
-      let query = db.select({
+      let query = db2.select({
         id: projectMembers.id,
         projectId: projectMembers.projectId,
         userId: projectMembers.userId,
@@ -5267,7 +5288,7 @@ var DatabaseStorage = class {
   }
   async createProjectMember(member) {
     try {
-      const [newMember] = await db.insert(projectMembers).values(member).returning();
+      const [newMember] = await db2.insert(projectMembers).values(member).returning();
       return newMember;
     } catch (error) {
       console.error("Error creating project member:", error);
@@ -5276,7 +5297,7 @@ var DatabaseStorage = class {
   }
   async deleteProjectMember(id) {
     try {
-      await db.delete(projectMembers).where(eq(projectMembers.id, id));
+      await db2.delete(projectMembers).where(eq(projectMembers.id, id));
     } catch (error) {
       console.error("Error deleting project member:", error);
       throw error;
@@ -5285,7 +5306,7 @@ var DatabaseStorage = class {
   // Approval management methods
   async getApprovalStats() {
     try {
-      const pendingOrders = await db.select().from(purchaseOrders).where(eq(purchaseOrders.status, "pending"));
+      const pendingOrders = await db2.select().from(purchaseOrders).where(eq(purchaseOrders.status, "pending"));
       const pendingCount = pendingOrders.length;
       const threeDaysAgo = /* @__PURE__ */ new Date();
       threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
@@ -5311,7 +5332,7 @@ var DatabaseStorage = class {
   }
   async getPendingApprovals(userRole, userId) {
     try {
-      let query = db.select().from(purchaseOrders).where(eq(purchaseOrders.status, "pending")).orderBy(asc(purchaseOrders.createdAt));
+      let query = db2.select().from(purchaseOrders).where(eq(purchaseOrders.status, "pending")).orderBy(asc(purchaseOrders.createdAt));
       return await query;
     } catch (error) {
       console.error("Error getting pending approvals:", error);
@@ -5320,7 +5341,7 @@ var DatabaseStorage = class {
   }
   async getApprovalHistory() {
     try {
-      return await db.select().from(purchaseOrders).where(or(
+      return await db2.select().from(purchaseOrders).where(or(
         eq(purchaseOrders.status, "approved"),
         eq(purchaseOrders.status, "completed"),
         eq(purchaseOrders.status, "sent")
@@ -5332,7 +5353,7 @@ var DatabaseStorage = class {
   }
   async getOrdersForApproval(role) {
     try {
-      return await db.select().from(purchaseOrders).where(and(
+      return await db2.select().from(purchaseOrders).where(and(
         eq(purchaseOrders.status, "pending"),
         eq(purchaseOrders.currentApproverRole, role)
       )).orderBy(desc(purchaseOrders.orderDate));
@@ -5343,11 +5364,11 @@ var DatabaseStorage = class {
   }
   async approveOrder(orderId, approverId, note) {
     try {
-      const [updatedOrder] = await db.update(purchaseOrders).set({
+      const [updatedOrder] = await db2.update(purchaseOrders).set({
         status: "approved",
         updatedAt: /* @__PURE__ */ new Date()
       }).where(eq(purchaseOrders.id, orderId)).returning();
-      await db.insert(orderHistory).values({
+      await db2.insert(orderHistory).values({
         orderId,
         userId: approverId,
         action: "approved",
@@ -5362,11 +5383,11 @@ var DatabaseStorage = class {
   }
   async rejectOrder(orderId, rejectedBy, note) {
     try {
-      const [updatedOrder] = await db.update(purchaseOrders).set({
+      const [updatedOrder] = await db2.update(purchaseOrders).set({
         status: "draft",
         updatedAt: /* @__PURE__ */ new Date()
       }).where(eq(purchaseOrders.id, orderId)).returning();
-      await db.insert(orderHistory).values({
+      await db2.insert(orderHistory).values({
         orderId,
         userId: rejectedBy,
         action: "rejected",
@@ -5382,7 +5403,7 @@ var DatabaseStorage = class {
   // Approval authority management methods
   async getApprovalAuthorities() {
     try {
-      return await db.select().from(approvalAuthorities).where(eq(approvalAuthorities.isActive, true)).orderBy(asc(approvalAuthorities.role));
+      return await db2.select().from(approvalAuthorities).where(eq(approvalAuthorities.isActive, true)).orderBy(asc(approvalAuthorities.role));
     } catch (error) {
       console.error("Error getting approval authorities:", error);
       throw error;
@@ -5391,7 +5412,7 @@ var DatabaseStorage = class {
   // Order approval workflow methods
   async getOrdersForApproval(userRole) {
     try {
-      const orders = await db.select().from(purchaseOrders).where(and(
+      const orders = await db2.select().from(purchaseOrders).where(and(
         eq(purchaseOrders.status, "pending"),
         eq(purchaseOrders.currentApproverRole, userRole)
       )).orderBy(desc(purchaseOrders.createdAt));
@@ -5425,8 +5446,8 @@ var DatabaseStorage = class {
         updateData.approvedBy = userId;
         updateData.approvedAt = /* @__PURE__ */ new Date();
       }
-      const [updatedOrder] = await db.update(purchaseOrders).set(updateData).where(eq(purchaseOrders.id, orderId)).returning();
-      await db.insert(orderHistory).values({
+      const [updatedOrder] = await db2.update(purchaseOrders).set(updateData).where(eq(purchaseOrders.id, orderId)).returning();
+      await db2.insert(orderHistory).values({
         orderId,
         userId,
         action: nextApprover ? "approved_partial" : "approved_final",
@@ -5454,7 +5475,7 @@ var DatabaseStorage = class {
   }
   async createApprovalAuthority(data) {
     try {
-      const [authority] = await db.insert(approvalAuthorities).values(data).returning();
+      const [authority] = await db2.insert(approvalAuthorities).values(data).returning();
       return authority;
     } catch (error) {
       console.error("Error creating approval authority:", error);
@@ -5463,7 +5484,7 @@ var DatabaseStorage = class {
   }
   async updateApprovalAuthority(role, data) {
     try {
-      const [authority] = await db.update(approvalAuthorities).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where(eq(approvalAuthorities.role, role)).returning();
+      const [authority] = await db2.update(approvalAuthorities).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where(eq(approvalAuthorities.role, role)).returning();
       return authority;
     } catch (error) {
       console.error("Error updating approval authority:", error);
@@ -5475,7 +5496,7 @@ var DatabaseStorage = class {
       if (userRole === "admin") {
         return true;
       }
-      const [authority] = await db.select().from(approvalAuthorities).where(and(
+      const [authority] = await db2.select().from(approvalAuthorities).where(and(
         eq(approvalAuthorities.role, userRole),
         eq(approvalAuthorities.isActive, true)
       ));
@@ -5492,16 +5513,16 @@ var DatabaseStorage = class {
   async getItemCategories() {
     try {
       console.log("\u{1F50D} Storage: Executing getItemCategories query...");
-      console.log("\u{1F50D} Storage: DB instance check:", typeof db, !!db);
+      console.log("\u{1F50D} Storage: DB instance check:", typeof db2, !!db2);
       console.log("\u{1F50D} Storage: ItemCategories table check:", typeof itemCategories);
       console.log("\u{1F50D} Storage: Testing basic query first...");
-      const testResult = await db.execute(sql2`SELECT 1 as test`);
+      const testResult = await db2.execute(sql2`SELECT 1 as test`);
       console.log("\u{1F50D} Storage: Basic query test result:", testResult);
       console.log("\u{1F50D} Storage: Testing itemCategories table exists...");
-      const tableCheck = await db.execute(sql2`SELECT COUNT(*) FROM item_categories`);
+      const tableCheck = await db2.execute(sql2`SELECT COUNT(*) FROM item_categories`);
       console.log("\u{1F50D} Storage: ItemCategories table count:", tableCheck);
       console.log("\u{1F50D} Storage: Trying simplified itemCategories query...");
-      const result = await db.select().from(itemCategories).where(eq(itemCategories.isActive, true)).orderBy(itemCategories.categoryType, itemCategories.displayOrder);
+      const result = await db2.select().from(itemCategories).where(eq(itemCategories.isActive, true)).orderBy(itemCategories.categoryType, itemCategories.displayOrder);
       console.log(`\u{1F50D} Storage: getItemCategories returned ${result.length} categories`);
       return result;
     } catch (error) {
@@ -5522,7 +5543,7 @@ var DatabaseStorage = class {
       if (parentId !== void 0) {
         conditions.push(eq(itemCategories.parentId, parentId));
       }
-      return await db.select().from(itemCategories).where(and(...conditions)).orderBy(itemCategories.displayOrder);
+      return await db2.select().from(itemCategories).where(and(...conditions)).orderBy(itemCategories.displayOrder);
     } catch (error) {
       console.error("Error getting item categories by type:", error);
       throw error;
@@ -5530,7 +5551,7 @@ var DatabaseStorage = class {
   }
   async createItemCategory(data) {
     try {
-      const [category] = await db.insert(itemCategories).values(data).returning();
+      const [category] = await db2.insert(itemCategories).values(data).returning();
       return category;
     } catch (error) {
       console.error("Error creating item category:", error);
@@ -5539,7 +5560,7 @@ var DatabaseStorage = class {
   }
   async updateItemCategory(id, data) {
     try {
-      const [category] = await db.update(itemCategories).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where(eq(itemCategories.id, id)).returning();
+      const [category] = await db2.update(itemCategories).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where(eq(itemCategories.id, id)).returning();
       return category;
     } catch (error) {
       console.error("Error updating item category:", error);
@@ -5548,7 +5569,7 @@ var DatabaseStorage = class {
   }
   async deleteItemCategory(id) {
     try {
-      await db.update(itemCategories).set({ isActive: false, updatedAt: /* @__PURE__ */ new Date() }).where(eq(itemCategories.id, id));
+      await db2.update(itemCategories).set({ isActive: false, updatedAt: /* @__PURE__ */ new Date() }).where(eq(itemCategories.id, id));
     } catch (error) {
       console.error("Error deleting item category:", error);
       throw error;
@@ -5557,7 +5578,7 @@ var DatabaseStorage = class {
   // Missing methods for API endpoints
   async getActiveProjects() {
     try {
-      return await db.select().from(projects).where(and(
+      return await db2.select().from(projects).where(and(
         eq(projects.isActive, true),
         eq(projects.status, "active")
       )).orderBy(projects.projectName);
@@ -5607,7 +5628,7 @@ var DatabaseStorage = class {
   // Item hierarchy methods for filters
   async getDistinctMajorCategories() {
     try {
-      const result = await db.selectDistinct({ majorCategory: purchaseOrderItems.majorCategory }).from(purchaseOrderItems).where(isNotNull(purchaseOrderItems.majorCategory)).orderBy(purchaseOrderItems.majorCategory);
+      const result = await db2.selectDistinct({ majorCategory: purchaseOrderItems.majorCategory }).from(purchaseOrderItems).where(isNotNull(purchaseOrderItems.majorCategory)).orderBy(purchaseOrderItems.majorCategory);
       return result.map((row) => row.majorCategory).filter((cat) => cat !== null && cat !== "");
     } catch (error) {
       console.error("Error getting distinct major categories:", error);
@@ -5616,7 +5637,7 @@ var DatabaseStorage = class {
   }
   async getDistinctMiddleCategories(majorCategory) {
     try {
-      let query = db.selectDistinct({ middleCategory: purchaseOrderItems.middleCategory }).from(purchaseOrderItems).where(isNotNull(purchaseOrderItems.middleCategory));
+      let query = db2.selectDistinct({ middleCategory: purchaseOrderItems.middleCategory }).from(purchaseOrderItems).where(isNotNull(purchaseOrderItems.middleCategory));
       if (majorCategory) {
         query = query.where(eq(purchaseOrderItems.majorCategory, majorCategory));
       }
@@ -5636,7 +5657,7 @@ var DatabaseStorage = class {
       if (middleCategory) {
         conditions.push(eq(purchaseOrderItems.middleCategory, middleCategory));
       }
-      const result = await db.selectDistinct({ minorCategory: purchaseOrderItems.minorCategory }).from(purchaseOrderItems).where(and(...conditions)).orderBy(purchaseOrderItems.minorCategory);
+      const result = await db2.selectDistinct({ minorCategory: purchaseOrderItems.minorCategory }).from(purchaseOrderItems).where(and(...conditions)).orderBy(purchaseOrderItems.minorCategory);
       return result.map((row) => row.minorCategory).filter((cat) => cat !== null && cat !== "");
     } catch (error) {
       console.error("Error getting distinct minor categories:", error);
@@ -5647,7 +5668,7 @@ var DatabaseStorage = class {
   async getCategoryOrderStats(userId) {
     try {
       const whereClause = userId ? eq(purchaseOrders.userId, userId) : void 0;
-      const results = await db.select({
+      const results = await db2.select({
         majorCategory: purchaseOrderItems.majorCategory,
         middleCategory: purchaseOrderItems.middleCategory,
         minorCategory: purchaseOrderItems.minorCategory,
@@ -5677,7 +5698,7 @@ var DatabaseStorage = class {
   // Attachment methods
   async getAttachment(orderId, attachmentId) {
     try {
-      const [attachment] = await db.select({
+      const [attachment] = await db2.select({
         id: attachments.id,
         orderId: attachments.orderId,
         originalName: attachments.originalName,
@@ -5702,7 +5723,7 @@ var DatabaseStorage = class {
   }
   async getOrderAttachments(orderId) {
     try {
-      return await db.select({
+      return await db2.select({
         id: attachments.id,
         orderId: attachments.orderId,
         originalName: attachments.originalName,
@@ -5723,7 +5744,7 @@ var DatabaseStorage = class {
    */
   async getAttachmentByPath(filePath) {
     try {
-      const [attachment] = await db.select({
+      const [attachment] = await db2.select({
         id: attachments.id,
         orderId: attachments.orderId,
         originalName: attachments.originalName,
@@ -5767,7 +5788,7 @@ async function getAuditSettings() {
     return cachedSettings;
   }
   try {
-    const settings = await db.select().from(auditSettings).limit(1);
+    const settings = await db2.select().from(auditSettings).limit(1);
     cachedSettings = settings[0] || {
       logLevel: "INFO",
       enableAuth: true,
@@ -5794,7 +5815,7 @@ async function logAuditEvent(eventType, eventCategory, details) {
     if (settings.logLevel === "OFF") return;
     const categoryEnabled = eventCategory === "auth" && settings.enableAuth || eventCategory === "data" && settings.enableData || eventCategory === "system" && settings.enableSystem || eventCategory === "security" && settings.enableSecurity;
     if (!categoryEnabled) return;
-    await db.insert(systemAuditLogs).values({
+    await db2.insert(systemAuditLogs).values({
       userId: details.userId || null,
       userName: details.userName || null,
       userRole: details.userRole || null,
@@ -6328,11 +6349,11 @@ var UserRegistrationService = class {
    */
   static async submitRegistration(data) {
     try {
-      const existingUser = await db.select().from(users).where(eq2(users.email, data.email)).limit(1);
+      const existingUser = await db2.select().from(users).where(eq2(users.email, data.email)).limit(1);
       if (existingUser.length > 0) {
         throw new Error("\uC774\uBBF8 \uB4F1\uB85D\uB41C \uC774\uBA54\uC77C \uC8FC\uC18C\uC785\uB2C8\uB2E4.");
       }
-      const existingRegistration = await db.select().from(userRegistrations).where(
+      const existingRegistration = await db2.select().from(userRegistrations).where(
         and2(
           eq2(userRegistrations.email, data.email),
           eq2(userRegistrations.status, "pending")
@@ -6351,7 +6372,7 @@ var UserRegistrationService = class {
         requestedRole: data.requestedRole || "field_worker",
         status: "pending"
       };
-      const [newRegistration] = await db.insert(userRegistrations).values(registrationData).returning();
+      const [newRegistration] = await db2.insert(userRegistrations).values(registrationData).returning();
       return newRegistration;
     } catch (error) {
       console.error("Registration submission error:", error);
@@ -6371,7 +6392,7 @@ var UserRegistrationService = class {
         throw new Error("\uC774\uBBF8 \uCC98\uB9AC\uB41C \uAC00\uC785 \uC2E0\uCCAD\uC785\uB2C8\uB2E4.");
       }
       const userId = uuidv4();
-      const [newUser] = await db.insert(users).values({
+      const [newUser] = await db2.insert(users).values({
         id: userId,
         email: registration.email,
         name: registration.name,
@@ -6381,7 +6402,7 @@ var UserRegistrationService = class {
         accountStatus: "active",
         isActive: true
       }).returning();
-      const [updatedRegistration] = await db.update(userRegistrations).set({
+      const [updatedRegistration] = await db2.update(userRegistrations).set({
         status: "approved",
         reviewedAt: /* @__PURE__ */ new Date(),
         reviewedBy: adminId
@@ -6404,7 +6425,7 @@ var UserRegistrationService = class {
       if (registration.status !== "pending") {
         throw new Error("\uC774\uBBF8 \uCC98\uB9AC\uB41C \uAC00\uC785 \uC2E0\uCCAD\uC785\uB2C8\uB2E4.");
       }
-      const [updatedRegistration] = await db.update(userRegistrations).set({
+      const [updatedRegistration] = await db2.update(userRegistrations).set({
         status: "rejected",
         rejectionReason: reason,
         reviewedAt: /* @__PURE__ */ new Date(),
@@ -6421,7 +6442,7 @@ var UserRegistrationService = class {
    */
   static async getPendingRegistrations() {
     try {
-      return await db.select().from(userRegistrations).where(eq2(userRegistrations.status, "pending")).orderBy(userRegistrations.appliedAt);
+      return await db2.select().from(userRegistrations).where(eq2(userRegistrations.status, "pending")).orderBy(userRegistrations.appliedAt);
     } catch (error) {
       console.error("Get pending registrations error:", error);
       throw error;
@@ -6432,7 +6453,7 @@ var UserRegistrationService = class {
    */
   static async getAllRegistrations() {
     try {
-      return await db.select().from(userRegistrations).orderBy(userRegistrations.appliedAt);
+      return await db2.select().from(userRegistrations).orderBy(userRegistrations.appliedAt);
     } catch (error) {
       console.error("Get all registrations error:", error);
       throw error;
@@ -6443,7 +6464,7 @@ var UserRegistrationService = class {
    */
   static async getRegistrationById(id) {
     try {
-      const [registration] = await db.select().from(userRegistrations).where(eq2(userRegistrations.id, id)).limit(1);
+      const [registration] = await db2.select().from(userRegistrations).where(eq2(userRegistrations.id, id)).limit(1);
       return registration || null;
     } catch (error) {
       console.error("Get registration by ID error:", error);
@@ -6455,7 +6476,7 @@ var UserRegistrationService = class {
    */
   static async getRegistrationByEmail(email) {
     try {
-      const [registration] = await db.select().from(userRegistrations).where(eq2(userRegistrations.email, email)).limit(1);
+      const [registration] = await db2.select().from(userRegistrations).where(eq2(userRegistrations.email, email)).limit(1);
       return registration || null;
     } catch (error) {
       console.error("Get registration by email error:", error);
@@ -6467,7 +6488,7 @@ var UserRegistrationService = class {
    */
   static async deleteRegistration(id) {
     try {
-      const result = await db.delete(userRegistrations).where(eq2(userRegistrations.id, id));
+      const result = await db2.delete(userRegistrations).where(eq2(userRegistrations.id, id));
       return result.rowCount !== void 0 && result.rowCount > 0;
     } catch (error) {
       console.error("Delete registration error:", error);
@@ -6488,14 +6509,14 @@ var PasswordResetService = class {
    */
   static async requestPasswordReset(email) {
     try {
-      const [user] = await db.select().from(users).where(eq3(users.email, email)).limit(1);
+      const [user] = await db2.select().from(users).where(eq3(users.email, email)).limit(1);
       if (!user) {
         throw new Error("\uB4F1\uB85D\uB418\uC9C0 \uC54A\uC740 \uC774\uBA54\uC77C \uC8FC\uC18C\uC785\uB2C8\uB2E4.");
       }
       if (user.accountStatus === "inactive" || user.accountStatus === "suspended") {
         throw new Error("\uBE44\uD65C\uC131\uD654\uB41C \uACC4\uC815\uC785\uB2C8\uB2E4.");
       }
-      await db.update(passwordResetTokens).set({ usedAt: /* @__PURE__ */ new Date() }).where(
+      await db2.update(passwordResetTokens).set({ usedAt: /* @__PURE__ */ new Date() }).where(
         and3(
           eq3(passwordResetTokens.userId, user.id),
           eq3(passwordResetTokens.usedAt, null)
@@ -6510,7 +6531,7 @@ var PasswordResetService = class {
         expiresAt,
         usedAt: null
       };
-      await db.insert(passwordResetTokens).values(tokenData);
+      await db2.insert(passwordResetTokens).values(tokenData);
       return { token, user };
     } catch (error) {
       console.error("Password reset request error:", error);
@@ -6522,7 +6543,7 @@ var PasswordResetService = class {
    */
   static async verifyResetToken(token) {
     try {
-      const [tokenRecord] = await db.select({
+      const [tokenRecord] = await db2.select({
         tokenId: passwordResetTokens.id,
         userId: passwordResetTokens.userId,
         expiresAt: passwordResetTokens.expiresAt,
@@ -6579,11 +6600,11 @@ var PasswordResetService = class {
       }
       const saltRounds = 10;
       const hashedPassword = await bcrypt4.hash(newPassword, saltRounds);
-      await db.update(users).set({
+      await db2.update(users).set({
         password: hashedPassword,
         updatedAt: /* @__PURE__ */ new Date()
       }).where(eq3(users.id, verification.user.id));
-      await db.update(passwordResetTokens).set({ usedAt: /* @__PURE__ */ new Date() }).where(eq3(passwordResetTokens.token, token));
+      await db2.update(passwordResetTokens).set({ usedAt: /* @__PURE__ */ new Date() }).where(eq3(passwordResetTokens.token, token));
       return {
         success: true,
         message: "\uBE44\uBC00\uBC88\uD638\uAC00 \uC131\uACF5\uC801\uC73C\uB85C \uBCC0\uACBD\uB418\uC5C8\uC2B5\uB2C8\uB2E4."
@@ -6601,7 +6622,7 @@ var PasswordResetService = class {
    */
   static async cleanupExpiredTokens() {
     try {
-      const result = await db.delete(passwordResetTokens).where(gt(/* @__PURE__ */ new Date(), passwordResetTokens.expiresAt));
+      const result = await db2.delete(passwordResetTokens).where(gt(/* @__PURE__ */ new Date(), passwordResetTokens.expiresAt));
       return result.rowCount || 0;
     } catch (error) {
       console.error("Cleanup expired tokens error:", error);
@@ -6613,7 +6634,7 @@ var PasswordResetService = class {
    */
   static async invalidateUserTokens(userId) {
     try {
-      await db.update(passwordResetTokens).set({ usedAt: /* @__PURE__ */ new Date() }).where(
+      await db2.update(passwordResetTokens).set({ usedAt: /* @__PURE__ */ new Date() }).where(
         and3(
           eq3(passwordResetTokens.userId, userId),
           eq3(passwordResetTokens.usedAt, null)
@@ -6629,7 +6650,7 @@ var PasswordResetService = class {
    */
   static async getPasswordResetHistory(userId) {
     try {
-      return await db.select().from(passwordResetTokens).where(eq3(passwordResetTokens.userId, userId)).orderBy(passwordResetTokens.createdAt);
+      return await db2.select().from(passwordResetTokens).where(eq3(passwordResetTokens.userId, userId)).orderBy(passwordResetTokens.createdAt);
     } catch (error) {
       console.error("Get password reset history error:", error);
       throw error;
@@ -6808,8 +6829,13 @@ var PlaywrightEngine = class {
   }
   getCSS(options) {
     return `
+      @font-face {
+        font-family: 'NotoSansKR';
+        src: local('Noto Sans KR'), local('NotoSansKR'), local('Malgun Gothic'), local('\uB9D1\uC740 \uACE0\uB515');
+      }
+      
       body {
-        font-family: 'Malgun Gothic', Arial, sans-serif;
+        font-family: 'Noto Sans KR', 'NotoSansKR', 'Malgun Gothic', '\uB9D1\uC740 \uACE0\uB515', 'Apple SD Gothic Neo', sans-serif;
         margin: 0;
         padding: 20px;
         font-size: 12px;
@@ -7253,7 +7279,7 @@ var POTemplateProcessor = class _POTemplateProcessor {
   static async saveToDatabase(orders, userId) {
     try {
       let savedOrders = 0;
-      await db.transaction(async (tx) => {
+      await db2.transaction(async (tx) => {
         for (const orderData of orders) {
           const vendorId = await this.findOrCreateVendor(tx, orderData.vendorName);
           const projectId = await this.findOrCreateProject(tx, orderData.siteName);
@@ -7460,7 +7486,7 @@ var __filename = fileURLToPath(import.meta.url);
 var __dirname = dirname(__filename);
 var POEmailService = class {
   constructor() {
-    this.db = db;
+    this.db = db2;
     this.transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || "smtp.naver.com",
       port: parseInt(process.env.SMTP_PORT || "587"),
@@ -9498,7 +9524,7 @@ var OptimizedOrderQueries = class {
     const cached = cache.get(cacheKey);
     if (cached) return cached;
     try {
-      let query = db.select({
+      let query = db2.select({
         id: purchaseOrders.id,
         orderNumber: purchaseOrders.orderNumber,
         status: purchaseOrders.status,
@@ -9527,7 +9553,7 @@ var OptimizedOrderQueries = class {
     const cached = cache.get(cacheKey);
     if (cached) return cached;
     try {
-      const result = await db.select().from(purchaseOrders).where(
+      const result = await db2.select().from(purchaseOrders).where(
         and5(
           eq6(purchaseOrders.status, "pending"),
           eq6(purchaseOrders.currentApproverRole, role)
@@ -9548,9 +9574,9 @@ var OptimizedOrderQueries = class {
     const cached = cache.get(cacheKey);
     if (cached) return cached;
     try {
-      const [totalOrders] = await db.select({ count: count2() }).from(purchaseOrders);
-      const [pendingOrders] = await db.select({ count: count2() }).from(purchaseOrders).where(eq6(purchaseOrders.status, "pending"));
-      const [approvedOrders] = await db.select({ count: count2() }).from(purchaseOrders).where(eq6(purchaseOrders.status, "approved"));
+      const [totalOrders] = await db2.select({ count: count2() }).from(purchaseOrders);
+      const [pendingOrders] = await db2.select({ count: count2() }).from(purchaseOrders).where(eq6(purchaseOrders.status, "pending"));
+      const [approvedOrders] = await db2.select({ count: count2() }).from(purchaseOrders).where(eq6(purchaseOrders.status, "approved"));
       const result = {
         total: totalOrders.count || 0,
         pending: pendingOrders.count || 0,
@@ -9574,7 +9600,7 @@ var OptimizedDashboardQueries = class {
     if (cached) return cached;
     try {
       console.log("\u{1F50D} Starting getUnifiedDashboardData query...");
-      const orderStatsResult = await db.execute(
+      const orderStatsResult = await db2.execute(
         sql3`SELECT 
           COUNT(*) as "totalOrders",
           COALESCE(SUM(total_amount), 0) as "totalAmount"
@@ -9582,32 +9608,32 @@ var OptimizedDashboardQueries = class {
       );
       console.log("\u{1F4CA} Order stats query result:", orderStatsResult);
       const orderStats = orderStatsResult.rows[0] || { totalOrders: 0, totalAmount: 0 };
-      const pendingOrderResult = await db.execute(
+      const pendingOrderResult = await db2.execute(
         sql3`SELECT COUNT(*) as "pendingOrders" FROM purchase_orders WHERE status = 'pending'`
       );
       const pendingOrderStats = pendingOrderResult.rows[0] || { pendingOrders: 0 };
-      const completedOrderResult = await db.execute(
+      const completedOrderResult = await db2.execute(
         sql3`SELECT COUNT(*) as "completedOrders" 
             FROM purchase_orders 
             WHERE status = 'completed' 
             AND order_date >= DATE_TRUNC('month', CURRENT_DATE)`
       );
       const completedOrderStats = completedOrderResult.rows[0] || { completedOrders: 0 };
-      const monthlyOrderResult = await db.execute(
+      const monthlyOrderResult = await db2.execute(
         sql3`SELECT COUNT(*) as "monthlyOrders" 
             FROM purchase_orders 
             WHERE order_date >= DATE_TRUNC('month', CURRENT_DATE)`
       );
       const monthlyOrderStats = monthlyOrderResult.rows[0] || { monthlyOrders: 0 };
-      const projectResult = await db.execute(
+      const projectResult = await db2.execute(
         sql3`SELECT COUNT(*) as "activeProjects" FROM projects WHERE is_active = true`
       );
       const projectStats = projectResult.rows[0] || { activeProjects: 0 };
-      const vendorResult = await db.execute(
+      const vendorResult = await db2.execute(
         sql3`SELECT COUNT(*) as "activeVendors" FROM vendors WHERE is_active = true`
       );
       const vendorStats = vendorResult.rows[0] || { activeVendors: 0 };
-      const recentOrdersRaw = await db.select({
+      const recentOrdersRaw = await db2.select({
         id: purchaseOrders.id,
         orderNumber: purchaseOrders.orderNumber,
         status: purchaseOrders.status,
@@ -9635,7 +9661,7 @@ var OptimizedDashboardQueries = class {
           // Add backward compatibility
         } : null
       }));
-      const monthlyStatsRaw = await db.select({
+      const monthlyStatsRaw = await db2.select({
         month: sql3`TO_CHAR(${purchaseOrders.orderDate}, 'YYYY-MM')`,
         count: count2(),
         amount: sql3`COALESCE(SUM(${purchaseOrders.totalAmount}), 0)`,
@@ -9649,7 +9675,7 @@ var OptimizedDashboardQueries = class {
         totalAmount: item.amount
         // Add alias for compatibility
       }));
-      const statusStats = await db.select({
+      const statusStats = await db2.select({
         status: purchaseOrders.orderStatus,
         count: count2(),
         amount: sql3`COALESCE(SUM(${purchaseOrders.totalAmount}), 0)`
@@ -9667,7 +9693,7 @@ var OptimizedDashboardQueries = class {
           amount: 0
         };
       });
-      const projectStatsList = await db.select({
+      const projectStatsList = await db2.select({
         projectId: projects.id,
         projectName: projects.projectName,
         projectType: projects.projectType,
@@ -9927,6 +9953,7 @@ var projects_default = router2;
 
 // server/routes/orders.ts
 import { Router as Router3 } from "express";
+init_schema();
 init_schema();
 
 // server/utils/multer-config.ts
@@ -10285,7 +10312,7 @@ var ApprovalRoutingService = class {
   static async handleDirectApproval(context, settings) {
     const directApprovalRoles = settings.directApprovalRoles || [];
     const canDirectApprove = directApprovalRoles.includes(context.currentUserRole);
-    const directApprovalUsers = await db.select({ id: users.id, name: users.name }).from(users).where(eq7(users.role, context.currentUserRole)).limit(10);
+    const directApprovalUsers = await db2.select({ id: users.id, name: users.name }).from(users).where(eq7(users.role, context.currentUserRole)).limit(10);
     return {
       approvalMode: "direct",
       canDirectApprove,
@@ -10327,7 +10354,7 @@ var ApprovalRoutingService = class {
    * 금액과 우선순위에 적합한 단계별 승인 템플릿 찾기
    */
   static async findAppropriateStagedTemplate(companyId, orderAmount, priority) {
-    const templates = await db.select().from(approvalStepTemplates).where(
+    const templates = await db2.select().from(approvalStepTemplates).where(
       and6(
         eq7(approvalStepTemplates.companyId, companyId),
         eq7(approvalStepTemplates.isActive, true),
@@ -10347,7 +10374,7 @@ var ApprovalRoutingService = class {
    * 현재 사용자 권한으로 건너뛸 수 있는 단계 확인
    */
   static async checkSkippableSteps(currentUserRole, orderAmount, approvalSteps) {
-    const userAuthority = await db.select().from(approvalAuthorities).where(
+    const userAuthority = await db2.select().from(approvalAuthorities).where(
       and6(
         eq7(approvalAuthorities.role, currentUserRole),
         eq7(approvalAuthorities.isActive, true)
@@ -10380,14 +10407,14 @@ var ApprovalRoutingService = class {
       requiredRole: step.requiredRole,
       status: "pending"
     }));
-    const instances = await db.insert(approvalStepInstances2).values(instancesData).returning();
+    const instances = await db2.insert(approvalStepInstances2).values(instancesData).returning();
     return instances;
   }
   /**
    * 주문의 다음 승인 단계 결정
    */
   static async getNextApprovalStep(orderId) {
-    const nextStep = await db.select().from(approvalStepInstances2).where(
+    const nextStep = await db2.select().from(approvalStepInstances2).where(
       and6(
         eq7(approvalStepInstances2.orderId, orderId),
         eq7(approvalStepInstances2.status, "pending"),
@@ -10400,7 +10427,7 @@ var ApprovalRoutingService = class {
    * 주문의 승인 완료 여부 확인
    */
   static async isApprovalComplete(orderId) {
-    const pendingSteps = await db.select().from(approvalStepInstances2).where(
+    const pendingSteps = await db2.select().from(approvalStepInstances2).where(
       and6(
         eq7(approvalStepInstances2.orderId, orderId),
         eq7(approvalStepInstances2.status, "pending"),
@@ -10413,7 +10440,7 @@ var ApprovalRoutingService = class {
    * 주문 승인 진행률 계산
    */
   static async getApprovalProgress(orderId) {
-    const allSteps = await db.select().from(approvalStepInstances2).where(
+    const allSteps = await db2.select().from(approvalStepInstances2).where(
       and6(
         eq7(approvalStepInstances2.orderId, orderId),
         eq7(approvalStepInstances2.isActive, true)
@@ -10434,7 +10461,7 @@ var ApprovalRoutingService = class {
    * 회사의 승인 워크플로 설정 조회
    */
   static async getWorkflowSettings(companyId) {
-    const settings = await db.select().from(approvalWorkflowSettings).where(
+    const settings = await db2.select().from(approvalWorkflowSettings).where(
       and6(
         eq7(approvalWorkflowSettings.companyId, companyId),
         eq7(approvalWorkflowSettings.isActive, true)
@@ -10449,7 +10476,7 @@ var approval_routing_service_default = ApprovalRoutingService;
 init_professional_pdf_generation_service();
 init_db();
 init_email_settings_service();
-import { eq as eq10 } from "drizzle-orm";
+import { eq as eq10, and as and7, or as or3, like as like2, desc as desc6 } from "drizzle-orm";
 import fs7 from "fs";
 import path5 from "path";
 import { fileURLToPath as fileURLToPath2 } from "url";
@@ -10460,7 +10487,7 @@ var __dirname2 = path5.dirname(__filename2);
 var router3 = Router3();
 var emailService = new POEmailService();
 async function updateOrderStatusAfterEmail(orderNumber) {
-  await db.update(purchaseOrders).set({
+  await db2.update(purchaseOrders).set({
     orderStatus: "sent",
     updatedAt: /* @__PURE__ */ new Date()
   }).where(eq10(purchaseOrders.orderNumber, orderNumber));
@@ -11829,7 +11856,7 @@ router3.post("/orders/:id/regenerate-pdf", requireAuth, async (req, res) => {
     if (!userId) {
       return res.status(401).json({ message: "User not authenticated" });
     }
-    const [order] = await db.select().from(purchaseOrders).where(eq10(purchaseOrders.id, orderId)).limit(1);
+    const [order] = await db2.select().from(purchaseOrders).where(eq10(purchaseOrders.id, orderId)).limit(1);
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
@@ -12074,6 +12101,38 @@ router3.get("/orders/download-pdf/:timestamp", async (req, res) => {
     });
   }
 });
+router3.get("/orders/:id/download-pdf", async (req, res) => {
+  try {
+    const orderId = parseInt(req.params.id);
+    console.log(`\u{1F4C4} Order ID ${orderId}\uB85C PDF \uB2E4\uC6B4\uB85C\uB4DC \uC694\uCCAD`);
+    const attachments3 = await db.select().from(attachments).where(
+      and7(
+        eq10(attachments.orderId, orderId),
+        or3(
+          eq10(attachments.mimeType, "application/pdf"),
+          like2(attachments.originalName, "%.pdf")
+        )
+      )
+    ).orderBy(desc6(attachments.createdAt)).limit(1);
+    if (!attachments3 || attachments3.length === 0) {
+      console.warn(`\u26A0\uFE0F Order ${orderId}\uC5D0 \uB300\uD55C PDF \uC5C6\uC74C`);
+      return res.status(404).json({
+        error: "PDF \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
+      });
+    }
+    const attachment = attachments3[0];
+    console.log(`\u{1F4C4} PDF \uBC1C\uACAC: ${attachment.originalName}`);
+    const downloadUrl = `/api/attachments/${attachment.id}/download?download=true`;
+    console.log(`\u{1F4C4} \uB9AC\uB2E4\uC774\uB809\uD2B8: ${downloadUrl}`);
+    res.redirect(downloadUrl);
+  } catch (error) {
+    console.error("\u274C Order PDF \uB2E4\uC6B4\uB85C\uB4DC \uC624\uB958:", error);
+    res.status(500).json({
+      error: "PDF \uB2E4\uC6B4\uB85C\uB4DC \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4.",
+      details: error instanceof Error ? error.message : "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"
+    });
+  }
+});
 router3.post("/orders/send-email", requireAuth, async (req, res) => {
   try {
     const {
@@ -12128,7 +12187,7 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
           const attachmentId = parseInt(attachmentIdMatch[1]);
           console.log("\u{1F4CE} PDF \uCCA8\uBD80 \uC2DC\uB3C4 (DB\uC5D0\uC11C):", attachmentId);
           try {
-            const [attachment] = await db.select({
+            const [attachment] = await db2.select({
               id: attachments.id,
               originalName: attachments.originalName,
               filePath: attachments.filePath,
@@ -12185,7 +12244,7 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
           const attachmentId = parseInt(attachmentIdMatch[1]);
           console.log("\u{1F4CE} Excel \uCCA8\uBD80 \uC2DC\uB3C4 (DB\uC5D0\uC11C):", attachmentId);
           try {
-            const [attachment] = await db.select({
+            const [attachment] = await db2.select({
               id: attachments.id,
               originalName: attachments.originalName,
               filePath: attachments.filePath,
@@ -12267,7 +12326,7 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
             console.log("\u26A0\uFE0F \uCCA8\uBD80\uD30C\uC77C \uC774\uBBF8 \uCC98\uB9AC\uB428 (\uAE30\uC874 \uB85C\uC9C1):", attachmentId);
             continue;
           }
-          const [attachment] = await db.select({
+          const [attachment] = await db2.select({
             id: attachments.id,
             originalName: attachments.originalName,
             filePath: attachments.filePath,
@@ -13241,8 +13300,8 @@ import { sql as sql4 } from "drizzle-orm";
 var router6 = Router6();
 router6.get("/dashboard/test-db", async (req, res) => {
   try {
-    const { db: db2 } = await Promise.resolve().then(() => (init_db(), db_exports));
-    const result = await db2.execute(sql4`SELECT COUNT(*) as count FROM purchase_orders`);
+    const { db: db3 } = await Promise.resolve().then(() => (init_db(), db_exports));
+    const result = await db3.execute(sql4`SELECT COUNT(*) as count FROM purchase_orders`);
     res.json({ success: true, data: result });
   } catch (error) {
     console.error("DB test error:", error);
@@ -13281,11 +13340,11 @@ router6.get("/dashboard/urgent-orders", async (req, res) => {
 });
 router6.get("/dashboard/order-status-stats", async (req, res) => {
   try {
-    const { db: db2 } = await Promise.resolve().then(() => (init_db(), db_exports));
-    if (!db2) {
+    const { db: db3 } = await Promise.resolve().then(() => (init_db(), db_exports));
+    if (!db3) {
       throw new Error("Database connection not available");
     }
-    const statsResult = await db2.execute(
+    const statsResult = await db3.execute(
       sql4`SELECT 
         po.order_status as status,
         COUNT(*) as count,
@@ -13295,7 +13354,7 @@ router6.get("/dashboard/order-status-stats", async (req, res) => {
       GROUP BY po.order_status
       ORDER BY po.order_status`
     );
-    const totalResult = await db2.execute(
+    const totalResult = await db3.execute(
       sql4`SELECT COUNT(*) as total FROM purchase_orders WHERE order_status IS NOT NULL`
     );
     const total = parseInt(totalResult.rows[0]?.total || "0");
@@ -13338,10 +13397,10 @@ router7.get("/companies/debug", async (req, res) => {
   console.log("\u{1F50D} Debug endpoint called");
   try {
     console.log("\u{1F50D} Attempting to import db module...");
-    const { db: db2 } = await Promise.resolve().then(() => (init_db(), db_exports));
+    const { db: db3 } = await Promise.resolve().then(() => (init_db(), db_exports));
     console.log("\u{1F50D} DB module imported successfully");
     console.log("\u{1F50D} Attempting basic query...");
-    const basicTest = await db2.execute(sql5`SELECT 1 as test`);
+    const basicTest = await db3.execute(sql5`SELECT 1 as test`);
     console.log("\u{1F50D} Basic query successful:", basicTest);
     res.json({
       databaseUrlSet: !!process.env.DATABASE_URL,
@@ -13455,7 +13514,7 @@ var companies_default = router7;
 import { Router as Router8 } from "express";
 init_db();
 init_schema();
-import { eq as eq11, and as and7 } from "drizzle-orm";
+import { eq as eq11, and as and8 } from "drizzle-orm";
 var router8 = Router8();
 router8.get("/users", requireAuth, requireAdmin, async (req, res) => {
   try {
@@ -13546,8 +13605,8 @@ router8.delete("/templates/:id", requireAuth, async (req, res) => {
 });
 router8.get("/approval-workflow-settings", requireAuth, requireAdmin, async (req, res) => {
   try {
-    const settings = await db.select().from(approvalWorkflowSettings).where(
-      and7(
+    const settings = await db2.select().from(approvalWorkflowSettings).where(
+      and8(
         eq11(approvalWorkflowSettings.isActive, true),
         eq11(approvalWorkflowSettings.companyId, 1)
       )
@@ -13586,9 +13645,9 @@ router8.put("/approval-workflow-settings", requireAuth, requireAdmin, async (req
       requireAllStages,
       skipLowerStages
     } = req.body;
-    const existing = await db.select().from(approvalWorkflowSettings).where(eq11(approvalWorkflowSettings.companyId, 1)).limit(1);
+    const existing = await db2.select().from(approvalWorkflowSettings).where(eq11(approvalWorkflowSettings.companyId, 1)).limit(1);
     if (existing.length === 0) {
-      const [newSettings] = await db.insert(approvalWorkflowSettings).values({
+      const [newSettings] = await db2.insert(approvalWorkflowSettings).values({
         companyId: 1,
         approvalMode,
         directApprovalRoles,
@@ -13600,7 +13659,7 @@ router8.put("/approval-workflow-settings", requireAuth, requireAdmin, async (req
       }).returning();
       res.json(newSettings);
     } else {
-      const [updatedSettings] = await db.update(approvalWorkflowSettings).set({
+      const [updatedSettings] = await db2.update(approvalWorkflowSettings).set({
         approvalMode,
         directApprovalRoles,
         stagedApprovalThresholds,
@@ -13723,7 +13782,7 @@ async function validateVendorName(vendorName, vendorType = "\uAC70\uB798\uCC98")
     const quickTest = new Promise((_, reject) => {
       setTimeout(() => reject(new Error("Quick DB test timeout")), 1e4);
     });
-    const testQuery = db.select({ count: sql6`1` }).from(vendors).limit(1);
+    const testQuery = db2.select({ count: sql6`1` }).from(vendors).limit(1);
     await Promise.race([testQuery, quickTest]);
     console.log(`\u2705 \uB370\uC774\uD130\uBCA0\uC774\uC2A4 \uC5F0\uACB0 \uD655\uC778\uB428`);
   } catch (quickTestError) {
@@ -13745,7 +13804,7 @@ async function validateVendorName(vendorName, vendorType = "\uAC70\uB798\uCC98")
       const dbTimeout = new Promise((_, reject) => {
         setTimeout(() => reject(new Error("Database connection timeout")), 5e3);
       });
-      const exactMatchQuery = db.select({
+      const exactMatchQuery = db2.select({
         id: vendors.id,
         name: vendors.name,
         email: vendors.email,
@@ -13753,7 +13812,7 @@ async function validateVendorName(vendorName, vendorType = "\uAC70\uB798\uCC98")
         contactPerson: vendors.contactPerson,
         aliases: vendors.aliases
       }).from(vendors).where(eq13(vendors.name, vendorName)).limit(1);
-      const aliasMatchQuery = db.select({
+      const aliasMatchQuery = db2.select({
         id: vendors.id,
         name: vendors.name,
         email: vendors.email,
@@ -13761,7 +13820,7 @@ async function validateVendorName(vendorName, vendorType = "\uAC70\uB798\uCC98")
         contactPerson: vendors.contactPerson,
         aliases: vendors.aliases
       }).from(vendors).where(sql6`${vendors.aliases}::jsonb @> ${JSON.stringify([vendorName])}::jsonb`).limit(1);
-      const allVendorsQuery = db.select({
+      const allVendorsQuery = db2.select({
         id: vendors.id,
         name: vendors.name,
         email: vendors.email,
@@ -13859,7 +13918,7 @@ async function checkEmailConflict(vendorName, excelEmail) {
       const dbTimeout = new Promise((_, reject) => {
         setTimeout(() => reject(new Error("Database connection timeout")), 3e3);
       });
-      const dbVendorQuery = db.select({
+      const dbVendorQuery = db2.select({
         id: vendors.id,
         name: vendors.name,
         email: vendors.email,
@@ -14005,7 +14064,7 @@ var ExcelAttachmentService = class {
       const fileName = path6.basename(processedExcelPath);
       const fileBuffer = fs8.readFileSync(processedExcelPath);
       const base64Data = fileBuffer.toString("base64");
-      const [attachment] = await db.insert(attachments).values({
+      const [attachment] = await db2.insert(attachments).values({
         orderId,
         originalName: originalFileName,
         storedName: fileName,
@@ -14047,7 +14106,7 @@ var ExcelAttachmentService = class {
       const fileName = `original_${path6.basename(originalExcelPath)}`;
       const fileBuffer = fs8.readFileSync(originalExcelPath);
       const base64Data = fileBuffer.toString("base64");
-      const [attachment] = await db.insert(attachments).values({
+      const [attachment] = await db2.insert(attachments).values({
         orderId,
         originalName: `[\uC6D0\uBCF8] ${originalFileName}`,
         storedName: fileName,
@@ -14089,7 +14148,7 @@ var ExcelAutomationService = class {
     try {
       console.log(`\u{1F50D} [DEBUG] 0\uB2E8\uACC4: DB \uC5F0\uACB0 \uD14C\uC2A4\uD2B8 \uC2DC\uC791`);
       try {
-        await db.select().from(purchaseOrders).limit(1);
+        await db2.select().from(purchaseOrders).limit(1);
         console.log(`\u2705 [DEBUG] DB \uC5F0\uACB0 \uC131\uACF5`);
       } catch (dbError) {
         console.error(`\u274C [DEBUG] DB \uC5F0\uACB0 \uC2E4\uD328:`, dbError);
@@ -14126,7 +14185,7 @@ var ExcelAutomationService = class {
       if (saveResult.savedOrderNumbers && saveResult.savedOrderNumbers.length > 0) {
         console.log(`\u{1F4CB} [DEBUG] \uBC1C\uC8FC\uC11C \uBC88\uD638\uB4E4:`, saveResult.savedOrderNumbers);
         try {
-          const orders = await db.select({ id: purchaseOrders.id, orderNumber: purchaseOrders.orderNumber }).from(purchaseOrders).where(inArray2(purchaseOrders.orderNumber, saveResult.savedOrderNumbers));
+          const orders = await db2.select({ id: purchaseOrders.id, orderNumber: purchaseOrders.orderNumber }).from(purchaseOrders).where(inArray2(purchaseOrders.orderNumber, saveResult.savedOrderNumbers));
           console.log(`\u{1F50D} [DEBUG] \uC870\uD68C\uB41C \uBC1C\uC8FC\uC11C\uB4E4:`, orders);
           const processedExcelPath = filePath.replace(/\.(xlsx?)$/i, "_processed.$1");
           const removeResult = await removeAllInputSheets(filePath, processedExcelPath);
@@ -14168,7 +14227,7 @@ var ExcelAutomationService = class {
       const orderIds = [];
       if (saveResult.savedOrderNumbers && saveResult.savedOrderNumbers.length > 0) {
         try {
-          const orders = await db.select({ id: purchaseOrders.id, orderNumber: purchaseOrders.orderNumber }).from(purchaseOrders).where(eq14(purchaseOrders.orderNumber, saveResult.savedOrderNumbers[0]));
+          const orders = await db2.select({ id: purchaseOrders.id, orderNumber: purchaseOrders.orderNumber }).from(purchaseOrders).where(eq14(purchaseOrders.orderNumber, saveResult.savedOrderNumbers[0]));
           if (orders.length > 0) {
             orderIds.push(orders[0].id);
           }
@@ -14476,10 +14535,10 @@ var ExcelAutomationService = class {
    * 발주서 상태를 'sent'로 업데이트하는 헬퍼 메소드
    */
   static async updateOrderStatusToSent(orderNumber) {
-    const { db: db2 } = await Promise.resolve().then(() => (init_db(), db_exports));
+    const { db: db3 } = await Promise.resolve().then(() => (init_db(), db_exports));
     const { purchaseOrders: purchaseOrders3 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
     const { eq: eq38 } = await import("drizzle-orm");
-    await db2.update(purchaseOrders3).set({
+    await db3.update(purchaseOrders3).set({
       orderStatus: "sent",
       updatedAt: /* @__PURE__ */ new Date()
     }).where(eq38(purchaseOrders3.orderNumber, orderNumber));
@@ -14488,10 +14547,10 @@ var ExcelAutomationService = class {
    * 여러 발주서의 상태를 'sent'로 업데이트하는 헬퍼 메소드
    */
   static async updateMultipleOrderStatusToSent(orderNumbers) {
-    const { db: db2 } = await Promise.resolve().then(() => (init_db(), db_exports));
+    const { db: db3 } = await Promise.resolve().then(() => (init_db(), db_exports));
     const { purchaseOrders: purchaseOrders3 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
     const { inArray: inArray7 } = await import("drizzle-orm");
-    await db2.update(purchaseOrders3).set({
+    await db3.update(purchaseOrders3).set({
       orderStatus: "sent",
       updatedAt: /* @__PURE__ */ new Date()
     }).where(inArray7(purchaseOrders3.orderNumber, orderNumbers));
@@ -14879,9 +14938,9 @@ router9.post("/debug-upload", requireAuth, upload2.single("file"), async (req, r
     }
     step = 2;
     console.log(`\u{1F41B} [DEBUG] Step ${step}: Database connection test`);
-    const { db: db2 } = await Promise.resolve().then(() => (init_db(), db_exports));
+    const { db: db3 } = await Promise.resolve().then(() => (init_db(), db_exports));
     const { purchaseOrders: purchaseOrders3 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-    await db2.select().from(purchaseOrders3).limit(1);
+    await db3.select().from(purchaseOrders3).limit(1);
     console.log(`\u{1F41B} [DEBUG] Step ${step} PASSED: DB connection OK`);
     step = 3;
     console.log(`\u{1F41B} [DEBUG] Step ${step}: File path check`);
@@ -16221,14 +16280,14 @@ var simpleAuth = (req, res, next) => {
 };
 router10.get("/db-status", simpleAuth, async (req, res) => {
   try {
-    if (!db) {
+    if (!db2) {
       return res.json({
         success: false,
         message: "DB \uC5F0\uACB0 \uC5C6\uC74C - Mock DB \uC0AC\uC6A9",
         usingMockDB: true
       });
     }
-    const testResult = await db.select().from(vendors).limit(1);
+    const testResult = await db2.select().from(vendors).limit(1);
     res.json({
       success: true,
       message: "\uC2E4\uC81C DB \uC5F0\uACB0 \uC131\uACF5",
@@ -16396,14 +16455,14 @@ router10.post("/save", simpleAuth, async (req, res) => {
     if (!orders || !Array.isArray(orders)) {
       return res.status(400).json({ error: "\uBC1C\uC8FC\uC11C \uB370\uC774\uD130\uAC00 \uB204\uB77D\uB418\uC5C8\uC2B5\uB2C8\uB2E4." });
     }
-    if (db) {
+    if (db2) {
       try {
         let savedOrders = 0;
         for (const orderData of orders) {
-          let vendor = await db.select().from(vendors).where(eq15(vendors.name, orderData.vendorName)).limit(1);
+          let vendor = await db2.select().from(vendors).where(eq15(vendors.name, orderData.vendorName)).limit(1);
           let vendorId;
           if (vendor.length === 0) {
-            const newVendor = await db.insert(vendors).values({
+            const newVendor = await db2.insert(vendors).values({
               name: orderData.vendorName,
               contactPerson: "\uC790\uB3D9\uC0DD\uC131",
               email: `auto-${Date.now()}@example.com`,
@@ -16413,10 +16472,10 @@ router10.post("/save", simpleAuth, async (req, res) => {
           } else {
             vendorId = vendor[0].id;
           }
-          let project = await db.select().from(projects).where(eq15(projects.projectName, orderData.siteName)).limit(1);
+          let project = await db2.select().from(projects).where(eq15(projects.projectName, orderData.siteName)).limit(1);
           let projectId;
           if (project.length === 0) {
-            const newProject = await db.insert(projects).values({
+            const newProject = await db2.insert(projects).values({
               projectName: orderData.siteName,
               projectCode: `AUTO-${Date.now().toString().slice(-8)}`,
               status: "active"
@@ -16429,7 +16488,7 @@ router10.post("/save", simpleAuth, async (req, res) => {
           let suffix = 1;
           while (true) {
             try {
-              const existing = await db.select().from(purchaseOrders).where(eq15(purchaseOrders.orderNumber, orderNumber));
+              const existing = await db2.select().from(purchaseOrders).where(eq15(purchaseOrders.orderNumber, orderNumber));
               if (existing.length === 0) {
                 break;
               }
@@ -16464,7 +16523,7 @@ router10.post("/save", simpleAuth, async (req, res) => {
             orderDateISO: parsedOrderDate ? parsedOrderDate.toISOString() : null,
             deliveryDateISO: parsedDeliveryDate ? parsedDeliveryDate.toISOString() : null
           });
-          const newOrder = await db.insert(purchaseOrders).values({
+          const newOrder = await db2.insert(purchaseOrders).values({
             orderNumber,
             projectId,
             vendorId,
@@ -16483,7 +16542,7 @@ router10.post("/save", simpleAuth, async (req, res) => {
           });
           const orderId = newOrder[0].id;
           for (const item of orderData.items) {
-            await db.insert(purchaseOrderItems).values({
+            await db2.insert(purchaseOrderItems).values({
               orderId,
               itemName: item.itemName,
               specification: item.specification,
@@ -16513,7 +16572,7 @@ router10.post("/save", simpleAuth, async (req, res) => {
               pdfBase64 = pdfBuffer.toString("base64");
             } else {
               console.log("\u26A0\uFE0F \uD3EC\uAD04\uC801 \uB370\uC774\uD130 \uC218\uC9D1 \uC2E4\uD328, fallback \uBAA8\uB4DC \uC0AC\uC6A9");
-              const companyList = await db.select().from(companies).limit(1);
+              const companyList = await db2.select().from(companies).limit(1);
               const company = companyList[0];
               const pdfOrderData = {
                 orderNumber,
@@ -16635,7 +16694,7 @@ router10.post("/save", simpleAuth, async (req, res) => {
             const cleanOrderNumber = orderNumber.startsWith("PO-") ? orderNumber.substring(3) : orderNumber;
             const pdfOriginalName = `PO_Professional_${cleanOrderNumber}_${Date.now()}.pdf`;
             const pdfStoredName = `PO_Professional_${cleanOrderNumber}_${Date.now()}.pdf`;
-            await db.insert(attachments).values({
+            await db2.insert(attachments).values({
               orderId: newOrder[0].id,
               originalName: pdfOriginalName,
               // 한글 포함 파일명
@@ -16658,7 +16717,7 @@ router10.post("/save", simpleAuth, async (req, res) => {
               const excelBase64 = excelBuffer.toString("base64");
               const excelOriginalName = `${orderNumber}_\uAC11\uC9C0\uC744\uC9C0.xlsx`;
               const excelStoredName = `${orderNumber}_${Date.now()}_extracted.xlsx`;
-              await db.insert(attachments).values({
+              await db2.insert(attachments).values({
                 orderId: newOrder[0].id,
                 originalName: excelOriginalName,
                 // 한글 포함 파일명
@@ -16775,12 +16834,12 @@ router10.post("/extract-sheets", simpleAuth, async (req, res) => {
 });
 router10.get("/db-stats", simpleAuth, async (req, res) => {
   try {
-    if (db) {
+    if (db2) {
       try {
-        const vendorCount = await db.select().from(vendors);
-        const projectCount = await db.select().from(projects);
-        const orderCount = await db.select().from(purchaseOrders);
-        const itemCount = await db.select().from(purchaseOrderItems);
+        const vendorCount = await db2.select().from(vendors);
+        const projectCount = await db2.select().from(projects);
+        const orderCount = await db2.select().from(purchaseOrders);
+        const itemCount = await db2.select().from(purchaseOrderItems);
         res.json({
           success: true,
           data: {
@@ -16883,10 +16942,10 @@ router10.post("/send-email", simpleAuth, async (req, res) => {
     }
     if (emailResult.success && orderNumber) {
       try {
-        const { db: db2 } = await Promise.resolve().then(() => (init_db(), db_exports));
+        const { db: db3 } = await Promise.resolve().then(() => (init_db(), db_exports));
         const { purchaseOrders: purchaseOrders3 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
         const { eq: eq38 } = await import("drizzle-orm");
-        await db2.update(purchaseOrders3).set({
+        await db3.update(purchaseOrders3).set({
           orderStatus: "sent",
           updatedAt: /* @__PURE__ */ new Date()
         }).where(eq38(purchaseOrders3.orderNumber, orderNumber));
@@ -17099,14 +17158,14 @@ router10.post("/reset-db", simpleAuth, (req, res) => {
   }
 });
 router10.saveToDatabase = async function(orders, userId) {
-  if (db) {
+  if (db2) {
     try {
       let savedOrders = 0;
       for (const orderData of orders) {
-        let vendor = await db.select().from(vendors).where(eq15(vendors.name, orderData.vendorName)).limit(1);
+        let vendor = await db2.select().from(vendors).where(eq15(vendors.name, orderData.vendorName)).limit(1);
         let vendorId;
         if (vendor.length === 0) {
-          const newVendor = await db.insert(vendors).values({
+          const newVendor = await db2.insert(vendors).values({
             name: orderData.vendorName,
             contactPerson: "\uC790\uB3D9\uC0DD\uC131",
             email: `auto-${Date.now()}@example.com`,
@@ -17116,10 +17175,10 @@ router10.saveToDatabase = async function(orders, userId) {
         } else {
           vendorId = vendor[0].id;
         }
-        let project = await db.select().from(projects).where(eq15(projects.projectName, orderData.siteName)).limit(1);
+        let project = await db2.select().from(projects).where(eq15(projects.projectName, orderData.siteName)).limit(1);
         let projectId;
         if (project.length === 0) {
-          const newProject = await db.insert(projects).values({
+          const newProject = await db2.insert(projects).values({
             projectName: orderData.siteName,
             projectCode: `AUTO-${Date.now().toString().slice(-8)}`,
             status: "active"
@@ -17128,7 +17187,7 @@ router10.saveToDatabase = async function(orders, userId) {
         } else {
           projectId = project[0].id;
         }
-        const newOrder = await db.insert(purchaseOrders).values({
+        const newOrder = await db2.insert(purchaseOrders).values({
           orderNumber: orderData.orderNumber,
           projectId,
           vendorId,
@@ -17141,7 +17200,7 @@ router10.saveToDatabase = async function(orders, userId) {
         }).returning();
         const orderId = newOrder[0].id;
         for (const item of orderData.items) {
-          await db.insert(purchaseOrderItems).values({
+          await db2.insert(purchaseOrderItems).values({
             orderId,
             itemName: item.itemName,
             specification: item.specification,
@@ -17189,7 +17248,7 @@ var po_template_real_default = router10;
 import { Router as Router11 } from "express";
 init_db();
 init_schema();
-import { eq as eq16, sql as sql8, and as and8, gte as gte4, lte as lte4, inArray as inArray3 } from "drizzle-orm";
+import { eq as eq16, sql as sql8, and as and9, gte as gte4, lte as lte4, inArray as inArray3 } from "drizzle-orm";
 import * as XLSX7 from "xlsx";
 var formatKoreanWon = (amount) => {
   return `\u20A9${amount.toLocaleString("ko-KR")}`;
@@ -17198,24 +17257,24 @@ var router11 = Router11();
 router11.get("/debug-data", async (req, res) => {
   try {
     console.log("Debug data endpoint called");
-    const orderCount = await db.select({
+    const orderCount = await db2.select({
       count: sql8`count(*)`
     }).from(purchaseOrders);
-    const itemCount = await db.select({
+    const itemCount = await db2.select({
       count: sql8`count(*)`
     }).from(purchaseOrderItems);
-    const itemsWithCategories = await db.select({
+    const itemsWithCategories = await db2.select({
       count: sql8`count(*)`,
       withMajor: sql8`count(${items.majorCategory})`,
       withMiddle: sql8`count(${items.middleCategory})`,
       withMinor: sql8`count(${items.minorCategory})`
     }).from(items);
-    const vendorCount = await db.select({
+    const vendorCount = await db2.select({
       count: sql8`count(*)`
     }).from(vendors);
-    const sampleOrders = await db.select().from(purchaseOrders).limit(3);
-    const sampleItems = await db.select().from(purchaseOrderItems).limit(3);
-    const sampleItemsData = await db.select().from(items).limit(3);
+    const sampleOrders = await db2.select().from(purchaseOrders).limit(3);
+    const sampleItems = await db2.select().from(purchaseOrderItems).limit(3);
+    const sampleItemsData = await db2.select().from(items).limit(3);
     res.json({
       counts: {
         orders: orderCount[0],
@@ -17237,14 +17296,14 @@ router11.get("/debug-data", async (req, res) => {
 router11.get("/debug-processing", async (req, res) => {
   try {
     console.log("Debug processing endpoint called");
-    const allOrders = await db.select({
+    const allOrders = await db2.select({
       id: purchaseOrders.id,
       orderNumber: purchaseOrders.orderNumber,
       orderDate: purchaseOrders.orderDate,
       status: purchaseOrders.status,
       totalAmount: purchaseOrders.totalAmount
     }).from(purchaseOrders).limit(10);
-    const ordersWithJoins = await db.select({
+    const ordersWithJoins = await db2.select({
       id: purchaseOrders.id,
       orderNumber: purchaseOrders.orderNumber,
       orderDate: purchaseOrders.orderDate,
@@ -17291,7 +17350,7 @@ router11.get("/by-category", async (req, res) => {
       middleCategory,
       minorCategory
     });
-    let query = db.select({
+    let query = db2.select({
       orderId: purchaseOrderItems.orderId,
       itemName: purchaseOrderItems.itemName,
       majorCategory: purchaseOrderItems.majorCategory,
@@ -17315,7 +17374,7 @@ router11.get("/by-category", async (req, res) => {
       filters.push(eq16(purchaseOrderItems.minorCategory, minorCategory));
     }
     if (filters.length > 0) {
-      query = query.where(and8(...filters));
+      query = query.where(and9(...filters));
     }
     const orderItemsWithCategories = await query;
     console.log("Order items with categories found:", orderItemsWithCategories.length);
@@ -17412,7 +17471,7 @@ router11.get("/by-project", requireAuth, async (req, res) => {
     if (projectId) {
       filters.push(eq16(purchaseOrders.projectId, parseInt(projectId)));
     }
-    const ordersWithProjects = await db.select({
+    const ordersWithProjects = await db2.select({
       projectId: projects.id,
       projectName: projects.projectName,
       projectCode: projects.projectCode,
@@ -17424,7 +17483,7 @@ router11.get("/by-project", requireAuth, async (req, res) => {
       orderStatus: purchaseOrders.status,
       vendorId: purchaseOrders.vendorId,
       vendorName: vendors.name
-    }).from(purchaseOrders).innerJoin(projects, eq16(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq16(purchaseOrders.vendorId, vendors.id)).where(filters.length > 0 ? and8(...filters) : void 0);
+    }).from(purchaseOrders).innerJoin(projects, eq16(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq16(purchaseOrders.vendorId, vendors.id)).where(filters.length > 0 ? and9(...filters) : void 0);
     const projectReport = ordersWithProjects.reduce((acc, order) => {
       const projectKey = order.projectId;
       if (!acc[projectKey]) {
@@ -17492,7 +17551,7 @@ router11.get("/by-vendor", async (req, res) => {
     console.log("Vendor report starting...");
     console.log("Vendor report filters:", { startDate, endDate, vendorId, filters });
     console.log("Starting vendor report generation...");
-    let vendorQuery = db.select({
+    let vendorQuery = db2.select({
       vendorId: vendors.id,
       vendorName: vendors.name,
       vendorCode: vendors.vendorCode,
@@ -17508,12 +17567,12 @@ router11.get("/by-vendor", async (req, res) => {
       // Add original vendorId for null check
     }).from(purchaseOrders).leftJoin(vendors, eq16(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq16(purchaseOrders.projectId, projects.id));
     if (filters.length > 0) {
-      vendorQuery = vendorQuery.where(and8(...filters));
+      vendorQuery = vendorQuery.where(and9(...filters));
     }
     const ordersWithVendors = await vendorQuery;
     console.log("Orders with vendors found:", ordersWithVendors.length);
     const orderIds = ordersWithVendors.map((o) => o.orderId);
-    const orderItemsData = await db.select({
+    const orderItemsData = await db2.select({
       orderId: purchaseOrderItems.orderId,
       itemName: purchaseOrderItems.itemName,
       majorCategory: purchaseOrderItems.majorCategory,
@@ -17782,7 +17841,7 @@ router11.get("/export-excel", requireAuth, async (req, res) => {
 router11.get("/processing-test", async (req, res) => {
   try {
     console.log("Processing test endpoint called");
-    const orders = await db.select({
+    const orders = await db2.select({
       id: purchaseOrders.id,
       orderNumber: purchaseOrders.orderNumber,
       orderDate: purchaseOrders.orderDate,
@@ -17828,7 +17887,7 @@ router11.get("/processing", requireAuth, async (req, res) => {
     if (year && year !== "all" && year !== "") {
       const yearNum = parseInt(year);
       filters.push(
-        and8(
+        and9(
           gte4(purchaseOrders.orderDate, /* @__PURE__ */ new Date(`${yearNum}-01-01`)),
           lte4(purchaseOrders.orderDate, /* @__PURE__ */ new Date(`${yearNum}-12-31`))
         )
@@ -17840,7 +17899,7 @@ router11.get("/processing", requireAuth, async (req, res) => {
       const startOfMonth = new Date(yearNum, monthNum - 1, 1);
       const endOfMonth = new Date(yearNum, monthNum, 0);
       filters.push(
-        and8(
+        and9(
           gte4(purchaseOrders.orderDate, startOfMonth),
           lte4(purchaseOrders.orderDate, endOfMonth)
         )
@@ -17856,9 +17915,9 @@ router11.get("/processing", requireAuth, async (req, res) => {
       filters.push(eq16(purchaseOrders.vendorId, parseInt(vendorId)));
     }
     console.log(`Processing report filters count: ${filters.length}`);
-    let ordersQuery = db.select().from(purchaseOrders).leftJoin(projects, eq16(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq16(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq16(purchaseOrders.userId, users.id));
+    let ordersQuery = db2.select().from(purchaseOrders).leftJoin(projects, eq16(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq16(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq16(purchaseOrders.userId, users.id));
     if (filters.length > 0) {
-      ordersQuery = ordersQuery.where(and8(...filters));
+      ordersQuery = ordersQuery.where(and9(...filters));
     }
     if (search && search !== "") {
       const searchFilter = sql8`(
@@ -17868,7 +17927,7 @@ router11.get("/processing", requireAuth, async (req, res) => {
         ${purchaseOrders.notes} ILIKE ${`%${search}%`}
       )`;
       if (filters.length > 0) {
-        ordersQuery = ordersQuery.where(and8(and8(...filters), searchFilter));
+        ordersQuery = ordersQuery.where(and9(and9(...filters), searchFilter));
       } else {
         ordersQuery = ordersQuery.where(searchFilter);
       }
@@ -17915,7 +17974,7 @@ router11.get("/processing", requireAuth, async (req, res) => {
     console.log(`Processing report found ${flatOrders.length} orders after flattening`);
     if (flatOrders.length > 0) {
       const orderIds = flatOrders.map((o) => o.id);
-      const orderItems = await db.select({
+      const orderItems = await db2.select({
         orderId: purchaseOrderItems.orderId,
         id: purchaseOrderItems.id,
         itemName: purchaseOrderItems.itemName,
@@ -17933,9 +17992,9 @@ router11.get("/processing", requireAuth, async (req, res) => {
         ...order,
         items: orderItems.filter((item) => item.orderId === order.id)
       }));
-      let countQuery = db.select({ count: sql8`count(*)` }).from(purchaseOrders).leftJoin(projects, eq16(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq16(purchaseOrders.vendorId, vendors.id));
+      let countQuery = db2.select({ count: sql8`count(*)` }).from(purchaseOrders).leftJoin(projects, eq16(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq16(purchaseOrders.vendorId, vendors.id));
       if (filters.length > 0) {
-        countQuery = countQuery.where(and8(...filters));
+        countQuery = countQuery.where(and9(...filters));
       }
       if (search && search !== "") {
         const searchFilter = sql8`(
@@ -17945,7 +18004,7 @@ router11.get("/processing", requireAuth, async (req, res) => {
           ${purchaseOrders.notes} ILIKE ${`%${search}%`}
         )`;
         if (filters.length > 0) {
-          countQuery = countQuery.where(and8(and8(...filters), searchFilter));
+          countQuery = countQuery.where(and9(and9(...filters), searchFilter));
         } else {
           countQuery = countQuery.where(searchFilter);
         }
@@ -17989,33 +18048,33 @@ router11.get("/summary", requireAuth, async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
     const dateFilters = parseDateFilters(startDate, endDate);
-    const ordersSummary = await db.select({
+    const ordersSummary = await db2.select({
       totalOrders: sql8`count(*)`,
       totalAmount: sql8`sum(${purchaseOrders.totalAmount})`,
       avgAmount: sql8`avg(${purchaseOrders.totalAmount})`
-    }).from(purchaseOrders).where(dateFilters.length > 0 ? and8(...dateFilters) : void 0);
-    const statusBreakdown = await db.select({
+    }).from(purchaseOrders).where(dateFilters.length > 0 ? and9(...dateFilters) : void 0);
+    const statusBreakdown = await db2.select({
       status: purchaseOrders.status,
       count: sql8`count(*)`,
       totalAmount: sql8`sum(${purchaseOrders.totalAmount})`
-    }).from(purchaseOrders).where(and8(...dateFilters)).groupBy(purchaseOrders.status);
-    const topVendors = await db.select({
+    }).from(purchaseOrders).where(and9(...dateFilters)).groupBy(purchaseOrders.status);
+    const topVendors = await db2.select({
       vendorId: vendors.id,
       vendorName: vendors.name,
       orderCount: sql8`count(${purchaseOrders.id})`,
       totalAmount: sql8`sum(${purchaseOrders.totalAmount})`
-    }).from(purchaseOrders).innerJoin(vendors, eq16(purchaseOrders.vendorId, vendors.id)).where(and8(...dateFilters)).groupBy(vendors.id, vendors.name).orderBy(sql8`sum(${purchaseOrders.totalAmount}) desc`).limit(10);
-    const topProjects = await db.select({
+    }).from(purchaseOrders).innerJoin(vendors, eq16(purchaseOrders.vendorId, vendors.id)).where(and9(...dateFilters)).groupBy(vendors.id, vendors.name).orderBy(sql8`sum(${purchaseOrders.totalAmount}) desc`).limit(10);
+    const topProjects = await db2.select({
       projectId: projects.id,
       projectName: projects.projectName,
       orderCount: sql8`count(${purchaseOrders.id})`,
       totalAmount: sql8`sum(${purchaseOrders.totalAmount})`
-    }).from(purchaseOrders).innerJoin(projects, eq16(purchaseOrders.projectId, projects.id)).where(and8(...dateFilters)).groupBy(projects.id, projects.projectName).orderBy(sql8`sum(${purchaseOrders.totalAmount}) desc`).limit(10);
-    const monthlyTrend = await db.select({
+    }).from(purchaseOrders).innerJoin(projects, eq16(purchaseOrders.projectId, projects.id)).where(and9(...dateFilters)).groupBy(projects.id, projects.projectName).orderBy(sql8`sum(${purchaseOrders.totalAmount}) desc`).limit(10);
+    const monthlyTrend = await db2.select({
       month: sql8`to_char(${purchaseOrders.orderDate}, 'YYYY-MM')`,
       orderCount: sql8`count(*)`,
       totalAmount: sql8`sum(${purchaseOrders.totalAmount})`
-    }).from(purchaseOrders).where(and8(...dateFilters)).groupBy(sql8`to_char(${purchaseOrders.orderDate}, 'YYYY-MM')`).orderBy(sql8`to_char(${purchaseOrders.orderDate}, 'YYYY-MM')`);
+    }).from(purchaseOrders).where(and9(...dateFilters)).groupBy(sql8`to_char(${purchaseOrders.orderDate}, 'YYYY-MM')`).orderBy(sql8`to_char(${purchaseOrders.orderDate}, 'YYYY-MM')`);
     res.json({
       period: {
         startDate: startDate || "all",
@@ -18100,7 +18159,7 @@ var ImportExportService = class {
             errors.push({ row: imported + errors.length + 1, error: "Missing required fields", data: row });
             continue;
           }
-          await db.insert(vendors).values({
+          await db2.insert(vendors).values({
             ...vendorData,
             aliases: vendorData.aliases ? JSON.parse(vendorData.aliases) : []
           });
@@ -18136,7 +18195,7 @@ var ImportExportService = class {
             errors.push({ row: imported + errors.length + 1, error: "Missing required fields", data: row });
             continue;
           }
-          await db.insert(items).values(itemData);
+          await db2.insert(items).values(itemData);
           imported++;
         } catch (error) {
           errors.push({ row: imported + errors.length + 1, error: error.message, data: row });
@@ -18184,7 +18243,7 @@ var ImportExportService = class {
             errors.push({ row: imported + errors.length + 1, error: "Missing required fields", data: row });
             continue;
           }
-          await db.insert(projects).values(projectData);
+          await db2.insert(projects).values(projectData);
           imported++;
         } catch (error) {
           errors.push({ row: imported + errors.length + 1, error: error.message, data: row });
@@ -18274,9 +18333,9 @@ var ImportExportService = class {
             continue;
           }
           orderData.totalAmount = totalAmount;
-          const [insertedOrder] = await db.insert(purchaseOrders).values(orderData).returning({ id: purchaseOrders.id });
+          const [insertedOrder] = await db2.insert(purchaseOrders).values(orderData).returning({ id: purchaseOrders.id });
           for (const itemData of orderItems) {
-            await db.insert(purchaseOrderItems).values({
+            await db2.insert(purchaseOrderItems).values({
               orderId: insertedOrder.id,
               ...itemData
             });
@@ -18314,7 +18373,7 @@ var ImportExportService = class {
   }
   // Export Methods
   static async exportVendors(format2) {
-    const vendorData = await db.select().from(vendors).where(eq17(vendors.isActive, true));
+    const vendorData = await db2.select().from(vendors).where(eq17(vendors.isActive, true));
     const exportData = vendorData.map((vendor) => ({
       "\uAC70\uB798\uCC98\uBA85": vendor.name,
       "\uAC70\uB798\uCC98\uCF54\uB4DC": vendor.vendorCode || "",
@@ -18341,7 +18400,7 @@ var ImportExportService = class {
     }
   }
   static async exportItems(format2) {
-    const itemData = await db.select().from(items).where(eq17(items.isActive, true));
+    const itemData = await db2.select().from(items).where(eq17(items.isActive, true));
     const exportData = itemData.map((item) => ({
       "\uD488\uBAA9\uBA85": item.name,
       "\uADDC\uACA9": item.specification || "",
@@ -18367,7 +18426,7 @@ var ImportExportService = class {
     }
   }
   static async exportProjects(format2) {
-    const projectData = await db.select().from(projects).where(eq17(projects.isActive, true));
+    const projectData = await db2.select().from(projects).where(eq17(projects.isActive, true));
     const typeMap = {
       "commercial": "\uC0C1\uC5C5\uC2DC\uC124",
       "residential": "\uC8FC\uAC70\uC2DC\uC124",
@@ -18408,7 +18467,7 @@ var ImportExportService = class {
     }
   }
   static async exportPurchaseOrders(format2) {
-    const orderData = await db.select({
+    const orderData = await db2.select({
       orderId: purchaseOrders.id,
       orderNumber: purchaseOrders.orderNumber,
       projectId: purchaseOrders.projectId,
@@ -18735,7 +18794,7 @@ var import_export_default = router12;
 init_db();
 init_schema();
 import { Router as Router13 } from "express";
-import { eq as eq18, desc as desc6, sql as sql9 } from "drizzle-orm";
+import { eq as eq18, desc as desc7, sql as sql9 } from "drizzle-orm";
 import { z as z4 } from "zod";
 var router13 = Router13();
 var createEmailHistorySchema = z4.object({
@@ -18769,13 +18828,13 @@ router13.get("/orders/:orderId/email-history", requireAuth, async (req, res) => 
     if (isNaN(orderId)) {
       return res.status(400).json({ error: "Invalid order ID" });
     }
-    const order = await db.query.purchaseOrders.findFirst({
+    const order = await db2.query.purchaseOrders.findFirst({
       where: eq18(purchaseOrders.id, orderId)
     });
     if (!order) {
       return res.status(404).json({ error: "Order not found" });
     }
-    const emailHistory = await db.select({
+    const emailHistory = await db2.select({
       id: emailSendHistory.id,
       orderId: emailSendHistory.orderId,
       sentAt: emailSendHistory.sentAt,
@@ -18794,7 +18853,7 @@ router13.get("/orders/:orderId/email-history", requireAuth, async (req, res) => 
       failedCount: emailSendHistory.failedCount,
       createdAt: emailSendHistory.createdAt,
       updatedAt: emailSendHistory.updatedAt
-    }).from(emailSendHistory).leftJoin(users, eq18(emailSendHistory.senderUserId, users.id)).where(eq18(emailSendHistory.orderId, orderId)).orderBy(desc6(emailSendHistory.sentAt));
+    }).from(emailSendHistory).leftJoin(users, eq18(emailSendHistory.senderUserId, users.id)).where(eq18(emailSendHistory.orderId, orderId)).orderBy(desc7(emailSendHistory.sentAt));
     res.json(emailHistory);
   } catch (error) {
     console.error("Error fetching email history:", error);
@@ -18804,16 +18863,16 @@ router13.get("/orders/:orderId/email-history", requireAuth, async (req, res) => 
 router13.post("/email-history", requireAuth, async (req, res) => {
   try {
     const validatedData = createEmailHistorySchema.parse(req.body);
-    const [newEmailHistory] = await db.insert(emailSendHistory).values({
+    const [newEmailHistory] = await db2.insert(emailSendHistory).values({
       ...validatedData,
       senderUserId: req.user.id,
       attachmentFiles: validatedData.attachmentFiles || null
     }).returning();
-    const order = await db.query.purchaseOrders.findFirst({
+    const order = await db2.query.purchaseOrders.findFirst({
       where: eq18(purchaseOrders.id, validatedData.orderId)
     });
     if (order && order.status === "approved") {
-      await db.update(purchaseOrders).set({
+      await db2.update(purchaseOrders).set({
         status: "sent",
         updatedAt: /* @__PURE__ */ new Date()
       }).where(eq18(purchaseOrders.id, validatedData.orderId));
@@ -18830,23 +18889,23 @@ router13.post("/email-history", requireAuth, async (req, res) => {
 router13.get("/orders-email-status", requireAuth, async (req, res) => {
   try {
     try {
-      const orders = await db.select({
+      const orders = await db2.select({
         id: purchaseOrders.id,
         orderNumber: purchaseOrders.orderNumber,
         emailStatus: emailSendHistory.status,
         lastSentAt: emailSendHistory.sentAt,
         recipients: emailSendHistory.recipients
-      }).from(purchaseOrders).leftJoin(emailSendHistory, eq18(purchaseOrders.id, emailSendHistory.orderId)).orderBy(desc6(purchaseOrders.id));
+      }).from(purchaseOrders).leftJoin(emailSendHistory, eq18(purchaseOrders.id, emailSendHistory.orderId)).orderBy(desc7(purchaseOrders.id));
       res.json(orders);
     } catch (dbError) {
       console.error("Database query error:", dbError);
-      const orders = await db.select({
+      const orders = await db2.select({
         id: purchaseOrders.id,
         orderNumber: purchaseOrders.orderNumber,
         emailStatus: sql9`null`.as("email_status"),
         lastSentAt: sql9`null`.as("last_sent_at"),
         recipients: sql9`null`.as("recipients")
-      }).from(purchaseOrders).orderBy(desc6(purchaseOrders.id));
+      }).from(purchaseOrders).orderBy(desc7(purchaseOrders.id));
       res.json(orders);
     }
   } catch (error) {
@@ -18864,7 +18923,7 @@ router13.put("/email-history/:id/status", requireAuth, async (req, res) => {
     if (!["pending", "sent", "failed"].includes(status)) {
       return res.status(400).json({ error: "Invalid status" });
     }
-    const [updated] = await db.update(emailSendHistory).set({ status, updatedAt: /* @__PURE__ */ new Date() }).where(eq18(emailSendHistory.id, emailId)).returning();
+    const [updated] = await db2.update(emailSendHistory).set({ status, updatedAt: /* @__PURE__ */ new Date() }).where(eq18(emailSendHistory.id, emailId)).returning();
     if (!updated) {
       return res.status(404).json({ error: "Email not found" });
     }
@@ -18880,7 +18939,7 @@ router13.get("/email-history/:id", requireAuth, async (req, res) => {
     if (isNaN(emailId)) {
       return res.status(400).json({ error: "Invalid email ID" });
     }
-    const email = await db.select({
+    const email = await db2.select({
       id: emailSendHistory.id,
       orderId: emailSendHistory.orderId,
       orderNumber: purchaseOrders.orderNumber,
@@ -19185,7 +19244,7 @@ import { Router as Router14 } from "express";
 // server/utils/optimized-orders-query.ts
 init_db();
 init_schema();
-import { eq as eq19, desc as desc7, asc as asc3, ilike as ilike3, and as and10, or as or3, between as between2, count as count3, sql as sql10, gte as gte5, lte as lte5 } from "drizzle-orm";
+import { eq as eq19, desc as desc8, asc as asc3, ilike as ilike3, and as and11, or as or4, between as between2, count as count3, sql as sql10, gte as gte5, lte as lte5 } from "drizzle-orm";
 var OptimizedOrdersService = class _OptimizedOrdersService {
   /**
    * 정렬 필드에 따른 ORDER BY 절 생성
@@ -19218,7 +19277,7 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
       }
     };
     const sortField = getSortField(sortBy || "createdAt");
-    return sortOrder === "asc" ? asc3(sortField) : desc7(sortField);
+    return sortOrder === "asc" ? asc3(sortField) : desc8(sortField);
   }
   /**
    * High-performance order listing with metadata
@@ -19273,9 +19332,9 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
     if (searchText && searchText.trim()) {
       const trimmedSearchText = searchText.trim();
       const searchPattern = `%${trimmedSearchText.toLowerCase()}%`;
-      const itemSearchSubquery = db.select({ orderId: purchaseOrderItems.orderId }).from(purchaseOrderItems).where(ilike3(purchaseOrderItems.itemName, searchPattern));
+      const itemSearchSubquery = db2.select({ orderId: purchaseOrderItems.orderId }).from(purchaseOrderItems).where(ilike3(purchaseOrderItems.itemName, searchPattern));
       whereConditions.push(
-        or3(
+        or4(
           ilike3(purchaseOrders.orderNumber, searchPattern),
           ilike3(vendors.name, searchPattern),
           ilike3(projects.projectName, searchPattern),
@@ -19285,8 +19344,8 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
         )
       );
     }
-    const whereClause = whereConditions.length > 0 ? and10(...whereConditions) : void 0;
-    const ordersQuery = db.select({
+    const whereClause = whereConditions.length > 0 ? and11(...whereConditions) : void 0;
+    const ordersQuery = db2.select({
       // Order fields
       id: purchaseOrders.id,
       orderNumber: purchaseOrders.orderNumber,
@@ -19313,7 +19372,7 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
       emailStatus: sql10`(SELECT ${emailSendHistory.status} FROM ${emailSendHistory} WHERE ${emailSendHistory.orderId} = ${purchaseOrders.id} ORDER BY ${emailSendHistory.sentAt} DESC LIMIT 1)`,
       emailSentAt: sql10`(SELECT ${emailSendHistory.sentAt} FROM ${emailSendHistory} WHERE ${emailSendHistory.orderId} = ${purchaseOrders.id} ORDER BY ${emailSendHistory.sentAt} DESC LIMIT 1)`
     }).from(purchaseOrders).leftJoin(vendors, eq19(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq19(purchaseOrders.projectId, projects.id)).leftJoin(users, eq19(purchaseOrders.userId, users.id)).where(whereClause).orderBy(_OptimizedOrdersService.getOrderByClause(sortBy, sortOrder)).limit(limit).offset((page - 1) * limit);
-    const countQuery = db.select({ count: count3() }).from(purchaseOrders).leftJoin(vendors, eq19(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq19(purchaseOrders.projectId, projects.id)).leftJoin(users, eq19(purchaseOrders.userId, users.id)).where(whereClause);
+    const countQuery = db2.select({ count: count3() }).from(purchaseOrders).leftJoin(vendors, eq19(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq19(purchaseOrders.projectId, projects.id)).leftJoin(users, eq19(purchaseOrders.userId, users.id)).where(whereClause);
     const [orders, [{ count: totalCount }]] = await Promise.all([
       ordersQuery,
       countQuery
@@ -19342,18 +19401,18 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
   static async getOrderMetadata() {
     const [vendorsList, projectsList, usersList] = await Promise.all([
       // Only active vendors with recent orders
-      db.select({
+      db2.select({
         id: vendors.id,
         name: vendors.name
       }).from(vendors).where(eq19(vendors.isActive, true)).orderBy(asc3(vendors.name)),
       // Only active projects
-      db.select({
+      db2.select({
         id: projects.id,
         projectName: projects.projectName,
         projectCode: projects.projectCode
       }).from(projects).where(eq19(projects.isActive, true)).orderBy(asc3(projects.projectName)),
       // Only active users
-      db.select({
+      db2.select({
         id: users.id,
         name: users.name,
         email: users.email
@@ -19377,7 +19436,7 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
    * Reduces multiple API calls for bulk operations
    */
   static async batchUpdateOrderStatus(orderIds, status, userId) {
-    const result = await db.update(purchaseOrders).set({
+    const result = await db2.update(purchaseOrders).set({
       status,
       updatedAt: /* @__PURE__ */ new Date()
     }).where(sql10`${purchaseOrders.id} = ANY(${orderIds})`).returning();
@@ -19389,7 +19448,7 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
    */
   static async getOrderStatistics(userId) {
     const whereClause = userId ? eq19(purchaseOrders.userId, userId) : void 0;
-    const stats = await db.select({
+    const stats = await db2.select({
       status: purchaseOrders.status,
       count: count3(),
       totalAmount: sql10`COALESCE(SUM(${purchaseOrders.totalAmount}), 0)`,
@@ -19435,10 +19494,10 @@ var router15 = Router14();
 router15.get("/orders-optimized-test", async (req, res) => {
   try {
     console.log("\u{1F50D} Testing DB connection...");
-    if (!db) {
+    if (!db2) {
       throw new Error("Database connection not available");
     }
-    const result = await db.execute({ sql: "SELECT 1 as test", args: [] });
+    const result = await db2.execute({ sql: "SELECT 1 as test", args: [] });
     console.log("\u2705 DB test successful:", result);
     res.json({
       status: "ok",
@@ -19636,7 +19695,7 @@ var order_statuses_default = router16;
 init_db();
 init_schema();
 import { Router as Router16 } from "express";
-import { eq as eq20, desc as desc8 } from "drizzle-orm";
+import { eq as eq20, desc as desc9 } from "drizzle-orm";
 import multer5 from "multer";
 import path14 from "path";
 import fs17 from "fs";
@@ -19681,7 +19740,7 @@ router17.get("/invoices", async (req, res) => {
   try {
     const { orderId } = req.query;
     console.log(`\u{1F4B0} Fetching invoices${orderId ? ` for order ${orderId}` : ""} from database...`);
-    let query = db.select({
+    let query = db2.select({
       id: invoices.id,
       orderId: invoices.orderId,
       invoiceNumber: invoices.invoiceNumber,
@@ -19704,7 +19763,7 @@ router17.get("/invoices", async (req, res) => {
     if (orderId) {
       query = query.where(eq20(invoices.orderId, parseInt(orderId)));
     }
-    const invoiceList = await query.orderBy(desc8(invoices.createdAt));
+    const invoiceList = await query.orderBy(desc9(invoices.createdAt));
     console.log(`\u2705 Successfully fetched ${invoiceList.length} invoices from database`);
     res.json(invoiceList);
   } catch (error) {
@@ -19719,7 +19778,7 @@ router17.get("/invoices/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     console.log(`\u{1F4B0} Fetching invoice ${id} from database...`);
-    const [invoice] = await db.select({
+    const [invoice] = await db2.select({
       id: invoices.id,
       orderId: invoices.orderId,
       invoiceNumber: invoices.invoiceNumber,
@@ -19786,7 +19845,7 @@ router17.post("/invoices", upload5.single("file"), async (req, res) => {
         console.log(`\u{1F4CE} File data encoded for Vercel: ${Math.round(fileBuffer.length / 1024)}KB`);
       }
     }
-    const [newInvoice] = await db.insert(invoices).values({
+    const [newInvoice] = await db2.insert(invoices).values({
       orderId: parseInt(orderId),
       invoiceNumber,
       invoiceType: invoiceType || "invoice",
@@ -19802,7 +19861,7 @@ router17.post("/invoices", upload5.single("file"), async (req, res) => {
       uploadedBy: userId,
       notes: notes || null
     }).returning();
-    const [invoice] = await db.select({
+    const [invoice] = await db2.select({
       id: invoices.id,
       orderId: invoices.orderId,
       invoiceNumber: invoices.invoiceNumber,
@@ -19839,7 +19898,7 @@ router17.post("/invoices/:id/verify", requireAuth, async (req, res) => {
     const invoiceId = parseInt(req.params.id, 10);
     const userId = req.user?.id || "test_admin_001";
     console.log(`\u{1F4B0} Verifying invoice ${invoiceId}...`);
-    const [updatedInvoice] = await db.update(invoices).set({
+    const [updatedInvoice] = await db2.update(invoices).set({
       status: "verified",
       verifiedBy: userId,
       verifiedAt: /* @__PURE__ */ new Date(),
@@ -19863,7 +19922,7 @@ router17.post("/invoices/:id/issue-tax", requireAuth, async (req, res) => {
     const invoiceId = parseInt(req.params.id, 10);
     const userId = req.user?.id || "test_admin_001";
     console.log(`\u{1F4B0} Issuing tax invoice for ${invoiceId}...`);
-    const [updatedInvoice] = await db.update(invoices).set({
+    const [updatedInvoice] = await db2.update(invoices).set({
       taxInvoiceIssued: true,
       taxInvoiceIssuedDate: /* @__PURE__ */ new Date(),
       taxInvoiceIssuedBy: userId,
@@ -19906,7 +19965,7 @@ router17.patch("/invoices/:id", requireAuth, async (req, res) => {
     if (status !== void 0) updateData.status = status;
     if (notes !== void 0) updateData.notes = notes;
     updateData.updatedAt = /* @__PURE__ */ new Date();
-    const [updatedInvoice] = await db.update(invoices).set(updateData).where(eq20(invoices.id, invoiceId)).returning();
+    const [updatedInvoice] = await db2.update(invoices).set(updateData).where(eq20(invoices.id, invoiceId)).returning();
     if (!updatedInvoice) {
       return res.status(404).json({ message: "Invoice not found" });
     }
@@ -19924,11 +19983,11 @@ router17.delete("/invoices/:id", requireAuth, async (req, res) => {
   try {
     const invoiceId = parseInt(req.params.id, 10);
     console.log(`\u{1F4B0} Deleting invoice ${invoiceId}...`);
-    const [invoice] = await db.select().from(invoices).where(eq20(invoices.id, invoiceId)).limit(1);
+    const [invoice] = await db2.select().from(invoices).where(eq20(invoices.id, invoiceId)).limit(1);
     if (!invoice) {
       return res.status(404).json({ message: "Invoice not found" });
     }
-    await db.delete(invoices).where(eq20(invoices.id, invoiceId));
+    await db2.delete(invoices).where(eq20(invoices.id, invoiceId));
     if (invoice.filePath && !process.env.VERCEL) {
       try {
         if (fs17.existsSync(invoice.filePath)) {
@@ -20021,12 +20080,12 @@ var verification_logs_default = router18;
 init_db();
 init_schema();
 import { Router as Router18 } from "express";
-import { eq as eq21, desc as desc9 } from "drizzle-orm";
+import { eq as eq21, desc as desc10 } from "drizzle-orm";
 var router19 = Router18();
 router19.get("/item-receipts", async (_req, res) => {
   try {
     console.log("\u{1F4E6} Fetching all item receipts from database...");
-    const receipts = await db.select({
+    const receipts = await db2.select({
       id: itemReceipts.id,
       orderItemId: itemReceipts.orderItemId,
       invoiceId: itemReceipts.invoiceId,
@@ -20045,7 +20104,7 @@ router19.get("/item-receipts", async (_req, res) => {
       orderId: purchaseOrderItems.orderId,
       // Join with users for verifier name
       verifierName: users.name
-    }).from(itemReceipts).leftJoin(purchaseOrderItems, eq21(itemReceipts.orderItemId, purchaseOrderItems.id)).leftJoin(users, eq21(itemReceipts.verifiedBy, users.id)).orderBy(desc9(itemReceipts.createdAt));
+    }).from(itemReceipts).leftJoin(purchaseOrderItems, eq21(itemReceipts.orderItemId, purchaseOrderItems.id)).leftJoin(users, eq21(itemReceipts.verifiedBy, users.id)).orderBy(desc10(itemReceipts.createdAt));
     console.log(`\u2705 Successfully fetched ${receipts.length} item receipts from database`);
     res.json(receipts);
   } catch (error) {
@@ -20060,7 +20119,7 @@ router19.get("/item-receipts/order/:orderId", async (req, res) => {
   try {
     const orderId = parseInt(req.params.orderId, 10);
     console.log(`\u{1F4E6} Fetching item receipts for order ${orderId} from database...`);
-    const receipts = await db.select({
+    const receipts = await db2.select({
       id: itemReceipts.id,
       orderItemId: itemReceipts.orderItemId,
       invoiceId: itemReceipts.invoiceId,
@@ -20079,7 +20138,7 @@ router19.get("/item-receipts/order/:orderId", async (req, res) => {
       orderId: purchaseOrderItems.orderId,
       // Join with users for verifier name
       verifierName: users.name
-    }).from(itemReceipts).leftJoin(purchaseOrderItems, eq21(itemReceipts.orderItemId, purchaseOrderItems.id)).leftJoin(users, eq21(itemReceipts.verifiedBy, users.id)).where(eq21(purchaseOrderItems.orderId, orderId)).orderBy(desc9(itemReceipts.createdAt));
+    }).from(itemReceipts).leftJoin(purchaseOrderItems, eq21(itemReceipts.orderItemId, purchaseOrderItems.id)).leftJoin(users, eq21(itemReceipts.verifiedBy, users.id)).where(eq21(purchaseOrderItems.orderId, orderId)).orderBy(desc10(itemReceipts.createdAt));
     console.log(`\u2705 Successfully fetched ${receipts.length} item receipts for order ${orderId}`);
     res.json(receipts);
   } catch (error) {
@@ -20110,7 +20169,7 @@ router19.post("/item-receipts", async (req, res) => {
         message: "Missing required fields: orderItemId, receivedQuantity, receivedDate"
       });
     }
-    const [newReceipt] = await db.insert(itemReceipts).values({
+    const [newReceipt] = await db2.insert(itemReceipts).values({
       orderItemId: parseInt(orderItemId),
       invoiceId: invoiceId ? parseInt(invoiceId) : null,
       receivedQuantity: parseFloat(receivedQuantity),
@@ -20121,7 +20180,7 @@ router19.post("/item-receipts", async (req, res) => {
       status: status || "pending",
       notes: notes || null
     }).returning();
-    const [receipt] = await db.select({
+    const [receipt] = await db2.select({
       id: itemReceipts.id,
       orderItemId: itemReceipts.orderItemId,
       invoiceId: itemReceipts.invoiceId,
@@ -20171,11 +20230,11 @@ router19.patch("/item-receipts/:id", async (req, res) => {
     if (status !== void 0) updateData.status = status;
     if (notes !== void 0) updateData.notes = notes;
     updateData.updatedAt = /* @__PURE__ */ new Date();
-    const [updatedReceipt] = await db.update(itemReceipts).set(updateData).where(eq21(itemReceipts.id, receiptId)).returning();
+    const [updatedReceipt] = await db2.update(itemReceipts).set(updateData).where(eq21(itemReceipts.id, receiptId)).returning();
     if (!updatedReceipt) {
       return res.status(404).json({ message: "Item receipt not found" });
     }
-    const [receipt] = await db.select({
+    const [receipt] = await db2.select({
       id: itemReceipts.id,
       orderItemId: itemReceipts.orderItemId,
       invoiceId: itemReceipts.invoiceId,
@@ -20209,7 +20268,7 @@ router19.delete("/item-receipts/:id", async (req, res) => {
   try {
     const receiptId = parseInt(req.params.id, 10);
     console.log(`\u{1F4E6} Deleting item receipt ${receiptId}...`);
-    const [deletedReceipt] = await db.delete(itemReceipts).where(eq21(itemReceipts.id, receiptId)).returning();
+    const [deletedReceipt] = await db2.delete(itemReceipts).where(eq21(itemReceipts.id, receiptId)).returning();
     if (!deletedReceipt) {
       return res.status(404).json({ message: "Item receipt not found" });
     }
@@ -20229,12 +20288,12 @@ var item_receipts_default = router19;
 import { Router as Router19 } from "express";
 init_db();
 init_schema();
-import { eq as eq23, and as and12, desc as desc10, sql as sql12, inArray as inArray5 } from "drizzle-orm";
+import { eq as eq23, and as and13, desc as desc11, sql as sql12, inArray as inArray5 } from "drizzle-orm";
 
 // server/services/notification-service.ts
 init_db();
 init_schema();
-import { eq as eq22, and as and11, inArray as inArray4, sql as sql11 } from "drizzle-orm";
+import { eq as eq22, and as and12, inArray as inArray4, sql as sql11 } from "drizzle-orm";
 var NotificationService = class {
   /**
    * 승인 요청 시 알림 발송
@@ -20269,7 +20328,7 @@ var NotificationService = class {
           requestedBy: orderInfo.requesterName
         })
       }));
-      await db.insert(notifications2).values(notifications2);
+      await db2.insert(notifications2).values(notifications2);
       console.log(`\u2705 Sent approval request notifications to ${approvers.length} users for order ${context.orderId}`);
     } catch (error) {
       console.error("\u274C Error sending approval request notification:", error);
@@ -20312,7 +20371,7 @@ var NotificationService = class {
           comments: context.comments
         })
       }));
-      await db.insert(notifications2).values(notifications2);
+      await db2.insert(notifications2).values(notifications2);
       console.log(`\u2705 Sent approval result notifications to ${recipients.length} users for order ${context.orderId}`);
     } catch (error) {
       console.error("\u274C Error sending approval result notification:", error);
@@ -20322,24 +20381,24 @@ var NotificationService = class {
    * 승인 권한이 있는 사용자들 조회
    */
   static async getEligibleApprovers(orderAmount) {
-    const authorities = await db.select({
+    const authorities = await db2.select({
       role: approvalAuthorities.role,
       maxAmount: approvalAuthorities.maxAmount
     }).from(approvalAuthorities).where(
-      and11(
+      and12(
         eq22(approvalAuthorities.isActive, true),
         sql11`CAST(${approvalAuthorities.maxAmount} AS DECIMAL) >= ${orderAmount}`
       )
     );
     if (authorities.length === 0) {
-      return await db.select({
+      return await db2.select({
         id: users.id,
         name: users.name,
         role: users.role
       }).from(users).where(eq22(users.role, "admin")).limit(10);
     }
     const eligibleRoles = authorities.map((auth) => auth.role);
-    return await db.select({
+    return await db2.select({
       id: users.id,
       name: users.name,
       role: users.role
@@ -20349,7 +20408,7 @@ var NotificationService = class {
    * 발주서 관련 정보 조회
    */
   static async getOrderInfo(orderId) {
-    const result = await db.select({
+    const result = await db2.select({
       id: purchaseOrders.id,
       orderNumber: purchaseOrders.orderNumber,
       totalAmount: purchaseOrders.totalAmount,
@@ -20373,11 +20432,11 @@ var NotificationService = class {
       stakeholders.add(orderInfo.userId);
     }
     if (orderInfo.projectId) {
-      const projectMembers3 = await db.select({ userId: users.id }).from(users).where(eq22(users.role, "project_manager")).limit(5);
+      const projectMembers3 = await db2.select({ userId: users.id }).from(users).where(eq22(users.role, "project_manager")).limit(5);
       projectMembers3.forEach((member) => stakeholders.add(member.userId));
     }
     if (stakeholders.size === 0) return [];
-    return await db.select({
+    return await db2.select({
       id: users.id,
       name: users.name
     }).from(users).where(inArray4(users.id, Array.from(stakeholders))).limit(10);
@@ -20406,8 +20465,8 @@ var NotificationService = class {
    */
   static async getUserNotifications(userId, limit = 20) {
     try {
-      const result = await db.select().from(notifications).where(
-        and11(
+      const result = await db2.select().from(notifications).where(
+        and12(
           eq22(notifications.userId, userId),
           eq22(notifications.isActive, true)
         )
@@ -20428,11 +20487,11 @@ var NotificationService = class {
    */
   static async markNotificationAsRead(notificationId, userId) {
     try {
-      const result = await db.update(notifications).set({
+      const result = await db2.update(notifications).set({
         isRead: true,
         updatedAt: /* @__PURE__ */ new Date()
       }).where(
-        and11(
+        and12(
           eq22(notifications.id, notificationId),
           eq22(notifications.userId, userId)
         )
@@ -20448,11 +20507,11 @@ var NotificationService = class {
    */
   static async markAllNotificationsAsRead(userId) {
     try {
-      const result = await db.update(notifications).set({
+      const result = await db2.update(notifications).set({
         isRead: true,
         updatedAt: /* @__PURE__ */ new Date()
       }).where(
-        and11(
+        and12(
           eq22(notifications.userId, userId),
           eq22(notifications.isRead, false),
           eq22(notifications.isActive, true)
@@ -20470,8 +20529,8 @@ var NotificationService = class {
 var router20 = Router19();
 async function checkApprovalPermission(userRole, orderAmount) {
   try {
-    const authority = await db.select().from(approvalAuthorities).where(
-      and12(
+    const authority = await db2.select().from(approvalAuthorities).where(
+      and13(
         eq23(approvalAuthorities.role, userRole),
         eq23(approvalAuthorities.isActive, true)
       )
@@ -20489,7 +20548,7 @@ async function checkApprovalPermission(userRole, orderAmount) {
 router20.get("/approvals/history", requireAuth, requireRole(["admin", "executive", "hq_management", "project_manager"]), async (req, res) => {
   try {
     console.log("\u{1F4CB} Fetching approval history from database...");
-    const approvalHistory = await db.select({
+    const approvalHistory = await db2.select({
       id: orderHistory.id,
       orderId: orderHistory.orderId,
       orderTitle: purchaseOrders.orderNumber,
@@ -20502,7 +20561,7 @@ router20.get("/approvals/history", requireAuth, requireRole(["admin", "executive
       createdAt: orderHistory.performedAt
     }).from(orderHistory).leftJoin(purchaseOrders, eq23(orderHistory.orderId, purchaseOrders.id)).leftJoin(users, eq23(orderHistory.performedBy, users.id)).where(
       inArray5(orderHistory.action, ["approved", "rejected"])
-    ).orderBy(desc10(orderHistory.performedAt)).limit(50);
+    ).orderBy(desc11(orderHistory.performedAt)).limit(50);
     const allHistory = approvalHistory.map((record) => ({
       ...record,
       orderTitle: record.orderTitle || `\uBC1C\uC8FC\uC11C #${record.orderId}`,
@@ -20525,7 +20584,7 @@ router20.get("/approvals/history", requireAuth, requireRole(["admin", "executive
 router20.get("/approvals/pending", requireAuth, requireRole(["admin", "executive", "hq_management", "project_manager"]), async (req, res) => {
   try {
     console.log("\u23F3 Fetching pending approvals from database...");
-    const pendingOrders = await db.select({
+    const pendingOrders = await db2.select({
       id: purchaseOrders.id,
       orderNumber: purchaseOrders.orderNumber,
       totalAmount: purchaseOrders.totalAmount,
@@ -20544,7 +20603,7 @@ router20.get("/approvals/pending", requireAuth, requireRole(["admin", "executive
       // Vendor information
       vendorId: vendors.id,
       vendorName: vendors.name
-    }).from(purchaseOrders).leftJoin(projects, eq23(purchaseOrders.projectId, projects.id)).leftJoin(users, eq23(purchaseOrders.userId, users.id)).leftJoin(vendors, eq23(purchaseOrders.vendorId, vendors.id)).where(eq23(purchaseOrders.status, "pending")).orderBy(desc10(purchaseOrders.createdAt));
+    }).from(purchaseOrders).leftJoin(projects, eq23(purchaseOrders.projectId, projects.id)).leftJoin(users, eq23(purchaseOrders.userId, users.id)).leftJoin(vendors, eq23(purchaseOrders.vendorId, vendors.id)).where(eq23(purchaseOrders.status, "pending")).orderBy(desc11(purchaseOrders.createdAt));
     const formattedOrders = pendingOrders.map((order) => ({
       id: order.id,
       orderNumber: order.orderNumber,
@@ -20578,20 +20637,20 @@ router20.get("/approvals/stats", requireAuth, requireRole(["admin", "executive",
     console.log("\u{1F4CA} Fetching approval stats from database...");
     const [totalStats, pendingStats, approvedStats, rejectedStats] = await Promise.all([
       // 전체 발주서 수
-      db.select({ count: sql12`count(*)` }).from(purchaseOrders),
+      db2.select({ count: sql12`count(*)` }).from(purchaseOrders),
       // 승인 대기 수
-      db.select({ count: sql12`count(*)` }).from(purchaseOrders).where(eq23(purchaseOrders.status, "pending")),
+      db2.select({ count: sql12`count(*)` }).from(purchaseOrders).where(eq23(purchaseOrders.status, "pending")),
       // 승인 완료 수
-      db.select({ count: sql12`count(*)` }).from(purchaseOrders).where(eq23(purchaseOrders.status, "approved")),
+      db2.select({ count: sql12`count(*)` }).from(purchaseOrders).where(eq23(purchaseOrders.status, "approved")),
       // 반려 수
-      db.select({ count: sql12`count(*)` }).from(purchaseOrders).where(eq23(purchaseOrders.status, "rejected"))
+      db2.select({ count: sql12`count(*)` }).from(purchaseOrders).where(eq23(purchaseOrders.status, "rejected"))
     ]);
     const totalCount = totalStats[0]?.count || 0;
     const pendingCount = pendingStats[0]?.count || 0;
     const approvedCount = approvedStats[0]?.count || 0;
     const rejectedCount = rejectedStats[0]?.count || 0;
     const approvalRate = totalCount > 0 ? approvedCount / (approvedCount + rejectedCount) * 100 : 0;
-    const monthlyStatsQuery = await db.select({
+    const monthlyStatsQuery = await db2.select({
       month: sql12`to_char(created_at, 'YYYY-MM')`,
       status: purchaseOrders.status,
       count: sql12`count(*)`
@@ -20640,7 +20699,7 @@ router20.post("/approvals/:id/process", requireAuth, requireRole(["admin", "exec
     const { action, comments } = req.body;
     const user = req.user;
     console.log(`\u{1F4CB} Processing approval ${id} with action: ${action} by ${user.name} (${user.role})`);
-    const existingOrder = await db.select().from(purchaseOrders).where(eq23(purchaseOrders.id, id)).limit(1);
+    const existingOrder = await db2.select().from(purchaseOrders).where(eq23(purchaseOrders.id, id)).limit(1);
     if (existingOrder.length === 0) {
       return res.status(404).json({ message: "\uBC1C\uC8FC\uC11C\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
     }
@@ -20652,7 +20711,7 @@ router20.post("/approvals/:id/process", requireAuth, requireRole(["admin", "exec
       });
     }
     const newStatus = action === "approve" ? "approved" : "rejected";
-    await db.update(purchaseOrders).set({
+    await db2.update(purchaseOrders).set({
       status: newStatus,
       updatedAt: /* @__PURE__ */ new Date()
     }).where(eq23(purchaseOrders.id, id));
@@ -20665,7 +20724,7 @@ router20.post("/approvals/:id/process", requireAuth, requireRole(["admin", "exec
       previousStatus: order.status,
       newStatus
     };
-    await db.insert(orderHistory).values(historyEntry);
+    await db2.insert(orderHistory).values(historyEntry);
     await NotificationService.sendApprovalResultNotification({
       orderId: id,
       action: action === "approve" ? "approval_completed" : "approval_rejected",
@@ -20743,7 +20802,7 @@ router20.post("/approvals/:orderId/reject", requireAuth, requireRole(["admin", "
 });
 async function processApproval(req, res, orderId, action, note, user) {
   try {
-    const existingOrder = await db.select().from(purchaseOrders).where(eq23(purchaseOrders.id, orderId)).limit(1);
+    const existingOrder = await db2.select().from(purchaseOrders).where(eq23(purchaseOrders.id, orderId)).limit(1);
     if (existingOrder.length === 0) {
       throw new Error("\uBC1C\uC8FC\uC11C\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4");
     }
@@ -20753,7 +20812,7 @@ async function processApproval(req, res, orderId, action, note, user) {
       throw new Error("\uD574\uB2F9 \uAE08\uC561\uC5D0 \uB300\uD55C \uC2B9\uC778 \uAD8C\uD55C\uC774 \uC5C6\uC2B5\uB2C8\uB2E4");
     }
     const newStatus = action === "approve" ? "approved" : "rejected";
-    await db.update(purchaseOrders).set({
+    await db2.update(purchaseOrders).set({
       status: newStatus,
       updatedAt: /* @__PURE__ */ new Date()
     }).where(eq23(purchaseOrders.id, orderId));
@@ -20766,7 +20825,7 @@ async function processApproval(req, res, orderId, action, note, user) {
       previousStatus: order.status,
       newStatus
     };
-    await db.insert(orderHistory).values(historyEntry);
+    await db2.insert(orderHistory).values(historyEntry);
     await NotificationService.sendApprovalResultNotification({
       orderId,
       action: action === "approve" ? "approval_completed" : "approval_rejected",
@@ -20797,7 +20856,7 @@ router20.post("/approvals/:orderId/start-workflow", requireAuth, requireRole(["a
     const { companyId } = req.body;
     const user = req.user;
     console.log(`\u{1F504} Starting approval workflow for order ${orderId}`);
-    const orderInfo = await db.select({
+    const orderInfo = await db2.select({
       id: purchaseOrders.id,
       totalAmount: purchaseOrders.totalAmount,
       status: purchaseOrders.status,
@@ -20838,7 +20897,7 @@ router20.post("/approvals/:orderId/start-workflow", requireAuth, requireRole(["a
       }
     } else {
       const approvalInstances = await ApprovalRoutingService.createApprovalInstances(orderId, approvalContext);
-      await db.update(purchaseOrders).set({
+      await db2.update(purchaseOrders).set({
         status: "pending",
         updatedAt: /* @__PURE__ */ new Date()
       }).where(eq23(purchaseOrders.id, orderId));
@@ -20895,7 +20954,7 @@ router20.post("/approvals/:orderId/step/:stepId", requireAuth, requireRole(["adm
     const { action, comments } = req.body;
     const user = req.user;
     console.log(`\u{1F504} Processing approval step ${stepId} for order ${orderId} with action: ${action}`);
-    const stepInstance = await db.select().from(approvalStepInstances2).where(eq23(approvalStepInstances2.id, stepId)).limit(1);
+    const stepInstance = await db2.select().from(approvalStepInstances2).where(eq23(approvalStepInstances2.id, stepId)).limit(1);
     if (stepInstance.length === 0) {
       return res.status(404).json({ message: "\uC2B9\uC778 \uB2E8\uACC4\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
     }
@@ -20906,7 +20965,7 @@ router20.post("/approvals/:orderId/step/:stepId", requireAuth, requireRole(["adm
       });
     }
     const newStatus = action === "approve" ? "approved" : action === "reject" ? "rejected" : "skipped";
-    await db.update(approvalStepInstances2).set({
+    await db2.update(approvalStepInstances2).set({
       status: newStatus,
       approvedBy: user.id,
       approvedAt: /* @__PURE__ */ new Date(),
@@ -20918,11 +20977,11 @@ router20.post("/approvals/:orderId/step/:stepId", requireAuth, requireRole(["adm
     let finalOrderStatus = "pending";
     if (action === "reject") {
       finalOrderStatus = "rejected";
-      await db.update(approvalStepInstances2).set({
+      await db2.update(approvalStepInstances2).set({
         isActive: false,
         updatedAt: /* @__PURE__ */ new Date()
       }).where(
-        and12(
+        and13(
           eq23(approvalStepInstances2.orderId, orderId),
           eq23(approvalStepInstances2.status, "pending")
         )
@@ -20931,11 +20990,11 @@ router20.post("/approvals/:orderId/step/:stepId", requireAuth, requireRole(["adm
       finalOrderStatus = "approved";
     }
     if (finalOrderStatus !== "pending") {
-      await db.update(purchaseOrders).set({
+      await db2.update(purchaseOrders).set({
         status: finalOrderStatus,
         updatedAt: /* @__PURE__ */ new Date()
       }).where(eq23(purchaseOrders.id, orderId));
-      await db.insert(orderHistory).values({
+      await db2.insert(orderHistory).values({
         orderId,
         action: finalOrderStatus === "approved" ? "approved" : "rejected",
         performedBy: user.id,
@@ -21552,7 +21611,7 @@ var test_accounts_default = router24;
 init_db();
 init_schema();
 import { Router as Router24 } from "express";
-import { eq as eq25, and as and14 } from "drizzle-orm";
+import { eq as eq25, and as and15 } from "drizzle-orm";
 
 // server/utils/category-mapping-validator.ts
 init_db();
@@ -21572,7 +21631,7 @@ async function validateCategoryMapping(request) {
     confidence: 0
   };
   try {
-    const allCategories = await db.select().from(itemCategories).where(eq24(itemCategories.isActive, true));
+    const allCategories = await db2.select().from(itemCategories).where(eq24(itemCategories.isActive, true));
     const majorCategories = allCategories.filter((c) => c.categoryType === "major");
     const middleCategories = allCategories.filter((c) => c.categoryType === "middle");
     const minorCategories = allCategories.filter((c) => c.categoryType === "minor");
@@ -21777,7 +21836,7 @@ async function validateCategoriesBatch(requests) {
 var router25 = Router24();
 router25.get("/hierarchy", async (req, res) => {
   try {
-    const categoriesFromOrderItems = await db.select({
+    const categoriesFromOrderItems = await db2.select({
       majorCategory: purchaseOrderItems.majorCategory,
       middleCategory: purchaseOrderItems.middleCategory,
       minorCategory: purchaseOrderItems.minorCategory
@@ -21786,7 +21845,7 @@ router25.get("/hierarchy", async (req, res) => {
       purchaseOrderItems.middleCategory,
       purchaseOrderItems.minorCategory
     );
-    const categoriesFromItems = await db.select({
+    const categoriesFromItems = await db2.select({
       majorCategory: items.majorCategory,
       middleCategory: items.middleCategory,
       minorCategory: items.minorCategory
@@ -21822,7 +21881,7 @@ router25.get("/hierarchy", async (req, res) => {
 router25.get("/", async (req, res) => {
   try {
     console.log("\u{1F4CB} Fetching all categories...");
-    const categories = await db.select().from(itemCategories).where(eq25(itemCategories.isActive, true)).orderBy(itemCategories.displayOrder, itemCategories.categoryName);
+    const categories = await db2.select().from(itemCategories).where(eq25(itemCategories.isActive, true)).orderBy(itemCategories.displayOrder, itemCategories.categoryName);
     const majorCategories = categories.filter((c) => c.categoryType === "major");
     const middleCategories = categories.filter((c) => c.categoryType === "middle");
     const minorCategories = categories.filter((c) => c.categoryType === "minor");
@@ -21850,7 +21909,7 @@ router25.get("/", async (req, res) => {
 router25.get("/used-in-orders", async (req, res) => {
   try {
     console.log("\u{1F4CB} Fetching categories used in purchase orders...");
-    const categoriesFromOrders = await db.select({
+    const categoriesFromOrders = await db2.select({
       majorCategory: purchaseOrderItems.majorCategory,
       middleCategory: purchaseOrderItems.middleCategory,
       minorCategory: purchaseOrderItems.minorCategory
@@ -21887,7 +21946,7 @@ router25.get("/:type", async (req, res) => {
     const { type } = req.params;
     const { parentId } = req.query;
     console.log(`\u{1F4CB} Fetching ${type} categories...`);
-    let query = db.select().from(itemCategories).where(and14(
+    let query = db2.select().from(itemCategories).where(and15(
       eq25(itemCategories.categoryType, type),
       eq25(itemCategories.isActive, true)
     ));
@@ -21912,7 +21971,7 @@ router25.post("/", async (req, res) => {
   try {
     const { categoryType, categoryName, parentId, displayOrder } = req.body;
     console.log("\u2795 Creating new category:", { categoryType, categoryName, parentId });
-    const newCategory = await db.insert(itemCategories).values({
+    const newCategory = await db2.insert(itemCategories).values({
       categoryType,
       categoryName,
       parentId: parentId || null,
@@ -21938,7 +21997,7 @@ router25.put("/:id", async (req, res) => {
     const { id } = req.params;
     const { categoryName, displayOrder, isActive } = req.body;
     console.log(`\u{1F527} Updating category ${id}...`);
-    const updatedCategory = await db.update(itemCategories).set({
+    const updatedCategory = await db2.update(itemCategories).set({
       categoryName,
       displayOrder,
       isActive,
@@ -21968,7 +22027,7 @@ router25.delete("/:id", async (req, res) => {
   try {
     const { id } = req.params;
     console.log(`\u{1F5D1}\uFE0F Deactivating category ${id}...`);
-    const updatedCategory = await db.update(itemCategories).set({
+    const updatedCategory = await db2.update(itemCategories).set({
       isActive: false,
       updatedAt: /* @__PURE__ */ new Date()
     }).where(eq25(itemCategories.id, parseInt(id))).returning();
@@ -22054,18 +22113,18 @@ var categories_default = router25;
 init_db();
 init_schema();
 import { Router as Router25 } from "express";
-import { eq as eq26, and as and15, desc as desc11, asc as asc5 } from "drizzle-orm";
+import { eq as eq26, and as and16, desc as desc12, asc as asc5 } from "drizzle-orm";
 import { z as z6 } from "zod";
 var router26 = Router25();
 router26.get("/workflow-settings/:companyId", requireAuth, async (req, res) => {
   try {
     const { companyId } = req.params;
-    const settings = await db.select().from(approvalWorkflowSettings).where(
-      and15(
+    const settings = await db2.select().from(approvalWorkflowSettings).where(
+      and16(
         eq26(approvalWorkflowSettings.companyId, parseInt(companyId)),
         eq26(approvalWorkflowSettings.isActive, true)
       )
-    ).orderBy(desc11(approvalWorkflowSettings.createdAt)).limit(1);
+    ).orderBy(desc12(approvalWorkflowSettings.createdAt)).limit(1);
     return res.json({
       success: true,
       data: settings[0] || null
@@ -22083,20 +22142,20 @@ router26.post("/workflow-settings", requireAuth, requireAdmin, async (req, res) 
       ...req.body,
       createdBy: req.user.id
     });
-    const existingSettings = await db.select().from(approvalWorkflowSettings).where(
-      and15(
+    const existingSettings = await db2.select().from(approvalWorkflowSettings).where(
+      and16(
         eq26(approvalWorkflowSettings.companyId, validatedData.companyId),
         eq26(approvalWorkflowSettings.isActive, true)
       )
     ).limit(1);
     let result;
     if (existingSettings.length > 0) {
-      result = await db.update(approvalWorkflowSettings).set({
+      result = await db2.update(approvalWorkflowSettings).set({
         ...validatedData,
         updatedAt: /* @__PURE__ */ new Date()
       }).where(eq26(approvalWorkflowSettings.id, existingSettings[0].id)).returning();
     } else {
-      result = await db.insert(approvalWorkflowSettings).values(validatedData).returning();
+      result = await db2.insert(approvalWorkflowSettings).values(validatedData).returning();
     }
     return res.json({
       success: true,
@@ -22119,15 +22178,15 @@ router26.get("/step-templates/:companyId", requireAuth, async (req, res) => {
   try {
     const { companyId } = req.params;
     const { templateName } = req.query;
-    let query = db.select().from(approvalStepTemplates).where(
-      and15(
+    let query = db2.select().from(approvalStepTemplates).where(
+      and16(
         eq26(approvalStepTemplates.companyId, parseInt(companyId)),
         eq26(approvalStepTemplates.isActive, true)
       )
     );
     if (templateName) {
       query = query.where(
-        and15(
+        and16(
           eq26(approvalStepTemplates.companyId, parseInt(companyId)),
           eq26(approvalStepTemplates.isActive, true),
           eq26(approvalStepTemplates.templateName, templateName)
@@ -22152,7 +22211,7 @@ router26.get("/step-templates/:companyId", requireAuth, async (req, res) => {
 router26.post("/step-templates", requireAuth, requireAdmin, async (req, res) => {
   try {
     const validatedData = insertApprovalStepTemplateSchema.parse(req.body);
-    const result = await db.insert(approvalStepTemplates).values(validatedData).returning();
+    const result = await db2.insert(approvalStepTemplates).values(validatedData).returning();
     return res.json({
       success: true,
       data: result[0]
@@ -22174,7 +22233,7 @@ router26.put("/step-templates/:id", requireAuth, requireAdmin, async (req, res) 
   try {
     const { id } = req.params;
     const validatedData = insertApprovalStepTemplateSchema.parse(req.body);
-    const result = await db.update(approvalStepTemplates).set({
+    const result = await db2.update(approvalStepTemplates).set({
       ...validatedData,
       updatedAt: /* @__PURE__ */ new Date()
     }).where(eq26(approvalStepTemplates.id, parseInt(id))).returning();
@@ -22201,7 +22260,7 @@ router26.put("/step-templates/:id", requireAuth, requireAdmin, async (req, res) 
 router26.delete("/step-templates/:id", requireAuth, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await db.update(approvalStepTemplates).set({
+    const result = await db2.update(approvalStepTemplates).set({
       isActive: false,
       updatedAt: /* @__PURE__ */ new Date()
     }).where(eq26(approvalStepTemplates.id, parseInt(id))).returning();
@@ -22222,8 +22281,8 @@ router26.delete("/step-templates/:id", requireAuth, requireAdmin, async (req, re
 router26.get("/step-instances/:orderId", requireAuth, async (req, res) => {
   try {
     const { orderId } = req.params;
-    const instances = await db.select().from(approvalStepInstances2).where(
-      and15(
+    const instances = await db2.select().from(approvalStepInstances2).where(
+      and16(
         eq26(approvalStepInstances2.orderId, parseInt(orderId)),
         eq26(approvalStepInstances2.isActive, true)
       )
@@ -22247,8 +22306,8 @@ router26.post("/step-instances", requireAuth, async (req, res) => {
         error: "orderId, templateName, companyId\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4"
       });
     }
-    const templates = await db.select().from(approvalStepTemplates).where(
-      and15(
+    const templates = await db2.select().from(approvalStepTemplates).where(
+      and16(
         eq26(approvalStepTemplates.companyId, companyId),
         eq26(approvalStepTemplates.templateName, templateName),
         eq26(approvalStepTemplates.isActive, true)
@@ -22266,7 +22325,7 @@ router26.post("/step-instances", requireAuth, async (req, res) => {
       requiredRole: template.requiredRole,
       status: "pending"
     }));
-    const result = await db.insert(approvalStepInstances2).values(instancesData).returning();
+    const result = await db2.insert(approvalStepInstances2).values(instancesData).returning();
     return res.json({
       success: true,
       data: result
@@ -22295,7 +22354,7 @@ router26.put("/step-instances/:id", requireAuth, async (req, res) => {
     };
     if (comments) updateData.comments = comments;
     if (rejectionReason) updateData.rejectionReason = rejectionReason;
-    const result = await db.update(approvalStepInstances2).set(updateData).where(eq26(approvalStepInstances2.id, parseInt(id))).returning();
+    const result = await db2.update(approvalStepInstances2).set(updateData).where(eq26(approvalStepInstances2.id, parseInt(id))).returning();
     if (result.length === 0) {
       return res.status(404).json({ error: "\uC2B9\uC778 \uB2E8\uACC4 \uC778\uC2A4\uD134\uC2A4\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
     }
@@ -22316,13 +22375,13 @@ var approval_settings_default = router26;
 import { Router as Router26 } from "express";
 init_db();
 init_schema();
-import { eq as eq27, and as and16, desc as desc12 } from "drizzle-orm";
+import { eq as eq27, and as and17, desc as desc13 } from "drizzle-orm";
 import { z as z7 } from "zod";
 var router27 = Router26();
 router27.get("/approval-authorities", requireAuth, requireRole(["admin"]), async (req, res) => {
   try {
     console.log("\u{1F4CB} Fetching approval authorities...");
-    const authorities = await db.select({
+    const authorities = await db2.select({
       id: approvalAuthorities.id,
       role: approvalAuthorities.role,
       maxAmount: approvalAuthorities.maxAmount,
@@ -22330,7 +22389,7 @@ router27.get("/approval-authorities", requireAuth, requireRole(["admin"]), async
       isActive: approvalAuthorities.isActive,
       createdAt: approvalAuthorities.createdAt,
       updatedAt: approvalAuthorities.updatedAt
-    }).from(approvalAuthorities).orderBy(desc12(approvalAuthorities.maxAmount));
+    }).from(approvalAuthorities).orderBy(desc13(approvalAuthorities.maxAmount));
     const formattedAuthorities = authorities.map((auth) => ({
       ...auth,
       maxAmount: parseFloat(auth.maxAmount),
@@ -22351,8 +22410,8 @@ router27.post("/approval-authorities", requireAuth, requireRole(["admin"]), asyn
   try {
     console.log("\u{1F4DD} Creating new approval authority:", req.body);
     const validatedData = insertApprovalAuthoritySchema.parse(req.body);
-    const existingAuthority = await db.select().from(approvalAuthorities).where(
-      and16(
+    const existingAuthority = await db2.select().from(approvalAuthorities).where(
+      and17(
         eq27(approvalAuthorities.role, validatedData.role),
         eq27(approvalAuthorities.isActive, true)
       )
@@ -22362,7 +22421,7 @@ router27.post("/approval-authorities", requireAuth, requireRole(["admin"]), asyn
         message: "\uD574\uB2F9 \uC5ED\uD560\uC5D0 \uB300\uD55C \uC2B9\uC778 \uAD8C\uD55C\uC774 \uC774\uBBF8 \uC874\uC7AC\uD569\uB2C8\uB2E4"
       });
     }
-    const result = await db.insert(approvalAuthorities).values(validatedData).returning();
+    const result = await db2.insert(approvalAuthorities).values(validatedData).returning();
     const newAuthority = {
       ...result[0],
       maxAmount: parseFloat(result[0].maxAmount),
@@ -22390,7 +22449,7 @@ router27.put("/approval-authorities/:id", requireAuth, requireRole(["admin"]), a
     const id = parseInt(req.params.id, 10);
     console.log(`\u{1F4DD} Updating approval authority ${id}:`, req.body);
     const validatedData = insertApprovalAuthoritySchema.parse(req.body);
-    const result = await db.update(approvalAuthorities).set({
+    const result = await db2.update(approvalAuthorities).set({
       ...validatedData,
       updatedAt: /* @__PURE__ */ new Date()
     }).where(eq27(approvalAuthorities.id, id)).returning();
@@ -22425,7 +22484,7 @@ router27.delete("/approval-authorities/:id", requireAuth, requireRole(["admin"])
   try {
     const id = parseInt(req.params.id, 10);
     console.log(`\u{1F5D1}\uFE0F Deactivating approval authority ${id}`);
-    const result = await db.update(approvalAuthorities).set({
+    const result = await db2.update(approvalAuthorities).set({
       isActive: false,
       updatedAt: /* @__PURE__ */ new Date()
     }).where(eq27(approvalAuthorities.id, id)).returning();
@@ -22450,8 +22509,8 @@ router27.get("/approval-authorities/role/:role", requireAuth, requireRole(["admi
   try {
     const { role } = req.params;
     console.log(`\u{1F4CB} Fetching approval authority for role: ${role}`);
-    const authority = await db.select().from(approvalAuthorities).where(
-      and16(
+    const authority = await db2.select().from(approvalAuthorities).where(
+      and17(
         eq27(approvalAuthorities.role, role),
         eq27(approvalAuthorities.isActive, true)
       )
@@ -22492,8 +22551,8 @@ router27.post("/approval-authorities/check-permission", requireAuth, requireRole
         message: "\uC5ED\uD560\uACFC \uAE08\uC561 \uC815\uBCF4\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4"
       });
     }
-    const authority = await db.select().from(approvalAuthorities).where(
-      and16(
+    const authority = await db2.select().from(approvalAuthorities).where(
+      and17(
         eq27(approvalAuthorities.role, checkRole),
         eq27(approvalAuthorities.isActive, true)
       )
@@ -22643,7 +22702,7 @@ var notifications_default = router28;
 init_db();
 init_schema();
 import { Router as Router28 } from "express";
-import { eq as eq28, and as and17, desc as desc13, count as count4 } from "drizzle-orm";
+import { eq as eq28, and as and18, desc as desc14, count as count4 } from "drizzle-orm";
 init_professional_pdf_generation_service();
 import multer6 from "multer";
 import path16 from "path";
@@ -22755,7 +22814,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
     let defaultProject;
     try {
       console.log("\u{1F50D} Fetching default project...");
-      defaultProject = await db.select().from(projects).where(eq28(projects.projectName, "\uAE30\uBCF8 \uD504\uB85C\uC81D\uD2B8")).then((rows) => rows[0]);
+      defaultProject = await db2.select().from(projects).where(eq28(projects.projectName, "\uAE30\uBCF8 \uD504\uB85C\uC81D\uD2B8")).then((rows) => rows[0]);
       console.log("\u2705 Default project fetch successful");
     } catch (error) {
       console.error("\u274C Error fetching default project:", error);
@@ -22764,7 +22823,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
     if (!defaultProject) {
       try {
         console.log("\u{1F50D} Creating default project...");
-        const [newProject] = await db.insert(projects).values({
+        const [newProject] = await db2.insert(projects).values({
           projectName: "\uAE30\uBCF8 \uD504\uB85C\uC81D\uD2B8",
           projectCode: "DEFAULT",
           status: "active",
@@ -22781,11 +22840,11 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
       try {
         let vendor = null;
         if (orderData.vendorName) {
-          const existingVendor = await db.select().from(vendors).where(eq28(vendors.name, orderData.vendorName)).then((rows) => rows[0]);
+          const existingVendor = await db2.select().from(vendors).where(eq28(vendors.name, orderData.vendorName)).then((rows) => rows[0]);
           if (existingVendor) {
             vendor = existingVendor;
           } else {
-            const [newVendor] = await db.insert(vendors).values({
+            const [newVendor] = await db2.insert(vendors).values({
               name: orderData.vendorName,
               contactPerson: "\uB2F4\uB2F9\uC790",
               // Required field
@@ -22797,7 +22856,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
         }
         let project = defaultProject;
         if (orderData.projectName) {
-          const existingProject = await db.select().from(projects).where(eq28(projects.projectName, orderData.projectName)).then((rows) => rows[0]);
+          const existingProject = await db2.select().from(projects).where(eq28(projects.projectName, orderData.projectName)).then((rows) => rows[0]);
           if (existingProject) {
             project = existingProject;
           }
@@ -22809,10 +22868,10 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
         let attempts = 0;
         const maxAttempts = 10;
         do {
-          const orderCount = await db.select().from(purchaseOrders).then((rows) => rows.length);
+          const orderCount = await db2.select().from(purchaseOrders).then((rows) => rows.length);
           const sequenceNumber = orderCount + 1 + attempts;
           orderNumber = `PO-${year}-${String(sequenceNumber).padStart(5, "0")}`;
-          const existingOrder = await db.select().from(purchaseOrders).where(eq28(purchaseOrders.orderNumber, orderNumber)).then((rows) => rows[0]);
+          const existingOrder = await db2.select().from(purchaseOrders).where(eq28(purchaseOrders.orderNumber, orderNumber)).then((rows) => rows[0]);
           if (!existingOrder) {
             break;
           }
@@ -22833,12 +22892,12 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
           approvalStatus = "not_required";
           legacyStatus = "draft";
         } else {
-          orderStatus = sendEmail ? "sent" : "created";
+          orderStatus = "created";
           approvalStatus = "not_required";
           approvalBypassReason = "direct_approval";
-          legacyStatus = sendEmail ? "sent" : "approved";
+          legacyStatus = "approved";
         }
-        const [newOrder] = await db.insert(purchaseOrders).values({
+        const [newOrder] = await db2.insert(purchaseOrders).values({
           orderNumber,
           projectId: project.id,
           vendorId: vendor?.id || null,
@@ -22884,7 +22943,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
             };
           });
           if (itemsToInsert.length > 0) {
-            await db.insert(purchaseOrderItems).values(itemsToInsert);
+            await db2.insert(purchaseOrderItems).values(itemsToInsert);
           }
         }
         try {
@@ -22945,7 +23004,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
               fileData = fileBuffer.toString("base64");
               console.log(`\u{1F4CE} File data encoded for Vercel: ${Math.round(fileBuffer.length / 1024)}KB -> ${Math.round(fileData.length / 1024)}KB base64`);
             }
-            const [savedAttachment] = await db.insert(attachments).values({
+            const [savedAttachment] = await db2.insert(attachments).values({
               orderId: newOrder.id,
               originalName: decodedOriginalName,
               storedName: processedFileName,
@@ -22970,7 +23029,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
             console.log("\u26A0\uFE0F Continuing without attachment...");
           }
         }
-        await db.insert(orderHistory).values({
+        await db2.insert(orderHistory).values({
           orderId: newOrder.id,
           userId: req.user.id,
           action: sendEmail ? "sent" : "created",
@@ -23013,7 +23072,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
           try {
             let excelAttachment = null;
             if (req.file) {
-              const attachment = await db.select().from(attachments).where(eq28(attachments.orderId, emailInfo.orderId)).then((rows) => rows[0]);
+              const attachment = await db2.select().from(attachments).where(eq28(attachments.orderId, emailInfo.orderId)).then((rows) => rows[0]);
               if (attachment) {
                 excelAttachment = process.env.VERCEL ? path16.join("/tmp", "uploads", "excel-simple", attachment.storedName) : attachment.filePath;
               }
@@ -23034,8 +23093,11 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
               );
               if (result.success) {
                 console.log(`\u2705 Email sent successfully for order ${emailInfo.orderNumber}`);
-                await db.update(purchaseOrders).set({ status: "sent" }).where(eq28(purchaseOrders.id, emailInfo.orderId));
-                await db.insert(orderHistory).values({
+                await db2.update(purchaseOrders).set({
+                  status: "sent",
+                  orderStatus: "sent"
+                }).where(eq28(purchaseOrders.id, emailInfo.orderId));
+                await db2.insert(orderHistory).values({
                   orderId: emailInfo.orderId,
                   userId: req.user.id,
                   action: "email_sent",
@@ -23080,7 +23142,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
 });
 router29.get("/orders/simple-upload-history", requireAuth, async (req, res) => {
   try {
-    const history = await db.select({
+    const history = await db2.select({
       id: purchaseOrders.id,
       orderNumber: purchaseOrders.orderNumber,
       createdAt: purchaseOrders.createdAt,
@@ -23090,7 +23152,7 @@ router29.get("/orders/simple-upload-history", requireAuth, async (req, res) => {
       vendorName: vendors.name,
       itemCount: count4(purchaseOrderItems.id)
     }).from(purchaseOrders).leftJoin(projects, eq28(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq28(purchaseOrders.vendorId, vendors.id)).leftJoin(purchaseOrderItems, eq28(purchaseOrderItems.orderId, purchaseOrders.id)).leftJoin(orderHistory, eq28(orderHistory.orderId, purchaseOrders.id)).where(
-      and17(
+      and18(
         eq28(purchaseOrders.userId, req.user.id),
         eq28(orderHistory.action, "created")
       )
@@ -23102,7 +23164,7 @@ router29.get("/orders/simple-upload-history", requireAuth, async (req, res) => {
       purchaseOrders.status,
       projects.projectName,
       vendors.name
-    ).orderBy(desc13(purchaseOrders.createdAt)).limit(50);
+    ).orderBy(desc14(purchaseOrders.createdAt)).limit(50);
     res.json(history);
   } catch (error) {
     console.error("Error fetching upload history:", error);
@@ -23111,7 +23173,7 @@ router29.get("/orders/simple-upload-history", requireAuth, async (req, res) => {
 });
 router29.get("/orders/drafts", requireAuth, async (req, res) => {
   try {
-    const drafts = await db.select({
+    const drafts = await db2.select({
       id: purchaseOrders.id,
       orderNumber: purchaseOrders.orderNumber,
       createdAt: purchaseOrders.createdAt,
@@ -23128,7 +23190,7 @@ router29.get("/orders/drafts", requireAuth, async (req, res) => {
       userId: purchaseOrders.userId,
       userName: users.name,
       notes: purchaseOrders.notes
-    }).from(purchaseOrders).leftJoin(projects, eq28(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq28(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq28(purchaseOrders.userId, users.id)).where(eq28(purchaseOrders.status, "draft")).orderBy(desc13(purchaseOrders.createdAt));
+    }).from(purchaseOrders).leftJoin(projects, eq28(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq28(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq28(purchaseOrders.userId, users.id)).where(eq28(purchaseOrders.status, "draft")).orderBy(desc14(purchaseOrders.createdAt));
     console.log(`\u{1F4DD} Found ${drafts.length} draft orders`);
     res.json({
       success: true,
@@ -23173,7 +23235,7 @@ import { Router as Router30 } from "express";
 // server/services/audit-service.ts
 init_db();
 init_schema();
-import { eq as eq29, and as and18, or as or5, gte as gte6, lte as lte6, desc as desc14, asc as asc7, sql as sql14, inArray as inArray6 } from "drizzle-orm";
+import { eq as eq29, and as and19, or as or6, gte as gte6, lte as lte6, desc as desc15, asc as asc7, sql as sql14, inArray as inArray6 } from "drizzle-orm";
 var AuditService = class {
   /**
    * 감사 로그 조회
@@ -23201,11 +23263,11 @@ var AuditService = class {
     if (startDate) conditions.push(gte6(systemAuditLogs.createdAt, startDate));
     if (endDate) conditions.push(lte6(systemAuditLogs.createdAt, endDate));
     const orderByColumn = sortBy === "eventType" ? systemAuditLogs.eventType : sortBy === "userName" ? systemAuditLogs.userName : systemAuditLogs.createdAt;
-    const orderByDirection = sortOrder === "asc" ? asc7 : desc14;
-    const query = db.select().from(systemAuditLogs).where(conditions.length > 0 ? and18(...conditions) : void 0).orderBy(orderByDirection(orderByColumn)).limit(limit).offset(offset);
+    const orderByDirection = sortOrder === "asc" ? asc7 : desc15;
+    const query = db2.select().from(systemAuditLogs).where(conditions.length > 0 ? and19(...conditions) : void 0).orderBy(orderByDirection(orderByColumn)).limit(limit).offset(offset);
     const [logs, countResult] = await Promise.all([
       query,
-      db.select({ count: sql14`count(*)` }).from(systemAuditLogs).where(conditions.length > 0 ? and18(...conditions) : void 0)
+      db2.select({ count: sql14`count(*)` }).from(systemAuditLogs).where(conditions.length > 0 ? and19(...conditions) : void 0)
     ]);
     return {
       logs,
@@ -23220,23 +23282,23 @@ var AuditService = class {
   static async getUserActivitySummary(userId, days = 30) {
     const startDate = /* @__PURE__ */ new Date();
     startDate.setDate(startDate.getDate() - days);
-    const activities = await db.select({
+    const activities = await db2.select({
       eventType: systemAuditLogs.eventType,
       count: sql14`count(*)`
     }).from(systemAuditLogs).where(
-      and18(
+      and19(
         eq29(systemAuditLogs.userId, userId),
         gte6(systemAuditLogs.createdAt, startDate)
       )
     ).groupBy(systemAuditLogs.eventType);
-    const lastLogin = await db.select().from(systemAuditLogs).where(
-      and18(
+    const lastLogin = await db2.select().from(systemAuditLogs).where(
+      and19(
         eq29(systemAuditLogs.userId, userId),
         eq29(systemAuditLogs.eventType, "login")
       )
-    ).orderBy(desc14(systemAuditLogs.createdAt)).limit(1);
-    const failedLogins = await db.select({ count: sql14`count(*)` }).from(systemAuditLogs).where(
-      and18(
+    ).orderBy(desc15(systemAuditLogs.createdAt)).limit(1);
+    const failedLogins = await db2.select({ count: sql14`count(*)` }).from(systemAuditLogs).where(
+      and19(
         eq29(systemAuditLogs.userId, userId),
         eq29(systemAuditLogs.eventType, "login_failed"),
         gte6(systemAuditLogs.createdAt, startDate)
@@ -23255,41 +23317,41 @@ var AuditService = class {
   static async getDashboardStats(hours = 24) {
     const startDate = /* @__PURE__ */ new Date();
     startDate.setHours(startDate.getHours() - hours);
-    const categoryStats = await db.select({
+    const categoryStats = await db2.select({
       category: systemAuditLogs.eventCategory,
       count: sql14`count(*)`
     }).from(systemAuditLogs).where(gte6(systemAuditLogs.createdAt, startDate)).groupBy(systemAuditLogs.eventCategory);
-    const eventStats = await db.select({
+    const eventStats = await db2.select({
       eventType: systemAuditLogs.eventType,
       count: sql14`count(*)`
     }).from(systemAuditLogs).where(gte6(systemAuditLogs.createdAt, startDate)).groupBy(systemAuditLogs.eventType);
-    const hourlyActivity = await db.select({
+    const hourlyActivity = await db2.select({
       hour: sql14`date_trunc('hour', ${systemAuditLogs.createdAt})`,
       count: sql14`count(*)`
     }).from(systemAuditLogs).where(gte6(systemAuditLogs.createdAt, startDate)).groupBy(sql14`date_trunc('hour', ${systemAuditLogs.createdAt})`).orderBy(sql14`date_trunc('hour', ${systemAuditLogs.createdAt})`);
-    const activeUsers = await db.select({
+    const activeUsers = await db2.select({
       count: sql14`count(distinct ${systemAuditLogs.userId})`
     }).from(systemAuditLogs).where(gte6(systemAuditLogs.createdAt, startDate));
-    const errors = await db.select().from(systemAuditLogs).where(
-      and18(
-        or5(
+    const errors = await db2.select().from(systemAuditLogs).where(
+      and19(
+        or6(
           eq29(systemAuditLogs.eventType, "system_error"),
           eq29(systemAuditLogs.eventType, "security_alert"),
           eq29(systemAuditLogs.eventType, "login_failed")
         ),
         gte6(systemAuditLogs.createdAt, startDate)
       )
-    ).orderBy(desc14(systemAuditLogs.createdAt)).limit(10);
-    const securityEvents = await db.select().from(systemAuditLogs).where(
-      and18(
-        or5(
+    ).orderBy(desc15(systemAuditLogs.createdAt)).limit(10);
+    const securityEvents = await db2.select().from(systemAuditLogs).where(
+      and19(
+        or6(
           eq29(systemAuditLogs.eventType, "login_failed"),
           eq29(systemAuditLogs.eventType, "security_alert"),
           eq29(systemAuditLogs.eventCategory, "security")
         ),
         gte6(systemAuditLogs.createdAt, startDate)
       )
-    ).orderBy(desc14(systemAuditLogs.createdAt)).limit(10);
+    ).orderBy(desc15(systemAuditLogs.createdAt)).limit(10);
     return {
       categoryStats,
       eventStats,
@@ -23304,7 +23366,7 @@ var AuditService = class {
    * 감사 설정 조회
    */
   static async getSettings() {
-    const settings = await db.select().from(auditSettings).limit(1);
+    const settings = await db2.select().from(auditSettings).limit(1);
     return settings[0] || null;
   }
   /**
@@ -23313,7 +23375,7 @@ var AuditService = class {
   static async updateSettings(settings, userId) {
     const existingSettings = await this.getSettings();
     if (existingSettings) {
-      const updated = await db.update(auditSettings).set({
+      const updated = await db2.update(auditSettings).set({
         ...settings,
         updatedBy: userId,
         updatedAt: /* @__PURE__ */ new Date()
@@ -23328,7 +23390,7 @@ var AuditService = class {
       });
       return updated[0];
     } else {
-      const created = await db.insert(auditSettings).values({
+      const created = await db2.insert(auditSettings).values({
         ...settings,
         updatedBy: userId
       }).returning();
@@ -23346,7 +23408,7 @@ var AuditService = class {
    * 로그 아카이빙
    */
   static async archiveLogs(beforeDate) {
-    const logsToArchive = await db.select().from(systemAuditLogs).where(lte6(systemAuditLogs.createdAt, beforeDate)).limit(1e3);
+    const logsToArchive = await db2.select().from(systemAuditLogs).where(lte6(systemAuditLogs.createdAt, beforeDate)).limit(1e3);
     if (logsToArchive.length === 0) {
       return { archived: 0 };
     }
@@ -23364,9 +23426,9 @@ var AuditService = class {
       ipAddress: log.ipAddress,
       createdAt: log.createdAt
     }));
-    await db.insert(archivedAuditLogs).values(archiveData);
+    await db2.insert(archivedAuditLogs).values(archiveData);
     const logIds = logsToArchive.map((log) => log.id);
-    await db.delete(systemAuditLogs).where(inArray6(systemAuditLogs.id, logIds));
+    await db2.delete(systemAuditLogs).where(inArray6(systemAuditLogs.id, logIds));
     return { archived: logsToArchive.length };
   }
   /**
@@ -23378,7 +23440,7 @@ var AuditService = class {
     if (userId) conditions.push(eq29(archivedAuditLogs.userId, userId));
     if (startDate) conditions.push(gte6(archivedAuditLogs.createdAt, startDate));
     if (endDate) conditions.push(lte6(archivedAuditLogs.createdAt, endDate));
-    const logs = await db.select().from(archivedAuditLogs).where(conditions.length > 0 ? and18(...conditions) : void 0).orderBy(desc14(archivedAuditLogs.createdAt)).limit(limit).offset(offset);
+    const logs = await db2.select().from(archivedAuditLogs).where(conditions.length > 0 ? and19(...conditions) : void 0).orderBy(desc15(archivedAuditLogs.createdAt)).limit(limit).offset(offset);
     return logs;
   }
   /**
@@ -23396,7 +23458,7 @@ var AuditService = class {
     if (userId) {
       conditions.push(eq29(systemAuditLogs.userId, userId));
     }
-    const history = await db.select({
+    const history = await db2.select({
       id: systemAuditLogs.id,
       userId: systemAuditLogs.userId,
       userName: systemAuditLogs.userName,
@@ -23406,7 +23468,7 @@ var AuditService = class {
       userAgent: systemAuditLogs.userAgent,
       details: systemAuditLogs.additionalDetails,
       createdAt: systemAuditLogs.createdAt
-    }).from(systemAuditLogs).where(and18(...conditions)).orderBy(desc14(systemAuditLogs.createdAt)).limit(100);
+    }).from(systemAuditLogs).where(and19(...conditions)).orderBy(desc15(systemAuditLogs.createdAt)).limit(100);
     const sessions2 = [];
     let currentSession = null;
     for (const event of history) {
@@ -23457,7 +23519,7 @@ var AuditService = class {
     if (entityType) conditions.push(eq29(systemAuditLogs.entityType, entityType));
     if (entityId) conditions.push(eq29(systemAuditLogs.entityId, entityId));
     if (userId) conditions.push(eq29(systemAuditLogs.userId, userId));
-    const changes = await db.select().from(systemAuditLogs).where(and18(...conditions)).orderBy(desc14(systemAuditLogs.createdAt)).limit(100);
+    const changes = await db2.select().from(systemAuditLogs).where(and19(...conditions)).orderBy(desc15(systemAuditLogs.createdAt)).limit(100);
     return changes;
   }
   /**
@@ -23474,7 +23536,7 @@ var AuditService = class {
     if (entityType) {
       conditions.push(eq29(systemAuditLogs.entityType, entityType));
     }
-    const deletions = await db.select().from(systemAuditLogs).where(and18(...conditions)).orderBy(desc14(systemAuditLogs.createdAt));
+    const deletions = await db2.select().from(systemAuditLogs).where(and19(...conditions)).orderBy(desc15(systemAuditLogs.createdAt));
     const records = deletions.map((deletion) => ({
       id: deletion.id,
       entityType: deletion.entityType,
@@ -23500,15 +23562,15 @@ var AuditService = class {
       "security_alert",
       "password_change"
     ];
-    const events = await db.select().from(systemAuditLogs).where(
-      and18(
-        or5(
+    const events = await db2.select().from(systemAuditLogs).where(
+      and19(
+        or6(
           inArray6(systemAuditLogs.eventType, securityEventTypes),
           eq29(systemAuditLogs.eventCategory, "security")
         ),
         gte6(systemAuditLogs.createdAt, startDate)
       )
-    ).orderBy(desc14(systemAuditLogs.createdAt));
+    ).orderBy(desc15(systemAuditLogs.createdAt));
     const categorizedEvents = events.map((event) => {
       let eventSeverity = "low";
       if (event.eventType === "security_alert" || event.eventType === "permission_change") {
@@ -23530,19 +23592,19 @@ var AuditService = class {
    * 알림 규칙 조회
    */
   static async getAlertRules() {
-    return await db.select().from(auditAlertRules).where(eq29(auditAlertRules.isActive, true)).orderBy(desc14(auditAlertRules.severity));
+    return await db2.select().from(auditAlertRules).where(eq29(auditAlertRules.isActive, true)).orderBy(desc15(auditAlertRules.severity));
   }
   /**
    * 알림 규칙 생성/업데이트
    */
   static async upsertAlertRule(rule, userId) {
     if (rule.id) {
-      return await db.update(auditAlertRules).set({
+      return await db2.update(auditAlertRules).set({
         ...rule,
         updatedAt: /* @__PURE__ */ new Date()
       }).where(eq29(auditAlertRules.id, rule.id)).returning();
     } else {
-      return await db.insert(auditAlertRules).values({
+      return await db2.insert(auditAlertRules).values({
         ...rule,
         createdBy: userId
       }).returning();
@@ -23562,7 +23624,7 @@ var AuditService = class {
     if (settings.retentionDays) {
       const deleteDate = /* @__PURE__ */ new Date();
       deleteDate.setDate(deleteDate.getDate() - settings.retentionDays);
-      await db.delete(archivedAuditLogs).where(lte6(archivedAuditLogs.archivedAt, deleteDate));
+      await db2.delete(archivedAuditLogs).where(lte6(archivedAuditLogs.archivedAt, deleteDate));
     }
     return { success: true, ...result };
   }
@@ -23984,7 +24046,7 @@ async function sendPurchaseOrderEmail(params) {
       try {
         const trackingId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         const fileStats = await fs20.stat(excelFilePath);
-        await db.insert(emailSendHistory).values({
+        await db2.insert(emailSendHistory).values({
           orderId,
           sentBy: userId,
           recipientEmail: recipients.join(", "),
@@ -24017,7 +24079,7 @@ async function sendPurchaseOrderEmail(params) {
     if (orderId && userId) {
       try {
         const trackingId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        await db.insert(emailSendHistory).values({
+        await db2.insert(emailSendHistory).values({
           orderId,
           sentBy: userId,
           recipientEmail: recipients.join(", "),
@@ -24420,13 +24482,13 @@ import { Router as Router31 } from "express";
 // server/services/approval-authority-service.ts
 init_db();
 init_schema();
-import { eq as eq30, and as and19, gte as gte7 } from "drizzle-orm";
+import { eq as eq30, and as and20, gte as gte7 } from "drizzle-orm";
 var ApprovalAuthorityService = class {
   /**
    * Check user's approval authority for a given amount
    */
   async checkAuthority(user, orderAmount) {
-    const authority = await db.select().from(approvalAuthorities).where(and19(
+    const authority = await db2.select().from(approvalAuthorities).where(and20(
       eq30(approvalAuthorities.role, user.role),
       eq30(approvalAuthorities.isActive, true)
     )).limit(1);
@@ -24474,16 +24536,16 @@ var ApprovalAuthorityService = class {
    * Find the appropriate approver for a given amount
    */
   async findNextApprover(orderAmount) {
-    const authorities = await db.select().from(approvalAuthorities).where(and19(
+    const authorities = await db2.select().from(approvalAuthorities).where(and20(
       gte7(approvalAuthorities.maxAmount, orderAmount.toString()),
       eq30(approvalAuthorities.isActive, true)
     )).orderBy(approvalAuthorities.maxAmount);
     if (authorities.length === 0) {
-      const executive = await db.select().from(users).where(eq30(users.role, "executive")).limit(1);
+      const executive = await db2.select().from(users).where(eq30(users.role, "executive")).limit(1);
       return executive[0]?.id;
     }
     const lowestAuthority = authorities[0];
-    const approver = await db.select().from(users).where(and19(
+    const approver = await db2.select().from(users).where(and20(
       eq30(users.role, lowestAuthority.role),
       eq30(users.isActive, true)
     )).limit(1);
@@ -24494,22 +24556,22 @@ var ApprovalAuthorityService = class {
    */
   async getRequiredApprovers(orderAmount, companyId) {
     const approvers = [];
-    const authorities = await db.select({
+    const authorities = await db2.select({
       role: approvalAuthorities.role,
       maxAmount: approvalAuthorities.maxAmount,
       canDirectApprove: approvalAuthorities.canDirectApprove,
       directApproveLimit: approvalAuthorities.directApproveLimit
-    }).from(approvalAuthorities).where(and19(
+    }).from(approvalAuthorities).where(and20(
       eq30(approvalAuthorities.isActive, true),
       gte7(approvalAuthorities.maxAmount, orderAmount.toString())
     )).orderBy(approvalAuthorities.maxAmount);
     for (const auth of authorities) {
-      const usersInRole = await db.select({
+      const usersInRole = await db2.select({
         id: users.id,
         name: users.name,
         email: users.email,
         role: users.role
-      }).from(users).where(and19(
+      }).from(users).where(and20(
         eq30(users.role, auth.role),
         eq30(users.isActive, true),
         companyId ? eq30(users.companyId, companyId) : void 0
@@ -24558,7 +24620,7 @@ var ApprovalAuthorityService = class {
       };
     }
     if (order.vendorId) {
-      const recentOrders = await db.select().from(purchaseOrders).where(and19(
+      const recentOrders = await db2.select().from(purchaseOrders).where(and20(
         eq30(purchaseOrders.vendorId, order.vendorId),
         eq30(purchaseOrders.orderStatus, "delivered")
         // Check orders from last 30 days
@@ -24593,7 +24655,7 @@ var ApprovalAuthorityService = class {
         updateData.rejectionReason = comments;
         updateData.orderStatus = "draft";
       }
-      await db.update(purchaseOrders).set(updateData).where(eq30(purchaseOrders.id, orderId));
+      await db2.update(purchaseOrders).set(updateData).where(eq30(purchaseOrders.id, orderId));
       return true;
     } catch (error) {
       console.error("Error processing approval:", error);
@@ -24638,7 +24700,7 @@ var WebSocketService = class _WebSocketService {
       console.log("\u{1F50C} WebSocket connection established:", socket.id);
       socket.on("authenticate", async (data) => {
         try {
-          const user = await db.select().from(users).where(eq31(users.id, data.userId)).then((rows) => rows[0]);
+          const user = await db2.select().from(users).where(eq31(users.id, data.userId)).then((rows) => rows[0]);
           if (user) {
             const webSocketUser = {
               id: user.id,
@@ -24791,7 +24853,7 @@ var WorkflowEngine = class {
    * Process the next step in the workflow automatically
    */
   async processNextStep(orderId, userId) {
-    const order = await db.select().from(purchaseOrders).where(eq32(purchaseOrders.id, orderId)).limit(1);
+    const order = await db2.select().from(purchaseOrders).where(eq32(purchaseOrders.id, orderId)).limit(1);
     if (!order || order.length === 0) {
       throw new Error(`Order ${orderId} not found`);
     }
@@ -24838,12 +24900,12 @@ var WorkflowEngine = class {
    * Track workflow progress for an order
    */
   async trackWorkflowProgress(orderId) {
-    const order = await db.select().from(purchaseOrders).where(eq32(purchaseOrders.id, orderId)).limit(1);
+    const order = await db2.select().from(purchaseOrders).where(eq32(purchaseOrders.id, orderId)).limit(1);
     if (!order || order.length === 0) {
       throw new Error(`Order ${orderId} not found`);
     }
     const currentOrder = order[0];
-    const history = await db.select({
+    const history = await db2.select({
       timestamp: orderHistory.changedAt,
       event: orderHistory.changeType,
       actor: orderHistory.userId,
@@ -24872,7 +24934,7 @@ var WorkflowEngine = class {
    * Send notifications based on workflow events
    */
   async sendNotifications(orderId, event) {
-    const order = await db.select({
+    const order = await db2.select({
       id: purchaseOrders.id,
       orderNumber: purchaseOrders.orderNumber,
       nextApproverId: purchaseOrders.nextApproverId,
@@ -24905,7 +24967,7 @@ var WorkflowEngine = class {
    * Update order status with validation and WebSocket broadcast
    */
   async updateOrderStatus(orderId, orderStatus, approvalStatus, additionalData) {
-    const beforeOrder = await db.select({
+    const beforeOrder = await db2.select({
       id: purchaseOrders.id,
       orderNumber: purchaseOrders.orderNumber,
       orderStatus: purchaseOrders.orderStatus,
@@ -24913,7 +24975,7 @@ var WorkflowEngine = class {
       userId: purchaseOrders.userId
     }).from(purchaseOrders).where(eq32(purchaseOrders.id, orderId)).limit(1);
     if (!beforeOrder || beforeOrder.length === 0) return;
-    await db.update(purchaseOrders).set({
+    await db2.update(purchaseOrders).set({
       orderStatus,
       approvalStatus,
       ...additionalData,
@@ -24947,13 +25009,13 @@ var WorkflowEngine = class {
    * Send order email if ready
    */
   async sendOrderIfReady(orderId) {
-    const order = await db.select({
+    const order = await db2.select({
       id: purchaseOrders.id,
       orderNumber: purchaseOrders.orderNumber,
       vendorId: purchaseOrders.vendorId
     }).from(purchaseOrders).where(eq32(purchaseOrders.id, orderId)).limit(1);
     if (!order || order.length === 0) return;
-    const vendor = await db.select().from(vendors).where(eq32(vendors.id, order[0].vendorId)).limit(1);
+    const vendor = await db2.select().from(vendors).where(eq32(vendors.id, order[0].vendorId)).limit(1);
     if (vendor[0]?.email) {
       try {
         console.log(`Email would be sent to ${vendor[0].email} for order ${order[0].orderNumber}`);
@@ -25018,7 +25080,7 @@ var WorkflowEngine = class {
    * Log workflow event to history
    */
   async logWorkflowEvent(orderId, event, userId, details) {
-    await db.insert(orderHistory).values({
+    await db2.insert(orderHistory).values({
       orderId,
       userId,
       changeType: event,
@@ -25030,7 +25092,7 @@ var WorkflowEngine = class {
    * Get user details
    */
   async getUser(userId) {
-    const user = await db.select().from(users).where(eq32(users.id, userId)).limit(1);
+    const user = await db2.select().from(users).where(eq32(users.id, userId)).limit(1);
     if (!user || user.length === 0) {
       throw new Error(`User ${userId} not found`);
     }
@@ -25041,7 +25103,7 @@ var WorkflowEngine = class {
    */
   async notifyApprover(approverId, orderId) {
     const approver = await this.getUserAsWebSocketUser(approverId);
-    const order = await db.select({
+    const order = await db2.select({
       id: purchaseOrders.id,
       orderNumber: purchaseOrders.orderNumber,
       totalAmount: purchaseOrders.totalAmount,
@@ -25125,7 +25187,7 @@ router34.post("/api/orders/check-approval-authority", async (req, res) => {
     if (!amount || amount <= 0) {
       return res.status(400).json({ message: "Invalid amount" });
     }
-    const user = await db.select().from(users).where(eq33(users.id, userId)).limit(1);
+    const user = await db2.select().from(users).where(eq33(users.id, userId)).limit(1);
     if (!user || user.length === 0) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -25160,7 +25222,7 @@ router34.post("/api/orders/create-with-workflow", async (req, res) => {
       return res.status(401).json({ message: "User not authenticated" });
     }
     const orderData = req.body;
-    const user = await db.select().from(users).where(eq33(users.id, userId)).limit(1);
+    const user = await db2.select().from(users).where(eq33(users.id, userId)).limit(1);
     if (!user || user.length === 0) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -25188,7 +25250,7 @@ router34.post("/api/orders/create-with-workflow", async (req, res) => {
         approvalBypassReason = autoApproval.reason;
       }
     }
-    const newOrder = await db.insert(purchaseOrders).values({
+    const newOrder = await db2.insert(purchaseOrders).values({
       ...orderData,
       orderStatus,
       approvalStatus,
@@ -25291,7 +25353,7 @@ router34.post("/api/orders/:id/confirm-delivery", async (req, res) => {
     if (isNaN(orderId)) {
       return res.status(400).json({ message: "Invalid order ID" });
     }
-    await db.update(purchaseOrders).set({
+    await db2.update(purchaseOrders).set({
       orderStatus: "delivered",
       deliveredAt: /* @__PURE__ */ new Date(),
       deliveredBy: userId,
@@ -25636,7 +25698,7 @@ router36.post("/orders/check-approval-authority", requireAuth, async (req, res) 
       orderAmount: z11.number().positive()
     });
     const { orderAmount } = schema.parse(req.body);
-    const user = await db.select().from(users).where(eq34(users.id, req.user.id)).then((rows) => rows[0]);
+    const user = await db2.select().from(users).where(eq34(users.id, req.user.id)).then((rows) => rows[0]);
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
@@ -25684,7 +25746,7 @@ router36.post("/orders/create-with-workflow", requireAuth, async (req, res) => {
       sendEmail: z11.boolean().optional()
     });
     const { orderData, sendEmail } = schema.parse(req.body);
-    const user = await db.select().from(users).where(eq34(users.id, req.user.id)).then((rows) => rows[0]);
+    const user = await db2.select().from(users).where(eq34(users.id, req.user.id)).then((rows) => rows[0]);
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
@@ -25709,9 +25771,9 @@ router36.post("/orders/create-with-workflow", requireAuth, async (req, res) => {
         approvalBypassReason = autoApproval.reason;
       }
     }
-    const orderCount = await db.select().from(purchaseOrders).then((rows) => rows.length);
+    const orderCount = await db2.select().from(purchaseOrders).then((rows) => rows.length);
     const orderNumber = `PO-${(/* @__PURE__ */ new Date()).getFullYear()}-${String(orderCount + 1).padStart(5, "0")}`;
-    const [newOrder] = await db.insert(purchaseOrders).values({
+    const [newOrder] = await db2.insert(purchaseOrders).values({
       ...orderData,
       orderNumber,
       userId: req.user.id,
@@ -25723,7 +25785,7 @@ router36.post("/orders/create-with-workflow", requireAuth, async (req, res) => {
       createdAt: /* @__PURE__ */ new Date(),
       updatedAt: /* @__PURE__ */ new Date()
     }).returning();
-    await db.insert(orderHistory).values({
+    await db2.insert(orderHistory).values({
       orderId: newOrder.id,
       userId: req.user.id,
       action: "created",
@@ -25759,7 +25821,7 @@ router36.get("/orders/workflow-status/:id", requireAuth, async (req, res) => {
     if (isNaN(orderId)) {
       return res.status(400).json({ error: "Invalid order ID" });
     }
-    const order = await db.select().from(purchaseOrders).where(eq34(purchaseOrders.id, orderId)).then((rows) => rows[0]);
+    const order = await db2.select().from(purchaseOrders).where(eq34(purchaseOrders.id, orderId)).then((rows) => rows[0]);
     if (!order) {
       return res.status(404).json({ error: "Order not found" });
     }
@@ -25785,7 +25847,7 @@ router36.post("/orders/:id/confirm-delivery", requireAuth, async (req, res) => {
       receivedBy: z11.string().optional()
     });
     const { deliveryNotes, actualDeliveryDate, receivedBy } = schema.parse(req.body);
-    const order = await db.select().from(purchaseOrders).where(eq34(purchaseOrders.id, orderId)).then((rows) => rows[0]);
+    const order = await db2.select().from(purchaseOrders).where(eq34(purchaseOrders.id, orderId)).then((rows) => rows[0]);
     if (!order) {
       return res.status(404).json({ error: "Order not found" });
     }
@@ -25795,7 +25857,7 @@ router36.post("/orders/:id/confirm-delivery", requireAuth, async (req, res) => {
         message: "Only sent orders can be marked as delivered"
       });
     }
-    const [updatedOrder] = await db.update(purchaseOrders).set({
+    const [updatedOrder] = await db2.update(purchaseOrders).set({
       orderStatus: "delivered",
       status: "completed",
       // Legacy status
@@ -25806,7 +25868,7 @@ router36.post("/orders/:id/confirm-delivery", requireAuth, async (req, res) => {
 \uBC30\uC1A1 \uBA54\uBAA8: ${deliveryNotes}` : deliveryNotes : order.notes,
       updatedAt: /* @__PURE__ */ new Date()
     }).where(eq34(purchaseOrders.id, orderId)).returning();
-    await db.insert(orderHistory).values({
+    await db2.insert(orderHistory).values({
       orderId,
       userId: req.user.id,
       action: "delivery_confirmed",
@@ -25867,7 +25929,7 @@ router36.post("/orders/:id/approve", requireAuth, async (req, res) => {
     if (!success) {
       return res.status(500).json({ error: "Failed to process approval" });
     }
-    await db.insert(orderHistory).values({
+    await db2.insert(orderHistory).values({
       orderId,
       userId: req.user.id,
       action: decision === "approved" ? "approved" : "rejected",
@@ -25910,7 +25972,7 @@ router37.post("/orders/:id/create-order", requireAuth, async (req, res) => {
     return res.status(401).json({ error: "\uC778\uC99D\uC774 \uD544\uC694\uD569\uB2C8\uB2E4." });
   }
   try {
-    const [order] = await db.select().from(purchaseOrders).where(eq35(purchaseOrders.id, orderId));
+    const [order] = await db2.select().from(purchaseOrders).where(eq35(purchaseOrders.id, orderId));
     if (!order) {
       return res.status(404).json({
         error: "\uBC1C\uC8FC\uC11C\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.",
@@ -25923,7 +25985,7 @@ router37.post("/orders/:id/create-order", requireAuth, async (req, res) => {
         currentStatus: order.orderStatus || order.status
       });
     }
-    const fullOrderData = await db.query.purchaseOrders.findFirst({
+    const fullOrderData = await db2.query.purchaseOrders.findFirst({
       where: eq35(purchaseOrders.id, orderId),
       with: {
         vendor: true,
@@ -25948,13 +26010,13 @@ router37.post("/orders/:id/create-order", requireAuth, async (req, res) => {
       });
     }
     console.log(`\u2705 PDF generated successfully: ${pdfResult.pdfPath}`);
-    const [updatedOrder] = await db.update(purchaseOrders).set({
+    const [updatedOrder] = await db2.update(purchaseOrders).set({
       orderStatus: "created",
       status: "approved",
       // 레거시 호환성
       updatedAt: /* @__PURE__ */ new Date()
     }).where(eq35(purchaseOrders.id, orderId)).returning();
-    await db.insert(orderHistory).values({
+    await db2.insert(orderHistory).values({
       orderId,
       userId,
       action: "order_created",
@@ -25991,7 +26053,7 @@ router37.get("/orders/:id/permissions", requireAuth, async (req, res) => {
   const userId = req.user?.id;
   const userRole = req.user?.role;
   try {
-    const [order] = await db.select({
+    const [order] = await db2.select({
       id: purchaseOrders.id,
       status: purchaseOrders.status,
       orderStatus: purchaseOrders.orderStatus,
@@ -26063,10 +26125,10 @@ router38.get("/health/database", async (req, res) => {
     });
   }
   try {
-    if (!db) {
+    if (!db2) {
       throw new Error("Database instance not initialized");
     }
-    const result = await db.execute(sql15`SELECT 1 as test`);
+    const result = await db2.execute(sql15`SELECT 1 as test`);
     if (result) {
       status.database.connected = true;
     }
@@ -26089,7 +26151,7 @@ router38.get("/health/auth", (req, res) => {
     authentication: {
       jwtConfigured: !!process.env.JWT_SECRET,
       sessionConfigured: !!process.env.SESSION_SECRET,
-      databaseAuthAvailable: !!process.env.DATABASE_URL && !!db,
+      databaseAuthAvailable: !!process.env.DATABASE_URL && !!db2,
       fallbackAuthActive: shouldUseFallback(),
       fallbackReason: null
     },
@@ -26098,7 +26160,7 @@ router38.get("/health/auth", (req, res) => {
   if (status.authentication.fallbackAuthActive) {
     if (!process.env.DATABASE_URL) {
       status.authentication.fallbackReason = "DATABASE_URL not configured";
-    } else if (!db) {
+    } else if (!db2) {
       status.authentication.fallbackReason = "Database connection failed";
     }
   }
@@ -26131,9 +26193,9 @@ router38.get("/health/system", async (req, res) => {
     },
     timestamp: (/* @__PURE__ */ new Date()).toISOString()
   };
-  if (process.env.DATABASE_URL && db) {
+  if (process.env.DATABASE_URL && db2) {
     try {
-      await db.execute(sql15`SELECT 1`);
+      await db2.execute(sql15`SELECT 1`);
       results.database = true;
     } catch (error) {
       console.error("Database health check failed:", error);
@@ -26156,12 +26218,12 @@ var health_default = router38;
 init_db();
 init_schema();
 import { Router as Router36 } from "express";
-import { eq as eq36, sql as sql16, desc as desc16 } from "drizzle-orm";
+import { eq as eq36, sql as sql16, desc as desc17 } from "drizzle-orm";
 var router39 = Router36();
 router39.get("/debug/recent-drafts", async (req, res) => {
   try {
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1e3);
-    const recentDrafts = await db.select({
+    const recentDrafts = await db2.select({
       id: purchaseOrders.id,
       orderNumber: purchaseOrders.orderNumber,
       status: purchaseOrders.status,
@@ -26170,8 +26232,8 @@ router39.get("/debug/recent-drafts", async (req, res) => {
       vendorId: purchaseOrders.vendorId,
       totalAmount: purchaseOrders.totalAmount,
       vendorName: vendors.name
-    }).from(purchaseOrders).leftJoin(vendors, eq36(purchaseOrders.vendorId, vendors.id)).where(eq36(purchaseOrders.status, "draft")).orderBy(desc16(purchaseOrders.createdAt)).limit(20);
-    const allRecentOrders = await db.select({
+    }).from(purchaseOrders).leftJoin(vendors, eq36(purchaseOrders.vendorId, vendors.id)).where(eq36(purchaseOrders.status, "draft")).orderBy(desc17(purchaseOrders.createdAt)).limit(20);
+    const allRecentOrders = await db2.select({
       id: purchaseOrders.id,
       orderNumber: purchaseOrders.orderNumber,
       status: purchaseOrders.status,
@@ -26180,8 +26242,8 @@ router39.get("/debug/recent-drafts", async (req, res) => {
       vendorId: purchaseOrders.vendorId,
       totalAmount: purchaseOrders.totalAmount,
       vendorName: vendors.name
-    }).from(purchaseOrders).leftJoin(vendors, eq36(purchaseOrders.vendorId, vendors.id)).where(sql16`${purchaseOrders.createdAt} > ${oneHourAgo}`).orderBy(desc16(purchaseOrders.createdAt)).limit(50);
-    const jbVendor = await db.select().from(vendors).where(sql16`${vendors.name} LIKE '%제이비엔지니어링%'`).limit(5);
+    }).from(purchaseOrders).leftJoin(vendors, eq36(purchaseOrders.vendorId, vendors.id)).where(sql16`${purchaseOrders.createdAt} > ${oneHourAgo}`).orderBy(desc17(purchaseOrders.createdAt)).limit(50);
+    const jbVendor = await db2.select().from(vendors).where(sql16`${vendors.name} LIKE '%제이비엔지니어링%'`).limit(5);
     res.json({
       recentDrafts,
       recentDraftsCount: recentDrafts.length,
@@ -26244,7 +26306,7 @@ router40.get("/attachments/:id/download", async (req, res) => {
         message: "Authentication required"
       });
     }
-    const [attachment] = await db.select({
+    const [attachment] = await db2.select({
       id: attachments.id,
       orderId: attachments.orderId,
       originalName: attachments.originalName,
@@ -26344,7 +26406,7 @@ router40.delete("/attachments/:id", requireAuth, async (req, res) => {
       });
     }
     console.log(`\u{1F5D1}\uFE0F Admin ${user.name} (ID: ${user.id}) requesting deletion of attachment ${attachmentId}`);
-    const [attachment] = await db.select({
+    const [attachment] = await db2.select({
       id: attachments.id,
       orderId: attachments.orderId,
       originalName: attachments.originalName,
@@ -26388,7 +26450,7 @@ router40.delete("/attachments/:id", requireAuth, async (req, res) => {
         }
       }
     }
-    const deletedRows = await db.delete(attachments).where(eq37(attachments.id, attachmentId));
+    const deletedRows = await db2.delete(attachments).where(eq37(attachments.id, attachmentId));
     console.log(`\u2705 Deleted attachment record from database (affected rows: ${deletedRows})`);
     return res.json({
       success: true,
@@ -26604,14 +26666,22 @@ if (process.env.VERCEL) {
     console.log("\u{1F50D} Session debug info:", sessionData);
     res.json(sessionData);
   });
+  const path20 = await import("path");
+  app.use(express4.static(path20.join(process.cwd(), "dist/public")));
+  console.log("\u{1F4C1} Serving static files from dist/public");
   app.use(routes_default);
+  app.get("*", (req, res) => {
+    if (!req.path.startsWith("/api")) {
+      res.sendFile(path20.join(process.cwd(), "dist/public/index.html"));
+    }
+  });
   app.use((err, _req, res, _next) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
     console.error("Express error:", err);
     res.status(status).json({ message });
   });
-  console.log("\u2705 Non-Vercel production app initialized");
+  console.log("\u2705 Non-Vercel production app initialized with static serving");
 }
 if (!process.env.VERCEL) {
   const port = process.env.PORT || 3e3;

@@ -7,6 +7,7 @@ import { Router } from "express";
 import { storage } from "../storage";
 import { requireAuth, requireAdmin, requireOrderManager } from "../local-auth";
 import { insertPurchaseOrderSchema, purchaseOrders, attachments as attachmentsTable } from "@shared/schema";
+import * as schema from "@shared/schema";
 import { upload } from "../utils/multer-config";
 import { decodeKoreanFilename } from "../utils/korean-filename";
 import { OrderService } from "../services/order-service";
@@ -16,7 +17,7 @@ import { POEmailService } from "../utils/po-email-service";
 import ApprovalRoutingService from "../services/approval-routing-service";
 import { ProfessionalPDFGenerationService } from "../services/professional-pdf-generation-service";
 import * as database from "../db";
-import { eq } from "drizzle-orm";
+import { eq, and, or, like, desc } from "drizzle-orm";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -1983,6 +1984,53 @@ router.get("/orders/download-pdf/:timestamp", async (req, res) => {
     console.error("❌ PDF 다운로드 오류:", error);
     res.status(500).json({
       success: false,
+      error: "PDF 다운로드 중 오류가 발생했습니다.",
+      details: error instanceof Error ? error.message : "알 수 없는 오류"
+    });
+  }
+});
+
+// Order ID로 PDF 다운로드 (UnifiedOrdersList에서 사용)
+router.get("/orders/:id/download-pdf", async (req, res) => {
+  try {
+    const orderId = parseInt(req.params.id);
+    console.log(`📄 Order ID ${orderId}로 PDF 다운로드 요청`);
+    
+    // 해당 주문의 PDF attachment 찾기
+    const attachments = await db
+      .select()
+      .from(schema.attachments)
+      .where(
+        and(
+          eq(schema.attachments.orderId, orderId),
+          or(
+            eq(schema.attachments.mimeType, 'application/pdf'),
+            like(schema.attachments.originalName, '%.pdf')
+          )
+        )
+      )
+      .orderBy(desc(schema.attachments.createdAt))
+      .limit(1);
+    
+    if (!attachments || attachments.length === 0) {
+      console.warn(`⚠️ Order ${orderId}에 대한 PDF 없음`);
+      return res.status(404).json({ 
+        error: "PDF 파일을 찾을 수 없습니다." 
+      });
+    }
+    
+    const attachment = attachments[0];
+    console.log(`📄 PDF 발견: ${attachment.originalName}`);
+    
+    // attachment ID로 다운로드 엔드포인트로 리다이렉트
+    const downloadUrl = `/api/attachments/${attachment.id}/download?download=true`;
+    console.log(`📄 리다이렉트: ${downloadUrl}`);
+    
+    res.redirect(downloadUrl);
+    
+  } catch (error) {
+    console.error("❌ Order PDF 다운로드 오류:", error);
+    res.status(500).json({
       error: "PDF 다운로드 중 오류가 발생했습니다.",
       details: error instanceof Error ? error.message : "알 수 없는 오류"
     });

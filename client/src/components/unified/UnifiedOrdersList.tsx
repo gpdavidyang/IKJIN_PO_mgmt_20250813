@@ -581,7 +581,7 @@ export function UnifiedOrdersList({
                   }`}>
                     <button
                       onClick={() => onSort?.("totalAmount")}
-                      className={`flex items-center gap-1 transition-colors ${
+                      className={`flex items-center gap-1 justify-end transition-colors ${
                         isDarkMode ? 'hover:text-gray-100' : 'hover:text-gray-700'
                       }`}
                     >
@@ -605,7 +605,15 @@ export function UnifiedOrdersList({
                   <th className={`px-3 py-3 text-center text-xs font-medium uppercase tracking-wider ${
                     isDarkMode ? 'text-gray-300' : 'text-gray-500'
                   }`}>
-                    액션
+                    <button
+                      onClick={() => onSort?.("actions")}
+                      className={`flex items-center gap-1 justify-center transition-colors ${
+                        isDarkMode ? 'hover:text-gray-100' : 'hover:text-gray-700'
+                      }`}
+                    >
+                      액션
+                      {getSortIcon("actions")}
+                    </button>
                   </th>
                 </tr>
               </thead>

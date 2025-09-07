@@ -266,11 +266,14 @@ router.post('/orders/bulk-create-simple', requireAuth, upload.single('excelFile'
           approvalStatus = 'not_required';
           legacyStatus = 'draft';
         } else {
-          // Check if needs approval (simplified for bulk creation - assumes direct approval for now)
-          orderStatus = sendEmail ? 'sent' : 'created';
+          // Order is created but NOT sent if sendEmail is false
+          // Only mark as 'sent' if email is actually sent
+          orderStatus = 'created'; // Always start as 'created'
           approvalStatus = 'not_required';
           approvalBypassReason = 'direct_approval'; // Bulk orders use direct approval
-          legacyStatus = sendEmail ? 'sent' : 'approved'; // Use 'approved' instead of 'created'
+          legacyStatus = 'approved'; // Legacy status is 'approved' after creation
+          
+          // Status will be updated to 'sent' later if email is successfully sent
         }
 
         // Create purchase order with dual status
@@ -526,10 +529,13 @@ router.post('/orders/bulk-create-simple', requireAuth, upload.single('excelFile'
               if (result.success) {
                 console.log(`✅ Email sent successfully for order ${emailInfo.orderNumber}`);
                 
-                // Update order status to 'sent'
+                // Update both legacy status and orderStatus to 'sent'
                 await db
                   .update(purchaseOrders)
-                  .set({ status: 'sent' })
+                  .set({ 
+                    status: 'sent',
+                    orderStatus: 'sent'
+                  })
                   .where(eq(purchaseOrders.id, emailInfo.orderId));
                   
                 // Add history entry for email sent

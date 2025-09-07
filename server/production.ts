@@ -208,8 +208,20 @@ if (process.env.VERCEL) {
     res.json(sessionData);
   });
 
+  // Serve static files for non-Vercel environments
+  const path = await import("path");
+  app.use(express.static(path.join(process.cwd(), "dist/public")));
+  console.log("📁 Serving static files from dist/public");
+
   // Use modular routes AFTER debug endpoints
   app.use(router);
+  
+  // Serve index.html for all non-API routes (SPA routing)
+  app.get("*", (req, res) => {
+    if (!req.path.startsWith("/api")) {
+      res.sendFile(path.join(process.cwd(), "dist/public/index.html"));
+    }
+  });
   
   // Error handling middleware
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -219,7 +231,7 @@ if (process.env.VERCEL) {
     res.status(status).json({ message });
   });
   
-  console.log("✅ Non-Vercel production app initialized");
+  console.log("✅ Non-Vercel production app initialized with static serving");
 }
 
 // Start server for non-Vercel environments

@@ -1127,11 +1127,15 @@ export class ProfessionalPDFGenerationService {
         let koreanFontPath = null;
         const possibleFonts = [
           '/System/Library/Fonts/Supplemental/AppleGothic.ttf', // macOS
+          '/System/Library/Fonts/AppleSDGothicNeo.ttc', // macOS AppleSDGothicNeo
           '/System/Library/Fonts/Supplemental/AppleMyungjo.ttf', // macOS 명조
+          '/System/Library/Fonts/NanumGothic.ttc', // macOS Nanum Gothic
           'C:\\Windows\\Fonts\\malgun.ttf', // Windows
           'C:\\Windows\\Fonts\\gulim.ttf', // Windows 굴림
+          'C:\\Windows\\Fonts\\batang.ttc', // Windows 바탕
           '/usr/share/fonts/truetype/nanum/NanumGothic.ttf', // Linux
-          '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc' // Linux Noto
+          '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc', // Linux Noto
+          '/usr/share/fonts/truetype/fonts-nanum/NanumGothic.ttf' // Linux Nanum alternative
         ];
         
         // 사용 가능한 폰트 찾기
@@ -1148,24 +1152,45 @@ export class ProfessionalPDFGenerationService {
           }
         }
         
-        // 한글 폰트 등록
+        // 한글 폰트 등록 및 설정
         if (koreanFontPath) {
           try {
+            // PDFKit에서 한글 폰트 등록
             doc.registerFont('Korean', koreanFontPath);
             doc.font('Korean'); // 기본 폰트를 한글 폰트로 설정
             console.log(`✅ [ProfessionalPDF] 한글 폰트 등록 완료: ${koreanFontPath}`);
           } catch (fontError) {
-            console.warn('⚠️ [ProfessionalPDF] 한글 폰트 등록 실패, 기본 폰트 사용:', fontError);
-            doc.font('Helvetica'); // 기본 폰트로 대체
+            console.warn('⚠️ [ProfessionalPDF] 한글 폰트 등록 실패:', fontError);
+            // Vercel 환경에서는 기본 폰트 사용
+            if (process.env.VERCEL) {
+              console.log('📝 [ProfessionalPDF] Vercel 환경 - 기본 폰트 사용');
+              doc.font('Helvetica');
+            } else {
+              // 로컬 환경에서는 추가 시도
+              console.log('📝 [ProfessionalPDF] 로컬 환경 - 기본 폰트 사용');
+              doc.font('Helvetica');
+            }
           }
         } else {
-          console.warn('⚠️ [ProfessionalPDF] 한글 폰트를 찾을 수 없음, 기본 폰트 사용');
-          doc.font('Helvetica'); // 기본 폰트로 대체
+          console.warn('⚠️ [ProfessionalPDF] 한글 폰트를 찾을 수 없음');
+          // Vercel 환경이면 기본 폰트 사용
+          if (process.env.VERCEL) {
+            console.log('📝 [ProfessionalPDF] Vercel에서는 한글 폰트 대신 기본 폰트 사용');
+            doc.font('Helvetica');
+          } else {
+            console.log('📝 [ProfessionalPDF] 로컬 환경 - 기본 폰트 사용');
+            doc.font('Helvetica');
+          }
         }
         
         // 한글 텍스트를 안전하게 처리하는 함수
         const safeText = (text: string) => {
-          return text || '';
+          if (!text) return '';
+          // 특수문자 이스케이프 처리
+          return text
+            .replace(/[\x00-\x1F\x7F]/g, '') // 제어 문자 제거
+            .replace(/[\u2028\u2029]/g, '') // 줄 구분자 제거
+            .trim();
         };
         
         const formatDate = (date?: Date | null) => {
