@@ -171,10 +171,6 @@ export class ExcelAutomationService {
       console.log(`📊 [DEBUG] saveResult:`, JSON.stringify(saveResult, null, 2));
       const originalFileName = path.basename(filePath);
       
-      // PDF 생성 결과를 저장할 변수들 (스코프 밖에서 선언)
-      let pdfGenerationPromises: Promise<any>[] = [];
-      let pdfResults: any[] = [];
-      
       // 발주서 ID들 조회
       if (saveResult.savedOrderNumbers && saveResult.savedOrderNumbers.length > 0) {
         console.log(`📋 [DEBUG] 발주서 번호들:`, saveResult.savedOrderNumbers);
@@ -192,19 +188,9 @@ export class ExcelAutomationService {
           if (removeResult.success && fs.existsSync(processedExcelPath)) {
             console.log(`✅ [DEBUG] Input 시트 제거 완료: ${processedExcelPath}`);
             
-            // PDF 생성 시작 알림
-            if (sessionId) {
-              progressManager.updateStep(sessionId, 'pdf', 'processing', `PDF 생성 시작: 총 ${orders.length}개 발주서`, {
-                current: 0,
-                total: orders.length
-              });
-            }
-            
-            let pdfProcessedCount = 0;
-            
-            // 각 발주서에 처리된 Excel 파일 첨부 및 PDF 생성 (발주서 번호 포함)
+            // 각 발주서에 처리된 Excel 파일만 첨부 (PDF 생성은 제거)
             for (const order of orders) {
-              // 1. Excel 파일 첨부
+              // Excel 파일 첨부
               const attachResult = await ExcelAttachmentService.saveProcessedExcelFile(
                 order.id,
                 processedExcelPath,
@@ -219,109 +205,19 @@ export class ExcelAutomationService {
                 console.warn(`⚠️ [DEBUG] 발주서 ${order.orderNumber}에 Excel 첨부파일 저장 실패: ${attachResult.error}`);
               }
               
-              // 2. PDF 자동 생성 및 첨부 (Promise로 수집)
-              const pdfPromise = (async () => {
-                try {
-                  console.log(`📄 [DEBUG] 발주서 ${order.orderNumber}에 대한 PDF 생성 시작...`);
-                  const { ProfessionalPDFGenerationService } = await import('../services/professional-pdf-generation-service');
-                  
-                  // Vercel 환경에서 타임아웃 설정 (30초)
-                  const pdfGenerationTimeout = process.env.VERCEL ? 30000 : 60000;
-                  
-                  const pdfResultPromise = ProfessionalPDFGenerationService.generateProfessionalPurchaseOrderPDF(
-                    order.id,
-                    userId
-                  );
-                  
-                  // 타임아웃과 PDF 생성을 경쟁시킴
-                  const pdfResult = await Promise.race([
-                    pdfResultPromise,
-                    new Promise<{ success: false, error: string }>((resolve) => 
-                      setTimeout(() => resolve({ success: false, error: 'PDF 생성 타임아웃' }), pdfGenerationTimeout)
-                    )
-                  ]);
-                  
-                  if (pdfResult.success) {
-                    console.log(`✅ [DEBUG] 발주서 ${order.orderNumber}에 PDF 생성 완료: ID ${pdfResult.attachmentId}`);
-                    
-                    // Update progress for each PDF completed
-                    pdfProcessedCount++;
-                    if (sessionId) {
-                      progressManager.updateStep(sessionId, 'pdf', 'processing', 
-                        `PDF 생성 중: ${order.orderNumber} 완료 (${pdfProcessedCount}/${orders.length})`, {
-                        current: pdfProcessedCount,
-                        total: orders.length,
-                        currentItem: order.orderNumber,
-                        percentage: Math.round((pdfProcessedCount / orders.length) * 100)
-                      });
-                    }
-                    
-                    return { orderId: order.id, orderNumber: order.orderNumber, success: true, attachmentId: pdfResult.attachmentId };
-                  } else {
-                    console.warn(`⚠️ [DEBUG] 발주서 ${order.orderNumber}에 PDF 생성 실패: ${pdfResult.error}`);
-                    
-                    pdfProcessedCount++;
-                    if (sessionId) {
-                      progressManager.updateStep(sessionId, 'pdf', 'processing', 
-                        `PDF 생성 중: ${order.orderNumber} 실패 (${pdfProcessedCount}/${orders.length})`, {
-                        current: pdfProcessedCount,
-                        total: orders.length,
-                        currentItem: order.orderNumber,
-                        percentage: Math.round((pdfProcessedCount / orders.length) * 100)
-                      });
-                    }
-                    
-                    return { orderId: order.id, orderNumber: order.orderNumber, success: false, error: pdfResult.error };
-                  }
-                } catch (pdfError) {
-                  console.error(`❌ [DEBUG] 발주서 ${order.orderNumber} PDF 생성 중 오류:`, pdfError);
-                  return { orderId: order.id, orderNumber: order.orderNumber, success: false, error: pdfError };
-                }
-              })();
-              
-              pdfGenerationPromises.push(pdfPromise);
-              
-              // 3. 발주서 상태를 '발주생성'으로 업데이트
+              // 발주서 상태를 '임시저장'으로 설정 (PDF 생성 제거로 인해 변경)
               try {
                 await db.update(purchaseOrders)
                   .set({ 
-                    orderStatus: '발주생성',
-                    status: 'created'
+                    orderStatus: 'draft',
+                    status: 'draft'
                   })
                   .where(eq(purchaseOrders.id, order.id));
                   
-                console.log(`✅ [DEBUG] 발주서 ${order.orderNumber} 상태를 '발주생성'으로 업데이트 완료`);
+                console.log(`✅ [DEBUG] 발주서 ${order.orderNumber} 상태를 'draft'(임시저장)로 설정 완료`);
               } catch (statusError) {
                 console.warn(`⚠️ [DEBUG] 발주서 ${order.orderNumber} 상태 업데이트 실패:`, statusError);
               }
-            }
-            
-            // 모든 PDF 생성이 완료될 때까지 대기
-            console.log(`⏳ [DEBUG] ${pdfGenerationPromises.length}개 PDF 생성 대기 중...`);
-            pdfResults = await Promise.all(pdfGenerationPromises);
-            
-            // PDF 생성 결과 요약
-            const successfulPdfs = pdfResults.filter(r => r.success);
-            const failedPdfs = pdfResults.filter(r => !r.success);
-            
-            console.log(`📊 [DEBUG] PDF 생성 완료: 성공 ${successfulPdfs.length}개, 실패 ${failedPdfs.length}개`);
-            
-            // Send final PDF generation status
-            if (sessionId) {
-              const status = failedPdfs.length === 0 ? 'completed' : 'error';
-              const message = failedPdfs.length === 0 
-                ? `모든 PDF 생성 완료: ${successfulPdfs.length}개 성공`
-                : `PDF 생성 완료: ${successfulPdfs.length}개 성공, ${failedPdfs.length}개 실패`;
-              
-              progressManager.updateStep(sessionId, 'pdf', status, message, {
-                successful: successfulPdfs.length,
-                failed: failedPdfs.length,
-                total: pdfResults.length
-              });
-            }
-            
-            if (failedPdfs.length > 0) {
-              console.warn(`⚠️ [DEBUG] PDF 생성 실패 목록:`, failedPdfs.map(f => f.orderNumber).join(', '));
             }
             
             // 임시 파일 정리
@@ -380,20 +276,8 @@ export class ExcelAutomationService {
         }
       }
 
-      // PDF 생성 결과 수집
-      let pdfGenerationInfo = undefined;
-      if (typeof pdfGenerationPromises !== 'undefined' && pdfGenerationPromises.length > 0) {
-        // pdfResults가 이미 위에서 정의되었으므로 재사용
-        if (typeof pdfResults !== 'undefined') {
-          const successfulPdfs = pdfResults.filter(r => r.success);
-          pdfGenerationInfo = {
-            total: pdfResults.length,
-            successful: successfulPdfs.length,
-            failed: pdfResults.length - successfulPdfs.length,
-            attachmentIds: successfulPdfs.map(p => p.attachmentId).filter(id => id !== undefined)
-          };
-        }
-      }
+      // PDF 생성 정보는 제거 (임시저장 시점에서는 PDF를 생성하지 않음)
+      const pdfGenerationInfo = undefined;
       
       const result = {
         success: true,

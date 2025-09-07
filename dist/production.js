@@ -1410,12 +1410,12 @@ var init_schema = __esm({
 // server/db.ts
 var db_exports = {};
 __export(db_exports, {
-  db: () => db2
+  db: () => db
 });
 import dotenv from "dotenv";
 import pkg from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
-var DATABASE_URL, Pool, db2;
+var DATABASE_URL, Pool, db;
 var init_db = __esm({
   "server/db.ts"() {
     "use strict";
@@ -1441,7 +1441,7 @@ var init_db = __esm({
       }
     }
     ({ Pool } = pkg);
-    db2 = null;
+    db = null;
     if (!DATABASE_URL) {
       console.error("\u274C DATABASE_URL not set - database connection not initialized");
       if (!process.env.VERCEL) {
@@ -1469,7 +1469,7 @@ var init_db = __esm({
         pool.on("error", (err) => {
           console.error("\u{1F4A5} Database pool error:", err);
         });
-        db2 = drizzle(pool, { schema: schema_exports });
+        db = drizzle(pool, { schema: schema_exports });
         console.log("\u2705 Database connected successfully (PostgreSQL pool)");
       } catch (error) {
         console.error("\u274C Database connection failed:", error instanceof Error ? error.message : String(error));
@@ -2041,7 +2041,7 @@ var init_email_settings_service = __esm({
           if (_EmailSettingsService.isCacheValid()) {
             return _EmailSettingsService.settingsCache;
           }
-          const db3 = db2;
+          const db3 = db;
           const result = await db3.select().from(emailSettings).where(eq8(emailSettings.isActive, true)).orderBy(desc4(emailSettings.isDefault), desc4(emailSettings.updatedAt)).limit(1);
           const setting = result[0] || null;
           _EmailSettingsService.settingsCache = setting;
@@ -2057,7 +2057,7 @@ var init_email_settings_service = __esm({
        */
       async getAllSettings() {
         try {
-          const db3 = db2;
+          const db3 = db;
           const result = await db3.select().from(emailSettings).orderBy(desc4(emailSettings.isDefault), desc4(emailSettings.updatedAt));
           return result;
         } catch (error) {
@@ -2071,7 +2071,7 @@ var init_email_settings_service = __esm({
       async createSettings(data, createdBy) {
         try {
           const encryptedPassword = EmailSettingsEncryption.encrypt(data.smtpPass);
-          const db3 = db2;
+          const db3 = db;
           if (data.isDefault) {
             await db3.update(emailSettings).set({ isDefault: false, updatedAt: /* @__PURE__ */ new Date() }).where(eq8(emailSettings.isDefault, true));
           }
@@ -2094,7 +2094,7 @@ var init_email_settings_service = __esm({
        */
       async updateSettings(id, data, updatedBy) {
         try {
-          const db3 = db2;
+          const db3 = db;
           const updateData = {
             ...data,
             updatedAt: /* @__PURE__ */ new Date()
@@ -2121,7 +2121,7 @@ var init_email_settings_service = __esm({
        */
       async deleteSettings(id) {
         try {
-          const db3 = db2;
+          const db3 = db;
           const result = await db3.delete(emailSettings).where(eq8(emailSettings.id, id)).returning();
           this.invalidateCache();
           return result.length > 0;
@@ -2225,7 +2225,7 @@ var init_email_settings_service = __esm({
         try {
           let setting;
           if (settingId) {
-            const db3 = db2;
+            const db3 = db;
             const result = await db3.select().from(emailSettings).where(eq8(emailSettings.id, settingId)).limit(1);
             setting = result[0] || null;
           } else {
@@ -2281,7 +2281,7 @@ var init_email_settings_service = __esm({
        */
       async updateTestResult(settingId, testResult) {
         try {
-          const db3 = db2;
+          const db3 = db;
           await db3.update(emailSettings).set({
             lastTestedAt: /* @__PURE__ */ new Date(),
             testResult,
@@ -2350,7 +2350,7 @@ var init_professional_pdf_generation_service = __esm({
       static async gatherComprehensiveOrderData(orderId) {
         try {
           console.log(`\u{1F4CA} [ProfessionalPDF] \uD3EC\uAD04\uC801 \uB370\uC774\uD130 \uC218\uC9D1 \uC2DC\uC791: Order ID ${orderId}`);
-          const orderQuery = await db2.select({
+          const orderQuery = await db.select({
             // Purchase Order 정보
             orderNumber: purchaseOrders.orderNumber,
             orderDate: purchaseOrders.orderDate,
@@ -2385,7 +2385,7 @@ var init_professional_pdf_generation_service = __esm({
             creatorPosition: users.position,
             creatorRole: users.role
           }).from(purchaseOrders).leftJoin(vendors, eq9(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq9(purchaseOrders.projectId, projects.id)).leftJoin(users, eq9(purchaseOrders.userId, users.id)).where(eq9(purchaseOrders.id, orderId)).limit(1);
-          const companyQuery = await db2.select({
+          const companyQuery = await db.select({
             companyName: companies.companyName,
             companyBusinessNumber: companies.businessNumber,
             companyAddress: companies.address,
@@ -2410,11 +2410,11 @@ var init_professional_pdf_generation_service = __esm({
             companyEmail: null,
             companyRepresentative: null
           };
-          const itemsQuery = await db2.select().from(purchaseOrderItems).where(eq9(purchaseOrderItems.orderId, orderId));
-          const attachmentsQuery = await db2.select().from(attachments).where(eq9(attachments.orderId, orderId));
+          const itemsQuery = await db.select().from(purchaseOrderItems).where(eq9(purchaseOrderItems.orderId, orderId));
+          const attachmentsQuery = await db.select().from(attachments).where(eq9(attachments.orderId, orderId));
           let emailHistoryQuery = [];
           try {
-            emailHistoryQuery = await db2.select().from(emailSendHistory).where(eq9(emailSendHistory.orderId, orderId)).orderBy(desc5(emailSendHistory.sentAt)).limit(5);
+            emailHistoryQuery = await db.select().from(emailSendHistory).where(eq9(emailSendHistory.orderId, orderId)).orderBy(desc5(emailSendHistory.sentAt)).limit(5);
           } catch (error) {
             if (error.code !== "42P01") {
               console.error("\u274C [ProfessionalPDF] \uC774\uBA54\uC77C \uC774\uB825 \uC870\uD68C \uC624\uB958:", error);
@@ -2551,7 +2551,7 @@ var init_professional_pdf_generation_service = __esm({
           console.log(`\u{1F50D} [ProfessionalPDF] Environment check - VERCEL: ${process.env.VERCEL}, Base64 size: ${base64Data.length} chars`);
           if (process.env.VERCEL) {
             console.log("\u{1F4DD} [ProfessionalPDF] Saving to database with Base64 data...");
-            const [attachment] = await db2.insert(attachments).values({
+            const [attachment] = await db.insert(attachments).values({
               orderId,
               originalName: fileName,
               storedName: fileName,
@@ -2571,7 +2571,7 @@ var init_professional_pdf_generation_service = __esm({
             }
             filePath = path5.join(tempDir, fileName);
             fs7.writeFileSync(filePath, pdfBuffer);
-            const [attachment] = await db2.insert(attachments).values({
+            const [attachment] = await db.insert(attachments).values({
               orderId,
               originalName: fileName,
               storedName: fileName,
@@ -3174,8 +3174,8 @@ var init_professional_pdf_generation_service = __esm({
           throw new Error("HTML to PDF conversion not supported in Vercel - use PDFKit instead");
         } else {
           try {
-            const { chromium: chromium2 } = await import("playwright-chromium");
-            const browser = await chromium2.launch({
+            const { chromium: chromium4 } = await import("playwright-chromium");
+            const browser = await chromium4.launch({
               headless: true,
               args: ["--no-sandbox", "--disable-dev-shm-usage"]
             });
@@ -3210,7 +3210,7 @@ var init_professional_pdf_generation_service = __esm({
       static async generateProfessionalPDFWithPDFKit(orderData) {
         try {
           const PDFKitDocument = (await import("pdfkit")).default;
-          const fs23 = await import("fs");
+          const fs25 = await import("fs");
           return new Promise((resolve, reject) => {
             try {
               const doc = new PDFKitDocument({
@@ -3590,7 +3590,7 @@ var init_po_template_processor_mock = __esm({
           let savedOrders = 0;
           const savedOrderNumbers = [];
           console.log(`\u{1F50D} [DB] \uD2B8\uB79C\uC7AD\uC158 \uC2DC\uC791`);
-          await db2.transaction(async (tx) => {
+          await db.transaction(async (tx) => {
             console.log(`\u{1F50D} [DB] \uD2B8\uB79C\uC7AD\uC158 \uB0B4\uBD80 \uC9C4\uC785 \uC131\uACF5`);
             for (const orderData of orders) {
               console.log(`\u{1F50D} [DB] \uBC1C\uC8FC\uC11C \uCC98\uB9AC \uC911: ${orderData.orderNumber}, \uAC70\uB798\uCC98: ${orderData.vendorName}`);
@@ -3848,23 +3848,761 @@ var init_po_template_processor_mock = __esm({
   }
 });
 
+// server/utils/enhanced-excel-to-pdf.ts
+import { chromium as chromium2 } from "playwright-chromium";
+import ExcelJS2 from "exceljs";
+import path16 from "path";
+import fs19 from "fs";
+var EnhancedExcelToPDFConverter;
+var init_enhanced_excel_to_pdf = __esm({
+  "server/utils/enhanced-excel-to-pdf.ts"() {
+    "use strict";
+    EnhancedExcelToPDFConverter = class {
+      static {
+        this.DEFAULT_OPTIONS = {
+          pageFormat: "A4",
+          orientation: "landscape",
+          quality: "high",
+          margin: {
+            top: "15mm",
+            right: "15mm",
+            bottom: "15mm",
+            left: "15mm"
+          }
+        };
+      }
+      /**
+       * Excel 파일을 고품질 PDF로 변환
+       */
+      static async convertExcelToPDF(excelPath, options = {}) {
+        const startTime = Date.now();
+        let browser = null;
+        try {
+          console.log(`\u{1F4C4} Enhanced PDF \uBCC0\uD658 \uC2DC\uC791: ${excelPath}`);
+          if (!fs19.existsSync(excelPath)) {
+            throw new Error(`Excel \uD30C\uC77C\uC774 \uC874\uC7AC\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4: ${excelPath}`);
+          }
+          const finalOptions = { ...this.DEFAULT_OPTIONS, ...options };
+          const pdfPath = finalOptions.outputPath || excelPath.replace(/\.(xlsx?|xlsm)$/i, "-enhanced.pdf");
+          const outputDir = path16.dirname(pdfPath);
+          if (!fs19.existsSync(outputDir)) {
+            fs19.mkdirSync(outputDir, { recursive: true });
+          }
+          console.log(`\u{1F4C4} PDF \uCD9C\uB825 \uACBD\uB85C: ${pdfPath}`);
+          const workbook = new ExcelJS2.Workbook();
+          await workbook.xlsx.readFile(excelPath);
+          console.log(`\u{1F4D6} Excel \uD30C\uC77C \uB85C\uB4DC \uC644\uB8CC. \uC2DC\uD2B8 \uC218: ${workbook.worksheets.length}`);
+          const sheetsToConvert = this.filterSheets(workbook, finalOptions);
+          if (sheetsToConvert.length === 0) {
+            console.warn("\u26A0\uFE0F \uBCC0\uD658\uD560 \uC2DC\uD2B8\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.");
+            return {
+              success: false,
+              error: "\uBCC0\uD658\uD560 \uC2DC\uD2B8\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4. Input \uC2DC\uD2B8\uAC00 \uC81C\uAC70\uB418\uC5C8\uAC70\uB098 \uBE48 \uD30C\uC77C\uC785\uB2C8\uB2E4."
+            };
+          }
+          console.log(`\u{1F3AF} \uBCC0\uD658 \uB300\uC0C1 \uC2DC\uD2B8: ${sheetsToConvert.map((ws) => ws.name).join(", ")}`);
+          const html = await this.generateEnhancedHTML(sheetsToConvert, finalOptions);
+          console.log(`\u{1F310} Enhanced HTML \uC0DD\uC131 \uC644\uB8CC. \uD06C\uAE30: ${Math.round(html.length / 1024)}KB`);
+          browser = await chromium2.launch({
+            headless: true,
+            args: [
+              "--no-sandbox",
+              "--disable-setuid-sandbox",
+              "--disable-dev-shm-usage",
+              "--disable-accelerated-2d-canvas",
+              "--no-first-run",
+              "--no-zygote",
+              "--single-process",
+              "--disable-gpu",
+              "--disable-extensions"
+            ]
+          });
+          const page = await browser.newPage();
+          await page.setViewportSize({
+            width: finalOptions.orientation === "landscape" ? 1169 : 827,
+            height: finalOptions.orientation === "landscape" ? 827 : 1169
+          });
+          await page.setContent(html, {
+            waitUntil: "networkidle",
+            timeout: 6e4
+            // 1분 타임아웃
+          });
+          console.log(`\u{1F4C4} PDF \uC0DD\uC131 \uC911... (${finalOptions.quality} \uD488\uC9C8)`);
+          const pdfOptions = {
+            path: pdfPath,
+            format: finalOptions.pageFormat,
+            landscape: finalOptions.orientation === "landscape",
+            printBackground: true,
+            preferCSSPageSize: false,
+            margin: finalOptions.margin,
+            // 품질 설정에 따른 추가 옵션
+            ...finalOptions.quality === "high" && {
+              quality: 100,
+              omitBackground: false
+            }
+          };
+          await page.pdf(pdfOptions);
+          await browser.close();
+          browser = null;
+          if (!fs19.existsSync(pdfPath)) {
+            throw new Error("PDF \uD30C\uC77C\uC774 \uC0DD\uC131\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4.");
+          }
+          const stats = fs19.statSync(pdfPath);
+          const processingTime = Date.now() - startTime;
+          console.log(`\u2705 Enhanced PDF \uC0DD\uC131 \uC644\uB8CC: ${pdfPath}`);
+          console.log(`\u{1F4CA} \uD30C\uC77C \uD06C\uAE30: ${Math.round(stats.size / 1024)}KB`);
+          console.log(`\u23F1\uFE0F \uCC98\uB9AC \uC2DC\uAC04: ${processingTime}ms`);
+          return {
+            success: true,
+            pdfPath,
+            stats: {
+              fileSize: stats.size,
+              sheetCount: sheetsToConvert.length,
+              processingTime
+            }
+          };
+        } catch (error) {
+          console.error("\u274C Enhanced PDF \uBCC0\uD658 \uC624\uB958:", error);
+          if (browser) {
+            try {
+              await browser.close();
+            } catch (closeError) {
+              console.error("\uBE0C\uB77C\uC6B0\uC800 \uC885\uB8CC \uC624\uB958:", closeError);
+            }
+          }
+          return {
+            success: false,
+            error: error instanceof Error ? error.message : "Unknown error"
+          };
+        }
+      }
+      /**
+       * 변환할 시트 필터링
+       */
+      static filterSheets(workbook, options) {
+        const allSheets = workbook.worksheets;
+        let filteredSheets = allSheets.filter(
+          (ws) => !ws.name.toLowerCase().startsWith("input")
+        );
+        if (options.includeSheets && options.includeSheets.length > 0) {
+          filteredSheets = filteredSheets.filter(
+            (ws) => options.includeSheets.includes(ws.name)
+          );
+        }
+        if (options.excludeSheets && options.excludeSheets.length > 0) {
+          filteredSheets = filteredSheets.filter(
+            (ws) => !options.excludeSheets.includes(ws.name)
+          );
+        }
+        return filteredSheets;
+      }
+      /**
+       * 고품질 HTML 생성
+       */
+      static async generateEnhancedHTML(worksheets, options) {
+        const styles = this.getEnhancedStyles(options);
+        let bodyContent = "";
+        for (let i = 0; i < worksheets.length; i++) {
+          const worksheet = worksheets[i];
+          if (i > 0) {
+            bodyContent += '<div class="page-break"></div>';
+          }
+          bodyContent += `<div class="sheet-container">`;
+          bodyContent += `<h2 class="sheet-title">${worksheet.name}</h2>`;
+          const tableHTML = await this.worksheetToEnhancedTable(worksheet);
+          bodyContent += tableHTML;
+          bodyContent += `</div>`;
+        }
+        if (options.watermark) {
+          bodyContent += `
+        <div class="watermark">${options.watermark}</div>
+      `;
+        }
+        return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Purchase Order PDF</title>
+  <style>${styles}</style>
+</head>
+<body>
+  ${bodyContent}
+</body>
+</html>
+    `;
+      }
+      /**
+       * 워크시트를 고품질 테이블 HTML로 변환
+       */
+      static async worksheetToEnhancedTable(worksheet) {
+        let tableHTML = '<table class="excel-table">';
+        worksheet.eachRow({ includeEmpty: true }, (row, rowNumber) => {
+          tableHTML += "<tr>";
+          row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+            const value = this.formatCellValue(cell.value);
+            const styles = this.getCellStyles(cell);
+            const alignment = this.getCellAlignment(cell);
+            tableHTML += `<td style="${styles}${alignment}">${value}</td>`;
+          });
+          tableHTML += "</tr>";
+        });
+        tableHTML += "</table>";
+        return tableHTML;
+      }
+      /**
+       * 셀 값 포맷팅
+       */
+      static formatCellValue(value) {
+        if (value === null || value === void 0 || value === "") {
+          return "&nbsp;";
+        }
+        if (value instanceof Date) {
+          return value.toLocaleDateString("ko-KR");
+        }
+        if (typeof value === "number") {
+          return value.toLocaleString("ko-KR");
+        }
+        if (value && typeof value === "object" && "richText" in value) {
+          return value.richText.map((rt) => rt.text).join("");
+        }
+        return String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+      }
+      /**
+       * 셀 스타일 생성
+       */
+      static getCellStyles(cell) {
+        let styles = "";
+        if (cell.font) {
+          if (cell.font.bold) styles += "font-weight: bold; ";
+          if (cell.font.italic) styles += "font-style: italic; ";
+          if (cell.font.size) styles += `font-size: ${cell.font.size}px; `;
+          if (cell.font.color && cell.font.color.argb) {
+            const color = "#" + cell.font.color.argb.substring(2);
+            styles += `color: ${color}; `;
+          }
+        }
+        if (cell.fill && cell.fill.type === "pattern" && cell.fill.pattern === "solid") {
+          const bgColor = cell.fill.fgColor;
+          if (bgColor && bgColor.argb) {
+            const color = "#" + bgColor.argb.substring(2);
+            styles += `background-color: ${color}; `;
+          }
+        }
+        if (cell.border) {
+          const borderStyle = "1px solid #333";
+          if (cell.border.top) styles += `border-top: ${borderStyle}; `;
+          if (cell.border.bottom) styles += `border-bottom: ${borderStyle}; `;
+          if (cell.border.left) styles += `border-left: ${borderStyle}; `;
+          if (cell.border.right) styles += `border-right: ${borderStyle}; `;
+        }
+        return styles;
+      }
+      /**
+       * 셀 정렬 스타일
+       */
+      static getCellAlignment(cell) {
+        if (!cell.alignment) return "";
+        let alignment = "";
+        if (cell.alignment.horizontal) {
+          alignment += `text-align: ${cell.alignment.horizontal}; `;
+        }
+        if (cell.alignment.vertical) {
+          alignment += `vertical-align: ${cell.alignment.vertical}; `;
+        }
+        return alignment;
+      }
+      /**
+       * Enhanced CSS 스타일
+       */
+      static getEnhancedStyles(options) {
+        return `
+      body {
+        font-family: 'Malgun Gothic', 'Noto Sans KR', Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: white;
+        line-height: 1.2;
+        font-size: 12px;
+      }
+
+      .sheet-container {
+        margin-bottom: 30px;
+        page-break-inside: avoid;
+      }
+
+      .sheet-title {
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 15px;
+        color: #1a1a1a;
+        border-bottom: 3px solid #3B82F6;
+        padding-bottom: 8px;
+        text-align: center;
+      }
+
+      .excel-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+        font-size: 11px;
+        background-color: white;
+      }
+
+      .excel-table td {
+        border: 1px solid #ddd;
+        padding: 6px 8px;
+        vertical-align: top;
+        min-height: 20px;
+        word-wrap: break-word;
+        max-width: 200px;
+      }
+
+      .excel-table th {
+        border: 1px solid #ddd;
+        padding: 8px;
+        background-color: #f8f9fa;
+        font-weight: bold;
+        text-align: center;
+      }
+
+      .page-break {
+        page-break-before: always;
+      }
+
+      .watermark {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(-45deg);
+        font-size: 72px;
+        color: rgba(0, 0, 0, 0.1);
+        pointer-events: none;
+        z-index: -1;
+        font-weight: bold;
+      }
+
+      /* \uC22B\uC790 \uC140 \uC6B0\uCE21 \uC815\uB82C */
+      .number-cell {
+        text-align: right;
+      }
+
+      /* \uD5E4\uB354 \uC2A4\uD0C0\uC77C */
+      .header-cell {
+        background-color: #e9ecef !important;
+        font-weight: bold;
+        text-align: center;
+      }
+
+      /* \uC778\uC1C4 \uCD5C\uC801\uD654 */
+      @media print {
+        body {
+          margin: 0;
+          padding: 5mm;
+        }
+        
+        .page-break {
+          page-break-before: always;
+        }
+        
+        .sheet-container {
+          break-inside: avoid;
+        }
+
+        .excel-table {
+          font-size: 10px;
+        }
+      }
+
+      /* \uD488\uC9C8\uBCC4 \uCD5C\uC801\uD654 */
+      ${options.quality === "high" ? `
+        .excel-table {
+          image-rendering: -webkit-optimize-contrast;
+          image-rendering: crisp-edges;
+        }
+      ` : ""}
+    `;
+      }
+      /**
+       * PDF 파일 검증
+       */
+      static validatePDF(pdfPath) {
+        try {
+          if (!fs19.existsSync(pdfPath)) {
+            return false;
+          }
+          const stats = fs19.statSync(pdfPath);
+          if (stats.size < 1024) {
+            console.warn(`\u26A0\uFE0F PDF \uD30C\uC77C \uD06C\uAE30\uAC00 \uB108\uBB34 \uC791\uC2B5\uB2C8\uB2E4: ${stats.size}bytes`);
+            return false;
+          }
+          const buffer = fs19.readFileSync(pdfPath, { start: 0, end: 4 });
+          const header = buffer.toString();
+          if (!header.startsWith("%PDF")) {
+            console.warn("\u26A0\uFE0F \uC720\uD6A8\uD558\uC9C0 \uC54A\uC740 PDF \uD30C\uC77C \uD5E4\uB354");
+            return false;
+          }
+          return true;
+        } catch (error) {
+          console.error("PDF \uAC80\uC99D \uC624\uB958:", error);
+          return false;
+        }
+      }
+      /**
+       * 임시 파일 정리
+       */
+      static cleanupTempFiles(filePaths) {
+        filePaths.forEach((filePath) => {
+          try {
+            if (fs19.existsSync(filePath)) {
+              fs19.unlinkSync(filePath);
+              console.log(`\u{1F5D1}\uFE0F \uC784\uC2DC \uD30C\uC77C \uC815\uB9AC: ${path16.basename(filePath)}`);
+            }
+          } catch (error) {
+            console.error(`\uD30C\uC77C \uC815\uB9AC \uC2E4\uD328: ${filePath}`, error);
+          }
+        });
+      }
+    };
+  }
+});
+
+// server/utils/excel-to-pdf-converter.ts
+import { chromium as chromium3 } from "playwright-chromium";
+import ExcelJS3 from "exceljs";
+import path17 from "path";
+import fs20 from "fs";
+import { fileURLToPath as fileURLToPath5 } from "url";
+var __filename5, __dirname5, ExcelToPDFConverter;
+var init_excel_to_pdf_converter = __esm({
+  "server/utils/excel-to-pdf-converter.ts"() {
+    "use strict";
+    __filename5 = fileURLToPath5(import.meta.url);
+    __dirname5 = path17.dirname(__filename5);
+    ExcelToPDFConverter = class {
+      /**
+       * Excel 파일을 PDF로 변환
+       * @param excelPath - Excel 파일 경로
+       * @param outputPath - PDF 출력 경로 (선택사항)
+       * @returns PDF 파일 경로
+       */
+      static async convertExcelToPDF(excelPath, outputPath) {
+        let browser;
+        try {
+          console.log(`\u{1F4C4} PDF \uBCC0\uD658 \uC2DC\uC791: ${excelPath}`);
+          if (!fs20.existsSync(excelPath)) {
+            throw new Error(`Excel \uD30C\uC77C\uC774 \uC874\uC7AC\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4: ${excelPath}`);
+          }
+          const pdfPath = outputPath || excelPath.replace(/\.(xlsx?|xlsm)$/i, ".pdf");
+          console.log(`\u{1F4C4} PDF \uCD9C\uB825 \uACBD\uB85C: ${pdfPath}`);
+          const outputDir = path17.dirname(pdfPath);
+          try {
+            if (!fs20.existsSync(outputDir)) {
+              fs20.mkdirSync(outputDir, { recursive: true });
+              console.log(`\u{1F4C1} \uCD9C\uB825 \uB514\uB809\uD1A0\uB9AC \uC0DD\uC131: ${outputDir}`);
+            }
+          } catch (error) {
+            console.error(`\u26A0\uFE0F \uCD9C\uB825 \uB514\uB809\uD1A0\uB9AC \uC0DD\uC131 \uC2E4\uD328: ${error}`);
+            if (process.env.VERCEL && !outputDir.startsWith("/tmp")) {
+              throw new Error("\u{1F680} Vercel \uD658\uACBD\uC5D0\uC11C\uB294 /tmp \uB514\uB809\uD1A0\uB9AC\uB97C \uC0AC\uC6A9\uD574\uC57C \uD569\uB2C8\uB2E4");
+            }
+            throw error;
+          }
+          console.log(`\u{1F4D6} Excel \uD30C\uC77C \uC77D\uB294 \uC911...`);
+          const workbook = new ExcelJS3.Workbook();
+          await workbook.xlsx.readFile(excelPath);
+          console.log(`\u{1F4D6} Excel \uD30C\uC77C \uC77D\uAE30 \uC644\uB8CC. \uC2DC\uD2B8 \uC218: ${workbook.worksheets.length}`);
+          console.log(`\u{1F310} HTML \uC0DD\uC131 \uC911...`);
+          const html = await this.generateHTMLFromWorkbook(workbook);
+          console.log(`\u{1F310} HTML \uC0DD\uC131 \uC644\uB8CC. \uD06C\uAE30: ${html.length} \uBB38\uC790`);
+          console.log(`\u{1F680} Playwright \uBE0C\uB77C\uC6B0\uC800 \uC2DC\uC791 \uC911...`);
+          browser = await chromium3.launch({
+            headless: true,
+            args: [
+              "--no-sandbox",
+              "--disable-setuid-sandbox",
+              "--disable-dev-shm-usage",
+              "--disable-accelerated-2d-canvas",
+              "--no-first-run",
+              "--no-zygote",
+              "--single-process",
+              "--disable-gpu"
+            ]
+          });
+          console.log(`\u{1F680} Playwright \uBE0C\uB77C\uC6B0\uC800 \uC2DC\uC791 \uC644\uB8CC`);
+          const page = await browser.newPage();
+          console.log(`\u{1F4C4} \uC0C8 \uD398\uC774\uC9C0 \uC0DD\uC131 \uC644\uB8CC`);
+          console.log(`\u{1F4C4} HTML \uCEE8\uD150\uCE20 \uC124\uC815 \uC911...`);
+          await page.setContent(html, {
+            waitUntil: "networkidle",
+            timeout: 3e4
+            // 30초 타임아웃
+          });
+          console.log(`\u{1F4C4} HTML \uCEE8\uD150\uCE20 \uC124\uC815 \uC644\uB8CC`);
+          console.log(`\u{1F4C4} PDF \uC0DD\uC131 \uC911... (\uACBD\uB85C: ${pdfPath})`);
+          await page.pdf({
+            path: pdfPath,
+            format: "A4",
+            landscape: true,
+            printBackground: true,
+            margin: {
+              top: "20mm",
+              bottom: "20mm",
+              left: "15mm",
+              right: "15mm"
+            }
+          });
+          console.log(`\u{1F4C4} PDF \uD30C\uC77C \uC0DD\uC131 \uC644\uB8CC: ${pdfPath}`);
+          await browser.close();
+          browser = null;
+          if (!fs20.existsSync(pdfPath)) {
+            throw new Error(`PDF \uD30C\uC77C\uC774 \uC0DD\uC131\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4: ${pdfPath}`);
+          }
+          const stats = fs20.statSync(pdfPath);
+          console.log(`\u2705 PDF \uC0DD\uC131 \uC644\uB8CC: ${pdfPath} (${Math.round(stats.size / 1024)}KB)`);
+          return pdfPath;
+        } catch (error) {
+          console.error("\u274C Excel to PDF \uBCC0\uD658 \uC624\uB958:", error);
+          if (browser) {
+            try {
+              await browser.close();
+            } catch (closeError) {
+              console.error("\uBE0C\uB77C\uC6B0\uC800 \uC885\uB8CC \uC624\uB958:", closeError);
+            }
+          }
+          let errorMessage = "PDF \uBCC0\uD658\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4";
+          if (error instanceof Error) {
+            errorMessage = error.message;
+          }
+          throw new Error(`PDF \uBCC0\uD658 \uC2E4\uD328: ${errorMessage}`);
+        }
+      }
+      /**
+       * Workbook을 HTML로 변환
+       */
+      static async generateHTMLFromWorkbook(workbook) {
+        let html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      font-family: 'Malgun Gothic', sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    .page-break {
+      page-break-after: always;
+    }
+    h2 {
+      color: #333;
+      border-bottom: 2px solid #3B82F6;
+      padding-bottom: 5px;
+      margin-bottom: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f5f5f5;
+      font-weight: bold;
+    }
+    .number {
+      text-align: right;
+    }
+    .center {
+      text-align: center;
+    }
+    .total-row {
+      font-weight: bold;
+      background-color: #f9f9f9;
+    }
+  </style>
+</head>
+<body>
+`;
+        workbook.eachSheet((worksheet, sheetId) => {
+          if (worksheet.name.toLowerCase().startsWith("input")) {
+            return;
+          }
+          if (sheetId > 1) {
+            html += '<div class="page-break"></div>';
+          }
+          html += `<h2>${worksheet.name}</h2>`;
+          html += "<table>";
+          worksheet.eachRow((row, rowNumber) => {
+            html += "<tr>";
+            row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+              const value = cell.value || "";
+              const isHeader = rowNumber === 1;
+              const tag = isHeader ? "th" : "td";
+              let className = "";
+              if (typeof value === "number") {
+                className = "number";
+              }
+              const colspan = cell.model.colspan || 1;
+              const rowspan = cell.model.rowspan || 1;
+              html += `<${tag} class="${className}"`;
+              if (colspan > 1) html += ` colspan="${colspan}"`;
+              if (rowspan > 1) html += ` rowspan="${rowspan}"`;
+              html += `>${this.formatCellValue(value)}</${tag}>`;
+            });
+            html += "</tr>";
+          });
+          html += "</table>";
+        });
+        html += `
+</body>
+</html>
+`;
+        return html;
+      }
+      /**
+       * 셀 값 포맷팅
+       */
+      static formatCellValue(value) {
+        if (value === null || value === void 0) {
+          return "";
+        }
+        if (value instanceof Date) {
+          return value.toLocaleDateString("ko-KR");
+        }
+        if (typeof value === "number") {
+          return value.toLocaleString("ko-KR");
+        }
+        if (value && typeof value === "object" && "richText" in value) {
+          return value.richText.map((rt) => rt.text).join("");
+        }
+        return String(value);
+      }
+      /**
+       * 여러 Excel 파일을 하나의 PDF로 병합
+       */
+      static async convertMultipleExcelsToPDF(excelPaths, outputPath) {
+        try {
+          const browser = await chromium3.launch({
+            headless: true,
+            args: ["--no-sandbox", "--disable-setuid-sandbox"]
+          });
+          const page = await browser.newPage();
+          let combinedHTML = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      font-family: 'Malgun Gothic', sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    .file-section {
+      page-break-after: always;
+    }
+    .file-section:last-child {
+      page-break-after: auto;
+    }
+    h1 {
+      color: #1a1a1a;
+      border-bottom: 3px solid #3B82F6;
+      padding-bottom: 10px;
+      margin-bottom: 30px;
+    }
+    h2 {
+      color: #333;
+      border-bottom: 2px solid #3B82F6;
+      padding-bottom: 5px;
+      margin-bottom: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f5f5f5;
+      font-weight: bold;
+    }
+    .number {
+      text-align: right;
+    }
+  </style>
+</head>
+<body>
+`;
+          for (let i = 0; i < excelPaths.length; i++) {
+            const excelPath = excelPaths[i];
+            const fileName = path17.basename(excelPath, path17.extname(excelPath));
+            const workbook = new ExcelJS3.Workbook();
+            await workbook.xlsx.readFile(excelPath);
+            combinedHTML += `<div class="file-section">`;
+            combinedHTML += `<h1>\uD30C\uC77C: ${fileName}</h1>`;
+            const content = await this.generateHTMLFromWorkbook(workbook);
+            const bodyContent = content.match(/<body>([\s\S]*)<\/body>/)?.[1] || "";
+            combinedHTML += bodyContent;
+            combinedHTML += `</div>`;
+          }
+          combinedHTML += `
+</body>
+</html>
+`;
+          await page.setContent(combinedHTML, { waitUntil: "networkidle" });
+          await page.pdf({
+            path: outputPath,
+            format: "A4",
+            landscape: true,
+            printBackground: true,
+            margin: {
+              top: "20mm",
+              bottom: "20mm",
+              left: "15mm",
+              right: "15mm"
+            }
+          });
+          await browser.close();
+          console.log(`\uD1B5\uD569 PDF \uC0DD\uC131 \uC644\uB8CC: ${outputPath}`);
+          return outputPath;
+        } catch (error) {
+          console.error("Multiple Excel to PDF \uBCC0\uD658 \uC624\uB958:", error);
+          throw error;
+        }
+      }
+    };
+  }
+});
+
 // server/utils/po-email-service-enhanced.ts
 var po_email_service_enhanced_exports = {};
 __export(po_email_service_enhanced_exports, {
   POEmailService: () => POEmailService2
 });
 import nodemailer5 from "nodemailer";
-import path16 from "path";
-import fs19 from "fs";
-import { fileURLToPath as fileURLToPath5 } from "url";
+import path18 from "path";
+import fs21 from "fs";
+import { fileURLToPath as fileURLToPath6 } from "url";
 import { dirname as dirname2 } from "path";
-var __filename5, __dirname5, POEmailService2;
+var __filename6, __dirname6, POEmailService2;
 var init_po_email_service_enhanced = __esm({
   "server/utils/po-email-service-enhanced.ts"() {
     "use strict";
     init_excel_input_sheet_remover();
-    __filename5 = fileURLToPath5(import.meta.url);
-    __dirname5 = dirname2(__filename5);
+    init_enhanced_excel_to_pdf();
+    init_excel_to_pdf_converter();
+    __filename6 = fileURLToPath6(import.meta.url);
+    __dirname6 = dirname2(__filename6);
     POEmailService2 = class {
       constructor() {
         this.isInitialized = false;
@@ -3952,8 +4690,8 @@ var init_po_email_service_enhanced = __esm({
             }
           }
           const timestamp2 = Date.now();
-          const uploadsDir = path16.join(__dirname5, "../../uploads");
-          const processedPath = path16.join(uploadsDir, `po-advanced-format-${timestamp2}.xlsx`);
+          const uploadsDir = path18.join(__dirname6, "../../uploads");
+          const processedPath = path18.join(uploadsDir, `po-advanced-format-${timestamp2}.xlsx`);
           const removeResult = await removeAllInputSheets(
             originalFilePath,
             processedPath
@@ -3967,7 +4705,7 @@ var init_po_email_service_enhanced = __esm({
           console.log(`\u{1F4C4} \uACE0\uAE09 \uD615\uC2DD \uBCF4\uC874 \uD30C\uC77C \uC0DD\uC131: ${processedPath}`);
           console.log(`\u{1F3AF} Input \uC2DC\uD2B8 \uC81C\uAC70 \uC644\uB8CC`);
           console.log(`\u{1F4CB} \uB0A8\uC740 \uC2DC\uD2B8: ${removeResult.remainingSheets.join(", ")}`);
-          const pdfPath = path16.join(uploadsDir, `po-advanced-format-${timestamp2}.pdf`);
+          const pdfPath = path18.join(uploadsDir, `po-advanced-format-${timestamp2}.pdf`);
           let pdfResult = { success: false, error: "" };
           try {
             const enhancedResult = await EnhancedExcelToPDFConverter.convertExcelToPDF(processedPath, {
@@ -3995,7 +4733,7 @@ var init_po_email_service_enhanced = __esm({
             pdfResult.error = pdfError instanceof Error ? pdfError.message : "PDF conversion error";
           }
           const attachments3 = [];
-          if (fs19.existsSync(processedPath)) {
+          if (fs21.existsSync(processedPath)) {
             attachments3.push({
               filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`,
               path: processedPath,
@@ -4003,7 +4741,7 @@ var init_po_email_service_enhanced = __esm({
             });
             console.log(`\u{1F4CE} Excel \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00: \uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`);
           }
-          if (pdfResult.success && fs19.existsSync(pdfPath)) {
+          if (pdfResult.success && fs21.existsSync(pdfPath)) {
             attachments3.push({
               filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`,
               path: pdfPath,
@@ -4263,12 +5001,12 @@ var init_po_email_service_enhanced = __esm({
         setTimeout(() => {
           filePaths.forEach((filePath) => {
             try {
-              if (fs19.existsSync(filePath)) {
-                fs19.unlinkSync(filePath);
-                console.log(`\u{1F5D1}\uFE0F \uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C: ${path16.basename(filePath)}`);
+              if (fs21.existsSync(filePath)) {
+                fs21.unlinkSync(filePath);
+                console.log(`\u{1F5D1}\uFE0F \uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C: ${path18.basename(filePath)}`);
               }
             } catch (error) {
-              console.warn(`\u26A0\uFE0F \uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328: ${path16.basename(filePath)}`, error);
+              console.warn(`\u26A0\uFE0F \uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328: ${path18.basename(filePath)}`, error);
             }
           });
         }, 5e3);
@@ -4297,11 +5035,11 @@ import { eq, desc, asc, ilike, and, or, between, count, sum, sql as sql2, gte, l
 var DatabaseStorage = class {
   // User operations
   async getUser(id) {
-    if (!db2) {
+    if (!db) {
       console.error("\u274C Database connection not available - DATABASE_URL not configured");
       throw new Error("Database connection not available. Please configure DATABASE_URL environment variable.");
     }
-    const [user] = await db2.select().from(users).where(eq(users.id, id));
+    const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
   async getUserById(id) {
@@ -4311,7 +5049,7 @@ var DatabaseStorage = class {
   async generateStandardizedUserId() {
     const today = /* @__PURE__ */ new Date();
     const datePrefix = today.toISOString().slice(0, 10).replace(/-/g, "");
-    const existingUsers = await db2.select({ id: users.id }).from(users).where(sql2`${users.id} LIKE ${"USR_" + datePrefix + "_%"}`);
+    const existingUsers = await db.select({ id: users.id }).from(users).where(sql2`${users.id} LIKE ${"USR_" + datePrefix + "_%"}`);
     let maxSequence = 0;
     for (const user of existingUsers) {
       const match = user.id.match(/USR_\d{8}_(\d{3})$/);
@@ -4328,9 +5066,9 @@ var DatabaseStorage = class {
   async upsertUser(userData) {
     let existingUser = [];
     if (userData.id) {
-      existingUser = await db2.select().from(users).where(eq(users.id, userData.id)).limit(1);
+      existingUser = await db.select().from(users).where(eq(users.id, userData.id)).limit(1);
     } else if (userData.email) {
-      existingUser = await db2.select().from(users).where(eq(users.email, userData.email)).limit(1);
+      existingUser = await db.select().from(users).where(eq(users.email, userData.email)).limit(1);
     }
     if (existingUser.length > 0) {
       const updateData = {
@@ -4341,34 +5079,34 @@ var DatabaseStorage = class {
       if (userData.role !== void 0) updateData.role = userData.role;
       if (userData.profileImageUrl !== void 0) updateData.profileImageUrl = userData.profileImageUrl;
       const whereCondition = userData.id ? eq(users.id, userData.id) : eq(users.email, userData.email);
-      const [user2] = await db2.update(users).set(updateData).where(whereCondition).returning();
+      const [user2] = await db.update(users).set(updateData).where(whereCondition).returning();
       return user2;
     }
     const userDataWithId = {
       ...userData,
       id: userData.id || await this.generateStandardizedUserId()
     };
-    const [user] = await db2.insert(users).values(userDataWithId).returning();
+    const [user] = await db.insert(users).values(userDataWithId).returning();
     return user;
   }
   async updateUserProfile(id, profile) {
-    const [user] = await db2.update(users).set({
+    const [user] = await db.update(users).set({
       ...profile,
       updatedAt: /* @__PURE__ */ new Date()
     }).where(eq(users.id, id)).returning();
     return user;
   }
   async getUsers() {
-    return await db2.select().from(users).orderBy(asc(users.createdAt));
+    return await db.select().from(users).orderBy(asc(users.createdAt));
   }
   async getUserByEmail(email) {
     console.log("\u{1F50D} Searching for user with email:", email);
-    if (!db2) {
+    if (!db) {
       console.error("\u274C Database connection not available - DATABASE_URL not configured");
       throw new Error("Database connection not available. Please configure DATABASE_URL environment variable.");
     }
     try {
-      const result = await db2.select().from(users).where(eq(users.email, email));
+      const result = await db.select().from(users).where(eq(users.email, email));
       console.log("\u{1F50D} Database query result:", result);
       const [user] = result;
       console.log("\u{1F50D} Found user:", user ? `${user.email} (${user.role})` : "null");
@@ -4379,15 +5117,15 @@ var DatabaseStorage = class {
     }
   }
   async updateUser(id, updates) {
-    const [user] = await db2.update(users).set({ ...updates, updatedAt: /* @__PURE__ */ new Date() }).where(eq(users.id, id)).returning();
+    const [user] = await db.update(users).set({ ...updates, updatedAt: /* @__PURE__ */ new Date() }).where(eq(users.id, id)).returning();
     return user;
   }
   async updateUserRole(id, role) {
-    const [user] = await db2.update(users).set({ role, updatedAt: /* @__PURE__ */ new Date() }).where(eq(users.id, id)).returning();
+    const [user] = await db.update(users).set({ role, updatedAt: /* @__PURE__ */ new Date() }).where(eq(users.id, id)).returning();
     return user;
   }
   async toggleUserActive(id, isActive) {
-    const [user] = await db2.update(users).set({
+    const [user] = await db.update(users).set({
       isActive,
       updatedAt: /* @__PURE__ */ new Date()
     }).where(eq(users.id, id)).returning();
@@ -4395,26 +5133,26 @@ var DatabaseStorage = class {
   }
   async checkUserReferences(id) {
     try {
-      const projectsAsManager = await db2.select({
+      const projectsAsManager = await db.select({
         id: projects.id,
         name: projects.projectName,
         type: sql2`'project_manager'`
       }).from(projects).where(eq(projects.projectManagerId, id));
-      const ordersByUser = await db2.select({
+      const ordersByUser = await db.select({
         id: purchaseOrders.id,
         orderNumber: purchaseOrders.orderNumber
       }).from(purchaseOrders).where(eq(purchaseOrders.userId, id));
-      const projectMemberships = await db2.select({
+      const projectMemberships = await db.select({
         id: projects.id,
         name: projects.projectName,
         type: sql2`'project_member'`
       }).from(projectMembers).leftJoin(projects, eq(projectMembers.projectId, projects.id)).where(eq(projectMembers.userId, id));
-      const projectMembersAssignedBy = await db2.select({
+      const projectMembersAssignedBy = await db.select({
         id: projects.id,
         name: projects.projectName,
         type: sql2`'assigned_by'`
       }).from(projectMembers).leftJoin(projects, eq(projectMembers.projectId, projects.id)).where(eq(projectMembers.assignedBy, id));
-      const projectHistoryChanges = await db2.select({
+      const projectHistoryChanges = await db.select({
         id: projects.id,
         name: projects.projectName || sql2`'Unknown Project'`,
         type: sql2`'history_changed_by'`
@@ -4452,19 +5190,19 @@ var DatabaseStorage = class {
       }
       throw new Error(`\uC0AC\uC6A9\uC790\uB97C \uC0AD\uC81C\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4: ${errorDetails.join(", ")}`);
     }
-    await db2.delete(users).where(eq(users.id, id));
+    await db.delete(users).where(eq(users.id, id));
   }
   async reassignUserProjects(fromUserId, toUserId) {
-    await db2.update(projects).set({ projectManagerId: toUserId, updatedAt: /* @__PURE__ */ new Date() }).where(eq(projects.projectManagerId, fromUserId));
-    await db2.update(projectMembers).set({ assignedBy: toUserId, assignedAt: /* @__PURE__ */ new Date() }).where(eq(projectMembers.assignedBy, fromUserId));
-    await db2.update(projectHistory).set({ changedBy: toUserId }).where(eq(projectHistory.changedBy, fromUserId));
-    await db2.delete(projectMembers).where(eq(projectMembers.userId, fromUserId));
+    await db.update(projects).set({ projectManagerId: toUserId, updatedAt: /* @__PURE__ */ new Date() }).where(eq(projects.projectManagerId, fromUserId));
+    await db.update(projectMembers).set({ assignedBy: toUserId, assignedAt: /* @__PURE__ */ new Date() }).where(eq(projectMembers.assignedBy, fromUserId));
+    await db.update(projectHistory).set({ changedBy: toUserId }).where(eq(projectHistory.changedBy, fromUserId));
+    await db.delete(projectMembers).where(eq(projectMembers.userId, fromUserId));
   }
   // Vendor operations
   async getVendors() {
     try {
       console.log("\u{1F50D} Storage: Executing getVendors query...");
-      const result = await db2.select().from(vendors).where(eq(vendors.isActive, true)).orderBy(asc(vendors.name));
+      const result = await db.select().from(vendors).where(eq(vendors.isActive, true)).orderBy(asc(vendors.name));
       console.log(`\u{1F50D} Storage: getVendors returned ${result.length} vendors`);
       return result;
     } catch (error) {
@@ -4473,50 +5211,50 @@ var DatabaseStorage = class {
     }
   }
   async getVendor(id) {
-    const [vendor] = await db2.select().from(vendors).where(eq(vendors.id, id));
+    const [vendor] = await db.select().from(vendors).where(eq(vendors.id, id));
     return vendor;
   }
   async createVendor(vendor) {
-    const [newVendor] = await db2.insert(vendors).values(vendor).returning();
+    const [newVendor] = await db.insert(vendors).values(vendor).returning();
     return newVendor;
   }
   async updateVendor(id, vendor) {
-    const [updatedVendor] = await db2.update(vendors).set({ ...vendor, updatedAt: /* @__PURE__ */ new Date() }).where(eq(vendors.id, id)).returning();
+    const [updatedVendor] = await db.update(vendors).set({ ...vendor, updatedAt: /* @__PURE__ */ new Date() }).where(eq(vendors.id, id)).returning();
     return updatedVendor;
   }
   async deleteVendor(id) {
-    await db2.update(vendors).set({ isActive: false }).where(eq(vendors.id, id));
+    await db.update(vendors).set({ isActive: false }).where(eq(vendors.id, id));
   }
   // Order template operations
   async getOrderTemplates() {
-    return await db2.select().from(orderTemplates).orderBy(asc(orderTemplates.templateName));
+    return await db.select().from(orderTemplates).orderBy(asc(orderTemplates.templateName));
   }
   async getActiveOrderTemplates() {
-    return await db2.select().from(orderTemplates).where(eq(orderTemplates.isActive, true)).orderBy(asc(orderTemplates.templateName));
+    return await db.select().from(orderTemplates).where(eq(orderTemplates.isActive, true)).orderBy(asc(orderTemplates.templateName));
   }
   async getOrderTemplate(id) {
-    const [template] = await db2.select().from(orderTemplates).where(eq(orderTemplates.id, id));
+    const [template] = await db.select().from(orderTemplates).where(eq(orderTemplates.id, id));
     return template;
   }
   async createOrderTemplate(template) {
-    const [newTemplate] = await db2.insert(orderTemplates).values(template).returning();
+    const [newTemplate] = await db.insert(orderTemplates).values(template).returning();
     return newTemplate;
   }
   async updateOrderTemplate(id, template) {
-    const [updatedTemplate] = await db2.update(orderTemplates).set({ ...template, updatedAt: /* @__PURE__ */ new Date() }).where(eq(orderTemplates.id, id)).returning();
+    const [updatedTemplate] = await db.update(orderTemplates).set({ ...template, updatedAt: /* @__PURE__ */ new Date() }).where(eq(orderTemplates.id, id)).returning();
     return updatedTemplate;
   }
   async deleteOrderTemplate(id) {
-    await db2.delete(orderTemplates).where(eq(orderTemplates.id, id));
+    await db.delete(orderTemplates).where(eq(orderTemplates.id, id));
   }
   async toggleOrderTemplateStatus(id, isActive) {
-    const [updatedTemplate] = await db2.update(orderTemplates).set({ isActive, updatedAt: /* @__PURE__ */ new Date() }).where(eq(orderTemplates.id, id)).returning();
+    const [updatedTemplate] = await db.update(orderTemplates).set({ isActive, updatedAt: /* @__PURE__ */ new Date() }).where(eq(orderTemplates.id, id)).returning();
     return updatedTemplate;
   }
   // Note: Project status and type operations removed - using ENUM types directly for better performance
   // Project operations
   async getProjects() {
-    const projectList = await db2.select({
+    const projectList = await db.select({
       id: projects.id,
       projectName: projects.projectName,
       projectCode: projects.projectCode,
@@ -4541,23 +5279,23 @@ var DatabaseStorage = class {
     return projectList;
   }
   async getProject(id) {
-    const [project] = await db2.select().from(projects).where(eq(projects.id, id));
+    const [project] = await db.select().from(projects).where(eq(projects.id, id));
     return project;
   }
   async createProject(projectData) {
-    const [project] = await db2.insert(projects).values(projectData).returning();
+    const [project] = await db.insert(projects).values(projectData).returning();
     return project;
   }
   async updateProject(id, projectData) {
-    const [updatedProject] = await db2.update(projects).set({ ...projectData, updatedAt: /* @__PURE__ */ new Date() }).where(eq(projects.id, id)).returning();
+    const [updatedProject] = await db.update(projects).set({ ...projectData, updatedAt: /* @__PURE__ */ new Date() }).where(eq(projects.id, id)).returning();
     return updatedProject;
   }
   async deleteProject(id) {
-    await db2.update(projects).set({ isActive: false }).where(eq(projects.id, id));
+    await db.update(projects).set({ isActive: false }).where(eq(projects.id, id));
   }
   // Order status operations - using display view approach
   async getOrderStatuses() {
-    const result = await db2.execute(sql2`
+    const result = await db.execute(sql2`
       SELECT 
         ROW_NUMBER() OVER (ORDER BY sort_order) as id,
         status_code as code,
@@ -4573,14 +5311,14 @@ var DatabaseStorage = class {
   async getItems(filters = {}) {
     try {
       console.log("\u{1F50D} Storage: Executing getItems query...");
-      console.log("\u{1F50D} Storage: DB instance check:", typeof db2, !!db2);
+      console.log("\u{1F50D} Storage: DB instance check:", typeof db, !!db);
       console.log("\u{1F50D} Storage: Items table check:", typeof items);
       console.log("\u{1F50D} Storage: Filters:", filters);
       console.log("\u{1F50D} Storage: Testing basic query first...");
-      const testResult = await db2.execute(sql2`SELECT 1 as test`);
+      const testResult = await db.execute(sql2`SELECT 1 as test`);
       console.log("\u{1F50D} Storage: Basic query test result:", testResult);
       console.log("\u{1F50D} Storage: Testing items table exists...");
-      const tableCheck = await db2.execute(sql2`SELECT COUNT(*) FROM items`);
+      const tableCheck = await db.execute(sql2`SELECT COUNT(*) FROM items`);
       console.log("\u{1F50D} Storage: Items table count:", tableCheck);
     } catch (error) {
       console.error("\u{1F4A5} Storage: getItems pre-check failed:", error);
@@ -4596,7 +5334,7 @@ var DatabaseStorage = class {
       page = 1,
       limit = 50
     } = filters;
-    let query = db2.select({
+    let query = db.select({
       id: items.id,
       name: items.name,
       specification: items.specification,
@@ -4611,7 +5349,7 @@ var DatabaseStorage = class {
       createdAt: items.createdAt,
       updatedAt: items.updatedAt
     }).from(items);
-    let countQuery = db2.select({ count: count() }).from(items);
+    let countQuery = db.select({ count: count() }).from(items);
     const conditions = [];
     if (isActive !== void 0) {
       conditions.push(eq(items.isActive, isActive));
@@ -4644,7 +5382,7 @@ var DatabaseStorage = class {
     };
   }
   async getItem(id) {
-    const [item] = await db2.select({
+    const [item] = await db.select({
       id: items.id,
       name: items.name,
       specification: items.specification,
@@ -4662,18 +5400,18 @@ var DatabaseStorage = class {
     return item;
   }
   async createItem(itemData) {
-    const [item] = await db2.insert(items).values(itemData).returning();
+    const [item] = await db.insert(items).values(itemData).returning();
     return item;
   }
   async updateItem(id, itemData) {
-    const [item] = await db2.update(items).set({ ...itemData, updatedAt: /* @__PURE__ */ new Date() }).where(eq(items.id, id)).returning();
+    const [item] = await db.update(items).set({ ...itemData, updatedAt: /* @__PURE__ */ new Date() }).where(eq(items.id, id)).returning();
     return item;
   }
   async deleteItem(id) {
-    await db2.update(items).set({ isActive: false }).where(eq(items.id, id));
+    await db.update(items).set({ isActive: false }).where(eq(items.id, id));
   }
   async getCategories() {
-    const result = await db2.selectDistinct({ category: items.category }).from(items).where(and(isNotNull(items.category), eq(items.isActive, true))).orderBy(items.category);
+    const result = await db.selectDistinct({ category: items.category }).from(items).where(and(isNotNull(items.category), eq(items.isActive, true))).orderBy(items.category);
     return result.map((row) => row.category);
   }
   // Purchase order operations
@@ -4700,8 +5438,8 @@ var DatabaseStorage = class {
       whereConditions.push(between(purchaseOrders.orderDate, startDate, endDate));
     }
     let baseWhereClause = whereConditions.length > 0 ? and(...whereConditions) : void 0;
-    const [{ count: totalCountResult }] = await db2.select({ count: count() }).from(purchaseOrders).where(baseWhereClause);
-    let allOrders = await db2.select({
+    const [{ count: totalCountResult }] = await db.select({ count: count() }).from(purchaseOrders).where(baseWhereClause);
+    let allOrders = await db.select({
       purchase_orders: purchaseOrders,
       vendors,
       users,
@@ -4710,7 +5448,7 @@ var DatabaseStorage = class {
     }).from(purchaseOrders).leftJoin(vendors, eq(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq(purchaseOrders.userId, users.id)).leftJoin(orderTemplates, eq(purchaseOrders.templateId, orderTemplates.id)).leftJoin(projects, eq(purchaseOrders.projectId, projects.id)).where(baseWhereClause).orderBy(desc(purchaseOrders.createdAt));
     let filteredOrders = allOrders;
     if (searchText) {
-      const allOrderItems = await db2.select().from(purchaseOrderItems);
+      const allOrderItems = await db.select().from(purchaseOrderItems);
       const orderItemsMap = /* @__PURE__ */ new Map();
       allOrderItems.forEach((item) => {
         if (!orderItemsMap.has(item.orderId)) {
@@ -4764,7 +5502,7 @@ var DatabaseStorage = class {
       if (minorCategory) {
         categoryConditions.push(eq(purchaseOrderItems.minorCategory, minorCategory));
       }
-      const matchingItems = await db2.select({ orderId: purchaseOrderItems.orderId }).from(purchaseOrderItems).where(and(...categoryConditions)).groupBy(purchaseOrderItems.orderId);
+      const matchingItems = await db.select({ orderId: purchaseOrderItems.orderId }).from(purchaseOrderItems).where(and(...categoryConditions)).groupBy(purchaseOrderItems.orderId);
       const matchingOrderIds = new Set(matchingItems.map((item) => item.orderId));
       filteredOrders = filteredOrders.filter((orderRow) => {
         return matchingOrderIds.has(orderRow.purchase_orders.id);
@@ -4774,7 +5512,7 @@ var DatabaseStorage = class {
     const orders = filteredOrders.slice((page - 1) * limit, page * limit);
     const ordersWithItems = await Promise.all(
       orders.map(async (order) => {
-        const items3 = await db2.select().from(purchaseOrderItems).where(eq(purchaseOrderItems.orderId, order.purchase_orders.id));
+        const items3 = await db.select().from(purchaseOrderItems).where(eq(purchaseOrderItems.orderId, order.purchase_orders.id));
         return {
           ...order.purchase_orders,
           vendor: order.vendors || void 0,
@@ -4794,11 +5532,11 @@ var DatabaseStorage = class {
     };
   }
   async getPurchaseOrder(id) {
-    const [order] = await db2.select().from(purchaseOrders).leftJoin(vendors, eq(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq(purchaseOrders.userId, users.id)).leftJoin(projects, eq(purchaseOrders.projectId, projects.id)).leftJoin(companies, eq(companies.id, 1)).where(eq(purchaseOrders.id, id));
+    const [order] = await db.select().from(purchaseOrders).leftJoin(vendors, eq(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq(purchaseOrders.userId, users.id)).leftJoin(projects, eq(purchaseOrders.projectId, projects.id)).leftJoin(companies, eq(companies.id, 1)).where(eq(purchaseOrders.id, id));
     if (!order) return void 0;
-    const items3 = await db2.select().from(purchaseOrderItems).where(eq(purchaseOrderItems.orderId, id));
+    const items3 = await db.select().from(purchaseOrderItems).where(eq(purchaseOrderItems.orderId, id));
     console.log("Debug: Items found:", items3);
-    const orderAttachments = await db2.select({
+    const orderAttachments = await db.select({
       id: attachments.id,
       orderId: attachments.orderId,
       originalName: attachments.originalName,
@@ -4835,7 +5573,7 @@ var DatabaseStorage = class {
       currentApproverRole: nextApprover,
       approvalLevel: 1
     };
-    const [newOrder] = await db2.insert(purchaseOrders).values(orderWithWorkflow).returning();
+    const [newOrder] = await db.insert(purchaseOrders).values(orderWithWorkflow).returning();
     if (items3 && items3.length > 0) {
       await this.createPurchaseOrderItems(
         items3.map((item) => ({
@@ -4857,7 +5595,7 @@ var DatabaseStorage = class {
     return newOrder;
   }
   async updatePurchaseOrder(id, orderData) {
-    const [updatedOrder] = await db2.update(purchaseOrders).set({ ...orderData, updatedAt: /* @__PURE__ */ new Date() }).where(eq(purchaseOrders.id, id)).returning();
+    const [updatedOrder] = await db.update(purchaseOrders).set({ ...orderData, updatedAt: /* @__PURE__ */ new Date() }).where(eq(purchaseOrders.id, id)).returning();
     await this.createOrderHistory({
       orderId: id,
       userId: updatedOrder.userId,
@@ -4867,9 +5605,9 @@ var DatabaseStorage = class {
     return updatedOrder;
   }
   async recalculateOrderTotal(orderId) {
-    const items3 = await db2.select().from(purchaseOrderItems).where(eq(purchaseOrderItems.orderId, orderId));
+    const items3 = await db.select().from(purchaseOrderItems).where(eq(purchaseOrderItems.orderId, orderId));
     const totalAmount = items3.reduce((sum2, item) => sum2 + Number(item.totalAmount || 0), 0);
-    await db2.update(purchaseOrders).set({
+    await db.update(purchaseOrders).set({
       totalAmount: totalAmount.toString(),
       updatedAt: /* @__PURE__ */ new Date()
     }).where(eq(purchaseOrders.id, orderId));
@@ -4884,13 +5622,13 @@ var DatabaseStorage = class {
     console.log(`\u{1F4DD} [storage.deletePurchaseOrder] Found order: ${order.orderNumber}, status: ${order.status}`);
     try {
       console.log(`\u{1F517} [storage.deletePurchaseOrder] Deleting purchaseOrderItems for order ${id}`);
-      await db2.delete(purchaseOrderItems).where(eq(purchaseOrderItems.orderId, id));
+      await db.delete(purchaseOrderItems).where(eq(purchaseOrderItems.orderId, id));
       console.log(`\u{1F517} [storage.deletePurchaseOrder] Deleting attachments for order ${id}`);
-      await db2.delete(attachments).where(eq(attachments.orderId, id));
+      await db.delete(attachments).where(eq(attachments.orderId, id));
       console.log(`\u{1F517} [storage.deletePurchaseOrder] Deleting orderHistory for order ${id}`);
-      await db2.delete(orderHistory).where(eq(orderHistory.orderId, id));
+      await db.delete(orderHistory).where(eq(orderHistory.orderId, id));
       console.log(`\u{1F517} [storage.deletePurchaseOrder] Deleting purchaseOrder ${id}`);
-      await db2.delete(purchaseOrders).where(eq(purchaseOrders.id, id));
+      await db.delete(purchaseOrders).where(eq(purchaseOrders.id, id));
       console.log(`\u2705 [storage.deletePurchaseOrder] Successfully deleted order ${id}`);
     } catch (error) {
       console.error(`\u274C [storage.deletePurchaseOrder] Failed to delete order ${id}:`, error);
@@ -4902,7 +5640,7 @@ var DatabaseStorage = class {
       return [];
     }
     console.log(`\u{1F5D1}\uFE0F Starting bulk delete for ${orderIds.length} orders by ${deletedBy}:`, orderIds);
-    return await db2.transaction(async (tx) => {
+    return await db.transaction(async (tx) => {
       try {
         const existingOrders = [];
         for (const orderId of orderIds) {
@@ -4947,7 +5685,7 @@ var DatabaseStorage = class {
     });
   }
   async approvePurchaseOrder(id, approvedBy) {
-    const [approvedOrder] = await db2.update(purchaseOrders).set({
+    const [approvedOrder] = await db.update(purchaseOrders).set({
       isApproved: true,
       approvedBy,
       approvedAt: /* @__PURE__ */ new Date(),
@@ -4965,12 +5703,12 @@ var DatabaseStorage = class {
   // Purchase order item operations
   async createPurchaseOrderItems(items3) {
     if (items3.length === 0) return [];
-    return await db2.insert(purchaseOrderItems).values(items3).returning();
+    return await db.insert(purchaseOrderItems).values(items3).returning();
   }
   async updatePurchaseOrderItems(orderId, items3) {
-    await db2.delete(purchaseOrderItems).where(eq(purchaseOrderItems.orderId, orderId));
+    await db.delete(purchaseOrderItems).where(eq(purchaseOrderItems.orderId, orderId));
     if (items3.length === 0) return [];
-    return await db2.insert(purchaseOrderItems).values(items3).returning();
+    return await db.insert(purchaseOrderItems).values(items3).returning();
   }
   // Attachment operations
   async createAttachment(attachment) {
@@ -4980,7 +5718,7 @@ var DatabaseStorage = class {
       attachment.originalName = this.decodeKoreanFilename(attachment.originalName);
       console.log("\u{1F48E}\u{1F48E}\u{1F48E} AFTER DECODE \u{1F48E}\u{1F48E}\u{1F48E}", attachment.originalName);
     }
-    const [newAttachment] = await db2.insert(attachments).values(attachment).returning();
+    const [newAttachment] = await db.insert(attachments).values(attachment).returning();
     return newAttachment;
   }
   // Korean filename decoder
@@ -5018,7 +5756,7 @@ var DatabaseStorage = class {
     return originalName;
   }
   async getAttachment(id) {
-    const [attachment] = await db2.select({
+    const [attachment] = await db.select({
       id: attachments.id,
       orderId: attachments.orderId,
       originalName: attachments.originalName,
@@ -5033,15 +5771,15 @@ var DatabaseStorage = class {
   }
   // getOrderAttachments - Duplicate function removed, better version exists later with error handling
   async deleteAttachment(id) {
-    await db2.delete(attachments).where(eq(attachments.id, id));
+    await db.delete(attachments).where(eq(attachments.id, id));
   }
   // Order history operations
   async createOrderHistory(history) {
-    const [newHistory] = await db2.insert(orderHistory).values(history).returning();
+    const [newHistory] = await db.insert(orderHistory).values(history).returning();
     return newHistory;
   }
   async getOrderHistory(orderId) {
-    return await db2.select().from(orderHistory).where(eq(orderHistory.orderId, orderId)).orderBy(desc(orderHistory.createdAt));
+    return await db.select().from(orderHistory).where(eq(orderHistory.orderId, orderId)).orderBy(desc(orderHistory.createdAt));
   }
   // Statistics
   async getDashboardStats(userId) {
@@ -5049,21 +5787,21 @@ var DatabaseStorage = class {
     const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const firstDayOfYear = new Date(now.getFullYear(), 0, 1);
     let whereClause = userId ? eq(purchaseOrders.userId, userId) : void 0;
-    const [totalOrders] = await db2.select({ count: count() }).from(purchaseOrders).where(whereClause);
-    const [monthlyOrders] = await db2.select({ count: count() }).from(purchaseOrders).where(
+    const [totalOrders] = await db.select({ count: count() }).from(purchaseOrders).where(whereClause);
+    const [monthlyOrders] = await db.select({ count: count() }).from(purchaseOrders).where(
       userId ? and(eq(purchaseOrders.userId, userId), gte(purchaseOrders.orderDate, firstDayOfMonth)) : gte(purchaseOrders.orderDate, firstDayOfMonth)
     );
-    const [yearlyOrders] = await db2.select({ count: count() }).from(purchaseOrders).where(
+    const [yearlyOrders] = await db.select({ count: count() }).from(purchaseOrders).where(
       userId ? and(eq(purchaseOrders.userId, userId), gte(purchaseOrders.orderDate, firstDayOfYear)) : gte(purchaseOrders.orderDate, firstDayOfYear)
     );
-    const [monthlyAmountResult] = await db2.select({ total: sql2`COALESCE(SUM(CAST(${purchaseOrders.totalAmount} AS NUMERIC)), 0)` }).from(purchaseOrders).where(
+    const [monthlyAmountResult] = await db.select({ total: sql2`COALESCE(SUM(CAST(${purchaseOrders.totalAmount} AS NUMERIC)), 0)` }).from(purchaseOrders).where(
       userId ? and(eq(purchaseOrders.userId, userId), gte(purchaseOrders.orderDate, firstDayOfMonth)) : gte(purchaseOrders.orderDate, firstDayOfMonth)
     );
-    const [pendingOrders] = await db2.select({ count: count() }).from(purchaseOrders).where(
+    const [pendingOrders] = await db.select({ count: count() }).from(purchaseOrders).where(
       userId ? and(eq(purchaseOrders.userId, userId), sql2`${purchaseOrders.status} = 'pending'`) : sql2`${purchaseOrders.status} = 'pending'`
     );
-    const [totalVendors] = await db2.select({ count: count() }).from(vendors).where(eq(vendors.isActive, true));
-    const [awaitingApprovalOrders] = await db2.select({ count: count() }).from(purchaseOrders).where(
+    const [totalVendors] = await db.select({ count: count() }).from(vendors).where(eq(vendors.isActive, true));
+    const [awaitingApprovalOrders] = await db.select({ count: count() }).from(purchaseOrders).where(
       userId ? and(eq(purchaseOrders.userId, userId), sql2`${purchaseOrders.status} = 'pending'`) : sql2`${purchaseOrders.status} = 'pending'`
     );
     return {
@@ -5079,7 +5817,7 @@ var DatabaseStorage = class {
   async getMonthlyOrderStats(userId) {
     const sixMonthsAgo = /* @__PURE__ */ new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-    const orders = await db2.select().from(purchaseOrders).where(
+    const orders = await db.select().from(purchaseOrders).where(
       and(
         gte(purchaseOrders.orderDate, sixMonthsAgo),
         userId ? eq(purchaseOrders.userId, userId) : void 0
@@ -5102,7 +5840,7 @@ var DatabaseStorage = class {
   }
   async getVendorOrderStats(userId) {
     const whereClause = userId ? eq(purchaseOrders.userId, userId) : void 0;
-    const results = await db2.select({
+    const results = await db.select({
       vendorName: vendors.name,
       orders: count(purchaseOrders.id).as("orders"),
       amount: sum(purchaseOrders.totalAmount).as("amount")
@@ -5115,7 +5853,7 @@ var DatabaseStorage = class {
   }
   async getStatusOrderStats(userId) {
     const whereClause = userId ? eq(purchaseOrders.userId, userId) : void 0;
-    const results = await db2.select({
+    const results = await db.select({
       status: purchaseOrders.status,
       orders: count(purchaseOrders.id).as("orders"),
       amount: sum(purchaseOrders.totalAmount).as("amount")
@@ -5128,7 +5866,7 @@ var DatabaseStorage = class {
   }
   async getProjectOrderStats(userId) {
     const whereClause = userId ? eq(purchaseOrders.userId, userId) : void 0;
-    const results = await db2.select({
+    const results = await db.select({
       projectName: projects.projectName,
       projectCode: projects.projectCode,
       orderCount: count(purchaseOrders.id).as("orderCount"),
@@ -5145,7 +5883,7 @@ var DatabaseStorage = class {
   async generateOrderNumber() {
     const year = (/* @__PURE__ */ new Date()).getFullYear();
     const prefix = `PO-${year}-`;
-    const [lastOrder] = await db2.select().from(purchaseOrders).where(ilike(purchaseOrders.orderNumber, `${prefix}%`)).orderBy(desc(purchaseOrders.orderNumber)).limit(1);
+    const [lastOrder] = await db.select().from(purchaseOrders).where(ilike(purchaseOrders.orderNumber, `${prefix}%`)).orderBy(desc(purchaseOrders.orderNumber)).limit(1);
     let nextNumber = 1;
     if (lastOrder) {
       const lastNumber = parseInt(lastOrder.orderNumber.split("-")[2] || "0");
@@ -5155,18 +5893,18 @@ var DatabaseStorage = class {
   }
   // Invoice operations
   async getInvoices(orderId) {
-    const query = db2.select().from(invoices).orderBy(desc(invoices.createdAt));
+    const query = db.select().from(invoices).orderBy(desc(invoices.createdAt));
     if (orderId) {
       return await query.where(eq(invoices.orderId, orderId));
     }
     return await query;
   }
   async getInvoice(id) {
-    const [invoice] = await db2.select().from(invoices).where(eq(invoices.id, id));
+    const [invoice] = await db.select().from(invoices).where(eq(invoices.id, id));
     return invoice;
   }
   async createInvoice(invoiceData) {
-    const [invoice] = await db2.insert(invoices).values(invoiceData).returning();
+    const [invoice] = await db.insert(invoices).values(invoiceData).returning();
     await this.createVerificationLog({
       orderId: invoice.orderId,
       invoiceId: invoice.id,
@@ -5177,14 +5915,14 @@ var DatabaseStorage = class {
     return invoice;
   }
   async updateInvoice(id, invoiceData) {
-    const [invoice] = await db2.update(invoices).set({ ...invoiceData, updatedAt: /* @__PURE__ */ new Date() }).where(eq(invoices.id, id)).returning();
+    const [invoice] = await db.update(invoices).set({ ...invoiceData, updatedAt: /* @__PURE__ */ new Date() }).where(eq(invoices.id, id)).returning();
     return invoice;
   }
   async deleteInvoice(id) {
-    await db2.delete(invoices).where(eq(invoices.id, id));
+    await db.delete(invoices).where(eq(invoices.id, id));
   }
   async verifyInvoice(id, verifiedBy) {
-    const [invoice] = await db2.update(invoices).set({
+    const [invoice] = await db.update(invoices).set({
       status: "verified",
       verifiedBy,
       verifiedAt: /* @__PURE__ */ new Date(),
@@ -5201,19 +5939,19 @@ var DatabaseStorage = class {
   }
   // Item receipt operations
   async getItemReceipts(orderItemId) {
-    const query = db2.select().from(itemReceipts).orderBy(desc(itemReceipts.createdAt));
+    const query = db.select().from(itemReceipts).orderBy(desc(itemReceipts.createdAt));
     if (orderItemId) {
       return await query.where(eq(itemReceipts.orderItemId, orderItemId));
     }
     return await query;
   }
   async getItemReceipt(id) {
-    const [receipt] = await db2.select().from(itemReceipts).where(eq(itemReceipts.id, id));
+    const [receipt] = await db.select().from(itemReceipts).where(eq(itemReceipts.id, id));
     return receipt;
   }
   async createItemReceipt(receiptData) {
-    const [receipt] = await db2.insert(itemReceipts).values(receiptData).returning();
-    const [orderItem] = await db2.select().from(purchaseOrderItems).where(eq(purchaseOrderItems.id, receipt.orderItemId));
+    const [receipt] = await db.insert(itemReceipts).values(receiptData).returning();
+    const [orderItem] = await db.select().from(purchaseOrderItems).where(eq(purchaseOrderItems.id, receipt.orderItemId));
     if (orderItem) {
       await this.createVerificationLog({
         orderId: orderItem.orderId,
@@ -5227,11 +5965,11 @@ var DatabaseStorage = class {
     return receipt;
   }
   async updateItemReceipt(id, receiptData) {
-    const [receipt] = await db2.update(itemReceipts).set({ ...receiptData, updatedAt: /* @__PURE__ */ new Date() }).where(eq(itemReceipts.id, id)).returning();
+    const [receipt] = await db.update(itemReceipts).set({ ...receiptData, updatedAt: /* @__PURE__ */ new Date() }).where(eq(itemReceipts.id, id)).returning();
     return receipt;
   }
   async deleteItemReceipt(id) {
-    await db2.delete(itemReceipts).where(eq(itemReceipts.id, id));
+    await db.delete(itemReceipts).where(eq(itemReceipts.id, id));
   }
   // Verification log operations
   async getVerificationLogs(orderId, invoiceId) {
@@ -5239,12 +5977,12 @@ var DatabaseStorage = class {
     if (orderId) conditions.push(eq(verificationLogs.orderId, orderId));
     if (invoiceId) conditions.push(eq(verificationLogs.invoiceId, invoiceId));
     if (conditions.length > 0) {
-      return await db2.select().from(verificationLogs).where(and(...conditions)).orderBy(desc(verificationLogs.createdAt));
+      return await db.select().from(verificationLogs).where(and(...conditions)).orderBy(desc(verificationLogs.createdAt));
     }
-    return await db2.select().from(verificationLogs).orderBy(desc(verificationLogs.createdAt));
+    return await db.select().from(verificationLogs).orderBy(desc(verificationLogs.createdAt));
   }
   async createVerificationLog(logData) {
-    const [log] = await db2.insert(verificationLogs).values(logData).returning();
+    const [log] = await db.insert(verificationLogs).values(logData).returning();
     return log;
   }
   // UI terms operations
@@ -5253,13 +5991,13 @@ var DatabaseStorage = class {
       console.log(`\u{1F50D} getUiTerms called with category: ${category}`);
       if (category) {
         console.log(`\u{1F4CB} Querying UI terms for category: ${category}`);
-        const result2 = await db2.select().from(uiTerms).where(and(eq(uiTerms.category, category), eq(uiTerms.isActive, true))).orderBy(asc(uiTerms.termKey));
+        const result2 = await db.select().from(uiTerms).where(and(eq(uiTerms.category, category), eq(uiTerms.isActive, true))).orderBy(asc(uiTerms.termKey));
         console.log(`\u2705 Found ${result2.length} terms for category ${category}`);
         result2.forEach((term) => console.log(`  - ${term.termKey}: ${term.termValue}`));
         return result2;
       }
       console.log(`\u{1F4CB} Querying all active UI terms`);
-      const result = await db2.select().from(uiTerms).where(eq(uiTerms.isActive, true)).orderBy(asc(uiTerms.termKey));
+      const result = await db.select().from(uiTerms).where(eq(uiTerms.isActive, true)).orderBy(asc(uiTerms.termKey));
       console.log(`\u2705 Found ${result.length} total active terms`);
       return result;
     } catch (error) {
@@ -5268,53 +6006,53 @@ var DatabaseStorage = class {
     }
   }
   async getUiTerm(termKey) {
-    const [term] = await db2.select().from(uiTerms).where(and(eq(uiTerms.termKey, termKey), eq(uiTerms.isActive, true)));
+    const [term] = await db.select().from(uiTerms).where(and(eq(uiTerms.termKey, termKey), eq(uiTerms.isActive, true)));
     return term;
   }
   async createUiTerm(termData) {
-    const [term] = await db2.insert(uiTerms).values(termData).returning();
+    const [term] = await db.insert(uiTerms).values(termData).returning();
     return term;
   }
   async updateUiTerm(termKey, termData) {
-    const [term] = await db2.update(uiTerms).set({ ...termData, updatedAt: /* @__PURE__ */ new Date() }).where(eq(uiTerms.termKey, termKey)).returning();
+    const [term] = await db.update(uiTerms).set({ ...termData, updatedAt: /* @__PURE__ */ new Date() }).where(eq(uiTerms.termKey, termKey)).returning();
     return term;
   }
   async deleteUiTerm(termKey) {
-    await db2.update(uiTerms).set({ isActive: false, updatedAt: /* @__PURE__ */ new Date() }).where(eq(uiTerms.termKey, termKey));
+    await db.update(uiTerms).set({ isActive: false, updatedAt: /* @__PURE__ */ new Date() }).where(eq(uiTerms.termKey, termKey));
   }
   // Terminology operations
   async getTerminology() {
-    return await db2.select().from(terminology).orderBy(asc(terminology.category), asc(terminology.termKey));
+    return await db.select().from(terminology).orderBy(asc(terminology.category), asc(terminology.termKey));
   }
   async getTerm(id) {
-    const [term] = await db2.select().from(terminology).where(eq(terminology.id, id));
+    const [term] = await db.select().from(terminology).where(eq(terminology.id, id));
     return term || void 0;
   }
   async createTerm(termData) {
-    const [term] = await db2.insert(terminology).values(termData).returning();
+    const [term] = await db.insert(terminology).values(termData).returning();
     return term;
   }
   async updateTerm(id, termData) {
-    const [term] = await db2.update(terminology).set({ ...termData, updatedAt: /* @__PURE__ */ new Date() }).where(eq(terminology.id, id)).returning();
+    const [term] = await db.update(terminology).set({ ...termData, updatedAt: /* @__PURE__ */ new Date() }).where(eq(terminology.id, id)).returning();
     return term;
   }
   async deleteTerm(id) {
-    await db2.delete(terminology).where(eq(terminology.id, id));
+    await db.delete(terminology).where(eq(terminology.id, id));
   }
   // Company operations
   async getCompanies() {
     try {
       console.log("\u{1F50D} Storage: Executing getCompanies query...");
-      console.log("\u{1F50D} Storage: DB instance check:", typeof db2, !!db2);
+      console.log("\u{1F50D} Storage: DB instance check:", typeof db, !!db);
       console.log("\u{1F50D} Storage: Companies table check:", typeof companies);
       console.log("\u{1F50D} Storage: Testing basic query first...");
-      const testResult = await db2.execute(sql2`SELECT 1 as test`);
+      const testResult = await db.execute(sql2`SELECT 1 as test`);
       console.log("\u{1F50D} Storage: Basic query test result:", testResult);
       console.log("\u{1F50D} Storage: Testing companies table exists...");
-      const tableCheck = await db2.execute(sql2`SELECT COUNT(*) FROM companies`);
+      const tableCheck = await db.execute(sql2`SELECT COUNT(*) FROM companies`);
       console.log("\u{1F50D} Storage: Companies table count:", tableCheck);
       console.log("\u{1F50D} Storage: Trying simplified companies query...");
-      const result = await db2.select().from(companies).limit(10);
+      const result = await db.select().from(companies).limit(10);
       console.log(`\u{1F50D} Storage: getCompanies returned ${result.length} companies`);
       return result;
     } catch (error) {
@@ -5327,11 +6065,11 @@ var DatabaseStorage = class {
     }
   }
   async getCompany(id) {
-    const [company] = await db2.select().from(companies).where(and(eq(companies.id, id), eq(companies.isActive, true)));
+    const [company] = await db.select().from(companies).where(and(eq(companies.id, id), eq(companies.isActive, true)));
     return company;
   }
   async createCompany(companyData) {
-    const [company] = await db2.insert(companies).values({
+    const [company] = await db.insert(companies).values({
       ...companyData,
       createdAt: /* @__PURE__ */ new Date(),
       updatedAt: /* @__PURE__ */ new Date()
@@ -5339,11 +6077,11 @@ var DatabaseStorage = class {
     return company;
   }
   async updateCompany(id, companyData) {
-    const [company] = await db2.update(companies).set({ ...companyData, updatedAt: /* @__PURE__ */ new Date() }).where(eq(companies.id, id)).returning();
+    const [company] = await db.update(companies).set({ ...companyData, updatedAt: /* @__PURE__ */ new Date() }).where(eq(companies.id, id)).returning();
     return company;
   }
   async deleteCompany(id) {
-    await db2.update(companies).set({ isActive: false, updatedAt: /* @__PURE__ */ new Date() }).where(eq(companies.id, id));
+    await db.update(companies).set({ isActive: false, updatedAt: /* @__PURE__ */ new Date() }).where(eq(companies.id, id));
   }
   // Enhanced dashboard statistics
   async getActiveProjectsCount(userId) {
@@ -5358,7 +6096,7 @@ var DatabaseStorage = class {
           eq(projects.orderManagerId, userId)
         ));
       }
-      const [result] = await db2.select({ count: sql2`count(*)` }).from(projects).where(and(...conditions));
+      const [result] = await db.select({ count: sql2`count(*)` }).from(projects).where(and(...conditions));
       return Number(result.count);
     } catch (error) {
       console.error("Error getting active projects count:", error);
@@ -5380,7 +6118,7 @@ var DatabaseStorage = class {
           eq(projects.orderManagerId, userId)
         ));
       }
-      const [result] = await db2.select({ count: sql2`count(*)` }).from(projects).where(and(...conditions));
+      const [result] = await db.select({ count: sql2`count(*)` }).from(projects).where(and(...conditions));
       return Number(result.count);
     } catch (error) {
       console.error("Error getting new projects this month:", error);
@@ -5402,7 +6140,7 @@ var DatabaseStorage = class {
           eq(projects.orderManagerId, userId)
         ));
       }
-      return await db2.select({
+      return await db.select({
         id: projects.id,
         projectName: projects.projectName,
         projectCode: projects.projectCode,
@@ -5428,7 +6166,7 @@ var DatabaseStorage = class {
       if (userId) {
         conditions.push(eq(purchaseOrders.userId, userId));
       }
-      return await db2.select({
+      return await db.select({
         id: purchaseOrders.id,
         orderNumber: purchaseOrders.orderNumber,
         requestedDeliveryDate: purchaseOrders.deliveryDate,
@@ -5471,7 +6209,7 @@ var DatabaseStorage = class {
   // Project members operations
   async getProjectMembers(projectId) {
     try {
-      let query = db2.select({
+      let query = db.select({
         id: projectMembers.id,
         projectId: projectMembers.projectId,
         userId: projectMembers.userId,
@@ -5493,7 +6231,7 @@ var DatabaseStorage = class {
   }
   async createProjectMember(member) {
     try {
-      const [newMember] = await db2.insert(projectMembers).values(member).returning();
+      const [newMember] = await db.insert(projectMembers).values(member).returning();
       return newMember;
     } catch (error) {
       console.error("Error creating project member:", error);
@@ -5502,7 +6240,7 @@ var DatabaseStorage = class {
   }
   async deleteProjectMember(id) {
     try {
-      await db2.delete(projectMembers).where(eq(projectMembers.id, id));
+      await db.delete(projectMembers).where(eq(projectMembers.id, id));
     } catch (error) {
       console.error("Error deleting project member:", error);
       throw error;
@@ -5511,7 +6249,7 @@ var DatabaseStorage = class {
   // Approval management methods
   async getApprovalStats() {
     try {
-      const pendingOrders = await db2.select().from(purchaseOrders).where(eq(purchaseOrders.status, "pending"));
+      const pendingOrders = await db.select().from(purchaseOrders).where(eq(purchaseOrders.status, "pending"));
       const pendingCount = pendingOrders.length;
       const threeDaysAgo = /* @__PURE__ */ new Date();
       threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
@@ -5537,7 +6275,7 @@ var DatabaseStorage = class {
   }
   async getPendingApprovals(userRole, userId) {
     try {
-      let query = db2.select().from(purchaseOrders).where(eq(purchaseOrders.status, "pending")).orderBy(asc(purchaseOrders.createdAt));
+      let query = db.select().from(purchaseOrders).where(eq(purchaseOrders.status, "pending")).orderBy(asc(purchaseOrders.createdAt));
       return await query;
     } catch (error) {
       console.error("Error getting pending approvals:", error);
@@ -5546,7 +6284,7 @@ var DatabaseStorage = class {
   }
   async getApprovalHistory() {
     try {
-      return await db2.select().from(purchaseOrders).where(or(
+      return await db.select().from(purchaseOrders).where(or(
         eq(purchaseOrders.status, "approved"),
         eq(purchaseOrders.status, "completed"),
         eq(purchaseOrders.status, "sent")
@@ -5559,11 +6297,11 @@ var DatabaseStorage = class {
   // getOrdersForApproval - Duplicate function removed, better version exists in approval workflow section
   async approveOrder(orderId, approverId, note) {
     try {
-      const [updatedOrder] = await db2.update(purchaseOrders).set({
+      const [updatedOrder] = await db.update(purchaseOrders).set({
         status: "approved",
         updatedAt: /* @__PURE__ */ new Date()
       }).where(eq(purchaseOrders.id, orderId)).returning();
-      await db2.insert(orderHistory).values({
+      await db.insert(orderHistory).values({
         orderId,
         userId: approverId,
         action: "approved",
@@ -5578,11 +6316,11 @@ var DatabaseStorage = class {
   }
   async rejectOrder(orderId, rejectedBy, note) {
     try {
-      const [updatedOrder] = await db2.update(purchaseOrders).set({
+      const [updatedOrder] = await db.update(purchaseOrders).set({
         status: "draft",
         updatedAt: /* @__PURE__ */ new Date()
       }).where(eq(purchaseOrders.id, orderId)).returning();
-      await db2.insert(orderHistory).values({
+      await db.insert(orderHistory).values({
         orderId,
         userId: rejectedBy,
         action: "rejected",
@@ -5598,7 +6336,7 @@ var DatabaseStorage = class {
   // Approval authority management methods
   async getApprovalAuthorities() {
     try {
-      return await db2.select().from(approvalAuthorities).where(eq(approvalAuthorities.isActive, true)).orderBy(asc(approvalAuthorities.role));
+      return await db.select().from(approvalAuthorities).where(eq(approvalAuthorities.isActive, true)).orderBy(asc(approvalAuthorities.role));
     } catch (error) {
       console.error("Error getting approval authorities:", error);
       throw error;
@@ -5607,7 +6345,7 @@ var DatabaseStorage = class {
   // Order approval workflow methods
   async getOrdersForApproval(userRole) {
     try {
-      const orders = await db2.select().from(purchaseOrders).where(and(
+      const orders = await db.select().from(purchaseOrders).where(and(
         eq(purchaseOrders.status, "pending"),
         eq(purchaseOrders.currentApproverRole, userRole)
       )).orderBy(desc(purchaseOrders.createdAt));
@@ -5641,8 +6379,8 @@ var DatabaseStorage = class {
         updateData.approvedBy = userId;
         updateData.approvedAt = /* @__PURE__ */ new Date();
       }
-      const [updatedOrder] = await db2.update(purchaseOrders).set(updateData).where(eq(purchaseOrders.id, orderId)).returning();
-      await db2.insert(orderHistory).values({
+      const [updatedOrder] = await db.update(purchaseOrders).set(updateData).where(eq(purchaseOrders.id, orderId)).returning();
+      await db.insert(orderHistory).values({
         orderId,
         userId,
         action: nextApprover ? "approved_partial" : "approved_final",
@@ -5670,7 +6408,7 @@ var DatabaseStorage = class {
   }
   async createApprovalAuthority(data) {
     try {
-      const [authority] = await db2.insert(approvalAuthorities).values(data).returning();
+      const [authority] = await db.insert(approvalAuthorities).values(data).returning();
       return authority;
     } catch (error) {
       console.error("Error creating approval authority:", error);
@@ -5679,7 +6417,7 @@ var DatabaseStorage = class {
   }
   async updateApprovalAuthority(role, data) {
     try {
-      const [authority] = await db2.update(approvalAuthorities).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where(eq(approvalAuthorities.role, role)).returning();
+      const [authority] = await db.update(approvalAuthorities).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where(eq(approvalAuthorities.role, role)).returning();
       return authority;
     } catch (error) {
       console.error("Error updating approval authority:", error);
@@ -5691,7 +6429,7 @@ var DatabaseStorage = class {
       if (userRole === "admin") {
         return true;
       }
-      const [authority] = await db2.select().from(approvalAuthorities).where(and(
+      const [authority] = await db.select().from(approvalAuthorities).where(and(
         eq(approvalAuthorities.role, userRole),
         eq(approvalAuthorities.isActive, true)
       ));
@@ -5708,16 +6446,16 @@ var DatabaseStorage = class {
   async getItemCategories() {
     try {
       console.log("\u{1F50D} Storage: Executing getItemCategories query...");
-      console.log("\u{1F50D} Storage: DB instance check:", typeof db2, !!db2);
+      console.log("\u{1F50D} Storage: DB instance check:", typeof db, !!db);
       console.log("\u{1F50D} Storage: ItemCategories table check:", typeof itemCategories);
       console.log("\u{1F50D} Storage: Testing basic query first...");
-      const testResult = await db2.execute(sql2`SELECT 1 as test`);
+      const testResult = await db.execute(sql2`SELECT 1 as test`);
       console.log("\u{1F50D} Storage: Basic query test result:", testResult);
       console.log("\u{1F50D} Storage: Testing itemCategories table exists...");
-      const tableCheck = await db2.execute(sql2`SELECT COUNT(*) FROM item_categories`);
+      const tableCheck = await db.execute(sql2`SELECT COUNT(*) FROM item_categories`);
       console.log("\u{1F50D} Storage: ItemCategories table count:", tableCheck);
       console.log("\u{1F50D} Storage: Trying simplified itemCategories query...");
-      const result = await db2.select().from(itemCategories).where(eq(itemCategories.isActive, true)).orderBy(itemCategories.categoryType, itemCategories.displayOrder);
+      const result = await db.select().from(itemCategories).where(eq(itemCategories.isActive, true)).orderBy(itemCategories.categoryType, itemCategories.displayOrder);
       console.log(`\u{1F50D} Storage: getItemCategories returned ${result.length} categories`);
       return result;
     } catch (error) {
@@ -5738,7 +6476,7 @@ var DatabaseStorage = class {
       if (parentId !== void 0) {
         conditions.push(eq(itemCategories.parentId, parentId));
       }
-      return await db2.select().from(itemCategories).where(and(...conditions)).orderBy(itemCategories.displayOrder);
+      return await db.select().from(itemCategories).where(and(...conditions)).orderBy(itemCategories.displayOrder);
     } catch (error) {
       console.error("Error getting item categories by type:", error);
       throw error;
@@ -5746,7 +6484,7 @@ var DatabaseStorage = class {
   }
   async createItemCategory(data) {
     try {
-      const [category] = await db2.insert(itemCategories).values(data).returning();
+      const [category] = await db.insert(itemCategories).values(data).returning();
       return category;
     } catch (error) {
       console.error("Error creating item category:", error);
@@ -5755,7 +6493,7 @@ var DatabaseStorage = class {
   }
   async updateItemCategory(id, data) {
     try {
-      const [category] = await db2.update(itemCategories).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where(eq(itemCategories.id, id)).returning();
+      const [category] = await db.update(itemCategories).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where(eq(itemCategories.id, id)).returning();
       return category;
     } catch (error) {
       console.error("Error updating item category:", error);
@@ -5764,7 +6502,7 @@ var DatabaseStorage = class {
   }
   async deleteItemCategory(id) {
     try {
-      await db2.update(itemCategories).set({ isActive: false, updatedAt: /* @__PURE__ */ new Date() }).where(eq(itemCategories.id, id));
+      await db.update(itemCategories).set({ isActive: false, updatedAt: /* @__PURE__ */ new Date() }).where(eq(itemCategories.id, id));
     } catch (error) {
       console.error("Error deleting item category:", error);
       throw error;
@@ -5773,7 +6511,7 @@ var DatabaseStorage = class {
   // Missing methods for API endpoints
   async getActiveProjects() {
     try {
-      return await db2.select().from(projects).where(and(
+      return await db.select().from(projects).where(and(
         eq(projects.isActive, true),
         eq(projects.status, "active")
       )).orderBy(projects.projectName);
@@ -5823,7 +6561,7 @@ var DatabaseStorage = class {
   // Item hierarchy methods for filters
   async getDistinctMajorCategories() {
     try {
-      const result = await db2.selectDistinct({ majorCategory: purchaseOrderItems.majorCategory }).from(purchaseOrderItems).where(isNotNull(purchaseOrderItems.majorCategory)).orderBy(purchaseOrderItems.majorCategory);
+      const result = await db.selectDistinct({ majorCategory: purchaseOrderItems.majorCategory }).from(purchaseOrderItems).where(isNotNull(purchaseOrderItems.majorCategory)).orderBy(purchaseOrderItems.majorCategory);
       return result.map((row) => row.majorCategory).filter((cat) => cat !== null && cat !== "");
     } catch (error) {
       console.error("Error getting distinct major categories:", error);
@@ -5832,7 +6570,7 @@ var DatabaseStorage = class {
   }
   async getDistinctMiddleCategories(majorCategory) {
     try {
-      let query = db2.selectDistinct({ middleCategory: purchaseOrderItems.middleCategory }).from(purchaseOrderItems).where(isNotNull(purchaseOrderItems.middleCategory));
+      let query = db.selectDistinct({ middleCategory: purchaseOrderItems.middleCategory }).from(purchaseOrderItems).where(isNotNull(purchaseOrderItems.middleCategory));
       if (majorCategory) {
         query = query.where(eq(purchaseOrderItems.majorCategory, majorCategory));
       }
@@ -5852,7 +6590,7 @@ var DatabaseStorage = class {
       if (middleCategory) {
         conditions.push(eq(purchaseOrderItems.middleCategory, middleCategory));
       }
-      const result = await db2.selectDistinct({ minorCategory: purchaseOrderItems.minorCategory }).from(purchaseOrderItems).where(and(...conditions)).orderBy(purchaseOrderItems.minorCategory);
+      const result = await db.selectDistinct({ minorCategory: purchaseOrderItems.minorCategory }).from(purchaseOrderItems).where(and(...conditions)).orderBy(purchaseOrderItems.minorCategory);
       return result.map((row) => row.minorCategory).filter((cat) => cat !== null && cat !== "");
     } catch (error) {
       console.error("Error getting distinct minor categories:", error);
@@ -5863,7 +6601,7 @@ var DatabaseStorage = class {
   async getCategoryOrderStats(userId) {
     try {
       const whereClause = userId ? eq(purchaseOrders.userId, userId) : void 0;
-      const results = await db2.select({
+      const results = await db.select({
         majorCategory: purchaseOrderItems.majorCategory,
         middleCategory: purchaseOrderItems.middleCategory,
         minorCategory: purchaseOrderItems.minorCategory,
@@ -5893,7 +6631,7 @@ var DatabaseStorage = class {
   // Attachment methods - Duplicate function removed, use getAttachment(id: number) instead
   async getOrderAttachments(orderId) {
     try {
-      return await db2.select({
+      return await db.select({
         id: attachments.id,
         orderId: attachments.orderId,
         originalName: attachments.originalName,
@@ -5914,7 +6652,7 @@ var DatabaseStorage = class {
    */
   async getAttachmentByPath(filePath) {
     try {
-      const [attachment] = await db2.select({
+      const [attachment] = await db.select({
         id: attachments.id,
         orderId: attachments.orderId,
         originalName: attachments.originalName,
@@ -5958,7 +6696,7 @@ async function getAuditSettings() {
     return cachedSettings;
   }
   try {
-    const settings = await db2.select().from(auditSettings).limit(1);
+    const settings = await db.select().from(auditSettings).limit(1);
     cachedSettings = settings[0] || {
       logLevel: "INFO",
       enableAuth: true,
@@ -5985,7 +6723,7 @@ async function logAuditEvent(eventType, eventCategory, details) {
     if (settings.logLevel === "OFF") return;
     const categoryEnabled = eventCategory === "auth" && settings.enableAuth || eventCategory === "data" && settings.enableData || eventCategory === "system" && settings.enableSystem || eventCategory === "security" && settings.enableSecurity;
     if (!categoryEnabled) return;
-    await db2.insert(systemAuditLogs).values({
+    await db.insert(systemAuditLogs).values({
       userId: details.userId || null,
       userName: details.userName || null,
       userRole: details.userRole || null,
@@ -6530,11 +7268,11 @@ var UserRegistrationService = class {
    */
   static async submitRegistration(data) {
     try {
-      const existingUser = await db2.select().from(users).where(eq2(users.email, data.email)).limit(1);
+      const existingUser = await db.select().from(users).where(eq2(users.email, data.email)).limit(1);
       if (existingUser.length > 0) {
         throw new Error("\uC774\uBBF8 \uB4F1\uB85D\uB41C \uC774\uBA54\uC77C \uC8FC\uC18C\uC785\uB2C8\uB2E4.");
       }
-      const existingRegistration = await db2.select().from(userRegistrations).where(
+      const existingRegistration = await db.select().from(userRegistrations).where(
         and2(
           eq2(userRegistrations.email, data.email),
           eq2(userRegistrations.status, "pending")
@@ -6553,7 +7291,7 @@ var UserRegistrationService = class {
         requestedRole: data.requestedRole || "field_worker",
         status: "pending"
       };
-      const [newRegistration] = await db2.insert(userRegistrations).values(registrationData).returning();
+      const [newRegistration] = await db.insert(userRegistrations).values(registrationData).returning();
       return newRegistration;
     } catch (error) {
       console.error("Registration submission error:", error);
@@ -6573,7 +7311,7 @@ var UserRegistrationService = class {
         throw new Error("\uC774\uBBF8 \uCC98\uB9AC\uB41C \uAC00\uC785 \uC2E0\uCCAD\uC785\uB2C8\uB2E4.");
       }
       const userId = uuidv4();
-      const [newUser] = await db2.insert(users).values({
+      const [newUser] = await db.insert(users).values({
         id: userId,
         email: registration.email,
         name: registration.name,
@@ -6583,7 +7321,7 @@ var UserRegistrationService = class {
         accountStatus: "active",
         isActive: true
       }).returning();
-      const [updatedRegistration] = await db2.update(userRegistrations).set({
+      const [updatedRegistration] = await db.update(userRegistrations).set({
         status: "approved",
         reviewedAt: /* @__PURE__ */ new Date(),
         reviewedBy: adminId
@@ -6606,7 +7344,7 @@ var UserRegistrationService = class {
       if (registration.status !== "pending") {
         throw new Error("\uC774\uBBF8 \uCC98\uB9AC\uB41C \uAC00\uC785 \uC2E0\uCCAD\uC785\uB2C8\uB2E4.");
       }
-      const [updatedRegistration] = await db2.update(userRegistrations).set({
+      const [updatedRegistration] = await db.update(userRegistrations).set({
         status: "rejected",
         rejectionReason: reason,
         reviewedAt: /* @__PURE__ */ new Date(),
@@ -6623,7 +7361,7 @@ var UserRegistrationService = class {
    */
   static async getPendingRegistrations() {
     try {
-      return await db2.select().from(userRegistrations).where(eq2(userRegistrations.status, "pending")).orderBy(userRegistrations.appliedAt);
+      return await db.select().from(userRegistrations).where(eq2(userRegistrations.status, "pending")).orderBy(userRegistrations.appliedAt);
     } catch (error) {
       console.error("Get pending registrations error:", error);
       throw error;
@@ -6634,7 +7372,7 @@ var UserRegistrationService = class {
    */
   static async getAllRegistrations() {
     try {
-      return await db2.select().from(userRegistrations).orderBy(userRegistrations.appliedAt);
+      return await db.select().from(userRegistrations).orderBy(userRegistrations.appliedAt);
     } catch (error) {
       console.error("Get all registrations error:", error);
       throw error;
@@ -6645,7 +7383,7 @@ var UserRegistrationService = class {
    */
   static async getRegistrationById(id) {
     try {
-      const [registration] = await db2.select().from(userRegistrations).where(eq2(userRegistrations.id, id)).limit(1);
+      const [registration] = await db.select().from(userRegistrations).where(eq2(userRegistrations.id, id)).limit(1);
       return registration || null;
     } catch (error) {
       console.error("Get registration by ID error:", error);
@@ -6657,7 +7395,7 @@ var UserRegistrationService = class {
    */
   static async getRegistrationByEmail(email) {
     try {
-      const [registration] = await db2.select().from(userRegistrations).where(eq2(userRegistrations.email, email)).limit(1);
+      const [registration] = await db.select().from(userRegistrations).where(eq2(userRegistrations.email, email)).limit(1);
       return registration || null;
     } catch (error) {
       console.error("Get registration by email error:", error);
@@ -6669,7 +7407,7 @@ var UserRegistrationService = class {
    */
   static async deleteRegistration(id) {
     try {
-      const result = await db2.delete(userRegistrations).where(eq2(userRegistrations.id, id));
+      const result = await db.delete(userRegistrations).where(eq2(userRegistrations.id, id));
       return result.rowCount !== void 0 && result.rowCount > 0;
     } catch (error) {
       console.error("Delete registration error:", error);
@@ -6690,14 +7428,14 @@ var PasswordResetService = class {
    */
   static async requestPasswordReset(email) {
     try {
-      const [user] = await db2.select().from(users).where(eq3(users.email, email)).limit(1);
+      const [user] = await db.select().from(users).where(eq3(users.email, email)).limit(1);
       if (!user) {
         throw new Error("\uB4F1\uB85D\uB418\uC9C0 \uC54A\uC740 \uC774\uBA54\uC77C \uC8FC\uC18C\uC785\uB2C8\uB2E4.");
       }
       if (user.accountStatus === "inactive" || user.accountStatus === "suspended") {
         throw new Error("\uBE44\uD65C\uC131\uD654\uB41C \uACC4\uC815\uC785\uB2C8\uB2E4.");
       }
-      await db2.update(passwordResetTokens).set({ usedAt: /* @__PURE__ */ new Date() }).where(
+      await db.update(passwordResetTokens).set({ usedAt: /* @__PURE__ */ new Date() }).where(
         and3(
           eq3(passwordResetTokens.userId, user.id),
           eq3(passwordResetTokens.usedAt, null)
@@ -6712,7 +7450,7 @@ var PasswordResetService = class {
         expiresAt,
         usedAt: null
       };
-      await db2.insert(passwordResetTokens).values(tokenData);
+      await db.insert(passwordResetTokens).values(tokenData);
       return { token, user };
     } catch (error) {
       console.error("Password reset request error:", error);
@@ -6724,7 +7462,7 @@ var PasswordResetService = class {
    */
   static async verifyResetToken(token) {
     try {
-      const [tokenRecord] = await db2.select({
+      const [tokenRecord] = await db.select({
         tokenId: passwordResetTokens.id,
         userId: passwordResetTokens.userId,
         expiresAt: passwordResetTokens.expiresAt,
@@ -6781,11 +7519,11 @@ var PasswordResetService = class {
       }
       const saltRounds = 10;
       const hashedPassword = await bcrypt4.hash(newPassword, saltRounds);
-      await db2.update(users).set({
+      await db.update(users).set({
         password: hashedPassword,
         updatedAt: /* @__PURE__ */ new Date()
       }).where(eq3(users.id, verification.user.id));
-      await db2.update(passwordResetTokens).set({ usedAt: /* @__PURE__ */ new Date() }).where(eq3(passwordResetTokens.token, token));
+      await db.update(passwordResetTokens).set({ usedAt: /* @__PURE__ */ new Date() }).where(eq3(passwordResetTokens.token, token));
       return {
         success: true,
         message: "\uBE44\uBC00\uBC88\uD638\uAC00 \uC131\uACF5\uC801\uC73C\uB85C \uBCC0\uACBD\uB418\uC5C8\uC2B5\uB2C8\uB2E4."
@@ -6803,7 +7541,7 @@ var PasswordResetService = class {
    */
   static async cleanupExpiredTokens() {
     try {
-      const result = await db2.delete(passwordResetTokens).where(gt(/* @__PURE__ */ new Date(), passwordResetTokens.expiresAt));
+      const result = await db.delete(passwordResetTokens).where(gt(/* @__PURE__ */ new Date(), passwordResetTokens.expiresAt));
       return result.rowCount || 0;
     } catch (error) {
       console.error("Cleanup expired tokens error:", error);
@@ -6815,7 +7553,7 @@ var PasswordResetService = class {
    */
   static async invalidateUserTokens(userId) {
     try {
-      await db2.update(passwordResetTokens).set({ usedAt: /* @__PURE__ */ new Date() }).where(
+      await db.update(passwordResetTokens).set({ usedAt: /* @__PURE__ */ new Date() }).where(
         and3(
           eq3(passwordResetTokens.userId, userId),
           eq3(passwordResetTokens.usedAt, null)
@@ -6831,7 +7569,7 @@ var PasswordResetService = class {
    */
   static async getPasswordResetHistory(userId) {
     try {
-      return await db2.select().from(passwordResetTokens).where(eq3(passwordResetTokens.userId, userId)).orderBy(passwordResetTokens.createdAt);
+      return await db.select().from(passwordResetTokens).where(eq3(passwordResetTokens.userId, userId)).orderBy(passwordResetTokens.createdAt);
     } catch (error) {
       console.error("Get password reset history error:", error);
       throw error;
@@ -7460,7 +8198,7 @@ var POTemplateProcessor = class _POTemplateProcessor {
   static async saveToDatabase(orders, userId) {
     try {
       let savedOrders = 0;
-      await db2.transaction(async (tx) => {
+      await db.transaction(async (tx) => {
         for (const orderData of orders) {
           const vendorId = await this.findOrCreateVendor(tx, orderData.vendorName);
           const projectId = await this.findOrCreateProject(tx, orderData.siteName);
@@ -7667,7 +8405,7 @@ var __filename = fileURLToPath(import.meta.url);
 var __dirname = dirname(__filename);
 var POEmailService = class {
   constructor() {
-    this.db = db2;
+    this.db = db;
     this.transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || "smtp.naver.com",
       port: parseInt(process.env.SMTP_PORT || "587"),
@@ -7785,6 +8523,17 @@ var POEmailService = class {
           contentType: "application/pdf"
         });
         console.log(`\u{1F4CE} PDF \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00: \uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`);
+      }
+      if (emailOptions.additionalAttachments && emailOptions.additionalAttachments.length > 0) {
+        console.log(`\u{1F4CE} \uCD94\uAC00 \uCCA8\uBD80\uD30C\uC77C ${emailOptions.additionalAttachments.length}\uAC1C \uCC98\uB9AC \uC2DC\uC791`);
+        for (const additionalAttachment of emailOptions.additionalAttachments) {
+          attachments3.push({
+            filename: additionalAttachment.filename,
+            content: additionalAttachment.content,
+            contentType: additionalAttachment.contentType
+          });
+          console.log(`\u{1F4CE} \uCD94\uAC00 \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00: ${additionalAttachment.filename} (${additionalAttachment.content.length} bytes)`);
+        }
       }
       if (attachments3.length === 0) {
         return {
@@ -9730,7 +10479,7 @@ var OptimizedOrderQueries = class {
     const cached = cache.get(cacheKey);
     if (cached) return cached;
     try {
-      let query = db2.select({
+      let query = db.select({
         id: purchaseOrders.id,
         orderNumber: purchaseOrders.orderNumber,
         status: purchaseOrders.status,
@@ -9759,7 +10508,7 @@ var OptimizedOrderQueries = class {
     const cached = cache.get(cacheKey);
     if (cached) return cached;
     try {
-      const result = await db2.select().from(purchaseOrders).where(
+      const result = await db.select().from(purchaseOrders).where(
         and5(
           eq6(purchaseOrders.status, "pending"),
           eq6(purchaseOrders.currentApproverRole, role)
@@ -9780,9 +10529,9 @@ var OptimizedOrderQueries = class {
     const cached = cache.get(cacheKey);
     if (cached) return cached;
     try {
-      const [totalOrders] = await db2.select({ count: count2() }).from(purchaseOrders);
-      const [pendingOrders] = await db2.select({ count: count2() }).from(purchaseOrders).where(eq6(purchaseOrders.status, "pending"));
-      const [approvedOrders] = await db2.select({ count: count2() }).from(purchaseOrders).where(eq6(purchaseOrders.status, "approved"));
+      const [totalOrders] = await db.select({ count: count2() }).from(purchaseOrders);
+      const [pendingOrders] = await db.select({ count: count2() }).from(purchaseOrders).where(eq6(purchaseOrders.status, "pending"));
+      const [approvedOrders] = await db.select({ count: count2() }).from(purchaseOrders).where(eq6(purchaseOrders.status, "approved"));
       const result = {
         total: totalOrders.count || 0,
         pending: pendingOrders.count || 0,
@@ -9806,7 +10555,7 @@ var OptimizedDashboardQueries = class {
     if (cached) return cached;
     try {
       console.log("\u{1F50D} Starting getUnifiedDashboardData query...");
-      const orderStatsResult = await db2.execute(
+      const orderStatsResult = await db.execute(
         sql3`SELECT 
           COUNT(*) as "totalOrders",
           COALESCE(SUM(total_amount), 0) as "totalAmount"
@@ -9814,32 +10563,32 @@ var OptimizedDashboardQueries = class {
       );
       console.log("\u{1F4CA} Order stats query result:", orderStatsResult);
       const orderStats = orderStatsResult.rows[0] || { totalOrders: 0, totalAmount: 0 };
-      const pendingOrderResult = await db2.execute(
+      const pendingOrderResult = await db.execute(
         sql3`SELECT COUNT(*) as "pendingOrders" FROM purchase_orders WHERE status = 'pending'`
       );
       const pendingOrderStats = pendingOrderResult.rows[0] || { pendingOrders: 0 };
-      const completedOrderResult = await db2.execute(
+      const completedOrderResult = await db.execute(
         sql3`SELECT COUNT(*) as "completedOrders" 
             FROM purchase_orders 
             WHERE status = 'completed' 
             AND order_date >= DATE_TRUNC('month', CURRENT_DATE)`
       );
       const completedOrderStats = completedOrderResult.rows[0] || { completedOrders: 0 };
-      const monthlyOrderResult = await db2.execute(
+      const monthlyOrderResult = await db.execute(
         sql3`SELECT COUNT(*) as "monthlyOrders" 
             FROM purchase_orders 
             WHERE order_date >= DATE_TRUNC('month', CURRENT_DATE)`
       );
       const monthlyOrderStats = monthlyOrderResult.rows[0] || { monthlyOrders: 0 };
-      const projectResult = await db2.execute(
+      const projectResult = await db.execute(
         sql3`SELECT COUNT(*) as "activeProjects" FROM projects WHERE is_active = true`
       );
       const projectStats = projectResult.rows[0] || { activeProjects: 0 };
-      const vendorResult = await db2.execute(
+      const vendorResult = await db.execute(
         sql3`SELECT COUNT(*) as "activeVendors" FROM vendors WHERE is_active = true`
       );
       const vendorStats = vendorResult.rows[0] || { activeVendors: 0 };
-      const recentOrdersResult = await db2.execute(
+      const recentOrdersResult = await db.execute(
         sql3`SELECT 
           po.id,
           po.order_number as "orderNumber",
@@ -9885,7 +10634,7 @@ var OptimizedDashboardQueries = class {
           // Add backward compatibility
         } : null
       }));
-      const monthlyStatsRaw = await db2.select({
+      const monthlyStatsRaw = await db.select({
         month: sql3`TO_CHAR(${purchaseOrders.orderDate}, 'YYYY-MM')`,
         count: count2(),
         amount: sql3`COALESCE(SUM(${purchaseOrders.totalAmount}), 0)`,
@@ -9899,7 +10648,7 @@ var OptimizedDashboardQueries = class {
         totalAmount: item.amount
         // Add alias for compatibility
       }));
-      const statusStats = await db2.select({
+      const statusStats = await db.select({
         status: purchaseOrders.orderStatus,
         count: count2(),
         amount: sql3`COALESCE(SUM(${purchaseOrders.totalAmount}), 0)`
@@ -9917,7 +10666,7 @@ var OptimizedDashboardQueries = class {
           amount: 0
         };
       });
-      const projectStatsList = await db2.select({
+      const projectStatsList = await db.select({
         projectId: projects.id,
         projectName: projects.projectName,
         projectType: projects.projectType,
@@ -10536,7 +11285,7 @@ var ApprovalRoutingService = class {
   static async handleDirectApproval(context, settings) {
     const directApprovalRoles = settings.directApprovalRoles || [];
     const canDirectApprove = directApprovalRoles.includes(context.currentUserRole);
-    const directApprovalUsers = await db2.select({ id: users.id, name: users.name }).from(users).where(eq7(users.role, context.currentUserRole)).limit(10);
+    const directApprovalUsers = await db.select({ id: users.id, name: users.name }).from(users).where(eq7(users.role, context.currentUserRole)).limit(10);
     return {
       approvalMode: "direct",
       canDirectApprove,
@@ -10578,7 +11327,7 @@ var ApprovalRoutingService = class {
    * 금액과 우선순위에 적합한 단계별 승인 템플릿 찾기
    */
   static async findAppropriateStagedTemplate(companyId, orderAmount, priority) {
-    const templates = await db2.select().from(approvalStepTemplates).where(
+    const templates = await db.select().from(approvalStepTemplates).where(
       and6(
         eq7(approvalStepTemplates.companyId, companyId),
         eq7(approvalStepTemplates.isActive, true),
@@ -10598,7 +11347,7 @@ var ApprovalRoutingService = class {
    * 현재 사용자 권한으로 건너뛸 수 있는 단계 확인
    */
   static async checkSkippableSteps(currentUserRole, orderAmount, approvalSteps) {
-    const userAuthority = await db2.select().from(approvalAuthorities).where(
+    const userAuthority = await db.select().from(approvalAuthorities).where(
       and6(
         eq7(approvalAuthorities.role, currentUserRole),
         eq7(approvalAuthorities.isActive, true)
@@ -10631,14 +11380,14 @@ var ApprovalRoutingService = class {
       requiredRole: step.requiredRole,
       status: "pending"
     }));
-    const instances = await db2.insert(approvalStepInstances2).values(instancesData).returning();
+    const instances = await db.insert(approvalStepInstances2).values(instancesData).returning();
     return instances;
   }
   /**
    * 주문의 다음 승인 단계 결정
    */
   static async getNextApprovalStep(orderId) {
-    const nextStep = await db2.select().from(approvalStepInstances2).where(
+    const nextStep = await db.select().from(approvalStepInstances2).where(
       and6(
         eq7(approvalStepInstances2.orderId, orderId),
         eq7(approvalStepInstances2.status, "pending"),
@@ -10651,7 +11400,7 @@ var ApprovalRoutingService = class {
    * 주문의 승인 완료 여부 확인
    */
   static async isApprovalComplete(orderId) {
-    const pendingSteps = await db2.select().from(approvalStepInstances2).where(
+    const pendingSteps = await db.select().from(approvalStepInstances2).where(
       and6(
         eq7(approvalStepInstances2.orderId, orderId),
         eq7(approvalStepInstances2.status, "pending"),
@@ -10664,7 +11413,7 @@ var ApprovalRoutingService = class {
    * 주문 승인 진행률 계산
    */
   static async getApprovalProgress(orderId) {
-    const allSteps = await db2.select().from(approvalStepInstances2).where(
+    const allSteps = await db.select().from(approvalStepInstances2).where(
       and6(
         eq7(approvalStepInstances2.orderId, orderId),
         eq7(approvalStepInstances2.isActive, true)
@@ -10685,7 +11434,7 @@ var ApprovalRoutingService = class {
    * 회사의 승인 워크플로 설정 조회
    */
   static async getWorkflowSettings(companyId) {
-    const settings = await db2.select().from(approvalWorkflowSettings).where(
+    const settings = await db.select().from(approvalWorkflowSettings).where(
       and6(
         eq7(approvalWorkflowSettings.companyId, companyId),
         eq7(approvalWorkflowSettings.isActive, true)
@@ -10700,7 +11449,7 @@ var approval_routing_service_default = ApprovalRoutingService;
 init_professional_pdf_generation_service();
 init_db();
 init_email_settings_service();
-import { eq as eq11, and as and7, or as or3, like as like2, desc as desc6 } from "drizzle-orm";
+import { eq as eq11, and as and7, or as or3, like as like2, desc as desc6, sql as sql4 } from "drizzle-orm";
 import fs8 from "fs";
 import path6 from "path";
 import { fileURLToPath as fileURLToPath2 } from "url";
@@ -10713,7 +11462,7 @@ init_schema();
 import { eq as eq10 } from "drizzle-orm";
 async function generateEmailTemplateData(orderId) {
   try {
-    const [order] = await db2.select({
+    const [order] = await db.select({
       orderNumber: purchaseOrders.orderNumber,
       vendorId: purchaseOrders.vendorId,
       projectId: purchaseOrders.projectId,
@@ -10728,19 +11477,19 @@ async function generateEmailTemplateData(orderId) {
     }
     let vendorName = "\uAC70\uB798\uCC98 \uBBF8\uC9C0\uC815";
     if (order.vendorId) {
-      const [vendor] = await db2.select({ name: vendors.name }).from(vendors).where(eq10(vendors.id, order.vendorId));
+      const [vendor] = await db.select({ name: vendors.name }).from(vendors).where(eq10(vendors.id, order.vendorId));
       if (vendor) {
         vendorName = vendor.name;
       }
     }
     let projectName = "\uD504\uB85C\uC81D\uD2B8 \uBBF8\uC9C0\uC815";
     if (order.projectId) {
-      const [project] = await db2.select({ name: projects.name }).from(projects).where(eq10(projects.id, order.projectId));
+      const [project] = await db.select({ name: projects.name }).from(projects).where(eq10(projects.id, order.projectId));
       if (project) {
         projectName = project.name;
       }
     }
-    const items3 = await db2.select({
+    const items3 = await db.select({
       itemName: purchaseOrderItems.itemName,
       specification: purchaseOrderItems.specification,
       quantity: purchaseOrderItems.quantity,
@@ -10926,10 +11675,11 @@ function generateEmailHTML(data) {
 var __filename2 = fileURLToPath2(import.meta.url);
 var __dirname2 = path6.dirname(__filename2);
 var router3 = Router3();
+var db2 = db;
 var emailService = new POEmailService();
 async function updateOrderStatusAfterEmail(orderNumber) {
   console.log(`\u{1F4E7} \uC774\uBA54\uC77C \uBC1C\uC1A1 \uD6C4 \uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8: ${orderNumber} \u2192 sent`);
-  await db2.update(purchaseOrders).set({
+  await db.update(purchaseOrders).set({
     orderStatus: "sent",
     // 발주상태: 이메일 발송 완료 후 'sent'로 변경
     // approvalStatus는 이미 'approved' 또는 'not_required' 상태이므로 변경하지 않음
@@ -11155,8 +11905,8 @@ router3.post("/orders", requireAuth, upload.array("attachments"), async (req, re
     const order = await storage.createPurchaseOrder(orderData);
     console.log("\u{1F527}\u{1F527}\u{1F527} ORDERS.TS - Created order:", order);
     if (req.files && req.files.length > 0) {
-      const fs23 = __require("fs");
-      const path21 = __require("path");
+      const fs25 = __require("fs");
+      const path23 = __require("path");
       const { removeAllInputSheets: removeAllInputSheets2 } = (init_excel_input_sheet_remover(), __toCommonJS(excel_input_sheet_remover_exports));
       for (const file of req.files) {
         const decodedFilename = decodeKoreanFilename(file.originalname);
@@ -11171,21 +11921,21 @@ router3.post("/orders", requireAuth, upload.array("attachments"), async (req, re
           console.log("\u{1F4CA} Excel \uD30C\uC77C \uAC10\uC9C0, Input \uC2DC\uD2B8 \uC81C\uAC70 \uCC98\uB9AC \uC2DC\uC791...");
           const processedPath = file.path.replace(/\.(xlsx?)$/i, "_processed.$1");
           const removeResult = await removeAllInputSheets2(file.path, processedPath);
-          if (removeResult.success && fs23.existsSync(processedPath)) {
+          if (removeResult.success && fs25.existsSync(processedPath)) {
             console.log(`\u2705 Input \uC2DC\uD2B8 \uC81C\uAC70 \uC644\uB8CC: ${removeResult.removedSheets.join(", ")}`);
             fileToStore = processedPath;
-            fileBuffer = fs23.readFileSync(processedPath);
+            fileBuffer = fs25.readFileSync(processedPath);
             try {
-              fs23.unlinkSync(file.path);
+              fs25.unlinkSync(file.path);
             } catch (e) {
               console.warn("\uC6D0\uBCF8 \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328:", e);
             }
           } else {
             console.warn("\u26A0\uFE0F Input \uC2DC\uD2B8 \uC81C\uAC70 \uC2E4\uD328, \uC6D0\uBCF8 \uD30C\uC77C \uC0AC\uC6A9:", removeResult.error);
-            fileBuffer = fs23.readFileSync(file.path);
+            fileBuffer = fs25.readFileSync(file.path);
           }
         } else {
-          fileBuffer = fs23.readFileSync(file.path);
+          fileBuffer = fs25.readFileSync(file.path);
         }
         const base64Data = fileBuffer.toString("base64");
         let finalOriginalName = decodedFilename;
@@ -11218,9 +11968,9 @@ router3.post("/orders", requireAuth, upload.array("attachments"), async (req, re
           delete attachmentData.fileData;
           await storage.createAttachment(attachmentData);
         }
-        if (fileToStore !== file.path && fs23.existsSync(fileToStore)) {
+        if (fileToStore !== file.path && fs25.existsSync(fileToStore)) {
           try {
-            fs23.unlinkSync(fileToStore);
+            fs25.unlinkSync(fileToStore);
           } catch (e) {
             console.warn("\uCC98\uB9AC\uB41C \uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328:", e);
           }
@@ -11335,23 +12085,8 @@ router3.post("/orders", requireAuth, upload.array("attachments"), async (req, re
           hasAttachments,
           attachmentNames: orderAttachments?.map((a) => a.originalName) || []
         };
-        const fallbackResult = await EnhancedPDFGenerationService.generateEnhancedPurchaseOrderPDF(
-          order.id,
-          enhancedPdfData,
-          userId
-        );
-        if (fallbackResult.success) {
-          console.log("\u2705 ORDERS.TS - Fallback Enhanced PDF generated successfully:", fallbackResult.pdfPath);
-          pdfGenerationStatus = {
-            success: true,
-            message: "PDF \uD30C\uC77C\uC774 \uC0DD\uC131\uB418\uC5C8\uC2B5\uB2C8\uB2E4 (\uB300\uCCB4 \uBC29\uC2DD)",
-            pdfPath: fallbackResult.pdfPath,
-            attachmentId: fallbackResult.attachmentId
-          };
-        } else {
-          console.error("\u26A0\uFE0F ORDERS.TS - Fallback Enhanced PDF also failed:", fallbackResult.error);
-          pdfGenerationStatus.message = "PDF \uC0DD\uC131\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4. \uAD00\uB9AC\uC790\uC5D0\uAC8C \uBB38\uC758\uD558\uC138\uC694.";
-        }
+        console.error("\u26A0\uFE0F ORDERS.TS - PROFESSIONAL PDF generation failed:", pdfResult.error);
+        pdfGenerationStatus.message = `PDF \uC0DD\uC131 \uC2E4\uD328: ${pdfResult.error}`;
       }
     } catch (pdfError) {
       console.error("\u274C ORDERS.TS - Error generating PDF:", pdfError);
@@ -12219,8 +12954,8 @@ async function generatePDFLogic(req, res) {
         let browser = null;
         try {
           console.log("\u{1F680} Playwright \uBE0C\uB77C\uC6B0\uC800 \uC2DC\uC791...");
-          const { chromium: chromium2 } = await import("playwright-chromium");
-          browser = await chromium2.launch({
+          const { chromium: chromium4 } = await import("playwright-chromium");
+          browser = await chromium4.launch({
             headless: true,
             args: [
               "--no-sandbox",
@@ -12336,7 +13071,7 @@ router3.post("/orders/:id/regenerate-pdf", requireAuth, async (req, res) => {
     if (!userId) {
       return res.status(401).json({ message: "User not authenticated" });
     }
-    const [order] = await db2.select().from(purchaseOrders).where(eq11(purchaseOrders.id, orderId)).limit(1);
+    const [order] = await db.select().from(purchaseOrders).where(eq11(purchaseOrders.id, orderId)).limit(1);
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
@@ -12585,7 +13320,7 @@ router3.get("/orders/:id/download-pdf", async (req, res) => {
   try {
     const orderId = parseInt(req.params.id);
     console.log(`\u{1F4C4} Order ID ${orderId}\uB85C PDF \uB2E4\uC6B4\uB85C\uB4DC \uC694\uCCAD`);
-    const attachments3 = await db.select().from(attachments).where(
+    const attachments3 = await db2.select().from(attachments).where(
       and7(
         eq11(attachments.orderId, orderId),
         or3(
@@ -12615,255 +13350,7 @@ router3.get("/orders/:id/download-pdf", async (req, res) => {
 });
 router3.post("/orders/send-email", requireAuth, async (req, res) => {
   try {
-    const {
-      orderData,
-      pdfUrl,
-      excelUrl,
-      recipients,
-      emailSettings: emailSettings2,
-      to,
-      cc,
-      bcc,
-      subject,
-      message,
-      attachPdf = true,
-      attachExcel = false,
-      selectedAttachments = [],
-      // NEW: Handle selectedAttachments from frontend
-      selectedAttachmentIds = []
-      // Also accept selectedAttachmentIds from frontend
-    } = req.body;
-    console.log("\u{1F4E7} \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC694\uCCAD:", {
-      orderData,
-      pdfUrl,
-      excelUrl,
-      recipients,
-      to,
-      cc,
-      bcc,
-      subject,
-      message,
-      attachPdf,
-      attachExcel,
-      selectedAttachments,
-      selectedAttachmentIds
-    });
-    const recipientEmails = recipients || to;
-    if (!recipientEmails || recipientEmails.length === 0) {
-      return res.status(400).json({ error: "\uC218\uC2E0\uC790\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4." });
-    }
-    const emailOptions = {
-      to: recipientEmails,
-      cc: cc || emailSettings2?.cc,
-      subject: subject || emailSettings2?.subject || `\uBC1C\uC8FC\uC11C - ${orderData.orderNumber || ""}`,
-      orderNumber: orderData.orderNumber,
-      vendorName: orderData.vendorName,
-      totalAmount: orderData.totalAmount,
-      additionalMessage: message || emailSettings2?.message
-    };
-    let attachments3 = [];
-    let attachmentsList = [];
-    if (attachPdf && pdfUrl) {
-      if (pdfUrl.includes("/api/attachments/") && pdfUrl.includes("/download")) {
-        const attachmentIdMatch = pdfUrl.match(/\/api\/attachments\/(\d+)\/download/);
-        if (attachmentIdMatch) {
-          const attachmentId = parseInt(attachmentIdMatch[1]);
-          console.log("\u{1F4CE} PDF \uCCA8\uBD80 \uC2DC\uB3C4 (DB\uC5D0\uC11C):", attachmentId);
-          try {
-            const [attachment] = await db2.select({
-              id: attachments.id,
-              originalName: attachments.originalName,
-              filePath: attachments.filePath,
-              mimeType: attachments.mimeType,
-              fileData: attachments.fileData
-            }).from(attachments).where(eq11(attachments.id, attachmentId));
-            if (attachment) {
-              if (attachment.fileData) {
-                attachments3.push({
-                  filename: attachment.originalName || `\uBC1C\uC8FC\uC11C_${orderData.orderNumber || Date.now()}.pdf`,
-                  content: Buffer.from(attachment.fileData, "base64"),
-                  contentType: attachment.mimeType || "application/pdf"
-                });
-                attachmentsList.push("\uBC1C\uC8FC\uC11C.pdf (PDF \uD30C\uC77C)");
-                console.log("\u2705 PDF \uCCA8\uBD80 \uC131\uACF5 (DB Base64)");
-              } else if (attachment.filePath && fs8.existsSync(attachment.filePath)) {
-                attachments3.push({
-                  filename: attachment.originalName || `\uBC1C\uC8FC\uC11C_${orderData.orderNumber || Date.now()}.pdf`,
-                  path: attachment.filePath,
-                  contentType: attachment.mimeType || "application/pdf"
-                });
-                attachmentsList.push("\uBC1C\uC8FC\uC11C.pdf (PDF \uD30C\uC77C)");
-                console.log("\u2705 PDF \uCCA8\uBD80 \uC131\uACF5 (\uD30C\uC77C \uACBD\uB85C)");
-              } else {
-                console.log("\u274C PDF \uCCA8\uBD80 \uC2E4\uD328: \uD30C\uC77C \uB370\uC774\uD130 \uC5C6\uC74C");
-              }
-            } else {
-              console.log("\u274C PDF \uCCA8\uBD80 \uC2E4\uD328: \uCCA8\uBD80\uD30C\uC77C \uC815\uBCF4 \uC5C6\uC74C");
-            }
-          } catch (error) {
-            console.error("\u274C PDF \uCCA8\uBD80 \uC624\uB958:", error);
-          }
-        }
-      } else {
-        const pdfPath = path6.join(__dirname2, "../../", pdfUrl.replace(/^\//, ""));
-        console.log("\u{1F4CE} PDF \uCCA8\uBD80 \uC2DC\uB3C4 (\uC9C1\uC811 \uACBD\uB85C):", pdfPath);
-        if (fs8.existsSync(pdfPath)) {
-          attachments3.push({
-            filename: `\uBC1C\uC8FC\uC11C_${orderData.orderNumber || Date.now()}.pdf`,
-            path: pdfPath,
-            contentType: "application/pdf"
-          });
-          attachmentsList.push("\uBC1C\uC8FC\uC11C.pdf (PDF \uD30C\uC77C)");
-          console.log("\u2705 PDF \uCCA8\uBD80 \uC131\uACF5 (\uC9C1\uC811 \uACBD\uB85C)");
-        } else {
-          console.log("\u274C PDF \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC74C:", pdfPath);
-        }
-      }
-    }
-    if (attachExcel && excelUrl) {
-      if (excelUrl.includes("/api/attachments/") && excelUrl.includes("/download")) {
-        const attachmentIdMatch = excelUrl.match(/\/api\/attachments\/(\d+)\/download/);
-        if (attachmentIdMatch) {
-          const attachmentId = parseInt(attachmentIdMatch[1]);
-          console.log("\u{1F4CE} Excel \uCCA8\uBD80 \uC2DC\uB3C4 (DB\uC5D0\uC11C):", attachmentId);
-          try {
-            const [attachment] = await db2.select({
-              id: attachments.id,
-              originalName: attachments.originalName,
-              filePath: attachments.filePath,
-              mimeType: attachments.mimeType,
-              fileData: attachments.fileData
-            }).from(attachments).where(eq11(attachments.id, attachmentId));
-            if (attachment) {
-              if (attachment.fileData) {
-                attachments3.push({
-                  filename: attachment.originalName || `\uBC1C\uC8FC\uC11C_${orderData.orderNumber || Date.now()}.xlsx`,
-                  content: Buffer.from(attachment.fileData, "base64"),
-                  contentType: attachment.mimeType || "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                });
-                attachmentsList.push("\uBC1C\uC8FC\uC11C.xlsx (Excel \uD30C\uC77C)");
-                console.log("\u2705 Excel \uCCA8\uBD80 \uC131\uACF5 (DB Base64)");
-              } else if (attachment.filePath && fs8.existsSync(attachment.filePath)) {
-                attachments3.push({
-                  filename: attachment.originalName || `\uBC1C\uC8FC\uC11C_${orderData.orderNumber || Date.now()}.xlsx`,
-                  path: attachment.filePath,
-                  contentType: attachment.mimeType || "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                });
-                attachmentsList.push("\uBC1C\uC8FC\uC11C.xlsx (Excel \uD30C\uC77C)");
-                console.log("\u2705 Excel \uCCA8\uBD80 \uC131\uACF5 (\uD30C\uC77C \uACBD\uB85C)");
-              } else {
-                console.log("\u274C Excel \uCCA8\uBD80 \uC2E4\uD328: \uD30C\uC77C \uB370\uC774\uD130 \uC5C6\uC74C");
-              }
-            } else {
-              console.log("\u274C Excel \uCCA8\uBD80 \uC2E4\uD328: \uCCA8\uBD80\uD30C\uC77C \uC815\uBCF4 \uC5C6\uC74C");
-            }
-          } catch (error) {
-            console.error("\u274C Excel \uCCA8\uBD80 \uC624\uB958:", error);
-          }
-        }
-      } else {
-        const excelPath = path6.join(__dirname2, "../../", excelUrl.replace(/^\//, ""));
-        console.log("\u{1F4CE} Excel \uCCA8\uBD80 \uC2DC\uB3C4 (\uC9C1\uC811 \uACBD\uB85C):", excelPath);
-        if (fs8.existsSync(excelPath)) {
-          attachments3.push({
-            filename: `\uBC1C\uC8FC\uC11C_${orderData.orderNumber || Date.now()}.xlsx`,
-            path: excelPath,
-            contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-          });
-          attachmentsList.push("\uBC1C\uC8FC\uC11C.xlsx (Excel \uD30C\uC77C)");
-          console.log("\u2705 Excel \uCCA8\uBD80 \uC131\uACF5 (\uC9C1\uC811 \uACBD\uB85C)");
-        } else {
-          console.log("\u274C Excel \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC74C:", excelPath);
-        }
-      }
-    }
-    const attachmentIdsToProcess = selectedAttachmentIds && selectedAttachmentIds.length > 0 ? selectedAttachmentIds : selectedAttachments;
-    if (attachmentIdsToProcess && Array.isArray(attachmentIdsToProcess) && attachmentIdsToProcess.length > 0) {
-      console.log("\u{1F4CE} \uCC98\uB9AC\uD560 \uC120\uD0DD\uB41C \uCCA8\uBD80\uD30C\uC77C IDs:", attachmentIdsToProcess);
-      console.log("\u{1F4CE} attachPdf:", attachPdf, "attachExcel:", attachExcel);
-      console.log("\u{1F4CE} pdfUrl:", pdfUrl, "excelUrl:", excelUrl);
-      const processedAttachmentIds = /* @__PURE__ */ new Set();
-      if (attachPdf && pdfUrl && pdfUrl.includes("/api/attachments/") && pdfUrl.includes("/download")) {
-        const pdfAttachmentIdMatch = pdfUrl.match(/\/api\/attachments\/(\d+)\/download/);
-        if (pdfAttachmentIdMatch && attachments3.length > 0) {
-          const pdfId = parseInt(pdfAttachmentIdMatch[1]);
-          console.log("\u{1F50D} PDF already processed by old logic, ID:", pdfId);
-          processedAttachmentIds.add(pdfId);
-        }
-      }
-      if (attachExcel && excelUrl && excelUrl.includes("/api/attachments/") && excelUrl.includes("/download")) {
-        const excelAttachmentIdMatch = excelUrl.match(/\/api\/attachments\/(\d+)\/download/);
-        if (excelAttachmentIdMatch) {
-          const excelId = parseInt(excelAttachmentIdMatch[1]);
-          const excelProcessed = attachmentsList.some((item) => item.includes("Excel"));
-          if (excelProcessed) {
-            console.log("\u{1F50D} Excel already processed by old logic, ID:", excelId);
-            processedAttachmentIds.add(excelId);
-          } else {
-            console.log("\u26A0\uFE0F Excel URL exists but not processed by old logic, will process in selectedAttachments");
-          }
-        }
-      }
-      for (const attachmentId of attachmentIdsToProcess) {
-        try {
-          if (processedAttachmentIds.has(attachmentId)) {
-            console.log("\u26A0\uFE0F \uCCA8\uBD80\uD30C\uC77C \uC774\uBBF8 \uCC98\uB9AC\uB428 (\uAE30\uC874 \uB85C\uC9C1):", attachmentId);
-            continue;
-          }
-          const [attachment] = await db2.select({
-            id: attachments.id,
-            originalName: attachments.originalName,
-            filePath: attachments.filePath,
-            mimeType: attachments.mimeType,
-            fileData: attachments.fileData
-          }).from(attachments).where(eq11(attachments.id, attachmentId));
-          if (attachment) {
-            if (attachment.fileData) {
-              attachments3.push({
-                filename: attachment.originalName,
-                content: Buffer.from(attachment.fileData, "base64"),
-                contentType: attachment.mimeType || "application/octet-stream"
-              });
-              attachmentsList.push(attachment.originalName);
-              console.log("\u2705 \uC120\uD0DD\uB41C \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00 \uC131\uACF5 (DB Base64):", attachment.originalName);
-            } else if (attachment.filePath && fs8.existsSync(attachment.filePath)) {
-              attachments3.push({
-                filename: attachment.originalName,
-                path: attachment.filePath,
-                contentType: attachment.mimeType || "application/octet-stream"
-              });
-              attachmentsList.push(attachment.originalName);
-              console.log("\u2705 \uC120\uD0DD\uB41C \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00 \uC131\uACF5 (\uD30C\uC77C \uACBD\uB85C):", attachment.originalName);
-            } else {
-              console.log("\u274C \uC120\uD0DD\uB41C \uCCA8\uBD80\uD30C\uC77C \uCC98\uB9AC \uC2E4\uD328 (\uB370\uC774\uD130 \uC5C6\uC74C):", attachment.originalName);
-            }
-          } else {
-            console.log("\u274C \uC120\uD0DD\uB41C \uCCA8\uBD80\uD30C\uC77C \uC815\uBCF4 \uC5C6\uC74C, ID:", attachmentId);
-          }
-        } catch (error) {
-          console.error("\u274C \uC120\uD0DD\uB41C \uCCA8\uBD80\uD30C\uC77C \uCC98\uB9AC \uC624\uB958, ID:", attachmentId, error);
-        }
-      }
-    }
-    console.log(`\u{1F4CE} \uCD1D ${attachments3.length}\uAC1C \uCCA8\uBD80\uD30C\uC77C:`, attachmentsList);
-    let emailHtmlContent;
-    if (orderData.orderId) {
-      const templateData = await generateEmailTemplateData(orderData.orderId);
-      if (templateData) {
-        templateData.attachmentsList = attachmentsList;
-        if (message) {
-          templateData.additionalMessage = message;
-        }
-        emailHtmlContent = generateEmailHTML(templateData);
-        console.log("\u2705 DB \uB370\uC774\uD130 \uAE30\uBC18 \uC774\uBA54\uC77C \uD15C\uD50C\uB9BF \uC0DD\uC131 \uC644\uB8CC");
-      } else {
-        console.log("\u26A0\uFE0F DB \uB370\uC774\uD130\uB97C \uAC00\uC838\uC62C \uC218 \uC5C6\uC5B4 \uAE30\uBCF8 \uD15C\uD50C\uB9BF \uC0AC\uC6A9");
-        emailHtmlContent = generateEmailContent(emailOptions, attachmentsList);
-      }
-    } else {
-      emailHtmlContent = generateEmailContent(emailOptions, attachmentsList);
-    }
-    const generateEmailContent = (options, attachmentsList2 = []) => {
+    let generateEmailContent2 = function(options, attachmentsList2 = []) {
       const formatCurrency = (amount) => {
         return new Intl.NumberFormat("ko-KR", {
           style: "currency",
@@ -13012,6 +13499,329 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
         </html>
       `;
     };
+    var generateEmailContent = generateEmailContent2;
+    const {
+      orderData,
+      pdfUrl,
+      excelUrl,
+      recipients,
+      emailSettings: emailSettings2,
+      to,
+      cc,
+      bcc,
+      subject,
+      message,
+      attachPdf = true,
+      attachExcel = false,
+      selectedAttachments = [],
+      // NEW: Handle selectedAttachments from frontend
+      selectedAttachmentIds = []
+      // Also accept selectedAttachmentIds from frontend
+    } = req.body;
+    console.log("\u{1F4E7} \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC694\uCCAD:", {
+      orderData,
+      pdfUrl,
+      excelUrl,
+      recipients,
+      to,
+      cc,
+      bcc,
+      subject,
+      message,
+      attachPdf,
+      attachExcel,
+      selectedAttachments,
+      selectedAttachmentIds
+    });
+    const recipientEmails = recipients || to;
+    if (!recipientEmails || recipientEmails.length === 0) {
+      return res.status(400).json({ error: "\uC218\uC2E0\uC790\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4." });
+    }
+    const emailOptions = {
+      to: recipientEmails,
+      cc: cc || emailSettings2?.cc,
+      subject: subject || emailSettings2?.subject || `\uBC1C\uC8FC\uC11C - ${orderData.orderNumber || ""}`,
+      orderNumber: orderData.orderNumber,
+      vendorName: orderData.vendorName,
+      totalAmount: orderData.totalAmount,
+      additionalMessage: message || emailSettings2?.message
+    };
+    let attachments3 = [];
+    let attachmentsList = [];
+    if (attachPdf && pdfUrl) {
+      if (pdfUrl.includes("/api/attachments/") && pdfUrl.includes("/download")) {
+        const attachmentIdMatch = pdfUrl.match(/\/api\/attachments\/(\d+)\/download/);
+        if (attachmentIdMatch) {
+          const attachmentId = parseInt(attachmentIdMatch[1]);
+          console.log("\u{1F4CE} PDF \uCCA8\uBD80 \uC2DC\uB3C4 (DB\uC5D0\uC11C):", attachmentId);
+          try {
+            const [attachment] = await db.select({
+              id: attachments.id,
+              originalName: attachments.originalName,
+              filePath: attachments.filePath,
+              mimeType: attachments.mimeType,
+              fileData: attachments.fileData
+            }).from(attachments).where(eq11(attachments.id, attachmentId));
+            if (attachment) {
+              if (attachment.fileData) {
+                attachments3.push({
+                  filename: attachment.originalName || `\uBC1C\uC8FC\uC11C_${orderData.orderNumber || Date.now()}.pdf`,
+                  content: Buffer.from(attachment.fileData, "base64"),
+                  contentType: attachment.mimeType || "application/pdf"
+                });
+                attachmentsList.push("\uBC1C\uC8FC\uC11C.pdf (PDF \uD30C\uC77C)");
+                console.log("\u2705 PDF \uCCA8\uBD80 \uC131\uACF5 (DB Base64)");
+              } else if (attachment.filePath && fs8.existsSync(attachment.filePath)) {
+                attachments3.push({
+                  filename: attachment.originalName || `\uBC1C\uC8FC\uC11C_${orderData.orderNumber || Date.now()}.pdf`,
+                  path: attachment.filePath,
+                  contentType: attachment.mimeType || "application/pdf"
+                });
+                attachmentsList.push("\uBC1C\uC8FC\uC11C.pdf (PDF \uD30C\uC77C)");
+                console.log("\u2705 PDF \uCCA8\uBD80 \uC131\uACF5 (\uD30C\uC77C \uACBD\uB85C)");
+              } else {
+                console.log("\u274C PDF \uCCA8\uBD80 \uC2E4\uD328: \uD30C\uC77C \uB370\uC774\uD130 \uC5C6\uC74C");
+              }
+            } else {
+              console.log("\u274C PDF \uCCA8\uBD80 \uC2E4\uD328: \uCCA8\uBD80\uD30C\uC77C \uC815\uBCF4 \uC5C6\uC74C");
+            }
+          } catch (error) {
+            console.error("\u274C PDF \uCCA8\uBD80 \uC624\uB958:", error);
+          }
+        }
+      } else {
+        const pdfPath = path6.join(__dirname2, "../../", pdfUrl.replace(/^\//, ""));
+        console.log("\u{1F4CE} PDF \uCCA8\uBD80 \uC2DC\uB3C4 (\uC9C1\uC811 \uACBD\uB85C):", pdfPath);
+        if (fs8.existsSync(pdfPath)) {
+          attachments3.push({
+            filename: `\uBC1C\uC8FC\uC11C_${orderData.orderNumber || Date.now()}.pdf`,
+            path: pdfPath,
+            contentType: "application/pdf"
+          });
+          attachmentsList.push("\uBC1C\uC8FC\uC11C.pdf (PDF \uD30C\uC77C)");
+          console.log("\u2705 PDF \uCCA8\uBD80 \uC131\uACF5 (\uC9C1\uC811 \uACBD\uB85C)");
+        } else {
+          console.log("\u274C PDF \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC74C:", pdfPath);
+        }
+      }
+    }
+    if (attachExcel && excelUrl) {
+      if (excelUrl.includes("/api/attachments/") && excelUrl.includes("/download")) {
+        const attachmentIdMatch = excelUrl.match(/\/api\/attachments\/(\d+)\/download/);
+        if (attachmentIdMatch) {
+          const attachmentId = parseInt(attachmentIdMatch[1]);
+          console.log("\u{1F4CE} Excel \uCCA8\uBD80 \uC2DC\uB3C4 (DB\uC5D0\uC11C):", attachmentId);
+          try {
+            const [attachment] = await db.select({
+              id: attachments.id,
+              originalName: attachments.originalName,
+              filePath: attachments.filePath,
+              mimeType: attachments.mimeType,
+              fileData: attachments.fileData
+            }).from(attachments).where(eq11(attachments.id, attachmentId));
+            if (attachment) {
+              if (attachment.fileData) {
+                attachments3.push({
+                  filename: attachment.originalName || `\uBC1C\uC8FC\uC11C_${orderData.orderNumber || Date.now()}.xlsx`,
+                  content: Buffer.from(attachment.fileData, "base64"),
+                  contentType: attachment.mimeType || "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                });
+                attachmentsList.push("\uBC1C\uC8FC\uC11C.xlsx (Excel \uD30C\uC77C)");
+                console.log("\u2705 Excel \uCCA8\uBD80 \uC131\uACF5 (DB Base64)");
+              } else if (attachment.filePath && fs8.existsSync(attachment.filePath)) {
+                attachments3.push({
+                  filename: attachment.originalName || `\uBC1C\uC8FC\uC11C_${orderData.orderNumber || Date.now()}.xlsx`,
+                  path: attachment.filePath,
+                  contentType: attachment.mimeType || "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                });
+                attachmentsList.push("\uBC1C\uC8FC\uC11C.xlsx (Excel \uD30C\uC77C)");
+                console.log("\u2705 Excel \uCCA8\uBD80 \uC131\uACF5 (\uD30C\uC77C \uACBD\uB85C)");
+              } else {
+                console.log("\u274C Excel \uCCA8\uBD80 \uC2E4\uD328: \uD30C\uC77C \uB370\uC774\uD130 \uC5C6\uC74C");
+              }
+            } else {
+              console.log("\u274C Excel \uCCA8\uBD80 \uC2E4\uD328: \uCCA8\uBD80\uD30C\uC77C \uC815\uBCF4 \uC5C6\uC74C");
+            }
+          } catch (error) {
+            console.error("\u274C Excel \uCCA8\uBD80 \uC624\uB958:", error);
+          }
+        }
+      } else {
+        const excelPath = path6.join(__dirname2, "../../", excelUrl.replace(/^\//, ""));
+        console.log("\u{1F4CE} Excel \uCCA8\uBD80 \uC2DC\uB3C4 (\uC9C1\uC811 \uACBD\uB85C):", excelPath);
+        if (fs8.existsSync(excelPath)) {
+          attachments3.push({
+            filename: `\uBC1C\uC8FC\uC11C_${orderData.orderNumber || Date.now()}.xlsx`,
+            path: excelPath,
+            contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          });
+          attachmentsList.push("\uBC1C\uC8FC\uC11C.xlsx (Excel \uD30C\uC77C)");
+          console.log("\u2705 Excel \uCCA8\uBD80 \uC131\uACF5 (\uC9C1\uC811 \uACBD\uB85C)");
+        } else {
+          console.log("\u274C Excel \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC74C:", excelPath);
+        }
+      }
+    }
+    const attachmentIdsToProcess = selectedAttachmentIds && selectedAttachmentIds.length > 0 ? selectedAttachmentIds : selectedAttachments;
+    if (attachmentIdsToProcess && Array.isArray(attachmentIdsToProcess) && attachmentIdsToProcess.length > 0) {
+      console.log("\u{1F4CE} \uCC98\uB9AC\uD560 \uC120\uD0DD\uB41C \uCCA8\uBD80\uD30C\uC77C IDs:", attachmentIdsToProcess);
+      console.log("\u{1F4CE} attachPdf:", attachPdf, "attachExcel:", attachExcel);
+      console.log("\u{1F4CE} pdfUrl:", pdfUrl, "excelUrl:", excelUrl);
+      const processedAttachmentIds = /* @__PURE__ */ new Set();
+      if (attachPdf && pdfUrl && pdfUrl.includes("/api/attachments/") && pdfUrl.includes("/download")) {
+        const pdfAttachmentIdMatch = pdfUrl.match(/\/api\/attachments\/(\d+)\/download/);
+        if (pdfAttachmentIdMatch && attachments3.length > 0) {
+          const pdfId = parseInt(pdfAttachmentIdMatch[1]);
+          console.log("\u{1F50D} PDF already processed by old logic, ID:", pdfId);
+          processedAttachmentIds.add(pdfId);
+        }
+      }
+      if (attachExcel && excelUrl && excelUrl.includes("/api/attachments/") && excelUrl.includes("/download")) {
+        const excelAttachmentIdMatch = excelUrl.match(/\/api\/attachments\/(\d+)\/download/);
+        if (excelAttachmentIdMatch) {
+          const excelId = parseInt(excelAttachmentIdMatch[1]);
+          const excelProcessed = attachmentsList.some((item) => item.includes("Excel"));
+          if (excelProcessed) {
+            console.log("\u{1F50D} Excel already processed by old logic, ID:", excelId);
+            processedAttachmentIds.add(excelId);
+          } else {
+            console.log("\u26A0\uFE0F Excel URL exists but not processed by old logic, will process in selectedAttachments");
+          }
+        }
+      }
+      for (const attachmentId of attachmentIdsToProcess) {
+        try {
+          if (processedAttachmentIds.has(attachmentId)) {
+            console.log("\u26A0\uFE0F \uCCA8\uBD80\uD30C\uC77C \uC774\uBBF8 \uCC98\uB9AC\uB428 (\uAE30\uC874 \uB85C\uC9C1):", attachmentId);
+            continue;
+          }
+          const [attachment] = await db.select({
+            id: attachments.id,
+            originalName: attachments.originalName,
+            filePath: attachments.filePath,
+            mimeType: attachments.mimeType,
+            fileData: attachments.fileData
+          }).from(attachments).where(eq11(attachments.id, attachmentId));
+          if (attachment) {
+            if (attachment.fileData) {
+              attachments3.push({
+                filename: attachment.originalName,
+                content: Buffer.from(attachment.fileData, "base64"),
+                contentType: attachment.mimeType || "application/octet-stream"
+              });
+              attachmentsList.push(attachment.originalName);
+              console.log("\u2705 \uC120\uD0DD\uB41C \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00 \uC131\uACF5 (DB Base64):", attachment.originalName);
+            } else if (attachment.filePath && fs8.existsSync(attachment.filePath)) {
+              attachments3.push({
+                filename: attachment.originalName,
+                path: attachment.filePath,
+                contentType: attachment.mimeType || "application/octet-stream"
+              });
+              attachmentsList.push(attachment.originalName);
+              console.log("\u2705 \uC120\uD0DD\uB41C \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00 \uC131\uACF5 (\uD30C\uC77C \uACBD\uB85C):", attachment.originalName);
+            } else {
+              console.log("\u274C \uC120\uD0DD\uB41C \uCCA8\uBD80\uD30C\uC77C \uCC98\uB9AC \uC2E4\uD328 (\uB370\uC774\uD130 \uC5C6\uC74C):", attachment.originalName);
+            }
+          } else {
+            console.log("\u274C \uC120\uD0DD\uB41C \uCCA8\uBD80\uD30C\uC77C \uC815\uBCF4 \uC5C6\uC74C, ID:", attachmentId);
+          }
+        } catch (error) {
+          console.error("\u274C \uC120\uD0DD\uB41C \uCCA8\uBD80\uD30C\uC77C \uCC98\uB9AC \uC624\uB958, ID:", attachmentId, error);
+        }
+      }
+    }
+    console.log(`\u{1F4CE} \uCD1D ${attachments3.length}\uAC1C \uCCA8\uBD80\uD30C\uC77C:`, attachmentsList);
+    let emailHtmlContent;
+    if (orderData.orderId) {
+      const templateData = await generateEmailTemplateData(orderData.orderId);
+      if (templateData) {
+        templateData.attachmentsList = attachmentsList;
+        if (message) {
+          templateData.additionalMessage = message;
+        }
+        emailHtmlContent = generateEmailHTML(templateData);
+        console.log("\u2705 DB \uB370\uC774\uD130 \uAE30\uBC18 \uC774\uBA54\uC77C \uD15C\uD50C\uB9BF \uC0DD\uC131 \uC644\uB8CC");
+      } else {
+        console.log("\u26A0\uFE0F DB \uB370\uC774\uD130\uB97C \uAC00\uC838\uC62C \uC218 \uC5C6\uC5B4 \uAE30\uBCF8 \uD15C\uD50C\uB9BF \uC0AC\uC6A9");
+        emailHtmlContent = `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <meta charset="UTF-8">
+              <style>
+                body { font-family: 'Malgun Gothic', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background-color: #007bff; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center; }
+                .content { background-color: #f8f9fa; padding: 30px; border-radius: 0 0 8px 8px; }
+                .order-info { background: white; padding: 20px; border-radius: 5px; margin: 20px 0; }
+              </style>
+            </head>
+            <body>
+              <div class="header"><h2>\u{1F4CB} \uBC1C\uC8FC\uC11C \uC804\uC1A1</h2></div>
+              <div class="content">
+                <p>\uC548\uB155\uD558\uC138\uC694, \uBC1C\uC8FC\uC11C\uB97C \uC804\uC1A1\uB4DC\uB9BD\uB2C8\uB2E4.</p>
+                <div class="order-info">
+                  <p><strong>\uBC1C\uC8FC\uBC88\uD638:</strong> ${emailOptions.orderNumber || "N/A"}</p>
+                  <p><strong>\uAC70\uB798\uCC98:</strong> ${emailOptions.vendorName || "N/A"}</p>
+                  <p><strong>\uBA54\uC2DC\uC9C0:</strong> ${emailOptions.additionalMessage || "\uC5C6\uC74C"}</p>
+                </div>
+              </div>
+            </body>
+          </html>
+        `;
+      }
+    } else {
+      emailHtmlContent = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="UTF-8">
+            <style>
+              body {
+                font-family: 'Malgun Gothic', Arial, sans-serif;
+                line-height: 1.6;
+                color: #333;
+                max-width: 600px;
+                margin: 0 auto;
+                padding: 20px;
+              }
+              .header {
+                background-color: #007bff;
+                color: white;
+                padding: 20px;
+                border-radius: 8px 8px 0 0;
+                text-align: center;
+              }
+              .content {
+                background-color: #f8f9fa;
+                padding: 30px;
+                border-radius: 0 0 8px 8px;
+              }
+              .order-info {
+                background: white;
+                padding: 20px;
+                border-radius: 5px;
+                margin: 20px 0;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+              }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <h2>\u{1F4CB} \uBC1C\uC8FC\uC11C \uC804\uC1A1</h2>
+            </div>
+            <div class="content">
+              <p>\uC548\uB155\uD558\uC138\uC694,</p>
+              <p>\uBC1C\uC8FC\uC11C\uB97C \uC804\uC1A1\uB4DC\uB9BD\uB2C8\uB2E4.</p>
+              <div class="order-info">
+                <p><strong>\uBC1C\uC8FC\uBC88\uD638:</strong> ${emailOptions.orderNumber || "N/A"}</p>
+                <p><strong>\uAC70\uB798\uCC98:</strong> ${emailOptions.vendorName || "N/A"}</p>
+                <p><strong>\uBA54\uC2DC\uC9C0:</strong> ${emailOptions.additionalMessage || "\uC5C6\uC74C"}</p>
+              </div>
+            </div>
+          </body>
+        </html>
+      `;
+    }
     console.log("\u{1F4E7} sendPOWithOriginalFormat \uD638\uCD9C \uC804 \uC635\uC158:", {
       to: emailOptions.to,
       cc: emailOptions.cc,
@@ -13094,8 +13904,8 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
 });
 router3.post("/orders/send-email-simple", requireAuth, async (req, res) => {
   try {
-    const { to, cc, subject, body, orderData, attachPdf, attachExcel } = req.body;
-    console.log("\u{1F4E7} \uAC04\uD3B8 \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC694\uCCAD:", { to, cc, subject, attachments: { attachPdf, attachExcel } });
+    const { to, cc, subject, body, orderData, attachPdf, attachExcel, selectedAttachmentIds } = req.body;
+    console.log("\u{1F4E7} \uAC04\uD3B8 \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC694\uCCAD:", { to, cc, subject, attachments: { attachPdf, attachExcel, selectedAttachmentIds } });
     if (!to || to.length === 0) {
       return res.status(400).json({ error: "\uC218\uC2E0\uC790\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4." });
     }
@@ -13142,6 +13952,38 @@ router3.post("/orders/send-email-simple", requireAuth, async (req, res) => {
         excelPath = "";
       }
     }
+    let attachments3 = [];
+    if (selectedAttachmentIds && Array.isArray(selectedAttachmentIds) && selectedAttachmentIds.length > 0) {
+      console.log("\u{1F4CE} \uCC98\uB9AC\uD560 \uC120\uD0DD\uB41C \uCCA8\uBD80\uD30C\uC77C IDs:", selectedAttachmentIds);
+      for (const attachmentId of selectedAttachmentIds) {
+        try {
+          const attachmentQuery = await db2.query(sql4`
+            SELECT id, original_name, file_data, mime_type
+            FROM attachments 
+            WHERE id = ${attachmentId}
+          `);
+          if (attachmentQuery.length > 0) {
+            const attachment = attachmentQuery[0];
+            console.log(`\u{1F4CE} \uCC98\uB9AC \uC911\uC778 \uCCA8\uBD80\uD30C\uC77C: ID=${attachmentId}, name=${attachment.original_name}`);
+            if (attachment.file_data) {
+              const fileBuffer = Buffer.from(attachment.file_data, "base64");
+              attachments3.push({
+                filename: attachment.original_name,
+                content: fileBuffer,
+                contentType: attachment.mime_type || "application/octet-stream"
+              });
+              console.log(`\u2705 \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00 \uC644\uB8CC: ${attachment.original_name} (${fileBuffer.length} bytes)`);
+            } else {
+              console.warn(`\u26A0\uFE0F \uCCA8\uBD80\uD30C\uC77C \uB370\uC774\uD130\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4: ID=${attachmentId}`);
+            }
+          } else {
+            console.warn(`\u26A0\uFE0F \uCCA8\uBD80\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4: ID=${attachmentId}`);
+          }
+        } catch (attachError) {
+          console.error(`\u274C \uCCA8\uBD80\uD30C\uC77C \uCC98\uB9AC \uC624\uB958: ID=${attachmentId}`, attachError);
+        }
+      }
+    }
     if (!excelPath) {
       const tempDir = path6.join(__dirname2, "../../uploads/temp");
       if (!fs8.existsSync(tempDir)) {
@@ -13152,6 +13994,7 @@ router3.post("/orders/send-email-simple", requireAuth, async (req, res) => {
 
 ${body}`);
     }
+    console.log(`\u{1F4E7} \uC774\uBA54\uC77C \uBC1C\uC1A1: \uAE30\uBCF8 \uCCA8\uBD80\uD30C\uC77C + \uCD94\uAC00 \uCCA8\uBD80\uD30C\uC77C ${attachments3.length}\uAC1C`);
     const result = await emailService.sendPOWithOriginalFormat(excelPath, {
       to: toEmails,
       cc: ccEmails,
@@ -13163,7 +14006,9 @@ ${body}`);
 \uAC70\uB798\uCC98: ${emailData.vendorName}`,
       orderData: emailData,
       userId: req.user?.id,
-      orderId: orderData?.orderId
+      orderId: orderData?.orderId,
+      additionalAttachments: attachments3
+      // Pass additional attachments
     });
     if (excelPath.includes("temp_")) {
       try {
@@ -13269,10 +14114,10 @@ router3.post("/test-email-smtp", async (req, res) => {
       userName: "System Tester",
       userPhone: "010-0000-0000"
     };
-    const fs23 = __require("fs");
-    const path21 = __require("path");
-    const testExcelPath = path21.join(__dirname2, "../../uploads/smtp-test.txt");
-    fs23.writeFileSync(testExcelPath, "SMTP Test File - " + (/* @__PURE__ */ new Date()).toISOString());
+    const fs25 = __require("fs");
+    const path23 = __require("path");
+    const testExcelPath = path23.join(__dirname2, "../../uploads/smtp-test.txt");
+    fs25.writeFileSync(testExcelPath, "SMTP Test File - " + (/* @__PURE__ */ new Date()).toISOString());
     const result = await emailService.sendPOWithOriginalFormat(testExcelPath, {
       to: [recipientEmail],
       cc: [],
@@ -13283,7 +14128,7 @@ router3.post("/test-email-smtp", async (req, res) => {
       orderId: 9999
     });
     try {
-      fs23.unlinkSync(testExcelPath);
+      fs25.unlinkSync(testExcelPath);
     } catch (e) {
       console.warn("\uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328:", e.message);
     }
@@ -13819,12 +14664,12 @@ var items_default = router5;
 
 // server/routes/dashboard.ts
 import { Router as Router6 } from "express";
-import { sql as sql4 } from "drizzle-orm";
+import { sql as sql5 } from "drizzle-orm";
 var router6 = Router6();
 router6.get("/dashboard/test-db", async (req, res) => {
   try {
     const { db: db3 } = await Promise.resolve().then(() => (init_db(), db_exports));
-    const result = await db3.execute(sql4`SELECT COUNT(*) as count FROM purchase_orders`);
+    const result = await db3.execute(sql5`SELECT COUNT(*) as count FROM purchase_orders`);
     res.json({ success: true, data: result });
   } catch (error) {
     console.error("DB test error:", error);
@@ -13868,7 +14713,7 @@ router6.get("/dashboard/order-status-stats", async (req, res) => {
       throw new Error("Database connection not available");
     }
     const statsResult = await db3.execute(
-      sql4`SELECT 
+      sql5`SELECT 
         po.order_status as status,
         COUNT(*) as count,
         COALESCE(SUM(po.total_amount), 0) as totalAmount
@@ -13878,7 +14723,7 @@ router6.get("/dashboard/order-status-stats", async (req, res) => {
       ORDER BY po.order_status`
     );
     const totalResult = await db3.execute(
-      sql4`SELECT COUNT(*) as total FROM purchase_orders WHERE order_status IS NOT NULL`
+      sql5`SELECT COUNT(*) as total FROM purchase_orders WHERE order_status IS NOT NULL`
     );
     const total = parseInt(totalResult.rows[0]?.total || "0");
     const stats = statsResult.rows.map((row) => ({
@@ -13914,7 +14759,7 @@ var dashboard_default = router6;
 // server/routes/companies.ts
 import { Router as Router7 } from "express";
 init_schema();
-import { sql as sql5 } from "drizzle-orm";
+import { sql as sql6 } from "drizzle-orm";
 var router7 = Router7();
 router7.get("/companies/debug", async (req, res) => {
   console.log("\u{1F50D} Debug endpoint called");
@@ -13923,7 +14768,7 @@ router7.get("/companies/debug", async (req, res) => {
     const { db: db3 } = await Promise.resolve().then(() => (init_db(), db_exports));
     console.log("\u{1F50D} DB module imported successfully");
     console.log("\u{1F50D} Attempting basic query...");
-    const basicTest = await db3.execute(sql5`SELECT 1 as test`);
+    const basicTest = await db3.execute(sql6`SELECT 1 as test`);
     console.log("\u{1F50D} Basic query successful:", basicTest);
     res.json({
       databaseUrlSet: !!process.env.DATABASE_URL,
@@ -14128,7 +14973,7 @@ router8.delete("/templates/:id", requireAuth, async (req, res) => {
 });
 router8.get("/approval-workflow-settings", requireAuth, requireAdmin, async (req, res) => {
   try {
-    const settings = await db2.select().from(approvalWorkflowSettings).where(
+    const settings = await db.select().from(approvalWorkflowSettings).where(
       and8(
         eq12(approvalWorkflowSettings.isActive, true),
         eq12(approvalWorkflowSettings.companyId, 1)
@@ -14168,9 +15013,9 @@ router8.put("/approval-workflow-settings", requireAuth, requireAdmin, async (req
       requireAllStages,
       skipLowerStages
     } = req.body;
-    const existing = await db2.select().from(approvalWorkflowSettings).where(eq12(approvalWorkflowSettings.companyId, 1)).limit(1);
+    const existing = await db.select().from(approvalWorkflowSettings).where(eq12(approvalWorkflowSettings.companyId, 1)).limit(1);
     if (existing.length === 0) {
-      const [newSettings] = await db2.insert(approvalWorkflowSettings).values({
+      const [newSettings] = await db.insert(approvalWorkflowSettings).values({
         companyId: 1,
         approvalMode,
         directApprovalRoles,
@@ -14182,7 +15027,7 @@ router8.put("/approval-workflow-settings", requireAuth, requireAdmin, async (req
       }).returning();
       res.json(newSettings);
     } else {
-      const [updatedSettings] = await db2.update(approvalWorkflowSettings).set({
+      const [updatedSettings] = await db.update(approvalWorkflowSettings).set({
         approvalMode,
         directApprovalRoles,
         stagedApprovalThresholds,
@@ -14214,7 +15059,7 @@ import { eq as eq15, inArray as inArray2 } from "drizzle-orm";
 // server/utils/vendor-validation.ts
 init_db();
 init_schema();
-import { eq as eq14, sql as sql6 } from "drizzle-orm";
+import { eq as eq14, sql as sql7 } from "drizzle-orm";
 function levenshteinDistance(str1, str2) {
   const matrix = [];
   if (str1.length === 0) return str2.length;
@@ -14305,7 +15150,7 @@ async function validateVendorName(vendorName, vendorType = "\uAC70\uB798\uCC98")
     const quickTest = new Promise((_, reject) => {
       setTimeout(() => reject(new Error("Quick DB test timeout")), 1e4);
     });
-    const testQuery = db2.select({ count: sql6`1` }).from(vendors).limit(1);
+    const testQuery = db.select({ count: sql7`1` }).from(vendors).limit(1);
     await Promise.race([testQuery, quickTest]);
     console.log(`\u2705 \uB370\uC774\uD130\uBCA0\uC774\uC2A4 \uC5F0\uACB0 \uD655\uC778\uB428`);
   } catch (quickTestError) {
@@ -14327,7 +15172,7 @@ async function validateVendorName(vendorName, vendorType = "\uAC70\uB798\uCC98")
       const dbTimeout = new Promise((_, reject) => {
         setTimeout(() => reject(new Error("Database connection timeout")), 5e3);
       });
-      const exactMatchQuery = db2.select({
+      const exactMatchQuery = db.select({
         id: vendors.id,
         name: vendors.name,
         email: vendors.email,
@@ -14335,15 +15180,15 @@ async function validateVendorName(vendorName, vendorType = "\uAC70\uB798\uCC98")
         contactPerson: vendors.contactPerson,
         aliases: vendors.aliases
       }).from(vendors).where(eq14(vendors.name, vendorName)).limit(1);
-      const aliasMatchQuery = db2.select({
+      const aliasMatchQuery = db.select({
         id: vendors.id,
         name: vendors.name,
         email: vendors.email,
         phone: vendors.phone,
         contactPerson: vendors.contactPerson,
         aliases: vendors.aliases
-      }).from(vendors).where(sql6`${vendors.aliases}::jsonb @> ${JSON.stringify([vendorName])}::jsonb`).limit(1);
-      const allVendorsQuery = db2.select({
+      }).from(vendors).where(sql7`${vendors.aliases}::jsonb @> ${JSON.stringify([vendorName])}::jsonb`).limit(1);
+      const allVendorsQuery = db.select({
         id: vendors.id,
         name: vendors.name,
         email: vendors.email,
@@ -14441,13 +15286,13 @@ async function checkEmailConflict(vendorName, excelEmail) {
       const dbTimeout = new Promise((_, reject) => {
         setTimeout(() => reject(new Error("Database connection timeout")), 3e3);
       });
-      const dbVendorQuery = db2.select({
+      const dbVendorQuery = db.select({
         id: vendors.id,
         name: vendors.name,
         email: vendors.email,
         aliases: vendors.aliases
       }).from(vendors).where(
-        sql6`${vendors.name} = ${vendorName} OR ${vendors.aliases}::jsonb @> ${JSON.stringify([vendorName])}::jsonb`
+        sql7`${vendors.name} = ${vendorName} OR ${vendors.aliases}::jsonb @> ${JSON.stringify([vendorName])}::jsonb`
       ).limit(1);
       dbVendor = await Promise.race([dbVendorQuery, dbTimeout]);
     } catch (dbError) {
@@ -14596,7 +15441,7 @@ var ExcelAttachmentService = class {
       console.log(`\u{1F4DD} \uD45C\uC900\uD654\uB41C Excel \uD30C\uC77C\uBA85: ${standardizedFileName}`);
       const fileBuffer = fs9.readFileSync(processedExcelPath);
       const base64Data = fileBuffer.toString("base64");
-      const [attachment] = await db2.insert(attachments).values({
+      const [attachment] = await db.insert(attachments).values({
         orderId,
         originalName: standardizedFileName,
         // 표준화된 파일명 사용
@@ -14639,7 +15484,7 @@ var ExcelAttachmentService = class {
       const fileName = `original_${path7.basename(originalExcelPath)}`;
       const fileBuffer = fs9.readFileSync(originalExcelPath);
       const base64Data = fileBuffer.toString("base64");
-      const [attachment] = await db2.insert(attachments).values({
+      const [attachment] = await db.insert(attachments).values({
         orderId,
         originalName: `[\uC6D0\uBCF8] ${originalFileName}`,
         storedName: fileName,
@@ -14788,7 +15633,7 @@ var ExcelAutomationService = class {
     try {
       console.log(`\u{1F50D} [DEBUG] 0\uB2E8\uACC4: DB \uC5F0\uACB0 \uD14C\uC2A4\uD2B8 \uC2DC\uC791`);
       try {
-        await db2.select().from(purchaseOrders).limit(1);
+        await db.select().from(purchaseOrders).limit(1);
         console.log(`\u2705 [DEBUG] DB \uC5F0\uACB0 \uC131\uACF5`);
       } catch (dbError) {
         console.error(`\u274C [DEBUG] DB \uC5F0\uACB0 \uC2E4\uD328:`, dbError);
@@ -14843,7 +15688,7 @@ var ExcelAutomationService = class {
       if (saveResult.savedOrderNumbers && saveResult.savedOrderNumbers.length > 0) {
         console.log(`\u{1F4CB} [DEBUG] \uBC1C\uC8FC\uC11C \uBC88\uD638\uB4E4:`, saveResult.savedOrderNumbers);
         try {
-          const orders = await db2.select({ id: purchaseOrders.id, orderNumber: purchaseOrders.orderNumber }).from(purchaseOrders).where(inArray2(purchaseOrders.orderNumber, saveResult.savedOrderNumbers));
+          const orders = await db.select({ id: purchaseOrders.id, orderNumber: purchaseOrders.orderNumber }).from(purchaseOrders).where(inArray2(purchaseOrders.orderNumber, saveResult.savedOrderNumbers));
           console.log(`\u{1F50D} [DEBUG] \uC870\uD68C\uB41C \uBC1C\uC8FC\uC11C\uB4E4:`, orders);
           const processedExcelPath = filePath.replace(/\.(xlsx?)$/i, "_processed.$1");
           const removeResult = await removeAllInputSheets(filePath, processedExcelPath);
@@ -14929,7 +15774,7 @@ var ExcelAutomationService = class {
               })();
               pdfGenerationPromises.push(pdfPromise);
               try {
-                await db2.update(purchaseOrders).set({
+                await db.update(purchaseOrders).set({
                   orderStatus: "\uBC1C\uC8FC\uC0DD\uC131",
                   status: "created"
                 }).where(eq15(purchaseOrders.id, order.id));
@@ -14993,7 +15838,7 @@ var ExcelAutomationService = class {
       const orderIds = [];
       if (saveResult.savedOrderNumbers && saveResult.savedOrderNumbers.length > 0) {
         try {
-          const orders = await db2.select({ id: purchaseOrders.id, orderNumber: purchaseOrders.orderNumber }).from(purchaseOrders).where(eq15(purchaseOrders.orderNumber, saveResult.savedOrderNumbers[0]));
+          const orders = await db.select({ id: purchaseOrders.id, orderNumber: purchaseOrders.orderNumber }).from(purchaseOrders).where(eq15(purchaseOrders.orderNumber, saveResult.savedOrderNumbers[0]));
           if (orders.length > 0) {
             orderIds.push(orders[0].id);
           }
@@ -15221,16 +16066,7 @@ var ExcelAutomationService = class {
       for (const email of recipients) {
         try {
           console.log(`\u{1F4E7} \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC911: ${email}`);
-          const sendResult = emailOptions.orderId ? await emailService4.sendPOWithOrderItemsFromDB(
-            processedFilePath,
-            emailOptions.orderId,
-            {
-              to: email,
-              subject: emailOptions.subject || `\uBC1C\uC8FC\uC11C - ${(/* @__PURE__ */ new Date()).toLocaleDateString("ko-KR")}`,
-              orderNumber: emailOptions.orderNumber,
-              additionalMessage: emailOptions.additionalMessage
-            }
-          ) : await emailService4.sendPOWithOriginalFormat(
+          const sendResult = await emailService4.sendPOWithOriginalFormat(
             processedFilePath,
             {
               to: email,
@@ -15754,8 +16590,8 @@ router9.post("/debug-upload", requireAuth, upload2.single("file"), async (req, r
     step = 3;
     console.log(`\u{1F41B} [DEBUG] Step ${step}: File path check`);
     const filePath = req.file.path;
-    const fs23 = await import("fs");
-    if (!fs23.existsSync(filePath)) {
+    const fs25 = await import("fs");
+    if (!fs25.existsSync(filePath)) {
       return res.status(400).json({
         success: false,
         error: "\uC5C5\uB85C\uB4DC\uB41C \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.",
@@ -17089,14 +17925,14 @@ var simpleAuth = (req, res, next) => {
 };
 router10.get("/db-status", simpleAuth, async (req, res) => {
   try {
-    if (!db2) {
+    if (!db) {
       return res.json({
         success: false,
         message: "DB \uC5F0\uACB0 \uC5C6\uC74C - Mock DB \uC0AC\uC6A9",
         usingMockDB: true
       });
     }
-    const testResult = await db2.select().from(vendors).limit(1);
+    const testResult = await db.select().from(vendors).limit(1);
     res.json({
       success: true,
       message: "\uC2E4\uC81C DB \uC5F0\uACB0 \uC131\uACF5",
@@ -17264,16 +18100,16 @@ router10.post("/save", simpleAuth, async (req, res) => {
     if (!orders || !Array.isArray(orders)) {
       return res.status(400).json({ error: "\uBC1C\uC8FC\uC11C \uB370\uC774\uD130\uAC00 \uB204\uB77D\uB418\uC5C8\uC2B5\uB2C8\uB2E4." });
     }
-    if (db2) {
+    if (db) {
       try {
         let savedOrders = 0;
         const savedOrderNumbers = [];
         const pdfGenerationStatuses = [];
         for (const orderData of orders) {
-          let vendor = await db2.select().from(vendors).where(eq16(vendors.name, orderData.vendorName)).limit(1);
+          let vendor = await db.select().from(vendors).where(eq16(vendors.name, orderData.vendorName)).limit(1);
           let vendorId;
           if (vendor.length === 0) {
-            const newVendor = await db2.insert(vendors).values({
+            const newVendor = await db.insert(vendors).values({
               name: orderData.vendorName,
               contactPerson: "\uC790\uB3D9\uC0DD\uC131",
               email: `auto-${Date.now()}@example.com`,
@@ -17283,10 +18119,10 @@ router10.post("/save", simpleAuth, async (req, res) => {
           } else {
             vendorId = vendor[0].id;
           }
-          let project = await db2.select().from(projects).where(eq16(projects.projectName, orderData.siteName)).limit(1);
+          let project = await db.select().from(projects).where(eq16(projects.projectName, orderData.siteName)).limit(1);
           let projectId;
           if (project.length === 0) {
-            const newProject = await db2.insert(projects).values({
+            const newProject = await db.insert(projects).values({
               projectName: orderData.siteName,
               projectCode: `AUTO-${Date.now().toString().slice(-8)}`,
               status: "active"
@@ -17299,7 +18135,7 @@ router10.post("/save", simpleAuth, async (req, res) => {
           let suffix = 1;
           while (true) {
             try {
-              const existing = await db2.select().from(purchaseOrders).where(eq16(purchaseOrders.orderNumber, orderNumber));
+              const existing = await db.select().from(purchaseOrders).where(eq16(purchaseOrders.orderNumber, orderNumber));
               if (existing.length === 0) {
                 break;
               }
@@ -17334,7 +18170,7 @@ router10.post("/save", simpleAuth, async (req, res) => {
             orderDateISO: parsedOrderDate ? parsedOrderDate.toISOString() : null,
             deliveryDateISO: parsedDeliveryDate ? parsedDeliveryDate.toISOString() : null
           });
-          const newOrder = await db2.insert(purchaseOrders).values({
+          const newOrder = await db.insert(purchaseOrders).values({
             orderNumber,
             projectId,
             vendorId,
@@ -17353,7 +18189,7 @@ router10.post("/save", simpleAuth, async (req, res) => {
           });
           const orderId = newOrder[0].id;
           for (const item of orderData.items) {
-            await db2.insert(purchaseOrderItems).values({
+            await db.insert(purchaseOrderItems).values({
               orderId,
               itemName: item.itemName,
               specification: item.specification,
@@ -17390,7 +18226,7 @@ router10.post("/save", simpleAuth, async (req, res) => {
               console.log("\u2705 [PDF\uC0DD\uC131] PDF \uBC84\uD37C \uC0DD\uC131 \uC644\uB8CC, \uD06C\uAE30:", pdfBuffer.length, "bytes", "Base64 \uAE38\uC774:", pdfBase64.length, "chars");
             } else {
               console.log("\u26A0\uFE0F \uD3EC\uAD04\uC801 \uB370\uC774\uD130 \uC218\uC9D1 \uC2E4\uD328, fallback \uBAA8\uB4DC \uC0AC\uC6A9");
-              const companyList = await db2.select().from(companies).limit(1);
+              const companyList = await db.select().from(companies).limit(1);
               const company = companyList[0];
               const pdfOrderData = {
                 orderNumber,
@@ -17512,7 +18348,7 @@ router10.post("/save", simpleAuth, async (req, res) => {
             const cleanOrderNumber = orderNumber.startsWith("PO-") ? orderNumber.substring(3) : orderNumber;
             const pdfOriginalName = `PO_Professional_${cleanOrderNumber}_${Date.now()}.pdf`;
             const pdfStoredName = `PO_Professional_${cleanOrderNumber}_${Date.now()}.pdf`;
-            const pdfAttachment = await db2.insert(attachments).values({
+            const pdfAttachment = await db.insert(attachments).values({
               orderId: newOrder[0].id,
               originalName: pdfOriginalName,
               // 한글 포함 파일명
@@ -17552,7 +18388,7 @@ router10.post("/save", simpleAuth, async (req, res) => {
               const excelBase64 = excelBuffer.toString("base64");
               const excelOriginalName = `${orderNumber}_\uAC11\uC9C0\uC744\uC9C0.xlsx`;
               const excelStoredName = `${orderNumber}_${Date.now()}_extracted.xlsx`;
-              await db2.insert(attachments).values({
+              await db.insert(attachments).values({
                 orderId: newOrder[0].id,
                 originalName: excelOriginalName,
                 // 한글 포함 파일명
@@ -17678,12 +18514,12 @@ router10.post("/extract-sheets", simpleAuth, async (req, res) => {
 });
 router10.get("/db-stats", simpleAuth, async (req, res) => {
   try {
-    if (db2) {
+    if (db) {
       try {
-        const vendorCount = await db2.select().from(vendors);
-        const projectCount = await db2.select().from(projects);
-        const orderCount = await db2.select().from(purchaseOrders);
-        const itemCount = await db2.select().from(purchaseOrderItems);
+        const vendorCount = await db.select().from(vendors);
+        const projectCount = await db.select().from(projects);
+        const orderCount = await db.select().from(purchaseOrders);
+        const itemCount = await db.select().from(purchaseOrderItems);
         res.json({
           success: true,
           data: {
@@ -18002,14 +18838,14 @@ router10.post("/reset-db", simpleAuth, (req, res) => {
   }
 });
 router10.saveToDatabase = async function(orders, userId) {
-  if (db2) {
+  if (db) {
     try {
       let savedOrders = 0;
       for (const orderData of orders) {
-        let vendor = await db2.select().from(vendors).where(eq16(vendors.name, orderData.vendorName)).limit(1);
+        let vendor = await db.select().from(vendors).where(eq16(vendors.name, orderData.vendorName)).limit(1);
         let vendorId;
         if (vendor.length === 0) {
-          const newVendor = await db2.insert(vendors).values({
+          const newVendor = await db.insert(vendors).values({
             name: orderData.vendorName,
             contactPerson: "\uC790\uB3D9\uC0DD\uC131",
             email: `auto-${Date.now()}@example.com`,
@@ -18019,10 +18855,10 @@ router10.saveToDatabase = async function(orders, userId) {
         } else {
           vendorId = vendor[0].id;
         }
-        let project = await db2.select().from(projects).where(eq16(projects.projectName, orderData.siteName)).limit(1);
+        let project = await db.select().from(projects).where(eq16(projects.projectName, orderData.siteName)).limit(1);
         let projectId;
         if (project.length === 0) {
-          const newProject = await db2.insert(projects).values({
+          const newProject = await db.insert(projects).values({
             projectName: orderData.siteName,
             projectCode: `AUTO-${Date.now().toString().slice(-8)}`,
             status: "active"
@@ -18031,7 +18867,7 @@ router10.saveToDatabase = async function(orders, userId) {
         } else {
           projectId = project[0].id;
         }
-        const newOrder = await db2.insert(purchaseOrders).values({
+        const newOrder = await db.insert(purchaseOrders).values({
           orderNumber: orderData.orderNumber,
           projectId,
           vendorId,
@@ -18044,7 +18880,7 @@ router10.saveToDatabase = async function(orders, userId) {
         }).returning();
         const orderId = newOrder[0].id;
         for (const item of orderData.items) {
-          await db2.insert(purchaseOrderItems).values({
+          await db.insert(purchaseOrderItems).values({
             orderId,
             itemName: item.itemName,
             specification: item.specification,
@@ -18092,7 +18928,7 @@ var po_template_real_default = router10;
 import { Router as Router11 } from "express";
 init_db();
 init_schema();
-import { eq as eq17, sql as sql8, and as and9, gte as gte4, lte as lte4, inArray as inArray3 } from "drizzle-orm";
+import { eq as eq17, sql as sql9, and as and9, gte as gte4, lte as lte4, inArray as inArray3 } from "drizzle-orm";
 import * as XLSX7 from "xlsx";
 var formatKoreanWon = (amount) => {
   return `\u20A9${amount.toLocaleString("ko-KR")}`;
@@ -18101,24 +18937,24 @@ var router11 = Router11();
 router11.get("/debug-data", async (req, res) => {
   try {
     console.log("Debug data endpoint called");
-    const orderCount = await db2.select({
-      count: sql8`count(*)`
+    const orderCount = await db.select({
+      count: sql9`count(*)`
     }).from(purchaseOrders);
-    const itemCount = await db2.select({
-      count: sql8`count(*)`
+    const itemCount = await db.select({
+      count: sql9`count(*)`
     }).from(purchaseOrderItems);
-    const itemsWithCategories = await db2.select({
-      count: sql8`count(*)`,
-      withMajor: sql8`count(${items.majorCategory})`,
-      withMiddle: sql8`count(${items.middleCategory})`,
-      withMinor: sql8`count(${items.minorCategory})`
+    const itemsWithCategories = await db.select({
+      count: sql9`count(*)`,
+      withMajor: sql9`count(${items.majorCategory})`,
+      withMiddle: sql9`count(${items.middleCategory})`,
+      withMinor: sql9`count(${items.minorCategory})`
     }).from(items);
-    const vendorCount = await db2.select({
-      count: sql8`count(*)`
+    const vendorCount = await db.select({
+      count: sql9`count(*)`
     }).from(vendors);
-    const sampleOrders = await db2.select().from(purchaseOrders).limit(3);
-    const sampleItems = await db2.select().from(purchaseOrderItems).limit(3);
-    const sampleItemsData = await db2.select().from(items).limit(3);
+    const sampleOrders = await db.select().from(purchaseOrders).limit(3);
+    const sampleItems = await db.select().from(purchaseOrderItems).limit(3);
+    const sampleItemsData = await db.select().from(items).limit(3);
     res.json({
       counts: {
         orders: orderCount[0],
@@ -18140,14 +18976,14 @@ router11.get("/debug-data", async (req, res) => {
 router11.get("/debug-processing", async (req, res) => {
   try {
     console.log("Debug processing endpoint called");
-    const allOrders = await db2.select({
+    const allOrders = await db.select({
       id: purchaseOrders.id,
       orderNumber: purchaseOrders.orderNumber,
       orderDate: purchaseOrders.orderDate,
       status: purchaseOrders.status,
       totalAmount: purchaseOrders.totalAmount
     }).from(purchaseOrders).limit(10);
-    const ordersWithJoins = await db2.select({
+    const ordersWithJoins = await db.select({
       id: purchaseOrders.id,
       orderNumber: purchaseOrders.orderNumber,
       orderDate: purchaseOrders.orderDate,
@@ -18194,7 +19030,7 @@ router11.get("/by-category", async (req, res) => {
       middleCategory,
       minorCategory
     });
-    let query = db2.select({
+    let query = db.select({
       orderId: purchaseOrderItems.orderId,
       itemName: purchaseOrderItems.itemName,
       majorCategory: purchaseOrderItems.majorCategory,
@@ -18315,7 +19151,7 @@ router11.get("/by-project", requireAuth, async (req, res) => {
     if (projectId) {
       filters.push(eq17(purchaseOrders.projectId, parseInt(projectId)));
     }
-    const ordersWithProjects = await db2.select({
+    const ordersWithProjects = await db.select({
       projectId: projects.id,
       projectName: projects.projectName,
       projectCode: projects.projectCode,
@@ -18395,7 +19231,7 @@ router11.get("/by-vendor", async (req, res) => {
     console.log("Vendor report starting...");
     console.log("Vendor report filters:", { startDate, endDate, vendorId, filters });
     console.log("Starting vendor report generation...");
-    let vendorQuery = db2.select({
+    let vendorQuery = db.select({
       vendorId: vendors.id,
       vendorName: vendors.name,
       vendorCode: vendors.vendorCode,
@@ -18416,7 +19252,7 @@ router11.get("/by-vendor", async (req, res) => {
     const ordersWithVendors = await vendorQuery;
     console.log("Orders with vendors found:", ordersWithVendors.length);
     const orderIds = ordersWithVendors.map((o) => o.orderId);
-    const orderItemsData = await db2.select({
+    const orderItemsData = await db.select({
       orderId: purchaseOrderItems.orderId,
       itemName: purchaseOrderItems.itemName,
       majorCategory: purchaseOrderItems.majorCategory,
@@ -18685,7 +19521,7 @@ router11.get("/export-excel", requireAuth, async (req, res) => {
 router11.get("/processing-test", async (req, res) => {
   try {
     console.log("Processing test endpoint called");
-    const orders = await db2.select({
+    const orders = await db.select({
       id: purchaseOrders.id,
       orderNumber: purchaseOrders.orderNumber,
       orderDate: purchaseOrders.orderDate,
@@ -18759,12 +19595,12 @@ router11.get("/processing", requireAuth, async (req, res) => {
       filters.push(eq17(purchaseOrders.vendorId, parseInt(vendorId)));
     }
     console.log(`Processing report filters count: ${filters.length}`);
-    let ordersQuery = db2.select().from(purchaseOrders).leftJoin(projects, eq17(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq17(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq17(purchaseOrders.userId, users.id));
+    let ordersQuery = db.select().from(purchaseOrders).leftJoin(projects, eq17(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq17(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq17(purchaseOrders.userId, users.id));
     if (filters.length > 0) {
       ordersQuery = ordersQuery.where(and9(...filters));
     }
     if (search && search !== "") {
-      const searchFilter = sql8`(
+      const searchFilter = sql9`(
         ${purchaseOrders.orderNumber} ILIKE ${`%${search}%`} OR
         ${vendors.name} ILIKE ${`%${search}%`} OR
         ${projects.projectName} ILIKE ${`%${search}%`} OR
@@ -18818,7 +19654,7 @@ router11.get("/processing", requireAuth, async (req, res) => {
     console.log(`Processing report found ${flatOrders.length} orders after flattening`);
     if (flatOrders.length > 0) {
       const orderIds = flatOrders.map((o) => o.id);
-      const orderItems = await db2.select({
+      const orderItems = await db.select({
         orderId: purchaseOrderItems.orderId,
         id: purchaseOrderItems.id,
         itemName: purchaseOrderItems.itemName,
@@ -18836,12 +19672,12 @@ router11.get("/processing", requireAuth, async (req, res) => {
         ...order,
         items: orderItems.filter((item) => item.orderId === order.id)
       }));
-      let countQuery = db2.select({ count: sql8`count(*)` }).from(purchaseOrders).leftJoin(projects, eq17(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq17(purchaseOrders.vendorId, vendors.id));
+      let countQuery = db.select({ count: sql9`count(*)` }).from(purchaseOrders).leftJoin(projects, eq17(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq17(purchaseOrders.vendorId, vendors.id));
       if (filters.length > 0) {
         countQuery = countQuery.where(and9(...filters));
       }
       if (search && search !== "") {
-        const searchFilter = sql8`(
+        const searchFilter = sql9`(
           ${purchaseOrders.orderNumber} ILIKE ${`%${search}%`} OR
           ${vendors.name} ILIKE ${`%${search}%`} OR
           ${projects.projectName} ILIKE ${`%${search}%`} OR
@@ -18892,33 +19728,33 @@ router11.get("/summary", requireAuth, async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
     const dateFilters = parseDateFilters(startDate, endDate);
-    const ordersSummary = await db2.select({
-      totalOrders: sql8`count(*)`,
-      totalAmount: sql8`sum(${purchaseOrders.totalAmount})`,
-      avgAmount: sql8`avg(${purchaseOrders.totalAmount})`
+    const ordersSummary = await db.select({
+      totalOrders: sql9`count(*)`,
+      totalAmount: sql9`sum(${purchaseOrders.totalAmount})`,
+      avgAmount: sql9`avg(${purchaseOrders.totalAmount})`
     }).from(purchaseOrders).where(dateFilters.length > 0 ? and9(...dateFilters) : void 0);
-    const statusBreakdown = await db2.select({
+    const statusBreakdown = await db.select({
       status: purchaseOrders.status,
-      count: sql8`count(*)`,
-      totalAmount: sql8`sum(${purchaseOrders.totalAmount})`
+      count: sql9`count(*)`,
+      totalAmount: sql9`sum(${purchaseOrders.totalAmount})`
     }).from(purchaseOrders).where(and9(...dateFilters)).groupBy(purchaseOrders.status);
-    const topVendors = await db2.select({
+    const topVendors = await db.select({
       vendorId: vendors.id,
       vendorName: vendors.name,
-      orderCount: sql8`count(${purchaseOrders.id})`,
-      totalAmount: sql8`sum(${purchaseOrders.totalAmount})`
-    }).from(purchaseOrders).innerJoin(vendors, eq17(purchaseOrders.vendorId, vendors.id)).where(and9(...dateFilters)).groupBy(vendors.id, vendors.name).orderBy(sql8`sum(${purchaseOrders.totalAmount}) desc`).limit(10);
-    const topProjects = await db2.select({
+      orderCount: sql9`count(${purchaseOrders.id})`,
+      totalAmount: sql9`sum(${purchaseOrders.totalAmount})`
+    }).from(purchaseOrders).innerJoin(vendors, eq17(purchaseOrders.vendorId, vendors.id)).where(and9(...dateFilters)).groupBy(vendors.id, vendors.name).orderBy(sql9`sum(${purchaseOrders.totalAmount}) desc`).limit(10);
+    const topProjects = await db.select({
       projectId: projects.id,
       projectName: projects.projectName,
-      orderCount: sql8`count(${purchaseOrders.id})`,
-      totalAmount: sql8`sum(${purchaseOrders.totalAmount})`
-    }).from(purchaseOrders).innerJoin(projects, eq17(purchaseOrders.projectId, projects.id)).where(and9(...dateFilters)).groupBy(projects.id, projects.projectName).orderBy(sql8`sum(${purchaseOrders.totalAmount}) desc`).limit(10);
-    const monthlyTrend = await db2.select({
-      month: sql8`to_char(${purchaseOrders.orderDate}, 'YYYY-MM')`,
-      orderCount: sql8`count(*)`,
-      totalAmount: sql8`sum(${purchaseOrders.totalAmount})`
-    }).from(purchaseOrders).where(and9(...dateFilters)).groupBy(sql8`to_char(${purchaseOrders.orderDate}, 'YYYY-MM')`).orderBy(sql8`to_char(${purchaseOrders.orderDate}, 'YYYY-MM')`);
+      orderCount: sql9`count(${purchaseOrders.id})`,
+      totalAmount: sql9`sum(${purchaseOrders.totalAmount})`
+    }).from(purchaseOrders).innerJoin(projects, eq17(purchaseOrders.projectId, projects.id)).where(and9(...dateFilters)).groupBy(projects.id, projects.projectName).orderBy(sql9`sum(${purchaseOrders.totalAmount}) desc`).limit(10);
+    const monthlyTrend = await db.select({
+      month: sql9`to_char(${purchaseOrders.orderDate}, 'YYYY-MM')`,
+      orderCount: sql9`count(*)`,
+      totalAmount: sql9`sum(${purchaseOrders.totalAmount})`
+    }).from(purchaseOrders).where(and9(...dateFilters)).groupBy(sql9`to_char(${purchaseOrders.orderDate}, 'YYYY-MM')`).orderBy(sql9`to_char(${purchaseOrders.orderDate}, 'YYYY-MM')`);
     res.json({
       period: {
         startDate: startDate || "all",
@@ -19003,7 +19839,7 @@ var ImportExportService = class {
             errors.push({ row: imported + errors.length + 1, error: "Missing required fields", data: row });
             continue;
           }
-          await db2.insert(vendors).values({
+          await db.insert(vendors).values({
             ...vendorData,
             aliases: vendorData.aliases ? JSON.parse(vendorData.aliases) : []
           });
@@ -19039,7 +19875,7 @@ var ImportExportService = class {
             errors.push({ row: imported + errors.length + 1, error: "Missing required fields", data: row });
             continue;
           }
-          await db2.insert(items).values(itemData);
+          await db.insert(items).values(itemData);
           imported++;
         } catch (error) {
           errors.push({ row: imported + errors.length + 1, error: error.message, data: row });
@@ -19087,7 +19923,7 @@ var ImportExportService = class {
             errors.push({ row: imported + errors.length + 1, error: "Missing required fields", data: row });
             continue;
           }
-          await db2.insert(projects).values(projectData);
+          await db.insert(projects).values(projectData);
           imported++;
         } catch (error) {
           errors.push({ row: imported + errors.length + 1, error: error.message, data: row });
@@ -19177,9 +20013,9 @@ var ImportExportService = class {
             continue;
           }
           orderData.totalAmount = totalAmount;
-          const [insertedOrder] = await db2.insert(purchaseOrders).values(orderData).returning({ id: purchaseOrders.id });
+          const [insertedOrder] = await db.insert(purchaseOrders).values(orderData).returning({ id: purchaseOrders.id });
           for (const itemData of orderItems) {
-            await db2.insert(purchaseOrderItems).values({
+            await db.insert(purchaseOrderItems).values({
               orderId: insertedOrder.id,
               ...itemData
             });
@@ -19217,7 +20053,7 @@ var ImportExportService = class {
   }
   // Export Methods
   static async exportVendors(format2) {
-    const vendorData = await db2.select().from(vendors).where(eq18(vendors.isActive, true));
+    const vendorData = await db.select().from(vendors).where(eq18(vendors.isActive, true));
     const exportData = vendorData.map((vendor) => ({
       "\uAC70\uB798\uCC98\uBA85": vendor.name,
       "\uAC70\uB798\uCC98\uCF54\uB4DC": vendor.vendorCode || "",
@@ -19244,7 +20080,7 @@ var ImportExportService = class {
     }
   }
   static async exportItems(format2) {
-    const itemData = await db2.select().from(items).where(eq18(items.isActive, true));
+    const itemData = await db.select().from(items).where(eq18(items.isActive, true));
     const exportData = itemData.map((item) => ({
       "\uD488\uBAA9\uBA85": item.name,
       "\uADDC\uACA9": item.specification || "",
@@ -19270,7 +20106,7 @@ var ImportExportService = class {
     }
   }
   static async exportProjects(format2) {
-    const projectData = await db2.select().from(projects).where(eq18(projects.isActive, true));
+    const projectData = await db.select().from(projects).where(eq18(projects.isActive, true));
     const typeMap = {
       "commercial": "\uC0C1\uC5C5\uC2DC\uC124",
       "residential": "\uC8FC\uAC70\uC2DC\uC124",
@@ -19311,7 +20147,7 @@ var ImportExportService = class {
     }
   }
   static async exportPurchaseOrders(format2) {
-    const orderData = await db2.select({
+    const orderData = await db.select({
       orderId: purchaseOrders.id,
       orderNumber: purchaseOrders.orderNumber,
       projectId: purchaseOrders.projectId,
@@ -19638,7 +20474,7 @@ var import_export_default = router12;
 init_db();
 init_schema();
 import { Router as Router13 } from "express";
-import { eq as eq19, desc as desc7, and as and10, sql as sql9 } from "drizzle-orm";
+import { eq as eq19, desc as desc7, and as and10, sql as sql10 } from "drizzle-orm";
 import { z as z4 } from "zod";
 var router13 = Router13();
 var createEmailHistorySchema = z4.object({
@@ -19672,13 +20508,13 @@ router13.get("/orders/:orderId/email-history", requireAuth, async (req, res) => 
     if (isNaN(orderId)) {
       return res.status(400).json({ error: "Invalid order ID" });
     }
-    const order = await db2.query.purchaseOrders.findFirst({
+    const order = await db.query.purchaseOrders.findFirst({
       where: eq19(purchaseOrders.id, orderId)
     });
     if (!order) {
       return res.status(404).json({ error: "Order not found" });
     }
-    const emailHistory = await db2.select({
+    const emailHistory = await db.select({
       id: emailSendHistory.id,
       orderId: emailSendHistory.orderId,
       sentAt: emailSendHistory.sentAt,
@@ -19707,16 +20543,16 @@ router13.get("/orders/:orderId/email-history", requireAuth, async (req, res) => 
 router13.post("/email-history", requireAuth, async (req, res) => {
   try {
     const validatedData = createEmailHistorySchema.parse(req.body);
-    const [newEmailHistory] = await db2.insert(emailSendHistory).values({
+    const [newEmailHistory] = await db.insert(emailSendHistory).values({
       ...validatedData,
       senderUserId: req.user.id,
       attachmentFiles: validatedData.attachmentFiles || null
     }).returning();
-    const order = await db2.query.purchaseOrders.findFirst({
+    const order = await db.query.purchaseOrders.findFirst({
       where: eq19(purchaseOrders.id, validatedData.orderId)
     });
     if (order && order.status === "approved") {
-      await db2.update(purchaseOrders).set({
+      await db.update(purchaseOrders).set({
         status: "sent",
         updatedAt: /* @__PURE__ */ new Date()
       }).where(eq19(purchaseOrders.id, validatedData.orderId));
@@ -19733,7 +20569,7 @@ router13.post("/email-history", requireAuth, async (req, res) => {
 router13.get("/orders-email-status", requireAuth, async (req, res) => {
   try {
     try {
-      const orders = await db2.select({
+      const orders = await db.select({
         id: purchaseOrders.id,
         orderNumber: purchaseOrders.orderNumber,
         emailStatus: emailSendHistory.status,
@@ -19744,12 +20580,12 @@ router13.get("/orders-email-status", requireAuth, async (req, res) => {
       res.json(orders);
     } catch (dbError) {
       console.error("Database query error:", dbError);
-      const orders = await db2.select({
+      const orders = await db.select({
         id: purchaseOrders.id,
         orderNumber: purchaseOrders.orderNumber,
-        emailStatus: sql9`null`.as("email_status"),
-        lastSentAt: sql9`null`.as("last_sent_at"),
-        recipients: sql9`null`.as("recipients")
+        emailStatus: sql10`null`.as("email_status"),
+        lastSentAt: sql10`null`.as("last_sent_at"),
+        recipients: sql10`null`.as("recipients")
       }).from(purchaseOrders).orderBy(desc7(purchaseOrders.id));
       res.json(orders);
     }
@@ -19768,7 +20604,7 @@ router13.put("/email-history/:id/status", requireAuth, async (req, res) => {
     if (!["pending", "sent", "failed"].includes(status)) {
       return res.status(400).json({ error: "Invalid status" });
     }
-    const [updated] = await db2.update(emailSendHistory).set({ status, updatedAt: /* @__PURE__ */ new Date() }).where(eq19(emailSendHistory.id, emailId)).returning();
+    const [updated] = await db.update(emailSendHistory).set({ status, updatedAt: /* @__PURE__ */ new Date() }).where(eq19(emailSendHistory.id, emailId)).returning();
     if (!updated) {
       return res.status(404).json({ error: "Email not found" });
     }
@@ -19784,7 +20620,7 @@ router13.get("/email-history/:id", requireAuth, async (req, res) => {
     if (isNaN(emailId)) {
       return res.status(400).json({ error: "Invalid email ID" });
     }
-    const email = await db2.select({
+    const email = await db.select({
       id: emailSendHistory.id,
       orderId: emailSendHistory.orderId,
       orderNumber: purchaseOrders.orderNumber,
@@ -19832,26 +20668,26 @@ router13.get("/email-history", requireAuth, async (req, res) => {
     const offset = (pageNum - 1) * limitNum;
     const conditions = [];
     if (startDate) {
-      conditions.push(sql9`${emailSendHistory.sentAt} >= ${new Date(startDate)}`);
+      conditions.push(sql10`${emailSendHistory.sentAt} >= ${new Date(startDate)}`);
     }
     if (endDate) {
-      conditions.push(sql9`${emailSendHistory.sentAt} <= ${new Date(endDate)}`);
+      conditions.push(sql10`${emailSendHistory.sentAt} <= ${new Date(endDate)}`);
     }
     if (status) {
       conditions.push(eq19(emailSendHistory.status, status));
     }
     if (orderNumber) {
-      conditions.push(sql9`${purchaseOrders.orderNumber} ILIKE ${`%${orderNumber}%`}`);
+      conditions.push(sql10`${purchaseOrders.orderNumber} ILIKE ${`%${orderNumber}%`}`);
     }
     if (vendorName) {
-      conditions.push(sql9`${vendors.name} ILIKE ${`%${vendorName}%`}`);
+      conditions.push(sql10`${vendors.name} ILIKE ${`%${vendorName}%`}`);
     }
     if (senderUserId) {
       conditions.push(eq19(emailSendHistory.senderUserId, senderUserId));
     }
     const whereClause = conditions.length > 0 ? and10(...conditions) : void 0;
-    const [{ count: count5 }] = await db2.select({ count: sql9`count(*)` }).from(emailSendHistory).leftJoin(purchaseOrders, eq19(emailSendHistory.orderId, purchaseOrders.id)).leftJoin(vendors, eq19(purchaseOrders.vendorId, vendors.id)).where(whereClause);
-    const emails = await db2.select({
+    const [{ count: count5 }] = await db.select({ count: sql10`count(*)` }).from(emailSendHistory).leftJoin(purchaseOrders, eq19(emailSendHistory.orderId, purchaseOrders.id)).leftJoin(vendors, eq19(purchaseOrders.vendorId, vendors.id)).where(whereClause);
+    const emails = await db.select({
       id: emailSendHistory.id,
       orderId: emailSendHistory.orderId,
       orderNumber: purchaseOrders.orderNumber,
@@ -19870,9 +20706,9 @@ router13.get("/email-history", requireAuth, async (req, res) => {
       failedCount: emailSendHistory.failedCount,
       createdAt: emailSendHistory.createdAt
     }).from(emailSendHistory).leftJoin(purchaseOrders, eq19(emailSendHistory.orderId, purchaseOrders.id)).leftJoin(vendors, eq19(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq19(emailSendHistory.senderUserId, users.id)).where(whereClause).orderBy(desc7(emailSendHistory.sentAt)).limit(limitNum).offset(offset);
-    const statusCounts = await db2.select({
+    const statusCounts = await db.select({
       status: emailSendHistory.status,
-      count: sql9`count(*)`
+      count: sql10`count(*)`
     }).from(emailSendHistory).leftJoin(purchaseOrders, eq19(emailSendHistory.orderId, purchaseOrders.id)).leftJoin(vendors, eq19(purchaseOrders.vendorId, vendors.id)).where(whereClause).groupBy(emailSendHistory.status);
     const totalEmails = count5;
     const successfulEmails = statusCounts.find((s) => s.status === "sent")?.count || 0;
@@ -20173,7 +21009,7 @@ import { Router as Router14 } from "express";
 // server/utils/optimized-orders-query.ts
 init_db();
 init_schema();
-import { eq as eq20, desc as desc8, asc as asc3, ilike as ilike3, and as and11, or as or4, between as between2, count as count3, sql as sql10, gte as gte5, lte as lte5 } from "drizzle-orm";
+import { eq as eq20, desc as desc8, asc as asc3, ilike as ilike3, and as and11, or as or4, between as between2, count as count3, sql as sql11, gte as gte5, lte as lte5 } from "drizzle-orm";
 var OptimizedOrdersService = class _OptimizedOrdersService {
   /**
    * 정렬 필드에 따른 ORDER BY 절 생성
@@ -20235,13 +21071,13 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
       whereConditions.push(eq20(purchaseOrders.userId, userId));
     }
     if (status && status !== "all" && status !== "") {
-      whereConditions.push(sql10`${purchaseOrders.status} = ${status}`);
+      whereConditions.push(sql11`${purchaseOrders.status} = ${status}`);
     }
     if (orderStatus && orderStatus !== "all" && orderStatus !== "") {
-      whereConditions.push(sql10`${purchaseOrders.orderStatus} = ${orderStatus}`);
+      whereConditions.push(sql11`${purchaseOrders.orderStatus} = ${orderStatus}`);
     }
     if (approvalStatus && approvalStatus !== "all" && approvalStatus !== "") {
-      whereConditions.push(sql10`${purchaseOrders.approvalStatus} = ${approvalStatus}`);
+      whereConditions.push(sql11`${purchaseOrders.approvalStatus} = ${approvalStatus}`);
     }
     if (vendorId && vendorId !== "all") {
       whereConditions.push(eq20(purchaseOrders.vendorId, vendorId));
@@ -20261,7 +21097,7 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
     if (searchText && searchText.trim()) {
       const trimmedSearchText = searchText.trim();
       const searchPattern = `%${trimmedSearchText.toLowerCase()}%`;
-      const itemSearchSubquery = db2.select({ orderId: purchaseOrderItems.orderId }).from(purchaseOrderItems).where(ilike3(purchaseOrderItems.itemName, searchPattern));
+      const itemSearchSubquery = db.select({ orderId: purchaseOrderItems.orderId }).from(purchaseOrderItems).where(ilike3(purchaseOrderItems.itemName, searchPattern));
       whereConditions.push(
         or4(
           ilike3(purchaseOrders.orderNumber, searchPattern),
@@ -20269,12 +21105,12 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
           ilike3(projects.projectName, searchPattern),
           ilike3(users.name, searchPattern),
           // 품목명으로 검색: 해당 품목을 포함하는 발주서 조회
-          sql10`${purchaseOrders.id} IN (SELECT "order_id" FROM ${purchaseOrderItems} WHERE LOWER("item_name") LIKE ${searchPattern.toLowerCase()})`
+          sql11`${purchaseOrders.id} IN (SELECT "order_id" FROM ${purchaseOrderItems} WHERE LOWER("item_name") LIKE ${searchPattern.toLowerCase()})`
         )
       );
     }
     const whereClause = whereConditions.length > 0 ? and11(...whereConditions) : void 0;
-    const ordersQuery = db2.select({
+    const ordersQuery = db.select({
       // Order fields
       id: purchaseOrders.id,
       orderNumber: purchaseOrders.orderNumber,
@@ -20295,13 +21131,13 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
       projectName: projects.projectName,
       userName: users.name,
       // PDF attachment status - use correct column names (database uses snake_case)
-      hasPdf: sql10`EXISTS(SELECT 1 FROM attachments WHERE attachments.order_id = ${purchaseOrders.id} AND attachments.mime_type = 'application/pdf')`,
+      hasPdf: sql11`EXISTS(SELECT 1 FROM attachments WHERE attachments.order_id = ${purchaseOrders.id} AND attachments.mime_type = 'application/pdf')`,
       // Email statistics from email_send_history - use correct column name: sending_status
-      totalEmailsSent: sql10`COALESCE((SELECT COUNT(*) FROM email_sending_history WHERE order_id = ${purchaseOrders.id}), 0)`,
-      emailStatus: sql10`(SELECT sending_status FROM email_sending_history WHERE order_id = ${purchaseOrders.id} ORDER BY sent_at DESC LIMIT 1)`,
-      emailSentAt: sql10`(SELECT sent_at FROM email_sending_history WHERE order_id = ${purchaseOrders.id} ORDER BY sent_at DESC LIMIT 1)`
+      totalEmailsSent: sql11`COALESCE((SELECT COUNT(*) FROM email_sending_history WHERE order_id = ${purchaseOrders.id}), 0)`,
+      emailStatus: sql11`(SELECT sending_status FROM email_sending_history WHERE order_id = ${purchaseOrders.id} ORDER BY sent_at DESC LIMIT 1)`,
+      emailSentAt: sql11`(SELECT sent_at FROM email_sending_history WHERE order_id = ${purchaseOrders.id} ORDER BY sent_at DESC LIMIT 1)`
     }).from(purchaseOrders).leftJoin(vendors, eq20(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq20(purchaseOrders.projectId, projects.id)).leftJoin(users, eq20(purchaseOrders.userId, users.id)).where(whereClause).orderBy(_OptimizedOrdersService.getOrderByClause(sortBy, sortOrder)).limit(limit).offset((page - 1) * limit);
-    const countQuery = db2.select({ count: count3() }).from(purchaseOrders).leftJoin(vendors, eq20(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq20(purchaseOrders.projectId, projects.id)).leftJoin(users, eq20(purchaseOrders.userId, users.id)).where(whereClause);
+    const countQuery = db.select({ count: count3() }).from(purchaseOrders).leftJoin(vendors, eq20(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq20(purchaseOrders.projectId, projects.id)).leftJoin(users, eq20(purchaseOrders.userId, users.id)).where(whereClause);
     const [orders, [{ count: totalCount }]] = await Promise.all([
       ordersQuery,
       countQuery
@@ -20330,18 +21166,18 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
   static async getOrderMetadata() {
     const [vendorsList, projectsList, usersList] = await Promise.all([
       // Only active vendors with recent orders
-      db2.select({
+      db.select({
         id: vendors.id,
         name: vendors.name
       }).from(vendors).where(eq20(vendors.isActive, true)).orderBy(asc3(vendors.name)),
       // Only active projects
-      db2.select({
+      db.select({
         id: projects.id,
         projectName: projects.projectName,
         projectCode: projects.projectCode
       }).from(projects).where(eq20(projects.isActive, true)).orderBy(asc3(projects.projectName)),
       // Only active users
-      db2.select({
+      db.select({
         id: users.id,
         name: users.name,
         email: users.email
@@ -20365,10 +21201,10 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
    * Reduces multiple API calls for bulk operations
    */
   static async batchUpdateOrderStatus(orderIds, status, userId) {
-    const result = await db2.update(purchaseOrders).set({
+    const result = await db.update(purchaseOrders).set({
       status,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(sql10`${purchaseOrders.id} = ANY(${orderIds})`).returning();
+    }).where(sql11`${purchaseOrders.id} = ANY(${orderIds})`).returning();
     return result;
   }
   /**
@@ -20377,11 +21213,11 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
    */
   static async getOrderStatistics(userId) {
     const whereClause = userId ? eq20(purchaseOrders.userId, userId) : void 0;
-    const stats = await db2.select({
+    const stats = await db.select({
       status: purchaseOrders.status,
       count: count3(),
-      totalAmount: sql10`COALESCE(SUM(${purchaseOrders.totalAmount}), 0)`,
-      avgAmount: sql10`COALESCE(AVG(${purchaseOrders.totalAmount}), 0)`
+      totalAmount: sql11`COALESCE(SUM(${purchaseOrders.totalAmount}), 0)`,
+      avgAmount: sql11`COALESCE(AVG(${purchaseOrders.totalAmount}), 0)`
     }).from(purchaseOrders).where(whereClause).groupBy(purchaseOrders.status);
     return stats;
   }
@@ -20423,10 +21259,10 @@ var router15 = Router14();
 router15.get("/orders-optimized-test", async (req, res) => {
   try {
     console.log("\u{1F50D} Testing DB connection...");
-    if (!db2) {
+    if (!db) {
       throw new Error("Database connection not available");
     }
-    const result = await db2.execute({ sql: "SELECT 1 as test", args: [] });
+    const result = await db.execute({ sql: "SELECT 1 as test", args: [] });
     console.log("\u2705 DB test successful:", result);
     res.json({
       status: "ok",
@@ -20669,7 +21505,7 @@ router17.get("/invoices", async (req, res) => {
   try {
     const { orderId } = req.query;
     console.log(`\u{1F4B0} Fetching invoices${orderId ? ` for order ${orderId}` : ""} from database...`);
-    let query = db2.select({
+    let query = db.select({
       id: invoices.id,
       orderId: invoices.orderId,
       invoiceNumber: invoices.invoiceNumber,
@@ -20707,7 +21543,7 @@ router17.get("/invoices/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     console.log(`\u{1F4B0} Fetching invoice ${id} from database...`);
-    const [invoice] = await db2.select({
+    const [invoice] = await db.select({
       id: invoices.id,
       orderId: invoices.orderId,
       invoiceNumber: invoices.invoiceNumber,
@@ -20774,7 +21610,7 @@ router17.post("/invoices", upload5.single("file"), async (req, res) => {
         console.log(`\u{1F4CE} File data encoded for Vercel: ${Math.round(fileBuffer.length / 1024)}KB`);
       }
     }
-    const [newInvoice] = await db2.insert(invoices).values({
+    const [newInvoice] = await db.insert(invoices).values({
       orderId: parseInt(orderId),
       invoiceNumber,
       invoiceType: invoiceType || "invoice",
@@ -20790,7 +21626,7 @@ router17.post("/invoices", upload5.single("file"), async (req, res) => {
       uploadedBy: userId,
       notes: notes || null
     }).returning();
-    const [invoice] = await db2.select({
+    const [invoice] = await db.select({
       id: invoices.id,
       orderId: invoices.orderId,
       invoiceNumber: invoices.invoiceNumber,
@@ -20827,7 +21663,7 @@ router17.post("/invoices/:id/verify", requireAuth, async (req, res) => {
     const invoiceId = parseInt(req.params.id, 10);
     const userId = req.user?.id || "test_admin_001";
     console.log(`\u{1F4B0} Verifying invoice ${invoiceId}...`);
-    const [updatedInvoice] = await db2.update(invoices).set({
+    const [updatedInvoice] = await db.update(invoices).set({
       status: "verified",
       verifiedBy: userId,
       verifiedAt: /* @__PURE__ */ new Date(),
@@ -20851,7 +21687,7 @@ router17.post("/invoices/:id/issue-tax", requireAuth, async (req, res) => {
     const invoiceId = parseInt(req.params.id, 10);
     const userId = req.user?.id || "test_admin_001";
     console.log(`\u{1F4B0} Issuing tax invoice for ${invoiceId}...`);
-    const [updatedInvoice] = await db2.update(invoices).set({
+    const [updatedInvoice] = await db.update(invoices).set({
       taxInvoiceIssued: true,
       taxInvoiceIssuedDate: /* @__PURE__ */ new Date(),
       taxInvoiceIssuedBy: userId,
@@ -20894,7 +21730,7 @@ router17.patch("/invoices/:id", requireAuth, async (req, res) => {
     if (status !== void 0) updateData.status = status;
     if (notes !== void 0) updateData.notes = notes;
     updateData.updatedAt = /* @__PURE__ */ new Date();
-    const [updatedInvoice] = await db2.update(invoices).set(updateData).where(eq21(invoices.id, invoiceId)).returning();
+    const [updatedInvoice] = await db.update(invoices).set(updateData).where(eq21(invoices.id, invoiceId)).returning();
     if (!updatedInvoice) {
       return res.status(404).json({ message: "Invoice not found" });
     }
@@ -20912,11 +21748,11 @@ router17.delete("/invoices/:id", requireAuth, async (req, res) => {
   try {
     const invoiceId = parseInt(req.params.id, 10);
     console.log(`\u{1F4B0} Deleting invoice ${invoiceId}...`);
-    const [invoice] = await db2.select().from(invoices).where(eq21(invoices.id, invoiceId)).limit(1);
+    const [invoice] = await db.select().from(invoices).where(eq21(invoices.id, invoiceId)).limit(1);
     if (!invoice) {
       return res.status(404).json({ message: "Invoice not found" });
     }
-    await db2.delete(invoices).where(eq21(invoices.id, invoiceId));
+    await db.delete(invoices).where(eq21(invoices.id, invoiceId));
     if (invoice.filePath && !process.env.VERCEL) {
       try {
         if (fs18.existsSync(invoice.filePath)) {
@@ -21014,7 +21850,7 @@ var router19 = Router18();
 router19.get("/item-receipts", async (_req, res) => {
   try {
     console.log("\u{1F4E6} Fetching all item receipts from database...");
-    const receipts = await db2.select({
+    const receipts = await db.select({
       id: itemReceipts.id,
       orderItemId: itemReceipts.orderItemId,
       invoiceId: itemReceipts.invoiceId,
@@ -21048,7 +21884,7 @@ router19.get("/item-receipts/order/:orderId", async (req, res) => {
   try {
     const orderId = parseInt(req.params.orderId, 10);
     console.log(`\u{1F4E6} Fetching item receipts for order ${orderId} from database...`);
-    const receipts = await db2.select({
+    const receipts = await db.select({
       id: itemReceipts.id,
       orderItemId: itemReceipts.orderItemId,
       invoiceId: itemReceipts.invoiceId,
@@ -21098,7 +21934,7 @@ router19.post("/item-receipts", async (req, res) => {
         message: "Missing required fields: orderItemId, receivedQuantity, receivedDate"
       });
     }
-    const [newReceipt] = await db2.insert(itemReceipts).values({
+    const [newReceipt] = await db.insert(itemReceipts).values({
       orderItemId: parseInt(orderItemId),
       invoiceId: invoiceId ? parseInt(invoiceId) : null,
       receivedQuantity: parseFloat(receivedQuantity),
@@ -21109,7 +21945,7 @@ router19.post("/item-receipts", async (req, res) => {
       status: status || "pending",
       notes: notes || null
     }).returning();
-    const [receipt] = await db2.select({
+    const [receipt] = await db.select({
       id: itemReceipts.id,
       orderItemId: itemReceipts.orderItemId,
       invoiceId: itemReceipts.invoiceId,
@@ -21159,11 +21995,11 @@ router19.patch("/item-receipts/:id", async (req, res) => {
     if (status !== void 0) updateData.status = status;
     if (notes !== void 0) updateData.notes = notes;
     updateData.updatedAt = /* @__PURE__ */ new Date();
-    const [updatedReceipt] = await db2.update(itemReceipts).set(updateData).where(eq22(itemReceipts.id, receiptId)).returning();
+    const [updatedReceipt] = await db.update(itemReceipts).set(updateData).where(eq22(itemReceipts.id, receiptId)).returning();
     if (!updatedReceipt) {
       return res.status(404).json({ message: "Item receipt not found" });
     }
-    const [receipt] = await db2.select({
+    const [receipt] = await db.select({
       id: itemReceipts.id,
       orderItemId: itemReceipts.orderItemId,
       invoiceId: itemReceipts.invoiceId,
@@ -21197,7 +22033,7 @@ router19.delete("/item-receipts/:id", async (req, res) => {
   try {
     const receiptId = parseInt(req.params.id, 10);
     console.log(`\u{1F4E6} Deleting item receipt ${receiptId}...`);
-    const [deletedReceipt] = await db2.delete(itemReceipts).where(eq22(itemReceipts.id, receiptId)).returning();
+    const [deletedReceipt] = await db.delete(itemReceipts).where(eq22(itemReceipts.id, receiptId)).returning();
     if (!deletedReceipt) {
       return res.status(404).json({ message: "Item receipt not found" });
     }
@@ -21217,12 +22053,12 @@ var item_receipts_default = router19;
 import { Router as Router19 } from "express";
 init_db();
 init_schema();
-import { eq as eq24, and as and13, desc as desc11, sql as sql12, inArray as inArray5 } from "drizzle-orm";
+import { eq as eq24, and as and13, desc as desc11, sql as sql13, inArray as inArray5 } from "drizzle-orm";
 
 // server/services/notification-service.ts
 init_db();
 init_schema();
-import { eq as eq23, and as and12, inArray as inArray4, sql as sql11 } from "drizzle-orm";
+import { eq as eq23, and as and12, inArray as inArray4, sql as sql12 } from "drizzle-orm";
 var NotificationService = class {
   /**
    * 승인 요청 시 알림 발송
@@ -21257,7 +22093,7 @@ var NotificationService = class {
           requestedBy: orderInfo.requesterName
         })
       }));
-      await db2.insert(notifications2).values(notifications2);
+      await db.insert(notifications2).values(notifications2);
       console.log(`\u2705 Sent approval request notifications to ${approvers.length} users for order ${context.orderId}`);
     } catch (error) {
       console.error("\u274C Error sending approval request notification:", error);
@@ -21300,7 +22136,7 @@ var NotificationService = class {
           comments: context.comments
         })
       }));
-      await db2.insert(notifications2).values(notifications2);
+      await db.insert(notifications2).values(notifications2);
       console.log(`\u2705 Sent approval result notifications to ${recipients.length} users for order ${context.orderId}`);
     } catch (error) {
       console.error("\u274C Error sending approval result notification:", error);
@@ -21310,24 +22146,24 @@ var NotificationService = class {
    * 승인 권한이 있는 사용자들 조회
    */
   static async getEligibleApprovers(orderAmount) {
-    const authorities = await db2.select({
+    const authorities = await db.select({
       role: approvalAuthorities.role,
       maxAmount: approvalAuthorities.maxAmount
     }).from(approvalAuthorities).where(
       and12(
         eq23(approvalAuthorities.isActive, true),
-        sql11`CAST(${approvalAuthorities.maxAmount} AS DECIMAL) >= ${orderAmount}`
+        sql12`CAST(${approvalAuthorities.maxAmount} AS DECIMAL) >= ${orderAmount}`
       )
     );
     if (authorities.length === 0) {
-      return await db2.select({
+      return await db.select({
         id: users.id,
         name: users.name,
         role: users.role
       }).from(users).where(eq23(users.role, "admin")).limit(10);
     }
     const eligibleRoles = authorities.map((auth) => auth.role);
-    return await db2.select({
+    return await db.select({
       id: users.id,
       name: users.name,
       role: users.role
@@ -21337,7 +22173,7 @@ var NotificationService = class {
    * 발주서 관련 정보 조회
    */
   static async getOrderInfo(orderId) {
-    const result = await db2.select({
+    const result = await db.select({
       id: purchaseOrders.id,
       orderNumber: purchaseOrders.orderNumber,
       totalAmount: purchaseOrders.totalAmount,
@@ -21361,11 +22197,11 @@ var NotificationService = class {
       stakeholders.add(orderInfo.userId);
     }
     if (orderInfo.projectId) {
-      const projectMembers3 = await db2.select({ userId: users.id }).from(users).where(eq23(users.role, "project_manager")).limit(5);
+      const projectMembers3 = await db.select({ userId: users.id }).from(users).where(eq23(users.role, "project_manager")).limit(5);
       projectMembers3.forEach((member) => stakeholders.add(member.userId));
     }
     if (stakeholders.size === 0) return [];
-    return await db2.select({
+    return await db.select({
       id: users.id,
       name: users.name
     }).from(users).where(inArray4(users.id, Array.from(stakeholders))).limit(10);
@@ -21394,12 +22230,12 @@ var NotificationService = class {
    */
   static async getUserNotifications(userId, limit = 20) {
     try {
-      const result = await db2.select().from(notifications).where(
+      const result = await db.select().from(notifications).where(
         and12(
           eq23(notifications.userId, userId),
           eq23(notifications.isActive, true)
         )
-      ).orderBy(sql11`${notifications.createdAt} DESC`).limit(limit);
+      ).orderBy(sql12`${notifications.createdAt} DESC`).limit(limit);
       return result.map((notification) => ({
         ...notification,
         metadata: notification.metadata ? JSON.parse(notification.metadata) : null,
@@ -21416,7 +22252,7 @@ var NotificationService = class {
    */
   static async markNotificationAsRead(notificationId, userId) {
     try {
-      const result = await db2.update(notifications).set({
+      const result = await db.update(notifications).set({
         isRead: true,
         updatedAt: /* @__PURE__ */ new Date()
       }).where(
@@ -21436,7 +22272,7 @@ var NotificationService = class {
    */
   static async markAllNotificationsAsRead(userId) {
     try {
-      const result = await db2.update(notifications).set({
+      const result = await db.update(notifications).set({
         isRead: true,
         updatedAt: /* @__PURE__ */ new Date()
       }).where(
@@ -21458,7 +22294,7 @@ var NotificationService = class {
 var router20 = Router19();
 async function checkApprovalPermission(userRole, orderAmount) {
   try {
-    const authority = await db2.select().from(approvalAuthorities).where(
+    const authority = await db.select().from(approvalAuthorities).where(
       and13(
         eq24(approvalAuthorities.role, userRole),
         eq24(approvalAuthorities.isActive, true)
@@ -21477,7 +22313,7 @@ async function checkApprovalPermission(userRole, orderAmount) {
 router20.get("/approvals/history", requireAuth, requireRole(["admin", "executive", "hq_management", "project_manager"]), async (req, res) => {
   try {
     console.log("\u{1F4CB} Fetching approval history from database...");
-    const approvalHistory = await db2.select({
+    const approvalHistory = await db.select({
       id: orderHistory.id,
       orderId: orderHistory.orderId,
       orderTitle: purchaseOrders.orderNumber,
@@ -21513,7 +22349,7 @@ router20.get("/approvals/history", requireAuth, requireRole(["admin", "executive
 router20.get("/approvals/pending", requireAuth, requireRole(["admin", "executive", "hq_management", "project_manager"]), async (req, res) => {
   try {
     console.log("\u23F3 Fetching pending approvals from database...");
-    const pendingOrders = await db2.select({
+    const pendingOrders = await db.select({
       id: purchaseOrders.id,
       orderNumber: purchaseOrders.orderNumber,
       totalAmount: purchaseOrders.totalAmount,
@@ -21566,24 +22402,24 @@ router20.get("/approvals/stats", requireAuth, requireRole(["admin", "executive",
     console.log("\u{1F4CA} Fetching approval stats from database...");
     const [totalStats, pendingStats, approvedStats, rejectedStats] = await Promise.all([
       // 전체 발주서 수
-      db2.select({ count: sql12`count(*)` }).from(purchaseOrders),
+      db.select({ count: sql13`count(*)` }).from(purchaseOrders),
       // 승인 대기 수
-      db2.select({ count: sql12`count(*)` }).from(purchaseOrders).where(eq24(purchaseOrders.status, "pending")),
+      db.select({ count: sql13`count(*)` }).from(purchaseOrders).where(eq24(purchaseOrders.status, "pending")),
       // 승인 완료 수
-      db2.select({ count: sql12`count(*)` }).from(purchaseOrders).where(eq24(purchaseOrders.status, "approved")),
+      db.select({ count: sql13`count(*)` }).from(purchaseOrders).where(eq24(purchaseOrders.status, "approved")),
       // 반려 수
-      db2.select({ count: sql12`count(*)` }).from(purchaseOrders).where(eq24(purchaseOrders.status, "rejected"))
+      db.select({ count: sql13`count(*)` }).from(purchaseOrders).where(eq24(purchaseOrders.status, "rejected"))
     ]);
     const totalCount = totalStats[0]?.count || 0;
     const pendingCount = pendingStats[0]?.count || 0;
     const approvedCount = approvedStats[0]?.count || 0;
     const rejectedCount = rejectedStats[0]?.count || 0;
     const approvalRate = totalCount > 0 ? approvedCount / (approvedCount + rejectedCount) * 100 : 0;
-    const monthlyStatsQuery = await db2.select({
-      month: sql12`to_char(created_at, 'YYYY-MM')`,
+    const monthlyStatsQuery = await db.select({
+      month: sql13`to_char(created_at, 'YYYY-MM')`,
       status: purchaseOrders.status,
-      count: sql12`count(*)`
-    }).from(purchaseOrders).where(sql12`created_at >= NOW() - INTERVAL '3 months'`).groupBy(sql12`to_char(created_at, 'YYYY-MM')`, purchaseOrders.status).orderBy(sql12`to_char(created_at, 'YYYY-MM') DESC`);
+      count: sql13`count(*)`
+    }).from(purchaseOrders).where(sql13`created_at >= NOW() - INTERVAL '3 months'`).groupBy(sql13`to_char(created_at, 'YYYY-MM')`, purchaseOrders.status).orderBy(sql13`to_char(created_at, 'YYYY-MM') DESC`);
     const monthlyStats = [];
     const monthlyData = {};
     monthlyStatsQuery.forEach((row) => {
@@ -21628,7 +22464,7 @@ router20.post("/approvals/:id/process", requireAuth, requireRole(["admin", "exec
     const { action, comments } = req.body;
     const user = req.user;
     console.log(`\u{1F4CB} Processing approval ${id} with action: ${action} by ${user.name} (${user.role})`);
-    const existingOrder = await db2.select().from(purchaseOrders).where(eq24(purchaseOrders.id, id)).limit(1);
+    const existingOrder = await db.select().from(purchaseOrders).where(eq24(purchaseOrders.id, id)).limit(1);
     if (existingOrder.length === 0) {
       return res.status(404).json({ message: "\uBC1C\uC8FC\uC11C\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
     }
@@ -21640,7 +22476,7 @@ router20.post("/approvals/:id/process", requireAuth, requireRole(["admin", "exec
       });
     }
     const newStatus = action === "approve" ? "approved" : "rejected";
-    await db2.update(purchaseOrders).set({
+    await db.update(purchaseOrders).set({
       status: newStatus,
       updatedAt: /* @__PURE__ */ new Date()
     }).where(eq24(purchaseOrders.id, id));
@@ -21653,7 +22489,7 @@ router20.post("/approvals/:id/process", requireAuth, requireRole(["admin", "exec
       previousStatus: order.status,
       newStatus
     };
-    await db2.insert(orderHistory).values(historyEntry);
+    await db.insert(orderHistory).values(historyEntry);
     await NotificationService.sendApprovalResultNotification({
       orderId: id,
       action: action === "approve" ? "approval_completed" : "approval_rejected",
@@ -21731,7 +22567,7 @@ router20.post("/approvals/:orderId/reject", requireAuth, requireRole(["admin", "
 });
 async function processApproval(req, res, orderId, action, note, user) {
   try {
-    const existingOrder = await db2.select().from(purchaseOrders).where(eq24(purchaseOrders.id, orderId)).limit(1);
+    const existingOrder = await db.select().from(purchaseOrders).where(eq24(purchaseOrders.id, orderId)).limit(1);
     if (existingOrder.length === 0) {
       throw new Error("\uBC1C\uC8FC\uC11C\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4");
     }
@@ -21741,7 +22577,7 @@ async function processApproval(req, res, orderId, action, note, user) {
       throw new Error("\uD574\uB2F9 \uAE08\uC561\uC5D0 \uB300\uD55C \uC2B9\uC778 \uAD8C\uD55C\uC774 \uC5C6\uC2B5\uB2C8\uB2E4");
     }
     const newStatus = action === "approve" ? "approved" : "rejected";
-    await db2.update(purchaseOrders).set({
+    await db.update(purchaseOrders).set({
       status: newStatus,
       updatedAt: /* @__PURE__ */ new Date()
     }).where(eq24(purchaseOrders.id, orderId));
@@ -21754,7 +22590,7 @@ async function processApproval(req, res, orderId, action, note, user) {
       previousStatus: order.status,
       newStatus
     };
-    await db2.insert(orderHistory).values(historyEntry);
+    await db.insert(orderHistory).values(historyEntry);
     await NotificationService.sendApprovalResultNotification({
       orderId,
       action: action === "approve" ? "approval_completed" : "approval_rejected",
@@ -21785,7 +22621,7 @@ router20.post("/approvals/:orderId/start-workflow", requireAuth, requireRole(["a
     const { companyId } = req.body;
     const user = req.user;
     console.log(`\u{1F504} Starting approval workflow for order ${orderId}`);
-    const orderInfo = await db2.select({
+    const orderInfo = await db.select({
       id: purchaseOrders.id,
       totalAmount: purchaseOrders.totalAmount,
       status: purchaseOrders.status,
@@ -21826,7 +22662,7 @@ router20.post("/approvals/:orderId/start-workflow", requireAuth, requireRole(["a
       }
     } else {
       const approvalInstances = await ApprovalRoutingService.createApprovalInstances(orderId, approvalContext);
-      await db2.update(purchaseOrders).set({
+      await db.update(purchaseOrders).set({
         status: "pending",
         updatedAt: /* @__PURE__ */ new Date()
       }).where(eq24(purchaseOrders.id, orderId));
@@ -21883,7 +22719,7 @@ router20.post("/approvals/:orderId/step/:stepId", requireAuth, requireRole(["adm
     const { action, comments } = req.body;
     const user = req.user;
     console.log(`\u{1F504} Processing approval step ${stepId} for order ${orderId} with action: ${action}`);
-    const stepInstance = await db2.select().from(approvalStepInstances2).where(eq24(approvalStepInstances2.id, stepId)).limit(1);
+    const stepInstance = await db.select().from(approvalStepInstances2).where(eq24(approvalStepInstances2.id, stepId)).limit(1);
     if (stepInstance.length === 0) {
       return res.status(404).json({ message: "\uC2B9\uC778 \uB2E8\uACC4\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
     }
@@ -21894,7 +22730,7 @@ router20.post("/approvals/:orderId/step/:stepId", requireAuth, requireRole(["adm
       });
     }
     const newStatus = action === "approve" ? "approved" : action === "reject" ? "rejected" : "skipped";
-    await db2.update(approvalStepInstances2).set({
+    await db.update(approvalStepInstances2).set({
       status: newStatus,
       approvedBy: user.id,
       approvedAt: /* @__PURE__ */ new Date(),
@@ -21906,7 +22742,7 @@ router20.post("/approvals/:orderId/step/:stepId", requireAuth, requireRole(["adm
     let finalOrderStatus = "pending";
     if (action === "reject") {
       finalOrderStatus = "rejected";
-      await db2.update(approvalStepInstances2).set({
+      await db.update(approvalStepInstances2).set({
         isActive: false,
         updatedAt: /* @__PURE__ */ new Date()
       }).where(
@@ -21919,11 +22755,11 @@ router20.post("/approvals/:orderId/step/:stepId", requireAuth, requireRole(["adm
       finalOrderStatus = "approved";
     }
     if (finalOrderStatus !== "pending") {
-      await db2.update(purchaseOrders).set({
+      await db.update(purchaseOrders).set({
         status: finalOrderStatus,
         updatedAt: /* @__PURE__ */ new Date()
       }).where(eq24(purchaseOrders.id, orderId));
-      await db2.insert(orderHistory).values({
+      await db.insert(orderHistory).values({
         orderId,
         action: finalOrderStatus === "approved" ? "approved" : "rejected",
         performedBy: user.id,
@@ -22560,7 +23396,7 @@ async function validateCategoryMapping(request) {
     confidence: 0
   };
   try {
-    const allCategories = await db2.select().from(itemCategories).where(eq25(itemCategories.isActive, true));
+    const allCategories = await db.select().from(itemCategories).where(eq25(itemCategories.isActive, true));
     const majorCategories = allCategories.filter((c) => c.categoryType === "major");
     const middleCategories = allCategories.filter((c) => c.categoryType === "middle");
     const minorCategories = allCategories.filter((c) => c.categoryType === "minor");
@@ -22765,7 +23601,7 @@ async function validateCategoriesBatch(requests) {
 var router25 = Router24();
 router25.get("/hierarchy", async (req, res) => {
   try {
-    const categoriesFromOrderItems = await db2.select({
+    const categoriesFromOrderItems = await db.select({
       majorCategory: purchaseOrderItems.majorCategory,
       middleCategory: purchaseOrderItems.middleCategory,
       minorCategory: purchaseOrderItems.minorCategory
@@ -22774,7 +23610,7 @@ router25.get("/hierarchy", async (req, res) => {
       purchaseOrderItems.middleCategory,
       purchaseOrderItems.minorCategory
     );
-    const categoriesFromItems = await db2.select({
+    const categoriesFromItems = await db.select({
       majorCategory: items.majorCategory,
       middleCategory: items.middleCategory,
       minorCategory: items.minorCategory
@@ -22810,7 +23646,7 @@ router25.get("/hierarchy", async (req, res) => {
 router25.get("/", async (req, res) => {
   try {
     console.log("\u{1F4CB} Fetching all categories...");
-    const categories = await db2.select().from(itemCategories).where(eq26(itemCategories.isActive, true)).orderBy(itemCategories.displayOrder, itemCategories.categoryName);
+    const categories = await db.select().from(itemCategories).where(eq26(itemCategories.isActive, true)).orderBy(itemCategories.displayOrder, itemCategories.categoryName);
     const majorCategories = categories.filter((c) => c.categoryType === "major");
     const middleCategories = categories.filter((c) => c.categoryType === "middle");
     const minorCategories = categories.filter((c) => c.categoryType === "minor");
@@ -22838,7 +23674,7 @@ router25.get("/", async (req, res) => {
 router25.get("/used-in-orders", async (req, res) => {
   try {
     console.log("\u{1F4CB} Fetching categories used in purchase orders...");
-    const categoriesFromOrders = await db2.select({
+    const categoriesFromOrders = await db.select({
       majorCategory: purchaseOrderItems.majorCategory,
       middleCategory: purchaseOrderItems.middleCategory,
       minorCategory: purchaseOrderItems.minorCategory
@@ -22875,7 +23711,7 @@ router25.get("/:type", async (req, res) => {
     const { type } = req.params;
     const { parentId } = req.query;
     console.log(`\u{1F4CB} Fetching ${type} categories...`);
-    let query = db2.select().from(itemCategories).where(and15(
+    let query = db.select().from(itemCategories).where(and15(
       eq26(itemCategories.categoryType, type),
       eq26(itemCategories.isActive, true)
     ));
@@ -22900,7 +23736,7 @@ router25.post("/", async (req, res) => {
   try {
     const { categoryType, categoryName, parentId, displayOrder } = req.body;
     console.log("\u2795 Creating new category:", { categoryType, categoryName, parentId });
-    const newCategory = await db2.insert(itemCategories).values({
+    const newCategory = await db.insert(itemCategories).values({
       categoryType,
       categoryName,
       parentId: parentId || null,
@@ -22926,7 +23762,7 @@ router25.put("/:id", async (req, res) => {
     const { id } = req.params;
     const { categoryName, displayOrder, isActive } = req.body;
     console.log(`\u{1F527} Updating category ${id}...`);
-    const updatedCategory = await db2.update(itemCategories).set({
+    const updatedCategory = await db.update(itemCategories).set({
       categoryName,
       displayOrder,
       isActive,
@@ -22956,7 +23792,7 @@ router25.delete("/:id", async (req, res) => {
   try {
     const { id } = req.params;
     console.log(`\u{1F5D1}\uFE0F Deactivating category ${id}...`);
-    const updatedCategory = await db2.update(itemCategories).set({
+    const updatedCategory = await db.update(itemCategories).set({
       isActive: false,
       updatedAt: /* @__PURE__ */ new Date()
     }).where(eq26(itemCategories.id, parseInt(id))).returning();
@@ -23048,7 +23884,7 @@ var router26 = Router25();
 router26.get("/workflow-settings/:companyId", requireAuth, async (req, res) => {
   try {
     const { companyId } = req.params;
-    const settings = await db2.select().from(approvalWorkflowSettings).where(
+    const settings = await db.select().from(approvalWorkflowSettings).where(
       and16(
         eq27(approvalWorkflowSettings.companyId, parseInt(companyId)),
         eq27(approvalWorkflowSettings.isActive, true)
@@ -23071,7 +23907,7 @@ router26.post("/workflow-settings", requireAuth, requireAdmin, async (req, res) 
       ...req.body,
       createdBy: req.user.id
     });
-    const existingSettings = await db2.select().from(approvalWorkflowSettings).where(
+    const existingSettings = await db.select().from(approvalWorkflowSettings).where(
       and16(
         eq27(approvalWorkflowSettings.companyId, validatedData.companyId),
         eq27(approvalWorkflowSettings.isActive, true)
@@ -23079,12 +23915,12 @@ router26.post("/workflow-settings", requireAuth, requireAdmin, async (req, res) 
     ).limit(1);
     let result;
     if (existingSettings.length > 0) {
-      result = await db2.update(approvalWorkflowSettings).set({
+      result = await db.update(approvalWorkflowSettings).set({
         ...validatedData,
         updatedAt: /* @__PURE__ */ new Date()
       }).where(eq27(approvalWorkflowSettings.id, existingSettings[0].id)).returning();
     } else {
-      result = await db2.insert(approvalWorkflowSettings).values(validatedData).returning();
+      result = await db.insert(approvalWorkflowSettings).values(validatedData).returning();
     }
     return res.json({
       success: true,
@@ -23107,7 +23943,7 @@ router26.get("/step-templates/:companyId", requireAuth, async (req, res) => {
   try {
     const { companyId } = req.params;
     const { templateName } = req.query;
-    let query = db2.select().from(approvalStepTemplates).where(
+    let query = db.select().from(approvalStepTemplates).where(
       and16(
         eq27(approvalStepTemplates.companyId, parseInt(companyId)),
         eq27(approvalStepTemplates.isActive, true)
@@ -23140,7 +23976,7 @@ router26.get("/step-templates/:companyId", requireAuth, async (req, res) => {
 router26.post("/step-templates", requireAuth, requireAdmin, async (req, res) => {
   try {
     const validatedData = insertApprovalStepTemplateSchema.parse(req.body);
-    const result = await db2.insert(approvalStepTemplates).values(validatedData).returning();
+    const result = await db.insert(approvalStepTemplates).values(validatedData).returning();
     return res.json({
       success: true,
       data: result[0]
@@ -23162,7 +23998,7 @@ router26.put("/step-templates/:id", requireAuth, requireAdmin, async (req, res) 
   try {
     const { id } = req.params;
     const validatedData = insertApprovalStepTemplateSchema.parse(req.body);
-    const result = await db2.update(approvalStepTemplates).set({
+    const result = await db.update(approvalStepTemplates).set({
       ...validatedData,
       updatedAt: /* @__PURE__ */ new Date()
     }).where(eq27(approvalStepTemplates.id, parseInt(id))).returning();
@@ -23189,7 +24025,7 @@ router26.put("/step-templates/:id", requireAuth, requireAdmin, async (req, res) 
 router26.delete("/step-templates/:id", requireAuth, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await db2.update(approvalStepTemplates).set({
+    const result = await db.update(approvalStepTemplates).set({
       isActive: false,
       updatedAt: /* @__PURE__ */ new Date()
     }).where(eq27(approvalStepTemplates.id, parseInt(id))).returning();
@@ -23210,7 +24046,7 @@ router26.delete("/step-templates/:id", requireAuth, requireAdmin, async (req, re
 router26.get("/step-instances/:orderId", requireAuth, async (req, res) => {
   try {
     const { orderId } = req.params;
-    const instances = await db2.select().from(approvalStepInstances2).where(
+    const instances = await db.select().from(approvalStepInstances2).where(
       and16(
         eq27(approvalStepInstances2.orderId, parseInt(orderId)),
         eq27(approvalStepInstances2.isActive, true)
@@ -23235,7 +24071,7 @@ router26.post("/step-instances", requireAuth, async (req, res) => {
         error: "orderId, templateName, companyId\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4"
       });
     }
-    const templates = await db2.select().from(approvalStepTemplates).where(
+    const templates = await db.select().from(approvalStepTemplates).where(
       and16(
         eq27(approvalStepTemplates.companyId, companyId),
         eq27(approvalStepTemplates.templateName, templateName),
@@ -23254,7 +24090,7 @@ router26.post("/step-instances", requireAuth, async (req, res) => {
       requiredRole: template.requiredRole,
       status: "pending"
     }));
-    const result = await db2.insert(approvalStepInstances2).values(instancesData).returning();
+    const result = await db.insert(approvalStepInstances2).values(instancesData).returning();
     return res.json({
       success: true,
       data: result
@@ -23283,7 +24119,7 @@ router26.put("/step-instances/:id", requireAuth, async (req, res) => {
     };
     if (comments) updateData.comments = comments;
     if (rejectionReason) updateData.rejectionReason = rejectionReason;
-    const result = await db2.update(approvalStepInstances2).set(updateData).where(eq27(approvalStepInstances2.id, parseInt(id))).returning();
+    const result = await db.update(approvalStepInstances2).set(updateData).where(eq27(approvalStepInstances2.id, parseInt(id))).returning();
     if (result.length === 0) {
       return res.status(404).json({ error: "\uC2B9\uC778 \uB2E8\uACC4 \uC778\uC2A4\uD134\uC2A4\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
     }
@@ -23310,7 +24146,7 @@ var router27 = Router26();
 router27.get("/approval-authorities", requireAuth, requireRole(["admin"]), async (req, res) => {
   try {
     console.log("\u{1F4CB} Fetching approval authorities...");
-    const authorities = await db2.select({
+    const authorities = await db.select({
       id: approvalAuthorities.id,
       role: approvalAuthorities.role,
       maxAmount: approvalAuthorities.maxAmount,
@@ -23339,7 +24175,7 @@ router27.post("/approval-authorities", requireAuth, requireRole(["admin"]), asyn
   try {
     console.log("\u{1F4DD} Creating new approval authority:", req.body);
     const validatedData = insertApprovalAuthoritySchema.parse(req.body);
-    const existingAuthority = await db2.select().from(approvalAuthorities).where(
+    const existingAuthority = await db.select().from(approvalAuthorities).where(
       and17(
         eq28(approvalAuthorities.role, validatedData.role),
         eq28(approvalAuthorities.isActive, true)
@@ -23350,7 +24186,7 @@ router27.post("/approval-authorities", requireAuth, requireRole(["admin"]), asyn
         message: "\uD574\uB2F9 \uC5ED\uD560\uC5D0 \uB300\uD55C \uC2B9\uC778 \uAD8C\uD55C\uC774 \uC774\uBBF8 \uC874\uC7AC\uD569\uB2C8\uB2E4"
       });
     }
-    const result = await db2.insert(approvalAuthorities).values(validatedData).returning();
+    const result = await db.insert(approvalAuthorities).values(validatedData).returning();
     const newAuthority = {
       ...result[0],
       maxAmount: parseFloat(result[0].maxAmount),
@@ -23378,7 +24214,7 @@ router27.put("/approval-authorities/:id", requireAuth, requireRole(["admin"]), a
     const id = parseInt(req.params.id, 10);
     console.log(`\u{1F4DD} Updating approval authority ${id}:`, req.body);
     const validatedData = insertApprovalAuthoritySchema.parse(req.body);
-    const result = await db2.update(approvalAuthorities).set({
+    const result = await db.update(approvalAuthorities).set({
       ...validatedData,
       updatedAt: /* @__PURE__ */ new Date()
     }).where(eq28(approvalAuthorities.id, id)).returning();
@@ -23413,7 +24249,7 @@ router27.delete("/approval-authorities/:id", requireAuth, requireRole(["admin"])
   try {
     const id = parseInt(req.params.id, 10);
     console.log(`\u{1F5D1}\uFE0F Deactivating approval authority ${id}`);
-    const result = await db2.update(approvalAuthorities).set({
+    const result = await db.update(approvalAuthorities).set({
       isActive: false,
       updatedAt: /* @__PURE__ */ new Date()
     }).where(eq28(approvalAuthorities.id, id)).returning();
@@ -23438,7 +24274,7 @@ router27.get("/approval-authorities/role/:role", requireAuth, requireRole(["admi
   try {
     const { role } = req.params;
     console.log(`\u{1F4CB} Fetching approval authority for role: ${role}`);
-    const authority = await db2.select().from(approvalAuthorities).where(
+    const authority = await db.select().from(approvalAuthorities).where(
       and17(
         eq28(approvalAuthorities.role, role),
         eq28(approvalAuthorities.isActive, true)
@@ -23480,7 +24316,7 @@ router27.post("/approval-authorities/check-permission", requireAuth, requireRole
         message: "\uC5ED\uD560\uACFC \uAE08\uC561 \uC815\uBCF4\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4"
       });
     }
-    const authority = await db2.select().from(approvalAuthorities).where(
+    const authority = await db.select().from(approvalAuthorities).where(
       and17(
         eq28(approvalAuthorities.role, checkRole),
         eq28(approvalAuthorities.isActive, true)
@@ -23634,23 +24470,23 @@ import { Router as Router28 } from "express";
 import { eq as eq29, and as and18, desc as desc14, count as count4 } from "drizzle-orm";
 init_professional_pdf_generation_service();
 import multer6 from "multer";
-import path17 from "path";
-import fs20 from "fs/promises";
+import path19 from "path";
+import fs22 from "fs/promises";
 import { readFileSync as readFileSync2, existsSync as existsSync3, unlinkSync } from "fs";
 import { z as z8 } from "zod";
 init_excel_input_sheet_remover();
 var router29 = Router28();
 var storage5 = multer6.diskStorage({
   destination: async (req, file, cb) => {
-    const uploadDir2 = process.env.VERCEL ? path17.join("/tmp", "uploads", "excel-simple") : path17.join(process.cwd(), "uploads", "excel-simple");
-    await fs20.mkdir(uploadDir2, { recursive: true });
+    const uploadDir2 = process.env.VERCEL ? path19.join("/tmp", "uploads", "excel-simple") : path19.join(process.cwd(), "uploads", "excel-simple");
+    await fs22.mkdir(uploadDir2, { recursive: true });
     cb(null, uploadDir2);
   },
   filename: (req, file, cb) => {
     const timestamp2 = Date.now();
     const decodedName = decodeKoreanFilename(file.originalname);
-    const ext = path17.extname(decodedName);
-    const basename = path17.basename(decodedName, ext);
+    const ext = path19.extname(decodedName);
+    const basename = path19.basename(decodedName, ext);
     cb(null, `${timestamp2}-${basename}${ext}`);
   }
 });
@@ -23663,7 +24499,7 @@ var upload6 = multer6({
   fileFilter: (req, file, cb) => {
     const decodedName = decodeKoreanFilename(file.originalname);
     file.originalname = decodedName;
-    const ext = path17.extname(decodedName).toLowerCase();
+    const ext = path19.extname(decodedName).toLowerCase();
     if ([".xlsx", ".xls", ".xlsm"].includes(ext)) {
       cb(null, true);
     } else {
@@ -23776,7 +24612,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
     let defaultProject;
     try {
       console.log("\u{1F50D} Fetching default project...");
-      defaultProject = await db2.select().from(projects).where(eq29(projects.projectName, "\uAE30\uBCF8 \uD504\uB85C\uC81D\uD2B8")).then((rows) => rows[0]);
+      defaultProject = await db.select().from(projects).where(eq29(projects.projectName, "\uAE30\uBCF8 \uD504\uB85C\uC81D\uD2B8")).then((rows) => rows[0]);
       console.log("\u2705 Default project fetch successful");
     } catch (error) {
       console.error("\u274C Error fetching default project:", error);
@@ -23785,7 +24621,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
     if (!defaultProject) {
       try {
         console.log("\u{1F50D} Creating default project...");
-        const [newProject] = await db2.insert(projects).values({
+        const [newProject] = await db.insert(projects).values({
           projectName: "\uAE30\uBCF8 \uD504\uB85C\uC81D\uD2B8",
           projectCode: "DEFAULT",
           status: "active",
@@ -23802,11 +24638,11 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
       try {
         let vendor = null;
         if (orderData.vendorName) {
-          const existingVendor = await db2.select().from(vendors).where(eq29(vendors.name, orderData.vendorName)).then((rows) => rows[0]);
+          const existingVendor = await db.select().from(vendors).where(eq29(vendors.name, orderData.vendorName)).then((rows) => rows[0]);
           if (existingVendor) {
             vendor = existingVendor;
           } else {
-            const [newVendor] = await db2.insert(vendors).values({
+            const [newVendor] = await db.insert(vendors).values({
               name: orderData.vendorName,
               contactPerson: "\uB2F4\uB2F9\uC790",
               // Required field
@@ -23818,7 +24654,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
         }
         let project = defaultProject;
         if (orderData.projectName) {
-          const existingProject = await db2.select().from(projects).where(eq29(projects.projectName, orderData.projectName)).then((rows) => rows[0]);
+          const existingProject = await db.select().from(projects).where(eq29(projects.projectName, orderData.projectName)).then((rows) => rows[0]);
           if (existingProject) {
             project = existingProject;
           }
@@ -23830,10 +24666,10 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
         let attempts = 0;
         const maxAttempts = 10;
         do {
-          const orderCount = await db2.select().from(purchaseOrders).then((rows) => rows.length);
+          const orderCount = await db.select().from(purchaseOrders).then((rows) => rows.length);
           const sequenceNumber = orderCount + 1 + attempts;
           orderNumber = `PO-${year}-${String(sequenceNumber).padStart(5, "0")}`;
-          const existingOrder = await db2.select().from(purchaseOrders).where(eq29(purchaseOrders.orderNumber, orderNumber)).then((rows) => rows[0]);
+          const existingOrder = await db.select().from(purchaseOrders).where(eq29(purchaseOrders.orderNumber, orderNumber)).then((rows) => rows[0]);
           if (!existingOrder) {
             break;
           }
@@ -23859,7 +24695,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
           approvalBypassReason = "direct_approval";
           legacyStatus = "approved";
         }
-        const [newOrder] = await db2.insert(purchaseOrders).values({
+        const [newOrder] = await db.insert(purchaseOrders).values({
           orderNumber,
           projectId: project.id,
           vendorId: vendor?.id || null,
@@ -23905,7 +24741,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
             };
           });
           if (itemsToInsert.length > 0) {
-            await db2.insert(purchaseOrderItems).values(itemsToInsert);
+            await db.insert(purchaseOrderItems).values(itemsToInsert);
           }
         }
         try {
@@ -23939,7 +24775,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
               fileData = processedExcelFile.fileBuffer.toString("base64");
               console.log(`\u{1F4CE} File data encoded for Vercel: ${Math.round(processedExcelFile.fileSize / 1024)}KB`);
             }
-            const [savedAttachment] = await db2.insert(attachments).values({
+            const [savedAttachment] = await db.insert(attachments).values({
               orderId: newOrder.id,
               originalName: processedExcelFile.originalName,
               storedName: processedExcelFile.storedName,
@@ -23957,7 +24793,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
             console.log("\u26A0\uFE0F Continuing without attachment...");
           }
         }
-        await db2.insert(orderHistory).values({
+        await db.insert(orderHistory).values({
           orderId: newOrder.id,
           userId: req.user.id,
           action: sendEmail ? "sent" : "created",
@@ -23977,7 +24813,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
             totalAmount
           });
         }
-        const orderAttachments = await db2.select().from(attachments).where(eq29(attachments.orderId, newOrder.id));
+        const orderAttachments = await db.select().from(attachments).where(eq29(attachments.orderId, newOrder.id));
         savedOrders.push({
           orderId: newOrder.id,
           orderNumber: newOrder.orderNumber,
@@ -24008,9 +24844,9 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
           try {
             let excelAttachment = null;
             if (req.file) {
-              const attachment = await db2.select().from(attachments).where(eq29(attachments.orderId, emailInfo.orderId)).then((rows) => rows[0]);
+              const attachment = await db.select().from(attachments).where(eq29(attachments.orderId, emailInfo.orderId)).then((rows) => rows[0]);
               if (attachment) {
-                excelAttachment = process.env.VERCEL ? path17.join("/tmp", "uploads", "excel-simple", attachment.storedName) : attachment.filePath;
+                excelAttachment = process.env.VERCEL ? path19.join("/tmp", "uploads", "excel-simple", attachment.storedName) : attachment.filePath;
               }
             }
             if (excelAttachment && existsSync3(excelAttachment)) {
@@ -24029,11 +24865,11 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
               );
               if (result.success) {
                 console.log(`\u2705 Email sent successfully for order ${emailInfo.orderNumber}`);
-                await db2.update(purchaseOrders).set({
+                await db.update(purchaseOrders).set({
                   status: "sent",
                   orderStatus: "sent"
                 }).where(eq29(purchaseOrders.id, emailInfo.orderId));
-                await db2.insert(orderHistory).values({
+                await db.insert(orderHistory).values({
                   orderId: emailInfo.orderId,
                   userId: req.user.id,
                   action: "email_sent",
@@ -24088,7 +24924,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
 });
 router29.get("/orders/simple-upload-history", requireAuth, async (req, res) => {
   try {
-    const history = await db2.select({
+    const history = await db.select({
       id: purchaseOrders.id,
       orderNumber: purchaseOrders.orderNumber,
       createdAt: purchaseOrders.createdAt,
@@ -24119,7 +24955,7 @@ router29.get("/orders/simple-upload-history", requireAuth, async (req, res) => {
 });
 router29.get("/orders/drafts", requireAuth, async (req, res) => {
   try {
-    const drafts = await db2.select({
+    const drafts = await db.select({
       id: purchaseOrders.id,
       orderNumber: purchaseOrders.orderNumber,
       createdAt: purchaseOrders.createdAt,
@@ -24181,7 +25017,7 @@ import { Router as Router30 } from "express";
 // server/services/audit-service.ts
 init_db();
 init_schema();
-import { eq as eq30, and as and19, or as or6, gte as gte6, lte as lte6, desc as desc15, asc as asc7, sql as sql14, inArray as inArray6 } from "drizzle-orm";
+import { eq as eq30, and as and19, or as or6, gte as gte6, lte as lte6, desc as desc15, asc as asc7, sql as sql15, inArray as inArray6 } from "drizzle-orm";
 var AuditService = class {
   /**
    * 감사 로그 조회
@@ -24210,10 +25046,10 @@ var AuditService = class {
     if (endDate) conditions.push(lte6(systemAuditLogs.createdAt, endDate));
     const orderByColumn = sortBy === "eventType" ? systemAuditLogs.eventType : sortBy === "userName" ? systemAuditLogs.userName : systemAuditLogs.createdAt;
     const orderByDirection = sortOrder === "asc" ? asc7 : desc15;
-    const query = db2.select().from(systemAuditLogs).where(conditions.length > 0 ? and19(...conditions) : void 0).orderBy(orderByDirection(orderByColumn)).limit(limit).offset(offset);
+    const query = db.select().from(systemAuditLogs).where(conditions.length > 0 ? and19(...conditions) : void 0).orderBy(orderByDirection(orderByColumn)).limit(limit).offset(offset);
     const [logs, countResult] = await Promise.all([
       query,
-      db2.select({ count: sql14`count(*)` }).from(systemAuditLogs).where(conditions.length > 0 ? and19(...conditions) : void 0)
+      db.select({ count: sql15`count(*)` }).from(systemAuditLogs).where(conditions.length > 0 ? and19(...conditions) : void 0)
     ]);
     return {
       logs,
@@ -24228,22 +25064,22 @@ var AuditService = class {
   static async getUserActivitySummary(userId, days = 30) {
     const startDate = /* @__PURE__ */ new Date();
     startDate.setDate(startDate.getDate() - days);
-    const activities = await db2.select({
+    const activities = await db.select({
       eventType: systemAuditLogs.eventType,
-      count: sql14`count(*)`
+      count: sql15`count(*)`
     }).from(systemAuditLogs).where(
       and19(
         eq30(systemAuditLogs.userId, userId),
         gte6(systemAuditLogs.createdAt, startDate)
       )
     ).groupBy(systemAuditLogs.eventType);
-    const lastLogin = await db2.select().from(systemAuditLogs).where(
+    const lastLogin = await db.select().from(systemAuditLogs).where(
       and19(
         eq30(systemAuditLogs.userId, userId),
         eq30(systemAuditLogs.eventType, "login")
       )
     ).orderBy(desc15(systemAuditLogs.createdAt)).limit(1);
-    const failedLogins = await db2.select({ count: sql14`count(*)` }).from(systemAuditLogs).where(
+    const failedLogins = await db.select({ count: sql15`count(*)` }).from(systemAuditLogs).where(
       and19(
         eq30(systemAuditLogs.userId, userId),
         eq30(systemAuditLogs.eventType, "login_failed"),
@@ -24263,22 +25099,22 @@ var AuditService = class {
   static async getDashboardStats(hours = 24) {
     const startDate = /* @__PURE__ */ new Date();
     startDate.setHours(startDate.getHours() - hours);
-    const categoryStats = await db2.select({
+    const categoryStats = await db.select({
       category: systemAuditLogs.eventCategory,
-      count: sql14`count(*)`
+      count: sql15`count(*)`
     }).from(systemAuditLogs).where(gte6(systemAuditLogs.createdAt, startDate)).groupBy(systemAuditLogs.eventCategory);
-    const eventStats = await db2.select({
+    const eventStats = await db.select({
       eventType: systemAuditLogs.eventType,
-      count: sql14`count(*)`
+      count: sql15`count(*)`
     }).from(systemAuditLogs).where(gte6(systemAuditLogs.createdAt, startDate)).groupBy(systemAuditLogs.eventType);
-    const hourlyActivity = await db2.select({
-      hour: sql14`date_trunc('hour', ${systemAuditLogs.createdAt})`,
-      count: sql14`count(*)`
-    }).from(systemAuditLogs).where(gte6(systemAuditLogs.createdAt, startDate)).groupBy(sql14`date_trunc('hour', ${systemAuditLogs.createdAt})`).orderBy(sql14`date_trunc('hour', ${systemAuditLogs.createdAt})`);
-    const activeUsers = await db2.select({
-      count: sql14`count(distinct ${systemAuditLogs.userId})`
+    const hourlyActivity = await db.select({
+      hour: sql15`date_trunc('hour', ${systemAuditLogs.createdAt})`,
+      count: sql15`count(*)`
+    }).from(systemAuditLogs).where(gte6(systemAuditLogs.createdAt, startDate)).groupBy(sql15`date_trunc('hour', ${systemAuditLogs.createdAt})`).orderBy(sql15`date_trunc('hour', ${systemAuditLogs.createdAt})`);
+    const activeUsers = await db.select({
+      count: sql15`count(distinct ${systemAuditLogs.userId})`
     }).from(systemAuditLogs).where(gte6(systemAuditLogs.createdAt, startDate));
-    const errors = await db2.select().from(systemAuditLogs).where(
+    const errors = await db.select().from(systemAuditLogs).where(
       and19(
         or6(
           eq30(systemAuditLogs.eventType, "system_error"),
@@ -24288,7 +25124,7 @@ var AuditService = class {
         gte6(systemAuditLogs.createdAt, startDate)
       )
     ).orderBy(desc15(systemAuditLogs.createdAt)).limit(10);
-    const securityEvents = await db2.select().from(systemAuditLogs).where(
+    const securityEvents = await db.select().from(systemAuditLogs).where(
       and19(
         or6(
           eq30(systemAuditLogs.eventType, "login_failed"),
@@ -24312,7 +25148,7 @@ var AuditService = class {
    * 감사 설정 조회
    */
   static async getSettings() {
-    const settings = await db2.select().from(auditSettings).limit(1);
+    const settings = await db.select().from(auditSettings).limit(1);
     return settings[0] || null;
   }
   /**
@@ -24321,7 +25157,7 @@ var AuditService = class {
   static async updateSettings(settings, userId) {
     const existingSettings = await this.getSettings();
     if (existingSettings) {
-      const updated = await db2.update(auditSettings).set({
+      const updated = await db.update(auditSettings).set({
         ...settings,
         updatedBy: userId,
         updatedAt: /* @__PURE__ */ new Date()
@@ -24336,7 +25172,7 @@ var AuditService = class {
       });
       return updated[0];
     } else {
-      const created = await db2.insert(auditSettings).values({
+      const created = await db.insert(auditSettings).values({
         ...settings,
         updatedBy: userId
       }).returning();
@@ -24354,7 +25190,7 @@ var AuditService = class {
    * 로그 아카이빙
    */
   static async archiveLogs(beforeDate) {
-    const logsToArchive = await db2.select().from(systemAuditLogs).where(lte6(systemAuditLogs.createdAt, beforeDate)).limit(1e3);
+    const logsToArchive = await db.select().from(systemAuditLogs).where(lte6(systemAuditLogs.createdAt, beforeDate)).limit(1e3);
     if (logsToArchive.length === 0) {
       return { archived: 0 };
     }
@@ -24372,9 +25208,9 @@ var AuditService = class {
       ipAddress: log.ipAddress,
       createdAt: log.createdAt
     }));
-    await db2.insert(archivedAuditLogs).values(archiveData);
+    await db.insert(archivedAuditLogs).values(archiveData);
     const logIds = logsToArchive.map((log) => log.id);
-    await db2.delete(systemAuditLogs).where(inArray6(systemAuditLogs.id, logIds));
+    await db.delete(systemAuditLogs).where(inArray6(systemAuditLogs.id, logIds));
     return { archived: logsToArchive.length };
   }
   /**
@@ -24386,7 +25222,7 @@ var AuditService = class {
     if (userId) conditions.push(eq30(archivedAuditLogs.userId, userId));
     if (startDate) conditions.push(gte6(archivedAuditLogs.createdAt, startDate));
     if (endDate) conditions.push(lte6(archivedAuditLogs.createdAt, endDate));
-    const logs = await db2.select().from(archivedAuditLogs).where(conditions.length > 0 ? and19(...conditions) : void 0).orderBy(desc15(archivedAuditLogs.createdAt)).limit(limit).offset(offset);
+    const logs = await db.select().from(archivedAuditLogs).where(conditions.length > 0 ? and19(...conditions) : void 0).orderBy(desc15(archivedAuditLogs.createdAt)).limit(limit).offset(offset);
     return logs;
   }
   /**
@@ -24404,7 +25240,7 @@ var AuditService = class {
     if (userId) {
       conditions.push(eq30(systemAuditLogs.userId, userId));
     }
-    const history = await db2.select({
+    const history = await db.select({
       id: systemAuditLogs.id,
       userId: systemAuditLogs.userId,
       userName: systemAuditLogs.userName,
@@ -24465,7 +25301,7 @@ var AuditService = class {
     if (entityType) conditions.push(eq30(systemAuditLogs.entityType, entityType));
     if (entityId) conditions.push(eq30(systemAuditLogs.entityId, entityId));
     if (userId) conditions.push(eq30(systemAuditLogs.userId, userId));
-    const changes = await db2.select().from(systemAuditLogs).where(and19(...conditions)).orderBy(desc15(systemAuditLogs.createdAt)).limit(100);
+    const changes = await db.select().from(systemAuditLogs).where(and19(...conditions)).orderBy(desc15(systemAuditLogs.createdAt)).limit(100);
     return changes;
   }
   /**
@@ -24482,7 +25318,7 @@ var AuditService = class {
     if (entityType) {
       conditions.push(eq30(systemAuditLogs.entityType, entityType));
     }
-    const deletions = await db2.select().from(systemAuditLogs).where(and19(...conditions)).orderBy(desc15(systemAuditLogs.createdAt));
+    const deletions = await db.select().from(systemAuditLogs).where(and19(...conditions)).orderBy(desc15(systemAuditLogs.createdAt));
     const records = deletions.map((deletion) => ({
       id: deletion.id,
       entityType: deletion.entityType,
@@ -24508,7 +25344,7 @@ var AuditService = class {
       "security_alert",
       "password_change"
     ];
-    const events = await db2.select().from(systemAuditLogs).where(
+    const events = await db.select().from(systemAuditLogs).where(
       and19(
         or6(
           inArray6(systemAuditLogs.eventType, securityEventTypes),
@@ -24538,19 +25374,19 @@ var AuditService = class {
    * 알림 규칙 조회
    */
   static async getAlertRules() {
-    return await db2.select().from(auditAlertRules).where(eq30(auditAlertRules.isActive, true)).orderBy(desc15(auditAlertRules.severity));
+    return await db.select().from(auditAlertRules).where(eq30(auditAlertRules.isActive, true)).orderBy(desc15(auditAlertRules.severity));
   }
   /**
    * 알림 규칙 생성/업데이트
    */
   static async upsertAlertRule(rule, userId) {
     if (rule.id) {
-      return await db2.update(auditAlertRules).set({
+      return await db.update(auditAlertRules).set({
         ...rule,
         updatedAt: /* @__PURE__ */ new Date()
       }).where(eq30(auditAlertRules.id, rule.id)).returning();
     } else {
-      return await db2.insert(auditAlertRules).values({
+      return await db.insert(auditAlertRules).values({
         ...rule,
         createdBy: userId
       }).returning();
@@ -24570,7 +25406,7 @@ var AuditService = class {
     if (settings.retentionDays) {
       const deleteDate = /* @__PURE__ */ new Date();
       deleteDate.setDate(deleteDate.getDate() - settings.retentionDays);
-      await db2.delete(archivedAuditLogs).where(lte6(archivedAuditLogs.archivedAt, deleteDate));
+      await db.delete(archivedAuditLogs).where(lte6(archivedAuditLogs.archivedAt, deleteDate));
     }
     return { success: true, ...result };
   }
@@ -24867,14 +25703,14 @@ var audit_default = router31;
 
 // server/routes/email-test.ts
 import express2 from "express";
-import path19 from "path";
+import path21 from "path";
 
 // server/services/email-service.ts
 init_db();
 init_schema();
 import nodemailer6 from "nodemailer";
-import path18 from "path";
-import fs21 from "fs/promises";
+import path20 from "path";
+import fs23 from "fs/promises";
 var transporter = nodemailer6.createTransport({
   host: process.env.SMTP_HOST || "smtp.naver.com",
   port: parseInt(process.env.SMTP_PORT || "587"),
@@ -24968,7 +25804,7 @@ var emailTemplates = {
 async function sendPurchaseOrderEmail(params) {
   const { orderData, excelFilePath, recipients, cc = [], userId, orderId } = params;
   try {
-    await fs21.access(excelFilePath);
+    await fs23.access(excelFilePath);
     const mailOptions = {
       from: `"(\uC8FC)\uC775\uC9C4\uC5D4\uC9C0\uB2C8\uC5B4\uB9C1" <${process.env.SMTP_USER}>`,
       to: recipients.join(", "),
@@ -24980,7 +25816,7 @@ async function sendPurchaseOrderEmail(params) {
       html: emailTemplates.purchaseOrder.html(orderData),
       attachments: [
         {
-          filename: path18.basename(excelFilePath),
+          filename: path20.basename(excelFilePath),
           path: excelFilePath,
           contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         }
@@ -24991,8 +25827,8 @@ async function sendPurchaseOrderEmail(params) {
     if (orderId && userId) {
       try {
         const trackingId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        const fileStats = await fs21.stat(excelFilePath);
-        await db2.insert(emailSendHistory).values({
+        const fileStats = await fs23.stat(excelFilePath);
+        await db.insert(emailSendHistory).values({
           orderId,
           sentBy: userId,
           recipientEmail: recipients.join(", "),
@@ -25001,7 +25837,7 @@ async function sendPurchaseOrderEmail(params) {
           subject: mailOptions.subject,
           body: mailOptions.html,
           attachments: [{
-            filename: path18.basename(excelFilePath),
+            filename: path20.basename(excelFilePath),
             path: excelFilePath,
             size: fileStats.size
           }],
@@ -25025,7 +25861,7 @@ async function sendPurchaseOrderEmail(params) {
     if (orderId && userId) {
       try {
         const trackingId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        await db2.insert(emailSendHistory).values({
+        await db.insert(emailSendHistory).values({
           orderId,
           sentBy: userId,
           recipientEmail: recipients.join(", "),
@@ -25145,14 +25981,14 @@ router32.post("/send-test", async (req, res) => {
       userName: "Test User",
       userPhone: "010-1234-5678"
     };
-    const dummyFilePath = path19.join(process.cwd(), "uploads", "test-email.xlsx");
-    const fs23 = __require("fs");
-    const uploadsDir = path19.join(process.cwd(), "uploads");
-    if (!fs23.existsSync(uploadsDir)) {
-      fs23.mkdirSync(uploadsDir, { recursive: true });
+    const dummyFilePath = path21.join(process.cwd(), "uploads", "test-email.xlsx");
+    const fs25 = __require("fs");
+    const uploadsDir = path21.join(process.cwd(), "uploads");
+    if (!fs25.existsSync(uploadsDir)) {
+      fs25.mkdirSync(uploadsDir, { recursive: true });
     }
-    if (!fs23.existsSync(dummyFilePath)) {
-      fs23.writeFileSync(dummyFilePath, "test content");
+    if (!fs25.existsSync(dummyFilePath)) {
+      fs25.writeFileSync(dummyFilePath, "test content");
     }
     const result = await emailService2.sendPurchaseOrderEmail({
       orderData: testOrderData,
@@ -25434,7 +26270,7 @@ var ApprovalAuthorityService = class {
    * Check user's approval authority for a given amount
    */
   async checkAuthority(user, orderAmount) {
-    const authority = await db2.select().from(approvalAuthorities).where(and20(
+    const authority = await db.select().from(approvalAuthorities).where(and20(
       eq31(approvalAuthorities.role, user.role),
       eq31(approvalAuthorities.isActive, true)
     )).limit(1);
@@ -25482,16 +26318,16 @@ var ApprovalAuthorityService = class {
    * Find the appropriate approver for a given amount
    */
   async findNextApprover(orderAmount) {
-    const authorities = await db2.select().from(approvalAuthorities).where(and20(
+    const authorities = await db.select().from(approvalAuthorities).where(and20(
       gte7(approvalAuthorities.maxAmount, orderAmount.toString()),
       eq31(approvalAuthorities.isActive, true)
     )).orderBy(approvalAuthorities.maxAmount);
     if (authorities.length === 0) {
-      const executive = await db2.select().from(users).where(eq31(users.role, "executive")).limit(1);
+      const executive = await db.select().from(users).where(eq31(users.role, "executive")).limit(1);
       return executive[0]?.id;
     }
     const lowestAuthority = authorities[0];
-    const approver = await db2.select().from(users).where(and20(
+    const approver = await db.select().from(users).where(and20(
       eq31(users.role, lowestAuthority.role),
       eq31(users.isActive, true)
     )).limit(1);
@@ -25502,7 +26338,7 @@ var ApprovalAuthorityService = class {
    */
   async getRequiredApprovers(orderAmount, companyId) {
     const approvers = [];
-    const authorities = await db2.select({
+    const authorities = await db.select({
       role: approvalAuthorities.role,
       maxAmount: approvalAuthorities.maxAmount,
       canDirectApprove: approvalAuthorities.canDirectApprove,
@@ -25512,7 +26348,7 @@ var ApprovalAuthorityService = class {
       gte7(approvalAuthorities.maxAmount, orderAmount.toString())
     )).orderBy(approvalAuthorities.maxAmount);
     for (const auth of authorities) {
-      const usersInRole = await db2.select({
+      const usersInRole = await db.select({
         id: users.id,
         name: users.name,
         email: users.email,
@@ -25566,7 +26402,7 @@ var ApprovalAuthorityService = class {
       };
     }
     if (order.vendorId) {
-      const recentOrders = await db2.select().from(purchaseOrders).where(and20(
+      const recentOrders = await db.select().from(purchaseOrders).where(and20(
         eq31(purchaseOrders.vendorId, order.vendorId),
         eq31(purchaseOrders.orderStatus, "delivered")
         // Check orders from last 30 days
@@ -25601,7 +26437,7 @@ var ApprovalAuthorityService = class {
         updateData.rejectionReason = comments;
         updateData.orderStatus = "draft";
       }
-      await db2.update(purchaseOrders).set(updateData).where(eq31(purchaseOrders.id, orderId));
+      await db.update(purchaseOrders).set(updateData).where(eq31(purchaseOrders.id, orderId));
       return true;
     } catch (error) {
       console.error("Error processing approval:", error);
@@ -25646,7 +26482,7 @@ var WebSocketService = class _WebSocketService {
       console.log("\u{1F50C} WebSocket connection established:", socket.id);
       socket.on("authenticate", async (data) => {
         try {
-          const user = await db2.select().from(users).where(eq32(users.id, data.userId)).then((rows) => rows[0]);
+          const user = await db.select().from(users).where(eq32(users.id, data.userId)).then((rows) => rows[0]);
           if (user) {
             const webSocketUser = {
               id: user.id,
@@ -25799,7 +26635,7 @@ var WorkflowEngine = class {
    * Process the next step in the workflow automatically
    */
   async processNextStep(orderId, userId) {
-    const order = await db2.select().from(purchaseOrders).where(eq33(purchaseOrders.id, orderId)).limit(1);
+    const order = await db.select().from(purchaseOrders).where(eq33(purchaseOrders.id, orderId)).limit(1);
     if (!order || order.length === 0) {
       throw new Error(`Order ${orderId} not found`);
     }
@@ -25846,12 +26682,12 @@ var WorkflowEngine = class {
    * Track workflow progress for an order
    */
   async trackWorkflowProgress(orderId) {
-    const order = await db2.select().from(purchaseOrders).where(eq33(purchaseOrders.id, orderId)).limit(1);
+    const order = await db.select().from(purchaseOrders).where(eq33(purchaseOrders.id, orderId)).limit(1);
     if (!order || order.length === 0) {
       throw new Error(`Order ${orderId} not found`);
     }
     const currentOrder = order[0];
-    const history = await db2.select({
+    const history = await db.select({
       timestamp: orderHistory.changedAt,
       event: orderHistory.changeType,
       actor: orderHistory.userId,
@@ -25880,7 +26716,7 @@ var WorkflowEngine = class {
    * Send notifications based on workflow events
    */
   async sendNotifications(orderId, event) {
-    const order = await db2.select({
+    const order = await db.select({
       id: purchaseOrders.id,
       orderNumber: purchaseOrders.orderNumber,
       nextApproverId: purchaseOrders.nextApproverId,
@@ -25913,7 +26749,7 @@ var WorkflowEngine = class {
    * Update order status with validation and WebSocket broadcast
    */
   async updateOrderStatus(orderId, orderStatus, approvalStatus, additionalData) {
-    const beforeOrder = await db2.select({
+    const beforeOrder = await db.select({
       id: purchaseOrders.id,
       orderNumber: purchaseOrders.orderNumber,
       orderStatus: purchaseOrders.orderStatus,
@@ -25921,7 +26757,7 @@ var WorkflowEngine = class {
       userId: purchaseOrders.userId
     }).from(purchaseOrders).where(eq33(purchaseOrders.id, orderId)).limit(1);
     if (!beforeOrder || beforeOrder.length === 0) return;
-    await db2.update(purchaseOrders).set({
+    await db.update(purchaseOrders).set({
       orderStatus,
       approvalStatus,
       ...additionalData,
@@ -25955,13 +26791,13 @@ var WorkflowEngine = class {
    * Send order email if ready
    */
   async sendOrderIfReady(orderId) {
-    const order = await db2.select({
+    const order = await db.select({
       id: purchaseOrders.id,
       orderNumber: purchaseOrders.orderNumber,
       vendorId: purchaseOrders.vendorId
     }).from(purchaseOrders).where(eq33(purchaseOrders.id, orderId)).limit(1);
     if (!order || order.length === 0) return;
-    const vendor = await db2.select().from(vendors).where(eq33(vendors.id, order[0].vendorId)).limit(1);
+    const vendor = await db.select().from(vendors).where(eq33(vendors.id, order[0].vendorId)).limit(1);
     if (vendor[0]?.email) {
       try {
         console.log(`Email would be sent to ${vendor[0].email} for order ${order[0].orderNumber}`);
@@ -26026,7 +26862,7 @@ var WorkflowEngine = class {
    * Log workflow event to history
    */
   async logWorkflowEvent(orderId, event, userId, details) {
-    await db2.insert(orderHistory).values({
+    await db.insert(orderHistory).values({
       orderId,
       userId,
       changeType: event,
@@ -26038,7 +26874,7 @@ var WorkflowEngine = class {
    * Get user details
    */
   async getUser(userId) {
-    const user = await db2.select().from(users).where(eq33(users.id, userId)).limit(1);
+    const user = await db.select().from(users).where(eq33(users.id, userId)).limit(1);
     if (!user || user.length === 0) {
       throw new Error(`User ${userId} not found`);
     }
@@ -26049,7 +26885,7 @@ var WorkflowEngine = class {
    */
   async notifyApprover(approverId, orderId) {
     const approver = await this.getUserAsWebSocketUser(approverId);
-    const order = await db2.select({
+    const order = await db.select({
       id: purchaseOrders.id,
       orderNumber: purchaseOrders.orderNumber,
       totalAmount: purchaseOrders.totalAmount,
@@ -26133,7 +26969,7 @@ router34.post("/api/orders/check-approval-authority", async (req, res) => {
     if (!amount || amount <= 0) {
       return res.status(400).json({ message: "Invalid amount" });
     }
-    const user = await db2.select().from(users).where(eq34(users.id, userId)).limit(1);
+    const user = await db.select().from(users).where(eq34(users.id, userId)).limit(1);
     if (!user || user.length === 0) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -26168,7 +27004,7 @@ router34.post("/api/orders/create-with-workflow", async (req, res) => {
       return res.status(401).json({ message: "User not authenticated" });
     }
     const orderData = req.body;
-    const user = await db2.select().from(users).where(eq34(users.id, userId)).limit(1);
+    const user = await db.select().from(users).where(eq34(users.id, userId)).limit(1);
     if (!user || user.length === 0) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -26196,7 +27032,7 @@ router34.post("/api/orders/create-with-workflow", async (req, res) => {
         approvalBypassReason = autoApproval.reason;
       }
     }
-    const newOrder = await db2.insert(purchaseOrders).values({
+    const newOrder = await db.insert(purchaseOrders).values({
       ...orderData,
       orderStatus,
       approvalStatus,
@@ -26299,7 +27135,7 @@ router34.post("/api/orders/:id/confirm-delivery", async (req, res) => {
     if (isNaN(orderId)) {
       return res.status(400).json({ message: "Invalid order ID" });
     }
-    await db2.update(purchaseOrders).set({
+    await db.update(purchaseOrders).set({
       orderStatus: "delivered",
       deliveredAt: /* @__PURE__ */ new Date(),
       deliveredBy: userId,
@@ -26644,7 +27480,7 @@ router36.post("/orders/check-approval-authority", requireAuth, async (req, res) 
       orderAmount: z11.number().positive()
     });
     const { orderAmount } = schema.parse(req.body);
-    const user = await db2.select().from(users).where(eq35(users.id, req.user.id)).then((rows) => rows[0]);
+    const user = await db.select().from(users).where(eq35(users.id, req.user.id)).then((rows) => rows[0]);
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
@@ -26692,7 +27528,7 @@ router36.post("/orders/create-with-workflow", requireAuth, async (req, res) => {
       sendEmail: z11.boolean().optional()
     });
     const { orderData, sendEmail } = schema.parse(req.body);
-    const user = await db2.select().from(users).where(eq35(users.id, req.user.id)).then((rows) => rows[0]);
+    const user = await db.select().from(users).where(eq35(users.id, req.user.id)).then((rows) => rows[0]);
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
@@ -26717,9 +27553,9 @@ router36.post("/orders/create-with-workflow", requireAuth, async (req, res) => {
         approvalBypassReason = autoApproval.reason;
       }
     }
-    const orderCount = await db2.select().from(purchaseOrders).then((rows) => rows.length);
+    const orderCount = await db.select().from(purchaseOrders).then((rows) => rows.length);
     const orderNumber = `PO-${(/* @__PURE__ */ new Date()).getFullYear()}-${String(orderCount + 1).padStart(5, "0")}`;
-    const [newOrder] = await db2.insert(purchaseOrders).values({
+    const [newOrder] = await db.insert(purchaseOrders).values({
       ...orderData,
       orderNumber,
       userId: req.user.id,
@@ -26731,7 +27567,7 @@ router36.post("/orders/create-with-workflow", requireAuth, async (req, res) => {
       createdAt: /* @__PURE__ */ new Date(),
       updatedAt: /* @__PURE__ */ new Date()
     }).returning();
-    await db2.insert(orderHistory).values({
+    await db.insert(orderHistory).values({
       orderId: newOrder.id,
       userId: req.user.id,
       action: "created",
@@ -26767,7 +27603,7 @@ router36.get("/orders/workflow-status/:id", requireAuth, async (req, res) => {
     if (isNaN(orderId)) {
       return res.status(400).json({ error: "Invalid order ID" });
     }
-    const order = await db2.select().from(purchaseOrders).where(eq35(purchaseOrders.id, orderId)).then((rows) => rows[0]);
+    const order = await db.select().from(purchaseOrders).where(eq35(purchaseOrders.id, orderId)).then((rows) => rows[0]);
     if (!order) {
       return res.status(404).json({ error: "Order not found" });
     }
@@ -26793,7 +27629,7 @@ router36.post("/orders/:id/confirm-delivery", requireAuth, async (req, res) => {
       receivedBy: z11.string().optional()
     });
     const { deliveryNotes, actualDeliveryDate, receivedBy } = schema.parse(req.body);
-    const order = await db2.select().from(purchaseOrders).where(eq35(purchaseOrders.id, orderId)).then((rows) => rows[0]);
+    const order = await db.select().from(purchaseOrders).where(eq35(purchaseOrders.id, orderId)).then((rows) => rows[0]);
     if (!order) {
       return res.status(404).json({ error: "Order not found" });
     }
@@ -26803,7 +27639,7 @@ router36.post("/orders/:id/confirm-delivery", requireAuth, async (req, res) => {
         message: "Only sent orders can be marked as delivered"
       });
     }
-    const [updatedOrder] = await db2.update(purchaseOrders).set({
+    const [updatedOrder] = await db.update(purchaseOrders).set({
       orderStatus: "delivered",
       status: "completed",
       // Legacy status
@@ -26814,7 +27650,7 @@ router36.post("/orders/:id/confirm-delivery", requireAuth, async (req, res) => {
 \uBC30\uC1A1 \uBA54\uBAA8: ${deliveryNotes}` : deliveryNotes : order.notes,
       updatedAt: /* @__PURE__ */ new Date()
     }).where(eq35(purchaseOrders.id, orderId)).returning();
-    await db2.insert(orderHistory).values({
+    await db.insert(orderHistory).values({
       orderId,
       userId: req.user.id,
       action: "delivery_confirmed",
@@ -26875,7 +27711,7 @@ router36.post("/orders/:id/approve", requireAuth, async (req, res) => {
     if (!success) {
       return res.status(500).json({ error: "Failed to process approval" });
     }
-    await db2.insert(orderHistory).values({
+    await db.insert(orderHistory).values({
       orderId,
       userId: req.user.id,
       action: decision === "approved" ? "approved" : "rejected",
@@ -26918,7 +27754,7 @@ router37.post("/orders/:id/create-order", requireAuth, async (req, res) => {
     return res.status(401).json({ error: "\uC778\uC99D\uC774 \uD544\uC694\uD569\uB2C8\uB2E4." });
   }
   try {
-    const [order] = await db2.select().from(purchaseOrders).where(eq36(purchaseOrders.id, orderId));
+    const [order] = await db.select().from(purchaseOrders).where(eq36(purchaseOrders.id, orderId));
     if (!order) {
       return res.status(404).json({
         error: "\uBC1C\uC8FC\uC11C\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.",
@@ -26931,7 +27767,7 @@ router37.post("/orders/:id/create-order", requireAuth, async (req, res) => {
         currentStatus: order.orderStatus || order.status
       });
     }
-    const fullOrderData = await db2.query.purchaseOrders.findFirst({
+    const fullOrderData = await db.query.purchaseOrders.findFirst({
       where: eq36(purchaseOrders.id, orderId),
       with: {
         vendor: true,
@@ -26956,13 +27792,13 @@ router37.post("/orders/:id/create-order", requireAuth, async (req, res) => {
       });
     }
     console.log(`\u2705 PDF generated successfully: ${pdfResult.pdfPath}`);
-    const [updatedOrder] = await db2.update(purchaseOrders).set({
+    const [updatedOrder] = await db.update(purchaseOrders).set({
       orderStatus: "created",
       status: "approved",
       // 레거시 호환성
       updatedAt: /* @__PURE__ */ new Date()
     }).where(eq36(purchaseOrders.id, orderId)).returning();
-    await db2.insert(orderHistory).values({
+    await db.insert(orderHistory).values({
       orderId,
       userId,
       action: "order_created",
@@ -26999,7 +27835,7 @@ router37.get("/orders/:id/permissions", requireAuth, async (req, res) => {
   const userId = req.user?.id;
   const userRole = req.user?.role;
   try {
-    const [order] = await db2.select({
+    const [order] = await db.select({
       id: purchaseOrders.id,
       status: purchaseOrders.status,
       orderStatus: purchaseOrders.orderStatus,
@@ -27033,7 +27869,7 @@ var orders_create_default = router37;
 // server/routes/health.ts
 init_db();
 import { Router as Router35 } from "express";
-import { sql as sql15 } from "drizzle-orm";
+import { sql as sql16 } from "drizzle-orm";
 var router38 = Router35();
 router38.get("/health", (req, res) => {
   res.json({
@@ -27071,10 +27907,10 @@ router38.get("/health/database", async (req, res) => {
     });
   }
   try {
-    if (!db2) {
+    if (!db) {
       throw new Error("Database instance not initialized");
     }
-    const result = await db2.execute(sql15`SELECT 1 as test`);
+    const result = await db.execute(sql16`SELECT 1 as test`);
     if (result) {
       status.database.connected = true;
     }
@@ -27097,7 +27933,7 @@ router38.get("/health/auth", (req, res) => {
     authentication: {
       jwtConfigured: !!process.env.JWT_SECRET,
       sessionConfigured: !!process.env.SESSION_SECRET,
-      databaseAuthAvailable: !!process.env.DATABASE_URL && !!db2,
+      databaseAuthAvailable: !!process.env.DATABASE_URL && !!db,
       fallbackAuthActive: shouldUseFallback(),
       fallbackReason: null
     },
@@ -27106,7 +27942,7 @@ router38.get("/health/auth", (req, res) => {
   if (status.authentication.fallbackAuthActive) {
     if (!process.env.DATABASE_URL) {
       status.authentication.fallbackReason = "DATABASE_URL not configured";
-    } else if (!db2) {
+    } else if (!db) {
       status.authentication.fallbackReason = "Database connection failed";
     }
   }
@@ -27139,9 +27975,9 @@ router38.get("/health/system", async (req, res) => {
     },
     timestamp: (/* @__PURE__ */ new Date()).toISOString()
   };
-  if (process.env.DATABASE_URL && db2) {
+  if (process.env.DATABASE_URL && db) {
     try {
-      await db2.execute(sql15`SELECT 1`);
+      await db.execute(sql16`SELECT 1`);
       results.database = true;
     } catch (error) {
       console.error("Database health check failed:", error);
@@ -27164,12 +28000,12 @@ var health_default = router38;
 init_db();
 init_schema();
 import { Router as Router36 } from "express";
-import { eq as eq37, sql as sql16, desc as desc17 } from "drizzle-orm";
+import { eq as eq37, sql as sql17, desc as desc17 } from "drizzle-orm";
 var router39 = Router36();
 router39.get("/debug/recent-drafts", async (req, res) => {
   try {
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1e3);
-    const recentDrafts = await db2.select({
+    const recentDrafts = await db.select({
       id: purchaseOrders.id,
       orderNumber: purchaseOrders.orderNumber,
       status: purchaseOrders.status,
@@ -27179,7 +28015,7 @@ router39.get("/debug/recent-drafts", async (req, res) => {
       totalAmount: purchaseOrders.totalAmount,
       vendorName: vendors.name
     }).from(purchaseOrders).leftJoin(vendors, eq37(purchaseOrders.vendorId, vendors.id)).where(eq37(purchaseOrders.status, "draft")).orderBy(desc17(purchaseOrders.createdAt)).limit(20);
-    const allRecentOrders = await db2.select({
+    const allRecentOrders = await db.select({
       id: purchaseOrders.id,
       orderNumber: purchaseOrders.orderNumber,
       status: purchaseOrders.status,
@@ -27188,8 +28024,8 @@ router39.get("/debug/recent-drafts", async (req, res) => {
       vendorId: purchaseOrders.vendorId,
       totalAmount: purchaseOrders.totalAmount,
       vendorName: vendors.name
-    }).from(purchaseOrders).leftJoin(vendors, eq37(purchaseOrders.vendorId, vendors.id)).where(sql16`${purchaseOrders.createdAt} > ${oneHourAgo}`).orderBy(desc17(purchaseOrders.createdAt)).limit(50);
-    const jbVendor = await db2.select().from(vendors).where(sql16`${vendors.name} LIKE '%제이비엔지니어링%'`).limit(5);
+    }).from(purchaseOrders).leftJoin(vendors, eq37(purchaseOrders.vendorId, vendors.id)).where(sql17`${purchaseOrders.createdAt} > ${oneHourAgo}`).orderBy(desc17(purchaseOrders.createdAt)).limit(50);
+    const jbVendor = await db.select().from(vendors).where(sql17`${vendors.name} LIKE '%제이비엔지니어링%'`).limit(5);
     res.json({
       recentDrafts,
       recentDraftsCount: recentDrafts.length,
@@ -27211,8 +28047,8 @@ init_db();
 init_schema();
 import { Router as Router37 } from "express";
 import { eq as eq38 } from "drizzle-orm";
-import path20 from "path";
-import fs22 from "fs";
+import path22 from "path";
+import fs24 from "fs";
 import jwt2 from "jsonwebtoken";
 var router40 = Router37();
 router40.get("/attachments/:id/download", async (req, res) => {
@@ -27252,7 +28088,7 @@ router40.get("/attachments/:id/download", async (req, res) => {
         message: "Authentication required"
       });
     }
-    const [attachment] = await db2.select({
+    const [attachment] = await db.select({
       id: attachments.id,
       orderId: attachments.orderId,
       originalName: attachments.originalName,
@@ -27294,20 +28130,20 @@ router40.get("/attachments/:id/download", async (req, res) => {
       fileName = fileName.replace("db://", "");
     }
     const possiblePaths = [];
-    if (path20.isAbsolute(fileName)) {
+    if (path22.isAbsolute(fileName)) {
       console.log("\u{1F4C4} Using absolute path directly:", fileName);
       possiblePaths.push(fileName);
     } else {
       possiblePaths.push(
-        path20.join(process.cwd(), "attached_assets", fileName),
-        path20.join(process.cwd(), "uploads", fileName),
-        path20.join(process.cwd(), "uploads", "temp-pdf", fileName),
-        path20.join(process.cwd(), fileName)
+        path22.join(process.cwd(), "attached_assets", fileName),
+        path22.join(process.cwd(), "uploads", fileName),
+        path22.join(process.cwd(), "uploads", "temp-pdf", fileName),
+        path22.join(process.cwd(), fileName)
       );
     }
     let foundPath = null;
     for (const testPath of possiblePaths) {
-      if (fs22.existsSync(testPath)) {
+      if (fs24.existsSync(testPath)) {
         foundPath = testPath;
         console.log(`\u2705 Found PDF file at: ${testPath}`);
         break;
@@ -27321,7 +28157,7 @@ router40.get("/attachments/:id/download", async (req, res) => {
       const contentDisposition = `${disposition}; filename*=UTF-8''${encodeURIComponent(displayName)}`;
       console.log(`\u{1F4C4} Setting Content-Disposition: ${contentDisposition} (mimeType: ${mimeType}, forceDownload: ${forceDownload})`);
       res.setHeader("Content-Disposition", contentDisposition);
-      const fileStream = fs22.createReadStream(foundPath);
+      const fileStream = fs24.createReadStream(foundPath);
       fileStream.pipe(res);
     } else {
       console.error(`File not found in any expected location for attachment ${attachmentId}`);
@@ -27352,7 +28188,7 @@ router40.delete("/attachments/:id", requireAuth, async (req, res) => {
       });
     }
     console.log(`\u{1F5D1}\uFE0F Admin ${user.name} (ID: ${user.id}) requesting deletion of attachment ${attachmentId}`);
-    const [attachment] = await db2.select({
+    const [attachment] = await db.select({
       id: attachments.id,
       orderId: attachments.orderId,
       originalName: attachments.originalName,
@@ -27374,20 +28210,20 @@ router40.delete("/attachments/:id", requireAuth, async (req, res) => {
     if (attachment.filePath && !attachment.filePath.startsWith("db://")) {
       let fileName = attachment.filePath;
       const possiblePaths = [];
-      if (path20.isAbsolute(fileName)) {
+      if (path22.isAbsolute(fileName)) {
         possiblePaths.push(fileName);
       } else {
         possiblePaths.push(
-          path20.join(process.cwd(), "attached_assets", fileName),
-          path20.join(process.cwd(), "uploads", fileName),
-          path20.join(process.cwd(), "uploads", "temp-pdf", fileName),
-          path20.join(process.cwd(), fileName)
+          path22.join(process.cwd(), "attached_assets", fileName),
+          path22.join(process.cwd(), "uploads", fileName),
+          path22.join(process.cwd(), "uploads", "temp-pdf", fileName),
+          path22.join(process.cwd(), fileName)
         );
       }
       for (const testPath of possiblePaths) {
-        if (fs22.existsSync(testPath)) {
+        if (fs24.existsSync(testPath)) {
           try {
-            fs22.unlinkSync(testPath);
+            fs24.unlinkSync(testPath);
             console.log(`\u{1F5D1}\uFE0F Deleted physical file at: ${testPath}`);
             break;
           } catch (fileError) {
@@ -27396,7 +28232,7 @@ router40.delete("/attachments/:id", requireAuth, async (req, res) => {
         }
       }
     }
-    const deletedRows = await db2.delete(attachments).where(eq38(attachments.id, attachmentId));
+    const deletedRows = await db.delete(attachments).where(eq38(attachments.id, attachmentId));
     console.log(`\u2705 Deleted attachment record from database (affected rows: ${deletedRows})`);
     return res.json({
       success: true,
@@ -27698,7 +28534,7 @@ app.use(session({
 console.log("\u2705 Session middleware configured globally");
 app.use((req, res, next) => {
   const start = Date.now();
-  const path21 = req.path;
+  const path23 = req.path;
   let capturedJsonResponse = void 0;
   const originalResJson = res.json;
   res.json = function(bodyJson, ...args) {
@@ -27707,8 +28543,8 @@ app.use((req, res, next) => {
   };
   res.on("finish", () => {
     const duration = Date.now() - start;
-    if (path21.startsWith("/api")) {
-      let logLine = `${req.method} ${path21} ${res.statusCode} in ${duration}ms`;
+    if (path23.startsWith("/api")) {
+      let logLine = `${req.method} ${path23} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }
@@ -27789,13 +28625,13 @@ if (process.env.VERCEL) {
     console.log("\u{1F50D} Session debug info:", sessionData);
     res.json(sessionData);
   });
-  const path21 = await import("path");
-  app.use(express4.static(path21.join(process.cwd(), "dist/public")));
+  const path23 = await import("path");
+  app.use(express4.static(path23.join(process.cwd(), "dist/public")));
   console.log("\u{1F4C1} Serving static files from dist/public");
   app.use(routes_default);
   app.get("*", (req, res) => {
     if (!req.path.startsWith("/api")) {
-      res.sendFile(path21.join(process.cwd(), "dist/public/index.html"));
+      res.sendFile(path23.join(process.cwd(), "dist/public/index.html"));
     }
   });
   app.use((err, _req, res, _next) => {

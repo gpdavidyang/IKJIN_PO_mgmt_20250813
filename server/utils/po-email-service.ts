@@ -44,6 +44,11 @@ export interface POEmailOptions {
   additionalMessage?: string;
   orderItems?: OrderItemSummary[];
   specialRequirements?: string;
+  additionalAttachments?: Array<{
+    filename: string;
+    content: Buffer;
+    contentType: string;
+  }>;
 }
 
 export class POEmailService {
@@ -201,6 +206,19 @@ export class POEmailService {
           contentType: 'application/pdf'
         });
         console.log(`📎 PDF 첨부파일 추가: 발주서_${emailOptions.orderNumber || timestamp}.pdf`);
+      }
+
+      // 추가 첨부파일 처리 (selectedAttachmentIds로부터 전달받은 파일들)
+      if (emailOptions.additionalAttachments && emailOptions.additionalAttachments.length > 0) {
+        console.log(`📎 추가 첨부파일 ${emailOptions.additionalAttachments.length}개 처리 시작`);
+        for (const additionalAttachment of emailOptions.additionalAttachments) {
+          attachments.push({
+            filename: additionalAttachment.filename,
+            content: additionalAttachment.content,
+            contentType: additionalAttachment.contentType
+          });
+          console.log(`📎 추가 첨부파일 추가: ${additionalAttachment.filename} (${additionalAttachment.content.length} bytes)`);
+        }
       }
 
       if (attachments.length === 0) {

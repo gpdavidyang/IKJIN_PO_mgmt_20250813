@@ -962,10 +962,13 @@ router.post("/orders/test-pdf", async (req, res) => {
   }
 });
 
-// Generate PDF for order
+// Generate PDF for order - Now using ProfessionalPDFGenerationService for better layout
 async function generatePDFLogic(req: any, res: any) {
   try {
     const { orderData, options = {} } = req.body;
+    const userId = req.user?.id || 'system';
+
+    console.log(`📄 [PDF Generation] 이쁜 레이아웃 PDF 생성 시작: ${orderData?.orderNumber || 'N/A'}`);
 
     // Enhanced validation
     if (!orderData) {
@@ -975,6 +978,35 @@ async function generatePDFLogic(req: any, res: any) {
       });
     }
 
+    // If orderData has an ID, use ProfessionalPDFGenerationService directly
+    if (orderData.id) {
+      console.log(`📄 [PDF Generation] Order ID 존재: ${orderData.id} - ProfessionalPDFGenerationService 사용`);
+      
+      const result = await ProfessionalPDFGenerationService.generateProfessionalPurchaseOrderPDF(
+        orderData.id,
+        userId
+      );
+
+      if (result.success) {
+        return res.json({
+          success: true,
+          message: "PDF가 성공적으로 생성되었습니다.",
+          pdfPath: result.pdfPath,
+          attachmentId: result.attachmentId,
+          downloadUrl: result.attachmentId ? `/api/attachments/${result.attachmentId}` : undefined,
+          pdfBuffer: result.pdfBuffer // For Vercel compatibility
+        });
+      } else {
+        return res.status(500).json({
+          success: false,
+          error: result.error || "PDF 생성에 실패했습니다."
+        });
+      }
+    }
+
+    // Fallback: If no order ID available, continue with original logic but warn about layout quality
+    console.log(`⚠️ [PDF Generation] Order ID 없음 - 기본 레이아웃 사용 (권장하지 않음)`);
+    
     // Validate essential fields
     const requiredFields = ['orderNumber', 'projectName', 'vendorName'];
     const missingFields = requiredFields.filter(field => !orderData[field]);
