@@ -3,25 +3,25 @@
  * Provides enhanced status handling with dark mode support
  */
 
-import { getStatusText as getBaseStatusText, getStatusColor as getBaseStatusColor } from './statusUtils';
+// No imports needed - this is now a self-contained utility
 
 /**
  * Get enhanced status color with dark mode and border support
  */
 export const getEnhancedStatusColor = (status: string): string => {
-  const baseColor = getBaseStatusColor(status);
-  
-  // Map base colors to enhanced versions with dark mode support
-  const colorEnhancementMap: { [key: string]: string } = {
-    'bg-gray-100 text-gray-800': 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-500/25 dark:text-gray-200 dark:border-gray-400/50',
-    'bg-yellow-100 text-yellow-800': 'bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-500/25 dark:text-yellow-200 dark:border-yellow-400/50',
-    'bg-blue-100 text-blue-800': 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-500/25 dark:text-blue-200 dark:border-blue-400/50',
-    'bg-red-100 text-red-800': 'bg-red-100 text-red-800 border-red-300 dark:bg-red-500/25 dark:text-red-200 dark:border-red-400/50',
-    'bg-purple-100 text-purple-800': 'bg-indigo-100 text-indigo-800 border-indigo-300 dark:bg-indigo-500/25 dark:text-indigo-200 dark:border-indigo-400/50',
-    'bg-green-100 text-green-800': 'bg-green-100 text-green-800 border-green-300 dark:bg-green-500/25 dark:text-green-200 dark:border-green-400/50'
+  // Direct status to enhanced color mapping for consistency
+  const statusColorMap: { [key: string]: string } = {
+    'draft': 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-500/25 dark:text-gray-200 dark:border-gray-400/50',
+    'pending': 'bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-500/25 dark:text-yellow-200 dark:border-yellow-400/50',
+    'approved': 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-500/25 dark:text-blue-200 dark:border-blue-400/50',
+    'created': 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-500/25 dark:text-blue-200 dark:border-blue-400/50',
+    'sent': 'bg-indigo-100 text-indigo-800 border-indigo-300 dark:bg-indigo-500/25 dark:text-indigo-200 dark:border-indigo-400/50',
+    'delivered': 'bg-green-100 text-green-800 border-green-300 dark:bg-green-500/25 dark:text-green-200 dark:border-green-400/50',
+    'completed': 'bg-green-100 text-green-800 border-green-300 dark:bg-green-500/25 dark:text-green-200 dark:border-green-400/50',
+    'rejected': 'bg-red-100 text-red-800 border-red-300 dark:bg-red-500/25 dark:text-red-200 dark:border-red-400/50'
   };
   
-  return colorEnhancementMap[baseColor] || colorEnhancementMap['bg-gray-100 text-gray-800'];
+  return statusColorMap[status] || statusColorMap['draft']; // Default to draft color
 };
 
 /**
@@ -29,12 +29,19 @@ export const getEnhancedStatusColor = (status: string): string => {
  * Handles special cases for order context
  */
 export const getOrderStatusText = (status: string): string => {
-  // Special mappings for order context
-  if (status === 'sent') return '발주완료';
-  if (status === 'delivered') return '납품완료';
-  if (status === 'completed') return '납품완료'; // Legacy support
+  // Complete mappings for order context - consistent with dashboard requirements
+  const orderStatusMap: { [key: string]: string } = {
+    'draft': '임시저장',
+    'pending': '승인대기', 
+    'approved': '승인완료',
+    'created': '발주생성',
+    'sent': '발주완료',
+    'delivered': '납품완료',
+    'completed': '납품완료', // Legacy support
+    'rejected': '반려'
+  };
   
-  return getBaseStatusText(status) || '-';
+  return orderStatusMap[status] || status || '-';
 };
 
 /**

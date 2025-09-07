@@ -22689,7 +22689,7 @@ init_professional_pdf_generation_service();
 import multer6 from "multer";
 import path16 from "path";
 import fs19 from "fs/promises";
-import { readFileSync } from "fs";
+import { readFileSync, existsSync as existsSync2, unlinkSync } from "fs";
 import { z as z8 } from "zod";
 var router29 = Router28();
 var storage5 = multer6.diskStorage({
@@ -22803,7 +22803,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
       let processedFileName = req.file.filename;
       const processedPath = req.file.path.replace(/\.(xlsx?)$/i, "_processed.$1");
       const removeResult = await removeAllInputSheets2(req.file.path, processedPath);
-      if (removeResult.success && existsSync(processedPath)) {
+      if (removeResult.success && existsSync2(processedPath)) {
         console.log(`\u2705 Input sheets removed: ${removeResult.removedSheets.join(", ")}`);
         fileToStore = processedPath;
         fileBuffer = readFileSync(processedPath);
@@ -23051,7 +23051,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
                 excelAttachment = process.env.VERCEL ? path16.join("/tmp", "uploads", "excel-simple", attachment.storedName) : attachment.filePath;
               }
             }
-            if (excelAttachment && fs19.existsSync(excelAttachment)) {
+            if (excelAttachment && existsSync2(excelAttachment)) {
               console.log(`\u{1F4CE} Sending email with attachment for order ${emailInfo.orderNumber}`);
               const result = await emailService4.sendPOWithOriginalFormat(
                 excelAttachment,
@@ -23098,7 +23098,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
     }
     const emailsSent = emailsToSend.length;
     if (processedExcelFile && processedExcelFile.filePath) {
-      if (existsSync(processedExcelFile.filePath)) {
+      if (existsSync2(processedExcelFile.filePath)) {
         try {
           unlinkSync(processedExcelFile.filePath);
           console.log("\u2705 Cleaned up temporary processed Excel file");

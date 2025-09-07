@@ -798,7 +798,7 @@ export default function OrdersProfessionalFast() {
         console.log('❌ PDF 파일을 찾을 수 없음');
         toast({
           title: "PDF 파일이 없습니다",
-          description: "발주서 상세에서 PDF를 생성해주세요.",
+          description: "관리자에 의해 삭제되었거나 PDF가 생성이 안 된 발주서입니다.",
           variant: "destructive",
         });
       }

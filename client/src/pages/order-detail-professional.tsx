@@ -504,7 +504,7 @@ export default function OrderDetailProfessional() {
                       // PDF not found - show helpful message
                       toast({
                         title: "PDF 파일이 없습니다",
-                        description: "발주서 생성 버튼을 클릭하면 PDF가 자동으로 생성됩니다.",
+                        description: "관리자에 의해 삭제되었거나 PDF가 생성이 안 된 발주서입니다.",
                       });
                     }
                   }}

@@ -6,7 +6,7 @@ import { requireAuth } from '../local-auth';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs/promises';
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync, unlinkSync } from 'fs';
 import { z } from 'zod';
 import { ProfessionalPDFGenerationService } from '../services/professional-pdf-generation-service.js';
 import { decodeKoreanFilename } from '../utils/korean-filename';
@@ -498,7 +498,7 @@ router.post('/orders/bulk-create-simple', requireAuth, upload.single('excelFile'
             }
             
             // Send email with Excel attachment if available
-            if (excelAttachment && fs.existsSync(excelAttachment)) {
+            if (excelAttachment && existsSync(excelAttachment)) {
               console.log(`📎 Sending email with attachment for order ${emailInfo.orderNumber}`);
               
               const result = await emailService.sendPOWithOriginalFormat(
