@@ -431,16 +431,17 @@ router.post('/save', simpleAuth, async (req: any, res) => {
           
           try {
             console.log('🚀 [PDF생성] 시작:', orderNumber, 'Order ID:', newOrder[0].id);
+            console.log('🌐 [PDF생성] Environment:', { VERCEL: !!process.env.VERCEL, NODE_ENV: process.env.NODE_ENV });
             
             // ProfessionalPDFGenerationService의 gatherComprehensiveOrderData 사용
             const comprehensiveData = await ProfessionalPDFGenerationService.gatherComprehensiveOrderData(newOrder[0].id);
             
             if (comprehensiveData) {
               console.log('✅ [PDF생성] 포괄적 데이터 수집 성공');
-              // PDF 생성
+              // PDF 생성 with enhanced error handling
               pdfBuffer = await ProfessionalPDFGenerationService.generateProfessionalPDF(comprehensiveData);
               pdfBase64 = pdfBuffer.toString('base64');
-              console.log('✅ [PDF생성] PDF 버퍼 생성 완료, 크기:', pdfBuffer.length, 'bytes');
+              console.log('✅ [PDF생성] PDF 버퍼 생성 완료, 크기:', pdfBuffer.length, 'bytes', 'Base64 길이:', pdfBase64.length, 'chars');
             } else {
               // fallback: 직접 데이터 구성
               console.log('⚠️ 포괄적 데이터 수집 실패, fallback 모드 사용');
@@ -611,11 +612,15 @@ router.post('/save', simpleAuth, async (req: any, res) => {
             console.error('❌ [PDF생성] 에러 상세:', {
               orderNumber,
               orderId: newOrder[0].id,
+              environment: process.env.VERCEL ? 'vercel' : 'local',
               errorMessage: pdfError instanceof Error ? pdfError.message : '알 수 없는 오류',
-              errorStack: pdfError instanceof Error ? pdfError.stack : null
+              errorStack: pdfError instanceof Error ? pdfError.stack : null,
+              memoryUsage: process.memoryUsage()
             });
             pdfGenerationStatus.success = false;
-            pdfGenerationStatus.message = `PDF 생성 실패: ${pdfError instanceof Error ? pdfError.message : '알 수 없는 오류'}`;
+            pdfGenerationStatus.message = process.env.VERCEL 
+              ? `PDF 생성 실패 (Vercel): ${pdfError instanceof Error ? pdfError.message : '알 수 없는 오류'}. 폰트 또는 환경 문제일 수 있습니다.`
+              : `PDF 생성 실패: ${pdfError instanceof Error ? pdfError.message : '알 수 없는 오류'}`;
           }
           
           pdfGenerationStatuses.push(pdfGenerationStatus);

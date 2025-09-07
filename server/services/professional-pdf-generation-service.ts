@@ -1112,11 +1112,12 @@ export class ProfessionalPDFGenerationService {
    * PDFKit으로 전문적인 발주서 PDF 생성
    */
   private static async generateProfessionalPDFWithPDFKit(orderData: ComprehensivePurchaseOrderData): Promise<Buffer> {
-    const PDFKitDocument = (await import('pdfkit')).default;
-    const fs = await import('fs');
-    
-    return new Promise((resolve, reject) => {
-      try {
+    try {
+      const PDFKitDocument = (await import('pdfkit')).default;
+      const fs = await import('fs');
+      
+      return new Promise((resolve, reject) => {
+        try {
         const doc = new PDFKitDocument({ 
           size: 'A4',
           margins: { top: 20, bottom: 20, left: 20, right: 20 },
@@ -1131,67 +1132,75 @@ export class ProfessionalPDFGenerationService {
         // 한글 폰트 등록 - 한글 지원을 위한 설정
         console.log('📝 [ProfessionalPDF] PDFKit으로 PDF 생성 (한글 폰트 등록)');
         
-        // 한글 폰트 경로 설정 (크로스 플랫폼 지원)
+        // 한글 폰트 경로 설정 (Vercel 환경 최적화)
         let koreanFontPath = null;
-        const possibleFonts = [
-          // 프로젝트에 포함된 폰트 우선 사용
-          path.join(process.cwd(), 'fonts', 'NotoSansKR-Regular.ttf'),
-          path.join(process.cwd(), 'fonts', 'NanumGothic.ttf'),
-          path.join(__dirname, '../../fonts', 'NotoSansKR-Regular.ttf'),
-          path.join(__dirname, '../../fonts', 'NanumGothic.ttf'),
-          // 시스템 폰트
-          '/System/Library/Fonts/Supplemental/AppleGothic.ttf', // macOS
-          '/System/Library/Fonts/AppleSDGothicNeo.ttc', // macOS AppleSDGothicNeo
-          '/System/Library/Fonts/Supplemental/AppleMyungjo.ttf', // macOS 명조
-          '/System/Library/Fonts/NanumGothic.ttc', // macOS Nanum Gothic
-          'C:\\Windows\\Fonts\\malgun.ttf', // Windows
-          'C:\\Windows\\Fonts\\gulim.ttf', // Windows 굴림
-          'C:\\Windows\\Fonts\\batang.ttc', // Windows 바탕
-          '/usr/share/fonts/truetype/nanum/NanumGothic.ttf', // Linux
-          '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc', // Linux Noto
-          '/usr/share/fonts/truetype/fonts-nanum/NanumGothic.ttf' // Linux Nanum alternative
-        ];
         
-        // 사용 가능한 폰트 찾기
-        for (const fontPath of possibleFonts) {
-          try {
-            if (fs.existsSync(fontPath)) {
-              koreanFontPath = fontPath;
-              console.log(`✅ [ProfessionalPDF] 한글 폰트 발견: ${fontPath}`);
-              break;
+        // Vercel 환경에서는 폰트 로딩 스킵하고 기본 폰트 사용
+        if (process.env.VERCEL) {
+          console.log('📝 [ProfessionalPDF] Vercel 환경: 기본 폰트 사용 (한글 -> 영문 대체 모드)');
+          doc.font('Helvetica');
+        } else {
+          // 로컬 환경에서만 한글 폰트 시도
+          const possibleFonts = [
+            // 프로젝트에 포함된 폰트 우선 사용
+            path.join(process.cwd(), 'fonts', 'NotoSansKR-Regular.ttf'),
+            path.join(process.cwd(), 'fonts', 'NanumGothic.ttf'),
+            path.join(__dirname, '../../fonts', 'NotoSansKR-Regular.ttf'),
+            path.join(__dirname, '../../fonts', 'NanumGothic.ttf'),
+            // 시스템 폰트
+            '/System/Library/Fonts/Supplemental/AppleGothic.ttf', // macOS
+            '/System/Library/Fonts/AppleSDGothicNeo.ttc', // macOS AppleSDGothicNeo
+            '/System/Library/Fonts/Supplemental/AppleMyungjo.ttf', // macOS 명조
+            '/System/Library/Fonts/NanumGothic.ttc', // macOS Nanum Gothic
+            'C:\\Windows\\Fonts\\malgun.ttf', // Windows
+            'C:\\Windows\\Fonts\\gulim.ttf', // Windows 굴림
+            'C:\\Windows\\Fonts\\batang.ttc', // Windows 바탕
+            '/usr/share/fonts/truetype/nanum/NanumGothic.ttf', // Linux
+            '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc', // Linux Noto
+            '/usr/share/fonts/truetype/fonts-nanum/NanumGothic.ttf' // Linux Nanum alternative
+          ];
+          
+          // 사용 가능한 폰트 찾기
+          for (const fontPath of possibleFonts) {
+            try {
+              if (fs.existsSync(fontPath)) {
+                koreanFontPath = fontPath;
+                console.log(`✅ [ProfessionalPDF] 한글 폰트 발견: ${fontPath}`);
+                break;
+              }
+            } catch (error) {
+              // 파일 시스템 에러 무시하고 다음 폰트 시도
+              continue;
             }
-          } catch (error) {
-            // 파일 시스템 에러 무시하고 다음 폰트 시도
-            continue;
           }
-        }
-        
-        // 한글 폰트 등록 및 설정
-        if (koreanFontPath) {
-          try {
-            // PDFKit에서 한글 폰트 등록
-            doc.registerFont('Korean', koreanFontPath);
-            doc.font('Korean'); // 기본 폰트를 한글 폰트로 설정
-            console.log(`✅ [ProfessionalPDF] 한글 폰트 등록 성공: ${koreanFontPath}`);
-          } catch (fontError) {
-            console.warn('⚠️ [ProfessionalPDF] 한글 폰트 등록 실패:', fontError);
+          
+          // 한글 폰트 등록 및 설정
+          if (koreanFontPath) {
+            try {
+              // PDFKit에서 한글 폰트 등록
+              doc.registerFont('Korean', koreanFontPath);
+              doc.font('Korean'); // 기본 폰트를 한글 폰트로 설정
+              console.log(`✅ [ProfessionalPDF] 한글 폰트 등록 성공: ${koreanFontPath}`);
+            } catch (fontError) {
+              console.warn('⚠️ [ProfessionalPDF] 한글 폰트 등록 실패:', fontError);
+              // Fallback: 기본 폰트 사용하고 한글을 영문으로 대체
+              doc.font('Helvetica');
+              console.log('📝 [ProfessionalPDF] 기본 폰트 사용 (한글 -> 영문 대체 모드)');
+            }
+          } else {
+            console.warn('⚠️ [ProfessionalPDF] 한글 폰트를 찾을 수 없음');
             // Fallback: 기본 폰트 사용하고 한글을 영문으로 대체
             doc.font('Helvetica');
             console.log('📝 [ProfessionalPDF] 기본 폰트 사용 (한글 -> 영문 대체 모드)');
           }
-        } else {
-          console.warn('⚠️ [ProfessionalPDF] 한글 폰트를 찾을 수 없음');
-          // Fallback: 기본 폰트 사용하고 한글을 영문으로 대체
-          doc.font('Helvetica');
-          console.log('📝 [ProfessionalPDF] 기본 폰트 사용 (한글 -> 영문 대체 모드)');
         }
         
         // 한글 텍스트를 안전하게 처리하는 함수
         const safeText = (text: string) => {
           if (!text) return '';
           
-          // 한글 폰트가 없으면 영문으로 대체
-          if (!koreanFontPath) {
+          // 한글 폰트가 없거나 Vercel 환경이면 영문으로 대체
+          if (!koreanFontPath || process.env.VERCEL) {
             // 기본적인 한글 -> 영문 매핑
             const koreanToEnglish: { [key: string]: string } = {
               '발주서': 'Purchase Order',
@@ -1422,6 +1431,11 @@ export class ProfessionalPDFGenerationService {
         reject(error);
       }
     });
+    
+    } catch (importError) {
+      console.error('❌ [ProfessionalPDF] PDFKit import 실패:', importError);
+      throw new Error(`PDFKit을 로드할 수 없습니다 (환경: ${process.env.VERCEL ? 'Vercel' : 'Local'}): ${importError instanceof Error ? importError.message : 'Unknown error'}`);
+    }
   }
 
 }
