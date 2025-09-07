@@ -35,7 +35,8 @@ import {
   BarChart3,
   PieChart,
   Download,
-  Eye
+  Eye,
+  Mail
 } from "lucide-react";
 
 export default function Reports() {
@@ -1138,17 +1139,22 @@ export default function Reports() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className={`text-lg font-semibold flex items-center gap-2 transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                <Search className="h-5 w-5 text-blue-600" />
+                {reportType === 'email' ? <Mail className="h-5 w-5 text-blue-600" /> : <Search className="h-5 w-5 text-blue-600" />}
                 {reportType === 'orders' ? '검색 결과' : 
                  reportType === 'category' ? '분류별 보고서 결과' :
                  reportType === 'project' ? '현장별 보고서 결과' :
-                 '거래처별 보고서 결과'}
+                 reportType === 'vendor' ? '거래처별 보고서 결과' :
+                 '이메일 발송 이력'}
               </CardTitle>
               <p className={`text-sm transition-colors mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                 {reportType === 'orders' ? (
                   processingLoading ? "데이터 로딩 중..." : 
                   processingReport && processingReport.orders ? 
                   `총 ${processingReport.orders.length}건의 발주 데이터` : "검색된 데이터가 없습니다"
+                ) : reportType === 'email' ? (
+                  emailReport ? 
+                  `총 ${emailReport.statistics?.totalEmails || 0}건의 이메일 발송 기록` : 
+                  "이메일 발송 이력 데이터를 불러오는 중입니다"
                 ) : (
                   "필터를 설정하고 검색 버튼을 클릭하세요"
                 )}
@@ -2132,6 +2138,123 @@ export default function Reports() {
                   <div className="text-center py-8">
                     <div className="text-gray-500">거래처별 보고서 데이터를 불러오는 중이거나 데이터가 없습니다.</div>
                     <p className="text-sm text-gray-400 mt-2">필터 조건을 변경하여 다시 검색해보세요.</p>
+                  </div>
+                )
+              )}
+
+              {/* Email History View */}
+              {reportType === 'email' && (
+                emailReport ? (
+                  <div className="space-y-4">
+                    {/* Email Statistics */}
+                    <div className="space-y-4 mb-6">
+                      <h3 className={`text-lg font-semibold mb-4 transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>이메일 발송 이력</h3>
+                      
+                      {/* Statistics Grid */}
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                        <div className={`p-3 rounded-lg text-center transition-colors ${isDarkMode ? 'bg-blue-900/30' : 'bg-blue-50'}`}>
+                          <div className={`text-2xl font-bold transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                            {emailReport.statistics?.totalEmails || 0}
+                          </div>
+                          <div className={`text-sm transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>총 이메일</div>
+                        </div>
+                        <div className={`p-3 rounded-lg text-center transition-colors ${isDarkMode ? 'bg-green-900/30' : 'bg-green-50'}`}>
+                          <div className={`text-2xl font-bold transition-colors ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
+                            {emailReport.statistics?.successfulEmails || 0}
+                          </div>
+                          <div className={`text-sm transition-colors ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>발송 성공</div>
+                        </div>
+                        <div className={`p-3 rounded-lg text-center transition-colors ${isDarkMode ? 'bg-red-900/30' : 'bg-red-50'}`}>
+                          <div className={`text-2xl font-bold transition-colors ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>
+                            {emailReport.statistics?.failedEmails || 0}
+                          </div>
+                          <div className={`text-sm transition-colors ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>발송 실패</div>
+                        </div>
+                        <div className={`p-3 rounded-lg text-center transition-colors ${isDarkMode ? 'bg-yellow-900/30' : 'bg-yellow-50'}`}>
+                          <div className={`text-2xl font-bold transition-colors ${isDarkMode ? 'text-yellow-400' : 'text-yellow-600'}`}>
+                            {emailReport.statistics?.pendingEmails || 0}
+                          </div>
+                          <div className={`text-sm transition-colors ${isDarkMode ? 'text-yellow-400' : 'text-yellow-600'}`}>대기중</div>
+                        </div>
+                        <div className={`p-3 rounded-lg text-center transition-colors ${isDarkMode ? 'bg-purple-900/30' : 'bg-purple-50'}`}>
+                          <div className={`text-2xl font-bold transition-colors ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`}>
+                            {emailReport.statistics?.successRate || 0}%
+                          </div>
+                          <div className={`text-sm transition-colors ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`}>성공률</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Email History Table */}
+                    <div className="space-y-4">
+                      <h4 className={`font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>이메일 발송 내역</h4>
+                      
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className={`border-b transition-colors ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}>
+                              <th className={`text-left py-3 px-2 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>발송일시</th>
+                              <th className={`text-left py-3 px-2 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>발주번호</th>
+                              <th className={`text-left py-3 px-2 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>거래처</th>
+                              <th className={`text-left py-3 px-2 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>제목</th>
+                              <th className={`text-left py-3 px-2 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>수신자</th>
+                              <th className={`text-left py-3 px-2 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>발송자</th>
+                              <th className={`text-center py-3 px-2 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>상태</th>
+                              <th className={`text-center py-3 px-2 font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>첨부파일</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {emailReport.data?.map((email: any, index: number) => (
+                              <tr key={email.id} className={`border-b transition-colors ${isDarkMode ? 'border-gray-700' : 'border-gray-100'} hover:${isDarkMode ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
+                                <td className="py-3 px-2 text-sm">
+                                  {email.sentAt ? new Date(email.sentAt).toLocaleString('ko-KR') : '-'}
+                                </td>
+                                <td className="py-3 px-2 text-sm font-medium">
+                                  {email.orderNumber || '-'}
+                                </td>
+                                <td className="py-3 px-2 text-sm">
+                                  {email.vendorName || '-'}
+                                </td>
+                                <td className="py-3 px-2 text-sm max-w-xs truncate" title={email.subject}>
+                                  {email.subject}
+                                </td>
+                                <td className="py-3 px-2 text-sm">
+                                  {email.recipients && Array.isArray(email.recipients) ? 
+                                    email.recipients.map((r: any) => r.email || r).join(', ') : 
+                                    (typeof email.recipients === 'string' ? email.recipients : '-')
+                                  }
+                                </td>
+                                <td className="py-3 px-2 text-sm">
+                                  {email.sentByName || email.sentByEmail || '-'}
+                                </td>
+                                <td className="py-3 px-2 text-center">
+                                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                    email.status === 'sent' 
+                                      ? 'bg-green-100 text-green-800' 
+                                      : email.status === 'failed'
+                                      ? 'bg-red-100 text-red-800'
+                                      : 'bg-yellow-100 text-yellow-800'
+                                  }`}>
+                                    {email.status === 'sent' ? '발송완료' : 
+                                     email.status === 'failed' ? '발송실패' : '대기중'}
+                                  </span>
+                                </td>
+                                <td className="py-3 px-2 text-center text-sm">
+                                  {email.attachmentFiles && Array.isArray(email.attachmentFiles) && email.attachmentFiles.length > 0 ? 
+                                    `${email.attachmentFiles.length}개` : '-'
+                                  }
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="text-gray-500">이메일 이력 데이터를 불러오는 중입니다.</div>
+                    <p className="text-sm text-gray-400 mt-2">필터 조건을 설정하여 검색해보세요.</p>
                   </div>
                 )
               )}
