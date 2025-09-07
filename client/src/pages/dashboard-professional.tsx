@@ -9,7 +9,7 @@ import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { formatKoreanWon } from "@/lib/utils";
 import { getStatusText } from "@/lib/statusUtils";
-import { getEnhancedStatusColor, getOrderStatusText, getApprovalStatusText } from "@/lib/orderStatusUtils";
+import { getEnhancedStatusColor, getOrderStatusText, getApprovalStatusText, canEditOrder, canShowPDF, canSendEmail, canShowEmailHistory } from "@/lib/orderStatusUtils";
 import { apiRequest } from "@/lib/queryClient";
 import { EmailSendDialog } from "@/components/email-send-dialog";
 import { EmailHistoryModal } from "@/components/email-history-modal";
@@ -926,8 +926,7 @@ export default function DashboardProfessional() {
                         </button>
                         
                         {/* Edit button - only for draft and created status */}
-                        {(order.orderStatus === 'draft' || order.orderStatus === 'created' || 
-                          (!order.orderStatus && order.status !== 'sent' && order.status !== 'delivered')) && (
+                        {canEditOrder(order) && (
                           <button
                             onClick={() => navigate(`/orders/${order.id}/edit`)}
                             className="p-1.5 rounded-md transition-all duration-200"
@@ -950,8 +949,7 @@ export default function DashboardProfessional() {
                         )}
                         
                         {/* PDF button - only for created, sent, delivered status */}
-                        {(order.orderStatus === 'created' || order.orderStatus === 'sent' || order.orderStatus === 'delivered' ||
-                          (!order.orderStatus && (order.status === 'approved' || order.status === 'sent' || order.status === 'completed'))) && (
+                        {canShowPDF(order) && (
                           <button
                             onClick={() => handlePDFDownload(order)}
                             className="p-1.5 rounded-md transition-all duration-200"
@@ -974,8 +972,7 @@ export default function DashboardProfessional() {
                         )}
                         
                         {/* Email button - only for created status */}
-                        {(order.orderStatus === 'created' || 
-                          (!order.orderStatus && order.status === 'approved')) && (
+                        {canSendEmail(order) && (
                           <button
                             onClick={() => handleEmailSend(order)}
                             className="p-1.5 rounded-md transition-all duration-200"
@@ -998,7 +995,7 @@ export default function DashboardProfessional() {
                         )}
                         
                         {/* Email history button - show if emails have been sent */}
-                        {order.totalEmailsSent > 0 && (
+                        {canShowEmailHistory(order) && (
                           <button
                             onClick={() => handleViewEmailHistory(order)}
                             className="p-1.5 rounded-md transition-all duration-200"
