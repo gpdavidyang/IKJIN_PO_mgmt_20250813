@@ -244,4 +244,123 @@ router.get("/email-history/:id", requireAuth, async (req, res) => {
   }
 });
 
+// Get all email history with pagination and filters (for reports page)
+router.get("/email-history", requireAuth, async (req, res) => {
+  try {
+    const { 
+      page = '1', 
+      limit = '50',
+      startDate,
+      endDate,
+      status,
+      orderNumber,
+      vendorName,
+      senderUserId 
+    } = req.query;
+
+    const pageNum = parseInt(page as string);
+    const limitNum = parseInt(limit as string);
+    const offset = (pageNum - 1) * limitNum;
+
+    // Build where conditions
+    const conditions = [];
+    
+    if (startDate) {
+      conditions.push(sql`${emailSendHistory.sentAt} >= ${new Date(startDate as string)}`);
+    }
+    if (endDate) {
+      conditions.push(sql`${emailSendHistory.sentAt} <= ${new Date(endDate as string)}`);
+    }
+    if (status) {
+      conditions.push(eq(emailSendHistory.status, status as string));
+    }
+    if (orderNumber) {
+      conditions.push(sql`${purchaseOrders.orderNumber} ILIKE ${`%${orderNumber}%`}`);
+    }
+    if (vendorName) {
+      conditions.push(sql`${vendors.name} ILIKE ${`%${vendorName}%`}`);
+    }
+    if (senderUserId) {
+      conditions.push(eq(emailSendHistory.senderUserId, senderUserId as string));
+    }
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    // Get total count
+    const [{ count }] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(emailSendHistory)
+      .leftJoin(purchaseOrders, eq(emailSendHistory.orderId, purchaseOrders.id))
+      .leftJoin(vendors, eq(purchaseOrders.vendorId, vendors.id))
+      .where(whereClause);
+
+    // Get paginated data
+    const emails = await db
+      .select({
+        id: emailSendHistory.id,
+        orderId: emailSendHistory.orderId,
+        orderNumber: purchaseOrders.orderNumber,
+        vendorName: vendors.name,
+        sentAt: emailSendHistory.sentAt,
+        sentByName: users.name,
+        sentByEmail: users.email,
+        recipients: emailSendHistory.recipients,
+        cc: emailSendHistory.cc,
+        subject: emailSendHistory.subject,
+        messageContent: emailSendHistory.messageContent,
+        attachmentFiles: emailSendHistory.attachmentFiles,
+        status: emailSendHistory.status,
+        errorMessage: emailSendHistory.errorMessage,
+        sentCount: emailSendHistory.sentCount,
+        failedCount: emailSendHistory.failedCount,
+        createdAt: emailSendHistory.createdAt,
+      })
+      .from(emailSendHistory)
+      .leftJoin(purchaseOrders, eq(emailSendHistory.orderId, purchaseOrders.id))
+      .leftJoin(vendors, eq(purchaseOrders.vendorId, vendors.id))
+      .leftJoin(users, eq(emailSendHistory.senderUserId, users.id))
+      .where(whereClause)
+      .orderBy(desc(emailSendHistory.sentAt))
+      .limit(limitNum)
+      .offset(offset);
+
+    // Calculate statistics
+    const statusCounts = await db
+      .select({
+        status: emailSendHistory.status,
+        count: sql<number>`count(*)`
+      })
+      .from(emailSendHistory)
+      .leftJoin(purchaseOrders, eq(emailSendHistory.orderId, purchaseOrders.id))
+      .leftJoin(vendors, eq(purchaseOrders.vendorId, vendors.id))
+      .where(whereClause)
+      .groupBy(emailSendHistory.status);
+
+    const totalEmails = count;
+    const successfulEmails = statusCounts.find(s => s.status === 'sent')?.count || 0;
+    const failedEmails = statusCounts.find(s => s.status === 'failed')?.count || 0;
+    const pendingEmails = statusCounts.find(s => s.status === 'pending')?.count || 0;
+
+    res.json({
+      data: emails,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total: totalEmails,
+        pages: Math.ceil(totalEmails / limitNum)
+      },
+      statistics: {
+        totalEmails,
+        successfulEmails,
+        failedEmails,
+        pendingEmails,
+        successRate: totalEmails > 0 ? Math.round((successfulEmails / totalEmails) * 100) : 0
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching email history:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 export default router;

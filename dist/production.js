@@ -5847,12 +5847,23 @@ function verifyToken(token) {
   }
 }
 function extractToken(authHeader, cookies) {
+  console.log("\u{1F50D} JWT: Extracting token from:", {
+    hasAuthHeader: !!authHeader,
+    authHeaderValue: authHeader ? authHeader.substring(0, 20) + "..." : "none",
+    hasCookies: !!cookies,
+    cookieKeys: cookies ? Object.keys(cookies) : [],
+    hasAuthTokenCookie: !!(cookies && cookies.auth_token)
+  });
   if (authHeader && authHeader.startsWith("Bearer ")) {
-    return authHeader.substring(7);
+    const token = authHeader.substring(7);
+    console.log("\u2705 JWT: Token extracted from Authorization header, length:", token.length);
+    return token;
   }
   if (cookies && cookies.auth_token) {
+    console.log("\u2705 JWT: Token extracted from cookie, length:", cookies.auth_token.length);
     return cookies.auth_token;
   }
+  console.log("\u274C JWT: No token found in headers or cookies");
   return null;
 }
 
@@ -8559,6 +8570,31 @@ router.get("/test/ping", (req, res) => {
     vercel: process.env.VERCEL || "false",
     origin: req.get("Origin") || "none"
   });
+});
+router.get("/auth/test-jwt", (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    const cookies = req.cookies;
+    const token = localStorage?.getItem ? "frontend-only" : null;
+    console.log("\u{1F9EA} JWT \uD14C\uC2A4\uD2B8 - \uC694\uCCAD \uC815\uBCF4:", {
+      hasAuthHeader: !!authHeader,
+      authHeaderValue: authHeader ? authHeader.substring(0, 20) + "..." : "none",
+      hasCookies: !!cookies,
+      cookieKeys: Object.keys(cookies || {}),
+      hasAuthTokenCookie: !!(cookies && cookies.auth_token),
+      tokenLength: cookies?.auth_token?.length || 0
+    });
+    res.json({
+      message: "JWT \uD14C\uC2A4\uD2B8 \uC5D4\uB4DC\uD3EC\uC778\uD2B8",
+      hasAuthHeader: !!authHeader,
+      hasCookieToken: !!(cookies && cookies.auth_token),
+      cookieTokenLength: cookies?.auth_token?.length || 0,
+      timestamp: (/* @__PURE__ */ new Date()).toISOString()
+    });
+  } catch (error) {
+    console.error("JWT \uD14C\uC2A4\uD2B8 \uC5D0\uB7EC:", error);
+    res.status(500).json({ error: "JWT \uD14C\uC2A4\uD2B8 \uC2E4\uD328" });
+  }
 });
 router.get("/auth/debug-prod", (req, res) => {
   try {

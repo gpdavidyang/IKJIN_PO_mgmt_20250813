@@ -46,7 +46,7 @@ export default function Reports() {
   const isDarkMode = theme === 'dark';
 
   // 리포트 타입 상태
-  const [reportType, setReportType] = useState<'orders' | 'category' | 'project' | 'vendor'>('orders');
+  const [reportType, setReportType] = useState<'orders' | 'category' | 'project' | 'vendor' | 'email'>('orders');
   const [categoryType, setCategoryType] = useState<'major' | 'middle' | 'minor'>('major');
   
   // 계층적 카테고리 필터 상태
@@ -667,6 +667,25 @@ export default function Reports() {
     enabled: isAuthenticated && !!activeFilters && reportType === 'vendor',
   });
 
+  const { data: emailReport } = useQuery({
+    queryKey: ["/api/email-history/email-history", activeFilters?.startDate, activeFilters?.endDate, filters.status, filters.search],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        page: '1',
+        limit: '100'
+      });
+      if (activeFilters?.startDate) params.append('startDate', activeFilters.startDate);
+      if (activeFilters?.endDate) params.append('endDate', activeFilters.endDate);
+      if (filters.status && filters.status !== 'all') params.append('status', filters.status);
+      if (filters.search) params.append('orderNumber', filters.search);
+      
+      const response = await fetch(`/api/email-history/email-history?${params.toString()}`);
+      if (!response.ok) throw new Error('Failed to fetch email history');
+      return response.json();
+    },
+    enabled: isAuthenticated && reportType === 'email',
+  });
+
   // Excel 내보내기 핸들러
   const handleExcelExport = async () => {
     try {
@@ -806,6 +825,18 @@ export default function Reports() {
               }`}
             >
               거래처별 보고서
+            </button>
+            <button
+              onClick={() => setReportType('email')}
+              className={`py-2 px-6 text-sm font-medium border-b-2 transition-colors ${
+                reportType === 'email'
+                  ? 'border-blue-600 text-blue-600'
+                  : isDarkMode 
+                    ? 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-500' 
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              이메일 이력
             </button>
           </nav>
         </div>
