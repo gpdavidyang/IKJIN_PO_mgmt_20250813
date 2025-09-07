@@ -44,6 +44,7 @@ import ordersCreateRoutes from "./orders-create";
 import healthRoutes from "./health";
 import debugRoutes from "./debug";
 import attachmentsRoutes from "./attachments";
+import koreanFontRoutes from "./korean-font-status";
 
 const router = Router();
 
@@ -88,5 +89,6 @@ router.use("/api/excel-smart-upload", excelSmartUploadRoutes); // Smart Excel up
 router.use("/api", attachmentsRoutes); // Attachment download routes
 router.use("/api", healthRoutes); // Health check routes
 router.use("/api", debugRoutes); // Debug routes
+router.use("/api/korean-font", koreanFontRoutes); // Korean font support status
 
 export default router;

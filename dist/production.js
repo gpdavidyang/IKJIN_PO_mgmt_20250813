@@ -4297,7 +4297,7 @@ import cookieParser from "cookie-parser";
 import crypto4 from "crypto";
 
 // server/routes/index.ts
-import { Router as Router38 } from "express";
+import { Router as Router39 } from "express";
 
 // server/routes/auth.ts
 import { Router } from "express";
@@ -27400,49 +27400,226 @@ router40.delete("/attachments/:id", requireAuth, async (req, res) => {
 });
 var attachments_default = router40;
 
-// server/routes/index.ts
+// server/routes/korean-font-status.ts
+init_korean_font_manager();
+init_professional_pdf_generation_service();
+import { Router as Router38 } from "express";
 var router41 = Router38();
-router41.use("/api", auth_default);
-router41.use("/api", projects_default);
-router41.use("/api", orders_default);
-router41.use("/api", vendors_default);
-router41.use("/api", items_default);
-router41.use("/api", dashboard_default);
-router41.use("/api", companies_default);
-router41.use("/api/admin", admin_default);
-router41.use("/api/excel-automation", excel_automation_default);
-router41.use("/api/po-template", po_template_real_default);
-router41.use("/api/reports", reports_default);
-router41.use("/api", import_export_default);
-router41.use("/api", email_history_default);
-router41.use("/api/excel-template", excel_template_default);
-router41.use("/api", orders_optimized_default);
-router41.use("/api", orders_create_default);
-router41.use("/api", order_statuses_default);
-router41.use("/api", invoices_default);
-router41.use("/api", verification_logs_default);
-router41.use("/api", item_receipts_default);
-router41.use("/api", approvals_default);
-router41.use("/api", project_members_default);
-router41.use("/api", project_types_default);
-router41.use("/api", simple_auth_default);
-router41.use("/api", test_accounts_default);
-router41.use("/api/categories", categories_default);
-router41.use("/api/approval-settings", approval_settings_default);
-router41.use("/api", approval_authorities_default);
-router41.use("/api", notifications_default);
-router41.use("/api", orders_simple_default);
-router41.use("/api", positions_default);
-router41.use("/api/audit", audit_default);
-router41.use("/api/email-test", email_test_default);
-router41.use("/api/email-settings", email_settings_default);
-router41.use(workflow_default);
-router41.use("/api", orders_workflow_default);
-router41.use("/api/excel-smart-upload", excel_smart_upload_simple_default);
-router41.use("/api", attachments_default);
-router41.use("/api", health_default);
-router41.use("/api", debug_default);
-var routes_default = router41;
+router41.get("/status", async (req, res) => {
+  try {
+    console.log("\u{1F50D} [KoreanFontAPI] \uD3F0\uD2B8 \uC0C1\uD0DC \uD655\uC778 \uC694\uCCAD");
+    const fontReport = fontManager.getFontReport();
+    const bestFont = fontManager.getBestKoreanFont();
+    const isVercelOptimized = fontManager.isVercelOptimized();
+    const environment = {
+      isVercel: !!process.env.VERCEL,
+      nodeEnv: process.env.NODE_ENV,
+      platform: process.platform,
+      cwd: process.cwd()
+    };
+    const response = {
+      success: true,
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      environment,
+      fontSupport: {
+        isOptimized: isVercelOptimized,
+        totalFonts: fontReport.totalFonts,
+        availableFonts: fontReport.availableFonts,
+        recommendedFont: fontReport.recommendedFont,
+        hasKoreanSupport: fontReport.availableFonts > 0
+      },
+      fonts: fontReport.fonts.map((font) => ({
+        name: font.name,
+        available: font.available,
+        size: font.size,
+        sizeKB: font.size ? Math.round(font.size / 1024) : 0,
+        path: font.path.includes(process.cwd()) ? "PROJECT" : "SYSTEM"
+      })),
+      textConversion: {
+        withFont: fontManager.safeKoreanText("\uAD6C\uB9E4\uBC1C\uC8FC\uC11C \uD14C\uC2A4\uD2B8", true),
+        withoutFont: fontManager.safeKoreanText("\uAD6C\uB9E4\uBC1C\uC8FC\uC11C \uD14C\uC2A4\uD2B8", false)
+      }
+    };
+    console.log("\u2705 [KoreanFontAPI] \uD3F0\uD2B8 \uC0C1\uD0DC \uD655\uC778 \uC644\uB8CC");
+    res.json(response);
+  } catch (error) {
+    console.error("\u274C [KoreanFontAPI] \uD3F0\uD2B8 \uC0C1\uD0DC \uD655\uC778 \uC624\uB958:", error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+      timestamp: (/* @__PURE__ */ new Date()).toISOString()
+    });
+  }
+});
+router41.post("/test-pdf", async (req, res) => {
+  try {
+    console.log("\u{1F4C4} [KoreanFontAPI] \uD55C\uAE00 PDF \uD14C\uC2A4\uD2B8 \uC694\uCCAD");
+    const testData = {
+      orderNumber: "TEST-KOREAN-" + Date.now(),
+      orderDate: /* @__PURE__ */ new Date(),
+      deliveryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1e3),
+      createdAt: /* @__PURE__ */ new Date(),
+      issuerCompany: {
+        name: "\uD55C\uAE00\uD3F0\uD2B8 \uD14C\uC2A4\uD2B8 \uD68C\uC0AC",
+        businessNumber: "123-45-67890",
+        representative: "\uAE40\uB300\uD45C",
+        address: "\uC11C\uC6B8\uD2B9\uBCC4\uC2DC \uAC15\uB0A8\uAD6C \uD14C\uD5E4\uB780\uB85C 123",
+        phone: "02-1234-5678",
+        email: "test@korean-font.co.kr"
+      },
+      vendorCompany: {
+        name: "\uD55C\uAE00 \uAC70\uB798\uCC98 \uD14C\uC2A4\uD2B8",
+        businessNumber: "987-65-43210",
+        representative: "\uBC15\uB300\uD45C",
+        address: "\uACBD\uAE30\uB3C4 \uC131\uB0A8\uC2DC \uBD84\uB2F9\uAD6C \uD310\uAD50\uC5ED\uB85C 166",
+        phone: "031-987-6543",
+        email: "vendor@korean-test.co.kr",
+        contactPerson: "\uC774\uB2F4\uB2F9\uC790"
+      },
+      project: {
+        name: "\uD55C\uAE00 \uD3F0\uD2B8 \uC9C0\uC6D0 \uD14C\uC2A4\uD2B8 \uD604\uC7A5",
+        code: "KOREAN-TEST-001",
+        location: "\uC11C\uC6B8\uD2B9\uBCC4\uC2DC \uC885\uB85C\uAD6C",
+        projectManager: "\uCD5C\uD604\uC7A5",
+        projectManagerContact: "010-1234-5678",
+        orderManager: "\uC815\uBC1C\uC8FC",
+        orderManagerContact: "order@test-korean.co.kr"
+      },
+      creator: {
+        name: "\uD55C\uAE00\uD3F0\uD2B8\uC2DC\uC2A4\uD15C",
+        email: "admin@korean-font.co.kr",
+        phone: "010-9876-5432"
+      },
+      items: [
+        {
+          sequenceNo: 1,
+          name: "\uD55C\uAE00 \uD488\uBAA9\uBA85 \uD14C\uC2A4\uD2B8 (\uAC74\uC124\uC790\uC7AC)",
+          specification: "\uADDC\uACA9: 1200\xD7600\xD7100mm",
+          quantity: 10,
+          unit: "\uAC1C",
+          unitPrice: 5e4,
+          totalPrice: 5e5,
+          deliveryLocation: "\uC11C\uC6B8 \uAC15\uB0A8\uAD6C \uD14C\uC2A4\uD2B8 \uD604\uC7A5",
+          deliveryEmail: "delivery@korean-test.com",
+          remarks: "\uD604\uC7A5 \uC9C1\uC811 \uBC30\uC1A1, \uD55C\uAE00 \uD2B9\uC774\uC0AC\uD56D"
+        }
+      ],
+      financial: {
+        subtotalAmount: 5e5,
+        vatRate: 0.1,
+        vatAmount: 5e4,
+        totalAmount: 55e4,
+        discountAmount: 0,
+        currencyCode: "KRW"
+      },
+      metadata: {
+        notes: "\uD55C\uAE00 \uD3F0\uD2B8 \uC9C0\uC6D0 \uD14C\uC2A4\uD2B8\uC6A9 PDF \uC0DD\uC131. \uBAA8\uB4E0 \uD55C\uAE00 \uD14D\uC2A4\uD2B8\uAC00 \uC62C\uBC14\uB974\uAC8C \uB80C\uB354\uB9C1\uB418\uB294\uC9C0 \uD655\uC778\uD558\uC138\uC694.",
+        documentId: "KOREAN-FONT-TEST-" + Date.now(),
+        generatedAt: /* @__PURE__ */ new Date(),
+        generatedBy: "\uD55C\uAE00\uD3F0\uD2B8API\uD14C\uC2A4\uD2B8",
+        templateVersion: "v2.1.0-korean-font-optimized"
+      }
+    };
+    const pdfBuffer = await ProfessionalPDFGenerationService.generateProfessionalPDFWithPDFKit(testData);
+    const base64PDF = pdfBuffer.toString("base64");
+    const response = {
+      success: true,
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      fontUsed: fontManager.getBestKoreanFont()?.name || "None",
+      pdfSize: pdfBuffer.length,
+      pdfSizeKB: Math.round(pdfBuffer.length / 1024),
+      base64PDF,
+      downloadUrl: `/api/korean-font/download-test-pdf?t=${Date.now()}`
+    };
+    console.log(`\u2705 [KoreanFontAPI] \uD55C\uAE00 PDF \uC0DD\uC131 \uC131\uACF5: ${response.pdfSizeKB}KB`);
+    res.json(response);
+  } catch (error) {
+    console.error("\u274C [KoreanFontAPI] \uD55C\uAE00 PDF \uC0DD\uC131 \uC624\uB958:", error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+      timestamp: (/* @__PURE__ */ new Date()).toISOString()
+    });
+  }
+});
+router41.get("/base64-font", async (req, res) => {
+  try {
+    console.log("\u{1F524} [KoreanFontAPI] Base64 \uD3F0\uD2B8 \uC778\uCF54\uB529 \uC694\uCCAD");
+    const fontName = req.query.font;
+    const base64Font = await fontManager.getFontAsBase64(fontName);
+    if (!base64Font) {
+      return res.status(404).json({
+        success: false,
+        error: "Font not found or encoding failed",
+        availableFonts: fontManager.getAvailableFonts().map((f) => f.name)
+      });
+    }
+    const response = {
+      success: true,
+      fontName: fontName || "auto-selected",
+      base64Size: base64Font.length,
+      base64SizeKB: Math.round(base64Font.length / 1024),
+      base64Font,
+      usage: {
+        pdfkit: `doc.registerFont('Korean', Buffer.from('${base64Font.substring(0, 50)}...', 'base64'));`
+      }
+    };
+    console.log(`\u2705 [KoreanFontAPI] Base64 \uD3F0\uD2B8 \uC778\uCF54\uB529 \uC644\uB8CC: ${response.base64SizeKB}KB`);
+    res.json(response);
+  } catch (error) {
+    console.error("\u274C [KoreanFontAPI] Base64 \uD3F0\uD2B8 \uC778\uCF54\uB529 \uC624\uB958:", error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+var korean_font_status_default = router41;
+
+// server/routes/index.ts
+var router42 = Router39();
+router42.use("/api", auth_default);
+router42.use("/api", projects_default);
+router42.use("/api", orders_default);
+router42.use("/api", vendors_default);
+router42.use("/api", items_default);
+router42.use("/api", dashboard_default);
+router42.use("/api", companies_default);
+router42.use("/api/admin", admin_default);
+router42.use("/api/excel-automation", excel_automation_default);
+router42.use("/api/po-template", po_template_real_default);
+router42.use("/api/reports", reports_default);
+router42.use("/api", import_export_default);
+router42.use("/api", email_history_default);
+router42.use("/api/excel-template", excel_template_default);
+router42.use("/api", orders_optimized_default);
+router42.use("/api", orders_create_default);
+router42.use("/api", order_statuses_default);
+router42.use("/api", invoices_default);
+router42.use("/api", verification_logs_default);
+router42.use("/api", item_receipts_default);
+router42.use("/api", approvals_default);
+router42.use("/api", project_members_default);
+router42.use("/api", project_types_default);
+router42.use("/api", simple_auth_default);
+router42.use("/api", test_accounts_default);
+router42.use("/api/categories", categories_default);
+router42.use("/api/approval-settings", approval_settings_default);
+router42.use("/api", approval_authorities_default);
+router42.use("/api", notifications_default);
+router42.use("/api", orders_simple_default);
+router42.use("/api", positions_default);
+router42.use("/api/audit", audit_default);
+router42.use("/api/email-test", email_test_default);
+router42.use("/api/email-settings", email_settings_default);
+router42.use(workflow_default);
+router42.use("/api", orders_workflow_default);
+router42.use("/api/excel-smart-upload", excel_smart_upload_simple_default);
+router42.use("/api", attachments_default);
+router42.use("/api", health_default);
+router42.use("/api", debug_default);
+router42.use("/api/korean-font", korean_font_status_default);
+var routes_default = router42;
 
 // server/production.ts
 dotenv2.config();
