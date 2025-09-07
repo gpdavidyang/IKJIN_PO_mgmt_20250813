@@ -178,11 +178,15 @@ export class OptimizedDashboardQueries {
         .select({
           id: purchaseOrders.id,
           orderNumber: purchaseOrders.orderNumber,
-          status: purchaseOrders.status,
+          status: purchaseOrders.status, // Legacy field for backward compatibility
+          orderStatus: purchaseOrders.orderStatus, // New order status field
+          approvalStatus: purchaseOrders.approvalStatus, // Approval status field
           totalAmount: purchaseOrders.totalAmount,
           createdAt: purchaseOrders.createdAt,
+          orderDate: purchaseOrders.orderDate,
           vendorId: vendors.id,
           vendorName: vendors.name,
+          vendorEmail: vendors.email,
           projectId: projects.id,
           projectName: projects.projectName
         })
@@ -197,12 +201,16 @@ export class OptimizedDashboardQueries {
       const recentOrders = recentOrdersRaw.map(order => ({
         id: order.id,
         orderNumber: order.orderNumber,
-        status: order.status,
+        status: order.status, // Legacy status field
+        orderStatus: order.orderStatus, // New order status field
+        approvalStatus: order.approvalStatus, // Approval status field
         totalAmount: order.totalAmount,
         createdAt: order.createdAt,
+        orderDate: order.orderDate,
         vendor: order.vendorId ? {
           id: order.vendorId,
-          name: order.vendorName
+          name: order.vendorName,
+          email: order.vendorEmail
         } : null,
         project: order.projectId ? {
           id: order.projectId,

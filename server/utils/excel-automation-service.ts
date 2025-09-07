@@ -159,19 +159,54 @@ export class ExcelAutomationService {
           if (removeResult.success && fs.existsSync(processedExcelPath)) {
             console.log(`✅ [DEBUG] Input 시트 제거 완료: ${processedExcelPath}`);
             
-            // 각 발주서에 처리된 Excel 파일 첨부
+            // 각 발주서에 처리된 Excel 파일 첨부 및 PDF 생성 (발주서 번호 포함)
             for (const order of orders) {
+              // 1. Excel 파일 첨부
               const attachResult = await ExcelAttachmentService.saveProcessedExcelFile(
                 order.id,
                 processedExcelPath,
                 originalFileName,
-                userId
+                userId,
+                order.orderNumber // 발주서 번호 전달하여 표준화된 파일명 생성
               );
               
               if (attachResult.success) {
                 console.log(`✅ [DEBUG] 발주서 ${order.orderNumber}에 Excel 첨부파일 저장 완료: ID ${attachResult.attachmentId}`);
               } else {
                 console.warn(`⚠️ [DEBUG] 발주서 ${order.orderNumber}에 Excel 첨부파일 저장 실패: ${attachResult.error}`);
+              }
+              
+              // 2. PDF 자동 생성 및 첨부
+              try {
+                console.log(`📄 [DEBUG] 발주서 ${order.orderNumber}에 대한 PDF 생성 시작...`);
+                const { ProfessionalPDFGenerationService } = await import('../services/professional-pdf-generation-service');
+                
+                const pdfResult = await ProfessionalPDFGenerationService.generateProfessionalPurchaseOrderPDF(
+                  order.id,
+                  userId
+                );
+                
+                if (pdfResult.success) {
+                  console.log(`✅ [DEBUG] 발주서 ${order.orderNumber}에 PDF 생성 완료: ID ${pdfResult.attachmentId}`);
+                } else {
+                  console.warn(`⚠️ [DEBUG] 발주서 ${order.orderNumber}에 PDF 생성 실패: ${pdfResult.error}`);
+                }
+              } catch (pdfError) {
+                console.error(`❌ [DEBUG] 발주서 ${order.orderNumber} PDF 생성 중 오류:`, pdfError);
+              }
+              
+              // 3. 발주서 상태를 '발주생성'으로 업데이트
+              try {
+                await db.update(purchaseOrders)
+                  .set({ 
+                    orderStatus: '발주생성',
+                    status: 'created'
+                  })
+                  .where(eq(purchaseOrders.id, order.id));
+                  
+                console.log(`✅ [DEBUG] 발주서 ${order.orderNumber} 상태를 '발주생성'으로 업데이트 완료`);
+              } catch (statusError) {
+                console.warn(`⚠️ [DEBUG] 발주서 ${order.orderNumber} 상태 업데이트 실패:`, statusError);
               }
             }
             

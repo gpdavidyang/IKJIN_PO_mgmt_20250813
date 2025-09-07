@@ -39,7 +39,8 @@ const emailService = new POEmailService();
 async function updateOrderStatusAfterEmail(orderNumber: string): Promise<void> {
   await database.db.update(purchaseOrders)
     .set({
-      orderStatus: 'sent',
+      orderStatus: '발주완료', // 이메일 발송 완료 후 '발주완료' 상태로 변경
+      status: 'completed',
       updatedAt: new Date()
     })
     .where(eq(purchaseOrders.orderNumber, orderNumber));

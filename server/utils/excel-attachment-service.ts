@@ -22,12 +22,14 @@ export class ExcelAttachmentService {
    * @param processedExcelPath 처리된 Excel 파일 경로 (Input 시트 제거됨)
    * @param originalFileName 원본 파일명
    * @param uploadedBy 업로드한 사용자 ID
+   * @param orderNumber 발주서 번호 (파일명 생성용)
    */
   static async saveProcessedExcelFile(
     orderId: number,
     processedExcelPath: string,
     originalFileName: string,
-    uploadedBy: string
+    uploadedBy: string,
+    orderNumber?: string
   ): Promise<ExcelAttachmentResult> {
     
     try {
@@ -43,7 +45,19 @@ export class ExcelAttachmentService {
       
       // 파일 정보 수집
       const stats = fs.statSync(processedExcelPath);
-      const fileName = path.basename(processedExcelPath);
+      
+      // 표준화된 파일명 생성: IKJIN_[PO번호]_[YYYYMMDD].xlsx
+      let standardizedFileName: string;
+      if (orderNumber) {
+        const today = new Date();
+        const dateStr = today.toISOString().slice(0, 10).replace(/-/g, ''); // YYYYMMDD
+        standardizedFileName = `IKJIN_${orderNumber}_${dateStr}.xlsx`;
+      } else {
+        // orderNumber가 없으면 원본 파일명 사용
+        standardizedFileName = originalFileName;
+      }
+      
+      console.log(`📝 표준화된 Excel 파일명: ${standardizedFileName}`);
       
       // Base64로 파일 내용 읽기 (Vercel 환경 대응)
       const fileBuffer = fs.readFileSync(processedExcelPath);
@@ -52,9 +66,9 @@ export class ExcelAttachmentService {
       // DB에 첨부파일 정보 저장
       const [attachment] = await db.insert(attachments).values({
         orderId,
-        originalName: originalFileName,
-        storedName: fileName,
-        filePath: `db://${fileName}`, // Base64 저장 표시
+        originalName: standardizedFileName, // 표준화된 파일명 사용
+        storedName: standardizedFileName,
+        filePath: `db://${standardizedFileName}`, // Base64 저장 표시
         fileSize: stats.size,
         mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         uploadedBy,

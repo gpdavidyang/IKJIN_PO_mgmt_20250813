@@ -31,8 +31,9 @@ declare global {
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { db } from "./db";
-import { insertOrderTemplateSchema, insertProjectSchema, users, companies } from "@shared/schema";
+import { insertOrderTemplateSchema, insertProjectSchema, users, companies, attachments } from "@shared/schema";
 import { insertVendorSchema, insertItemSchema, insertPurchaseOrderSchema, insertInvoiceSchema, insertItemReceiptSchema, insertVerificationLogSchema, insertCompanySchema } from "@shared/schema";
+import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import { z } from "zod";
 import nodemailer from "nodemailer";
@@ -1890,6 +1891,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error downloading attachment:", error);
       res.status(500).json({ message: "Failed to download attachment" });
+    }
+  });
+
+  // Get attachments for an order
+  app.get('/api/orders/:id/attachments', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      const orderId = parseInt(req.params.id);
+      
+      if (isNaN(orderId)) {
+        return res.status(400).json({ message: "Invalid order ID" });
+      }
+      
+      const order = await storage.getPurchaseOrder(orderId);
+      if (!order) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+
+      // Check access permissions
+      if (user?.role !== "admin" && order.userId !== user?.id) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      // Get all attachments for this order
+      const orderAttachments = await db.select({
+        id: attachments.id,
+        originalName: attachments.originalName,
+        storedName: attachments.storedName,
+        filePath: attachments.filePath,
+        fileSize: attachments.fileSize,
+        mimeType: attachments.mimeType,
+        uploadedBy: attachments.uploadedBy,
+        uploadedAt: attachments.uploadedAt
+      })
+      .from(attachments)
+      .where(eq(attachments.orderId, orderId))
+      .orderBy(attachments.uploadedAt);
+
+      console.log(`📎 Retrieved ${orderAttachments.length} attachments for order ${orderId}`);
+      res.json(orderAttachments);
+      
+    } catch (error) {
+      console.error("Error fetching order attachments:", error);
+      res.status(500).json({ message: "Failed to fetch attachments" });
     }
   });
 

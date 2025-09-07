@@ -15,10 +15,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trash2, Edit, Plus, Settings, Workflow, ChevronRight, ChevronDown, Layers, Zap } from "lucide-react";
+import { Trash2, Edit, Plus, Settings, Workflow, ChevronRight, ChevronDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { ApprovalWorkflowTemplateBuilder } from "./ApprovalWorkflowTemplateBuilder";
 
 interface ApprovalWorkflowSettings {
   id: number;
