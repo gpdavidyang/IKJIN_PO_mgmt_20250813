@@ -393,8 +393,8 @@ export default function OrderEdit() {
     console.log(`Category change: index=${index}, type=${categoryType}, value=${value}`);
     const updates: any = {};
     
-    // Value is already handled by Select component (empty string for deselection)
-    const actualValue = value || "";
+    // Handle special "__CLEAR__" value for deselection
+    const actualValue = value === "__CLEAR__" ? "" : value;
     console.log(`Actual value after conversion: ${actualValue}`);
     
     if (categoryType === 'major') {
@@ -1039,7 +1039,7 @@ export default function OrderEdit() {
                             <SelectValue placeholder="대분류 선택" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">선택 해제</SelectItem>
+                            <SelectItem value="__CLEAR__">선택 해제</SelectItem>
                             {getMajorCategories().map((category: any) => (
                               <SelectItem key={`major-${category.id}`} value={category.categoryName}>
                                 {category.categoryName}
@@ -1063,7 +1063,7 @@ export default function OrderEdit() {
                             <SelectValue placeholder={item.majorCategory ? "중분류 선택" : "대분류 먼저 선택"} />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">선택 해제</SelectItem>
+                            <SelectItem value="__CLEAR__">선택 해제</SelectItem>
                             {getMiddleCategories(item.majorCategory || "").map((category: any) => (
                               <SelectItem key={`middle-${category.id}`} value={category.categoryName}>
                                 {category.categoryName}
@@ -1087,7 +1087,7 @@ export default function OrderEdit() {
                             <SelectValue placeholder={item.middleCategory ? "소분류 선택" : "중분류 먼저 선택"} />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">선택 해제</SelectItem>
+                            <SelectItem value="__CLEAR__">선택 해제</SelectItem>
                             {getMinorCategories(item.middleCategory || "").map((category: any) => (
                               <SelectItem key={`minor-${category.id}`} value={category.categoryName}>
                                 {category.categoryName}
