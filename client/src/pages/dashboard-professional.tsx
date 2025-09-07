@@ -32,6 +32,16 @@ export default function DashboardProfessional() {
   const queryClient = useQueryClient();
   const { actualTheme } = useTheme();
 
+  // Show loading while checking authentication - MOVED TO TOP BEFORE HOOKS
+  if (authLoading) {
+    return <DashboardSkeleton />;
+  }
+
+  // Redirect if not authenticated - MOVED TO TOP BEFORE HOOKS
+  if (!user) {
+    return <DashboardSkeleton />; // Show skeleton while redirecting
+  }
+
   // Modal states
   const [isMonthlyTrendModalOpen, setIsMonthlyTrendModalOpen] = useState(false);
   const [isStatusDistributionModalOpen, setIsStatusDistributionModalOpen] = useState(false);
@@ -71,6 +81,11 @@ export default function DashboardProfessional() {
 
   // Unified dashboard API call - only fetch when authenticated
   const { data: dashboardData, isLoading: dashboardLoading, error: dashboardError } = useDashboardData();
+  
+  // Show loading while fetching dashboard data - MOVED AFTER HOOKS
+  if (dashboardLoading) {
+    return <DashboardSkeleton />;
+  }
   
   // Extract data from unified response with fallbacks - MUST BE DEFINED BEFORE CALLBACKS
   const stats = dashboardData?.statistics || {};
@@ -291,22 +306,6 @@ export default function DashboardProfessional() {
       });
     }
   }, [toast]);
-
-
-  // Show loading while checking authentication
-  if (authLoading) {
-    return <DashboardSkeleton />;
-  }
-
-  // Redirect if not authenticated
-  if (!user) {
-    return <DashboardSkeleton />; // Show skeleton while redirecting
-  }
-
-  // Show loading while fetching dashboard data
-  if (dashboardLoading) {
-    return <DashboardSkeleton />;
-  }
 
   // Professional color palette
   const colors = {
