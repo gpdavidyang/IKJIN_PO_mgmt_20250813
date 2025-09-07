@@ -56,7 +56,7 @@ const CreateOrder = createNetworkAwareLazyComponent(() => import("@/pages/create
 // const CreatePanelOrder = createLazyComponent(() => import("@/pages/create-order-panel"), 'CreatePanelOrder');
 // const CreateAccessoriesOrder = createLazyComponent(() => import("@/pages/create-order-accessories"), 'CreateAccessoriesOrder');
 const CategoryManagement = createLazyComponent(() => import("@/pages/category-management"), 'CategoryManagement');
-// const CreateStandardOrder = createLazyComponent(() => import("@/pages/create-order-standard-professional"), 'CreateStandardOrder');
+const CreateStandardOrder = createLazyComponent(() => import("@/pages/create-order-standard-professional"), 'CreateStandardOrder');
 // const CreateStandardOrderRefactored = createLazyComponent(() => import("@/pages/create-order-standard-refactored"), 'CreateStandardOrderRefactored');
 // const CreateMaterialsOrder = createLazyComponent(() => import("@/pages/create-order-materials"), 'CreateMaterialsOrder');
 const CreateOrderExcel = createLazyComponent(() => DynamicFeatures.loadExcelPage(), 'CreateOrderExcel');

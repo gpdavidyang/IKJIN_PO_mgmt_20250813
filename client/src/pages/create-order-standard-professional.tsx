@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { 
   FileText, 
@@ -31,11 +32,13 @@ import {
   DollarSign,
   Loader2,
   Building2,
-  Calculator
+  Calculator,
+  Zap
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Project, User as DatabaseUser } from "@shared/schema";
 import { formatNumberWithCommas, removeCommas, generatePONumber } from "@/lib/order-utils";
+import { ExcelAutomationWizard } from "@/components/excel-automation-wizard";
 
 interface StandardOrderForm {
   site: string;
@@ -357,9 +360,24 @@ export default function CreateStandardOrderProfessional() {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Order Info Card */}
-          <Card className="shadow-sm bg-white">
+        {/* Tabs for Manual and Automation */}
+        <Tabs defaultValue="manual" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2 max-w-[400px]">
+            <TabsTrigger value="manual" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              수동 입력
+            </TabsTrigger>
+            <TabsTrigger value="automation" className="flex items-center gap-2">
+              <Zap className="h-4 w-4" />
+              엑셀 자동화
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Manual Input Tab */}
+          <TabsContent value="manual" className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Order Info Card */}
+              <Card className="shadow-sm bg-white">
             <div className="p-6 border-b border-blue-200 bg-blue-50/30">
               <div className="flex items-center gap-2">
                 <Building2 className="h-5 w-5 text-gray-600" />
@@ -746,6 +764,13 @@ export default function CreateStandardOrderProfessional() {
             </Button>
           </div>
         </form>
+      </TabsContent>
+
+      {/* Automation Tab */}
+      <TabsContent value="automation" className="space-y-6">
+        <ExcelAutomationWizard />
+      </TabsContent>
+    </Tabs>
       </div>
     </div>
   );
