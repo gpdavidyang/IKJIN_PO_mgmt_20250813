@@ -173,28 +173,30 @@ export class OptimizedDashboardQueries {
       );
       const vendorStats = vendorResult.rows[0] || { activeVendors: 0 };
 
-      // Get recent orders with vendor and project information
-      const recentOrdersRaw = await db
-        .select({
-          id: purchaseOrders.id,
-          orderNumber: purchaseOrders.orderNumber,
-          status: purchaseOrders.status, // Legacy field for backward compatibility
-          orderStatus: purchaseOrders.orderStatus, // New order status field
-          approvalStatus: purchaseOrders.approvalStatus, // Approval status field
-          totalAmount: purchaseOrders.totalAmount,
-          createdAt: purchaseOrders.createdAt,
-          orderDate: purchaseOrders.orderDate,
-          vendorId: vendors.id,
-          vendorName: vendors.name,
-          vendorEmail: vendors.email,
-          projectId: projects.id,
-          projectName: projects.projectName
-        })
-        .from(purchaseOrders)
-        .leftJoin(vendors, eq(purchaseOrders.vendorId, vendors.id))
-        .leftJoin(projects, eq(purchaseOrders.projectId, projects.id))
-        .orderBy(desc(purchaseOrders.createdAt))
-        .limit(10);
+      // Get recent orders with vendor and project information - using raw SQL to ensure correct column mapping
+      const recentOrdersResult = await db.execute(
+        sql`SELECT 
+          po.id,
+          po.order_number as "orderNumber",
+          po.status,
+          po.order_status as "orderStatus", 
+          po.approval_status as "approvalStatus",
+          po.total_amount as "totalAmount",
+          po.created_at as "createdAt",
+          po.order_date as "orderDate",
+          v.id as "vendorId",
+          v.name as "vendorName",
+          v.email as "vendorEmail",
+          p.id as "projectId", 
+          p.project_name as "projectName"
+        FROM purchase_orders po
+        LEFT JOIN vendors v ON po.vendor_id = v.id
+        LEFT JOIN projects p ON po.project_id = p.id
+        ORDER BY po.created_at DESC
+        LIMIT 10`
+      );
+      
+      const recentOrdersRaw = recentOrdersResult.rows;
       
 
       // Transform to nested structure for backward compatibility
