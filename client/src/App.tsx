@@ -291,6 +291,11 @@ const Layout = React.memo(function Layout() {
                   <CreateStandardOrder />
                 </Suspense>
               </Route>
+              <Route path="/create-order-standard-professional">
+                <Suspense fallback={<FormLoadingFallback />}>
+                  <CreateStandardOrder />
+                </Suspense>
+              </Route>
               <Route path="/create-order/standard-new">
                 <Suspense fallback={<FormLoadingFallback />}>
                   <CreateStandardOrderRefactored />
