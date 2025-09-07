@@ -9,7 +9,7 @@ import { purchaseOrders, orderHistory } from '@shared/schema';
 
 // Mock dependencies
 jest.mock('../db');
-jest.mock('../services/pdf-generation-service');
+jest.mock('../services/professional-pdf-generation-service');
 
 const mockDb = db as jest.Mocked<typeof db>;
 
@@ -90,8 +90,8 @@ describe('발주서 상태 관리 테스트', () => {
       });
 
       // Mock PDF generation service
-      const { PDFGenerationService } = await import('../services/pdf-generation-service');
-      (PDFGenerationService.generatePurchaseOrderPDF as jest.Mock)
+      const { ProfessionalPDFGenerationService } = await import('../services/professional-pdf-generation-service');
+      (ProfessionalPDFGenerationService.generateProfessionalPurchaseOrderPDF as jest.Mock)
         .mockResolvedValue({
           success: true,
           pdfPath: '/uploads/pdf/test.pdf',

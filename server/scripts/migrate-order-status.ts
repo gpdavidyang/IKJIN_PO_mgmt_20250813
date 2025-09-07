@@ -147,7 +147,7 @@ export async function generateMissingPDFs() {
     }
 
     // 동적으로 PDF 생성 서비스 import
-    const { PDFGenerationService } = await import('../services/pdf-generation-service');
+    const { ProfessionalPDFGenerationService } = await import('../services/professional-pdf-generation-service.js');
 
     let successCount = 0;
     let errorCount = 0;
@@ -181,9 +181,8 @@ export async function generateMissingPDFs() {
           site: order.project?.projectName
         };
 
-        const pdfResult = await PDFGenerationService.generatePurchaseOrderPDF(
+        const pdfResult = await ProfessionalPDFGenerationService.generateProfessionalPurchaseOrderPDF(
           order.id,
-          pdfData,
           'system' // system user로 생성
         );
 
