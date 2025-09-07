@@ -26,23 +26,14 @@ import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart, PieChart, Pie, Cell } from "recharts";
 
 export default function DashboardProfessional() {
+  // ALL HOOKS MUST BE CALLED FIRST - BEFORE ANY CONDITIONAL LOGIC
   const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const queryClient = useQueryClient();
   const { actualTheme } = useTheme();
 
-  // Show loading while checking authentication - MOVED TO TOP BEFORE HOOKS
-  if (authLoading) {
-    return <DashboardSkeleton />;
-  }
-
-  // Redirect if not authenticated - MOVED TO TOP BEFORE HOOKS
-  if (!user) {
-    return <DashboardSkeleton />; // Show skeleton while redirecting
-  }
-
-  // Modal states
+  // Modal states - ALL useState hooks must be at the top
   const [isMonthlyTrendModalOpen, setIsMonthlyTrendModalOpen] = useState(false);
   const [isStatusDistributionModalOpen, setIsStatusDistributionModalOpen] = useState(false);
   
@@ -57,14 +48,13 @@ export default function DashboardProfessional() {
   // Sorting state for recent orders table
   const [sortField, setSortField] = useState<string>('');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-  
 
   // Check if dark mode is active - MEMOIZED to prevent recalculation
   const isDarkMode = useMemo(() => {
     return actualTheme === 'dark';
   }, [actualTheme]);
 
-  // Redirect to login if not authenticated
+  // Redirect to login if not authenticated - useEffect must be before conditional returns
   useEffect(() => {
     if (!authLoading && !user) {
       toast({
@@ -81,12 +71,7 @@ export default function DashboardProfessional() {
 
   // Unified dashboard API call - only fetch when authenticated
   const { data: dashboardData, isLoading: dashboardLoading, error: dashboardError } = useDashboardData();
-  
-  // Show loading while fetching dashboard data - MOVED AFTER HOOKS
-  if (dashboardLoading) {
-    return <DashboardSkeleton />;
-  }
-  
+
   // Extract data from unified response with fallbacks - MUST BE DEFINED BEFORE CALLBACKS
   const stats = dashboardData?.statistics || {};
   const recentOrders = dashboardData?.recentOrders || [];
@@ -96,61 +81,8 @@ export default function DashboardProfessional() {
   const projectStats = dashboardData?.projectStats || [];
   const categoryStats = dashboardData?.categoryStats || [];
 
-  // Helper functions for email and status rendering (from orders-professional.tsx)
-  const renderEmailStatus = (order: any) => {
-    if (!order.emailStatus || order.totalEmailsSent === 0) {
-      return (
-        <span className="text-xs" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>미발송</span>
-      );
-    }
-
-    if (order.emailStatus === 'sent') {
-      return (
-        <div className="flex items-center gap-1">
-          <Send className="h-3 w-3" style={{ color: isDarkMode ? '#60a5fa' : '#2563eb' }} />
-          <span className="text-xs" style={{ color: isDarkMode ? '#60a5fa' : '#2563eb' }}>발송됨</span>
-        </div>
-      );
-    }
-
-    if (order.emailStatus === 'opened') {
-      return (
-        <div className="flex items-center gap-1">
-          <Mail className="h-3 w-3" style={{ color: isDarkMode ? '#34d399' : '#059669' }} />
-          <span className="text-xs" style={{ color: isDarkMode ? '#34d399' : '#059669' }}>열람됨</span>
-        </div>
-      );
-    }
-
-    return (
-      <span className="text-xs" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>미발송</span>
-    );
-  };
-
-  const getStatusColor = (status: string) => {
-    if (isDarkMode) {
-      switch (status) {
-        case 'pending': return 'bg-yellow-900/30 text-yellow-300 border-yellow-600';
-        case 'approved': return 'bg-green-900/30 text-green-300 border-green-600';
-        case 'sent': return 'bg-blue-900/30 text-blue-300 border-blue-600';
-        case 'completed': return 'bg-purple-900/30 text-purple-300 border-purple-600';
-        case 'rejected': return 'bg-red-900/30 text-red-300 border-red-600';
-        default: return 'bg-gray-700 text-gray-300 border-gray-600';
-      }
-    } else {
-      switch (status) {
-        case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-        case 'approved': return 'bg-green-100 text-green-800 border-green-200';
-        case 'sent': return 'bg-blue-100 text-blue-800 border-blue-200';
-        case 'completed': return 'bg-purple-100 text-purple-800 border-purple-200';
-        case 'rejected': return 'bg-red-100 text-red-800 border-red-200';
-        default: return 'bg-gray-100 text-gray-800 border-gray-200';
-      }
-    }
-  };
-
+  // ALL CALLBACK HOOKS MUST BE HERE - AFTER DATA EXTRACTION BUT BEFORE CONDITIONAL RETURNS
   // Email handlers (from orders-professional.tsx) - MEMOIZED
-  // NOW SAFE - recentOrders is defined above
   const handleEmailSend = useCallback((order: any) => {
     const fullOrder = recentOrders.find((o: any) => o.id === order.id);
     if (fullOrder) {
@@ -307,6 +239,114 @@ export default function DashboardProfessional() {
     }
   }, [toast]);
 
+  // Sort recent orders based on current sort settings - MEMO HOOK MUST BE HERE
+  const sortedRecentOrders = useMemo(() => {
+    if (!sortField) return recentOrders;
+    
+    return [...recentOrders].sort((a, b) => {
+      let aValue = a[sortField];
+      let bValue = b[sortField];
+      
+      // Handle nested properties
+      if (sortField === 'vendorName') {
+        aValue = a.vendor?.name || '';
+        bValue = b.vendor?.name || '';
+      } else if (sortField === 'projectName') {
+        aValue = a.project?.projectName || a.project?.name || '';
+        bValue = b.project?.projectName || b.project?.name || '';
+      } else if (sortField === 'totalAmount') {
+        aValue = Number(a.totalAmount) || 0;
+        bValue = Number(b.totalAmount) || 0;
+      } else if (sortField === 'orderDate') {
+        aValue = new Date(a.orderDate || a.createdAt).getTime();
+        bValue = new Date(b.orderDate || b.createdAt).getTime();
+      } else if (sortField === 'createdAt') {
+        aValue = new Date(a.createdAt).getTime();
+        bValue = new Date(b.createdAt).getTime();
+      }
+      
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortDirection === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+      }
+      
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+      }
+      
+      return 0;
+    });
+  }, [recentOrders, sortField, sortDirection]);
+
+  // CONDITIONAL RETURNS ONLY AFTER ALL HOOKS ARE CALLED
+  // Show loading while checking authentication
+  if (authLoading) {
+    return <DashboardSkeleton />;
+  }
+
+  // Redirect if not authenticated
+  if (!user) {
+    return <DashboardSkeleton />; // Show skeleton while redirecting
+  }
+  
+  // Show loading while fetching dashboard data
+  if (dashboardLoading) {
+    return <DashboardSkeleton />;
+  }
+
+  // Helper functions for email and status rendering (from orders-professional.tsx)
+  const renderEmailStatus = (order: any) => {
+    if (!order.emailStatus || order.totalEmailsSent === 0) {
+      return (
+        <span className="text-xs" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>미발송</span>
+      );
+    }
+
+    if (order.emailStatus === 'sent') {
+      return (
+        <div className="flex items-center gap-1">
+          <Send className="h-3 w-3" style={{ color: isDarkMode ? '#60a5fa' : '#2563eb' }} />
+          <span className="text-xs" style={{ color: isDarkMode ? '#60a5fa' : '#2563eb' }}>발송됨</span>
+        </div>
+      );
+    }
+
+    if (order.emailStatus === 'opened') {
+      return (
+        <div className="flex items-center gap-1">
+          <Mail className="h-3 w-3" style={{ color: isDarkMode ? '#34d399' : '#059669' }} />
+          <span className="text-xs" style={{ color: isDarkMode ? '#34d399' : '#059669' }}>열람됨</span>
+        </div>
+      );
+    }
+
+    return (
+      <span className="text-xs" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>미발송</span>
+    );
+  };
+
+  const getStatusColor = (status: string) => {
+    if (isDarkMode) {
+      switch (status) {
+        case 'pending': return 'bg-yellow-900/30 text-yellow-300 border-yellow-600';
+        case 'approved': return 'bg-green-900/30 text-green-300 border-green-600';
+        case 'sent': return 'bg-blue-900/30 text-blue-300 border-blue-600';
+        case 'completed': return 'bg-purple-900/30 text-purple-300 border-purple-600';
+        case 'rejected': return 'bg-red-900/30 text-red-300 border-red-600';
+        default: return 'bg-gray-700 text-gray-300 border-gray-600';
+      }
+    } else {
+      switch (status) {
+        case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        case 'approved': return 'bg-green-100 text-green-800 border-green-200';
+        case 'sent': return 'bg-blue-100 text-blue-800 border-blue-200';
+        case 'completed': return 'bg-purple-100 text-purple-800 border-purple-200';
+        case 'rejected': return 'bg-red-100 text-red-800 border-red-200';
+        default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      }
+    }
+  };
+
+
   // Professional color palette
   const colors = {
     primary: '#3B82F6',
@@ -381,43 +421,6 @@ export default function DashboardProfessional() {
     return sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />;
   };
 
-  // Sort recent orders based on current sort settings
-  const sortedRecentOrders = useMemo(() => {
-    if (!sortField) return recentOrders;
-    
-    return [...recentOrders].sort((a, b) => {
-      let aValue = a[sortField];
-      let bValue = b[sortField];
-      
-      // Handle nested properties
-      if (sortField === 'vendorName') {
-        aValue = a.vendor?.name || '';
-        bValue = b.vendor?.name || '';
-      } else if (sortField === 'projectName') {
-        aValue = a.project?.projectName || a.project?.name || '';
-        bValue = b.project?.projectName || b.project?.name || '';
-      } else if (sortField === 'totalAmount') {
-        aValue = Number(a.totalAmount) || 0;
-        bValue = Number(b.totalAmount) || 0;
-      } else if (sortField === 'orderDate') {
-        aValue = new Date(a.orderDate || a.createdAt).getTime();
-        bValue = new Date(b.orderDate || b.createdAt).getTime();
-      } else if (sortField === 'createdAt') {
-        aValue = new Date(a.createdAt).getTime();
-        bValue = new Date(b.createdAt).getTime();
-      }
-      
-      if (typeof aValue === 'string' && typeof bValue === 'string') {
-        return sortDirection === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
-      }
-      
-      if (typeof aValue === 'number' && typeof bValue === 'number') {
-        return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
-      }
-      
-      return 0;
-    });
-  }, [recentOrders, sortField, sortDirection]);
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: isDarkMode ? '#111827' : '#f9fafb' }}>
