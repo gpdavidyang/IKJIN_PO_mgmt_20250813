@@ -10,7 +10,15 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
-import { getStatusText } from "@/lib/statusUtils";
+import { 
+  getEnhancedStatusColor as getStatusColor,
+  getOrderStatusText,
+  getApprovalStatusText,
+  canShowPDF,
+  canEditOrder,
+  canSendEmail,
+  canShowEmailHistory
+} from "@/lib/orderStatusUtils";
 import { EmailSendDialog } from "@/components/email-send-dialog";
 import { EmailService } from "@/services/emailService";
 import { EmailHistoryModal } from "@/components/email-history-modal";
@@ -738,22 +746,54 @@ export default function OrdersProfessionalFast() {
       if (pdfAttachment) {
         console.log('📥 PDF 다운로드 시작:', pdfAttachment);
         
-        // 브라우저 기본 다운로드 방식 사용
-        const downloadUrl = `/api/attachments/${pdfAttachment.id}/download?download=true`;
-        
-        // 임시 링크 생성하여 다운로드
-        const link = document.createElement('a');
-        link.href = downloadUrl;
-        link.download = `발주서_${order.orderNumber}.pdf`;
-        link.style.display = 'none';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        toast({
-          title: "PDF 다운로드",
-          description: `발주서 ${order.orderNumber}의 전문적인 PDF를 다운로드합니다.`,
-        });
+        try {
+          // Fetch를 사용하여 인증 정보와 함께 다운로드
+          const downloadResponse = await fetch(`/api/attachments/${pdfAttachment.id}/download?download=true`, {
+            method: 'GET',
+            credentials: 'include', // 쿠키 포함
+            headers: {
+              'Accept': 'application/pdf',
+            },
+          });
+          
+          if (!downloadResponse.ok) {
+            const errorText = await downloadResponse.text();
+            console.error('Download response error:', errorText);
+            throw new Error(`다운로드 실패: ${downloadResponse.status}`);
+          }
+          
+          // Blob으로 변환
+          const blob = await downloadResponse.blob();
+          
+          // Blob URL 생성
+          const blobUrl = window.URL.createObjectURL(blob);
+          
+          // 다운로드 링크 생성
+          const link = document.createElement('a');
+          link.href = blobUrl;
+          link.download = `발주서_${order.orderNumber}.pdf`;
+          link.style.display = 'none';
+          document.body.appendChild(link);
+          link.click();
+          
+          // 정리
+          setTimeout(() => {
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(blobUrl);
+          }, 100);
+          
+          toast({
+            title: "PDF 다운로드 성공",
+            description: `발주서 ${order.orderNumber}의 PDF를 다운로드했습니다.`,
+          });
+        } catch (fetchError) {
+          console.error('❌ PDF 다운로드 fetch 오류:', fetchError);
+          toast({
+            title: "PDF 다운로드 실패",
+            description: fetchError instanceof Error ? fetchError.message : "PDF 다운로드 중 오류가 발생했습니다.",
+            variant: "destructive",
+          });
+        }
       } else {
         console.log('❌ PDF 파일을 찾을 수 없음');
         toast({
@@ -837,79 +877,9 @@ export default function OrdersProfessionalFast() {
     );
   };
 
-  // Status colors optimized for dark mode visibility - 실제 status 필드에 맞게 수정
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'draft': return 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-500/25 dark:text-gray-200 dark:border-gray-400/50';
-      case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-500/25 dark:text-yellow-200 dark:border-yellow-400/50';
-      case 'approved': return 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-500/25 dark:text-blue-200 dark:border-blue-400/50';
-      case 'rejected': return 'bg-red-100 text-red-800 border-red-300 dark:bg-red-500/25 dark:text-red-200 dark:border-red-400/50';
-      case 'sent': return 'bg-indigo-100 text-indigo-800 border-indigo-300 dark:bg-indigo-500/25 dark:text-indigo-200 dark:border-indigo-400/50';
-      case 'completed': return 'bg-green-100 text-green-800 border-green-300 dark:bg-green-500/25 dark:text-green-200 dark:border-green-400/50';
-      case 'deleted': return 'bg-red-100 text-red-800 border-red-300 dark:bg-red-500/25 dark:text-red-200 dark:border-red-400/50';
-      default: return 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-500/25 dark:text-gray-200 dark:border-gray-400/50';
-    }
-  };
-
-  // Get status text - 실제 status 필드에 맞게 수정
-  const getStatusText = (status: string) => {
-    const statusMap: { [key: string]: string } = {
-      'draft': '임시저장',
-      'pending': '결재대기',
-      'approved': '승인됨',
-      'rejected': '반려됨',
-      'sent': '발송됨',
-      'completed': '완료',
-      'deleted': '삭제됨'
-    };
-    return statusMap[status] || status;
-  };
-
-  // 발주 상태 텍스트
-  const getOrderStatusText = (status: string) => {
-    const statusMap: { [key: string]: string } = {
-      'draft': '임시저장',
-      'created': '발주생성',
-      'sent': '발주완료',
-      'delivered': '납품완료',
-      'completed': '납품완료'  // legacy status 지원
-    };
-    return statusMap[status] || status || '-';
-  };
-
-  // 승인 상태 텍스트
-  const getApprovalStatusText = (status: string) => {
-    const statusMap: { [key: string]: string } = {
-      'not_required': '승인불필요',
-      'pending': '승인대기',
-      'approved': '승인완료',
-      'rejected': '반려'
-    };
-    return statusMap[status] || status || '-';
-  };
-
-  // 발주 상태 색상
-  const getOrderStatusColor = (status: string) => {
-    switch(status) {
-      case 'draft': return 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-500/25 dark:text-gray-200 dark:border-gray-400/50';
-      case 'created': return 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-500/25 dark:text-blue-200 dark:border-blue-400/50';
-      case 'sent': return 'bg-indigo-100 text-indigo-800 border-indigo-300 dark:bg-indigo-500/25 dark:text-indigo-200 dark:border-indigo-400/50';
-      case 'delivered': return 'bg-green-100 text-green-800 border-green-300 dark:bg-green-500/25 dark:text-green-200 dark:border-green-400/50';
-      case 'completed': return 'bg-green-100 text-green-800 border-green-300 dark:bg-green-500/25 dark:text-green-200 dark:border-green-400/50';
-      default: return 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-500/25 dark:text-gray-200 dark:border-gray-400/50';
-    }
-  };
-
-  // 승인 상태 색상
-  const getApprovalStatusColor = (status: string) => {
-    switch(status) {
-      case 'not_required': return 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-500/25 dark:text-gray-200 dark:border-gray-400/50';
-      case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-500/25 dark:text-yellow-200 dark:border-yellow-400/50';
-      case 'approved': return 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-500/25 dark:text-blue-200 dark:border-blue-400/50';
-      case 'rejected': return 'bg-red-100 text-red-800 border-red-300 dark:bg-red-500/25 dark:text-red-200 dark:border-red-400/50';
-      default: return 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-500/25 dark:text-gray-200 dark:border-gray-400/50';
-    }
-  };
+  // Alias for consistency
+  const getOrderStatusColor = getStatusColor;
+  const getApprovalStatusColor = getStatusColor;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
@@ -1417,8 +1387,7 @@ export default function OrdersProfessionalFast() {
                           </button>
                           
                           {/* Edit button - only for draft and created status */}
-                          {(order.orderStatus === 'draft' || order.orderStatus === 'created' || 
-                            (!order.orderStatus && order.status !== 'sent' && order.status !== 'delivered')) && (
+                          {canEditOrder(order) && (
                             <button
                               onClick={() => navigate(`/orders/${order.id}/edit`)}
                               className="p-1.5 text-green-500 hover:text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:text-green-300 dark:hover:bg-green-900/20 rounded-md transition-all duration-200"
@@ -1429,15 +1398,7 @@ export default function OrdersProfessionalFast() {
                           )}
                           
                           {/* PDF button - only for non-draft status (created, sent, delivered) */}
-                          {(() => {
-                            // orderStatus를 우선 확인 (새로운 발주 상태 필드)
-                            if (order.orderStatus) {
-                              // draft 상태면 PDF 버튼 숨김
-                              return order.orderStatus !== 'draft' && ['created', 'sent', 'delivered'].includes(order.orderStatus);
-                            }
-                            // orderStatus가 없으면 기존 status 필드 확인
-                            return order.status !== 'draft' && ['approved', 'sent', 'completed'].includes(order.status);
-                          })() && (
+                          {canShowPDF(order) && (
                             <button
                               onClick={() => handlePDFDownload(order)}
                               className="p-1.5 text-orange-500 hover:text-orange-700 hover:bg-orange-50 dark:text-orange-400 dark:hover:text-orange-300 dark:hover:bg-orange-900/20 rounded-md transition-all duration-200"
@@ -1448,8 +1409,7 @@ export default function OrdersProfessionalFast() {
                           )}
                           
                           {/* Email button - only for created status */}
-                          {(order.orderStatus === 'created' || 
-                            (!order.orderStatus && order.status === 'approved')) && (
+                          {canSendEmail(order) && (
                             <button
                               onClick={() => handleEmailSend(order)}
                               className="p-1.5 text-purple-500 hover:text-purple-700 hover:bg-purple-50 dark:text-purple-400 dark:hover:text-purple-300 dark:hover:bg-purple-900/20 rounded-md transition-all duration-200"
@@ -1460,8 +1420,7 @@ export default function OrdersProfessionalFast() {
                           )}
                           
                           {/* Email History button - for sent, delivered, and completed status */}
-                          {(order.orderStatus === 'sent' || order.orderStatus === 'delivered' ||
-                            (!order.orderStatus && (order.status === 'sent' || order.status === 'delivered' || order.status === 'completed'))) && (
+                          {canShowEmailHistory(order) && (
                             <button
                               onClick={() => handleViewEmailHistory(order)}
                               className="p-1.5 text-indigo-500 hover:text-indigo-700 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:text-indigo-300 dark:hover:bg-indigo-900/20 rounded-md transition-all duration-200"

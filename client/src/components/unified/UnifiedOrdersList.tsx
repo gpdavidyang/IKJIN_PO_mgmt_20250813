@@ -7,6 +7,10 @@ import { useState, useMemo, useCallback } from "react";
 import { Clock, FileText, Eye, Edit, Mail, Trash2, Download, Building, Users, DollarSign, CheckCircle, XCircle, AlertCircle, Circle, PlayCircle, MailCheck, Truck, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 import { formatKoreanWon, formatDate } from "@/lib/utils";
 import { getStatusText, getStatusColor } from "@/lib/statusUtils";
+import { 
+  canShowPDF,
+  getOrderStatusText
+} from "@/lib/orderStatusUtils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -60,13 +64,7 @@ function CompactOrderItem({
   onOrderClick?: (orderId: number) => void;
   isDarkMode: boolean;
 }) {
-  const canShowPDF = useMemo(() => {
-    const currentOrderStatus = order.orderStatus || order.status;
-    if (order.orderStatus) {
-      return order.orderStatus !== 'draft' && ['created', 'sent', 'delivered'].includes(order.orderStatus);
-    }
-    return order.status !== 'draft' && ['approved', 'sent', 'completed'].includes(order.status);
-  }, [order.orderStatus, order.status]);
+  const showPDF = useMemo(() => canShowPDF(order), [order]);
 
   return (
     <div 
@@ -89,7 +87,7 @@ function CompactOrderItem({
           </div>
         </div>
         {/* PDF 다운로드 버튼 */}
-        {canShowPDF && (
+        {showPDF && (
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -128,13 +126,7 @@ function CompactTableOrderItem({
   sortOrder?: 'asc' | 'desc';
   onSort?: (field: string) => void;
 }) {
-  const canShowPDF = useMemo(() => {
-    const currentOrderStatus = order.orderStatus || order.status;
-    if (order.orderStatus) {
-      return order.orderStatus !== 'draft' && ['created', 'sent', 'delivered'].includes(order.orderStatus);
-    }
-    return order.status !== 'draft' && ['approved', 'sent', 'completed'].includes(order.status);
-  }, [order.orderStatus, order.status]);
+  const showPDF = useMemo(() => canShowPDF(order), [order]);
 
   const getSortIcon = (field: string) => {
     if (sortBy !== field) {
@@ -192,7 +184,7 @@ function CompactTableOrderItem({
 
       {/* 액션 */}
       <td className="px-3 py-2 text-center">
-        {canShowPDF && (
+        {showPDF && (
           <button
             onClick={(e) => {
               e.stopPropagation();

@@ -1,4 +1,4 @@
-import { FileText, Package, Users, Clock, Building, Plus, AlertCircle, BarChart3, TrendingUp, ShoppingCart, Activity, FolderTree, ChevronRight, DollarSign } from "lucide-react";
+import { FileText, Package, Users, Clock, Building, Plus, AlertCircle, BarChart3, TrendingUp, ShoppingCart, Activity, FolderTree, ChevronRight, DollarSign, Shield } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useDashboardData } from "@/hooks/use-enhanced-queries";
 import { useEffect, useState, useCallback } from "react";
@@ -16,6 +16,7 @@ import { ProjectStatsList } from "@/components/dashboard/project-stats-list";
 import { RecentOrdersList } from "@/components/dashboard/recent-orders-list";
 import { UnifiedOrdersList } from "@/components/unified/UnifiedOrdersList";
 import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
+import { ApprovalWidget } from "@/components/dashboard/ApprovalWidget";
 
 // Import new advanced chart components
 import { AdvancedBarChart, AdvancedPieChart, AdvancedLineChart } from "@/components/charts/advanced-chart";
@@ -544,8 +545,16 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Right Column: Recent Activity + Category Stats */}
+        {/* Right Column: Approval Widget + Recent Activity + Category Stats */}
         <div className="space-y-1">
+          {/* Approval Widget - Compact View */}
+          {user && ["admin", "executive", "hq_management", "project_manager"].includes(user.role) && (
+            <ApprovalWidget 
+              className="mb-1" 
+              showDetails={false} 
+            />
+          )}
+          
           {/* Recent Orders - Using UnifiedOrdersList */}
           <div className={`rounded border p-2 transition-colors ${
             isDarkMode 

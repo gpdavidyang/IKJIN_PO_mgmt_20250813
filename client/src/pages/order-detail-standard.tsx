@@ -7,11 +7,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, Edit, Send, Check, FileText, Download, Eye, Printer, Package, Building, User, Calendar, DollarSign, MapPin, Truck, Loader2, ExternalLink } from "lucide-react";
+import { ArrowLeft, Edit, Send, Check, FileText, Download, Eye, Printer, Package, Building, User, Calendar, DollarSign, MapPin, Truck, Loader2, ExternalLink, Shield, AlertCircle } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { format } from "date-fns";
 import { formatKoreanWon } from "@/lib/utils";
 import { AttachedFilesInfo } from "@/components/attached-files-info";
+import { ApprovalProgressViewer } from "@/components/approval/ApprovalProgressViewer";
+import { ApprovalDetailModal } from "@/components/approval/ApprovalDetailModal";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function OrderDetailStandard() {
   const { user } = useAuth();
@@ -21,6 +24,7 @@ export default function OrderDetailStandard() {
   const [showPreview, setShowPreview] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [showApprovalModal, setShowApprovalModal] = useState(false);
   const orderId = parseInt(params.id);
 
   const { data: order, isLoading } = useQuery({
@@ -350,12 +354,52 @@ export default function OrderDetailStandard() {
 
         {/* Sidebar - 작업 버튼 */}
         <div className="space-y-4">
+          {/* 승인 진행 상황 */}
+          {(order.status === "pending" || order.status === "approved") && (
+            <Card className="shadow-sm border-blue-200 bg-blue-50/30">
+              <CardHeader className="bg-blue-50 py-3 px-4">
+                <CardTitle className="flex items-center justify-between text-sm font-semibold">
+                  <div className="flex items-center space-x-2">
+                    <Shield className="h-5 w-5 text-blue-600" />
+                    <span>승인 진행 상황</span>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 px-2 text-xs"
+                    onClick={() => setShowApprovalModal(true)}
+                  >
+                    <Eye className="h-3 w-3 mr-1" />
+                    상세보기
+                  </Button>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 py-3">
+                <ApprovalProgressViewer
+                  orderId={orderId}
+                  className="border-0 shadow-none"
+                />
+              </CardContent>
+            </Card>
+          )}
+
+          {/* 승인 알림 */}
+          {order.status === "pending" && user && ["admin", "executive", "hq_management", "project_manager"].includes(user.role) && (
+            <Alert className="bg-yellow-50 border-yellow-200">
+              <AlertCircle className="h-4 w-4 text-yellow-600" />
+              <AlertDescription className="text-xs text-yellow-800">
+                <strong>승인 대기 중</strong>
+                <p className="mt-1">이 발주서는 승인이 필요합니다.</p>
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* 승인 상태 */}
           <Card className="shadow-sm">
             <CardHeader className="bg-gray-50 py-3 px-4">
               <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
                 <Check className="h-5 w-5 text-blue-600" />
-                <span>승인 상태</span>
+                <span>발주 상태</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="px-4 py-3">
@@ -366,15 +410,14 @@ export default function OrderDetailStandard() {
                     {statusText}
                   </Badge>
                 </div>
-                {order.status === "pending" && (
+                {order.status === "pending" && user && ["admin", "executive", "hq_management", "project_manager"].includes(user.role) && (
                   <Button
-                    onClick={() => approveMutation.mutate()}
-                    disabled={approveMutation.isPending}
-                    className="w-full h-8 text-xs"
+                    onClick={() => setShowApprovalModal(true)}
+                    className="w-full h-8 text-xs bg-blue-600 hover:bg-blue-700"
                     size="sm"
                   >
-                    <Check className="h-3 w-3 mr-1" />
-                    승인
+                    <Shield className="h-3 w-3 mr-1" />
+                    승인 관리
                   </Button>
                 )}
                 {order.status === "approved" && (
@@ -513,6 +556,17 @@ export default function OrderDetailStandard() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Approval Detail Modal */}
+      {showApprovalModal && (
+        <ApprovalDetailModal
+          isOpen={showApprovalModal}
+          onClose={() => setShowApprovalModal(false)}
+          orderId={orderId}
+          orderNumber={order.orderNumber}
+          canApprove={user && ["admin", "executive", "hq_management", "project_manager"].includes(user.role)}
+        />
+      )}
       </div>
     </div>
   );
