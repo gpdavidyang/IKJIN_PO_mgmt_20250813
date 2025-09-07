@@ -262,31 +262,54 @@ export default function OrderEdit() {
 
   // Category selection helpers
   const getMajorCategories = () => {
-    const result = categories || [];
-    console.log('getMajorCategories result:', result);
-    return result;
+    // Filter only major categories from flat categories
+    const majorCats = flatCategories.filter((cat: any) => cat.categoryType === 'major');
+    console.log('getMajorCategories result:', majorCats);
+    return majorCats;
   };
 
-  const getMiddleCategories = (majorCategoryId: string) => {
-    if (!majorCategoryId) return [];
-    const majorCategory = flatCategories.find(cat => 
-      cat.categoryType === 'major' && cat.categoryName === majorCategoryId
+  const getMiddleCategories = (majorCategoryName: string) => {
+    if (!majorCategoryName || majorCategoryName === "none") return [];
+    
+    // Find the major category by name
+    const majorCategory = flatCategories.find((cat: any) => 
+      cat.categoryType === 'major' && cat.categoryName === majorCategoryName
     );
-    if (!majorCategory) return [];
-    return flatCategories.filter(cat => 
+    
+    if (!majorCategory) {
+      console.log(`Major category not found: ${majorCategoryName}`);
+      return [];
+    }
+    
+    // Get all middle categories that belong to this major category
+    const middleCats = flatCategories.filter((cat: any) => 
       cat.categoryType === 'middle' && cat.parentId === majorCategory.id
     );
+    
+    console.log(`Middle categories for ${majorCategoryName}:`, middleCats);
+    return middleCats;
   };
 
-  const getMinorCategories = (middleCategoryId: string) => {
-    if (!middleCategoryId) return [];
-    const middleCategory = flatCategories.find(cat => 
-      cat.categoryType === 'middle' && cat.categoryName === middleCategoryId
+  const getMinorCategories = (middleCategoryName: string) => {
+    if (!middleCategoryName || middleCategoryName === "none") return [];
+    
+    // Find the middle category by name
+    const middleCategory = flatCategories.find((cat: any) => 
+      cat.categoryType === 'middle' && cat.categoryName === middleCategoryName
     );
-    if (!middleCategory) return [];
-    return flatCategories.filter(cat => 
+    
+    if (!middleCategory) {
+      console.log(`Middle category not found: ${middleCategoryName}`);
+      return [];
+    }
+    
+    // Get all minor categories that belong to this middle category
+    const minorCats = flatCategories.filter((cat: any) => 
       cat.categoryType === 'minor' && cat.parentId === middleCategory.id
     );
+    
+    console.log(`Minor categories for ${middleCategoryName}:`, minorCats);
+    return minorCats;
   };
 
   const handleCategoryChange = (index: number, categoryType: 'major' | 'middle' | 'minor', value: string) => {
@@ -547,39 +570,43 @@ export default function OrderEdit() {
                         <Select
                           value={item.majorCategory || "none"}
                           onValueChange={(value) => {
-                            console.log(`Select onValueChange triggered: ${value}`);
+                            console.log(`Major category selected: ${value}`);
                             handleCategoryChange(index, "major", value);
                           }}
                         >
                           <SelectTrigger className="min-w-[120px]">
-                            <SelectValue placeholder="대분류 선택" />
+                            <SelectValue placeholder="대분류 선택">
+                              {item.majorCategory && item.majorCategory !== "none" ? item.majorCategory : "대분류 선택"}
+                            </SelectValue>
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="none">선택 해제</SelectItem>
-                            {getMajorCategories().map((category: any) => {
-                              console.log('Rendering major category:', category);
-                              return (
-                                <SelectItem key={category.id} value={category.categoryName}>
-                                  {category.categoryName}
-                                </SelectItem>
-                              );
-                            })}
+                            {getMajorCategories().map((category: any) => (
+                              <SelectItem key={`major-${category.id}`} value={category.categoryName}>
+                                {category.categoryName}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </TableCell>
                       <TableCell>
                         <Select
                           value={item.middleCategory || "none"}
-                          onValueChange={(value) => handleCategoryChange(index, "middle", value)}
-                          disabled={!item.majorCategory}
+                          onValueChange={(value) => {
+                            console.log(`Middle category selected: ${value}`);
+                            handleCategoryChange(index, "middle", value);
+                          }}
+                          disabled={!item.majorCategory || item.majorCategory === "none"}
                         >
                           <SelectTrigger className="min-w-[120px]">
-                            <SelectValue placeholder={item.majorCategory ? "중분류 선택" : "대분류 먼저 선택"} />
+                            <SelectValue placeholder={item.majorCategory && item.majorCategory !== "none" ? "중분류 선택" : "대분류 먼저 선택"}>
+                              {item.middleCategory && item.middleCategory !== "none" ? item.middleCategory : (item.majorCategory && item.majorCategory !== "none" ? "중분류 선택" : "대분류 먼저 선택")}
+                            </SelectValue>
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="none">선택 해제</SelectItem>
                             {getMiddleCategories(item.majorCategory || "").map((category: any) => (
-                              <SelectItem key={category.id} value={category.categoryName}>
+                              <SelectItem key={`middle-${category.id}`} value={category.categoryName}>
                                 {category.categoryName}
                               </SelectItem>
                             ))}
@@ -589,16 +616,21 @@ export default function OrderEdit() {
                       <TableCell>
                         <Select
                           value={item.minorCategory || "none"}
-                          onValueChange={(value) => handleCategoryChange(index, "minor", value)}
-                          disabled={!item.middleCategory}
+                          onValueChange={(value) => {
+                            console.log(`Minor category selected: ${value}`);
+                            handleCategoryChange(index, "minor", value);
+                          }}
+                          disabled={!item.middleCategory || item.middleCategory === "none"}
                         >
                           <SelectTrigger className="min-w-[120px]">
-                            <SelectValue placeholder={item.middleCategory ? "소분류 선택" : "중분류 먼저 선택"} />
+                            <SelectValue placeholder={item.middleCategory && item.middleCategory !== "none" ? "소분류 선택" : "중분류 먼저 선택"}>
+                              {item.minorCategory && item.minorCategory !== "none" ? item.minorCategory : (item.middleCategory && item.middleCategory !== "none" ? "소분류 선택" : "중분류 먼저 선택")}
+                            </SelectValue>
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="none">선택 해제</SelectItem>
                             {getMinorCategories(item.middleCategory || "").map((category: any) => (
-                              <SelectItem key={category.id} value={category.categoryName}>
+                              <SelectItem key={`minor-${category.id}`} value={category.categoryName}>
                                 {category.categoryName}
                               </SelectItem>
                             ))}
@@ -609,17 +641,85 @@ export default function OrderEdit() {
                         <Input
                           type="number"
                           value={item.quantity}
-                          onChange={(e) => updateItem(index, "quantity", Number(e.target.value))}
-                          min="1"
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            const numValue = value === "" ? 0 : Number(value);
+                            console.log(`Quantity changed: ${value} -> ${numValue}`);
+                            updateItem(index, "quantity", numValue);
+                          }}
+                          onBlur={(e) => {
+                            // Ensure minimum value of 1 on blur
+                            if (Number(e.target.value) < 1) {
+                              updateItem(index, "quantity", 1);
+                            }
+                          }}
+                          min="0.01"
+                          step="0.01"
                           required
+                          className="w-24"
                         />
                       </TableCell>
                       <TableCell>
-                        <Input
-                          value={item.unit || ""}
-                          onChange={(e) => updateItem(index, "unit", e.target.value)}
-                          placeholder="단위"
-                        />
+                        <Select
+                          value={item.unit || "EA"}
+                          onValueChange={(value) => {
+                            console.log(`Unit selected: ${value}`);
+                            updateItem(index, "unit", value);
+                          }}
+                        >
+                          <SelectTrigger className="w-24">
+                            <SelectValue placeholder="단위 선택" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="EA">EA</SelectItem>
+                            <SelectItem value="개">개</SelectItem>
+                            <SelectItem value="박스">박스</SelectItem>
+                            <SelectItem value="세트">세트</SelectItem>
+                            <SelectItem value="kg">kg</SelectItem>
+                            <SelectItem value="g">g</SelectItem>
+                            <SelectItem value="L">L</SelectItem>
+                            <SelectItem value="mL">mL</SelectItem>
+                            <SelectItem value="m">m</SelectItem>
+                            <SelectItem value="cm">cm</SelectItem>
+                            <SelectItem value="mm">mm</SelectItem>
+                            <SelectItem value="㎡">㎡</SelectItem>
+                            <SelectItem value="㎥">㎥</SelectItem>
+                            <SelectItem value="매">매</SelectItem>
+                            <SelectItem value="장">장</SelectItem>
+                            <SelectItem value="권">권</SelectItem>
+                            <SelectItem value="부">부</SelectItem>
+                            <SelectItem value="대">대</SelectItem>
+                            <SelectItem value="식">식</SelectItem>
+                            <SelectItem value="조">조</SelectItem>
+                            <SelectItem value="타">타</SelectItem>
+                            <SelectItem value="켤레">켤레</SelectItem>
+                            <SelectItem value="통">통</SelectItem>
+                            <SelectItem value="병">병</SelectItem>
+                            <SelectItem value="캔">캔</SelectItem>
+                            <SelectItem value="포">포</SelectItem>
+                            <SelectItem value="봉">봉</SelectItem>
+                            <SelectItem value="팩">팩</SelectItem>
+                            <SelectItem value="롤">롤</SelectItem>
+                            <SelectItem value="쌍">쌍</SelectItem>
+                            <SelectItem value="톤">톤</SelectItem>
+                            <SelectItem value="되">되</SelectItem>
+                            <SelectItem value="말">말</SelectItem>
+                            <SelectItem value="자루">자루</SelectItem>
+                            <SelectItem value="마리">마리</SelectItem>
+                            <SelectItem value="모">모</SelectItem>
+                            <SelectItem value="평">평</SelectItem>
+                            <SelectItem value="보루">보루</SelectItem>
+                            <SelectItem value="묶음">묶음</SelectItem>
+                            <SelectItem value="다스">다스</SelectItem>
+                            <SelectItem value="갑">갑</SelectItem>
+                            <SelectItem value="곽">곽</SelectItem>
+                            <SelectItem value="판">판</SelectItem>
+                            <SelectItem value="그루">그루</SelectItem>
+                            <SelectItem value="주">주</SelectItem>
+                            <SelectItem value="본">본</SelectItem>
+                            <SelectItem value="줄">줄</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </TableCell>
                       <TableCell>
                         <Input

@@ -3,70 +3,51 @@
  */
 
 import { Router } from "express";
+import { eq, desc } from "drizzle-orm";
+import { db } from "../db";
+import { itemReceipts, purchaseOrderItems, users } from "@shared/schema";
 
 const router = Router();
 
 // Get all item receipts
-router.get("/item-receipts", async (req, res) => {
+router.get("/item-receipts", async (_req, res) => {
   try {
-    console.log("📦 Fetching item receipts (using reliable mock data)...");
+    console.log("📦 Fetching all item receipts from database...");
     
-    // STABLE: Use mock data for consistent API functionality
-    const mockItemReceipts = [
-      {
-        id: 1,
-        orderId: 135,
-        itemId: 1,
-        itemName: "철근 D16",
-        quantityOrdered: 10,
-        quantityReceived: 8,
-        quantityPending: 2,
-        receiptDate: "2025-01-15",
-        receivedBy: "김철수",
-        condition: "good",
-        notes: "일부 자재는 다음 주 배송 예정",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      },
-      {
-        id: 2,
-        orderId: 135,
-        itemId: 2,
-        itemName: "시멘트 1종",
-        quantityOrdered: 50,
-        quantityReceived: 50,
-        quantityPending: 0,
-        receiptDate: "2025-01-16",
-        receivedBy: "이영희",
-        condition: "excellent",
-        notes: "모든 포장이 양호한 상태",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      },
-      {
-        id: 3,
-        orderId: 136,
-        itemId: 3,
-        itemName: "전선 THHN 2.5sq",
-        quantityOrdered: 1000,
-        quantityReceived: 1000,
-        quantityPending: 0,
-        receiptDate: "2025-01-17",
-        receivedBy: "박민수",
-        condition: "good",
-        notes: "품질 검사 완료",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }
-    ];
+    // Fetch from actual database with joins
+    const receipts = await db
+      .select({
+        id: itemReceipts.id,
+        orderItemId: itemReceipts.orderItemId,
+        invoiceId: itemReceipts.invoiceId,
+        receivedQuantity: itemReceipts.receivedQuantity,
+        receivedDate: itemReceipts.receivedDate,
+        qualityCheck: itemReceipts.qualityCheck,
+        qualityNotes: itemReceipts.qualityNotes,
+        verifiedBy: itemReceipts.verifiedBy,
+        status: itemReceipts.status,
+        notes: itemReceipts.notes,
+        createdAt: itemReceipts.createdAt,
+        updatedAt: itemReceipts.updatedAt,
+        // Join with order items for item details
+        itemName: purchaseOrderItems.itemName,
+        unit: purchaseOrderItems.unit,
+        orderId: purchaseOrderItems.orderId,
+        // Join with users for verifier name
+        verifierName: users.name,
+      })
+      .from(itemReceipts)
+      .leftJoin(purchaseOrderItems, eq(itemReceipts.orderItemId, purchaseOrderItems.id))
+      .leftJoin(users, eq(itemReceipts.verifiedBy, users.id))
+      .orderBy(desc(itemReceipts.createdAt));
     
-    console.log(`✅ Successfully returning ${mockItemReceipts.length} item receipts (mock data)`);
-    res.json(mockItemReceipts);
+    console.log(`✅ Successfully fetched ${receipts.length} item receipts from database`);
+    res.json(receipts);
   } catch (error) {
-    console.error("❌ Error in item-receipts endpoint:", error);
+    console.error("❌ Error fetching item receipts:", error);
     res.status(500).json({ 
       message: "Failed to fetch item receipts",
-      error: process.env.NODE_ENV === 'development' ? error?.message : undefined
+      error: process.env.NODE_ENV === 'development' ? (error as Error)?.message : undefined
     });
   }
 });
@@ -75,34 +56,43 @@ router.get("/item-receipts", async (req, res) => {
 router.get("/item-receipts/order/:orderId", async (req, res) => {
   try {
     const orderId = parseInt(req.params.orderId, 10);
-    console.log(`📦 Fetching item receipts for order ${orderId} (using reliable mock data)...`);
+    console.log(`📦 Fetching item receipts for order ${orderId} from database...`);
     
-    // STABLE: Use mock data for consistent API functionality
-    const mockItemReceipts = [
-      {
-        id: 1,
-        orderId: orderId,
-        itemId: 1,
-        itemName: "철근 D16",
-        quantityOrdered: 10,
-        quantityReceived: 8,
-        quantityPending: 2,
-        receiptDate: "2025-01-15",
-        receivedBy: "김철수",
-        condition: "good",
-        notes: "일부 자재는 다음 주 배송 예정",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }
-    ];
+    // Fetch from database with joins, filtering by orderId
+    const receipts = await db
+      .select({
+        id: itemReceipts.id,
+        orderItemId: itemReceipts.orderItemId,
+        invoiceId: itemReceipts.invoiceId,
+        receivedQuantity: itemReceipts.receivedQuantity,
+        receivedDate: itemReceipts.receivedDate,
+        qualityCheck: itemReceipts.qualityCheck,
+        qualityNotes: itemReceipts.qualityNotes,
+        verifiedBy: itemReceipts.verifiedBy,
+        status: itemReceipts.status,
+        notes: itemReceipts.notes,
+        createdAt: itemReceipts.createdAt,
+        updatedAt: itemReceipts.updatedAt,
+        // Join with order items for item details
+        itemName: purchaseOrderItems.itemName,
+        unit: purchaseOrderItems.unit,
+        orderId: purchaseOrderItems.orderId,
+        // Join with users for verifier name
+        verifierName: users.name,
+      })
+      .from(itemReceipts)
+      .leftJoin(purchaseOrderItems, eq(itemReceipts.orderItemId, purchaseOrderItems.id))
+      .leftJoin(users, eq(itemReceipts.verifiedBy, users.id))
+      .where(eq(purchaseOrderItems.orderId, orderId))
+      .orderBy(desc(itemReceipts.createdAt));
     
-    console.log(`✅ Successfully returning ${mockItemReceipts.length} item receipts for order ${orderId} (mock data)`);
-    res.json(mockItemReceipts);
+    console.log(`✅ Successfully fetched ${receipts.length} item receipts for order ${orderId}`);
+    res.json(receipts);
   } catch (error) {
-    console.error("❌ Error in item-receipts by order endpoint:", error);
+    console.error("❌ Error fetching item receipts by order:", error);
     res.status(500).json({ 
       message: "Failed to fetch item receipts for order",
-      error: process.env.NODE_ENV === 'development' ? error?.message : undefined
+      error: process.env.NODE_ENV === 'development' ? (error as Error)?.message : undefined
     });
   }
 });
@@ -110,34 +100,181 @@ router.get("/item-receipts/order/:orderId", async (req, res) => {
 // Create new item receipt
 router.post("/item-receipts", async (req, res) => {
   try {
-    console.log("📦 Creating item receipt (using reliable mock data)...");
+    console.log("📦 Creating new item receipt...");
+    console.log("Request body:", req.body);
     
-    const { orderId, itemId, quantityReceived, condition, notes } = req.body;
+    const { 
+      orderItemId, 
+      invoiceId, 
+      receivedQuantity, 
+      receivedDate,
+      qualityCheck,
+      qualityNotes,
+      status,
+      notes 
+    } = req.body;
     
-    // STABLE: Use mock data for consistent API functionality
-    const mockItemReceipt = {
-      id: Math.floor(Math.random() * 1000) + 1,
-      orderId: parseInt(orderId),
-      itemId: parseInt(itemId),
-      itemName: "신규 자재",
-      quantityOrdered: quantityReceived + 10, // Mock ordered quantity
-      quantityReceived: parseInt(quantityReceived),
-      quantityPending: 10, // Mock pending quantity
-      receiptDate: new Date().toISOString().split('T')[0],
-      receivedBy: "현재사용자", // In real app, get from auth
-      condition: condition || "good",
-      notes: notes || "",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
+    // Get current user ID from session
+    const userId = (req as any).user?.id || 'test_admin_001';
     
-    console.log(`✅ Successfully created item receipt ${mockItemReceipt.id} (mock data)`);
-    res.status(201).json(mockItemReceipt);
+    // Validate required fields
+    if (!orderItemId || !receivedQuantity || !receivedDate) {
+      return res.status(400).json({ 
+        message: "Missing required fields: orderItemId, receivedQuantity, receivedDate" 
+      });
+    }
+    
+    // Create receipt in database
+    const [newReceipt] = await db
+      .insert(itemReceipts)
+      .values({
+        orderItemId: parseInt(orderItemId),
+        invoiceId: invoiceId ? parseInt(invoiceId) : null,
+        receivedQuantity: parseFloat(receivedQuantity),
+        receivedDate: new Date(receivedDate),
+        qualityCheck: qualityCheck || false,
+        qualityNotes: qualityNotes || null,
+        verifiedBy: userId,
+        status: status || 'pending',
+        notes: notes || null,
+      })
+      .returning();
+    
+    // Fetch the created receipt with joins for complete data
+    const [receipt] = await db
+      .select({
+        id: itemReceipts.id,
+        orderItemId: itemReceipts.orderItemId,
+        invoiceId: itemReceipts.invoiceId,
+        receivedQuantity: itemReceipts.receivedQuantity,
+        receivedDate: itemReceipts.receivedDate,
+        qualityCheck: itemReceipts.qualityCheck,
+        qualityNotes: itemReceipts.qualityNotes,
+        verifiedBy: itemReceipts.verifiedBy,
+        status: itemReceipts.status,
+        notes: itemReceipts.notes,
+        createdAt: itemReceipts.createdAt,
+        updatedAt: itemReceipts.updatedAt,
+        // Join with order items for item details
+        itemName: purchaseOrderItems.itemName,
+        unit: purchaseOrderItems.unit,
+        orderId: purchaseOrderItems.orderId,
+        // Join with users for verifier name
+        verifierName: users.name,
+      })
+      .from(itemReceipts)
+      .leftJoin(purchaseOrderItems, eq(itemReceipts.orderItemId, purchaseOrderItems.id))
+      .leftJoin(users, eq(itemReceipts.verifiedBy, users.id))
+      .where(eq(itemReceipts.id, newReceipt.id));
+    
+    console.log(`✅ Successfully created item receipt ${newReceipt.id}`);
+    res.status(201).json(receipt);
   } catch (error) {
     console.error("❌ Error creating item receipt:", error);
     res.status(500).json({ 
       message: "Failed to create item receipt",
-      error: process.env.NODE_ENV === 'development' ? error?.message : undefined
+      error: process.env.NODE_ENV === 'development' ? (error as Error)?.message : undefined
+    });
+  }
+});
+
+// Update item receipt
+router.patch("/item-receipts/:id", async (req, res) => {
+  try {
+    const receiptId = parseInt(req.params.id, 10);
+    console.log(`📦 Updating item receipt ${receiptId}...`);
+    
+    const { 
+      receivedQuantity, 
+      receivedDate,
+      qualityCheck,
+      qualityNotes,
+      status,
+      notes 
+    } = req.body;
+    
+    // Build update object with only provided fields
+    const updateData: any = {};
+    if (receivedQuantity !== undefined) updateData.receivedQuantity = parseFloat(receivedQuantity);
+    if (receivedDate !== undefined) updateData.receivedDate = new Date(receivedDate);
+    if (qualityCheck !== undefined) updateData.qualityCheck = qualityCheck;
+    if (qualityNotes !== undefined) updateData.qualityNotes = qualityNotes;
+    if (status !== undefined) updateData.status = status;
+    if (notes !== undefined) updateData.notes = notes;
+    updateData.updatedAt = new Date();
+    
+    // Update receipt in database
+    const [updatedReceipt] = await db
+      .update(itemReceipts)
+      .set(updateData)
+      .where(eq(itemReceipts.id, receiptId))
+      .returning();
+    
+    if (!updatedReceipt) {
+      return res.status(404).json({ message: "Item receipt not found" });
+    }
+    
+    // Fetch the updated receipt with joins for complete data
+    const [receipt] = await db
+      .select({
+        id: itemReceipts.id,
+        orderItemId: itemReceipts.orderItemId,
+        invoiceId: itemReceipts.invoiceId,
+        receivedQuantity: itemReceipts.receivedQuantity,
+        receivedDate: itemReceipts.receivedDate,
+        qualityCheck: itemReceipts.qualityCheck,
+        qualityNotes: itemReceipts.qualityNotes,
+        verifiedBy: itemReceipts.verifiedBy,
+        status: itemReceipts.status,
+        notes: itemReceipts.notes,
+        createdAt: itemReceipts.createdAt,
+        updatedAt: itemReceipts.updatedAt,
+        // Join with order items for item details
+        itemName: purchaseOrderItems.itemName,
+        unit: purchaseOrderItems.unit,
+        orderId: purchaseOrderItems.orderId,
+        // Join with users for verifier name
+        verifierName: users.name,
+      })
+      .from(itemReceipts)
+      .leftJoin(purchaseOrderItems, eq(itemReceipts.orderItemId, purchaseOrderItems.id))
+      .leftJoin(users, eq(itemReceipts.verifiedBy, users.id))
+      .where(eq(itemReceipts.id, receiptId));
+    
+    console.log(`✅ Successfully updated item receipt ${receiptId}`);
+    res.json(receipt);
+  } catch (error) {
+    console.error("❌ Error updating item receipt:", error);
+    res.status(500).json({ 
+      message: "Failed to update item receipt",
+      error: process.env.NODE_ENV === 'development' ? (error as Error)?.message : undefined
+    });
+  }
+});
+
+// Delete item receipt
+router.delete("/item-receipts/:id", async (req, res) => {
+  try {
+    const receiptId = parseInt(req.params.id, 10);
+    console.log(`📦 Deleting item receipt ${receiptId}...`);
+    
+    // Delete receipt from database
+    const [deletedReceipt] = await db
+      .delete(itemReceipts)
+      .where(eq(itemReceipts.id, receiptId))
+      .returning();
+    
+    if (!deletedReceipt) {
+      return res.status(404).json({ message: "Item receipt not found" });
+    }
+    
+    console.log(`✅ Successfully deleted item receipt ${receiptId}`);
+    res.json({ message: "Item receipt deleted successfully", id: receiptId });
+  } catch (error) {
+    console.error("❌ Error deleting item receipt:", error);
+    res.status(500).json({ 
+      message: "Failed to delete item receipt",
+      error: process.env.NODE_ENV === 'development' ? (error as Error)?.message : undefined
     });
   }
 });

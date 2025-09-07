@@ -14,8 +14,6 @@ import { OptimizedOrderQueries, OptimizedDashboardQueries } from "../utils/optim
 import { ExcelToPDFConverter } from "../utils/excel-to-pdf-converter";
 import { POEmailService } from "../utils/po-email-service";
 import ApprovalRoutingService from "../services/approval-routing-service";
-import { PDFGenerationService } from "../services/pdf-generation-service";
-import { EnhancedPDFGenerationService } from "../services/pdf-generation-service-enhanced";
 import { ProfessionalPDFGenerationService } from "../services/professional-pdf-generation-service";
 import * as database from "../db";
 import { eq } from "drizzle-orm";
@@ -836,7 +834,7 @@ router.get("/orders/stats", async (req, res) => {
   }
 });
 
-// Test PDF generation endpoint (no auth for testing) - Uses PDFGenerationService
+// Test PDF generation endpoint (no auth for testing) - Uses ProfessionalPDFGenerationService
 router.post("/orders/test-pdf", async (req, res) => {
   try {
     const testOrderData = {
@@ -850,14 +848,14 @@ router.post("/orders/test-pdf", async (req, res) => {
           quantity: 10,
           unit: "EA",
           unitPrice: 50000,
-          price: 500000
+          totalAmount: 500000
         },
         {
           name: "테스트 품목 2", 
           quantity: 5,
           unit: "SET",
           unitPrice: 100000,
-          price: 500000
+          totalAmount: 500000
         }
       ],
       notes: "테스트용 발주서입니다.",
@@ -865,35 +863,15 @@ router.post("/orders/test-pdf", async (req, res) => {
       createdBy: "테스트 사용자"
     };
 
-    console.log('🧪 PDF 테스트 시작:', testOrderData.orderNumber);
+    console.log('🧪 [Professional PDF] 테스트 PDF 생성 시작:', testOrderData.orderNumber);
     
-    // Use PDFGenerationService directly instead of the old generatePDFLogic
-    const result = await PDFGenerationService.generatePurchaseOrderPDF(
-      0, // Test order ID
-      testOrderData,
-      'test-user'
-    );
-
-    if (result.success) {
-      // Get the timestamp from the attachment path
-      const timestamp = Date.now();
-      
-      res.json({
-        success: true,
-        pdfUrl: `/api/orders/download-pdf/${timestamp}`,
-        message: "PDF가 성공적으로 생성되었습니다.",
-        fileSize: result.pdfBuffer?.length || 0,
-        attachmentId: result.attachmentId
-      });
-    } else {
-      res.status(500).json({
-        success: false,
-        error: result.error || "PDF 생성 실패",
-        details: "PDFGenerationService 오류"
-      });
-    }
+    // Call the updated generatePDFLogic function
+    req.body = { orderData: testOrderData };
+    req.user = { id: 'test-user' };
+    
+    return await generatePDFLogic(req, res);
   } catch (error) {
-    console.error('🧪 PDF 테스트 오류:', error);
+    console.error('🧪 [Professional PDF] 테스트 오류:', error);
     res.status(500).json({
       success: false,
       error: "PDF 테스트 실패",
@@ -1667,54 +1645,14 @@ router.post("/orders/:id/regenerate-pdf", requireAuth, async (req, res) => {
       userId
     );
 
-    // If Professional PDF fails, fallback to the old method
+    // If Professional PDF fails, return error
     if (!result.success) {
-      console.log(`⚠️ [Regenerate PDF] Professional PDF failed, falling back to basic PDF`);
-      
-      // Prepare basic PDF data
-      const pdfData = {
-        orderNumber: order.orderNumber,
-        orderDate: order.orderDate,
-        deliveryDate: order.deliveryDate,
-        projectName: order.project?.projectName,
-        vendorName: order.vendor?.name,
-        vendorContact: order.vendor?.contactPerson,
-        vendorEmail: order.vendor?.email,
-        items: (order.items || []).map((item: any) => ({
-          category: item.majorCategory || '',
-          subCategory1: item.middleCategory || '',
-          subCategory2: item.minorCategory || '',
-          name: item.itemName,
-          specification: item.specification || '',
-          quantity: item.quantity || 0,
-          unit: item.unit || '개',
-          unitPrice: item.unitPrice || 0,
-          price: item.totalAmount || 0,
-          deliveryLocation: ''
-        })),
-        totalAmount: order.totalAmount,
-        notes: order.notes
-      };
-
-      // Fallback to basic PDF
-      const fallbackResult = await PDFGenerationService.regeneratePDF(orderId, pdfData, userId);
-      
-      if (fallbackResult.success) {
-        console.log(`✅ [Regenerate PDF] Fallback basic PDF generated successfully`);
-        return res.json({
-          success: true,
-          message: "PDF가 성공적으로 재생성되어 저장되었습니다 (기본 레이아웃)",
-          attachmentId: fallbackResult.attachmentId,
-          pdfPath: fallbackResult.pdfPath
-        });
-      } else {
-        console.error(`❌ [Regenerate PDF] Both Professional and Basic PDF generation failed`);
-        return res.status(500).json({
-          success: false,
-          message: "PDF 재생성 실패",
-          error: fallbackResult.error
-        });
-      }
+      console.error(`❌ [Regenerate PDF] Professional PDF generation failed`);
+      return res.status(500).json({
+        success: false,
+        message: "PDF 재생성 실패",
+        error: result.error || "PDF 생성 중 오류가 발생했습니다"
+      });
     }
 
     // Professional PDF was successful!

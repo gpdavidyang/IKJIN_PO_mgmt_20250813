@@ -16,10 +16,7 @@ export interface ComprehensivePurchaseOrderData {
   orderNumber: string;
   orderDate: Date;
   deliveryDate?: Date | null;
-  orderStatus?: string;
-  approvalStatus?: string;
   createdAt?: Date;
-  updatedAt?: Date;
   
   // === 발주업체 정보 (회사) ===
   issuerCompany: {
@@ -28,9 +25,7 @@ export interface ComprehensivePurchaseOrderData {
     representative?: string;
     address?: string;
     phone?: string;
-    fax?: string;
     email?: string;
-    website?: string;
   };
   
   // === 수주업체 정보 (거래처) ===
@@ -40,27 +35,19 @@ export interface ComprehensivePurchaseOrderData {
     representative?: string;
     address?: string;
     phone?: string;
-    fax?: string;
     email?: string;
     contactPerson?: string;
-    contactPhone?: string;
-    contactEmail?: string;
-    businessType?: string;
   };
   
   // === 현장 정보 ===
   project: {
     name: string;
     code?: string;
-    clientName?: string;
     location?: string;
-    startDate?: Date | null;
-    endDate?: Date | null;
     projectManager?: string;
     projectManagerContact?: string;
     orderManager?: string;
     orderManagerContact?: string;
-    totalBudget?: number;
   };
   
   // === 작성자/담당자 정보 ===
@@ -68,18 +55,11 @@ export interface ComprehensivePurchaseOrderData {
     name: string;
     email?: string;
     phone?: string;
-    position?: string;
-    role?: string;
-    department?: string;
   };
   
   // === 품목 정보 ===
   items: Array<{
     sequenceNo: number;
-    majorCategory?: string;
-    middleCategory?: string;
-    minorCategory?: string;
-    itemCode?: string;
     name: string;
     specification?: string;
     quantity: number;
@@ -87,8 +67,8 @@ export interface ComprehensivePurchaseOrderData {
     unitPrice: number;
     totalPrice: number;
     deliveryLocation?: string;
+    deliveryEmail?: string;
     remarks?: string;
-    categoryPath?: string; // "대분류 > 중분류 > 소분류" 형태
   }>;
   
   // === 금액 정보 ===
@@ -101,59 +81,9 @@ export interface ComprehensivePurchaseOrderData {
     currencyCode: string;
   };
   
-  // === 계약 조건 ===
-  terms: {
-    paymentTerms?: string;
-    deliveryTerms?: string;
-    warrantyPeriod?: string;
-    penaltyRate?: string;
-    qualityStandard?: string;
-    inspectionMethod?: string;
-  };
-  
-  // === 첨부파일 및 커뮤니케이션 ===
-  attachments: {
-    count: number;
-    hasAttachments: boolean;
-    fileNames: string[];
-    totalSize: number;
-  };
-  
-  communication: {
-    emailHistory: Array<{
-      sentAt: Date;
-      recipient: string;
-      subject: string;
-      status: string;
-    }>;
-    lastEmailSent?: Date;
-    totalEmailsSent: number;
-  };
-  
-  // === 결재/승인 정보 ===
-  approval: {
-    currentStatus: string;
-    approvalLevel: number;
-    approvers: Array<{
-      role: string;
-      name?: string;
-      position?: string;
-      department?: string;
-      status: string; // pending, approved, rejected
-      approvedAt?: Date;
-      comments?: string;
-    }>;
-    requestedAt?: Date;
-    completedAt?: Date;
-  };
-  
   // === 기타 정보 ===
   metadata: {
     notes?: string;
-    specialInstructions?: string;
-    riskFactors?: string;
-    complianceNotes?: string;
-    revisionNumber?: number;
     documentId: string;
     generatedAt: Date;
     generatedBy: string;
@@ -219,7 +149,7 @@ export class ProfessionalPDFGenerationService {
       console.log(`📊 [ProfessionalPDF] 포괄적 데이터 수집 시작: Order ID ${orderId}`);
 
       // 기본 발주서 정보 조회
-      const orderQuery = await db.db
+      const orderQuery = await db
         .select({
           // Purchase Order 정보
           orderNumber: purchaseOrders.orderNumber,
@@ -266,7 +196,7 @@ export class ProfessionalPDFGenerationService {
         .limit(1);
 
       // 회사 정보 별도 조회 (첫 번째 활성화된 회사)
-      const companyQuery = await db.db
+      const companyQuery = await db
         .select({
           companyName: companies.companyName,
           companyBusinessNumber: companies.businessNumber,
@@ -297,19 +227,17 @@ export class ProfessionalPDFGenerationService {
         companyContactPerson: null,
         companyPhone: null,
         companyEmail: null,
-        companyFax: null,
-        companyWebsite: null,
         companyRepresentative: null,
       };
 
       // 품목 정보 조회
-      const itemsQuery = await db.db
+      const itemsQuery = await db
         .select()
         .from(purchaseOrderItems)
         .where(eq(purchaseOrderItems.orderId, orderId));
 
       // 첨부파일 정보 조회
-      const attachmentsQuery = await db.db
+      const attachmentsQuery = await db
         .select()
         .from(attachments)
         .where(eq(attachments.orderId, orderId));
@@ -317,7 +245,7 @@ export class ProfessionalPDFGenerationService {
       // 이메일 발송 이력 조회 (테이블이 있는 경우만)
       let emailHistoryQuery: any[] = [];
       try {
-        emailHistoryQuery = await db.db
+        emailHistoryQuery = await db
           .select()
           .from(emailSendHistory)
           .where(eq(emailSendHistory.orderId, orderId))
@@ -340,10 +268,7 @@ export class ProfessionalPDFGenerationService {
         orderNumber: orderData.orderNumber,
         orderDate: orderData.orderDate,
         deliveryDate: orderData.deliveryDate,
-        orderStatus: orderData.orderStatus || 'draft',
-        approvalStatus: orderData.approvalStatus || 'not_required',
         createdAt: orderData.createdAt,
-        updatedAt: orderData.updatedAt,
 
         issuerCompany: {
           name: companyData.companyName || '발주업체',
@@ -351,102 +276,74 @@ export class ProfessionalPDFGenerationService {
           representative: companyData.companyRepresentative,
           address: companyData.companyAddress,
           phone: companyData.companyPhone,
-          email: await this.getSystemEmail() || companyData.companyEmail,
-          fax: companyData.companyFax,
-          website: companyData.companyWebsite,
+          email: companyData.companyEmail || 'ikjin@example.com', // 이메일 설정 단순화
         },
 
         vendorCompany: {
           name: orderData.vendorName || '거래처명 없음',
           businessNumber: orderData.vendorBusinessNumber,
+          representative: orderData.vendorBusinessNumber ? '대표자' : undefined, // 실제 대표자 정보가 없으면 제외
           address: orderData.vendorAddress,
           phone: orderData.vendorPhone,
           email: orderData.vendorEmail,
           contactPerson: orderData.vendorContactPerson,
-          businessType: orderData.vendorBusinessType,
         },
 
         project: {
           name: orderData.projectName || '현장명 없음',
           code: orderData.projectCode,
-          clientName: orderData.projectClientName,
           location: orderData.projectLocation,
-          startDate: orderData.projectStartDate,
-          endDate: orderData.projectEndDate,
-          totalBudget: Number(orderData.projectTotalBudget) || undefined,
+          projectManager: orderData.creatorName, // 현장 책임자로 작성자 사용
+          projectManagerContact: orderData.creatorPhone,
+          orderManager: orderData.creatorName, // 발주 담당자로 작성자 사용
+          orderManagerContact: orderData.creatorEmail,
         },
 
         creator: {
           name: orderData.creatorName || '작성자 정보 없음',
           email: orderData.creatorEmail,
           phone: orderData.creatorPhone,
-          position: orderData.creatorPosition,
-          role: orderData.creatorRole,
         },
 
-        items: itemsQuery.map((item, index) => ({
-          sequenceNo: index + 1,
-          majorCategory: item.majorCategory,
-          middleCategory: item.middleCategory,
-          minorCategory: item.minorCategory,
-          name: item.itemName,
-          specification: item.specification,
-          quantity: Number(item.quantity),
-          unit: item.unit,
-          unitPrice: Number(item.unitPrice),
-          totalPrice: Number(item.totalAmount),
-          remarks: item.notes,
-          categoryPath: [
-            item.majorCategory,
-            item.middleCategory,
-            item.minorCategory
-          ].filter(Boolean).join(' | '),
-        })),
+        items: itemsQuery.map((item: any, index: number) => {
+          // 납품처 정보 추출 (remarks에서 파싱)
+          let deliveryLocation = '';
+          let deliveryEmail = '';
+          const remarks = item.notes || '';
+          
+          // "납품처:" 패턴 찾기
+          const deliveryMatch = remarks.match(/납품처:\s*([^,\n]+)/);
+          if (deliveryMatch) {
+            deliveryLocation = deliveryMatch[1].trim();
+          }
+          
+          // "이메일:" 패턴 찾기
+          const emailMatch = remarks.match(/이메일:\s*([^\s,\n]+)/);
+          if (emailMatch) {
+            deliveryEmail = emailMatch[1].trim();
+          }
+          
+          return {
+            sequenceNo: index + 1,
+            name: item.itemName,
+            specification: item.specification,
+            quantity: Number(item.quantity),
+            unit: item.unit,
+            unitPrice: Number(item.unitPrice),
+            totalPrice: Number(item.totalAmount),
+            deliveryLocation,
+            deliveryEmail,
+            remarks: item.notes,
+          };
+        }),
 
         financial: {
           subtotalAmount,
           vatRate: this.VAT_RATE,
           vatAmount,
           totalAmount,
+          discountAmount: 0, // 할인 금액이 있으면 여기에 설정
           currencyCode: 'KRW',
-        },
-
-        terms: {
-          paymentTerms: '계약서에 따름',
-          deliveryTerms: '현장 직납',
-          warrantyPeriod: '1년',
-          qualityStandard: 'KS 기준',
-          inspectionMethod: '현장 검수',
-        },
-
-        attachments: {
-          count: attachmentsQuery.length,
-          hasAttachments: attachmentsQuery.length > 0,
-          fileNames: attachmentsQuery.map(att => att.originalName),
-          totalSize: attachmentsQuery.reduce((sum, att) => sum + (att.fileSize || 0), 0),
-        },
-
-        communication: {
-          emailHistory: emailHistoryQuery.map(email => ({
-            sentAt: email.sentAt,
-            recipient: email.recipientEmail,
-            subject: email.subject,
-            status: email.status,
-          })),
-          lastEmailSent: emailHistoryQuery[0]?.sentAt,
-          totalEmailsSent: emailHistoryQuery.length,
-        },
-
-        approval: {
-          currentStatus: orderData.approvalStatus || 'not_required',
-          approvalLevel: orderData.approvalLevel || 1,
-          approvers: [
-            { role: 'field_worker', status: 'approved' },
-            { role: 'project_manager', status: 'pending' },
-            { role: 'hq_management', status: 'pending' },
-            { role: 'executive', status: 'pending' },
-            { role: 'admin', status: 'pending' },
-          ],
         },
 
         metadata: {
@@ -579,10 +476,6 @@ export class ProfessionalPDFGenerationService {
       return format(new Date(date), 'yyyy년 MM월 dd일', { locale: ko });
     };
 
-    const formatDateTime = (date?: Date | null) => {
-      if (!date) return '-';
-      return format(new Date(date), 'yyyy.MM.dd HH:mm', { locale: ko });
-    };
 
     const formatCurrency = (amount: number) => {
       return new Intl.NumberFormat('ko-KR', {
@@ -595,21 +488,25 @@ export class ProfessionalPDFGenerationService {
       return new Intl.NumberFormat('ko-KR').format(num);
     };
 
-    // 특이사항 포맷팅 함수 (카테고리는 파이프로, 납품처 정보는 글머리표로)
+    // 특이사항 포맷팅 함수 (납품처 정보를 글머리표로)
     const formatRemarks = (item: any) => {
       let result = '';
       
-      // 카테고리 정보가 있으면 파이프로 구분하여 추가
-      if (item.categoryPath && item.categoryPath !== '-') {
-        result += item.categoryPath + '<br/>';
+      // 납품처 정보
+      if (item.deliveryLocation) {
+        result += `• 납품처: ${item.deliveryLocation}`;
       }
       
-      // 기존 remarks에서 납품처 정보를 글머리표로 포맷팅
-      if (item.remarks && item.remarks !== '-') {
-        const formattedRemarks = item.remarks
-          .replace(/납품처:/g, '• 납품처:')
-          .replace(/이메일:/g, '<br/>• 이메일:');
-        result += formattedRemarks;
+      // 이메일 정보
+      if (item.deliveryEmail) {
+        result += `<br/>• 이메일: ${item.deliveryEmail}`;
+      }
+      
+      // 기타 비고사항
+      if (item.remarks && item.remarks !== '-' && 
+          !item.remarks.includes('납품처:') && 
+          !item.remarks.includes('이메일:')) {
+        result += `<br/>${item.remarks}`;
       }
       
       return result || '-';
@@ -629,22 +526,7 @@ export class ProfessionalPDFGenerationService {
       </tr>
     `).join('');
 
-    // 승인자 현황
-    const approverBoxes = data.approval.approvers.map(approver => {
-      const statusIcon = approver.status === 'approved' ? '✓' : 
-                        approver.status === 'rejected' ? '✗' : '○';
-      const statusClass = approver.status === 'approved' ? 'approved' : 
-                         approver.status === 'rejected' ? 'rejected' : 'pending';
-      
-      return `
-        <div class="approval-box ${statusClass}">
-          <div class="approval-title">${this.getRoleDisplayName(approver.role)}</div>
-          <div class="approval-status">${statusIcon}</div>
-          <div class="approval-name">${approver.name || '-'}</div>
-          ${approver.approvedAt ? `<div class="approval-date">${formatDate(approver.approvedAt)}</div>` : ''}
-        </div>
-      `;
-    }).join('');
+    // 승인자 현황 제거 (간소화)
 
     return `
 <!DOCTYPE html>
@@ -816,7 +698,7 @@ export class ProfessionalPDFGenerationService {
       gap: 10px;
       padding: 3px 8px;
       border-bottom: 1px solid #e2e8f0;
-      font-size: 8pt;
+      font-size: 7pt;
     }
     
     .financial-row:last-child {
@@ -995,11 +877,8 @@ export class ProfessionalPDFGenerationService {
   <div class="container">
     <!-- HEADER -->
     <div class="header" style="text-align: left; padding: 20px 0;">
-      <h1 style="margin-bottom: 8px;">구매 발주서</h1>
+      <h1 style="margin-bottom: 8px; white-space: nowrap;">구매발주서</h1>
       <div class="order-number" style="margin-bottom: 5px;">발주번호: ${data.orderNumber}</div>
-      <div style="font-size: 6pt; color: #666; line-height: 1.2;">
-        생성일: ${formatDate(data.metadata.generatedAt)}
-      </div>
     </div>
     
     <!-- COMPANY & VENDOR INFO -->
@@ -1066,7 +945,7 @@ export class ProfessionalPDFGenerationService {
           </div>
           <div class="info-row">
             <span class="info-label">발주처</span>
-            <span class="info-value">${data.project.clientName || '-'}</span>
+            <span class="info-value">-</span>
           </div>
         </div>
         
@@ -1094,7 +973,7 @@ export class ProfessionalPDFGenerationService {
           </div>
           <div class="info-row">
             <span class="info-label">직책</span>
-            <span class="info-value">${data.creator.position || data.creator.role || '-'}</span>
+            <span class="info-value">-</span>
           </div>
           <div class="info-row">
             <span class="info-label">연락처</span>
@@ -1145,32 +1024,6 @@ export class ProfessionalPDFGenerationService {
       </div>
     </div>
     
-    <!-- ATTACHMENTS & COMMUNICATION -->
-    <div class="comm-grid">
-      <div class="comm-box">
-        <h4>첨부파일 (${data.attachments.count}개)</h4>
-        ${data.attachments.hasAttachments ? 
-          data.attachments.fileNames.slice(0, 3).map(name => 
-            `<div class="attachment-item">${name.length > 30 ? name.substring(0, 30) + '...' : name}</div>`
-          ).join('') +
-          (data.attachments.count > 3 ? `<div class="attachment-item">... 외 ${data.attachments.count - 3}개</div>` : '')
-          : '<div style="color: #666;">첨부파일 없음</div>'
-        }
-        ${data.attachments.totalSize > 0 ? `<div style="margin-top: 3px; font-size: 6pt; color: #666;">총 크기: ${Math.round(data.attachments.totalSize / 1024)}KB</div>` : ''}
-      </div>
-      
-      <div class="comm-box">
-        <h4>이메일 발송 이력 (${data.communication.totalEmailsSent}회)</h4>
-        ${data.communication.emailHistory.length > 0 ?
-          data.communication.emailHistory.slice(0, 2).map(email =>
-            `<div class="email-item">${formatDateTime(email.sentAt)} | ${email.recipient.split('@')[0]}@...</div>`
-          ).join('') +
-          (data.communication.totalEmailsSent > 2 ? `<div class="email-item">... 외 ${data.communication.totalEmailsSent - 2}회</div>` : '')
-          : '<div style="color: #666;">발송 이력 없음</div>'
-        }
-        ${data.communication.lastEmailSent ? `<div style="margin-top: 3px; font-size: 6pt; color: #666;">최종 발송: ${formatDate(data.communication.lastEmailSent)}</div>` : ''}
-      </div>
-    </div>
     
     <!-- NOTES -->
     ${data.metadata.notes ? `
@@ -1190,9 +1043,9 @@ export class ProfessionalPDFGenerationService {
       </div>
       
       <div class="doc-metadata">
-        <div>Template ${data.metadata.templateVersion}</div>
+        <div>생성일시: ${formatDate(data.metadata.generatedAt)}</div>
         <div class="center">본 문서는 전자적으로 생성되었습니다</div>
-        <div class="right"></div>
+        <div class="right">Template ${data.metadata.templateVersion}</div>
       </div>
     </div>
   </div>
@@ -1289,9 +1142,8 @@ export class ProfessionalPDFGenerationService {
         
         // === 헤더 섹션 ===
         // 제목 및 발주서 번호 (왼쪽 정렬)
-        doc.fontSize(16).text(safeText('구매 발주서'), 20, doc.y);
+        doc.fontSize(16).text(safeText('구매발주서'), 20, doc.y);
         doc.fontSize(12).text(safeText(`발주번호: ${orderData.orderNumber}`), 20, doc.y);
-        doc.fontSize(6).text(safeText(`생성일시: ${formatDate(orderData.metadata?.generatedAt || new Date())}`), 20, doc.y);
         
         // 구분선
         doc.moveTo(20, doc.y + 5).lineTo(575, doc.y + 5).stroke();
@@ -1299,7 +1151,6 @@ export class ProfessionalPDFGenerationService {
         
         // === 정보 섹션 (3열 레이아웃) ===
         const infoY = doc.y;
-        const colWidth = 180;
         doc.fontSize(8);
         
         // 좌측 열 - 발주업체
@@ -1368,20 +1219,16 @@ export class ProfessionalPDFGenerationService {
           doc.text(safeText(item.unit || '-'), 300, currentY + 3);
           doc.text(safeText(formatCurrency(item.unitPrice)), 340, currentY + 3);
           doc.text(safeText(formatCurrency(item.totalPrice)), 420, currentY + 3);
-          // 특이사항 포맷팅 (카테고리 + 납품처 정보)
+          // 특이사항 포맷팅 (납품처 정보)
           const formatRemarksForPDF = (item: any) => {
             let result = '';
-            // 카테고리 정보 추가
-            if (item.categoryPath && item.categoryPath !== '-') {
-              result += item.categoryPath.substring(0, 15) + '\\n';
+            // 납품처 정보
+            if (item.deliveryLocation) {
+              result += `• ${item.deliveryLocation.substring(0, 15)}`;
             }
-            // 납품처 정보 포맷팅
-            if (item.remarks && item.remarks !== '-') {
-              const formattedRemarks = item.remarks
-                .replace(/납품처:/g, '• 납품처:')
-                .replace(/이메일:/g, '\\n• 이메일:')
-                .substring(0, 20);
-              result += formattedRemarks;
+            // 이메일 정보
+            if (item.deliveryEmail) {
+              result += `\\n${item.deliveryEmail.substring(0, 20)}`;
             }
             return result || '-';
           };
@@ -1401,51 +1248,33 @@ export class ProfessionalPDFGenerationService {
         }
         
         // 금액 합계
-        doc.rect(20, currentY, 555, 20).fill('#e3f2fd');
+        doc.rect(20, currentY, 555, 16).fill('#e3f2fd');
         doc.fillColor('black');
-        doc.fontSize(8);
-        doc.text(safeText('소계 (부가세별도)'), 25, currentY + 5);
-        doc.text(safeText(formatCurrency(orderData.financial.subtotalAmount)), 420, currentY + 5);
-        doc.rect(20, currentY, 555, 20).stroke();
-        currentY += 20;
+        doc.fontSize(6);
+        doc.text(safeText('소계 (부가세별도)'), 25, currentY + 3);
+        doc.text(safeText(formatCurrency(orderData.financial.subtotalAmount)), 420, currentY + 3);
+        doc.rect(20, currentY, 555, 16).stroke();
+        currentY += 16;
         
-        doc.rect(20, currentY, 555, 20).fill('#e3f2fd');
+        doc.rect(20, currentY, 555, 16).fill('#e3f2fd');
         doc.fillColor('black');
-        doc.text(safeText(`부가세 (${(orderData.financial.vatRate * 100).toFixed(0)}%)`), 25, currentY + 5);
-        doc.text(safeText(formatCurrency(orderData.financial.vatAmount)), 420, currentY + 5);
-        doc.rect(20, currentY, 555, 20).stroke();
-        currentY += 20;
+        doc.fontSize(6);
+        doc.text(safeText(`부가세 (${(orderData.financial.vatRate * 100).toFixed(0)}%)`), 25, currentY + 3);
+        doc.text(safeText(formatCurrency(orderData.financial.vatAmount)), 420, currentY + 3);
+        doc.rect(20, currentY, 555, 16).stroke();
+        currentY += 16;
         
-        doc.rect(20, currentY, 555, 20).fill('#1e40af');
+        doc.rect(20, currentY, 555, 16).fill('#1e40af');
         doc.fillColor('white');
-        doc.fontSize(9).text(safeText('총 금액'), 25, currentY + 5);
-        doc.text(safeText(formatCurrency(orderData.financial.totalAmount)), 420, currentY + 5);
-        doc.rect(20, currentY, 555, 20).stroke();
+        doc.fontSize(7).text(safeText('총 금액'), 25, currentY + 3);
+        doc.text(safeText(formatCurrency(orderData.financial.totalAmount)), 420, currentY + 3);
+        doc.rect(20, currentY, 555, 16).stroke();
         
         doc.fillColor('black');
         doc.moveDown(2);
         
         // === 추가 정보 섹션 ===
         doc.fontSize(7);
-        
-        // 첨부파일 정보
-        if (orderData.attachments.hasAttachments) {
-          doc.text(safeText(`첨부파일: ${orderData.attachments.count}개 (${Math.round(orderData.attachments.totalSize / 1024)}KB)`), 20);
-          orderData.attachments.fileNames.slice(0, 3).forEach((fileName, index) => {
-            doc.text(safeText(`  ${index + 1}. ${fileName.length > 40 ? fileName.substring(0, 40) + '...' : fileName}`), 20, doc.y + 8);
-          });
-          if (orderData.attachments.count > 3) {
-            doc.text(safeText(`  ... 외 ${orderData.attachments.count - 3}개 파일`), 20, doc.y + 8);
-          }
-          doc.moveDown(1);
-        }
-        
-        // 이메일 발송 이력
-        if (orderData.communication.totalEmailsSent > 0) {
-          doc.text(safeText(`이메일 발송: 총 ${orderData.communication.totalEmailsSent}회`), 20);
-          doc.text(safeText(`최근 발송: ${formatDate(orderData.communication.lastEmailSent)}`), 20, doc.y + 8);
-          doc.moveDown(1);
-        }
         
         // 특이사항
         if (orderData.metadata.notes) {
@@ -1454,38 +1283,11 @@ export class ProfessionalPDFGenerationService {
           doc.moveDown(1);
         }
         
-        // === 결재선 ===
-        doc.moveDown(1);
-        const signY = doc.y;
-        const signBoxWidth = 105;
-        const signBoxHeight = 40;
-        
-        // 결재선 제목
-        doc.fontSize(8).text(safeText('결재'), 20, signY);
-        doc.moveDown(0.5);
-        
-        const finalSignY = doc.y;
-        const roles = ['담당', '검토', '팀장', '임원', '대표'];
-        
-        roles.forEach((role, index) => {
-          const x = 20 + (index * 110);
-          doc.rect(x, finalSignY, signBoxWidth, signBoxHeight).stroke();
-          doc.fontSize(7).text(safeText(role), x + 45, finalSignY + 5);
-          
-          // 승인 상태 표시
-          const approver = orderData.approval.approvers[index];
-          if (approver) {
-            const statusText = approver.status === 'approved' ? '승인' : 
-                             approver.status === 'rejected' ? '반려' : '대기';
-            doc.text(safeText(statusText), x + 40, finalSignY + 15);
-            if (approver.approvedAt) {
-              doc.text(safeText(formatDate(approver.approvedAt)), x + 35, finalSignY + 25);
-            }
-          }
-        });
+        // === 결재선 제거 (간소화) ===
+        doc.moveDown(2);
         
         // === 하단 정보 ===
-        doc.y = finalSignY + signBoxHeight + 15;
+        doc.y = doc.y + 15;
         doc.fontSize(8);
         doc.text(safeText(orderData.issuerCompany.name), { align: 'center' });
         if (orderData.issuerCompany.representative) {
@@ -1498,7 +1300,7 @@ export class ProfessionalPDFGenerationService {
         
         doc.moveDown(1);
         doc.fontSize(6);
-        doc.text(safeText(`문서 ID: ${orderData.metadata.documentId} | Template: ${orderData.metadata.templateVersion} | Generated: ${formatDate(orderData.metadata.generatedAt)}`), { align: 'center' });
+        doc.text(safeText(`문서 ID: ${orderData.metadata.documentId} | 생성일시: ${formatDate(orderData.metadata.generatedAt)} | Template: ${orderData.metadata.templateVersion}`), { align: 'center' });
         
         doc.end();
         
@@ -1508,32 +1310,4 @@ export class ProfessionalPDFGenerationService {
     });
   }
 
-  /**
-   * 역할 표시명 반환
-   */
-  private static getRoleDisplayName(role: string): string {
-    const roleMap: { [key: string]: string } = {
-      'field_worker': '담당',
-      'project_manager': '검토',
-      'hq_management': '팀장',
-      'executive': '임원',
-      'admin': '대표'
-    };
-    return roleMap[role] || role;
-  }
-
-  /**
-   * 상태 표시명 반환
-   */
-  private static getStatusDisplayName(status?: string): string {
-    const statusMap: { [key: string]: string } = {
-      'draft': '초안',
-      'created': '생성',
-      'pending': '검토중',
-      'approved': '승인',
-      'sent': '발송',
-      'delivered': '납품'
-    };
-    return statusMap[status || 'draft'] || status || '초안';
-  }
 }

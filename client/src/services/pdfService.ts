@@ -7,9 +7,12 @@ export class PDFService {
   private static readonly BASE_URL = '/api/orders';
 
   /**
-   * 기본 PDF 생성 (기존 방식)
+   * 기본 PDF 생성 (Professional PDF로 리다이렉트)
    */
   static async generateBasicPDF(orderData: any) {
+    console.log(`📄 [PDFService] 기본 PDF 생성 요청 - Professional PDF로 전환`);
+    
+    // 이제 모든 PDF 생성은 Professional PDF를 사용
     return apiRequest(`${this.BASE_URL}/generate-pdf`, {
       method: 'POST',
       body: JSON.stringify(orderData),
@@ -20,9 +23,11 @@ export class PDFService {
   }
 
   /**
-   * 특정 발주서의 PDF 재생성 (기존 방식)
+   * 특정 발주서의 PDF 재생성 (Professional PDF 사용)
    */
   static async regeneratePDF(orderId: string | number) {
+    console.log(`📄 [PDFService] PDF 재생성 요청 - Professional PDF 사용: Order ID ${orderId}`);
+    
     return apiRequest(`${this.BASE_URL}/${orderId}/regenerate-pdf`, {
       method: 'POST',
       headers: {

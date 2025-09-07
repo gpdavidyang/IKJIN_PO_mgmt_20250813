@@ -8,7 +8,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import { readFileSync } from 'fs';
 import { z } from 'zod';
-import { PDFGenerationService } from '../services/pdf-generation-service';
+import { ProfessionalPDFGenerationService as PDFGenerationService } from '../services/professional-pdf-generation-service.js';
 import { decodeKoreanFilename } from '../utils/korean-filename';
 
 const router = Router();
