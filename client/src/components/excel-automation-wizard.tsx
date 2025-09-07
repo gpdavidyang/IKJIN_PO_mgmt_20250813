@@ -75,6 +75,12 @@ interface AutomationData {
   filePath?: string;
   fileName?: string;
   fileSize?: number;
+  pdfGeneration?: {
+    total: number;
+    successful: number;
+    failed: number;
+    attachmentIds: number[];
+  };
 }
 
 export function ExcelAutomationWizard() {
@@ -618,6 +624,18 @@ export function ExcelAutomationWizard() {
                 <div className={`text-sm transition-colors ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`}>이메일 수신자</div>
               </div>
             </div>
+            
+            {/* PDF 생성 상태 표시 */}
+            {automationData.pdfGeneration && (
+              <Alert className={automationData.pdfGeneration.failed > 0 ? 'border-yellow-500' : 'border-green-500'}>
+                <FileText className="h-4 w-4" />
+                <AlertDescription>
+                  PDF 생성 완료: {automationData.pdfGeneration.successful}개 성공
+                  {automationData.pdfGeneration.failed > 0 && `, ${automationData.pdfGeneration.failed}개 실패`}
+                  {automationData.pdfGeneration.successful > 0 && ' - PDF 파일이 자동으로 첨부됩니다'}
+                </AlertDescription>
+              </Alert>
+            )}
 
             <Separator />
 
