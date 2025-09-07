@@ -18740,20 +18740,28 @@ import { z as z4 } from "zod";
 var router13 = Router13();
 var createEmailHistorySchema = z4.object({
   orderId: z4.number(),
-  recipientEmail: z4.string().email(),
-  recipientName: z4.string().optional(),
-  ccEmails: z4.string().optional(),
+  orderNumber: z4.string().optional(),
+  recipients: z4.array(z4.object({
+    email: z4.string().email(),
+    name: z4.string().optional()
+  })),
+  cc: z4.array(z4.object({
+    email: z4.string().email(),
+    name: z4.string().optional()
+  })).optional(),
+  bcc: z4.array(z4.object({
+    email: z4.string().email(),
+    name: z4.string().optional()
+  })).optional(),
   subject: z4.string(),
-  body: z4.string(),
-  attachments: z4.array(z4.object({
+  messageContent: z4.string(),
+  attachmentFiles: z4.array(z4.object({
     filename: z4.string(),
     path: z4.string(),
     size: z4.number()
   })).optional(),
-  status: z4.enum(["sent", "failed", "bounced", "opened", "clicked"]).default("sent"),
-  errorMessage: z4.string().optional(),
-  emailProvider: z4.string().default("naver"),
-  messageId: z4.string().optional()
+  status: z4.string().default("pending"),
+  errorMessage: z4.string().optional()
 });
 router13.get("/orders/:orderId/email-history", requireAuth, async (req, res) => {
   try {
@@ -18771,23 +18779,22 @@ router13.get("/orders/:orderId/email-history", requireAuth, async (req, res) => 
       id: emailSendHistory.id,
       orderId: emailSendHistory.orderId,
       sentAt: emailSendHistory.sentAt,
-      sentBy: emailSendHistory.sentBy,
+      sentBy: emailSendHistory.senderUserId,
       sentByName: users.name,
       sentByEmail: users.email,
-      recipientEmail: emailSendHistory.recipientEmail,
-      recipientName: emailSendHistory.recipientName,
-      ccEmails: emailSendHistory.ccEmails,
+      recipients: emailSendHistory.recipients,
+      cc: emailSendHistory.cc,
+      bcc: emailSendHistory.bcc,
       subject: emailSendHistory.subject,
-      body: emailSendHistory.body,
-      attachments: emailSendHistory.attachments,
+      body: emailSendHistory.messageContent,
+      attachments: emailSendHistory.attachmentFiles,
       status: emailSendHistory.status,
       errorMessage: emailSendHistory.errorMessage,
-      openedAt: emailSendHistory.openedAt,
-      clickedAt: emailSendHistory.clickedAt,
-      trackingId: emailSendHistory.trackingId,
-      emailProvider: emailSendHistory.emailProvider,
-      messageId: emailSendHistory.messageId
-    }).from(emailSendHistory).leftJoin(users, eq18(emailSendHistory.sentBy, users.id)).where(eq18(emailSendHistory.orderId, orderId)).orderBy(desc6(emailSendHistory.sentAt));
+      sentCount: emailSendHistory.sentCount,
+      failedCount: emailSendHistory.failedCount,
+      createdAt: emailSendHistory.createdAt,
+      updatedAt: emailSendHistory.updatedAt
+    }).from(emailSendHistory).leftJoin(users, eq18(emailSendHistory.senderUserId, users.id)).where(eq18(emailSendHistory.orderId, orderId)).orderBy(desc6(emailSendHistory.sentAt));
     res.json(emailHistory);
   } catch (error) {
     console.error("Error fetching email history:", error);
@@ -18797,12 +18804,10 @@ router13.get("/orders/:orderId/email-history", requireAuth, async (req, res) => 
 router13.post("/email-history", requireAuth, async (req, res) => {
   try {
     const validatedData = createEmailHistorySchema.parse(req.body);
-    const trackingId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const [newEmailHistory] = await db.insert(emailSendHistory).values({
       ...validatedData,
-      sentBy: req.user.id,
-      trackingId,
-      attachments: validatedData.attachments || null
+      senderUserId: req.user.id,
+      attachmentFiles: validatedData.attachmentFiles || null
     }).returning();
     const order = await db.query.purchaseOrders.findFirst({
       where: eq18(purchaseOrders.id, validatedData.orderId)
@@ -18830,8 +18835,7 @@ router13.get("/orders-email-status", requireAuth, async (req, res) => {
         orderNumber: purchaseOrders.orderNumber,
         emailStatus: emailSendHistory.status,
         lastSentAt: emailSendHistory.sentAt,
-        recipientEmail: emailSendHistory.recipientEmail,
-        openedAt: emailSendHistory.openedAt
+        recipients: emailSendHistory.recipients
       }).from(purchaseOrders).leftJoin(emailSendHistory, eq18(purchaseOrders.id, emailSendHistory.orderId)).orderBy(desc6(purchaseOrders.id));
       res.json(orders);
     } catch (dbError) {
@@ -18841,8 +18845,7 @@ router13.get("/orders-email-status", requireAuth, async (req, res) => {
         orderNumber: purchaseOrders.orderNumber,
         emailStatus: sql9`null`.as("email_status"),
         lastSentAt: sql9`null`.as("last_sent_at"),
-        recipientEmail: sql9`null`.as("recipient_email"),
-        openedAt: sql9`null`.as("opened_at")
+        recipients: sql9`null`.as("recipients")
       }).from(purchaseOrders).orderBy(desc6(purchaseOrders.id));
       res.json(orders);
     }
@@ -18851,34 +18854,23 @@ router13.get("/orders-email-status", requireAuth, async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
-router13.put("/email-tracking/:trackingId", async (req, res) => {
+router13.put("/email-history/:id/status", requireAuth, async (req, res) => {
   try {
-    const { trackingId } = req.params;
-    const { action } = req.body;
-    if (!["opened", "clicked"].includes(action)) {
-      return res.status(400).json({ error: "Invalid action" });
+    const emailId = parseInt(req.params.id);
+    if (isNaN(emailId)) {
+      return res.status(400).json({ error: "Invalid email ID" });
     }
-    const updateData = {};
-    if (action === "opened") {
-      updateData.openedAt = /* @__PURE__ */ new Date();
-      updateData.status = "opened";
-    } else if (action === "clicked") {
-      updateData.clickedAt = /* @__PURE__ */ new Date();
-      updateData.status = "clicked";
+    const { status } = req.body;
+    if (!["pending", "sent", "failed"].includes(status)) {
+      return res.status(400).json({ error: "Invalid status" });
     }
-    if (req.headers["x-forwarded-for"] || req.ip) {
-      updateData.ipAddress = (req.headers["x-forwarded-for"] || req.ip).split(",")[0];
-    }
-    if (req.headers["user-agent"]) {
-      updateData.userAgent = req.headers["user-agent"];
-    }
-    const [updated] = await db.update(emailSendHistory).set(updateData).where(eq18(emailSendHistory.trackingId, trackingId)).returning();
+    const [updated] = await db.update(emailSendHistory).set({ status, updatedAt: /* @__PURE__ */ new Date() }).where(eq18(emailSendHistory.id, emailId)).returning();
     if (!updated) {
       return res.status(404).json({ error: "Email not found" });
     }
-    res.json({ success: true });
+    res.json(updated);
   } catch (error) {
-    console.error("Error updating email tracking:", error);
+    console.error("Error updating email status:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -18894,25 +18886,22 @@ router13.get("/email-history/:id", requireAuth, async (req, res) => {
       orderNumber: purchaseOrders.orderNumber,
       vendorName: vendors.name,
       sentAt: emailSendHistory.sentAt,
-      sentBy: emailSendHistory.sentBy,
+      senderUserId: emailSendHistory.senderUserId,
       sentByName: users.name,
       sentByEmail: users.email,
-      recipientEmail: emailSendHistory.recipientEmail,
-      recipientName: emailSendHistory.recipientName,
-      ccEmails: emailSendHistory.ccEmails,
+      recipients: emailSendHistory.recipients,
+      cc: emailSendHistory.cc,
+      bcc: emailSendHistory.bcc,
       subject: emailSendHistory.subject,
-      body: emailSendHistory.body,
-      attachments: emailSendHistory.attachments,
+      messageContent: emailSendHistory.messageContent,
+      attachmentFiles: emailSendHistory.attachmentFiles,
       status: emailSendHistory.status,
       errorMessage: emailSendHistory.errorMessage,
-      openedAt: emailSendHistory.openedAt,
-      clickedAt: emailSendHistory.clickedAt,
-      ipAddress: emailSendHistory.ipAddress,
-      userAgent: emailSendHistory.userAgent,
-      trackingId: emailSendHistory.trackingId,
-      emailProvider: emailSendHistory.emailProvider,
-      messageId: emailSendHistory.messageId
-    }).from(emailSendHistory).leftJoin(purchaseOrders, eq18(emailSendHistory.orderId, purchaseOrders.id)).leftJoin(vendors, eq18(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq18(emailSendHistory.sentBy, users.id)).where(eq18(emailSendHistory.id, emailId));
+      sentCount: emailSendHistory.sentCount,
+      failedCount: emailSendHistory.failedCount,
+      createdAt: emailSendHistory.createdAt,
+      updatedAt: emailSendHistory.updatedAt
+    }).from(emailSendHistory).leftJoin(purchaseOrders, eq18(emailSendHistory.orderId, purchaseOrders.id)).leftJoin(vendors, eq18(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq18(emailSendHistory.senderUserId, users.id)).where(eq18(emailSendHistory.id, emailId));
     if (!email || email.length === 0) {
       return res.status(404).json({ error: "Email not found" });
     }

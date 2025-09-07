@@ -40,6 +40,7 @@ export default function CreateOrderExcel() {
   const [vendorValidation, setVendorValidation] = useState<any>(null);
   const [selectedVendors, setSelectedVendors] = useState<any[]>([]);
   const [emailPreview, setEmailPreview] = useState<any>(null);
+  const [savedOrderNumbers, setSavedOrderNumbers] = useState<string[]>([]);
   const [processingSteps, setProcessingSteps] = useState<ProcessingStep[]>([
     { id: 'upload', title: '파일 업로드', description: '엑셀 파일을 서버로 업로드', status: 'pending' },
     { id: 'parse', title: 'Input 시트 파싱', description: '엑셀 파일의 Input 시트 데이터 분석', status: 'pending' },
@@ -170,6 +171,12 @@ export default function CreateOrderExcel() {
       }
 
       updateProcessingStep('save', 'completed', `발주서 ${saveData.data.savedOrders}개 저장 완료 (PDF/Excel 파일 포함)`);
+
+      // 저장된 발주서 번호들 저장
+      if (saveData.data.savedOrderNumbers && saveData.data.savedOrderNumbers.length > 0) {
+        setSavedOrderNumbers(saveData.data.savedOrderNumbers);
+        console.log('저장된 발주서 번호들:', saveData.data.savedOrderNumbers);
+      }
 
       // Invalidate orders queries to refresh the orders list
       await queryClient.invalidateQueries({ queryKey: ['orders'] });
@@ -674,9 +681,11 @@ export default function CreateOrderExcel() {
                         body: JSON.stringify({
                           processedFilePath: `uploads/${emailPreview.attachmentInfo.processedFile}`,
                           recipients: emailPreview.recipients,
+                          savedOrderNumbers: savedOrderNumbers,
                           emailOptions: {
                             subject: emailPreview.subject,
                             orderNumber: uploadResult?.data?.orders?.[0]?.orderNumber || 'AUTO',
+                            savedOrderNumbers: savedOrderNumbers,
                             additionalMessage: '자동화 시스템을 통해 발송된 발주서입니다.'
                           }
                         }),
@@ -848,9 +857,11 @@ export default function CreateOrderExcel() {
                         body: JSON.stringify({
                           processedFilePath: `uploads/${emailPreview.attachmentInfo.processedFile}`,
                           recipients: emailPreview.recipients,
+                          savedOrderNumbers: savedOrderNumbers,
                           emailOptions: {
                             subject: emailPreview.subject,
                             orderNumber: uploadResult?.data?.orders?.[0]?.orderNumber || 'AUTO',
+                            savedOrderNumbers: savedOrderNumbers,
                             additionalMessage: '자동화 시스템을 통해 발송된 발주서입니다.'
                           }
                         }),

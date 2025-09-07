@@ -282,8 +282,13 @@ class PlaywrightEngine implements ConversionEngine {
 
   private getCSS(options: UnifiedPdfOptions): string {
     return `
+      @font-face {
+        font-family: 'NotoSansKR';
+        src: local('Noto Sans KR'), local('NotoSansKR'), local('Malgun Gothic'), local('맑은 고딕');
+      }
+      
       body {
-        font-family: 'Malgun Gothic', Arial, sans-serif;
+        font-family: 'Noto Sans KR', 'NotoSansKR', 'Malgun Gothic', '맑은 고딕', 'Apple SD Gothic Neo', sans-serif;
         margin: 0;
         padding: 20px;
         font-size: 12px;
