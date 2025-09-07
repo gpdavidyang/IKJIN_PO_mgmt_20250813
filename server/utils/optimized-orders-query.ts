@@ -9,7 +9,8 @@ import {
   vendors, 
   projects, 
   users,
-  purchaseOrderItems
+  purchaseOrderItems,
+  emailSendHistory
 } from "@shared/schema";
 import { eq, desc, asc, ilike, and, or, between, count, sql, gte, lte } from "drizzle-orm";
 
@@ -54,6 +55,9 @@ export interface OrderWithMetadata {
   // Computed fields
   itemCount?: number;
   hasPdf?: boolean; // PDF 생성 여부
+  // Email fields
+  emailStatus?: string | null; // 최신 이메일 상태
+  totalEmailsSent?: number; // 총 이메일 발송 횟수
 }
 
 export class OptimizedOrdersService {
@@ -182,7 +186,7 @@ export class OptimizedOrdersService {
 
     const whereClause = whereConditions.length > 0 ? and(...whereConditions) : undefined;
 
-    // Optimized query using proper joins and pagination
+    // Optimized query using proper joins and pagination with email statistics
     const ordersQuery = db
       .select({
         // Order fields
@@ -206,8 +210,10 @@ export class OptimizedOrdersService {
         userName: users.name,
         // PDF attachment status - use correct column names (database uses snake_case)
         hasPdf: sql<boolean>`EXISTS(SELECT 1 FROM attachments WHERE attachments.order_id = ${purchaseOrders.id} AND attachments.mime_type = 'application/pdf')`,
-        // Email sent status - temporarily disabled until email_send_history table is created
-        emailSentAt: sql<string | null>`NULL`,
+        // Email statistics from email_send_history
+        totalEmailsSent: sql<number>`COALESCE((SELECT COUNT(*) FROM ${emailSendHistory} WHERE ${emailSendHistory.orderId} = ${purchaseOrders.id}), 0)`,
+        emailStatus: sql<string | null>`(SELECT ${emailSendHistory.status} FROM ${emailSendHistory} WHERE ${emailSendHistory.orderId} = ${purchaseOrders.id} ORDER BY ${emailSendHistory.sentAt} DESC LIMIT 1)`,
+        emailSentAt: sql<string | null>`(SELECT ${emailSendHistory.sentAt} FROM ${emailSendHistory} WHERE ${emailSendHistory.orderId} = ${purchaseOrders.id} ORDER BY ${emailSendHistory.sentAt} DESC LIMIT 1)`,
       })
       .from(purchaseOrders)
       .leftJoin(vendors, eq(purchaseOrders.vendorId, vendors.id))
@@ -307,24 +313,11 @@ export class OptimizedOrdersService {
 
   /**
    * Get orders with email status in a single optimized query
-   * TEMPORARY: Email functionality disabled until email_send_history table is created
+   * Now fetches actual email status from email_send_history table
    */
   static async getOrdersWithEmailStatus(filters: OptimizedOrderFilters = {}) {
-    const ordersResult = await this.getOrdersWithMetadata(filters);
-    
-    // Temporarily return orders without email status until table is created
-    const ordersWithEmailStatus = ordersResult.orders.map(order => ({
-      ...order,
-      emailStatus: null,
-      lastSentAt: null,
-      totalEmailsSent: 0,
-      openedAt: null
-    }));
-
-    return {
-      ...ordersResult,
-      orders: ordersWithEmailStatus
-    };
+    // The main getOrdersWithMetadata method now includes email statistics
+    return await this.getOrdersWithMetadata(filters);
   }
 
   /**

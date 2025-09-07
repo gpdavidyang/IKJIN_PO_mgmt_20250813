@@ -44,13 +44,23 @@ export function UploadSuccessActions({ uploadResult, extractedFiles }: UploadSuc
     if (!selectedOrder) return;
 
     try {
+      // Build attachment URLs from selectedAttachmentIds
+      const attachmentUrls: string[] = [];
+      if (emailData.selectedAttachmentIds && emailData.selectedAttachmentIds.length > 0) {
+        for (const attachmentId of emailData.selectedAttachmentIds) {
+          const attachmentUrl = `/api/attachments/${attachmentId}/download`;
+          attachmentUrls.push(attachmentUrl);
+        }
+      }
+
       const orderData = {
         orderNumber: selectedOrder.orderNumber,
         vendorName: selectedOrder.vendorName,
         orderDate: selectedOrder.orderDate,
         totalAmount: selectedOrder.totalAmount,
         siteName: selectedOrder.siteName,
-        filePath: extractedFiles?.excelPath || uploadResult.filePath
+        filePath: extractedFiles?.excelPath || uploadResult.filePath,
+        attachmentUrls: attachmentUrls
       };
 
       await EmailService.sendPurchaseOrderEmail(orderData, emailData);

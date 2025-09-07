@@ -40,9 +40,7 @@ interface EmailData {
   cc?: string[];
   subject: string;
   message?: string;
-  attachPDF: boolean;
-  attachExcel: boolean;
-  selectedAttachments?: number[]; // Added for dynamic attachment selection
+  selectedAttachmentIds: number[];
 }
 
 export function EmailSendDialog({ open, onOpenChange, orderData, onSendEmail }: EmailSendDialogProps) {
@@ -52,9 +50,7 @@ export function EmailSendDialog({ open, onOpenChange, orderData, onSendEmail }: 
     cc: [],
     subject: `발주서 전송 - ${orderData.orderNumber}`,
     message: '',
-    attachPDF: true,
-    attachExcel: true,
-    selectedAttachments: []
+    selectedAttachmentIds: []
   });
   
   const [isLoading, setIsLoading] = useState(false);
@@ -77,10 +73,10 @@ export function EmailSendDialog({ open, onOpenChange, orderData, onSendEmail }: 
     setAttachmentsLoading(true);
     try {
       console.log('📎 Fetching attachments for order:', orderData.orderId);
-      const response = await apiRequest('GET', `/api/orders/${orderData.orderId}`);
+      const response = await apiRequest(`/orders/${orderData.orderId}/attachments`);
       
-      if (response.attachments && Array.isArray(response.attachments)) {
-        const attachmentInfos: AttachmentInfo[] = response.attachments.map((att: any) => ({
+      if (Array.isArray(response)) {
+        const attachmentInfos: AttachmentInfo[] = response.map((att: any) => ({
           id: att.id,
           originalName: att.originalName,
           filePath: att.filePath,
@@ -91,13 +87,11 @@ export function EmailSendDialog({ open, onOpenChange, orderData, onSendEmail }: 
         
         setAttachments(attachmentInfos);
         
-        // Auto-select PDF and Excel files based on current logic
-        const pdfIds = attachmentInfos
-          .filter(att => att.mimeType?.includes('pdf') || att.originalName?.toLowerCase().endsWith('.pdf'))
-          .map(att => att.id);
-        
-        const excelIds = attachmentInfos
+        // Auto-select all PDF and Excel files by default
+        const autoSelectIds = attachmentInfos
           .filter(att => 
+            att.mimeType?.includes('pdf') || 
+            att.originalName?.toLowerCase().endsWith('.pdf') ||
             att.mimeType?.includes('excel') || 
             att.mimeType?.includes('spreadsheet') ||
             att.originalName?.toLowerCase().endsWith('.xlsx') ||
@@ -107,15 +101,12 @@ export function EmailSendDialog({ open, onOpenChange, orderData, onSendEmail }: 
           
         setEmailData(prev => ({
           ...prev,
-          attachPDF: pdfIds.length > 0,
-          attachExcel: excelIds.length > 0,
-          selectedAttachments: [...pdfIds, ...excelIds]
+          selectedAttachmentIds: autoSelectIds
         }));
         
         console.log('📎 Loaded attachments:', { 
           total: attachmentInfos.length, 
-          pdfs: pdfIds.length, 
-          excels: excelIds.length 
+          autoSelected: autoSelectIds.length 
         });
       } else {
         setAttachments([]);
@@ -179,7 +170,7 @@ export function EmailSendDialog({ open, onOpenChange, orderData, onSendEmail }: 
   // 첨부파일 선택/해제
   const toggleAttachment = (attachmentId: number) => {
     setEmailData(prev => {
-      const currentSelected = prev.selectedAttachments || [];
+      const currentSelected = prev.selectedAttachmentIds;
       const isSelected = currentSelected.includes(attachmentId);
       
       const newSelected = isSelected 
@@ -188,7 +179,7 @@ export function EmailSendDialog({ open, onOpenChange, orderData, onSendEmail }: 
         
       return {
         ...prev,
-        selectedAttachments: newSelected
+        selectedAttachmentIds: newSelected
       };
     });
   };
@@ -249,9 +240,7 @@ export function EmailSendDialog({ open, onOpenChange, orderData, onSendEmail }: 
         cc: emailData.cc,
         subject: emailData.subject,
         message: emailData.message,
-        selectedAttachments: emailData.selectedAttachments,
-        attachPDF: emailData.attachPDF,
-        attachExcel: emailData.attachExcel
+        selectedAttachmentIds: emailData.selectedAttachmentIds
       });
       
       await onSendEmail(emailData);
@@ -396,7 +385,7 @@ ${orderData.vendorName} 담당자님께 발주서를 전송드립니다.
                   총 {attachments.length}개의 파일이 첨부되어 있습니다
                 </div>
                 {attachments.map((attachment) => {
-                  const isSelected = emailData.selectedAttachments?.includes(attachment.id) || false;
+                  const isSelected = emailData.selectedAttachmentIds.includes(attachment.id);
                   return (
                     <div 
                       key={attachment.id} 
@@ -434,10 +423,10 @@ ${orderData.vendorName} 담당자님께 발주서를 전송드립니다.
                 })}
                 
                 {/* 선택된 파일 개수 표시 */}
-                {(emailData.selectedAttachments?.length || 0) > 0 && (
+                {emailData.selectedAttachmentIds.length > 0 && (
                   <div className="pt-2 border-t border-gray-200">
                     <div className="text-xs text-blue-600 font-medium">
-                      ✓ {emailData.selectedAttachments?.length}개 파일이 선택되었습니다
+                      ✓ {emailData.selectedAttachmentIds.length}개 파일이 선택되었습니다
                     </div>
                   </div>
                 )}

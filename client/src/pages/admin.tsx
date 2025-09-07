@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Users, FileText, Building, Edit, Save, X, Upload, Image, UserCheck, Search, Trash2, UserPlus, ChevronUp, ChevronDown, Mail, Hash, Phone, Calendar, Power, PowerOff, List, Grid3X3, Settings2, Shield, Activity } from "lucide-react";
+import { Plus, Users, FileText, Building, Edit, Save, X, Upload, Image, UserCheck, Search, Trash2, UserPlus, ChevronUp, ChevronDown, Mail, Hash, Phone, Calendar, Power, PowerOff, List, Grid3X3, Settings2, Shield, Activity, CheckCircle, XCircle, Clock, AlertCircle } from "lucide-react";
 import { useLocation } from "wouter";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SafeUserDelete } from "@/components/safe-user-delete";
@@ -38,6 +38,20 @@ interface ApprovalAuthority {
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
+}
+
+interface UserRegistration {
+  id: number;
+  name: string;
+  email: string;
+  phoneNumber: string;
+  userId: string;
+  role: string;
+  status: 'pending' | 'approved' | 'rejected';
+  submittedAt: string;
+  reviewedAt?: string;
+  reviewedBy?: string;
+  rejectionReason?: string;
 }
 import { RoleDisplay, RoleSelectOptions } from "@/components/role-display";
 
@@ -88,6 +102,10 @@ export default function Admin() {
   const [deletingUser, setDeletingUser] = useState<User | null>(null);
   const [userViewMode, setUserViewMode] = useState<'list' | 'card'>('list');
   
+  // Registration management states
+  const [selectedRegistration, setSelectedRegistration] = useState<UserRegistration | null>(null);
+  const [rejectionReason, setRejectionReason] = useState("");
+  
   // Sorting states
   const [userSortField, setUserSortField] = useState<string | null>(null);
   const [userSortDirection, setUserSortDirection] = useState<'asc' | 'desc'>('asc');
@@ -106,6 +124,11 @@ export default function Admin() {
 
   const { data: approvalAuthorities = [], isLoading: isLoadingApprovals } = useQuery<ApprovalAuthority[]>({
     queryKey: ["/api/approval-authorities"],
+    enabled: !!user && user.role === "admin",
+  });
+
+  const { data: userRegistrations = [], isLoading: isLoadingRegistrations } = useQuery<UserRegistration[]>({
+    queryKey: ["/api/admin/pending-registrations"],
     enabled: !!user && user.role === "admin",
   });
 
@@ -297,6 +320,32 @@ export default function Admin() {
     },
   });
 
+  const approveRegistrationMutation = useMutation({
+    mutationFn: (id: number) => apiRequest("POST", `/api/admin/approve-registration/${id}`),
+    onSuccess: () => {
+      toast({ title: "성공", description: "가입 신청이 승인되었습니다." });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/pending-registrations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+    },
+    onError: () => {
+      toast({ title: "오류", description: "가입 승인에 실패했습니다.", variant: "destructive" });
+    },
+  });
+
+  const rejectRegistrationMutation = useMutation({
+    mutationFn: ({ id, reason }: { id: number; reason: string }) => 
+      apiRequest("POST", `/api/admin/reject-registration/${id}`, { reason }),
+    onSuccess: () => {
+      toast({ title: "성공", description: "가입 신청이 거부되었습니다." });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/pending-registrations"] });
+      setSelectedRegistration(null);
+      setRejectionReason("");
+    },
+    onError: () => {
+      toast({ title: "오류", description: "가입 거부에 실패했습니다.", variant: "destructive" });
+    },
+  });
+
   // Helper functions
   const handleSaveCompany = (data: CompanyFormData) => {
     saveCompanyMutation.mutate(data);
@@ -334,6 +383,45 @@ export default function Admin() {
   const getSortIcon = (field: string, sortField: string | null, sortDirection: 'asc' | 'desc') => {
     if (sortField !== field) return null;
     return sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />;
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return <Clock className="h-4 w-4 text-yellow-600" />;
+      case 'approved':
+        return <CheckCircle className="h-4 w-4 text-green-600" />;
+      case 'rejected':
+        return <XCircle className="h-4 w-4 text-red-600" />;
+      default:
+        return <AlertCircle className="h-4 w-4 text-gray-600" />;
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return '대기 중';
+      case 'approved':
+        return '승인됨';
+      case 'rejected':
+        return '거부됨';
+      default:
+        return '알 수 없음';
+    }
+  };
+
+  const getStatusBadgeVariant = (status: string): "default" | "secondary" | "destructive" => {
+    switch (status) {
+      case 'pending':
+        return 'default';
+      case 'approved':
+        return 'secondary';
+      case 'rejected':
+        return 'destructive';
+      default:
+        return 'default';
+    }
   };
 
   const handleLogoUpload = async (file: File) => {
@@ -381,7 +469,7 @@ export default function Admin() {
 
       <div className={`shadow-sm rounded-lg border transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className={`grid w-full grid-cols-6 transition-colors ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+          <TabsList className={`grid w-full grid-cols-7 transition-colors ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
           <TabsTrigger value="company" className="flex items-center gap-2 text-sm">
             <Building className="h-4 w-4" />
             회사 정보
@@ -389,6 +477,10 @@ export default function Admin() {
           <TabsTrigger value="users" className="flex items-center gap-2 text-sm">
             <Users className="h-4 w-4" />
             사용자 관리
+          </TabsTrigger>
+          <TabsTrigger value="registrations" className="flex items-center gap-2 text-sm">
+            <UserPlus className="h-4 w-4" />
+            가입 신청
           </TabsTrigger>
           <TabsTrigger value="approval" className="flex items-center gap-2 text-sm">
             <UserCheck className="h-4 w-4" />
@@ -800,6 +892,132 @@ export default function Admin() {
           </Card>
         </TabsContent>
 
+        {/* 가입 신청 관리 탭 */}
+        <TabsContent value="registrations" className="mt-2">
+          <Card className={`shadow-sm transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+            <CardHeader className="pb-1">
+              <CardTitle className={`flex items-center justify-between text-sm transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                <div className="flex items-center gap-1">
+                  <UserPlus className={`h-4 w-4 transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                  <span>가입 신청 관리</span>
+                </div>
+                <Badge variant="outline" className="text-xs">
+                  {userRegistrations.filter(r => r.status === 'pending').length}개 대기 중
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-1">
+              {isLoadingRegistrations ? (
+                <div className={`text-xs text-center py-8 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  가입 신청 정보를 불러오는 중...
+                </div>
+              ) : userRegistrations.length === 0 ? (
+                <div className={`text-center py-8 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  <UserPlus className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p className="text-sm">가입 신청이 없습니다.</p>
+                  <p className="text-xs mt-1">새로운 사용자 가입 신청이 있으면 여기에 표시됩니다.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {userRegistrations.map((registration) => (
+                    <Card key={registration.id} className={`p-4 border transition-colors ${
+                      isDarkMode 
+                        ? 'bg-gray-700/50 border-gray-600' 
+                        : 'bg-gray-50 border-gray-200'
+                    }`}>
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <Avatar className="h-10 w-10">
+                              <AvatarFallback className="text-sm">
+                                {registration.name[0]}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <h3 className={`font-medium text-sm transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                                {registration.name}
+                              </h3>
+                              <RoleDisplay role={registration.role} />
+                            </div>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                            <div className="flex items-center gap-2">
+                              <Mail className={`h-3 w-3 transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                              <span className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                                {registration.email}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Phone className={`h-3 w-3 transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                              <span className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                                {registration.phoneNumber}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Hash className={`h-3 w-3 transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                              <span className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                                ID: {registration.userId}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Calendar className={`h-3 w-3 transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                              <span className={`transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                                {new Date(registration.submittedAt).toLocaleString('ko-KR')}
+                              </span>
+                            </div>
+                          </div>
+
+                          {registration.rejectionReason && (
+                            <div className={`mt-2 p-2 rounded text-xs transition-colors ${
+                              isDarkMode 
+                                ? 'bg-red-900/20 border border-red-800 text-red-200' 
+                                : 'bg-red-50 border border-red-200 text-red-700'
+                            }`}>
+                              <strong>거부 사유:</strong> {registration.rejectionReason}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2 ml-4">
+                          <Badge variant={getStatusBadgeVariant(registration.status)} className="text-xs">
+                            <div className="flex items-center gap-1">
+                              {getStatusIcon(registration.status)}
+                              {getStatusText(registration.status)}
+                            </div>
+                          </Badge>
+
+                          {registration.status === 'pending' && (
+                            <div className="flex gap-1">
+                              <Button
+                                size="sm"
+                                onClick={() => approveRegistrationMutation.mutate(registration.id)}
+                                disabled={approveRegistrationMutation.isPending}
+                                className="h-7 px-2 text-xs gap-1"
+                              >
+                                <CheckCircle className="h-3 w-3" />
+                                승인
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => setSelectedRegistration(registration)}
+                                className="h-7 px-2 text-xs gap-1"
+                              >
+                                <XCircle className="h-3 w-3" />
+                                거부
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         {/* 승인 설정 탭 */}
         <TabsContent value="approval" className="mt-2">
@@ -1007,6 +1225,99 @@ export default function Admin() {
                 </div>
               </form>
             </Form>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Registration Rejection Dialog */}
+      {selectedRegistration && (
+        <Dialog open={true} onOpenChange={() => {
+          setSelectedRegistration(null);
+          setRejectionReason("");
+        }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>가입 신청 거부</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className={`p-3 rounded border transition-colors ${
+                isDarkMode 
+                  ? 'bg-gray-700/50 border-gray-600' 
+                  : 'bg-gray-50 border-gray-200'
+              }`}>
+                <div className="flex items-center gap-3 mb-2">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback className="text-sm">
+                      {selectedRegistration.name[0]}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h3 className={`font-medium text-sm transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                      {selectedRegistration.name}
+                    </h3>
+                    <p className={`text-xs transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      {selectedRegistration.email}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <Label className={`text-sm transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  거부 사유 *
+                </Label>
+                <textarea
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  placeholder="가입 신청을 거부하는 이유를 입력해주세요..."
+                  className={`w-full mt-1 p-2 text-sm rounded border transition-colors ${
+                    isDarkMode 
+                      ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder:text-gray-400' 
+                      : 'bg-white border-gray-300 placeholder:text-gray-500'
+                  }`}
+                  rows={4}
+                />
+              </div>
+
+              <div className={`p-3 rounded border transition-colors ${
+                isDarkMode 
+                  ? 'bg-yellow-900/20 border-yellow-800' 
+                  : 'bg-yellow-50 border-yellow-200'
+              }`}>
+                <p className={`text-xs transition-colors ${
+                  isDarkMode ? 'text-yellow-200' : 'text-yellow-800'
+                }`}>
+                  <strong>주의:</strong> 거부된 가입 신청은 되돌릴 수 없으며, 
+                  신청자에게 거부 사유가 포함된 이메일이 발송됩니다.
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex justify-end gap-2 mt-4">
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  setSelectedRegistration(null);
+                  setRejectionReason("");
+                }}
+              >
+                취소
+              </Button>
+              <Button 
+                variant="destructive"
+                onClick={() => {
+                  if (selectedRegistration && rejectionReason.trim()) {
+                    rejectRegistrationMutation.mutate({
+                      id: selectedRegistration.id,
+                      reason: rejectionReason.trim()
+                    });
+                  }
+                }}
+                disabled={!rejectionReason.trim() || rejectRegistrationMutation.isPending}
+              >
+                {rejectRegistrationMutation.isPending ? "처리 중..." : "거부"}
+              </Button>
+            </div>
           </DialogContent>
         </Dialog>
       )}

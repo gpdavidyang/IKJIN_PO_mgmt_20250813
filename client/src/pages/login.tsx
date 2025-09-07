@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { LogIn, Building2, Eye, EyeOff, Copy, Check } from "lucide-react";
+import { LogIn, Building2, Eye, EyeOff, Copy, Check, UserPlus, KeyRound } from "lucide-react";
 import { useLocation } from "wouter";
 import { useTheme } from "@/components/ui/theme-provider";
 
@@ -176,6 +176,40 @@ export default function LoginPage() {
             </Form>
           </CardContent>
         </Card>
+
+        {/* Registration and Password Reset Links */}
+        <div className={`mt-6 text-center transition-colors`}>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+            <Button
+              variant="outline"
+              onClick={() => setLocation("/register")}
+              className={`w-full sm:w-auto flex items-center gap-2 transition-colors ${
+                isDarkMode 
+                  ? 'border-gray-600 bg-gray-800 text-gray-200 hover:bg-gray-700 hover:border-gray-500' 
+                  : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-400'
+              }`}
+            >
+              <UserPlus className="h-4 w-4" />
+              회원가입
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => setLocation("/forgot-password")}
+              className={`w-full sm:w-auto flex items-center gap-2 transition-colors ${
+                isDarkMode 
+                  ? 'text-gray-300 hover:text-gray-100 hover:bg-gray-800' 
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
+            >
+              <KeyRound className="h-4 w-4" />
+              비밀번호 찾기
+            </Button>
+          </div>
+          <div className={`mt-3 text-xs transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+            <p>계정이 없으신가요? 회원가입을 통해 새 계정을 만들어보세요.</p>
+            <p>비밀번호를 잊으셨나요? 이메일을 통해 재설정할 수 있습니다.</p>
+          </div>
+        </div>
 
         <div className={`mt-8 text-center text-sm transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
           <p className="mb-3">기본 로그인 정보:</p>

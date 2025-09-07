@@ -29,13 +29,15 @@ import {
   ChevronRight,
   TrendingUp,
   X,
-  AlertCircle
+  AlertCircle,
+  MailCheck
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { downloadAttachment, showDownloadSuccessMessage } from "@/lib/downloadUtils";
 import { InvoiceManager } from "@/components/invoice-manager";
 import { ReceiptManager } from "@/components/receipt-manager";
 import { EmailSendDialog } from "@/components/email-send-dialog";
+import { EmailHistoryModal } from "@/components/email-history-modal";
 import { AttachedFilesInfo } from "@/components/attached-files-info";
 import { format } from "date-fns";
 import { formatKoreanWon } from "@/lib/utils";
@@ -48,6 +50,7 @@ export default function OrderDetailProfessional() {
   const params = useParams();
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [emailHistoryModalOpen, setEmailHistoryModalOpen] = useState(false);
   const orderId = parseInt(params.id);
 
   const { data: order, isLoading } = useQuery({
@@ -276,48 +279,35 @@ export default function OrderDetailProfessional() {
     if (!order) return;
 
     try {
+      // 선택된 첨부파일 URL 생성
+      const attachmentUrls: string[] = [];
+      
+      if (emailData.selectedAttachmentIds && emailData.selectedAttachmentIds.length > 0) {
+        console.log('📎 선택된 첨부파일 ID:', emailData.selectedAttachmentIds);
+        
+        // 각 첨부파일 ID를 다운로드 URL로 변환
+        for (const attachmentId of emailData.selectedAttachmentIds) {
+          const attachmentUrl = `/api/attachments/${attachmentId}/download`;
+          attachmentUrls.push(attachmentUrl);
+          console.log('📎 첨부파일 URL 생성:', attachmentUrl);
+        }
+      }
+
       const orderData = {
         orderNumber: order.orderNumber,
         vendorName: order.vendor?.name || order.vendorName || '',
         orderDate: order.orderDate,
         totalAmount: order.totalAmount,
         siteName: order.project?.projectName || order.projectName || '',
-        filePath: order.filePath || ''
+        filePath: order.filePath || '',
+        attachmentUrls: attachmentUrls
       };
 
-      // Extract PDF and Excel attachment URLs if they exist
-      let pdfUrl = '';
-      let excelUrl = '';
-      
-      if (order.attachments && order.attachments.length > 0) {
-        // Find PDF attachment
-        const pdfAttachment = order.attachments.find(
-          (att: any) => att.mimeType?.includes('pdf') || att.originalName?.toLowerCase().endsWith('.pdf')
-        );
-        if (pdfAttachment) {
-          pdfUrl = `/api/attachments/${pdfAttachment.id}/download`;
-          console.log('🔗 Found PDF attachment for email:', pdfUrl);
-        }
-
-        // Find Excel attachment
-        const excelAttachment = order.attachments.find(
-          (att: any) => att.mimeType?.includes('excel') || 
-                       att.mimeType?.includes('spreadsheet') ||
-                       att.originalName?.toLowerCase().endsWith('.xlsx') ||
-                       att.originalName?.toLowerCase().endsWith('.xls')
-        );
-        if (excelAttachment) {
-          excelUrl = `/api/attachments/${excelAttachment.id}/download`;
-          console.log('🔗 Found Excel attachment for email:', excelUrl);
-        }
-      }
-
-      console.log('📧 Email attachment info:', { 
-        attachPdf: emailData.attachPDF, 
-        attachExcel: emailData.attachExcel, 
-        selectedAttachments: emailData.selectedAttachments,
-        pdfUrl, 
-        excelUrl,
+      console.log('📧 이메일 발송 데이터:', { 
+        orderData, 
+        emailData,
+        selectedAttachmentIds: emailData.selectedAttachmentIds,
+        attachmentUrls: attachmentUrls,
         hasAttachments: order.attachments?.length || 0
       });
 
@@ -328,9 +318,7 @@ export default function OrderDetailProfessional() {
           orderData,
           ...emailData,
           orderId: order.id,
-          pdfUrl: pdfUrl,
-          excelUrl: excelUrl,
-          selectedAttachments: emailData.selectedAttachments
+          attachmentUrls: attachmentUrls
         })
       });
 
@@ -351,6 +339,10 @@ export default function OrderDetailProfessional() {
         variant: "destructive",
       });
     }
+  };
+
+  const handleViewEmailHistory = () => {
+    setEmailHistoryModalOpen(true);
   };
 
   if (isLoading) {
@@ -403,6 +395,7 @@ export default function OrderDetailProfessional() {
   const canCreateOrder = isDraft && (user?.role === "admin" || order.userId === user?.id);
   const canGeneratePDF = isCreated || isSent || isDelivered;
   const canSendEmail = isCreated && (user?.role === "admin" || order.userId === user?.id);
+  const canViewEmailHistory = (isSent || isDelivered) && (user?.role === "admin" || order.userId === user?.id);
   const canEdit = isDraft || (isCreated && (user?.role === "admin" || order.userId === user?.id));
   const canApprove = user?.role === "admin" && order.approvalStatus === "pending";
   const canCompleteDelivery = (isCreated || isSent) && (user?.role === "admin" || order.userId === user?.id);
@@ -535,6 +528,18 @@ export default function OrderDetailProfessional() {
                 >
                   <Mail className="h-4 w-4" />
                   이메일 발송
+                </Button>
+              )}
+
+              {/* Email History button - for sent and delivered status */}
+              {canViewEmailHistory && (
+                <Button 
+                  variant="outline" 
+                  onClick={handleViewEmailHistory}
+                  className="flex items-center gap-2"
+                >
+                  <MailCheck className="h-4 w-4" />
+                  이메일 기록
                 </Button>
               )}
               
@@ -992,6 +997,16 @@ export default function OrderDetailProfessional() {
               orderId: order.id
             }}
             onSendEmail={handleSendEmail}
+          />
+        )}
+
+        {/* Email History Modal */}
+        {order && (
+          <EmailHistoryModal
+            orderId={order.id}
+            orderNumber={order.orderNumber}
+            isOpen={emailHistoryModalOpen}
+            onClose={() => setEmailHistoryModalOpen(false)}
           />
         )}
       </div>

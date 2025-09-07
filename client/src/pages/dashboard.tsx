@@ -14,6 +14,7 @@ import { ChartCard } from "@/components/dashboard/chart-card";
 import { QuickActions } from "@/components/dashboard/quick-actions";
 import { ProjectStatsList } from "@/components/dashboard/project-stats-list";
 import { RecentOrdersList } from "@/components/dashboard/recent-orders-list";
+import { UnifiedOrdersList } from "@/components/unified/UnifiedOrdersList";
 import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
 
 // Import new advanced chart components
@@ -488,7 +489,7 @@ export default function Dashboard() {
 
         {/* Right Column: Recent Activity + Category Stats */}
         <div className="space-y-1">
-          {/* Recent Orders - Ultra Compact */}
+          {/* Recent Orders - Using UnifiedOrdersList */}
           <div className={`rounded border p-2 transition-colors ${
             isDarkMode 
               ? 'bg-gray-800 border-gray-600' 
@@ -511,60 +512,13 @@ export default function Dashboard() {
               </button>
             </div>
             <div className="h-[120px] overflow-y-auto">
-              {!isAnyLoading && recentOrders.length > 0 ? (
-                <div className="space-y-1">
-                  {recentOrders.slice(0, 6).map((order: any, index: number) => (
-                    <div 
-                      key={index}
-                      className={`flex items-center justify-between p-1 rounded cursor-pointer transition-colors ${
-                        isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
-                      }`}
-                    >
-                      <div className="min-w-0 flex-1" onClick={() => navigate(`/orders/${order.id}`)}>
-                        <div className={`text-xs font-medium truncate transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{order.orderNumber}</div>
-                        <div className={`text-xs transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{order.vendor?.name}</div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="text-right">
-                          <div className={`text-xs font-semibold transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
-                            {formatKoreanWon(order.totalAmount || 0).replace('₩', '').replace(',000,000', 'M')}
-                          </div>
-                        </div>
-                        {/* PDF 아이콘 - draft 상태가 아닌 경우만 표시 */}
-                        {(() => {
-                          const currentOrderStatus = order.orderStatus || order.status;
-                          if (order.orderStatus) {
-                            return order.orderStatus !== 'draft' && ['created', 'sent', 'delivered'].includes(order.orderStatus);
-                          }
-                          return order.status !== 'draft' && ['approved', 'sent', 'completed'].includes(order.status);
-                        })() && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              window.open(`/api/orders/${order.id}/download-pdf`, '_blank');
-                            }}
-                            className={`p-1 rounded transition-colors ${
-                              isDarkMode 
-                                ? 'text-orange-400 hover:bg-orange-900/20 hover:text-orange-300' 
-                                : 'text-orange-500 hover:bg-orange-50 hover:text-orange-700'
-                            }`}
-                            title="PDF 다운로드"
-                          >
-                            <FileText className="h-3 w-3" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className={`h-[100px] flex items-center justify-center transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  <div className="text-center">
-                    <Clock className={`h-6 w-6 mx-auto mb-1 transition-colors ${isDarkMode ? 'text-gray-600' : 'text-gray-300'}`} />
-                    <p className="text-xs">데이터 준비 중...</p>
-                  </div>
-                </div>
-              )}
+              <UnifiedOrdersList
+                mode="compact"
+                maxItems={6}
+                orders={recentOrders}
+                onOrderClick={(orderId) => navigate(`/orders/${orderId}`)}
+                showActions={false}
+              />
             </div>
           </div>
 

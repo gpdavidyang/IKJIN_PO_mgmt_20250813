@@ -21,6 +21,7 @@ import router from "./routes/index";
 import { requireAuth } from "./local-auth";
 import { auditLogger } from "./middleware/audit-logger";
 import { webSocketService } from "./services/websocket-service";
+import { generalRateLimit, securityHeaders } from "./middleware/security";
 
 // Create app instance
 const app = express();
@@ -62,6 +63,10 @@ app.use((req, res, next) => {
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser()); // Add cookie parser middleware
+
+// Security middleware
+app.use(securityHeaders); // Apply security headers to all routes
+app.use('/api', generalRateLimit); // Apply rate limiting to API routes
 
 // Serve attached assets statically
 app.use('/attached_assets', express.static('attached_assets'));

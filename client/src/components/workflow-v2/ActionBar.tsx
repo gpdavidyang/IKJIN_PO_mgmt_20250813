@@ -5,9 +5,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Save, Send, Download, Loader2, FileText, Mail, Plus, X, Paperclip, List } from 'lucide-react';
+import { Save, Send, Download, Loader2, FileText, Mail, Plus, X, Paperclip, List, File } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/contexts/SidebarContext';
+import { apiRequest } from '@/lib/queryClient';
 
 interface ActionBarProps {
   orderData: any;
@@ -38,15 +39,16 @@ const ActionBar: React.FC<ActionBarProps> = ({
   const { isCollapsed } = useSidebar();
   const [sendEmailAfterCreate, setSendEmailAfterCreate] = useState(true);
   const [showEmailSettings, setShowEmailSettings] = useState(false);
+  const [availableAttachments, setAvailableAttachments] = useState<any[]>([]);
+  const [loadingAttachments, setLoadingAttachments] = useState(false);
   const [emailSettings, setEmailSettings] = useState({
     to: [orderData.vendorEmail || ''].filter(Boolean),
     cc: [],
     subject: `발주서 - ${orderData.orderNumber || ''} (${new Date().toLocaleDateString('ko-KR')})`,
     message: `안녕하세요,\n\n첨부된 발주서를 확인해 주시기 바랍니다.\n\n감사합니다.`,
     attachments: {
-      includeExcel: true,
-      includePdf: true,
-      additionalFiles: []
+      selectedAttachmentIds: [] as number[],
+      additionalFiles: [] as File[]
     }
   });
   
@@ -67,6 +69,36 @@ const ActionBar: React.FC<ActionBarProps> = ({
       subject: `발주서 - ${orderData.orderNumber || ''} (${new Date().toLocaleDateString('ko-KR')})`
     }));
   }, [orderData.vendorEmail, orderData.orderNumber]);
+
+  // 이메일 모달이 열릴 때 첨부파일 목록 가져오기
+  useEffect(() => {
+    const fetchAttachments = async () => {
+      if (!showEmailSettings || !orderData.id || loadingAttachments) return;
+      
+      setLoadingAttachments(true);
+      try {
+        const response = await apiRequest(`/orders/${orderData.id}/attachments`);
+        setAvailableAttachments(response);
+        
+        // 기본적으로 모든 PDF와 Excel 파일을 선택된 상태로 설정
+        const allAttachmentIds = response.map((att: any) => att.id);
+        setEmailSettings(prev => ({
+          ...prev,
+          attachments: {
+            ...prev.attachments,
+            selectedAttachmentIds: allAttachmentIds
+          }
+        }));
+      } catch (error) {
+        console.error('첨부파일 목록을 가져오는 중 오류:', error);
+        setAvailableAttachments([]);
+      } finally {
+        setLoadingAttachments(false);
+      }
+    };
+
+    fetchAttachments();
+  }, [showEmailSettings, orderData.id]);
 
   // 이메일 관련 헬퍼 함수들
   const addToEmail = () => {
@@ -120,6 +152,18 @@ const ActionBar: React.FC<ActionBarProps> = ({
       attachments: {
         ...prev.attachments,
         additionalFiles: prev.attachments.additionalFiles.filter((_, i) => i !== index)
+      }
+    }));
+  };
+
+  const toggleAttachmentSelection = (attachmentId: number) => {
+    setEmailSettings(prev => ({
+      ...prev,
+      attachments: {
+        ...prev.attachments,
+        selectedAttachmentIds: prev.attachments.selectedAttachmentIds.includes(attachmentId)
+          ? prev.attachments.selectedAttachmentIds.filter(id => id !== attachmentId)
+          : [...prev.attachments.selectedAttachmentIds, attachmentId]
       }
     }));
   };
@@ -437,36 +481,40 @@ const ActionBar: React.FC<ActionBarProps> = ({
               <Label className="text-sm font-medium">첨부파일</Label>
               <div className="mt-2 space-y-3">
                 
-                {/* 기본 첨부파일 옵션 */}
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="include-excel"
-                      checked={emailSettings.attachments.includeExcel}
-                      onCheckedChange={(checked) => 
-                        setEmailSettings(prev => ({
-                          ...prev,
-                          attachments: { ...prev.attachments, includeExcel: !!checked }
-                        }))
-                      }
-                    />
-                    <Label htmlFor="include-excel" className="text-sm">Excel 파일 첨부</Label>
+                {/* 첨부 가능한 파일 목록 */}
+                {loadingAttachments ? (
+                  <div className="flex items-center gap-2 p-2 text-sm text-muted-foreground">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    첨부파일 목록을 불러오는 중...
                   </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="include-pdf"
-                      checked={emailSettings.attachments.includePdf}
-                      onCheckedChange={(checked) => 
-                        setEmailSettings(prev => ({
-                          ...prev,
-                          attachments: { ...prev.attachments, includePdf: !!checked }
-                        }))
-                      }
-                    />
-                    <Label htmlFor="include-pdf" className="text-sm">PDF 파일 첨부</Label>
+                ) : availableAttachments.length > 0 ? (
+                  <div className="space-y-2">
+                    <div className="text-sm text-muted-foreground">첨부 가능한 파일:</div>
+                    {availableAttachments.map((attachment) => (
+                      <div key={attachment.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`attachment-${attachment.id}`}
+                          checked={emailSettings.attachments.selectedAttachmentIds.includes(attachment.id)}
+                          onCheckedChange={() => toggleAttachmentSelection(attachment.id)}
+                        />
+                        <Label 
+                          htmlFor={`attachment-${attachment.id}`} 
+                          className="flex items-center gap-2 text-sm cursor-pointer flex-1"
+                        >
+                          <File className="w-4 h-4 text-muted-foreground" />
+                          <span>{attachment.originalName}</span>
+                          <span className="text-xs text-muted-foreground">
+                            ({attachment.type === 'pdf' ? 'PDF' : attachment.type === 'excel' ? 'Excel' : 'File'})
+                          </span>
+                        </Label>
+                      </div>
+                    ))}
                   </div>
-                </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground p-2 bg-yellow-50 dark:bg-yellow-950 rounded">
+                    📎 아직 첨부 가능한 파일이 없습니다. 발주서 생성 후 PDF와 Excel 파일을 첨부할 수 있습니다.
+                  </div>
+                )}
 
                 {/* 추가 파일 첨부 */}
                 <div>
@@ -520,7 +568,12 @@ const ActionBar: React.FC<ActionBarProps> = ({
             </div>
 
             <div className="text-xs text-muted-foreground bg-blue-50 dark:bg-blue-950 p-2 rounded">
-              📎 선택한 첨부파일이 이메일과 함께 발송됩니다.
+              📎 선택한 첨부파일과 추가 파일이 이메일과 함께 발송됩니다.
+              {availableAttachments.length > 0 && (
+                <div className="mt-1">
+                  현재 {emailSettings.attachments.selectedAttachmentIds.length}개의 파일이 선택되었습니다.
+                </div>
+              )}
             </div>
           </div>
           

@@ -108,6 +108,9 @@ export const approvalAuthorities = pgTable("approval_authorities", {
   unique("unique_role_approval").on(table.role),
 ]);
 
+// Account status enum for user account management
+export const accountStatusEnum = pgEnum("account_status", ["active", "pending", "suspended", "inactive"]);
+
 // User storage table for local authentication
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().notNull(),
@@ -118,12 +121,14 @@ export const users = pgTable("users", {
   profileImageUrl: varchar("profile_image_url"),
   role: userRoleEnum("role").notNull().default("field_worker"),
   position: varchar("position"), // Add position field that exists in DB
+  accountStatus: accountStatusEnum("account_status").default("active"), // Account status management
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
   index("idx_users_email").on(table.email),
   index("idx_users_role").on(table.role),
+  index("idx_users_account_status").on(table.accountStatus),
 ]);
 
 // Note: order_statuses table removed - using ENUM with display views instead
@@ -428,32 +433,27 @@ export const orderHistory = pgTable("order_history", {
 });
 
 // Email send history
-export const emailSendHistory = pgTable("email_send_history", {
+export const emailSendHistory = pgTable("email_sending_history", {
   id: serial("id").primaryKey(),
-  orderId: integer("order_id").notNull().references(() => purchaseOrders.id, { onDelete: "cascade" }),
-  sentAt: timestamp("sent_at").defaultNow().notNull(),
-  sentBy: varchar("sent_by", { length: 255 }).notNull().references(() => users.id),
-  recipientEmail: varchar("recipient_email", { length: 255 }).notNull(),
-  recipientName: varchar("recipient_name", { length: 255 }),
-  ccEmails: text("cc_emails"), // JSON array of CC emails
+  orderId: integer("order_id").references(() => purchaseOrders.id, { onDelete: "cascade" }),
+  orderNumber: varchar("order_number", { length: 255 }),
+  senderUserId: varchar("sender_user_id", { length: 255 }).references(() => users.id),
+  recipients: jsonb("recipients"),
+  cc: jsonb("cc"),
+  bcc: jsonb("bcc"),
   subject: text("subject").notNull(),
-  body: text("body").notNull(),
-  attachments: jsonb("attachments").$type<{ filename: string; path: string; size: number }[]>(),
-  status: varchar("status", { length: 50 }).notNull().default('sent'), // sent, failed, bounced, opened, clicked
+  messageContent: text("message_content"),
+  attachmentFiles: jsonb("attachment_files"),
+  status: varchar("sending_status", { length: 50 }).default('pending'),
+  sentCount: integer("sent_count").default(0),
+  failedCount: integer("failed_count").default(0),
   errorMessage: text("error_message"),
-  openedAt: timestamp("opened_at"),
-  clickedAt: timestamp("clicked_at"),
-  ipAddress: varchar("ip_address", { length: 50 }),
-  userAgent: text("user_agent"),
-  trackingId: varchar("tracking_id", { length: 100 }).unique(),
-  emailProvider: varchar("email_provider", { length: 50 }).default('naver'), // naver, gmail, etc.
-  messageId: varchar("message_id", { length: 255 }), // Email message ID for tracking
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  sentAt: timestamp("sent_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
 }, (table) => [
   index("idx_email_history_order").on(table.orderId),
-  index("idx_email_history_sent_by").on(table.sentBy),
-  index("idx_email_history_recipient").on(table.recipientEmail),
-  index("idx_email_history_tracking").on(table.trackingId),
+  index("idx_email_history_sender").on(table.senderUserId),
   index("idx_email_history_status").on(table.status),
   index("idx_email_history_sent_at").on(table.sentAt),
 ]);
@@ -701,8 +701,8 @@ export const emailSendHistoryRelations = relations(emailSendHistory, ({ one }) =
     fields: [emailSendHistory.orderId],
     references: [purchaseOrders.id],
   }),
-  sentByUser: one(users, {
-    fields: [emailSendHistory.sentBy],
+  senderUser: one(users, {
+    fields: [emailSendHistory.senderUserId],
     references: [users.id],
   }),
 }));
@@ -1397,3 +1397,86 @@ export const insertEmailSettingsSchema = createInsertSchema(emailSettings).omit(
 });
 export type EmailSetting = typeof emailSettings.$inferSelect;
 export type InsertEmailSetting = z.infer<typeof insertEmailSettingsSchema>;
+
+// ============================================================================
+// USER REGISTRATION AND PASSWORD RESET SYSTEM
+// ============================================================================
+
+// Registration status enum
+export const registrationStatusEnum = pgEnum("registration_status", ["pending", "approved", "rejected"]);
+
+// User registrations table for managing signup requests
+export const userRegistrations = pgTable("user_registrations", {
+  id: serial("id").primaryKey(),
+  email: varchar("email", { length: 255 }).notNull().unique(),
+  name: varchar("name", { length: 255 }).notNull(),
+  phoneNumber: varchar("phone_number", { length: 50 }),
+  hashedPassword: varchar("hashed_password").notNull(),
+  requestedRole: userRoleEnum("requested_role").default("field_worker"),
+  status: registrationStatusEnum("status").notNull().default("pending"),
+  rejectionReason: text("rejection_reason"),
+  appliedAt: timestamp("applied_at").defaultNow().notNull(),
+  reviewedAt: timestamp("reviewed_at"),
+  reviewedBy: varchar("reviewed_by").references(() => users.id),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_user_registrations_email").on(table.email),
+  index("idx_user_registrations_status").on(table.status),
+  index("idx_user_registrations_applied_at").on(table.appliedAt),
+  index("idx_user_registrations_reviewed_by").on(table.reviewedBy),
+]);
+
+// Password reset tokens table for secure password recovery
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  token: varchar("token", { length: 255 }).notNull().unique(),
+  expiresAt: timestamp("expires_at").notNull(),
+  usedAt: timestamp("used_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_password_reset_tokens_user").on(table.userId),
+  index("idx_password_reset_tokens_token").on(table.token),
+  index("idx_password_reset_tokens_expires").on(table.expiresAt),
+]);
+
+// Relations for user registration system
+export const userRegistrationsRelations = relations(userRegistrations, ({ one }) => ({
+  reviewedByUser: one(users, {
+    fields: [userRegistrations.reviewedBy],
+    references: [users.id],
+  }),
+}));
+
+export const passwordResetTokensRelations = relations(passwordResetTokens, ({ one }) => ({
+  user: one(users, {
+    fields: [passwordResetTokens.userId],
+    references: [users.id],
+  }),
+}));
+
+// Insert schemas for new tables
+export const insertUserRegistrationSchema = createInsertSchema(userRegistrations).omit({
+  id: true,
+  appliedAt: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  email: z.string().email("유효한 이메일 주소를 입력해주세요"),
+  name: z.string().min(2, "이름은 2글자 이상이어야 합니다").max(50, "이름은 50글자를 초과할 수 없습니다"),
+  phoneNumber: z.string().regex(/^[0-9-+().\s]*$/, "올바른 전화번호 형식을 입력해주세요").optional(),
+  hashedPassword: z.string().min(1, "비밀번호는 필수입니다"),
+});
+
+export const insertPasswordResetTokenSchema = createInsertSchema(passwordResetTokens).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Types for new tables
+export type UserRegistration = typeof userRegistrations.$inferSelect;
+export type InsertUserRegistration = z.infer<typeof insertUserRegistrationSchema>;
+export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
+export type InsertPasswordResetToken = z.infer<typeof insertPasswordResetTokenSchema>;

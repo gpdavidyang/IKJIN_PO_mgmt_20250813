@@ -2788,6 +2788,47 @@ router.post("/test-email-smtp", async (req, res) => {
   }
 });
 
+// Get all attachments for an order
+router.get("/orders/:orderId/attachments", requireAuth, async (req, res) => {
+  try {
+    const orderId = parseInt(req.params.orderId, 10);
+    
+    console.log(`📎 발주서 첨부파일 목록 요청: 발주서 ID ${orderId}`);
+
+    // Get all attachments for this order
+    const attachments = await storage.getAttachments(orderId);
+    
+    const attachmentList = attachments.map(attachment => ({
+      id: attachment.id,
+      originalName: attachment.originalName,
+      storedName: attachment.storedName,
+      fileSize: attachment.fileSize,
+      mimeType: attachment.mimeType,
+      uploadedAt: attachment.uploadedAt,
+      uploadedBy: attachment.uploadedBy,
+      // 파일 타입 분류
+      type: attachment.mimeType === 'application/pdf' ? 'pdf' : 
+            attachment.mimeType?.includes('excel') || attachment.originalName?.endsWith('.xlsx') ? 'excel' : 'other'
+    }));
+
+    console.log(`📎 발주서 ${orderId}의 첨부파일: ${attachmentList.length}개`);
+
+    res.json({
+      success: true,
+      orderId,
+      attachments: attachmentList
+    });
+
+  } catch (error) {
+    console.error("Error fetching order attachments:", error);
+    res.status(500).json({ 
+      success: false,
+      error: "첨부파일 목록을 가져오는데 실패했습니다.",
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 // Download attachment file by ID
 router.get("/orders/:orderId/attachments/:attachmentId/download", requireAuth, async (req, res) => {
   try {

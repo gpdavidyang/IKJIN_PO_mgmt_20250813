@@ -3520,8 +3520,8 @@ __export(po_email_service_enhanced_exports, {
   POEmailService: () => POEmailService2
 });
 import nodemailer5 from "nodemailer";
-import path14 from "path";
-import fs17 from "fs";
+import path15 from "path";
+import fs18 from "fs";
 import { fileURLToPath as fileURLToPath5 } from "url";
 import { dirname as dirname2 } from "path";
 var __filename5, __dirname5, POEmailService2;
@@ -3618,8 +3618,8 @@ var init_po_email_service_enhanced = __esm({
             }
           }
           const timestamp2 = Date.now();
-          const uploadsDir = path14.join(__dirname5, "../../uploads");
-          const processedPath = path14.join(uploadsDir, `po-advanced-format-${timestamp2}.xlsx`);
+          const uploadsDir = path15.join(__dirname5, "../../uploads");
+          const processedPath = path15.join(uploadsDir, `po-advanced-format-${timestamp2}.xlsx`);
           const removeResult = await removeAllInputSheets(
             originalFilePath,
             processedPath
@@ -3633,7 +3633,7 @@ var init_po_email_service_enhanced = __esm({
           console.log(`\u{1F4C4} \uACE0\uAE09 \uD615\uC2DD \uBCF4\uC874 \uD30C\uC77C \uC0DD\uC131: ${processedPath}`);
           console.log(`\u{1F3AF} Input \uC2DC\uD2B8 \uC81C\uAC70 \uC644\uB8CC`);
           console.log(`\u{1F4CB} \uB0A8\uC740 \uC2DC\uD2B8: ${removeResult.remainingSheets.join(", ")}`);
-          const pdfPath = path14.join(uploadsDir, `po-advanced-format-${timestamp2}.pdf`);
+          const pdfPath = path15.join(uploadsDir, `po-advanced-format-${timestamp2}.pdf`);
           let pdfResult = { success: false, error: "" };
           try {
             const enhancedResult = await EnhancedExcelToPDFConverter.convertExcelToPDF(processedPath, {
@@ -3661,7 +3661,7 @@ var init_po_email_service_enhanced = __esm({
             pdfResult.error = pdfError instanceof Error ? pdfError.message : "PDF conversion error";
           }
           const attachments3 = [];
-          if (fs17.existsSync(processedPath)) {
+          if (fs18.existsSync(processedPath)) {
             attachments3.push({
               filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`,
               path: processedPath,
@@ -3669,7 +3669,7 @@ var init_po_email_service_enhanced = __esm({
             });
             console.log(`\u{1F4CE} Excel \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00: \uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`);
           }
-          if (pdfResult.success && fs17.existsSync(pdfPath)) {
+          if (pdfResult.success && fs18.existsSync(pdfPath)) {
             attachments3.push({
               filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`,
               path: pdfPath,
@@ -3929,12 +3929,12 @@ var init_po_email_service_enhanced = __esm({
         setTimeout(() => {
           filePaths.forEach((filePath) => {
             try {
-              if (fs17.existsSync(filePath)) {
-                fs17.unlinkSync(filePath);
-                console.log(`\u{1F5D1}\uFE0F \uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C: ${path14.basename(filePath)}`);
+              if (fs18.existsSync(filePath)) {
+                fs18.unlinkSync(filePath);
+                console.log(`\u{1F5D1}\uFE0F \uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C: ${path15.basename(filePath)}`);
               }
             } catch (error) {
-              console.warn(`\u26A0\uFE0F \uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328: ${path14.basename(filePath)}`, error);
+              console.warn(`\u26A0\uFE0F \uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328: ${path15.basename(filePath)}`, error);
             }
           });
         }, 5e3);
@@ -6270,12 +6270,12 @@ router.post("/auth/login-simple", (req, res) => {
     const { username, password, email } = req.body;
     const identifier = username || email;
     console.log("\u{1F510} Simple login attempt for:", identifier);
-    const users4 = [
+    const users3 = [
       { id: "admin", username: "admin", email: "admin@company.com", password: "admin123", name: "\uAD00\uB9AC\uC790", role: "admin" },
       { id: "manager", username: "manager", email: "manager@company.com", password: "manager123", name: "\uAE40\uBD80\uC7A5", role: "project_manager" },
       { id: "user", username: "user", email: "user@company.com", password: "user123", name: "\uC774\uAE30\uC0AC", role: "field_worker" }
     ];
-    const user = users4.find((u) => u.username === identifier || u.email === identifier);
+    const user = users3.find((u) => u.username === identifier || u.email === identifier);
     if (!user || user.password !== password) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
@@ -6294,12 +6294,12 @@ router.post("/auth/login-test", (req, res) => {
     const { username, password, email } = req.body;
     const identifier = username || email;
     console.log("\u{1F510} Test login attempt for:", identifier);
-    const users4 = [
+    const users3 = [
       { id: "admin", username: "admin", email: "admin@company.com", password: "admin123", name: "\uAD00\uB9AC\uC790", role: "admin" },
       { id: "manager", username: "manager", email: "manager@company.com", password: "manager123", name: "\uAE40\uBD80\uC7A5", role: "project_manager" },
       { id: "user", username: "user", email: "user@company.com", password: "user123", name: "\uC774\uAE30\uC0AC", role: "field_worker" }
     ];
-    const user = users4.find((u) => u.username === identifier || u.email === identifier);
+    const user = users3.find((u) => u.username === identifier || u.email === identifier);
     if (!user || user.password !== password) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
@@ -6491,8 +6491,8 @@ router.get("/auth/permissions/:userId", async (req, res) => {
 });
 router.get("/users", requireAuth, requireAdmin, async (req, res) => {
   try {
-    const users4 = await storage.getUsers();
-    res.json(users4);
+    const users3 = await storage.getUsers();
+    res.json(users3);
   } catch (error) {
     console.error("Error fetching users:", error);
     res.status(500).json({ message: "Failed to fetch users" });
@@ -9199,8 +9199,8 @@ router3.post("/orders", requireAuth, upload.array("attachments"), async (req, re
     const order = await storage.createPurchaseOrder(orderData);
     console.log("\u{1F527}\u{1F527}\u{1F527} ORDERS.TS - Created order:", order);
     if (req.files && req.files.length > 0) {
-      const fs21 = __require("fs");
-      const path19 = __require("path");
+      const fs22 = __require("fs");
+      const path20 = __require("path");
       const { removeAllInputSheets: removeAllInputSheets2 } = (init_excel_input_sheet_remover(), __toCommonJS(excel_input_sheet_remover_exports));
       for (const file of req.files) {
         const decodedFilename = decodeKoreanFilename(file.originalname);
@@ -9215,21 +9215,21 @@ router3.post("/orders", requireAuth, upload.array("attachments"), async (req, re
           console.log("\u{1F4CA} Excel \uD30C\uC77C \uAC10\uC9C0, Input \uC2DC\uD2B8 \uC81C\uAC70 \uCC98\uB9AC \uC2DC\uC791...");
           const processedPath = file.path.replace(/\.(xlsx?)$/i, "_processed.$1");
           const removeResult = await removeAllInputSheets2(file.path, processedPath);
-          if (removeResult.success && fs21.existsSync(processedPath)) {
+          if (removeResult.success && fs22.existsSync(processedPath)) {
             console.log(`\u2705 Input \uC2DC\uD2B8 \uC81C\uAC70 \uC644\uB8CC: ${removeResult.removedSheets.join(", ")}`);
             fileToStore = processedPath;
-            fileBuffer = fs21.readFileSync(processedPath);
+            fileBuffer = fs22.readFileSync(processedPath);
             try {
-              fs21.unlinkSync(file.path);
+              fs22.unlinkSync(file.path);
             } catch (e) {
               console.warn("\uC6D0\uBCF8 \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328:", e);
             }
           } else {
             console.warn("\u26A0\uFE0F Input \uC2DC\uD2B8 \uC81C\uAC70 \uC2E4\uD328, \uC6D0\uBCF8 \uD30C\uC77C \uC0AC\uC6A9:", removeResult.error);
-            fileBuffer = fs21.readFileSync(file.path);
+            fileBuffer = fs22.readFileSync(file.path);
           }
         } else {
-          fileBuffer = fs21.readFileSync(file.path);
+          fileBuffer = fs22.readFileSync(file.path);
         }
         const base64Data = fileBuffer.toString("base64");
         const attachmentData = {
@@ -9251,9 +9251,9 @@ router3.post("/orders", requireAuth, upload.array("attachments"), async (req, re
           delete attachmentData.fileData;
           await storage.createAttachment(attachmentData);
         }
-        if (fileToStore !== file.path && fs21.existsSync(fileToStore)) {
+        if (fileToStore !== file.path && fs22.existsSync(fileToStore)) {
           try {
-            fs21.unlinkSync(fileToStore);
+            fs22.unlinkSync(fileToStore);
           } catch (e) {
             console.warn("\uCC98\uB9AC\uB41C \uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328:", e);
           }
@@ -11203,10 +11203,10 @@ router3.post("/test-email-smtp", async (req, res) => {
       userName: "System Tester",
       userPhone: "010-0000-0000"
     };
-    const fs21 = __require("fs");
-    const path19 = __require("path");
-    const testExcelPath = path19.join(__dirname2, "../../uploads/smtp-test.txt");
-    fs21.writeFileSync(testExcelPath, "SMTP Test File - " + (/* @__PURE__ */ new Date()).toISOString());
+    const fs22 = __require("fs");
+    const path20 = __require("path");
+    const testExcelPath = path20.join(__dirname2, "../../uploads/smtp-test.txt");
+    fs22.writeFileSync(testExcelPath, "SMTP Test File - " + (/* @__PURE__ */ new Date()).toISOString());
     const result = await emailService.sendPOWithOriginalFormat(testExcelPath, {
       to: [recipientEmail],
       cc: [],
@@ -11217,7 +11217,7 @@ router3.post("/test-email-smtp", async (req, res) => {
       orderId: 9999
     });
     try {
-      fs21.unlinkSync(testExcelPath);
+      fs22.unlinkSync(testExcelPath);
     } catch (e) {
       console.warn("\uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328:", e.message);
     }
@@ -11254,6 +11254,37 @@ router3.post("/test-email-smtp", async (req, res) => {
         code: error.code,
         response: error.response
       }
+    });
+  }
+});
+router3.get("/orders/:orderId/attachments", requireAuth, async (req, res) => {
+  try {
+    const orderId = parseInt(req.params.orderId, 10);
+    console.log(`\u{1F4CE} \uBC1C\uC8FC\uC11C \uCCA8\uBD80\uD30C\uC77C \uBAA9\uB85D \uC694\uCCAD: \uBC1C\uC8FC\uC11C ID ${orderId}`);
+    const attachments3 = await storage.getAttachments(orderId);
+    const attachmentList = attachments3.map((attachment) => ({
+      id: attachment.id,
+      originalName: attachment.originalName,
+      storedName: attachment.storedName,
+      fileSize: attachment.fileSize,
+      mimeType: attachment.mimeType,
+      uploadedAt: attachment.uploadedAt,
+      uploadedBy: attachment.uploadedBy,
+      // 파일 타입 분류
+      type: attachment.mimeType === "application/pdf" ? "pdf" : attachment.mimeType?.includes("excel") || attachment.originalName?.endsWith(".xlsx") ? "excel" : "other"
+    }));
+    console.log(`\u{1F4CE} \uBC1C\uC8FC\uC11C ${orderId}\uC758 \uCCA8\uBD80\uD30C\uC77C: ${attachmentList.length}\uAC1C`);
+    res.json({
+      success: true,
+      orderId,
+      attachments: attachmentList
+    });
+  } catch (error) {
+    console.error("Error fetching order attachments:", error);
+    res.status(500).json({
+      success: false,
+      error: "\uCCA8\uBD80\uD30C\uC77C \uBAA9\uB85D\uC744 \uAC00\uC838\uC624\uB294\uB370 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.",
+      details: error instanceof Error ? error.message : "Unknown error"
     });
   }
 });
@@ -12044,8 +12075,8 @@ import { eq as eq9, and as and5 } from "drizzle-orm";
 var router8 = Router8();
 router8.get("/users", requireAuth, requireAdmin, async (req, res) => {
   try {
-    const users4 = await storage.getUsers();
-    res.json(users4);
+    const users3 = await storage.getUsers();
+    res.json(users3);
   } catch (error) {
     console.error("Error fetching users:", error);
     res.status(500).json({ message: "Failed to fetch users" });
@@ -13471,8 +13502,8 @@ router9.post("/debug-upload", requireAuth, upload2.single("file"), async (req, r
     step = 3;
     console.log(`\u{1F41B} [DEBUG] Step ${step}: File path check`);
     const filePath = req.file.path;
-    const fs21 = await import("fs");
-    if (!fs21.existsSync(filePath)) {
+    const fs22 = await import("fs");
+    if (!fs22.existsSync(filePath)) {
       return res.status(400).json({
         success: false,
         error: "\uC5C5\uB85C\uB4DC\uB41C \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.",
@@ -17903,8 +17934,10 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
       userName: users.name,
       // PDF attachment status - use correct column names (database uses snake_case)
       hasPdf: sql10`EXISTS(SELECT 1 FROM attachments WHERE attachments.order_id = ${purchaseOrders.id} AND attachments.mime_type = 'application/pdf')`,
-      // Email sent status - temporarily disabled until email_send_history table is created
-      emailSentAt: sql10`NULL`
+      // Email statistics from email_send_history
+      totalEmailsSent: sql10`COALESCE((SELECT COUNT(*) FROM ${emailSendHistory} WHERE ${emailSendHistory.orderId} = ${purchaseOrders.id}), 0)`,
+      emailStatus: sql10`(SELECT ${emailSendHistory.status} FROM ${emailSendHistory} WHERE ${emailSendHistory.orderId} = ${purchaseOrders.id} ORDER BY ${emailSendHistory.sentAt} DESC LIMIT 1)`,
+      emailSentAt: sql10`(SELECT ${emailSendHistory.sentAt} FROM ${emailSendHistory} WHERE ${emailSendHistory.orderId} = ${purchaseOrders.id} ORDER BY ${emailSendHistory.sentAt} DESC LIMIT 1)`
     }).from(purchaseOrders).leftJoin(vendors, eq17(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq17(purchaseOrders.projectId, projects.id)).leftJoin(users, eq17(purchaseOrders.userId, users.id)).where(whereClause).orderBy(_OptimizedOrdersService.getOrderByClause(sortBy, sortOrder)).limit(limit).offset((page - 1) * limit);
     const countQuery = db.select({ count: count3() }).from(purchaseOrders).leftJoin(vendors, eq17(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq17(purchaseOrders.projectId, projects.id)).leftJoin(users, eq17(purchaseOrders.userId, users.id)).where(whereClause);
     const [orders, [{ count: totalCount }]] = await Promise.all([
@@ -17960,21 +17993,10 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
   }
   /**
    * Get orders with email status in a single optimized query
-   * TEMPORARY: Email functionality disabled until email_send_history table is created
+   * Now fetches actual email status from email_send_history table
    */
   static async getOrdersWithEmailStatus(filters = {}) {
-    const ordersResult = await this.getOrdersWithMetadata(filters);
-    const ordersWithEmailStatus = ordersResult.orders.map((order) => ({
-      ...order,
-      emailStatus: null,
-      lastSentAt: null,
-      totalEmailsSent: 0,
-      openedAt: null
-    }));
-    return {
-      ...ordersResult,
-      orders: ordersWithEmailStatus
-    };
+    return await this.getOrdersWithMetadata(filters);
   }
   /**
    * Batch operation for updating multiple order statuses
@@ -18241,7 +18263,46 @@ init_db();
 init_schema();
 import { Router as Router16 } from "express";
 import { eq as eq18, desc as desc8 } from "drizzle-orm";
+import multer5 from "multer";
+import path14 from "path";
+import fs17 from "fs";
 var router17 = Router16();
+var storage4 = multer5.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir2 = process.env.VERCEL ? "/tmp" : "uploads/invoices";
+    if (!process.env.VERCEL && !fs17.existsSync(uploadDir2)) {
+      fs17.mkdirSync(uploadDir2, { recursive: true });
+    }
+    cb(null, uploadDir2);
+  },
+  filename: (req, file, cb) => {
+    const timestamp2 = Date.now();
+    const ext = path14.extname(file.originalname);
+    const name = path14.basename(file.originalname, ext);
+    cb(null, `${name}_${timestamp2}${ext}`);
+  }
+});
+var upload5 = multer5({
+  storage: storage4,
+  limits: {
+    fileSize: 10 * 1024 * 1024
+    // 10MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = [
+      "application/pdf",
+      "image/jpeg",
+      "image/png",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "application/vnd.ms-excel"
+    ];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Invalid file type. Only PDF, images, and Excel files are allowed."));
+    }
+  }
+});
 router17.get("/invoices", async (req, res) => {
   try {
     const { orderId } = req.query;
@@ -18283,28 +18344,233 @@ router17.get("/invoices", async (req, res) => {
 router17.get("/invoices/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
-    console.log(`\u{1F4B0} Fetching invoice ${id} (using reliable mock data)...`);
-    const mockInvoice = {
-      id,
-      orderId: 135,
-      invoiceNumber: `INV-2025-${id.toString().padStart(3, "0")}`,
-      issueDate: "2025-01-15",
-      dueDate: "2025-02-15",
-      amount: 55e5,
-      tax: 55e4,
-      totalAmount: 605e4,
-      status: "issued",
-      vendorName: "\uC0BC\uC131\uAC74\uC124",
-      description: "\uCCA0\uADFC D16 \uBC0F \uC2DC\uBA58\uD2B8 \uACF5\uAE09",
-      createdAt: (/* @__PURE__ */ new Date()).toISOString(),
-      updatedAt: (/* @__PURE__ */ new Date()).toISOString()
-    };
-    console.log(`\u2705 Successfully returning invoice ${id} (mock data)`);
-    res.json(mockInvoice);
+    console.log(`\u{1F4B0} Fetching invoice ${id} from database...`);
+    const [invoice] = await db.select({
+      id: invoices.id,
+      orderId: invoices.orderId,
+      invoiceNumber: invoices.invoiceNumber,
+      invoiceType: invoices.invoiceType,
+      issueDate: invoices.issueDate,
+      dueDate: invoices.dueDate,
+      totalAmount: invoices.totalAmount,
+      vatAmount: invoices.vatAmount,
+      status: invoices.status,
+      filePath: invoices.filePath,
+      uploadedBy: invoices.uploadedBy,
+      verifiedBy: invoices.verifiedBy,
+      verifiedAt: invoices.verifiedAt,
+      taxInvoiceIssued: invoices.taxInvoiceIssued,
+      taxInvoiceIssuedDate: invoices.taxInvoiceIssuedDate,
+      taxInvoiceIssuedBy: invoices.taxInvoiceIssuedBy,
+      notes: invoices.notes,
+      createdAt: invoices.createdAt,
+      updatedAt: invoices.updatedAt,
+      // Join with users for uploader name
+      uploaderName: users.name
+    }).from(invoices).leftJoin(users, eq18(invoices.uploadedBy, users.id)).where(eq18(invoices.id, id)).limit(1);
+    if (!invoice) {
+      return res.status(404).json({ message: "Invoice not found" });
+    }
+    console.log(`\u2705 Successfully fetched invoice ${id}`);
+    res.json(invoice);
   } catch (error) {
-    console.error("\u274C Error in invoice by ID endpoint:", error);
+    console.error("\u274C Error fetching invoice by ID:", error);
     res.status(500).json({
       message: "Failed to fetch invoice",
+      error: process.env.NODE_ENV === "development" ? error?.message : void 0
+    });
+  }
+});
+router17.post("/invoices", upload5.single("file"), async (req, res) => {
+  try {
+    console.log("\u{1F4B0} Creating new invoice...");
+    console.log("Request body:", req.body);
+    console.log("Uploaded file:", req.file);
+    const {
+      orderId,
+      invoiceNumber,
+      invoiceType,
+      issueDate,
+      dueDate,
+      totalAmount,
+      vatAmount,
+      notes
+    } = req.body;
+    const userId = req.user?.id || "test_admin_001";
+    if (!orderId || !invoiceNumber || !totalAmount) {
+      return res.status(400).json({
+        message: "Missing required fields: orderId, invoiceNumber, totalAmount"
+      });
+    }
+    let fileData;
+    let filePath;
+    if (req.file) {
+      filePath = req.file.path;
+      if (process.env.VERCEL) {
+        const fileBuffer = fs17.readFileSync(req.file.path);
+        fileData = fileBuffer.toString("base64");
+        console.log(`\u{1F4CE} File data encoded for Vercel: ${Math.round(fileBuffer.length / 1024)}KB`);
+      }
+    }
+    const [newInvoice] = await db.insert(invoices).values({
+      orderId: parseInt(orderId),
+      invoiceNumber,
+      invoiceType: invoiceType || "invoice",
+      invoiceDate: new Date(issueDate),
+      // Use actual DB column name
+      invoiceAmount: parseFloat(totalAmount),
+      // Use actual DB column name
+      dueDate: dueDate ? new Date(dueDate) : null,
+      totalAmount: parseFloat(totalAmount),
+      vatAmount: vatAmount ? parseFloat(vatAmount) : 0,
+      status: "pending",
+      filePath: process.env.VERCEL ? req.file?.filename : filePath,
+      uploadedBy: userId,
+      notes: notes || null
+    }).returning();
+    const [invoice] = await db.select({
+      id: invoices.id,
+      orderId: invoices.orderId,
+      invoiceNumber: invoices.invoiceNumber,
+      invoiceType: invoices.invoiceType,
+      issueDate: invoices.issueDate,
+      dueDate: invoices.dueDate,
+      totalAmount: invoices.totalAmount,
+      vatAmount: invoices.vatAmount,
+      status: invoices.status,
+      filePath: invoices.filePath,
+      uploadedBy: invoices.uploadedBy,
+      verifiedBy: invoices.verifiedBy,
+      verifiedAt: invoices.verifiedAt,
+      taxInvoiceIssued: invoices.taxInvoiceIssued,
+      taxInvoiceIssuedDate: invoices.taxInvoiceIssuedDate,
+      notes: invoices.notes,
+      createdAt: invoices.createdAt,
+      updatedAt: invoices.updatedAt,
+      // Join with users for uploader name
+      uploaderName: users.name
+    }).from(invoices).leftJoin(users, eq18(invoices.uploadedBy, users.id)).where(eq18(invoices.id, newInvoice.id));
+    console.log(`\u2705 Successfully created invoice ${newInvoice.id}`);
+    res.status(201).json(invoice);
+  } catch (error) {
+    console.error("\u274C Error creating invoice:", error);
+    res.status(500).json({
+      message: "Failed to create invoice",
+      error: process.env.NODE_ENV === "development" ? error?.message : void 0
+    });
+  }
+});
+router17.post("/invoices/:id/verify", requireAuth, async (req, res) => {
+  try {
+    const invoiceId = parseInt(req.params.id, 10);
+    const userId = req.user?.id || "test_admin_001";
+    console.log(`\u{1F4B0} Verifying invoice ${invoiceId}...`);
+    const [updatedInvoice] = await db.update(invoices).set({
+      status: "verified",
+      verifiedBy: userId,
+      verifiedAt: /* @__PURE__ */ new Date(),
+      updatedAt: /* @__PURE__ */ new Date()
+    }).where(eq18(invoices.id, invoiceId)).returning();
+    if (!updatedInvoice) {
+      return res.status(404).json({ message: "Invoice not found" });
+    }
+    console.log(`\u2705 Successfully verified invoice ${invoiceId}`);
+    res.json({ message: "Invoice verified successfully", invoice: updatedInvoice });
+  } catch (error) {
+    console.error("\u274C Error verifying invoice:", error);
+    res.status(500).json({
+      message: "Failed to verify invoice",
+      error: process.env.NODE_ENV === "development" ? error?.message : void 0
+    });
+  }
+});
+router17.post("/invoices/:id/issue-tax", requireAuth, async (req, res) => {
+  try {
+    const invoiceId = parseInt(req.params.id, 10);
+    const userId = req.user?.id || "test_admin_001";
+    console.log(`\u{1F4B0} Issuing tax invoice for ${invoiceId}...`);
+    const [updatedInvoice] = await db.update(invoices).set({
+      taxInvoiceIssued: true,
+      taxInvoiceIssuedDate: /* @__PURE__ */ new Date(),
+      taxInvoiceIssuedBy: userId,
+      updatedAt: /* @__PURE__ */ new Date()
+    }).where(eq18(invoices.id, invoiceId)).returning();
+    if (!updatedInvoice) {
+      return res.status(404).json({ message: "Invoice not found" });
+    }
+    console.log(`\u2705 Successfully issued tax invoice for ${invoiceId}`);
+    res.json({ message: "Tax invoice issued successfully", invoice: updatedInvoice });
+  } catch (error) {
+    console.error("\u274C Error issuing tax invoice:", error);
+    res.status(500).json({
+      message: "Failed to issue tax invoice",
+      error: process.env.NODE_ENV === "development" ? error?.message : void 0
+    });
+  }
+});
+router17.patch("/invoices/:id", requireAuth, async (req, res) => {
+  try {
+    const invoiceId = parseInt(req.params.id, 10);
+    console.log(`\u{1F4B0} Updating invoice ${invoiceId}...`);
+    const {
+      invoiceNumber,
+      invoiceType,
+      issueDate,
+      dueDate,
+      totalAmount,
+      vatAmount,
+      status,
+      notes
+    } = req.body;
+    const updateData = {};
+    if (invoiceNumber !== void 0) updateData.invoiceNumber = invoiceNumber;
+    if (invoiceType !== void 0) updateData.invoiceType = invoiceType;
+    if (issueDate !== void 0) updateData.issueDate = new Date(issueDate);
+    if (dueDate !== void 0) updateData.dueDate = dueDate ? new Date(dueDate) : null;
+    if (totalAmount !== void 0) updateData.totalAmount = parseFloat(totalAmount);
+    if (vatAmount !== void 0) updateData.vatAmount = parseFloat(vatAmount);
+    if (status !== void 0) updateData.status = status;
+    if (notes !== void 0) updateData.notes = notes;
+    updateData.updatedAt = /* @__PURE__ */ new Date();
+    const [updatedInvoice] = await db.update(invoices).set(updateData).where(eq18(invoices.id, invoiceId)).returning();
+    if (!updatedInvoice) {
+      return res.status(404).json({ message: "Invoice not found" });
+    }
+    console.log(`\u2705 Successfully updated invoice ${invoiceId}`);
+    res.json(updatedInvoice);
+  } catch (error) {
+    console.error("\u274C Error updating invoice:", error);
+    res.status(500).json({
+      message: "Failed to update invoice",
+      error: process.env.NODE_ENV === "development" ? error?.message : void 0
+    });
+  }
+});
+router17.delete("/invoices/:id", requireAuth, async (req, res) => {
+  try {
+    const invoiceId = parseInt(req.params.id, 10);
+    console.log(`\u{1F4B0} Deleting invoice ${invoiceId}...`);
+    const [invoice] = await db.select().from(invoices).where(eq18(invoices.id, invoiceId)).limit(1);
+    if (!invoice) {
+      return res.status(404).json({ message: "Invoice not found" });
+    }
+    await db.delete(invoices).where(eq18(invoices.id, invoiceId));
+    if (invoice.filePath && !process.env.VERCEL) {
+      try {
+        if (fs17.existsSync(invoice.filePath)) {
+          fs17.unlinkSync(invoice.filePath);
+          console.log(`\u{1F5D1}\uFE0F Deleted invoice file: ${invoice.filePath}`);
+        }
+      } catch (fileError) {
+        console.warn(`\u26A0\uFE0F Failed to delete invoice file: ${fileError}`);
+      }
+    }
+    console.log(`\u2705 Successfully deleted invoice ${invoiceId}`);
+    res.json({ message: "Invoice deleted successfully", id: invoiceId });
+  } catch (error) {
+    console.error("\u274C Error deleting invoice:", error);
+    res.status(500).json({
+      message: "Failed to delete invoice",
       error: process.env.NODE_ENV === "development" ? error?.message : void 0
     });
   }
@@ -21005,28 +21271,28 @@ init_schema();
 import { Router as Router28 } from "express";
 import { eq as eq26, and as and15, desc as desc13, count as count4 } from "drizzle-orm";
 init_professional_pdf_generation_service();
-import multer5 from "multer";
-import path15 from "path";
-import fs18 from "fs/promises";
+import multer6 from "multer";
+import path16 from "path";
+import fs19 from "fs/promises";
 import { readFileSync } from "fs";
 import { z as z6 } from "zod";
 var router29 = Router28();
-var storage4 = multer5.diskStorage({
+var storage5 = multer6.diskStorage({
   destination: async (req, file, cb) => {
-    const uploadDir2 = process.env.VERCEL ? path15.join("/tmp", "uploads", "excel-simple") : path15.join(process.cwd(), "uploads", "excel-simple");
-    await fs18.mkdir(uploadDir2, { recursive: true });
+    const uploadDir2 = process.env.VERCEL ? path16.join("/tmp", "uploads", "excel-simple") : path16.join(process.cwd(), "uploads", "excel-simple");
+    await fs19.mkdir(uploadDir2, { recursive: true });
     cb(null, uploadDir2);
   },
   filename: (req, file, cb) => {
     const timestamp2 = Date.now();
     const decodedName = decodeKoreanFilename(file.originalname);
-    const ext = path15.extname(decodedName);
-    const basename = path15.basename(decodedName, ext);
+    const ext = path16.extname(decodedName);
+    const basename = path16.basename(decodedName, ext);
     cb(null, `${timestamp2}-${basename}${ext}`);
   }
 });
-var upload5 = multer5({
-  storage: storage4,
+var upload6 = multer6({
+  storage: storage5,
   limits: {
     fileSize: 10 * 1024 * 1024
     // 10MB limit
@@ -21034,7 +21300,7 @@ var upload5 = multer5({
   fileFilter: (req, file, cb) => {
     const decodedName = decodeKoreanFilename(file.originalname);
     file.originalname = decodedName;
-    const ext = path15.extname(decodedName).toLowerCase();
+    const ext = path16.extname(decodedName).toLowerCase();
     if ([".xlsx", ".xls", ".xlsm"].includes(ext)) {
       cb(null, true);
     } else {
@@ -21068,7 +21334,7 @@ var OrderDataSchema = z6.object({
   isValid: z6.boolean().optional(),
   errors: z6.array(z6.string()).optional()
 });
-router29.post("/orders/bulk-create-simple", requireAuth, upload5.single("excelFile"), async (req, res) => {
+router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFile"), async (req, res) => {
   console.log("\u{1F680} /bulk-create-simple - REQUEST START");
   console.log("\u{1F4CB} Request headers:", {
     "content-type": req.headers["content-type"],
@@ -21375,10 +21641,10 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload5.single("excelFi
             if (req.file) {
               const attachment = await db.select().from(attachments).where(eq26(attachments.orderId, emailInfo.orderId)).then((rows) => rows[0]);
               if (attachment) {
-                excelAttachment = process.env.VERCEL ? path15.join("/tmp", "uploads", "excel-simple", attachment.storedName) : attachment.filePath;
+                excelAttachment = process.env.VERCEL ? path16.join("/tmp", "uploads", "excel-simple", attachment.storedName) : attachment.filePath;
               }
             }
-            if (excelAttachment && fs18.existsSync(excelAttachment)) {
+            if (excelAttachment && fs19.existsSync(excelAttachment)) {
               console.log(`\u{1F4CE} Sending email with attachment for order ${emailInfo.orderNumber}`);
               const result = await emailService4.sendPOWithOriginalFormat(
                 excelAttachment,
@@ -22219,14 +22485,14 @@ var audit_default = router31;
 
 // server/routes/email-test.ts
 import express2 from "express";
-import path17 from "path";
+import path18 from "path";
 
 // server/services/email-service.ts
 init_db();
 init_schema();
 import nodemailer6 from "nodemailer";
-import path16 from "path";
-import fs19 from "fs/promises";
+import path17 from "path";
+import fs20 from "fs/promises";
 var transporter = nodemailer6.createTransport({
   host: process.env.SMTP_HOST || "smtp.naver.com",
   port: parseInt(process.env.SMTP_PORT || "587"),
@@ -22320,7 +22586,7 @@ var emailTemplates = {
 async function sendPurchaseOrderEmail(params) {
   const { orderData, excelFilePath, recipients, cc = [], userId, orderId } = params;
   try {
-    await fs19.access(excelFilePath);
+    await fs20.access(excelFilePath);
     const mailOptions = {
       from: `"(\uC8FC)\uC775\uC9C4\uC5D4\uC9C0\uB2C8\uC5B4\uB9C1" <${process.env.SMTP_USER}>`,
       to: recipients.join(", "),
@@ -22332,7 +22598,7 @@ async function sendPurchaseOrderEmail(params) {
       html: emailTemplates.purchaseOrder.html(orderData),
       attachments: [
         {
-          filename: path16.basename(excelFilePath),
+          filename: path17.basename(excelFilePath),
           path: excelFilePath,
           contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         }
@@ -22343,7 +22609,7 @@ async function sendPurchaseOrderEmail(params) {
     if (orderId && userId) {
       try {
         const trackingId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        const fileStats = await fs19.stat(excelFilePath);
+        const fileStats = await fs20.stat(excelFilePath);
         await db.insert(emailSendHistory).values({
           orderId,
           sentBy: userId,
@@ -22353,7 +22619,7 @@ async function sendPurchaseOrderEmail(params) {
           subject: mailOptions.subject,
           body: mailOptions.html,
           attachments: [{
-            filename: path16.basename(excelFilePath),
+            filename: path17.basename(excelFilePath),
             path: excelFilePath,
             size: fileStats.size
           }],
@@ -22497,14 +22763,14 @@ router32.post("/send-test", async (req, res) => {
       userName: "Test User",
       userPhone: "010-1234-5678"
     };
-    const dummyFilePath = path17.join(process.cwd(), "uploads", "test-email.xlsx");
-    const fs21 = __require("fs");
-    const uploadsDir = path17.join(process.cwd(), "uploads");
-    if (!fs21.existsSync(uploadsDir)) {
-      fs21.mkdirSync(uploadsDir, { recursive: true });
+    const dummyFilePath = path18.join(process.cwd(), "uploads", "test-email.xlsx");
+    const fs22 = __require("fs");
+    const uploadsDir = path18.join(process.cwd(), "uploads");
+    if (!fs22.existsSync(uploadsDir)) {
+      fs22.mkdirSync(uploadsDir, { recursive: true });
     }
-    if (!fs21.existsSync(dummyFilePath)) {
-      fs21.writeFileSync(dummyFilePath, "test content");
+    if (!fs22.existsSync(dummyFilePath)) {
+      fs22.writeFileSync(dummyFilePath, "test content");
     }
     const result = await emailService2.sendPurchaseOrderEmail({
       orderData: testOrderData,
@@ -23696,13 +23962,13 @@ var workflow_default = router34;
 
 // server/routes/excel-smart-upload-simple.ts
 import { Router as Router32 } from "express";
-import multer6 from "multer";
+import multer7 from "multer";
 import xlsx from "xlsx";
 import crypto2 from "crypto";
 var router35 = Router32();
-var storage5 = multer6.memoryStorage();
-var upload6 = multer6({
-  storage: storage5,
+var storage6 = multer7.memoryStorage();
+var upload7 = multer7({
+  storage: storage6,
   limits: {
     fileSize: 10 * 1024 * 1024
     // 10MB limit
@@ -23754,7 +24020,7 @@ var standardFieldMappings = {
 var requiredStandardFields = ["\uAC70\uB798\uCC98\uBA85", "\uD504\uB85C\uC81D\uD2B8\uBA85", "\uD488\uBAA9\uBA85"];
 var emailFields = ["\uAC70\uB798\uCC98 \uC774\uBA54\uC77C", "\uB0A9\uD488\uCC98 \uC774\uBA54\uC77C"];
 var numberFields = ["\uC218\uB7C9", "\uB2E8\uAC00", "\uCD1D\uAE08\uC561"];
-router35.post("/process", upload6.single("file"), async (req, res) => {
+router35.post("/process", upload7.single("file"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({
@@ -24563,8 +24829,8 @@ init_db();
 init_schema();
 import { Router as Router37 } from "express";
 import { eq as eq35 } from "drizzle-orm";
-import path18 from "path";
-import fs20 from "fs";
+import path19 from "path";
+import fs21 from "fs";
 import jwt2 from "jsonwebtoken";
 var router40 = Router37();
 router40.get("/attachments/:id/download", async (req, res) => {
@@ -24646,20 +24912,20 @@ router40.get("/attachments/:id/download", async (req, res) => {
       fileName = fileName.replace("db://", "");
     }
     const possiblePaths = [];
-    if (path18.isAbsolute(fileName)) {
+    if (path19.isAbsolute(fileName)) {
       console.log("\u{1F4C4} Using absolute path directly:", fileName);
       possiblePaths.push(fileName);
     } else {
       possiblePaths.push(
-        path18.join(process.cwd(), "attached_assets", fileName),
-        path18.join(process.cwd(), "uploads", fileName),
-        path18.join(process.cwd(), "uploads", "temp-pdf", fileName),
-        path18.join(process.cwd(), fileName)
+        path19.join(process.cwd(), "attached_assets", fileName),
+        path19.join(process.cwd(), "uploads", fileName),
+        path19.join(process.cwd(), "uploads", "temp-pdf", fileName),
+        path19.join(process.cwd(), fileName)
       );
     }
     let foundPath = null;
     for (const testPath of possiblePaths) {
-      if (fs20.existsSync(testPath)) {
+      if (fs21.existsSync(testPath)) {
         foundPath = testPath;
         console.log(`\u2705 Found PDF file at: ${testPath}`);
         break;
@@ -24673,7 +24939,7 @@ router40.get("/attachments/:id/download", async (req, res) => {
       const contentDisposition = `${disposition}; filename*=UTF-8''${encodeURIComponent(displayName)}`;
       console.log(`\u{1F4C4} Setting Content-Disposition: ${contentDisposition} (mimeType: ${mimeType}, forceDownload: ${forceDownload})`);
       res.setHeader("Content-Disposition", contentDisposition);
-      const fileStream = fs20.createReadStream(foundPath);
+      const fileStream = fs21.createReadStream(foundPath);
       fileStream.pipe(res);
     } else {
       console.error(`File not found in any expected location for attachment ${attachmentId}`);
@@ -24726,20 +24992,20 @@ router40.delete("/attachments/:id", requireAuth, async (req, res) => {
     if (attachment.filePath && !attachment.filePath.startsWith("db://")) {
       let fileName = attachment.filePath;
       const possiblePaths = [];
-      if (path18.isAbsolute(fileName)) {
+      if (path19.isAbsolute(fileName)) {
         possiblePaths.push(fileName);
       } else {
         possiblePaths.push(
-          path18.join(process.cwd(), "attached_assets", fileName),
-          path18.join(process.cwd(), "uploads", fileName),
-          path18.join(process.cwd(), "uploads", "temp-pdf", fileName),
-          path18.join(process.cwd(), fileName)
+          path19.join(process.cwd(), "attached_assets", fileName),
+          path19.join(process.cwd(), "uploads", fileName),
+          path19.join(process.cwd(), "uploads", "temp-pdf", fileName),
+          path19.join(process.cwd(), fileName)
         );
       }
       for (const testPath of possiblePaths) {
-        if (fs20.existsSync(testPath)) {
+        if (fs21.existsSync(testPath)) {
           try {
-            fs20.unlinkSync(testPath);
+            fs21.unlinkSync(testPath);
             console.log(`\u{1F5D1}\uFE0F Deleted physical file at: ${testPath}`);
             break;
           } catch (fileError) {
@@ -24873,7 +25139,7 @@ app.use(session({
 console.log("\u2705 Session middleware configured globally");
 app.use((req, res, next) => {
   const start = Date.now();
-  const path19 = req.path;
+  const path20 = req.path;
   let capturedJsonResponse = void 0;
   const originalResJson = res.json;
   res.json = function(bodyJson, ...args) {
@@ -24882,8 +25148,8 @@ app.use((req, res, next) => {
   };
   res.on("finish", () => {
     const duration = Date.now() - start;
-    if (path19.startsWith("/api")) {
-      let logLine = `${req.method} ${path19} ${res.statusCode} in ${duration}ms`;
+    if (path20.startsWith("/api")) {
+      let logLine = `${req.method} ${path20} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }

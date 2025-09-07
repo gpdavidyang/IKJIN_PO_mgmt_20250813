@@ -625,38 +625,17 @@ export default function OrdersProfessionalFast() {
     if (!selectedOrder) return;
 
     try {
-      // 첨부파일이 필요한 경우, 발주서 상세 정보를 가져와서 attachments 정보 확인
-      let pdfUrl = '';
-      let excelUrl = '';
+      // 선택된 첨부파일 URL 생성
+      const attachmentUrls: string[] = [];
       
-      if (emailData.attachPDF || emailData.attachExcel) {
-        console.log('📎 첨부파일 정보 조회 중...', selectedOrder.id);
-        const response = await apiRequest('GET', `/api/orders/${selectedOrder.id}`);
+      if (emailData.selectedAttachmentIds && emailData.selectedAttachmentIds.length > 0) {
+        console.log('📎 선택된 첨부파일 ID:', emailData.selectedAttachmentIds);
         
-        if (response && response.attachments && Array.isArray(response.attachments)) {
-          console.log('📎 첨부파일 목록:', response.attachments);
-          
-          if (emailData.attachPDF) {
-            const pdfAttachment = response.attachments.find(
-              (att: any) => att.mimeType?.includes('pdf') || att.originalName?.toLowerCase().endsWith('.pdf')
-            );
-            if (pdfAttachment) {
-              pdfUrl = `/api/attachments/${pdfAttachment.id}/download`;
-              console.log('📎 PDF 첨부파일 URL:', pdfUrl);
-            }
-          }
-          
-          if (emailData.attachExcel) {
-            const excelAttachment = response.attachments.find(
-              (att: any) => att.mimeType?.includes('spreadsheet') || 
-                          att.originalName?.toLowerCase().endsWith('.xlsx') ||
-                          att.originalName?.toLowerCase().endsWith('.xls')
-            );
-            if (excelAttachment) {
-              excelUrl = `/api/attachments/${excelAttachment.id}/download`;
-              console.log('📎 Excel 첨부파일 URL:', excelUrl);
-            }
-          }
+        // 각 첨부파일 ID를 다운로드 URL로 변환
+        for (const attachmentId of emailData.selectedAttachmentIds) {
+          const attachmentUrl = `/api/attachments/${attachmentId}/download`;
+          attachmentUrls.push(attachmentUrl);
+          console.log('📎 첨부파일 URL 생성:', attachmentUrl);
         }
       }
 
@@ -667,8 +646,7 @@ export default function OrdersProfessionalFast() {
         totalAmount: selectedOrder.totalAmount,
         siteName: selectedOrder.projectName,
         filePath: selectedOrder.filePath || '',
-        pdfUrl: pdfUrl,
-        excelUrl: excelUrl
+        attachmentUrls: attachmentUrls
       };
 
       console.log('📧 이메일 발송 데이터:', { orderData, emailData });

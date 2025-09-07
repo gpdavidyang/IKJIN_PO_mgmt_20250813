@@ -283,6 +283,15 @@ export function BulkOrderEditorTwoRow({ orders, onOrderUpdate, onOrderRemove, on
 
   const handleEmailSend = async (emailData: any) => {
     try {
+      // Build attachment URLs from selectedAttachmentIds if any
+      const attachmentUrls: string[] = [];
+      if (emailData.selectedAttachmentIds && emailData.selectedAttachmentIds.length > 0) {
+        for (const attachmentId of emailData.selectedAttachmentIds) {
+          const attachmentUrl = `/api/attachments/${attachmentId}/download`;
+          attachmentUrls.push(attachmentUrl);
+        }
+      }
+
       // 이메일 발송 API 호출
       const response = await fetch('/api/orders/send-email-simple', {
         method: 'POST',
@@ -302,10 +311,10 @@ export function BulkOrderEditorTwoRow({ orders, onOrderUpdate, onOrderRemove, on
             orderDate: savedOrderData?.orderDate,
             deliveryDate: savedOrderData?.deliveryDate,
             totalAmount: savedOrderData?.totalAmount,
-            excelFilePath: savedOrderData?.excelFilePath
+            excelFilePath: savedOrderData?.excelFilePath,
+            attachmentUrls: attachmentUrls
           },
-          attachPdf: emailData.attachPdf,
-          attachExcel: emailData.attachExcel
+          selectedAttachmentIds: emailData.selectedAttachmentIds || []
         })
       });
 

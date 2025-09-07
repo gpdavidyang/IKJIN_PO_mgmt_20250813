@@ -24,6 +24,9 @@ import { QueryDevTools, useQueryDevTools } from "@/components/dev/query-devtools
 // Critical components (loaded immediately)
 import NotFound from "@/pages/not-found";
 import { ProtectedRoute, AdminRoute } from "@/components/ProtectedRoute";
+import RegisterPage from "@/pages/register";
+import ForgotPasswordPage from "@/pages/forgot-password";
+import ResetPasswordPage from "@/pages/reset-password";
 
 // Import dynamic loading utilities
 import {
@@ -497,8 +500,17 @@ function Router() {
     );
   }
 
-  // For unauthenticated users, always show login page
+  // For unauthenticated users, handle auth-related routes
   if (!user) {
+    if (location === '/register') {
+      return <RegisterPage />;
+    }
+    if (location === '/forgot-password') {
+      return <ForgotPasswordPage />;
+    }
+    if (location.startsWith('/reset-password')) {
+      return <ResetPasswordPage />;
+    }
     return <LoginPage />;
   }
 

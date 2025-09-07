@@ -8,11 +8,35 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { Plus, Save, ArrowLeft, Trash2, Edit } from "lucide-react";
+import { 
+  Plus, 
+  Save, 
+  ArrowLeft, 
+  Trash2, 
+  Edit,
+  FileText,
+  DollarSign,
+  Package,
+  Calendar,
+  Building2,
+  MapPin,
+  Phone,
+  Mail,
+  User,
+  Clock,
+  Eye,
+  Download
+} from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
+import { useTheme } from "@/components/ui/theme-provider";
+import { formatKoreanWon } from "@/lib/utils";
+import { format } from "date-fns";
+import { AttachedFilesInfo } from "@/components/attached-files-info";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { OrderPreviewSimple } from "@/components/order-preview-simple";
 
 export default function OrderEdit() {
   const { user } = useAuth();
@@ -20,9 +44,16 @@ export default function OrderEdit() {
   const [location, navigate] = useLocation();
   const params = useParams();
   const orderId = params.id;
+  const { theme } = useTheme();
+  const isDarkMode = theme === 'dark';
+  const [showPreview, setShowPreview] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   
   console.log('OrderEdit params:', params);
   console.log('OrderEdit orderId:', orderId, typeof orderId);
+
+  // Use a flag to track if form has been initialized to prevent infinite loops
+  const [isFormInitialized, setIsFormInitialized] = useState(false);
 
   const [formData, setFormData] = useState({
     projectId: "",
@@ -85,67 +116,70 @@ export default function OrderEdit() {
   const items = itemsData?.items || [];
 
   useEffect(() => {
-    if (order && items.length > 0) {
-      // Map existing order items to include proper itemId based on itemName and add category fields
-      const mappedItems = (order.items || []).map((item: any) => {
-        // Try multiple matching strategies
-        let matchingItem = null;
-        
-        // 1. Exact name match
-        matchingItem = items.find((availableItem: any) => 
-          availableItem.name === item.itemName
-        );
-        
-        // 2. If no exact match, try partial name match
-        if (!matchingItem) {
+    if (order && !isFormInitialized) {
+      if (items.length > 0) {
+        // Map existing order items to include proper itemId based on itemName and add category fields
+        const mappedItems = (order.items || []).map((item: any) => {
+          // Try multiple matching strategies
+          let matchingItem = null;
+          
+          // 1. Exact name match
           matchingItem = items.find((availableItem: any) => 
-            availableItem.name.includes(item.itemName) || item.itemName.includes(availableItem.name)
+            availableItem.name === item.itemName
           );
-        }
-        
-        // 3. If still no match, try by existing itemId
-        if (!matchingItem && item.itemId) {
-          matchingItem = items.find((availableItem: any) => 
-            availableItem.id === item.itemId
-          );
-        }
-        
-        return {
-          itemId: matchingItem?.id || null,
-          itemName: item.itemName || "",
-          quantity: parseFloat(item.quantity) || 1,
-          unitPrice: parseFloat(item.unitPrice) || 0,
-          specification: item.specification || "",
-          notes: item.notes || "",
-          unit: item.unit || "EA",
-          majorCategory: item.majorCategory || "",
-          middleCategory: item.middleCategory || "",
-          minorCategory: item.minorCategory || "",
-        };
-      });
+          
+          // 2. If no exact match, try partial name match
+          if (!matchingItem) {
+            matchingItem = items.find((availableItem: any) => 
+              availableItem.name.includes(item.itemName) || item.itemName.includes(availableItem.name)
+            );
+          }
+          
+          // 3. If still no match, try by existing itemId
+          if (!matchingItem && item.itemId) {
+            matchingItem = items.find((availableItem: any) => 
+              availableItem.id === item.itemId
+            );
+          }
+          
+          return {
+            itemId: matchingItem?.id || null,
+            itemName: item.itemName || "",
+            quantity: parseFloat(item.quantity) || 1,
+            unitPrice: parseFloat(item.unitPrice) || 0,
+            specification: item.specification || "",
+            notes: item.notes || "",
+            unit: item.unit || "EA",
+            majorCategory: item.majorCategory || "",
+            middleCategory: item.middleCategory || "",
+            minorCategory: item.minorCategory || "",
+          };
+        });
 
-      setFormData({
-        projectId: order.projectId?.toString() || "",
-        vendorId: order.vendorId?.toString() || "",
-        orderDate: order.orderDate ? new Date(order.orderDate).toISOString().split('T')[0] : "",
-        deliveryDate: order.deliveryDate ? new Date(order.deliveryDate).toISOString().split('T')[0] : "",
-        notes: order.notes || "",
-        templateId: order.templateId?.toString() || "",
-        items: mappedItems,
-      });
-    } else if (order && items.length === 0) {
-      // If items haven't loaded yet, set basic form data without items
-      setFormData({
-        projectId: order.projectId?.toString() || "",
-        vendorId: order.vendorId?.toString() || "",
-        orderDate: order.orderDate ? new Date(order.orderDate).toISOString().split('T')[0] : "",
-        deliveryDate: order.deliveryDate ? new Date(order.deliveryDate).toISOString().split('T')[0] : "",
-        notes: order.notes || "",
-        templateId: order.templateId?.toString() || "",
-        items: order.items || [],
-      });
+        setFormData({
+          projectId: order.projectId?.toString() || "",
+          vendorId: order.vendorId?.toString() || "",
+          orderDate: order.orderDate ? new Date(order.orderDate).toISOString().split('T')[0] : "",
+          deliveryDate: order.deliveryDate ? new Date(order.deliveryDate).toISOString().split('T')[0] : "",
+          notes: order.notes || "",
+          templateId: order.templateId?.toString() || "",
+          items: mappedItems,
+        });
+      } else {
+        // If items haven't loaded yet, set basic form data without items
+        setFormData({
+          projectId: order.projectId?.toString() || "",
+          vendorId: order.vendorId?.toString() || "",
+          orderDate: order.orderDate ? new Date(order.orderDate).toISOString().split('T')[0] : "",
+          deliveryDate: order.deliveryDate ? new Date(order.deliveryDate).toISOString().split('T')[0] : "",
+          notes: order.notes || "",
+          templateId: order.templateId?.toString() || "",
+          items: order.items || [],
+        });
+      }
+      setIsFormInitialized(true);
     }
-  }, [order, items]);
+  }, [order, items, isFormInitialized]);
 
   const updateOrderMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -214,6 +248,49 @@ export default function OrderEdit() {
     };
 
     updateOrderMutation.mutate(submitData);
+  };
+
+  // PDF preview - show existing PDF or generate if not exists
+  const handlePdfPreview = async () => {
+    // Check if PDF already exists
+    const existingPdf = order?.attachments?.find((attachment: any) => 
+      attachment.mimeType === 'application/pdf' &&
+      attachment.originalName?.startsWith('PO_')
+    );
+
+    if (existingPdf) {
+      // Show existing PDF
+      setShowPreview(true);
+      return;
+    }
+
+    // No existing PDF, generate new one
+    setIsGeneratingPdf(true);
+    try {
+      // Call server to regenerate and save PDF
+      const result = await apiRequest("POST", `/api/orders/${orderId}/regenerate-pdf`);
+      
+      if (result.success) {
+        toast({
+          title: "PDF 생성 완료",
+          description: "PDF가 생성되어 첨부파일에 저장되었습니다.",
+        });
+        
+        // Refresh order data to show the new PDF
+        queryClient.invalidateQueries({ queryKey: [`/api/orders/${orderId}`] });
+        
+        // Show preview
+        setShowPreview(true);
+      }
+    } catch (error: any) {
+      toast({
+        title: "PDF 생성 실패",
+        description: error.message || "PDF 생성 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingPdf(false);
+    }
   };
 
   const addItem = () => {
@@ -316,8 +393,8 @@ export default function OrderEdit() {
     console.log(`Category change: index=${index}, type=${categoryType}, value=${value}`);
     const updates: any = {};
     
-    // Convert "none" to empty string
-    const actualValue = value === "none" ? "" : value;
+    // Value is already handled by Select component (empty string for deselection)
+    const actualValue = value || "";
     console.log(`Actual value after conversion: ${actualValue}`);
     
     if (categoryType === 'major') {
@@ -386,58 +463,307 @@ export default function OrderEdit() {
   }
 
   return (
-    <div className="max-w-[1366px] mx-auto p-6">
-      {/* Page Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate(`/orders/${orderId}`)}
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              돌아가기
-            </Button>
-            <Edit className="h-6 w-6 text-blue-600" />
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">발주서 수정</h1>
-              <p className="text-sm text-gray-600 mt-1">
-                발주서 정보를 수정합니다
-              </p>
+    <div className={`min-h-screen transition-colors ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+      <div className="max-w-[1366px] mx-auto">
+        {/* Page Header */}
+        <div className={`shadow-sm border-b transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+          <div className="px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => navigate(`/orders/${orderId}`)} 
+                  className={`no-print h-8 px-2 transition-colors ${isDarkMode ? 'text-gray-300 hover:text-gray-100 hover:bg-gray-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}`}
+                  aria-label="발주서 상세로 돌아가기"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-lg transition-colors ${isDarkMode ? 'bg-blue-900/20' : 'bg-blue-50'}`}>
+                    <Edit className={`h-5 w-5 transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                  </div>
+                  <div>
+                    <h1 className={`text-lg font-bold transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>발주서 수정</h1>
+                    <p className={`text-sm transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      {order?.vendor?.name} • {order?.orderDate ? format(new Date(order.orderDate), 'MM.dd') : '날짜 미정'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-3">
+                <div className="text-right">
+                  <p className={`text-sm transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>총 발주금액</p>
+                  <p className={`text-lg font-bold transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    {formatKoreanWon(formData.items.reduce((total, item) => {
+                      const itemTotal = (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0);
+                      return total + itemTotal;
+                    }, 0))}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
+      {/* Main Content */}
+      <div className="px-6 py-4 space-y-4">
+
       <form onSubmit={handleSubmit}>
-        {/* Order Information Summary */}
+        {/* Overview Cards */}
         {order && (
-          <Card className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
-            <CardContent className="p-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <h3 className="text-sm font-medium text-blue-600">발주서 번호</h3>
-                  <p className="text-lg font-semibold text-blue-900">{order.orderNumber || 'N/A'}</p>
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-blue-600">현재 상태</h3>
-                  <p className="text-lg font-semibold text-blue-900">{order.status || 'N/A'}</p>
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-blue-600">생성일시</h3>
-                  <p className="text-lg font-semibold text-blue-900">
-                    {order.createdAt ? new Date(order.createdAt).toLocaleString('ko-KR') : 'N/A'}
-                  </p>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+            {/* Status Card */}
+            <div className={`shadow-sm rounded-lg border transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+              <div className="p-3">
+                <span className={`text-xs block mb-1 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>진행 상태</span>
+                <div className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium transition-colors ${
+                  order.status === 'draft' 
+                    ? isDarkMode ? 'bg-yellow-900/20 text-yellow-400' : 'bg-yellow-100 text-yellow-800'
+                    : order.status === 'pending_approval'
+                    ? isDarkMode ? 'bg-orange-900/20 text-orange-400' : 'bg-orange-100 text-orange-800'
+                    : order.status === 'approved'
+                    ? isDarkMode ? 'bg-blue-900/20 text-blue-400' : 'bg-blue-100 text-blue-800'
+                    : order.status === 'sent'
+                    ? isDarkMode ? 'bg-green-900/20 text-green-400' : 'bg-green-100 text-green-800'
+                    : isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-800'
+                }`}>
+                  {order.status || 'N/A'}
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+
+            {/* Amount Card */}
+            <div className={`shadow-sm rounded-lg border transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+              <div className="p-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <span className={`text-xs block mb-1 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>발주 금액</span>
+                    <span className={`text-lg font-bold transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                      {formatKoreanWon(formData.items.reduce((total, item) => {
+                        const itemTotal = (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0);
+                        return total + itemTotal;
+                      }, 0))}
+                    </span>
+                  </div>
+                  <DollarSign className={`h-4 w-4 mt-0.5 transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                </div>
+              </div>
+            </div>
+
+            {/* Items Count Card */}
+            <div className={`shadow-sm rounded-lg border transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+              <div className="p-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <span className={`text-xs block mb-1 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>품목 수</span>
+                    <span className={`text-lg font-bold transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{formData.items.length}개</span>
+                  </div>
+                  <Package className={`h-4 w-4 mt-0.5 transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                </div>
+              </div>
+            </div>
+
+            {/* Delivery Date Card */}
+            <div className={`shadow-sm rounded-lg border transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+              <div className="p-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <span className={`text-xs block mb-1 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>납기일</span>
+                    <span className={`text-lg font-bold transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                      {order.deliveryDate ? format(new Date(order.deliveryDate), 'MM.dd') : "미정"}
+                    </span>
+                  </div>
+                  <Calendar className={`h-4 w-4 mt-0.5 transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                </div>
+              </div>
+            </div>
+          </div>
         )}
 
-        <Card className="mb-6">
+        {/* Information Grid */}
+        {order && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+            {/* Order Details */}
+            <div className={`shadow-sm rounded-lg border transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+              <div className={`p-4 border-b transition-colors ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                <div className="flex items-center">
+                  <div className={`p-2 rounded-lg mr-3 transition-colors ${isDarkMode ? 'bg-blue-900/20' : 'bg-blue-50'}`}>
+                    <FileText className={`h-5 w-5 transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                  </div>
+                  <h3 className={`text-lg font-semibold transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>발주서 정보</h3>
+                </div>
+              </div>
+              <div className="p-4 space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className={`block transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>발주번호</span>
+                    <span className={`font-semibold transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{order.orderNumber}</span>
+                  </div>
+                  <div>
+                    <span className={`block transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>발주일</span>
+                    <span className={`transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>
+                      {order.orderDate ? format(new Date(order.orderDate), 'yyyy.MM.dd') : "-"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className={`block text-xs transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>시스템 등록일</span>
+                    <span className={`text-xs transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      {order.createdAt ? format(new Date(order.createdAt), 'yyyy.MM.dd HH:mm') : "-"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className={`block transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>담당자</span>
+                    <div className="flex items-center gap-1">
+                      <User className={`h-4 w-4 transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                      <span className={`transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>
+                        {order.user?.firstName && order.user?.lastName 
+                          ? `${order.user.lastName}${order.user.firstName}` 
+                          : order.user?.email || "알 수 없음"}
+                      </span>
+                    </div>
+                  </div>
+                  <div>
+                    <span className={`block transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>납기일</span>
+                    <div className="flex items-center gap-1">
+                      <Clock className={`h-4 w-4 transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                      <span className={`transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>
+                        {order.deliveryDate ? format(new Date(order.deliveryDate), 'yyyy.MM.dd') : "-"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                
+                {order.notes && (
+                  <div className={`pt-4 border-t transition-colors ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                    <span className={`text-sm block mb-2 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>비고</span>
+                    <div className={`text-sm p-3 rounded transition-colors ${isDarkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-50 text-gray-700'}`}>
+                      {order.notes}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Vendor Information */}
+            {order.vendor && (
+              <div className={`shadow-sm rounded-lg border transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+                <div className={`p-4 border-b transition-colors ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                  <div className="flex items-center">
+                    <div className={`p-2 rounded-lg mr-3 transition-colors ${isDarkMode ? 'bg-blue-900/20' : 'bg-blue-50'}`}>
+                      <Building2 className={`h-5 w-5 transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                    </div>
+                    <h3 className={`text-lg font-semibold transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>거래처 정보</h3>
+                  </div>
+                </div>
+                <div className="p-4 space-y-3">
+                  <div className="space-y-2">
+                    <div>
+                      <span className={`text-xs block transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>업체명</span>
+                      <span className={`text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>
+                        {order.vendor.name}
+                      </span>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <span className={`block transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>담당자</span>
+                        <div className="flex items-center gap-1">
+                          <User className={`h-3 w-3 transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                          <span className={`transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{order.vendor.contact || "-"}</span>
+                        </div>
+                      </div>
+                      <div>
+                        <span className={`block transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>전화번호</span>
+                        <div className="flex items-center gap-1">
+                          <Phone className={`h-3 w-3 transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                          <span className={`transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{order.vendor.phone || "-"}</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {order.vendor.email && (
+                      <div>
+                        <span className={`text-xs block transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>이메일</span>
+                        <div className="flex items-center gap-1">
+                          <Mail className={`h-3 w-3 transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                          <span className={`text-xs transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{order.vendor.email}</span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {order.vendor.address && (
+                      <div>
+                        <span className={`text-xs block transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>주소</span>
+                        <div className="flex items-start gap-1">
+                          <MapPin className={`h-3 w-3 mt-0.5 flex-shrink-0 transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                          <span className={`text-xs transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{order.vendor.address}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Project Information */}
+            {order.project && (
+              <div className={`shadow-sm rounded-lg border transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+                <div className={`p-4 border-b transition-colors ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                  <div className="flex items-center">
+                    <div className={`p-2 rounded-lg mr-3 transition-colors ${isDarkMode ? 'bg-blue-900/20' : 'bg-blue-50'}`}>
+                      <Building2 className={`h-5 w-5 transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                    </div>
+                    <h3 className={`text-lg font-semibold transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>현장 정보</h3>
+                  </div>
+                </div>
+                <div className="p-4 space-y-3">
+                  <div className="space-y-2">
+                    <div>
+                      <span className={`text-xs block transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>현장명</span>
+                      <span className={`text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>
+                        {order.project.projectName}
+                      </span>
+                      <span className={`text-xs block transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>({order.project.projectCode})</span>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <span className={`block transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>담당자</span>
+                        <div className="flex items-center gap-1">
+                          <User className={`h-3 w-3 transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                          <span className={`transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{order.project.projectManager || "-"}</span>
+                        </div>
+                      </div>
+                      <div>
+                        <span className={`block transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>위치</span>
+                        <div className="flex items-center gap-1">
+                          <MapPin className={`h-3 w-3 transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                          <span className={`transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{order.project.location || "-"}</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {order.project.description && (
+                      <div>
+                        <span className={`text-xs block mb-1 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>설명</span>
+                        <div className={`text-xs p-2 rounded transition-colors ${isDarkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-50 text-gray-700'}`}>
+                          {order.project.description}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        <Card className={`mb-6 transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
           <CardHeader>
-            <CardTitle>기본 정보</CardTitle>
+            <CardTitle className={`transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>기본 정보</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -514,11 +840,11 @@ export default function OrderEdit() {
           </CardContent>
         </Card>
 
-        <Card className="mb-6">
+        <Card className={`mb-6 transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>발주 품목</CardTitle>
-              <Button type="button" onClick={addItem}>
+              <CardTitle className={`transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>발주 품목</CardTitle>
+              <Button type="button" onClick={addItem} className={`transition-colors ${isDarkMode ? 'bg-blue-600 hover:bg-blue-500 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}>
                 <Plus className="h-4 w-4 mr-2" />
                 품목 추가
               </Button>
@@ -526,20 +852,20 @@ export default function OrderEdit() {
           </CardHeader>
           <CardContent>
             {formData.items.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className={`text-center py-8 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                 발주할 품목을 추가해주세요
               </div>
             ) : (
               <div className="space-y-4">
                 {formData.items.map((item, index) => (
-                  <Card key={index} className="p-4 border bg-gradient-to-br from-gray-50 to-white hover:shadow-md transition-shadow">
+                  <Card key={index} className={`p-4 border transition-all ${isDarkMode ? 'bg-gradient-to-br from-gray-700 to-gray-800 hover:shadow-lg border-gray-600' : 'bg-gradient-to-br from-gray-50 to-white hover:shadow-md border-gray-200'}`}>
                     {/* 헤더: 순번과 삭제 버튼 */}
                     <div className="flex justify-between items-center mb-4">
                       <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-sm bg-blue-50 text-blue-700 border-blue-200">
+                        <Badge variant="outline" className={`text-sm transition-colors ${isDarkMode ? 'bg-blue-900/20 text-blue-300 border-blue-700' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
                           품목 #{index + 1}
                         </Badge>
-                        <span className="text-xs text-gray-500">
+                        <span className={`text-xs transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                           {item.itemName ? `• ${item.itemName}` : ''}
                         </span>
                       </div>
@@ -548,7 +874,7 @@ export default function OrderEdit() {
                         variant="ghost"
                         size="icon"
                         onClick={() => removeItem(index)}
-                        className="h-8 w-8 text-gray-400 hover:text-red-600 hover:bg-red-50"
+                        className={`h-8 w-8 transition-colors ${isDarkMode ? 'text-gray-400 hover:text-red-400 hover:bg-red-950' : 'text-gray-400 hover:text-red-600 hover:bg-red-50'}`}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -557,7 +883,7 @@ export default function OrderEdit() {
                     {/* 첫 번째 행: 기본 정보 */}
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mb-3">
                       <div className="col-span-2 sm:col-span-3 md:col-span-2">
-                        <Label className="text-xs font-medium text-gray-700 mb-1 block">품목명 *</Label>
+                        <Label className={`text-xs font-medium mb-1 block transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>품목명 *</Label>
                         <Select
                           value={item.itemId?.toString() || ""}
                           onValueChange={(value) => handleItemSelect(index, value)}
@@ -576,29 +902,36 @@ export default function OrderEdit() {
                       </div>
                       
                       <div>
-                        <Label className="text-xs font-medium text-gray-700 mb-1 block">수량 *</Label>
+                        <Label className={`text-xs font-medium mb-1 block transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>수량 *</Label>
                         <Input
                           type="number"
-                          value={item.quantity}
+                          value={item.quantity || 0}
                           onChange={(e) => {
                             const value = e.target.value;
-                            const numValue = value === "" ? 0 : Number(value);
-                            console.log(`Quantity changed: ${value} -> ${numValue}`);
-                            updateItem(index, "quantity", numValue);
+                            if (value === "" || value === "0") {
+                              updateItem(index, "quantity", 0);
+                            } else {
+                              const numValue = parseFloat(value);
+                              if (!isNaN(numValue) && numValue >= 0) {
+                                updateItem(index, "quantity", numValue);
+                              }
+                            }
                           }}
                           onBlur={(e) => {
-                            if (Number(e.target.value) < 1) {
+                            const value = parseFloat(e.target.value);
+                            if (isNaN(value) || value <= 0) {
                               updateItem(index, "quantity", 1);
                             }
                           }}
                           min="0.01"
                           step="0.01"
                           required
+                          className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-900'}`}
                         />
                       </div>
                       
                       <div>
-                        <Label className="text-xs font-medium text-gray-700 mb-1 block">단위</Label>
+                        <Label className={`text-xs font-medium mb-1 block transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>단위</Label>
                         <Select
                           value={item.unit || "EA"}
                           onValueChange={(value) => {
@@ -662,41 +995,51 @@ export default function OrderEdit() {
                       </div>
                       
                       <div>
-                        <Label className="text-xs font-medium text-gray-700 mb-1 block">단가</Label>
+                        <Label className={`text-xs font-medium mb-1 block transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>단가</Label>
                         <Input
                           type="number"
-                          value={item.unitPrice}
-                          onChange={(e) => updateItem(index, "unitPrice", Number(e.target.value))}
+                          value={item.unitPrice || 0}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            if (value === "" || value === "0") {
+                              updateItem(index, "unitPrice", 0);
+                            } else {
+                              const numValue = parseFloat(value);
+                              if (!isNaN(numValue) && numValue >= 0) {
+                                updateItem(index, "unitPrice", numValue);
+                              }
+                            }
+                          }}
                           min="0"
+                          step="0.01"
+                          className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-900'}`}
                         />
                       </div>
                       
                       <div>
-                        <Label className="text-xs font-medium text-gray-700 mb-1 block">총액</Label>
-                        <div className="h-10 px-3 py-2 border rounded-md bg-blue-50 border-blue-200 flex items-center font-semibold text-blue-700">
+                        <Label className={`text-xs font-medium mb-1 block transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>총액</Label>
+                        <div className={`h-10 px-3 py-2 border rounded-md flex items-center font-semibold transition-colors ${isDarkMode ? 'bg-blue-900/20 border-blue-700 text-blue-300' : 'bg-blue-50 border-blue-200 text-blue-700'}`}>
                           ₩{(Number(item.quantity) * Number(item.unitPrice)).toLocaleString('ko-KR')}
                         </div>
                       </div>
                     </div>
 
                     {/* 두 번째 행: 상세 정보 */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 border-t border-gray-200 pt-3 mt-3">
+                    <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 border-t pt-3 mt-3 transition-colors ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}>
                       <div>
-                        <Label className="text-xs font-medium text-gray-700 mb-1 block">대분류</Label>
+                        <Label className={`text-xs font-medium mb-1 block transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>대분류</Label>
                         <Select
-                          value={item.majorCategory || "none"}
+                          value={item.majorCategory || ""}
                           onValueChange={(value) => {
                             console.log(`Major category selected: ${value}`);
                             handleCategoryChange(index, "major", value);
                           }}
                         >
-                          <SelectTrigger>
-                            <SelectValue placeholder="대분류 선택">
-                              {item.majorCategory && item.majorCategory !== "none" ? item.majorCategory : "대분류 선택"}
-                            </SelectValue>
+                          <SelectTrigger className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-900'}`}>
+                            <SelectValue placeholder="대분류 선택" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="none">선택 해제</SelectItem>
+                            <SelectItem value="">선택 해제</SelectItem>
                             {getMajorCategories().map((category: any) => (
                               <SelectItem key={`major-${category.id}`} value={category.categoryName}>
                                 {category.categoryName}
@@ -707,22 +1050,20 @@ export default function OrderEdit() {
                       </div>
                       
                       <div>
-                        <Label className="text-xs font-medium text-gray-700 mb-1 block">중분류</Label>
+                        <Label className={`text-xs font-medium mb-1 block transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>중분류</Label>
                         <Select
-                          value={item.middleCategory || "none"}
+                          value={item.middleCategory || ""}
                           onValueChange={(value) => {
                             console.log(`Middle category selected: ${value}`);
                             handleCategoryChange(index, "middle", value);
                           }}
-                          disabled={!item.majorCategory || item.majorCategory === "none"}
+                          disabled={!item.majorCategory}
                         >
-                          <SelectTrigger>
-                            <SelectValue placeholder={item.majorCategory && item.majorCategory !== "none" ? "중분류 선택" : "대분류 먼저 선택"}>
-                              {item.middleCategory && item.middleCategory !== "none" ? item.middleCategory : (item.majorCategory && item.majorCategory !== "none" ? "중분류 선택" : "대분류 먼저 선택")}
-                            </SelectValue>
+                          <SelectTrigger className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-900'}`}>
+                            <SelectValue placeholder={item.majorCategory ? "중분류 선택" : "대분류 먼저 선택"} />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="none">선택 해제</SelectItem>
+                            <SelectItem value="">선택 해제</SelectItem>
                             {getMiddleCategories(item.majorCategory || "").map((category: any) => (
                               <SelectItem key={`middle-${category.id}`} value={category.categoryName}>
                                 {category.categoryName}
@@ -733,22 +1074,20 @@ export default function OrderEdit() {
                       </div>
                       
                       <div>
-                        <Label className="text-xs font-medium text-gray-700 mb-1 block">소분류</Label>
+                        <Label className={`text-xs font-medium mb-1 block transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>소분류</Label>
                         <Select
-                          value={item.minorCategory || "none"}
+                          value={item.minorCategory || ""}
                           onValueChange={(value) => {
                             console.log(`Minor category selected: ${value}`);
                             handleCategoryChange(index, "minor", value);
                           }}
-                          disabled={!item.middleCategory || item.middleCategory === "none"}
+                          disabled={!item.middleCategory}
                         >
-                          <SelectTrigger>
-                            <SelectValue placeholder={item.middleCategory && item.middleCategory !== "none" ? "소분류 선택" : "중분류 먼저 선택"}>
-                              {item.minorCategory && item.minorCategory !== "none" ? item.minorCategory : (item.middleCategory && item.middleCategory !== "none" ? "소분류 선택" : "중분류 먼저 선택")}
-                            </SelectValue>
+                          <SelectTrigger className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-900'}`}>
+                            <SelectValue placeholder={item.middleCategory ? "소분류 선택" : "중분류 먼저 선택"} />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="none">선택 해제</SelectItem>
+                            <SelectItem value="">선택 해제</SelectItem>
                             {getMinorCategories(item.middleCategory || "").map((category: any) => (
                               <SelectItem key={`minor-${category.id}`} value={category.categoryName}>
                                 {category.categoryName}
@@ -759,20 +1098,22 @@ export default function OrderEdit() {
                       </div>
                       
                       <div>
-                        <Label className="text-xs font-medium text-gray-700 mb-1 block">규격</Label>
+                        <Label className={`text-xs font-medium mb-1 block transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>규격</Label>
                         <Input
                           value={item.specification}
                           onChange={(e) => updateItem(index, "specification", e.target.value)}
                           placeholder="규격 입력"
+                          className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-900'}`}
                         />
                       </div>
                       
                       <div>
-                        <Label className="text-xs font-medium text-gray-700 mb-1 block">비고</Label>
+                        <Label className={`text-xs font-medium mb-1 block transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>비고</Label>
                         <Input
                           value={item.notes}
                           onChange={(e) => updateItem(index, "notes", e.target.value)}
                           placeholder="비고 입력"
+                          className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-900'}`}
                         />
                       </div>
                     </div>
@@ -786,25 +1127,25 @@ export default function OrderEdit() {
               <div className="mt-6 space-y-4">
                 {/* Category Summary */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="bg-blue-50 p-4 rounded-lg">
-                    <div className="text-sm text-blue-600 mb-1">총 품목 수</div>
-                    <div className="text-xl font-bold text-blue-700">{formData.items.length}개</div>
+                  <div className={`p-4 rounded-lg transition-colors ${isDarkMode ? 'bg-blue-900/20 border border-blue-700' : 'bg-blue-50'}`}>
+                    <div className={`text-sm mb-1 transition-colors ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>총 품목 수</div>
+                    <div className={`text-xl font-bold transition-colors ${isDarkMode ? 'text-blue-300' : 'text-blue-700'}`}>{formData.items.length}개</div>
                   </div>
-                  <div className="bg-green-50 p-4 rounded-lg">
-                    <div className="text-sm text-green-600 mb-1">총 수량</div>
-                    <div className="text-xl font-bold text-green-700">
+                  <div className={`p-4 rounded-lg transition-colors ${isDarkMode ? 'bg-green-900/20 border border-green-700' : 'bg-green-50'}`}>
+                    <div className={`text-sm mb-1 transition-colors ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>총 수량</div>
+                    <div className={`text-xl font-bold transition-colors ${isDarkMode ? 'text-green-300' : 'text-green-700'}`}>
                       {formData.items.reduce((total, item) => total + (Number(item.quantity) || 0), 0)}
                     </div>
                   </div>
-                  <div className="bg-purple-50 p-4 rounded-lg">
-                    <div className="text-sm text-purple-600 mb-1">대분류 수</div>
-                    <div className="text-xl font-bold text-purple-700">
+                  <div className={`p-4 rounded-lg transition-colors ${isDarkMode ? 'bg-purple-900/20 border border-purple-700' : 'bg-purple-50'}`}>
+                    <div className={`text-sm mb-1 transition-colors ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`}>대분류 수</div>
+                    <div className={`text-xl font-bold transition-colors ${isDarkMode ? 'text-purple-300' : 'text-purple-700'}`}>
                       {new Set(formData.items.map(item => item.majorCategory).filter(cat => cat)).size}개
                     </div>
                   </div>
-                  <div className="bg-orange-50 p-4 rounded-lg">
-                    <div className="text-sm text-orange-600 mb-1">총 합계 금액</div>
-                    <div className="text-xl font-bold text-orange-700">
+                  <div className={`p-4 rounded-lg transition-colors ${isDarkMode ? 'bg-orange-900/20 border border-orange-700' : 'bg-orange-50'}`}>
+                    <div className={`text-sm mb-1 transition-colors ${isDarkMode ? 'text-orange-400' : 'text-orange-600'}`}>총 합계 금액</div>
+                    <div className={`text-xl font-bold transition-colors ${isDarkMode ? 'text-orange-300' : 'text-orange-700'}`}>
                       ₩{formData.items.reduce((total, item) => {
                         const itemTotal = (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0);
                         return total + itemTotal;
@@ -817,23 +1158,88 @@ export default function OrderEdit() {
           </CardContent>
         </Card>
 
+        {/* Attachments Section */}
+        {order?.attachments && order.attachments.length > 0 && (
+          <Card className={`mb-6 transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className={`transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>첨부파일</CardTitle>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handlePdfPreview}
+                    disabled={isGeneratingPdf}
+                    className={`h-8 px-3 text-xs transition-colors ${isDarkMode ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                  >
+                    {isGeneratingPdf ? (
+                      <>
+                        <div className="animate-spin h-3 w-3 mr-1 border border-gray-300 border-t-transparent rounded-full"></div>
+                        생성 중...
+                      </>
+                    ) : (() => {
+                      const existingPdf = order?.attachments?.find((attachment: any) => 
+                        attachment.mimeType === 'application/pdf' &&
+                        attachment.originalName?.startsWith('PO_')
+                      );
+                      return existingPdf ? (
+                        <>
+                          <Eye className="h-4 w-4 mr-1" />
+                          PDF 미리보기
+                        </>
+                      ) : (
+                        <>
+                          <Eye className="h-4 w-4 mr-1" />
+                          PDF 생성 및 미리보기
+                        </>
+                      );
+                    })()}
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <AttachedFilesInfo 
+                attachments={order.attachments} 
+                orderId={order.id}
+                isDarkMode={isDarkMode}
+              />
+            </CardContent>
+          </Card>
+        )}
+
         <div className="flex justify-end space-x-4">
           <Button
             type="button"
             variant="outline"
             onClick={() => navigate(`/orders/${orderId}`)}
+            className={`transition-colors ${isDarkMode ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
           >
             취소
           </Button>
           <Button
             type="submit"
             disabled={updateOrderMutation.isPending}
+            className={`transition-colors ${isDarkMode ? 'bg-blue-600 hover:bg-blue-500 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
           >
             <Save className="h-4 w-4 mr-2" />
             {updateOrderMutation.isPending ? "저장 중..." : "저장"}
           </Button>
         </div>
       </form>
+      </div>
+
+      {/* PDF Preview Dialog */}
+      {showPreview && order && (
+        <Dialog open={showPreview} onOpenChange={setShowPreview}>
+          <DialogContent className="max-w-4xl max-h-[90vh]">
+            <DialogHeader>
+              <DialogTitle>발주서 미리보기</DialogTitle>
+            </DialogHeader>
+            <OrderPreviewSimple order={order} />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

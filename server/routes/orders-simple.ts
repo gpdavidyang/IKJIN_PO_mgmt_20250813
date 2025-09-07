@@ -8,7 +8,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import { readFileSync } from 'fs';
 import { z } from 'zod';
-import { ProfessionalPDFGenerationService as PDFGenerationService } from '../services/professional-pdf-generation-service.js';
+import { ProfessionalPDFGenerationService } from '../services/professional-pdf-generation-service.js';
 import { decodeKoreanFilename } from '../utils/korean-filename';
 
 const router = Router();
@@ -332,7 +332,7 @@ router.post('/orders/bulk-create-simple', requireAuth, upload.single('excelFile'
           
           // Use the Professional PDF Generation Service
           // This service automatically gathers all comprehensive data from the database
-          const pdfResult = await PDFGenerationService.generateProfessionalPurchaseOrderPDF(
+          const pdfResult = await ProfessionalPDFGenerationService.generateProfessionalPurchaseOrderPDF(
             newOrder.id,
             req.user.id
           );

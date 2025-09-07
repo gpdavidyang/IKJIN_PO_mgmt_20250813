@@ -5,8 +5,7 @@ export interface EmailData {
   cc?: string[];
   subject: string;
   message?: string;
-  attachPDF: boolean;
-  attachExcel: boolean;
+  selectedAttachmentIds: number[];
 }
 
 export interface EmailSendRequest {
@@ -88,8 +87,7 @@ export class EmailService {
       totalAmount: number;
       siteName?: string;
       filePath?: string;
-      pdfUrl?: string;
-      excelUrl?: string;
+      attachmentUrls?: string[];
     },
     emailData: EmailData
   ): Promise<EmailSendResponse> {
@@ -111,20 +109,11 @@ export class EmailService {
 
       emailRequest.attachments = [];
       
-      if (emailData.attachExcel) {
-        emailRequest.attachments.push({
-          path: orderData.filePath,
-          filename: `발주서_${orderData.orderNumber}.xlsx`
-        });
-      }
-      
-      if (emailData.attachPDF) {
-        // PDF 파일 경로는 Excel 파일 경로에서 확장자만 변경
-        const pdfPath = orderData.filePath.replace('.xlsx', '.pdf');
-        emailRequest.attachments.push({
-          path: pdfPath,
-          filename: `발주서_${orderData.orderNumber}.pdf`
-        });
+      if (orderData.attachmentUrls && orderData.attachmentUrls.length > 0) {
+        emailRequest.attachments = orderData.attachmentUrls.map((url, index) => ({
+          path: url,
+          filename: `첨부파일_${orderData.orderNumber}_${index + 1}`
+        }));
       }
 
       try {
@@ -149,8 +138,8 @@ export class EmailService {
         cc: emailData.cc,
         subject: emailData.subject,
         message: emailData.message,
-        attachPdf: emailData.attachPDF,
-        attachExcel: emailData.attachExcel,
+        selectedAttachmentIds: emailData.selectedAttachmentIds,
+        attachmentUrls: orderData.attachmentUrls,
         emailSettings: {
           subject: emailData.subject,
           message: emailData.message,
@@ -158,15 +147,9 @@ export class EmailService {
         }
       };
       
-      // 실제 파일 URL이 있으면 추가
-      if (emailData.attachPDF && orderData.pdfUrl) {
-        requestData.pdfUrl = orderData.pdfUrl;
-        console.log('📎 PDF URL 추가:', orderData.pdfUrl);
-      }
-      
-      if (emailData.attachExcel && orderData.excelUrl) {
-        requestData.excelUrl = orderData.excelUrl;
-        console.log('📎 Excel URL 추가:', orderData.excelUrl);
+      // 첨부파일 URL이 있으면 로그 출력
+      if (orderData.attachmentUrls && orderData.attachmentUrls.length > 0) {
+        console.log('📎 첨부파일 URL 추가:', orderData.attachmentUrls);
       }
       
       console.log('📧 이메일 API 요청 데이터:', requestData);
