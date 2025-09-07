@@ -6,7 +6,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { FileSpreadsheet, Upload, Info, CheckCircle, AlertCircle, Download, AlertTriangle } from 'lucide-react';
+import { 
+  FileSpreadsheet, 
+  Upload, 
+  Info, 
+  CheckCircle, 
+  AlertCircle, 
+  Download, 
+  AlertTriangle,
+  Search,
+  FileText,
+  Database,
+  FilePlus,
+  Paperclip,
+  Clock
+} from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface UploadResponse {
@@ -28,6 +42,8 @@ interface ProcessingStep {
   description: string;
   status: 'pending' | 'processing' | 'completed' | 'error';
   message?: string;
+  estimatedTime?: number; // 예상 소요 시간 (초)
+  icon?: string; // 아이콘 타입
 }
 
 export default function CreateOrderExcel() {
@@ -44,10 +60,62 @@ export default function CreateOrderExcel() {
   const [emailPreview, setEmailPreview] = useState<any>(null);
   const [savedOrderNumbers, setSavedOrderNumbers] = useState<string[]>([]);
   const [processingSteps, setProcessingSteps] = useState<ProcessingStep[]>([
-    { id: 'upload', title: '파일 업로드', description: '엑셀 파일을 서버로 업로드', status: 'pending' },
-    { id: 'parse', title: 'Input 시트 파싱', description: '엑셀 파일의 Input 시트 데이터 분석', status: 'pending' },
-    { id: 'extract', title: '갑지/을지 추출', description: '갑지/을지 시트를 별도 파일로 추출', status: 'pending' },
-    { id: 'save', title: '데이터베이스 저장', description: '발주서 정보 및 PDF/Excel 파일을 DB에 저장', status: 'pending' },
+    { 
+      id: 'upload', 
+      title: '파일 업로드', 
+      description: '엑셀 파일을 서버로 업로드', 
+      status: 'pending',
+      estimatedTime: 5,
+      icon: 'upload'
+    },
+    { 
+      id: 'parse', 
+      title: 'Input 시트 파싱', 
+      description: '엑셀 파일의 Input 시트 데이터 분석', 
+      status: 'pending',
+      estimatedTime: 10,
+      icon: 'search'
+    },
+    { 
+      id: 'extract', 
+      title: '갑지/을지 추출', 
+      description: '갑지/을지 시트를 별도 파일로 추출', 
+      status: 'pending',
+      estimatedTime: 8,
+      icon: 'file-text'
+    },
+    { 
+      id: 'save-db', 
+      title: '데이터베이스 저장', 
+      description: '발주서 정보를 데이터베이스에 저장', 
+      status: 'pending',
+      estimatedTime: 12,
+      icon: 'database'
+    },
+    { 
+      id: 'generate-pdf', 
+      title: 'PDF 생성', 
+      description: '전문적인 발주서 PDF 생성 및 저장', 
+      status: 'pending',
+      estimatedTime: 20,
+      icon: 'file-plus'
+    },
+    { 
+      id: 'prepare-attachments', 
+      title: '첨부파일 준비', 
+      description: 'PDF/Excel 파일 첨부 준비 완료', 
+      status: 'pending',
+      estimatedTime: 5,
+      icon: 'paperclip'
+    },
+    { 
+      id: 'complete', 
+      title: '처리 완료', 
+      description: '모든 작업이 성공적으로 완료됨', 
+      status: 'pending',
+      estimatedTime: 2,
+      icon: 'check-circle'
+    }
   ]);
 
   const handleDrag = (e: React.DragEvent) => {
@@ -257,13 +325,24 @@ export default function CreateOrderExcel() {
     return (completedSteps / processingSteps.length) * 100;
   };
 
-  const getStepIcon = (status: ProcessingStep['status']) => {
-    switch (status) {
-      case 'completed': return <CheckCircle className="w-5 h-5 text-green-600" />;
-      case 'processing': return <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />;
-      case 'error': return <AlertCircle className="w-5 h-5 text-red-600" />;
-      default: return <div className="w-5 h-5 border-2 border-gray-300 rounded-full" />;
-    }
+  const getStepIcon = (iconType: string, status: ProcessingStep['status']) => {
+    const baseClasses = "w-3 h-3";
+    
+    if (status === 'completed') return <CheckCircle className={`${baseClasses} text-green-600`} />;
+    if (status === 'processing') return <div className={`${baseClasses} border border-blue-600 border-t-transparent rounded-full animate-spin`} />;
+    if (status === 'error') return <AlertCircle className={`${baseClasses} text-red-600`} />;
+    
+    const IconComponent = {
+      'upload': Upload,
+      'search': Search, 
+      'file-text': FileText,
+      'database': Database,
+      'file-plus': FilePlus,
+      'paperclip': Paperclip,
+      'check-circle': CheckCircle
+    }[iconType] || CheckCircle;
+    
+    return <IconComponent className={`${baseClasses} text-gray-400`} />;
   };
 
   const handleStartEmailProcess = async () => {

@@ -1,13 +1,12 @@
 import { useLocation } from "wouter";
 import { OrderForm } from "@/components/order-form";
 import { SimpleExcelBulkUpload } from "@/components/simple-excel-bulk-upload";
-import { FileText, Upload, Info, Zap } from "lucide-react";
+import { FileText, Upload, Info } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { isFeatureEnabled } from "@/lib/feature-flags";
 import { useTheme } from "@/components/ui/theme-provider";
-import { ExcelAutomationWizard } from "@/components/excel-automation-wizard";
 
 export default function CreateOrder() {
   const [, navigate] = useLocation();
@@ -65,9 +64,6 @@ export default function CreateOrder() {
                   <div>
                     <span className={`font-medium ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>직접 입력:</span> 소량 발주서, 세밀한 조정, 즉시 처리에 적합 (10건 이하 권장)
                   </div>
-                  <div>
-                    <span className={`font-medium ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`}>엑셀 자동화:</span> 완전 자동화, 이메일 발송, 대량 처리에 적합 (50건+ 권장)
-                  </div>
                 </div>
               </div>
             </AlertDescription>
@@ -75,7 +71,7 @@ export default function CreateOrder() {
         )}
         {isExcelUploadEnabled ? (
           <Tabs defaultValue="form" className="w-full">
-            <TabsList className={`grid w-full grid-cols-3 transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-100'}`}>
+            <TabsList className={`grid w-full grid-cols-2 transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-100'}`}>
               <TabsTrigger 
                 value="form" 
                 className={`flex items-center gap-2 transition-colors ${
@@ -98,17 +94,6 @@ export default function CreateOrder() {
                 <Upload className="h-4 w-4" />
                 엑셀 업로드 입력
               </TabsTrigger>
-              <TabsTrigger 
-                value="automation" 
-                className={`flex items-center gap-2 transition-colors ${
-                  isDarkMode 
-                    ? 'data-[state=active]:bg-gray-700 data-[state=active]:text-white hover:bg-gray-750' 
-                    : 'data-[state=active]:bg-white data-[state=active]:text-gray-900'
-                }`}
-              >
-                <Zap className="h-4 w-4" />
-                엑셀 자동화
-              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="form" className="mt-6">
@@ -117,10 +102,6 @@ export default function CreateOrder() {
 
             <TabsContent value="simple" className="mt-6">
               <SimpleExcelBulkUpload />
-            </TabsContent>
-
-            <TabsContent value="automation" className="mt-6">
-              <ExcelAutomationWizard />
             </TabsContent>
           </Tabs>
         ) : (
