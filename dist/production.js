@@ -11061,6 +11061,12 @@ router3.post("/orders", requireAuth, upload.array("attachments"), async (req, re
         }
       }
     }
+    let pdfGenerationStatus = {
+      success: false,
+      message: "",
+      pdfPath: "",
+      attachmentId: null
+    };
     try {
       console.log("\u{1F527}\u{1F527}\u{1F527} ORDERS.TS - Generating PROFESSIONAL PDF for order:", order.id);
       const pdfResult = await ProfessionalPDFGenerationService.generateProfessionalPurchaseOrderPDF(
@@ -11070,8 +11076,15 @@ router3.post("/orders", requireAuth, upload.array("attachments"), async (req, re
       if (pdfResult.success) {
         console.log("\u2705 ORDERS.TS - PROFESSIONAL PDF generated successfully:", pdfResult.pdfPath);
         console.log("\u{1F4C4} PDF Attachment ID:", pdfResult.attachmentId);
+        pdfGenerationStatus = {
+          success: true,
+          message: "PDF \uD30C\uC77C\uC774 \uC131\uACF5\uC801\uC73C\uB85C \uC0DD\uC131\uB418\uC5C8\uC2B5\uB2C8\uB2E4",
+          pdfPath: pdfResult.pdfPath,
+          attachmentId: pdfResult.attachmentId
+        };
       } else {
         console.error("\u26A0\uFE0F ORDERS.TS - PROFESSIONAL PDF generation failed:", pdfResult.error);
+        pdfGenerationStatus.message = `PDF \uC0DD\uC131 \uC2E4\uD328: ${pdfResult.error}`;
         console.log("\u{1F504} Attempting fallback to Enhanced PDF...");
         const vendor = orderData.vendorId ? await storage.getVendor(orderData.vendorId) : null;
         const project = await storage.getProject(orderData.projectId);
@@ -11163,12 +11176,20 @@ router3.post("/orders", requireAuth, upload.array("attachments"), async (req, re
         );
         if (fallbackResult.success) {
           console.log("\u2705 ORDERS.TS - Fallback Enhanced PDF generated successfully:", fallbackResult.pdfPath);
+          pdfGenerationStatus = {
+            success: true,
+            message: "PDF \uD30C\uC77C\uC774 \uC0DD\uC131\uB418\uC5C8\uC2B5\uB2C8\uB2E4 (\uB300\uCCB4 \uBC29\uC2DD)",
+            pdfPath: fallbackResult.pdfPath,
+            attachmentId: fallbackResult.attachmentId
+          };
         } else {
           console.error("\u26A0\uFE0F ORDERS.TS - Fallback Enhanced PDF also failed:", fallbackResult.error);
+          pdfGenerationStatus.message = "PDF \uC0DD\uC131\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4. \uAD00\uB9AC\uC790\uC5D0\uAC8C \uBB38\uC758\uD558\uC138\uC694.";
         }
       }
     } catch (pdfError) {
       console.error("\u274C ORDERS.TS - Error generating PDF:", pdfError);
+      pdfGenerationStatus.message = `PDF \uC0DD\uC131 \uC911 \uC624\uB958 \uBC1C\uC0DD: ${pdfError instanceof Error ? pdfError.message : "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"}`;
     }
     try {
       const approvalContext2 = {
@@ -11198,7 +11219,10 @@ router3.post("/orders", requireAuth, upload.array("attachments"), async (req, re
           stepsCount: approvalRoute.stagedApprovalSteps?.length || 0
         }
       };
-      res.status(201).json(orderWithApproval);
+      res.status(201).json({
+        ...orderWithApproval,
+        pdfGenerationStatus
+      });
     } catch (approvalError) {
       console.error("\u{1F527}\u{1F527}\u{1F527} ORDERS.TS - Error setting up approval process:", approvalError);
       res.status(201).json({
@@ -11208,7 +11232,8 @@ router3.post("/orders", requireAuth, upload.array("attachments"), async (req, re
           canDirectApprove: false,
           reasoning: "\uC2B9\uC778 \uD504\uB85C\uC138\uC2A4 \uC124\uC815 \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD558\uC5EC \uAE30\uBCF8 \uC124\uC815\uC744 \uC0AC\uC6A9\uD569\uB2C8\uB2E4.",
           stepsCount: 0
-        }
+        },
+        pdfGenerationStatus
       });
     }
   } catch (error) {
@@ -17055,6 +17080,8 @@ router10.post("/save", simpleAuth, async (req, res) => {
     if (db2) {
       try {
         let savedOrders = 0;
+        const savedOrderNumbers = [];
+        const pdfGenerationStatuses = [];
         for (const orderData of orders) {
           let vendor = await db2.select().from(vendors).where(eq16(vendors.name, orderData.vendorName)).limit(1);
           let vendorId;
@@ -17159,6 +17186,12 @@ router10.post("/save", simpleAuth, async (req, res) => {
           }
           let pdfBuffer;
           let pdfBase64;
+          let pdfGenerationStatus = {
+            orderNumber,
+            success: false,
+            message: "",
+            attachmentId: null
+          };
           try {
             console.log("\u{1F4C4} PDF \uC0DD\uC131 \uC2DC\uC791:", orderNumber);
             console.log("\u{1F4CA} \uD3EC\uAD04\uC801 \uB370\uC774\uD130 \uC218\uC9D1 \uC2DC\uB3C4 - Order ID:", newOrder[0].id);
@@ -17291,7 +17324,7 @@ router10.post("/save", simpleAuth, async (req, res) => {
             const cleanOrderNumber = orderNumber.startsWith("PO-") ? orderNumber.substring(3) : orderNumber;
             const pdfOriginalName = `PO_Professional_${cleanOrderNumber}_${Date.now()}.pdf`;
             const pdfStoredName = `PO_Professional_${cleanOrderNumber}_${Date.now()}.pdf`;
-            await db2.insert(attachments).values({
+            const pdfAttachment = await db2.insert(attachments).values({
               orderId: newOrder[0].id,
               originalName: pdfOriginalName,
               // 한글 포함 파일명
@@ -17302,11 +17335,19 @@ router10.post("/save", simpleAuth, async (req, res) => {
               mimeType: "application/pdf",
               uploadedBy: req.user?.id || "system",
               fileData: pdfBase64
-            });
+            }).returning();
+            pdfGenerationStatus = {
+              orderNumber,
+              success: true,
+              message: `PDF \uD30C\uC77C\uC774 \uC131\uACF5\uC801\uC73C\uB85C \uC0DD\uC131\uB418\uC5C8\uC2B5\uB2C8\uB2E4 (${orderNumber}.pdf)`,
+              attachmentId: pdfAttachment[0].id
+            };
             console.log("\u2705 PDF \uC0DD\uC131 \uBC0F \uC800\uC7A5 \uC644\uB8CC:", orderNumber);
           } catch (pdfError) {
             console.error("\u274C PDF \uC0DD\uC131 \uC2E4\uD328 (\uACC4\uC18D \uC9C4\uD589):", pdfError);
+            pdfGenerationStatus.message = `PDF \uC0DD\uC131 \uC2E4\uD328: ${pdfError instanceof Error ? pdfError.message : "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"}`;
           }
+          pdfGenerationStatuses.push(pdfGenerationStatus);
           if (extractedFilePath && fs14.existsSync(extractedFilePath)) {
             try {
               console.log("\u{1F4CA} Excel \uD30C\uC77C \uC800\uC7A5 \uC2DC\uC791:", extractedFilePath);
@@ -17332,13 +17373,16 @@ router10.post("/save", simpleAuth, async (req, res) => {
             }
           }
           savedOrders++;
+          savedOrderNumbers.push(orderNumber);
         }
         res.json({
           success: true,
           message: "\uC2E4\uC81C DB \uC800\uC7A5 \uC644\uB8CC",
           data: {
             savedOrders,
-            usingMockDB: false
+            savedOrderNumbers,
+            usingMockDB: false,
+            pdfGenerationStatuses
           }
         });
       } catch (dbError) {
