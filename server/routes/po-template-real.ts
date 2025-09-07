@@ -430,17 +430,17 @@ router.post('/save', simpleAuth, async (req: any, res) => {
           };
           
           try {
-            console.log('📄 PDF 생성 시작:', orderNumber);
-            console.log('📊 포괄적 데이터 수집 시도 - Order ID:', newOrder[0].id);
+            console.log('🚀 [PDF생성] 시작:', orderNumber, 'Order ID:', newOrder[0].id);
             
             // ProfessionalPDFGenerationService의 gatherComprehensiveOrderData 사용
             const comprehensiveData = await ProfessionalPDFGenerationService.gatherComprehensiveOrderData(newOrder[0].id);
             
             if (comprehensiveData) {
-              console.log('✅ 포괄적 데이터 수집 성공');
+              console.log('✅ [PDF생성] 포괄적 데이터 수집 성공');
               // PDF 생성
               pdfBuffer = await ProfessionalPDFGenerationService.generateProfessionalPDF(comprehensiveData);
               pdfBase64 = pdfBuffer.toString('base64');
+              console.log('✅ [PDF생성] PDF 버퍼 생성 완료, 크기:', pdfBuffer.length, 'bytes');
             } else {
               // fallback: 직접 데이터 구성
               console.log('⚠️ 포괄적 데이터 수집 실패, fallback 모드 사용');
@@ -605,9 +605,16 @@ router.post('/save', simpleAuth, async (req: any, res) => {
               attachmentId: pdfAttachment[0].id
             };
             
-            console.log('✅ PDF 생성 및 저장 완료:', orderNumber);
+            console.log('✅ [PDF생성] PDF 생성 및 저장 완료:', orderNumber);
           } catch (pdfError) {
-            console.error('❌ PDF 생성 실패 (계속 진행):', pdfError);
+            console.error('❌ [PDF생성] PDF 생성 실패 (계속 진행):', pdfError);
+            console.error('❌ [PDF생성] 에러 상세:', {
+              orderNumber,
+              orderId: newOrder[0].id,
+              errorMessage: pdfError instanceof Error ? pdfError.message : '알 수 없는 오류',
+              errorStack: pdfError instanceof Error ? pdfError.stack : null
+            });
+            pdfGenerationStatus.success = false;
             pdfGenerationStatus.message = `PDF 생성 실패: ${pdfError instanceof Error ? pdfError.message : '알 수 없는 오류'}`;
           }
           
@@ -646,6 +653,12 @@ router.post('/save', simpleAuth, async (req: any, res) => {
           savedOrderNumbers.push(orderNumber);
         }
         
+        console.log('📤 [응답] PDF 생성 상태 포함하여 응답 전송:', {
+          savedOrders,
+          pdfStatusCount: pdfGenerationStatuses.length,
+          pdfStatuses: pdfGenerationStatuses.map(s => ({ orderNumber: s.orderNumber, success: s.success, hasMessage: !!s.message }))
+        });
+
         res.json({
           success: true,
           message: '실제 DB 저장 완료',
@@ -653,7 +666,7 @@ router.post('/save', simpleAuth, async (req: any, res) => {
             savedOrders,
             savedOrderNumbers,
             usingMockDB: false,
-            pdfGenerationStatuses
+            pdfGenerationStatuses: pdfGenerationStatuses // 확실히 포함
           }
         });
         

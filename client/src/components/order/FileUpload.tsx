@@ -81,7 +81,7 @@ export default function FileUpload({
               파일을 선택하거나 여기에 드래그하세요
             </p>
             <p className="text-xs text-gray-500">
-              PDF, Word, Excel, 이미지 파일 지원
+              모든 파일 형식 지원
             </p>
             
             {/* 숨겨진 파일 input */}
@@ -91,7 +91,7 @@ export default function FileUpload({
               multiple
               className="hidden"
               onChange={handleFileSelect}
-              accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.gif"
+              accept="*"
             />
           </div>
         </div>

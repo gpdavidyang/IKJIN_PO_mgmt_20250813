@@ -174,23 +174,43 @@ export default function CreateOrderExcel() {
 
       updateProcessingStep('save', 'completed', `발주서 ${saveData.data.savedOrders}개 저장 완료 (PDF/Excel 파일 포함)`);
 
+      console.log('📱 [클라이언트] PDF 생성 상태 확인:', {
+        hasPdfStatuses: !!(saveData.data.pdfGenerationStatuses),
+        statusCount: saveData.data.pdfGenerationStatuses?.length || 0,
+        statuses: saveData.data.pdfGenerationStatuses
+      });
+
       // PDF 생성 상태에 대한 toast 메시지 표시
       if (saveData.data.pdfGenerationStatuses && saveData.data.pdfGenerationStatuses.length > 0) {
-        saveData.data.pdfGenerationStatuses.forEach((status: any) => {
+        console.log('📱 [클라이언트] Toast 메시지 표시 시작');
+        saveData.data.pdfGenerationStatuses.forEach((status: any, index: number) => {
+          console.log(`📱 [클라이언트] PDF 상태 ${index + 1}:`, status);
+          
           if (status.success) {
             toast({
               title: "PDF 생성 성공",
-              description: status.message,
+              description: status.message || `${status.orderNumber} PDF가 생성되었습니다.`,
               duration: 5000,
             });
-          } else if (status.message) {
+            console.log('📱 [클라이언트] 성공 Toast 표시됨:', status.orderNumber);
+          } else {
             toast({
               title: "PDF 생성 실패",
-              description: status.message,
+              description: status.message || `${status.orderNumber} PDF 생성에 실패했습니다.`,
               variant: "destructive",
               duration: 7000,
             });
+            console.log('📱 [클라이언트] 실패 Toast 표시됨:', status.orderNumber);
           }
+        });
+      } else {
+        console.log('📱 [클라이언트] PDF 생성 상태가 없거나 비어있음');
+        // PDF 상태가 없을 때도 알림
+        toast({
+          title: "PDF 생성 상태 알 수 없음",
+          description: "PDF 생성 상태를 확인할 수 없습니다. 발주서 관리에서 확인해주세요.",
+          variant: "destructive",
+          duration: 5000,
         });
       }
 
