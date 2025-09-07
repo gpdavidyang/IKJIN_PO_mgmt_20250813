@@ -45,8 +45,8 @@ const navigationItems: NavItem[] = [
     badge: "3",
     children: [
       { id: "orders-list", label: "발주 목록", href: "/orders", icon: FileText },
-      { id: "orders-create", label: "발주 생성", href: "/orders/create", icon: FileText },
-      { id: "orders-excel", label: "Excel 업로드", href: "/create-order-excel", icon: FileText },
+      { id: "orders-create", label: "발주 생성", href: "/orders/new", icon: FileText },
+      // { id: "orders-excel", label: "Excel 업로드", href: "/create-order-excel", icon: FileText }, // 발주 생성 페이지로 통합됨
     ],
   },
   {

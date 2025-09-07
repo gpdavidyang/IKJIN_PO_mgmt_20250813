@@ -1,1 +1,0 @@
-import{r as u}from"./index-BfDc6Omt-1757213250784.js";function o(r){const e=u.useRef({value:r,previous:r});return u.useMemo(()=>(e.current.value!==r&&(e.current.previous=e.current.value,e.current.value=r),e.current.previous),[r])}export{o as u};

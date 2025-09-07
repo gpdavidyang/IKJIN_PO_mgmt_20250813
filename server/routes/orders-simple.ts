@@ -352,13 +352,47 @@ router.post('/orders/bulk-create-simple', requireAuth, upload.single('excelFile'
         if (req.file) {
           // The filename is already decoded by multer fileFilter
           const decodedOriginalName = req.file.originalname;
+          const { removeAllInputSheets } = require('../utils/excel-input-sheet-remover');
+          
+          let fileToStore = req.file.path;
+          let fileBuffer: Buffer;
+          let processedFileName = req.file.filename;
+          
+          // Excel 파일인 경우 Input 시트 제거 처리
+          if (req.file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+              req.file.originalname.toLowerCase().endsWith('.xlsx')) {
+            console.log("📊 Excel 파일 감지, Input 시트 제거 처리 시작...");
+            
+            const processedPath = req.file.path.replace(/\.(xlsx?)$/i, '_processed.$1');
+            const removeResult = await removeAllInputSheets(req.file.path, processedPath);
+            
+            if (removeResult.success && existsSync(processedPath)) {
+              console.log(`✅ Input 시트 제거 완료: ${removeResult.removedSheets.join(', ')}`);
+              fileToStore = processedPath;
+              fileBuffer = readFileSync(processedPath);
+              processedFileName = req.file.filename.replace(/\.(xlsx?)$/i, '_processed.$1');
+              
+              // 원본 파일 삭제
+              try {
+                unlinkSync(req.file.path);
+              } catch (e) {
+                console.warn('원본 파일 삭제 실패:', e);
+              }
+            } else {
+              console.warn('⚠️ Input 시트 제거 실패, 원본 파일 사용:', removeResult.error);
+              fileBuffer = readFileSync(req.file.path);
+            }
+          } else {
+            // Excel이 아닌 파일은 원본 그대로 사용
+            fileBuffer = readFileSync(req.file.path);
+          }
           
           console.log(`📎 Saving Excel file attachment for order ${newOrder.orderNumber}:`, {
             orderId: newOrder.id,
             originalName: decodedOriginalName,
-            storedName: req.file.filename,
-            filePath: req.file.path,
-            fileSize: req.file.size,
+            storedName: processedFileName,
+            filePath: fileToStore,
+            fileSize: fileBuffer.length,
             mimeType: req.file.mimetype,
             uploadedBy: req.user.id
           });
@@ -366,33 +400,36 @@ router.post('/orders/bulk-create-simple', requireAuth, upload.single('excelFile'
           try {
             // Use relative path for database storage to avoid /tmp issues
             const relativePath = process.env.VERCEL 
-              ? req.file.filename  // Just store filename for Vercel
-              : req.file.path;     // Full path for local development
+              ? processedFileName  // Just store filename for Vercel
+              : fileToStore;       // Full path for local development
 
             // Read file data for Vercel environment (like PDF generation services)
             let fileData: string | undefined;
             if (process.env.VERCEL) {
-              try {
-                const fileBuffer = readFileSync(req.file.path);
-                fileData = fileBuffer.toString('base64');
-                console.log(`📎 File data encoded for Vercel: ${Math.round(fileBuffer.length / 1024)}KB -> ${Math.round(fileData.length / 1024)}KB base64`);
-              } catch (fileReadError) {
-                console.error('❌ Failed to read file for Vercel storage:', fileReadError);
-                // Continue without fileData as fallback
-              }
+              fileData = fileBuffer.toString('base64');
+              console.log(`📎 File data encoded for Vercel: ${Math.round(fileBuffer.length / 1024)}KB -> ${Math.round(fileData.length / 1024)}KB base64`);
             }
               
             const [savedAttachment] = await db.insert(attachments).values({
               orderId: newOrder.id,
               originalName: decodedOriginalName,
-              storedName: req.file.filename,
+              storedName: processedFileName,
               filePath: relativePath,
-              fileSize: req.file.size,
+              fileSize: fileBuffer.length,
               mimeType: req.file.mimetype,
               uploadedBy: req.user.id,
               uploadedAt: new Date(),
               ...(fileData && { fileData }) // Include fileData only if available
             }).returning();
+            
+            // 처리된 파일이 임시 파일인 경우 정리
+            if (fileToStore !== req.file.path && existsSync(fileToStore)) {
+              try {
+                unlinkSync(fileToStore);
+              } catch (e) {
+                console.warn('처리된 임시 파일 삭제 실패:', e);
+              }
+            }
             
             console.log(`✅ Excel file attachment saved with ID ${savedAttachment.id} for order ${newOrder.orderNumber}`);
           } catch (attachmentError) {

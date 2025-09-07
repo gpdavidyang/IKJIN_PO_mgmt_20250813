@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Plus, Save, ArrowLeft, Trash2, Edit } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -530,26 +530,34 @@ export default function OrderEdit() {
                 발주할 품목을 추가해주세요
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>품목명 *</TableHead>
-                    <TableHead>대분류</TableHead>
-                    <TableHead>중분류</TableHead>
-                    <TableHead>소분류</TableHead>
-                    <TableHead>수량 *</TableHead>
-                    <TableHead>단위</TableHead>
-                    <TableHead>단가</TableHead>
-                    <TableHead>규격</TableHead>
-                    <TableHead>비고</TableHead>
-                    <TableHead>총액</TableHead>
-                    <TableHead className="w-[100px]">작업</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {formData.items.map((item, index) => (
-                    <TableRow key={index}>
-                      <TableCell>
+              <div className="space-y-4">
+                {formData.items.map((item, index) => (
+                  <Card key={index} className="p-4 border bg-gradient-to-br from-gray-50 to-white hover:shadow-md transition-shadow">
+                    {/* 헤더: 순번과 삭제 버튼 */}
+                    <div className="flex justify-between items-center mb-4">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-sm bg-blue-50 text-blue-700 border-blue-200">
+                          품목 #{index + 1}
+                        </Badge>
+                        <span className="text-xs text-gray-500">
+                          {item.itemName ? `• ${item.itemName}` : ''}
+                        </span>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeItem(index)}
+                        className="h-8 w-8 text-gray-400 hover:text-red-600 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    {/* 첫 번째 행: 기본 정보 */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mb-3">
+                      <div className="col-span-2 sm:col-span-3 md:col-span-2">
+                        <Label className="text-xs font-medium text-gray-700 mb-1 block">품목명 *</Label>
                         <Select
                           value={item.itemId?.toString() || ""}
                           onValueChange={(value) => handleItemSelect(index, value)}
@@ -565,79 +573,10 @@ export default function OrderEdit() {
                             ))}
                           </SelectContent>
                         </Select>
-                      </TableCell>
-                      <TableCell>
-                        <Select
-                          value={item.majorCategory || "none"}
-                          onValueChange={(value) => {
-                            console.log(`Major category selected: ${value}`);
-                            handleCategoryChange(index, "major", value);
-                          }}
-                        >
-                          <SelectTrigger className="min-w-[120px]">
-                            <SelectValue placeholder="대분류 선택">
-                              {item.majorCategory && item.majorCategory !== "none" ? item.majorCategory : "대분류 선택"}
-                            </SelectValue>
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">선택 해제</SelectItem>
-                            {getMajorCategories().map((category: any) => (
-                              <SelectItem key={`major-${category.id}`} value={category.categoryName}>
-                                {category.categoryName}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell>
-                        <Select
-                          value={item.middleCategory || "none"}
-                          onValueChange={(value) => {
-                            console.log(`Middle category selected: ${value}`);
-                            handleCategoryChange(index, "middle", value);
-                          }}
-                          disabled={!item.majorCategory || item.majorCategory === "none"}
-                        >
-                          <SelectTrigger className="min-w-[120px]">
-                            <SelectValue placeholder={item.majorCategory && item.majorCategory !== "none" ? "중분류 선택" : "대분류 먼저 선택"}>
-                              {item.middleCategory && item.middleCategory !== "none" ? item.middleCategory : (item.majorCategory && item.majorCategory !== "none" ? "중분류 선택" : "대분류 먼저 선택")}
-                            </SelectValue>
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">선택 해제</SelectItem>
-                            {getMiddleCategories(item.majorCategory || "").map((category: any) => (
-                              <SelectItem key={`middle-${category.id}`} value={category.categoryName}>
-                                {category.categoryName}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell>
-                        <Select
-                          value={item.minorCategory || "none"}
-                          onValueChange={(value) => {
-                            console.log(`Minor category selected: ${value}`);
-                            handleCategoryChange(index, "minor", value);
-                          }}
-                          disabled={!item.middleCategory || item.middleCategory === "none"}
-                        >
-                          <SelectTrigger className="min-w-[120px]">
-                            <SelectValue placeholder={item.middleCategory && item.middleCategory !== "none" ? "소분류 선택" : "중분류 먼저 선택"}>
-                              {item.minorCategory && item.minorCategory !== "none" ? item.minorCategory : (item.middleCategory && item.middleCategory !== "none" ? "소분류 선택" : "중분류 먼저 선택")}
-                            </SelectValue>
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">선택 해제</SelectItem>
-                            {getMinorCategories(item.middleCategory || "").map((category: any) => (
-                              <SelectItem key={`minor-${category.id}`} value={category.categoryName}>
-                                {category.categoryName}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell>
+                      </div>
+                      
+                      <div>
+                        <Label className="text-xs font-medium text-gray-700 mb-1 block">수량 *</Label>
                         <Input
                           type="number"
                           value={item.quantity}
@@ -648,7 +587,6 @@ export default function OrderEdit() {
                             updateItem(index, "quantity", numValue);
                           }}
                           onBlur={(e) => {
-                            // Ensure minimum value of 1 on blur
                             if (Number(e.target.value) < 1) {
                               updateItem(index, "quantity", 1);
                             }
@@ -656,10 +594,11 @@ export default function OrderEdit() {
                           min="0.01"
                           step="0.01"
                           required
-                          className="w-24"
                         />
-                      </TableCell>
-                      <TableCell>
+                      </div>
+                      
+                      <div>
+                        <Label className="text-xs font-medium text-gray-700 mb-1 block">단위</Label>
                         <Select
                           value={item.unit || "EA"}
                           onValueChange={(value) => {
@@ -667,7 +606,7 @@ export default function OrderEdit() {
                             updateItem(index, "unit", value);
                           }}
                         >
-                          <SelectTrigger className="w-24">
+                          <SelectTrigger>
                             <SelectValue placeholder="단위 선택" />
                           </SelectTrigger>
                           <SelectContent>
@@ -720,46 +659,126 @@ export default function OrderEdit() {
                             <SelectItem value="줄">줄</SelectItem>
                           </SelectContent>
                         </Select>
-                      </TableCell>
-                      <TableCell>
+                      </div>
+                      
+                      <div>
+                        <Label className="text-xs font-medium text-gray-700 mb-1 block">단가</Label>
                         <Input
                           type="number"
                           value={item.unitPrice}
                           onChange={(e) => updateItem(index, "unitPrice", Number(e.target.value))}
                           min="0"
                         />
-                      </TableCell>
-                      <TableCell>
+                      </div>
+                      
+                      <div>
+                        <Label className="text-xs font-medium text-gray-700 mb-1 block">총액</Label>
+                        <div className="h-10 px-3 py-2 border rounded-md bg-blue-50 border-blue-200 flex items-center font-semibold text-blue-700">
+                          ₩{(Number(item.quantity) * Number(item.unitPrice)).toLocaleString('ko-KR')}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 두 번째 행: 상세 정보 */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 border-t border-gray-200 pt-3 mt-3">
+                      <div>
+                        <Label className="text-xs font-medium text-gray-700 mb-1 block">대분류</Label>
+                        <Select
+                          value={item.majorCategory || "none"}
+                          onValueChange={(value) => {
+                            console.log(`Major category selected: ${value}`);
+                            handleCategoryChange(index, "major", value);
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="대분류 선택">
+                              {item.majorCategory && item.majorCategory !== "none" ? item.majorCategory : "대분류 선택"}
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">선택 해제</SelectItem>
+                            {getMajorCategories().map((category: any) => (
+                              <SelectItem key={`major-${category.id}`} value={category.categoryName}>
+                                {category.categoryName}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div>
+                        <Label className="text-xs font-medium text-gray-700 mb-1 block">중분류</Label>
+                        <Select
+                          value={item.middleCategory || "none"}
+                          onValueChange={(value) => {
+                            console.log(`Middle category selected: ${value}`);
+                            handleCategoryChange(index, "middle", value);
+                          }}
+                          disabled={!item.majorCategory || item.majorCategory === "none"}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={item.majorCategory && item.majorCategory !== "none" ? "중분류 선택" : "대분류 먼저 선택"}>
+                              {item.middleCategory && item.middleCategory !== "none" ? item.middleCategory : (item.majorCategory && item.majorCategory !== "none" ? "중분류 선택" : "대분류 먼저 선택")}
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">선택 해제</SelectItem>
+                            {getMiddleCategories(item.majorCategory || "").map((category: any) => (
+                              <SelectItem key={`middle-${category.id}`} value={category.categoryName}>
+                                {category.categoryName}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div>
+                        <Label className="text-xs font-medium text-gray-700 mb-1 block">소분류</Label>
+                        <Select
+                          value={item.minorCategory || "none"}
+                          onValueChange={(value) => {
+                            console.log(`Minor category selected: ${value}`);
+                            handleCategoryChange(index, "minor", value);
+                          }}
+                          disabled={!item.middleCategory || item.middleCategory === "none"}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={item.middleCategory && item.middleCategory !== "none" ? "소분류 선택" : "중분류 먼저 선택"}>
+                              {item.minorCategory && item.minorCategory !== "none" ? item.minorCategory : (item.middleCategory && item.middleCategory !== "none" ? "소분류 선택" : "중분류 먼저 선택")}
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">선택 해제</SelectItem>
+                            {getMinorCategories(item.middleCategory || "").map((category: any) => (
+                              <SelectItem key={`minor-${category.id}`} value={category.categoryName}>
+                                {category.categoryName}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div>
+                        <Label className="text-xs font-medium text-gray-700 mb-1 block">규격</Label>
                         <Input
                           value={item.specification}
                           onChange={(e) => updateItem(index, "specification", e.target.value)}
                           placeholder="규격 입력"
                         />
-                      </TableCell>
-                      <TableCell>
+                      </div>
+                      
+                      <div>
+                        <Label className="text-xs font-medium text-gray-700 mb-1 block">비고</Label>
                         <Input
                           value={item.notes}
                           onChange={(e) => updateItem(index, "notes", e.target.value)}
                           placeholder="비고 입력"
                         />
-                      </TableCell>
-                      <TableCell>
-                        ₩{(Number(item.quantity) * Number(item.unitPrice)).toLocaleString('ko-KR')}
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeItem(index)}
-                        >
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
             )}
             
             {/* Items Summary */}

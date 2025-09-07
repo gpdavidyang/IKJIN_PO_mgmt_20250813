@@ -21264,39 +21264,66 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload5.single("excelFi
         }
         if (req.file) {
           const decodedOriginalName = req.file.originalname;
+          const { removeAllInputSheets: removeAllInputSheets2 } = (init_excel_input_sheet_remover(), __toCommonJS(excel_input_sheet_remover_exports));
+          let fileToStore = req.file.path;
+          let fileBuffer;
+          let processedFileName = req.file.filename;
+          if (req.file.mimetype === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" || req.file.originalname.toLowerCase().endsWith(".xlsx")) {
+            console.log("\u{1F4CA} Excel \uD30C\uC77C \uAC10\uC9C0, Input \uC2DC\uD2B8 \uC81C\uAC70 \uCC98\uB9AC \uC2DC\uC791...");
+            const processedPath = req.file.path.replace(/\.(xlsx?)$/i, "_processed.$1");
+            const removeResult = await removeAllInputSheets2(req.file.path, processedPath);
+            if (removeResult.success && existsSync(processedPath)) {
+              console.log(`\u2705 Input \uC2DC\uD2B8 \uC81C\uAC70 \uC644\uB8CC: ${removeResult.removedSheets.join(", ")}`);
+              fileToStore = processedPath;
+              fileBuffer = readFileSync(processedPath);
+              processedFileName = req.file.filename.replace(/\.(xlsx?)$/i, "_processed.$1");
+              try {
+                unlinkSync(req.file.path);
+              } catch (e) {
+                console.warn("\uC6D0\uBCF8 \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328:", e);
+              }
+            } else {
+              console.warn("\u26A0\uFE0F Input \uC2DC\uD2B8 \uC81C\uAC70 \uC2E4\uD328, \uC6D0\uBCF8 \uD30C\uC77C \uC0AC\uC6A9:", removeResult.error);
+              fileBuffer = readFileSync(req.file.path);
+            }
+          } else {
+            fileBuffer = readFileSync(req.file.path);
+          }
           console.log(`\u{1F4CE} Saving Excel file attachment for order ${newOrder.orderNumber}:`, {
             orderId: newOrder.id,
             originalName: decodedOriginalName,
-            storedName: req.file.filename,
-            filePath: req.file.path,
-            fileSize: req.file.size,
+            storedName: processedFileName,
+            filePath: fileToStore,
+            fileSize: fileBuffer.length,
             mimeType: req.file.mimetype,
             uploadedBy: req.user.id
           });
           try {
-            const relativePath = process.env.VERCEL ? req.file.filename : req.file.path;
+            const relativePath = process.env.VERCEL ? processedFileName : fileToStore;
             let fileData;
             if (process.env.VERCEL) {
-              try {
-                const fileBuffer = readFileSync(req.file.path);
-                fileData = fileBuffer.toString("base64");
-                console.log(`\u{1F4CE} File data encoded for Vercel: ${Math.round(fileBuffer.length / 1024)}KB -> ${Math.round(fileData.length / 1024)}KB base64`);
-              } catch (fileReadError) {
-                console.error("\u274C Failed to read file for Vercel storage:", fileReadError);
-              }
+              fileData = fileBuffer.toString("base64");
+              console.log(`\u{1F4CE} File data encoded for Vercel: ${Math.round(fileBuffer.length / 1024)}KB -> ${Math.round(fileData.length / 1024)}KB base64`);
             }
             const [savedAttachment] = await db.insert(attachments).values({
               orderId: newOrder.id,
               originalName: decodedOriginalName,
-              storedName: req.file.filename,
+              storedName: processedFileName,
               filePath: relativePath,
-              fileSize: req.file.size,
+              fileSize: fileBuffer.length,
               mimeType: req.file.mimetype,
               uploadedBy: req.user.id,
               uploadedAt: /* @__PURE__ */ new Date(),
               ...fileData && { fileData }
               // Include fileData only if available
             }).returning();
+            if (fileToStore !== req.file.path && existsSync(fileToStore)) {
+              try {
+                unlinkSync(fileToStore);
+              } catch (e) {
+                console.warn("\uCC98\uB9AC\uB41C \uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328:", e);
+              }
+            }
             console.log(`\u2705 Excel file attachment saved with ID ${savedAttachment.id} for order ${newOrder.orderNumber}`);
           } catch (attachmentError) {
             console.error(`\u274C Failed to save Excel attachment for order ${newOrder.orderNumber}:`, attachmentError);

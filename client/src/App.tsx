@@ -44,17 +44,18 @@ const OrderDetailStandard = createLazyComponent(() => import("@/pages/order-deta
 const OrderEdit = createLazyComponent(() => import("@/pages/order-edit"), 'OrderEdit');
 const OrderPreview = createLazyComponent(() => import("@/pages/order-preview"), 'OrderPreview');
 const CreateOrder = createNetworkAwareLazyComponent(() => import("@/pages/create-order"), 'CreateOrder');
-const CreateExtrusionOrder = createLazyComponent(() => import("@/pages/create-order-extrusion"), 'CreateExtrusionOrder');
-const CreatePanelOrder = createLazyComponent(() => import("@/pages/create-order-panel"), 'CreatePanelOrder');
-const CreateAccessoriesOrder = createLazyComponent(() => import("@/pages/create-order-accessories"), 'CreateAccessoriesOrder');
+// 사용하지 않는 발주서 생성 방법들 - 주석처리 (직접입력과 엑셀업로드만 사용)
+// const CreateExtrusionOrder = createLazyComponent(() => import("@/pages/create-order-extrusion"), 'CreateExtrusionOrder');
+// const CreatePanelOrder = createLazyComponent(() => import("@/pages/create-order-panel"), 'CreatePanelOrder');
+// const CreateAccessoriesOrder = createLazyComponent(() => import("@/pages/create-order-accessories"), 'CreateAccessoriesOrder');
 const CategoryManagement = createLazyComponent(() => import("@/pages/category-management"), 'CategoryManagement');
-const CreateStandardOrder = createLazyComponent(() => import("@/pages/create-order-standard-professional"), 'CreateStandardOrder');
-const CreateStandardOrderRefactored = createLazyComponent(() => import("@/pages/create-order-standard-refactored"), 'CreateStandardOrderRefactored');
-const CreateMaterialsOrder = createLazyComponent(() => import("@/pages/create-order-materials"), 'CreateMaterialsOrder');
+// const CreateStandardOrder = createLazyComponent(() => import("@/pages/create-order-standard-professional"), 'CreateStandardOrder');
+// const CreateStandardOrderRefactored = createLazyComponent(() => import("@/pages/create-order-standard-refactored"), 'CreateStandardOrderRefactored');
+// const CreateMaterialsOrder = createLazyComponent(() => import("@/pages/create-order-materials"), 'CreateMaterialsOrder');
 const CreateOrderExcel = createLazyComponent(() => DynamicFeatures.loadExcelPage(), 'CreateOrderExcel');
-const CreateOrderSimple = createLazyComponent(() => import("@/pages/create-order-simple"), 'CreateOrderSimple');
-const CreateOrderUnified = createLazyComponent(() => import("@/pages/create-order-unified"), 'CreateOrderUnified');
-const CreateOrderUnifiedV2 = createLazyComponent(() => import("@/pages/create-order-unified-v2"), 'CreateOrderUnifiedV2');
+// const CreateOrderSimple = createLazyComponent(() => import("@/pages/create-order-simple"), 'CreateOrderSimple');
+// const CreateOrderUnified = createLazyComponent(() => import("@/pages/create-order-unified"), 'CreateOrderUnified');
+// const CreateOrderUnifiedV2 = createLazyComponent(() => import("@/pages/create-order-unified-v2"), 'CreateOrderUnifiedV2');
 const Vendors = createNetworkAwareLazyComponent(() => DynamicFeatures.loadVendorList(), 'Vendors');
 const VendorDetail = createLazyComponent(() => DynamicFeatures.loadVendorDetail(), 'VendorDetail');
 const VendorEdit = createLazyComponent(() => import("@/pages/vendor-edit"), 'VendorEdit');
@@ -242,7 +243,8 @@ const Layout = React.memo(function Layout() {
                   <CreateOrder />
                 </Suspense>
               </Route>
-              <Route path="/create-order/extrusion">
+              {/* 사용하지 않는 발주서 생성 라우트들 - 주석처리 (직접입력과 엑셀업로드만 사용) */}
+              {/* <Route path="/create-order/extrusion">
                 <Suspense fallback={<FormLoadingFallback />}>
                   <CreateExtrusionOrder />
                 </Suspense>
@@ -296,13 +298,13 @@ const Layout = React.memo(function Layout() {
                 <Suspense fallback={<FormLoadingFallback />}>
                   <CreateMaterialsOrder />
                 </Suspense>
-              </Route>
+              </Route> */}
               <Route path="/create-order/excel">
                 <Suspense fallback={<FormLoadingFallback />}>
                   <CreateOrderExcel />
                 </Suspense>
               </Route>
-              <Route path="/create-order/simple">
+              {/* <Route path="/create-order/simple">
                 <Suspense fallback={<FormLoadingFallback />}>
                   <CreateOrderSimple />
                 </Suspense>
@@ -316,7 +318,7 @@ const Layout = React.memo(function Layout() {
                 <Suspense fallback={<FormLoadingFallback />}>
                   <CreateOrderUnifiedV2 />
                 </Suspense>
-              </Route>
+              </Route> */}
               
               {/* Vendor Routes */}
               <Route path="/vendors/:id/edit">
