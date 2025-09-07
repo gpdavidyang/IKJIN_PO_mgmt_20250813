@@ -51,7 +51,7 @@ export default function DashboardProfessional() {
 
   // Check if dark mode is active - MEMOIZED to prevent recalculation
   const isDarkMode = useMemo(() => {
-    return actualTheme === 'dark' && document.documentElement.classList.contains('dark');
+    return actualTheme === 'dark';
   }, [actualTheme]);
 
   // Redirect to login if not authenticated
