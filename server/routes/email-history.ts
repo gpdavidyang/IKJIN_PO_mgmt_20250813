@@ -134,7 +134,7 @@ router.get("/orders-email-status", requireAuth, async (req, res) => {
         .select({
           id: purchaseOrders.id,
           orderNumber: purchaseOrders.orderNumber,
-          emailStatus: emailSendHistory.status,
+          emailStatus: emailSendHistory.status, // This maps to sending_status column
           lastSentAt: emailSendHistory.sentAt,
           recipients: emailSendHistory.recipients,
         })

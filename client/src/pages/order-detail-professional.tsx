@@ -328,6 +328,19 @@ export default function OrderDetailProfessional() {
         });
         setEmailDialogOpen(false);
         setSelectedOrder(null);
+
+        // 🔄 Cache invalidation after successful email sending
+        queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+        queryClient.invalidateQueries({ queryKey: [`/api/orders/${orderId}`] });
+        queryClient.invalidateQueries({ queryKey: ["orders-optimized"] });
+        queryClient.invalidateQueries({ queryKey: ["orders-metadata"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+
+        // Force refetch with no cache for critical queries to immediately update UI
+        queryClient.refetchQueries({ 
+          queryKey: [`/api/orders/${orderId}`], 
+          type: 'active' 
+        });
       } else {
         throw new Error('이메일 발송 실패');
       }

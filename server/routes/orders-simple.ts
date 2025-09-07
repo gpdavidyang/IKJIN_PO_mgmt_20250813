@@ -10,6 +10,7 @@ import { readFileSync, existsSync, unlinkSync } from 'fs';
 import { z } from 'zod';
 import { ProfessionalPDFGenerationService } from '../services/professional-pdf-generation-service.js';
 import { decodeKoreanFilename } from '../utils/korean-filename';
+import { removeAllInputSheets } from '../utils/excel-input-sheet-remover';
 
 const router = Router();
 
@@ -139,7 +140,6 @@ router.post('/orders/bulk-create-simple', requireAuth, upload.single('excelFile'
     if (req.file && (req.file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
         req.file.originalname.toLowerCase().endsWith('.xlsx'))) {
       console.log("📊 Processing Excel file for all orders...");
-      const { removeAllInputSheets } = require('../utils/excel-input-sheet-remover');
       const decodedOriginalName = req.file.originalname;
       
       let fileToStore = req.file.path;
@@ -396,6 +396,24 @@ router.post('/orders/bulk-create-simple', requireAuth, upload.single('excelFile'
         // Save Excel file attachment for this order
         if (processedExcelFile) {
           console.log(`📎 Saving Excel file attachment for order ${newOrder.orderNumber}`);
+          
+          // 📋 Excel 파일명 표준화: IKJIN_[PO번호]_[날짜].xlsx 형식으로 변환
+          console.log("📋 Excel 파일명 표준화 시작:", processedExcelFile.originalName);
+          
+          // 현재 날짜를 YYYYMMDD 형식으로 포맷
+          const today = new Date();
+          const dateStr = today.getFullYear().toString() + 
+                         (today.getMonth() + 1).toString().padStart(2, '0') + 
+                         today.getDate().toString().padStart(2, '0');
+          
+          // 표준화된 파일명 생성: IKJIN_PO-2025-XXXXX_20250907.xlsx
+          const standardizedName = `IKJIN_${newOrder.orderNumber}_${dateStr}.xlsx`;
+          
+          // 파일명 업데이트
+          processedExcelFile.originalName = standardizedName;
+          processedExcelFile.storedName = `${Date.now()}-${standardizedName}`; // 타임스탬프 추가로 중복 방지
+          
+          console.log(`✅ Excel 파일명 표준화 완료: → ${standardizedName}`);
           
           try {
             // Use relative path for database storage to avoid /tmp issues

@@ -66,7 +66,7 @@ export function EmailHistoryModal({
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      sent: { variant: "default" as const, label: "발송됨" },
+      sent: { variant: "default" as const, label: "발주완료" },
       opened: { variant: "success" as const, label: "열람됨" },
       clicked: { variant: "secondary" as const, label: "클릭됨" },
       failed: { variant: "destructive" as const, label: "실패" },

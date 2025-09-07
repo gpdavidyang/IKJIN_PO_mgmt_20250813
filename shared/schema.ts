@@ -910,7 +910,11 @@ export type ProjectHistory = typeof projectHistory.$inferSelect;
 export type InsertProjectHistory = z.infer<typeof insertProjectHistorySchema>;
 
 // UI terminology types
-export const insertUiTermSchema = createInsertSchema(uiTerms);
+export const insertUiTermSchema = createInsertSchema(uiTerms).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
 export type UiTerm = typeof uiTerms.$inferSelect;
 export type InsertUiTerm = z.infer<typeof insertUiTermSchema>;
 

@@ -40,7 +40,7 @@ async function updateOrderStatusAfterEmail(orderNumber: string): Promise<void> {
   await database.db.update(purchaseOrders)
     .set({
       orderStatus: '발주완료', // 이메일 발송 완료 후 '발주완료' 상태로 변경
-      status: 'completed',
+      status: 'sent', // Frontend expects 'sent' status for email history button
       updatedAt: new Date()
     })
     .where(eq(purchaseOrders.orderNumber, orderNumber));
@@ -361,11 +361,34 @@ router.post("/orders", requireAuth, upload.array('attachments'), async (req, res
 
         const base64Data = fileBuffer.toString('base64');
         
+        // 📋 Excel 파일명 표준화: IKJIN_[PO번호]_[날짜].xlsx 형식으로 변환
+        let finalOriginalName = decodedFilename;
+        let finalStoredName = file.filename;
+        
+        if (file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+            decodedFilename.toLowerCase().endsWith('.xlsx')) {
+          console.log("📋 Excel 파일명 표준화 시작:", decodedFilename);
+          
+          // 현재 날짜를 YYYYMMDD 형식으로 포맷
+          const today = new Date();
+          const dateStr = today.getFullYear().toString() + 
+                         (today.getMonth() + 1).toString().padStart(2, '0') + 
+                         today.getDate().toString().padStart(2, '0');
+          
+          // 표준화된 파일명 생성: IKJIN_PO-2025-XXXXX_20250907.xlsx
+          const standardizedName = `IKJIN_${order.orderNumber}_${dateStr}.xlsx`;
+          
+          finalOriginalName = standardizedName;
+          finalStoredName = `${Date.now()}-${standardizedName}`; // 타임스탬프 추가로 중복 방지
+          
+          console.log(`✅ Excel 파일명 표준화 완료: ${decodedFilename} → ${standardizedName}`);
+        }
+        
         const attachmentData: any = {
           orderId: order.id,
-          originalName: decodedFilename,
-          storedName: file.filename,
-          filePath: `db://${file.filename}`, // Use db:// prefix for database storage
+          originalName: finalOriginalName,
+          storedName: finalStoredName,
+          filePath: `db://${finalStoredName}`, // Use db:// prefix for database storage
           fileSize: fileBuffer.length,
           mimeType: file.mimetype,
           uploadedBy: userId,

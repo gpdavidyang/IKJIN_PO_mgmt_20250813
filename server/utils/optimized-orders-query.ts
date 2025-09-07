@@ -210,10 +210,10 @@ export class OptimizedOrdersService {
         userName: users.name,
         // PDF attachment status - use correct column names (database uses snake_case)
         hasPdf: sql<boolean>`EXISTS(SELECT 1 FROM attachments WHERE attachments.order_id = ${purchaseOrders.id} AND attachments.mime_type = 'application/pdf')`,
-        // Email statistics from email_send_history
-        totalEmailsSent: sql<number>`COALESCE((SELECT COUNT(*) FROM ${emailSendHistory} WHERE ${emailSendHistory.orderId} = ${purchaseOrders.id}), 0)`,
-        emailStatus: sql<string | null>`(SELECT ${emailSendHistory.status} FROM ${emailSendHistory} WHERE ${emailSendHistory.orderId} = ${purchaseOrders.id} ORDER BY ${emailSendHistory.sentAt} DESC LIMIT 1)`,
-        emailSentAt: sql<string | null>`(SELECT ${emailSendHistory.sentAt} FROM ${emailSendHistory} WHERE ${emailSendHistory.orderId} = ${purchaseOrders.id} ORDER BY ${emailSendHistory.sentAt} DESC LIMIT 1)`,
+        // Email statistics from email_send_history - use correct column name: sending_status
+        totalEmailsSent: sql<number>`COALESCE((SELECT COUNT(*) FROM email_sending_history WHERE order_id = ${purchaseOrders.id}), 0)`,
+        emailStatus: sql<string | null>`(SELECT sending_status FROM email_sending_history WHERE order_id = ${purchaseOrders.id} ORDER BY sent_at DESC LIMIT 1)`,
+        emailSentAt: sql<string | null>`(SELECT sent_at FROM email_sending_history WHERE order_id = ${purchaseOrders.id} ORDER BY sent_at DESC LIMIT 1)`,
       })
       .from(purchaseOrders)
       .leftJoin(vendors, eq(purchaseOrders.vendorId, vendors.id))

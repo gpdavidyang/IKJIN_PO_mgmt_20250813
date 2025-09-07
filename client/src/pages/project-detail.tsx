@@ -146,7 +146,7 @@ export default function ProjectDetail() {
     switch (status) {
       case 'pending': return '대기중';
       case 'approved': return '승인됨';
-      case 'sent': return '발송됨';
+      case 'sent': return '발주완료';
       case 'completed': return '완료됨';
       default: return status;
     }

@@ -345,7 +345,7 @@ export default function Reports() {
         case 'draft': return '임시 저장';
         case 'pending': return '승인 대기';
         case 'approved': return '승인 완료';
-        case 'sent': return '발송됨';
+        case 'sent': return '발주완료';
         case 'completed': return '발주 완료';
         case 'rejected': return '반려';
         default: return status;
@@ -940,7 +940,7 @@ export default function Reports() {
                       <SelectItem value="draft">임시 저장</SelectItem>
                       <SelectItem value="pending">승인 대기</SelectItem>
                       <SelectItem value="approved">승인 완료</SelectItem>
-                      <SelectItem value="sent">발송됨</SelectItem>
+                      <SelectItem value="sent">발주완료</SelectItem>
                       <SelectItem value="completed">발주 완료</SelectItem>
                       <SelectItem value="rejected">반려</SelectItem>
                     </SelectContent>
@@ -1477,7 +1477,7 @@ export default function Reports() {
                             {order.status === 'draft' ? '임시 저장' :
                              order.status === 'pending' ? '승인 대기' :
                              order.status === 'approved' ? '진행 중' :
-                             order.status === 'sent' ? '발송됨' :
+                             order.status === 'sent' ? '발주완료' :
                              order.status === 'completed' ? '완료' :
                              order.status === 'rejected' ? '반려' :
                              order.status}

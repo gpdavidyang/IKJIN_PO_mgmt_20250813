@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Download, Filter, ChevronUp, ChevronDown, FileText, Eye, Edit, Mail, Clock, CheckCircle, XCircle, AlertCircle, Calendar, Building, Users, DollarSign, Send, ChevronsUpDown, ChevronLeft, ChevronRight, Trash2, Info, Circle, PlayCircle, MailCheck, Truck } from "lucide-react";
+import { Plus, Search, Download, Filter, ChevronUp, ChevronDown, FileText, Eye, Edit, Mail, Clock, CheckCircle, XCircle, AlertCircle, Calendar, Building, Users, DollarSign, Send, ChevronsUpDown, ChevronLeft, ChevronRight, Trash2, Info, Circle, PlayCircle, MailCheck, Truck, RefreshCw } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -846,35 +846,67 @@ export default function OrdersProfessionalFast() {
   const projects = metadata?.projects || data?.metadata?.projects || [];
   const users = metadata?.users || data?.metadata?.users || [];
   
-  // Email status rendering
+  // Email status rendering - improved with more status types
   const renderEmailStatus = (order: Order) => {
-    if (!order.emailStatus || order.totalEmailsSent === 0) {
+    // If no email status and no emails sent, show 미발송
+    if (!order.emailStatus && (!order.totalEmailsSent || order.totalEmailsSent === 0)) {
       return (
         <span className="text-xs text-gray-500 dark:text-gray-400">미발송</span>
       );
     }
 
-    if (order.emailStatus === 'sent') {
-      return (
-        <div className="flex items-center gap-1">
-          <Send className="h-3 w-3 text-blue-600 dark:text-blue-400" />
-          <span className="text-xs text-blue-600 dark:text-blue-400">발송됨</span>
-        </div>
-      );
+    // Show count if emails were sent
+    const emailCount = order.totalEmailsSent || 0;
+    
+    switch (order.emailStatus) {
+      case 'sent':
+      case 'delivered':
+        return (
+          <div className="flex items-center gap-1">
+            <Send className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+            <span className="text-xs text-blue-600 dark:text-blue-400">
+              발송됨 {emailCount > 1 ? `(${emailCount})` : ''}
+            </span>
+          </div>
+        );
+      case 'opened':
+      case 'read':
+        return (
+          <div className="flex items-center gap-1">
+            <Mail className="h-3 w-3 text-green-600 dark:text-green-400" />
+            <span className="text-xs text-green-600 dark:text-green-400">
+              열람됨 {emailCount > 1 ? `(${emailCount})` : ''}
+            </span>
+          </div>
+        );
+      case 'pending':
+        return (
+          <div className="flex items-center gap-1">
+            <RefreshCw className="h-3 w-3 text-yellow-600 dark:text-yellow-400" />
+            <span className="text-xs text-yellow-600 dark:text-yellow-400">발송중</span>
+          </div>
+        );
+      case 'failed':
+        return (
+          <div className="flex items-center gap-1">
+            <AlertCircle className="h-3 w-3 text-red-600 dark:text-red-400" />
+            <span className="text-xs text-red-600 dark:text-red-400">실패</span>
+          </div>
+        );
+      default:
+        // If there's an email count but unknown status, show count with neutral state
+        if (emailCount > 0) {
+          return (
+            <div className="flex items-center gap-1">
+              <Send className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+              <span className="text-xs text-blue-600 dark:text-blue-400">발송됨 ({emailCount})</span>
+            </div>
+          );
+        }
+        return (
+          <span className="text-xs text-gray-500 dark:text-gray-400">미발송</span>
+        );
     }
-
-    if (order.emailStatus === 'opened') {
-      return (
-        <div className="flex items-center gap-1">
-          <Mail className="h-3 w-3 text-green-600 dark:text-green-400" />
-          <span className="text-xs text-green-600 dark:text-green-400">열람됨</span>
-        </div>
-      );
-    }
-
-    return (
-      <span className="text-xs text-gray-500 dark:text-gray-400">미발송</span>
-    );
   };
 
   // Alias for consistency

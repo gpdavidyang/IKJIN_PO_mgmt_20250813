@@ -11,7 +11,7 @@ export const getStatusText = (status: string): string => {
     case "created":
       return "발주생성";
     case "sent":
-      return "발송됨";
+      return "발주완료";
     case "delivered":
       return "납품완료";
     case "completed":
