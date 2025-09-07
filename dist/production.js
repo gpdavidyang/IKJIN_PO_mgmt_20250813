@@ -1644,6 +1644,232 @@ var init_excel_input_sheet_remover = __esm({
   }
 });
 
+// server/utils/korean-font-manager.ts
+import * as fs6 from "fs";
+import * as path4 from "path";
+var KoreanFontManager, fontManager;
+var init_korean_font_manager = __esm({
+  "server/utils/korean-font-manager.ts"() {
+    "use strict";
+    KoreanFontManager = class _KoreanFontManager {
+      constructor() {
+        this.fontCache = /* @__PURE__ */ new Map();
+        this.base64Cache = /* @__PURE__ */ new Map();
+        this.initializeFonts();
+      }
+      static {
+        // 지원 폰트 목록 (우선순위 순)
+        this.FONT_PRIORITIES = [
+          {
+            name: "NotoSansKR",
+            path: path4.join(process.cwd(), "fonts", "NotoSansKR-Regular.ttf"),
+            available: false
+          },
+          {
+            name: "NanumGothic",
+            path: path4.join(process.cwd(), "fonts", "NanumGothic-Regular.ttf"),
+            available: false
+          },
+          // Fallback 시스템 폰트 (로컬 환경용)
+          {
+            name: "AppleGothic",
+            path: "/System/Library/Fonts/Supplemental/AppleGothic.ttf",
+            available: false
+          },
+          {
+            name: "AppleSDGothicNeo",
+            path: "/System/Library/Fonts/AppleSDGothicNeo.ttc",
+            available: false
+          },
+          {
+            name: "MalgunGothic",
+            path: "C:\\Windows\\Fonts\\malgun.ttf",
+            available: false
+          },
+          {
+            name: "NanumGothicLinux",
+            path: "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",
+            available: false
+          }
+        ];
+      }
+      static getInstance() {
+        if (!_KoreanFontManager.instance) {
+          _KoreanFontManager.instance = new _KoreanFontManager();
+        }
+        return _KoreanFontManager.instance;
+      }
+      /**
+       * 사용 가능한 폰트 초기화 및 검색
+       */
+      initializeFonts() {
+        console.log("\u{1F50D} [FontManager] \uD55C\uAE00 \uD3F0\uD2B8 \uCD08\uAE30\uD654 \uC2DC\uC791...");
+        for (const font of _KoreanFontManager.FONT_PRIORITIES) {
+          try {
+            if (fs6.existsSync(font.path)) {
+              const stats = fs6.statSync(font.path);
+              font.available = true;
+              font.size = stats.size;
+              this.fontCache.set(font.name, { ...font });
+              console.log(`\u2705 [FontManager] \uD3F0\uD2B8 \uBC1C\uACAC: ${font.name} (${Math.round(stats.size / 1024)}KB)`);
+            } else {
+              font.available = false;
+              console.log(`\u274C [FontManager] \uD3F0\uD2B8 \uC5C6\uC74C: ${font.name} - ${font.path}`);
+            }
+          } catch (error) {
+            font.available = false;
+            console.log(`\u26A0\uFE0F [FontManager] \uD3F0\uD2B8 \uC811\uADFC \uC2E4\uD328: ${font.name} - ${error}`);
+          }
+        }
+        const availableFonts = Array.from(this.fontCache.values()).filter((f) => f.available);
+        console.log(`\u{1F4CA} [FontManager] \uCD1D ${availableFonts.length}\uAC1C \uD55C\uAE00 \uD3F0\uD2B8 \uC0AC\uC6A9 \uAC00\uB2A5`);
+      }
+      /**
+       * 최적의 한글 폰트 선택
+       */
+      getBestKoreanFont() {
+        for (const font of _KoreanFontManager.FONT_PRIORITIES) {
+          const cachedFont = this.fontCache.get(font.name);
+          if (cachedFont && cachedFont.available) {
+            return cachedFont;
+          }
+        }
+        return null;
+      }
+      /**
+       * 폰트를 Base64로 인코딩 (서버리스 환경용)
+       */
+      async getFontAsBase64(fontName) {
+        try {
+          const font = fontName ? this.fontCache.get(fontName) : this.getBestKoreanFont();
+          if (!font || !font.available) {
+            console.warn(`\u26A0\uFE0F [FontManager] \uD3F0\uD2B8 \uC0AC\uC6A9 \uBD88\uAC00: ${fontName || "auto-select"}`);
+            return null;
+          }
+          const cacheKey = font.name;
+          if (this.base64Cache.has(cacheKey)) {
+            console.log(`\u{1F4BE} [FontManager] Base64 \uCE90\uC2DC \uD788\uD2B8: ${font.name}`);
+            return this.base64Cache.get(cacheKey);
+          }
+          const fontBuffer = fs6.readFileSync(font.path);
+          const base64Data = fontBuffer.toString("base64");
+          this.base64Cache.set(cacheKey, base64Data);
+          console.log(`\u2705 [FontManager] Base64 \uC778\uCF54\uB529 \uC644\uB8CC: ${font.name} (${Math.round(base64Data.length / 1024)}KB)`);
+          return base64Data;
+        } catch (error) {
+          console.error(`\u274C [FontManager] Base64 \uC778\uCF54\uB529 \uC2E4\uD328:`, error);
+          return null;
+        }
+      }
+      /**
+       * PDFKit에서 사용할 폰트 버퍼 반환
+       */
+      getFontBuffer(fontName) {
+        try {
+          const font = fontName ? this.fontCache.get(fontName) : this.getBestKoreanFont();
+          if (!font || !font.available) {
+            return null;
+          }
+          return fs6.readFileSync(font.path);
+        } catch (error) {
+          console.error(`\u274C [FontManager] \uD3F0\uD2B8 \uBC84\uD37C \uB85C\uB4DC \uC2E4\uD328:`, error);
+          return null;
+        }
+      }
+      /**
+       * 사용 가능한 폰트 목록 반환
+       */
+      getAvailableFonts() {
+        return Array.from(this.fontCache.values()).filter((f) => f.available);
+      }
+      /**
+       * 폰트 지원 상태 보고서
+       */
+      getFontReport() {
+        const availableFonts = this.getAvailableFonts();
+        const bestFont = this.getBestKoreanFont();
+        return {
+          environment: process.env.VERCEL ? "Vercel" : "Local",
+          totalFonts: _KoreanFontManager.FONT_PRIORITIES.length,
+          availableFonts: availableFonts.length,
+          recommendedFont: bestFont?.name || null,
+          fonts: availableFonts
+        };
+      }
+      /**
+       * 한글 텍스트 안전 변환 (폰트 없을 때 대체)
+       */
+      safeKoreanText(text2, hasKoreanFont = true) {
+        if (!text2) return "";
+        if (hasKoreanFont) {
+          return text2.replace(/[\x00-\x1F\x7F]/g, "").replace(/[\u2028\u2029]/g, "").trim();
+        }
+        const koreanToEnglish = {
+          "\uAD6C\uB9E4\uBC1C\uC8FC\uC11C": "Purchase Order",
+          "\uBC1C\uC8FC\uC11C": "Purchase Order",
+          "\uBC1C\uC8FC\uBC88\uD638": "Order No",
+          "\uBC1C\uC8FC\uC5C5\uCCB4": "Issuer Company",
+          "\uC218\uC8FC\uC5C5\uCCB4": "Vendor Company",
+          "\uAC70\uB798\uCC98": "Vendor",
+          "\uD488\uBAA9\uBA85": "Item Name",
+          "\uD488\uBAA9": "Item",
+          "\uADDC\uACA9": "Specification",
+          "\uC218\uB7C9": "Quantity",
+          "\uB2E8\uC704": "Unit",
+          "\uB2E8\uAC00": "Unit Price",
+          "\uAE08\uC561": "Amount",
+          "\uD569\uACC4": "Total",
+          "\uCD1D \uAE08\uC561": "Total Amount",
+          "\uC18C\uACC4": "Subtotal",
+          "\uBD80\uAC00\uC138": "VAT",
+          "\uC0AC\uC5C5\uC790\uB4F1\uB85D\uBC88\uD638": "Business Registration No",
+          "\uC0AC\uC5C5\uC790\uBC88\uD638": "Business No",
+          "\uB300\uD45C\uC790": "Representative",
+          "\uB2F4\uB2F9\uC790": "Contact Person",
+          "\uC5F0\uB77D\uCC98": "Phone",
+          "\uC804\uD654\uBC88\uD638": "Phone",
+          "\uC8FC\uC18C": "Address",
+          "\uC774\uBA54\uC77C": "Email",
+          "\uD604\uC7A5\uBA85": "Project Name",
+          "\uD604\uC7A5\uC815\uBCF4": "Project Info",
+          "\uD604\uC7A5": "Project",
+          "\uBC1C\uC8FC\uC77C": "Order Date",
+          "\uB0A9\uAE30\uC77C": "Delivery Date",
+          "\uB4F1\uB85D\uC77C": "Created Date",
+          "\uC791\uC131\uC790": "Creator",
+          "\uD2B9\uC774\uC0AC\uD56D": "Remarks",
+          "\uBE44\uACE0": "Notes",
+          "\uCC38\uACE0\uC0AC\uD56D": "Reference",
+          "\uC5C5\uCCB4\uBA85": "Company Name",
+          "\uC77C\uC815": "Schedule",
+          "\uC21C\uBC88": "No"
+        };
+        let result = text2;
+        for (const [korean, english] of Object.entries(koreanToEnglish)) {
+          result = result.replace(new RegExp(korean, "g"), english);
+        }
+        if (/[ᄀ-ᇿ㄰-㆏ꥠ-꥿가-힯ힰ-퟿]/g.test(result)) {
+          result = result.replace(/[ᄀ-ᇿ㄰-㆏ꥠ-꥿가-힯ힰ-퟿]+/g, "[Korean Text]");
+        }
+        return result.replace(/[\x00-\x1F\x7F]/g, "").replace(/[\u2028\u2029]/g, "").trim();
+      }
+      /**
+       * Vercel 환경에서 폰트 최적화 상태 확인
+       */
+      isVercelOptimized() {
+        if (!process.env.VERCEL) {
+          return true;
+        }
+        const projectFonts = this.getAvailableFonts().filter(
+          (font) => font.path.includes(process.cwd())
+        );
+        return projectFonts.length > 0;
+      }
+    };
+    fontManager = KoreanFontManager.getInstance();
+  }
+});
+
 // server/utils/email-settings-encryption.ts
 import crypto2 from "crypto";
 var EmailSettingsEncryption;
@@ -2074,8 +2300,8 @@ var professional_pdf_generation_service_exports = {};
 __export(professional_pdf_generation_service_exports, {
   ProfessionalPDFGenerationService: () => ProfessionalPDFGenerationService
 });
-import * as fs6 from "fs";
-import * as path4 from "path";
+import * as fs7 from "fs";
+import * as path5 from "path";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import { eq as eq9, desc as desc5 } from "drizzle-orm";
@@ -2085,6 +2311,7 @@ var init_professional_pdf_generation_service = __esm({
     "use strict";
     init_db();
     init_schema();
+    init_korean_font_manager();
     ProfessionalPDFGenerationService = class {
       static async generateProfessionalPDF(orderData) {
         if (process.env.VERCEL) {
@@ -2103,7 +2330,7 @@ var init_professional_pdf_generation_service = __esm({
         }
       }
       static {
-        this.uploadDir = process.env.VERCEL ? "/tmp/pdf" : path4.join(process.cwd(), "uploads/pdf");
+        this.uploadDir = process.env.VERCEL ? "/tmp/pdf" : path5.join(process.cwd(), "uploads/pdf");
       }
       static {
         this.TEMPLATE_VERSION = "v2.0.0";
@@ -2350,12 +2577,12 @@ var init_professional_pdf_generation_service = __esm({
             filePath = `professional://${fileName}`;
             console.log(`\u2705 [ProfessionalPDF] PDF \uC0DD\uC131 \uC644\uB8CC (Vercel): ${fileName}, \uD06C\uAE30: ${Math.round(pdfBuffer.length / 1024)}KB`);
           } else {
-            const tempDir = path4.join(this.uploadDir, "professional", String((/* @__PURE__ */ new Date()).getFullYear()));
-            if (!fs6.existsSync(tempDir)) {
-              fs6.mkdirSync(tempDir, { recursive: true });
+            const tempDir = path5.join(this.uploadDir, "professional", String((/* @__PURE__ */ new Date()).getFullYear()));
+            if (!fs7.existsSync(tempDir)) {
+              fs7.mkdirSync(tempDir, { recursive: true });
             }
-            filePath = path4.join(tempDir, fileName);
-            fs6.writeFileSync(filePath, pdfBuffer);
+            filePath = path5.join(tempDir, fileName);
+            fs7.writeFileSync(filePath, pdfBuffer);
             const [attachment] = await db2.insert(attachments).values({
               orderId,
               originalName: fileName,
@@ -2993,243 +3220,194 @@ var init_professional_pdf_generation_service = __esm({
        * PDFKit으로 전문적인 발주서 PDF 생성
        */
       static async generateProfessionalPDFWithPDFKit(orderData) {
-        const PDFKitDocument = (await import("pdfkit")).default;
-        const fs22 = await import("fs");
-        return new Promise((resolve, reject) => {
-          try {
-            const doc = new PDFKitDocument({
-              size: "A4",
-              margins: { top: 20, bottom: 20, left: 20, right: 20 },
-              autoFirstPage: true
-            });
-            const buffers = [];
-            doc.on("data", buffers.push.bind(buffers));
-            doc.on("end", () => resolve(Buffer.concat(buffers)));
-            doc.on("error", reject);
-            console.log("\u{1F4DD} [ProfessionalPDF] PDFKit\uC73C\uB85C PDF \uC0DD\uC131 (\uD55C\uAE00 \uD3F0\uD2B8 \uB4F1\uB85D)");
-            let koreanFontPath = null;
-            const possibleFonts = [
-              // 프로젝트에 포함된 폰트 우선 사용
-              path4.join(process.cwd(), "fonts", "NotoSansKR-Regular.ttf"),
-              path4.join(process.cwd(), "fonts", "NanumGothic.ttf"),
-              path4.join(__dirname, "../../fonts", "NotoSansKR-Regular.ttf"),
-              path4.join(__dirname, "../../fonts", "NanumGothic.ttf"),
-              // 시스템 폰트
-              "/System/Library/Fonts/Supplemental/AppleGothic.ttf",
-              // macOS
-              "/System/Library/Fonts/AppleSDGothicNeo.ttc",
-              // macOS AppleSDGothicNeo
-              "/System/Library/Fonts/Supplemental/AppleMyungjo.ttf",
-              // macOS 명조
-              "/System/Library/Fonts/NanumGothic.ttc",
-              // macOS Nanum Gothic
-              "C:\\Windows\\Fonts\\malgun.ttf",
-              // Windows
-              "C:\\Windows\\Fonts\\gulim.ttf",
-              // Windows 굴림
-              "C:\\Windows\\Fonts\\batang.ttc",
-              // Windows 바탕
-              "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",
-              // Linux
-              "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
-              // Linux Noto
-              "/usr/share/fonts/truetype/fonts-nanum/NanumGothic.ttf"
-              // Linux Nanum alternative
-            ];
-            for (const fontPath of possibleFonts) {
+        try {
+          const PDFKitDocument = (await import("pdfkit")).default;
+          const fs23 = await import("fs");
+          return new Promise((resolve, reject) => {
+            try {
+              const doc = new PDFKitDocument({
+                size: "A4",
+                margins: { top: 20, bottom: 20, left: 20, right: 20 },
+                autoFirstPage: true
+              });
+              const buffers = [];
+              doc.on("data", buffers.push.bind(buffers));
+              doc.on("end", () => resolve(Buffer.concat(buffers)));
+              doc.on("error", reject);
+              console.log("\u{1F4DD} [ProfessionalPDF] PDFKit\uC73C\uB85C PDF \uC0DD\uC131 (\uD55C\uAE00 \uD3F0\uD2B8 \uCD5C\uC801\uD654 \uB85C\uB529)");
+              let hasKoreanFont = false;
+              let selectedFont = null;
               try {
-                if (fs22.existsSync(fontPath)) {
-                  koreanFontPath = fontPath;
-                  console.log(`\u2705 [ProfessionalPDF] \uD55C\uAE00 \uD3F0\uD2B8 \uBC1C\uACAC: ${fontPath}`);
-                  break;
+                selectedFont = fontManager.getBestKoreanFont();
+                if (selectedFont && selectedFont.available) {
+                  console.log(`\u{1F3AF} [ProfessionalPDF] \uC120\uD0DD\uB41C \uD55C\uAE00 \uD3F0\uD2B8: ${selectedFont.name}`);
+                  if (process.env.VERCEL) {
+                    console.log("\u2601\uFE0F [ProfessionalPDF] Vercel \uD658\uACBD: Base64 \uD3F0\uD2B8 \uB85C\uB529 \uBC29\uC2DD");
+                    const fontBuffer = fontManager.getFontBuffer(selectedFont.name);
+                    if (fontBuffer) {
+                      doc.registerFont("Korean", fontBuffer);
+                      doc.font("Korean");
+                      hasKoreanFont = true;
+                      console.log("\u2705 [ProfessionalPDF] Vercel \uD658\uACBD\uC5D0\uC11C \uD55C\uAE00 \uD3F0\uD2B8 \uB4F1\uB85D \uC131\uACF5");
+                    } else {
+                      throw new Error("FontBuffer \uB85C\uB4DC \uC2E4\uD328");
+                    }
+                  } else {
+                    console.log("\u{1F3E0} [ProfessionalPDF] \uB85C\uCEEC \uD658\uACBD: \uD30C\uC77C \uACBD\uB85C \uD3F0\uD2B8 \uB85C\uB529 \uBC29\uC2DD");
+                    doc.registerFont("Korean", selectedFont.path);
+                    doc.font("Korean");
+                    hasKoreanFont = true;
+                    console.log(`\u2705 [ProfessionalPDF] \uB85C\uCEEC \uD658\uACBD\uC5D0\uC11C \uD55C\uAE00 \uD3F0\uD2B8 \uB4F1\uB85D \uC131\uACF5: ${selectedFont.path}`);
+                  }
+                } else {
+                  throw new Error("\uC0AC\uC6A9 \uAC00\uB2A5\uD55C \uD55C\uAE00 \uD3F0\uD2B8\uAC00 \uC5C6\uC74C");
                 }
-              } catch (error) {
-                continue;
-              }
-            }
-            if (koreanFontPath) {
-              try {
-                doc.registerFont("Korean", koreanFontPath);
-                doc.font("Korean");
-                console.log(`\u2705 [ProfessionalPDF] \uD55C\uAE00 \uD3F0\uD2B8 \uB4F1\uB85D \uC131\uACF5: ${koreanFontPath}`);
               } catch (fontError) {
                 console.warn("\u26A0\uFE0F [ProfessionalPDF] \uD55C\uAE00 \uD3F0\uD2B8 \uB4F1\uB85D \uC2E4\uD328:", fontError);
                 doc.font("Helvetica");
+                hasKoreanFont = false;
+                const fontReport = fontManager.getFontReport();
+                console.log("\u{1F4CA} [ProfessionalPDF] \uD3F0\uD2B8 \uC9C0\uC6D0 \uC0C1\uD0DC:", JSON.stringify(fontReport, null, 2));
                 console.log("\u{1F4DD} [ProfessionalPDF] \uAE30\uBCF8 \uD3F0\uD2B8 \uC0AC\uC6A9 (\uD55C\uAE00 -> \uC601\uBB38 \uB300\uCCB4 \uBAA8\uB4DC)");
               }
-            } else {
-              console.warn("\u26A0\uFE0F [ProfessionalPDF] \uD55C\uAE00 \uD3F0\uD2B8\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC74C");
-              doc.font("Helvetica");
-              console.log("\u{1F4DD} [ProfessionalPDF] \uAE30\uBCF8 \uD3F0\uD2B8 \uC0AC\uC6A9 (\uD55C\uAE00 -> \uC601\uBB38 \uB300\uCCB4 \uBAA8\uB4DC)");
-            }
-            const safeText = (text2) => {
-              if (!text2) return "";
-              if (!koreanFontPath) {
-                const koreanToEnglish = {
-                  "\uBC1C\uC8FC\uC11C": "Purchase Order",
-                  "\uBC1C\uC8FC\uBC88\uD638": "Order No",
-                  "\uAC70\uB798\uCC98": "Vendor",
-                  "\uD488\uBAA9": "Item",
-                  "\uC218\uB7C9": "Qty",
-                  "\uB2E8\uAC00": "Unit Price",
-                  "\uAE08\uC561": "Amount",
-                  "\uD569\uACC4": "Total",
-                  "\uBD80\uAC00\uC138": "VAT",
-                  "\uC0AC\uC5C5\uC790\uB4F1\uB85D\uBC88\uD638": "Business No",
-                  "\uB300\uD45C\uC790": "Representative",
-                  "\uC8FC\uC18C": "Address",
-                  "\uC804\uD654\uBC88\uD638": "Phone",
-                  "\uC774\uBA54\uC77C": "Email",
-                  "\uD604\uC7A5\uBA85": "Project",
-                  "\uBC1C\uC8FC\uC77C": "Order Date",
-                  "\uB0A9\uAE30\uC77C": "Delivery Date",
-                  "\uB2F4\uB2F9\uC790": "Contact Person",
-                  "\uCC38\uACE0\uC0AC\uD56D": "Remarks",
-                  "\uC18C\uACC4": "Subtotal",
-                  "\uCD1D \uAE08\uC561": "Total Amount"
-                };
-                let result = text2;
-                for (const [kor, eng] of Object.entries(koreanToEnglish)) {
-                  result = result.replace(new RegExp(kor, "g"), eng);
-                }
-                if (/[ᄀ-ᇿ㄰-㆏ꥠ-꥿가-힯ힰ-퟿]/g.test(result)) {
-                  result = result.replace(/[ᄀ-ᇿ㄰-㆏ꥠ-꥿가-힯ힰ-퟿]+/g, "[Korean Text]");
-                }
-                return result.replace(/[\x00-\x1F\x7F]/g, "").replace(/[\u2028\u2029]/g, "").trim();
-              }
-              return text2.replace(/[\x00-\x1F\x7F]/g, "").replace(/[\u2028\u2029]/g, "").trim();
-            };
-            const formatDate = (date2) => {
-              if (!date2) return "-";
-              return format(new Date(date2), "yyyy\uB144 MM\uC6D4 dd\uC77C", { locale: ko });
-            };
-            const formatCurrency = (amount) => {
-              return new Intl.NumberFormat("ko-KR", {
-                style: "currency",
-                currency: "KRW"
-              }).format(amount);
-            };
-            doc.fontSize(16).text(safeText("\uAD6C\uB9E4\uBC1C\uC8FC\uC11C"), 20, doc.y);
-            doc.fontSize(12).text(safeText(`\uBC1C\uC8FC\uBC88\uD638: ${orderData.orderNumber}`), 20, doc.y);
-            doc.moveTo(20, doc.y + 5).lineTo(575, doc.y + 5).stroke();
-            doc.moveDown(1);
-            const infoY = doc.y;
-            doc.fontSize(8);
-            doc.text(safeText("\u3010\uBC1C\uC8FC\uC5C5\uCCB4\u3011"), 20, infoY);
-            doc.text(safeText(`\uC5C5\uCCB4\uBA85: ${orderData.issuerCompany.name}`), 20, infoY + 12);
-            doc.text(safeText(`\uC0AC\uC5C5\uC790\uBC88\uD638: ${orderData.issuerCompany.businessNumber || "-"}`), 20, infoY + 24);
-            doc.text(safeText(`\uC5F0\uB77D\uCC98: ${orderData.issuerCompany.phone || "-"}`), 20, infoY + 36);
-            doc.text(safeText(`\uC8FC\uC18C: ${orderData.issuerCompany.address || "-"}`), 20, infoY + 48);
-            doc.text(safeText("\u3010\uC218\uC8FC\uC5C5\uCCB4\u3011"), 200, infoY);
-            doc.text(safeText(`\uC5C5\uCCB4\uBA85: ${orderData.vendorCompany.name}`), 200, infoY + 12);
-            doc.text(safeText(`\uC0AC\uC5C5\uC790\uBC88\uD638: ${orderData.vendorCompany.businessNumber || "-"}`), 200, infoY + 24);
-            doc.text(safeText(`\uB2F4\uB2F9\uC790: ${orderData.vendorCompany.contactPerson || "-"}`), 200, infoY + 36);
-            doc.text(safeText(`\uC5F0\uB77D\uCC98: ${orderData.vendorCompany.phone || "-"}`), 200, infoY + 48);
-            doc.text(safeText("\u3010\uD604\uC7A5\uC815\uBCF4\u3011"), 380, infoY);
-            doc.text(safeText(`\uD604\uC7A5\uBA85: ${orderData.project.name}`), 380, infoY + 12);
-            doc.text(safeText(`\uBC1C\uC8FC\uC77C: ${formatDate(orderData.orderDate)}`), 380, infoY + 24);
-            doc.text(safeText(`\uB0A9\uAE30\uC77C: ${formatDate(orderData.deliveryDate)}`), 380, infoY + 36);
-            doc.text(safeText(`\uC791\uC131\uC790: ${orderData.creator.name}`), 380, infoY + 48);
-            doc.y = infoY + 70;
-            doc.moveTo(20, doc.y).lineTo(575, doc.y).stroke();
-            doc.moveDown(1);
-            doc.fontSize(9).text(safeText(`\uBC1C\uC8FC \uD488\uBAA9 (\uCD1D ${orderData.items.length}\uAC1C)`), 20);
-            doc.moveDown(0.5);
-            const tableTop = doc.y;
-            doc.fontSize(7);
-            doc.rect(20, tableTop, 555, 15).fill("#e5e7eb");
-            doc.fillColor("black");
-            doc.text("No", 25, tableTop + 3);
-            doc.text(safeText("\uD488\uBAA9\uBA85"), 50, tableTop + 3);
-            doc.text(safeText("\uADDC\uACA9"), 180, tableTop + 3);
-            doc.text(safeText("\uC218\uB7C9"), 260, tableTop + 3);
-            doc.text(safeText("\uB2E8\uC704"), 300, tableTop + 3);
-            doc.text(safeText("\uB2E8\uAC00"), 340, tableTop + 3);
-            doc.text(safeText("\uAE08\uC561"), 420, tableTop + 3);
-            doc.text(safeText("\uD2B9\uC774\uC0AC\uD56D"), 500, tableTop + 3);
-            doc.rect(20, tableTop, 555, 15).stroke();
-            let currentY = tableTop + 15;
-            orderData.items.slice(0, 15).forEach((item, index2) => {
-              const rowHeight = 16;
-              if (index2 % 2 === 0) {
-                doc.rect(20, currentY, 555, rowHeight).fill("#f9fafb");
-                doc.fillColor("black");
-              }
-              doc.fontSize(6);
-              doc.text(`${item.sequenceNo}`, 25, currentY + 3);
-              doc.text(safeText(item.name.substring(0, 25)), 50, currentY + 3);
-              doc.text(safeText((item.specification || "-").substring(0, 15)), 180, currentY + 3);
-              doc.text(safeText(item.quantity.toString()), 260, currentY + 3);
-              doc.text(safeText(item.unit || "-"), 300, currentY + 3);
-              doc.text(safeText(formatCurrency(item.unitPrice)), 340, currentY + 3);
-              doc.text(safeText(formatCurrency(item.totalPrice)), 420, currentY + 3);
-              const formatRemarksForPDF = (item2) => {
-                let result = "";
-                if (item2.deliveryLocation) {
-                  result += `\u2022 ${item2.deliveryLocation.substring(0, 15)}`;
-                }
-                if (item2.deliveryEmail) {
-                  result += `\\n${item2.deliveryEmail.substring(0, 20)}`;
-                }
-                return result || "-";
+              const safeText = (text2) => {
+                return fontManager.safeKoreanText(text2, hasKoreanFont);
               };
-              doc.text(safeText(formatRemarksForPDF(item)), 500, currentY + 3);
-              doc.rect(20, currentY, 555, rowHeight).stroke();
-              currentY += rowHeight;
-            });
-            if (orderData.items.length > 15) {
-              doc.rect(20, currentY, 555, 16).fill("#fef3c7");
+              const formatDate = (date2) => {
+                if (!date2) return "-";
+                return format(new Date(date2), "yyyy\uB144 MM\uC6D4 dd\uC77C", { locale: ko });
+              };
+              const formatCurrency = (amount) => {
+                return new Intl.NumberFormat("ko-KR", {
+                  style: "currency",
+                  currency: "KRW"
+                }).format(amount);
+              };
+              doc.fontSize(16).text(safeText("\uAD6C\uB9E4\uBC1C\uC8FC\uC11C"), 20, doc.y);
+              doc.fontSize(12).text(safeText(`\uBC1C\uC8FC\uBC88\uD638: ${orderData.orderNumber}`), 20, doc.y);
+              doc.moveTo(20, doc.y + 5).lineTo(575, doc.y + 5).stroke();
+              doc.moveDown(1);
+              const infoY = doc.y;
+              doc.fontSize(8);
+              doc.text(safeText("\u3010\uBC1C\uC8FC\uC5C5\uCCB4\u3011"), 20, infoY);
+              doc.text(safeText(`\uC5C5\uCCB4\uBA85: ${orderData.issuerCompany.name}`), 20, infoY + 12);
+              doc.text(safeText(`\uC0AC\uC5C5\uC790\uBC88\uD638: ${orderData.issuerCompany.businessNumber || "-"}`), 20, infoY + 24);
+              doc.text(safeText(`\uC5F0\uB77D\uCC98: ${orderData.issuerCompany.phone || "-"}`), 20, infoY + 36);
+              doc.text(safeText(`\uC8FC\uC18C: ${orderData.issuerCompany.address || "-"}`), 20, infoY + 48);
+              doc.text(safeText("\u3010\uC218\uC8FC\uC5C5\uCCB4\u3011"), 200, infoY);
+              doc.text(safeText(`\uC5C5\uCCB4\uBA85: ${orderData.vendorCompany.name}`), 200, infoY + 12);
+              doc.text(safeText(`\uC0AC\uC5C5\uC790\uBC88\uD638: ${orderData.vendorCompany.businessNumber || "-"}`), 200, infoY + 24);
+              doc.text(safeText(`\uB2F4\uB2F9\uC790: ${orderData.vendorCompany.contactPerson || "-"}`), 200, infoY + 36);
+              doc.text(safeText(`\uC5F0\uB77D\uCC98: ${orderData.vendorCompany.phone || "-"}`), 200, infoY + 48);
+              doc.text(safeText("\u3010\uD604\uC7A5\uC815\uBCF4\u3011"), 380, infoY);
+              doc.text(safeText(`\uD604\uC7A5\uBA85: ${orderData.project.name}`), 380, infoY + 12);
+              doc.text(safeText(`\uBC1C\uC8FC\uC77C: ${formatDate(orderData.orderDate)}`), 380, infoY + 24);
+              doc.text(safeText(`\uB0A9\uAE30\uC77C: ${formatDate(orderData.deliveryDate)}`), 380, infoY + 36);
+              doc.text(safeText(`\uC791\uC131\uC790: ${orderData.creator.name}`), 380, infoY + 48);
+              doc.y = infoY + 70;
+              doc.moveTo(20, doc.y).lineTo(575, doc.y).stroke();
+              doc.moveDown(1);
+              doc.fontSize(9).text(safeText(`\uBC1C\uC8FC \uD488\uBAA9 (\uCD1D ${orderData.items.length}\uAC1C)`), 20);
+              doc.moveDown(0.5);
+              const tableTop = doc.y;
+              doc.fontSize(7);
+              doc.rect(20, tableTop, 555, 15).fill("#e5e7eb");
               doc.fillColor("black");
-              doc.fontSize(7).text(safeText(`... \uC678 ${orderData.items.length - 15}\uAC1C \uD488\uBAA9 (\uBCC4\uB3C4 \uCCA8\uBD80\uC790\uB8CC \uCC38\uACE0)`), 25, currentY + 3);
+              doc.text("No", 25, tableTop + 3);
+              doc.text(safeText("\uD488\uBAA9\uBA85"), 50, tableTop + 3);
+              doc.text(safeText("\uADDC\uACA9"), 180, tableTop + 3);
+              doc.text(safeText("\uC218\uB7C9"), 260, tableTop + 3);
+              doc.text(safeText("\uB2E8\uC704"), 300, tableTop + 3);
+              doc.text(safeText("\uB2E8\uAC00"), 340, tableTop + 3);
+              doc.text(safeText("\uAE08\uC561"), 420, tableTop + 3);
+              doc.text(safeText("\uD2B9\uC774\uC0AC\uD56D"), 500, tableTop + 3);
+              doc.rect(20, tableTop, 555, 15).stroke();
+              let currentY = tableTop + 15;
+              orderData.items.slice(0, 15).forEach((item, index2) => {
+                const rowHeight = 16;
+                if (index2 % 2 === 0) {
+                  doc.rect(20, currentY, 555, rowHeight).fill("#f9fafb");
+                  doc.fillColor("black");
+                }
+                doc.fontSize(6);
+                doc.text(`${item.sequenceNo}`, 25, currentY + 3);
+                doc.text(safeText(item.name.substring(0, 25)), 50, currentY + 3);
+                doc.text(safeText((item.specification || "-").substring(0, 15)), 180, currentY + 3);
+                doc.text(safeText(item.quantity.toString()), 260, currentY + 3);
+                doc.text(safeText(item.unit || "-"), 300, currentY + 3);
+                doc.text(safeText(formatCurrency(item.unitPrice)), 340, currentY + 3);
+                doc.text(safeText(formatCurrency(item.totalPrice)), 420, currentY + 3);
+                const formatRemarksForPDF = (item2) => {
+                  let result = "";
+                  if (item2.deliveryLocation) {
+                    result += `\u2022 ${item2.deliveryLocation.substring(0, 15)}`;
+                  }
+                  if (item2.deliveryEmail) {
+                    result += `\\n${item2.deliveryEmail.substring(0, 20)}`;
+                  }
+                  return result || "-";
+                };
+                doc.text(safeText(formatRemarksForPDF(item)), 500, currentY + 3);
+                doc.rect(20, currentY, 555, rowHeight).stroke();
+                currentY += rowHeight;
+              });
+              if (orderData.items.length > 15) {
+                doc.rect(20, currentY, 555, 16).fill("#fef3c7");
+                doc.fillColor("black");
+                doc.fontSize(7).text(safeText(`... \uC678 ${orderData.items.length - 15}\uAC1C \uD488\uBAA9 (\uBCC4\uB3C4 \uCCA8\uBD80\uC790\uB8CC \uCC38\uACE0)`), 25, currentY + 3);
+                doc.rect(20, currentY, 555, 16).stroke();
+                currentY += 16;
+              }
+              doc.rect(20, currentY, 555, 16).fill("#e3f2fd");
+              doc.fillColor("black");
+              doc.fontSize(6);
+              doc.text(safeText("\uC18C\uACC4 (\uBD80\uAC00\uC138\uBCC4\uB3C4)"), 25, currentY + 3);
+              doc.text(safeText(formatCurrency(orderData.financial.subtotalAmount)), 420, currentY + 3);
               doc.rect(20, currentY, 555, 16).stroke();
               currentY += 16;
-            }
-            doc.rect(20, currentY, 555, 16).fill("#e3f2fd");
-            doc.fillColor("black");
-            doc.fontSize(6);
-            doc.text(safeText("\uC18C\uACC4 (\uBD80\uAC00\uC138\uBCC4\uB3C4)"), 25, currentY + 3);
-            doc.text(safeText(formatCurrency(orderData.financial.subtotalAmount)), 420, currentY + 3);
-            doc.rect(20, currentY, 555, 16).stroke();
-            currentY += 16;
-            doc.rect(20, currentY, 555, 16).fill("#e3f2fd");
-            doc.fillColor("black");
-            doc.fontSize(6);
-            doc.text(safeText(`\uBD80\uAC00\uC138 (${(orderData.financial.vatRate * 100).toFixed(0)}%)`), 25, currentY + 3);
-            doc.text(safeText(formatCurrency(orderData.financial.vatAmount)), 420, currentY + 3);
-            doc.rect(20, currentY, 555, 16).stroke();
-            currentY += 16;
-            doc.rect(20, currentY, 555, 16).fill("#1e40af");
-            doc.fillColor("white");
-            doc.fontSize(7).text(safeText("\uCD1D \uAE08\uC561"), 25, currentY + 3);
-            doc.text(safeText(formatCurrency(orderData.financial.totalAmount)), 420, currentY + 3);
-            doc.rect(20, currentY, 555, 16).stroke();
-            doc.fillColor("black");
-            doc.moveDown(2);
-            doc.fontSize(7);
-            if (orderData.metadata.notes) {
-              doc.text(safeText("\uD2B9\uC774\uC0AC\uD56D:"), 20);
-              doc.text(safeText(orderData.metadata.notes), 20, doc.y + 8);
+              doc.rect(20, currentY, 555, 16).fill("#e3f2fd");
+              doc.fillColor("black");
+              doc.fontSize(6);
+              doc.text(safeText(`\uBD80\uAC00\uC138 (${(orderData.financial.vatRate * 100).toFixed(0)}%)`), 25, currentY + 3);
+              doc.text(safeText(formatCurrency(orderData.financial.vatAmount)), 420, currentY + 3);
+              doc.rect(20, currentY, 555, 16).stroke();
+              currentY += 16;
+              doc.rect(20, currentY, 555, 16).fill("#1e40af");
+              doc.fillColor("white");
+              doc.fontSize(7).text(safeText("\uCD1D \uAE08\uC561"), 25, currentY + 3);
+              doc.text(safeText(formatCurrency(orderData.financial.totalAmount)), 420, currentY + 3);
+              doc.rect(20, currentY, 555, 16).stroke();
+              doc.fillColor("black");
+              doc.moveDown(2);
+              doc.fontSize(7);
+              if (orderData.metadata.notes) {
+                doc.text(safeText("\uD2B9\uC774\uC0AC\uD56D:"), 20);
+                doc.text(safeText(orderData.metadata.notes), 20, doc.y + 8);
+                doc.moveDown(1);
+              }
+              doc.moveDown(2);
+              doc.y = doc.y + 15;
+              doc.fontSize(8);
+              doc.text(safeText(orderData.issuerCompany.name), { align: "center" });
+              if (orderData.issuerCompany.representative) {
+                doc.text(safeText(`\uB300\uD45C\uC790: ${orderData.issuerCompany.representative}`), { align: "center" });
+              }
+              doc.fontSize(6);
+              doc.text(safeText(orderData.issuerCompany.address || ""), { align: "center" });
+              doc.text(safeText(`TEL: ${orderData.issuerCompany.phone || ""} | EMAIL: ${orderData.issuerCompany.email || ""}`), { align: "center" });
+              doc.text(safeText(`\uC0AC\uC5C5\uC790\uB4F1\uB85D\uBC88\uD638: ${orderData.issuerCompany.businessNumber || ""}`), { align: "center" });
               doc.moveDown(1);
+              doc.fontSize(6);
+              doc.text(safeText(`\uBB38\uC11C ID: ${orderData.metadata.documentId} | \uC0DD\uC131\uC77C\uC2DC: ${formatDate(orderData.metadata.generatedAt)} | Template: ${orderData.metadata.templateVersion}`), { align: "center" });
+              doc.end();
+            } catch (error) {
+              reject(error);
             }
-            doc.moveDown(2);
-            doc.y = doc.y + 15;
-            doc.fontSize(8);
-            doc.text(safeText(orderData.issuerCompany.name), { align: "center" });
-            if (orderData.issuerCompany.representative) {
-              doc.text(safeText(`\uB300\uD45C\uC790: ${orderData.issuerCompany.representative}`), { align: "center" });
-            }
-            doc.fontSize(6);
-            doc.text(safeText(orderData.issuerCompany.address || ""), { align: "center" });
-            doc.text(safeText(`TEL: ${orderData.issuerCompany.phone || ""} | EMAIL: ${orderData.issuerCompany.email || ""}`), { align: "center" });
-            doc.text(safeText(`\uC0AC\uC5C5\uC790\uB4F1\uB85D\uBC88\uD638: ${orderData.issuerCompany.businessNumber || ""}`), { align: "center" });
-            doc.moveDown(1);
-            doc.fontSize(6);
-            doc.text(safeText(`\uBB38\uC11C ID: ${orderData.metadata.documentId} | \uC0DD\uC131\uC77C\uC2DC: ${formatDate(orderData.metadata.generatedAt)} | Template: ${orderData.metadata.templateVersion}`), { align: "center" });
-            doc.end();
-          } catch (error) {
-            reject(error);
-          }
-        });
+          });
+        } catch (importError) {
+          console.error("\u274C [ProfessionalPDF] PDFKit import \uC2E4\uD328:", importError);
+          throw new Error(`PDFKit\uC744 \uB85C\uB4DC\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4 (\uD658\uACBD: ${process.env.VERCEL ? "Vercel" : "Local"}): ${importError instanceof Error ? importError.message : "Unknown error"}`);
+        }
       }
     };
   }
@@ -3688,17 +3866,17 @@ __export(po_email_service_enhanced_exports, {
   POEmailService: () => POEmailService2
 });
 import nodemailer5 from "nodemailer";
-import path15 from "path";
-import fs18 from "fs";
+import path16 from "path";
+import fs19 from "fs";
 import { fileURLToPath as fileURLToPath5 } from "url";
 import { dirname as dirname2 } from "path";
-var __filename5, __dirname6, POEmailService2;
+var __filename5, __dirname5, POEmailService2;
 var init_po_email_service_enhanced = __esm({
   "server/utils/po-email-service-enhanced.ts"() {
     "use strict";
     init_excel_input_sheet_remover();
     __filename5 = fileURLToPath5(import.meta.url);
-    __dirname6 = dirname2(__filename5);
+    __dirname5 = dirname2(__filename5);
     POEmailService2 = class {
       constructor() {
         this.isInitialized = false;
@@ -3786,8 +3964,8 @@ var init_po_email_service_enhanced = __esm({
             }
           }
           const timestamp2 = Date.now();
-          const uploadsDir = path15.join(__dirname6, "../../uploads");
-          const processedPath = path15.join(uploadsDir, `po-advanced-format-${timestamp2}.xlsx`);
+          const uploadsDir = path16.join(__dirname5, "../../uploads");
+          const processedPath = path16.join(uploadsDir, `po-advanced-format-${timestamp2}.xlsx`);
           const removeResult = await removeAllInputSheets(
             originalFilePath,
             processedPath
@@ -3801,7 +3979,7 @@ var init_po_email_service_enhanced = __esm({
           console.log(`\u{1F4C4} \uACE0\uAE09 \uD615\uC2DD \uBCF4\uC874 \uD30C\uC77C \uC0DD\uC131: ${processedPath}`);
           console.log(`\u{1F3AF} Input \uC2DC\uD2B8 \uC81C\uAC70 \uC644\uB8CC`);
           console.log(`\u{1F4CB} \uB0A8\uC740 \uC2DC\uD2B8: ${removeResult.remainingSheets.join(", ")}`);
-          const pdfPath = path15.join(uploadsDir, `po-advanced-format-${timestamp2}.pdf`);
+          const pdfPath = path16.join(uploadsDir, `po-advanced-format-${timestamp2}.pdf`);
           let pdfResult = { success: false, error: "" };
           try {
             const enhancedResult = await EnhancedExcelToPDFConverter.convertExcelToPDF(processedPath, {
@@ -3829,7 +4007,7 @@ var init_po_email_service_enhanced = __esm({
             pdfResult.error = pdfError instanceof Error ? pdfError.message : "PDF conversion error";
           }
           const attachments3 = [];
-          if (fs18.existsSync(processedPath)) {
+          if (fs19.existsSync(processedPath)) {
             attachments3.push({
               filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`,
               path: processedPath,
@@ -3837,7 +4015,7 @@ var init_po_email_service_enhanced = __esm({
             });
             console.log(`\u{1F4CE} Excel \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00: \uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`);
           }
-          if (pdfResult.success && fs18.existsSync(pdfPath)) {
+          if (pdfResult.success && fs19.existsSync(pdfPath)) {
             attachments3.push({
               filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`,
               path: pdfPath,
@@ -4097,12 +4275,12 @@ var init_po_email_service_enhanced = __esm({
         setTimeout(() => {
           filePaths.forEach((filePath) => {
             try {
-              if (fs18.existsSync(filePath)) {
-                fs18.unlinkSync(filePath);
-                console.log(`\u{1F5D1}\uFE0F \uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C: ${path15.basename(filePath)}`);
+              if (fs19.existsSync(filePath)) {
+                fs19.unlinkSync(filePath);
+                console.log(`\u{1F5D1}\uFE0F \uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C: ${path16.basename(filePath)}`);
               }
             } catch (error) {
-              console.warn(`\u26A0\uFE0F \uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328: ${path15.basename(filePath)}`, error);
+              console.warn(`\u26A0\uFE0F \uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328: ${path16.basename(filePath)}`, error);
             }
           });
         }, 5e3);
@@ -7498,7 +7676,7 @@ init_db();
 init_schema();
 import { eq as eq5 } from "drizzle-orm";
 var __filename = fileURLToPath(import.meta.url);
-var __dirname2 = dirname(__filename);
+var __dirname = dirname(__filename);
 var POEmailService = class {
   constructor() {
     this.db = db2;
@@ -7562,7 +7740,7 @@ var POEmailService = class {
   async sendPOWithOriginalFormat(originalFilePath, emailOptions) {
     try {
       const timestamp2 = Date.now();
-      const uploadsDir = path2.join(__dirname2, "../../uploads");
+      const uploadsDir = path2.join(__dirname, "../../uploads");
       const processedPath = path2.join(uploadsDir, `po-advanced-format-${timestamp2}.xlsx`);
       const removeResult = await removeAllInputSheets(
         originalFilePath,
@@ -7655,7 +7833,7 @@ var POEmailService = class {
   async sendPOWithAttachments(originalFilePath, emailOptions) {
     try {
       const timestamp2 = Date.now();
-      const uploadsDir = path2.join(__dirname2, "../../uploads");
+      const uploadsDir = path2.join(__dirname, "../../uploads");
       const extractedPath = path2.join(uploadsDir, `po-sheets-${timestamp2}.xlsx`);
       const extractResult = POTemplateProcessor.extractSheetsToFile(
         originalFilePath,
@@ -10535,8 +10713,8 @@ init_professional_pdf_generation_service();
 init_db();
 init_email_settings_service();
 import { eq as eq11, and as and7, or as or3, like as like2, desc as desc6 } from "drizzle-orm";
-import fs7 from "fs";
-import path5 from "path";
+import fs8 from "fs";
+import path6 from "path";
 import { fileURLToPath as fileURLToPath2 } from "url";
 import * as XLSX3 from "xlsx";
 import nodemailer3 from "nodemailer";
@@ -10758,7 +10936,7 @@ function generateEmailHTML(data) {
 
 // server/routes/orders.ts
 var __filename2 = fileURLToPath2(import.meta.url);
-var __dirname3 = path5.dirname(__filename2);
+var __dirname2 = path6.dirname(__filename2);
 var router3 = Router3();
 var emailService = new POEmailService();
 async function updateOrderStatusAfterEmail(orderNumber) {
@@ -10989,8 +11167,8 @@ router3.post("/orders", requireAuth, upload.array("attachments"), async (req, re
     const order = await storage.createPurchaseOrder(orderData);
     console.log("\u{1F527}\u{1F527}\u{1F527} ORDERS.TS - Created order:", order);
     if (req.files && req.files.length > 0) {
-      const fs22 = __require("fs");
-      const path20 = __require("path");
+      const fs23 = __require("fs");
+      const path21 = __require("path");
       const { removeAllInputSheets: removeAllInputSheets2 } = (init_excel_input_sheet_remover(), __toCommonJS(excel_input_sheet_remover_exports));
       for (const file of req.files) {
         const decodedFilename = decodeKoreanFilename(file.originalname);
@@ -11005,21 +11183,21 @@ router3.post("/orders", requireAuth, upload.array("attachments"), async (req, re
           console.log("\u{1F4CA} Excel \uD30C\uC77C \uAC10\uC9C0, Input \uC2DC\uD2B8 \uC81C\uAC70 \uCC98\uB9AC \uC2DC\uC791...");
           const processedPath = file.path.replace(/\.(xlsx?)$/i, "_processed.$1");
           const removeResult = await removeAllInputSheets2(file.path, processedPath);
-          if (removeResult.success && fs22.existsSync(processedPath)) {
+          if (removeResult.success && fs23.existsSync(processedPath)) {
             console.log(`\u2705 Input \uC2DC\uD2B8 \uC81C\uAC70 \uC644\uB8CC: ${removeResult.removedSheets.join(", ")}`);
             fileToStore = processedPath;
-            fileBuffer = fs22.readFileSync(processedPath);
+            fileBuffer = fs23.readFileSync(processedPath);
             try {
-              fs22.unlinkSync(file.path);
+              fs23.unlinkSync(file.path);
             } catch (e) {
               console.warn("\uC6D0\uBCF8 \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328:", e);
             }
           } else {
             console.warn("\u26A0\uFE0F Input \uC2DC\uD2B8 \uC81C\uAC70 \uC2E4\uD328, \uC6D0\uBCF8 \uD30C\uC77C \uC0AC\uC6A9:", removeResult.error);
-            fileBuffer = fs22.readFileSync(file.path);
+            fileBuffer = fs23.readFileSync(file.path);
           }
         } else {
-          fileBuffer = fs22.readFileSync(file.path);
+          fileBuffer = fs23.readFileSync(file.path);
         }
         const base64Data = fileBuffer.toString("base64");
         let finalOriginalName = decodedFilename;
@@ -11052,9 +11230,9 @@ router3.post("/orders", requireAuth, upload.array("attachments"), async (req, re
           delete attachmentData.fileData;
           await storage.createAttachment(attachmentData);
         }
-        if (fileToStore !== file.path && fs22.existsSync(fileToStore)) {
+        if (fileToStore !== file.path && fs23.existsSync(fileToStore)) {
           try {
-            fs22.unlinkSync(fileToStore);
+            fs23.unlinkSync(fileToStore);
           } catch (e) {
             console.warn("\uCC98\uB9AC\uB41C \uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328:", e);
           }
@@ -11531,10 +11709,10 @@ async function generatePDFLogic(req, res) {
     console.log(`\u{1F4C4} PDF \uC0DD\uC131 \uC694\uCCAD: \uBC1C\uC8FC\uC11C ${orderData.orderNumber || "N/A"}`);
     console.log("\u{1F4C4} PDF \uC0DD\uC131 \uB370\uC774\uD130:", JSON.stringify(orderData, null, 2));
     const timestamp2 = Date.now();
-    const tempDir = process.env.VERCEL ? path5.join("/tmp", "temp-pdf") : path5.join(process.cwd(), "uploads/temp-pdf");
+    const tempDir = process.env.VERCEL ? path6.join("/tmp", "temp-pdf") : path6.join(process.cwd(), "uploads/temp-pdf");
     try {
-      if (!fs7.existsSync(tempDir)) {
-        fs7.mkdirSync(tempDir, { recursive: true });
+      if (!fs8.existsSync(tempDir)) {
+        fs8.mkdirSync(tempDir, { recursive: true });
         console.log(`\u{1F4C1} \uC784\uC2DC \uB514\uB809\uD1A0\uB9AC \uC0DD\uC131: ${tempDir}`);
       }
     } catch (error) {
@@ -11544,8 +11722,8 @@ async function generatePDFLogic(req, res) {
       }
       throw error;
     }
-    const tempHtmlPath = path5.join(tempDir, `order-${timestamp2}.html`);
-    const tempPdfPath = path5.join(tempDir, `order-${timestamp2}.pdf`);
+    const tempHtmlPath = path6.join(tempDir, `order-${timestamp2}.html`);
+    const tempPdfPath = path6.join(tempDir, `order-${timestamp2}.pdf`);
     console.log(`\u{1F4C4} \uC784\uC2DC \uD30C\uC77C \uACBD\uB85C - HTML: ${tempHtmlPath}, PDF: ${tempPdfPath}`);
     try {
       let companyInfo = null;
@@ -12024,7 +12202,7 @@ async function generatePDFLogic(req, res) {
 </html>
       `;
       try {
-        fs7.writeFileSync(tempHtmlPath, orderHtml, "utf8");
+        fs8.writeFileSync(tempHtmlPath, orderHtml, "utf8");
         console.log(`\u2705 HTML \uD30C\uC77C \uC0DD\uC131 \uC644\uB8CC: ${tempHtmlPath}`);
       } catch (writeError) {
         throw new Error(`HTML \uD30C\uC77C \uC0DD\uC131 \uC2E4\uD328: ${writeError.message}`);
@@ -12046,9 +12224,9 @@ async function generatePDFLogic(req, res) {
           </script>
           </head>`
         );
-        fs7.writeFileSync(tempPdfPath.replace(".pdf", ".html"), htmlForPdf);
+        fs8.writeFileSync(tempPdfPath.replace(".pdf", ".html"), htmlForPdf);
         console.log("\u2705 HTML \uD30C\uC77C \uC0DD\uC131 \uC644\uB8CC (\uD074\uB77C\uC774\uC5B8\uD2B8 PDF \uBCC0\uD658\uC6A9)");
-        fs7.writeFileSync(tempPdfPath, "PDF generation pending - use browser print");
+        fs8.writeFileSync(tempPdfPath, "PDF generation pending - use browser print");
       } else {
         let browser = null;
         try {
@@ -12104,10 +12282,10 @@ async function generatePDFLogic(req, res) {
           }
         }
       }
-      if (!fs7.existsSync(tempPdfPath)) {
+      if (!fs8.existsSync(tempPdfPath)) {
         throw new Error("PDF \uD30C\uC77C\uC774 \uC0DD\uC131\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4.");
       }
-      const stats = fs7.statSync(tempPdfPath);
+      const stats = fs8.statSync(tempPdfPath);
       if (stats.size === 0) {
         throw new Error("PDF \uD30C\uC77C\uC774 \uBE44\uC5B4\uC788\uC2B5\uB2C8\uB2E4.");
       }
@@ -12115,16 +12293,16 @@ async function generatePDFLogic(req, res) {
       const pdfUrl = `/api/orders/download-pdf/${timestamp2}`;
       console.log(`\u2705 PDF \uC0DD\uC131 \uC644\uB8CC: ${pdfUrl}`);
       try {
-        if (fs7.existsSync(tempHtmlPath)) {
-          fs7.unlinkSync(tempHtmlPath);
+        if (fs8.existsSync(tempHtmlPath)) {
+          fs8.unlinkSync(tempHtmlPath);
         }
       } catch (cleanupError) {
         console.warn("\u26A0\uFE0F HTML \uD30C\uC77C \uC815\uB9AC \uC2E4\uD328:", cleanupError.message);
       }
       setTimeout(() => {
         try {
-          if (fs7.existsSync(tempPdfPath)) {
-            fs7.unlinkSync(tempPdfPath);
+          if (fs8.existsSync(tempPdfPath)) {
+            fs8.unlinkSync(tempPdfPath);
             console.log(`\u{1F5D1}\uFE0F \uC784\uC2DC PDF \uD30C\uC77C \uC815\uB9AC \uC644\uB8CC: ${tempPdfPath}`);
           }
         } catch (cleanupError) {
@@ -12140,8 +12318,8 @@ async function generatePDFLogic(req, res) {
     } catch (conversionError) {
       console.error("\u274C PDF \uBCC0\uD658 \uC624\uB958:", conversionError);
       try {
-        if (fs7.existsSync(tempHtmlPath)) fs7.unlinkSync(tempHtmlPath);
-        if (fs7.existsSync(tempPdfPath)) fs7.unlinkSync(tempPdfPath);
+        if (fs8.existsSync(tempHtmlPath)) fs8.unlinkSync(tempHtmlPath);
+        if (fs8.existsSync(tempPdfPath)) fs8.unlinkSync(tempPdfPath);
       } catch (cleanupError) {
         console.warn("\u26A0\uFE0F \uC784\uC2DC \uD30C\uC77C \uC815\uB9AC \uC2E4\uD328:", cleanupError.message);
       }
@@ -12327,13 +12505,13 @@ router3.get("/orders/download-pdf/:timestamp", async (req, res) => {
         console.error("\u274C \uB370\uC774\uD130\uBCA0\uC774\uC2A4 PDF \uC870\uD68C \uC624\uB958:", dbError);
       }
     }
-    const basePath = process.env.VERCEL ? path5.join("/tmp", "temp-pdf", `order-${timestamp2}`) : path5.join(process.cwd(), "uploads/temp-pdf", `order-${timestamp2}`);
+    const basePath = process.env.VERCEL ? path6.join("/tmp", "temp-pdf", `order-${timestamp2}`) : path6.join(process.cwd(), "uploads/temp-pdf", `order-${timestamp2}`);
     const pdfPath = `${basePath}.pdf`;
     const htmlPath = `${basePath}.html`;
     console.log(`\u{1F4C4} \uD30C\uC77C \uC2DC\uC2A4\uD15C\uC5D0\uC11C \uD30C\uC77C \uC694\uCCAD: ${basePath}.*`);
-    console.log(`\u{1F4C4} PDF \uC874\uC7AC: ${fs7.existsSync(pdfPath)}, HTML \uC874\uC7AC: ${fs7.existsSync(htmlPath)}`);
-    if (process.env.VERCEL && !fs7.existsSync(pdfPath) && fs7.existsSync(htmlPath)) {
-      const htmlContent = fs7.readFileSync(htmlPath, "utf-8");
+    console.log(`\u{1F4C4} PDF \uC874\uC7AC: ${fs8.existsSync(pdfPath)}, HTML \uC874\uC7AC: ${fs8.existsSync(htmlPath)}`);
+    if (process.env.VERCEL && !fs8.existsSync(pdfPath) && fs8.existsSync(htmlPath)) {
+      const htmlContent = fs8.readFileSync(htmlPath, "utf-8");
       res.setHeader("Content-Type", "text/html; charset=utf-8");
       res.setHeader("Cache-Control", "no-cache");
       if (download === "true") {
@@ -12342,9 +12520,9 @@ router3.get("/orders/download-pdf/:timestamp", async (req, res) => {
       res.send(htmlContent);
       return;
     }
-    if (fs7.existsSync(pdfPath)) {
+    if (fs8.existsSync(pdfPath)) {
       try {
-        const stat = fs7.statSync(pdfPath);
+        const stat = fs8.statSync(pdfPath);
         console.log(`\u{1F4CA} PDF \uD30C\uC77C \uC815\uBCF4: \uD06C\uAE30 ${(stat.size / 1024).toFixed(2)} KB`);
         res.setHeader("Access-Control-Allow-Origin", "*");
         res.setHeader("Access-Control-Allow-Methods", "GET");
@@ -12355,7 +12533,7 @@ router3.get("/orders/download-pdf/:timestamp", async (req, res) => {
           res.setHeader("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent("\uBC1C\uC8FC\uC11C.pdf")}`);
           res.setHeader("Content-Type", "application/pdf");
           res.setHeader("Content-Length", stat.size.toString());
-          const downloadStream = fs7.createReadStream(pdfPath);
+          const downloadStream = fs8.createReadStream(pdfPath);
           downloadStream.on("error", (error) => {
             console.error("\u274C PDF \uB2E4\uC6B4\uB85C\uB4DC \uC2A4\uD2B8\uB9BC \uC624\uB958:", error);
             if (!res.headersSent) {
@@ -12371,7 +12549,7 @@ router3.get("/orders/download-pdf/:timestamp", async (req, res) => {
           res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
           res.setHeader("Pragma", "no-cache");
           res.setHeader("Expires", "0");
-          const pdfStream = fs7.createReadStream(pdfPath);
+          const pdfStream = fs8.createReadStream(pdfPath);
           pdfStream.on("error", (error) => {
             console.error("\u274C PDF \uC2A4\uD2B8\uB9BC \uC624\uB958:", error);
             if (!res.headersSent) {
@@ -12520,7 +12698,7 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
                 });
                 attachmentsList.push("\uBC1C\uC8FC\uC11C.pdf (PDF \uD30C\uC77C)");
                 console.log("\u2705 PDF \uCCA8\uBD80 \uC131\uACF5 (DB Base64)");
-              } else if (attachment.filePath && fs7.existsSync(attachment.filePath)) {
+              } else if (attachment.filePath && fs8.existsSync(attachment.filePath)) {
                 attachments3.push({
                   filename: attachment.originalName || `\uBC1C\uC8FC\uC11C_${orderData.orderNumber || Date.now()}.pdf`,
                   path: attachment.filePath,
@@ -12539,9 +12717,9 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
           }
         }
       } else {
-        const pdfPath = path5.join(__dirname3, "../../", pdfUrl.replace(/^\//, ""));
+        const pdfPath = path6.join(__dirname2, "../../", pdfUrl.replace(/^\//, ""));
         console.log("\u{1F4CE} PDF \uCCA8\uBD80 \uC2DC\uB3C4 (\uC9C1\uC811 \uACBD\uB85C):", pdfPath);
-        if (fs7.existsSync(pdfPath)) {
+        if (fs8.existsSync(pdfPath)) {
           attachments3.push({
             filename: `\uBC1C\uC8FC\uC11C_${orderData.orderNumber || Date.now()}.pdf`,
             path: pdfPath,
@@ -12577,7 +12755,7 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
                 });
                 attachmentsList.push("\uBC1C\uC8FC\uC11C.xlsx (Excel \uD30C\uC77C)");
                 console.log("\u2705 Excel \uCCA8\uBD80 \uC131\uACF5 (DB Base64)");
-              } else if (attachment.filePath && fs7.existsSync(attachment.filePath)) {
+              } else if (attachment.filePath && fs8.existsSync(attachment.filePath)) {
                 attachments3.push({
                   filename: attachment.originalName || `\uBC1C\uC8FC\uC11C_${orderData.orderNumber || Date.now()}.xlsx`,
                   path: attachment.filePath,
@@ -12596,9 +12774,9 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
           }
         }
       } else {
-        const excelPath = path5.join(__dirname3, "../../", excelUrl.replace(/^\//, ""));
+        const excelPath = path6.join(__dirname2, "../../", excelUrl.replace(/^\//, ""));
         console.log("\u{1F4CE} Excel \uCCA8\uBD80 \uC2DC\uB3C4 (\uC9C1\uC811 \uACBD\uB85C):", excelPath);
-        if (fs7.existsSync(excelPath)) {
+        if (fs8.existsSync(excelPath)) {
           attachments3.push({
             filename: `\uBC1C\uC8FC\uC11C_${orderData.orderNumber || Date.now()}.xlsx`,
             path: excelPath,
@@ -12660,7 +12838,7 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
               });
               attachmentsList.push(attachment.originalName);
               console.log("\u2705 \uC120\uD0DD\uB41C \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00 \uC131\uACF5 (DB Base64):", attachment.originalName);
-            } else if (attachment.filePath && fs7.existsSync(attachment.filePath)) {
+            } else if (attachment.filePath && fs8.existsSync(attachment.filePath)) {
               attachments3.push({
                 filename: attachment.originalName,
                 path: attachment.filePath,
@@ -12949,19 +13127,19 @@ router3.post("/orders/send-email-simple", requireAuth, async (req, res) => {
     };
     let excelPath = "";
     if (attachExcel && orderData?.excelFilePath) {
-      excelPath = path5.join(__dirname3, "../../", orderData.excelFilePath.replace(/^\//, ""));
-      if (!fs7.existsSync(excelPath)) {
+      excelPath = path6.join(__dirname2, "../../", orderData.excelFilePath.replace(/^\//, ""));
+      if (!fs8.existsSync(excelPath)) {
         console.warn("\u26A0\uFE0F \uC5D1\uC140 \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4:", excelPath);
         excelPath = "";
       }
     }
     if (!excelPath) {
-      const tempDir = path5.join(__dirname3, "../../uploads/temp");
-      if (!fs7.existsSync(tempDir)) {
-        fs7.mkdirSync(tempDir, { recursive: true });
+      const tempDir = path6.join(__dirname2, "../../uploads/temp");
+      if (!fs8.existsSync(tempDir)) {
+        fs8.mkdirSync(tempDir, { recursive: true });
       }
-      excelPath = path5.join(tempDir, `temp_${Date.now()}.txt`);
-      fs7.writeFileSync(excelPath, `\uBC1C\uC8FC\uC11C \uC0C1\uC138 \uB0B4\uC6A9
+      excelPath = path6.join(tempDir, `temp_${Date.now()}.txt`);
+      fs8.writeFileSync(excelPath, `\uBC1C\uC8FC\uC11C \uC0C1\uC138 \uB0B4\uC6A9
 
 ${body}`);
     }
@@ -12980,7 +13158,7 @@ ${body}`);
     });
     if (excelPath.includes("temp_")) {
       try {
-        fs7.unlinkSync(excelPath);
+        fs8.unlinkSync(excelPath);
       } catch (err) {
         console.warn("\uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328:", err);
       }
@@ -13020,9 +13198,9 @@ router3.post("/orders/send-email-with-excel", requireAuth, async (req, res) => {
       return res.status(400).json({ error: "\uC5D1\uC140 \uD30C\uC77C \uACBD\uB85C\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4." });
     }
     const absoluteExcelPath = excelFilePath.startsWith("http") ? excelFilePath.replace(/^https?:\/\/[^\/]+/, "") : excelFilePath;
-    const localExcelPath = path5.join(__dirname3, "../../", absoluteExcelPath.replace(/^\//, ""));
+    const localExcelPath = path6.join(__dirname2, "../../", absoluteExcelPath.replace(/^\//, ""));
     console.log("\u{1F4E7} \uC5D1\uC140 \uD30C\uC77C \uACBD\uB85C:", localExcelPath);
-    if (!fs7.existsSync(localExcelPath)) {
+    if (!fs8.existsSync(localExcelPath)) {
       return res.status(400).json({ error: "\uC5D1\uC140 \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4." });
     }
     const result = await emailService.sendPOWithOriginalFormat(
@@ -13082,10 +13260,10 @@ router3.post("/test-email-smtp", async (req, res) => {
       userName: "System Tester",
       userPhone: "010-0000-0000"
     };
-    const fs22 = __require("fs");
-    const path20 = __require("path");
-    const testExcelPath = path20.join(__dirname3, "../../uploads/smtp-test.txt");
-    fs22.writeFileSync(testExcelPath, "SMTP Test File - " + (/* @__PURE__ */ new Date()).toISOString());
+    const fs23 = __require("fs");
+    const path21 = __require("path");
+    const testExcelPath = path21.join(__dirname2, "../../uploads/smtp-test.txt");
+    fs23.writeFileSync(testExcelPath, "SMTP Test File - " + (/* @__PURE__ */ new Date()).toISOString());
     const result = await emailService.sendPOWithOriginalFormat(testExcelPath, {
       to: [recipientEmail],
       cc: [],
@@ -13096,7 +13274,7 @@ router3.post("/test-email-smtp", async (req, res) => {
       orderId: 9999
     });
     try {
-      fs22.unlinkSync(testExcelPath);
+      fs23.unlinkSync(testExcelPath);
     } catch (e) {
       console.warn("\uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328:", e.message);
     }
@@ -13202,21 +13380,21 @@ router3.get("/orders/:orderId/attachments/:attachmentId/download", requireAuth, 
       console.log(`\u2705 \uD30C\uC77C \uB2E4\uC6B4\uB85C\uB4DC \uC644\uB8CC (DB): ${originalName}`);
     } else {
       let filePath = attachment.filePath;
-      if (!path5.isAbsolute(filePath)) {
-        filePath = path5.join(__dirname3, "../../", filePath);
+      if (!path6.isAbsolute(filePath)) {
+        filePath = path6.join(__dirname2, "../../", filePath);
       }
       console.log(`\u{1F4C2} \uD30C\uC77C \uACBD\uB85C: ${filePath}`);
-      if (!fs7.existsSync(filePath)) {
+      if (!fs8.existsSync(filePath)) {
         console.log(`\u274C \uD30C\uC77C\uC774 \uC874\uC7AC\uD558\uC9C0 \uC54A\uC74C: ${filePath}`);
         return res.status(404).json({
           error: "\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.",
           filePath: attachment.filePath
         });
       }
-      const stats = fs7.statSync(filePath);
+      const stats = fs8.statSync(filePath);
       console.log(`\u{1F4CA} \uD30C\uC77C \uD06C\uAE30: ${(stats.size / 1024).toFixed(2)} KB`);
       res.setHeader("Content-Length", stats.size);
-      const fileStream = fs7.createReadStream(filePath);
+      const fileStream = fs8.createReadStream(filePath);
       fileStream.on("error", (error) => {
         console.error("\u274C \uD30C\uC77C \uC2A4\uD2B8\uB9BC \uC624\uB958:", error);
         if (!res.headersSent) {
@@ -14015,8 +14193,8 @@ var admin_default = router8;
 // server/routes/excel-automation.ts
 import { Router as Router9 } from "express";
 import multer2 from "multer";
-import path8 from "path";
-import fs10 from "fs";
+import path9 from "path";
+import fs11 from "fs";
 
 // server/utils/excel-automation-service.ts
 init_db();
@@ -14377,8 +14555,8 @@ init_debug_logger();
 // server/utils/excel-attachment-service.ts
 init_db();
 init_schema();
-import fs8 from "fs";
-import path6 from "path";
+import fs9 from "fs";
+import path7 from "path";
 var ExcelAttachmentService = class {
   /**
    * 처리된 Excel 파일을 attachments 테이블에 저장
@@ -14391,13 +14569,13 @@ var ExcelAttachmentService = class {
   static async saveProcessedExcelFile(orderId, processedExcelPath, originalFileName, uploadedBy, orderNumber) {
     try {
       console.log(`\u{1F4CE} Excel \uCCA8\uBD80\uD30C\uC77C \uC800\uC7A5 \uC2DC\uC791: ${processedExcelPath}`);
-      if (!fs8.existsSync(processedExcelPath)) {
+      if (!fs9.existsSync(processedExcelPath)) {
         return {
           success: false,
           error: `\uCC98\uB9AC\uB41C Excel \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4: ${processedExcelPath}`
         };
       }
-      const stats = fs8.statSync(processedExcelPath);
+      const stats = fs9.statSync(processedExcelPath);
       let standardizedFileName;
       if (orderNumber) {
         const today = /* @__PURE__ */ new Date();
@@ -14407,7 +14585,7 @@ var ExcelAttachmentService = class {
         standardizedFileName = originalFileName;
       }
       console.log(`\u{1F4DD} \uD45C\uC900\uD654\uB41C Excel \uD30C\uC77C\uBA85: ${standardizedFileName}`);
-      const fileBuffer = fs8.readFileSync(processedExcelPath);
+      const fileBuffer = fs9.readFileSync(processedExcelPath);
       const base64Data = fileBuffer.toString("base64");
       const [attachment] = await db2.insert(attachments).values({
         orderId,
@@ -14442,15 +14620,15 @@ var ExcelAttachmentService = class {
   static async saveOriginalExcelFile(orderId, originalExcelPath, originalFileName, uploadedBy) {
     try {
       console.log(`\u{1F4CE} \uC6D0\uBCF8 Excel \uCCA8\uBD80\uD30C\uC77C \uC800\uC7A5 \uC2DC\uC791: ${originalExcelPath}`);
-      if (!fs8.existsSync(originalExcelPath)) {
+      if (!fs9.existsSync(originalExcelPath)) {
         return {
           success: false,
           error: `\uC6D0\uBCF8 Excel \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4: ${originalExcelPath}`
         };
       }
-      const stats = fs8.statSync(originalExcelPath);
-      const fileName = `original_${path6.basename(originalExcelPath)}`;
-      const fileBuffer = fs8.readFileSync(originalExcelPath);
+      const stats = fs9.statSync(originalExcelPath);
+      const fileName = `original_${path7.basename(originalExcelPath)}`;
+      const fileBuffer = fs9.readFileSync(originalExcelPath);
       const base64Data = fileBuffer.toString("base64");
       const [attachment] = await db2.insert(attachments).values({
         orderId,
@@ -14479,8 +14657,8 @@ var ExcelAttachmentService = class {
 };
 
 // server/utils/excel-automation-service.ts
-import fs9 from "fs";
-import path7 from "path";
+import fs10 from "fs";
+import path8 from "path";
 
 // server/utils/progress-manager.ts
 var ProgressManager = class {
@@ -14650,7 +14828,7 @@ var ExcelAutomationService = class {
       }
       console.log(`\u{1F50D} [DEBUG] 2.5\uB2E8\uACC4: \uCC98\uB9AC\uB41C Excel \uD30C\uC77C \uCCA8\uBD80 \uC2DC\uC791`);
       console.log(`\u{1F4CA} [DEBUG] saveResult:`, JSON.stringify(saveResult, null, 2));
-      const originalFileName = path7.basename(filePath);
+      const originalFileName = path8.basename(filePath);
       let pdfGenerationPromises = [];
       let pdfResults = [];
       if (saveResult.savedOrderNumbers && saveResult.savedOrderNumbers.length > 0) {
@@ -14660,7 +14838,7 @@ var ExcelAutomationService = class {
           console.log(`\u{1F50D} [DEBUG] \uC870\uD68C\uB41C \uBC1C\uC8FC\uC11C\uB4E4:`, orders);
           const processedExcelPath = filePath.replace(/\.(xlsx?)$/i, "_processed.$1");
           const removeResult = await removeAllInputSheets(filePath, processedExcelPath);
-          if (removeResult.success && fs9.existsSync(processedExcelPath)) {
+          if (removeResult.success && fs10.existsSync(processedExcelPath)) {
             console.log(`\u2705 [DEBUG] Input \uC2DC\uD2B8 \uC81C\uAC70 \uC644\uB8CC: ${processedExcelPath}`);
             if (sessionId) {
               progressManager.updateStep(sessionId, "pdf", "processing", `PDF \uC0DD\uC131 \uC2DC\uC791: \uCD1D ${orders.length}\uAC1C \uBC1C\uC8FC\uC11C`, {
@@ -14769,7 +14947,7 @@ var ExcelAutomationService = class {
               console.warn(`\u26A0\uFE0F [DEBUG] PDF \uC0DD\uC131 \uC2E4\uD328 \uBAA9\uB85D:`, failedPdfs.map((f) => f.orderNumber).join(", "));
             }
             try {
-              fs9.unlinkSync(processedExcelPath);
+              fs10.unlinkSync(processedExcelPath);
               console.log(`\u{1F9F9} [DEBUG] \uC784\uC2DC \uCC98\uB9AC\uB41C Excel \uD30C\uC77C \uC815\uB9AC \uC644\uB8CC: ${processedExcelPath}`);
             } catch (cleanupError) {
               console.warn(`\u26A0\uFE0F [DEBUG] \uC784\uC2DC \uD30C\uC77C \uC815\uB9AC \uC2E4\uD328:`, cleanupError);
@@ -14954,8 +15132,8 @@ var ExcelAutomationService = class {
         new Set(vendorValidation.validVendors.map((v) => v.email))
       ).filter((email) => email && email.trim());
       const timestamp2 = Date.now();
-      const processedPath = path7.join(
-        path7.dirname(filePath),
+      const processedPath = path8.join(
+        path8.dirname(filePath),
         `processed-${timestamp2}.xlsx`
       );
       await removeAllInputSheets(filePath, processedPath);
@@ -14984,15 +15162,15 @@ var ExcelAutomationService = class {
       } catch (pdfError) {
         console.error("\u26A0\uFE0F \uD1B5\uD569 PDF \uC11C\uBE44\uC2A4 \uC2E4\uD328 - Excel \uD30C\uC77C\uB9CC \uCCA8\uBD80\uB429\uB2C8\uB2E4:", pdfError);
       }
-      const stats = fs9.statSync(processedPath);
-      const pdfStats = pdfConversionSuccess && fs9.existsSync(pdfPath) ? fs9.statSync(pdfPath) : null;
+      const stats = fs10.statSync(processedPath);
+      const pdfStats = pdfConversionSuccess && fs10.existsSync(pdfPath) ? fs10.statSync(pdfPath) : null;
       const emailPreview = {
         recipients,
-        subject: `\uBC1C\uC8FC\uC11C - ${path7.basename(filePath, path7.extname(filePath))} (${(/* @__PURE__ */ new Date()).toLocaleDateString("ko-KR")})`,
+        subject: `\uBC1C\uC8FC\uC11C - ${path8.basename(filePath, path8.extname(filePath))} (${(/* @__PURE__ */ new Date()).toLocaleDateString("ko-KR")})`,
         attachmentInfo: {
-          originalFile: path7.basename(filePath),
-          processedFile: path7.basename(processedPath),
-          processedPdfFile: pdfStats ? path7.basename(pdfPath) : void 0,
+          originalFile: path8.basename(filePath),
+          processedFile: path8.basename(processedPath),
+          processedPdfFile: pdfStats ? path8.basename(pdfPath) : void 0,
           fileSize: stats.size,
           pdfFileSize: pdfStats ? pdfStats.size : void 0
         },
@@ -15160,8 +15338,8 @@ var ExcelAutomationService = class {
         new Set(selectedVendors.map((v) => v.selectedVendorEmail))
       ).filter((email) => email && email.trim());
       const timestamp2 = Date.now();
-      const processedPath = path7.join(
-        path7.dirname(filePath),
+      const processedPath = path8.join(
+        path8.dirname(filePath),
         `processed-${timestamp2}.xlsx`
       );
       await removeAllInputSheets(filePath, processedPath);
@@ -15190,15 +15368,15 @@ var ExcelAutomationService = class {
       } catch (pdfError) {
         console.error("\u26A0\uFE0F \uD1B5\uD569 PDF \uC11C\uBE44\uC2A4 \uC2E4\uD328 - Excel \uD30C\uC77C\uB9CC \uCCA8\uBD80\uB429\uB2C8\uB2E4:", pdfError);
       }
-      const stats = fs9.statSync(processedPath);
-      const pdfStats = pdfConversionSuccess && fs9.existsSync(pdfPath) ? fs9.statSync(pdfPath) : null;
+      const stats = fs10.statSync(processedPath);
+      const pdfStats = pdfConversionSuccess && fs10.existsSync(pdfPath) ? fs10.statSync(pdfPath) : null;
       return {
         recipients,
-        subject: `\uBC1C\uC8FC\uC11C - ${path7.basename(filePath, path7.extname(filePath))} (${(/* @__PURE__ */ new Date()).toLocaleDateString("ko-KR")})`,
+        subject: `\uBC1C\uC8FC\uC11C - ${path8.basename(filePath, path8.extname(filePath))} (${(/* @__PURE__ */ new Date()).toLocaleDateString("ko-KR")})`,
         attachmentInfo: {
-          originalFile: path7.basename(filePath),
-          processedFile: path7.basename(processedPath),
-          processedPdfFile: pdfStats ? path7.basename(pdfPath) : void 0,
+          originalFile: path8.basename(filePath),
+          processedFile: path8.basename(processedPath),
+          processedPdfFile: pdfStats ? path8.basename(pdfPath) : void 0,
           fileSize: stats.size,
           pdfFileSize: pdfStats ? pdfStats.size : void 0
         },
@@ -15225,8 +15403,8 @@ init_debug_logger();
 var storage2 = multer2.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir2 = process.env.VERCEL ? "/tmp" : "uploads";
-    if (!process.env.VERCEL && !fs10.existsSync(uploadDir2)) {
-      fs10.mkdirSync(uploadDir2, { recursive: true });
+    if (!process.env.VERCEL && !fs11.existsSync(uploadDir2)) {
+      fs11.mkdirSync(uploadDir2, { recursive: true });
     }
     cb(null, uploadDir2);
   },
@@ -15341,8 +15519,8 @@ router9.post("/upload-and-process", requireAuth, upload2.single("file"), async (
     const result = await ExcelAutomationService.processExcelUpload(filePath, userId, sessionId);
     console.log(`\u2705 [API] ExcelAutomationService.processExcelUpload \uC644\uB8CC:`, result.success ? "\uC131\uACF5" : "\uC2E4\uD328");
     if (!result.success) {
-      if (fs10.existsSync(filePath)) {
-        fs10.unlinkSync(filePath);
+      if (fs11.existsSync(filePath)) {
+        fs11.unlinkSync(filePath);
       }
       clearTimeout(timeoutHandler);
       if (!responseHandled) {
@@ -15370,9 +15548,9 @@ router9.post("/upload-and-process", requireAuth, upload2.single("file"), async (
   } catch (error) {
     clearTimeout(timeoutHandler);
     console.error("\u274C [API] Excel \uC790\uB3D9\uD654 \uCC98\uB9AC \uC624\uB958:", error);
-    if (req.file?.path && fs10.existsSync(req.file.path)) {
+    if (req.file?.path && fs11.existsSync(req.file.path)) {
       console.log(`\u{1F5D1}\uFE0F [API] \uC624\uB958\uB85C \uC778\uD55C \uC784\uC2DC \uD30C\uC77C \uC815\uB9AC: ${req.file.path}`);
-      fs10.unlinkSync(req.file.path);
+      fs11.unlinkSync(req.file.path);
     }
     let errorMessage = "\uC11C\uBC84 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4.";
     let statusCode = 500;
@@ -15460,7 +15638,7 @@ router9.post("/send-emails", requireAuth, async (req, res) => {
         error: "\uC774\uBA54\uC77C \uC218\uC2E0\uC790\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4."
       });
     }
-    if (!fs10.existsSync(processedFilePath)) {
+    if (!fs11.existsSync(processedFilePath)) {
       return res.status(400).json({
         success: false,
         error: "\uCC98\uB9AC\uB41C \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
@@ -15495,7 +15673,7 @@ router9.post("/send-emails", requireAuth, async (req, res) => {
 router9.post("/validate-vendors", requireAuth, async (req, res) => {
   try {
     const { filePath } = req.body;
-    if (!filePath || !fs10.existsSync(filePath)) {
+    if (!filePath || !fs11.existsSync(filePath)) {
       return res.status(400).json({
         success: false,
         error: "\uC720\uD6A8\uD55C \uD30C\uC77C \uACBD\uB85C\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4."
@@ -15519,8 +15697,8 @@ router9.post("/validate-vendors", requireAuth, async (req, res) => {
 router9.get("/download/:filename", requireAuth, (req, res) => {
   try {
     const filename = req.params.filename;
-    const filePath = path8.join("uploads", filename);
-    if (!fs10.existsSync(filePath)) {
+    const filePath = path9.join("uploads", filename);
+    if (!fs11.existsSync(filePath)) {
       return res.status(404).json({
         success: false,
         error: "\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
@@ -15567,8 +15745,8 @@ router9.post("/debug-upload", requireAuth, upload2.single("file"), async (req, r
     step = 3;
     console.log(`\u{1F41B} [DEBUG] Step ${step}: File path check`);
     const filePath = req.file.path;
-    const fs22 = await import("fs");
-    if (!fs22.existsSync(filePath)) {
+    const fs23 = await import("fs");
+    if (!fs23.existsSync(filePath)) {
       return res.status(400).json({
         success: false,
         error: "\uC5C5\uB85C\uB4DC\uB41C \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.",
@@ -15625,8 +15803,8 @@ router9.delete("/cleanup", requireAuth, async (req, res) => {
     const errors = [];
     for (const filePath of filePaths) {
       try {
-        if (fs10.existsSync(filePath)) {
-          fs10.unlinkSync(filePath);
+        if (fs11.existsSync(filePath)) {
+          fs11.unlinkSync(filePath);
           deletedCount++;
           console.log(`\u{1F5D1}\uFE0F \uD30C\uC77C \uC0AD\uC81C: ${filePath}`);
         }
@@ -15659,18 +15837,18 @@ init_po_template_processor_mock();
 init_debug_logger();
 import { Router as Router10 } from "express";
 import multer3 from "multer";
-import path12 from "path";
-import fs14 from "fs";
+import path13 from "path";
+import fs15 from "fs";
 import { fileURLToPath as fileURLToPath4 } from "url";
 
 // server/utils/po-email-service-mock.ts
 init_po_template_processor_mock();
 import nodemailer4 from "nodemailer";
-import path9 from "path";
-import fs11 from "fs";
+import path10 from "path";
+import fs12 from "fs";
 import { fileURLToPath as fileURLToPath3 } from "url";
 var __filename3 = fileURLToPath3(import.meta.url);
-var __dirname4 = path9.dirname(__filename3);
+var __dirname3 = path10.dirname(__filename3);
 var POEmailServiceMock = class {
   constructor() {
     this.transporter = null;
@@ -15696,8 +15874,8 @@ var POEmailServiceMock = class {
   async sendPOWithAttachments(originalFilePath, emailOptions) {
     try {
       const timestamp2 = Date.now();
-      const uploadsDir = path9.join(__dirname4, "../../uploads");
-      const extractedPath = path9.join(uploadsDir, `po-sheets-${timestamp2}.xlsx`);
+      const uploadsDir = path10.join(__dirname3, "../../uploads");
+      const extractedPath = path10.join(uploadsDir, `po-sheets-${timestamp2}.xlsx`);
       const extractResult = POTemplateProcessorMock.extractSheetsToFile(
         originalFilePath,
         extractedPath,
@@ -15710,7 +15888,7 @@ var POEmailServiceMock = class {
           error: `\uC2DC\uD2B8 \uCD94\uCD9C \uC2E4\uD328: ${extractResultData.error}`
         };
       }
-      const pdfPath = path9.join(uploadsDir, `po-sheets-${timestamp2}.pdf`);
+      const pdfPath = path10.join(uploadsDir, `po-sheets-${timestamp2}.pdf`);
       const pdfResult = await this.createDummyPDF(pdfPath);
       if (!pdfResult.success) {
         return {
@@ -15719,14 +15897,14 @@ var POEmailServiceMock = class {
         };
       }
       const attachments3 = [];
-      if (fs11.existsSync(extractedPath)) {
+      if (fs12.existsSync(extractedPath)) {
         attachments3.push({
           filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`,
           path: extractedPath,
           contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         });
       }
-      if (fs11.existsSync(pdfPath)) {
+      if (fs12.existsSync(pdfPath)) {
         attachments3.push({
           filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`,
           path: pdfPath,
@@ -15818,12 +15996,12 @@ var POEmailServiceMock = class {
     console.log("  \uC81C\uBAA9:", options.subject);
     console.log("  \uCCA8\uBD80\uD30C\uC77C:", options.attachments?.length || 0, "\uAC1C");
     console.log("  \uBC1C\uC1A1 \uC2DC\uAC04:", mockLog.timestamp);
-    const logDir = path9.join(__dirname4, "../../logs");
-    if (!fs11.existsSync(logDir)) {
-      fs11.mkdirSync(logDir, { recursive: true });
+    const logDir = path10.join(__dirname3, "../../logs");
+    if (!fs12.existsSync(logDir)) {
+      fs12.mkdirSync(logDir, { recursive: true });
     }
-    const logFile = path9.join(logDir, `mock-email-${Date.now()}.json`);
-    fs11.writeFileSync(logFile, JSON.stringify(mockLog, null, 2));
+    const logFile = path10.join(logDir, `mock-email-${Date.now()}.json`);
+    fs12.writeFileSync(logFile, JSON.stringify(mockLog, null, 2));
     return {
       success: true,
       messageId: `mock-${Date.now()}@po-management.local`,
@@ -15902,7 +16080,7 @@ trailer
 startxref
 456
 %%EOF`;
-      fs11.writeFileSync(pdfPath, pdfContent);
+      fs12.writeFileSync(pdfPath, pdfContent);
       return { success: true };
     } catch (error) {
       return {
@@ -15916,7 +16094,7 @@ startxref
    */
   getFileSize(filePath) {
     try {
-      const stats = fs11.statSync(filePath);
+      const stats = fs12.statSync(filePath);
       const bytes = stats.size;
       if (bytes === 0) return "0 Bytes";
       const k = 1024;
@@ -16110,9 +16288,9 @@ startxref
   cleanupTempFiles(filePaths) {
     filePaths.forEach((filePath) => {
       try {
-        if (fs11.existsSync(filePath)) {
-          fs11.unlinkSync(filePath);
-          console.log(`\u2705 \uC784\uC2DC \uD30C\uC77C \uC815\uB9AC: ${path9.basename(filePath)}`);
+        if (fs12.existsSync(filePath)) {
+          fs12.unlinkSync(filePath);
+          console.log(`\u2705 \uC784\uC2DC \uD30C\uC77C \uC815\uB9AC: ${path10.basename(filePath)}`);
         }
       } catch (error) {
         console.error(`\u274C \uD30C\uC77C \uC815\uB9AC \uC2E4\uD328: ${filePath}`, error);
@@ -16148,15 +16326,15 @@ startxref
 
 // server/utils/excel-to-pdf-mock.ts
 import XLSX5 from "xlsx";
-import path10 from "path";
-import fs12 from "fs";
+import path11 from "path";
+import fs13 from "fs";
 var ExcelToPdfConverterMock = class {
   /**
    * Excel 파일을 PDF로 변환 (Mock 버전)
    */
   static async convertToPdf(excelPath, options = {}) {
     try {
-      if (!fs12.existsSync(excelPath)) {
+      if (!fs13.existsSync(excelPath)) {
         return {
           success: false,
           error: "Excel \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
@@ -16185,7 +16363,7 @@ var ExcelToPdfConverterMock = class {
    */
   static async convertSheetsToPdf(excelPath, sheetNames, options = {}) {
     try {
-      if (!fs12.existsSync(excelPath)) {
+      if (!fs13.existsSync(excelPath)) {
         return {
           success: false,
           error: "Excel \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
@@ -16214,7 +16392,7 @@ var ExcelToPdfConverterMock = class {
    */
   static async createMockPdf(htmlContent, pdfPath) {
     try {
-      console.log(`\u{1F4C4} PDFKit\uC73C\uB85C \uD55C\uAE00 \uC9C0\uC6D0 PDF \uC0DD\uC131 \uC2DC\uC791: ${path10.basename(pdfPath)}`);
+      console.log(`\u{1F4C4} PDFKit\uC73C\uB85C \uD55C\uAE00 \uC9C0\uC6D0 PDF \uC0DD\uC131 \uC2DC\uC791: ${path11.basename(pdfPath)}`);
       const PDFDocument = (await import("pdfkit")).default;
       const doc = new PDFDocument({
         size: "A4",
@@ -16235,7 +16413,7 @@ var ExcelToPdfConverterMock = class {
       ];
       for (const fontPath of possibleFonts) {
         try {
-          if (fs12.existsSync(fontPath)) {
+          if (fs13.existsSync(fontPath)) {
             koreanFontPath = fontPath;
             console.log(`\u2705 \uD55C\uAE00 \uD3F0\uD2B8 \uBC1C\uACAC: ${fontPath}`);
             break;
@@ -16265,7 +16443,7 @@ var ExcelToPdfConverterMock = class {
       doc.moveDown(0.5);
       doc.text("\u{1F4C5} \uC0DD\uC131 \uC2DC\uAC04: " + (/* @__PURE__ */ new Date()).toLocaleString("ko-KR"));
       doc.moveDown(0.5);
-      doc.text("\u{1F4C1} \uD30C\uC77C \uACBD\uB85C: " + path10.basename(pdfPath));
+      doc.text("\u{1F4C1} \uD30C\uC77C \uACBD\uB85C: " + path11.basename(pdfPath));
       doc.moveDown(1);
       doc.fontSize(14).text("\u{1F4CA} Excel \uD30C\uC77C \uC815\uBCF4:", 50, doc.y);
       doc.fontSize(10);
@@ -16280,14 +16458,14 @@ var ExcelToPdfConverterMock = class {
       doc.text("\u2022 \uD55C\uAE00 \uD3F0\uD2B8 \uBB38\uC81C\uAC00 \uD574\uACB0\uB418\uC5C8\uB294\uC9C0 \uD655\uC778\uD574 \uC8FC\uC138\uC694.");
       doc.fontSize(8);
       doc.text(`\uC2DC\uC2A4\uD15C: ${process.platform} | Node.js: ${process.version}`, 50, 700);
-      doc.text(`\uD55C\uAE00 \uD3F0\uD2B8: ${koreanFontPath ? path10.basename(koreanFontPath) : "Helvetica (\uAE30\uBCF8)"}`, 50, 715);
+      doc.text(`\uD55C\uAE00 \uD3F0\uD2B8: ${koreanFontPath ? path11.basename(koreanFontPath) : "Helvetica (\uAE30\uBCF8)"}`, 50, 715);
       const buffers = [];
       doc.on("data", buffers.push.bind(buffers));
       return new Promise((resolve) => {
         doc.on("end", () => {
           const pdfBuffer = Buffer.concat(buffers);
-          fs12.writeFileSync(pdfPath, pdfBuffer);
-          console.log(`\u2705 \uD55C\uAE00 \uC9C0\uC6D0 Mock PDF \uC0DD\uC131 \uC644\uB8CC: ${path10.basename(pdfPath)}`);
+          fs13.writeFileSync(pdfPath, pdfBuffer);
+          console.log(`\u2705 \uD55C\uAE00 \uC9C0\uC6D0 Mock PDF \uC0DD\uC131 \uC644\uB8CC: ${path11.basename(pdfPath)}`);
           resolve({ success: true });
         });
         doc.end();
@@ -16455,8 +16633,8 @@ async function convertExcelToPdfMock(excelPath, outputPath, sheetsOnly) {
 
 // server/utils/po-template-validator.ts
 import XLSX6 from "xlsx";
-import fs13 from "fs";
-import path11 from "path";
+import fs14 from "fs";
+import path12 from "path";
 var POTemplateValidator = class {
   static {
     this.REQUIRED_COLUMNS = [
@@ -16573,12 +16751,12 @@ var POTemplateValidator = class {
       }
     };
     try {
-      if (!fs13.existsSync(filePath)) {
+      if (!fs14.existsSync(filePath)) {
         result.isValid = false;
         result.errors.push("\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.");
         return result;
       }
-      const ext = path11.extname(filePath).toLowerCase();
+      const ext = path12.extname(filePath).toLowerCase();
       if (![".xlsx", ".xlsm", ".xls"].includes(ext)) {
         result.isValid = false;
         result.errors.push("\uC9C0\uC6D0\uD558\uC9C0 \uC54A\uB294 \uD30C\uC77C \uD615\uC2DD\uC785\uB2C8\uB2E4. Excel \uD30C\uC77C(.xlsx, .xlsm, .xls)\uB9CC \uC9C0\uC6D0\uB429\uB2C8\uB2E4.");
@@ -16815,7 +16993,7 @@ var POTemplateValidator = class {
       errors: []
     };
     try {
-      if (!fs13.existsSync(filePath)) {
+      if (!fs14.existsSync(filePath)) {
         result.isValid = false;
         result.errors.push("\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.");
         return result;
@@ -16854,20 +17032,20 @@ router10.get("/test", (req, res) => {
   res.json({ message: "PO Template router is working!", timestamp: /* @__PURE__ */ new Date() });
 });
 var __filename4 = fileURLToPath4(import.meta.url);
-var __dirname5 = path12.dirname(__filename4);
+var __dirname4 = path13.dirname(__filename4);
 var storage3 = multer3.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir2 = process.env.VERCEL ? "/tmp" : path12.join(__dirname5, "../../uploads");
-    if (!process.env.VERCEL && !fs14.existsSync(uploadDir2)) {
-      fs14.mkdirSync(uploadDir2, { recursive: true });
+    const uploadDir2 = process.env.VERCEL ? "/tmp" : path13.join(__dirname4, "../../uploads");
+    if (!process.env.VERCEL && !fs15.existsSync(uploadDir2)) {
+      fs15.mkdirSync(uploadDir2, { recursive: true });
     }
     cb(null, uploadDir2);
   },
   filename: (req, file, cb) => {
     const timestamp2 = Date.now();
     const originalName = Buffer.from(file.originalname, "latin1").toString("utf8");
-    const extension = path12.extname(originalName);
-    const basename = path12.basename(originalName, extension);
+    const extension = path13.extname(originalName);
+    const basename = path13.basename(originalName, extension);
     const safeBasename = basename.replace(/[^a-zA-Z0-9가-힣_-]/g, "_");
     cb(null, `${timestamp2}-${safeBasename}${extension}`);
   }
@@ -16992,7 +17170,7 @@ router10.post("/upload", simpleAuth, upload3.single("file"), async (req, res) =>
     });
     if (!quickValidation.isValid) {
       console.error("\u274C [\uC11C\uBC84] \uC720\uD6A8\uC131 \uAC80\uC0AC \uC2E4\uD328");
-      fs14.unlinkSync(filePath);
+      fs15.unlinkSync(filePath);
       clearTimeout(timeoutId);
       return responseHandler.send(400, {
         success: false,
@@ -17011,7 +17189,7 @@ router10.post("/upload", simpleAuth, upload3.single("file"), async (req, res) =>
     });
     if (!parseResult.success) {
       console.error("\u274C [\uC11C\uBC84] \uD30C\uC2F1 \uC2E4\uD328:", parseResult.error);
-      fs14.unlinkSync(filePath);
+      fs15.unlinkSync(filePath);
       clearTimeout(timeoutId);
       return responseHandler.send(400, {
         success: false,
@@ -17052,9 +17230,9 @@ router10.post("/upload", simpleAuth, upload3.single("file"), async (req, res) =>
       endpoint: "/api/po-template/upload",
       elapsedTime: Date.now() - startTime
     });
-    if (req.file && fs14.existsSync(req.file.path)) {
+    if (req.file && fs15.existsSync(req.file.path)) {
       console.log("\u{1F5D1}\uFE0F [\uC11C\uBC84] \uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C:", req.file.path);
-      fs14.unlinkSync(req.file.path);
+      fs15.unlinkSync(req.file.path);
     }
     clearTimeout(timeoutId);
     responseHandler.send(500, {
@@ -17193,13 +17371,14 @@ router10.post("/save", simpleAuth, async (req, res) => {
             attachmentId: null
           };
           try {
-            console.log("\u{1F4C4} PDF \uC0DD\uC131 \uC2DC\uC791:", orderNumber);
-            console.log("\u{1F4CA} \uD3EC\uAD04\uC801 \uB370\uC774\uD130 \uC218\uC9D1 \uC2DC\uB3C4 - Order ID:", newOrder[0].id);
+            console.log("\u{1F680} [PDF\uC0DD\uC131] \uC2DC\uC791:", orderNumber, "Order ID:", newOrder[0].id);
+            console.log("\u{1F310} [PDF\uC0DD\uC131] Environment:", { VERCEL: !!process.env.VERCEL, NODE_ENV: process.env.NODE_ENV });
             const comprehensiveData = await ProfessionalPDFGenerationService.gatherComprehensiveOrderData(newOrder[0].id);
             if (comprehensiveData) {
-              console.log("\u2705 \uD3EC\uAD04\uC801 \uB370\uC774\uD130 \uC218\uC9D1 \uC131\uACF5");
+              console.log("\u2705 [PDF\uC0DD\uC131] \uD3EC\uAD04\uC801 \uB370\uC774\uD130 \uC218\uC9D1 \uC131\uACF5");
               pdfBuffer = await ProfessionalPDFGenerationService.generateProfessionalPDF(comprehensiveData);
               pdfBase64 = pdfBuffer.toString("base64");
+              console.log("\u2705 [PDF\uC0DD\uC131] PDF \uBC84\uD37C \uC0DD\uC131 \uC644\uB8CC, \uD06C\uAE30:", pdfBuffer.length, "bytes", "Base64 \uAE38\uC774:", pdfBase64.length, "chars");
             } else {
               console.log("\u26A0\uFE0F \uD3EC\uAD04\uC801 \uB370\uC774\uD130 \uC218\uC9D1 \uC2E4\uD328, fallback \uBAA8\uB4DC \uC0AC\uC6A9");
               const companyList = await db2.select().from(companies).limit(1);
@@ -17342,16 +17521,25 @@ router10.post("/save", simpleAuth, async (req, res) => {
               message: `PDF \uD30C\uC77C\uC774 \uC131\uACF5\uC801\uC73C\uB85C \uC0DD\uC131\uB418\uC5C8\uC2B5\uB2C8\uB2E4 (${orderNumber}.pdf)`,
               attachmentId: pdfAttachment[0].id
             };
-            console.log("\u2705 PDF \uC0DD\uC131 \uBC0F \uC800\uC7A5 \uC644\uB8CC:", orderNumber);
+            console.log("\u2705 [PDF\uC0DD\uC131] PDF \uC0DD\uC131 \uBC0F \uC800\uC7A5 \uC644\uB8CC:", orderNumber);
           } catch (pdfError) {
-            console.error("\u274C PDF \uC0DD\uC131 \uC2E4\uD328 (\uACC4\uC18D \uC9C4\uD589):", pdfError);
-            pdfGenerationStatus.message = `PDF \uC0DD\uC131 \uC2E4\uD328: ${pdfError instanceof Error ? pdfError.message : "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"}`;
+            console.error("\u274C [PDF\uC0DD\uC131] PDF \uC0DD\uC131 \uC2E4\uD328 (\uACC4\uC18D \uC9C4\uD589):", pdfError);
+            console.error("\u274C [PDF\uC0DD\uC131] \uC5D0\uB7EC \uC0C1\uC138:", {
+              orderNumber,
+              orderId: newOrder[0].id,
+              environment: process.env.VERCEL ? "vercel" : "local",
+              errorMessage: pdfError instanceof Error ? pdfError.message : "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958",
+              errorStack: pdfError instanceof Error ? pdfError.stack : null,
+              memoryUsage: process.memoryUsage()
+            });
+            pdfGenerationStatus.success = false;
+            pdfGenerationStatus.message = process.env.VERCEL ? `PDF \uC0DD\uC131 \uC2E4\uD328 (Vercel): ${pdfError instanceof Error ? pdfError.message : "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"}. \uD3F0\uD2B8 \uB610\uB294 \uD658\uACBD \uBB38\uC81C\uC77C \uC218 \uC788\uC2B5\uB2C8\uB2E4.` : `PDF \uC0DD\uC131 \uC2E4\uD328: ${pdfError instanceof Error ? pdfError.message : "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"}`;
           }
           pdfGenerationStatuses.push(pdfGenerationStatus);
-          if (extractedFilePath && fs14.existsSync(extractedFilePath)) {
+          if (extractedFilePath && fs15.existsSync(extractedFilePath)) {
             try {
               console.log("\u{1F4CA} Excel \uD30C\uC77C \uC800\uC7A5 \uC2DC\uC791:", extractedFilePath);
-              const excelBuffer = fs14.readFileSync(extractedFilePath);
+              const excelBuffer = fs15.readFileSync(extractedFilePath);
               const excelBase64 = excelBuffer.toString("base64");
               const excelOriginalName = `${orderNumber}_\uAC11\uC9C0\uC744\uC9C0.xlsx`;
               const excelStoredName = `${orderNumber}_${Date.now()}_extracted.xlsx`;
@@ -17375,6 +17563,11 @@ router10.post("/save", simpleAuth, async (req, res) => {
           savedOrders++;
           savedOrderNumbers.push(orderNumber);
         }
+        console.log("\u{1F4E4} [\uC751\uB2F5] PDF \uC0DD\uC131 \uC0C1\uD0DC \uD3EC\uD568\uD558\uC5EC \uC751\uB2F5 \uC804\uC1A1:", {
+          savedOrders,
+          pdfStatusCount: pdfGenerationStatuses.length,
+          pdfStatuses: pdfGenerationStatuses.map((s) => ({ orderNumber: s.orderNumber, success: s.success, hasMessage: !!s.message }))
+        });
         res.json({
           success: true,
           message: "\uC2E4\uC81C DB \uC800\uC7A5 \uC644\uB8CC",
@@ -17383,6 +17576,7 @@ router10.post("/save", simpleAuth, async (req, res) => {
             savedOrderNumbers,
             usingMockDB: false,
             pdfGenerationStatuses
+            // 확실히 포함
           }
         });
       } catch (dbError) {
@@ -17436,12 +17630,12 @@ router10.post("/extract-sheets", simpleAuth, async (req, res) => {
     if (!filePath) {
       return res.status(400).json({ error: "\uD30C\uC77C \uACBD\uB85C\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4." });
     }
-    if (!fs14.existsSync(filePath)) {
+    if (!fs15.existsSync(filePath)) {
       return res.status(400).json({ error: "\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4." });
     }
     const timestamp2 = Date.now();
-    const extractedPath = path12.join(
-      path12.dirname(filePath),
+    const extractedPath = path13.join(
+      path13.dirname(filePath),
       `extracted-${timestamp2}.xlsx`
     );
     const extractResult = await POTemplateProcessorMock.extractSheetsToFile(
@@ -17559,7 +17753,7 @@ router10.post("/send-email", simpleAuth, async (req, res) => {
         error: "\uD544\uC218 \uB370\uC774\uD130\uAC00 \uB204\uB77D\uB418\uC5C8\uC2B5\uB2C8\uB2E4. (filePath, to, subject \uD544\uC218)"
       });
     }
-    if (!fs14.existsSync(filePath)) {
+    if (!fs15.existsSync(filePath)) {
       return res.status(400).json({ error: "\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4." });
     }
     const emailService4 = new POEmailServiceMock();
@@ -17619,12 +17813,12 @@ router10.post("/convert-to-pdf", simpleAuth, async (req, res) => {
     if (!filePath) {
       return res.status(400).json({ error: "\uD30C\uC77C \uACBD\uB85C\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4." });
     }
-    if (!fs14.existsSync(filePath)) {
+    if (!fs15.existsSync(filePath)) {
       return res.status(400).json({ error: "\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4." });
     }
     const timestamp2 = Date.now();
-    const pdfPath = outputPath || path12.join(
-      path12.dirname(filePath),
+    const pdfPath = outputPath || path13.join(
+      path13.dirname(filePath),
       `po-sheets-${timestamp2}.pdf`
     );
     const pdfResult = await convertExcelToPdfMock(filePath, pdfPath, ["\uAC11\uC9C0", "\uC744\uC9C0"]);
@@ -17677,7 +17871,7 @@ router10.post("/process-complete", simpleAuth, upload3.single("file"), async (re
     const validation = await POTemplateValidator.validatePOTemplateFile(filePath);
     results.validation = validation;
     if (!validation.isValid) {
-      fs14.unlinkSync(filePath);
+      fs15.unlinkSync(filePath);
       return res.status(400).json({
         error: "\uC720\uD6A8\uC131 \uAC80\uC0AC \uC2E4\uD328",
         details: validation.errors.join(", "),
@@ -17688,7 +17882,7 @@ router10.post("/process-complete", simpleAuth, upload3.single("file"), async (re
     const parseResult = POTemplateProcessorMock.parseInputSheet(filePath);
     results.parsing = parseResult;
     if (!parseResult.success) {
-      fs14.unlinkSync(filePath);
+      fs15.unlinkSync(filePath);
       return res.status(400).json({
         error: "\uD30C\uC2F1 \uC2E4\uD328",
         details: parseResult.error,
@@ -17700,8 +17894,8 @@ router10.post("/process-complete", simpleAuth, upload3.single("file"), async (re
     results.saving = saveResult;
     console.log("\u{1F4CB} 4\uB2E8\uACC4: \uAC11\uC9C0/\uC744\uC9C0 \uC2DC\uD2B8 \uCD94\uCD9C");
     const timestamp2 = Date.now();
-    const extractedPath = path12.join(
-      path12.dirname(filePath),
+    const extractedPath = path13.join(
+      path13.dirname(filePath),
       `extracted-${timestamp2}.xlsx`
     );
     const extractResult = await POTemplateProcessorMock.extractSheetsToFile(
@@ -17712,8 +17906,8 @@ router10.post("/process-complete", simpleAuth, upload3.single("file"), async (re
     results.extraction = extractResult;
     if (generatePDF) {
       console.log("\u{1F4C4} 5\uB2E8\uACC4: PDF \uBCC0\uD658");
-      const pdfPath = path12.join(
-        path12.dirname(filePath),
+      const pdfPath = path13.join(
+        path13.dirname(filePath),
         `po-sheets-${timestamp2}.pdf`
       );
       const pdfResult = await convertExcelToPdfMock(extractedPath, pdfPath);
@@ -17754,8 +17948,8 @@ router10.post("/process-complete", simpleAuth, upload3.single("file"), async (re
     });
   } catch (error) {
     console.error("\uD1B5\uD569 \uCC98\uB9AC \uC624\uB958:", error);
-    if (req.file && fs14.existsSync(req.file.path)) {
-      fs14.unlinkSync(req.file.path);
+    if (req.file && fs15.existsSync(req.file.path)) {
+      fs15.unlinkSync(req.file.path);
     }
     res.status(500).json({
       error: "\uC11C\uBC84 \uC624\uB958",
@@ -18743,7 +18937,7 @@ init_schema();
 import * as XLSX8 from "xlsx";
 import Papa from "papaparse";
 import { eq as eq18 } from "drizzle-orm";
-import fs15 from "fs";
+import fs16 from "fs";
 var ImportExportService = class {
   // Parse Excel file
   static parseExcelFile(filePath) {
@@ -18756,7 +18950,7 @@ var ImportExportService = class {
   // Parse CSV file
   static parseCSVFile(filePath) {
     return new Promise((resolve, reject) => {
-      const fileContent = fs15.readFileSync(filePath, "utf8");
+      const fileContent = fs16.readFileSync(filePath, "utf8");
       Papa.parse(fileContent, {
         header: true,
         complete: (results) => {
@@ -19248,8 +19442,8 @@ var ImportExportService = class {
 
 // server/routes/import-export.ts
 import multer4 from "multer";
-import fs16 from "fs";
-import path13 from "path";
+import fs17 from "fs";
+import path14 from "path";
 var upload4 = multer4({
   dest: "uploads/",
   limits: {
@@ -19271,7 +19465,7 @@ var upload4 = multer4({
 });
 var router12 = Router12();
 var getFileType = (filename) => {
-  const ext = path13.extname(filename).toLowerCase();
+  const ext = path14.extname(filename).toLowerCase();
   return ext === ".csv" ? "csv" : "excel";
 };
 router12.post("/import/vendors", requireAuth, upload4.single("file"), async (req, res) => {
@@ -19281,7 +19475,7 @@ router12.post("/import/vendors", requireAuth, upload4.single("file"), async (req
     }
     const fileType = getFileType(req.file.filename);
     const result = await ImportExportService.importVendors(req.file.path, fileType);
-    fs16.unlinkSync(req.file.path);
+    fs17.unlinkSync(req.file.path);
     res.json({
       message: "Vendor import completed",
       imported: result.imported,
@@ -19300,7 +19494,7 @@ router12.post("/import/items", requireAuth, upload4.single("file"), async (req, 
     }
     const fileType = getFileType(req.file.filename);
     const result = await ImportExportService.importItems(req.file.path, fileType);
-    fs16.unlinkSync(req.file.path);
+    fs17.unlinkSync(req.file.path);
     res.json({
       message: "Item import completed",
       imported: result.imported,
@@ -19319,7 +19513,7 @@ router12.post("/import/projects", requireAuth, upload4.single("file"), async (re
     }
     const fileType = getFileType(req.file.filename);
     const result = await ImportExportService.importProjects(req.file.path, fileType);
-    fs16.unlinkSync(req.file.path);
+    fs17.unlinkSync(req.file.path);
     res.json({
       message: "Project import completed",
       imported: result.imported,
@@ -19338,7 +19532,7 @@ router12.post("/import/purchase_orders", requireAuth, upload4.single("file"), as
     }
     const fileType = getFileType(req.file.filename);
     const result = await ImportExportService.importPurchaseOrders(req.file.path, fileType);
-    fs16.unlinkSync(req.file.path);
+    fs17.unlinkSync(req.file.path);
     res.json({
       message: "Purchase order import completed",
       imported: result.imported,
@@ -20423,21 +20617,21 @@ init_schema();
 import { Router as Router16 } from "express";
 import { eq as eq21, desc as desc9 } from "drizzle-orm";
 import multer5 from "multer";
-import path14 from "path";
-import fs17 from "fs";
+import path15 from "path";
+import fs18 from "fs";
 var router17 = Router16();
 var storage4 = multer5.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir2 = process.env.VERCEL ? "/tmp" : "uploads/invoices";
-    if (!process.env.VERCEL && !fs17.existsSync(uploadDir2)) {
-      fs17.mkdirSync(uploadDir2, { recursive: true });
+    if (!process.env.VERCEL && !fs18.existsSync(uploadDir2)) {
+      fs18.mkdirSync(uploadDir2, { recursive: true });
     }
     cb(null, uploadDir2);
   },
   filename: (req, file, cb) => {
     const timestamp2 = Date.now();
-    const ext = path14.extname(file.originalname);
-    const name = path14.basename(file.originalname, ext);
+    const ext = path15.extname(file.originalname);
+    const name = path15.basename(file.originalname, ext);
     cb(null, `${name}_${timestamp2}${ext}`);
   }
 });
@@ -20566,7 +20760,7 @@ router17.post("/invoices", upload5.single("file"), async (req, res) => {
     if (req.file) {
       filePath = req.file.path;
       if (process.env.VERCEL) {
-        const fileBuffer = fs17.readFileSync(req.file.path);
+        const fileBuffer = fs18.readFileSync(req.file.path);
         fileData = fileBuffer.toString("base64");
         console.log(`\u{1F4CE} File data encoded for Vercel: ${Math.round(fileBuffer.length / 1024)}KB`);
       }
@@ -20716,8 +20910,8 @@ router17.delete("/invoices/:id", requireAuth, async (req, res) => {
     await db2.delete(invoices).where(eq21(invoices.id, invoiceId));
     if (invoice.filePath && !process.env.VERCEL) {
       try {
-        if (fs17.existsSync(invoice.filePath)) {
-          fs17.unlinkSync(invoice.filePath);
+        if (fs18.existsSync(invoice.filePath)) {
+          fs18.unlinkSync(invoice.filePath);
           console.log(`\u{1F5D1}\uFE0F Deleted invoice file: ${invoice.filePath}`);
         }
       } catch (fileError) {
@@ -23431,23 +23625,23 @@ import { Router as Router28 } from "express";
 import { eq as eq29, and as and18, desc as desc14, count as count4 } from "drizzle-orm";
 init_professional_pdf_generation_service();
 import multer6 from "multer";
-import path16 from "path";
-import fs19 from "fs/promises";
-import { readFileSync, existsSync as existsSync2, unlinkSync } from "fs";
+import path17 from "path";
+import fs20 from "fs/promises";
+import { readFileSync as readFileSync2, existsSync as existsSync3, unlinkSync } from "fs";
 import { z as z8 } from "zod";
 init_excel_input_sheet_remover();
 var router29 = Router28();
 var storage5 = multer6.diskStorage({
   destination: async (req, file, cb) => {
-    const uploadDir2 = process.env.VERCEL ? path16.join("/tmp", "uploads", "excel-simple") : path16.join(process.cwd(), "uploads", "excel-simple");
-    await fs19.mkdir(uploadDir2, { recursive: true });
+    const uploadDir2 = process.env.VERCEL ? path17.join("/tmp", "uploads", "excel-simple") : path17.join(process.cwd(), "uploads", "excel-simple");
+    await fs20.mkdir(uploadDir2, { recursive: true });
     cb(null, uploadDir2);
   },
   filename: (req, file, cb) => {
     const timestamp2 = Date.now();
     const decodedName = decodeKoreanFilename(file.originalname);
-    const ext = path16.extname(decodedName);
-    const basename = path16.basename(decodedName, ext);
+    const ext = path17.extname(decodedName);
+    const basename = path17.basename(decodedName, ext);
     cb(null, `${timestamp2}-${basename}${ext}`);
   }
 });
@@ -23460,7 +23654,7 @@ var upload6 = multer6({
   fileFilter: (req, file, cb) => {
     const decodedName = decodeKoreanFilename(file.originalname);
     file.originalname = decodedName;
-    const ext = path16.extname(decodedName).toLowerCase();
+    const ext = path17.extname(decodedName).toLowerCase();
     if ([".xlsx", ".xls", ".xlsm"].includes(ext)) {
       cb(null, true);
     } else {
@@ -23547,10 +23741,10 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
       let processedFileName = req.file.filename;
       const processedPath = req.file.path.replace(/\.(xlsx?)$/i, "_processed.$1");
       const removeResult = await removeAllInputSheets(req.file.path, processedPath);
-      if (removeResult.success && existsSync2(processedPath)) {
+      if (removeResult.success && existsSync3(processedPath)) {
         console.log(`\u2705 Input sheets removed: ${removeResult.removedSheets.join(", ")}`);
         fileToStore = processedPath;
-        fileBuffer = readFileSync(processedPath);
+        fileBuffer = readFileSync2(processedPath);
         processedFileName = req.file.filename.replace(/\.(xlsx?)$/i, "_processed.$1");
         try {
           unlinkSync(req.file.path);
@@ -23559,7 +23753,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
         }
       } else {
         console.warn("\u26A0\uFE0F Failed to remove Input sheets, using original:", removeResult.error);
-        fileBuffer = readFileSync(req.file.path);
+        fileBuffer = readFileSync2(req.file.path);
       }
       processedExcelFile = {
         originalName: decodedOriginalName,
@@ -23799,10 +23993,10 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
             if (req.file) {
               const attachment = await db2.select().from(attachments).where(eq29(attachments.orderId, emailInfo.orderId)).then((rows) => rows[0]);
               if (attachment) {
-                excelAttachment = process.env.VERCEL ? path16.join("/tmp", "uploads", "excel-simple", attachment.storedName) : attachment.filePath;
+                excelAttachment = process.env.VERCEL ? path17.join("/tmp", "uploads", "excel-simple", attachment.storedName) : attachment.filePath;
               }
             }
-            if (excelAttachment && existsSync2(excelAttachment)) {
+            if (excelAttachment && existsSync3(excelAttachment)) {
               console.log(`\u{1F4CE} Sending email with attachment for order ${emailInfo.orderNumber}`);
               const result = await emailService4.sendPOWithOriginalFormat(
                 excelAttachment,
@@ -23849,7 +24043,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
     }
     const emailsSent = emailsToSend.length;
     if (processedExcelFile && processedExcelFile.filePath) {
-      if (existsSync2(processedExcelFile.filePath)) {
+      if (existsSync3(processedExcelFile.filePath)) {
         try {
           unlinkSync(processedExcelFile.filePath);
           console.log("\u2705 Cleaned up temporary processed Excel file");
@@ -24656,14 +24850,14 @@ var audit_default = router31;
 
 // server/routes/email-test.ts
 import express2 from "express";
-import path18 from "path";
+import path19 from "path";
 
 // server/services/email-service.ts
 init_db();
 init_schema();
 import nodemailer6 from "nodemailer";
-import path17 from "path";
-import fs20 from "fs/promises";
+import path18 from "path";
+import fs21 from "fs/promises";
 var transporter = nodemailer6.createTransport({
   host: process.env.SMTP_HOST || "smtp.naver.com",
   port: parseInt(process.env.SMTP_PORT || "587"),
@@ -24757,7 +24951,7 @@ var emailTemplates = {
 async function sendPurchaseOrderEmail(params) {
   const { orderData, excelFilePath, recipients, cc = [], userId, orderId } = params;
   try {
-    await fs20.access(excelFilePath);
+    await fs21.access(excelFilePath);
     const mailOptions = {
       from: `"(\uC8FC)\uC775\uC9C4\uC5D4\uC9C0\uB2C8\uC5B4\uB9C1" <${process.env.SMTP_USER}>`,
       to: recipients.join(", "),
@@ -24769,7 +24963,7 @@ async function sendPurchaseOrderEmail(params) {
       html: emailTemplates.purchaseOrder.html(orderData),
       attachments: [
         {
-          filename: path17.basename(excelFilePath),
+          filename: path18.basename(excelFilePath),
           path: excelFilePath,
           contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         }
@@ -24780,7 +24974,7 @@ async function sendPurchaseOrderEmail(params) {
     if (orderId && userId) {
       try {
         const trackingId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        const fileStats = await fs20.stat(excelFilePath);
+        const fileStats = await fs21.stat(excelFilePath);
         await db2.insert(emailSendHistory).values({
           orderId,
           sentBy: userId,
@@ -24790,7 +24984,7 @@ async function sendPurchaseOrderEmail(params) {
           subject: mailOptions.subject,
           body: mailOptions.html,
           attachments: [{
-            filename: path17.basename(excelFilePath),
+            filename: path18.basename(excelFilePath),
             path: excelFilePath,
             size: fileStats.size
           }],
@@ -24934,14 +25128,14 @@ router32.post("/send-test", async (req, res) => {
       userName: "Test User",
       userPhone: "010-1234-5678"
     };
-    const dummyFilePath = path18.join(process.cwd(), "uploads", "test-email.xlsx");
-    const fs22 = __require("fs");
-    const uploadsDir = path18.join(process.cwd(), "uploads");
-    if (!fs22.existsSync(uploadsDir)) {
-      fs22.mkdirSync(uploadsDir, { recursive: true });
+    const dummyFilePath = path19.join(process.cwd(), "uploads", "test-email.xlsx");
+    const fs23 = __require("fs");
+    const uploadsDir = path19.join(process.cwd(), "uploads");
+    if (!fs23.existsSync(uploadsDir)) {
+      fs23.mkdirSync(uploadsDir, { recursive: true });
     }
-    if (!fs22.existsSync(dummyFilePath)) {
-      fs22.writeFileSync(dummyFilePath, "test content");
+    if (!fs23.existsSync(dummyFilePath)) {
+      fs23.writeFileSync(dummyFilePath, "test content");
     }
     const result = await emailService2.sendPurchaseOrderEmail({
       orderData: testOrderData,
@@ -27000,8 +27194,8 @@ init_db();
 init_schema();
 import { Router as Router37 } from "express";
 import { eq as eq38 } from "drizzle-orm";
-import path19 from "path";
-import fs21 from "fs";
+import path20 from "path";
+import fs22 from "fs";
 import jwt2 from "jsonwebtoken";
 var router40 = Router37();
 router40.get("/attachments/:id/download", async (req, res) => {
@@ -27083,20 +27277,20 @@ router40.get("/attachments/:id/download", async (req, res) => {
       fileName = fileName.replace("db://", "");
     }
     const possiblePaths = [];
-    if (path19.isAbsolute(fileName)) {
+    if (path20.isAbsolute(fileName)) {
       console.log("\u{1F4C4} Using absolute path directly:", fileName);
       possiblePaths.push(fileName);
     } else {
       possiblePaths.push(
-        path19.join(process.cwd(), "attached_assets", fileName),
-        path19.join(process.cwd(), "uploads", fileName),
-        path19.join(process.cwd(), "uploads", "temp-pdf", fileName),
-        path19.join(process.cwd(), fileName)
+        path20.join(process.cwd(), "attached_assets", fileName),
+        path20.join(process.cwd(), "uploads", fileName),
+        path20.join(process.cwd(), "uploads", "temp-pdf", fileName),
+        path20.join(process.cwd(), fileName)
       );
     }
     let foundPath = null;
     for (const testPath of possiblePaths) {
-      if (fs21.existsSync(testPath)) {
+      if (fs22.existsSync(testPath)) {
         foundPath = testPath;
         console.log(`\u2705 Found PDF file at: ${testPath}`);
         break;
@@ -27110,7 +27304,7 @@ router40.get("/attachments/:id/download", async (req, res) => {
       const contentDisposition = `${disposition}; filename*=UTF-8''${encodeURIComponent(displayName)}`;
       console.log(`\u{1F4C4} Setting Content-Disposition: ${contentDisposition} (mimeType: ${mimeType}, forceDownload: ${forceDownload})`);
       res.setHeader("Content-Disposition", contentDisposition);
-      const fileStream = fs21.createReadStream(foundPath);
+      const fileStream = fs22.createReadStream(foundPath);
       fileStream.pipe(res);
     } else {
       console.error(`File not found in any expected location for attachment ${attachmentId}`);
@@ -27163,20 +27357,20 @@ router40.delete("/attachments/:id", requireAuth, async (req, res) => {
     if (attachment.filePath && !attachment.filePath.startsWith("db://")) {
       let fileName = attachment.filePath;
       const possiblePaths = [];
-      if (path19.isAbsolute(fileName)) {
+      if (path20.isAbsolute(fileName)) {
         possiblePaths.push(fileName);
       } else {
         possiblePaths.push(
-          path19.join(process.cwd(), "attached_assets", fileName),
-          path19.join(process.cwd(), "uploads", fileName),
-          path19.join(process.cwd(), "uploads", "temp-pdf", fileName),
-          path19.join(process.cwd(), fileName)
+          path20.join(process.cwd(), "attached_assets", fileName),
+          path20.join(process.cwd(), "uploads", fileName),
+          path20.join(process.cwd(), "uploads", "temp-pdf", fileName),
+          path20.join(process.cwd(), fileName)
         );
       }
       for (const testPath of possiblePaths) {
-        if (fs21.existsSync(testPath)) {
+        if (fs22.existsSync(testPath)) {
           try {
-            fs21.unlinkSync(testPath);
+            fs22.unlinkSync(testPath);
             console.log(`\u{1F5D1}\uFE0F Deleted physical file at: ${testPath}`);
             break;
           } catch (fileError) {
@@ -27310,7 +27504,7 @@ app.use(session({
 console.log("\u2705 Session middleware configured globally");
 app.use((req, res, next) => {
   const start = Date.now();
-  const path20 = req.path;
+  const path21 = req.path;
   let capturedJsonResponse = void 0;
   const originalResJson = res.json;
   res.json = function(bodyJson, ...args) {
@@ -27319,8 +27513,8 @@ app.use((req, res, next) => {
   };
   res.on("finish", () => {
     const duration = Date.now() - start;
-    if (path20.startsWith("/api")) {
-      let logLine = `${req.method} ${path20} ${res.statusCode} in ${duration}ms`;
+    if (path21.startsWith("/api")) {
+      let logLine = `${req.method} ${path21} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }
@@ -27401,13 +27595,13 @@ if (process.env.VERCEL) {
     console.log("\u{1F50D} Session debug info:", sessionData);
     res.json(sessionData);
   });
-  const path20 = await import("path");
-  app.use(express4.static(path20.join(process.cwd(), "dist/public")));
+  const path21 = await import("path");
+  app.use(express4.static(path21.join(process.cwd(), "dist/public")));
   console.log("\u{1F4C1} Serving static files from dist/public");
   app.use(routes_default);
   app.get("*", (req, res) => {
     if (!req.path.startsWith("/api")) {
-      res.sendFile(path20.join(process.cwd(), "dist/public/index.html"));
+      res.sendFile(path21.join(process.cwd(), "dist/public/index.html"));
     }
   });
   app.use((err, _req, res, _next) => {

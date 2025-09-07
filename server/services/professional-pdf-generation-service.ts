@@ -6,6 +6,7 @@ import { ko } from 'date-fns/locale';
 import { db } from '../db';
 import { attachments, users, companies, vendors, projects, purchaseOrders, purchaseOrderItems, emailSendHistory } from '../../shared/schema';
 import { eq, desc } from 'drizzle-orm';
+import { fontManager, FontInfo } from '../utils/korean-font-manager';
 
 /**
  * 포괄적인 발주서 PDF 데이터 모델
@@ -1129,126 +1130,60 @@ export class ProfessionalPDFGenerationService {
         doc.on('end', () => resolve(Buffer.concat(buffers)));
         doc.on('error', reject);
 
-        // 한글 폰트 등록 - 한글 지원을 위한 설정
-        console.log('📝 [ProfessionalPDF] PDFKit으로 PDF 생성 (한글 폰트 등록)');
+        // === 한글 폰트 관리자를 통한 최적화된 폰트 로딩 ===
+        console.log('📝 [ProfessionalPDF] PDFKit으로 PDF 생성 (한글 폰트 최적화 로딩)');
         
-        // 한글 폰트 경로 설정 (Vercel 환경 최적화)
-        let koreanFontPath = null;
+        let hasKoreanFont = false;
+        let selectedFont: FontInfo | null = null;
         
-        // Vercel 환경에서는 폰트 로딩 스킵하고 기본 폰트 사용
-        if (process.env.VERCEL) {
-          console.log('📝 [ProfessionalPDF] Vercel 환경: 기본 폰트 사용 (한글 -> 영문 대체 모드)');
-          doc.font('Helvetica');
-        } else {
-          // 로컬 환경에서만 한글 폰트 시도
-          const possibleFonts = [
-            // 프로젝트에 포함된 폰트 우선 사용
-            path.join(process.cwd(), 'fonts', 'NotoSansKR-Regular.ttf'),
-            path.join(process.cwd(), 'fonts', 'NanumGothic.ttf'),
-            path.join(__dirname, '../../fonts', 'NotoSansKR-Regular.ttf'),
-            path.join(__dirname, '../../fonts', 'NanumGothic.ttf'),
-            // 시스템 폰트
-            '/System/Library/Fonts/Supplemental/AppleGothic.ttf', // macOS
-            '/System/Library/Fonts/AppleSDGothicNeo.ttc', // macOS AppleSDGothicNeo
-            '/System/Library/Fonts/Supplemental/AppleMyungjo.ttf', // macOS 명조
-            '/System/Library/Fonts/NanumGothic.ttc', // macOS Nanum Gothic
-            'C:\\Windows\\Fonts\\malgun.ttf', // Windows
-            'C:\\Windows\\Fonts\\gulim.ttf', // Windows 굴림
-            'C:\\Windows\\Fonts\\batang.ttc', // Windows 바탕
-            '/usr/share/fonts/truetype/nanum/NanumGothic.ttf', // Linux
-            '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc', // Linux Noto
-            '/usr/share/fonts/truetype/fonts-nanum/NanumGothic.ttf' // Linux Nanum alternative
-          ];
+        try {
+          // 폰트 관리자에서 최적의 한글 폰트 선택
+          selectedFont = fontManager.getBestKoreanFont();
           
-          // 사용 가능한 폰트 찾기
-          for (const fontPath of possibleFonts) {
-            try {
-              if (fs.existsSync(fontPath)) {
-                koreanFontPath = fontPath;
-                console.log(`✅ [ProfessionalPDF] 한글 폰트 발견: ${fontPath}`);
-                break;
+          if (selectedFont && selectedFont.available) {
+            console.log(`🎯 [ProfessionalPDF] 선택된 한글 폰트: ${selectedFont.name}`);
+            
+            if (process.env.VERCEL) {
+              // Vercel 환경: Base64 방식으로 폰트 로드
+              console.log('☁️ [ProfessionalPDF] Vercel 환경: Base64 폰트 로딩 방식');
+              
+              const fontBuffer = fontManager.getFontBuffer(selectedFont.name);
+              if (fontBuffer) {
+                doc.registerFont('Korean', fontBuffer);
+                doc.font('Korean');
+                hasKoreanFont = true;
+                console.log('✅ [ProfessionalPDF] Vercel 환경에서 한글 폰트 등록 성공');
+              } else {
+                throw new Error('FontBuffer 로드 실패');
               }
-            } catch (error) {
-              // 파일 시스템 에러 무시하고 다음 폰트 시도
-              continue;
-            }
-          }
-          
-          // 한글 폰트 등록 및 설정
-          if (koreanFontPath) {
-            try {
-              // PDFKit에서 한글 폰트 등록
-              doc.registerFont('Korean', koreanFontPath);
-              doc.font('Korean'); // 기본 폰트를 한글 폰트로 설정
-              console.log(`✅ [ProfessionalPDF] 한글 폰트 등록 성공: ${koreanFontPath}`);
-            } catch (fontError) {
-              console.warn('⚠️ [ProfessionalPDF] 한글 폰트 등록 실패:', fontError);
-              // Fallback: 기본 폰트 사용하고 한글을 영문으로 대체
-              doc.font('Helvetica');
-              console.log('📝 [ProfessionalPDF] 기본 폰트 사용 (한글 -> 영문 대체 모드)');
+            } else {
+              // 로컬 환경: 파일 경로 방식으로 폰트 로드
+              console.log('🏠 [ProfessionalPDF] 로컬 환경: 파일 경로 폰트 로딩 방식');
+              
+              doc.registerFont('Korean', selectedFont.path);
+              doc.font('Korean');
+              hasKoreanFont = true;
+              console.log(`✅ [ProfessionalPDF] 로컬 환경에서 한글 폰트 등록 성공: ${selectedFont.path}`);
             }
           } else {
-            console.warn('⚠️ [ProfessionalPDF] 한글 폰트를 찾을 수 없음');
-            // Fallback: 기본 폰트 사용하고 한글을 영문으로 대체
-            doc.font('Helvetica');
-            console.log('📝 [ProfessionalPDF] 기본 폰트 사용 (한글 -> 영문 대체 모드)');
+            throw new Error('사용 가능한 한글 폰트가 없음');
           }
+        } catch (fontError) {
+          console.warn('⚠️ [ProfessionalPDF] 한글 폰트 등록 실패:', fontError);
+          
+          // Fallback: 기본 폰트 사용
+          doc.font('Helvetica');
+          hasKoreanFont = false;
+          
+          // 폰트 지원 상태 보고서 출력
+          const fontReport = fontManager.getFontReport();
+          console.log('📊 [ProfessionalPDF] 폰트 지원 상태:', JSON.stringify(fontReport, null, 2));
+          console.log('📝 [ProfessionalPDF] 기본 폰트 사용 (한글 -> 영문 대체 모드)');
         }
         
-        // 한글 텍스트를 안전하게 처리하는 함수
+        // 한글 텍스트를 안전하게 처리하는 함수 (폰트 관리자 사용)
         const safeText = (text: string) => {
-          if (!text) return '';
-          
-          // 한글 폰트가 없거나 Vercel 환경이면 영문으로 대체
-          if (!koreanFontPath || process.env.VERCEL) {
-            // 기본적인 한글 -> 영문 매핑
-            const koreanToEnglish: { [key: string]: string } = {
-              '발주서': 'Purchase Order',
-              '발주번호': 'Order No',
-              '거래처': 'Vendor',
-              '품목': 'Item',
-              '수량': 'Qty',
-              '단가': 'Unit Price',
-              '금액': 'Amount',
-              '합계': 'Total',
-              '부가세': 'VAT',
-              '사업자등록번호': 'Business No',
-              '대표자': 'Representative',
-              '주소': 'Address',
-              '전화번호': 'Phone',
-              '이메일': 'Email',
-              '현장명': 'Project',
-              '발주일': 'Order Date',
-              '납기일': 'Delivery Date',
-              '담당자': 'Contact Person',
-              '참고사항': 'Remarks',
-              '소계': 'Subtotal',
-              '총 금액': 'Total Amount'
-            };
-            
-            // 주요 한글 단어를 영문으로 대체
-            let result = text;
-            for (const [kor, eng] of Object.entries(koreanToEnglish)) {
-              result = result.replace(new RegExp(kor, 'g'), eng);
-            }
-            
-            // 남은 한글 문자를 [Korean Text]로 대체
-            if (/[ᄀ-ᇿ㄰-㆏ꥠ-꥿가-힯ힰ-퟿]/g.test(result)) {
-              // 아직 한글이 남아있으면 영문 표기
-              result = result.replace(/[ᄀ-ᇿ㄰-㆏ꥠ-꥿가-힯ힰ-퟿]+/g, '[Korean Text]');
-            }
-            
-            return result
-              .replace(/[\x00-\x1F\x7F]/g, '') // 제어 문자 제거
-              .replace(/[\u2028\u2029]/g, '') // 줄 구분자 제거
-              .trim();
-          }
-          
-          // 한글 폰트가 있으면 그대로 사용
-          return text
-            .replace(/[\x00-\x1F\x7F]/g, '') // 제어 문자 제거
-            .replace(/[\u2028\u2029]/g, '') // 줄 구분자 제거
-            .trim();
+          return fontManager.safeKoreanText(text, hasKoreanFont);
         };
         
         const formatDate = (date?: Date | null) => {

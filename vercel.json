@@ -22,7 +22,7 @@
       }
     },
     {
-      "src": "/(.*\\.(js|css|png|jpg|svg|ico|woff|woff2|xlsx|json))",
+      "src": "/(.*\\.(js|css|png|jpg|svg|ico|woff|woff2|ttf|otf|xlsx|json))",
       "dest": "$1"
     },
     {

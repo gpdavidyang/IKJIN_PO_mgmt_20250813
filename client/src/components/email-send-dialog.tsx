@@ -243,6 +243,8 @@ export function EmailSendDialog({ open, onOpenChange, orderData, onSendEmail, at
     if (!validateForm()) return;
 
     setIsLoading(true);
+    setErrors([]); // 기존 에러 메시지 초기화
+    
     try {
       console.log('📧 Sending email with data:', {
         to: emailData.to,
@@ -255,8 +257,86 @@ export function EmailSendDialog({ open, onOpenChange, orderData, onSendEmail, at
       await onSendEmail(emailData);
       onOpenChange(false);
       // 성공 알림은 부모 컴포넌트에서 처리
-    } catch (error) {
-      setErrors(['이메일 발송 중 오류가 발생했습니다.']);
+    } catch (error: any) {
+      console.error('❌ Email sending error:', error);
+      
+      // 구체적인 에러 메시지 처리
+      let errorMessage = '이메일 발송 중 오류가 발생했습니다.';
+      let specificErrors: string[] = [];
+      
+      if (error?.response?.data) {
+        const errorData = error.response.data;
+        
+        // 서버에서 반환한 구체적인 에러 메시지 처리
+        if (errorData.message) {
+          errorMessage = errorData.message;
+        }
+        
+        // 여러 에러가 있을 경우
+        if (errorData.errors && Array.isArray(errorData.errors)) {
+          specificErrors = errorData.errors;
+        } else if (errorData.details) {
+          specificErrors = [errorData.details];
+        }
+        
+        // SMTP 관련 에러 처리
+        if (errorData.code) {
+          switch (errorData.code) {
+            case 'EAUTH':
+              specificErrors.push('이메일 계정 인증에 실패했습니다. 관리자에게 문의하세요.');
+              break;
+            case 'ECONNECTION':
+            case 'ETIMEDOUT':
+              specificErrors.push('이메일 서버에 연결할 수 없습니다. 네트워크 상태를 확인하세요.');
+              break;
+            case 'EMESSAGE':
+              specificErrors.push('이메일 내용에 오류가 있습니다. 입력 내용을 확인하세요.');
+              break;
+            case 'EENVELOPE':
+              specificErrors.push('수신자 또는 발신자 이메일 주소에 오류가 있습니다.');
+              break;
+            default:
+              if (errorData.code) {
+                specificErrors.push(`이메일 서버 오류: ${errorData.code}`);
+              }
+          }
+        }
+        
+        // 첨부파일 관련 에러
+        if (errorMessage.includes('attachment') || errorMessage.includes('첨부')) {
+          specificErrors.push('첨부파일 처리 중 문제가 발생했습니다. 파일 크기나 형식을 확인하세요.');
+        }
+        
+        // 이메일 주소 관련 에러
+        if (errorMessage.includes('invalid') && errorMessage.includes('email')) {
+          specificErrors.push('유효하지 않은 이메일 주소가 포함되어 있습니다.');
+        }
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
+      // 네트워크 에러 처리
+      if (error?.code === 'NETWORK_ERROR' || error?.name === 'NetworkError') {
+        errorMessage = '네트워크 연결에 문제가 있습니다.';
+        specificErrors.push('인터넷 연결을 확인하고 다시 시도하세요.');
+      }
+      
+      // 타임아웃 에러
+      if (error?.code === 'TIMEOUT_ERROR' || error?.message?.includes('timeout')) {
+        errorMessage = '이메일 발송 시간이 초과되었습니다.';
+        specificErrors.push('서버가 응답하지 않습니다. 잠시 후 다시 시도하세요.');
+      }
+      
+      // 에러 메시지 설정
+      const allErrors = [errorMessage, ...specificErrors].filter(Boolean);
+      setErrors(allErrors);
+      
+      // 사용자 친화적인 토스트 메시지도 표시
+      toast({
+        title: "이메일 발송 실패",
+        description: specificErrors.length > 0 ? specificErrors[0] : errorMessage,
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }
@@ -301,14 +381,20 @@ ${orderData.vendorName} 담당자님께 발주서를 전송드립니다.
         <div className="space-y-4">
           {/* 오류 메시지 */}
           {errors.length > 0 && (
-            <Alert variant="destructive">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>
-                <ul className="list-disc list-inside">
-                  {errors.map((error, index) => (
-                    <li key={index}>{error}</li>
-                  ))}
-                </ul>
+            <Alert variant="destructive" className="border-red-200 bg-red-50">
+              <AlertTriangle className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-red-800">
+                <div className="space-y-1">
+                  <div className="font-semibold text-sm">⚠️ 이메일 발송 실패</div>
+                  <ul className="list-disc list-inside space-y-1 text-sm">
+                    {errors.map((error, index) => (
+                      <li key={index} className="break-words">{error}</li>
+                    ))}
+                  </ul>
+                  <div className="text-xs text-red-600 mt-2 pt-1 border-t border-red-200">
+                    💡 문제가 지속되면 관리자에게 문의하세요.
+                  </div>
+                </div>
               </AlertDescription>
             </Alert>
           )}
