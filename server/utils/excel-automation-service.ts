@@ -669,27 +669,16 @@ export class ExcelAutomationService {
         try {
           console.log(`📧 이메일 발송 중: ${email}`);
           
-          // orderId가 있으면 품목 정보를 포함한 이메일 발송, 없으면 기본 이메일 발송
-          const sendResult = emailOptions.orderId
-            ? await emailService.sendPOWithOrderItemsFromDB(
-                processedFilePath,
-                emailOptions.orderId,
-                {
-                  to: email,
-                  subject: emailOptions.subject || `발주서 - ${new Date().toLocaleDateString('ko-KR')}`,
-                  orderNumber: emailOptions.orderNumber,
-                  additionalMessage: emailOptions.additionalMessage
-                }
-              )
-            : await emailService.sendPOWithOriginalFormat(
-                processedFilePath,
-                {
-                  to: email,
-                  subject: emailOptions.subject || `발주서 - ${new Date().toLocaleDateString('ko-KR')}`,
-                  orderNumber: emailOptions.orderNumber,
-                  additionalMessage: emailOptions.additionalMessage
-                }
-              );
+          // 단일 메서드로 통합하여 이메일 발송 (orderId 정보는 이메일 내용에 포함)
+          const sendResult = await emailService.sendPOWithOriginalFormat(
+            processedFilePath,
+            {
+              to: email,
+              subject: emailOptions.subject || `발주서 - ${new Date().toLocaleDateString('ko-KR')}`,
+              orderNumber: emailOptions.orderNumber,
+              additionalMessage: emailOptions.additionalMessage
+            }
+          );
 
           if (sendResult.success) {
             emailResults.push({
