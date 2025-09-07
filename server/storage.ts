@@ -1856,21 +1856,30 @@ export class DatabaseStorage implements IStorage {
   // UI terms operations
   async getUiTerms(category?: string): Promise<UiTerm[]> {
     try {
+      console.log(`🔍 getUiTerms called with category: ${category}`);
+      
       if (category) {
-        return await db
+        console.log(`📋 Querying UI terms for category: ${category}`);
+        const result = await db
           .select()
           .from(uiTerms)
           .where(and(eq(uiTerms.category, category), eq(uiTerms.isActive, true)))
           .orderBy(asc(uiTerms.termKey));
+        console.log(`✅ Found ${result.length} terms for category ${category}`);
+        result.forEach(term => console.log(`  - ${term.termKey}: ${term.termValue}`));
+        return result;
       }
       
-      return await db
+      console.log(`📋 Querying all active UI terms`);
+      const result = await db
         .select()
         .from(uiTerms)
         .where(eq(uiTerms.isActive, true))
         .orderBy(asc(uiTerms.termKey));
+      console.log(`✅ Found ${result.length} total active terms`);
+      return result;
     } catch (error) {
-      console.error('Database error in getUiTerms:', error);
+      console.error('❌ Database error in getUiTerms:', error);
       // Return empty array if table doesn't exist or has structure issues
       return [];
     }

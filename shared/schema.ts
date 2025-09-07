@@ -30,8 +30,7 @@ export const sessions = pgTable(
 
 // UI terminology table for soft-coding localization
 export const uiTerms = pgTable("ui_terms", {
-  id: serial("id").primaryKey(),
-  termKey: varchar("term_key", { length: 100 }).notNull().unique(),
+  termKey: varchar("term_key", { length: 100 }).notNull().primaryKey(),
   termValue: varchar("term_value", { length: 255 }).notNull(),
   category: varchar("category", { length: 50 }).default("general"),
   description: text("description"),
@@ -911,7 +910,6 @@ export type InsertProjectHistory = z.infer<typeof insertProjectHistorySchema>;
 
 // UI terminology types
 export const insertUiTermSchema = createInsertSchema(uiTerms).omit({
-  id: true,
   createdAt: true,
   updatedAt: true,
 });

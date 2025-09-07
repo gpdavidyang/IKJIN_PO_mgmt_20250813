@@ -2433,10 +2433,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/ui-terms", async (req, res) => {
     try {
       const category = req.query.category as string;
+      console.log(`🚀 API /ui-terms called with category: ${category}`);
       const terms = await storage.getUiTerms(category);
+      console.log(`📤 API returning ${terms.length} terms`);
       res.json(terms);
     } catch (error) {
-      console.error("Error fetching UI terms:", error);
+      console.error("❌ Error fetching UI terms:", error);
       res.status(500).json({ message: "Failed to fetch UI terms" });
     }
   });

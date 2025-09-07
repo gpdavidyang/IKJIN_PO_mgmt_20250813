@@ -25,10 +25,9 @@ const db = drizzle(sql);
 
 // UI Terms table schema
 const uiTerms = pgTable("ui_terms", {
-  id: serial("id").primaryKey(),
-  termKey: varchar("term_key", { length: 100 }).notNull().unique(),
+  termKey: varchar("term_key", { length: 100 }).notNull().primaryKey(),
   termValue: varchar("term_value", { length: 255 }).notNull(),
-  category: varchar("category", { length: 50 }).default("general"),
+  category: varchar("category", { length: 50 }),
   description: text("description"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),

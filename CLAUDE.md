@@ -72,7 +72,10 @@ shared/              # Shared code between client and server
 
 Key tables defined in `shared/schema.ts`:
 - **users**: User accounts with roles (field_worker, project_manager, hq_management, executive, admin)
-- **purchaseOrders**: Main order records with status workflow
+- **purchaseOrders**: Main order records with **dual status system**
+  - `orderStatus`: 발주상태 (draft, created, sent, delivered)
+  - `approvalStatus`: 승인상태 (not_required, pending, approved, rejected)
+  - `status`: DEPRECATED - 하위 호환성을 위해서만 유지
 - **purchaseOrderItems**: Line items for orders
 - **vendors**, **projects**, **items**, **companies**: Master data
 - **approvalAuthorities**: Role-based approval limits
@@ -81,6 +84,41 @@ Key tables defined in `shared/schema.ts`:
 - **sessions**: Replit Auth session storage
 - **ui_terms**: UI terminology management for Korean localization
 - **positions**: Position/rank management for users
+
+### Status Management System
+
+**중요**: 본 시스템은 발주상태와 승인상태를 명확히 분리한 이중 상태 시스템을 사용합니다.
+자세한 내용은 `STATUS_MANAGEMENT.md` 문서를 참조하세요.
+
+**발주상태 (orderStatus)**:
+- `draft`: 임시저장
+- `created`: 발주생성  
+- `sent`: 발주완료
+- `delivered`: 납품완료
+
+**승인상태 (approvalStatus)**:
+- `not_required`: 승인불필요
+- `pending`: 승인대기
+- `approved`: 승인완료
+- `rejected`: 반려
+
+**사용 규칙**:
+```javascript
+// ✅ 올바른 사용법
+import { getOrderStatusText, getApprovalStatusText, getDisplayStatus } from '@/lib/statusUtils';
+
+// UI 표시
+const displayText = getDisplayStatus(order.orderStatus, order.approvalStatus);
+const displayColor = getDisplayStatusColor(order.orderStatus, order.approvalStatus);
+
+// 비즈니스 로직
+const canEdit = canEditOrder(order.orderStatus, order.approvalStatus);
+const canSend = canSendEmail(order.orderStatus, order.approvalStatus);
+
+// ❌ 금지된 사용법
+const status = order.status; // deprecated 필드 사용 금지
+const mixed = order.orderStatus === 'approved'; // 발주상태와 승인상태 혼재 금지
+```
 
 ### API Routes
 
