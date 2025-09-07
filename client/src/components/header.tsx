@@ -1,5 +1,5 @@
 import { Bell, LogOut, User, Settings, Home, ChevronRight, Plus } from "lucide-react";
-import { NotificationBell } from "@/components/notifications/notification-bell";
+import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 import { WebSocketStatus } from "@/components/websocket-status";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -8,6 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation, Link } from "wouter";
 import { getUserInitials, getUserDisplayName, getRoleText } from "@/lib/statusUtils";
+import { useApprovalNotifications } from "@/hooks/useApprovalNotifications";
 
 // 개선된 페이지 설정 - 섹션별 그룹화와 액션 정보 포함
 const pageConfig = {
@@ -290,7 +291,11 @@ export function Header() {
         
         <div className="flex items-center space-x-3">
           <WebSocketStatus />
-          <NotificationBell />
+          
+          {/* Notification Center for Approval System */}
+          {user && ['admin', 'executive', 'hq_management', 'project_manager'].includes(user.role) && (
+            <NotificationCenter className="mr-2" />
+          )}
           
           <div className="flex items-center space-x-3">
             <DropdownMenu>

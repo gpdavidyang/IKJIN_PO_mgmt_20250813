@@ -421,7 +421,7 @@ router.post("/orders", requireAuth, upload.array('attachments'), async (req, res
         const user = await storage.getUser(userId);
         
         // Get attachments count
-        const orderAttachments = await storage.getAttachments(order.id);
+        const orderAttachments = await storage.getOrderAttachments(order.id);
         const attachmentCount = orderAttachments?.length || 0;
         const hasAttachments = attachmentCount > 0;
         
@@ -2844,7 +2844,7 @@ router.get("/orders/:orderId/attachments", requireAuth, async (req, res) => {
     console.log(`📎 발주서 첨부파일 목록 요청: 발주서 ID ${orderId}`);
 
     // Get all attachments for this order
-    const attachments = await storage.getAttachments(orderId);
+    const attachments = await storage.getOrderAttachments(orderId);
     
     const attachmentList = attachments.map(attachment => ({
       id: attachment.id,
@@ -2886,7 +2886,7 @@ router.get("/orders/:orderId/attachments/:attachmentId/download", requireAuth, a
     console.log(`📎 파일 다운로드 요청: 발주서 ID ${orderId}, 첨부파일 ID ${attachmentId}`);
 
     // Get attachment info from database
-    const attachment = await storage.getAttachment(orderId, attachmentId);
+    const attachment = await storage.getAttachment(attachmentId);
     
     if (!attachment) {
       console.log(`❌ 첨부파일을 찾을 수 없음: ID ${attachmentId}`);

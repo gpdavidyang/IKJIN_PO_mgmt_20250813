@@ -9,6 +9,9 @@ import LoginPage from "@/pages/login";
 import { SidebarProvider, useSidebar } from "@/contexts/SidebarContext";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { NotificationProvider } from "@/components/notifications/NotificationProvider";
+import { NotificationCenter } from "@/components/notifications/NotificationCenter";
+import { useApprovalNotifications } from "@/hooks/useApprovalNotifications";
 // Accessibility imports
 import { AccessibilityProvider, AccessibilityToolbar } from "@/components/accessibility/accessibility-toolbar";
 import { ContrastProvider } from "@/components/accessibility/high-contrast";
@@ -549,18 +552,20 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <WebSocketProvider>
-          <AccessibilityProvider>
-            <ContrastProvider>
-              <FocusProvider>
-                <TooltipProvider>
-                  <Toaster />
-                  <Router />
-                </TooltipProvider>
-              </FocusProvider>
-            </ContrastProvider>
-          </AccessibilityProvider>
-        </WebSocketProvider>
+        <NotificationProvider pollingInterval={30000}>
+          <WebSocketProvider>
+            <AccessibilityProvider>
+              <ContrastProvider>
+                <FocusProvider>
+                  <TooltipProvider>
+                    <Toaster />
+                    <Router />
+                  </TooltipProvider>
+                </FocusProvider>
+              </ContrastProvider>
+            </AccessibilityProvider>
+          </WebSocketProvider>
+        </NotificationProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
