@@ -184,6 +184,33 @@ export function UploadSuccessActions({ uploadResult, extractedFiles }: UploadSuc
             totalAmount: selectedOrder.totalAmount,
             siteName: selectedOrder.siteName
           }}
+          attachments={[
+            // Excel file (from extractedFiles or uploadResult)
+            ...(extractedFiles?.excelPath ? [{
+              id: 'excel-upload',
+              originalName: extractedFiles.excelPath.split('/').pop() || uploadResult.fileName,
+              filePath: extractedFiles.excelPath,
+              fileSize: 0, // Size not available in this context
+              mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+              isSelected: false
+            }] : [{
+              id: 'original-upload',
+              originalName: uploadResult.fileName,
+              filePath: uploadResult.filePath,
+              fileSize: 0, // Size not available in this context
+              mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+              isSelected: false
+            }]),
+            // PDF file (if exists)
+            ...(extractedFiles?.pdfPath ? [{
+              id: 'pdf-upload',
+              originalName: extractedFiles.pdfPath.split('/').pop() || `${selectedOrder.orderNumber}.pdf`,
+              filePath: extractedFiles.pdfPath,
+              fileSize: 0, // Size not available in this context
+              mimeType: 'application/pdf',
+              isSelected: false
+            }] : [])
+          ]}
           onSendEmail={handleSendEmail}
         />
       )}

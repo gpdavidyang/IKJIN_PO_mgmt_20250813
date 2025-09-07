@@ -651,6 +651,35 @@ export function BulkOrderEditorTwoRow({ orders, onOrderUpdate, onOrderRemove, on
             totalAmount: savedOrderData.totalAmount || 0,
             siteName: savedOrderData?.originalOrder?.projectName || '일괄 발주서'
           }}
+          attachments={[
+            // Excel file (if available from order creation)
+            ...(savedOrderData?.excelFilePath ? [{
+              id: 'bulk-excel',
+              originalName: savedOrderData.excelFilePath.split('/').pop() || `${savedOrderData.orderNumber || 'BULK-ORDER'}.xlsx`,
+              filePath: savedOrderData.excelFilePath,
+              fileSize: 0, // Size not available in bulk creation context
+              mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+              isSelected: false
+            }] : []),
+            // PDF file (if available from order creation)
+            ...(savedOrderData?.pdfFilePath ? [{
+              id: 'bulk-pdf',
+              originalName: savedOrderData.pdfFilePath.split('/').pop() || `${savedOrderData.orderNumber || 'BULK-ORDER'}.pdf`,
+              filePath: savedOrderData.pdfFilePath,
+              fileSize: 0, // Size not available in bulk creation context
+              mimeType: 'application/pdf',
+              isSelected: false
+            }] : []),
+            // Include attachments from API response if available
+            ...(savedOrderData?.attachments?.map((att: any, index: number) => ({
+              id: `attachment-${index}`,
+              originalName: att.originalName || att.fileName || `attachment-${index}`,
+              filePath: att.filePath || att.path,
+              fileSize: att.fileSize || 0,
+              mimeType: att.mimeType || 'application/octet-stream',
+              isSelected: false
+            })) || [])
+          ]}
           onSendEmail={handleEmailSend}
         />
       )}

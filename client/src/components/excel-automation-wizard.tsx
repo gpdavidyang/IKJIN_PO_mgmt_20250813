@@ -328,7 +328,10 @@ export function ExcelAutomationWizard() {
       siteName: '자동화 발주서'
     };
     
-    setCurrentOrderForEmail(orderData);
+    setCurrentOrderForEmail({
+      ...orderData,
+      attachmentInfo: automationData.emailPreview.attachmentInfo
+    });
     setEmailDialogOpen(true);
   };
 
@@ -815,7 +818,7 @@ export function ExcelAutomationWizard() {
   return (
     <>
       {/* EmailSendDialog */}
-      {currentOrderForEmail && (
+      {currentOrderForEmail && automationData?.emailPreview?.attachmentInfo && (
         <EmailSendDialog
           open={emailDialogOpen}
           onOpenChange={(open) => {
@@ -823,6 +826,26 @@ export function ExcelAutomationWizard() {
             if (!open) setCurrentOrderForEmail(null);
           }}
           orderData={currentOrderForEmail}
+          attachments={[
+            // Excel file
+            {
+              id: 'excel-file',
+              originalName: automationData.emailPreview.attachmentInfo.processedFile,
+              filePath: `uploads/${automationData.emailPreview.attachmentInfo.processedFile}`,
+              fileSize: automationData.emailPreview.attachmentInfo.fileSize,
+              mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+              isSelected: false
+            },
+            // PDF file (if exists)
+            ...(automationData.emailPreview.attachmentInfo.processedPdfFile ? [{
+              id: 'pdf-file',
+              originalName: automationData.emailPreview.attachmentInfo.processedPdfFile,
+              filePath: `uploads/${automationData.emailPreview.attachmentInfo.processedPdfFile}`,
+              fileSize: automationData.emailPreview.attachmentInfo.pdfFileSize || 0,
+              mimeType: 'application/pdf',
+              isSelected: false
+            }] : [])
+          ]}
           onSendEmail={handleSendEmailFromDialog}
         />
       )}
