@@ -86,16 +86,16 @@ export default function CreateOrderExcel() {
     },
     { 
       id: 'save-db', 
-      title: '데이터베이스 저장', 
-      description: '발주서 정보를 데이터베이스에 저장', 
+      title: '발주서 저장', 
+      description: '발주서 기본 정보를 데이터베이스에 저장', 
       status: 'pending',
       estimatedTime: 12,
       icon: 'database'
     },
     { 
       id: 'generate-pdf', 
-      title: 'PDF 생성', 
-      description: '전문적인 발주서 PDF 생성 및 저장', 
+      title: 'PDF 생성 및 저장', 
+      description: '전문 발주서 PDF 생성 후 DB 저장', 
       status: 'pending',
       estimatedTime: 20,
       icon: 'file-plus'
@@ -103,7 +103,7 @@ export default function CreateOrderExcel() {
     { 
       id: 'prepare-attachments', 
       title: '첨부파일 준비', 
-      description: 'PDF/Excel 파일 첨부 준비 완료', 
+      description: 'Excel 파일 첨부 준비 완료', 
       status: 'pending',
       estimatedTime: 5,
       icon: 'paperclip'
@@ -188,13 +188,14 @@ export default function CreateOrderExcel() {
         return;
       }
 
-      updateProcessingStep('upload', 'completed', `${uploadData.data.fileName} 업로드 완료`);
-      updateProcessingStep('parse', 'completed', `발주서 ${uploadData.data.totalOrders}개, 아이템 ${uploadData.data.totalItems}개 파싱 완료`);
-
-      // Step 2: Save to database
-      updateProcessingStep('save', 'processing');
+      updateProcessingStep('upload', 'completed');
       
-      // Step 3: Extract sheets first to get the extracted file path
+      // Step 2: Parse Input sheet
+      updateProcessingStep('parse', 'processing');
+      await new Promise(resolve => setTimeout(resolve, 500)); // 시각적 피드백
+      updateProcessingStep('parse', 'completed');
+
+      // Step 3: Extract sheets 
       updateProcessingStep('extract', 'processing');
       
       const extractResponse = await fetch('/api/po-template/extract-sheets', {
@@ -213,13 +214,12 @@ export default function CreateOrderExcel() {
         return;
       }
 
-      updateProcessingStep('extract', 'completed', `${extractData.data.extractedSheets.join(', ')} 시트 추출 완료`);
+      updateProcessingStep('extract', 'completed');
       
-      // Get the extracted file path for saving
+      // Step 4: Save to database
+      updateProcessingStep('save-db', 'processing');
+      
       const extractedFilePath = extractData.data?.extractedFilePath || uploadData.data.filePath.replace('.xlsx', '_extracted.xlsx');
-      
-      // Step 2: Save to database with extracted file path
-      updateProcessingStep('save', 'processing');
       
       const saveResponse = await fetch('/api/po-template/save', {
         method: 'POST',
@@ -235,59 +235,67 @@ export default function CreateOrderExcel() {
       const saveData = await saveResponse.json();
       
       if (!saveResponse.ok) {
-        updateProcessingStep('save', 'error', saveData.error || '데이터베이스 저장 실패');
+        updateProcessingStep('save-db', 'error', saveData.error || '데이터베이스 저장 실패');
         setProcessing(false);
         return;
       }
 
-      updateProcessingStep('save', 'completed', `발주서 ${saveData.data.savedOrders}개 저장 완료 (PDF/Excel 파일 포함)`);
+      updateProcessingStep('save-db', 'completed');
 
-      console.log('📱 [클라이언트] PDF 생성 상태 확인:', {
-        hasPdfStatuses: !!(saveData.data.pdfGenerationStatuses),
-        statusCount: saveData.data.pdfGenerationStatuses?.length || 0,
-        statuses: saveData.data.pdfGenerationStatuses
-      });
+      // Step 5: Generate PDF
+      updateProcessingStep('generate-pdf', 'processing');
+      await new Promise(resolve => setTimeout(resolve, 1000)); // PDF 생성 시뮬레이션
 
-      // PDF 생성 상태에 대한 toast 메시지 표시
+      // PDF 생성 상태 확인 및 처리
       if (saveData.data.pdfGenerationStatuses && saveData.data.pdfGenerationStatuses.length > 0) {
-        console.log('📱 [클라이언트] Toast 메시지 표시 시작');
-        saveData.data.pdfGenerationStatuses.forEach((status: any, index: number) => {
-          console.log(`📱 [클라이언트] PDF 상태 ${index + 1}:`, status);
-          
+        const hasErrors = saveData.data.pdfGenerationStatuses.some((status: any) => !status.success);
+        if (hasErrors) {
+          updateProcessingStep('generate-pdf', 'error', 'PDF 생성 중 일부 오류 발생');
+        } else {
+          updateProcessingStep('generate-pdf', 'completed');
+        }
+        
+        // Toast 메시지 표시
+        saveData.data.pdfGenerationStatuses.forEach((status: any) => {
           if (status.success) {
             toast({
               title: "PDF 생성 성공",
               description: status.message || `${status.orderNumber} PDF가 생성되었습니다.`,
               duration: 5000,
             });
-            console.log('📱 [클라이언트] 성공 Toast 표시됨:', status.orderNumber);
           } else {
             toast({
-              title: "PDF 생성 실패",
+              title: "PDF 생성 실패", 
               description: status.message || `${status.orderNumber} PDF 생성에 실패했습니다.`,
               variant: "destructive",
               duration: 7000,
             });
-            console.log('📱 [클라이언트] 실패 Toast 표시됨:', status.orderNumber);
           }
         });
       } else {
-        console.log('📱 [클라이언트] PDF 생성 상태가 없거나 비어있음');
-        // PDF 상태가 없을 때도 알림
+        updateProcessingStep('generate-pdf', 'error', 'PDF 생성 상태 확인 불가');
         toast({
           title: "PDF 생성 상태 알 수 없음",
-          description: "PDF 생성 상태를 확인할 수 없습니다. 발주서 관리에서 확인해주세요.",
+          description: "PDF 생성 상태를 확인할 수 없습니다.",
           variant: "destructive",
           duration: 5000,
         });
       }
 
+      // Step 6: Prepare attachments
+      updateProcessingStep('prepare-attachments', 'processing');
+      await new Promise(resolve => setTimeout(resolve, 300));
+      updateProcessingStep('prepare-attachments', 'completed');
+
+      // Step 7: Complete
+      updateProcessingStep('complete', 'processing');
+      await new Promise(resolve => setTimeout(resolve, 200));
+      updateProcessingStep('complete', 'completed');
+
       // 저장된 발주서 번호들 저장
       if (saveData.data.savedOrderNumbers && saveData.data.savedOrderNumbers.length > 0) {
         setSavedOrderNumbers(saveData.data.savedOrderNumbers);
-        console.log('저장된 발주서 번호들:', saveData.data.savedOrderNumbers);
         
-        // DB 저장 성공 toast 메시지
         toast({
           title: "발주서 저장 완료",
           description: `${saveData.data.savedOrderNumbers.length}개의 발주서가 데이터베이스에 저장되었습니다.`,
@@ -295,26 +303,26 @@ export default function CreateOrderExcel() {
         });
       }
 
-      // Invalidate orders queries to refresh the orders list
+      // Invalidate orders queries
       await queryClient.invalidateQueries({ queryKey: ['orders'] });
       await queryClient.invalidateQueries({ queryKey: ['orders-optimized'] });
       await queryClient.invalidateQueries({ queryKey: ['dashboard-orders'] });
 
       setUploadResult(uploadData);
       
-      // 업로드 완료 후 자동으로 거래처 확인 시작
+      // 모든 처리 완료 후 이메일 프로세스 시작
       setTimeout(() => {
-        console.log('자동 거래처 확인 시작, filePath:', uploadData.data?.filePath);
         if (uploadData.data?.filePath) {
           handleStartEmailProcessWithFilePath(uploadData.data.filePath);
-        } else {
-          console.error('파일 경로가 없어서 거래처 확인을 시작할 수 없습니다.');
         }
-      }, 500); // 약간의 딜레이로 UI 업데이트 완료 후 실행
+      }, 1000); // 완료 후 1초 대기
       
     } catch (error) {
       console.error('Processing error:', error);
-      updateProcessingStep('upload', 'error', '처리 중 오류가 발생했습니다.');
+      const currentStep = processingSteps.find(s => s.status === 'processing');
+      if (currentStep) {
+        updateProcessingStep(currentStep.id, 'error', '처리 중 오류가 발생했습니다.');
+      }
     } finally {
       setProcessing(false);
     }
@@ -624,14 +632,28 @@ export default function CreateOrderExcel() {
             )}
 
             {processing && (
-              <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-medium text-blue-900">처리 진행 상황</span>
-                  <span className="text-sm text-blue-700">{Math.round(getProgressValue())}%</span>
+              <div className="mt-4 p-3 bg-blue-50 rounded border">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium text-blue-900">진행 상황</span>
+                  <span className="text-xs text-blue-700">{Math.round(getProgressValue())}%</span>
                 </div>
-                <Progress value={getProgressValue()} className="h-2 mb-3" />
-                <div className="text-sm text-blue-700">
-                  {processingSteps.find(s => s.status === 'processing')?.title || '처리 중...'}
+                <Progress value={getProgressValue()} className="h-1 mb-2" />
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1">
+                    {processingSteps.map((step, index) => (
+                      <div key={step.id} className="flex items-center gap-0.5">
+                        {getStepIcon(step.icon || 'check-circle', step.status)}
+                        {index < processingSteps.length - 1 && (
+                          <div className={`w-2 h-0.5 ${
+                            step.status === 'completed' ? 'bg-green-600' : 'bg-gray-300'
+                          }`} />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="text-xs text-blue-700">
+                    {processingSteps.find(s => s.status === 'processing')?.title || '완료'}
+                  </div>
                 </div>
               </div>
             )}
