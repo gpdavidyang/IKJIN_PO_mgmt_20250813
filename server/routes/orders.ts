@@ -17,7 +17,7 @@ import { POEmailService } from "../utils/po-email-service";
 import ApprovalRoutingService from "../services/approval-routing-service";
 import { ProfessionalPDFGenerationService } from "../services/professional-pdf-generation-service";
 import * as database from "../db";
-import { eq, and, or, like, desc } from "drizzle-orm";
+import { eq, and, or, like, desc, sql } from "drizzle-orm";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -33,7 +33,8 @@ const __dirname = path.dirname(__filename);
 
 const router = Router();
 
-// Email service instance
+// Database and email service instances
+const db = database.db;
 const emailService = new POEmailService();
 
 // Helper function to update order status after successful email sending
@@ -2721,9 +2722,9 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
 // 간편 이메일 발송 (bulk order editor용)
 router.post("/orders/send-email-simple", requireAuth, async (req, res) => {
   try {
-    const { to, cc, subject, body, orderData, attachPdf, attachExcel } = req.body;
+    const { to, cc, subject, body, orderData, attachPdf, attachExcel, selectedAttachmentIds } = req.body;
     
-    console.log('📧 간편 이메일 발송 요청:', { to, cc, subject, attachments: { attachPdf, attachExcel } });
+    console.log('📧 간편 이메일 발송 요청:', { to, cc, subject, attachments: { attachPdf, attachExcel, selectedAttachmentIds } });
     
     // 수신자 검증
     if (!to || to.length === 0) {
@@ -2787,6 +2788,47 @@ router.post("/orders/send-email-simple", requireAuth, async (req, res) => {
       }
     }
 
+    // Process selectedAttachmentIds from frontend modal
+    let attachments = [];
+    if (selectedAttachmentIds && Array.isArray(selectedAttachmentIds) && selectedAttachmentIds.length > 0) {
+      console.log('📎 처리할 선택된 첨부파일 IDs:', selectedAttachmentIds);
+      
+      for (const attachmentId of selectedAttachmentIds) {
+        try {
+          // Query attachment data from database
+          const attachmentQuery = await db.query(sql`
+            SELECT id, original_name, file_data, mime_type
+            FROM attachments 
+            WHERE id = ${attachmentId}
+          `);
+          
+          if (attachmentQuery.length > 0) {
+            const attachment = attachmentQuery[0];
+            console.log(`📎 처리 중인 첨부파일: ID=${attachmentId}, name=${attachment.original_name}`);
+            
+            if (attachment.file_data) {
+              // Convert base64 data to buffer
+              const fileBuffer = Buffer.from(attachment.file_data, 'base64');
+              
+              attachments.push({
+                filename: attachment.original_name,
+                content: fileBuffer,
+                contentType: attachment.mime_type || 'application/octet-stream'
+              });
+              
+              console.log(`✅ 첨부파일 추가 완료: ${attachment.original_name} (${fileBuffer.length} bytes)`);
+            } else {
+              console.warn(`⚠️ 첨부파일 데이터가 없습니다: ID=${attachmentId}`);
+            }
+          } else {
+            console.warn(`⚠️ 첨부파일을 찾을 수 없습니다: ID=${attachmentId}`);
+          }
+        } catch (attachError) {
+          console.error(`❌ 첨부파일 처리 오류: ID=${attachmentId}`, attachError);
+        }
+      }
+    }
+
     // 임시 엑셀 파일 생성 (첨부파일이 없는 경우)
     if (!excelPath) {
       const tempDir = path.join(__dirname, '../../uploads/temp');
@@ -2797,7 +2839,8 @@ router.post("/orders/send-email-simple", requireAuth, async (req, res) => {
       fs.writeFileSync(excelPath, `발주서 상세 내용\n\n${body}`);
     }
 
-    // 이메일 발송 (POEmailService 사용)
+    // 이메일 발송 (POEmailService 사용) - additionalAttachments 지원
+    console.log(`📧 이메일 발송: 기본 첨부파일 + 추가 첨부파일 ${attachments.length}개`);
     const result = await emailService.sendPOWithOriginalFormat(excelPath, {
       to: toEmails,
       cc: ccEmails,
@@ -2805,7 +2848,8 @@ router.post("/orders/send-email-simple", requireAuth, async (req, res) => {
       body: body || `발주서를 첨부합니다.\n\n발주번호: ${emailData.orderNumber}\n프로젝트: ${emailData.projectName}\n거래처: ${emailData.vendorName}`,
       orderData: emailData,
       userId: (req as any).user?.id,
-      orderId: orderData?.orderId
+      orderId: orderData?.orderId,
+      additionalAttachments: attachments // Pass additional attachments
     });
 
     // 임시 파일 삭제
