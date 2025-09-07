@@ -47,6 +47,7 @@
     "VERCEL": "1",
     "NODE_ENV": "production",
     "VITE_ENVIRONMENT": "production",
-    "VITE_ENABLE_EXCEL_UPLOAD": "true"
+    "VITE_ENABLE_EXCEL_UPLOAD": "true",
+    "DEPLOYMENT_VERSION": "2025-09-07-21-08"
   }
 }
