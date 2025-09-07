@@ -208,7 +208,7 @@ export function NotificationBell() {
               <div className="flex items-center justify-center py-8">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
               </div>
-            ) : notifications.length === 0 ? (
+            ) : !Array.isArray(notifications) || notifications.length === 0 ? (
               <div className="text-center py-8 text-gray-500 text-sm">
                 새로운 알림이 없습니다
               </div>

@@ -58,8 +58,8 @@ export function NotificationCenter({ className }: NotificationCenterProps) {
   } = useNotifications();
 
   const displayNotifications = activeTab === 'unread' 
-    ? notifications.filter(n => !n.read)
-    : notifications;
+    ? (Array.isArray(notifications) ? notifications.filter(n => !n.read) : [])
+    : (Array.isArray(notifications) ? notifications : []);
 
   const getNotificationIcon = (type: Notification['type']) => {
     switch (type) {

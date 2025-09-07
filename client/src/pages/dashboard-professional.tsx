@@ -322,7 +322,7 @@ export default function DashboardProfessional() {
   };
 
   // Transform monthly data for area chart with proper sorting and formatting
-  const monthlyChartData = monthlyStats
+  const monthlyChartData = (Array.isArray(monthlyStats) ? monthlyStats : [])
     .sort((a: any, b: any) => a.month.localeCompare(b.month)) // Sort by YYYY-MM format
     .map((item: any) => {
       const [year, month] = item.month.split('-');
@@ -347,7 +347,7 @@ export default function DashboardProfessional() {
   
   // Create a map of existing status data
   const statusDataMap = new Map(
-    orderStatusStats.map((item: any) => [item.status, Number(item.count) || 0])
+    (Array.isArray(orderStatusStats) ? orderStatusStats : []).map((item: any) => [item.status, Number(item.count) || 0])
   );
   
   // Order Status distribution for pie chart - ensure all statuses are present
