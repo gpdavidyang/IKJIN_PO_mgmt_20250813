@@ -130,13 +130,14 @@ export class ProfessionalPDFGenerationService {
   };
 
   /**
-   * 환경별 폰트 설정 가져오기 (런타임 결정)
+   * 환경별 폰트 설정 가져오기 - 한글 폰트 우선 사용
    */
   private static getFonts() {
+    // 사용자 요청: 모든 환경에서 한글 폰트 우선 사용
     return {
-      regular: process.env.VERCEL ? 'Helvetica' : 'NotoSansKR-Regular',
-      bold: process.env.VERCEL ? 'Helvetica-Bold' : 'NotoSansKR-Bold',
-      medium: process.env.VERCEL ? 'Helvetica' : 'NotoSansKR-Medium',
+      regular: 'NotoSansKR-Regular',
+      bold: 'NotoSansKR-Bold', 
+      medium: 'NotoSansKR-Medium',
     };
   }
 
@@ -393,30 +394,18 @@ export class ProfessionalPDFGenerationService {
   }
 
   /**
-   * 텍스트 출력 헬퍼 - 환경별 번역 적용
+   * 텍스트 출력 헬퍼 - 한글 원문 유지 모드
    */
   private static drawText(doc: PDFDocument, text: string, x: number, y: number, options?: any): void {
-    // Vercel 환경에서는 하드코딩된 한글도 번역 필요
-    const translatedText = this.translateForVercel(text);
+    // 사용자 요청: 한글 원문 그대로 유지, 번역 비활성화
     const fonts = this.getFonts();
     
-    // Vercel 환경에서 번역 로그 출력
-    if (process.env.VERCEL && text !== translatedText) {
-      console.log(`🌐 [PDF] 텍스트 번역: "${text}" → "${translatedText}"`);
-    }
-    
-    // 폰트 설정
+    // 폰트 설정 - 한글 폰트 우선 사용
     const fontName = options?.font || fonts.regular;
+    doc.font(fontName);
     
-    if (!process.env.VERCEL) {
-      // 로컬 환경에서는 등록된 폰트 사용
-      doc.font(fontName);
-    } else {
-      // Vercel 환경에서는 내장 폰트 직접 사용
-      doc.font(fontName === fonts.bold ? 'Helvetica-Bold' : 'Helvetica');
-    }
-    
-    doc.text(translatedText, x, y, options);
+    // 원문 그대로 출력
+    doc.text(text, x, y, options);
   }
 
   /**
@@ -476,17 +465,8 @@ export class ProfessionalPDFGenerationService {
         const chunks: Buffer[] = [];
         let isResolved = false;
 
-        // Vercel 환경에서 doc.text 메서드 오버라이드
-        if (process.env.VERCEL) {
-          const originalText = doc.text.bind(doc);
-          doc.text = function(text: string, x?: number, y?: number, options?: any) {
-            const translatedText = ProfessionalPDFGenerationService.translateForVercel(text);
-            if (text !== translatedText) {
-              console.log(`🌐 [PDF] 자동번역: "${text}" → "${translatedText}"`);
-            }
-            return originalText(translatedText, x, y, options);
-          };
-        }
+        // 한글 원문 유지: doc.text 오버라이드 비활성화
+        console.log('📝 [PDF] 한글 폰트 기반 원문 렌더링 모드');
 
         // PDF 데이터 수집
         doc.on('data', (chunk) => {
@@ -566,19 +546,57 @@ export class ProfessionalPDFGenerationService {
       console.log('🎯 [PDF] 한글 폰트 등록 시작...');
       console.log(`🌐 [PDF] 환경 체크: VERCEL=${process.env.VERCEL}, NODE_ENV=${process.env.NODE_ENV}`);
       
-      // Vercel 환경에서는 최적화된 한글 폰트 시도
+      // Vercel 환경에서는 경량 한글 폰트 (NanumGothic) 사용
       if (process.env.VERCEL) {
-        console.log('☁️ [PDF] Vercel 서버리스 환경 - 최적화된 한글 폰트 로드');
+        console.log('☁️ [PDF] Vercel 서버리스 환경 - 경량 한글 폰트 로드');
         
         try {
-          // FontManager에서 Vercel 최적화 폰트 가져오기
+          // 직접 경량 폰트 로드 시도
+          const fs = await import('fs');
+          const path = await import('path');
+          
+          // 먼저 NotoSansKR 시도 (안정성 우선)
+          let fontPath = path.join(process.cwd(), 'fonts', 'NotoSansKR-Regular.ttf');
+          let fontName = 'NotoSansKR';
+          
+          // NotoSansKR이 없으면 NanumGothic으로 폴백
+          if (!fs.existsSync(fontPath)) {
+            fontPath = path.join(process.cwd(), 'fonts', 'NanumGothic-Regular.ttf');
+            fontName = 'NanumGothic';
+          }
+          
+          console.log(`🔍 [PDF] 폰트 경로 확인: ${fontPath}`);
+          
+          if (fs.existsSync(fontPath)) {
+            const fontBuffer = fs.readFileSync(fontPath);
+            console.log(`✅ [PDF] ${fontName} 폰트 로드 성공 (크기: ${Math.round(fontBuffer.length / 1024)}KB)`);
+            
+            const fonts = this.getFonts();
+            
+            try {
+              // 모든 폰트 스타일에 동일한 NanumGothic 적용
+              doc.registerFont(fonts.regular, fontBuffer);
+              doc.registerFont(fonts.bold, fontBuffer);
+              doc.registerFont(fonts.medium, fontBuffer);
+              
+              console.log('🎉 [PDF] Vercel 경량 한글 폰트 등록 성공!');
+              return;
+            } catch (registerError) {
+              console.error('❌ [PDF] NanumGothic 폰트 등록 실패:', registerError);
+            }
+          } else {
+            console.warn('⚠️ [PDF] NanumGothic 폰트 파일을 찾을 수 없음');
+          }
+          
+          // 폰트 로드 실패 시 FontManager 시도
+          console.log('🔄 [PDF] FontManager로 폴백 시도...');
           await initializeFontManager();
           
           if (fontManager) {
             const vercelFontBuffer = fontManager.getVercelOptimizedFontBuffer();
             
             if (vercelFontBuffer) {
-              console.log('✅ [PDF] Vercel 최적화 폰트 등록 시도...');
+              console.log('✅ [PDF] FontManager 최적화 폰트 등록 시도...');
               const fonts = this.getFonts();
               
               try {
@@ -586,24 +604,23 @@ export class ProfessionalPDFGenerationService {
                 doc.registerFont(fonts.bold, vercelFontBuffer);
                 doc.registerFont(fonts.medium, vercelFontBuffer);
                 
-                console.log('🎉 [PDF] Vercel 최적화 한글 폰트 등록 성공!');
+                console.log('🎉 [PDF] FontManager 한글 폰트 등록 성공!');
                 return;
               } catch (registerError) {
-                console.error('❌ [PDF] Vercel 폰트 등록 실패:', registerError);
-                // 폰트 등록 실패 시 폴백으로 계속 진행
+                console.error('❌ [PDF] FontManager 폰트 등록 실패:', registerError);
               }
             }
           }
           
-          console.log('⚠️ [PDF] Vercel 최적화 폰트 사용 불가 - 기본 폰트로 폴백');
+          console.error('❌ [PDF] 모든 한글 폰트 로드 방법 실패 - Helvetica로 폴백');
           
-          // 최적화 폰트 실패 시 기본 폰트로 폴백
+          // 완전 실패 시 기본 폰트로 폴백
           const fonts = this.getFonts();
           doc.registerFont(fonts.regular, 'Helvetica');
-          doc.registerFont(fonts.bold, 'Helvetica-Bold');
+          doc.registerFont(fonts.bold, 'Helvetica-Bold');  
           doc.registerFont(fonts.medium, 'Helvetica');
           
-          console.log('🔄 [PDF] Vercel - 기본 폰트로 폴백 완료');
+          console.log('🔄 [PDF] Vercel - Helvetica 폰트로 폴백 완료');
           return;
           
         } catch (vercelError) {
