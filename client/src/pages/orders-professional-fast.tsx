@@ -676,12 +676,21 @@ export default function OrdersProfessionalFast() {
       };
 
       console.log('📧 이메일 발송 데이터:', { orderData, emailData });
-      await EmailService.sendPurchaseOrderEmail(orderData, emailData);
+      const result = await EmailService.sendPurchaseOrderEmail(orderData, emailData);
       
-      toast({
-        title: "이메일 발송 완료",
-        description: `${selectedOrder.vendorName}에게 발주서 ${selectedOrder.orderNumber}를 전송했습니다.`,
-      });
+      // warning이 있으면 경고 표시, 없으면 성공 표시
+      if (result.warning) {
+        toast({
+          title: "이메일 발송 완료 (경고)",
+          description: `${result.warning}\n${selectedOrder.vendorName}에게 발주서 ${selectedOrder.orderNumber}를 전송했습니다.`,
+          variant: "default",
+        });
+      } else {
+        toast({
+          title: "이메일 발송 완료",
+          description: `${selectedOrder.vendorName}에게 발주서 ${selectedOrder.orderNumber}를 전송했습니다.`,
+        });
+      }
     } catch (error) {
       console.error('이메일 발송 오류:', error);
       toast({

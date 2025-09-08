@@ -681,6 +681,7 @@ router.post("/orders", requireAuth, upload.array('attachments'), async (req, res
         console.error("⚠️ ORDERS.TS - PROFESSIONAL PDF generation failed:", pdfResult.error);
         pdfGenerationStatus.message = `PDF 생성 실패: ${pdfResult.error}`;
         // Note: Fallback PDF generation removed - using ProfessionalPDFGenerationService as primary method
+        }
       }
     } catch (pdfError) {
       console.error("❌ ORDERS.TS - Error generating PDF:", pdfError);
