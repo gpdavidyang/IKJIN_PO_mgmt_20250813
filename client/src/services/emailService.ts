@@ -32,10 +32,25 @@ export interface EmailSendResponse {
   messageId?: string;
   error?: string;
   mockMode?: boolean;
+  warning?: string; // PDF 생성 실패 등 경고 메시지
 }
 
 export class EmailService {
   private static readonly BASE_URL = '/api/po-template';
+  
+  /**
+   * PDF 생성 실패 시 사용자 확인 다이얼로그 표시
+   */
+  private static async showPdfGenerationFailureDialog(): Promise<boolean> {
+    return new Promise((resolve) => {
+      const message = `PDF 파일 생성에 실패했습니다.\n\nPDF 없이 이메일을 발송하시겠습니까?\n(Excel 파일과 기타 첨부파일은 포함됩니다)`;
+      
+      // 브라우저 기본 confirm 다이얼로그 사용
+      // 실제 구현에서는 더 나은 UI 컴포넌트 사용 가능
+      const result = window.confirm(message);
+      resolve(result);
+    });
+  }
 
   /**
    * 원본 형식 유지 발주서 이메일 발송 (Input 시트만 제거)
@@ -221,8 +236,58 @@ export class EmailService {
           messageId: response.messageId
         };
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Email send error:', error);
+      
+      // PDF 생성 실패 오류인지 확인
+      if (error.message?.includes('첨부할 파일이 생성되지 않았습니다') || 
+          error.message?.includes('PDF 생성')) {
+        // PDF 생성 실패 시 사용자에게 확인 요청
+        const userConfirmed = await this.showPdfGenerationFailureDialog();
+        
+        if (userConfirmed) {
+          // PDF 없이 이메일 발송 재시도
+          console.log('📧 PDF 없이 이메일 발송 재시도');
+          
+          const requestData: any = {
+            orderData: {
+              orderId: orderData.orderId,
+              orderNumber: orderData.orderNumber,
+              vendorName: orderData.vendorName,
+              orderDate: orderData.orderDate,
+              totalAmount: orderData.totalAmount,
+              siteName: orderData.siteName
+            },
+            to: emailData.to,
+            cc: emailData.cc,
+            subject: emailData.subject,
+            message: emailData.message,
+            selectedAttachmentIds: emailData.selectedAttachmentIds,
+            attachmentUrls: orderData.attachmentUrls,
+            skipPdfGeneration: true, // PDF 생성 건너뛰기 플래그
+            emailSettings: {
+              subject: emailData.subject,
+              message: emailData.message,
+              cc: emailData.cc
+            }
+          };
+          
+          try {
+            const response = await apiRequest('POST', '/api/orders/send-email', requestData);
+            return {
+              success: true,
+              messageId: response.messageId,
+              warning: 'PDF 파일 없이 이메일이 발송되었습니다.'
+            };
+          } catch (retryError) {
+            console.error('Email send retry error:', retryError);
+            throw new Error('PDF 없이 이메일 발송을 시도했으나 실패했습니다.');
+          }
+        } else {
+          throw new Error('PDF 생성 실패로 이메일 발송이 취소되었습니다.');
+        }
+      }
+      
       throw new Error('이메일 발송 중 오류가 발생했습니다.');
     }
   }

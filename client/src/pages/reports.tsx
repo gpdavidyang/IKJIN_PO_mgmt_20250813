@@ -680,7 +680,13 @@ export default function Reports() {
       if (filters.status && filters.status !== 'all') params.append('status', filters.status);
       if (filters.search) params.append('orderNumber', filters.search);
       
-      const response = await fetch(`/api/email-history?${params.toString()}`);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/email-history?${params.toString()}`, {
+        credentials: 'include',
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+        }
+      });
       if (!response.ok) throw new Error('Failed to fetch email history');
       return response.json();
     },

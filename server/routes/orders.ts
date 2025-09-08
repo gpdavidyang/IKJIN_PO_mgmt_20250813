@@ -548,8 +548,12 @@ router.post("/orders", requireAuth, upload.array('attachments'), async (req, res
       attachmentId: null as number | null
     };
     
+    // Vercel 환경에서는 PDF 생성을 선택사항으로 처리
+    const isVercelEnvironment = process.env.VERCEL === '1' || process.env.VERCEL_ENV;
+    
     try {
       console.log("🔧🔧🔧 ORDERS.TS - Generating PROFESSIONAL PDF for order:", order.id);
+      console.log("🌐 Environment:", isVercelEnvironment ? "Vercel" : "Standard");
       
       // Use the new Professional PDF Generation Service
       // This service automatically gathers all comprehensive data from the database
@@ -571,8 +575,14 @@ router.post("/orders", requireAuth, upload.array('attachments'), async (req, res
         console.error("⚠️ ORDERS.TS - PROFESSIONAL PDF generation failed:", pdfResult.error);
         pdfGenerationStatus.message = `PDF 생성 실패: ${pdfResult.error}`;
         
-        // Fallback to Enhanced PDF if Professional fails
-        console.log("🔄 Attempting fallback to Enhanced PDF...");
+        // Vercel 환경에서는 PDF 생성 실패를 경고로 처리
+        if (isVercelEnvironment) {
+          console.log("⚠️ Vercel 환경: PDF 생성 실패를 경고로 처리");
+          pdfGenerationStatus.success = false;
+          pdfGenerationStatus.message = 'PDF 생성에 실패했지만 발주서는 정상적으로 생성되었습니다';
+        } else {
+          // Fallback to Enhanced PDF if Professional fails
+          console.log("🔄 Attempting fallback to Enhanced PDF...");
         
         // Get vendor, project, company, and user details for enhanced PDF
         const vendor = orderData.vendorId ? await storage.getVendor(orderData.vendorId) : null;
@@ -1607,7 +1617,8 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
       cc, 
       subject, 
       message, 
-      selectedAttachmentIds = []
+      selectedAttachmentIds = [],
+      skipPdfGeneration = false  // PDF 생성 건너뛰기 옵션
     } = req.body;
     
     console.log('📧 이메일 발송 요청 (POEmailService 사용):', { 
@@ -2244,7 +2255,7 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
       }, {
         orderId: orderData?.orderId,
         senderUserId: req.user?.id
-      });
+      }, skipPdfGeneration);  // PDF 생성 건너뛰기 플래그 전달
 
       // 임시 파일 삭제
       try {
@@ -2269,11 +2280,19 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
           }
         }
         
-        res.json({ 
+        // PDF 생성 경고가 있으면 포함
+        const response: any = { 
           success: true, 
           messageId: result.messageId,
           message: '이메일이 성공적으로 발송되었습니다.'
-        });
+        };
+        
+        if (result.pdfGenerationWarning) {
+          response.warning = result.pdfGenerationWarning;
+          response.message = 'PDF 파일 없이 이메일이 발송되었습니다.';
+        }
+        
+        res.json(response);
         return;
       } else {
         console.error('❌ POEmailService 이메일 발송 실패:', result.error);

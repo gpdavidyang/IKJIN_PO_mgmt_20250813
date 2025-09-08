@@ -133,8 +133,9 @@ export class POEmailService {
   async sendPOWithOriginalFormat(
     originalFilePath: string,
     emailOptions: POEmailOptions,
-    orderInfo?: { orderId?: number; senderUserId?: string }
-  ): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    orderInfo?: { orderId?: number; senderUserId?: string },
+    skipPdfGeneration: boolean = false
+  ): Promise<{ success: boolean; messageId?: string; error?: string; pdfGenerationWarning?: string }> {
     try {
       const timestamp = Date.now();
       const uploadsDir = getUploadsDir();
