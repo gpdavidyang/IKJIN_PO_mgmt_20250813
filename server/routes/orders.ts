@@ -3123,5 +3123,164 @@ router.get("/:orderId/email-history", async (req, res) => {
   }
 });
 
+// 파일 업로드를 포함한 이메일 발송 (FormData 지원)
+router.post("/orders/send-email-with-files", requireAuth, upload.array('customFiles', 10), async (req, res) => {
+  console.log('🔍 파일 포함 이메일 발송 엔드포인트 진입');
+  
+  try {
+    // FormData에서 JSON 데이터 파싱
+    const orderData = JSON.parse(req.body.orderData || '{}');
+    const to = JSON.parse(req.body.to || '[]');
+    const cc = req.body.cc ? JSON.parse(req.body.cc) : [];
+    const subject = req.body.subject || '';
+    const message = req.body.message || '';
+    const selectedAttachmentIds = JSON.parse(req.body.selectedAttachmentIds || '[]');
+    const attachmentUrls = req.body.attachmentUrls ? JSON.parse(req.body.attachmentUrls) : [];
+    
+    // 업로드된 파일들 (multer에서 처리됨)
+    const uploadedFiles = req.files as Express.Multer.File[] || [];
+    
+    console.log('📧 파일 포함 이메일 발송 요청:', { 
+      orderData, 
+      to, 
+      cc, 
+      subject, 
+      message: message ? `[메시지 있음: ${message.substring(0, 50)}...]` : '[메시지 없음]',
+      messageLength: message ? message.length : 0,
+      selectedAttachmentIds,
+      uploadedFilesCount: uploadedFiles.length,
+      uploadedFileNames: uploadedFiles.map(f => f.originalname)
+    });
+    
+    // 입력 데이터 검증
+    if (!to || to.length === 0) {
+      console.log('❌ 수신자 검증 실패');
+      return res.status(400).json({ error: '수신자가 필요합니다.' });
+    }
+    
+    if (!orderData || !orderData.orderNumber) {
+      console.log('❌ 주문 정보 검증 실패:', orderData);
+      return res.status(400).json({ error: '주문 정보가 필요합니다.' });
+    }
+    
+    // 첨부파일 처리: 기존 첨부파일 + 사용자 업로드 파일
+    let attachments: any[] = [];
+    let attachmentsList: string[] = [];
+    
+    // 1. 기존 첨부파일 처리 (selectedAttachmentIds)
+    if (selectedAttachmentIds && selectedAttachmentIds.length > 0) {
+      console.log('📎 기존 첨부파일 처리:', selectedAttachmentIds);
+      
+      for (const attachmentId of selectedAttachmentIds) {
+        try {
+          const [attachment] = await database.db
+            .select({
+              id: attachmentsTable.id,
+              originalName: attachmentsTable.originalName,
+              filePath: attachmentsTable.filePath,
+              mimeType: attachmentsTable.mimeType,
+              fileData: attachmentsTable.fileData
+            })
+            .from(attachmentsTable)
+            .where(eq(attachmentsTable.id, attachmentId));
+            
+          if (attachment && attachment.fileData) {
+            // Base64 데이터를 Buffer로 변환하여 첨부파일 추가
+            const fileBuffer = Buffer.from(attachment.fileData, 'base64');
+            attachments.push({
+              filename: attachment.originalName,
+              content: fileBuffer,
+              contentType: attachment.mimeType || 'application/octet-stream'
+            });
+            attachmentsList.push(attachment.originalName);
+            console.log(`📎 기존 첨부파일 추가: ${attachment.originalName} (${fileBuffer.length} bytes)`);
+          }
+        } catch (error) {
+          console.error(`❌ 첨부파일 ${attachmentId} 처리 실패:`, error);
+        }
+      }
+    }
+    
+    // 2. 사용자 업로드 파일 처리
+    if (uploadedFiles && uploadedFiles.length > 0) {
+      console.log('📎 사용자 업로드 파일 처리:', uploadedFiles.length);
+      
+      uploadedFiles.forEach((file) => {
+        attachments.push({
+          filename: decodeKoreanFilename(file.originalname || 'unknown'),
+          content: file.buffer,
+          contentType: file.mimetype || 'application/octet-stream'
+        });
+        attachmentsList.push(file.originalname || 'unknown');
+        console.log(`📎 사용자 파일 추가: ${file.originalname} (${file.size} bytes)`);
+      });
+    }
+    
+    console.log(`📎 총 첨부파일: ${attachments.length}개 - ${attachmentsList.join(', ')}`);
+    
+    // 이메일 옵션 설정 (사용자 메시지를 우선 사용)
+    const emailOptions = {
+      to: Array.isArray(to) ? to : [to],
+      cc: Array.isArray(cc) ? cc : (cc ? [cc] : []),
+      subject: subject || `발주서 - ${orderData.orderNumber}`,
+      orderNumber: orderData.orderNumber,
+      vendorName: orderData.vendorName,
+      orderDate: orderData.orderDate,
+      totalAmount: orderData.totalAmount,
+      additionalMessage: message, // 사용자가 작성한 메시지
+      additionalAttachments: attachments // 모든 첨부파일
+    };
+    
+    console.log('📧 이메일 발송 옵션:', {
+      to: emailOptions.to,
+      cc: emailOptions.cc,
+      subject: emailOptions.subject,
+      orderNumber: emailOptions.orderNumber,
+      hasMessage: !!emailOptions.additionalMessage,
+      messageLength: emailOptions.additionalMessage?.length || 0,
+      attachmentCount: emailOptions.additionalAttachments?.length || 0
+    });
+    
+    // POEmailService를 사용하여 이메일 발송
+    const result = await emailService.sendEmailWithDirectAttachments(emailOptions, {
+      orderId: orderData.orderId,
+      senderUserId: (req as any).user?.id
+    });
+    
+    if (result.success) {
+      console.log('📧 파일 포함 이메일 발송 성공');
+      
+      // 이메일 발송 성공 시 발주서 상태를 'sent'로 업데이트
+      if (orderData && orderData.orderNumber) {
+        try {
+          await updateOrderStatusAfterEmail(orderData.orderNumber);
+          console.log(`📋 발주서 상태 업데이트 완료: ${orderData.orderNumber} → sent`);
+        } catch (updateError) {
+          console.error(`❌ 발주서 상태 업데이트 실패: ${orderData.orderNumber}`, updateError);
+          // 상태 업데이트 실패는 이메일 발송 성공에 영향을 주지 않음
+        }
+      }
+      
+      res.json({ 
+        success: true, 
+        messageId: result.messageId,
+        attachmentCount: attachments.length,
+        attachmentNames: attachmentsList
+      });
+    } else {
+      console.error('📧 파일 포함 이메일 발송 실패:', result.error);
+      res.status(500).json({ 
+        error: result.error || '이메일 발송에 실패했습니다.',
+        details: 'POEmailService에서 오류가 발생했습니다.'
+      });
+    }
+  } catch (error) {
+    console.error('❌ 파일 포함 이메일 발송 오류:', error);
+    res.status(500).json({ 
+      error: '파일 포함 이메일 발송 실패',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
 
 export default router;

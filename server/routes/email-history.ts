@@ -72,7 +72,7 @@ router.get("/orders/:orderId/email-history", requireAuth, async (req, res) => {
 });
 
 // Create new email history record
-router.post("/email-history", requireAuth, async (req, res) => {
+router.post("/", requireAuth, async (req, res) => {
   try {
     const validatedData = createEmailHistorySchema.parse(req.body);
 
@@ -151,7 +151,7 @@ router.get("/orders-email-status", requireAuth, async (req, res) => {
 });
 
 // Update email status
-router.put("/email-history/:id/status", requireAuth, async (req, res) => {
+router.put("/:id/status", requireAuth, async (req, res) => {
   try {
     const emailId = parseInt(req.params.id);
     if (isNaN(emailId)) {
@@ -182,7 +182,7 @@ router.put("/email-history/:id/status", requireAuth, async (req, res) => {
 });
 
 // Get email history detail
-router.get("/email-history/:id", requireAuth, async (req, res) => {
+router.get("/:id", requireAuth, async (req, res) => {
   try {
     const emailId = parseInt(req.params.id);
     if (isNaN(emailId)) {
@@ -228,7 +228,7 @@ router.get("/email-history/:id", requireAuth, async (req, res) => {
 });
 
 // Get all email history with pagination and filters (for reports page)
-router.get("/email-history", requireAuth, async (req, res) => {
+router.get("/", requireAuth, async (req, res) => {
   try {
     const { 
       page = '1', 

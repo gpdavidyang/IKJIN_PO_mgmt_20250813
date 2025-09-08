@@ -2360,6 +2360,31 @@ var init_professional_pdf_generation_service = __esm({
         };
       }
       /**
+       * 금액 포맷팅 (소수점 없음, 천단위 콤마)
+       * @param value 숫자 값
+       * @returns 포맷된 문자열 (예: "1,234,567")
+       */
+      static formatAmount(value) {
+        if (value === null || value === void 0) return "0";
+        const numValue = typeof value === "string" ? parseFloat(value) : value;
+        if (isNaN(numValue)) return "0";
+        return Math.round(numValue).toLocaleString("ko-KR");
+      }
+      /**
+       * 수량 포맷팅 (소수점 1자리, 천단위 콤마)
+       * @param value 숫자 값
+       * @returns 포맷된 문자열 (예: "1,234.5")
+       */
+      static formatQuantity(value) {
+        if (value === null || value === void 0) return "0";
+        const numValue = typeof value === "string" ? parseFloat(value) : value;
+        if (isNaN(numValue)) return "0";
+        return numValue.toLocaleString("ko-KR", {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 1
+        });
+      }
+      /**
        * Vercel 환경에서 한글 텍스트를 영어로 변환 - 확장된 번역 사전
        */
       static translateForVercel(text2) {
@@ -3044,10 +3069,10 @@ var init_professional_pdf_generation_service = __esm({
             item.sequenceNo.toString(),
             item.name,
             item.specification || "-",
-            item.quantity.toString(),
+            this.formatQuantity(item.quantity),
             item.unit || "-",
-            `\u20A9${item.unitPrice.toLocaleString("ko-KR")}`,
-            `\u20A9${item.totalPrice.toLocaleString("ko-KR")}`,
+            `\u20A9${this.formatAmount(item.unitPrice)}`,
+            `\u20A9${this.formatAmount(item.totalPrice)}`,
             item.remarks || "-"
           ];
           values.forEach((value, i) => {
@@ -3072,8 +3097,8 @@ var init_professional_pdf_generation_service = __esm({
         const summaryWidth = 220;
         const summaryX = this.LAYOUT.pageWidth - this.LAYOUT.margin - summaryWidth;
         const rows = [
-          { label: "\uC18C\uACC4 (\uBD80\uAC00\uC138 \uBCC4\uB3C4)", value: `\u20A9${orderData.financial.subtotalAmount.toLocaleString("ko-KR")}` },
-          { label: `\uBD80\uAC00\uC138 (${orderData.financial.vatRate}%)`, value: `\u20A9${orderData.financial.vatAmount.toLocaleString("ko-KR")}` }
+          { label: "\uC18C\uACC4 (\uBD80\uAC00\uC138 \uBCC4\uB3C4)", value: `\u20A9${this.formatAmount(orderData.financial.subtotalAmount)}` },
+          { label: `\uBD80\uAC00\uC138 (${orderData.financial.vatRate}%)`, value: `\u20A9${this.formatAmount(orderData.financial.vatAmount)}` }
         ];
         let currentY = y;
         const rowHeight = 18;
@@ -3090,7 +3115,7 @@ var init_professional_pdf_generation_service = __esm({
         doc.rect(summaryX, currentY, summaryWidth, 22).fillColor(this.COLORS.navy).fill();
         const totalTextY = currentY + (22 - 8) / 2;
         doc.font(fonts.bold).fontSize(8).fillColor(this.COLORS.white).text("\uCD1D \uAE08\uC561", summaryX + 5, totalTextY);
-        doc.font(fonts.bold).fontSize(9).fillColor(this.COLORS.white).text(`\u20A9${orderData.financial.totalAmount.toLocaleString("ko-KR")}`, summaryX + 5, totalTextY - 1, {
+        doc.font(fonts.bold).fontSize(9).fillColor(this.COLORS.white).text(`\u20A9${this.formatAmount(orderData.financial.totalAmount)}`, summaryX + 5, totalTextY - 1, {
           width: summaryWidth - 10,
           align: "right"
         });
@@ -3197,17 +3222,17 @@ var init_professional_pdf_generation_service = __esm({
               sequenceNo: index2 + 1,
               name: item.name || "\uD488\uBAA9\uBA85",
               specification: item.specification || void 0,
-              quantity: item.quantity || 1,
+              quantity: typeof item.quantity === "string" ? parseFloat(item.quantity) : item.quantity || 1,
               unit: item.unit || void 0,
-              unitPrice: item.unitPrice || 0,
-              totalPrice: item.totalPrice || 0,
+              unitPrice: typeof item.unitPrice === "string" ? parseFloat(item.unitPrice) : item.unitPrice || 0,
+              totalPrice: typeof item.totalPrice === "string" ? parseFloat(item.totalPrice) : item.totalPrice || 0,
               remarks: item.remarks || void 0
             })),
             financial: {
-              subtotalAmount: order.subtotalAmount || 0,
+              subtotalAmount: typeof order.subtotalAmount === "string" ? parseFloat(order.subtotalAmount) : order.subtotalAmount || 0,
               vatRate: 10,
-              vatAmount: order.vatAmount || 0,
-              totalAmount: order.totalAmount || 0,
+              vatAmount: typeof order.vatAmount === "string" ? parseFloat(order.vatAmount) : order.vatAmount || 0,
+              totalAmount: typeof order.totalAmount === "string" ? parseFloat(order.totalAmount) : order.totalAmount || 0,
               currencyCode: "KRW"
             },
             metadata: {
@@ -8581,6 +8606,165 @@ var POEmailService = class {
     }
   }
   /**
+   * 직접 첨부파일을 포함하여 이메일 발송 (사용자 메시지 우선 사용)
+   * 새로운 Vercel 최적화 메소드
+   */
+  async sendEmailWithDirectAttachments(emailOptions, orderInfo) {
+    try {
+      console.log("\u{1F4E7} \uC9C1\uC811 \uCCA8\uBD80\uD30C\uC77C \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC2DC\uC791:", {
+        to: emailOptions.to,
+        subject: emailOptions.subject,
+        hasMessage: !!emailOptions.additionalMessage,
+        messageLength: emailOptions.additionalMessage?.length || 0,
+        attachmentCount: emailOptions.additionalAttachments?.length || 0
+      });
+      let htmlContent = "";
+      if (emailOptions.additionalMessage && emailOptions.additionalMessage.trim()) {
+        console.log("\u{1F4DD} \uC0AC\uC6A9\uC790 \uBA54\uC2DC\uC9C0 \uC6B0\uC120 \uC0AC\uC6A9");
+        htmlContent = `
+          <!DOCTYPE html>
+          <html lang="ko">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>\uBC1C\uC8FC\uC11C \uC804\uC1A1</title>
+            <style>
+              body { 
+                font-family: "Malgun Gothic", "\uB9D1\uC740 \uACE0\uB515", Arial, sans-serif; 
+                line-height: 1.6; 
+                color: #333; 
+                max-width: 600px; 
+                margin: 0 auto; 
+                padding: 20px; 
+              }
+              .message-content { 
+                background-color: #f9f9f9; 
+                padding: 20px; 
+                border-radius: 5px; 
+                margin: 20px 0;
+                white-space: pre-wrap; 
+                word-wrap: break-word;
+              }
+              .order-info {
+                background-color: #e7f3ff;
+                padding: 15px;
+                border-radius: 5px;
+                margin: 20px 0;
+              }
+              .footer {
+                margin-top: 30px;
+                padding-top: 20px;
+                border-top: 1px solid #ddd;
+                font-size: 12px;
+                color: #666;
+                text-align: center;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="message-content">
+              ${emailOptions.additionalMessage.replace(/\n/g, "<br>")}
+            </div>
+            
+            ${emailOptions.orderNumber ? `
+              <div class="order-info">
+                <h3>\u{1F4CB} \uBC1C\uC8FC \uC815\uBCF4</h3>
+                <ul>
+                  ${emailOptions.orderNumber ? `<li><strong>\uBC1C\uC8FC\uBC88\uD638:</strong> ${emailOptions.orderNumber}</li>` : ""}
+                  ${emailOptions.vendorName ? `<li><strong>\uAC70\uB798\uCC98:</strong> ${emailOptions.vendorName}</li>` : ""}
+                  ${emailOptions.orderDate ? `<li><strong>\uBC1C\uC8FC\uC77C\uC790:</strong> ${emailOptions.orderDate}</li>` : ""}
+                  ${emailOptions.totalAmount ? `<li><strong>\uBC1C\uC8FC\uAE08\uC561:</strong> ${emailOptions.totalAmount.toLocaleString()}\uC6D0</li>` : ""}
+                </ul>
+              </div>
+            ` : ""}
+            
+            <div class="footer">
+              <p>
+                \uC774 \uBA54\uC77C\uC740 \uAD6C\uB9E4 \uBC1C\uC8FC \uAD00\uB9AC \uC2DC\uC2A4\uD15C\uC5D0\uC11C \uBC1C\uC1A1\uB418\uC5C8\uC2B5\uB2C8\uB2E4.<br>
+                \uBC1C\uC1A1 \uC2DC\uAC04: ${(/* @__PURE__ */ new Date()).toLocaleString("ko-KR")}
+              </p>
+            </div>
+          </body>
+          </html>
+        `;
+      } else {
+        console.log("\u{1F4E7} \uAE30\uBCF8 \uD15C\uD50C\uB9BF \uC0AC\uC6A9");
+        htmlContent = this.generateEmailContent(emailOptions);
+      }
+      const mailOptions = {
+        from: process.env.SMTP_USER,
+        to: Array.isArray(emailOptions.to) ? emailOptions.to.join(", ") : emailOptions.to,
+        subject: emailOptions.subject,
+        html: htmlContent
+      };
+      if (emailOptions.cc && emailOptions.cc.length > 0) {
+        mailOptions.cc = Array.isArray(emailOptions.cc) ? emailOptions.cc.join(", ") : emailOptions.cc;
+      }
+      if (emailOptions.bcc && emailOptions.bcc.length > 0) {
+        mailOptions.bcc = Array.isArray(emailOptions.bcc) ? emailOptions.bcc.join(", ") : emailOptions.bcc;
+      }
+      if (emailOptions.additionalAttachments && emailOptions.additionalAttachments.length > 0) {
+        mailOptions.attachments = emailOptions.additionalAttachments.map((att) => ({
+          filename: att.filename,
+          content: att.content,
+          contentType: att.contentType
+        }));
+        console.log("\u{1F4CE} \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00:", emailOptions.additionalAttachments.map(
+          (att) => `${att.filename} (${att.content.length} bytes)`
+        ).join(", "));
+      }
+      console.log("\u{1F4E7} \uCD5C\uC885 \uBA54\uC77C \uC635\uC158:", {
+        from: mailOptions.from,
+        to: mailOptions.to,
+        cc: mailOptions.cc,
+        subject: mailOptions.subject,
+        attachmentCount: mailOptions.attachments?.length || 0
+      });
+      const info = await this.transporter.sendMail(mailOptions);
+      console.log("\u{1F4E7} \uC9C1\uC811 \uCCA8\uBD80\uD30C\uC77C \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC131\uACF5:", info.messageId);
+      if (orderInfo?.orderId) {
+        try {
+          await this.recordEmailSendHistory({
+            orderId: orderInfo.orderId,
+            senderUserId: orderInfo.senderUserId,
+            recipients: Array.isArray(emailOptions.to) ? emailOptions.to : [emailOptions.to],
+            subject: emailOptions.subject,
+            messageId: info.messageId,
+            attachmentCount: emailOptions.additionalAttachments?.length || 0,
+            status: "success"
+          });
+        } catch (historyError) {
+          console.error("\uC774\uBA54\uC77C \uAE30\uB85D \uC800\uC7A5 \uC2E4\uD328:", historyError);
+        }
+      }
+      return {
+        success: true,
+        messageId: info.messageId
+      };
+    } catch (error) {
+      console.error("\u274C \uC9C1\uC811 \uCCA8\uBD80\uD30C\uC77C \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC624\uB958:", error);
+      if (orderInfo?.orderId) {
+        try {
+          await this.recordEmailSendHistory({
+            orderId: orderInfo.orderId,
+            senderUserId: orderInfo.senderUserId,
+            recipients: Array.isArray(emailOptions.to) ? emailOptions.to : [emailOptions.to],
+            subject: emailOptions.subject,
+            attachmentCount: emailOptions.additionalAttachments?.length || 0,
+            status: "failed",
+            errorMessage: error instanceof Error ? error.message : "Unknown error"
+          });
+        } catch (historyError) {
+          console.error("\uC774\uBA54\uC77C \uC2E4\uD328 \uAE30\uB85D \uC800\uC7A5 \uC2E4\uD328:", historyError);
+        }
+      }
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error"
+      };
+    }
+  }
+  /**
    * [기존 방식] 갑지/을지 시트를 Excel과 PDF로 첨부하여 이메일 발송
    * @deprecated 형식 손상 문제로 sendPOWithOriginalFormat 사용 권장
    */
@@ -10016,33 +10200,102 @@ router.put("/users/:id", async (req, res) => {
     res.status(500).json({ message: "Failed to update user" });
   }
 });
-router.delete("/users/:id", async (req, res) => {
+router.delete("/users/:id", requireAuth, requireAdmin, async (req, res) => {
   try {
     const id = req.params.id;
-    const userOrders = await storage.getOrdersByUserId(id);
-    if (userOrders && userOrders.length > 0) {
+    const currentUserId = req.user?.id;
+    if (id === currentUserId) {
       return res.status(400).json({
-        message: "Cannot delete user with existing orders",
-        reason: "data_integrity",
-        details: "User has purchase orders that must preserve creator information"
+        message: "\uC790\uAE30 \uC790\uC2E0\uC744 \uC0AD\uC81C\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4",
+        reason: "self_deletion",
+        details: "\uAD00\uB9AC\uC790 \uACC4\uC815 \uBCF4\uD638\uB97C \uC704\uD574 \uC790\uAE30 \uC790\uC2E0\uC740 \uC0AD\uC81C\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4"
       });
     }
+    const targetUser = await storage.getUser(id);
+    if (!targetUser) {
+      return res.status(404).json({
+        message: "\uC0AC\uC6A9\uC790\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4",
+        reason: "not_found"
+      });
+    }
+    const refCheck = await storage.checkUserReferences(id);
+    if (!refCheck.canDelete) {
+      const details = [];
+      if (refCheck.references.projects.length > 0) {
+        details.push(`${refCheck.references.projects.length}\uAC1C\uC758 \uD504\uB85C\uC81D\uD2B8\uC640 \uC5F0\uACB0\uB418\uC5B4 \uC788\uC2B5\uB2C8\uB2E4`);
+      }
+      if (refCheck.references.orders.length > 0) {
+        details.push(`${refCheck.references.orders.length}\uAC1C\uC758 \uBC1C\uC8FC\uC11C\uB97C \uC0DD\uC131\uD588\uC2B5\uB2C8\uB2E4`);
+      }
+      return res.status(400).json({
+        message: "\uC0AC\uC6A9\uC790\uB97C \uC0AD\uC81C\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4",
+        reason: "has_references",
+        details: details.join(", "),
+        references: refCheck.references,
+        suggestion: "\uC774 \uC0AC\uC6A9\uC790\uB97C \uBE44\uD65C\uC131\uD654\uD558\uB294 \uAC83\uC744 \uACE0\uB824\uD574\uBCF4\uC138\uC694"
+      });
+    }
+    await logAuditEvent(req, {
+      action: "user_deleted",
+      targetUserId: id,
+      targetUserEmail: targetUser.email,
+      performedBy: currentUserId,
+      timestamp: (/* @__PURE__ */ new Date()).toISOString()
+    });
     await storage.deleteUser(id);
-    res.json({ message: "User deleted successfully" });
+    res.json({
+      message: "\uC0AC\uC6A9\uC790\uAC00 \uC131\uACF5\uC801\uC73C\uB85C \uC0AD\uC81C\uB418\uC5C8\uC2B5\uB2C8\uB2E4",
+      deletedUser: {
+        id: targetUser.id,
+        email: targetUser.email,
+        name: targetUser.name
+      }
+    });
   } catch (error) {
     console.error("Error deleting user:", error);
-    res.status(500).json({ message: "Failed to delete user" });
+    res.status(500).json({
+      message: "\uC0AC\uC6A9\uC790 \uC0AD\uC81C \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4",
+      error: error.message
+    });
   }
 });
-router.patch("/users/:id/toggle-active", async (req, res) => {
+router.patch("/users/:id/toggle-active", requireAuth, requireAdmin, async (req, res) => {
   try {
     const id = req.params.id;
     const { isActive } = req.body;
+    const currentUserId = req.user?.id;
+    const targetUser = await storage.getUser(id);
+    if (!targetUser) {
+      return res.status(404).json({
+        message: "\uC0AC\uC6A9\uC790\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4",
+        reason: "not_found"
+      });
+    }
+    if (id === currentUserId && !isActive) {
+      return res.status(400).json({
+        message: "\uC790\uAE30 \uC790\uC2E0\uC744 \uBE44\uD65C\uC131\uD654\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4",
+        reason: "self_deactivation",
+        details: "\uAD00\uB9AC\uC790 \uACC4\uC815 \uBCF4\uD638\uB97C \uC704\uD574 \uC790\uAE30 \uC790\uC2E0\uC740 \uBE44\uD65C\uC131\uD654\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4"
+      });
+    }
+    await logAuditEvent(req, {
+      action: isActive ? "user_activated" : "user_deactivated",
+      targetUserId: id,
+      targetUserEmail: targetUser.email,
+      performedBy: currentUserId,
+      timestamp: (/* @__PURE__ */ new Date()).toISOString()
+    });
     const updatedUser = await storage.updateUser(id, { isActive });
-    res.json(updatedUser);
+    res.json({
+      message: `\uC0AC\uC6A9\uC790\uAC00 ${isActive ? "\uD65C\uC131\uD654" : "\uBE44\uD65C\uC131\uD654"}\uB418\uC5C8\uC2B5\uB2C8\uB2E4`,
+      user: updatedUser
+    });
   } catch (error) {
     console.error("Error toggling user active status:", error);
-    res.status(500).json({ message: "Failed to toggle user active status" });
+    res.status(500).json({
+      message: "\uC0AC\uC6A9\uC790 \uC0C1\uD0DC \uBCC0\uACBD\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4",
+      error: error.message
+    });
   }
 });
 var registrationSchema = z3.object({
@@ -11753,13 +12006,11 @@ var UnifiedOrderCreationService = class {
       const orderId = await this.saveOrderToDB(data, preparedItems);
       await this.notifyProgress(sessionId, "attachments", "\uCCA8\uBD80\uD30C\uC77C \uCC98\uB9AC \uC911...", 60);
       await this.processAttachments(orderId, data);
-      await this.notifyProgress(sessionId, "pdf", "PDF \uC0DD\uC131 \uC911...", 75);
-      const pdfResult = await this.generatePDF(orderId, data.userId);
-      await this.notifyProgress(sessionId, "status", "\uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8 \uC911...", 90);
-      await this.updateOrderStatus(orderId, "created");
-      await this.notifyProgress(sessionId, "complete", "\uBC1C\uC8FC\uC11C \uC0DD\uC131 \uC644\uB8CC!", 100);
+      let pdfResult = { success: false, attachmentId: void 0 };
+      await this.notifyProgress(sessionId, "status", "\uC784\uC2DC\uC800\uC7A5 \uC644\uB8CC", 90);
+      await this.notifyProgress(sessionId, "complete", "\uBC1C\uC8FC\uC11C \uC784\uC2DC\uC800\uC7A5 \uC644\uB8CC!", 100);
       const orderNumber = await this.getOrderNumber(orderId);
-      logger.log(`\u2705 \uBC1C\uC8FC\uC11C \uC0DD\uC131 \uC644\uB8CC - ID: ${orderId}, \uBC88\uD638: ${orderNumber}`);
+      logger.log(`\u2705 \uBC1C\uC8FC\uC11C \uC784\uC2DC\uC800\uC7A5 \uC644\uB8CC - ID: ${orderId}, \uBC88\uD638: ${orderNumber}`);
       return {
         success: true,
         orderId,
@@ -15067,6 +15318,134 @@ router3.get("/:orderId/email-history", async (req, res) => {
   } catch (error) {
     console.error("Error fetching email history:", error);
     res.status(500).json({ error: "Internal server error" });
+  }
+});
+router3.post("/orders/send-email-with-files", requireAuth, upload.array("customFiles", 10), async (req, res) => {
+  console.log("\u{1F50D} \uD30C\uC77C \uD3EC\uD568 \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC5D4\uB4DC\uD3EC\uC778\uD2B8 \uC9C4\uC785");
+  try {
+    const orderData = JSON.parse(req.body.orderData || "{}");
+    const to = JSON.parse(req.body.to || "[]");
+    const cc = req.body.cc ? JSON.parse(req.body.cc) : [];
+    const subject = req.body.subject || "";
+    const message = req.body.message || "";
+    const selectedAttachmentIds = JSON.parse(req.body.selectedAttachmentIds || "[]");
+    const attachmentUrls = req.body.attachmentUrls ? JSON.parse(req.body.attachmentUrls) : [];
+    const uploadedFiles = req.files || [];
+    console.log("\u{1F4E7} \uD30C\uC77C \uD3EC\uD568 \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC694\uCCAD:", {
+      orderData,
+      to,
+      cc,
+      subject,
+      message: message ? `[\uBA54\uC2DC\uC9C0 \uC788\uC74C: ${message.substring(0, 50)}...]` : "[\uBA54\uC2DC\uC9C0 \uC5C6\uC74C]",
+      messageLength: message ? message.length : 0,
+      selectedAttachmentIds,
+      uploadedFilesCount: uploadedFiles.length,
+      uploadedFileNames: uploadedFiles.map((f) => f.originalname)
+    });
+    if (!to || to.length === 0) {
+      console.log("\u274C \uC218\uC2E0\uC790 \uAC80\uC99D \uC2E4\uD328");
+      return res.status(400).json({ error: "\uC218\uC2E0\uC790\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4." });
+    }
+    if (!orderData || !orderData.orderNumber) {
+      console.log("\u274C \uC8FC\uBB38 \uC815\uBCF4 \uAC80\uC99D \uC2E4\uD328:", orderData);
+      return res.status(400).json({ error: "\uC8FC\uBB38 \uC815\uBCF4\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4." });
+    }
+    let attachments3 = [];
+    let attachmentsList = [];
+    if (selectedAttachmentIds && selectedAttachmentIds.length > 0) {
+      console.log("\u{1F4CE} \uAE30\uC874 \uCCA8\uBD80\uD30C\uC77C \uCC98\uB9AC:", selectedAttachmentIds);
+      for (const attachmentId of selectedAttachmentIds) {
+        try {
+          const [attachment] = await db.select({
+            id: attachments.id,
+            originalName: attachments.originalName,
+            filePath: attachments.filePath,
+            mimeType: attachments.mimeType,
+            fileData: attachments.fileData
+          }).from(attachments).where(eq12(attachments.id, attachmentId));
+          if (attachment && attachment.fileData) {
+            const fileBuffer = Buffer.from(attachment.fileData, "base64");
+            attachments3.push({
+              filename: attachment.originalName,
+              content: fileBuffer,
+              contentType: attachment.mimeType || "application/octet-stream"
+            });
+            attachmentsList.push(attachment.originalName);
+            console.log(`\u{1F4CE} \uAE30\uC874 \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00: ${attachment.originalName} (${fileBuffer.length} bytes)`);
+          }
+        } catch (error) {
+          console.error(`\u274C \uCCA8\uBD80\uD30C\uC77C ${attachmentId} \uCC98\uB9AC \uC2E4\uD328:`, error);
+        }
+      }
+    }
+    if (uploadedFiles && uploadedFiles.length > 0) {
+      console.log("\u{1F4CE} \uC0AC\uC6A9\uC790 \uC5C5\uB85C\uB4DC \uD30C\uC77C \uCC98\uB9AC:", uploadedFiles.length);
+      uploadedFiles.forEach((file) => {
+        attachments3.push({
+          filename: decodeKoreanFilename(file.originalname || "unknown"),
+          content: file.buffer,
+          contentType: file.mimetype || "application/octet-stream"
+        });
+        attachmentsList.push(file.originalname || "unknown");
+        console.log(`\u{1F4CE} \uC0AC\uC6A9\uC790 \uD30C\uC77C \uCD94\uAC00: ${file.originalname} (${file.size} bytes)`);
+      });
+    }
+    console.log(`\u{1F4CE} \uCD1D \uCCA8\uBD80\uD30C\uC77C: ${attachments3.length}\uAC1C - ${attachmentsList.join(", ")}`);
+    const emailOptions = {
+      to: Array.isArray(to) ? to : [to],
+      cc: Array.isArray(cc) ? cc : cc ? [cc] : [],
+      subject: subject || `\uBC1C\uC8FC\uC11C - ${orderData.orderNumber}`,
+      orderNumber: orderData.orderNumber,
+      vendorName: orderData.vendorName,
+      orderDate: orderData.orderDate,
+      totalAmount: orderData.totalAmount,
+      additionalMessage: message,
+      // 사용자가 작성한 메시지
+      additionalAttachments: attachments3
+      // 모든 첨부파일
+    };
+    console.log("\u{1F4E7} \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC635\uC158:", {
+      to: emailOptions.to,
+      cc: emailOptions.cc,
+      subject: emailOptions.subject,
+      orderNumber: emailOptions.orderNumber,
+      hasMessage: !!emailOptions.additionalMessage,
+      messageLength: emailOptions.additionalMessage?.length || 0,
+      attachmentCount: emailOptions.additionalAttachments?.length || 0
+    });
+    const result = await emailService.sendEmailWithDirectAttachments(emailOptions, {
+      orderId: orderData.orderId,
+      senderUserId: req.user?.id
+    });
+    if (result.success) {
+      console.log("\u{1F4E7} \uD30C\uC77C \uD3EC\uD568 \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC131\uACF5");
+      if (orderData && orderData.orderNumber) {
+        try {
+          await updateOrderStatusAfterEmail(orderData.orderNumber);
+          console.log(`\u{1F4CB} \uBC1C\uC8FC\uC11C \uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8 \uC644\uB8CC: ${orderData.orderNumber} \u2192 sent`);
+        } catch (updateError) {
+          console.error(`\u274C \uBC1C\uC8FC\uC11C \uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8 \uC2E4\uD328: ${orderData.orderNumber}`, updateError);
+        }
+      }
+      res.json({
+        success: true,
+        messageId: result.messageId,
+        attachmentCount: attachments3.length,
+        attachmentNames: attachmentsList
+      });
+    } else {
+      console.error("\u{1F4E7} \uD30C\uC77C \uD3EC\uD568 \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC2E4\uD328:", result.error);
+      res.status(500).json({
+        error: result.error || "\uC774\uBA54\uC77C \uBC1C\uC1A1\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.",
+        details: "POEmailService\uC5D0\uC11C \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4."
+      });
+    }
+  } catch (error) {
+    console.error("\u274C \uD30C\uC77C \uD3EC\uD568 \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC624\uB958:", error);
+    res.status(500).json({
+      error: "\uD30C\uC77C \uD3EC\uD568 \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC2E4\uD328",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
   }
 });
 var orders_default = router3;
@@ -21134,7 +21513,7 @@ router13.get("/orders/:orderId/email-history", requireAuth, async (req, res) => 
     res.status(500).json({ error: "Internal server error" });
   }
 });
-router13.post("/email-history", requireAuth, async (req, res) => {
+router13.post("/", requireAuth, async (req, res) => {
   try {
     const validatedData = createEmailHistorySchema.parse(req.body);
     const [newEmailHistory] = await db.insert(emailSendHistory).values({
@@ -21188,7 +21567,7 @@ router13.get("/orders-email-status", requireAuth, async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
-router13.put("/email-history/:id/status", requireAuth, async (req, res) => {
+router13.put("/:id/status", requireAuth, async (req, res) => {
   try {
     const emailId = parseInt(req.params.id);
     if (isNaN(emailId)) {
@@ -21208,7 +21587,7 @@ router13.put("/email-history/:id/status", requireAuth, async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
-router13.get("/email-history/:id", requireAuth, async (req, res) => {
+router13.get("/:id", requireAuth, async (req, res) => {
   try {
     const emailId = parseInt(req.params.id);
     if (isNaN(emailId)) {
@@ -21243,7 +21622,7 @@ router13.get("/email-history/:id", requireAuth, async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
-router13.get("/email-history", requireAuth, async (req, res) => {
+router13.get("/", requireAuth, async (req, res) => {
   try {
     const {
       page = "1",

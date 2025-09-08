@@ -142,6 +142,37 @@ export class ProfessionalPDFGenerationService {
   }
 
   /**
+   * 금액 포맷팅 (소수점 없음, 천단위 콤마)
+   * @param value 숫자 값
+   * @returns 포맷된 문자열 (예: "1,234,567")
+   */
+  private static formatAmount(value: number | string | null | undefined): string {
+    if (value === null || value === undefined) return '0';
+    const numValue = typeof value === 'string' ? parseFloat(value) : value;
+    if (isNaN(numValue)) return '0';
+    
+    // 정수로 반올림하고 천단위 콤마 추가
+    return Math.round(numValue).toLocaleString('ko-KR');
+  }
+
+  /**
+   * 수량 포맷팅 (소수점 1자리, 천단위 콤마)
+   * @param value 숫자 값
+   * @returns 포맷된 문자열 (예: "1,234.5")
+   */
+  private static formatQuantity(value: number | string | null | undefined): string {
+    if (value === null || value === undefined) return '0';
+    const numValue = typeof value === 'string' ? parseFloat(value) : value;
+    if (isNaN(numValue)) return '0';
+    
+    // 소수점 1자리까지 표시, 천단위 콤마 추가
+    return numValue.toLocaleString('ko-KR', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 1
+    });
+  }
+
+  /**
    * Vercel 환경에서 한글 텍스트를 영어로 변환 - 확장된 번역 사전
    */
   private static translateForVercel(text: string): string {
@@ -1065,10 +1096,10 @@ export class ProfessionalPDFGenerationService {
         item.sequenceNo.toString(),
         item.name,
         item.specification || '-',
-        item.quantity.toString(),
+        this.formatQuantity(item.quantity),
         item.unit || '-',
-        `₩${item.unitPrice.toLocaleString('ko-KR')}`,
-        `₩${item.totalPrice.toLocaleString('ko-KR')}`,
+        `₩${this.formatAmount(item.unitPrice)}`,
+        `₩${this.formatAmount(item.totalPrice)}`,
         item.remarks || '-',
       ];
 
@@ -1108,8 +1139,8 @@ export class ProfessionalPDFGenerationService {
     const summaryX = this.LAYOUT.pageWidth - this.LAYOUT.margin - summaryWidth;
     
     const rows = [
-      { label: '소계 (부가세 별도)', value: `₩${orderData.financial.subtotalAmount.toLocaleString('ko-KR')}` },
-      { label: `부가세 (${orderData.financial.vatRate}%)`, value: `₩${orderData.financial.vatAmount.toLocaleString('ko-KR')}` },
+      { label: '소계 (부가세 별도)', value: `₩${this.formatAmount(orderData.financial.subtotalAmount)}` },
+      { label: `부가세 (${orderData.financial.vatRate}%)`, value: `₩${this.formatAmount(orderData.financial.vatAmount)}` },
     ];
 
     let currentY = y;
@@ -1155,7 +1186,7 @@ export class ProfessionalPDFGenerationService {
     doc.font(fonts.bold)
        .fontSize(9)
        .fillColor(this.COLORS.white)
-       .text(`₩${orderData.financial.totalAmount.toLocaleString('ko-KR')}`, summaryX + 5, totalTextY - 1, {
+       .text(`₩${this.formatAmount(orderData.financial.totalAmount)}`, summaryX + 5, totalTextY - 1, {
          width: summaryWidth - 10,
          align: 'right',
        });
@@ -1318,18 +1349,18 @@ export class ProfessionalPDFGenerationService {
           sequenceNo: index + 1,
           name: item.name || '품목명',
           specification: item.specification || undefined,
-          quantity: item.quantity || 1,
+          quantity: typeof item.quantity === 'string' ? parseFloat(item.quantity) : (item.quantity || 1),
           unit: item.unit || undefined,
-          unitPrice: item.unitPrice || 0,
-          totalPrice: item.totalPrice || 0,
+          unitPrice: typeof item.unitPrice === 'string' ? parseFloat(item.unitPrice) : (item.unitPrice || 0),
+          totalPrice: typeof item.totalPrice === 'string' ? parseFloat(item.totalPrice) : (item.totalPrice || 0),
           remarks: item.remarks || undefined,
         })),
         
         financial: {
-          subtotalAmount: order.subtotalAmount || 0,
+          subtotalAmount: typeof order.subtotalAmount === 'string' ? parseFloat(order.subtotalAmount) : (order.subtotalAmount || 0),
           vatRate: 10,
-          vatAmount: order.vatAmount || 0,
-          totalAmount: order.totalAmount || 0,
+          vatAmount: typeof order.vatAmount === 'string' ? parseFloat(order.vatAmount) : (order.vatAmount || 0),
+          totalAmount: typeof order.totalAmount === 'string' ? parseFloat(order.totalAmount) : (order.totalAmount || 0),
           currencyCode: 'KRW',
         },
         

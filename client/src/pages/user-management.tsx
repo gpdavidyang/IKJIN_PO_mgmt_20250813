@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { Plus, Edit, Trash2, Users, Grid3X3, List, UserCheck, UserX, LayoutGrid } from "lucide-react";
+import { Plus, Edit, Trash2, Users, Grid3X3, List, UserCheck, UserX, LayoutGrid, AlertTriangle, ToggleLeft, ToggleRight, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -55,6 +56,8 @@ export default function UserManagement() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
+  const [deleteConfirmDialog, setDeleteConfirmDialog] = useState<{open: boolean; user: any; error?: any}>({open: false, user: null});
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const form = useForm<UserFormData>({
     resolver: zodResolver(userFormSchema),
@@ -178,8 +181,54 @@ export default function UserManagement() {
   };
 
   const handleDelete = (user: any) => {
-    if (confirm(`${user.email} 사용자를 삭제하시겠습니까?`)) {
-      deleteUserMutation.mutate(user.id);
+    setDeleteConfirmDialog({ open: true, user, error: null });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirmDialog.user) return;
+    
+    setIsDeleting(true);
+    try {
+      const response = await apiRequest("DELETE", `/api/users/${deleteConfirmDialog.user.id}`);
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      toast({
+        title: "성공",
+        description: response.message || "사용자가 삭제되었습니다.",
+      });
+      setDeleteConfirmDialog({ open: false, user: null });
+    } catch (error: any) {
+      if (error.reason === 'has_references') {
+        setDeleteConfirmDialog(prev => ({ ...prev, error }));
+      } else {
+        toast({
+          title: "오류",
+          description: error.message || "사용자 삭제에 실패했습니다.",
+          variant: "destructive",
+        });
+        if (error.reason !== 'self_deletion') {
+          setDeleteConfirmDialog({ open: false, user: null });
+        }
+      }
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleToggleActive = async (user: any) => {
+    try {
+      const newStatus = !user.isActive;
+      await apiRequest("PATCH", `/api/users/${user.id}/toggle-active`, { isActive: newStatus });
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      toast({
+        title: "성공",
+        description: `사용자가 ${newStatus ? '활성화' : '비활성화'}되었습니다.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "오류",
+        description: error.message || "상태 변경에 실패했습니다.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -357,11 +406,24 @@ export default function UserManagement() {
                   
                   {/* User Rows */}
                   {filteredUsers.map((user: any) => (
-                    <div key={user.id} className={`grid grid-cols-12 gap-2 px-2 py-1 transition-colors text-xs ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}>
-                      <div className="col-span-2 flex items-center">
-                        <span className={`font-medium truncate transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                    <div key={user.id} className={`grid grid-cols-12 gap-2 px-2 py-1 transition-colors text-xs ${
+                      !user.isActive 
+                        ? isDarkMode ? 'bg-gray-800/50 opacity-60' : 'bg-gray-100/50 opacity-60'
+                        : isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
+                    }`}>
+                      <div className="col-span-2 flex items-center gap-1">
+                        <span className={`font-medium truncate transition-colors ${
+                          !user.isActive 
+                            ? isDarkMode ? 'text-gray-500' : 'text-gray-400'
+                            : isDarkMode ? 'text-gray-100' : 'text-gray-900'
+                        }`}>
                           {getUserDisplayName(user)}
                         </span>
+                        {!user.isActive && (
+                          <Badge variant="outline" className="text-xs px-1 py-0">
+                            비활성
+                          </Badge>
+                        )}
                       </div>
                       <div className="col-span-3 flex items-center">
                         <span className={`truncate transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>{user.email}</span>
@@ -393,9 +455,21 @@ export default function UserManagement() {
                           <Edit className="h-3 w-3" />
                         </button>
                         <button
+                          onClick={() => handleToggleActive(user)}
+                          className={`inline-flex items-center justify-center w-5 h-5 rounded transition-colors ${
+                            user.isActive 
+                              ? isDarkMode ? 'hover:bg-orange-900/20 text-orange-500' : 'hover:bg-orange-100 text-orange-600'
+                              : isDarkMode ? 'hover:bg-green-900/20 text-green-500' : 'hover:bg-green-100 text-green-600'
+                          }`}
+                          title={user.isActive ? "비활성화" : "활성화"}
+                        >
+                          {user.isActive ? <ToggleRight className="h-3 w-3" /> : <ToggleLeft className="h-3 w-3" />}
+                        </button>
+                        <button
                           onClick={() => handleDelete(user)}
                           className={`inline-flex items-center justify-center w-5 h-5 rounded text-red-600 transition-colors ${isDarkMode ? 'hover:bg-red-900/20' : 'hover:bg-red-100'}`}
                           title="삭제"
+                          disabled={user.id === currentUser?.id}
                         >
                           <Trash2 className="h-3 w-3" />
                         </button>
@@ -406,12 +480,27 @@ export default function UserManagement() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2 p-2">
                   {filteredUsers.map((user: any) => (
-                    <Card key={user.id} className={`p-3 hover:shadow-md transition-shadow shadow-sm ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
+                    <Card key={user.id} className={`p-3 hover:shadow-md transition-shadow shadow-sm ${
+                      !user.isActive 
+                        ? isDarkMode ? 'bg-gray-800/50 border-gray-700 opacity-70' : 'bg-gray-50 border-gray-300 opacity-70'
+                        : isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'
+                    }`}>
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1">
-                          <h4 className={`font-medium text-sm truncate transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
-                            {getUserDisplayName(user)}
-                          </h4>
+                          <div className="flex items-center gap-1 mb-1">
+                            <h4 className={`font-medium text-sm truncate transition-colors ${
+                              !user.isActive 
+                                ? isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                                : isDarkMode ? 'text-gray-100' : 'text-gray-900'
+                            }`}>
+                              {getUserDisplayName(user)}
+                            </h4>
+                            {!user.isActive && (
+                              <Badge variant="outline" className="text-xs px-1 py-0">
+                                비활성
+                              </Badge>
+                            )}
+                          </div>
                           <p className={`text-xs truncate transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>{user.email}</p>
                         </div>
                         <div className="flex gap-1 ml-2">
@@ -423,9 +512,21 @@ export default function UserManagement() {
                             <Edit className="h-3 w-3" />
                           </button>
                           <button
+                            onClick={() => handleToggleActive(user)}
+                            className={`inline-flex items-center justify-center w-6 h-6 rounded transition-colors ${
+                              user.isActive 
+                                ? isDarkMode ? 'hover:bg-orange-900/20 text-orange-500' : 'hover:bg-orange-100 text-orange-600'
+                                : isDarkMode ? 'hover:bg-green-900/20 text-green-500' : 'hover:bg-green-100 text-green-600'
+                            }`}
+                            title={user.isActive ? "비활성화" : "활성화"}
+                          >
+                            {user.isActive ? <ToggleRight className="h-3 w-3" /> : <ToggleLeft className="h-3 w-3" />}
+                          </button>
+                          <button
                             onClick={() => handleDelete(user)}
                             className={`inline-flex items-center justify-center w-6 h-6 rounded text-red-600 transition-colors ${isDarkMode ? 'hover:bg-red-900/20' : 'hover:bg-red-100'}`}
                             title="삭제"
+                            disabled={user.id === currentUser?.id}
                           >
                             <Trash2 className="h-3 w-3" />
                           </button>
@@ -588,6 +689,96 @@ export default function UserManagement() {
               </div>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteConfirmDialog.open} onOpenChange={(open) => !isDeleting && setDeleteConfirmDialog({ open, user: null })}>
+        <DialogContent className={`max-w-md transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+          <DialogHeader>
+            <DialogTitle className={`flex items-center gap-2 transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+              <AlertTriangle className="h-5 w-5 text-red-600" />
+              사용자 삭제 확인
+            </DialogTitle>
+            <DialogDescription className={`transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              이 작업은 되돌릴 수 없습니다. 신중하게 결정해주세요.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {deleteConfirmDialog.user && (
+            <div className="space-y-4">
+              <div className={`p-3 rounded-lg transition-colors ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                <p className={`text-sm font-medium mb-1 transition-colors ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                  삭제할 사용자:
+                </p>
+                <p className={`text-sm transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                  {deleteConfirmDialog.user.name || deleteConfirmDialog.user.email}
+                </p>
+                <p className={`text-xs transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  {deleteConfirmDialog.user.email}
+                </p>
+              </div>
+              
+              {deleteConfirmDialog.error && (
+                <Alert className={`border-red-200 ${isDarkMode ? 'bg-red-900/20' : 'bg-red-50'}`}>
+                  <AlertTriangle className="h-4 w-4 text-red-600" />
+                  <AlertDescription className="space-y-2">
+                    <p className="font-medium text-red-800">
+                      {deleteConfirmDialog.error.message}
+                    </p>
+                    {deleteConfirmDialog.error.details && (
+                      <p className="text-sm text-red-700">
+                        {deleteConfirmDialog.error.details}
+                      </p>
+                    )}
+                    {deleteConfirmDialog.error.suggestion && (
+                      <p className="text-sm text-red-600 italic">
+                        💡 {deleteConfirmDialog.error.suggestion}
+                      </p>
+                    )}
+                  </AlertDescription>
+                </Alert>
+              )}
+              
+              {deleteConfirmDialog.user.id === currentUser?.id && (
+                <Alert className={`border-yellow-200 ${isDarkMode ? 'bg-yellow-900/20' : 'bg-yellow-50'}`}>
+                  <Shield className="h-4 w-4 text-yellow-600" />
+                  <AlertDescription className="text-sm text-yellow-800">
+                    자기 자신은 삭제할 수 없습니다. 다른 관리자가 삭제해야 합니다.
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteConfirmDialog({ open: false, user: null })}
+              disabled={isDeleting}
+            >
+              취소
+            </Button>
+            {deleteConfirmDialog.error?.reason === 'has_references' ? (
+              <Button
+                onClick={() => {
+                  handleToggleActive(deleteConfirmDialog.user);
+                  setDeleteConfirmDialog({ open: false, user: null });
+                }}
+                className="bg-orange-600 hover:bg-orange-700 text-white"
+              >
+                대신 비활성화
+              </Button>
+            ) : (
+              <Button
+                variant="destructive"
+                onClick={confirmDelete}
+                disabled={isDeleting || deleteConfirmDialog.user?.id === currentUser?.id}
+              >
+                {isDeleting ? "삭제 중..." : "삭제"}
+              </Button>
+            )}
+          </DialogFooter>
         </DialogContent>
       </Dialog>
       </div>

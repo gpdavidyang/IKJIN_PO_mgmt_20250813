@@ -289,6 +289,194 @@ export class POEmailService {
   }
 
   /**
+   * 직접 첨부파일을 포함하여 이메일 발송 (사용자 메시지 우선 사용)
+   * 새로운 Vercel 최적화 메소드
+   */
+  async sendEmailWithDirectAttachments(
+    emailOptions: POEmailOptions,
+    orderInfo?: { orderId?: number; senderUserId?: string }
+  ): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    try {
+      console.log('📧 직접 첨부파일 이메일 발송 시작:', {
+        to: emailOptions.to,
+        subject: emailOptions.subject,
+        hasMessage: !!emailOptions.additionalMessage,
+        messageLength: emailOptions.additionalMessage?.length || 0,
+        attachmentCount: emailOptions.additionalAttachments?.length || 0
+      });
+
+      // 이메일 본문 생성 (사용자 메시지 우선)
+      let htmlContent = '';
+      
+      if (emailOptions.additionalMessage && emailOptions.additionalMessage.trim()) {
+        // 사용자가 메시지를 작성한 경우: 사용자 메시지를 기본으로 사용
+        console.log('📝 사용자 메시지 우선 사용');
+        
+        htmlContent = `
+          <!DOCTYPE html>
+          <html lang="ko">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>발주서 전송</title>
+            <style>
+              body { 
+                font-family: "Malgun Gothic", "맑은 고딕", Arial, sans-serif; 
+                line-height: 1.6; 
+                color: #333; 
+                max-width: 600px; 
+                margin: 0 auto; 
+                padding: 20px; 
+              }
+              .message-content { 
+                background-color: #f9f9f9; 
+                padding: 20px; 
+                border-radius: 5px; 
+                margin: 20px 0;
+                white-space: pre-wrap; 
+                word-wrap: break-word;
+              }
+              .order-info {
+                background-color: #e7f3ff;
+                padding: 15px;
+                border-radius: 5px;
+                margin: 20px 0;
+              }
+              .footer {
+                margin-top: 30px;
+                padding-top: 20px;
+                border-top: 1px solid #ddd;
+                font-size: 12px;
+                color: #666;
+                text-align: center;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="message-content">
+              ${emailOptions.additionalMessage.replace(/\n/g, '<br>')}
+            </div>
+            
+            ${emailOptions.orderNumber ? `
+              <div class="order-info">
+                <h3>📋 발주 정보</h3>
+                <ul>
+                  ${emailOptions.orderNumber ? `<li><strong>발주번호:</strong> ${emailOptions.orderNumber}</li>` : ''}
+                  ${emailOptions.vendorName ? `<li><strong>거래처:</strong> ${emailOptions.vendorName}</li>` : ''}
+                  ${emailOptions.orderDate ? `<li><strong>발주일자:</strong> ${emailOptions.orderDate}</li>` : ''}
+                  ${emailOptions.totalAmount ? `<li><strong>발주금액:</strong> ${emailOptions.totalAmount.toLocaleString()}원</li>` : ''}
+                </ul>
+              </div>
+            ` : ''}
+            
+            <div class="footer">
+              <p>
+                이 메일은 구매 발주 관리 시스템에서 발송되었습니다.<br>
+                발송 시간: ${new Date().toLocaleString('ko-KR')}
+              </p>
+            </div>
+          </body>
+          </html>
+        `;
+      } else {
+        // 사용자 메시지가 없는 경우: 기본 템플릿 사용
+        console.log('📧 기본 템플릿 사용');
+        htmlContent = this.generateEmailContent(emailOptions);
+      }
+
+      // 메일 옵션 설정
+      const mailOptions: any = {
+        from: process.env.SMTP_USER,
+        to: Array.isArray(emailOptions.to) ? emailOptions.to.join(', ') : emailOptions.to,
+        subject: emailOptions.subject,
+        html: htmlContent
+      };
+
+      // CC 설정
+      if (emailOptions.cc && emailOptions.cc.length > 0) {
+        mailOptions.cc = Array.isArray(emailOptions.cc) ? emailOptions.cc.join(', ') : emailOptions.cc;
+      }
+
+      // BCC 설정
+      if (emailOptions.bcc && emailOptions.bcc.length > 0) {
+        mailOptions.bcc = Array.isArray(emailOptions.bcc) ? emailOptions.bcc.join(', ') : emailOptions.bcc;
+      }
+
+      // 첨부파일 설정
+      if (emailOptions.additionalAttachments && emailOptions.additionalAttachments.length > 0) {
+        mailOptions.attachments = emailOptions.additionalAttachments.map(att => ({
+          filename: att.filename,
+          content: att.content,
+          contentType: att.contentType
+        }));
+        
+        console.log('📎 첨부파일 추가:', emailOptions.additionalAttachments.map(att => 
+          `${att.filename} (${att.content.length} bytes)`
+        ).join(', '));
+      }
+
+      console.log('📧 최종 메일 옵션:', {
+        from: mailOptions.from,
+        to: mailOptions.to,
+        cc: mailOptions.cc,
+        subject: mailOptions.subject,
+        attachmentCount: mailOptions.attachments?.length || 0
+      });
+
+      // 이메일 발송
+      const info = await this.transporter.sendMail(mailOptions);
+      console.log('📧 직접 첨부파일 이메일 발송 성공:', info.messageId);
+
+      // 이메일 발송 기록 저장
+      if (orderInfo?.orderId) {
+        try {
+          await this.recordEmailSendHistory({
+            orderId: orderInfo.orderId,
+            senderUserId: orderInfo.senderUserId,
+            recipients: Array.isArray(emailOptions.to) ? emailOptions.to : [emailOptions.to],
+            subject: emailOptions.subject,
+            messageId: info.messageId,
+            attachmentCount: emailOptions.additionalAttachments?.length || 0,
+            status: 'success'
+          });
+        } catch (historyError) {
+          console.error('이메일 기록 저장 실패:', historyError);
+          // 기록 저장 실패는 이메일 발송 성공에 영향을 주지 않음
+        }
+      }
+
+      return {
+        success: true,
+        messageId: info.messageId
+      };
+    } catch (error) {
+      console.error('❌ 직접 첨부파일 이메일 발송 오류:', error);
+      
+      // 이메일 발송 실패 기록
+      if (orderInfo?.orderId) {
+        try {
+          await this.recordEmailSendHistory({
+            orderId: orderInfo.orderId,
+            senderUserId: orderInfo.senderUserId,
+            recipients: Array.isArray(emailOptions.to) ? emailOptions.to : [emailOptions.to],
+            subject: emailOptions.subject,
+            attachmentCount: emailOptions.additionalAttachments?.length || 0,
+            status: 'failed',
+            errorMessage: error instanceof Error ? error.message : 'Unknown error'
+          });
+        } catch (historyError) {
+          console.error('이메일 실패 기록 저장 실패:', historyError);
+        }
+      }
+
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  /**
    * [기존 방식] 갑지/을지 시트를 Excel과 PDF로 첨부하여 이메일 발송
    * @deprecated 형식 손상 문제로 sendPOWithOriginalFormat 사용 권장
    */

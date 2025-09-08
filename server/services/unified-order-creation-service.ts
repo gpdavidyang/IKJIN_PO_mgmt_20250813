@@ -106,20 +106,27 @@ export class UnifiedOrderCreationService {
       await this.notifyProgress(sessionId, 'attachments', '첨부파일 처리 중...', 60);
       await this.processAttachments(orderId, data);
       
-      // 5단계: PDF 생성
-      await this.notifyProgress(sessionId, 'pdf', 'PDF 생성 중...', 75);
-      const pdfResult = await this.generatePDF(orderId, data.userId);
+      // 5단계: PDF 생성 (임시저장이 아닌 경우에만)
+      // 현재는 모든 발주서가 'draft' 상태로 생성되므로 PDF 생성 스킵
+      // 추후 'created' 상태로 바로 생성하는 경우에만 PDF 생성
+      let pdfResult = { success: false, attachmentId: undefined };
       
-      // 6단계: 상태 업데이트
-      await this.notifyProgress(sessionId, 'status', '상태 업데이트 중...', 90);
-      await this.updateOrderStatus(orderId, 'created');
+      // TODO: 향후 버튼에 따라 상태를 다르게 처리할 때 활성화
+      // if (data.orderStatus === 'created') {
+      //   await this.notifyProgress(sessionId, 'pdf', 'PDF 생성 중...', 75);
+      //   pdfResult = await this.generatePDF(orderId, data.userId);
+      // }
+      
+      // 6단계: 상태는 이미 'draft'로 저장되어 있음
+      await this.notifyProgress(sessionId, 'status', '임시저장 완료', 90);
+      // await this.updateOrderStatus(orderId, 'created'); // 제거: draft 상태 유지
       
       // 7단계: 완료
-      await this.notifyProgress(sessionId, 'complete', '발주서 생성 완료!', 100);
+      await this.notifyProgress(sessionId, 'complete', '발주서 임시저장 완료!', 100);
       
       const orderNumber = await this.getOrderNumber(orderId);
       
-      logger.log(`✅ 발주서 생성 완료 - ID: ${orderId}, 번호: ${orderNumber}`);
+      logger.log(`✅ 발주서 임시저장 완료 - ID: ${orderId}, 번호: ${orderNumber}`);
       
       return {
         success: true,

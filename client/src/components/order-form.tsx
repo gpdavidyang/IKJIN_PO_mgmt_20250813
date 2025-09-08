@@ -248,7 +248,7 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
       });
       
       // SSE 이벤트 리스너 설정
-      const eventSource = new EventSource(`/api/progress/${sessionId}`);
+      const eventSource = new EventSource(`/api/orders/progress/${sessionId}`);
       
       eventSource.onmessage = (event) => {
         try {

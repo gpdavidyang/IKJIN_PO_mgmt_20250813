@@ -6,6 +6,7 @@ export interface EmailData {
   subject: string;
   message?: string;
   selectedAttachmentIds: number[];
+  customFiles?: File[]; // 사용자가 업로드한 파일들
 }
 
 export interface EmailSendRequest {
@@ -127,40 +128,99 @@ export class EmailService {
     
     // filePath가 없으면 orders 엔드포인트 사용 (첨부파일 포함 이메일 발송)
     try {
-      const requestData: any = {
-        orderData: {
-          orderId: orderData.orderId, // Include orderId for email history recording
+      // 사용자 업로드 파일이 있으면 FormData 사용, 없으면 JSON 사용
+      if (emailData.customFiles && emailData.customFiles.length > 0) {
+        console.log('📎 사용자 업로드 파일 포함:', emailData.customFiles.length);
+        
+        // FormData로 전송 (파일 포함)
+        const formData = new FormData();
+        
+        // 기본 데이터 추가
+        formData.append('orderData', JSON.stringify({
+          orderId: orderData.orderId,
           orderNumber: orderData.orderNumber,
           vendorName: orderData.vendorName,
           orderDate: orderData.orderDate,
           totalAmount: orderData.totalAmount,
           siteName: orderData.siteName
-        },
-        to: emailData.to,
-        cc: emailData.cc,
-        subject: emailData.subject,
-        message: emailData.message,
-        selectedAttachmentIds: emailData.selectedAttachmentIds,
-        attachmentUrls: orderData.attachmentUrls,
-        emailSettings: {
+        }));
+        
+        formData.append('to', JSON.stringify(emailData.to));
+        if (emailData.cc && emailData.cc.length > 0) {
+          formData.append('cc', JSON.stringify(emailData.cc));
+        }
+        formData.append('subject', emailData.subject);
+        if (emailData.message) {
+          formData.append('message', emailData.message);
+        }
+        formData.append('selectedAttachmentIds', JSON.stringify(emailData.selectedAttachmentIds));
+        
+        // 첨부파일 URL 추가
+        if (orderData.attachmentUrls && orderData.attachmentUrls.length > 0) {
+          formData.append('attachmentUrls', JSON.stringify(orderData.attachmentUrls));
+          console.log('📎 첨부파일 URL 추가:', orderData.attachmentUrls);
+        }
+        
+        // 사용자 업로드 파일 추가
+        emailData.customFiles.forEach((file, index) => {
+          formData.append(`customFiles`, file);
+          console.log(`📎 사용자 파일 추가: ${file.name} (${file.size} bytes)`);
+        });
+        
+        // FormData로 API 요청 (apiRequest 대신 fetch 직접 사용)
+        const response = await fetch('/api/orders/send-email-with-files', {
+          method: 'POST',
+          body: formData,
+          credentials: 'include'
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const result = await response.json();
+        return {
+          success: true,
+          messageId: result.messageId
+        };
+      } else {
+        // JSON으로 전송 (기존 방식)
+        const requestData: any = {
+          orderData: {
+            orderId: orderData.orderId, // Include orderId for email history recording
+            orderNumber: orderData.orderNumber,
+            vendorName: orderData.vendorName,
+            orderDate: orderData.orderDate,
+            totalAmount: orderData.totalAmount,
+            siteName: orderData.siteName
+          },
+          to: emailData.to,
+          cc: emailData.cc,
           subject: emailData.subject,
           message: emailData.message,
-          cc: emailData.cc
+          selectedAttachmentIds: emailData.selectedAttachmentIds,
+          attachmentUrls: orderData.attachmentUrls,
+          emailSettings: {
+            subject: emailData.subject,
+            message: emailData.message,
+            cc: emailData.cc
+          }
+        };
+        
+        // 첨부파일 URL이 있으면 로그 출력
+        if (orderData.attachmentUrls && orderData.attachmentUrls.length > 0) {
+          console.log('📎 첨부파일 URL 추가:', orderData.attachmentUrls);
         }
-      };
-      
-      // 첨부파일 URL이 있으면 로그 출력
-      if (orderData.attachmentUrls && orderData.attachmentUrls.length > 0) {
-        console.log('📎 첨부파일 URL 추가:', orderData.attachmentUrls);
+        
+        console.log('📧 이메일 API 요청 데이터 (JSON):', requestData);
+        const response = await apiRequest('POST', '/api/orders/send-email', requestData);
+        
+        return {
+          success: true,
+          messageId: response.messageId
+        };
       }
-      
-      console.log('📧 이메일 API 요청 데이터:', requestData);
-      const response = await apiRequest('POST', '/api/orders/send-email', requestData);
-      
-      return {
-        success: true,
-        messageId: response.messageId
-      };
     } catch (error) {
       console.error('Email send error:', error);
       throw new Error('이메일 발송 중 오류가 발생했습니다.');

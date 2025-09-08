@@ -482,38 +482,121 @@ router.put("/users/:id", async (req, res) => {
   }
 });
 
-router.delete("/users/:id", async (req, res) => {
+router.delete("/users/:id", requireAuth, requireAdmin, async (req, res) => {
   try {
     const id = req.params.id;
+    const currentUserId = req.user?.id;
     
-    // Check if user has any orders before deletion
-    const userOrders = await storage.getOrdersByUserId(id);
-    if (userOrders && userOrders.length > 0) {
+    // Prevent self-deletion
+    if (id === currentUserId) {
       return res.status(400).json({ 
-        message: "Cannot delete user with existing orders",
-        reason: "data_integrity",
-        details: "User has purchase orders that must preserve creator information"
+        message: "자기 자신을 삭제할 수 없습니다",
+        reason: "self_deletion",
+        details: "관리자 계정 보호를 위해 자기 자신은 삭제할 수 없습니다"
+      });
+    }
+    
+    // Check if user exists
+    const targetUser = await storage.getUser(id);
+    if (!targetUser) {
+      return res.status(404).json({ 
+        message: "사용자를 찾을 수 없습니다",
+        reason: "not_found"
+      });
+    }
+    
+    // Check for references (comprehensive check)
+    const refCheck = await storage.checkUserReferences(id);
+    
+    if (!refCheck.canDelete) {
+      const details = [];
+      if (refCheck.references.projects.length > 0) {
+        details.push(`${refCheck.references.projects.length}개의 프로젝트와 연결되어 있습니다`);
+      }
+      if (refCheck.references.orders.length > 0) {
+        details.push(`${refCheck.references.orders.length}개의 발주서를 생성했습니다`);
+      }
+      
+      return res.status(400).json({ 
+        message: "사용자를 삭제할 수 없습니다",
+        reason: "has_references",
+        details: details.join(", "),
+        references: refCheck.references,
+        suggestion: "이 사용자를 비활성화하는 것을 고려해보세요"
       });
     }
 
+    // Log audit event
+    await logAuditEvent(req, {
+      action: 'user_deleted',
+      targetUserId: id,
+      targetUserEmail: targetUser.email,
+      performedBy: currentUserId,
+      timestamp: new Date().toISOString()
+    });
+
     await storage.deleteUser(id);
-    res.json({ message: "User deleted successfully" });
+    res.json({ 
+      message: "사용자가 성공적으로 삭제되었습니다",
+      deletedUser: {
+        id: targetUser.id,
+        email: targetUser.email,
+        name: targetUser.name
+      }
+    });
   } catch (error) {
     console.error("Error deleting user:", error);
-    res.status(500).json({ message: "Failed to delete user" });
+    res.status(500).json({ 
+      message: "사용자 삭제 중 오류가 발생했습니다",
+      error: error.message 
+    });
   }
 });
 
-router.patch("/users/:id/toggle-active", async (req, res) => {
+router.patch("/users/:id/toggle-active", requireAuth, requireAdmin, async (req, res) => {
   try {
     const id = req.params.id;
     const { isActive } = req.body;
+    const currentUserId = req.user?.id;
+    
+    // Check if user exists
+    const targetUser = await storage.getUser(id);
+    if (!targetUser) {
+      return res.status(404).json({ 
+        message: "사용자를 찾을 수 없습니다",
+        reason: "not_found"
+      });
+    }
+    
+    // Prevent self-deactivation for active admins
+    if (id === currentUserId && !isActive) {
+      return res.status(400).json({ 
+        message: "자기 자신을 비활성화할 수 없습니다",
+        reason: "self_deactivation",
+        details: "관리자 계정 보호를 위해 자기 자신은 비활성화할 수 없습니다"
+      });
+    }
+    
+    // Log audit event
+    await logAuditEvent(req, {
+      action: isActive ? 'user_activated' : 'user_deactivated',
+      targetUserId: id,
+      targetUserEmail: targetUser.email,
+      performedBy: currentUserId,
+      timestamp: new Date().toISOString()
+    });
     
     const updatedUser = await storage.updateUser(id, { isActive });
-    res.json(updatedUser);
+    res.json({
+      message: `사용자가 ${isActive ? '활성화' : '비활성화'}되었습니다`,
+      user: updatedUser
+    });
   } catch (error) {
     console.error("Error toggling user active status:", error);
-    res.status(500).json({ message: "Failed to toggle user active status" });
+    res.status(500).json({ 
+      message: "사용자 상태 변경에 실패했습니다",
+      error: error.message 
+    });
   }
 });
 
