@@ -129,9 +129,6 @@ function CompactTableOrderItem({
   showActions?: boolean;
 }) {
   const showPDF = useMemo(() => canShowPDF(order), [order]);
-  
-  // Debug logging
-  console.log('CompactTableOrderItem Debug:', { orderNumber: order.orderNumber, showActions });
 
   const getSortIcon = (field: string) => {
     if (sortBy !== field) {
@@ -200,12 +197,12 @@ function CompactTableOrderItem({
                 isDarkMode 
                   ? 'text-orange-400 hover:bg-orange-900/20 hover:text-orange-300' 
                   : 'text-orange-500 hover:bg-orange-50 hover:text-orange-700'
-              }`}
-              title="PDF 다운로드"
-            >
-              <FileText className="h-3 w-3" />
-            </button>
-          )}
+                }`}
+                title="PDF 다운로드"
+              >
+                <FileText className="h-3 w-3" />
+              </button>
+            )}
         </td>
       )}
     </tr>
@@ -452,9 +449,6 @@ export function UnifiedOrdersList({
   
   // compact-table 모드에서는 기본적으로 액션을 숨김
   const effectiveShowActions = mode === 'compact-table' ? false : showActions;
-  
-  // Debug logging for dashboard
-  console.log('UnifiedOrdersList Debug:', { mode, showActions, effectiveShowActions });
 
   // Determine which query to use based on props
   const shouldFetchData = !preloadedOrders;
@@ -607,7 +601,7 @@ export function UnifiedOrdersList({
                       {getSortIcon("orderStatus")}
                     </button>
                   </th>
-                  {effectiveShowActions && showActions && (
+                  {effectiveShowActions && (
                     <th className={`px-3 py-3 text-center text-xs font-medium uppercase tracking-wider ${
                       isDarkMode ? 'text-gray-300' : 'text-gray-500'
                     }`}>
