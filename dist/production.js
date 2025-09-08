@@ -1645,11 +1645,6 @@ var init_excel_input_sheet_remover = __esm({
 });
 
 // server/utils/korean-font-manager.ts
-var korean_font_manager_exports = {};
-__export(korean_font_manager_exports, {
-  KoreanFontManager: () => KoreanFontManager,
-  fontManager: () => fontManager
-});
 import * as fs6 from "fs";
 import * as path4 from "path";
 var KoreanFontManager, fontManager;
@@ -2467,8 +2462,8 @@ var init_professional_pdf_generation_service = __esm({
     init_korean_font_manager();
     ProfessionalPDFGenerationService = class {
       static async generateProfessionalPDF(orderData) {
-        console.log("\u{1F4C4} [ProfessionalPDF] \uC77C\uAD00\uB41C \uACE0\uD488\uC9C8 PDFKit\uC73C\uB85C PDF \uC0DD\uC131 \uC2DC\uC791");
-        return await this.generateProfessionalPDFWithPDFKit(orderData);
+        console.log("\u{1F4C4} [ProfessionalPDF] \uD0C0\uAC9F \uB9E4\uCE6D PDF \uC0DD\uC131 \uC2DC\uC791");
+        return await this.generateTargetMatchingPDF(orderData);
       }
       static {
         this.uploadDir = process.env.VERCEL ? "/tmp/pdf" : path5.join(process.cwd(), "uploads/pdf");
@@ -2588,13 +2583,11 @@ var init_professional_pdf_generation_service = __esm({
               address: companyData.companyAddress,
               phone: companyData.companyPhone,
               email: companyData.companyEmail || "ikjin@example.com"
-              // 이메일 설정 단순화
             },
             vendorCompany: {
               name: orderData.vendorName || "\uAC70\uB798\uCC98\uBA85 \uC5C6\uC74C",
               businessNumber: orderData.vendorBusinessNumber,
               representative: orderData.vendorBusinessNumber ? "\uB300\uD45C\uC790" : void 0,
-              // 실제 대표자 정보가 없으면 제외
               address: orderData.vendorAddress,
               phone: orderData.vendorPhone,
               email: orderData.vendorEmail,
@@ -2605,10 +2598,8 @@ var init_professional_pdf_generation_service = __esm({
               code: orderData.projectCode,
               location: orderData.projectLocation,
               projectManager: orderData.creatorName,
-              // 현장 책임자로 작성자 사용
               projectManagerContact: orderData.creatorPhone,
               orderManager: orderData.creatorName,
-              // 발주 담당자로 작성자 사용
               orderManagerContact: orderData.creatorEmail
             },
             creator: {
@@ -2647,7 +2638,6 @@ var init_professional_pdf_generation_service = __esm({
               vatAmount,
               totalAmount,
               discountAmount: 0,
-              // 할인 금액이 있으면 여기에 설정
               currencyCode: "KRW"
             },
             metadata: {
@@ -2681,9 +2671,9 @@ var init_professional_pdf_generation_service = __esm({
           const timestamp2 = Date.now();
           const cleanOrderNumber = orderData.orderNumber.startsWith("PO-") ? orderData.orderNumber.substring(3) : orderData.orderNumber;
           const fileName = `PO_Professional_${cleanOrderNumber}_${timestamp2}.pdf`;
-          console.log("\u{1F4C4} [ProfessionalPDF] \uACE0\uD488\uC9C8 PDFKit\uC73C\uB85C PDF \uC0DD\uC131 (\uBAA8\uB4E0 \uD658\uACBD\uC5D0\uC11C \uC77C\uAD00\uB41C \uCD9C\uB825)");
-          const pdfBuffer = await this.generateProfessionalPDFWithPDFKit(orderData);
-          console.log("\u2705 [ProfessionalPDF] PDFKit\uC73C\uB85C PDF \uC0DD\uC131 \uC131\uACF5");
+          console.log("\u{1F4C4} [ProfessionalPDF] \uD0C0\uAC9F \uB9E4\uCE6D PDF \uC0DD\uC131");
+          const pdfBuffer = await this.generateTargetMatchingPDF(orderData);
+          console.log("\u2705 [ProfessionalPDF] \uD0C0\uAC9F \uB9E4\uCE6D PDF \uC0DD\uC131 \uC131\uACF5");
           const base64Data = pdfBuffer.toString("base64");
           let filePath = "";
           let attachmentId;
@@ -2719,7 +2709,6 @@ var init_professional_pdf_generation_service = __esm({
               mimeType: "application/pdf",
               uploadedBy: userId,
               fileData: base64Data
-              // 로컬에서도 Base64 저장하여 배포 시 호환성 보장
             }).returning();
             attachmentId = attachment.id;
             console.log(`\u2705 [ProfessionalPDF] PDF \uC0DD\uC131 \uC644\uB8CC (\uB85C\uCEEC): ${filePath}, DB\uC5D0\uB3C4 Base64 \uC800\uC7A5`);
@@ -2739,925 +2728,384 @@ var init_professional_pdf_generation_service = __esm({
         }
       }
       /**
-       * 전문적인 HTML 템플릿 생성
+       * 타겟 PDF와 정확히 일치하는 PDF 생성 (PDFKit 사용)
+       * 완전히 새로 작성된 구현
        */
-      static generateProfessionalHTMLTemplate(data) {
-        const formatDate = (date2) => {
-          if (!date2) return "-";
-          return format(new Date(date2), "yyyy\uB144 MM\uC6D4 dd\uC77C", { locale: ko });
-        };
-        const formatCurrency = (amount) => {
-          return new Intl.NumberFormat("ko-KR", {
-            style: "currency",
-            currency: "KRW"
-          }).format(amount);
-        };
-        const formatNumber = (num) => {
-          return new Intl.NumberFormat("ko-KR").format(num);
-        };
-        const formatRemarks = (item) => {
-          let result = "";
-          if (item.deliveryLocation) {
-            result += `\u2022 \uB0A9\uD488\uCC98: ${item.deliveryLocation}`;
-          }
-          if (item.deliveryEmail) {
-            result += `<br/>\u2022 \uC774\uBA54\uC77C: ${item.deliveryEmail}`;
-          }
-          if (item.remarks && item.remarks !== "-" && !item.remarks.includes("\uB0A9\uD488\uCC98:") && !item.remarks.includes("\uC774\uBA54\uC77C:")) {
-            result += `<br/>${item.remarks}`;
-          }
-          return result || "-";
-        };
-        const itemRows = data.items.map((item) => `
-      <tr>
-        <td class="text-center">${item.sequenceNo}</td>
-        <td class="text-small">${item.name}</td>
-        <td class="text-small">${item.specification || "-"}</td>
-        <td class="text-center">${formatNumber(item.quantity)}</td>
-        <td class="text-center">${item.unit || "-"}</td>
-        <td class="text-right">${formatCurrency(item.unitPrice)}</td>
-        <td class="text-right">${formatCurrency(item.totalPrice)}</td>
-        <td class="text-small">${formatRemarks(item)}</td>
-      </tr>
-    `).join("");
-        return `
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-  <meta charset="UTF-8">
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>\uAD6C\uB9E4 \uBC1C\uC8FC\uC11C - ${data.orderNumber}</title>
-  <style>
-    @page {
-      size: A4;
-      margin: 12mm;
-    }
-    
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    
-    body {
-      font-family: 'Malgun Gothic', 'Nanum Gothic', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Arial', sans-serif;
-      font-size: 9pt;
-      line-height: 1.4;
-      color: #1a1a1a;
-      background: #fff;
-    }
-    
-    .container {
-      max-width: 210mm;
-      margin: 0 auto;
-      background: #ffffff;
-    }
-    
-    /* === ENHANCED HEADER SECTION === */
-    .header {
-      background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
-      color: white;
-      padding: 16px 20px;
-      margin: -12mm -12mm 16px -12mm;
-      text-align: center;
-      position: relative;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    
-    .header::after {
-      content: '';
-      position: absolute;
-      bottom: -8px;
-      left: 0;
-      right: 0;
-      height: 8px;
-      background: linear-gradient(to right, transparent, rgba(37, 99, 235, 0.3), transparent);
-    }
-    
-    .header h1 {
-      font-size: 24pt;
-      font-weight: 700;
-      margin-bottom: 8px;
-      letter-spacing: 2px;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.1);
-    }
-    
-    .header .order-number {
-      font-size: 14pt;
-      font-weight: 600;
-      background: rgba(255,255,255,0.2);
-      padding: 4px 12px;
-      border-radius: 12px;
-      display: inline-block;
-    }
-    
-    .header .order-date {
-      font-size: 11pt;
-      margin-top: 6px;
-      opacity: 0.9;
-    }
-    
-    .status-badge {
-      display: inline-block;
-      padding: 4px 12px;
-      border-radius: 16px;
-      font-size: 8pt;
-      font-weight: 600;
-      margin: 4px 6px 0 0;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    
-    .status-draft { 
-      background: linear-gradient(135deg, #fbbf24, #f59e0b); 
-      color: white; 
-      box-shadow: 0 2px 4px rgba(251, 191, 36, 0.3);
-    }
-    .status-approved { 
-      background: linear-gradient(135deg, #10b981, #059669); 
-      color: white; 
-      box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
-    }
-    .status-sent { 
-      background: linear-gradient(135deg, #3b82f6, #2563eb); 
-      color: white; 
-      box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
-    }
-    
-    /* === ENHANCED INFO GRID === */
-    .info-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-bottom: 16px;
-    }
-    
-    .info-box {
-      border: 1px solid #e5e7eb;
-      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-      padding: 12px;
-      border-radius: 8px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    }
-    
-    .info-box h3 {
-      font-size: 11pt;
-      font-weight: 700;
-      margin-bottom: 8px;
-      padding-bottom: 4px;
-      border-bottom: 2px solid #2563eb;
-      color: #1e40af;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    
-    .info-row {
-      display: grid;
-      grid-template-columns: 80px 1fr;
-      gap: 8px;
-      margin-bottom: 4px;
-      font-size: 8pt;
-      align-items: center;
-    }
-    
-    .info-label {
-      font-weight: 600;
-      color: #475569;
-      text-align: right;
-      padding-right: 4px;
-    }
-    
-    .info-value {
-      color: #1e293b;
-      font-weight: 500;
-      padding: 2px 6px;
-      background: rgba(255,255,255,0.7);
-      border-radius: 4px;
-    }
-    
-    /* === PROJECT INFO FULL WIDTH === */
-    .project-info {
-      grid-column: 1 / -1;
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-      margin: 8px 0;
-    }
-    
-    /* === ITEMS TABLE === */
-    .items-section {
-      margin: 10px 0;
-    }
-    
-    .items-header {
-      background: #1e40af;
-      color: white;
-      padding: 4px 8px;
-      font-weight: bold;
-      font-size: 9pt;
-    }
-    
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 7pt;
-      margin-bottom: 8px;
-    }
-    
-    th, td {
-      border: 1px solid #d1d5db;
-      padding: 2px 4px;
-      vertical-align: middle;
-    }
-    
-    th {
-      background-color: #f3f4f6;
-      font-weight: bold;
-      text-align: center;
-      font-size: 7pt;
-    }
-    
-    .text-center { text-align: center; }
-    .text-right { text-align: right; }
-    .text-small { font-size: 6pt; }
-    
-    .financial-summary {
-      margin-top: 5px;
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-    }
-    
-    .financial-row {
-      display: grid;
-      grid-template-columns: 1fr auto auto;
-      gap: 10px;
-      padding: 3px 8px;
-      border-bottom: 1px solid #e2e8f0;
-      font-size: 7pt;
-    }
-    
-    .financial-row:last-child {
-      border-bottom: none;
-      font-weight: bold;
-      background: #e2e8f0;
-    }
-    
-    /* === TERMS & CONDITIONS === */
-    .terms-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 6px;
-      margin: 8px 0;
-    }
-    
-    .terms-box {
-      border: 1px solid #d1d5db;
-      padding: 4px;
-      background: #fffbeb;
-    }
-    
-    .terms-box h4 {
-      font-size: 8pt;
-      font-weight: bold;
-      margin-bottom: 3px;
-      color: #92400e;
-    }
-    
-    .terms-content {
-      font-size: 7pt;
-      color: #451a03;
-    }
-    
-    /* === ATTACHMENTS & COMMUNICATION === */
-    .comm-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px;
-      margin: 8px 0;
-    }
-    
-    .comm-box {
-      border: 1px solid #d1d5db;
-      padding: 4px;
-      background: #f0f9ff;
-      font-size: 7pt;
-    }
-    
-    .comm-box h4 {
-      font-size: 8pt;
-      font-weight: bold;
-      margin-bottom: 3px;
-      color: #1e40af;
-    }
-    
-    .attachment-item {
-      background: #e0e7ff;
-      padding: 2px 4px;
-      margin: 1px 0;
-      border-radius: 2px;
-      font-size: 6pt;
-    }
-    
-    .email-item {
-      background: #f0f9ff;
-      padding: 2px 4px;
-      margin: 1px 0;
-      border-radius: 2px;
-      font-size: 6pt;
-    }
-    
-    
-    /* Approval styles removed */
-    .removed-approval-header {
-      background: #1e40af;
-      color: white;
-      padding: 4px 8px;
-      font-weight: bold;
-      font-size: 9pt;
-    }
-    
-    .approval-grid {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 1px;
-      padding: 4px;
-    }
-    
-    .approval-box {
-      border: 1px solid #d1d5db;
-      padding: 4px;
-      text-align: center;
-      background: white;
-      min-height: 50px;
-    }
-    
-    .approval-box.approved {
-      background: #d1fae5;
-      border-color: #10b981;
-    }
-    
-    .approval-box.rejected {
-      background: #fee2e2;
-      border-color: #ef4444;
-    }
-    
-    .approval-box.pending {
-      background: #fef3c7;
-      border-color: #f59e0b;
-    }
-    
-    .approval-title {
-      font-size: 7pt;
-      font-weight: bold;
-      margin-bottom: 2px;
-    }
-    
-    .approval-status {
-      font-size: 12pt;
-      font-weight: bold;
-      margin: 3px 0;
-    }
-    
-    .approval-name {
-      font-size: 6pt;
-      margin-bottom: 1px;
-    }
-    
-    .approval-date {
-      font-size: 6pt;
-      color: #666;
-    }
-    
-    /* === FOOTER === */
-    .footer {
-      margin-top: 10px;
-      padding-top: 8px;
-      border-top: 2px solid #374151;
-      font-size: 7pt;
-      color: #374151;
-    }
-    
-    .company-info {
-      text-align: center;
-      margin-bottom: 6px;
-    }
-    
-    .company-info .name {
-      font-size: 10pt;
-      font-weight: bold;
-      margin-bottom: 2px;
-    }
-    
-    .doc-metadata {
-      display: grid;
-      grid-template-columns: 1fr auto 1fr;
-      gap: 10px;
-      align-items: center;
-      font-size: 6pt;
-      color: #6b7280;
-      border-top: 1px solid #e5e7eb;
-      padding-top: 4px;
-    }
-    
-    .doc-metadata .center {
-      text-align: center;
-    }
-    
-    .doc-metadata .right {
-      text-align: right;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <!-- HEADER -->
-    <div class="header" style="text-align: left; padding: 20px 0;">
-      <h1 style="margin-bottom: 8px; white-space: nowrap;">\uAD6C\uB9E4\uBC1C\uC8FC\uC11C</h1>
-      <div class="order-number" style="margin-bottom: 5px;">\uBC1C\uC8FC\uBC88\uD638: ${data.orderNumber}</div>
-    </div>
-    
-    <!-- COMPANY & VENDOR INFO -->
-    <div class="info-grid">
-      <div class="info-box">
-        <h3>\uBC1C\uC8FC\uC5C5\uCCB4 \uC815\uBCF4</h3>
-        <div class="info-row">
-          <span class="info-label">\uC5C5\uCCB4\uBA85</span>
-          <span class="info-value">${data.issuerCompany.name}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">\uC0AC\uC5C5\uC790\uBC88\uD638</span>
-          <span class="info-value">${data.issuerCompany.businessNumber || "-"}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">\uB300\uD45C\uC790</span>
-          <span class="info-value">${data.issuerCompany.representative || "-"}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">\uC8FC\uC18C</span>
-          <span class="info-value">${data.issuerCompany.address || "-"}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">\uC5F0\uB77D\uCC98</span>
-          <span class="info-value">${data.issuerCompany.phone || "-"}</span>
-        </div>
-      </div>
-      
-      <div class="info-box">
-        <h3>\uC218\uC8FC\uC5C5\uCCB4 \uC815\uBCF4</h3>
-        <div class="info-row">
-          <span class="info-label">\uC5C5\uCCB4\uBA85</span>
-          <span class="info-value">${data.vendorCompany.name}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">\uC0AC\uC5C5\uC790\uBC88\uD638</span>
-          <span class="info-value">${data.vendorCompany.businessNumber || "-"}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">\uB300\uD45C\uC790</span>
-          <span class="info-value">${data.vendorCompany.representative || "-"}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">\uB2F4\uB2F9\uC790</span>
-          <span class="info-value">${data.vendorCompany.contactPerson || "-"}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">\uC5F0\uB77D\uCC98</span>
-          <span class="info-value">${data.vendorCompany.phone || "-"}</span>
-        </div>
-      </div>
-      
-      <!-- PROJECT INFO (FULL WIDTH) -->
-      <div class="project-info">
-        <div class="info-box">
-          <h3>\uD604\uC7A5</h3>
-          <div class="info-row">
-            <span class="info-label">\uD604\uC7A5\uBA85</span>
-            <span class="info-value">${data.project.name}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">\uD604\uC7A5\uCF54\uB4DC</span>
-            <span class="info-value">${data.project.code || "-"}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">\uBC1C\uC8FC\uCC98</span>
-            <span class="info-value">-</span>
-          </div>
-        </div>
-        
-        <div class="info-box">
-          <h3>\uC77C\uC815</h3>
-          <div class="info-row">
-            <span class="info-label">\uBC1C\uC8FC\uC77C</span>
-            <span class="info-value">${formatDate(data.orderDate)}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">\uB0A9\uAE30\uC77C</span>
-            <span class="info-value">${formatDate(data.deliveryDate)}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">\uB4F1\uB85D\uC77C</span>
-            <span class="info-value">${formatDate(data.createdAt)}</span>
-          </div>
-        </div>
-        
-        <div class="info-box">
-          <h3>\uB2F4\uB2F9\uC790</h3>
-          <div class="info-row">
-            <span class="info-label">\uC791\uC131\uC790</span>
-            <span class="info-value">${data.creator.name}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">\uC9C1\uCC45</span>
-            <span class="info-value">-</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">\uC5F0\uB77D\uCC98</span>
-            <span class="info-value">${data.creator.phone || "-"}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <!-- ITEMS SECTION -->
-    <div class="items-section">
-      <div class="items-header">\uBC1C\uC8FC \uD488\uBAA9 (\uCD1D ${data.items.length}\uAC1C \uD488\uBAA9)</div>
-      <table>
-        <thead>
-          <tr>
-            <th style="width: 5%">\uC21C\uBC88</th>
-            <th style="width: 22%">\uD488\uBAA9\uBA85</th>
-            <th style="width: 17%">\uADDC\uACA9</th>
-            <th style="width: 8%">\uC218\uB7C9</th>
-            <th style="width: 6%">\uB2E8\uC704</th>
-            <th style="width: 12%">\uB2E8\uAC00</th>
-            <th style="width: 12%">\uAE08\uC561</th>
-            <th style="width: 23%">\uD2B9\uC774\uC0AC\uD56D</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${itemRows}
-        </tbody>
-      </table>
-      
-      <!-- FINANCIAL SUMMARY -->
-      <div class="financial-summary">
-        <div class="financial-row">
-          <span>\uC18C\uACC4 (\uBD80\uAC00\uC138 \uBCC4\uB3C4)</span>
-          <span></span>
-          <span>${formatCurrency(data.financial.subtotalAmount)}</span>
-        </div>
-        <div class="financial-row">
-          <span>\uBD80\uAC00\uC138 (${(data.financial.vatRate * 100).toFixed(0)}%)</span>
-          <span></span>
-          <span>${formatCurrency(data.financial.vatAmount)}</span>
-        </div>
-        <div class="financial-row">
-          <span>\uCD1D \uAE08\uC561</span>
-          <span></span>
-          <span>${formatCurrency(data.financial.totalAmount)}</span>
-        </div>
-      </div>
-    </div>
-    
-    
-    <!-- NOTES -->
-    ${data.metadata.notes ? `
-    <div style="margin: 8px 0; padding: 6px; border: 1px solid #d1d5db; background: #fffbeb; font-size: 7pt;">
-      <strong>\uD2B9\uC774\uC0AC\uD56D:</strong> ${data.metadata.notes}
-    </div>
-    ` : ""}
-    
-    <!-- FOOTER -->
-    <div class="footer">
-      <div class="company-info">
-        <div class="name">${data.issuerCompany.name}</div>
-        ${data.issuerCompany.representative ? `<div>\uB300\uD45C\uC790: ${data.issuerCompany.representative}</div>` : ""}
-        <div>${data.issuerCompany.address || ""}</div>
-        <div>TEL: ${data.issuerCompany.phone || ""} | EMAIL: ${data.issuerCompany.email || ""}</div>
-        ${data.issuerCompany.businessNumber ? `<div>\uC0AC\uC5C5\uC790\uB4F1\uB85D\uBC88\uD638: ${data.issuerCompany.businessNumber}</div>` : ""}
-      </div>
-      
-      <div class="doc-metadata">
-        <div>\uC0DD\uC131\uC77C\uC2DC: ${formatDate(data.metadata.generatedAt)}</div>
-        <div class="center">\uBCF8 \uBB38\uC11C\uB294 \uC804\uC790\uC801\uC73C\uB85C \uC0DD\uC131\uB418\uC5C8\uC2B5\uB2C8\uB2E4</div>
-        <div class="right">Template ${data.metadata.templateVersion}</div>
-      </div>
-    </div>
-  </div>
-</body>
-</html>
-    `;
-      }
-      /**
-       * HTML을 PDF로 변환
-       */
-      static async convertHTMLToPDFFromString(htmlContent) {
-        if (process.env.VERCEL) {
-          throw new Error("HTML to PDF conversion not supported in Vercel - use PDFKit instead");
-        } else {
-          try {
-            const { chromium: chromium4 } = await import("playwright-chromium");
-            const browser = await chromium4.launch({
-              headless: true,
-              args: ["--no-sandbox", "--disable-dev-shm-usage"]
-            });
-            const page = await browser.newPage();
-            try {
-              await page.setContent(htmlContent, {
-                waitUntil: "networkidle"
-              });
-              const pdfBuffer = await page.pdf({
-                format: "A4",
-                printBackground: true,
-                margin: {
-                  top: "8mm",
-                  right: "8mm",
-                  bottom: "8mm",
-                  left: "8mm"
-                }
-              });
-              return pdfBuffer;
-            } finally {
-              await browser.close();
-            }
-          } catch (playwrightError) {
-            console.warn("\u26A0\uFE0F Playwright \uC2E4\uD328:", playwrightError);
-            throw playwrightError;
-          }
-        }
-      }
-      /**
-       * PDFKit으로 전문적인 발주서 PDF 생성
-       */
-      static async generateProfessionalPDFWithPDFKit(orderData) {
+      static async generateTargetMatchingPDF(orderData) {
         try {
           const PDFKitDocument = (await import("pdfkit")).default;
-          const fs28 = await import("fs");
           return new Promise((resolve, reject) => {
             try {
               const doc = new PDFKitDocument({
                 size: "A4",
-                margins: { top: 20, bottom: 20, left: 20, right: 20 },
-                autoFirstPage: true
+                margins: { top: 30, bottom: 30, left: 30, right: 30 },
+                autoFirstPage: false
               });
               const buffers = [];
               doc.on("data", buffers.push.bind(buffers));
               doc.on("end", () => resolve(Buffer.concat(buffers)));
               doc.on("error", reject);
-              console.log("\u{1F4DD} [ProfessionalPDF] PDFKit\uC73C\uB85C PDF \uC0DD\uC131 (\uD55C\uAE00 \uD3F0\uD2B8 \uCD5C\uC801\uD654 \uB85C\uB529)");
-              console.log("\u{1F527} [ProfessionalPDF] \uC11C\uBC84\uB9AC\uC2A4 \uD658\uACBD \uD3F0\uD2B8 \uCD08\uAE30\uD654 \uAC80\uC99D...");
-              const availableFontsCount = fontManager.getAvailableFonts().length;
-              if (availableFontsCount === 0 && process.env.VERCEL) {
-                console.log("\u26A0\uFE0F [ProfessionalPDF] \uC11C\uBC84\uB9AC\uC2A4 \uD658\uACBD\uC5D0\uC11C \uD3F0\uD2B8 \uC5C6\uC74C - \uAC15\uC81C \uC7AC\uCD08\uAE30\uD654 \uC2DC\uB3C4");
-                const { KoreanFontManager: KoreanFontManager2 } = (init_korean_font_manager(), __toCommonJS(korean_font_manager_exports));
-                const freshFontManager = KoreanFontManager2.getInstance();
-                console.log(`\u{1F504} [ProfessionalPDF] \uD3F0\uD2B8 \uC7AC\uCD08\uAE30\uD654 \uC644\uB8CC: ${freshFontManager.getAvailableFonts().length}\uAC1C \uD3F0\uD2B8 \uBC1C\uACAC`);
-              }
-              const fontDiagnosis = fontManager.diagnoseFontIssues();
-              console.log("\u{1F50D} [ProfessionalPDF] \uD3F0\uD2B8 \uC9C4\uB2E8 \uACB0\uACFC:", JSON.stringify(fontDiagnosis, null, 2));
+              console.log("\u{1F4DD} [ProfessionalPDF] \uD0C0\uAC9F \uB9E4\uCE6D PDF \uC0DD\uC131 \uC2DC\uC791");
               let hasKoreanFont = false;
-              let selectedFont = null;
               let fontName = "Helvetica";
               try {
-                selectedFont = fontManager.getBestKoreanFont();
+                const selectedFont = fontManager.getBestKoreanFont();
                 if (selectedFont && selectedFont.available) {
                   console.log(`\u{1F3AF} [ProfessionalPDF] \uC120\uD0DD\uB41C \uD55C\uAE00 \uD3F0\uD2B8: ${selectedFont.name}`);
                   if (process.env.VERCEL) {
-                    console.log("\u2601\uFE0F [ProfessionalPDF] Vercel \uD658\uACBD: Base64 \uD3F0\uD2B8 \uB85C\uB529 \uBC29\uC2DD");
                     const fontBuffer = fontManager.getFontBuffer(selectedFont.name);
                     if (fontBuffer) {
                       doc.registerFont("Korean", fontBuffer);
                       fontName = "Korean";
                       hasKoreanFont = true;
                       console.log("\u2705 [ProfessionalPDF] Vercel \uD658\uACBD\uC5D0\uC11C \uD55C\uAE00 \uD3F0\uD2B8 \uB4F1\uB85D \uC131\uACF5");
-                    } else {
-                      throw new Error("FontBuffer \uB85C\uB4DC \uC2E4\uD328");
                     }
                   } else {
-                    console.log("\u{1F3E0} [ProfessionalPDF] \uB85C\uCEEC \uD658\uACBD: \uD30C\uC77C \uACBD\uB85C \uD3F0\uD2B8 \uB85C\uB529 \uBC29\uC2DD");
                     doc.registerFont("Korean", selectedFont.path);
                     fontName = "Korean";
                     hasKoreanFont = true;
                     console.log(`\u2705 [ProfessionalPDF] \uB85C\uCEEC \uD658\uACBD\uC5D0\uC11C \uD55C\uAE00 \uD3F0\uD2B8 \uB4F1\uB85D \uC131\uACF5: ${selectedFont.path}`);
                   }
-                } else {
-                  throw new Error("\uC0AC\uC6A9 \uAC00\uB2A5\uD55C \uD55C\uAE00 \uD3F0\uD2B8\uAC00 \uC5C6\uC74C");
                 }
               } catch (fontError) {
                 console.warn("\u26A0\uFE0F [ProfessionalPDF] \uD55C\uAE00 \uD3F0\uD2B8 \uB4F1\uB85D \uC2E4\uD328:", fontError);
-                console.warn("\u26A0\uFE0F [ProfessionalPDF] \uD3F0\uD2B8 \uC9C4\uB2E8:", JSON.stringify(fontDiagnosis, null, 2));
-                try {
-                  doc.registerFont("FallbackFont", "Times-Roman");
-                  fontName = "FallbackFont";
-                  console.log("\u{1F4DD} [ProfessionalPDF] \uACE0\uD488\uC9C8 Times-Roman \uB300\uCCB4 \uD3F0\uD2B8 \uC0AC\uC6A9");
-                } catch {
-                  fontName = "Times-Roman";
-                  console.log("\u{1F4DD} [ProfessionalPDF] \uC2DC\uC2A4\uD15C Times-Roman \uD3F0\uD2B8 \uC0AC\uC6A9");
-                }
+                fontName = "Helvetica";
                 hasKoreanFont = false;
-                const fontReport = fontManager.getFontReport();
-                console.log("\u{1F4CA} [ProfessionalPDF] \uD3F0\uD2B8 \uC9C0\uC6D0 \uC0C1\uD0DC:", JSON.stringify(fontReport, null, 2));
-                console.log("\u{1F4DD} [ProfessionalPDF] \uACE0\uD488\uC9C8 \uB300\uCCB4 \uD3F0\uD2B8 \uC0AC\uC6A9 (\uD55C\uAE00 \uC9C0\uC6D0 \uBAA8\uB4DC \uBE44\uD65C\uC131\uD654)");
               }
               doc.font(fontName);
               const safeText = (text2) => {
                 if (!text2) return "";
-                if (hasKoreanFont) {
-                  return fontManager.safeKoreanText(text2, hasKoreanFont);
-                } else {
-                  return text2;
-                }
+                return hasKoreanFont ? text2 : text2;
               };
               const formatDate = (date2) => {
                 if (!date2) return "-";
                 return format(new Date(date2), "yyyy\uB144 MM\uC6D4 dd\uC77C", { locale: ko });
               };
-              const formatCurrency = (amount) => {
-                return new Intl.NumberFormat("ko-KR", {
-                  style: "currency",
-                  currency: "KRW"
-                }).format(amount);
-              };
-              const headerY = 20;
-              doc.fillColor("black").fontSize(24).font(fontName);
-              doc.text(safeText("\uAD6C\uB9E4\uBC1C\uC8FC\uC11C"), 30, headerY);
-              doc.fontSize(14);
-              doc.text(safeText(`\uBC1C\uC8FC\uBC88\uD638: ${orderData.orderNumber}`), 400, headerY);
-              doc.moveTo(20, headerY + 35).lineTo(575, headerY + 35).stroke();
-              doc.y = headerY + 50;
-              const infoY = doc.y + 10;
-              const boxHeight = 85;
-              const drawInfoBox = (x, width, y, title, items3) => {
-                doc.rect(x, y, width, boxHeight).stroke("#d1d5db");
-                doc.fillColor("black").fontSize(10).font(fontName);
-                doc.text(safeText(title), x + 8, y + 8);
-                doc.fontSize(8);
-                items3.forEach((item, index2) => {
-                  const itemY = y + 25 + index2 * 12;
-                  doc.fillColor("#666666");
-                  doc.text(safeText(item.label), x + 12, itemY);
-                  doc.fillColor("black");
-                  doc.text(safeText(item.value), x + 80, itemY);
-                });
-              };
-              const firstRowY = infoY;
-              const boxWidth = 270;
-              drawInfoBox(20, boxWidth, firstRowY, "\uBC1C\uC8FC\uC5C5\uCCB4 \uC815\uBCF4", [
-                { label: "\uC5C5\uCCB4\uBA85", value: orderData.issuerCompany.name },
-                { label: "\uC0AC\uC5C5\uC790\uBC88\uD638", value: orderData.issuerCompany.businessNumber || "-" },
-                { label: "\uB300\uD45C\uC790", value: orderData.issuerCompany.representative || "-" },
-                { label: "\uC8FC\uC18C", value: (orderData.issuerCompany.address || "-").substring(0, 32) + (orderData.issuerCompany.address && orderData.issuerCompany.address.length > 32 ? "..." : "") },
-                { label: "\uC5F0\uB77D\uCC98", value: orderData.issuerCompany.phone || "-" }
-              ]);
-              drawInfoBox(305, boxWidth, firstRowY, "\uC218\uC8FC\uC5C5\uCCB4 \uC815\uBCF4", [
-                { label: "\uC5C5\uCCB4\uBA85", value: orderData.vendorCompany.name },
-                { label: "\uC0AC\uC5C5\uC790\uBC88\uD638", value: orderData.vendorCompany.businessNumber || "-" },
-                { label: "\uB300\uD45C\uC790", value: orderData.vendorCompany.representative || "-" },
-                { label: "\uB2F4\uB2F9\uC790", value: orderData.vendorCompany.contactPerson || "-" },
-                { label: "\uC5F0\uB77D\uCC98", value: orderData.vendorCompany.phone || "-" }
-              ]);
-              const secondRowY = firstRowY + boxHeight + 10;
-              const smallBoxWidth = 183;
-              drawInfoBox(20, smallBoxWidth, secondRowY, "\uD604\uC7A5", [
-                { label: "\uD604\uC7A5\uBA85", value: orderData.project.name },
-                { label: "\uD604\uC7A5\uCF54\uB4DC", value: orderData.project.code || "-" },
-                { label: "\uBC1C\uC8FC\uCC98", value: "-" }
-              ]);
-              drawInfoBox(210, smallBoxWidth, secondRowY, "\uC77C\uC815", [
-                { label: "\uBC1C\uC8FC\uC77C", value: formatDate(orderData.orderDate) },
-                { label: "\uB0A9\uAE30\uC77C", value: formatDate(orderData.deliveryDate) },
-                { label: "\uB4F1\uB85D\uC77C", value: formatDate(orderData.createdAt) }
-              ]);
-              drawInfoBox(400, smallBoxWidth, secondRowY, "\uB2F4\uB2F9\uC790", [
-                { label: "\uC791\uC131\uC790", value: orderData.creator.name },
-                { label: "\uC9C1\uCC45", value: "-" },
-                { label: "\uC5F0\uB77D\uCC98", value: orderData.creator.phone || "-" }
-              ]);
-              doc.y = secondRowY + boxHeight + 15;
-              const titleY = doc.y;
-              const headerHeight = 22;
-              doc.rect(20, titleY, 555, headerHeight).fill("#2563eb");
-              doc.fillColor("white").fontSize(10).font(fontName);
-              doc.text(safeText(`\uBC1C\uC8FC \uD488\uBAA9 (\uCD1D ${orderData.items.length}\uAC1C \uD488\uBAA9)`), 25, titleY + 6);
-              const tableHeaderY = titleY + headerHeight;
-              const rowHeight = 20;
-              const columns = [
-                { text: "\uC21C\uBC88", x: 25, width: 35, align: "center" },
-                { text: "\uD488\uBAA9\uBA85", x: 65, width: 140, align: "left" },
-                { text: "\uADDC\uACA9", x: 210, width: 100, align: "center" },
-                { text: "\uC218\uB7C9", x: 315, width: 40, align: "center" },
-                { text: "\uB2E8\uC704", x: 360, width: 35, align: "center" },
-                { text: "\uB2E8\uAC00", x: 400, width: 60, align: "right" },
-                { text: "\uAE08\uC561", x: 465, width: 70, align: "right" },
-                { text: "\uD2B9\uC774\uC0AC\uD56D", x: 540, width: 35, align: "center" }
-              ];
-              doc.rect(20, tableHeaderY, 555, rowHeight).fill("#f3f4f6").stroke("#d1d5db");
-              doc.fillColor("black").fontSize(8).font(fontName);
-              columns.forEach((col) => {
-                let textX = col.x;
-                if (col.align === "center") textX = col.x + col.width / 2 - 10;
-                else if (col.align === "right") textX = col.x + col.width - 15;
-                doc.text(safeText(col.text), textX, tableHeaderY + 6);
-              });
-              let currentX = 20;
-              columns.forEach((col, index2) => {
-                if (index2 > 0) {
-                  doc.moveTo(currentX, tableHeaderY).lineTo(currentX, tableHeaderY + rowHeight).stroke("#d1d5db");
-                }
-                currentX += col.width;
-              });
-              doc.fillColor("black");
-              let currentY = tableHeaderY + rowHeight;
-              orderData.items.slice(0, 15).forEach((item, index2) => {
-                const bgColor = index2 % 2 === 0 ? "#ffffff" : "#f8fafc";
-                doc.rect(20, currentY, 555, rowHeight).fill(bgColor).stroke("#d1d5db");
-                doc.fillColor("black").fontSize(7).font(fontName);
-                const formatRemarksForPDF = (item2) => {
-                  if (item2.deliveryLocation || item2.deliveryEmail) {
-                    return `\uB0A9\uD488\uCC98: ${item2.deliveryLocation || ""} ${item2.deliveryEmail || ""}`.trim();
-                  }
-                  return item2.remarks && item2.remarks !== "-" ? item2.remarks.substring(0, 10) + "..." : "-";
-                };
-                doc.text(`${item.sequenceNo}`, 37, currentY + 6);
-                doc.text(safeText(item.name.substring(0, 20)), 70, currentY + 6);
-                doc.text(safeText((item.specification || "-").substring(0, 14)), 240, currentY + 6);
-                doc.text(safeText(item.quantity.toLocaleString()), 325, currentY + 6);
-                doc.text(safeText(item.unit || "-"), 372, currentY + 6);
-                doc.text(safeText(`\u20A9${item.unitPrice.toLocaleString()}`), 450, currentY + 6);
-                doc.text(safeText(`\u20A9${item.totalPrice.toLocaleString()}`), 520, currentY + 6);
-                doc.text(safeText(formatRemarksForPDF(item)), 545, currentY + 6);
-                let lineX = 20;
-                columns.forEach((col, colIndex) => {
-                  if (colIndex > 0) {
-                    doc.moveTo(lineX, currentY).lineTo(lineX, currentY + rowHeight).stroke("#d1d5db");
-                  }
-                  lineX += col.width;
-                });
-                currentY += rowHeight;
-              });
-              if (orderData.items.length > 15) {
-                doc.rect(20, currentY, 555, 16).fill("#fef3c7");
-                doc.fillColor("black");
-                doc.fontSize(7).text(safeText(`... \uC678 ${orderData.items.length - 15}\uAC1C \uD488\uBAA9 (\uBCC4\uB3C4 \uCCA8\uBD80\uC790\uB8CC \uCC38\uACE0)`), 25, currentY + 3);
-                doc.rect(20, currentY, 555, 16).stroke();
-                currentY += 16;
-              }
-              const summaryY = currentY + 5;
-              const summaryHeight = 18;
-              doc.rect(20, summaryY, 555, summaryHeight).fill("#ffffff").stroke("#d1d5db");
-              doc.fillColor("black").fontSize(8).font(fontName);
-              doc.text(safeText("\uC18C\uACC4 (\uBD80\uAC00\uC138 \uBCC4\uB3C4)"), 30, summaryY + 5);
-              doc.text(safeText(`\u20A9${orderData.financial.subtotalAmount.toLocaleString()}`), 500, summaryY + 5);
-              const vatY = summaryY + summaryHeight;
-              doc.rect(20, vatY, 555, summaryHeight).fill("#ffffff").stroke("#d1d5db");
-              doc.fillColor("black").fontSize(8);
-              doc.text(safeText(`\uBD80\uAC00\uC138 (${(orderData.financial.vatRate * 100).toFixed(0)}%)`), 30, vatY + 5);
-              doc.text(safeText(`\u20A9${orderData.financial.vatAmount.toLocaleString()}`), 500, vatY + 5);
-              const totalY = vatY + summaryHeight;
-              doc.rect(20, totalY, 555, summaryHeight + 2).fill("#e5e7eb").stroke("#d1d5db");
-              doc.fillColor("black").fontSize(10).font(fontName);
-              doc.text(safeText("\uCD1D \uAE08\uC561"), 30, totalY + 6);
+              doc.addPage();
+              doc.fontSize(20).fillColor("black");
+              doc.text(safeText("\uAD6C\uB9E4\uBC1C\uC8FC\uC11C"), 30, 50);
+              doc.fontSize(12);
+              doc.text(safeText(`\uBC1C\uC8FC\uBC88\uD638: ${orderData.orderNumber}`), 450, 55);
+              doc.moveTo(30, 85).lineTo(565, 85).stroke("#cccccc");
+              let currentY = 100;
+              const boxWidth = 260;
+              const boxHeight = 120;
+              doc.rect(30, currentY, boxWidth, boxHeight).stroke("#e5e7eb");
+              doc.fontSize(10).fillColor("black");
+              doc.text(safeText("\uBC1C\uC8FC\uC5C5\uCCB4 \uC815\uBCF4"), 40, currentY + 10);
+              let infoY = currentY + 30;
+              doc.fontSize(8);
+              doc.text(safeText("\uC5C5\uCCB4\uBA85"), 40, infoY);
+              doc.text(safeText(orderData.issuerCompany.name), 120, infoY);
+              infoY += 15;
+              doc.text(safeText("\uC0AC\uC5C5\uC790\uBC88\uD638"), 40, infoY);
+              doc.text(safeText(orderData.issuerCompany.businessNumber || "-"), 120, infoY);
+              infoY += 15;
+              doc.text(safeText("\uB300\uD45C\uC790"), 40, infoY);
+              doc.text(safeText(orderData.issuerCompany.representative || "-"), 120, infoY);
+              infoY += 15;
+              doc.text(safeText("\uC8FC\uC18C"), 40, infoY);
+              const address = orderData.issuerCompany.address || "-";
+              const shortAddress = address.length > 20 ? address.substring(0, 20) + "..." : address;
+              doc.text(safeText(shortAddress), 120, infoY);
+              infoY += 15;
+              doc.text(safeText("\uC5F0\uB77D\uCC98"), 40, infoY);
+              doc.text(safeText(orderData.issuerCompany.phone || "-"), 120, infoY);
+              const rightBoxX = 305;
+              doc.rect(rightBoxX, currentY, boxWidth, boxHeight).stroke("#e5e7eb");
               doc.fontSize(10);
-              doc.text(safeText(`\u20A9${orderData.financial.totalAmount.toLocaleString()}`), 490, totalY + 6);
-              currentY = totalY + summaryHeight + 2;
-              doc.fillColor("black");
-              doc.moveDown(2);
+              doc.text(safeText("\uC218\uC8FC\uC5C5\uCCB4 \uC815\uBCF4"), rightBoxX + 10, currentY + 10);
+              infoY = currentY + 30;
+              doc.fontSize(8);
+              doc.text(safeText("\uC5C5\uCCB4\uBA85"), rightBoxX + 10, infoY);
+              doc.text(safeText(orderData.vendorCompany.name), rightBoxX + 90, infoY);
+              infoY += 15;
+              doc.text(safeText("\uC0AC\uC5C5\uC790\uBC88\uD638"), rightBoxX + 10, infoY);
+              doc.text(safeText(orderData.vendorCompany.businessNumber || "-"), rightBoxX + 90, infoY);
+              infoY += 15;
+              doc.text(safeText("\uB300\uD45C\uC790"), rightBoxX + 10, infoY);
+              doc.text(safeText(orderData.vendorCompany.representative || "-"), rightBoxX + 90, infoY);
+              infoY += 15;
+              doc.text(safeText("\uB2F4\uB2F9\uC790"), rightBoxX + 10, infoY);
+              doc.text(safeText(orderData.vendorCompany.contactPerson || "-"), rightBoxX + 90, infoY);
+              infoY += 15;
+              doc.text(safeText("\uC5F0\uB77D\uCC98"), rightBoxX + 10, infoY);
+              doc.text(safeText(orderData.vendorCompany.phone || "-"), rightBoxX + 90, infoY);
+              currentY += boxHeight + 20;
+              const smallBoxWidth = 175;
+              const smallBoxHeight = 90;
+              doc.rect(30, currentY, smallBoxWidth, smallBoxHeight).stroke("#e5e7eb");
+              doc.fontSize(10);
+              doc.text(safeText("\uD604\uC7A5"), 40, currentY + 10);
+              infoY = currentY + 30;
+              doc.fontSize(8);
+              doc.text(safeText("\uD604\uC7A5\uBA85"), 40, infoY);
+              doc.text(safeText(orderData.project.name), 85, infoY);
+              infoY += 15;
+              doc.text(safeText("\uD604\uC7A5\uCF54\uB4DC"), 40, infoY);
+              doc.text(safeText(orderData.project.code || "-"), 85, infoY);
+              infoY += 15;
+              doc.text(safeText("\uBC1C\uC8FC\uCC98"), 40, infoY);
+              doc.text(safeText("-"), 85, infoY);
+              const scheduleX = 210;
+              doc.rect(scheduleX, currentY, smallBoxWidth, smallBoxHeight).stroke("#e5e7eb");
+              doc.fontSize(10);
+              doc.text(safeText("\uC77C\uC815"), scheduleX + 10, currentY + 10);
+              infoY = currentY + 30;
+              doc.fontSize(8);
+              doc.text(safeText("\uBC1C\uC8FC\uC77C"), scheduleX + 10, infoY);
+              doc.text(safeText(formatDate(orderData.orderDate)), scheduleX + 55, infoY);
+              infoY += 15;
+              doc.text(safeText("\uB0A9\uAE30\uC77C"), scheduleX + 10, infoY);
+              doc.text(safeText(formatDate(orderData.deliveryDate)), scheduleX + 55, infoY);
+              infoY += 15;
+              doc.text(safeText("\uB4F1\uB85D\uC77C"), scheduleX + 10, infoY);
+              doc.text(safeText(formatDate(orderData.createdAt)), scheduleX + 55, infoY);
+              const managerX = 390;
+              doc.rect(managerX, currentY, smallBoxWidth, smallBoxHeight).stroke("#e5e7eb");
+              doc.fontSize(10);
+              doc.text(safeText("\uB2F4\uB2F9\uC790"), managerX + 10, currentY + 10);
+              infoY = currentY + 30;
+              doc.fontSize(8);
+              doc.text(safeText("\uC791\uC131\uC790"), managerX + 10, infoY);
+              doc.text(safeText(orderData.creator.name), managerX + 55, infoY);
+              infoY += 15;
+              doc.text(safeText("\uC9C1\uCC45"), managerX + 10, infoY);
+              doc.text(safeText("-"), managerX + 55, infoY);
+              infoY += 15;
+              doc.text(safeText("\uC5F0\uB77D\uCC98"), managerX + 10, infoY);
+              doc.text(safeText(orderData.creator.phone || "-"), managerX + 55, infoY);
+              currentY += smallBoxHeight + 30;
+              doc.rect(30, currentY, 535, 25).fill("#2563eb");
+              doc.fontSize(10).fillColor("white");
+              doc.text(safeText(`\uBC1C\uC8FC \uD488\uBAA9 (\uCD1D ${orderData.items.length}\uAC1C \uD488\uBAA9)`), 40, currentY + 8);
+              currentY += 25;
+              const tableHeaders = ["\uC21C\uBC88", "\uD488\uBAA9\uBA85", "\uADDC\uACA9", "\uC218\uB7C9", "\uB2E8\uC704", "\uB2E8\uAC00", "\uAE08\uC561", "\uD2B9\uC774\uC0AC\uD56D"];
+              const columnWidths = [35, 140, 85, 50, 35, 70, 80, 40];
+              let tableX = 30;
+              doc.rect(30, currentY, 535, 20).fill("#f3f4f6").stroke("#d1d5db");
+              doc.fontSize(8).fillColor("black");
+              tableHeaders.forEach((header, index2) => {
+                const headerX = tableX + columnWidths[index2] / 2 - 10;
+                doc.text(safeText(header), headerX, currentY + 6);
+                tableX += columnWidths[index2];
+              });
+              currentY += 20;
+              orderData.items.slice(0, 10).forEach((item, index2) => {
+                const bgColor = index2 % 2 === 0 ? "#ffffff" : "#f8fafc";
+                doc.rect(30, currentY, 535, 18).fill(bgColor).stroke("#d1d5db");
+                doc.fontSize(7).fillColor("black");
+                tableX = 30;
+                doc.text(safeText(item.sequenceNo.toString()), tableX + 15, currentY + 5);
+                tableX += columnWidths[0];
+                const itemName = item.name.length > 18 ? item.name.substring(0, 18) + "..." : item.name;
+                doc.text(safeText(itemName), tableX + 2, currentY + 5);
+                tableX += columnWidths[1];
+                const spec = (item.specification || "-").length > 12 ? (item.specification || "-").substring(0, 12) + "..." : item.specification || "-";
+                doc.text(safeText(spec), tableX + 2, currentY + 5);
+                tableX += columnWidths[2];
+                doc.text(safeText(item.quantity.toString()), tableX + 15, currentY + 5);
+                tableX += columnWidths[3];
+                doc.text(safeText(item.unit || "-"), tableX + 12, currentY + 5);
+                tableX += columnWidths[4];
+                doc.text(safeText(`\u20A9${item.unitPrice.toLocaleString()}`), tableX + 5, currentY + 5);
+                tableX += columnWidths[5];
+                doc.text(safeText(`\u20A9${item.totalPrice.toLocaleString()}`), tableX + 5, currentY + 5);
+                tableX += columnWidths[6];
+                doc.text(safeText("-"), tableX + 15, currentY + 5);
+                currentY += 18;
+              });
+              const summaryY = currentY + 10;
+              doc.rect(30, summaryY, 535, 18).fill("#ffffff").stroke("#d1d5db");
+              doc.fontSize(8).fillColor("black");
+              doc.text(safeText("\uC18C\uACC4 (\uBD80\uAC00\uC138 \uBCC4\uB3C4)"), 400, summaryY + 5);
+              doc.text(safeText(`\u20A9${orderData.financial.subtotalAmount.toLocaleString()}`), 480, summaryY + 5);
+              doc.rect(30, summaryY + 18, 535, 18).fill("#ffffff").stroke("#d1d5db");
+              doc.text(safeText(`\uBD80\uAC00\uC138 (${(orderData.financial.vatRate * 100).toFixed(0)}%)`), 400, summaryY + 23);
+              doc.text(safeText(`\u20A9${orderData.financial.vatAmount.toLocaleString()}`), 480, summaryY + 23);
+              doc.rect(30, summaryY + 36, 535, 20).fill("#e5e7eb").stroke("#d1d5db");
+              doc.fontSize(10).fillColor("black");
+              doc.text(safeText("\uCD1D \uAE08\uC561"), 400, summaryY + 42);
+              doc.text(safeText(`\u20A9${orderData.financial.totalAmount.toLocaleString()}`), 480, summaryY + 42);
+              currentY = summaryY + 60;
               if (orderData.metadata.notes) {
-                const notesY = currentY + 10;
-                const notesHeight = 25;
-                doc.rect(20, notesY, 555, notesHeight).fill("#fffbeb").stroke("#d1d5db");
-                doc.fillColor("black").fontSize(8).font(fontName);
-                doc.text(safeText(`\uD2B9\uC774\uC0AC\uD56D: ${orderData.metadata.notes}`), 25, notesY + 8);
-                currentY = notesY + notesHeight + 5;
+                doc.rect(30, currentY, 535, 30).fill("#fffbeb").stroke("#d1d5db");
+                doc.fontSize(8).fillColor("black");
+                doc.text(safeText(`\uD2B9\uC774\uC0AC\uD56D: ${orderData.metadata.notes}`), 40, currentY + 8);
+                currentY += 35;
               }
-              doc.moveDown(2);
-              const footerY = currentY + 25;
-              doc.y = footerY;
-              doc.moveTo(20, doc.y).lineTo(575, doc.y).stroke();
-              doc.y += 10;
-              doc.fontSize(12).font(fontName);
-              doc.text(safeText(orderData.issuerCompany.name), 0, doc.y, { align: "center", width: 595 });
-              doc.moveDown(0.3);
+              doc.moveTo(30, currentY + 20).lineTo(565, currentY + 20).stroke("#374151");
+              const footerY = currentY + 35;
+              doc.fontSize(12).fillColor("black");
+              doc.text(safeText(orderData.issuerCompany.name), 0, footerY, { align: "center", width: 595 });
               if (orderData.issuerCompany.representative) {
                 doc.fontSize(8);
-                doc.text(safeText(`\uB300\uD45C\uC790: ${orderData.issuerCompany.representative}`), 0, doc.y, { align: "center", width: 595 });
-                doc.moveDown(0.3);
+                doc.text(safeText(`\uB300\uD45C\uC790: ${orderData.issuerCompany.representative}`), 0, footerY + 20, { align: "center", width: 595 });
               }
               doc.fontSize(7);
-              doc.text(safeText(orderData.issuerCompany.address || ""), 0, doc.y, { align: "center", width: 595 });
-              doc.moveDown(0.3);
-              doc.text(safeText(`TEL: ${orderData.issuerCompany.phone || ""} | EMAIL: ${orderData.issuerCompany.email || ""}`), 0, doc.y, { align: "center", width: 595 });
-              doc.moveDown(0.3);
+              doc.text(safeText(orderData.issuerCompany.address || ""), 0, footerY + 35, { align: "center", width: 595 });
+              doc.text(safeText(`TEL: ${orderData.issuerCompany.phone || ""} | EMAIL: ${orderData.issuerCompany.email || ""}`), 0, footerY + 50, { align: "center", width: 595 });
               if (orderData.issuerCompany.businessNumber) {
-                doc.text(safeText(`\uC0AC\uC5C5\uC790\uB4F1\uB85D\uBC88\uD638: ${orderData.issuerCompany.businessNumber}`), 0, doc.y, { align: "center", width: 595 });
+                doc.text(safeText(`\uC0AC\uC5C5\uC790\uB4F1\uB85D\uBC88\uD638: ${orderData.issuerCompany.businessNumber}`), 0, footerY + 65, { align: "center", width: 595 });
               }
-              doc.moveDown(0.5);
-              const metaY = doc.y + 5;
               doc.fontSize(6).fillColor("#666666");
-              doc.text(safeText(`\uC0DD\uC131\uC77C\uC2DC: ${formatDate(orderData.metadata.generatedAt)}`), 20, metaY);
-              doc.text(safeText("\uBCF8 \uBB38\uC11C\uB294 \uC804\uC790\uC801\uC73C\uB85C \uC0DD\uC131\uB418\uC5C8\uC2B5\uB2C8\uB2E4"), 0, metaY, { align: "center", width: 595 });
-              doc.text(safeText(`Template ${orderData.metadata.templateVersion}`), 0, metaY, { align: "right", width: 575 });
+              doc.text(safeText(`\uC0DD\uC131\uC77C\uC2DC: ${formatDate(orderData.metadata.generatedAt)}`), 30, footerY + 85);
+              doc.text(safeText("\uBCF8 \uBB38\uC11C\uB294 \uC804\uC790\uC801\uC73C\uB85C \uC0DD\uC131\uB418\uC5C8\uC2B5\uB2C8\uB2E4"), 0, footerY + 85, { align: "center", width: 595 });
+              doc.text(safeText(`Template ${orderData.metadata.templateVersion}`), 0, footerY + 85, { align: "right", width: 565 });
+              doc.addPage();
+              doc.rect(0, 0, 595, 60).fill("#2563eb");
+              doc.fontSize(18).fillColor("white");
+              doc.text(safeText("\uAD6C\uB9E4\uBC1C\uC8FC\uC11C"), 30, 20);
+              doc.fontSize(12);
+              doc.text(safeText(`\uBC1C\uC8FC\uBC88\uD638: ${orderData.orderNumber}`), 450, 25);
+              currentY = 80;
+              doc.rect(30, currentY, boxWidth, 20).fill("#2563eb");
+              doc.fontSize(9).fillColor("white");
+              doc.text(safeText("\uBC1C\uC8FC\uC5C5\uCCB4 \uC815\uBCF4"), 40, currentY + 6);
+              doc.rect(30, currentY + 20, boxWidth, 100).stroke("#e5e7eb");
+              infoY = currentY + 35;
+              doc.fontSize(8).fillColor("black");
+              doc.text(safeText("\uC5C5\uCCB4\uBA85"), 40, infoY);
+              doc.text(safeText(orderData.issuerCompany.name), 120, infoY);
+              infoY += 15;
+              doc.text(safeText("\uC0AC\uC5C5\uC790\uBC88\uD638"), 40, infoY);
+              doc.text(safeText(orderData.issuerCompany.businessNumber || "-"), 120, infoY);
+              infoY += 15;
+              doc.text(safeText("\uB300\uD45C\uC790"), 40, infoY);
+              doc.text(safeText(orderData.issuerCompany.representative || "-"), 120, infoY);
+              infoY += 15;
+              doc.text(safeText("\uC8FC\uC18C"), 40, infoY);
+              doc.text(safeText(shortAddress), 120, infoY);
+              infoY += 15;
+              doc.text(safeText("\uC5F0\uB77D\uCC98"), 40, infoY);
+              doc.text(safeText(orderData.issuerCompany.phone || "-"), 120, infoY);
+              doc.rect(rightBoxX, currentY, boxWidth, 20).fill("#2563eb");
+              doc.fontSize(9).fillColor("white");
+              doc.text(safeText("\uC218\uC8FC\uC5C5\uCCB4 \uC815\uBCF4"), rightBoxX + 10, currentY + 6);
+              doc.rect(rightBoxX, currentY + 20, boxWidth, 100).stroke("#e5e7eb");
+              infoY = currentY + 35;
+              doc.fontSize(8).fillColor("black");
+              doc.text(safeText("\uC5C5\uCCB4\uBA85"), rightBoxX + 10, infoY);
+              doc.text(safeText(orderData.vendorCompany.name), rightBoxX + 90, infoY);
+              infoY += 15;
+              doc.text(safeText("\uC0AC\uC5C5\uC790\uBC88\uD638"), rightBoxX + 10, infoY);
+              doc.text(safeText(orderData.vendorCompany.businessNumber || "-"), rightBoxX + 90, infoY);
+              infoY += 15;
+              doc.text(safeText("\uB300\uD45C\uC790"), rightBoxX + 10, infoY);
+              doc.text(safeText(orderData.vendorCompany.representative || "-"), rightBoxX + 90, infoY);
+              infoY += 15;
+              doc.text(safeText("\uB2F4\uB2F9\uC790"), rightBoxX + 10, infoY);
+              doc.text(safeText(orderData.vendorCompany.contactPerson || "-"), rightBoxX + 90, infoY);
+              infoY += 15;
+              doc.text(safeText("\uC5F0\uB77D\uCC98"), rightBoxX + 10, infoY);
+              doc.text(safeText(orderData.vendorCompany.phone || "-"), rightBoxX + 90, infoY);
+              currentY += 140;
+              doc.rect(30, currentY, smallBoxWidth, 18).fill("#2563eb");
+              doc.fontSize(9).fillColor("white");
+              doc.text(safeText("\uD604\uC7A5"), 40, currentY + 5);
+              doc.rect(30, currentY + 18, smallBoxWidth, 72).stroke("#e5e7eb");
+              infoY = currentY + 30;
+              doc.fontSize(8).fillColor("black");
+              doc.text(safeText("\uD604\uC7A5\uBA85"), 40, infoY);
+              doc.text(safeText(orderData.project.name), 85, infoY);
+              infoY += 15;
+              doc.text(safeText("\uD604\uC7A5\uCF54\uB4DC"), 40, infoY);
+              doc.text(safeText(orderData.project.code || "-"), 85, infoY);
+              infoY += 15;
+              doc.text(safeText("\uBC1C\uC8FC\uCC98"), 40, infoY);
+              doc.text(safeText("-"), 85, infoY);
+              doc.rect(scheduleX, currentY, smallBoxWidth, 18).fill("#2563eb");
+              doc.fontSize(9).fillColor("white");
+              doc.text(safeText("\uC77C\uC815"), scheduleX + 10, currentY + 5);
+              doc.rect(scheduleX, currentY + 18, smallBoxWidth, 72).stroke("#e5e7eb");
+              infoY = currentY + 30;
+              doc.fontSize(8).fillColor("black");
+              doc.text(safeText("\uBC1C\uC8FC\uC77C"), scheduleX + 10, infoY);
+              doc.text(safeText(formatDate(orderData.orderDate)), scheduleX + 55, infoY);
+              infoY += 15;
+              doc.text(safeText("\uB0A9\uAE30\uC77C"), scheduleX + 10, infoY);
+              doc.text(safeText(formatDate(orderData.deliveryDate)), scheduleX + 55, infoY);
+              infoY += 15;
+              doc.text(safeText("\uB4F1\uB85D\uC77C"), scheduleX + 10, infoY);
+              doc.text(safeText(formatDate(orderData.createdAt)), scheduleX + 55, infoY);
+              doc.rect(managerX, currentY, smallBoxWidth, 18).fill("#2563eb");
+              doc.fontSize(9).fillColor("white");
+              doc.text(safeText("\uB2F4\uB2F9\uC790"), managerX + 10, currentY + 5);
+              doc.rect(managerX, currentY + 18, smallBoxWidth, 72).stroke("#e5e7eb");
+              infoY = currentY + 30;
+              doc.fontSize(8).fillColor("black");
+              doc.text(safeText("\uC791\uC131\uC790"), managerX + 10, infoY);
+              doc.text(safeText(orderData.creator.name), managerX + 55, infoY);
+              infoY += 15;
+              doc.text(safeText("\uC9C1\uCC45"), managerX + 10, infoY);
+              doc.text(safeText("-"), managerX + 55, infoY);
+              infoY += 15;
+              doc.text(safeText("\uC5F0\uB77D\uCC98"), managerX + 10, infoY);
+              doc.text(safeText(orderData.creator.phone || "-"), managerX + 55, infoY);
+              currentY += 110;
+              doc.rect(30, currentY, 535, 25).fill("#2563eb");
+              doc.fontSize(10).fillColor("white");
+              doc.text(safeText(`\uBC1C\uC8FC \uD488\uBAA9 (\uCD1D ${orderData.items.length}\uAC1C \uD488\uBAA9)`), 40, currentY + 8);
+              currentY += 25;
+              tableX = 30;
+              doc.rect(30, currentY, 535, 20).fill("#f3f4f6").stroke("#d1d5db");
+              doc.fontSize(8).fillColor("black");
+              tableHeaders.forEach((header, index2) => {
+                const headerX = tableX + columnWidths[index2] / 2 - 10;
+                doc.text(safeText(header), headerX, currentY + 6);
+                tableX += columnWidths[index2];
+              });
+              currentY += 20;
+              const remainingItems = orderData.items.slice(10);
+              if (remainingItems.length > 0) {
+                remainingItems.forEach((item, index2) => {
+                  const bgColor = index2 % 2 === 0 ? "#ffffff" : "#f8fafc";
+                  doc.rect(30, currentY, 535, 18).fill(bgColor).stroke("#d1d5db");
+                  doc.fontSize(7).fillColor("black");
+                  tableX = 30;
+                  doc.text(safeText(item.sequenceNo.toString()), tableX + 15, currentY + 5);
+                  tableX += columnWidths[0];
+                  const itemName = item.name.length > 18 ? item.name.substring(0, 18) + "..." : item.name;
+                  doc.text(safeText(itemName), tableX + 2, currentY + 5);
+                  tableX += columnWidths[1];
+                  const spec = (item.specification || "-").length > 12 ? (item.specification || "-").substring(0, 12) + "..." : item.specification || "-";
+                  doc.text(safeText(spec), tableX + 2, currentY + 5);
+                  tableX += columnWidths[2];
+                  doc.text(safeText(item.quantity.toString()), tableX + 15, currentY + 5);
+                  tableX += columnWidths[3];
+                  doc.text(safeText(item.unit || "-"), tableX + 12, currentY + 5);
+                  tableX += columnWidths[4];
+                  doc.text(safeText(`\u20A9${item.unitPrice.toLocaleString()}`), tableX + 5, currentY + 5);
+                  tableX += columnWidths[5];
+                  doc.text(safeText(`\u20A9${item.totalPrice.toLocaleString()}`), tableX + 5, currentY + 5);
+                  tableX += columnWidths[6];
+                  doc.text(safeText("-"), tableX + 15, currentY + 5);
+                  currentY += 18;
+                });
+              } else {
+                doc.rect(30, currentY, 535, 18).fill("#f8fafc").stroke("#d1d5db");
+                doc.fontSize(8).fillColor("#666666");
+                doc.text(safeText("\uBAA8\uB4E0 \uD488\uBAA9\uC774 \uCCAB \uBC88\uC9F8 \uD398\uC774\uC9C0\uC5D0 \uD45C\uC2DC\uB418\uC5C8\uC2B5\uB2C8\uB2E4."), 40, currentY + 5);
+                currentY += 18;
+              }
+              doc.moveTo(30, currentY + 30).lineTo(565, currentY + 30).stroke("#374151");
+              const footer2Y = currentY + 45;
+              doc.fontSize(12).fillColor("black");
+              doc.text(safeText(orderData.issuerCompany.name), 0, footer2Y, { align: "center", width: 595 });
+              if (orderData.issuerCompany.representative) {
+                doc.fontSize(8);
+                doc.text(safeText(`\uB300\uD45C\uC790: ${orderData.issuerCompany.representative}`), 0, footer2Y + 20, { align: "center", width: 595 });
+              }
+              doc.fontSize(7);
+              doc.text(safeText(orderData.issuerCompany.address || ""), 0, footer2Y + 35, { align: "center", width: 595 });
+              doc.text(safeText(`TEL: ${orderData.issuerCompany.phone || ""} | EMAIL: ${orderData.issuerCompany.email || ""}`), 0, footer2Y + 50, { align: "center", width: 595 });
+              if (orderData.issuerCompany.businessNumber) {
+                doc.text(safeText(`\uC0AC\uC5C5\uC790\uB4F1\uB85D\uBC88\uD638: ${orderData.issuerCompany.businessNumber}`), 0, footer2Y + 65, { align: "center", width: 595 });
+              }
+              doc.fontSize(6).fillColor("#666666");
+              doc.text(safeText(`\uC0DD\uC131\uC77C\uC2DC: ${formatDate(orderData.metadata.generatedAt)}`), 30, footer2Y + 85);
+              doc.text(safeText("\uBCF8 \uBB38\uC11C\uB294 \uC804\uC790\uC801\uC73C\uB85C \uC0DD\uC131\uB418\uC5C8\uC2B5\uB2C8\uB2E4"), 0, footer2Y + 85, { align: "center", width: 595 });
+              doc.text(safeText(`Template ${orderData.metadata.templateVersion}`), 0, footer2Y + 85, { align: "right", width: 565 });
               doc.end();
             } catch (error) {
               reject(error);
@@ -3665,8 +3113,14 @@ var init_professional_pdf_generation_service = __esm({
           });
         } catch (importError) {
           console.error("\u274C [ProfessionalPDF] PDFKit import \uC2E4\uD328:", importError);
-          throw new Error(`PDFKit\uC744 \uB85C\uB4DC\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4 (\uD658\uACBD: ${process.env.VERCEL ? "Vercel" : "Local"}): ${importError instanceof Error ? importError.message : "Unknown error"}`);
+          throw new Error(`PDFKit\uC744 \uB85C\uB4DC\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4: ${importError instanceof Error ? importError.message : "Unknown error"}`);
         }
+      }
+      /**
+       * 기존 호환성을 위한 메서드 (사용되지 않음)
+       */
+      static async generateProfessionalPDFWithPDFKit(orderData) {
+        return this.generateTargetMatchingPDF(orderData);
       }
     };
   }

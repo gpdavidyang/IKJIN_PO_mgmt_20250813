@@ -1242,41 +1242,7 @@ export default function OrderEdit() {
         {order?.attachments && order.attachments.length > 0 && (
           <Card className={`mb-6 transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className={`transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>첨부파일</CardTitle>
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={handlePdfPreview}
-                    disabled={isGeneratingPdf}
-                    className={`h-8 px-3 text-xs transition-colors ${isDarkMode ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
-                  >
-                    {isGeneratingPdf ? (
-                      <>
-                        <div className="animate-spin h-3 w-3 mr-1 border border-gray-300 border-t-transparent rounded-full"></div>
-                        생성 중...
-                      </>
-                    ) : (() => {
-                      const existingPdf = order?.attachments?.find((attachment: any) => 
-                        attachment.mimeType === 'application/pdf' &&
-                        attachment.originalName?.startsWith('PO_')
-                      );
-                      return existingPdf ? (
-                        <>
-                          <Eye className="h-4 w-4 mr-1" />
-                          PDF 미리보기
-                        </>
-                      ) : (
-                        <>
-                          <Eye className="h-4 w-4 mr-1" />
-                          PDF 생성 및 미리보기
-                        </>
-                      );
-                    })()}
-                  </Button>
-                </div>
-              </div>
+              <CardTitle className={`transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>첨부파일</CardTitle>
             </CardHeader>
             <CardContent>
               <AttachedFilesInfo 
