@@ -389,7 +389,46 @@ ${orderData.vendorName} 담당자님께 발주서를 전송드립니다.
     setErrors([]); // 기존 에러 메시지 초기화
     
     try {
-      console.log('📧 Sending email with data:', {
+      // 상세한 첨부파일 로깅
+      console.log('📧 [UI DEBUG] 이메일 발송 시작:');
+      console.log('  ├─ to:', emailData.to);
+      console.log('  ├─ cc:', emailData.cc);
+      console.log('  ├─ subject:', emailData.subject);
+      console.log('  ├─ message 길이:', emailData.message?.length || 0);
+      console.log('  ├─ selectedAttachmentIds:', emailData.selectedAttachmentIds);
+      console.log('  ├─ selectedAttachmentIds 길이:', emailData.selectedAttachmentIds?.length || 0);
+      console.log('  ├─ customFiles 개수:', emailData.customFiles?.length || 0);
+      
+      // 선택된 첨부파일 상세 분석
+      console.log('📎 [UI DEBUG] 선택된 첨부파일 분석:');
+      if (emailData.selectedAttachmentIds && emailData.selectedAttachmentIds.length > 0) {
+        emailData.selectedAttachmentIds.forEach((attachmentId, index) => {
+          // 서버 첨부파일에서 찾기
+          const serverAttachment = attachments.find(att => att.id === attachmentId);
+          // 커스텀 첨부파일에서 찾기  
+          const customAttachment = customAttachments.find(att => att.id === attachmentId);
+          
+          if (serverAttachment) {
+            const isExcel = serverAttachment.mimeType?.includes('excel') || 
+                           serverAttachment.mimeType?.includes('spreadsheet') ||
+                           serverAttachment.originalName?.toLowerCase().endsWith('.xlsx') ||
+                           serverAttachment.originalName?.toLowerCase().endsWith('.xls');
+            console.log(`  ├─ [${index}] 서버파일: ${serverAttachment.originalName} (ID: ${attachmentId}, Excel: ${isExcel})`);
+          } else if (customAttachment) {
+            const isExcel = customAttachment.mimeType?.includes('excel') || 
+                           customAttachment.mimeType?.includes('spreadsheet') ||
+                           customAttachment.originalName?.toLowerCase().endsWith('.xlsx') ||
+                           customAttachment.originalName?.toLowerCase().endsWith('.xls');
+            console.log(`  ├─ [${index}] 커스텀파일: ${customAttachment.originalName} (ID: ${attachmentId}, Excel: ${isExcel})`);
+          } else {
+            console.warn(`  ├─ [${index}] ⚠️ 첨부파일 ID ${attachmentId}를 찾을 수 없음!`);
+          }
+        });
+      } else {
+        console.warn('  └─ ⚠️ 선택된 첨부파일이 없음!');
+      }
+      
+      console.log('📧 [UI DEBUG] 기존 로그와 함께 전송:', {
         to: emailData.to,
         cc: emailData.cc,
         subject: emailData.subject,

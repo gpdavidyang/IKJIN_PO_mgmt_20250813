@@ -16,6 +16,26 @@ import * as database from '../db';
 import { purchaseOrderItems, emailSendHistory } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 
+// Vercel 환경에서도 잘 보이는 로깅 함수
+const debugLog = (message: string, data?: any) => {
+  const timestamp = new Date().toISOString();
+  const prefix = `[${timestamp}] ${message}`;
+  
+  if (data) {
+    // JSON 형태로 출력하여 Vercel 로그에서 가독성 향상
+    console.log(prefix, JSON.stringify(data, null, 2));
+  } else {
+    console.log(prefix);
+  }
+  
+  // Vercel 환경에서 추가적으로 console.error도 사용하여 더 잘 보이도록
+  if (process.env.VERCEL) {
+    if (message.includes('DEBUG') || message.includes('ERROR')) {
+      console.error(prefix, data ? JSON.stringify(data, null, 2) : '');
+    }
+  }
+};
+
 export interface EmailAttachment {
   filename: string;
   path?: string;        // Made optional since we can use content instead
@@ -133,17 +153,26 @@ export class POEmailService {
   async sendPOWithOriginalFormat(
     originalFilePath: string,
     emailOptions: POEmailOptions,
-    orderInfo?: { orderId?: number; senderUserId?: string },
-    skipPdfGeneration: boolean = false
+    orderInfo?: { orderId?: number; senderUserId?: string; skipPdfGeneration?: boolean }
   ): Promise<{ success: boolean; messageId?: string; error?: string; pdfGenerationWarning?: string }> {
     try {
       const timestamp = Date.now();
       const uploadsDir = getUploadsDir();
       ensureUploadDir(uploadsDir);
+      const skipPdfGeneration = orderInfo?.skipPdfGeneration || false;
       
-      // 파일이 실제 Excel 파일인지 확인
-      const isExcelFile = originalFilePath.toLowerCase().endsWith('.xlsx') || originalFilePath.toLowerCase().endsWith('.xls');
-      const fileExists = fs.existsSync(originalFilePath);
+      // 파일이 실제 Excel 파일인지 확인 (안전하게 처리)
+      let isExcelFile = false;
+      let fileExists = false;
+      
+      try {
+        isExcelFile = originalFilePath && (originalFilePath.toLowerCase().endsWith('.xlsx') || originalFilePath.toLowerCase().endsWith('.xls'));
+        fileExists = originalFilePath && fs.existsSync(originalFilePath);
+      } catch (error) {
+        console.warn('⚠️ 파일 확인 중 오류:', error);
+        isExcelFile = false;
+        fileExists = false;
+      }
       
       console.log(`🔍 파일 검증: ${originalFilePath}`);
       console.log(`📁 파일 존재: ${fileExists}`);
@@ -171,12 +200,13 @@ export class POEmailService {
           console.log(`📋 남은 시트: ${removeResult.remainingSheets.join(', ')}`);
         }
 
-        // 2. Excel 파일인 경우: PDF 변환 시도
-        pdfPath = path.join(uploadsDir, `po-advanced-format-${timestamp}.pdf`);
+        // 2. Excel 파일인 경우: PDF 변환 시도 (skipPdfGeneration이 false인 경우에만)
+        if (!skipPdfGeneration) {
+          pdfPath = path.join(uploadsDir, `po-advanced-format-${timestamp}.pdf`);
         
-        try {
-          // 통합 PDF 서비스 사용 (모든 기존 변환기 통합, 자동 fallback)
-          const result = await UnifiedExcelPdfService.convertExcelToPDF(processedPath, {
+          try {
+            // 통합 PDF 서비스 사용 (모든 기존 변환기 통합, 자동 fallback)
+            const result = await UnifiedExcelPdfService.convertExcelToPDF(processedPath, {
             outputPath: pdfPath,
             quality: 'high',
             orientation: 'landscape',
@@ -196,9 +226,12 @@ export class POEmailService {
             pdfResult.error = result.error || '통합 PDF 서비스 변환 실패';
             console.warn(`⚠️ PDF 변환 실패: ${pdfResult.error}, Excel 파일만 첨부합니다.`);
           }
-        } catch (error) {
-          pdfResult.error = `통합 PDF 서비스 오류: ${error instanceof Error ? error.message : 'Unknown error'}`;
-          console.warn(`⚠️ PDF 변환 완전 실패: ${pdfResult.error}, Excel 파일만 첨부합니다.`);
+          } catch (error) {
+            pdfResult.error = `통합 PDF 서비스 오류: ${error instanceof Error ? error.message : 'Unknown error'}`;
+            console.warn(`⚠️ PDF 변환 완전 실패: ${pdfResult.error}, Excel 파일만 첨부합니다.`);
+          }
+        } else {
+          console.log('📋 PDF 생성 건너뛰기 플래그가 설정되어 있어 PDF 변환을 생략합니다.');
         }
       }
 
@@ -222,13 +255,15 @@ export class POEmailService {
         }
 
         // PDF 파일 첨부 (변환 성공한 경우에만)
-        if (pdfResult.success && fs.existsSync(pdfPath)) {
+        if (!skipPdfGeneration && pdfResult.success && fs.existsSync(pdfPath)) {
           attachments.push({
             filename: `발주서_${emailOptions.orderNumber || timestamp}.pdf`,
             path: pdfPath,
             contentType: 'application/pdf'
           });
           console.log(`📎 PDF 첨부파일 추가: 발주서_${emailOptions.orderNumber || timestamp}.pdf`);
+        } else if (skipPdfGeneration) {
+          console.log(`📋 PDF 첨부 건너뜀 (skipPdfGeneration=true)`);
         }
       } else if (fileExists) {
         // Excel이 아닌 파일이지만 존재하는 경우 (텍스트 파일 등)
@@ -279,7 +314,10 @@ export class POEmailService {
       });
 
       // 6. 임시 파일 정리
-      this.cleanupTempFiles([processedPath, pdfPath]);
+      const filesToCleanup = [processedPath, pdfPath].filter(Boolean);
+      if (filesToCleanup.length > 0) {
+        this.cleanupTempFiles(filesToCleanup);
+      }
 
       if (result.success) {
         console.log(`✅ 원본 형식 유지 이메일 발송 성공: ${emailOptions.to}`);
@@ -305,13 +343,28 @@ export class POEmailService {
     orderInfo?: { orderId?: number; senderUserId?: string }
   ): Promise<{ success: boolean; messageId?: string; error?: string }> {
     try {
-      console.log('📧 직접 첨부파일 이메일 발송 시작:', {
+      debugLog('📧 [EMAIL SERVICE DEBUG] 직접 첨부파일 이메일 발송 시작', {
         to: emailOptions.to,
         subject: emailOptions.subject,
         hasMessage: !!emailOptions.additionalMessage,
         messageLength: emailOptions.additionalMessage?.length || 0,
         attachmentCount: emailOptions.additionalAttachments?.length || 0
       });
+      
+      // 첨부파일 상세 로깅
+      if (emailOptions.additionalAttachments && emailOptions.additionalAttachments.length > 0) {
+        const attachmentDetails = emailOptions.additionalAttachments.map((att, index) => ({
+          index,
+          filename: att.filename,
+          contentType: att.contentType,
+          contentSize: att.content ? att.content.length : 0,
+          isExcel: att.filename?.toLowerCase().includes('xlsx') || att.filename?.toLowerCase().includes('xls')
+        }));
+        
+        debugLog('📎 [EMAIL SERVICE DEBUG] 받은 첨부파일 상세 분석', attachmentDetails);
+      } else {
+        debugLog('⚠️ [EMAIL SERVICE DEBUG] 첨부파일이 없음!');
+      }
 
       // 이메일 본문 생성 (사용자 메시지 우선)
       let htmlContent = '';
@@ -412,28 +465,64 @@ export class POEmailService {
 
       // 첨부파일 설정
       if (emailOptions.additionalAttachments && emailOptions.additionalAttachments.length > 0) {
-        mailOptions.attachments = emailOptions.additionalAttachments.map(att => ({
-          filename: att.filename,
-          content: att.content,
-          contentType: att.contentType
-        }));
+        mailOptions.attachments = emailOptions.additionalAttachments.map((att, index) => {
+          const attachment = {
+            filename: att.filename,
+            content: att.content,
+            contentType: att.contentType
+          };
+          
+          console.log(`📎 [EMAIL SERVICE DEBUG] nodemailer 첨부파일 [${index}] 준비:`, {
+            filename: attachment.filename,
+            contentType: attachment.contentType,
+            contentSize: attachment.content ? attachment.content.length : 0,
+            isBuffer: Buffer.isBuffer(attachment.content),
+            firstBytes: attachment.content ? Array.from(attachment.content.subarray(0, 10)).join(',') : 'N/A'
+          });
+          
+          return attachment;
+        });
         
-        console.log('📎 첨부파일 추가:', emailOptions.additionalAttachments.map(att => 
-          `${att.filename} (${att.content.length} bytes)`
-        ).join(', '));
+        debugLog('📎 [EMAIL SERVICE DEBUG] nodemailer 첨부파일 배열 최종 상태', {
+          총개수: mailOptions.attachments.length,
+          파일목록: mailOptions.attachments.map(att => att.filename).join(', '),
+          Excel파일개수: mailOptions.attachments.filter(att => 
+            att.filename?.toLowerCase().includes('xlsx') || att.filename?.toLowerCase().includes('xls')
+          ).length
+        });
+      } else {
+        debugLog('⚠️ [EMAIL SERVICE DEBUG] nodemailer에 전달할 첨부파일이 없음!');
       }
 
-      console.log('📧 최종 메일 옵션:', {
+      console.log('📧 [EMAIL SERVICE DEBUG] nodemailer 최종 메일 옵션:', {
         from: mailOptions.from,
         to: mailOptions.to,
         cc: mailOptions.cc,
         subject: mailOptions.subject,
-        attachmentCount: mailOptions.attachments?.length || 0
+        attachmentCount: mailOptions.attachments?.length || 0,
+        hasAttachments: !!(mailOptions.attachments && mailOptions.attachments.length > 0)
       });
 
+      // 이메일 발송 직전 최종 확인
+      debugLog('🚀 [EMAIL SERVICE DEBUG] nodemailer.sendMail 호출 직전');
+      if (mailOptions.attachments && mailOptions.attachments.length > 0) {
+        debugLog('📎 [EMAIL SERVICE DEBUG] 실제 전송될 첨부파일', 
+          mailOptions.attachments.map(att => ({
+            filename: att.filename,
+            size: att.content?.length || 0
+          }))
+        );
+      }
+
       // 이메일 발송
+      debugLog('📨 [EMAIL SERVICE DEBUG] nodemailer.sendMail 실행 중...');
       const info = await this.transporter.sendMail(mailOptions);
-      console.log('📧 직접 첨부파일 이메일 발송 성공:', info.messageId);
+      debugLog('✅ [EMAIL SERVICE DEBUG] nodemailer.sendMail 성공', {
+        messageId: info.messageId,
+        accepted: info.accepted,
+        rejected: info.rejected,
+        response: info.response
+      });
 
       // 이메일 발송 기록 저장
       if (orderInfo?.orderId) {
@@ -458,7 +547,18 @@ export class POEmailService {
         messageId: info.messageId
       };
     } catch (error) {
-      console.error('❌ 직접 첨부파일 이메일 발송 오류:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorData = {
+        error: errorMessage,
+        stack: error instanceof Error ? error.stack : undefined,
+        emailOptions: {
+          to: emailOptions.to,
+          subject: emailOptions.subject,
+          attachmentCount: emailOptions.additionalAttachments?.length || 0
+        }
+      };
+      
+      debugLog('❌ [EMAIL SERVICE ERROR] 직접 첨부파일 이메일 발송 오류', errorData);
       
       // 이메일 발송 실패 기록
       if (orderInfo?.orderId) {
@@ -470,16 +570,16 @@ export class POEmailService {
             subject: emailOptions.subject,
             attachmentCount: emailOptions.additionalAttachments?.length || 0,
             status: 'failed',
-            errorMessage: error instanceof Error ? error.message : 'Unknown error'
+            errorMessage: errorMessage
           });
         } catch (historyError) {
-          console.error('이메일 실패 기록 저장 실패:', historyError);
+          debugLog('❌ [EMAIL SERVICE ERROR] 이메일 실패 기록 저장 실패', historyError);
         }
       }
 
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: errorMessage
       };
     }
   }
@@ -1001,16 +1101,22 @@ export class POEmailService {
   }
 
   /**
-   * 임시 파일 정리
+   * 임시 파일 정리 (Vercel 환경 고려)
    */
   private cleanupTempFiles(filePaths: string[]): void {
     filePaths.forEach(filePath => {
       try {
-        if (fs.existsSync(filePath)) {
+        if (filePath && fs.existsSync(filePath)) {
           fs.unlinkSync(filePath);
+          console.log(`🗑️ 임시 파일 삭제: ${filePath}`);
         }
       } catch (error) {
-        console.error(`파일 정리 실패: ${filePath}`, error);
+        // Vercel 환경에서는 파일 삭제 실패가 일반적일 수 있음
+        if (process.env.VERCEL) {
+          console.warn(`⚠️ Vercel 환경에서 파일 정리 실패 (정상): ${filePath}`);
+        } else {
+          console.error(`❌ 파일 정리 실패: ${filePath}`, error);
+        }
       }
     });
   }

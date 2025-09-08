@@ -223,12 +223,32 @@ export class EmailService {
           }
         };
         
-        // 첨부파일 URL이 있으면 로그 출력
-        if (orderData.attachmentUrls && orderData.attachmentUrls.length > 0) {
-          console.log('📎 첨부파일 URL 추가:', orderData.attachmentUrls);
+        // 상세 로깅 추가
+        console.log('📧 [CLIENT DEBUG] 이메일 API 요청 데이터 검증:');
+        console.log('  ├─ orderData.orderId:', orderData.orderId);
+        console.log('  ├─ orderData.orderNumber:', orderData.orderNumber);
+        console.log('  ├─ emailData.to:', emailData.to);
+        console.log('  ├─ emailData.selectedAttachmentIds:', emailData.selectedAttachmentIds);
+        console.log('  ├─ selectedAttachmentIds 길이:', emailData.selectedAttachmentIds?.length || 0);
+        console.log('  ├─ selectedAttachmentIds 타입:', typeof emailData.selectedAttachmentIds);
+        console.log('  ├─ selectedAttachmentIds 상세:', JSON.stringify(emailData.selectedAttachmentIds));
+        
+        // Excel 파일 ID 확인
+        if (emailData.selectedAttachmentIds && emailData.selectedAttachmentIds.length > 0) {
+          console.log('📊 [CLIENT DEBUG] Excel 파일 첨부 체크:');
+          emailData.selectedAttachmentIds.forEach((id, index) => {
+            console.log(`  ├─ 첨부파일 [${index}]: ID = ${id} (타입: ${typeof id})`);
+          });
+        } else {
+          console.warn('⚠️ [CLIENT DEBUG] selectedAttachmentIds가 비어있음!');
         }
         
-        console.log('📧 이메일 API 요청 데이터 (JSON):', requestData);
+        // 첨부파일 URL이 있으면 로그 출력
+        if (orderData.attachmentUrls && orderData.attachmentUrls.length > 0) {
+          console.log('📎 [CLIENT DEBUG] 첨부파일 URL 추가:', orderData.attachmentUrls);
+        }
+        
+        console.log('📧 [CLIENT DEBUG] 최종 API 요청 데이터:', requestData);
         const response = await apiRequest('POST', '/api/orders/send-email', requestData);
         
         return {

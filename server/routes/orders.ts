@@ -1609,7 +1609,7 @@ router.get("/orders/:id/download-pdf", async (req, res) => {
 // 이메일 발송 (POEmailService 사용으로 완전히 재작성)
 
 router.post("/orders/send-email", requireAuth, async (req, res) => {
-  console.log('🔍 이메일 발송 엔드포인트 진입');
+  console.log('🔍 [SERVER DEBUG] 이메일 발송 엔드포인트 진입');
   
   try {
     const { 
@@ -1622,27 +1622,28 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
       skipPdfGeneration = false  // PDF 생성 건너뛰기 옵션
     } = req.body;
     
-    console.log('📧 이메일 발송 요청 (POEmailService 사용):', { 
-      orderData, 
-      to, 
-      cc, 
-      subject, 
-      message: message ? `[메시지 있음: ${message.substring(0, 50)}...]` : '[메시지 없음]',
-      messageLength: message ? message.length : 0,
-      selectedAttachmentIds
-    });
+    console.log('📧 [SERVER DEBUG] 이메일 발송 요청 (POEmailService 사용):');
+    console.log('  ├─ orderData:', orderData);
+    console.log('  ├─ to:', to);
+    console.log('  ├─ cc:', cc);
+    console.log('  ├─ subject:', subject);
+    console.log('  ├─ message:', message ? `[메시지 있음: ${message.substring(0, 50)}...]` : '[메시지 없음]');
+    console.log('  ├─ messageLength:', message ? message.length : 0);
+    console.log('  └─ selectedAttachmentIds:', selectedAttachmentIds);
     
-    // 입력 데이터 로깅
-    console.log('📄 수신 데이터:', {
-      hasOrderData: !!orderData,
-      orderNumber: orderData?.orderNumber,
-      orderId: orderData?.orderId,
-      toCount: Array.isArray(to) ? to.length : (typeof to === 'string' ? 1 : 0),
-      ccCount: Array.isArray(cc) ? cc.length : (typeof cc === 'string' ? 1 : 0),
-      hasSubject: !!subject,
-      hasMessage: !!message,
-      attachmentIds: selectedAttachmentIds
-    });
+    // 입력 데이터 상세 검증
+    console.log('📄 [SERVER DEBUG] 수신 데이터 검증:');
+    console.log('  ├─ hasOrderData:', !!orderData);
+    console.log('  ├─ orderNumber:', orderData?.orderNumber);
+    console.log('  ├─ orderId:', orderData?.orderId);
+    console.log('  ├─ toCount:', Array.isArray(to) ? to.length : (typeof to === 'string' ? 1 : 0));
+    console.log('  ├─ ccCount:', Array.isArray(cc) ? cc.length : (typeof cc === 'string' ? 1 : 0));
+    console.log('  ├─ hasSubject:', !!subject);
+    console.log('  ├─ hasMessage:', !!message);
+    console.log('  ├─ attachmentIds (원본):', selectedAttachmentIds);
+    console.log('  ├─ attachmentIds 타입:', typeof selectedAttachmentIds);
+    console.log('  ├─ attachmentIds 배열인가:', Array.isArray(selectedAttachmentIds));
+    console.log('  └─ attachmentIds 길이:', selectedAttachmentIds?.length || 0);
     
     // 수신자 검증
     if (!to || to.length === 0) {
@@ -1673,11 +1674,13 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
     };
     
     if (selectedAttachmentIds && selectedAttachmentIds.length > 0) {
-      console.log('📎 선택된 첨부파일 처리:', selectedAttachmentIds);
+      console.log('📎 [SERVER DEBUG] 선택된 첨부파일 처리 시작:', selectedAttachmentIds);
+      console.log('  ├─ selectedAttachmentIds 배열 길이:', selectedAttachmentIds.length);
+      console.log('  └─ selectedAttachmentIds 내용:', JSON.stringify(selectedAttachmentIds));
       
       for (const attachmentId of selectedAttachmentIds) {
         try {
-          console.log(`📈 첨부파일 ID ${attachmentId} 처리 시작`);
+          console.log(`📈 [SERVER DEBUG] 첨부파일 ID ${attachmentId} 처리 시작 (타입: ${typeof attachmentId})`);
           
           const [attachment] = await database.db
             .select({
@@ -1690,13 +1693,13 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
             .from(attachmentsTable)
             .where(eq(attachmentsTable.id, attachmentId));
           
-          console.log(`📋 첨부파일 데이터베이스 조회 결과:`, {
-            found: !!attachment,
-            name: attachment?.originalName,
-            mimeType: attachment?.mimeType,
-            hasFileData: !!attachment?.fileData,
-            hasFilePath: !!attachment?.filePath
-          });
+          console.log(`📋 [SERVER DEBUG] 첨부파일 ${attachmentId} 데이터베이스 조회 결과:`);
+          console.log('  ├─ 조회됨:', !!attachment);
+          console.log('  ├─ 파일명:', attachment?.originalName);
+          console.log('  ├─ MIME타입:', attachment?.mimeType);
+          console.log('  ├─ fileData 존재:', !!attachment?.fileData);
+          console.log('  ├─ fileData 길이:', attachment?.fileData ? attachment.fileData.length : 0);
+          console.log('  └─ filePath 존재:', !!attachment?.filePath);
             
           if (attachment) {
             const isExcelFile = attachment.mimeType?.includes('excel') || 
@@ -1704,41 +1707,101 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
                               attachment.originalName?.toLowerCase().endsWith('.xlsx') ||
                               attachment.originalName?.toLowerCase().endsWith('.xls');
                               
+            console.log(`📊 [SERVER DEBUG] 파일 타입 판정 (ID: ${attachmentId}):`);
+            console.log('  ├─ mimeType 체크:', {
+              mimeType: attachment.mimeType,
+              includesExcel: attachment.mimeType?.includes('excel'),
+              includesSpreadsheet: attachment.mimeType?.includes('spreadsheet')
+            });
+            console.log('  ├─ 파일명 체크:', {
+              originalName: attachment.originalName,
+              endsWithXlsx: attachment.originalName?.toLowerCase().endsWith('.xlsx'),
+              endsWithXls: attachment.originalName?.toLowerCase().endsWith('.xls')
+            });
+            console.log('  └─ 최종 Excel 파일 판정:', isExcelFile);
+                              
             if (isExcelFile && !excelFilePath) {
+              console.log(`🟢 [SERVER DEBUG] Excel 파일로 판정됨, 주 첨부파일로 처리 (ID: ${attachmentId})`);
               // 첫 번째 Excel 파일을 주 첨부파일로 사용
               if (attachment.fileData) {
-                // Base64 데이터를 임시 파일로 저장
-                const tempDir = getUploadsDir();
-                ensureUploadDir(tempDir);
-                const tempFilePath = path.join(tempDir, `temp-${Date.now()}-${attachment.originalName}`);
-                
-                if (!fs.existsSync(tempDir)) {
-                  fs.mkdirSync(tempDir, { recursive: true });
+                console.log('📦 [SERVER DEBUG] Base64 데이터를 임시 파일로 저장 시작');
+                try {
+                  // Base64 데이터를 임시 파일로 저장
+                  const tempDir = getUploadsDir();
+                  ensureUploadDir(tempDir);
+                  const tempFilePath = path.join(tempDir, `temp-${Date.now()}-${attachment.originalName}`);
+                  
+                  if (!fs.existsSync(tempDir)) {
+                    fs.mkdirSync(tempDir, { recursive: true });
+                  }
+                  
+                  const buffer = Buffer.from(attachment.fileData, 'base64');
+                  console.log('📦 [SERVER DEBUG] Base64 변환 완료:', {
+                    원본데이터길이: attachment.fileData.length,
+                    변환된버퍼크기: buffer.length,
+                    임시파일경로: tempFilePath
+                  });
+                  
+                  fs.writeFileSync(tempFilePath, buffer);
+                  excelFilePath = tempFilePath;
+                  console.log('✅ [SERVER DEBUG] Excel 파일 임시 저장 성공:', tempFilePath);
+                  
+                  // 파일이 제대로 생성되었는지 확인
+                  if (fs.existsSync(tempFilePath)) {
+                    const stats = fs.statSync(tempFilePath);
+                    console.log('✅ [SERVER DEBUG] 임시파일 검증 완료:', {
+                      파일존재: true,
+                      파일크기: stats.size,
+                      파일경로: tempFilePath
+                    });
+                  } else {
+                    console.error('❌ [SERVER DEBUG] 임시파일 생성 실패:', tempFilePath);
+                  }
+                } catch (base64Error) {
+                  console.error('❌ [SERVER DEBUG] Base64 변환 오류:', base64Error);
                 }
-                
-                fs.writeFileSync(tempFilePath, Buffer.from(attachment.fileData, 'base64'));
-                excelFilePath = tempFilePath;
-                console.log('✅ Excel 파일 임시 저장:', tempFilePath);
               } else if (attachment.filePath && fs.existsSync(attachment.filePath)) {
                 excelFilePath = attachment.filePath;
-                console.log('✅ Excel 파일 경로 사용:', attachment.filePath);
+                console.log('✅ [SERVER DEBUG] Excel 파일 경로 사용:', attachment.filePath);
+              } else {
+                console.warn('⚠️ [SERVER DEBUG] Excel 파일이지만 데이터나 경로 없음:', {
+                  hasFileData: !!attachment.fileData,
+                  hasFilePath: !!attachment.filePath,
+                  filePathExists: attachment.filePath ? fs.existsSync(attachment.filePath) : false
+                });
               }
             } else {
+              console.log(`🔸 [SERVER DEBUG] 추가 첨부파일로 처리 (ID: ${attachmentId}, Excel이미있음: ${!!excelFilePath})`);
               // Excel이 아닌 파일들은 추가 첨부파일로 처리
               if (attachment.fileData) {
-                additionalAttachments.push({
-                  filename: attachment.originalName,
-                  content: Buffer.from(attachment.fileData, 'base64'),
-                  contentType: attachment.mimeType || 'application/octet-stream'
-                });
-                console.log('✅ 추가 첨부파일 추가 (Base64):', attachment.originalName);
+                try {
+                  const buffer = Buffer.from(attachment.fileData, 'base64');
+                  additionalAttachments.push({
+                    filename: attachment.originalName,
+                    content: buffer,
+                    contentType: attachment.mimeType || 'application/octet-stream'
+                  });
+                  console.log('✅ [SERVER DEBUG] 추가 첨부파일 추가 (Base64):', {
+                    파일명: attachment.originalName,
+                    원본크기: attachment.fileData.length,
+                    변환크기: buffer.length
+                  });
+                } catch (base64Error) {
+                  console.error('❌ [SERVER DEBUG] 추가파일 Base64 변환 실패:', base64Error);
+                }
               } else if (attachment.filePath && fs.existsSync(attachment.filePath)) {
                 additionalAttachments.push({
                   filename: attachment.originalName,
                   path: attachment.filePath,
                   contentType: attachment.mimeType || 'application/octet-stream'
                 });
-                console.log('✅ 추가 첨부파일 추가 (파일 경로):', attachment.originalName);
+                console.log('✅ [SERVER DEBUG] 추가 첨부파일 추가 (파일 경로):', attachment.originalName);
+              } else {
+                console.warn('⚠️ [SERVER DEBUG] 추가파일이지만 데이터나 경로 없음:', {
+                  파일명: attachment.originalName,
+                  hasFileData: !!attachment.fileData,
+                  hasFilePath: !!attachment.filePath
+                });
               }
             }
           }
@@ -1771,8 +1834,21 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
       XLSX.writeFile(workbook, tempFilePath);
       
       excelFilePath = tempFilePath;
-      console.log('✅ 기본 Excel 파일 생성:', tempFilePath);
+      console.log('✅ [SERVER DEBUG] 기본 Excel 파일 생성 완료:', tempFilePath);
     }
+    
+    // 첨부파일 처리 완료 상태 로깅
+    console.log('📋 [SERVER DEBUG] 첨부파일 처리 완료 상태:');
+    console.log('  ├─ excelFilePath:', excelFilePath);
+    console.log('  ├─ excelFilePath 존재:', excelFilePath ? fs.existsSync(excelFilePath) : false);
+    console.log('  ├─ additionalAttachments 개수:', additionalAttachments.length);
+    console.log('  └─ additionalAttachments 목록:', additionalAttachments.map(att => ({
+      filename: att.filename,
+      hasContent: !!att.content,
+      hasPath: !!att.path,
+      contentType: att.contentType,
+      contentSize: att.content ? att.content.length : 'N/A'
+    })));
 
     // NEW: Process selectedAttachments/selectedAttachmentIds from frontend modal
     // Support both selectedAttachments and selectedAttachmentIds (frontend sends selectedAttachmentIds)
@@ -2255,8 +2331,9 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
         additionalAttachments: poServiceAttachments
       }, {
         orderId: orderData?.orderId,
-        senderUserId: req.user?.id
-      }, skipPdfGeneration);  // PDF 생성 건너뛰기 플래그 전달
+        senderUserId: req.user?.id,
+        skipPdfGeneration: skipPdfGeneration  // PDF 생성 건너뛰기 플래그를 orderInfo 객체 안에 포함
+      });
 
       // 임시 파일 삭제
       try {
@@ -2680,7 +2757,8 @@ router.post("/orders/send-email-simple", requireAuth, async (req, res) => {
       additionalAttachments: attachments // Pass additional attachments
     }, {
       orderId: orderData?.orderId,
-      senderUserId: (req as any).user?.id
+      senderUserId: (req as any).user?.id,
+      skipPdfGeneration: true  // 간편 발송 시 PDF 생성 건너뛰기
     });
 
     // 임시 파일 삭제
@@ -3261,7 +3339,22 @@ router.post("/orders/send-email-with-files", requireAuth, upload.array('customFi
       attachmentCount: emailOptions.additionalAttachments?.length || 0
     });
     
+    // POEmailService 호출 직전 최종 확인
+    console.log('📧 [SERVER DEBUG] POEmailService 호출 직전 최종 데이터:');
+    console.log('  ├─ emailOptions.to:', emailOptions.to);
+    console.log('  ├─ emailOptions.cc:', emailOptions.cc);
+    console.log('  ├─ emailOptions.subject:', emailOptions.subject);
+    console.log('  ├─ emailOptions.additionalMessage 길이:', emailOptions.additionalMessage?.length || 0);
+    console.log('  ├─ emailOptions.additionalAttachments 개수:', emailOptions.additionalAttachments?.length || 0);
+    console.log('  └─ emailOptions.additionalAttachments 상세:', emailOptions.additionalAttachments?.map(att => ({
+      filename: att.filename,
+      hasContent: !!att.content,
+      contentSize: att.content ? att.content.length : 0,
+      contentType: att.contentType
+    })));
+    
     // POEmailService를 사용하여 이메일 발송
+    console.log('🚀 [SERVER DEBUG] POEmailService.sendEmailWithDirectAttachments 호출');
     const result = await emailService.sendEmailWithDirectAttachments(emailOptions, {
       orderId: orderData.orderId,
       senderUserId: (req as any).user?.id

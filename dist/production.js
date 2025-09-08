@@ -8482,13 +8482,22 @@ var POEmailService = class {
    * Input 시트만 제거한 원본 형식 유지 엑셀과 PDF로 첨부하여 이메일 발송
    * 기존 방식과 달리 엑셀 파일의 원본 형식(테두리, 병합, 색상 등)을 그대로 유지
    */
-  async sendPOWithOriginalFormat(originalFilePath, emailOptions, orderInfo, skipPdfGeneration = false) {
+  async sendPOWithOriginalFormat(originalFilePath, emailOptions, orderInfo) {
     try {
       const timestamp2 = Date.now();
       const uploadsDir = getUploadsDir();
       ensureUploadDir(uploadsDir);
-      const isExcelFile = originalFilePath.toLowerCase().endsWith(".xlsx") || originalFilePath.toLowerCase().endsWith(".xls");
-      const fileExists = fs5.existsSync(originalFilePath);
+      const skipPdfGeneration = orderInfo?.skipPdfGeneration || false;
+      let isExcelFile = false;
+      let fileExists = false;
+      try {
+        isExcelFile = originalFilePath && (originalFilePath.toLowerCase().endsWith(".xlsx") || originalFilePath.toLowerCase().endsWith(".xls"));
+        fileExists = originalFilePath && fs5.existsSync(originalFilePath);
+      } catch (error) {
+        console.warn("\u26A0\uFE0F \uD30C\uC77C \uD655\uC778 \uC911 \uC624\uB958:", error);
+        isExcelFile = false;
+        fileExists = false;
+      }
       console.log(`\u{1F50D} \uD30C\uC77C \uAC80\uC99D: ${originalFilePath}`);
       console.log(`\u{1F4C1} \uD30C\uC77C \uC874\uC7AC: ${fileExists}`);
       console.log(`\u{1F4CA} Excel \uD30C\uC77C: ${isExcelFile}`);
@@ -8510,30 +8519,34 @@ var POEmailService = class {
           console.log(`\u{1F3AF} Input \uC2DC\uD2B8 \uC81C\uAC70 \uC644\uB8CC`);
           console.log(`\u{1F4CB} \uB0A8\uC740 \uC2DC\uD2B8: ${removeResult.remainingSheets.join(", ")}`);
         }
-        pdfPath = path3.join(uploadsDir, `po-advanced-format-${timestamp2}.pdf`);
-        try {
-          const result2 = await UnifiedExcelPdfService.convertExcelToPDF(processedPath, {
-            outputPath: pdfPath,
-            quality: "high",
-            orientation: "landscape",
-            excludeSheets: ["Input", "Settings"],
-            watermark: `\uBC1C\uC8FC\uC11C - ${emailOptions.orderNumber || ""}`,
-            retryCount: 2
-          });
-          if (result2.success) {
-            pdfResult.success = true;
-            const fileSize = result2.stats ? Math.round(result2.stats.fileSize / 1024) : 0;
-            console.log(`\u2705 ${result2.engineUsed} \uC5D4\uC9C4\uC73C\uB85C PDF \uBCC0\uD658 \uC131\uACF5: ${pdfPath} (${fileSize}KB)`);
-            if (result2.warnings && result2.warnings.length > 0) {
-              console.warn(`\u26A0\uFE0F \uACBD\uACE0: ${result2.warnings.join(", ")}`);
+        if (!skipPdfGeneration) {
+          pdfPath = path3.join(uploadsDir, `po-advanced-format-${timestamp2}.pdf`);
+          try {
+            const result2 = await UnifiedExcelPdfService.convertExcelToPDF(processedPath, {
+              outputPath: pdfPath,
+              quality: "high",
+              orientation: "landscape",
+              excludeSheets: ["Input", "Settings"],
+              watermark: `\uBC1C\uC8FC\uC11C - ${emailOptions.orderNumber || ""}`,
+              retryCount: 2
+            });
+            if (result2.success) {
+              pdfResult.success = true;
+              const fileSize = result2.stats ? Math.round(result2.stats.fileSize / 1024) : 0;
+              console.log(`\u2705 ${result2.engineUsed} \uC5D4\uC9C4\uC73C\uB85C PDF \uBCC0\uD658 \uC131\uACF5: ${pdfPath} (${fileSize}KB)`);
+              if (result2.warnings && result2.warnings.length > 0) {
+                console.warn(`\u26A0\uFE0F \uACBD\uACE0: ${result2.warnings.join(", ")}`);
+              }
+            } else {
+              pdfResult.error = result2.error || "\uD1B5\uD569 PDF \uC11C\uBE44\uC2A4 \uBCC0\uD658 \uC2E4\uD328";
+              console.warn(`\u26A0\uFE0F PDF \uBCC0\uD658 \uC2E4\uD328: ${pdfResult.error}, Excel \uD30C\uC77C\uB9CC \uCCA8\uBD80\uD569\uB2C8\uB2E4.`);
             }
-          } else {
-            pdfResult.error = result2.error || "\uD1B5\uD569 PDF \uC11C\uBE44\uC2A4 \uBCC0\uD658 \uC2E4\uD328";
-            console.warn(`\u26A0\uFE0F PDF \uBCC0\uD658 \uC2E4\uD328: ${pdfResult.error}, Excel \uD30C\uC77C\uB9CC \uCCA8\uBD80\uD569\uB2C8\uB2E4.`);
+          } catch (error) {
+            pdfResult.error = `\uD1B5\uD569 PDF \uC11C\uBE44\uC2A4 \uC624\uB958: ${error instanceof Error ? error.message : "Unknown error"}`;
+            console.warn(`\u26A0\uFE0F PDF \uBCC0\uD658 \uC644\uC804 \uC2E4\uD328: ${pdfResult.error}, Excel \uD30C\uC77C\uB9CC \uCCA8\uBD80\uD569\uB2C8\uB2E4.`);
           }
-        } catch (error) {
-          pdfResult.error = `\uD1B5\uD569 PDF \uC11C\uBE44\uC2A4 \uC624\uB958: ${error instanceof Error ? error.message : "Unknown error"}`;
-          console.warn(`\u26A0\uFE0F PDF \uBCC0\uD658 \uC644\uC804 \uC2E4\uD328: ${pdfResult.error}, Excel \uD30C\uC77C\uB9CC \uCCA8\uBD80\uD569\uB2C8\uB2E4.`);
+        } else {
+          console.log("\u{1F4CB} PDF \uC0DD\uC131 \uAC74\uB108\uB6F0\uAE30 \uD50C\uB798\uADF8\uAC00 \uC124\uC815\uB418\uC5B4 \uC788\uC5B4 PDF \uBCC0\uD658\uC744 \uC0DD\uB7B5\uD569\uB2C8\uB2E4.");
         }
       }
       if (fileExists && isExcelFile) {
@@ -8552,13 +8565,15 @@ var POEmailService = class {
         } else {
           console.warn(`\u26A0\uFE0F \uCC98\uB9AC\uB41C Excel \uD30C\uC77C\uC774 \uC874\uC7AC\uD558\uC9C0 \uC54A\uC74C: ${processedPath}`);
         }
-        if (pdfResult.success && fs5.existsSync(pdfPath)) {
+        if (!skipPdfGeneration && pdfResult.success && fs5.existsSync(pdfPath)) {
           attachments3.push({
             filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`,
             path: pdfPath,
             contentType: "application/pdf"
           });
           console.log(`\u{1F4CE} PDF \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00: \uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`);
+        } else if (skipPdfGeneration) {
+          console.log(`\u{1F4CB} PDF \uCCA8\uBD80 \uAC74\uB108\uB700 (skipPdfGeneration=true)`);
         }
       } else if (fileExists) {
         const fileExt = path3.extname(originalFilePath) || ".txt";
@@ -8599,7 +8614,10 @@ var POEmailService = class {
         ...orderInfo,
         orderNumber: emailOptions.orderNumber
       });
-      this.cleanupTempFiles([processedPath, pdfPath]);
+      const filesToCleanup = [processedPath, pdfPath].filter(Boolean);
+      if (filesToCleanup.length > 0) {
+        this.cleanupTempFiles(filesToCleanup);
+      }
       if (result.success) {
         console.log(`\u2705 \uC6D0\uBCF8 \uD615\uC2DD \uC720\uC9C0 \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC131\uACF5: ${emailOptions.to}`);
       }
@@ -9226,16 +9244,21 @@ var POEmailService = class {
     `;
   }
   /**
-   * 임시 파일 정리
+   * 임시 파일 정리 (Vercel 환경 고려)
    */
   cleanupTempFiles(filePaths) {
     filePaths.forEach((filePath) => {
       try {
-        if (fs5.existsSync(filePath)) {
+        if (filePath && fs5.existsSync(filePath)) {
           fs5.unlinkSync(filePath);
+          console.log(`\u{1F5D1}\uFE0F \uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C: ${filePath}`);
         }
       } catch (error) {
-        console.error(`\uD30C\uC77C \uC815\uB9AC \uC2E4\uD328: ${filePath}`, error);
+        if (process.env.VERCEL) {
+          console.warn(`\u26A0\uFE0F Vercel \uD658\uACBD\uC5D0\uC11C \uD30C\uC77C \uC815\uB9AC \uC2E4\uD328 (\uC815\uC0C1): ${filePath}`);
+        } else {
+          console.error(`\u274C \uD30C\uC77C \uC815\uB9AC \uC2E4\uD328: ${filePath}`, error);
+        }
       }
     });
   }
@@ -14697,8 +14720,10 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
         additionalAttachments: poServiceAttachments
       }, {
         orderId: orderData?.orderId,
-        senderUserId: req.user?.id
-      }, skipPdfGeneration);
+        senderUserId: req.user?.id,
+        skipPdfGeneration
+        // PDF 생성 건너뛰기 플래그를 orderInfo 객체 안에 포함
+      });
       try {
         if (fs11.existsSync(tempExcelPath)) {
           fs11.unlinkSync(tempExcelPath);
@@ -15025,7 +15050,9 @@ ${body}`);
       // Pass additional attachments
     }, {
       orderId: orderData?.orderId,
-      senderUserId: req.user?.id
+      senderUserId: req.user?.id,
+      skipPdfGeneration: true
+      // 간편 발송 시 PDF 생성 건너뛰기
     });
     if (excelPath.includes("temp_")) {
       try {
