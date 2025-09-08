@@ -1,228 +1,200 @@
 /**
- * 한글 폰트 지원 상태 확인 API 엔드포인트
- * Vercel 환경에서 한글 폰트 사용 가능 여부 진단
+ * 한글 폰트 지원 상태 API
+ * Vercel 환경에서 폰트 최적화 상태를 진단하고 테스트
  */
 
 import { Router } from 'express';
 import { fontManager } from '../utils/korean-font-manager';
-import { ProfessionalPDFGenerationService } from '../services/professional-pdf-generation-service';
+import { VercelFontOptimizer } from '../utils/vercel-font-optimizer';
 
 const router = Router();
 
 /**
+ * 한글 폰트 지원 상태 조회
  * GET /api/korean-font/status
- * 한글 폰트 지원 상태 확인
  */
 router.get('/status', async (req, res) => {
   try {
-    console.log('🔍 [KoreanFontAPI] 폰트 상태 확인 요청');
-
-    // 1. 폰트 관리자 상태 보고서
+    console.log('🔍 [FontStatus] 한글 폰트 상태 조회 시작');
+    
+    // FontManager 보고서
     const fontReport = fontManager.getFontReport();
-
-    // 2. 최적 폰트 정보
-    const bestFont = fontManager.getBestKoreanFont();
-
-    // 3. Vercel 최적화 상태
-    const isVercelOptimized = fontManager.isVercelOptimized();
-
-    // 4. 환경 정보
-    const environment = {
-      isVercel: !!process.env.VERCEL,
-      nodeEnv: process.env.NODE_ENV,
-      platform: process.platform,
-      cwd: process.cwd()
-    };
-
+    
+    // Vercel 최적화 상태
+    const vercelDiagnostics = VercelFontOptimizer.diagnose();
+    
+    // Vercel 환경에서 최적화 폰트 테스트
+    let vercelOptimizedTest: any = null;
+    if (process.env.VERCEL) {
+      try {
+        const optimizedFont = VercelFontOptimizer.getOptimizedKoreanFont();
+        vercelOptimizedTest = {
+          success: !!optimizedFont,
+          fontName: optimizedFont?.name || null,
+          fontSize: optimizedFont ? Math.round(optimizedFont.size / 1024) : null,
+          format: optimizedFont?.format || null
+        };
+      } catch (error) {
+        vercelOptimizedTest = {
+          success: false,
+          error: error.message
+        };
+      }
+    }
+    
     const response = {
       success: true,
       timestamp: new Date().toISOString(),
-      environment,
-      fontSupport: {
-        isOptimized: isVercelOptimized,
-        totalFonts: fontReport.totalFonts,
-        availableFonts: fontReport.availableFonts,
-        recommendedFont: fontReport.recommendedFont,
-        hasKoreanSupport: fontReport.availableFonts > 0
-      },
-      fonts: fontReport.fonts.map(font => ({
-        name: font.name,
-        available: font.available,
-        size: font.size,
-        sizeKB: font.size ? Math.round(font.size / 1024) : 0,
-        path: font.path.includes(process.cwd()) ? 'PROJECT' : 'SYSTEM'
-      })),
-      textConversion: {
-        withFont: fontManager.safeKoreanText('구매발주서 테스트', true),
-        withoutFont: fontManager.safeKoreanText('구매발주서 테스트', false)
-      }
+      environment: process.env.VERCEL ? 'Vercel Serverless' : 'Local Development',
+      fontManager: fontReport,
+      vercelOptimization: vercelDiagnostics,
+      vercelOptimizedFontTest: vercelOptimizedTest,
+      recommendations: generateRecommendations(fontReport, vercelDiagnostics)
     };
-
-    console.log('✅ [KoreanFontAPI] 폰트 상태 확인 완료');
+    
+    console.log('✅ [FontStatus] 한글 폰트 상태 조회 완료');
     res.json(response);
-
+    
   } catch (error) {
-    console.error('❌ [KoreanFontAPI] 폰트 상태 확인 오류:', error);
+    console.error('❌ [FontStatus] 상태 조회 실패:', error);
     res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString()
+      error: 'Failed to get Korean font status',
+      details: error.message
     });
   }
 });
 
 /**
+ * PDF 생성 테스트 (한글 폰트 포함)
  * POST /api/korean-font/test-pdf
- * 한글 PDF 생성 테스트
  */
 router.post('/test-pdf', async (req, res) => {
   try {
-    console.log('📄 [KoreanFontAPI] 한글 PDF 테스트 요청');
-
-    // 샘플 한글 데이터로 PDF 생성
-    const testData = {
-      orderNumber: 'TEST-KOREAN-' + Date.now(),
-      orderDate: new Date(),
-      deliveryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      createdAt: new Date(),
-
-      issuerCompany: {
-        name: '한글폰트 테스트 회사',
-        businessNumber: '123-45-67890',
-        representative: '김대표',
-        address: '서울특별시 강남구 테헤란로 123',
-        phone: '02-1234-5678',
-        email: 'test@korean-font.co.kr',
-      },
-
-      vendorCompany: {
-        name: '한글 거래처 테스트',
-        businessNumber: '987-65-43210',
-        representative: '박대표',
-        address: '경기도 성남시 분당구 판교역로 166',
-        phone: '031-987-6543',
-        email: 'vendor@korean-test.co.kr',
-        contactPerson: '이담당자',
-      },
-
-      project: {
-        name: '한글 폰트 지원 테스트 현장',
-        code: 'KOREAN-TEST-001',
-        location: '서울특별시 종로구',
-        projectManager: '최현장',
-        projectManagerContact: '010-1234-5678',
-        orderManager: '정발주',
-        orderManagerContact: 'order@test-korean.co.kr',
-      },
-
-      creator: {
-        name: '한글폰트시스템',
-        email: 'admin@korean-font.co.kr',
-        phone: '010-9876-5432',
-      },
-
-      items: [
-        {
-          sequenceNo: 1,
-          name: '한글 품목명 테스트 (건설자재)',
-          specification: '규격: 1200×600×100mm',
-          quantity: 10,
-          unit: '개',
-          unitPrice: 50000,
-          totalPrice: 500000,
-          deliveryLocation: '서울 강남구 테스트 현장',
-          deliveryEmail: 'delivery@korean-test.com',
-          remarks: '현장 직접 배송, 한글 특이사항',
-        },
-      ],
-
-      financial: {
-        subtotalAmount: 500000,
-        vatRate: 0.1,
-        vatAmount: 50000,
-        totalAmount: 550000,
-        discountAmount: 0,
-        currencyCode: 'KRW',
-      },
-
-      metadata: {
-        notes: '한글 폰트 지원 테스트용 PDF 생성. 모든 한글 텍스트가 올바르게 렌더링되는지 확인하세요.',
-        documentId: 'KOREAN-FONT-TEST-' + Date.now(),
-        generatedAt: new Date(),
-        generatedBy: '한글폰트API테스트',
-        templateVersion: 'v2.1.0-korean-font-optimized',
-      },
-    };
-
-    // PDF 생성
-    const pdfBuffer = await ProfessionalPDFGenerationService.generateProfessionalPDFWithPDFKit(testData);
-
-    // PDF 파일을 Base64로 인코딩하여 응답
-    const base64PDF = pdfBuffer.toString('base64');
-
-    const response = {
-      success: true,
-      timestamp: new Date().toISOString(),
-      fontUsed: fontManager.getBestKoreanFont()?.name || 'None',
-      pdfSize: pdfBuffer.length,
-      pdfSizeKB: Math.round(pdfBuffer.length / 1024),
-      base64PDF,
-      downloadUrl: `/api/korean-font/download-test-pdf?t=${Date.now()}`
-    };
-
-    console.log(`✅ [KoreanFontAPI] 한글 PDF 생성 성공: ${response.pdfSizeKB}KB`);
-    res.json(response);
-
+    console.log('🧪 [FontTest] PDF 한글 폰트 테스트 시작');
+    
+    // ProfessionalPDFGenerationService 동적 임포트
+    const { ProfessionalPDFGenerationService } = await import('../services/professional-pdf-generation-service');
+    
+    // 샘플 PDF 생성
+    const samplePdfBuffer = await ProfessionalPDFGenerationService.generateSamplePDF();
+    
+    console.log(`✅ [FontTest] 샘플 PDF 생성 성공 (크기: ${Math.round(samplePdfBuffer.length / 1024)}KB)`);
+    
+    // PDF를 응답으로 전송
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename="korean_font_test_sample.pdf"');
+    res.setHeader('Content-Length', samplePdfBuffer.length);
+    
+    res.end(samplePdfBuffer);
+    
   } catch (error) {
-    console.error('❌ [KoreanFontAPI] 한글 PDF 생성 오류:', error);
+    console.error('❌ [FontTest] PDF 테스트 실패:', error);
     res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString()
+      error: 'Failed to generate test PDF',
+      details: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 });
 
 /**
- * GET /api/korean-font/base64-font
- * 폰트를 Base64로 인코딩하여 반환 (개발용)
+ * 한글 텍스트 번역 테스트
+ * POST /api/korean-font/test-translate
  */
-router.get('/base64-font', async (req, res) => {
+router.post('/test-translate', async (req, res) => {
   try {
-    console.log('🔤 [KoreanFontAPI] Base64 폰트 인코딩 요청');
-
-    const fontName = req.query.font as string;
-    const base64Font = await fontManager.getFontAsBase64(fontName);
-
-    if (!base64Font) {
-      return res.status(404).json({
+    const { text } = req.body;
+    
+    if (!text) {
+      return res.status(400).json({
         success: false,
-        error: 'Font not found or encoding failed',
-        availableFonts: fontManager.getAvailableFonts().map(f => f.name)
+        error: 'Text is required'
       });
     }
-
-    const response = {
+    
+    console.log(`🌐 [TranslateTest] 번역 테스트: "${text}"`);
+    
+    // ProfessionalPDFGenerationService의 번역 메서드 호출
+    const { ProfessionalPDFGenerationService } = await import('../services/professional-pdf-generation-service');
+    
+    // translateForVercel은 private이므로 우회 방법 필요
+    // 임시로 여기서 직접 번역 로직 테스트
+    const translatedText = process.env.VERCEL ? translateKoreanText(text) : text;
+    
+    res.json({
       success: true,
-      fontName: fontName || 'auto-selected',
-      base64Size: base64Font.length,
-      base64SizeKB: Math.round(base64Font.length / 1024),
-      base64Font,
-      usage: {
-        pdfkit: `doc.registerFont('Korean', Buffer.from('${base64Font.substring(0, 50)}...', 'base64'));`
-      }
-    };
-
-    console.log(`✅ [KoreanFontAPI] Base64 폰트 인코딩 완료: ${response.base64SizeKB}KB`);
-    res.json(response);
-
+      original: text,
+      translated: translatedText,
+      environment: process.env.VERCEL ? 'Vercel' : 'Local',
+      hasKoreanChars: /[가-힣ㄱ-ㅎㅏ-ㅣ]/.test(text)
+    });
+    
   } catch (error) {
-    console.error('❌ [KoreanFontAPI] Base64 폰트 인코딩 오류:', error);
+    console.error('❌ [TranslateTest] 번역 테스트 실패:', error);
     res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: 'Failed to test translation',
+      details: error.message
     });
   }
 });
+
+/**
+ * 간단한 한글 번역 함수 (테스트용)
+ */
+function translateKoreanText(text: string): string {
+  const basicTranslations = {
+    '구매발주서': 'Purchase Order',
+    '발주업체': 'Issuer Company',
+    '수주업체': 'Vendor Company',
+    '품목명': 'Item Name',
+    '수량': 'Quantity',
+    '단가': 'Unit Price',
+    '금액': 'Amount',
+    '합계': 'Total'
+  };
+  
+  let result = text;
+  for (const [korean, english] of Object.entries(basicTranslations)) {
+    result = result.replace(new RegExp(korean, 'g'), english);
+  }
+  
+  // 남은 한글을 [Korean]으로 변환
+  result = result.replace(/[가-힣]+/g, '[Korean]');
+  
+  return result;
+}
+
+/**
+ * 권장사항 생성
+ */
+function generateRecommendations(fontReport: any, vercelDiagnostics: any): string[] {
+  const recommendations: string[] = [];
+  
+  if (process.env.VERCEL) {
+    if (!vercelDiagnostics.hasOptimizedFonts) {
+      recommendations.push('Vercel 환경용 최적화된 폰트 디렉토리 생성 필요');
+      recommendations.push('경량 한글 폰트를 fonts/optimized/ 디렉토리에 배치');
+    }
+    
+    if (fontReport.availableFonts === 0) {
+      recommendations.push('한글 폰트 파일이 Vercel 번들에 포함되지 않음');
+      recommendations.push('vercel.json의 includeFiles 설정 확인');
+    }
+    
+    recommendations.push('메모리 사용량 최적화를 위해 폰트 서브셋 생성 권장');
+    recommendations.push('PDF 생성 시 한글 번역 모드 사용 고려');
+  } else {
+    if (fontReport.availableFonts > 0) {
+      recommendations.push('로컬 환경에서 한글 폰트 정상 동작 중');
+    } else {
+      recommendations.push('한글 폰트 파일을 fonts/ 디렉토리에 배치 필요');
+    }
+  }
+  
+  return recommendations;
+}
 
 export default router;

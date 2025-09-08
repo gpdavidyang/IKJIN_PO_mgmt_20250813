@@ -570,21 +570,60 @@ export class ProfessionalPDFGenerationService {
       console.log('🎯 [PDF] 한글 폰트 등록 시작...');
       console.log(`🌐 [PDF] 환경 체크: VERCEL=${process.env.VERCEL}, NODE_ENV=${process.env.NODE_ENV}`);
       
-      // Vercel 환경에서는 극도로 간소화된 접근 방식
+      // Vercel 환경에서는 최적화된 한글 폰트 시도
       if (process.env.VERCEL) {
-        console.log('☁️ [PDF] Vercel 서버리스 환경 - 폰트 등록 최적화 모드');
+        console.log('☁️ [PDF] Vercel 서버리스 환경 - 최적화된 한글 폰트 로드');
         
         try {
-          // Vercel에서는 폰트 등록을 완전히 스킵하고 기본 폰트만 사용
-          // PDFKit의 내장 폰트만 사용하여 메모리 사용량과 로딩 시간 최소화
-          console.log('🚨 [PDF] Vercel - 한글 폰트 스킵, 내장 폰트 사용');
+          // FontManager에서 Vercel 최적화 폰트 가져오기
+          await initializeFontManager();
           
-          // PDFKit 내장 폰트는 별도 등록 없이 바로 사용 가능
-          // 한글은 표시되지 않지만 PDF 생성 자체는 성공
+          if (fontManager) {
+            const vercelFontBuffer = fontManager.getVercelOptimizedFontBuffer();
+            
+            if (vercelFontBuffer) {
+              console.log('✅ [PDF] Vercel 최적화 폰트 등록 시도...');
+              const fonts = this.getFonts();
+              
+              try {
+                doc.registerFont(fonts.regular, vercelFontBuffer);
+                doc.registerFont(fonts.bold, vercelFontBuffer);
+                doc.registerFont(fonts.medium, vercelFontBuffer);
+                
+                console.log('🎉 [PDF] Vercel 최적화 한글 폰트 등록 성공!');
+                return;
+              } catch (registerError) {
+                console.error('❌ [PDF] Vercel 폰트 등록 실패:', registerError);
+                // 폰트 등록 실패 시 폴백으로 계속 진행
+              }
+            }
+          }
+          
+          console.log('⚠️ [PDF] Vercel 최적화 폰트 사용 불가 - 기본 폰트로 폴백');
+          
+          // 최적화 폰트 실패 시 기본 폰트로 폴백
+          const fonts = this.getFonts();
+          doc.registerFont(fonts.regular, 'Helvetica');
+          doc.registerFont(fonts.bold, 'Helvetica-Bold');
+          doc.registerFont(fonts.medium, 'Helvetica');
+          
+          console.log('🔄 [PDF] Vercel - 기본 폰트로 폴백 완료');
           return;
+          
         } catch (vercelError) {
-          console.error('❌ [PDF] Vercel - 폰트 최적화 실패:', vercelError);
-          throw vercelError; // 서버리스에서는 빠르게 실패
+          console.error('❌ [PDF] Vercel - 폰트 처리 실패:', vercelError);
+          // 완전 실패 시에도 기본 폰트로 진행
+          try {
+            const fonts = this.getFonts();
+            doc.registerFont(fonts.regular, 'Helvetica');
+            doc.registerFont(fonts.bold, 'Helvetica-Bold');
+            doc.registerFont(fonts.medium, 'Helvetica');
+            console.log('🆘 [PDF] Vercel - 최종 폴백 완료');
+            return;
+          } catch (fallbackError) {
+            console.error('💥 [PDF] Vercel - 완전 실패:', fallbackError);
+            throw fallbackError;
+          }
         }
       }
       

@@ -5,6 +5,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { VercelFontOptimizer } from './vercel-font-optimizer';
 
 export interface FontInfo {
   name: string;
@@ -251,6 +252,33 @@ export class KoreanFontManager {
    */
   public getAvailableFonts(): FontInfo[] {
     return Array.from(this.fontCache.values()).filter(f => f.available);
+  }
+
+  /**
+   * Vercel 환경을 위한 최적화된 폰트 버퍼 반환
+   */
+  public getVercelOptimizedFontBuffer(): Buffer | null {
+    if (!process.env.VERCEL) {
+      return null; // Vercel 환경이 아니면 기본 로직 사용
+    }
+
+    try {
+      console.log('☁️ [FontManager] Vercel 최적화 폰트 로드 시작...');
+      
+      const optimizedFont = VercelFontOptimizer.getOptimizedKoreanFont();
+      
+      if (optimizedFont) {
+        console.log(`✅ [FontManager] Vercel 최적화 폰트 로드 성공: ${optimizedFont.name} (${Math.round(optimizedFont.size / 1024)}KB)`);
+        return Buffer.from(optimizedFont.base64Data, 'base64');
+      }
+      
+      console.log('⚠️ [FontManager] Vercel 최적화 폰트를 찾을 수 없음');
+      return null;
+      
+    } catch (error) {
+      console.error('❌ [FontManager] Vercel 최적화 폰트 로드 실패:', error);
+      return null;
+    }
   }
 
   /**

@@ -37,6 +37,7 @@
   "functions": {
     "api/[...all].js": {
       "maxDuration": 60,
+      "memory": 256,
       "includeFiles": "fonts/**"
     }
   },
