@@ -16,6 +16,7 @@ import { ExcelToPDFConverter } from "../utils/excel-to-pdf-converter";
 import { POEmailService } from "../utils/po-email-service";
 import ApprovalRoutingService from "../services/approval-routing-service";
 import { ProfessionalPDFGenerationService } from "../services/professional-pdf-generation-service";
+import { UnifiedOrderCreationService } from "../services/unified-order-creation-service";
 import * as database from "../db";
 import { eq, and, or, like, desc, sql } from "drizzle-orm";
 import fs from "fs";
@@ -26,6 +27,7 @@ import * as XLSX from "xlsx";
 import nodemailer from "nodemailer";
 import { EmailSettingsService } from "../services/email-settings-service";
 import { generateEmailTemplateData, generateEmailHTML } from "../utils/email-template-generator";
+import { progressManager } from "../utils/progress-manager";
 
 // ES 모듈에서 __dirname 대체
 const __filename = fileURLToPath(import.meta.url);
@@ -49,6 +51,36 @@ async function updateOrderStatusAfterEmail(orderNumber: string): Promise<void> {
     })
     .where(eq(purchaseOrders.orderNumber, orderNumber));
 }
+
+// SSE endpoint for order creation progress tracking
+router.get("/orders/progress/:sessionId", (req, res) => {
+  const { sessionId } = req.params;
+  
+  console.log(`📡 SSE 연결 시작 - 세션: ${sessionId}`);
+  
+  // Set SSE headers
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+    'Access-Control-Allow-Origin': '*'
+  });
+  
+  // Register client
+  progressManager.addClient(sessionId, res);
+  
+  // Send existing progress
+  const existingProgress = progressManager.getSessionProgress(sessionId);
+  existingProgress.forEach(update => {
+    res.write(`data: ${JSON.stringify(update)}\n\n`);
+  });
+  
+  // Handle client disconnect
+  req.on('close', () => {
+    console.log(`📡 SSE 연결 종료 - 세션: ${sessionId}`);
+    progressManager.removeClient(sessionId, res);
+  });
+});
 
 // Get all orders with filters and pagination
 router.get("/orders", async (req, res) => {
@@ -230,7 +262,92 @@ router.get("/orders/:id", async (req, res) => {
   }
 });
 
-// Create new order
+// Create new order with unified service
+router.post("/orders/create-unified", requireAuth, upload.array('attachments'), async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: "User not authenticated" });
+    }
+
+    console.log("🚀 통합 발주서 생성 요청:", {
+      body: req.body,
+      files: req.files?.map(f => ({ 
+        originalname: f.originalname, 
+        filename: f.filename,
+        size: f.size 
+      }))
+    });
+
+    // Parse items from form data
+    let items = [];
+    try {
+      items = JSON.parse(req.body.items || "[]");
+    } catch (parseError) {
+      console.error("아이템 파싱 실패:", parseError);
+      return res.status(400).json({ message: "Invalid items data" });
+    }
+
+    // 세션 ID 생성 (진행상황 추적용)
+    const sessionId = `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    // 통합 서비스용 데이터 준비
+    const orderCreationData = {
+      method: 'manual' as const,
+      projectId: parseInt(req.body.projectId),
+      vendorId: parseInt(req.body.vendorId),
+      orderDate: req.body.orderDate,
+      deliveryDate: req.body.deliveryDate || null,
+      notes: req.body.notes || null,
+      userId,
+      items: items.map((item: any) => ({
+        itemId: item.itemId ? parseInt(item.itemId) : undefined,
+        itemName: item.itemName,
+        specification: item.specification || null,
+        majorCategory: item.majorCategory || null,
+        middleCategory: item.middleCategory || null,
+        minorCategory: item.minorCategory || null,
+        quantity: parseFloat(item.quantity),
+        unitPrice: parseFloat(item.unitPrice),
+        notes: item.notes || null,
+      })),
+      attachedFiles: req.files as Express.Multer.File[],
+      customFields: req.body.customFields ? JSON.parse(req.body.customFields) : undefined,
+    };
+
+    // 통합 서비스로 발주서 생성
+    const unifiedService = new UnifiedOrderCreationService();
+    const result = await unifiedService.createOrder(orderCreationData, sessionId);
+
+    if (result.success) {
+      res.json({
+        success: true,
+        id: result.orderId,
+        orderNumber: result.orderNumber,
+        pdfGenerated: result.pdfGenerated,
+        attachmentId: result.attachmentId,
+        sessionId, // 진행상황 추적용
+        message: "발주서가 성공적으로 생성되었습니다."
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        error: result.error,
+        message: "발주서 생성에 실패했습니다."
+      });
+    }
+
+  } catch (error) {
+    console.error("통합 발주서 생성 오류:", error);
+    res.status(500).json({ 
+      success: false,
+      message: "발주서 생성 중 오류가 발생했습니다.",
+      error: error.message 
+    });
+  }
+});
+
+// Create new order (기존 방식 - 하위 호환성)
 router.post("/orders", requireAuth, upload.array('attachments'), async (req, res) => {
   try {
     const userId = req.user?.id;
