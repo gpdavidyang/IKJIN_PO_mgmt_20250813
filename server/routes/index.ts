@@ -45,6 +45,7 @@ import healthRoutes from "./health";
 import debugRoutes from "./debug";
 import attachmentsRoutes from "./attachments";
 import koreanFontRoutes from "./korean-font-status";
+import fontDebugRoutes from "./font-debug";
 
 const router = Router();
 
@@ -90,5 +91,6 @@ router.use("/api", attachmentsRoutes); // Attachment download routes
 router.use("/api", healthRoutes); // Health check routes
 router.use("/api", debugRoutes); // Debug routes
 router.use("/api/korean-font", koreanFontRoutes); // Korean font support status
+router.use("/api/debug", fontDebugRoutes); // Font debugging utilities
 
 export default router;

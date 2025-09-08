@@ -1476,202 +1476,130 @@ router.get("/orders/:id/download-pdf", async (req, res) => {
   }
 });
 
-// 이메일 발송 (PDF만)
+// 이메일 발송 (POEmailService 사용으로 완전히 재작성)
 
 router.post("/orders/send-email", requireAuth, async (req, res) => {
   try {
     const { 
       orderData, 
-      pdfUrl, 
-      excelUrl, 
-      recipients, 
-      emailSettings, 
       to, 
       cc, 
-      bcc, 
       subject, 
       message, 
-      attachPdf = true, 
-      attachExcel = false,
-      selectedAttachments = [], // NEW: Handle selectedAttachments from frontend
-      selectedAttachmentIds = [] // Also accept selectedAttachmentIds from frontend
+      selectedAttachmentIds = []
     } = req.body;
     
-    console.log('📧 이메일 발송 요청:', { 
+    console.log('📧 이메일 발송 요청 (POEmailService 사용):', { 
       orderData, 
-      pdfUrl, 
-      excelUrl, 
-      recipients, 
       to, 
       cc, 
-      bcc, 
       subject, 
-      message, 
-      attachPdf, 
-      attachExcel,
-      selectedAttachments,
-      selectedAttachmentIds 
+      message: message ? '[메시지 있음]' : '[메시지 없음]',
+      selectedAttachmentIds
     });
     
-    // recipients 또는 to 필드 중 하나를 사용
-    const recipientEmails = recipients || to;
-    if (!recipientEmails || recipientEmails.length === 0) {
+    // 수신자 검증
+    if (!to || to.length === 0) {
       return res.status(400).json({ error: '수신자가 필요합니다.' });
     }
 
-    // 기본 이메일 발송 옵션
-    const emailOptions = {
-      to: recipientEmails,
-      cc: cc || emailSettings?.cc,
-      subject: subject || emailSettings?.subject || `발주서 - ${orderData.orderNumber || ''}`,
-      orderNumber: orderData.orderNumber,
-      vendorName: orderData.vendorName,
-      totalAmount: orderData.totalAmount,
-      additionalMessage: message || emailSettings?.message
-    };
+    // 주문 정보 검증
+    if (!orderData || !orderData.orderNumber) {
+      return res.status(400).json({ error: '주문 정보가 필요합니다.' });
+    }
 
-    // 첨부파일 처리
-    let attachments = [];
-    let attachmentsList = [];
+    // 첨부파일 처리: selectedAttachmentIds에서 Excel 파일 찾기
+    let excelFilePath = '';
+    let additionalAttachments: any[] = [];
     
-    // PDF 파일 첨부 (attachPdf가 true이고 pdfUrl이 있으면)
-    if (attachPdf && pdfUrl) {
-      // Check if pdfUrl is an attachment API URL or direct file path
-      if (pdfUrl.includes('/api/attachments/') && pdfUrl.includes('/download')) {
-        // Extract attachment ID from URL like /api/attachments/123/download
-        const attachmentIdMatch = pdfUrl.match(/\/api\/attachments\/(\d+)\/download/);
-        if (attachmentIdMatch) {
-          const attachmentId = parseInt(attachmentIdMatch[1]);
-          console.log('📎 PDF 첨부 시도 (DB에서):', attachmentId);
-          
-          try {
-            // Fetch attachment from database
-            const [attachment] = await database.db
-              .select({
-                id: attachmentsTable.id,
-                originalName: attachmentsTable.originalName,
-                filePath: attachmentsTable.filePath,
-                mimeType: attachmentsTable.mimeType,
-                fileData: attachmentsTable.fileData
-              })
-              .from(attachmentsTable)
-              .where(eq(attachmentsTable.id, attachmentId));
-              
-            if (attachment) {
+    if (selectedAttachmentIds && selectedAttachmentIds.length > 0) {
+      console.log('📎 선택된 첨부파일 처리:', selectedAttachmentIds);
+      
+      for (const attachmentId of selectedAttachmentIds) {
+        try {
+          const [attachment] = await database.db
+            .select({
+              id: attachmentsTable.id,
+              originalName: attachmentsTable.originalName,
+              filePath: attachmentsTable.filePath,
+              mimeType: attachmentsTable.mimeType,
+              fileData: attachmentsTable.fileData
+            })
+            .from(attachmentsTable)
+            .where(eq(attachmentsTable.id, attachmentId));
+            
+          if (attachment) {
+            const isExcelFile = attachment.mimeType?.includes('excel') || 
+                              attachment.mimeType?.includes('spreadsheet') ||
+                              attachment.originalName?.toLowerCase().endsWith('.xlsx') ||
+                              attachment.originalName?.toLowerCase().endsWith('.xls');
+                              
+            if (isExcelFile && !excelFilePath) {
+              // 첫 번째 Excel 파일을 주 첨부파일로 사용
               if (attachment.fileData) {
-                // Use Base64 data from database
-                attachments.push({
-                  filename: attachment.originalName || `발주서_${orderData.orderNumber || Date.now()}.pdf`,
-                  content: Buffer.from(attachment.fileData, 'base64'),
-                  contentType: attachment.mimeType || 'application/pdf'
-                });
-                attachmentsList.push('발주서.pdf (PDF 파일)');
-                console.log('✅ PDF 첨부 성공 (DB Base64)');
+                // Base64 데이터를 임시 파일로 저장
+                const tempDir = path.join(__dirname, '../../uploads');
+                const tempFilePath = path.join(tempDir, `temp-${Date.now()}-${attachment.originalName}`);
+                
+                if (!fs.existsSync(tempDir)) {
+                  fs.mkdirSync(tempDir, { recursive: true });
+                }
+                
+                fs.writeFileSync(tempFilePath, Buffer.from(attachment.fileData, 'base64'));
+                excelFilePath = tempFilePath;
+                console.log('✅ Excel 파일 임시 저장:', tempFilePath);
               } else if (attachment.filePath && fs.existsSync(attachment.filePath)) {
-                // Use file path
-                attachments.push({
-                  filename: attachment.originalName || `발주서_${orderData.orderNumber || Date.now()}.pdf`,
-                  path: attachment.filePath,
-                  contentType: attachment.mimeType || 'application/pdf'
-                });
-                attachmentsList.push('발주서.pdf (PDF 파일)');
-                console.log('✅ PDF 첨부 성공 (파일 경로)');
-              } else {
-                console.log('❌ PDF 첨부 실패: 파일 데이터 없음');
+                excelFilePath = attachment.filePath;
+                console.log('✅ Excel 파일 경로 사용:', attachment.filePath);
               }
             } else {
-              console.log('❌ PDF 첨부 실패: 첨부파일 정보 없음');
+              // Excel이 아닌 파일들은 추가 첨부파일로 처리
+              if (attachment.fileData) {
+                additionalAttachments.push({
+                  filename: attachment.originalName,
+                  content: Buffer.from(attachment.fileData, 'base64'),
+                  contentType: attachment.mimeType || 'application/octet-stream'
+                });
+                console.log('✅ 추가 첨부파일 추가 (Base64):', attachment.originalName);
+              } else if (attachment.filePath && fs.existsSync(attachment.filePath)) {
+                additionalAttachments.push({
+                  filename: attachment.originalName,
+                  path: attachment.filePath,
+                  contentType: attachment.mimeType || 'application/octet-stream'
+                });
+                console.log('✅ 추가 첨부파일 추가 (파일 경로):', attachment.originalName);
+              }
             }
-          } catch (error) {
-            console.error('❌ PDF 첨부 오류:', error);
           }
-        }
-      } else {
-        // Handle direct file path (legacy support)
-        const pdfPath = path.join(__dirname, '../../', pdfUrl.replace(/^\//, ''));
-        console.log('📎 PDF 첨부 시도 (직접 경로):', pdfPath);
-        if (fs.existsSync(pdfPath)) {
-          attachments.push({
-            filename: `발주서_${orderData.orderNumber || Date.now()}.pdf`,
-            path: pdfPath,
-            contentType: 'application/pdf'
-          });
-          attachmentsList.push('발주서.pdf (PDF 파일)');
-          console.log('✅ PDF 첨부 성공 (직접 경로)');
-        } else {
-          console.log('❌ PDF 파일을 찾을 수 없음:', pdfPath);
+        } catch (error) {
+          console.error('❌ 첨부파일 처리 오류, ID:', attachmentId, error);
         }
       }
     }
-    
-    // Excel 파일 첨부 (attachExcel이 true이고 excelUrl이 있으면)
-    if (attachExcel && excelUrl) {
-      // Check if excelUrl is an attachment API URL or direct file path
-      if (excelUrl.includes('/api/attachments/') && excelUrl.includes('/download')) {
-        // Extract attachment ID from URL like /api/attachments/123/download
-        const attachmentIdMatch = excelUrl.match(/\/api\/attachments\/(\d+)\/download/);
-        if (attachmentIdMatch) {
-          const attachmentId = parseInt(attachmentIdMatch[1]);
-          console.log('📎 Excel 첨부 시도 (DB에서):', attachmentId);
-          
-          try {
-            // Fetch attachment from database
-            const [attachment] = await database.db
-              .select({
-                id: attachmentsTable.id,
-                originalName: attachmentsTable.originalName,
-                filePath: attachmentsTable.filePath,
-                mimeType: attachmentsTable.mimeType,
-                fileData: attachmentsTable.fileData
-              })
-              .from(attachmentsTable)
-              .where(eq(attachmentsTable.id, attachmentId));
-              
-            if (attachment) {
-              if (attachment.fileData) {
-                // Use Base64 data from database
-                attachments.push({
-                  filename: attachment.originalName || `발주서_${orderData.orderNumber || Date.now()}.xlsx`,
-                  content: Buffer.from(attachment.fileData, 'base64'),
-                  contentType: attachment.mimeType || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-                });
-                attachmentsList.push('발주서.xlsx (Excel 파일)');
-                console.log('✅ Excel 첨부 성공 (DB Base64)');
-              } else if (attachment.filePath && fs.existsSync(attachment.filePath)) {
-                // Use file path
-                attachments.push({
-                  filename: attachment.originalName || `발주서_${orderData.orderNumber || Date.now()}.xlsx`,
-                  path: attachment.filePath,
-                  contentType: attachment.mimeType || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-                });
-                attachmentsList.push('발주서.xlsx (Excel 파일)');
-                console.log('✅ Excel 첨부 성공 (파일 경로)');
-              } else {
-                console.log('❌ Excel 첨부 실패: 파일 데이터 없음');
-              }
-            } else {
-              console.log('❌ Excel 첨부 실패: 첨부파일 정보 없음');
-            }
-          } catch (error) {
-            console.error('❌ Excel 첨부 오류:', error);
-          }
-        }
-      } else {
-        // Handle direct file path (legacy support)
-        const excelPath = path.join(__dirname, '../../', excelUrl.replace(/^\//, ''));
-        console.log('📎 Excel 첨부 시도 (직접 경로):', excelPath);
-        if (fs.existsSync(excelPath)) {
-          attachments.push({
-            filename: `발주서_${orderData.orderNumber || Date.now()}.xlsx`,
-            path: excelPath,
-            contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-          });
-          attachmentsList.push('발주서.xlsx (Excel 파일)');
-          console.log('✅ Excel 첨부 성공 (직접 경로)');
-        } else {
-          console.log('❌ Excel 파일을 찾을 수 없음:', excelPath);
-        }
+
+    // Excel 파일이 없으면 기본 빈 Excel 파일 생성
+    if (!excelFilePath) {
+      console.log('📎 Excel 파일이 없어 기본 파일 생성');
+      const tempDir = path.join(__dirname, '../../uploads');
+      const tempFilePath = path.join(tempDir, `default-po-${Date.now()}.xlsx`);
+      
+      if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir, { recursive: true });
       }
+      
+      // 기본 Excel 파일 생성
+      const workbook = XLSX.utils.book_new();
+      const worksheet = XLSX.utils.json_to_sheet([{
+        '발주번호': orderData.orderNumber,
+        '거래처': orderData.vendorName,
+        '발주금액': orderData.totalAmount,
+        '발주일자': orderData.orderDate
+      }]);
+      XLSX.utils.book_append_sheet(workbook, worksheet, '발주서');
+      XLSX.writeFile(workbook, tempFilePath);
+      
+      excelFilePath = tempFilePath;
+      console.log('✅ 기본 Excel 파일 생성:', tempFilePath);
     }
 
     // NEW: Process selectedAttachments/selectedAttachmentIds from frontend modal

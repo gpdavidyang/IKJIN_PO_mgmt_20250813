@@ -119,39 +119,33 @@ export const getQueryFn: <T>(options: {
 // Use the optimized query client with enhanced defaults
 export const queryClient = createOptimizedQueryClient();
 
-// EMERGENCY ANTI-LOOP CONFIGURATION: Override defaults with aggressive caching
+// Configure proper error handling for authentication failures
 queryClient.setDefaultOptions({
   queries: {
     queryFn: getQueryFn({ on401: "returnNull" }), // Return null for 401 instead of throwing
-    retry: false, // EMERGENCY: Disable all retries to prevent loops
-    staleTime: Infinity, // EMERGENCY: Never consider data stale to prevent refetches
-    gcTime: Infinity, // EMERGENCY: Keep cache forever to prevent re-requests
+    retry: (failureCount, error: any) => {
+      // Don't retry on 401 or 403 errors (authentication/authorization failures)
+      if (error?.status === 401 || error?.status === 403) {
+        return false;
+      }
+      // Retry other errors up to 2 times
+      return failureCount < 2;
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 10, // 10 minutes
     refetchOnWindowFocus: false, // Prevent excessive refetching
-    refetchOnMount: false, // EMERGENCY: Never refetch on mount
-    refetchOnReconnect: false, // Never refetch on reconnect
-    refetchInterval: false, // Disable automatic polling
-    // EMERGENCY: Network prioritization to use cache first
-    networkMode: 'offlineFirst',
+    refetchOnMount: true, // Allow refetch on mount for fresh data
+    refetchOnReconnect: true, // Refetch when reconnecting
+    refetchInterval: false, // Disable automatic polling by default
   },
   mutations: {
-    // EMERGENCY: Disable mutation retry to prevent cascades
-    retry: false,
-    // EMERGENCY: Disable automatic query invalidation
-    onSuccess: () => {
-      // Do nothing - prevent automatic invalidations that cause loops
-    },
-  },
-  // EMERGENCY: Suppress ALL query errors to prevent console spam and loops
-  defaultOptions: {
-    queries: {
-      onError: () => {
-        // EMERGENCY: Complete error suppression to prevent cascading failures
-      },
-    },
-    mutations: {
-      onError: () => {
-        // EMERGENCY: Complete error suppression to prevent cascading failures  
-      },
+    retry: (failureCount, error: any) => {
+      // Don't retry on 401 or 403 errors
+      if (error?.status === 401 || error?.status === 403) {
+        return false;
+      }
+      // Retry other errors once
+      return failureCount < 1;
     },
   },
 });

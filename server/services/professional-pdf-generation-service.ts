@@ -1150,6 +1150,10 @@ export class ProfessionalPDFGenerationService {
         // === 한글 폰트 관리자를 통한 최적화된 폰트 로딩 ===
         console.log('📝 [ProfessionalPDF] PDFKit으로 PDF 생성 (한글 폰트 최적화 로딩)');
         
+        // 폰트 문제 진단
+        const fontDiagnosis = fontManager.diagnoseFontIssues();
+        console.log('🔍 [ProfessionalPDF] 폰트 진단 결과:', JSON.stringify(fontDiagnosis, null, 2));
+        
         let hasKoreanFont = false;
         let selectedFont: FontInfo | null = null;
         
@@ -1187,6 +1191,7 @@ export class ProfessionalPDFGenerationService {
           }
         } catch (fontError) {
           console.warn('⚠️ [ProfessionalPDF] 한글 폰트 등록 실패:', fontError);
+          console.warn('⚠️ [ProfessionalPDF] 폰트 진단:', JSON.stringify(fontDiagnosis, null, 2));
           
           // Fallback: 기본 폰트 사용
           doc.font('Helvetica');

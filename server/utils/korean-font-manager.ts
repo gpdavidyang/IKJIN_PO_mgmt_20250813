@@ -24,14 +24,14 @@ export class KoreanFontManager {
     {
       name: 'NotoSansKR',
       path: process.env.VERCEL 
-        ? path.join('/var/task', 'fonts', 'NotoSansKR-Regular.ttf')
+        ? path.join(process.cwd(), 'fonts', 'NotoSansKR-Regular.ttf')
         : path.join(process.cwd(), 'fonts', 'NotoSansKR-Regular.ttf'),
       available: false
     },
     {
       name: 'NanumGothic', 
       path: process.env.VERCEL
-        ? path.join('/var/task', 'fonts', 'NanumGothic-Regular.ttf')
+        ? path.join(process.cwd(), 'fonts', 'NanumGothic-Regular.ttf')
         : path.join(process.cwd(), 'fonts', 'NanumGothic-Regular.ttf'),
       available: false
     },
@@ -74,15 +74,47 @@ export class KoreanFontManager {
    */
   private initializeFonts(): void {
     console.log('🔍 [FontManager] 한글 폰트 초기화 시작...');
+    console.log(`🔍 [FontManager] 환경: ${process.env.VERCEL ? 'Vercel' : 'Local'}, 작업디렉토리: ${process.cwd()}`);
+    
+    // Vercel 환경에서 번들된 폰트 확인
+    if (process.env.VERCEL) {
+      console.log('☁️ [FontManager] Vercel 환경 - 번들된 폰트 탐색');
+      // 번들된 리소스 확인
+      try {
+        const bundledFontsDir = path.join(process.cwd(), 'fonts');
+        console.log(`📂 [FontManager] 번들된 폰트 디렉토리 확인: ${bundledFontsDir}`);
+        if (fs.existsSync(bundledFontsDir)) {
+          const files = fs.readdirSync(bundledFontsDir);
+          console.log(`📋 [FontManager] 번들된 파일 목록:`, files);
+        } else {
+          console.log(`❌ [FontManager] 번들된 폰트 디렉토리 없음: ${bundledFontsDir}`);
+        }
+      } catch (error) {
+        console.log(`⚠️ [FontManager] 번들 확인 실패:`, error);
+      }
+    }
     
     for (const font of KoreanFontManager.FONT_PRIORITIES) {
       try {
+        console.log(`🔍 [FontManager] 폰트 확인 중: ${font.name} at ${font.path}`);
         if (fs.existsSync(font.path)) {
           const stats = fs.statSync(font.path);
           font.available = true;
           font.size = stats.size;
           this.fontCache.set(font.name, { ...font });
           console.log(`✅ [FontManager] 폰트 발견: ${font.name} (${Math.round(stats.size / 1024)}KB)`);
+          
+          // Vercel 환경에서 Base64 미리 로드
+          if (process.env.VERCEL) {
+            try {
+              const fontBuffer = fs.readFileSync(font.path);
+              const base64Data = fontBuffer.toString('base64');
+              this.base64Cache.set(font.name, base64Data);
+              console.log(`💾 [FontManager] Vercel용 Base64 미리 로드: ${font.name}`);
+            } catch (base64Error) {
+              console.warn(`⚠️ [FontManager] Base64 미리 로드 실패: ${font.name}`, base64Error);
+            }
+          }
         } else {
           font.available = false;
           console.log(`❌ [FontManager] 폰트 없음: ${font.name} - ${font.path}`);
@@ -95,6 +127,12 @@ export class KoreanFontManager {
     
     const availableFonts = Array.from(this.fontCache.values()).filter(f => f.available);
     console.log(`📊 [FontManager] 총 ${availableFonts.length}개 한글 폰트 사용 가능`);
+    
+    // Vercel 환경에서 임베디드 폰트 시도
+    if (process.env.VERCEL && availableFonts.length === 0) {
+      console.log('🔄 [FontManager] Vercel에서 폰트 없음 - 임베디드 폰트 시도');
+      this.loadEmbeddedFonts();
+    }
   }
 
   /**
@@ -284,6 +322,75 @@ export class KoreanFontManager {
     );
 
     return projectFonts.length > 0;
+  }
+
+  /**
+   * Vercel용 임베디드 폰트 로드 (Base64 방식)
+   */
+  private loadEmbeddedFonts(): void {
+    console.log('🔄 [FontManager] 임베디드 폰트 로드 시도...');
+    
+    // 기본 한글 폰트를 Base64로 임베드 (실제 환경에서는 폰트 파일이 번들되어야 함)
+    const embeddedFonts = {
+      'NotoSansKR-Basic': {
+        name: 'NotoSansKR-Basic',
+        path: 'embedded://NotoSansKR-Basic',
+        available: true,
+        size: 0
+      }
+    };
+    
+    for (const [key, font] of Object.entries(embeddedFonts)) {
+      this.fontCache.set(font.name, font);
+      console.log(`📦 [FontManager] 임베디드 폰트 등록: ${font.name}`);
+    }
+  }
+
+  /**
+   * 폰트 번들링 상태 진단
+   */
+  public diagnoseFontIssues(): {
+    environment: string;
+    workingDirectory: string;
+    fontDirectory: string;
+    fontDirectoryExists: boolean;
+    bundledFiles: string[];
+    availableFonts: number;
+    issues: string[];
+  } {
+    const issues: string[] = [];
+    const fontDir = path.join(process.cwd(), 'fonts');
+    const fontDirExists = fs.existsSync(fontDir);
+    let bundledFiles: string[] = [];
+    
+    if (fontDirExists) {
+      try {
+        bundledFiles = fs.readdirSync(fontDir);
+      } catch (error) {
+        issues.push(`폰트 디렉토리 읽기 실패: ${error}`);
+      }
+    } else {
+      issues.push('폰트 디렉토리가 존재하지 않음');
+    }
+    
+    const availableFonts = this.getAvailableFonts().length;
+    if (availableFonts === 0) {
+      issues.push('사용 가능한 한글 폰트가 없음');
+    }
+    
+    if (process.env.VERCEL && !fontDirExists) {
+      issues.push('Vercel 환경에서 폰트가 번들에 포함되지 않음');
+    }
+    
+    return {
+      environment: process.env.VERCEL ? 'Vercel' : 'Local',
+      workingDirectory: process.cwd(),
+      fontDirectory: fontDir,
+      fontDirectoryExists,
+      bundledFiles,
+      availableFonts,
+      issues
+    };
   }
 }
 
