@@ -46,6 +46,7 @@ import debugRoutes from "./debug";
 import attachmentsRoutes from "./attachments";
 import koreanFontRoutes from "./korean-font-status";
 import fontDebugRoutes from "./font-debug";
+import ordersEmailFixedRoutes from "./orders-email-fixed";
 
 const router = Router();
 
@@ -53,6 +54,7 @@ const router = Router();
 router.use("/api", authRoutes);
 router.use("/api", projectRoutes);
 router.use("/api", orderRoutes);
+router.use("/api", ordersEmailFixedRoutes); // Fixed email route - overrides broken send-email in orders.ts
 router.use("/api", vendorRoutes);
 router.use("/api", itemRoutes);
 router.use("/api", dashboardRoutes);

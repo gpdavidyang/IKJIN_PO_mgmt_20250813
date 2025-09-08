@@ -2014,12 +2014,50 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
         const info = await transporter.sendMail(mailOptions);
         console.log('📧 이메일 발송 성공:', info.messageId);
         
-        // 이메일 발송 성공 시 발주서 상태를 'sent'로 업데이트
+        // 이메일 발송 성공 시 발주서 상태를 'sent'로 업데이트 및 이메일 기록 저장
         if (orderData && orderData.orderNumber) {
           try {
             console.log(`🔄 발주서 상태 업데이트 시도: ${orderData.orderNumber} → sent`);
             await updateOrderStatusAfterEmail(orderData.orderNumber);
             console.log(`✅ 발주서 상태 업데이트 완료: ${orderData.orderNumber} → sent`);
+            
+            // 이메일 발송 기록 저장
+            if (orderData.orderId) {
+              try {
+                const { emailSendHistory } = await import('@shared/schema');
+                
+                // 수신자 목록 정리
+                const recipients = Array.isArray(emailOptions.to) 
+                  ? emailOptions.to 
+                  : emailOptions.to.split(',').map((e: string) => e.trim());
+                
+                const ccRecipients = emailOptions.cc 
+                  ? (Array.isArray(emailOptions.cc) 
+                      ? emailOptions.cc 
+                      : emailOptions.cc.split(',').map((e: string) => e.trim())) 
+                  : [];
+                
+                await database.db.insert(emailSendHistory).values({
+                  orderId: orderData.orderId,
+                  senderUserId: req.user?.id || 0,
+                  recipients: recipients,
+                  cc: ccRecipients,
+                  bcc: [],
+                  subject: mailOptions.subject,
+                  message: message || emailOptions.additionalMessage || '',
+                  attachments: attachmentsList,
+                  status: 'sent',
+                  sentAt: new Date(),
+                  messageId: info.messageId,
+                  error: null
+                });
+                
+                console.log(`📧 이메일 발송 기록 저장 완료: 발주번호 ${orderData.orderNumber}`);
+              } catch (historyError) {
+                console.error(`❌ 이메일 기록 저장 실패:`, historyError);
+                // 기록 저장 실패는 이메일 발송 성공에 영향을 주지 않음
+              }
+            }
           } catch (updateError) {
             console.error(`❌ 발주서 상태 업데이트 실패: ${orderData.orderNumber}`, updateError);
             // 상태 업데이트 실패는 이메일 발송 성공에 영향을 주지 않음
@@ -2031,6 +2069,43 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
         res.json({ success: true, messageId: info.messageId });
       } catch (emailError) {
         console.error('📧 이메일 발송 실패:', emailError);
+        
+        // 이메일 발송 실패 시에도 기록 저장
+        if (orderData && orderData.orderId) {
+          try {
+            const { emailSendHistory } = await import('@shared/schema');
+            
+            const recipients = Array.isArray(emailOptions.to) 
+              ? emailOptions.to 
+              : emailOptions.to.split(',').map((e: string) => e.trim());
+            
+            const ccRecipients = emailOptions.cc 
+              ? (Array.isArray(emailOptions.cc) 
+                  ? emailOptions.cc 
+                  : emailOptions.cc.split(',').map((e: string) => e.trim())) 
+              : [];
+            
+            await database.db.insert(emailSendHistory).values({
+              orderId: orderData.orderId,
+              senderUserId: req.user?.id || 0,
+              recipients: recipients,
+              cc: ccRecipients,
+              bcc: [],
+              subject: mailOptions.subject,
+              message: message || emailOptions.additionalMessage || '',
+              attachments: attachmentsList,
+              status: 'failed',
+              sentAt: new Date(),
+              messageId: null,
+              error: emailError instanceof Error ? emailError.message : 'Unknown error'
+            });
+            
+            console.log(`📧 이메일 발송 실패 기록 저장 완료: 발주번호 ${orderData.orderNumber}`);
+          } catch (historyError) {
+            console.error(`❌ 이메일 실패 기록 저장 실패:`, historyError);
+          }
+        }
+        
         res.status(500).json({ 
           error: '이메일 발송 실패',
           details: emailError instanceof Error ? emailError.message : 'Unknown error'
