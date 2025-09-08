@@ -516,7 +516,8 @@ export class ImportExportService {
       vendorId: purchaseOrders.vendorId,
       orderDate: purchaseOrders.orderDate,
       deliveryDate: purchaseOrders.deliveryDate,
-      status: purchaseOrders.status,
+      orderStatus: purchaseOrders.orderStatus,
+      approvalStatus: purchaseOrders.approvalStatus,
       notes: purchaseOrders.notes,
       itemName: purchaseOrderItems.itemName,
       specification: purchaseOrderItems.specification,
@@ -533,13 +534,18 @@ export class ImportExportService {
     .leftJoin(purchaseOrderItems, eq(purchaseOrders.id, purchaseOrderItems.orderId))
     .where(eq(purchaseOrders.isActive, true));
 
-    const statusMap: Record<string, string> = {
-      'pending': '대기',
-      'approved': '승인',
-      'sent': '발송',
-      'received': '수신확인',
-      'delivered': '납품완료',
-      'cancelled': '취소'
+    const orderStatusMap: Record<string, string> = {
+      'draft': '임시저장',
+      'created': '발주생성',
+      'sent': '발주완료',
+      'delivered': '납품완료'
+    };
+    
+    const approvalStatusMap: Record<string, string> = {
+      'not_required': '승인불필요',
+      'pending': '승인대기',
+      'approved': '승인완료',
+      'rejected': '반려'
     };
 
     const exportData = orderData.map(order => ({
@@ -548,7 +554,8 @@ export class ImportExportService {
       '거래처ID': order.vendorId || '',
       '발주일자': order.orderDate?.toISOString().split('T')[0] || '',
       '납기일자': order.deliveryDate?.toISOString().split('T')[0] || '',
-      '상태': statusMap[order.status] || order.status,
+      '발주상태': orderStatusMap[order.orderStatus] || order.orderStatus,
+      '승인상태': approvalStatusMap[order.approvalStatus] || order.approvalStatus,
       '품목명': order.itemName || '',
       '규격': order.specification || '',
       '단위': order.unit || '',

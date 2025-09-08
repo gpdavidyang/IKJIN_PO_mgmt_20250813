@@ -6728,6 +6728,28 @@ async function getAuditSettings() {
     };
   }
 }
+function maskSensitiveData(data) {
+  if (!data) return data;
+  const sensitiveFields = ["password", "token", "secret", "apiKey", "email", "phone"];
+  if (typeof data === "string") {
+    return data;
+  }
+  if (Array.isArray(data)) {
+    return data.map((item) => maskSensitiveData(item));
+  }
+  if (typeof data === "object") {
+    const masked = { ...data };
+    for (const key of Object.keys(masked)) {
+      if (sensitiveFields.some((field) => key.toLowerCase().includes(field))) {
+        masked[key] = "***MASKED***";
+      } else if (typeof masked[key] === "object") {
+        masked[key] = maskSensitiveData(masked[key]);
+      }
+    }
+    return masked;
+  }
+  return data;
+}
 async function logAuditEvent(eventType, eventCategory, details) {
   try {
     const settings = await getAuditSettings();
@@ -6742,10 +6764,11 @@ async function logAuditEvent(eventType, eventCategory, details) {
       eventCategory,
       entityType: details.entityType,
       entityId: details.entityId,
+      tableName: details.tableName,
       action: details.action,
       additionalDetails: details.additionalDetails ? JSON.stringify(details.additionalDetails) : null,
-      oldData: details.oldValue ? JSON.stringify(details.oldValue) : null,
-      newData: details.newValue ? JSON.stringify(details.newValue) : null,
+      oldData: details.oldValue ? JSON.stringify(maskSensitiveData(details.oldValue)) : null,
+      newData: details.newValue ? JSON.stringify(maskSensitiveData(details.newValue)) : null,
       ipAddress: details.ipAddress,
       userAgent: details.userAgent,
       sessionId: details.sessionId
@@ -13352,6 +13375,25 @@ router3.post("/orders", requireAuth, upload.array("attachments"), async (req, re
     console.log("\u{1F527}\u{1F527}\u{1F527} ORDERS.TS - Prepared order data with status:", initialStatus);
     const order = await storage.createPurchaseOrder(orderData);
     console.log("\u{1F527}\u{1F527}\u{1F527} ORDERS.TS - Created order:", order);
+    await logAuditEvent("data_create", "data", {
+      userId: req.user.id,
+      userName: req.user.name,
+      userRole: req.user.role,
+      entityType: "purchase_order",
+      entityId: String(order.id),
+      tableName: "purchase_orders",
+      action: `\uBC1C\uC8FC\uC11C \uC0DD\uC131 (${order.orderNumber})`,
+      newValue: order,
+      additionalDetails: {
+        totalAmount,
+        itemsCount: items3.length,
+        attachmentsCount: req.files?.length || 0,
+        initialStatus
+      },
+      ipAddress: req.ip,
+      userAgent: req.headers["user-agent"],
+      sessionId: req.sessionID
+    });
     if (req.files && req.files.length > 0) {
       const fs29 = __require("fs");
       const path28 = __require("path");
@@ -13602,14 +13644,44 @@ router3.put("/orders/:id", requireAuth, async (req, res) => {
   try {
     const orderId = parseInt(req.params.id, 10);
     const updateData = req.body;
-    const order = await storage.getPurchaseOrder(orderId);
-    if (!order) {
+    const user = req.user;
+    const oldOrder = await storage.getPurchaseOrder(orderId);
+    if (!oldOrder) {
       return res.status(404).json({ message: "Order not found" });
     }
-    if (order.status !== "draft" && order.userId !== req.user?.id) {
+    if (oldOrder.status !== "draft" && oldOrder.userId !== user.id) {
       return res.status(403).json({ message: "Cannot edit approved orders" });
     }
     const updatedOrder = await storage.updatePurchaseOrder(orderId, updateData);
+    const changes = [];
+    if (oldOrder.orderStatus !== updatedOrder.orderStatus) {
+      changes.push(`\uBC1C\uC8FC\uC0C1\uD0DC: ${oldOrder.orderStatus} \u2192 ${updatedOrder.orderStatus}`);
+    }
+    if (oldOrder.approvalStatus !== updatedOrder.approvalStatus) {
+      changes.push(`\uC2B9\uC778\uC0C1\uD0DC: ${oldOrder.approvalStatus} \u2192 ${updatedOrder.approvalStatus}`);
+    }
+    if (oldOrder.totalAmount !== updatedOrder.totalAmount) {
+      changes.push(`\uCD1D\uAE08\uC561: ${oldOrder.totalAmount?.toLocaleString() || "0"}\uC6D0 \u2192 ${updatedOrder.totalAmount?.toLocaleString() || "0"}\uC6D0`);
+    }
+    const actionDescription = changes.length > 0 ? `\uBC1C\uC8FC\uC11C ${updatedOrder.orderNumber} \uC218\uC815 (${changes.join(", ")})` : `\uBC1C\uC8FC\uC11C ${updatedOrder.orderNumber} \uC218\uC815`;
+    await logAuditEvent("data_update", "data", {
+      userId: user.id,
+      userName: user.name,
+      userRole: user.role,
+      entityType: "purchase_order",
+      entityId: String(orderId),
+      tableName: "purchase_orders",
+      action: actionDescription,
+      oldValue: oldOrder,
+      newValue: updatedOrder,
+      additionalDetails: {
+        changes,
+        updatedFields: Object.keys(updateData)
+      },
+      ipAddress: req.ip,
+      userAgent: req.headers["user-agent"],
+      sessionId: req.sessionID
+    });
     res.json(updatedOrder);
   } catch (error) {
     console.error("Error updating order:", error);
@@ -15714,6 +15786,108 @@ router3.post("/orders/send-email-with-files", requireAuth, upload.array("customF
     });
   }
 });
+router3.get("/:orderId/status-history", requireAuth, async (req, res) => {
+  try {
+    const orderId = parseInt(req.params.orderId);
+    if (isNaN(orderId)) {
+      return res.status(400).json({ error: "Invalid order ID" });
+    }
+    console.log(`\u{1F4CB} Fetching status history for order ${orderId}`);
+    const { orderHistory: orderHistory2, users: users3 } = schema_exports;
+    const history = await db2.select({
+      id: orderHistory2.id,
+      orderId: orderHistory2.orderId,
+      userId: orderHistory2.userId,
+      userName: users3.name,
+      userRole: users3.role,
+      userPosition: users3.position,
+      action: orderHistory2.action,
+      changes: orderHistory2.changes,
+      createdAt: orderHistory2.createdAt
+    }).from(orderHistory2).leftJoin(users3, eq12(orderHistory2.userId, users3.id)).where(eq12(orderHistory2.orderId, orderId)).orderBy(desc6(orderHistory2.createdAt));
+    console.log(`\u2705 Found ${history.length} history entries for order ${orderId}`);
+    const transformedHistory = history.map((entry) => ({
+      id: entry.id,
+      orderId: entry.orderId,
+      user: {
+        id: entry.userId,
+        name: entry.userName || "System",
+        role: entry.userRole,
+        position: entry.userPosition
+      },
+      action: entry.action,
+      actionText: getActionText(entry.action),
+      actionIcon: getActionIcon(entry.action),
+      actionColor: getActionColor(entry.action),
+      changes: entry.changes,
+      createdAt: entry.createdAt
+    }));
+    res.json(transformedHistory);
+  } catch (error) {
+    console.error("Error fetching order history:", error);
+    res.status(500).json({
+      error: "Failed to fetch order history",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+function getActionText(action) {
+  const actionTexts = {
+    "created": "\uBC1C\uC8FC\uC11C \uC0DD\uC131",
+    "updated": "\uBC1C\uC8FC\uC11C \uC218\uC815",
+    "approved": "\uBC1C\uC8FC\uC11C \uC2B9\uC778",
+    "approved_partial": "\uB2E8\uACC4\uBCC4 \uC2B9\uC778",
+    "approved_final": "\uCD5C\uC885 \uC2B9\uC778",
+    "rejected": "\uBC1C\uC8FC\uC11C \uBC18\uB824",
+    "sent": "\uBC1C\uC8FC\uC11C \uBC1C\uC1A1",
+    "email_sent": "\uC774\uBA54\uC77C \uBC1C\uC1A1",
+    "status_migrated": "\uC0C1\uD0DC \uB9C8\uC774\uADF8\uB808\uC774\uC158",
+    "pdf_generated": "PDF \uC0DD\uC131",
+    "attachment_added": "\uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00",
+    "attachment_removed": "\uCCA8\uBD80\uD30C\uC77C \uC0AD\uC81C",
+    "delivered": "\uB0A9\uD488 \uC644\uB8CC",
+    "cancelled": "\uBC1C\uC8FC \uCDE8\uC18C"
+  };
+  return actionTexts[action] || action;
+}
+function getActionIcon(action) {
+  const actionIcons = {
+    "created": "Plus",
+    "updated": "Edit",
+    "approved": "Check",
+    "approved_partial": "CheckCheck",
+    "approved_final": "CheckCircle",
+    "rejected": "X",
+    "sent": "Send",
+    "email_sent": "Mail",
+    "status_migrated": "RefreshCw",
+    "pdf_generated": "FileText",
+    "attachment_added": "Paperclip",
+    "attachment_removed": "Trash2",
+    "delivered": "Package",
+    "cancelled": "XCircle"
+  };
+  return actionIcons[action] || "Activity";
+}
+function getActionColor(action) {
+  const actionColors = {
+    "created": "gray",
+    "updated": "blue",
+    "approved": "green",
+    "approved_partial": "teal",
+    "approved_final": "green",
+    "rejected": "red",
+    "sent": "indigo",
+    "email_sent": "blue",
+    "status_migrated": "purple",
+    "pdf_generated": "cyan",
+    "attachment_added": "gray",
+    "attachment_removed": "orange",
+    "delivered": "green",
+    "cancelled": "red"
+  };
+  return actionColors[action] || "gray";
+}
 var orders_default = router3;
 
 // server/routes/vendors.ts
@@ -15769,6 +15943,23 @@ router4.post("/vendors", requireAuth, async (req, res) => {
       try {
         const vendor = await storage.createVendor(vendorData);
         console.log("\u2705 Vendor created successfully:", vendor);
+        await logAuditEvent("data_create", "data", {
+          userId: req.user?.id,
+          userName: req.user?.name,
+          userRole: req.user?.role,
+          entityType: "vendor",
+          entityId: String(vendor.id),
+          tableName: "vendors",
+          action: `\uAC70\uB798\uCC98 \uC0DD\uC131 (${vendor.name})`,
+          newValue: vendor,
+          additionalDetails: {
+            businessNumber: vendor.businessNumber,
+            contactPerson: vendor.contactPerson
+          },
+          ipAddress: req.ip,
+          userAgent: req.headers["user-agent"],
+          sessionId: req.sessionID
+        });
         return res.status(201).json(vendor);
       } catch (dbError) {
         attempts++;
@@ -15794,10 +15985,43 @@ router4.put("/vendors/:id", requireAuth, async (req, res) => {
     const id = parseInt(req.params.id);
     console.log("\u{1F50D} Vendor update request - ID:", id);
     console.log("\u{1F50D} Update data:", req.body);
+    const oldVendor = await storage.getVendor(id);
+    if (!oldVendor) {
+      return res.status(404).json({ message: "Vendor not found" });
+    }
     const updatedVendor = await storage.updateVendor(id, req.body);
     if (!updatedVendor) {
       return res.status(404).json({ message: "Vendor not found" });
     }
+    const changes = [];
+    if (oldVendor.name !== updatedVendor.name) {
+      changes.push(`\uBA85\uCE6D: ${oldVendor.name} \u2192 ${updatedVendor.name}`);
+    }
+    if (oldVendor.contactPerson !== updatedVendor.contactPerson) {
+      changes.push(`\uB2F4\uB2F9\uC790: ${oldVendor.contactPerson || ""} \u2192 ${updatedVendor.contactPerson || ""}`);
+    }
+    if (oldVendor.phone !== updatedVendor.phone) {
+      changes.push(`\uC5F0\uB77D\uCC98: ${oldVendor.phone || ""} \u2192 ${updatedVendor.phone || ""}`);
+    }
+    const actionDescription = changes.length > 0 ? `\uAC70\uB798\uCC98 ${updatedVendor.name} \uC218\uC815 (${changes.join(", ")})` : `\uAC70\uB798\uCC98 ${updatedVendor.name} \uC218\uC815`;
+    await logAuditEvent("data_update", "data", {
+      userId: req.user?.id,
+      userName: req.user?.name,
+      userRole: req.user?.role,
+      entityType: "vendor",
+      entityId: String(id),
+      tableName: "vendors",
+      action: actionDescription,
+      oldValue: oldVendor,
+      newValue: updatedVendor,
+      additionalDetails: {
+        changes,
+        updatedFields: Object.keys(req.body)
+      },
+      ipAddress: req.ip,
+      userAgent: req.headers["user-agent"],
+      sessionId: req.sessionID
+    });
     console.log("\u2705 Vendor updated successfully:", updatedVendor);
     res.json(updatedVendor);
   } catch (error) {
@@ -15808,7 +16032,28 @@ router4.put("/vendors/:id", requireAuth, async (req, res) => {
 router4.delete("/vendors/:id", requireAuth, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
+    const vendorToDelete = await storage.getVendor(id);
+    if (!vendorToDelete) {
+      return res.status(404).json({ message: "Vendor not found" });
+    }
     await storage.deleteVendor(id);
+    await logAuditEvent("data_delete", "data", {
+      userId: req.user?.id,
+      userName: req.user?.name,
+      userRole: req.user?.role,
+      entityType: "vendor",
+      entityId: String(id),
+      tableName: "vendors",
+      action: `\uAC70\uB798\uCC98 \uC0AD\uC81C (${vendorToDelete.name})`,
+      oldValue: vendorToDelete,
+      additionalDetails: {
+        deletedVendorName: vendorToDelete.name,
+        deletedVendorBusinessNumber: vendorToDelete.businessNumber
+      },
+      ipAddress: req.ip,
+      userAgent: req.headers["user-agent"],
+      sessionId: req.sessionID
+    });
     res.status(204).send();
   } catch (error) {
     console.error("Error deleting vendor:", error);
@@ -15964,30 +16209,103 @@ router5.get("/items/:id", async (req, res) => {
     res.status(500).json({ message: "Failed to fetch item" });
   }
 });
-router5.post("/items", async (req, res) => {
+router5.post("/items", requireAuth, async (req, res) => {
   try {
     const validatedData = insertItemSchema.parse(req.body);
     const item = await storage.createItem(validatedData);
+    await logAuditEvent("data_create", "data", {
+      userId: req.user?.id,
+      userName: req.user?.name,
+      userRole: req.user?.role,
+      entityType: "item",
+      entityId: String(item.id),
+      tableName: "items",
+      action: `\uD488\uBAA9 \uC0DD\uC131 (${item.name})`,
+      newValue: item,
+      additionalDetails: {
+        category: item.category,
+        code: item.code,
+        price: item.price
+      },
+      ipAddress: req.ip,
+      userAgent: req.headers["user-agent"],
+      sessionId: req.sessionID
+    });
     res.status(201).json(item);
   } catch (error) {
     console.error("Error creating item:", error);
     res.status(500).json({ message: "Failed to create item" });
   }
 });
-router5.put("/items/:id", async (req, res) => {
+router5.put("/items/:id", requireAuth, async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
+    const oldItem = await storage.getItem(id);
+    if (!oldItem) {
+      return res.status(404).json({ message: "Item not found" });
+    }
     const updatedItem = await storage.updateItem(id, req.body);
+    const changes = [];
+    if (oldItem.name !== updatedItem.name) {
+      changes.push(`\uD488\uBA85: ${oldItem.name} \u2192 ${updatedItem.name}`);
+    }
+    if (oldItem.price !== updatedItem.price) {
+      changes.push(`\uB2E8\uAC00: ${oldItem.price?.toLocaleString() || "0"}\uC6D0 \u2192 ${updatedItem.price?.toLocaleString() || "0"}\uC6D0`);
+    }
+    if (oldItem.category !== updatedItem.category) {
+      changes.push(`\uBD84\uB958: ${oldItem.category || ""} \u2192 ${updatedItem.category || ""}`);
+    }
+    const actionDescription = changes.length > 0 ? `\uD488\uBAA9 ${updatedItem.name} \uC218\uC815 (${changes.join(", ")})` : `\uD488\uBAA9 ${updatedItem.name} \uC218\uC815`;
+    await logAuditEvent("data_update", "data", {
+      userId: req.user?.id,
+      userName: req.user?.name,
+      userRole: req.user?.role,
+      entityType: "item",
+      entityId: String(id),
+      tableName: "items",
+      action: actionDescription,
+      oldValue: oldItem,
+      newValue: updatedItem,
+      additionalDetails: {
+        changes,
+        updatedFields: Object.keys(req.body)
+      },
+      ipAddress: req.ip,
+      userAgent: req.headers["user-agent"],
+      sessionId: req.sessionID
+    });
     res.json(updatedItem);
   } catch (error) {
     console.error("Error updating item:", error);
     res.status(500).json({ message: "Failed to update item" });
   }
 });
-router5.delete("/items/:id", async (req, res) => {
+router5.delete("/items/:id", requireAuth, async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
+    const itemToDelete = await storage.getItem(id);
+    if (!itemToDelete) {
+      return res.status(404).json({ message: "Item not found" });
+    }
     await storage.deleteItem(id);
+    await logAuditEvent("data_delete", "data", {
+      userId: req.user?.id,
+      userName: req.user?.name,
+      userRole: req.user?.role,
+      entityType: "item",
+      entityId: String(id),
+      tableName: "items",
+      action: `\uD488\uBAA9 \uC0AD\uC81C (${itemToDelete.name})`,
+      oldValue: itemToDelete,
+      additionalDetails: {
+        deletedItemName: itemToDelete.name,
+        deletedItemCode: itemToDelete.code,
+        deletedItemCategory: itemToDelete.category
+      },
+      ipAddress: req.ip,
+      userAgent: req.headers["user-agent"],
+      sessionId: req.sessionID
+    });
     res.json({ message: "Item deleted successfully" });
   } catch (error) {
     console.error("Error deleting item:", error);
@@ -21408,7 +21726,8 @@ var ImportExportService = class {
       vendorId: purchaseOrders.vendorId,
       orderDate: purchaseOrders.orderDate,
       deliveryDate: purchaseOrders.deliveryDate,
-      status: purchaseOrders.status,
+      orderStatus: purchaseOrders.orderStatus,
+      approvalStatus: purchaseOrders.approvalStatus,
       notes: purchaseOrders.notes,
       itemName: purchaseOrderItems.itemName,
       specification: purchaseOrderItems.specification,
@@ -21421,13 +21740,17 @@ var ImportExportService = class {
       minorCategory: purchaseOrderItems.minorCategory,
       itemNotes: purchaseOrderItems.notes
     }).from(purchaseOrders).leftJoin(purchaseOrderItems, eq19(purchaseOrders.id, purchaseOrderItems.orderId)).where(eq19(purchaseOrders.isActive, true));
-    const statusMap = {
-      "pending": "\uB300\uAE30",
-      "approved": "\uC2B9\uC778",
-      "sent": "\uBC1C\uC1A1",
-      "received": "\uC218\uC2E0\uD655\uC778",
-      "delivered": "\uB0A9\uD488\uC644\uB8CC",
-      "cancelled": "\uCDE8\uC18C"
+    const orderStatusMap = {
+      "draft": "\uC784\uC2DC\uC800\uC7A5",
+      "created": "\uBC1C\uC8FC\uC0DD\uC131",
+      "sent": "\uBC1C\uC8FC\uC644\uB8CC",
+      "delivered": "\uB0A9\uD488\uC644\uB8CC"
+    };
+    const approvalStatusMap = {
+      "not_required": "\uC2B9\uC778\uBD88\uD544\uC694",
+      "pending": "\uC2B9\uC778\uB300\uAE30",
+      "approved": "\uC2B9\uC778\uC644\uB8CC",
+      "rejected": "\uBC18\uB824"
     };
     const exportData = orderData.map((order) => ({
       "\uBC1C\uC8FC\uBC88\uD638": order.orderNumber,
@@ -21435,7 +21758,8 @@ var ImportExportService = class {
       "\uAC70\uB798\uCC98ID": order.vendorId || "",
       "\uBC1C\uC8FC\uC77C\uC790": order.orderDate?.toISOString().split("T")[0] || "",
       "\uB0A9\uAE30\uC77C\uC790": order.deliveryDate?.toISOString().split("T")[0] || "",
-      "\uC0C1\uD0DC": statusMap[order.status] || order.status,
+      "\uBC1C\uC8FC\uC0C1\uD0DC": orderStatusMap[order.orderStatus] || order.orderStatus,
+      "\uC2B9\uC778\uC0C1\uD0DC": approvalStatusMap[order.approvalStatus] || order.approvalStatus,
       "\uD488\uBAA9\uBA85": order.itemName || "",
       "\uADDC\uACA9": order.specification || "",
       "\uB2E8\uC704": order.unit || "",

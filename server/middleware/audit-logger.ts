@@ -158,23 +158,86 @@ function determineEventType(path: string, method: string, statusCode: number): s
   }
 }
 
+// 엔티티 매핑 테이블
+const entityMapping: Record<string, { type: string; tableName: string; displayName: string }> = {
+  'orders': { type: 'purchase_order', tableName: 'purchase_orders', displayName: '발주서' },
+  'vendors': { type: 'vendor', tableName: 'vendors', displayName: '거래처' },
+  'items': { type: 'item', tableName: 'items', displayName: '품목' },
+  'users': { type: 'user', tableName: 'users', displayName: '사용자' },
+  'projects': { type: 'project', tableName: 'projects', displayName: '프로젝트' },
+  'companies': { type: 'company', tableName: 'companies', displayName: '회사' },
+  'approvals': { type: 'approval', tableName: 'approvals', displayName: '승인' },
+  'templates': { type: 'template', tableName: 'order_templates', displayName: '템플릿' },
+  'categories': { type: 'category', tableName: 'item_categories', displayName: '카테고리' },
+  'positions': { type: 'position', tableName: 'positions', displayName: '직급' }
+};
+
 // 엔티티 정보 추출
-function extractEntityInfo(path: string, body: any): { type?: string; id?: string } {
+function extractEntityInfo(path: string, body: any): { 
+  type?: string; 
+  id?: string; 
+  tableName?: string;
+  displayName?: string;
+} {
   const pathParts = path.split('/').filter(p => p);
   
-  // 주요 엔티티 패턴
-  const entities = ['orders', 'users', 'vendors', 'projects', 'items', 'companies'];
-  
   for (let i = 0; i < pathParts.length; i++) {
-    if (entities.includes(pathParts[i])) {
+    const mapping = entityMapping[pathParts[i]];
+    if (mapping) {
       return {
-        type: pathParts[i].slice(0, -1), // Remove 's' from plural
-        id: pathParts[i + 1] || body?.id
+        type: mapping.type,
+        id: pathParts[i + 1] || body?.id,
+        tableName: mapping.tableName,
+        displayName: mapping.displayName
       };
     }
   }
   
   return {};
+}
+
+// 의미 있는 action 설명 생성
+function generateActionDescription(
+  method: string, 
+  path: string, 
+  entityInfo: any,
+  body?: any,
+  statusCode?: number
+): string {
+  const { displayName, id } = entityInfo;
+  
+  if (!displayName) {
+    return `${method} ${path}`;
+  }
+  
+  // 엔티티별 특별 처리
+  if (path.includes('/orders')) {
+    if (method === 'POST') {
+      return `${displayName} 생성 (${body?.orderNumber || '신규'})`;
+    } else if (method === 'PUT' || method === 'PATCH') {
+      const changes = [];
+      if (body?.orderStatus) changes.push(`상태: ${body.orderStatus}`);
+      if (body?.approvalStatus) changes.push(`승인: ${body.approvalStatus}`);
+      return `${displayName} ${body?.orderNumber || id} 수정${changes.length ? ` (${changes.join(', ')})` : ''}`;
+    } else if (method === 'DELETE') {
+      return `${displayName} ${body?.orderNumber || id} 삭제`;
+    }
+  }
+  
+  // 일반적인 CRUD 작업
+  switch (method) {
+    case 'POST':
+      return `${displayName} 생성${body?.name ? ` (${body.name})` : ''}`;
+    case 'PUT':
+    case 'PATCH':
+      return `${displayName} ${id || ''} 수정`;
+    case 'DELETE':
+      return `${displayName} ${id || ''} 삭제`;
+    case 'GET':
+      return `${displayName} ${id ? '조회' : '목록 조회'}`;
+    default:
+      return `${displayName} ${method} 작업`;
+  }
 }
 
 // Audit 로깅 미들웨어
@@ -212,7 +275,7 @@ export function auditLogger(req: AuditRequest, res: Response, next: NextFunction
         }
         
         const eventType = determineEventType(req.path, req.method, res.statusCode);
-        const { type: entityType, id: entityId } = extractEntityInfo(req.path, req.body);
+        const entityInfo = extractEntityInfo(req.path, req.body);
         
         // 실행 시간 계산
         const executionTime = Date.now() - (req.auditLog?.startTime || Date.now());
@@ -226,6 +289,15 @@ export function auditLogger(req: AuditRequest, res: Response, next: NextFunction
         
         if (!shouldLog) return;
         
+        // 의미 있는 action 설명 생성
+        const actionDescription = generateActionDescription(
+          req.method,
+          req.path,
+          entityInfo,
+          req.body,
+          res.statusCode
+        );
+        
         // 로그 데이터 준비
         const logData: any = {
           userId: req.user?.id || null,
@@ -233,9 +305,10 @@ export function auditLogger(req: AuditRequest, res: Response, next: NextFunction
           userRole: req.user?.role || null,
           eventType,
           eventCategory,
-          entityType: entityType || req.auditLog?.entityType,
-          entityId: entityId || req.auditLog?.entityId,
-          action: `${req.method} ${req.path}`,
+          entityType: entityInfo.type || req.auditLog?.entityType,
+          entityId: entityInfo.id || req.auditLog?.entityId,
+          tableName: entityInfo.tableName,
+          action: actionDescription,
           ipAddress: req.ip || req.connection.remoteAddress,
           userAgent: req.headers['user-agent'],
           sessionId: req.sessionID,
@@ -299,6 +372,7 @@ export async function logAuditEvent(
     userRole?: string;
     entityType?: string;
     entityId?: string;
+    tableName?: string;
     action: string;
     oldValue?: any;
     newValue?: any;
@@ -330,10 +404,11 @@ export async function logAuditEvent(
       eventCategory,
       entityType: details.entityType,
       entityId: details.entityId,
+      tableName: details.tableName,
       action: details.action,
       additionalDetails: details.additionalDetails ? JSON.stringify(details.additionalDetails) : null,
-      oldData: details.oldValue ? JSON.stringify(details.oldValue) : null,
-      newData: details.newValue ? JSON.stringify(details.newValue) : null,
+      oldData: details.oldValue ? JSON.stringify(maskSensitiveData(details.oldValue)) : null,
+      newData: details.newValue ? JSON.stringify(maskSensitiveData(details.newValue)) : null,
       ipAddress: details.ipAddress,
       userAgent: details.userAgent,
       sessionId: details.sessionId,

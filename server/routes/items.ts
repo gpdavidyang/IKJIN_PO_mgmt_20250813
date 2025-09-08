@@ -5,6 +5,8 @@
 import { Router } from "express";
 import { storage } from "../storage";
 import { insertItemSchema } from "@shared/schema";
+import { requireAuth } from "../local-auth";
+import { logAuditEvent } from "../middleware/audit-logger";
 
 const router = Router();
 
@@ -116,10 +118,31 @@ router.get("/items/:id", async (req, res) => {
   }
 });
 
-router.post("/items", async (req, res) => {
+router.post("/items", requireAuth, async (req: any, res) => {
   try {
     const validatedData = insertItemSchema.parse(req.body);
     const item = await storage.createItem(validatedData);
+
+    // Log audit event for item creation
+    await logAuditEvent('data_create', 'data', {
+      userId: req.user?.id,
+      userName: req.user?.name,
+      userRole: req.user?.role,
+      entityType: 'item',
+      entityId: String(item.id),
+      tableName: 'items',
+      action: `품목 생성 (${item.name})`,
+      newValue: item,
+      additionalDetails: {
+        category: item.category,
+        code: item.code,
+        price: item.price
+      },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+      sessionId: req.sessionID
+    });
+
     res.status(201).json(item);
   } catch (error) {
     console.error("Error creating item:", error);
@@ -127,10 +150,53 @@ router.post("/items", async (req, res) => {
   }
 });
 
-router.put("/items/:id", async (req, res) => {
+router.put("/items/:id", requireAuth, async (req: any, res) => {
   try {
     const id = parseInt(req.params.id, 10);
+    
+    // Get old item data for audit trail
+    const oldItem = await storage.getItem(id);
+    if (!oldItem) {
+      return res.status(404).json({ message: "Item not found" });
+    }
+    
     const updatedItem = await storage.updateItem(id, req.body);
+
+    // Log audit event for item update
+    const changes: string[] = [];
+    if (oldItem.name !== updatedItem.name) {
+      changes.push(`품명: ${oldItem.name} → ${updatedItem.name}`);
+    }
+    if (oldItem.price !== updatedItem.price) {
+      changes.push(`단가: ${oldItem.price?.toLocaleString() || '0'}원 → ${updatedItem.price?.toLocaleString() || '0'}원`);
+    }
+    if (oldItem.category !== updatedItem.category) {
+      changes.push(`분류: ${oldItem.category || ''} → ${updatedItem.category || ''}`);
+    }
+
+    const actionDescription = changes.length > 0 
+      ? `품목 ${updatedItem.name} 수정 (${changes.join(', ')})`
+      : `품목 ${updatedItem.name} 수정`;
+
+    await logAuditEvent('data_update', 'data', {
+      userId: req.user?.id,
+      userName: req.user?.name,
+      userRole: req.user?.role,
+      entityType: 'item',
+      entityId: String(id),
+      tableName: 'items',
+      action: actionDescription,
+      oldValue: oldItem,
+      newValue: updatedItem,
+      additionalDetails: {
+        changes,
+        updatedFields: Object.keys(req.body)
+      },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+      sessionId: req.sessionID
+    });
+    
     res.json(updatedItem);
   } catch (error) {
     console.error("Error updating item:", error);
@@ -138,10 +204,38 @@ router.put("/items/:id", async (req, res) => {
   }
 });
 
-router.delete("/items/:id", async (req, res) => {
+router.delete("/items/:id", requireAuth, async (req: any, res) => {
   try {
     const id = parseInt(req.params.id, 10);
+    
+    // Get item data before deletion for audit trail
+    const itemToDelete = await storage.getItem(id);
+    if (!itemToDelete) {
+      return res.status(404).json({ message: "Item not found" });
+    }
+    
     await storage.deleteItem(id);
+
+    // Log audit event for item deletion
+    await logAuditEvent('data_delete', 'data', {
+      userId: req.user?.id,
+      userName: req.user?.name,
+      userRole: req.user?.role,
+      entityType: 'item',
+      entityId: String(id),
+      tableName: 'items',
+      action: `품목 삭제 (${itemToDelete.name})`,
+      oldValue: itemToDelete,
+      additionalDetails: {
+        deletedItemName: itemToDelete.name,
+        deletedItemCode: itemToDelete.code,
+        deletedItemCategory: itemToDelete.category
+      },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+      sessionId: req.sessionID
+    });
+    
     res.json({ message: "Item deleted successfully" });
   } catch (error) {
     console.error("Error deleting item:", error);

@@ -6,6 +6,7 @@ import { Router } from "express";
 import { storage } from "../storage";
 import { insertVendorSchema } from "@shared/schema";
 import { requireAuth } from "../local-auth";
+import { logAuditEvent } from "../middleware/audit-logger";
 
 const router = Router();
 
@@ -70,6 +71,26 @@ router.post("/vendors", requireAuth, async (req: any, res) => {
       try {
         const vendor = await storage.createVendor(vendorData);
         console.log("✅ Vendor created successfully:", vendor);
+
+        // Log audit event for vendor creation
+        await logAuditEvent('data_create', 'data', {
+          userId: req.user?.id,
+          userName: req.user?.name,
+          userRole: req.user?.role,
+          entityType: 'vendor',
+          entityId: String(vendor.id),
+          tableName: 'vendors',
+          action: `거래처 생성 (${vendor.name})`,
+          newValue: vendor,
+          additionalDetails: {
+            businessNumber: vendor.businessNumber,
+            contactPerson: vendor.contactPerson
+          },
+          ipAddress: req.ip,
+          userAgent: req.headers['user-agent'],
+          sessionId: req.sessionID
+        });
+
         return res.status(201).json(vendor);
       } catch (dbError) {
         attempts++;
@@ -99,11 +120,52 @@ router.put("/vendors/:id", requireAuth, async (req: any, res) => {
     console.log("🔍 Vendor update request - ID:", id);
     console.log("🔍 Update data:", req.body);
     
+    // Get old vendor data for audit trail
+    const oldVendor = await storage.getVendor(id);
+    if (!oldVendor) {
+      return res.status(404).json({ message: "Vendor not found" });
+    }
+    
     const updatedVendor = await storage.updateVendor(id, req.body);
     
     if (!updatedVendor) {
       return res.status(404).json({ message: "Vendor not found" });
     }
+
+    // Log audit event for vendor update
+    const changes: string[] = [];
+    if (oldVendor.name !== updatedVendor.name) {
+      changes.push(`명칭: ${oldVendor.name} → ${updatedVendor.name}`);
+    }
+    if (oldVendor.contactPerson !== updatedVendor.contactPerson) {
+      changes.push(`담당자: ${oldVendor.contactPerson || ''} → ${updatedVendor.contactPerson || ''}`);
+    }
+    if (oldVendor.phone !== updatedVendor.phone) {
+      changes.push(`연락처: ${oldVendor.phone || ''} → ${updatedVendor.phone || ''}`);
+    }
+
+    const actionDescription = changes.length > 0 
+      ? `거래처 ${updatedVendor.name} 수정 (${changes.join(', ')})`
+      : `거래처 ${updatedVendor.name} 수정`;
+
+    await logAuditEvent('data_update', 'data', {
+      userId: req.user?.id,
+      userName: req.user?.name,
+      userRole: req.user?.role,
+      entityType: 'vendor',
+      entityId: String(id),
+      tableName: 'vendors',
+      action: actionDescription,
+      oldValue: oldVendor,
+      newValue: updatedVendor,
+      additionalDetails: {
+        changes,
+        updatedFields: Object.keys(req.body)
+      },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+      sessionId: req.sessionID
+    });
     
     console.log("✅ Vendor updated successfully:", updatedVendor);
     res.json(updatedVendor);
@@ -117,7 +179,34 @@ router.delete("/vendors/:id", requireAuth, async (req: any, res) => {
   try {
     // 권한 체크 간소화 - requireAuth로 충분
     const id = parseInt(req.params.id);
+    
+    // Get vendor data before deletion for audit trail
+    const vendorToDelete = await storage.getVendor(id);
+    if (!vendorToDelete) {
+      return res.status(404).json({ message: "Vendor not found" });
+    }
+    
     await storage.deleteVendor(id);
+
+    // Log audit event for vendor deletion
+    await logAuditEvent('data_delete', 'data', {
+      userId: req.user?.id,
+      userName: req.user?.name,
+      userRole: req.user?.role,
+      entityType: 'vendor',
+      entityId: String(id),
+      tableName: 'vendors',
+      action: `거래처 삭제 (${vendorToDelete.name})`,
+      oldValue: vendorToDelete,
+      additionalDetails: {
+        deletedVendorName: vendorToDelete.name,
+        deletedVendorBusinessNumber: vendorToDelete.businessNumber
+      },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+      sessionId: req.sessionID
+    });
+
     res.status(204).send();
   } catch (error) {
     console.error("Error deleting vendor:", error);

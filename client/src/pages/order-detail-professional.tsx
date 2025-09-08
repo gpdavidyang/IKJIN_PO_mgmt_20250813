@@ -30,7 +30,8 @@ import {
   TrendingUp,
   X,
   AlertCircle,
-  MailCheck
+  MailCheck,
+  History
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { downloadAttachment, showDownloadSuccessMessage } from "@/lib/downloadUtils";
@@ -39,6 +40,7 @@ import { ReceiptManager } from "@/components/receipt-manager";
 import { EmailSendDialog } from "@/components/email-send-dialog";
 import { EmailHistoryModal } from "@/components/email-history-modal";
 import { AttachedFilesInfo } from "@/components/attached-files-info";
+import { OrderStatusHistory } from "@/components/order-status-history";
 import { format } from "date-fns";
 import { formatKoreanWon } from "@/lib/utils";
 import { 
@@ -1101,6 +1103,19 @@ export default function OrderDetailProfessional() {
             </div>
           )}
         </div>
+
+        {/* 상태 변경 이력 */}
+        <Card className="shadow-lg border-0 bg-gradient-to-r from-blue-50 to-indigo-50">
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <History className="h-5 w-5 text-blue-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-800">상태 변경 이력</h3>
+            </div>
+            <OrderStatusHistory orderId={order.id} />
+          </CardContent>
+        </Card>
 
         {/* Excel Upload File Info - Display Excel files separately */}
         {order.attachments && order.attachments.length > 0 && (

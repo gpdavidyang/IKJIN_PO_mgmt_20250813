@@ -28,6 +28,7 @@ import * as XLSX from "xlsx";
 import nodemailer from "nodemailer";
 import { EmailSettingsService } from "../services/email-settings-service";
 import { generateEmailTemplateData, generateEmailHTML } from "../utils/email-template-generator";
+import { logAuditEvent } from "../middleware/audit-logger";
 import { progressManager } from "../utils/progress-manager";
 
 // ES 모듈에서 __dirname 대체
@@ -437,6 +438,27 @@ router.post("/orders", requireAuth, upload.array('attachments'), async (req, res
     const order = await storage.createPurchaseOrder(orderData);
     console.log("🔧🔧🔧 ORDERS.TS - Created order:", order);
 
+    // Log audit event for order creation
+    await logAuditEvent('data_create', 'data', {
+      userId: req.user!.id,
+      userName: req.user!.name,
+      userRole: req.user!.role,
+      entityType: 'purchase_order',
+      entityId: String(order.id),
+      tableName: 'purchase_orders',
+      action: `발주서 생성 (${order.orderNumber})`,
+      newValue: order,
+      additionalDetails: {
+        totalAmount,
+        itemsCount: items.length,
+        attachmentsCount: req.files?.length || 0,
+        initialStatus
+      },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+      sessionId: req.sessionID
+    });
+
     // Handle file attachments
     if (req.files && req.files.length > 0) {
       const fs = require('fs');
@@ -752,19 +774,58 @@ router.put("/orders/:id", requireAuth, async (req, res) => {
   try {
     const orderId = parseInt(req.params.id, 10);
     const updateData = req.body;
+    const user = req.user!;
 
     // Check if user can edit this order
-    const order = await storage.getPurchaseOrder(orderId);
-    if (!order) {
+    const oldOrder = await storage.getPurchaseOrder(orderId);
+    if (!oldOrder) {
       return res.status(404).json({ message: "Order not found" });
     }
 
     // Only draft orders can be edited by creators
-    if (order.status !== 'draft' && order.userId !== req.user?.id) {
+    if (oldOrder.status !== 'draft' && oldOrder.userId !== user.id) {
       return res.status(403).json({ message: "Cannot edit approved orders" });
     }
 
     const updatedOrder = await storage.updatePurchaseOrder(orderId, updateData);
+
+    // Log the audit event with detailed information
+    const changes: string[] = [];
+    
+    // Check for status changes
+    if (oldOrder.orderStatus !== updatedOrder.orderStatus) {
+      changes.push(`발주상태: ${oldOrder.orderStatus} → ${updatedOrder.orderStatus}`);
+    }
+    if (oldOrder.approvalStatus !== updatedOrder.approvalStatus) {
+      changes.push(`승인상태: ${oldOrder.approvalStatus} → ${updatedOrder.approvalStatus}`);
+    }
+    if (oldOrder.totalAmount !== updatedOrder.totalAmount) {
+      changes.push(`총금액: ${oldOrder.totalAmount?.toLocaleString() || '0'}원 → ${updatedOrder.totalAmount?.toLocaleString() || '0'}원`);
+    }
+    
+    const actionDescription = changes.length > 0 
+      ? `발주서 ${updatedOrder.orderNumber} 수정 (${changes.join(', ')})`
+      : `발주서 ${updatedOrder.orderNumber} 수정`;
+
+    await logAuditEvent('data_update', 'data', {
+      userId: user.id,
+      userName: user.name,
+      userRole: user.role,
+      entityType: 'purchase_order',
+      entityId: String(orderId),
+      tableName: 'purchase_orders',
+      action: actionDescription,
+      oldValue: oldOrder,
+      newValue: updatedOrder,
+      additionalDetails: {
+        changes,
+        updatedFields: Object.keys(updateData)
+      },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+      sessionId: req.sessionID
+    });
+
     res.json(updatedOrder);
   } catch (error) {
     console.error("Error updating order:", error);
@@ -3395,5 +3456,126 @@ router.post("/orders/send-email-with-files", requireAuth, upload.array('customFi
     });
   }
 });
+
+// Get order status change history
+router.get("/:orderId/status-history", requireAuth, async (req, res) => {
+  try {
+    const orderId = parseInt(req.params.orderId);
+    if (isNaN(orderId)) {
+      return res.status(400).json({ error: "Invalid order ID" });
+    }
+
+    console.log(`📋 Fetching status history for order ${orderId}`);
+
+    // Get order history with user information
+    const { orderHistory, users } = schema;
+    
+    const history = await db
+      .select({
+        id: orderHistory.id,
+        orderId: orderHistory.orderId,
+        userId: orderHistory.userId,
+        userName: users.name,
+        userRole: users.role,
+        userPosition: users.position,
+        action: orderHistory.action,
+        changes: orderHistory.changes,
+        createdAt: orderHistory.createdAt,
+      })
+      .from(orderHistory)
+      .leftJoin(users, eq(orderHistory.userId, users.id))
+      .where(eq(orderHistory.orderId, orderId))
+      .orderBy(desc(orderHistory.createdAt));
+
+    console.log(`✅ Found ${history.length} history entries for order ${orderId}`);
+
+    // Transform the data for better frontend consumption
+    const transformedHistory = history.map(entry => ({
+      id: entry.id,
+      orderId: entry.orderId,
+      user: {
+        id: entry.userId,
+        name: entry.userName || 'System',
+        role: entry.userRole,
+        position: entry.userPosition
+      },
+      action: entry.action,
+      actionText: getActionText(entry.action),
+      actionIcon: getActionIcon(entry.action),
+      actionColor: getActionColor(entry.action),
+      changes: entry.changes,
+      createdAt: entry.createdAt
+    }));
+
+    res.json(transformedHistory);
+  } catch (error) {
+    console.error("Error fetching order history:", error);
+    res.status(500).json({ 
+      error: "Failed to fetch order history",
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Helper functions for action text and styling
+function getActionText(action: string): string {
+  const actionTexts: Record<string, string> = {
+    'created': '발주서 생성',
+    'updated': '발주서 수정',
+    'approved': '발주서 승인',
+    'approved_partial': '단계별 승인',
+    'approved_final': '최종 승인',
+    'rejected': '발주서 반려',
+    'sent': '발주서 발송',
+    'email_sent': '이메일 발송',
+    'status_migrated': '상태 마이그레이션',
+    'pdf_generated': 'PDF 생성',
+    'attachment_added': '첨부파일 추가',
+    'attachment_removed': '첨부파일 삭제',
+    'delivered': '납품 완료',
+    'cancelled': '발주 취소'
+  };
+  return actionTexts[action] || action;
+}
+
+function getActionIcon(action: string): string {
+  const actionIcons: Record<string, string> = {
+    'created': 'Plus',
+    'updated': 'Edit',
+    'approved': 'Check',
+    'approved_partial': 'CheckCheck',
+    'approved_final': 'CheckCircle',
+    'rejected': 'X',
+    'sent': 'Send',
+    'email_sent': 'Mail',
+    'status_migrated': 'RefreshCw',
+    'pdf_generated': 'FileText',
+    'attachment_added': 'Paperclip',
+    'attachment_removed': 'Trash2',
+    'delivered': 'Package',
+    'cancelled': 'XCircle'
+  };
+  return actionIcons[action] || 'Activity';
+}
+
+function getActionColor(action: string): string {
+  const actionColors: Record<string, string> = {
+    'created': 'gray',
+    'updated': 'blue',
+    'approved': 'green',
+    'approved_partial': 'teal',
+    'approved_final': 'green',
+    'rejected': 'red',
+    'sent': 'indigo',
+    'email_sent': 'blue',
+    'status_migrated': 'purple',
+    'pdf_generated': 'cyan',
+    'attachment_added': 'gray',
+    'attachment_removed': 'orange',
+    'delivered': 'green',
+    'cancelled': 'red'
+  };
+  return actionColors[action] || 'gray';
+}
 
 export default router;

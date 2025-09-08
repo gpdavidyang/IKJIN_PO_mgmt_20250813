@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, Edit, Send, Check, FileText, Download, Eye, Printer, Package, Building, User, Calendar, DollarSign, MapPin, Truck, Loader2, ExternalLink, Shield, AlertCircle } from "lucide-react";
+import { ArrowLeft, Edit, Send, Check, FileText, Download, Eye, Printer, Package, Building, User, Calendar, DollarSign, MapPin, Truck, Loader2, ExternalLink, Shield, AlertCircle, History } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { format } from "date-fns";
 import { formatKoreanWon } from "@/lib/utils";
@@ -15,6 +15,7 @@ import { AttachedFilesInfo } from "@/components/attached-files-info";
 import { ApprovalProgressViewer } from "@/components/approval/ApprovalProgressViewer";
 import { ApprovalDetailModal } from "@/components/approval/ApprovalDetailModal";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { OrderStatusHistory } from "@/components/order-status-history";
 
 export default function OrderDetailStandard() {
   const { user } = useAuth();
@@ -315,6 +316,19 @@ export default function OrderDetailStandard() {
               </CardContent>
             </Card>
           )}
+
+          {/* 상태 변경 이력 */}
+          <Card className="shadow-sm">
+            <CardHeader className="bg-gray-50 py-3 px-4">
+              <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                <History className="h-5 w-5 text-blue-600" />
+                <span>상태 변경 이력</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 py-3">
+              <OrderStatusHistory orderId={order.id} />
+            </CardContent>
+          </Card>
 
           {/* 첨부파일 */}
           <Card className="shadow-sm">

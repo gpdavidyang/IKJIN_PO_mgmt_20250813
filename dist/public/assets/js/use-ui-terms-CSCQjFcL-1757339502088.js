@@ -1,0 +1,1 @@
+import{q as r}from"./index-BHt0qwks-1757339502088.js";function s(e={}){return r({queryKey:["/api/ui-terms",e.category],enabled:!0})}function a(e){return r({queryKey:[`/api/ui-terms/${e}`],enabled:!!e})}function i(e,u=e){const{data:t}=a(e);return t?.termValue||u}export{i as a,s as u};
