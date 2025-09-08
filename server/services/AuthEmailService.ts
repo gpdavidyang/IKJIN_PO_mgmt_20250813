@@ -1,6 +1,41 @@
 import { POEmailService } from "../utils/po-email-service";
 import type { User, UserRegistration } from "@shared/schema";
 
+// Create singleton instance for email sending
+const poEmailService = new POEmailService();
+
+/**
+ * 프론트엔드 URL을 환경에 따라 동적으로 결정하는 함수
+ */
+function getFrontendUrl(req?: any): string {
+  // 1. 명시적으로 설정된 환경변수가 있으면 사용
+  if (process.env.FRONTEND_URL && process.env.FRONTEND_URL.trim() !== '') {
+    console.log('🔧 Using FRONTEND_URL from environment:', process.env.FRONTEND_URL);
+    return process.env.FRONTEND_URL;
+  }
+
+  // 2. 요청 객체에서 호스트 정보를 추출 (배포 환경에서)
+  if (req && req.get && req.get('host')) {
+    const protocol = req.get('x-forwarded-proto') || (req.secure ? 'https' : 'http');
+    const host = req.get('host');
+    const detectedUrl = `${protocol}://${host}`;
+    console.log('🔍 Detected URL from request headers:', detectedUrl);
+    return detectedUrl;
+  }
+
+  // 3. NODE_ENV에 따른 기본값
+  if (process.env.NODE_ENV === 'production') {
+    // 배포 환경에서는 요청에서 URL을 감지하지 못한 경우
+    console.warn('⚠️ FRONTEND_URL not set and unable to detect from request headers');
+    console.warn('⚠️ Please set FRONTEND_URL environment variable for production');
+    return 'https://localhost:5173'; // 오류를 명확히 하기 위해 https로 변경
+  }
+
+  // 4. 개발 환경 기본값
+  console.log('🔧 Using development default URL');
+  return 'http://localhost:5173';
+}
+
 export interface AuthEmailTemplates {
   REGISTRATION_APPROVED: {
     subject: string;
@@ -254,11 +289,13 @@ export class AuthEmailService extends POEmailService {
       const template = AUTH_EMAIL_TEMPLATES.REGISTRATION_RECEIVED;
       const htmlContent = template.template(registration.name);
 
-      return await this.sendEmail({
+      const result = await poEmailService.sendEmail({
         to: registration.email,
         subject: template.subject,
         html: htmlContent,
       });
+      console.log('📧 Registration received email sent:', result);
+      return result;
     } catch (error) {
       console.error("Send registration received email error:", error);
       return false;
@@ -273,11 +310,13 @@ export class AuthEmailService extends POEmailService {
       const template = AUTH_EMAIL_TEMPLATES.REGISTRATION_APPROVED;
       const htmlContent = template.template(user.name);
 
-      return await this.sendEmail({
+      const result = await poEmailService.sendEmail({
         to: user.email,
         subject: template.subject,
         html: htmlContent,
       });
+      console.log('📧 Registration approved email sent:', result);
+      return result;
     } catch (error) {
       console.error("Send registration approved email error:", error);
       return false;
@@ -292,11 +331,13 @@ export class AuthEmailService extends POEmailService {
       const template = AUTH_EMAIL_TEMPLATES.REGISTRATION_REJECTED;
       const htmlContent = template.template(registration.name, reason);
 
-      return await this.sendEmail({
+      const result = await poEmailService.sendEmail({
         to: registration.email,
         subject: template.subject,
         html: htmlContent,
       });
+      console.log('📧 Registration received email sent:', result);
+      return result;
     } catch (error) {
       console.error("Send registration rejected email error:", error);
       return false;
@@ -306,17 +347,25 @@ export class AuthEmailService extends POEmailService {
   /**
    * 비밀번호 재설정 링크 이메일 발송
    */
-  static async sendPasswordReset(user: User, resetToken: string): Promise<boolean> {
+  static async sendPasswordReset(user: User, resetToken: string, req?: any): Promise<boolean> {
     try {
       const template = AUTH_EMAIL_TEMPLATES.PASSWORD_RESET;
-      const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}`;
+      const frontendUrl = getFrontendUrl(req);
+      const resetLink = `${frontendUrl}/reset-password?token=${resetToken}`;
       const htmlContent = template.template(user.name, resetLink);
 
-      return await this.sendEmail({
+      console.log('🔑 Sending password reset email to:', user.email);
+      console.log('🌐 Frontend URL detected:', frontendUrl);
+      console.log('🔗 Reset link:', resetLink);
+
+      const result = await poEmailService.sendEmail({
         to: user.email,
         subject: template.subject,
         html: htmlContent,
       });
+
+      console.log('📧 Password reset email sent:', result);
+      return result;
     } catch (error) {
       console.error("Send password reset email error:", error);
       return false;
@@ -383,11 +432,12 @@ export class AuthEmailService extends POEmailService {
 
       let allSent = true;
       for (const adminEmail of adminEmails) {
-        const sent = await this.sendEmail({
+        const sent = await poEmailService.sendEmail({
           to: adminEmail.trim(),
           subject,
           html: htmlContent,
         });
+        console.log('📧 Admin notification email sent to:', adminEmail.trim(), sent);
         if (!sent) allSent = false;
       }
 

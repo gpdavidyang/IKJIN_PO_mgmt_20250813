@@ -856,7 +856,7 @@ router.post('/auth/forgot-password', async (req, res) => {
       const { token, user } = await PasswordResetService.requestPasswordReset(email);
 
       // Send reset email
-      const emailSent = await AuthEmailService.sendPasswordReset(user, token);
+      const emailSent = await AuthEmailService.sendPasswordReset(user, token, req);
       
       if (!emailSent) {
         console.error("Failed to send password reset email");
