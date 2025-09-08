@@ -49,6 +49,7 @@
   "env": {
     "DATABASE_URL": "postgresql://postgres.tbvugytmskxxyqfvqmup:gps110601ysw@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres",
     "SESSION_SECRET": "ikjin-po-mgmt-secure-session-key-2025",
+    "JWT_SECRET": "ikjin-po-mgmt-production-jwt-secret-2025-secure-key",
     "VERCEL": "1",
     "NODE_ENV": "production",
     "VITE_ENVIRONMENT": "production",
