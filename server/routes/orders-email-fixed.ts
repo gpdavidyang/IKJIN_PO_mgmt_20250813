@@ -71,10 +71,12 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
     let additionalAttachments: any[] = [];
     
     if (selectedAttachmentIds && selectedAttachmentIds.length > 0) {
-      console.log('📎 선택된 첨부파일 처리:', selectedAttachmentIds);
+      console.log('📎 선택된 첨부파일 처리 시작:', selectedAttachmentIds.length, '개');
+      console.log('📎 첨부파일 IDs:', selectedAttachmentIds);
       
       for (const attachmentId of selectedAttachmentIds) {
         try {
+          console.log(`📎 첨부파일 ID ${attachmentId} 조회 시작`);
           const [attachment] = await database.db
             .select({
               id: attachmentsTable.id,
@@ -87,16 +89,27 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
             .where(eq(attachmentsTable.id, attachmentId));
             
           if (attachment) {
+            console.log(`📎 첨부파일 정보 조회 성공:`, {
+              id: attachment.id,
+              originalName: attachment.originalName,
+              mimeType: attachment.mimeType,
+              hasFilePath: !!attachment.filePath,
+              hasFileData: !!attachment.fileData,
+              fileDataLength: attachment.fileData ? attachment.fileData.length : 0
+            });
+            
             const isExcelFile = attachment.mimeType?.includes('excel') || 
                               attachment.mimeType?.includes('spreadsheet') ||
                               attachment.originalName?.toLowerCase().endsWith('.xlsx') ||
                               attachment.originalName?.toLowerCase().endsWith('.xls');
+            
+            console.log(`📊 Excel 파일 여부: ${isExcelFile}, 현재 excelFilePath: ${excelFilePath ? '있음' : '없음'}`);
                               
             if (isExcelFile && !excelFilePath) {
               // 첫 번째 Excel 파일을 주 첨부파일로 사용
               if (attachment.fileData) {
-                // Base64 데이터를 임시 파일로 저장
-                const tempDir = path.join(__dirname, '../../uploads');
+                // Base64 데이터를 임시 파일로 저장 (Vercel은 /tmp만 쓰기 가능)
+                const tempDir = process.env.VERCEL ? '/tmp' : path.join(__dirname, '../../uploads');
                 const tempFilePath = path.join(tempDir, `temp-${Date.now()}-${attachment.originalName}`);
                 
                 try {
@@ -107,16 +120,18 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
                   const buffer = Buffer.from(attachment.fileData, 'base64');
                   fs.writeFileSync(tempFilePath, buffer);
                   excelFilePath = tempFilePath;
-                  console.log('✅ Excel 파일 임시 저장 (Base64):', tempFilePath, `(${buffer.length} bytes)`);
+                  console.log('✅ Excel 파일 임시 저장 성공 (Base64):', tempFilePath, `(${buffer.length} bytes)`);
                 } catch (saveError) {
                   console.error('❌ Excel 파일 저장 실패:', saveError);
                   console.log('🔄 해당 파일 건너뛰고 기본 Excel 파일을 생성합니다');
                 }
               } else if (attachment.filePath) {
                 // 파일 경로가 있으면 존재 여부 확인
+                console.log('📁 Excel 파일 경로 확인:', attachment.filePath);
                 if (fs.existsSync(attachment.filePath)) {
                   excelFilePath = attachment.filePath;
-                  console.log('✅ Excel 파일 경로 사용:', attachment.filePath);
+                  const stats = fs.statSync(attachment.filePath);
+                  console.log('✅ Excel 파일 경로 사용:', attachment.filePath, `(${Math.round(stats.size / 1024)}KB)`);
                 } else {
                   console.warn('⚠️ Excel 파일 경로가 존재하지 않음:', attachment.filePath);
                   console.log('🔄 해당 첨부파일은 건너뛰고 기본 Excel 파일을 생성합니다');
@@ -124,8 +139,28 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
               } else {
                 console.warn('⚠️ Excel 첨부파일에 Base64 데이터와 파일 경로가 모두 없음:', attachment.originalName);
               }
+            } else if (isExcelFile && excelFilePath) {
+              // 이미 Excel 파일이 있는 경우, 추가 Excel 파일로 처리
+              console.log('📊 추가 Excel 파일로 처리:', attachment.originalName);
+              if (attachment.fileData) {
+                additionalAttachments.push({
+                  filename: attachment.originalName,
+                  content: Buffer.from(attachment.fileData, 'base64'),
+                  contentType: attachment.mimeType || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                });
+                console.log('✅ 추가 Excel 파일 추가 (Base64):', attachment.originalName);
+              } else if (attachment.filePath && fs.existsSync(attachment.filePath)) {
+                const fileContent = fs.readFileSync(attachment.filePath);
+                additionalAttachments.push({
+                  filename: attachment.originalName,
+                  content: fileContent,
+                  contentType: attachment.mimeType || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                });
+                console.log('✅ 추가 Excel 파일 추가 (파일 읽기):', attachment.originalName, `(${Math.round(fileContent.length / 1024)}KB)`);
+              }
             } else {
               // Excel이 아닌 파일들은 추가 첨부파일로 처리
+              console.log('📄 Excel이 아닌 파일 처리:', attachment.originalName);
               if (attachment.fileData) {
                 additionalAttachments.push({
                   filename: attachment.originalName,
@@ -134,14 +169,17 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
                 });
                 console.log('✅ 추가 첨부파일 추가 (Base64):', attachment.originalName);
               } else if (attachment.filePath && fs.existsSync(attachment.filePath)) {
+                const fileContent = fs.readFileSync(attachment.filePath);
                 additionalAttachments.push({
                   filename: attachment.originalName,
-                  path: attachment.filePath,
+                  content: fileContent,
                   contentType: attachment.mimeType || 'application/octet-stream'
                 });
-                console.log('✅ 추가 첨부파일 추가 (파일 경로):', attachment.originalName);
+                console.log('✅ 추가 첨부파일 추가 (파일 읽기):', attachment.originalName, `(${Math.round(fileContent.length / 1024)}KB)`);
               }
             }
+          } else {
+            console.warn(`⚠️ 첨부파일 ID ${attachmentId}에 대한 정보를 찾을 수 없음`);
           }
         } catch (error) {
           console.error('❌ 첨부파일 처리 오류, ID:', attachmentId, error);
@@ -150,12 +188,18 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
         }
       }
     }
+    
+    console.log('📊 첨부파일 처리 결과:', {
+      excelFilePath: excelFilePath || '없음',
+      additionalAttachmentsCount: additionalAttachments.length,
+      additionalFiles: additionalAttachments.map(a => a.filename)
+    });
 
     // Excel 파일이 없으면 기본 빈 Excel 파일 생성
     if (!excelFilePath) {
       console.log('📎 Excel 파일이 없어 기본 파일 생성');
       try {
-        const tempDir = path.join(__dirname, '../../uploads');
+        const tempDir = process.env.VERCEL ? '/tmp' : path.join(__dirname, '../../uploads');
         const tempFilePath = path.join(tempDir, `default-po-${Date.now()}.xlsx`);
         
         if (!fs.existsSync(tempDir)) {

@@ -8422,6 +8422,20 @@ init_schema();
 import { eq as eq5 } from "drizzle-orm";
 var __filename = fileURLToPath(import.meta.url);
 var __dirname = dirname(__filename);
+var debugLog = (message, data) => {
+  const timestamp2 = (/* @__PURE__ */ new Date()).toISOString();
+  const prefix = `[${timestamp2}] ${message}`;
+  if (data) {
+    console.log(prefix, JSON.stringify(data, null, 2));
+  } else {
+    console.log(prefix);
+  }
+  if (process.env.VERCEL) {
+    if (message.includes("DEBUG") || message.includes("ERROR")) {
+      console.error(prefix, data ? JSON.stringify(data, null, 2) : "");
+    }
+  }
+};
 var POEmailService = class {
   constructor() {
     this.db = db;
@@ -8636,13 +8650,25 @@ var POEmailService = class {
    */
   async sendEmailWithDirectAttachments(emailOptions, orderInfo) {
     try {
-      console.log("\u{1F4E7} \uC9C1\uC811 \uCCA8\uBD80\uD30C\uC77C \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC2DC\uC791:", {
+      debugLog("\u{1F4E7} [EMAIL SERVICE DEBUG] \uC9C1\uC811 \uCCA8\uBD80\uD30C\uC77C \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC2DC\uC791", {
         to: emailOptions.to,
         subject: emailOptions.subject,
         hasMessage: !!emailOptions.additionalMessage,
         messageLength: emailOptions.additionalMessage?.length || 0,
         attachmentCount: emailOptions.additionalAttachments?.length || 0
       });
+      if (emailOptions.additionalAttachments && emailOptions.additionalAttachments.length > 0) {
+        const attachmentDetails = emailOptions.additionalAttachments.map((att, index2) => ({
+          index: index2,
+          filename: att.filename,
+          contentType: att.contentType,
+          contentSize: att.content ? att.content.length : 0,
+          isExcel: att.filename?.toLowerCase().includes("xlsx") || att.filename?.toLowerCase().includes("xls")
+        }));
+        debugLog("\u{1F4CE} [EMAIL SERVICE DEBUG] \uBC1B\uC740 \uCCA8\uBD80\uD30C\uC77C \uC0C1\uC138 \uBD84\uC11D", attachmentDetails);
+      } else {
+        debugLog("\u26A0\uFE0F [EMAIL SERVICE DEBUG] \uCCA8\uBD80\uD30C\uC77C\uC774 \uC5C6\uC74C!");
+      }
       let htmlContent = "";
       if (emailOptions.additionalMessage && emailOptions.additionalMessage.trim()) {
         console.log("\u{1F4DD} \uC0AC\uC6A9\uC790 \uBA54\uC2DC\uC9C0 \uC6B0\uC120 \uC0AC\uC6A9");
@@ -8729,24 +8755,57 @@ var POEmailService = class {
         mailOptions.bcc = Array.isArray(emailOptions.bcc) ? emailOptions.bcc.join(", ") : emailOptions.bcc;
       }
       if (emailOptions.additionalAttachments && emailOptions.additionalAttachments.length > 0) {
-        mailOptions.attachments = emailOptions.additionalAttachments.map((att) => ({
-          filename: att.filename,
-          content: att.content,
-          contentType: att.contentType
-        }));
-        console.log("\u{1F4CE} \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00:", emailOptions.additionalAttachments.map(
-          (att) => `${att.filename} (${att.content.length} bytes)`
-        ).join(", "));
+        mailOptions.attachments = emailOptions.additionalAttachments.map((att, index2) => {
+          const attachment = {
+            filename: att.filename,
+            content: att.content,
+            contentType: att.contentType
+          };
+          console.log(`\u{1F4CE} [EMAIL SERVICE DEBUG] nodemailer \uCCA8\uBD80\uD30C\uC77C [${index2}] \uC900\uBE44:`, {
+            filename: attachment.filename,
+            contentType: attachment.contentType,
+            contentSize: attachment.content ? attachment.content.length : 0,
+            isBuffer: Buffer.isBuffer(attachment.content),
+            firstBytes: attachment.content ? Array.from(attachment.content.subarray(0, 10)).join(",") : "N/A"
+          });
+          return attachment;
+        });
+        debugLog("\u{1F4CE} [EMAIL SERVICE DEBUG] nodemailer \uCCA8\uBD80\uD30C\uC77C \uBC30\uC5F4 \uCD5C\uC885 \uC0C1\uD0DC", {
+          \uCD1D\uAC1C\uC218: mailOptions.attachments.length,
+          \uD30C\uC77C\uBAA9\uB85D: mailOptions.attachments.map((att) => att.filename).join(", "),
+          Excel\uD30C\uC77C\uAC1C\uC218: mailOptions.attachments.filter(
+            (att) => att.filename?.toLowerCase().includes("xlsx") || att.filename?.toLowerCase().includes("xls")
+          ).length
+        });
+      } else {
+        debugLog("\u26A0\uFE0F [EMAIL SERVICE DEBUG] nodemailer\uC5D0 \uC804\uB2EC\uD560 \uCCA8\uBD80\uD30C\uC77C\uC774 \uC5C6\uC74C!");
       }
-      console.log("\u{1F4E7} \uCD5C\uC885 \uBA54\uC77C \uC635\uC158:", {
+      console.log("\u{1F4E7} [EMAIL SERVICE DEBUG] nodemailer \uCD5C\uC885 \uBA54\uC77C \uC635\uC158:", {
         from: mailOptions.from,
         to: mailOptions.to,
         cc: mailOptions.cc,
         subject: mailOptions.subject,
-        attachmentCount: mailOptions.attachments?.length || 0
+        attachmentCount: mailOptions.attachments?.length || 0,
+        hasAttachments: !!(mailOptions.attachments && mailOptions.attachments.length > 0)
       });
+      debugLog("\u{1F680} [EMAIL SERVICE DEBUG] nodemailer.sendMail \uD638\uCD9C \uC9C1\uC804");
+      if (mailOptions.attachments && mailOptions.attachments.length > 0) {
+        debugLog(
+          "\u{1F4CE} [EMAIL SERVICE DEBUG] \uC2E4\uC81C \uC804\uC1A1\uB420 \uCCA8\uBD80\uD30C\uC77C",
+          mailOptions.attachments.map((att) => ({
+            filename: att.filename,
+            size: att.content?.length || 0
+          }))
+        );
+      }
+      debugLog("\u{1F4E8} [EMAIL SERVICE DEBUG] nodemailer.sendMail \uC2E4\uD589 \uC911...");
       const info = await this.transporter.sendMail(mailOptions);
-      console.log("\u{1F4E7} \uC9C1\uC811 \uCCA8\uBD80\uD30C\uC77C \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC131\uACF5:", info.messageId);
+      debugLog("\u2705 [EMAIL SERVICE DEBUG] nodemailer.sendMail \uC131\uACF5", {
+        messageId: info.messageId,
+        accepted: info.accepted,
+        rejected: info.rejected,
+        response: info.response
+      });
       if (orderInfo?.orderId) {
         try {
           await this.recordEmailSendHistory({
@@ -8767,7 +8826,17 @@ var POEmailService = class {
         messageId: info.messageId
       };
     } catch (error) {
-      console.error("\u274C \uC9C1\uC811 \uCCA8\uBD80\uD30C\uC77C \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC624\uB958:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      const errorData = {
+        error: errorMessage,
+        stack: error instanceof Error ? error.stack : void 0,
+        emailOptions: {
+          to: emailOptions.to,
+          subject: emailOptions.subject,
+          attachmentCount: emailOptions.additionalAttachments?.length || 0
+        }
+      };
+      debugLog("\u274C [EMAIL SERVICE ERROR] \uC9C1\uC811 \uCCA8\uBD80\uD30C\uC77C \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC624\uB958", errorData);
       if (orderInfo?.orderId) {
         try {
           await this.recordEmailSendHistory({
@@ -8777,15 +8846,15 @@ var POEmailService = class {
             subject: emailOptions.subject,
             attachmentCount: emailOptions.additionalAttachments?.length || 0,
             status: "failed",
-            errorMessage: error instanceof Error ? error.message : "Unknown error"
+            errorMessage
           });
         } catch (historyError) {
-          console.error("\uC774\uBA54\uC77C \uC2E4\uD328 \uAE30\uB85D \uC800\uC7A5 \uC2E4\uD328:", historyError);
+          debugLog("\u274C [EMAIL SERVICE ERROR] \uC774\uBA54\uC77C \uC2E4\uD328 \uAE30\uB85D \uC800\uC7A5 \uC2E4\uD328", historyError);
         }
       }
       return {
         success: false,
-        error: error instanceof Error ? error.message : "Unknown error"
+        error: errorMessage
       };
     }
   }
@@ -14169,7 +14238,7 @@ router3.get("/orders/:id/download-pdf", async (req, res) => {
   }
 });
 router3.post("/orders/send-email", requireAuth, async (req, res) => {
-  console.log("\u{1F50D} \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC5D4\uB4DC\uD3EC\uC778\uD2B8 \uC9C4\uC785");
+  console.log("\u{1F50D} [SERVER DEBUG] \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC5D4\uB4DC\uD3EC\uC778\uD2B8 \uC9C4\uC785");
   try {
     let generateEmailContent2 = function(options, attachmentsList2 = []) {
       const formatCurrency = (amount) => {
@@ -14331,25 +14400,26 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
       skipPdfGeneration = false
       // PDF 생성 건너뛰기 옵션
     } = req.body;
-    console.log("\u{1F4E7} \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC694\uCCAD (POEmailService \uC0AC\uC6A9):", {
-      orderData,
-      to,
-      cc,
-      subject,
-      message: message ? `[\uBA54\uC2DC\uC9C0 \uC788\uC74C: ${message.substring(0, 50)}...]` : "[\uBA54\uC2DC\uC9C0 \uC5C6\uC74C]",
-      messageLength: message ? message.length : 0,
-      selectedAttachmentIds
-    });
-    console.log("\u{1F4C4} \uC218\uC2E0 \uB370\uC774\uD130:", {
-      hasOrderData: !!orderData,
-      orderNumber: orderData?.orderNumber,
-      orderId: orderData?.orderId,
-      toCount: Array.isArray(to) ? to.length : typeof to === "string" ? 1 : 0,
-      ccCount: Array.isArray(cc) ? cc.length : typeof cc === "string" ? 1 : 0,
-      hasSubject: !!subject,
-      hasMessage: !!message,
-      attachmentIds: selectedAttachmentIds
-    });
+    console.log("\u{1F4E7} [SERVER DEBUG] \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC694\uCCAD (POEmailService \uC0AC\uC6A9):");
+    console.log("  \u251C\u2500 orderData:", orderData);
+    console.log("  \u251C\u2500 to:", to);
+    console.log("  \u251C\u2500 cc:", cc);
+    console.log("  \u251C\u2500 subject:", subject);
+    console.log("  \u251C\u2500 message:", message ? `[\uBA54\uC2DC\uC9C0 \uC788\uC74C: ${message.substring(0, 50)}...]` : "[\uBA54\uC2DC\uC9C0 \uC5C6\uC74C]");
+    console.log("  \u251C\u2500 messageLength:", message ? message.length : 0);
+    console.log("  \u2514\u2500 selectedAttachmentIds:", selectedAttachmentIds);
+    console.log("\u{1F4C4} [SERVER DEBUG] \uC218\uC2E0 \uB370\uC774\uD130 \uAC80\uC99D:");
+    console.log("  \u251C\u2500 hasOrderData:", !!orderData);
+    console.log("  \u251C\u2500 orderNumber:", orderData?.orderNumber);
+    console.log("  \u251C\u2500 orderId:", orderData?.orderId);
+    console.log("  \u251C\u2500 toCount:", Array.isArray(to) ? to.length : typeof to === "string" ? 1 : 0);
+    console.log("  \u251C\u2500 ccCount:", Array.isArray(cc) ? cc.length : typeof cc === "string" ? 1 : 0);
+    console.log("  \u251C\u2500 hasSubject:", !!subject);
+    console.log("  \u251C\u2500 hasMessage:", !!message);
+    console.log("  \u251C\u2500 attachmentIds (\uC6D0\uBCF8):", selectedAttachmentIds);
+    console.log("  \u251C\u2500 attachmentIds \uD0C0\uC785:", typeof selectedAttachmentIds);
+    console.log("  \u251C\u2500 attachmentIds \uBC30\uC5F4\uC778\uAC00:", Array.isArray(selectedAttachmentIds));
+    console.log("  \u2514\u2500 attachmentIds \uAE38\uC774:", selectedAttachmentIds?.length || 0);
     if (!to || to.length === 0) {
       console.log("\u274C \uC218\uC2E0\uC790 \uAC80\uC99D \uC2E4\uD328");
       return res.status(400).json({ error: "\uC218\uC2E0\uC790\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4." });
@@ -14371,10 +14441,12 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
       subject: subject || `\uBC1C\uC8FC\uC11C - ${orderData.orderNumber}`
     };
     if (selectedAttachmentIds && selectedAttachmentIds.length > 0) {
-      console.log("\u{1F4CE} \uC120\uD0DD\uB41C \uCCA8\uBD80\uD30C\uC77C \uCC98\uB9AC:", selectedAttachmentIds);
+      console.log("\u{1F4CE} [SERVER DEBUG] \uC120\uD0DD\uB41C \uCCA8\uBD80\uD30C\uC77C \uCC98\uB9AC \uC2DC\uC791:", selectedAttachmentIds);
+      console.log("  \u251C\u2500 selectedAttachmentIds \uBC30\uC5F4 \uAE38\uC774:", selectedAttachmentIds.length);
+      console.log("  \u2514\u2500 selectedAttachmentIds \uB0B4\uC6A9:", JSON.stringify(selectedAttachmentIds));
       for (const attachmentId of selectedAttachmentIds) {
         try {
-          console.log(`\u{1F4C8} \uCCA8\uBD80\uD30C\uC77C ID ${attachmentId} \uCC98\uB9AC \uC2DC\uC791`);
+          console.log(`\u{1F4C8} [SERVER DEBUG] \uCCA8\uBD80\uD30C\uC77C ID ${attachmentId} \uCC98\uB9AC \uC2DC\uC791 (\uD0C0\uC785: ${typeof attachmentId})`);
           const [attachment] = await db.select({
             id: attachments.id,
             originalName: attachments.originalName,
@@ -14382,45 +14454,101 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
             mimeType: attachments.mimeType,
             fileData: attachments.fileData
           }).from(attachments).where(eq12(attachments.id, attachmentId));
-          console.log(`\u{1F4CB} \uCCA8\uBD80\uD30C\uC77C \uB370\uC774\uD130\uBCA0\uC774\uC2A4 \uC870\uD68C \uACB0\uACFC:`, {
-            found: !!attachment,
-            name: attachment?.originalName,
-            mimeType: attachment?.mimeType,
-            hasFileData: !!attachment?.fileData,
-            hasFilePath: !!attachment?.filePath
-          });
+          console.log(`\u{1F4CB} [SERVER DEBUG] \uCCA8\uBD80\uD30C\uC77C ${attachmentId} \uB370\uC774\uD130\uBCA0\uC774\uC2A4 \uC870\uD68C \uACB0\uACFC:`);
+          console.log("  \u251C\u2500 \uC870\uD68C\uB428:", !!attachment);
+          console.log("  \u251C\u2500 \uD30C\uC77C\uBA85:", attachment?.originalName);
+          console.log("  \u251C\u2500 MIME\uD0C0\uC785:", attachment?.mimeType);
+          console.log("  \u251C\u2500 fileData \uC874\uC7AC:", !!attachment?.fileData);
+          console.log("  \u251C\u2500 fileData \uAE38\uC774:", attachment?.fileData ? attachment.fileData.length : 0);
+          console.log("  \u2514\u2500 filePath \uC874\uC7AC:", !!attachment?.filePath);
           if (attachment) {
             const isExcelFile = attachment.mimeType?.includes("excel") || attachment.mimeType?.includes("spreadsheet") || attachment.originalName?.toLowerCase().endsWith(".xlsx") || attachment.originalName?.toLowerCase().endsWith(".xls");
+            console.log(`\u{1F4CA} [SERVER DEBUG] \uD30C\uC77C \uD0C0\uC785 \uD310\uC815 (ID: ${attachmentId}):`);
+            console.log("  \u251C\u2500 mimeType \uCCB4\uD06C:", {
+              mimeType: attachment.mimeType,
+              includesExcel: attachment.mimeType?.includes("excel"),
+              includesSpreadsheet: attachment.mimeType?.includes("spreadsheet")
+            });
+            console.log("  \u251C\u2500 \uD30C\uC77C\uBA85 \uCCB4\uD06C:", {
+              originalName: attachment.originalName,
+              endsWithXlsx: attachment.originalName?.toLowerCase().endsWith(".xlsx"),
+              endsWithXls: attachment.originalName?.toLowerCase().endsWith(".xls")
+            });
+            console.log("  \u2514\u2500 \uCD5C\uC885 Excel \uD30C\uC77C \uD310\uC815:", isExcelFile);
             if (isExcelFile && !excelFilePath) {
+              console.log(`\u{1F7E2} [SERVER DEBUG] Excel \uD30C\uC77C\uB85C \uD310\uC815\uB428, \uC8FC \uCCA8\uBD80\uD30C\uC77C\uB85C \uCC98\uB9AC (ID: ${attachmentId})`);
               if (attachment.fileData) {
-                const tempDir = getUploadsDir();
-                ensureUploadDir(tempDir);
-                const tempFilePath = path9.join(tempDir, `temp-${Date.now()}-${attachment.originalName}`);
-                if (!fs11.existsSync(tempDir)) {
-                  fs11.mkdirSync(tempDir, { recursive: true });
+                console.log("\u{1F4E6} [SERVER DEBUG] Base64 \uB370\uC774\uD130\uB97C \uC784\uC2DC \uD30C\uC77C\uB85C \uC800\uC7A5 \uC2DC\uC791");
+                try {
+                  const tempDir = getUploadsDir();
+                  ensureUploadDir(tempDir);
+                  const tempFilePath = path9.join(tempDir, `temp-${Date.now()}-${attachment.originalName}`);
+                  if (!fs11.existsSync(tempDir)) {
+                    fs11.mkdirSync(tempDir, { recursive: true });
+                  }
+                  const buffer = Buffer.from(attachment.fileData, "base64");
+                  console.log("\u{1F4E6} [SERVER DEBUG] Base64 \uBCC0\uD658 \uC644\uB8CC:", {
+                    \uC6D0\uBCF8\uB370\uC774\uD130\uAE38\uC774: attachment.fileData.length,
+                    \uBCC0\uD658\uB41C\uBC84\uD37C\uD06C\uAE30: buffer.length,
+                    \uC784\uC2DC\uD30C\uC77C\uACBD\uB85C: tempFilePath
+                  });
+                  fs11.writeFileSync(tempFilePath, buffer);
+                  excelFilePath = tempFilePath;
+                  console.log("\u2705 [SERVER DEBUG] Excel \uD30C\uC77C \uC784\uC2DC \uC800\uC7A5 \uC131\uACF5:", tempFilePath);
+                  if (fs11.existsSync(tempFilePath)) {
+                    const stats = fs11.statSync(tempFilePath);
+                    console.log("\u2705 [SERVER DEBUG] \uC784\uC2DC\uD30C\uC77C \uAC80\uC99D \uC644\uB8CC:", {
+                      \uD30C\uC77C\uC874\uC7AC: true,
+                      \uD30C\uC77C\uD06C\uAE30: stats.size,
+                      \uD30C\uC77C\uACBD\uB85C: tempFilePath
+                    });
+                  } else {
+                    console.error("\u274C [SERVER DEBUG] \uC784\uC2DC\uD30C\uC77C \uC0DD\uC131 \uC2E4\uD328:", tempFilePath);
+                  }
+                } catch (base64Error) {
+                  console.error("\u274C [SERVER DEBUG] Base64 \uBCC0\uD658 \uC624\uB958:", base64Error);
                 }
-                fs11.writeFileSync(tempFilePath, Buffer.from(attachment.fileData, "base64"));
-                excelFilePath = tempFilePath;
-                console.log("\u2705 Excel \uD30C\uC77C \uC784\uC2DC \uC800\uC7A5:", tempFilePath);
               } else if (attachment.filePath && fs11.existsSync(attachment.filePath)) {
                 excelFilePath = attachment.filePath;
-                console.log("\u2705 Excel \uD30C\uC77C \uACBD\uB85C \uC0AC\uC6A9:", attachment.filePath);
+                console.log("\u2705 [SERVER DEBUG] Excel \uD30C\uC77C \uACBD\uB85C \uC0AC\uC6A9:", attachment.filePath);
+              } else {
+                console.warn("\u26A0\uFE0F [SERVER DEBUG] Excel \uD30C\uC77C\uC774\uC9C0\uB9CC \uB370\uC774\uD130\uB098 \uACBD\uB85C \uC5C6\uC74C:", {
+                  hasFileData: !!attachment.fileData,
+                  hasFilePath: !!attachment.filePath,
+                  filePathExists: attachment.filePath ? fs11.existsSync(attachment.filePath) : false
+                });
               }
             } else {
+              console.log(`\u{1F538} [SERVER DEBUG] \uCD94\uAC00 \uCCA8\uBD80\uD30C\uC77C\uB85C \uCC98\uB9AC (ID: ${attachmentId}, Excel\uC774\uBBF8\uC788\uC74C: ${!!excelFilePath})`);
               if (attachment.fileData) {
-                additionalAttachments.push({
-                  filename: attachment.originalName,
-                  content: Buffer.from(attachment.fileData, "base64"),
-                  contentType: attachment.mimeType || "application/octet-stream"
-                });
-                console.log("\u2705 \uCD94\uAC00 \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00 (Base64):", attachment.originalName);
+                try {
+                  const buffer = Buffer.from(attachment.fileData, "base64");
+                  additionalAttachments.push({
+                    filename: attachment.originalName,
+                    content: buffer,
+                    contentType: attachment.mimeType || "application/octet-stream"
+                  });
+                  console.log("\u2705 [SERVER DEBUG] \uCD94\uAC00 \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00 (Base64):", {
+                    \uD30C\uC77C\uBA85: attachment.originalName,
+                    \uC6D0\uBCF8\uD06C\uAE30: attachment.fileData.length,
+                    \uBCC0\uD658\uD06C\uAE30: buffer.length
+                  });
+                } catch (base64Error) {
+                  console.error("\u274C [SERVER DEBUG] \uCD94\uAC00\uD30C\uC77C Base64 \uBCC0\uD658 \uC2E4\uD328:", base64Error);
+                }
               } else if (attachment.filePath && fs11.existsSync(attachment.filePath)) {
                 additionalAttachments.push({
                   filename: attachment.originalName,
                   path: attachment.filePath,
                   contentType: attachment.mimeType || "application/octet-stream"
                 });
-                console.log("\u2705 \uCD94\uAC00 \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00 (\uD30C\uC77C \uACBD\uB85C):", attachment.originalName);
+                console.log("\u2705 [SERVER DEBUG] \uCD94\uAC00 \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00 (\uD30C\uC77C \uACBD\uB85C):", attachment.originalName);
+              } else {
+                console.warn("\u26A0\uFE0F [SERVER DEBUG] \uCD94\uAC00\uD30C\uC77C\uC774\uC9C0\uB9CC \uB370\uC774\uD130\uB098 \uACBD\uB85C \uC5C6\uC74C:", {
+                  \uD30C\uC77C\uBA85: attachment.originalName,
+                  hasFileData: !!attachment.fileData,
+                  hasFilePath: !!attachment.filePath
+                });
               }
             }
           }
@@ -14447,8 +14575,19 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
       XLSX3.utils.book_append_sheet(workbook, worksheet, "\uBC1C\uC8FC\uC11C");
       XLSX3.writeFile(workbook, tempFilePath);
       excelFilePath = tempFilePath;
-      console.log("\u2705 \uAE30\uBCF8 Excel \uD30C\uC77C \uC0DD\uC131:", tempFilePath);
+      console.log("\u2705 [SERVER DEBUG] \uAE30\uBCF8 Excel \uD30C\uC77C \uC0DD\uC131 \uC644\uB8CC:", tempFilePath);
     }
+    console.log("\u{1F4CB} [SERVER DEBUG] \uCCA8\uBD80\uD30C\uC77C \uCC98\uB9AC \uC644\uB8CC \uC0C1\uD0DC:");
+    console.log("  \u251C\u2500 excelFilePath:", excelFilePath);
+    console.log("  \u251C\u2500 excelFilePath \uC874\uC7AC:", excelFilePath ? fs11.existsSync(excelFilePath) : false);
+    console.log("  \u251C\u2500 additionalAttachments \uAC1C\uC218:", additionalAttachments.length);
+    console.log("  \u2514\u2500 additionalAttachments \uBAA9\uB85D:", additionalAttachments.map((att) => ({
+      filename: att.filename,
+      hasContent: !!att.content,
+      hasPath: !!att.path,
+      contentType: att.contentType,
+      contentSize: att.content ? att.content.length : "N/A"
+    })));
     const selectedAttachments = req.body.selectedAttachments || [];
     const attachPdf = req.body.attachPdf || false;
     const attachExcel = req.body.attachExcel || false;
@@ -15495,6 +15634,19 @@ router3.post("/orders/send-email-with-files", requireAuth, upload.array("customF
       messageLength: emailOptions.additionalMessage?.length || 0,
       attachmentCount: emailOptions.additionalAttachments?.length || 0
     });
+    console.log("\u{1F4E7} [SERVER DEBUG] POEmailService \uD638\uCD9C \uC9C1\uC804 \uCD5C\uC885 \uB370\uC774\uD130:");
+    console.log("  \u251C\u2500 emailOptions.to:", emailOptions.to);
+    console.log("  \u251C\u2500 emailOptions.cc:", emailOptions.cc);
+    console.log("  \u251C\u2500 emailOptions.subject:", emailOptions.subject);
+    console.log("  \u251C\u2500 emailOptions.additionalMessage \uAE38\uC774:", emailOptions.additionalMessage?.length || 0);
+    console.log("  \u251C\u2500 emailOptions.additionalAttachments \uAC1C\uC218:", emailOptions.additionalAttachments?.length || 0);
+    console.log("  \u2514\u2500 emailOptions.additionalAttachments \uC0C1\uC138:", emailOptions.additionalAttachments?.map((att) => ({
+      filename: att.filename,
+      hasContent: !!att.content,
+      contentSize: att.content ? att.content.length : 0,
+      contentType: att.contentType
+    })));
+    console.log("\u{1F680} [SERVER DEBUG] POEmailService.sendEmailWithDirectAttachments \uD638\uCD9C");
     const result = await emailService.sendEmailWithDirectAttachments(emailOptions, {
       orderId: orderData.orderId,
       senderUserId: req.user?.id
@@ -29813,9 +29965,11 @@ router43.post("/orders/send-email", requireAuth, async (req, res) => {
     let excelFilePath = "";
     let additionalAttachments = [];
     if (selectedAttachmentIds && selectedAttachmentIds.length > 0) {
-      console.log("\u{1F4CE} \uC120\uD0DD\uB41C \uCCA8\uBD80\uD30C\uC77C \uCC98\uB9AC:", selectedAttachmentIds);
+      console.log("\u{1F4CE} \uC120\uD0DD\uB41C \uCCA8\uBD80\uD30C\uC77C \uCC98\uB9AC \uC2DC\uC791:", selectedAttachmentIds.length, "\uAC1C");
+      console.log("\u{1F4CE} \uCCA8\uBD80\uD30C\uC77C IDs:", selectedAttachmentIds);
       for (const attachmentId of selectedAttachmentIds) {
         try {
+          console.log(`\u{1F4CE} \uCCA8\uBD80\uD30C\uC77C ID ${attachmentId} \uC870\uD68C \uC2DC\uC791`);
           const [attachment] = await db.select({
             id: attachments.id,
             originalName: attachments.originalName,
@@ -29824,10 +29978,19 @@ router43.post("/orders/send-email", requireAuth, async (req, res) => {
             fileData: attachments.fileData
           }).from(attachments).where(eq40(attachments.id, attachmentId));
           if (attachment) {
+            console.log(`\u{1F4CE} \uCCA8\uBD80\uD30C\uC77C \uC815\uBCF4 \uC870\uD68C \uC131\uACF5:`, {
+              id: attachment.id,
+              originalName: attachment.originalName,
+              mimeType: attachment.mimeType,
+              hasFilePath: !!attachment.filePath,
+              hasFileData: !!attachment.fileData,
+              fileDataLength: attachment.fileData ? attachment.fileData.length : 0
+            });
             const isExcelFile = attachment.mimeType?.includes("excel") || attachment.mimeType?.includes("spreadsheet") || attachment.originalName?.toLowerCase().endsWith(".xlsx") || attachment.originalName?.toLowerCase().endsWith(".xls");
+            console.log(`\u{1F4CA} Excel \uD30C\uC77C \uC5EC\uBD80: ${isExcelFile}, \uD604\uC7AC excelFilePath: ${excelFilePath ? "\uC788\uC74C" : "\uC5C6\uC74C"}`);
             if (isExcelFile && !excelFilePath) {
               if (attachment.fileData) {
-                const tempDir = path27.join(__dirname7, "../../uploads");
+                const tempDir = process.env.VERCEL ? "/tmp" : path27.join(__dirname7, "../../uploads");
                 const tempFilePath = path27.join(tempDir, `temp-${Date.now()}-${attachment.originalName}`);
                 try {
                   if (!fs28.existsSync(tempDir)) {
@@ -29836,15 +29999,17 @@ router43.post("/orders/send-email", requireAuth, async (req, res) => {
                   const buffer = Buffer.from(attachment.fileData, "base64");
                   fs28.writeFileSync(tempFilePath, buffer);
                   excelFilePath = tempFilePath;
-                  console.log("\u2705 Excel \uD30C\uC77C \uC784\uC2DC \uC800\uC7A5 (Base64):", tempFilePath, `(${buffer.length} bytes)`);
+                  console.log("\u2705 Excel \uD30C\uC77C \uC784\uC2DC \uC800\uC7A5 \uC131\uACF5 (Base64):", tempFilePath, `(${buffer.length} bytes)`);
                 } catch (saveError) {
                   console.error("\u274C Excel \uD30C\uC77C \uC800\uC7A5 \uC2E4\uD328:", saveError);
                   console.log("\u{1F504} \uD574\uB2F9 \uD30C\uC77C \uAC74\uB108\uB6F0\uACE0 \uAE30\uBCF8 Excel \uD30C\uC77C\uC744 \uC0DD\uC131\uD569\uB2C8\uB2E4");
                 }
               } else if (attachment.filePath) {
+                console.log("\u{1F4C1} Excel \uD30C\uC77C \uACBD\uB85C \uD655\uC778:", attachment.filePath);
                 if (fs28.existsSync(attachment.filePath)) {
                   excelFilePath = attachment.filePath;
-                  console.log("\u2705 Excel \uD30C\uC77C \uACBD\uB85C \uC0AC\uC6A9:", attachment.filePath);
+                  const stats = fs28.statSync(attachment.filePath);
+                  console.log("\u2705 Excel \uD30C\uC77C \uACBD\uB85C \uC0AC\uC6A9:", attachment.filePath, `(${Math.round(stats.size / 1024)}KB)`);
                 } else {
                   console.warn("\u26A0\uFE0F Excel \uD30C\uC77C \uACBD\uB85C\uAC00 \uC874\uC7AC\uD558\uC9C0 \uC54A\uC74C:", attachment.filePath);
                   console.log("\u{1F504} \uD574\uB2F9 \uCCA8\uBD80\uD30C\uC77C\uC740 \uAC74\uB108\uB6F0\uACE0 \uAE30\uBCF8 Excel \uD30C\uC77C\uC744 \uC0DD\uC131\uD569\uB2C8\uB2E4");
@@ -29852,7 +30017,26 @@ router43.post("/orders/send-email", requireAuth, async (req, res) => {
               } else {
                 console.warn("\u26A0\uFE0F Excel \uCCA8\uBD80\uD30C\uC77C\uC5D0 Base64 \uB370\uC774\uD130\uC640 \uD30C\uC77C \uACBD\uB85C\uAC00 \uBAA8\uB450 \uC5C6\uC74C:", attachment.originalName);
               }
+            } else if (isExcelFile && excelFilePath) {
+              console.log("\u{1F4CA} \uCD94\uAC00 Excel \uD30C\uC77C\uB85C \uCC98\uB9AC:", attachment.originalName);
+              if (attachment.fileData) {
+                additionalAttachments.push({
+                  filename: attachment.originalName,
+                  content: Buffer.from(attachment.fileData, "base64"),
+                  contentType: attachment.mimeType || "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                });
+                console.log("\u2705 \uCD94\uAC00 Excel \uD30C\uC77C \uCD94\uAC00 (Base64):", attachment.originalName);
+              } else if (attachment.filePath && fs28.existsSync(attachment.filePath)) {
+                const fileContent = fs28.readFileSync(attachment.filePath);
+                additionalAttachments.push({
+                  filename: attachment.originalName,
+                  content: fileContent,
+                  contentType: attachment.mimeType || "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                });
+                console.log("\u2705 \uCD94\uAC00 Excel \uD30C\uC77C \uCD94\uAC00 (\uD30C\uC77C \uC77D\uAE30):", attachment.originalName, `(${Math.round(fileContent.length / 1024)}KB)`);
+              }
             } else {
+              console.log("\u{1F4C4} Excel\uC774 \uC544\uB2CC \uD30C\uC77C \uCC98\uB9AC:", attachment.originalName);
               if (attachment.fileData) {
                 additionalAttachments.push({
                   filename: attachment.originalName,
@@ -29861,14 +30045,17 @@ router43.post("/orders/send-email", requireAuth, async (req, res) => {
                 });
                 console.log("\u2705 \uCD94\uAC00 \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00 (Base64):", attachment.originalName);
               } else if (attachment.filePath && fs28.existsSync(attachment.filePath)) {
+                const fileContent = fs28.readFileSync(attachment.filePath);
                 additionalAttachments.push({
                   filename: attachment.originalName,
-                  path: attachment.filePath,
+                  content: fileContent,
                   contentType: attachment.mimeType || "application/octet-stream"
                 });
-                console.log("\u2705 \uCD94\uAC00 \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00 (\uD30C\uC77C \uACBD\uB85C):", attachment.originalName);
+                console.log("\u2705 \uCD94\uAC00 \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00 (\uD30C\uC77C \uC77D\uAE30):", attachment.originalName, `(${Math.round(fileContent.length / 1024)}KB)`);
               }
             }
+          } else {
+            console.warn(`\u26A0\uFE0F \uCCA8\uBD80\uD30C\uC77C ID ${attachmentId}\uC5D0 \uB300\uD55C \uC815\uBCF4\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC74C`);
           }
         } catch (error) {
           console.error("\u274C \uCCA8\uBD80\uD30C\uC77C \uCC98\uB9AC \uC624\uB958, ID:", attachmentId, error);
@@ -29876,10 +30063,15 @@ router43.post("/orders/send-email", requireAuth, async (req, res) => {
         }
       }
     }
+    console.log("\u{1F4CA} \uCCA8\uBD80\uD30C\uC77C \uCC98\uB9AC \uACB0\uACFC:", {
+      excelFilePath: excelFilePath || "\uC5C6\uC74C",
+      additionalAttachmentsCount: additionalAttachments.length,
+      additionalFiles: additionalAttachments.map((a) => a.filename)
+    });
     if (!excelFilePath) {
       console.log("\u{1F4CE} Excel \uD30C\uC77C\uC774 \uC5C6\uC5B4 \uAE30\uBCF8 \uD30C\uC77C \uC0DD\uC131");
       try {
-        const tempDir = path27.join(__dirname7, "../../uploads");
+        const tempDir = process.env.VERCEL ? "/tmp" : path27.join(__dirname7, "../../uploads");
         const tempFilePath = path27.join(tempDir, `default-po-${Date.now()}.xlsx`);
         if (!fs28.existsSync(tempDir)) {
           fs28.mkdirSync(tempDir, { recursive: true });
