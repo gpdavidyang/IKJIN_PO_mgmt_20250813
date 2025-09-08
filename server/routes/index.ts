@@ -53,8 +53,8 @@ const router = Router();
 // Mount all route modules
 router.use("/api", authRoutes);
 router.use("/api", projectRoutes);
+router.use("/api", ordersEmailFixedRoutes); // Fixed email route - MUST be before orderRoutes to override broken send-email
 router.use("/api", orderRoutes);
-router.use("/api", ordersEmailFixedRoutes); // Fixed email route - overrides broken send-email in orders.ts
 router.use("/api", vendorRoutes);
 router.use("/api", itemRoutes);
 router.use("/api", dashboardRoutes);

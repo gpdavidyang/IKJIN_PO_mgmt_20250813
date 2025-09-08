@@ -186,11 +186,25 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
     });
     
     // 주문 정보 (이메일 히스토리용)
+    console.log('📧 주문 정보 구성 전 orderData:', {
+      orderData,
+      orderDataKeys: Object.keys(orderData || {}),
+      hasOrderId: !!(orderData.orderId),
+      hasId: !!(orderData.id),
+      userInfo: {
+        hasUser: !!(req as any).user,
+        userId: (req as any).user?.id,
+        userEmail: (req as any).user?.email
+      }
+    });
+    
     const orderInfo = {
       orderId: orderData.orderId || orderData.id,
       orderNumber: orderData.orderNumber,
       senderUserId: (req as any).user?.id || (req as any).user?.email
     };
+    
+    console.log('📧 구성된 orderInfo:', orderInfo);
     
     try {
       // POEmailService.sendPOWithOriginalFormat 사용 (자동으로 이메일 히스토리 기록)
