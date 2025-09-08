@@ -586,6 +586,7 @@ export default function Dashboard() {
                 sortBy={recentOrdersSorting.sortBy}
                 sortOrder={recentOrdersSorting.sortOrder}
                 onSort={handleRecentOrdersSort}
+                showActions={false}
               />
             </div>
           </div>

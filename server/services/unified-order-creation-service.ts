@@ -45,6 +45,7 @@ export interface OrderItem {
   itemId?: number;
   itemName: string;
   specification?: string;
+  unit?: string; // 단위 필드 추가
   majorCategory?: string;
   middleCategory?: string;
   minorCategory?: string;
@@ -226,6 +227,7 @@ export class UnifiedOrderCreationService {
         itemId: item.itemId || null,
         itemName: item.itemName,
         specification: item.specification || null,
+        unit: item.unit || null, // 단위 필드 추가
         majorCategory: item.majorCategory || null,
         middleCategory: item.middleCategory || null,
         minorCategory: item.minorCategory || null,
@@ -256,12 +258,13 @@ export class UnifiedOrderCreationService {
       for (const file of data.attachedFiles) {
         await db.insert(attachmentsTable).values({
           orderId,
-          fileName: file.originalname,
+          originalName: file.originalname,
+          storedName: file.filename || file.originalname, // 서버에 저장된 파일명
           filePath: file.path,
           fileSize: file.size,
           mimeType: file.mimetype,
           uploadedBy: data.userId,
-          createdAt: new Date(),
+          uploadedAt: new Date(),
         });
       }
     }
@@ -276,12 +279,13 @@ export class UnifiedOrderCreationService {
         
         await db.insert(attachmentsTable).values({
           orderId,
-          fileName,
+          originalName: fileName,
+          storedName: fileName, // 엑셀 파일의 경우 원본명과 동일
           filePath: data.excelFilePath,
           fileSize: stat.size,
           mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
           uploadedBy: data.userId,
-          createdAt: new Date(),
+          uploadedAt: new Date(),
         });
       }
     }

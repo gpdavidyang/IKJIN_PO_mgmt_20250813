@@ -97,14 +97,15 @@ export interface ComprehensivePurchaseOrderData {
  * 삼성물산/현대건설 스타일의 전문적인 발주서 생성
  */
 export class ProfessionalPDFGenerationService {
-  // 색상 정의 - 네이비/그레이 톤
+  // 색상 정의 - 네이비/그레이 톤 (더 진하게)
   private static readonly COLORS = {
     navy: '#1e3a5f',        // 메인 네이비
     darkNavy: '#0f2340',    // 진한 네이비
-    gray: '#6b7280',        // 중간 그레이
+    gray: '#374151',        // 중간 그레이 (더 진하게)
     lightGray: '#f3f4f6',   // 연한 그레이
-    borderGray: '#d1d5db',  // 테두리 그레이
+    borderGray: '#9ca3af',  // 테두리 그레이 (더 진하게)
     black: '#000000',
+    darkGray: '#1f2937',    // 진한 그레이 (텍스트용)
     white: '#ffffff',
     blue: '#2563eb',        // 포인트 블루
   };
@@ -116,15 +117,15 @@ export class ProfessionalPDFGenerationService {
     medium: 'NotoSansKR-Medium',
   };
 
-  // 레이아웃 설정 - 더 컴팩트하게 조정
+  // 레이아웃 설정 - 매우 컴팩트하게 조정
   private static readonly LAYOUT = {
     pageWidth: 595.28,     // A4 width in points
     pageHeight: 841.89,    // A4 height in points
-    margin: 30,            // 페이지 여백 (40->30)
-    headerHeight: 60,      // 헤더 높이 (80->60)
-    footerHeight: 50,      // 푸터 높이 (60->50)
-    sectionGap: 10,        // 섹션 간격 (15->10)
-    cellPadding: 5,        // 셀 패딩 (8->5)
+    margin: 20,            // 페이지 여백 (30->20)
+    headerHeight: 45,      // 헤더 높이 (60->45)
+    footerHeight: 40,      // 푸터 높이 (50->40)
+    sectionGap: 8,         // 섹션 간격 (10->8)
+    cellPadding: 3,        // 셀 패딩 (5->3)
   };
 
   /**
@@ -240,14 +241,14 @@ export class ProfessionalPDFGenerationService {
     
     // 제목과 발주번호를 한 줄에 컴팩트하게
     doc.font(this.FONTS.bold)
-       .fontSize(20)
+       .fontSize(18)
        .fillColor(this.COLORS.darkNavy)
        .text('구매발주서', this.LAYOUT.margin, y);
 
-    // 발주번호 박스 - 오른쪽 상단
+    // 발주번호 박스 - 오른쪽 상단 (더 작게)
     const orderNumText = orderData.orderNumber;
-    const boxWidth = 120;
-    const boxHeight = 25;
+    const boxWidth = 100;
+    const boxHeight = 22;
     const boxX = this.LAYOUT.pageWidth - this.LAYOUT.margin - boxWidth;
     
     doc.rect(boxX, y, boxWidth, boxHeight)
@@ -255,9 +256,9 @@ export class ProfessionalPDFGenerationService {
        .fill();
     
     doc.font(this.FONTS.medium)
-       .fontSize(10)
+       .fontSize(8)
        .fillColor(this.COLORS.darkNavy)
-       .text(orderNumText, boxX, y + 8, {
+       .text(orderNumText, boxX, y + 7, {
          width: boxWidth,
          align: 'center'
        });
@@ -265,19 +266,19 @@ export class ProfessionalPDFGenerationService {
     // 발주일자 - 발주번호 박스 아래
     const dateText = format(orderData.orderDate, 'yyyy-MM-dd');
     doc.font(this.FONTS.regular)
-       .fontSize(9)
+       .fontSize(7)
        .fillColor(this.COLORS.gray)
-       .text(dateText, boxX, y + boxHeight + 3, {
+       .text(dateText, boxX, y + boxHeight + 2, {
          width: boxWidth,
          align: 'center'
        });
 
     // 헤더 하단 선
-    const lineY = y + 40;
+    const lineY = y + 35;
     doc.moveTo(this.LAYOUT.margin, lineY)
        .lineTo(this.LAYOUT.pageWidth - this.LAYOUT.margin, lineY)
        .strokeColor(this.COLORS.navy)
-       .lineWidth(1.5)
+       .lineWidth(1)
        .stroke();
 
     return lineY;
@@ -287,7 +288,7 @@ export class ProfessionalPDFGenerationService {
    * 업체 정보 렌더링 - 2단 레이아웃
    */
   private static renderCompanyInfo(doc: PDFDocument, orderData: ComprehensivePurchaseOrderData, y: number): number {
-    const columnWidth = (this.LAYOUT.pageWidth - (this.LAYOUT.margin * 2) - 20) / 2;
+    const columnWidth = (this.LAYOUT.pageWidth - (this.LAYOUT.margin * 2) - 10) / 2;
     const startY = y;
     
     // 발주업체 (왼쪽)
@@ -305,7 +306,7 @@ export class ProfessionalPDFGenerationService {
       doc,
       '수주업체',
       orderData.vendorCompany,
-      this.LAYOUT.margin + columnWidth + 20,
+      this.LAYOUT.margin + columnWidth + 10,
       y,
       columnWidth
     );
@@ -325,37 +326,41 @@ export class ProfessionalPDFGenerationService {
     width: number
   ): number {
     // 박스 헤더
-    doc.rect(x, y, width, 25)
+    doc.rect(x, y, width, 20)
        .fillColor(this.COLORS.navy)
        .fill();
 
+    // 박스 헤더 텍스트 중앙 정렬
+    const titleY = y + (20 - 9) / 2; // 20px 박스에서 9px 폰트 중앙
     doc.font(this.FONTS.bold)
-       .fontSize(10)
+       .fontSize(9)
        .fillColor(this.COLORS.white)
-       .text(title, x + 8, y + 7);
+       .text(title, x + 5, titleY);
 
     // 박스 본문
-    const contentY = y + 25;
-    const boxHeight = 85; // 고정 높이로 컴팩트하게
+    const contentY = y + 20;
+    const boxHeight = 70; // 고정 높이로 더 컴팩트하게
     doc.rect(x, contentY, width, boxHeight)
        .strokeColor(this.COLORS.borderGray)
        .lineWidth(0.5)
        .stroke();
 
-    let currentY = contentY + 8;
+    let currentY = contentY + 5;
     const fontSize = 8;
-    const lineHeight = 13;
+    const lineHeight = 11;
 
     // 회사 정보 렌더링
     const renderField = (label: string, value?: string) => {
       if (value) {
+        // 텍스트 수직 중앙 정렬
+        const textY = currentY + 1; // 약간 위로 조정하여 중앙에 맞춤
         doc.font(this.FONTS.medium)
            .fontSize(fontSize)
            .fillColor(this.COLORS.gray)
-           .text(label, x + 10, currentY, { continued: true })
+           .text(label, x + 5, textY, { continued: true })
            .font(this.FONTS.regular)
-           .fillColor(this.COLORS.black)
-           .text(` ${value}`, { width: width - 20 });
+           .fillColor(this.COLORS.darkGray)
+           .text(` ${value}`, { width: width - 10, ellipsis: true });
         currentY += lineHeight;
       }
     };
@@ -380,38 +385,42 @@ export class ProfessionalPDFGenerationService {
     const pageWidth = this.LAYOUT.pageWidth - (this.LAYOUT.margin * 2);
     
     // 섹션 헤더
-    doc.rect(this.LAYOUT.margin, y, pageWidth, 20)
+    doc.rect(this.LAYOUT.margin, y, pageWidth, 18)
        .fillColor(this.COLORS.lightGray)
        .fill();
 
+    // 섹션 헤더 텍스트 수직 중앙
+    const sectionTitleY = y + (18 - 8) / 2;
     doc.font(this.FONTS.bold)
-       .fontSize(9)
+       .fontSize(8)
        .fillColor(this.COLORS.darkNavy)
-       .text('현장 정보', this.LAYOUT.margin + 8, y + 6);
+       .text('현장 정보', this.LAYOUT.margin + 5, sectionTitleY);
 
     // 정보 표시 (3열) - 더 컴팩트하게
-    const contentY = y + 20;
+    const contentY = y + 18;
     const colWidth = pageWidth / 3;
     
     const renderInfo = (label: string, value: string | undefined, x: number, y: number) => {
+      // 현장 정보 텍스트 수직 중앙
+      const infoTextY = y + 1;
       doc.font(this.FONTS.medium)
-         .fontSize(9)
+         .fontSize(8)
          .fillColor(this.COLORS.gray)
-         .text(label, x + 10, y, { continued: true })
+         .text(label, x + 5, infoTextY, { continued: true })
          .font(this.FONTS.regular)
-         .fillColor(this.COLORS.black)
-         .text(` ${value || '-'}`, { width: colWidth - 20 });
+         .fillColor(this.COLORS.darkGray)
+         .text(` ${value || '-'}`, { width: colWidth - 10, ellipsis: true });
     };
 
-    renderInfo('현장명:', orderData.project.name, this.LAYOUT.margin, contentY + 5);
-    renderInfo('현장코드:', orderData.project.code, this.LAYOUT.margin + colWidth, contentY + 5);
-    renderInfo('담당자:', orderData.creator.name, this.LAYOUT.margin + colWidth * 2, contentY + 5);
+    renderInfo('현장명:', orderData.project.name, this.LAYOUT.margin, contentY + 3);
+    renderInfo('현장코드:', orderData.project.code, this.LAYOUT.margin + colWidth, contentY + 3);
+    renderInfo('담당자:', orderData.creator.name, this.LAYOUT.margin + colWidth * 2, contentY + 3);
 
-    renderInfo('발주일:', format(orderData.orderDate, 'yyyy-MM-dd'), this.LAYOUT.margin, contentY + 18);
-    renderInfo('납기일:', orderData.deliveryDate ? format(orderData.deliveryDate, 'yyyy-MM-dd') : '-', this.LAYOUT.margin + colWidth, contentY + 18);
-    renderInfo('연락처:', orderData.creator.phone, this.LAYOUT.margin + colWidth * 2, contentY + 18);
+    renderInfo('발주일:', format(orderData.orderDate, 'yyyy-MM-dd'), this.LAYOUT.margin, contentY + 14);
+    renderInfo('납기일:', orderData.deliveryDate ? format(orderData.deliveryDate, 'yyyy-MM-dd') : '-', this.LAYOUT.margin + colWidth, contentY + 14);
+    renderInfo('연락처:', orderData.creator.phone, this.LAYOUT.margin + colWidth * 2, contentY + 14);
 
-    return contentY + 35;
+    return contentY + 28;
   }
 
   /**
@@ -421,31 +430,34 @@ export class ProfessionalPDFGenerationService {
     const pageWidth = this.LAYOUT.pageWidth - (this.LAYOUT.margin * 2);
     
     // 테이블 헤더
-    const headerHeight = 28;
+    const headerHeight = 22;
     doc.rect(this.LAYOUT.margin, y, pageWidth, headerHeight)
        .fillColor(this.COLORS.navy)
        .fill();
 
-    // 컬럼 정의 - 너비 최적화
+    // 컬럼 정의 - 컴팩트하게 너비 조정
+    const totalWidth = pageWidth;
     const columns = [
-      { label: '순번', width: 35, align: 'center' },
-      { label: '품목명', width: 155, align: 'left' },
-      { label: '규격', width: 95, align: 'left' },
-      { label: '수량', width: 45, align: 'center' },
-      { label: '단위', width: 35, align: 'center' },
-      { label: '단가', width: 85, align: 'right' },
-      { label: '금액', width: 95, align: 'right' },
-      { label: '비고', width: 40, align: 'center' },
+      { label: '순번', width: 25, align: 'center' },           // 축소
+      { label: '품목명', width: totalWidth * 0.22, align: 'left' },  // 30% → 22%
+      { label: '규격', width: totalWidth * 0.12, align: 'left' },    // 18% → 12%
+      { label: '수량', width: 35, align: 'center' },           // 40 → 35
+      { label: '단위', width: 25, align: 'center' },           // 30 → 25
+      { label: '단가', width: totalWidth * 0.12, align: 'right' },   // 15% → 12%
+      { label: '금액', width: totalWidth * 0.20, align: 'right' },   // 18% → 20% (더 중요)
+      { label: '비고', width: totalWidth * 0.12, align: 'left' },    // 45 → 12%
     ];
 
     // 헤더 텍스트
     let currentX = this.LAYOUT.margin;
     columns.forEach(col => {
+      // 테이블 헤더 텍스트 수직 중앙
+      const headerTextY = y + (headerHeight - 8) / 2;
       doc.font(this.FONTS.bold)
-         .fontSize(9)
+         .fontSize(8)
          .fillColor(this.COLORS.white)
-         .text(col.label, currentX + 3, y + 9, {
-           width: col.width - 6,
+         .text(col.label, currentX + 2, headerTextY, {
+           width: col.width - 4,
            align: col.align as any,
          });
       currentX += col.width;
@@ -454,7 +466,7 @@ export class ProfessionalPDFGenerationService {
     // 테이블 본문
     let currentY = y + headerHeight;
     orderData.items.forEach((item, index) => {
-      const rowHeight = 25; // 행 높이 줄임
+      const rowHeight = 20; // 행 높이 더 줄임
       const isEvenRow = index % 2 === 0;
       
       // 행 배경색 (교차)
@@ -478,11 +490,13 @@ export class ProfessionalPDFGenerationService {
       ];
 
       values.forEach((value, i) => {
+        // 테이블 데이터 수직 중앙 정렬
+        const cellTextY = currentY + (rowHeight - 7.5) / 2;
         doc.font(this.FONTS.regular)
-           .fontSize(8)
-           .fillColor(this.COLORS.black)
-           .text(value, currentX + 3, currentY + 8, {
-             width: columns[i].width - 6,
+           .fontSize(7.5)
+           .fillColor(this.COLORS.darkGray)
+           .text(value, currentX + 2, cellTextY, {
+             width: columns[i].width - 4,
              align: columns[i].align as any,
              ellipsis: true
            });
@@ -506,7 +520,7 @@ export class ProfessionalPDFGenerationService {
    * 금액 요약 렌더링
    */
   private static renderFinancialSummary(doc: PDFDocument, orderData: ComprehensivePurchaseOrderData, y: number): number {
-    const summaryWidth = 250;
+    const summaryWidth = 220;
     const summaryX = this.LAYOUT.pageWidth - this.LAYOUT.margin - summaryWidth;
     
     const rows = [
@@ -515,7 +529,7 @@ export class ProfessionalPDFGenerationService {
     ];
 
     let currentY = y;
-    const rowHeight = 22; // 금액 요약 행 높이 줄임
+    const rowHeight = 18; // 금액 요약 행 높이 더 줄임
 
     // 일반 행
     rows.forEach(row => {
@@ -524,16 +538,18 @@ export class ProfessionalPDFGenerationService {
          .lineWidth(0.5)
          .stroke();
 
+      // 금액 요약 텍스트 수직 중앙
+      const summaryTextY = currentY + (rowHeight - 8) / 2;
       doc.font(this.FONTS.regular)
-         .fontSize(10)
+         .fontSize(8)
          .fillColor(this.COLORS.gray)
-         .text(row.label, summaryX + 10, currentY + 8);
+         .text(row.label, summaryX + 5, summaryTextY);
 
-      doc.font(this.FONTS.regular)
-         .fontSize(10)
-         .fillColor(this.COLORS.black)
-         .text(row.value, summaryX + 10, currentY + 8, {
-           width: summaryWidth - 20,
+      doc.font(this.FONTS.medium)
+         .fontSize(8)
+         .fillColor(this.COLORS.darkGray)
+         .text(row.value, summaryX + 5, summaryTextY, {
+           width: summaryWidth - 10,
            align: 'right',
          });
 
@@ -541,24 +557,26 @@ export class ProfessionalPDFGenerationService {
     });
 
     // 총 금액 (강조)
-    doc.rect(summaryX, currentY, summaryWidth, 30)
+    doc.rect(summaryX, currentY, summaryWidth, 22)
        .fillColor(this.COLORS.navy)
        .fill();
 
+    // 총 금액 텍스트 수직 중앙
+    const totalTextY = currentY + (22 - 8) / 2;
     doc.font(this.FONTS.bold)
-       .fontSize(10)
+       .fontSize(8)
        .fillColor(this.COLORS.white)
-       .text('총 금액', summaryX + 10, currentY + 10);
+       .text('총 금액', summaryX + 5, totalTextY);
 
     doc.font(this.FONTS.bold)
-       .fontSize(12)
+       .fontSize(9)
        .fillColor(this.COLORS.white)
-       .text(`₩${orderData.financial.totalAmount.toLocaleString('ko-KR')}`, summaryX + 10, currentY + 9, {
-         width: summaryWidth - 20,
+       .text(`₩${orderData.financial.totalAmount.toLocaleString('ko-KR')}`, summaryX + 5, totalTextY - 1, {
+         width: summaryWidth - 10,
          align: 'right',
        });
 
-    return currentY + 30;
+    return currentY + 22;
   }
 
   /**
@@ -570,27 +588,28 @@ export class ProfessionalPDFGenerationService {
     const pageWidth = this.LAYOUT.pageWidth - (this.LAYOUT.margin * 2);
     
     doc.font(this.FONTS.bold)
-       .fontSize(10)
+       .fontSize(9)
        .fillColor(this.COLORS.darkNavy)
        .text('특이사항', this.LAYOUT.margin, y);
 
     // 특이사항을 더 컴팩트하게
-    const notesHeight = 50;
-    doc.rect(this.LAYOUT.margin, y + 15, pageWidth, notesHeight)
+    const notesHeight = 40;
+    doc.rect(this.LAYOUT.margin, y + 12, pageWidth, notesHeight)
        .strokeColor(this.COLORS.borderGray)
        .lineWidth(0.5)
        .stroke();
 
     doc.font(this.FONTS.regular)
-       .fontSize(8)
-       .fillColor(this.COLORS.black)
-       .text(orderData.metadata.notes, this.LAYOUT.margin + 8, y + 20, {
-         width: pageWidth - 16,
-         height: notesHeight - 10,
-         ellipsis: true
+       .fontSize(7.5)
+       .fillColor(this.COLORS.darkGray)
+       .text(orderData.metadata.notes, this.LAYOUT.margin + 5, y + 15, {
+         width: pageWidth - 10,
+         height: notesHeight - 6,
+         ellipsis: true,
+         lineGap: 1
        });
 
-    return y + 15 + notesHeight;
+    return y + 12 + notesHeight;
   }
 
   /**
@@ -607,13 +626,13 @@ export class ProfessionalPDFGenerationService {
        .lineWidth(0.5)
        .stroke();
 
-    // 회사 정보
+    // 회사 정보 - 줄간격 충분히 확보
     doc.font(this.FONTS.bold)
-       .fontSize(10)
+       .fontSize(8)
        .fillColor(this.COLORS.darkNavy)
-       .text(orderData.issuerCompany.name, this.LAYOUT.margin, footerY + 10);
+       .text(orderData.issuerCompany.name, this.LAYOUT.margin, footerY + 5);
 
-    // 푸터 정보를 한 줄로 컴팩트하게
+    // 푸터 정보 - 줄간격 개선
     const footerInfo = [
       orderData.issuerCompany.address,
       `TEL: ${orderData.issuerCompany.phone}`,
@@ -621,9 +640,9 @@ export class ProfessionalPDFGenerationService {
     ].filter(Boolean).join(' | ');
 
     doc.font(this.FONTS.regular)
-       .fontSize(7)
+       .fontSize(6.5)
        .fillColor(this.COLORS.gray)
-       .text(footerInfo, this.LAYOUT.margin, footerY + 20, {
+       .text(footerInfo, this.LAYOUT.margin, footerY + 18, {  // 16 -> 18로 증가
          width: pageWidth,
        });
 
@@ -632,7 +651,7 @@ export class ProfessionalPDFGenerationService {
     doc.font(this.FONTS.regular)
        .fontSize(6)
        .fillColor(this.COLORS.gray)
-       .text(docInfo, this.LAYOUT.margin, footerY + 32, {
+       .text(docInfo, this.LAYOUT.margin, footerY + 28, {  // 25 -> 28로 증가
          width: pageWidth,
          align: 'right',
        });

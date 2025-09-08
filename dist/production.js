@@ -1663,19 +1663,21 @@ var init_professional_pdf_generation_service = __esm({
     init_schema();
     ProfessionalPDFGenerationService = class {
       static {
-        // 색상 정의 - 네이비/그레이 톤
+        // 색상 정의 - 네이비/그레이 톤 (더 진하게)
         this.COLORS = {
           navy: "#1e3a5f",
           // 메인 네이비
           darkNavy: "#0f2340",
           // 진한 네이비
-          gray: "#6b7280",
-          // 중간 그레이
+          gray: "#374151",
+          // 중간 그레이 (더 진하게)
           lightGray: "#f3f4f6",
           // 연한 그레이
-          borderGray: "#d1d5db",
-          // 테두리 그레이
+          borderGray: "#9ca3af",
+          // 테두리 그레이 (더 진하게)
           black: "#000000",
+          darkGray: "#1f2937",
+          // 진한 그레이 (텍스트용)
           white: "#ffffff",
           blue: "#2563eb"
           // 포인트 블루
@@ -1690,22 +1692,22 @@ var init_professional_pdf_generation_service = __esm({
         };
       }
       static {
-        // 레이아웃 설정 - 더 컴팩트하게 조정
+        // 레이아웃 설정 - 매우 컴팩트하게 조정
         this.LAYOUT = {
           pageWidth: 595.28,
           // A4 width in points
           pageHeight: 841.89,
           // A4 height in points
-          margin: 30,
-          // 페이지 여백 (40->30)
-          headerHeight: 60,
-          // 헤더 높이 (80->60)
-          footerHeight: 50,
-          // 푸터 높이 (60->50)
-          sectionGap: 10,
-          // 섹션 간격 (15->10)
-          cellPadding: 5
-          // 셀 패딩 (8->5)
+          margin: 20,
+          // 페이지 여백 (30->20)
+          headerHeight: 45,
+          // 헤더 높이 (60->45)
+          footerHeight: 40,
+          // 푸터 높이 (50->40)
+          sectionGap: 8,
+          // 섹션 간격 (10->8)
+          cellPadding: 3
+          // 셀 패딩 (5->3)
         };
       }
       /**
@@ -1789,30 +1791,30 @@ var init_professional_pdf_generation_service = __esm({
        * 헤더 렌더링 - 제목과 발주번호
        */
       static renderHeader(doc, orderData, y) {
-        doc.font(this.FONTS.bold).fontSize(20).fillColor(this.COLORS.darkNavy).text("\uAD6C\uB9E4\uBC1C\uC8FC\uC11C", this.LAYOUT.margin, y);
+        doc.font(this.FONTS.bold).fontSize(18).fillColor(this.COLORS.darkNavy).text("\uAD6C\uB9E4\uBC1C\uC8FC\uC11C", this.LAYOUT.margin, y);
         const orderNumText = orderData.orderNumber;
-        const boxWidth = 120;
-        const boxHeight = 25;
+        const boxWidth = 100;
+        const boxHeight = 22;
         const boxX = this.LAYOUT.pageWidth - this.LAYOUT.margin - boxWidth;
         doc.rect(boxX, y, boxWidth, boxHeight).fillColor(this.COLORS.lightGray).fill();
-        doc.font(this.FONTS.medium).fontSize(10).fillColor(this.COLORS.darkNavy).text(orderNumText, boxX, y + 8, {
+        doc.font(this.FONTS.medium).fontSize(8).fillColor(this.COLORS.darkNavy).text(orderNumText, boxX, y + 7, {
           width: boxWidth,
           align: "center"
         });
         const dateText = format(orderData.orderDate, "yyyy-MM-dd");
-        doc.font(this.FONTS.regular).fontSize(9).fillColor(this.COLORS.gray).text(dateText, boxX, y + boxHeight + 3, {
+        doc.font(this.FONTS.regular).fontSize(7).fillColor(this.COLORS.gray).text(dateText, boxX, y + boxHeight + 2, {
           width: boxWidth,
           align: "center"
         });
-        const lineY = y + 40;
-        doc.moveTo(this.LAYOUT.margin, lineY).lineTo(this.LAYOUT.pageWidth - this.LAYOUT.margin, lineY).strokeColor(this.COLORS.navy).lineWidth(1.5).stroke();
+        const lineY = y + 35;
+        doc.moveTo(this.LAYOUT.margin, lineY).lineTo(this.LAYOUT.pageWidth - this.LAYOUT.margin, lineY).strokeColor(this.COLORS.navy).lineWidth(1).stroke();
         return lineY;
       }
       /**
        * 업체 정보 렌더링 - 2단 레이아웃
        */
       static renderCompanyInfo(doc, orderData, y) {
-        const columnWidth = (this.LAYOUT.pageWidth - this.LAYOUT.margin * 2 - 20) / 2;
+        const columnWidth = (this.LAYOUT.pageWidth - this.LAYOUT.margin * 2 - 10) / 2;
         const startY = y;
         let leftY = this.renderCompanyBox(
           doc,
@@ -1826,7 +1828,7 @@ var init_professional_pdf_generation_service = __esm({
           doc,
           "\uC218\uC8FC\uC5C5\uCCB4",
           orderData.vendorCompany,
-          this.LAYOUT.margin + columnWidth + 20,
+          this.LAYOUT.margin + columnWidth + 10,
           y,
           columnWidth
         );
@@ -1836,17 +1838,19 @@ var init_professional_pdf_generation_service = __esm({
        * 회사 정보 박스 렌더링
        */
       static renderCompanyBox(doc, title, company, x, y, width) {
-        doc.rect(x, y, width, 25).fillColor(this.COLORS.navy).fill();
-        doc.font(this.FONTS.bold).fontSize(10).fillColor(this.COLORS.white).text(title, x + 8, y + 7);
-        const contentY = y + 25;
-        const boxHeight = 85;
+        doc.rect(x, y, width, 20).fillColor(this.COLORS.navy).fill();
+        const titleY = y + (20 - 9) / 2;
+        doc.font(this.FONTS.bold).fontSize(9).fillColor(this.COLORS.white).text(title, x + 5, titleY);
+        const contentY = y + 20;
+        const boxHeight = 70;
         doc.rect(x, contentY, width, boxHeight).strokeColor(this.COLORS.borderGray).lineWidth(0.5).stroke();
-        let currentY = contentY + 8;
+        let currentY = contentY + 5;
         const fontSize = 8;
-        const lineHeight = 13;
+        const lineHeight = 11;
         const renderField = (label, value) => {
           if (value) {
-            doc.font(this.FONTS.medium).fontSize(fontSize).fillColor(this.COLORS.gray).text(label, x + 10, currentY, { continued: true }).font(this.FONTS.regular).fillColor(this.COLORS.black).text(` ${value}`, { width: width - 20 });
+            const textY = currentY + 1;
+            doc.font(this.FONTS.medium).fontSize(fontSize).fillColor(this.COLORS.gray).text(label, x + 5, textY, { continued: true }).font(this.FONTS.regular).fillColor(this.COLORS.darkGray).text(` ${value}`, { width: width - 10, ellipsis: true });
             currentY += lineHeight;
           }
         };
@@ -1865,49 +1869,61 @@ var init_professional_pdf_generation_service = __esm({
        */
       static renderProjectInfo(doc, orderData, y) {
         const pageWidth = this.LAYOUT.pageWidth - this.LAYOUT.margin * 2;
-        doc.rect(this.LAYOUT.margin, y, pageWidth, 20).fillColor(this.COLORS.lightGray).fill();
-        doc.font(this.FONTS.bold).fontSize(9).fillColor(this.COLORS.darkNavy).text("\uD604\uC7A5 \uC815\uBCF4", this.LAYOUT.margin + 8, y + 6);
-        const contentY = y + 20;
+        doc.rect(this.LAYOUT.margin, y, pageWidth, 18).fillColor(this.COLORS.lightGray).fill();
+        const sectionTitleY = y + (18 - 8) / 2;
+        doc.font(this.FONTS.bold).fontSize(8).fillColor(this.COLORS.darkNavy).text("\uD604\uC7A5 \uC815\uBCF4", this.LAYOUT.margin + 5, sectionTitleY);
+        const contentY = y + 18;
         const colWidth = pageWidth / 3;
         const renderInfo = (label, value, x, y2) => {
-          doc.font(this.FONTS.medium).fontSize(9).fillColor(this.COLORS.gray).text(label, x + 10, y2, { continued: true }).font(this.FONTS.regular).fillColor(this.COLORS.black).text(` ${value || "-"}`, { width: colWidth - 20 });
+          const infoTextY = y2 + 1;
+          doc.font(this.FONTS.medium).fontSize(8).fillColor(this.COLORS.gray).text(label, x + 5, infoTextY, { continued: true }).font(this.FONTS.regular).fillColor(this.COLORS.darkGray).text(` ${value || "-"}`, { width: colWidth - 10, ellipsis: true });
         };
-        renderInfo("\uD604\uC7A5\uBA85:", orderData.project.name, this.LAYOUT.margin, contentY + 5);
-        renderInfo("\uD604\uC7A5\uCF54\uB4DC:", orderData.project.code, this.LAYOUT.margin + colWidth, contentY + 5);
-        renderInfo("\uB2F4\uB2F9\uC790:", orderData.creator.name, this.LAYOUT.margin + colWidth * 2, contentY + 5);
-        renderInfo("\uBC1C\uC8FC\uC77C:", format(orderData.orderDate, "yyyy-MM-dd"), this.LAYOUT.margin, contentY + 18);
-        renderInfo("\uB0A9\uAE30\uC77C:", orderData.deliveryDate ? format(orderData.deliveryDate, "yyyy-MM-dd") : "-", this.LAYOUT.margin + colWidth, contentY + 18);
-        renderInfo("\uC5F0\uB77D\uCC98:", orderData.creator.phone, this.LAYOUT.margin + colWidth * 2, contentY + 18);
-        return contentY + 35;
+        renderInfo("\uD604\uC7A5\uBA85:", orderData.project.name, this.LAYOUT.margin, contentY + 3);
+        renderInfo("\uD604\uC7A5\uCF54\uB4DC:", orderData.project.code, this.LAYOUT.margin + colWidth, contentY + 3);
+        renderInfo("\uB2F4\uB2F9\uC790:", orderData.creator.name, this.LAYOUT.margin + colWidth * 2, contentY + 3);
+        renderInfo("\uBC1C\uC8FC\uC77C:", format(orderData.orderDate, "yyyy-MM-dd"), this.LAYOUT.margin, contentY + 14);
+        renderInfo("\uB0A9\uAE30\uC77C:", orderData.deliveryDate ? format(orderData.deliveryDate, "yyyy-MM-dd") : "-", this.LAYOUT.margin + colWidth, contentY + 14);
+        renderInfo("\uC5F0\uB77D\uCC98:", orderData.creator.phone, this.LAYOUT.margin + colWidth * 2, contentY + 14);
+        return contentY + 28;
       }
       /**
        * 품목 테이블 렌더링
        */
       static renderItemsTable(doc, orderData, y) {
         const pageWidth = this.LAYOUT.pageWidth - this.LAYOUT.margin * 2;
-        const headerHeight = 28;
+        const headerHeight = 22;
         doc.rect(this.LAYOUT.margin, y, pageWidth, headerHeight).fillColor(this.COLORS.navy).fill();
+        const totalWidth = pageWidth;
         const columns = [
-          { label: "\uC21C\uBC88", width: 35, align: "center" },
-          { label: "\uD488\uBAA9\uBA85", width: 155, align: "left" },
-          { label: "\uADDC\uACA9", width: 95, align: "left" },
-          { label: "\uC218\uB7C9", width: 45, align: "center" },
-          { label: "\uB2E8\uC704", width: 35, align: "center" },
-          { label: "\uB2E8\uAC00", width: 85, align: "right" },
-          { label: "\uAE08\uC561", width: 95, align: "right" },
-          { label: "\uBE44\uACE0", width: 40, align: "center" }
+          { label: "\uC21C\uBC88", width: 25, align: "center" },
+          // 축소
+          { label: "\uD488\uBAA9\uBA85", width: totalWidth * 0.22, align: "left" },
+          // 30% → 22%
+          { label: "\uADDC\uACA9", width: totalWidth * 0.12, align: "left" },
+          // 18% → 12%
+          { label: "\uC218\uB7C9", width: 35, align: "center" },
+          // 40 → 35
+          { label: "\uB2E8\uC704", width: 25, align: "center" },
+          // 30 → 25
+          { label: "\uB2E8\uAC00", width: totalWidth * 0.12, align: "right" },
+          // 15% → 12%
+          { label: "\uAE08\uC561", width: totalWidth * 0.2, align: "right" },
+          // 18% → 20% (더 중요)
+          { label: "\uBE44\uACE0", width: totalWidth * 0.12, align: "left" }
+          // 45 → 12%
         ];
         let currentX = this.LAYOUT.margin;
         columns.forEach((col) => {
-          doc.font(this.FONTS.bold).fontSize(9).fillColor(this.COLORS.white).text(col.label, currentX + 3, y + 9, {
-            width: col.width - 6,
+          const headerTextY = y + (headerHeight - 8) / 2;
+          doc.font(this.FONTS.bold).fontSize(8).fillColor(this.COLORS.white).text(col.label, currentX + 2, headerTextY, {
+            width: col.width - 4,
             align: col.align
           });
           currentX += col.width;
         });
         let currentY = y + headerHeight;
         orderData.items.forEach((item, index2) => {
-          const rowHeight = 25;
+          const rowHeight = 20;
           const isEvenRow = index2 % 2 === 0;
           if (isEvenRow) {
             doc.rect(this.LAYOUT.margin, currentY, pageWidth, rowHeight).fillColor(this.COLORS.lightGray).fill();
@@ -1924,8 +1940,9 @@ var init_professional_pdf_generation_service = __esm({
             item.remarks || "-"
           ];
           values.forEach((value, i) => {
-            doc.font(this.FONTS.regular).fontSize(8).fillColor(this.COLORS.black).text(value, currentX + 3, currentY + 8, {
-              width: columns[i].width - 6,
+            const cellTextY = currentY + (rowHeight - 7.5) / 2;
+            doc.font(this.FONTS.regular).fontSize(7.5).fillColor(this.COLORS.darkGray).text(value, currentX + 2, cellTextY, {
+              width: columns[i].width - 4,
               align: columns[i].align,
               ellipsis: true
             });
@@ -1940,30 +1957,32 @@ var init_professional_pdf_generation_service = __esm({
        * 금액 요약 렌더링
        */
       static renderFinancialSummary(doc, orderData, y) {
-        const summaryWidth = 250;
+        const summaryWidth = 220;
         const summaryX = this.LAYOUT.pageWidth - this.LAYOUT.margin - summaryWidth;
         const rows = [
           { label: "\uC18C\uACC4 (\uBD80\uAC00\uC138 \uBCC4\uB3C4)", value: `\u20A9${orderData.financial.subtotalAmount.toLocaleString("ko-KR")}` },
           { label: `\uBD80\uAC00\uC138 (${orderData.financial.vatRate}%)`, value: `\u20A9${orderData.financial.vatAmount.toLocaleString("ko-KR")}` }
         ];
         let currentY = y;
-        const rowHeight = 22;
+        const rowHeight = 18;
         rows.forEach((row) => {
           doc.rect(summaryX, currentY, summaryWidth, rowHeight).strokeColor(this.COLORS.borderGray).lineWidth(0.5).stroke();
-          doc.font(this.FONTS.regular).fontSize(10).fillColor(this.COLORS.gray).text(row.label, summaryX + 10, currentY + 8);
-          doc.font(this.FONTS.regular).fontSize(10).fillColor(this.COLORS.black).text(row.value, summaryX + 10, currentY + 8, {
-            width: summaryWidth - 20,
+          const summaryTextY = currentY + (rowHeight - 8) / 2;
+          doc.font(this.FONTS.regular).fontSize(8).fillColor(this.COLORS.gray).text(row.label, summaryX + 5, summaryTextY);
+          doc.font(this.FONTS.medium).fontSize(8).fillColor(this.COLORS.darkGray).text(row.value, summaryX + 5, summaryTextY, {
+            width: summaryWidth - 10,
             align: "right"
           });
           currentY += rowHeight;
         });
-        doc.rect(summaryX, currentY, summaryWidth, 30).fillColor(this.COLORS.navy).fill();
-        doc.font(this.FONTS.bold).fontSize(10).fillColor(this.COLORS.white).text("\uCD1D \uAE08\uC561", summaryX + 10, currentY + 10);
-        doc.font(this.FONTS.bold).fontSize(12).fillColor(this.COLORS.white).text(`\u20A9${orderData.financial.totalAmount.toLocaleString("ko-KR")}`, summaryX + 10, currentY + 9, {
-          width: summaryWidth - 20,
+        doc.rect(summaryX, currentY, summaryWidth, 22).fillColor(this.COLORS.navy).fill();
+        const totalTextY = currentY + (22 - 8) / 2;
+        doc.font(this.FONTS.bold).fontSize(8).fillColor(this.COLORS.white).text("\uCD1D \uAE08\uC561", summaryX + 5, totalTextY);
+        doc.font(this.FONTS.bold).fontSize(9).fillColor(this.COLORS.white).text(`\u20A9${orderData.financial.totalAmount.toLocaleString("ko-KR")}`, summaryX + 5, totalTextY - 1, {
+          width: summaryWidth - 10,
           align: "right"
         });
-        return currentY + 30;
+        return currentY + 22;
       }
       /**
        * 특이사항 렌더링
@@ -1971,15 +1990,16 @@ var init_professional_pdf_generation_service = __esm({
       static renderNotes(doc, orderData, y) {
         if (!orderData.metadata.notes) return y;
         const pageWidth = this.LAYOUT.pageWidth - this.LAYOUT.margin * 2;
-        doc.font(this.FONTS.bold).fontSize(10).fillColor(this.COLORS.darkNavy).text("\uD2B9\uC774\uC0AC\uD56D", this.LAYOUT.margin, y);
-        const notesHeight = 50;
-        doc.rect(this.LAYOUT.margin, y + 15, pageWidth, notesHeight).strokeColor(this.COLORS.borderGray).lineWidth(0.5).stroke();
-        doc.font(this.FONTS.regular).fontSize(8).fillColor(this.COLORS.black).text(orderData.metadata.notes, this.LAYOUT.margin + 8, y + 20, {
-          width: pageWidth - 16,
-          height: notesHeight - 10,
-          ellipsis: true
+        doc.font(this.FONTS.bold).fontSize(9).fillColor(this.COLORS.darkNavy).text("\uD2B9\uC774\uC0AC\uD56D", this.LAYOUT.margin, y);
+        const notesHeight = 40;
+        doc.rect(this.LAYOUT.margin, y + 12, pageWidth, notesHeight).strokeColor(this.COLORS.borderGray).lineWidth(0.5).stroke();
+        doc.font(this.FONTS.regular).fontSize(7.5).fillColor(this.COLORS.darkGray).text(orderData.metadata.notes, this.LAYOUT.margin + 5, y + 15, {
+          width: pageWidth - 10,
+          height: notesHeight - 6,
+          ellipsis: true,
+          lineGap: 1
         });
-        return y + 15 + notesHeight;
+        return y + 12 + notesHeight;
       }
       /**
        * 푸터 렌더링 - 페이지 하단 고정
@@ -1988,17 +2008,19 @@ var init_professional_pdf_generation_service = __esm({
         const footerY = this.LAYOUT.pageHeight - this.LAYOUT.footerHeight - this.LAYOUT.margin;
         const pageWidth = this.LAYOUT.pageWidth - this.LAYOUT.margin * 2;
         doc.moveTo(this.LAYOUT.margin, footerY).lineTo(this.LAYOUT.pageWidth - this.LAYOUT.margin, footerY).strokeColor(this.COLORS.borderGray).lineWidth(0.5).stroke();
-        doc.font(this.FONTS.bold).fontSize(10).fillColor(this.COLORS.darkNavy).text(orderData.issuerCompany.name, this.LAYOUT.margin, footerY + 10);
+        doc.font(this.FONTS.bold).fontSize(8).fillColor(this.COLORS.darkNavy).text(orderData.issuerCompany.name, this.LAYOUT.margin, footerY + 5);
         const footerInfo = [
           orderData.issuerCompany.address,
           `TEL: ${orderData.issuerCompany.phone}`,
           `\uC0AC\uC5C5\uC790\uBC88\uD638: ${orderData.issuerCompany.businessNumber}`
         ].filter(Boolean).join(" | ");
-        doc.font(this.FONTS.regular).fontSize(7).fillColor(this.COLORS.gray).text(footerInfo, this.LAYOUT.margin, footerY + 20, {
+        doc.font(this.FONTS.regular).fontSize(6.5).fillColor(this.COLORS.gray).text(footerInfo, this.LAYOUT.margin, footerY + 18, {
+          // 16 -> 18로 증가
           width: pageWidth
         });
         const docInfo = `\uC0DD\uC131\uC77C\uC2DC: ${format(orderData.metadata.generatedAt, "yyyy-MM-dd HH:mm")} | ${orderData.metadata.templateVersion}`;
-        doc.font(this.FONTS.regular).fontSize(6).fillColor(this.COLORS.gray).text(docInfo, this.LAYOUT.margin, footerY + 32, {
+        doc.font(this.FONTS.regular).fontSize(6).fillColor(this.COLORS.gray).text(docInfo, this.LAYOUT.margin, footerY + 28, {
+          // 25 -> 28로 증가
           width: pageWidth,
           align: "right"
         });
@@ -7316,21 +7338,32 @@ var POEmailService = class {
           console.warn(`\u26A0\uFE0F PDF \uBCC0\uD658 \uC644\uC804 \uC2E4\uD328: ${pdfResult.error}, Excel \uD30C\uC77C\uB9CC \uCCA8\uBD80\uD569\uB2C8\uB2E4.`);
         }
       }
-      if (fs4.existsSync(processedPath)) {
+      if (fileExists && isExcelFile) {
+        if (fs4.existsSync(processedPath)) {
+          attachments4.push({
+            filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`,
+            path: processedPath,
+            contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          });
+          console.log(`\u{1F4CE} Excel \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00: \uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`);
+        }
+        if (pdfResult.success && fs4.existsSync(pdfPath)) {
+          attachments4.push({
+            filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`,
+            path: pdfPath,
+            contentType: "application/pdf"
+          });
+          console.log(`\u{1F4CE} PDF \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00: \uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`);
+        }
+      } else if (fileExists) {
+        const fileExt = path2.extname(originalFilePath) || ".txt";
+        const baseName = `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}`;
         attachments4.push({
-          filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`,
-          path: processedPath,
-          contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          filename: `${baseName}${fileExt}`,
+          path: originalFilePath,
+          contentType: fileExt === ".txt" ? "text/plain" : "application/octet-stream"
         });
-        console.log(`\u{1F4CE} Excel \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00: \uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`);
-      }
-      if (pdfResult.success && fs4.existsSync(pdfPath)) {
-        attachments4.push({
-          filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`,
-          path: pdfPath,
-          contentType: "application/pdf"
-        });
-        console.log(`\u{1F4CE} PDF \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00: \uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`);
+        console.log(`\u{1F4CE} \uD14D\uC2A4\uD2B8/\uAE30\uD0C0 \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00: ${baseName}${fileExt}`);
       }
       if (emailOptions.additionalAttachments && emailOptions.additionalAttachments.length > 0) {
         console.log(`\u{1F4CE} \uCD94\uAC00 \uCCA8\uBD80\uD30C\uC77C ${emailOptions.additionalAttachments.length}\uAC1C \uCC98\uB9AC \uC2DC\uC791`);
@@ -13126,7 +13159,9 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
         senderUserId: req.user?.id
       });
       try {
-        fs8.unlinkSync(tempExcelPath);
+        if (fs8.existsSync(tempExcelPath)) {
+          fs8.unlinkSync(tempExcelPath);
+        }
       } catch (unlinkError) {
         console.warn("\uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328:", unlinkError);
       }
@@ -13157,7 +13192,9 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
       }
     } catch (serviceError) {
       try {
-        fs8.unlinkSync(tempExcelPath);
+        if (fs8.existsSync(tempExcelPath)) {
+          fs8.unlinkSync(tempExcelPath);
+        }
       } catch (unlinkError) {
         console.warn("\uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328 (\uC624\uB958 \uC2DC):", unlinkError);
       }
@@ -13445,7 +13482,9 @@ ${body}`);
     });
     if (excelPath.includes("temp_")) {
       try {
-        fs8.unlinkSync(excelPath);
+        if (fs8.existsSync(excelPath)) {
+          fs8.unlinkSync(excelPath);
+        }
       } catch (err) {
         console.warn("\uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328:", err);
       }
@@ -13567,7 +13606,9 @@ router3.post("/test-email-smtp", async (req, res) => {
       senderUserId: "system-test"
     });
     try {
-      fs28.unlinkSync(testExcelPath);
+      if (fs28.existsSync(testExcelPath)) {
+        fs28.unlinkSync(testExcelPath);
+      }
     } catch (e) {
       console.warn("\uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328:", e.message);
     }

@@ -304,6 +304,7 @@ router.post("/orders/create-unified", requireAuth, upload.array('attachments'), 
         itemId: item.itemId ? parseInt(item.itemId) : undefined,
         itemName: item.itemName,
         specification: item.specification || null,
+        unit: item.unit || null, // 단위 필드 추가
         majorCategory: item.majorCategory || null,
         middleCategory: item.middleCategory || null,
         minorCategory: item.minorCategory || null,
@@ -2243,7 +2244,9 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
 
       // 임시 파일 삭제
       try {
-        fs.unlinkSync(tempExcelPath);
+        if (fs.existsSync(tempExcelPath)) {
+          fs.unlinkSync(tempExcelPath);
+        }
       } catch (unlinkError) {
         console.warn('임시 파일 삭제 실패:', unlinkError);
       }
@@ -2279,7 +2282,9 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
     } catch (serviceError) {
       // 임시 파일 삭제 (오류 시에도)
       try {
-        fs.unlinkSync(tempExcelPath);
+        if (fs.existsSync(tempExcelPath)) {
+          fs.unlinkSync(tempExcelPath);
+        }
       } catch (unlinkError) {
         console.warn('임시 파일 삭제 실패 (오류 시):', unlinkError);
       }
@@ -2656,7 +2661,9 @@ router.post("/orders/send-email-simple", requireAuth, async (req, res) => {
     // 임시 파일 삭제
     if (excelPath.includes('temp_')) {
       try {
-        fs.unlinkSync(excelPath);
+        if (fs.existsSync(excelPath)) {
+          fs.unlinkSync(excelPath);
+        }
       } catch (err) {
         console.warn('임시 파일 삭제 실패:', err);
       }
@@ -2814,7 +2821,9 @@ router.post("/test-email-smtp", async (req, res) => {
 
     // 임시 파일 삭제
     try {
-      fs.unlinkSync(testExcelPath);
+      if (fs.existsSync(testExcelPath)) {
+        fs.unlinkSync(testExcelPath);
+      }
     } catch (e) {
       console.warn('임시 파일 삭제 실패:', e.message);
     }
