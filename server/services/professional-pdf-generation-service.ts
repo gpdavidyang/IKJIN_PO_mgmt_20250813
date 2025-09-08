@@ -6,6 +6,7 @@ import { ko } from 'date-fns/locale';
 import { db } from '../db';
 import { attachments, users, companies, vendors, projects, purchaseOrders, purchaseOrderItems, emailSendHistory } from '../../shared/schema';
 import { eq, desc } from 'drizzle-orm';
+import { fontManager } from '../utils/korean-font-manager';
 
 /**
  * 포괄적인 발주서 PDF 데이터 모델
@@ -129,12 +130,18 @@ export class ProfessionalPDFGenerationService {
   };
 
   /**
-   * 전문적인 PDF 생성
+   * 전문적인 PDF 생성 - 향상된 에러 처리로 Vercel 환경 대응
    */
   static async generateProfessionalPDF(orderData: ComprehensivePurchaseOrderData): Promise<Buffer> {
     return new Promise(async (resolve, reject) => {
+      let doc: PDFDocument | null = null;
+      
       try {
-        const doc = new PDFDocument({
+        console.log(`🚀 [PDF] PDF 생성 시작 - 발주번호: ${orderData.orderNumber}`);
+        console.log(`📍 [PDF] 환경: ${process.env.VERCEL ? 'Vercel' : 'Local'}`);
+        
+        // PDFDocument 생성
+        doc = new PDFDocument({
           size: 'A4',
           margin: this.LAYOUT.margin,
           bufferPages: true,
@@ -149,53 +156,148 @@ export class ProfessionalPDFGenerationService {
         });
 
         const chunks: Buffer[] = [];
-        doc.on('data', (chunk) => chunks.push(chunk));
-        doc.on('end', () => resolve(Buffer.concat(chunks)));
+        let isResolved = false;
+
+        // PDF 데이터 수집
+        doc.on('data', (chunk) => {
+          chunks.push(chunk);
+        });
+        
+        // PDF 생성 완료 이벤트
+        doc.on('end', () => {
+          if (!isResolved) {
+            isResolved = true;
+            const pdfBuffer = Buffer.concat(chunks);
+            console.log(`✅ [PDF] PDF 생성 완료 - 크기: ${Math.round(pdfBuffer.length / 1024)}KB`);
+            resolve(pdfBuffer);
+          }
+        });
+
+        // PDF 에러 이벤트
+        doc.on('error', (error) => {
+          if (!isResolved) {
+            isResolved = true;
+            console.error('❌ [PDF] PDFDocument 에러:', error);
+            reject(error);
+          }
+        });
 
         // 한글 폰트 등록
+        console.log('🎨 [PDF] 한글 폰트 등록 단계...');
         await this.registerKoreanFonts(doc);
 
         // 메인 콘텐츠 렌더링
+        console.log('📄 [PDF] 콘텐츠 렌더링 단계...');
         await this.renderContent(doc, orderData);
 
+        // PDF 생성 완료
+        console.log('🏁 [PDF] 문서 생성 마무리...');
         doc.end();
+        
+        // 타임아웃 설정 (30초)
+        setTimeout(() => {
+          if (!isResolved) {
+            isResolved = true;
+            console.error('⏰ [PDF] PDF 생성 타임아웃');
+            reject(new Error('PDF 생성 시간 초과'));
+          }
+        }, 30000);
+
       } catch (error) {
-        console.error('PDF generation error:', error);
-        reject(error);
+        console.error('💥 [PDF] PDF 생성 중 예외 발생:', error);
+        console.error('📊 [PDF] 에러 스택:', error.stack);
+        
+        // PDFDocument가 생성되었다면 정리
+        if (doc) {
+          try {
+            doc.end();
+          } catch (cleanupError) {
+            console.warn('⚠️ [PDF] 정리 중 에러:', cleanupError);
+          }
+        }
+        
+        // 상세한 에러 정보 제공
+        if (error.message) {
+          reject(new Error(`PDF 생성 실패: ${error.message}`));
+        } else {
+          reject(new Error('PDF 생성 중 알 수 없는 오류가 발생했습니다.'));
+        }
       }
     });
   }
 
   /**
-   * 한글 폰트 등록
+   * 한글 폰트 등록 - KoreanFontManager 사용으로 Vercel 환경 대응
    */
   private static async registerKoreanFonts(doc: PDFDocument): Promise<void> {
     try {
-      const fontsDir = path.join(process.cwd(), 'server', 'assets', 'fonts');
+      console.log('🎯 [PDF] 한글 폰트 등록 시작...');
       
-      // 폰트 파일 경로
-      const fontPaths = {
-        regular: path.join(fontsDir, 'NotoSansKR-Regular.ttf'),
-        bold: path.join(fontsDir, 'NotoSansKR-Bold.ttf'),
-        medium: path.join(fontsDir, 'NotoSansKR-Medium.ttf'),
-      };
-
-      // 폰트 파일 존재 확인 및 등록
-      for (const [key, fontPath] of Object.entries(fontPaths)) {
-        if (fs.existsSync(fontPath)) {
-          doc.registerFont(this.FONTS[key as keyof typeof this.FONTS], fontPath);
-        } else {
-          console.warn(`Font file not found: ${fontPath}`);
-          // 폴백으로 기본 폰트 사용
-          doc.registerFont(this.FONTS[key as keyof typeof this.FONTS], 'Helvetica');
+      // Korean Font Manager를 통해 최적의 폰트 얻기
+      const bestFont = fontManager.getBestKoreanFont();
+      
+      if (bestFont && bestFont.available) {
+        console.log(`✅ [PDF] 최적 한글 폰트 발견: ${bestFont.name}`);
+        
+        try {
+          // FontManager에서 폰트 버퍼 가져오기
+          const fontBuffer = fontManager.getFontBuffer(bestFont.name);
+          
+          if (fontBuffer) {
+            // 폰트 버퍼를 PDFKit에 등록
+            doc.registerFont(this.FONTS.regular, fontBuffer);
+            doc.registerFont(this.FONTS.bold, fontBuffer); // 같은 폰트를 Bold로도 사용
+            doc.registerFont(this.FONTS.medium, fontBuffer); // 같은 폰트를 Medium으로도 사용
+            
+            console.log(`✅ [PDF] 한글 폰트 등록 완료: ${bestFont.name}`);
+            return;
+          }
+        } catch (bufferError) {
+          console.warn(`⚠️ [PDF] 폰트 버퍼 등록 실패: ${bestFont.name}`, bufferError);
         }
       }
-    } catch (error) {
-      console.error('Font registration error:', error);
-      // 폴백으로 기본 폰트 사용
+      
+      console.log('⚠️ [PDF] 한글 폰트를 찾을 수 없음 - 시스템 폰트로 폴백');
+      
+      // 시스템 폰트 폴백 시도
+      const systemFonts = [
+        { name: 'AppleGothic', path: '/System/Library/Fonts/Supplemental/AppleGothic.ttf' },
+        { name: 'AppleSDGothicNeo', path: '/System/Library/Fonts/AppleSDGothicNeo.ttc' },
+      ];
+      
+      for (const systemFont of systemFonts) {
+        try {
+          if (fs.existsSync(systemFont.path)) {
+            doc.registerFont(this.FONTS.regular, systemFont.path);
+            doc.registerFont(this.FONTS.bold, systemFont.path);
+            doc.registerFont(this.FONTS.medium, systemFont.path);
+            console.log(`✅ [PDF] 시스템 폰트 등록: ${systemFont.name}`);
+            return;
+          }
+        } catch (systemError) {
+          continue;
+        }
+      }
+      
+      // 최후 폴백: 기본 폰트
+      console.log('🚨 [PDF] 모든 한글 폰트 실패 - 기본 폰트 사용');
       doc.registerFont(this.FONTS.regular, 'Helvetica');
       doc.registerFont(this.FONTS.bold, 'Helvetica-Bold');
       doc.registerFont(this.FONTS.medium, 'Helvetica');
+      
+    } catch (error) {
+      console.error('❌ [PDF] 폰트 등록 중 예외 발생:', error);
+      
+      // 최종 폴백
+      try {
+        doc.registerFont(this.FONTS.regular, 'Helvetica');
+        doc.registerFont(this.FONTS.bold, 'Helvetica-Bold');
+        doc.registerFont(this.FONTS.medium, 'Helvetica');
+        console.log('🔧 [PDF] 기본 폰트로 폴백 완료');
+      } catch (fallbackError) {
+        console.error('💥 [PDF] 기본 폰트 등록도 실패:', fallbackError);
+        throw new Error('PDF 폰트 등록 실패: 모든 폰트를 로드할 수 없습니다.');
+      }
     }
   }
 

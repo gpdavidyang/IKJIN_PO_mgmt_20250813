@@ -129,6 +129,9 @@ function CompactTableOrderItem({
   showActions?: boolean;
 }) {
   const showPDF = useMemo(() => canShowPDF(order), [order]);
+  
+  // Debug logging
+  console.log('CompactTableOrderItem Debug:', { orderNumber: order.orderNumber, showActions });
 
   const getSortIcon = (field: string) => {
     if (sortBy !== field) {
@@ -449,6 +452,9 @@ export function UnifiedOrdersList({
   
   // compact-table 모드에서는 기본적으로 액션을 숨김
   const effectiveShowActions = mode === 'compact-table' ? false : showActions;
+  
+  // Debug logging for dashboard
+  console.log('UnifiedOrdersList Debug:', { mode, showActions, effectiveShowActions });
 
   // Determine which query to use based on props
   const shouldFetchData = !preloadedOrders;
@@ -601,7 +607,7 @@ export function UnifiedOrdersList({
                       {getSortIcon("orderStatus")}
                     </button>
                   </th>
-                  {effectiveShowActions && (
+                  {effectiveShowActions && showActions && (
                     <th className={`px-3 py-3 text-center text-xs font-medium uppercase tracking-wider ${
                       isDarkMode ? 'text-gray-300' : 'text-gray-500'
                     }`}>
