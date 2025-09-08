@@ -141,12 +141,13 @@ export class ProfessionalPDFGenerationService {
   }
 
   /**
-   * Vercel 환경에서 한글 텍스트를 영어로 변환
+   * Vercel 환경에서 한글 텍스트를 영어로 변환 - 확장된 번역 사전
    */
   private static translateForVercel(text: string): string {
     if (!process.env.VERCEL || !text) return text;
     
     const translations = {
+      // 기본 용어
       '구매발주서': 'Purchase Order',
       '발주서': 'Purchase Order',
       '발주번호': 'PO Number',
@@ -185,20 +186,71 @@ export class ProfessionalPDFGenerationService {
       '업체명': 'Company Name',
       '일정': 'Schedule',
       '순번': 'No',
-      '원': 'KRW'
+      '원': 'KRW',
+      
+      // 회사명 및 고유명사
+      '익진엔지니어링': 'IKJIN Engineering',
+      '주식회사': 'Co., Ltd.',
+      '(주)': '',
+      '유한회사': 'Ltd.',
+      '건설': 'Construction',
+      '엔지니어링': 'Engineering',
+      '산업': 'Industries',
+      '물산': 'Trading',
+      '건설사': 'Construction Co.',
+      
+      // 공통 한글 단어들
+      '입니다': '',
+      '합니다': '',
+      '있습니다': '',
+      '없습니다': '',
+      '회사': 'Company',
+      '부서': 'Department',
+      '팀': 'Team',
+      '과장': 'Manager',
+      '대리': 'Assistant Manager',
+      '주임': 'Supervisor',
+      '사원': 'Staff',
+      '부장': 'General Manager',
+      '이사': 'Director',
+      '상무': 'Managing Director',
+      '전무': 'Executive Director',
+      '사장': 'President',
+      '회장': 'Chairman',
+      '년': 'Y',
+      '월': 'M', 
+      '일': 'D',
+      '시': 'H',
+      '분': 'Min',
+      '초': 'Sec'
     };
     
     let result = text;
     
-    // 정확한 단어 매칭으로 번역
-    for (const [korean, english] of Object.entries(translations)) {
+    // 1단계: 정확한 단어 매칭으로 번역 (긴 단어부터)
+    const sortedTranslations = Object.entries(translations)
+      .sort(([a], [b]) => b.length - a.length); // 긴 단어부터 처리
+    
+    for (const [korean, english] of sortedTranslations) {
       result = result.replace(new RegExp(korean, 'g'), english);
     }
     
-    // 남은 한글 문자를 [Korean Text]로 대체
-    if (/[가-힣]/.test(result)) {
-      result = result.replace(/[가-힣]+/g, '[Korean Text]');
-    }
+    // 2단계: 남은 한글을 의미있는 영문으로 대체
+    result = result.replace(/[가-힣]{2,}/g, (match) => {
+      // 한글 단어를 라틴 문자로 근사치 변환
+      if (match.includes('주식회사') || match.includes('회사')) return 'Company';
+      if (match.includes('엔지니어링')) return 'Engineering';
+      if (match.includes('건설')) return 'Construction';
+      if (match.includes('산업')) return 'Industries';
+      return `[${match.length > 6 ? 'Korean Company' : 'Korean Text'}]`;
+    });
+    
+    // 3단계: 단일 한글 문자 처리
+    result = result.replace(/[가-힣]/g, '');
+    
+    // 4단계: 불필요한 공백 및 특수문자 정리
+    result = result.replace(/\s+/g, ' ').trim();
+    result = result.replace(/\[\s*\]/g, '');
     
     return result;
   }
@@ -252,6 +304,13 @@ export class ProfessionalPDFGenerationService {
       try {
         console.log(`🚀 [PDF] PDF 생성 시작 - 발주번호: ${orderData.orderNumber}`);
         console.log(`📍 [PDF] 환경: ${process.env.VERCEL ? 'Vercel' : 'Local'}`);
+        
+        // Vercel 환경에서 데이터 사전 번역 처리
+        if (process.env.VERCEL) {
+          console.log('🌐 [PDF] Vercel 환경 - 데이터 번역 중...');
+          orderData = this.translateOrderData(orderData);
+          console.log('✅ [PDF] 데이터 번역 완료');
+        }
         
         // PDFDocument 생성 (Vercel 최적화)
         const docOptions: any = {
