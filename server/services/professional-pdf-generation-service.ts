@@ -448,12 +448,8 @@ export class ProfessionalPDFGenerationService {
         console.log(`🚀 [PDF] PDF 생성 시작 - 발주번호: ${orderData.orderNumber}`);
         console.log(`📍 [PDF] 환경: ${process.env.VERCEL ? 'Vercel' : 'Local'}`);
         
-        // Vercel 환경에서 데이터 사전 번역 처리
-        if (process.env.VERCEL) {
-          console.log('🌐 [PDF] Vercel 환경 - 데이터 번역 중...');
-          orderData = this.translateOrderData(orderData);
-          console.log('✅ [PDF] 데이터 번역 완료');
-        }
+        // 사용자 요청: 한글 원문 유지, 번역 비활성화
+        console.log('🇰🇷 [PDF] 한글 원문 유지 모드 - 번역 비활성화');
         
         // PDFDocument 생성 (Vercel 최적화)
         const docOptions: any = {

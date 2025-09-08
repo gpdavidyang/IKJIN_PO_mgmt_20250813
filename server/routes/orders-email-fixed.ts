@@ -105,10 +105,18 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
                 
                 fs.writeFileSync(tempFilePath, Buffer.from(attachment.fileData, 'base64'));
                 excelFilePath = tempFilePath;
-                console.log('✅ Excel 파일 임시 저장:', tempFilePath);
-              } else if (attachment.filePath && fs.existsSync(attachment.filePath)) {
-                excelFilePath = attachment.filePath;
-                console.log('✅ Excel 파일 경로 사용:', attachment.filePath);
+                console.log('✅ Excel 파일 임시 저장 (Base64):', tempFilePath);
+              } else if (attachment.filePath) {
+                // 파일 경로가 있으면 존재 여부 확인
+                if (fs.existsSync(attachment.filePath)) {
+                  excelFilePath = attachment.filePath;
+                  console.log('✅ Excel 파일 경로 사용:', attachment.filePath);
+                } else {
+                  console.warn('⚠️ Excel 파일 경로가 존재하지 않음:', attachment.filePath);
+                  console.log('🔄 해당 첨부파일은 건너뛰고 기본 Excel 파일을 생성합니다');
+                }
+              } else {
+                console.warn('⚠️ Excel 첨부파일에 Base64 데이터와 파일 경로가 모두 없음:', attachment.originalName);
               }
             } else {
               // Excel이 아닌 파일들은 추가 첨부파일로 처리
@@ -131,6 +139,8 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
           }
         } catch (error) {
           console.error('❌ 첨부파일 처리 오류, ID:', attachmentId, error);
+          console.log('🔄 첨부파일 처리 실패 - 해당 파일을 건너뛰고 계속 진행합니다');
+          // 첨부파일 처리 실패해도 이메일 발송은 계속 진행
         }
       }
     }
@@ -138,26 +148,32 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
     // Excel 파일이 없으면 기본 빈 Excel 파일 생성
     if (!excelFilePath) {
       console.log('📎 Excel 파일이 없어 기본 파일 생성');
-      const tempDir = path.join(__dirname, '../../uploads');
-      const tempFilePath = path.join(tempDir, `default-po-${Date.now()}.xlsx`);
-      
-      if (!fs.existsSync(tempDir)) {
-        fs.mkdirSync(tempDir, { recursive: true });
+      try {
+        const tempDir = path.join(__dirname, '../../uploads');
+        const tempFilePath = path.join(tempDir, `default-po-${Date.now()}.xlsx`);
+        
+        if (!fs.existsSync(tempDir)) {
+          fs.mkdirSync(tempDir, { recursive: true });
+        }
+        
+        // 기본 Excel 파일 생성
+        const workbook = XLSX.utils.book_new();
+        const worksheet = XLSX.utils.json_to_sheet([{
+          '발주번호': orderData.orderNumber || 'N/A',
+          '거래처': orderData.vendorName || 'N/A',
+          '발주금액': orderData.totalAmount || 0,
+          '발주일자': orderData.orderDate || new Date().toISOString().split('T')[0]
+        }]);
+        XLSX.utils.book_append_sheet(workbook, worksheet, '발주서');
+        XLSX.writeFile(workbook, tempFilePath);
+        
+        excelFilePath = tempFilePath;
+        console.log('✅ 기본 Excel 파일 생성 성공:', tempFilePath);
+      } catch (error) {
+        console.error('❌ 기본 Excel 파일 생성 실패:', error);
+        // Excel 파일 생성 실패해도 이메일 발송은 시도 (PDF만이라도)
+        console.log('🔄 Excel 파일 없이 이메일 발송을 시도합니다');
       }
-      
-      // 기본 Excel 파일 생성
-      const workbook = XLSX.utils.book_new();
-      const worksheet = XLSX.utils.json_to_sheet([{
-        '발주번호': orderData.orderNumber,
-        '거래처': orderData.vendorName,
-        '발주금액': orderData.totalAmount,
-        '발주일자': orderData.orderDate
-      }]);
-      XLSX.utils.book_append_sheet(workbook, worksheet, '발주서');
-      XLSX.writeFile(workbook, tempFilePath);
-      
-      excelFilePath = tempFilePath;
-      console.log('✅ 기본 Excel 파일 생성:', tempFilePath);
     }
 
     // POEmailService를 사용하여 이메일 발송 (이메일 히스토리 자동 기록 포함)
