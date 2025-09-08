@@ -47,6 +47,7 @@ import attachmentsRoutes from "./attachments";
 import koreanFontRoutes from "./korean-font-status";
 import fontDebugRoutes from "./font-debug";
 import ordersEmailFixedRoutes from "./orders-email-fixed";
+import emailTestSimpleRoutes from "./email-test-simple";
 
 const router = Router();
 
@@ -94,5 +95,6 @@ router.use("/api", healthRoutes); // Health check routes
 router.use("/api", debugRoutes); // Debug routes
 router.use("/api/korean-font", koreanFontRoutes); // Korean font support status
 router.use("/api/debug", fontDebugRoutes); // Font debugging utilities
+router.use("/api/email-test", emailTestSimpleRoutes); // Simple email testing (no auth)
 
 export default router;
