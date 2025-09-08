@@ -386,7 +386,7 @@ export class KoreanFontManager {
       environment: process.env.VERCEL ? 'Vercel' : 'Local',
       workingDirectory: process.cwd(),
       fontDirectory: fontDir,
-      fontDirectoryExists,
+      fontDirectoryExists: fontDirExists,
       bundledFiles,
       availableFonts,
       issues
