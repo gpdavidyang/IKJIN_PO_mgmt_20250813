@@ -1,7 +1,6 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Info, Sparkles, TreePine, Grid3x3, Zap, Rocket } from 'lucide-react';
+import { Info, TreePine, Grid3x3, Zap, Rocket } from 'lucide-react';
 import CategoryHierarchyBuilder from '@/components/category-hierarchy-builder';
 
 export default function CategoryManagement() {
@@ -14,15 +13,6 @@ export default function CategoryManagement() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">분류 관리 시스템</h1>
           <p className="text-gray-600 mt-1">품목 분류를 효율적으로 관리하세요</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="bg-gradient-to-r from-blue-100 to-purple-100 text-blue-800 border-blue-200">
-            <Sparkles className="w-3 h-3 mr-1" />
-            혁신적 UI
-          </Badge>
-          <Badge variant="outline" className="text-green-600 border-green-200">
-            v2.0 Beta
-          </Badge>
         </div>
       </div>
 

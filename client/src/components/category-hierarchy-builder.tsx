@@ -1259,13 +1259,198 @@ export default function CategoryHierarchyBuilder() {
               </div>
             )}
 
-            {/* Grid View (placeholder) */}
+            {/* Grid View */}
             {viewMode === 'grid' && (
-              <div className="h-full flex items-center justify-center text-gray-500">
-                <div className="text-center">
-                  <Grid className="w-12 h-12 mx-auto mb-4" />
-                  <p>그리드 뷰는 곧 구현될 예정입니다</p>
+              <div className="space-y-6">
+                {/* Major Categories */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                    <span className="text-xl">🏗️</span>
+                    대분류
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {filteredData.filter(cat => cat.categoryType === 'major').map((category) => (
+                      <Card key={category.id} className="hover:shadow-md transition-shadow cursor-pointer group">
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex-1">
+                              <h4 className="font-medium text-sm truncate">{category.categoryName}</h4>
+                              <Badge variant="outline" className={CATEGORY_CONFIGS.major.color}>
+                                대분류
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                onClick={() => handleEdit(category)}
+                                className="h-6 w-6 p-0"
+                              >
+                                <Edit className="h-3 w-3" />
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                onClick={() => handleAddChild(category)}
+                                className="h-6 w-6 p-0"
+                              >
+                                <Plus className="h-3 w-3" />
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                onClick={() => handleDelete(category)}
+                                className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {filteredData.filter(cat => cat.parentId === category.id && cat.categoryType === 'middle').length}개 중분류
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                    {filteredData.filter(cat => cat.categoryType === 'major').length === 0 && (
+                      <div className="col-span-full text-center py-8 text-gray-500">
+                        등록된 대분류가 없습니다
+                      </div>
+                    )}
+                  </div>
                 </div>
+
+                {/* Middle Categories */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                    <span className="text-xl">📁</span>
+                    중분류
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {filteredData.filter(cat => cat.categoryType === 'middle').map((category) => {
+                      const parent = filteredData.find(cat => cat.id === category.parentId);
+                      return (
+                        <Card key={category.id} className="hover:shadow-md transition-shadow cursor-pointer group">
+                          <CardContent className="p-4">
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex-1">
+                                <h4 className="font-medium text-sm truncate">{category.categoryName}</h4>
+                                <Badge variant="outline" className={CATEGORY_CONFIGS.middle.color}>
+                                  중분류
+                                </Badge>
+                                {parent && (
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    상위: {parent.categoryName}
+                                  </p>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost" 
+                                  onClick={() => handleEdit(category)}
+                                  className="h-6 w-6 p-0"
+                                >
+                                  <Edit className="h-3 w-3" />
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost" 
+                                  onClick={() => handleAddChild(category)}
+                                  className="h-6 w-6 p-0"
+                                >
+                                  <Plus className="h-3 w-3" />
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost" 
+                                  onClick={() => handleDelete(category)}
+                                  className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {filteredData.filter(cat => cat.parentId === category.id && cat.categoryType === 'minor').length}개 소분류
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                    {filteredData.filter(cat => cat.categoryType === 'middle').length === 0 && (
+                      <div className="col-span-full text-center py-8 text-gray-500">
+                        등록된 중분류가 없습니다
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Minor Categories */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                    <span className="text-xl">📄</span>
+                    소분류
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {filteredData.filter(cat => cat.categoryType === 'minor').map((category) => {
+                      const parent = filteredData.find(cat => cat.id === category.parentId);
+                      const grandParent = parent ? filteredData.find(cat => cat.id === parent.parentId) : null;
+                      return (
+                        <Card key={category.id} className="hover:shadow-md transition-shadow cursor-pointer group">
+                          <CardContent className="p-4">
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex-1">
+                                <h4 className="font-medium text-sm truncate">{category.categoryName}</h4>
+                                <Badge variant="outline" className={CATEGORY_CONFIGS.minor.color}>
+                                  소분류
+                                </Badge>
+                                {parent && (
+                                  <div className="text-xs text-gray-500 mt-1 space-y-0.5">
+                                    {grandParent && <p>대분류: {grandParent.categoryName}</p>}
+                                    <p>중분류: {parent.categoryName}</p>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost" 
+                                  onClick={() => handleEdit(category)}
+                                  className="h-6 w-6 p-0"
+                                >
+                                  <Edit className="h-3 w-3" />
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost" 
+                                  onClick={() => handleDelete(category)}
+                                  className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                    {filteredData.filter(cat => cat.categoryType === 'minor').length === 0 && (
+                      <div className="col-span-full text-center py-8 text-gray-500">
+                        등록된 소분류가 없습니다
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Empty state for all categories */}
+                {filteredData.length === 0 && (
+                  <div className="flex flex-col items-center justify-center h-64 text-gray-500">
+                    <Archive className="w-12 h-12 mb-4" />
+                    <p className="text-lg font-medium">등록된 분류가 없습니다</p>
+                    <p className="text-sm">새로운 분류를 추가해보세요</p>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
