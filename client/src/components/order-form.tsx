@@ -549,29 +549,13 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
   // 공통 파일 검증 및 처리 함수
   const processFiles = (files: File[]) => {
     const validFiles = files.filter(file => {
-      const validTypes = [
-        "application/pdf",
-        "image/jpeg",
-        "image/png",
-        "image/gif",
-        "application/dwg",
-        "application/x-dwg",
-      ];
-      const maxSize = 10 * 1024 * 1024; // 10MB
+      const maxSize = 50 * 1024 * 1024; // 50MB로 증가
       
-      if (!validTypes.includes(file.type)) {
-        toast({
-          title: "파일 형식 오류",
-          description: `${file.name}은(는) 지원하지 않는 파일 형식입니다.`,
-          variant: "destructive",
-        });
-        return false;
-      }
-      
+      // 파일 크기만 검증 (모든 파일 형식 허용)
       if (file.size > maxSize) {
         toast({
           title: "파일 크기 오류",
-          description: `${file.name}은(는) 파일 크기가 10MB를 초과합니다.`,
+          description: `${file.name}은(는) 파일 크기가 50MB를 초과합니다.`,
           variant: "destructive",
         });
         return false;

@@ -1253,154 +1253,183 @@ export class ProfessionalPDFGenerationService {
           }).format(amount);
         };
         
-        // === 개선된 헤더 섹션 (항상 고품질 보장) ===
-        // 배경색이 있는 전문적인 헤더 생성
-        const headerHeight = 50;
+        // === 개선된 헤더 섹션 - 타겟 디자인 매칭 ===
         const headerY = 20;
         
-        // 헤더 배경 (파란색)
-        doc.rect(20, headerY, 555, headerHeight).fill('#2563eb');
+        // 클린한 헤더 (배경색 없음, 심플한 디자인)
+        doc.fillColor('black').fontSize(24).font(fontName);
+        doc.text(safeText('구매발주서'), 30, headerY);
         
-        // 제목 (흰색 텍스트, 큰 폰트)
-        doc.fillColor('white').fontSize(20).font(fontName);
-        doc.text(safeText('구매발주서'), 30, headerY + 10);
+        // 발주번호 (우측 정렬, 적절한 크기)
+        doc.fontSize(14);
+        doc.text(safeText(`발주번호: ${orderData.orderNumber}`), 400, headerY);
         
-        // 발주번호 (흰색 텍스트, 우측 정렬)
-        doc.fontSize(12);
-        doc.text(safeText(`발주번호: ${orderData.orderNumber}`), 350, headerY + 15);
+        // 헤더 하단 구분선
+        doc.moveTo(20, headerY + 35).lineTo(575, headerY + 35).stroke();
         
-        // 발주일 (흰색 텍스트, 우측 정렬)
-        doc.fontSize(10);
-        doc.text(safeText(`발주일: ${formatDate(orderData.orderDate)}`), 350, headerY + 30);
+        // 다음 섹션을 위해 위치 설정
+        doc.y = headerY + 50;
         
-        // 다음 섹션을 위해 색상과 위치 리셋
-        doc.fillColor('black');
-        doc.y = headerY + headerHeight + 10;
+        // === 타겟 디자인 매칭: 정보 섹션 (2+3 그리드 레이아웃) ===
+        const infoY = doc.y + 10;
+        const boxHeight = 85;
         
-        // === 개선된 정보 섹션 (항상 고품질 보장) ===
-        const infoY = doc.y;
-        const sectionHeight = 80;
-        const columnWidth = 180;
-        
-        // 정보 섹션들을 박스로 구분하여 전문적 외관 제공
-        const drawInfoBox = (x: number, title: string, items: string[], bgColor = '#f8fafc') => {
-          // 배경 박스
-          doc.rect(x, infoY, columnWidth, sectionHeight).fill(bgColor);
-          doc.fillColor('black');
+        // 회색 테두리 박스 그리기 함수
+        const drawInfoBox = (x: number, width: number, y: number, title: string, items: {label: string, value: string}[]) => {
+          // 회색 테두리 박스
+          doc.rect(x, y, width, boxHeight).stroke('#d1d5db');
           
-          // 제목 배경 (진한 파란색)
-          doc.rect(x, infoY, columnWidth, 20).fill('#1e40af');
-          doc.fillColor('white').fontSize(9).font(fontName);
-          doc.text(safeText(title), x + 5, infoY + 6);
+          // 제목 (흰 배경에 검은 텍스트)
+          doc.fillColor('black').fontSize(10).font(fontName);
+          doc.text(safeText(title), x + 8, y + 8);
           
           // 항목들
-          doc.fillColor('black').fontSize(7);
+          doc.fontSize(8);
           items.forEach((item, index) => {
-            doc.text(safeText(item), x + 5, infoY + 25 + (index * 10));
+            const itemY = y + 25 + (index * 12);
+            // 레이블
+            doc.fillColor('#666666');
+            doc.text(safeText(item.label), x + 12, itemY);
+            // 값
+            doc.fillColor('black');
+            doc.text(safeText(item.value), x + 80, itemY);
           });
         };
         
-        // 좌측 박스 - 발주업체
-        drawInfoBox(20, '발주업체', [
-          `업체명: ${orderData.issuerCompany.name}`,
-          `사업자번호: ${orderData.issuerCompany.businessNumber || '-'}`,
-          `연락처: ${orderData.issuerCompany.phone || '-'}`,
-          `대표자: ${orderData.issuerCompany.representative || '-'}`,
-          `주소: ${(orderData.issuerCompany.address || '-').substring(0, 30)}...`
+        // 첫 번째 행: 발주업체 정보 (좌측) + 수주업체 정보 (우측)
+        const firstRowY = infoY;
+        const boxWidth = 270;
+        
+        // 발주업체 정보
+        drawInfoBox(20, boxWidth, firstRowY, '발주업체 정보', [
+          { label: '업체명', value: orderData.issuerCompany.name },
+          { label: '사업자번호', value: orderData.issuerCompany.businessNumber || '-' },
+          { label: '대표자', value: orderData.issuerCompany.representative || '-' },
+          { label: '주소', value: (orderData.issuerCompany.address || '-').substring(0, 32) + (orderData.issuerCompany.address && orderData.issuerCompany.address.length > 32 ? '...' : '') },
+          { label: '연락처', value: orderData.issuerCompany.phone || '-' }
         ]);
         
-        // 중간 박스 - 수주업체
-        drawInfoBox(210, '수주업체', [
-          `업체명: ${orderData.vendorCompany.name}`,
-          `사업자번호: ${orderData.vendorCompany.businessNumber || '-'}`,
-          `담당자: ${orderData.vendorCompany.contactPerson || '-'}`,
-          `연락처: ${orderData.vendorCompany.phone || '-'}`,
-          `이메일: ${(orderData.vendorCompany.email || '-').substring(0, 25)}...`
+        // 수주업체 정보
+        drawInfoBox(305, boxWidth, firstRowY, '수주업체 정보', [
+          { label: '업체명', value: orderData.vendorCompany.name },
+          { label: '사업자번호', value: orderData.vendorCompany.businessNumber || '-' },
+          { label: '대표자', value: orderData.vendorCompany.representative || '-' },
+          { label: '담당자', value: orderData.vendorCompany.contactPerson || '-' },
+          { label: '연락처', value: orderData.vendorCompany.phone || '-' }
         ]);
         
-        // 우측 박스 - 현장정보
-        drawInfoBox(400, '현장정보', [
-          `현장명: ${orderData.project.name}`,
-          `현장코드: ${orderData.project.code || '-'}`,
-          `납기일: ${formatDate(orderData.deliveryDate)}`,
-          `작성자: ${orderData.creator.name}`,
-          `연락처: ${orderData.creator.phone || '-'}`
+        // 두 번째 행: 현장 + 일정 + 담당자 (3개 컬럼)
+        const secondRowY = firstRowY + boxHeight + 10;
+        const smallBoxWidth = 183;
+        
+        // 현장 정보
+        drawInfoBox(20, smallBoxWidth, secondRowY, '현장', [
+          { label: '현장명', value: orderData.project.name },
+          { label: '현장코드', value: orderData.project.code || '-' },
+          { label: '발주처', value: '-' }
         ]);
         
-        doc.y = infoY + sectionHeight + 10;
+        // 일정 정보
+        drawInfoBox(210, smallBoxWidth, secondRowY, '일정', [
+          { label: '발주일', value: formatDate(orderData.orderDate) },
+          { label: '납기일', value: formatDate(orderData.deliveryDate) },
+          { label: '등록일', value: formatDate(orderData.createdAt) }
+        ]);
         
-        // 구분선
-        doc.moveTo(20, doc.y).lineTo(575, doc.y).stroke();
-        doc.moveDown(1);
+        // 담당자 정보
+        drawInfoBox(400, smallBoxWidth, secondRowY, '담당자', [
+          { label: '작성자', value: orderData.creator.name },
+          { label: '직책', value: '-' },
+          { label: '연락처', value: orderData.creator.phone || '-' }
+        ]);
         
-        // === 개선된 품목 테이블 (항상 고품질 보장) ===
-        // 섹션 제목 (배경색 포함)
+        doc.y = secondRowY + boxHeight + 15;
+        
+        // 구분선 제거 (클린한 디자인)
+        
+        // === 타겟 디자인 매칭: 품목 테이블 ===
         const titleY = doc.y;
-        doc.rect(20, titleY, 555, 25).fill('#1e40af');
-        doc.fillColor('white').fontSize(12).font(fontName);
-        doc.text(safeText(`발주 품목 (총 ${orderData.items.length}개)`), 30, titleY + 8);
         
-        doc.fillColor('black');
-        doc.y = titleY + 30;
+        // 파란색 테이블 헤더 (타겟과 동일한 스타일)
+        const headerHeight = 22;
+        doc.rect(20, titleY, 555, headerHeight).fill('#2563eb');
+        doc.fillColor('white').fontSize(10).font(fontName);
+        doc.text(safeText(`발주 품목 (총 ${orderData.items.length}개 품목)`), 25, titleY + 6);
         
-        const tableTop = doc.y;
-        const rowHeight = 18;
+        // 테이블 컬럼 헤더
+        const tableHeaderY = titleY + headerHeight;
+        const rowHeight = 20;
         
-        // 테이블 헤더 (더 진한 파란색 배경)
-        doc.rect(20, tableTop, 555, rowHeight).fill('#1e40af');
-        doc.fillColor('white').fontSize(8).font(fontName);
-        
-        // 헤더 텍스트 (정확한 컬럼 위치)
+        // 컬럼 정의 (타겟 레이아웃과 정확히 매칭)
         const columns = [
-          { text: 'No', x: 25, width: 25 },
-          { text: '품목명', x: 55, width: 120 },
-          { text: '규격', x: 180, width: 80 },
-          { text: '수량', x: 265, width: 35 },
-          { text: '단위', x: 305, width: 30 },
-          { text: '단가', x: 340, width: 70 },
-          { text: '금액', x: 415, width: 70 },
-          { text: '특이사항', x: 490, width: 85 }
+          { text: '순번', x: 25, width: 35, align: 'center' },
+          { text: '품목명', x: 65, width: 140, align: 'left' },
+          { text: '규격', x: 210, width: 100, align: 'center' },
+          { text: '수량', x: 315, width: 40, align: 'center' },
+          { text: '단위', x: 360, width: 35, align: 'center' },
+          { text: '단가', x: 400, width: 60, align: 'right' },
+          { text: '금액', x: 465, width: 70, align: 'right' },
+          { text: '특이사항', x: 540, width: 35, align: 'center' }
         ];
         
+        // 테이블 헤더 행 (회색 배경)
+        doc.rect(20, tableHeaderY, 555, rowHeight).fill('#f3f4f6').stroke('#d1d5db');
+        doc.fillColor('black').fontSize(8).font(fontName);
+        
+        // 컬럼 헤더 텍스트
         columns.forEach(col => {
-          doc.text(safeText(col.text), col.x, tableTop + 5);
+          let textX = col.x;
+          if (col.align === 'center') textX = col.x + (col.width / 2) - 10;
+          else if (col.align === 'right') textX = col.x + col.width - 15;
+          doc.text(safeText(col.text), textX, tableHeaderY + 6);
         });
         
-        // 테이블 헤더 경계선
-        doc.rect(20, tableTop, 555, rowHeight).stroke();
+        // 수직 구분선들
+        let currentX = 20;
+        columns.forEach((col, index) => {
+          if (index > 0) {
+            doc.moveTo(currentX, tableHeaderY).lineTo(currentX, tableHeaderY + rowHeight).stroke('#d1d5db');
+          }
+          currentX += col.width;
+        });
+        
         doc.fillColor('black');
         
-        // 개선된 품목 행들 (항상 고품질 보장)
-        let currentY = tableTop + rowHeight;
+        // 품목 데이터 행들 (교대 배경색으로 가독성 향상)
+        let currentY = tableHeaderY + rowHeight;
         orderData.items.slice(0, 15).forEach((item, index) => { // 최대 15개 품목만 표시
-          // 교대로 배경색 적용하여 가독성 향상
-          const bgColor = index % 2 === 0 ? '#f8fafc' : '#ffffff';
-          doc.rect(20, currentY, 555, rowHeight).fill(bgColor);
-          doc.fillColor('black');
+          // 교대로 배경색 적용 (타겟 디자인과 매칭)
+          const bgColor = index % 2 === 0 ? '#ffffff' : '#f8fafc';
+          doc.rect(20, currentY, 555, rowHeight).fill(bgColor).stroke('#d1d5db');
+          doc.fillColor('black').fontSize(7).font(fontName);
           
-          // 품목 데이터를 정확한 컬럼 위치에 배치
-          doc.fontSize(7).font(fontName);
-          
-          // 특이사항 포맷팅 함수 (납품처 정보)
+          // 특이사항 포맷팅
           const formatRemarksForPDF = (item: any) => {
-            let result = [];
-            if (item.deliveryLocation) result.push(`납품처: ${item.deliveryLocation.substring(0, 12)}`);
-            if (item.deliveryEmail) result.push(`이메일: ${item.deliveryEmail.substring(0, 15)}`);
-            return result.length > 0 ? result.join(', ') : '-';
+            if (item.deliveryLocation || item.deliveryEmail) {
+              return `납품처: ${item.deliveryLocation || ''} ${item.deliveryEmail || ''}`.trim();
+            }
+            return item.remarks && item.remarks !== '-' ? item.remarks.substring(0, 10) + '...' : '-';
           };
           
-          // 각 컬럼에 데이터 배치
-          doc.text(`${item.sequenceNo}`, columns[0].x, currentY + 5);
-          doc.text(safeText(item.name.substring(0, 18)), columns[1].x, currentY + 5);
-          doc.text(safeText((item.specification || '-').substring(0, 12)), columns[2].x, currentY + 5);
-          doc.text(safeText(item.quantity.toLocaleString()), columns[3].x, currentY + 5);
-          doc.text(safeText(item.unit || '-'), columns[4].x, currentY + 5);
-          doc.text(safeText(formatCurrency(item.unitPrice).substring(0, 10)), columns[5].x, currentY + 5);
-          doc.text(safeText(formatCurrency(item.totalPrice).substring(0, 10)), columns[6].x, currentY + 5);
-          doc.text(safeText(formatRemarksForPDF(item)), columns[7].x, currentY + 5);
+          // 각 컬럼에 데이터 정확히 배치 (정렬에 맞춰)
+          doc.text(`${item.sequenceNo}`, 37, currentY + 6); // 순번 (중앙정렬)
+          doc.text(safeText(item.name.substring(0, 20)), 70, currentY + 6); // 품목명
+          doc.text(safeText((item.specification || '-').substring(0, 14)), 240, currentY + 6); // 규격 (중앙정렬)
+          doc.text(safeText(item.quantity.toLocaleString()), 325, currentY + 6); // 수량 (중앙정렬)
+          doc.text(safeText(item.unit || '-'), 372, currentY + 6); // 단위 (중앙정렬)
+          doc.text(safeText(`₩${item.unitPrice.toLocaleString()}`), 450, currentY + 6); // 단가 (우측정렬)
+          doc.text(safeText(`₩${item.totalPrice.toLocaleString()}`), 520, currentY + 6); // 금액 (우측정렬)
+          doc.text(safeText(formatRemarksForPDF(item)), 545, currentY + 6); // 특이사항
           
-          // 행 경계선
-          doc.rect(20, currentY, 555, rowHeight).stroke();
+          // 수직 구분선들
+          let lineX = 20;
+          columns.forEach((col, colIndex) => {
+            if (colIndex > 0) {
+              doc.moveTo(lineX, currentY).lineTo(lineX, currentY + rowHeight).stroke('#d1d5db');
+            }
+            lineX += col.width;
+          });
+          
           currentY += rowHeight;
         });
         
@@ -1413,65 +1442,101 @@ export class ProfessionalPDFGenerationService {
           currentY += 16;
         }
         
-        // 개선된 금액 합계 (항상 고품질 보장)
-        const summaryHeight = 20;
+        // 타겟 디자인 매칭: 금액 합계 섹션
+        const summaryY = currentY + 5;
+        const summaryHeight = 18;
         
-        // 소계
-        doc.rect(20, currentY, 555, summaryHeight).fill('#e3f2fd');
-        doc.fillColor('black').fontSize(9).font(fontName);
-        doc.text(safeText('소계 (부가세별도)'), 30, currentY + 6);
-        doc.text(safeText(formatCurrency(orderData.financial.subtotalAmount)), 450, currentY + 6);
-        doc.rect(20, currentY, 555, summaryHeight).stroke();
-        currentY += summaryHeight;
+        // 소계 행
+        doc.rect(20, summaryY, 555, summaryHeight).fill('#ffffff').stroke('#d1d5db');
+        doc.fillColor('black').fontSize(8).font(fontName);
+        doc.text(safeText('소계 (부가세 별도)'), 30, summaryY + 5);
+        doc.text(safeText(`₩${orderData.financial.subtotalAmount.toLocaleString()}`), 500, summaryY + 5);
         
-        // 부가세
-        doc.rect(20, currentY, 555, summaryHeight).fill('#e3f2fd');
-        doc.fillColor('black').fontSize(9);
-        doc.text(safeText(`부가세 (${(orderData.financial.vatRate * 100).toFixed(0)}%)`), 30, currentY + 6);
-        doc.text(safeText(formatCurrency(orderData.financial.vatAmount)), 450, currentY + 6);
-        doc.rect(20, currentY, 555, summaryHeight).stroke();
-        currentY += summaryHeight;
+        // 부가세 행
+        const vatY = summaryY + summaryHeight;
+        doc.rect(20, vatY, 555, summaryHeight).fill('#ffffff').stroke('#d1d5db');
+        doc.fillColor('black').fontSize(8);
+        doc.text(safeText(`부가세 (${(orderData.financial.vatRate * 100).toFixed(0)}%)`), 30, vatY + 5);
+        doc.text(safeText(`₩${orderData.financial.vatAmount.toLocaleString()}`), 500, vatY + 5);
         
-        // 총 금액 (강조)
-        doc.rect(20, currentY, 555, summaryHeight + 5).fill('#1e40af');
-        doc.fillColor('white').fontSize(12).font(fontName);
-        doc.text(safeText('총 금액'), 30, currentY + 8);
-        doc.fontSize(12);
-        doc.text(safeText(formatCurrency(orderData.financial.totalAmount)), 420, currentY + 8);
-        doc.rect(20, currentY, 555, summaryHeight + 5).stroke();
-        currentY += summaryHeight + 5;
+        // 총 금액 행 (강조된 배경)
+        const totalY = vatY + summaryHeight;
+        doc.rect(20, totalY, 555, summaryHeight + 2).fill('#e5e7eb').stroke('#d1d5db');
+        doc.fillColor('black').fontSize(10).font(fontName);
+        doc.text(safeText('총 금액'), 30, totalY + 6);
+        doc.fontSize(10);
+        doc.text(safeText(`₩${orderData.financial.totalAmount.toLocaleString()}`), 490, totalY + 6);
+        
+        currentY = totalY + summaryHeight + 2;
         
         doc.fillColor('black');
         doc.moveDown(2);
         
-        // === 추가 정보 섹션 ===
-        doc.fontSize(7);
-        
-        // 특이사항
+        // === 특이사항 섹션 (타겟 디자인 매칭) ===
         if (orderData.metadata.notes) {
-          doc.text(safeText('특이사항:'), 20);
-          doc.text(safeText(orderData.metadata.notes), 20, doc.y + 8);
-          doc.moveDown(1);
+          const notesY = currentY + 10;
+          const notesHeight = 25;
+          
+          // 연한 배경의 특이사항 박스
+          doc.rect(20, notesY, 555, notesHeight).fill('#fffbeb').stroke('#d1d5db');
+          
+          doc.fillColor('black').fontSize(8).font(fontName);
+          doc.text(safeText(`특이사항: ${orderData.metadata.notes}`), 25, notesY + 8);
+          
+          currentY = notesY + notesHeight + 5;
         }
         
         // === 결재선 제거 (간소화) ===
         doc.moveDown(2);
         
-        // === 하단 정보 ===
-        doc.y = doc.y + 15;
-        doc.fontSize(8);
-        doc.text(safeText(orderData.issuerCompany.name), { align: 'center' });
-        if (orderData.issuerCompany.representative) {
-          doc.text(safeText(`대표자: ${orderData.issuerCompany.representative}`), { align: 'center' });
-        }
-        doc.fontSize(6);
-        doc.text(safeText(orderData.issuerCompany.address || ''), { align: 'center' });
-        doc.text(safeText(`TEL: ${orderData.issuerCompany.phone || ''} | EMAIL: ${orderData.issuerCompany.email || ''}`), { align: 'center' });
-        doc.text(safeText(`사업자등록번호: ${orderData.issuerCompany.businessNumber || ''}`), { align: 'center' });
+        // === 타겟 디자인 매칭: 하단 회사 정보 및 문서 메타데이터 ===
+        const footerY = currentY + 25;
+        doc.y = footerY;
         
-        doc.moveDown(1);
-        doc.fontSize(6);
-        doc.text(safeText(`문서 ID: ${orderData.metadata.documentId} | 생성일시: ${formatDate(orderData.metadata.generatedAt)} | Template: ${orderData.metadata.templateVersion}`), { align: 'center' });
+        // 구분선
+        doc.moveTo(20, doc.y).lineTo(575, doc.y).stroke();
+        doc.y += 10;
+        
+        // 회사명 (중앙 정렬, 큰 폰트)
+        doc.fontSize(12).font(fontName);
+        doc.text(safeText(orderData.issuerCompany.name), 0, doc.y, { align: 'center', width: 595 });
+        doc.moveDown(0.3);
+        
+        // 대표자 정보
+        if (orderData.issuerCompany.representative) {
+          doc.fontSize(8);
+          doc.text(safeText(`대표자: ${orderData.issuerCompany.representative}`), 0, doc.y, { align: 'center', width: 595 });
+          doc.moveDown(0.3);
+        }
+        
+        // 주소
+        doc.fontSize(7);
+        doc.text(safeText(orderData.issuerCompany.address || ''), 0, doc.y, { align: 'center', width: 595 });
+        doc.moveDown(0.3);
+        
+        // 연락처 정보
+        doc.text(safeText(`TEL: ${orderData.issuerCompany.phone || ''} | EMAIL: ${orderData.issuerCompany.email || ''}`), 0, doc.y, { align: 'center', width: 595 });
+        doc.moveDown(0.3);
+        
+        // 사업자등록번호
+        if (orderData.issuerCompany.businessNumber) {
+          doc.text(safeText(`사업자등록번호: ${orderData.issuerCompany.businessNumber}`), 0, doc.y, { align: 'center', width: 595 });
+        }
+        
+        doc.moveDown(0.5);
+        
+        // 문서 메타데이터 (3열 레이아웃)
+        const metaY = doc.y + 5;
+        doc.fontSize(6).fillColor('#666666');
+        
+        // 좌측: 생성일시
+        doc.text(safeText(`생성일시: ${formatDate(orderData.metadata.generatedAt)}`), 20, metaY);
+        
+        // 중앙: 전자문서 표시
+        doc.text(safeText('본 문서는 전자적으로 생성되었습니다'), 0, metaY, { align: 'center', width: 595 });
+        
+        // 우측: 템플릿 버전
+        doc.text(safeText(`Template ${orderData.metadata.templateVersion}`), 0, metaY, { align: 'right', width: 575 });
         
         doc.end();
         

@@ -38,7 +38,7 @@ __export(schema_exports, {
   approvalStepTemplates: () => approvalStepTemplates,
   approvalWorkflowSettings: () => approvalWorkflowSettings,
   archivedAuditLogs: () => archivedAuditLogs,
-  attachments: () => attachments2,
+  attachments: () => attachments,
   attachmentsRelations: () => attachmentsRelations,
   auditAlertRules: () => auditAlertRules,
   auditAlertRulesRelations: () => auditAlertRulesRelations,
@@ -167,7 +167,7 @@ import {
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-var sessions, uiTerms, itemCategories, userRoleEnum, purchaseOrderStatusEnum, orderStatusEnum, approvalStatusEnum, projectStatusEnum, projectTypeEnum, invoiceStatusEnum, itemReceiptStatusEnum, verificationActionEnum, approvalStepStatusEnum, emailSettings, approvalAuthorities, accountStatusEnum, users, companies, vendors, items, terminology, projects, projectMembers, projectHistory, orderTemplates, templateFields, handsontableConfigs, templateVersions, purchaseOrders, purchaseOrderItems, attachments2, orderHistory, emailSendHistory, invoices, itemReceipts, verificationLogs, usersRelations, vendorsRelations, itemsRelations, projectsRelations, projectMembersRelations, projectHistoryRelations, orderTemplatesRelations, purchaseOrdersRelations, purchaseOrderItemsRelations, attachmentsRelations, orderHistoryRelations, invoicesRelations, itemReceiptsRelations, verificationLogsRelations, templateFieldsRelations, handsontableConfigsRelations, templateVersionsRelations, itemCategoriesRelations, emailSendHistoryRelations, insertCompanySchema, insertVendorSchema, insertItemSchema, insertProjectSchema, insertOrderTemplateSchema, insertItemCategorySchema, insertPurchaseOrderSchema, insertPurchaseOrderItemSchema, insertAttachmentSchema, insertOrderHistorySchema, insertInvoiceSchema, insertItemReceiptSchema, insertVerificationLogSchema, insertEmailSendHistorySchema, insertTemplateFieldSchema, insertHandsontableConfigSchema, insertTemplateVersionSchema, insertProjectMemberSchema, insertProjectHistorySchema, insertUiTermSchema, insertTerminologySchema, insertUITermSchema, insertApprovalAuthoritySchema, approvalWorkflowSettings, approvalStepTemplates, approvalStepInstances2, insertApprovalWorkflowSettingsSchema, insertApprovalStepTemplateSchema, insertApprovalStepInstanceSchema, auditLogLevelEnum, auditEventTypeEnum, systemAuditLogs, auditSettings, archivedAuditLogs, auditAlertRules, systemAuditLogsRelations, auditSettingsRelations, auditAlertRulesRelations, insertSystemAuditLogSchema, insertAuditSettingsSchema, insertArchivedAuditLogSchema, insertAuditAlertRuleSchema, validationSessions, validationResults, aiSuggestions, vendorMappings, categoryMappings, validationSessionsRelations, validationResultsRelations, aiSuggestionsRelations, vendorMappingsRelations, categoryMappingsRelations, insertValidationSessionSchema, insertValidationResultSchema, insertAISuggestionSchema, insertVendorMappingSchema, insertCategoryMappingSchema, insertEmailSettingsSchema, registrationStatusEnum, userRegistrations, passwordResetTokens, userRegistrationsRelations, passwordResetTokensRelations, insertUserRegistrationSchema, insertPasswordResetTokenSchema;
+var sessions, uiTerms, itemCategories, userRoleEnum, purchaseOrderStatusEnum, orderStatusEnum, approvalStatusEnum, projectStatusEnum, projectTypeEnum, invoiceStatusEnum, itemReceiptStatusEnum, verificationActionEnum, approvalStepStatusEnum, emailSettings, approvalAuthorities, accountStatusEnum, users, companies, vendors, items, terminology, projects, projectMembers, projectHistory, orderTemplates, templateFields, handsontableConfigs, templateVersions, purchaseOrders, purchaseOrderItems, attachments, orderHistory, emailSendHistory, invoices, itemReceipts, verificationLogs, usersRelations, vendorsRelations, itemsRelations, projectsRelations, projectMembersRelations, projectHistoryRelations, orderTemplatesRelations, purchaseOrdersRelations, purchaseOrderItemsRelations, attachmentsRelations, orderHistoryRelations, invoicesRelations, itemReceiptsRelations, verificationLogsRelations, templateFieldsRelations, handsontableConfigsRelations, templateVersionsRelations, itemCategoriesRelations, emailSendHistoryRelations, insertCompanySchema, insertVendorSchema, insertItemSchema, insertProjectSchema, insertOrderTemplateSchema, insertItemCategorySchema, insertPurchaseOrderSchema, insertPurchaseOrderItemSchema, insertAttachmentSchema, insertOrderHistorySchema, insertInvoiceSchema, insertItemReceiptSchema, insertVerificationLogSchema, insertEmailSendHistorySchema, insertTemplateFieldSchema, insertHandsontableConfigSchema, insertTemplateVersionSchema, insertProjectMemberSchema, insertProjectHistorySchema, insertUiTermSchema, insertTerminologySchema, insertUITermSchema, insertApprovalAuthoritySchema, approvalWorkflowSettings, approvalStepTemplates, approvalStepInstances2, insertApprovalWorkflowSettingsSchema, insertApprovalStepTemplateSchema, insertApprovalStepInstanceSchema, auditLogLevelEnum, auditEventTypeEnum, systemAuditLogs, auditSettings, archivedAuditLogs, auditAlertRules, systemAuditLogsRelations, auditSettingsRelations, auditAlertRulesRelations, insertSystemAuditLogSchema, insertAuditSettingsSchema, insertArchivedAuditLogSchema, insertAuditAlertRuleSchema, validationSessions, validationResults, aiSuggestions, vendorMappings, categoryMappings, validationSessionsRelations, validationResultsRelations, aiSuggestionsRelations, vendorMappingsRelations, categoryMappingsRelations, insertValidationSessionSchema, insertValidationResultSchema, insertAISuggestionSchema, insertVendorMappingSchema, insertCategoryMappingSchema, insertEmailSettingsSchema, registrationStatusEnum, userRegistrations, passwordResetTokens, userRegistrationsRelations, passwordResetTokensRelations, insertUserRegistrationSchema, insertPasswordResetTokenSchema;
 var init_schema = __esm({
   "shared/schema.ts"() {
     "use strict";
@@ -536,7 +536,7 @@ var init_schema = __esm({
       // index("idx_purchase_order_items_category_lv2").on(table.categoryLv2), // TODO: Add when column is added
       // index("idx_purchase_order_items_category_lv3").on(table.categoryLv3), // TODO: Add when column is added
     ]);
-    attachments2 = pgTable("attachments", {
+    attachments = pgTable("attachments", {
       id: serial("id").primaryKey(),
       orderId: integer("order_id").references(() => purchaseOrders.id).notNull(),
       originalName: varchar("original_name", { length: 255 }).notNull(),
@@ -710,7 +710,7 @@ var init_schema = __esm({
         references: [users.id]
       }),
       items: many(purchaseOrderItems),
-      attachments: many(attachments2),
+      attachments: many(attachments),
       history: many(orderHistory),
       invoices: many(invoices),
       verificationLogs: many(verificationLogs),
@@ -723,9 +723,9 @@ var init_schema = __esm({
       }),
       receipts: many(itemReceipts)
     }));
-    attachmentsRelations = relations(attachments2, ({ one }) => ({
+    attachmentsRelations = relations(attachments, ({ one }) => ({
       order: one(purchaseOrders, {
-        fields: [attachments2.orderId],
+        fields: [attachments.orderId],
         references: [purchaseOrders.id]
       })
     }));
@@ -871,7 +871,7 @@ var init_schema = __esm({
       supplyAmount: z.number().nonnegative().optional(),
       taxAmount: z.number().nonnegative().optional()
     });
-    insertAttachmentSchema = createInsertSchema(attachments2).omit({
+    insertAttachmentSchema = createInsertSchema(attachments).omit({
       id: true,
       uploadedAt: true
     });
@@ -1645,6 +1645,11 @@ var init_excel_input_sheet_remover = __esm({
 });
 
 // server/utils/korean-font-manager.ts
+var korean_font_manager_exports = {};
+__export(korean_font_manager_exports, {
+  KoreanFontManager: () => KoreanFontManager,
+  fontManager: () => fontManager
+});
 import * as fs6 from "fs";
 import * as path4 from "path";
 var KoreanFontManager, fontManager;
@@ -1808,6 +1813,14 @@ var init_korean_font_manager = __esm({
               const base64Data = this.base64Cache.get(cacheKey);
               return Buffer.from(base64Data, "base64");
             }
+            if (font.path.startsWith("embedded://")) {
+              console.log(`\u{1F4E6} [FontManager] \uC784\uBCA0\uB514\uB4DC \uD3F0\uD2B8 \uCC98\uB9AC \uC911: ${font.name}`);
+              const minimalKoreanFont = this.getMinimalKoreanFontBuffer();
+              if (minimalKoreanFont) {
+                console.log(`\u2705 [FontManager] \uC784\uBCA0\uB514\uB4DC \uD3F0\uD2B8 Buffer \uBC18\uD658: ${font.name}`);
+                return minimalKoreanFont;
+              }
+            }
             try {
               const fontBuffer = fs6.readFileSync(font.path);
               const base64Data = fontBuffer.toString("base64");
@@ -1816,6 +1829,11 @@ var init_korean_font_manager = __esm({
               return fontBuffer;
             } catch (vercelError) {
               console.error(`\u274C [FontManager] Vercel \uD3F0\uD2B8 \uB85C\uB4DC \uC2E4\uD328: ${font.name}`, vercelError);
+              const minimalFont = this.getMinimalKoreanFontBuffer();
+              if (minimalFont) {
+                console.log(`\u{1F6A8} [FontManager] \uCD5C\uD6C4 \uC218\uB2E8: \uCD5C\uC18C \uD55C\uAE00 \uD3F0\uD2B8 \uC0AC\uC6A9`);
+                return minimalFont;
+              }
               return null;
             }
           }
@@ -1965,6 +1983,40 @@ var init_korean_font_manager = __esm({
           availableFonts,
           issues
         };
+      }
+      /**
+       * 최소한의 한글 폰트 버퍼 반환 (임베디드용)
+       * 실제 운영에서는 적절한 한글 폰트 파일을 번들해야 함
+       */
+      getMinimalKoreanFontBuffer() {
+        try {
+          const fallbackFontPaths = [
+            "/System/Library/Fonts/AppleGothic.ttf",
+            // macOS
+            "/System/Library/Fonts/Supplemental/AppleGothic.ttf",
+            // macOS alternative
+            "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",
+            // Linux
+            "/Windows/Fonts/malgun.ttf"
+            // Windows
+          ];
+          for (const fontPath of fallbackFontPaths) {
+            try {
+              if (fs6.existsSync(fontPath)) {
+                const fontBuffer = fs6.readFileSync(fontPath);
+                console.log(`\u2705 [FontManager] \uC2DC\uC2A4\uD15C \uD3F0\uD2B8 \uBC1C\uACAC: ${fontPath}`);
+                return fontBuffer;
+              }
+            } catch (error) {
+              continue;
+            }
+          }
+          console.log(`\u26A0\uFE0F [FontManager] \uC2DC\uC2A4\uD15C \uD3F0\uD2B8\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC74C - null \uBC18\uD658`);
+          return null;
+        } catch (error) {
+          console.error(`\u274C [FontManager] \uCD5C\uC18C \uD3F0\uD2B8 \uB85C\uB4DC \uC2E4\uD328:`, error);
+          return null;
+        }
       }
     };
     fontManager = KoreanFontManager.getInstance();
@@ -2415,7 +2467,7 @@ var init_professional_pdf_generation_service = __esm({
     init_korean_font_manager();
     ProfessionalPDFGenerationService = class {
       static async generateProfessionalPDF(orderData) {
-        console.log("\u{1F4C4} [ProfessionalPDF] \uC774\uC05C PDFKit\uC73C\uB85C PDF \uC0DD\uC131 \uC2DC\uC791");
+        console.log("\u{1F4C4} [ProfessionalPDF] \uC77C\uAD00\uB41C \uACE0\uD488\uC9C8 PDFKit\uC73C\uB85C PDF \uC0DD\uC131 \uC2DC\uC791");
         return await this.generateProfessionalPDFWithPDFKit(orderData);
       }
       static {
@@ -2512,7 +2564,7 @@ var init_professional_pdf_generation_service = __esm({
             companyRepresentative: null
           };
           const itemsQuery = await db.select().from(purchaseOrderItems).where(eq9(purchaseOrderItems.orderId, orderId));
-          const attachmentsQuery = await db.select().from(attachments2).where(eq9(attachments2.orderId, orderId));
+          const attachmentsQuery = await db.select().from(attachments).where(eq9(attachments.orderId, orderId));
           let emailHistoryQuery = [];
           try {
             emailHistoryQuery = await db.select().from(emailSendHistory).where(eq9(emailSendHistory.orderId, orderId)).orderBy(desc5(emailSendHistory.sentAt)).limit(5);
@@ -2638,7 +2690,7 @@ var init_professional_pdf_generation_service = __esm({
           console.log(`\u{1F50D} [ProfessionalPDF] Environment check - VERCEL: ${process.env.VERCEL}, Base64 size: ${base64Data.length} chars`);
           if (process.env.VERCEL) {
             console.log("\u{1F4DD} [ProfessionalPDF] Saving to database with Base64 data...");
-            const [attachment] = await db.insert(attachments2).values({
+            const [attachment] = await db.insert(attachments).values({
               orderId,
               originalName: fileName,
               storedName: fileName,
@@ -2658,7 +2710,7 @@ var init_professional_pdf_generation_service = __esm({
             }
             filePath = path5.join(tempDir, fileName);
             fs7.writeFileSync(filePath, pdfBuffer);
-            const [attachment] = await db.insert(attachments2).values({
+            const [attachment] = await db.insert(attachments).values({
               orderId,
               originalName: fileName,
               storedName: fileName,
@@ -3341,7 +3393,7 @@ var init_professional_pdf_generation_service = __esm({
       static async generateProfessionalPDFWithPDFKit(orderData) {
         try {
           const PDFKitDocument = (await import("pdfkit")).default;
-          const fs27 = await import("fs");
+          const fs28 = await import("fs");
           return new Promise((resolve, reject) => {
             try {
               const doc = new PDFKitDocument({
@@ -3354,10 +3406,19 @@ var init_professional_pdf_generation_service = __esm({
               doc.on("end", () => resolve(Buffer.concat(buffers)));
               doc.on("error", reject);
               console.log("\u{1F4DD} [ProfessionalPDF] PDFKit\uC73C\uB85C PDF \uC0DD\uC131 (\uD55C\uAE00 \uD3F0\uD2B8 \uCD5C\uC801\uD654 \uB85C\uB529)");
+              console.log("\u{1F527} [ProfessionalPDF] \uC11C\uBC84\uB9AC\uC2A4 \uD658\uACBD \uD3F0\uD2B8 \uCD08\uAE30\uD654 \uAC80\uC99D...");
+              const availableFontsCount = fontManager.getAvailableFonts().length;
+              if (availableFontsCount === 0 && process.env.VERCEL) {
+                console.log("\u26A0\uFE0F [ProfessionalPDF] \uC11C\uBC84\uB9AC\uC2A4 \uD658\uACBD\uC5D0\uC11C \uD3F0\uD2B8 \uC5C6\uC74C - \uAC15\uC81C \uC7AC\uCD08\uAE30\uD654 \uC2DC\uB3C4");
+                const { KoreanFontManager: KoreanFontManager2 } = (init_korean_font_manager(), __toCommonJS(korean_font_manager_exports));
+                const freshFontManager = KoreanFontManager2.getInstance();
+                console.log(`\u{1F504} [ProfessionalPDF] \uD3F0\uD2B8 \uC7AC\uCD08\uAE30\uD654 \uC644\uB8CC: ${freshFontManager.getAvailableFonts().length}\uAC1C \uD3F0\uD2B8 \uBC1C\uACAC`);
+              }
               const fontDiagnosis = fontManager.diagnoseFontIssues();
               console.log("\u{1F50D} [ProfessionalPDF] \uD3F0\uD2B8 \uC9C4\uB2E8 \uACB0\uACFC:", JSON.stringify(fontDiagnosis, null, 2));
               let hasKoreanFont = false;
               let selectedFont = null;
+              let fontName = "Helvetica";
               try {
                 selectedFont = fontManager.getBestKoreanFont();
                 if (selectedFont && selectedFont.available) {
@@ -3367,7 +3428,7 @@ var init_professional_pdf_generation_service = __esm({
                     const fontBuffer = fontManager.getFontBuffer(selectedFont.name);
                     if (fontBuffer) {
                       doc.registerFont("Korean", fontBuffer);
-                      doc.font("Korean");
+                      fontName = "Korean";
                       hasKoreanFont = true;
                       console.log("\u2705 [ProfessionalPDF] Vercel \uD658\uACBD\uC5D0\uC11C \uD55C\uAE00 \uD3F0\uD2B8 \uB4F1\uB85D \uC131\uACF5");
                     } else {
@@ -3376,7 +3437,7 @@ var init_professional_pdf_generation_service = __esm({
                   } else {
                     console.log("\u{1F3E0} [ProfessionalPDF] \uB85C\uCEEC \uD658\uACBD: \uD30C\uC77C \uACBD\uB85C \uD3F0\uD2B8 \uB85C\uB529 \uBC29\uC2DD");
                     doc.registerFont("Korean", selectedFont.path);
-                    doc.font("Korean");
+                    fontName = "Korean";
                     hasKoreanFont = true;
                     console.log(`\u2705 [ProfessionalPDF] \uB85C\uCEEC \uD658\uACBD\uC5D0\uC11C \uD55C\uAE00 \uD3F0\uD2B8 \uB4F1\uB85D \uC131\uACF5: ${selectedFont.path}`);
                   }
@@ -3386,14 +3447,27 @@ var init_professional_pdf_generation_service = __esm({
               } catch (fontError) {
                 console.warn("\u26A0\uFE0F [ProfessionalPDF] \uD55C\uAE00 \uD3F0\uD2B8 \uB4F1\uB85D \uC2E4\uD328:", fontError);
                 console.warn("\u26A0\uFE0F [ProfessionalPDF] \uD3F0\uD2B8 \uC9C4\uB2E8:", JSON.stringify(fontDiagnosis, null, 2));
-                doc.font("Helvetica");
+                try {
+                  doc.registerFont("FallbackFont", "Times-Roman");
+                  fontName = "FallbackFont";
+                  console.log("\u{1F4DD} [ProfessionalPDF] \uACE0\uD488\uC9C8 Times-Roman \uB300\uCCB4 \uD3F0\uD2B8 \uC0AC\uC6A9");
+                } catch {
+                  fontName = "Times-Roman";
+                  console.log("\u{1F4DD} [ProfessionalPDF] \uC2DC\uC2A4\uD15C Times-Roman \uD3F0\uD2B8 \uC0AC\uC6A9");
+                }
                 hasKoreanFont = false;
                 const fontReport = fontManager.getFontReport();
                 console.log("\u{1F4CA} [ProfessionalPDF] \uD3F0\uD2B8 \uC9C0\uC6D0 \uC0C1\uD0DC:", JSON.stringify(fontReport, null, 2));
-                console.log("\u{1F4DD} [ProfessionalPDF] \uAE30\uBCF8 \uD3F0\uD2B8 \uC0AC\uC6A9 (\uD55C\uAE00 -> \uC601\uBB38 \uB300\uCCB4 \uBAA8\uB4DC)");
+                console.log("\u{1F4DD} [ProfessionalPDF] \uACE0\uD488\uC9C8 \uB300\uCCB4 \uD3F0\uD2B8 \uC0AC\uC6A9 (\uD55C\uAE00 \uC9C0\uC6D0 \uBAA8\uB4DC \uBE44\uD65C\uC131\uD654)");
               }
+              doc.font(fontName);
               const safeText = (text2) => {
-                return fontManager.safeKoreanText(text2, hasKoreanFont);
+                if (!text2) return "";
+                if (hasKoreanFont) {
+                  return fontManager.safeKoreanText(text2, hasKoreanFont);
+                } else {
+                  return text2;
+                }
               };
               const formatDate = (date2) => {
                 if (!date2) return "-";
@@ -3405,72 +3479,121 @@ var init_professional_pdf_generation_service = __esm({
                   currency: "KRW"
                 }).format(amount);
               };
-              doc.fontSize(16).text(safeText("\uAD6C\uB9E4\uBC1C\uC8FC\uC11C"), 20, doc.y);
-              doc.fontSize(12).text(safeText(`\uBC1C\uC8FC\uBC88\uD638: ${orderData.orderNumber}`), 20, doc.y);
-              doc.moveTo(20, doc.y + 5).lineTo(575, doc.y + 5).stroke();
-              doc.moveDown(1);
-              const infoY = doc.y;
-              doc.fontSize(8);
-              doc.text(safeText("\u3010\uBC1C\uC8FC\uC5C5\uCCB4\u3011"), 20, infoY);
-              doc.text(safeText(`\uC5C5\uCCB4\uBA85: ${orderData.issuerCompany.name}`), 20, infoY + 12);
-              doc.text(safeText(`\uC0AC\uC5C5\uC790\uBC88\uD638: ${orderData.issuerCompany.businessNumber || "-"}`), 20, infoY + 24);
-              doc.text(safeText(`\uC5F0\uB77D\uCC98: ${orderData.issuerCompany.phone || "-"}`), 20, infoY + 36);
-              doc.text(safeText(`\uC8FC\uC18C: ${orderData.issuerCompany.address || "-"}`), 20, infoY + 48);
-              doc.text(safeText("\u3010\uC218\uC8FC\uC5C5\uCCB4\u3011"), 200, infoY);
-              doc.text(safeText(`\uC5C5\uCCB4\uBA85: ${orderData.vendorCompany.name}`), 200, infoY + 12);
-              doc.text(safeText(`\uC0AC\uC5C5\uC790\uBC88\uD638: ${orderData.vendorCompany.businessNumber || "-"}`), 200, infoY + 24);
-              doc.text(safeText(`\uB2F4\uB2F9\uC790: ${orderData.vendorCompany.contactPerson || "-"}`), 200, infoY + 36);
-              doc.text(safeText(`\uC5F0\uB77D\uCC98: ${orderData.vendorCompany.phone || "-"}`), 200, infoY + 48);
-              doc.text(safeText("\u3010\uD604\uC7A5\uC815\uBCF4\u3011"), 380, infoY);
-              doc.text(safeText(`\uD604\uC7A5\uBA85: ${orderData.project.name}`), 380, infoY + 12);
-              doc.text(safeText(`\uBC1C\uC8FC\uC77C: ${formatDate(orderData.orderDate)}`), 380, infoY + 24);
-              doc.text(safeText(`\uB0A9\uAE30\uC77C: ${formatDate(orderData.deliveryDate)}`), 380, infoY + 36);
-              doc.text(safeText(`\uC791\uC131\uC790: ${orderData.creator.name}`), 380, infoY + 48);
-              doc.y = infoY + 70;
-              doc.moveTo(20, doc.y).lineTo(575, doc.y).stroke();
-              doc.moveDown(1);
-              doc.fontSize(9).text(safeText(`\uBC1C\uC8FC \uD488\uBAA9 (\uCD1D ${orderData.items.length}\uAC1C)`), 20);
-              doc.moveDown(0.5);
-              const tableTop = doc.y;
-              doc.fontSize(7);
-              doc.rect(20, tableTop, 555, 15).fill("#e5e7eb");
-              doc.fillColor("black");
-              doc.text("No", 25, tableTop + 3);
-              doc.text(safeText("\uD488\uBAA9\uBA85"), 50, tableTop + 3);
-              doc.text(safeText("\uADDC\uACA9"), 180, tableTop + 3);
-              doc.text(safeText("\uC218\uB7C9"), 260, tableTop + 3);
-              doc.text(safeText("\uB2E8\uC704"), 300, tableTop + 3);
-              doc.text(safeText("\uB2E8\uAC00"), 340, tableTop + 3);
-              doc.text(safeText("\uAE08\uC561"), 420, tableTop + 3);
-              doc.text(safeText("\uD2B9\uC774\uC0AC\uD56D"), 500, tableTop + 3);
-              doc.rect(20, tableTop, 555, 15).stroke();
-              let currentY = tableTop + 15;
-              orderData.items.slice(0, 15).forEach((item, index2) => {
-                const rowHeight = 16;
-                if (index2 % 2 === 0) {
-                  doc.rect(20, currentY, 555, rowHeight).fill("#f9fafb");
+              const headerY = 20;
+              doc.fillColor("black").fontSize(24).font(fontName);
+              doc.text(safeText("\uAD6C\uB9E4\uBC1C\uC8FC\uC11C"), 30, headerY);
+              doc.fontSize(14);
+              doc.text(safeText(`\uBC1C\uC8FC\uBC88\uD638: ${orderData.orderNumber}`), 400, headerY);
+              doc.moveTo(20, headerY + 35).lineTo(575, headerY + 35).stroke();
+              doc.y = headerY + 50;
+              const infoY = doc.y + 10;
+              const boxHeight = 85;
+              const drawInfoBox = (x, width, y, title, items3) => {
+                doc.rect(x, y, width, boxHeight).stroke("#d1d5db");
+                doc.fillColor("black").fontSize(10).font(fontName);
+                doc.text(safeText(title), x + 8, y + 8);
+                doc.fontSize(8);
+                items3.forEach((item, index2) => {
+                  const itemY = y + 25 + index2 * 12;
+                  doc.fillColor("#666666");
+                  doc.text(safeText(item.label), x + 12, itemY);
                   doc.fillColor("black");
+                  doc.text(safeText(item.value), x + 80, itemY);
+                });
+              };
+              const firstRowY = infoY;
+              const boxWidth = 270;
+              drawInfoBox(20, boxWidth, firstRowY, "\uBC1C\uC8FC\uC5C5\uCCB4 \uC815\uBCF4", [
+                { label: "\uC5C5\uCCB4\uBA85", value: orderData.issuerCompany.name },
+                { label: "\uC0AC\uC5C5\uC790\uBC88\uD638", value: orderData.issuerCompany.businessNumber || "-" },
+                { label: "\uB300\uD45C\uC790", value: orderData.issuerCompany.representative || "-" },
+                { label: "\uC8FC\uC18C", value: (orderData.issuerCompany.address || "-").substring(0, 32) + (orderData.issuerCompany.address && orderData.issuerCompany.address.length > 32 ? "..." : "") },
+                { label: "\uC5F0\uB77D\uCC98", value: orderData.issuerCompany.phone || "-" }
+              ]);
+              drawInfoBox(305, boxWidth, firstRowY, "\uC218\uC8FC\uC5C5\uCCB4 \uC815\uBCF4", [
+                { label: "\uC5C5\uCCB4\uBA85", value: orderData.vendorCompany.name },
+                { label: "\uC0AC\uC5C5\uC790\uBC88\uD638", value: orderData.vendorCompany.businessNumber || "-" },
+                { label: "\uB300\uD45C\uC790", value: orderData.vendorCompany.representative || "-" },
+                { label: "\uB2F4\uB2F9\uC790", value: orderData.vendorCompany.contactPerson || "-" },
+                { label: "\uC5F0\uB77D\uCC98", value: orderData.vendorCompany.phone || "-" }
+              ]);
+              const secondRowY = firstRowY + boxHeight + 10;
+              const smallBoxWidth = 183;
+              drawInfoBox(20, smallBoxWidth, secondRowY, "\uD604\uC7A5", [
+                { label: "\uD604\uC7A5\uBA85", value: orderData.project.name },
+                { label: "\uD604\uC7A5\uCF54\uB4DC", value: orderData.project.code || "-" },
+                { label: "\uBC1C\uC8FC\uCC98", value: "-" }
+              ]);
+              drawInfoBox(210, smallBoxWidth, secondRowY, "\uC77C\uC815", [
+                { label: "\uBC1C\uC8FC\uC77C", value: formatDate(orderData.orderDate) },
+                { label: "\uB0A9\uAE30\uC77C", value: formatDate(orderData.deliveryDate) },
+                { label: "\uB4F1\uB85D\uC77C", value: formatDate(orderData.createdAt) }
+              ]);
+              drawInfoBox(400, smallBoxWidth, secondRowY, "\uB2F4\uB2F9\uC790", [
+                { label: "\uC791\uC131\uC790", value: orderData.creator.name },
+                { label: "\uC9C1\uCC45", value: "-" },
+                { label: "\uC5F0\uB77D\uCC98", value: orderData.creator.phone || "-" }
+              ]);
+              doc.y = secondRowY + boxHeight + 15;
+              const titleY = doc.y;
+              const headerHeight = 22;
+              doc.rect(20, titleY, 555, headerHeight).fill("#2563eb");
+              doc.fillColor("white").fontSize(10).font(fontName);
+              doc.text(safeText(`\uBC1C\uC8FC \uD488\uBAA9 (\uCD1D ${orderData.items.length}\uAC1C \uD488\uBAA9)`), 25, titleY + 6);
+              const tableHeaderY = titleY + headerHeight;
+              const rowHeight = 20;
+              const columns = [
+                { text: "\uC21C\uBC88", x: 25, width: 35, align: "center" },
+                { text: "\uD488\uBAA9\uBA85", x: 65, width: 140, align: "left" },
+                { text: "\uADDC\uACA9", x: 210, width: 100, align: "center" },
+                { text: "\uC218\uB7C9", x: 315, width: 40, align: "center" },
+                { text: "\uB2E8\uC704", x: 360, width: 35, align: "center" },
+                { text: "\uB2E8\uAC00", x: 400, width: 60, align: "right" },
+                { text: "\uAE08\uC561", x: 465, width: 70, align: "right" },
+                { text: "\uD2B9\uC774\uC0AC\uD56D", x: 540, width: 35, align: "center" }
+              ];
+              doc.rect(20, tableHeaderY, 555, rowHeight).fill("#f3f4f6").stroke("#d1d5db");
+              doc.fillColor("black").fontSize(8).font(fontName);
+              columns.forEach((col) => {
+                let textX = col.x;
+                if (col.align === "center") textX = col.x + col.width / 2 - 10;
+                else if (col.align === "right") textX = col.x + col.width - 15;
+                doc.text(safeText(col.text), textX, tableHeaderY + 6);
+              });
+              let currentX = 20;
+              columns.forEach((col, index2) => {
+                if (index2 > 0) {
+                  doc.moveTo(currentX, tableHeaderY).lineTo(currentX, tableHeaderY + rowHeight).stroke("#d1d5db");
                 }
-                doc.fontSize(6);
-                doc.text(`${item.sequenceNo}`, 25, currentY + 3);
-                doc.text(safeText(item.name.substring(0, 25)), 50, currentY + 3);
-                doc.text(safeText((item.specification || "-").substring(0, 15)), 180, currentY + 3);
-                doc.text(safeText(item.quantity.toString()), 260, currentY + 3);
-                doc.text(safeText(item.unit || "-"), 300, currentY + 3);
-                doc.text(safeText(formatCurrency(item.unitPrice)), 340, currentY + 3);
-                doc.text(safeText(formatCurrency(item.totalPrice)), 420, currentY + 3);
+                currentX += col.width;
+              });
+              doc.fillColor("black");
+              let currentY = tableHeaderY + rowHeight;
+              orderData.items.slice(0, 15).forEach((item, index2) => {
+                const bgColor = index2 % 2 === 0 ? "#ffffff" : "#f8fafc";
+                doc.rect(20, currentY, 555, rowHeight).fill(bgColor).stroke("#d1d5db");
+                doc.fillColor("black").fontSize(7).font(fontName);
                 const formatRemarksForPDF = (item2) => {
-                  let result = "";
-                  if (item2.deliveryLocation) {
-                    result += `\u2022 ${item2.deliveryLocation.substring(0, 15)}`;
+                  if (item2.deliveryLocation || item2.deliveryEmail) {
+                    return `\uB0A9\uD488\uCC98: ${item2.deliveryLocation || ""} ${item2.deliveryEmail || ""}`.trim();
                   }
-                  if (item2.deliveryEmail) {
-                    result += `\\n${item2.deliveryEmail.substring(0, 20)}`;
-                  }
-                  return result || "-";
+                  return item2.remarks && item2.remarks !== "-" ? item2.remarks.substring(0, 10) + "..." : "-";
                 };
-                doc.text(safeText(formatRemarksForPDF(item)), 500, currentY + 3);
-                doc.rect(20, currentY, 555, rowHeight).stroke();
+                doc.text(`${item.sequenceNo}`, 37, currentY + 6);
+                doc.text(safeText(item.name.substring(0, 20)), 70, currentY + 6);
+                doc.text(safeText((item.specification || "-").substring(0, 14)), 240, currentY + 6);
+                doc.text(safeText(item.quantity.toLocaleString()), 325, currentY + 6);
+                doc.text(safeText(item.unit || "-"), 372, currentY + 6);
+                doc.text(safeText(`\u20A9${item.unitPrice.toLocaleString()}`), 450, currentY + 6);
+                doc.text(safeText(`\u20A9${item.totalPrice.toLocaleString()}`), 520, currentY + 6);
+                doc.text(safeText(formatRemarksForPDF(item)), 545, currentY + 6);
+                let lineX = 20;
+                columns.forEach((col, colIndex) => {
+                  if (colIndex > 0) {
+                    doc.moveTo(lineX, currentY).lineTo(lineX, currentY + rowHeight).stroke("#d1d5db");
+                  }
+                  lineX += col.width;
+                });
                 currentY += rowHeight;
               });
               if (orderData.items.length > 15) {
@@ -3480,47 +3603,61 @@ var init_professional_pdf_generation_service = __esm({
                 doc.rect(20, currentY, 555, 16).stroke();
                 currentY += 16;
               }
-              doc.rect(20, currentY, 555, 16).fill("#e3f2fd");
-              doc.fillColor("black");
-              doc.fontSize(6);
-              doc.text(safeText("\uC18C\uACC4 (\uBD80\uAC00\uC138\uBCC4\uB3C4)"), 25, currentY + 3);
-              doc.text(safeText(formatCurrency(orderData.financial.subtotalAmount)), 420, currentY + 3);
-              doc.rect(20, currentY, 555, 16).stroke();
-              currentY += 16;
-              doc.rect(20, currentY, 555, 16).fill("#e3f2fd");
-              doc.fillColor("black");
-              doc.fontSize(6);
-              doc.text(safeText(`\uBD80\uAC00\uC138 (${(orderData.financial.vatRate * 100).toFixed(0)}%)`), 25, currentY + 3);
-              doc.text(safeText(formatCurrency(orderData.financial.vatAmount)), 420, currentY + 3);
-              doc.rect(20, currentY, 555, 16).stroke();
-              currentY += 16;
-              doc.rect(20, currentY, 555, 16).fill("#1e40af");
-              doc.fillColor("white");
-              doc.fontSize(7).text(safeText("\uCD1D \uAE08\uC561"), 25, currentY + 3);
-              doc.text(safeText(formatCurrency(orderData.financial.totalAmount)), 420, currentY + 3);
-              doc.rect(20, currentY, 555, 16).stroke();
+              const summaryY = currentY + 5;
+              const summaryHeight = 18;
+              doc.rect(20, summaryY, 555, summaryHeight).fill("#ffffff").stroke("#d1d5db");
+              doc.fillColor("black").fontSize(8).font(fontName);
+              doc.text(safeText("\uC18C\uACC4 (\uBD80\uAC00\uC138 \uBCC4\uB3C4)"), 30, summaryY + 5);
+              doc.text(safeText(`\u20A9${orderData.financial.subtotalAmount.toLocaleString()}`), 500, summaryY + 5);
+              const vatY = summaryY + summaryHeight;
+              doc.rect(20, vatY, 555, summaryHeight).fill("#ffffff").stroke("#d1d5db");
+              doc.fillColor("black").fontSize(8);
+              doc.text(safeText(`\uBD80\uAC00\uC138 (${(orderData.financial.vatRate * 100).toFixed(0)}%)`), 30, vatY + 5);
+              doc.text(safeText(`\u20A9${orderData.financial.vatAmount.toLocaleString()}`), 500, vatY + 5);
+              const totalY = vatY + summaryHeight;
+              doc.rect(20, totalY, 555, summaryHeight + 2).fill("#e5e7eb").stroke("#d1d5db");
+              doc.fillColor("black").fontSize(10).font(fontName);
+              doc.text(safeText("\uCD1D \uAE08\uC561"), 30, totalY + 6);
+              doc.fontSize(10);
+              doc.text(safeText(`\u20A9${orderData.financial.totalAmount.toLocaleString()}`), 490, totalY + 6);
+              currentY = totalY + summaryHeight + 2;
               doc.fillColor("black");
               doc.moveDown(2);
-              doc.fontSize(7);
               if (orderData.metadata.notes) {
-                doc.text(safeText("\uD2B9\uC774\uC0AC\uD56D:"), 20);
-                doc.text(safeText(orderData.metadata.notes), 20, doc.y + 8);
-                doc.moveDown(1);
+                const notesY = currentY + 10;
+                const notesHeight = 25;
+                doc.rect(20, notesY, 555, notesHeight).fill("#fffbeb").stroke("#d1d5db");
+                doc.fillColor("black").fontSize(8).font(fontName);
+                doc.text(safeText(`\uD2B9\uC774\uC0AC\uD56D: ${orderData.metadata.notes}`), 25, notesY + 8);
+                currentY = notesY + notesHeight + 5;
               }
               doc.moveDown(2);
-              doc.y = doc.y + 15;
-              doc.fontSize(8);
-              doc.text(safeText(orderData.issuerCompany.name), { align: "center" });
+              const footerY = currentY + 25;
+              doc.y = footerY;
+              doc.moveTo(20, doc.y).lineTo(575, doc.y).stroke();
+              doc.y += 10;
+              doc.fontSize(12).font(fontName);
+              doc.text(safeText(orderData.issuerCompany.name), 0, doc.y, { align: "center", width: 595 });
+              doc.moveDown(0.3);
               if (orderData.issuerCompany.representative) {
-                doc.text(safeText(`\uB300\uD45C\uC790: ${orderData.issuerCompany.representative}`), { align: "center" });
+                doc.fontSize(8);
+                doc.text(safeText(`\uB300\uD45C\uC790: ${orderData.issuerCompany.representative}`), 0, doc.y, { align: "center", width: 595 });
+                doc.moveDown(0.3);
               }
-              doc.fontSize(6);
-              doc.text(safeText(orderData.issuerCompany.address || ""), { align: "center" });
-              doc.text(safeText(`TEL: ${orderData.issuerCompany.phone || ""} | EMAIL: ${orderData.issuerCompany.email || ""}`), { align: "center" });
-              doc.text(safeText(`\uC0AC\uC5C5\uC790\uB4F1\uB85D\uBC88\uD638: ${orderData.issuerCompany.businessNumber || ""}`), { align: "center" });
-              doc.moveDown(1);
-              doc.fontSize(6);
-              doc.text(safeText(`\uBB38\uC11C ID: ${orderData.metadata.documentId} | \uC0DD\uC131\uC77C\uC2DC: ${formatDate(orderData.metadata.generatedAt)} | Template: ${orderData.metadata.templateVersion}`), { align: "center" });
+              doc.fontSize(7);
+              doc.text(safeText(orderData.issuerCompany.address || ""), 0, doc.y, { align: "center", width: 595 });
+              doc.moveDown(0.3);
+              doc.text(safeText(`TEL: ${orderData.issuerCompany.phone || ""} | EMAIL: ${orderData.issuerCompany.email || ""}`), 0, doc.y, { align: "center", width: 595 });
+              doc.moveDown(0.3);
+              if (orderData.issuerCompany.businessNumber) {
+                doc.text(safeText(`\uC0AC\uC5C5\uC790\uB4F1\uB85D\uBC88\uD638: ${orderData.issuerCompany.businessNumber}`), 0, doc.y, { align: "center", width: 595 });
+              }
+              doc.moveDown(0.5);
+              const metaY = doc.y + 5;
+              doc.fontSize(6).fillColor("#666666");
+              doc.text(safeText(`\uC0DD\uC131\uC77C\uC2DC: ${formatDate(orderData.metadata.generatedAt)}`), 20, metaY);
+              doc.text(safeText("\uBCF8 \uBB38\uC11C\uB294 \uC804\uC790\uC801\uC73C\uB85C \uC0DD\uC131\uB418\uC5C8\uC2B5\uB2C8\uB2E4"), 0, metaY, { align: "center", width: 595 });
+              doc.text(safeText(`Template ${orderData.metadata.templateVersion}`), 0, metaY, { align: "right", width: 575 });
               doc.end();
             } catch (error) {
               reject(error);
@@ -3586,7 +3723,7 @@ __export(po_template_processor_mock_exports, {
   POTemplateProcessorMock: () => POTemplateProcessorMock
 });
 import XLSX4 from "xlsx";
-import { eq as eq13 } from "drizzle-orm";
+import { eq as eq14 } from "drizzle-orm";
 var POTemplateProcessorMock;
 var init_po_template_processor_mock = __esm({
   "server/utils/po-template-processor-mock.ts"() {
@@ -3729,7 +3866,7 @@ var init_po_template_processor_mock = __esm({
             for (const orderData of orders) {
               console.log(`\u{1F50D} [DB] \uBC1C\uC8FC\uC11C \uCC98\uB9AC \uC911: ${orderData.orderNumber}, \uAC70\uB798\uCC98: ${orderData.vendorName}`);
               console.log(`\u{1F50D} [DB] \uAC70\uB798\uCC98 \uC870\uD68C: ${orderData.vendorName}`);
-              let vendor = await tx.select().from(vendors).where(eq13(vendors.name, orderData.vendorName)).limit(1);
+              let vendor = await tx.select().from(vendors).where(eq14(vendors.name, orderData.vendorName)).limit(1);
               let vendorId;
               if (vendor.length === 0) {
                 console.log(`\u{1F50D} [DB] \uAC70\uB798\uCC98 \uC0DD\uC131: ${orderData.vendorName}`);
@@ -3747,7 +3884,7 @@ var init_po_template_processor_mock = __esm({
                 console.log(`\u2705 [DB] \uAC70\uB798\uCC98 \uAE30\uC874 \uBC1C\uACAC: ID ${vendorId}`);
               }
               console.log(`\u{1F50D} [DB] \uD504\uB85C\uC81D\uD2B8 \uC870\uD68C: ${orderData.siteName}`);
-              let project = await tx.select().from(projects).where(eq13(projects.projectName, orderData.siteName)).limit(1);
+              let project = await tx.select().from(projects).where(eq14(projects.projectName, orderData.siteName)).limit(1);
               let projectId;
               if (project.length === 0) {
                 console.log(`\u{1F50D} [DB] \uD504\uB85C\uC81D\uD2B8 \uC0DD\uC131: ${orderData.siteName}`);
@@ -3820,8 +3957,8 @@ var init_po_template_processor_mock = __esm({
               }
               try {
                 console.log(`\u{1F4C4} [DB] PDF \uC0DD\uC131 \uC2DC\uC791: \uBC1C\uC8FC\uC11C ${orderData.orderNumber}`);
-                const vendorInfo = await tx.select().from(vendors).where(eq13(vendors.id, vendorId)).limit(1);
-                const projectInfo = await tx.select().from(projects).where(eq13(projects.id, projectId)).limit(1);
+                const vendorInfo = await tx.select().from(vendors).where(eq14(vendors.id, vendorId)).limit(1);
+                const projectInfo = await tx.select().from(projects).where(eq14(projects.id, projectId)).limit(1);
                 const pdfData = {
                   orderNumber: orderData.orderNumber,
                   orderDate: new Date(orderData.orderDate),
@@ -3985,8 +4122,8 @@ var init_po_template_processor_mock = __esm({
 // server/utils/enhanced-excel-to-pdf.ts
 import { chromium as chromium2 } from "playwright-chromium";
 import ExcelJS2 from "exceljs";
-import path16 from "path";
-import fs19 from "fs";
+import path17 from "path";
+import fs20 from "fs";
 var EnhancedExcelToPDFConverter;
 var init_enhanced_excel_to_pdf = __esm({
   "server/utils/enhanced-excel-to-pdf.ts"() {
@@ -4013,14 +4150,14 @@ var init_enhanced_excel_to_pdf = __esm({
         let browser = null;
         try {
           console.log(`\u{1F4C4} Enhanced PDF \uBCC0\uD658 \uC2DC\uC791: ${excelPath}`);
-          if (!fs19.existsSync(excelPath)) {
+          if (!fs20.existsSync(excelPath)) {
             throw new Error(`Excel \uD30C\uC77C\uC774 \uC874\uC7AC\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4: ${excelPath}`);
           }
           const finalOptions = { ...this.DEFAULT_OPTIONS, ...options };
           const pdfPath = finalOptions.outputPath || excelPath.replace(/\.(xlsx?|xlsm)$/i, "-enhanced.pdf");
-          const outputDir = path16.dirname(pdfPath);
-          if (!fs19.existsSync(outputDir)) {
-            fs19.mkdirSync(outputDir, { recursive: true });
+          const outputDir = path17.dirname(pdfPath);
+          if (!fs20.existsSync(outputDir)) {
+            fs20.mkdirSync(outputDir, { recursive: true });
           }
           console.log(`\u{1F4C4} PDF \uCD9C\uB825 \uACBD\uB85C: ${pdfPath}`);
           const workbook = new ExcelJS2.Workbook();
@@ -4078,10 +4215,10 @@ var init_enhanced_excel_to_pdf = __esm({
           await page.pdf(pdfOptions);
           await browser.close();
           browser = null;
-          if (!fs19.existsSync(pdfPath)) {
+          if (!fs20.existsSync(pdfPath)) {
             throw new Error("PDF \uD30C\uC77C\uC774 \uC0DD\uC131\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4.");
           }
-          const stats = fs19.statSync(pdfPath);
+          const stats = fs20.statSync(pdfPath);
           const processingTime = Date.now() - startTime;
           console.log(`\u2705 Enhanced PDF \uC0DD\uC131 \uC644\uB8CC: ${pdfPath}`);
           console.log(`\u{1F4CA} \uD30C\uC77C \uD06C\uAE30: ${Math.round(stats.size / 1024)}KB`);
@@ -4362,15 +4499,15 @@ var init_enhanced_excel_to_pdf = __esm({
        */
       static validatePDF(pdfPath) {
         try {
-          if (!fs19.existsSync(pdfPath)) {
+          if (!fs20.existsSync(pdfPath)) {
             return false;
           }
-          const stats = fs19.statSync(pdfPath);
+          const stats = fs20.statSync(pdfPath);
           if (stats.size < 1024) {
             console.warn(`\u26A0\uFE0F PDF \uD30C\uC77C \uD06C\uAE30\uAC00 \uB108\uBB34 \uC791\uC2B5\uB2C8\uB2E4: ${stats.size}bytes`);
             return false;
           }
-          const buffer = fs19.readFileSync(pdfPath, { start: 0, end: 4 });
+          const buffer = fs20.readFileSync(pdfPath, { start: 0, end: 4 });
           const header = buffer.toString();
           if (!header.startsWith("%PDF")) {
             console.warn("\u26A0\uFE0F \uC720\uD6A8\uD558\uC9C0 \uC54A\uC740 PDF \uD30C\uC77C \uD5E4\uB354");
@@ -4388,9 +4525,9 @@ var init_enhanced_excel_to_pdf = __esm({
       static cleanupTempFiles(filePaths) {
         filePaths.forEach((filePath) => {
           try {
-            if (fs19.existsSync(filePath)) {
-              fs19.unlinkSync(filePath);
-              console.log(`\u{1F5D1}\uFE0F \uC784\uC2DC \uD30C\uC77C \uC815\uB9AC: ${path16.basename(filePath)}`);
+            if (fs20.existsSync(filePath)) {
+              fs20.unlinkSync(filePath);
+              console.log(`\u{1F5D1}\uFE0F \uC784\uC2DC \uD30C\uC77C \uC815\uB9AC: ${path17.basename(filePath)}`);
             }
           } catch (error) {
             console.error(`\uD30C\uC77C \uC815\uB9AC \uC2E4\uD328: ${filePath}`, error);
@@ -4404,15 +4541,15 @@ var init_enhanced_excel_to_pdf = __esm({
 // server/utils/excel-to-pdf-converter.ts
 import { chromium as chromium3 } from "playwright-chromium";
 import ExcelJS3 from "exceljs";
-import path17 from "path";
-import fs20 from "fs";
+import path18 from "path";
+import fs21 from "fs";
 import { fileURLToPath as fileURLToPath5 } from "url";
 var __filename5, __dirname5, ExcelToPDFConverter;
 var init_excel_to_pdf_converter = __esm({
   "server/utils/excel-to-pdf-converter.ts"() {
     "use strict";
     __filename5 = fileURLToPath5(import.meta.url);
-    __dirname5 = path17.dirname(__filename5);
+    __dirname5 = path18.dirname(__filename5);
     ExcelToPDFConverter = class {
       /**
        * Excel 파일을 PDF로 변환
@@ -4424,15 +4561,15 @@ var init_excel_to_pdf_converter = __esm({
         let browser;
         try {
           console.log(`\u{1F4C4} PDF \uBCC0\uD658 \uC2DC\uC791: ${excelPath}`);
-          if (!fs20.existsSync(excelPath)) {
+          if (!fs21.existsSync(excelPath)) {
             throw new Error(`Excel \uD30C\uC77C\uC774 \uC874\uC7AC\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4: ${excelPath}`);
           }
           const pdfPath = outputPath || excelPath.replace(/\.(xlsx?|xlsm)$/i, ".pdf");
           console.log(`\u{1F4C4} PDF \uCD9C\uB825 \uACBD\uB85C: ${pdfPath}`);
-          const outputDir = path17.dirname(pdfPath);
+          const outputDir = path18.dirname(pdfPath);
           try {
-            if (!fs20.existsSync(outputDir)) {
-              fs20.mkdirSync(outputDir, { recursive: true });
+            if (!fs21.existsSync(outputDir)) {
+              fs21.mkdirSync(outputDir, { recursive: true });
               console.log(`\u{1F4C1} \uCD9C\uB825 \uB514\uB809\uD1A0\uB9AC \uC0DD\uC131: ${outputDir}`);
             }
           } catch (error) {
@@ -4489,10 +4626,10 @@ var init_excel_to_pdf_converter = __esm({
           console.log(`\u{1F4C4} PDF \uD30C\uC77C \uC0DD\uC131 \uC644\uB8CC: ${pdfPath}`);
           await browser.close();
           browser = null;
-          if (!fs20.existsSync(pdfPath)) {
+          if (!fs21.existsSync(pdfPath)) {
             throw new Error(`PDF \uD30C\uC77C\uC774 \uC0DD\uC131\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4: ${pdfPath}`);
           }
-          const stats = fs20.statSync(pdfPath);
+          const stats = fs21.statSync(pdfPath);
           console.log(`\u2705 PDF \uC0DD\uC131 \uC644\uB8CC: ${pdfPath} (${Math.round(stats.size / 1024)}KB)`);
           return pdfPath;
         } catch (error) {
@@ -4679,7 +4816,7 @@ var init_excel_to_pdf_converter = __esm({
 `;
           for (let i = 0; i < excelPaths.length; i++) {
             const excelPath = excelPaths[i];
-            const fileName = path17.basename(excelPath, path17.extname(excelPath));
+            const fileName = path18.basename(excelPath, path18.extname(excelPath));
             const workbook = new ExcelJS3.Workbook();
             await workbook.xlsx.readFile(excelPath);
             combinedHTML += `<div class="file-section">`;
@@ -4724,8 +4861,8 @@ __export(po_email_service_enhanced_exports, {
   POEmailService: () => POEmailService2
 });
 import nodemailer5 from "nodemailer";
-import path18 from "path";
-import fs21 from "fs";
+import path19 from "path";
+import fs22 from "fs";
 import { fileURLToPath as fileURLToPath6 } from "url";
 import { dirname as dirname2 } from "path";
 var __filename6, __dirname6, POEmailService2;
@@ -4806,12 +4943,12 @@ var init_po_email_service_enhanced = __esm({
        * Input 시트만 제거한 원본 형식 유지 엑셀과 PDF로 첨부하여 이메일 발송
        * 기존 방식과 달리 엑셀 파일의 원본 형식(테두리, 병합, 색상 등)을 그대로 유지
        */
-      async sendPOWithOriginalFormat(originalFilePath, emailOptions2) {
+      async sendPOWithOriginalFormat(originalFilePath, emailOptions) {
         try {
           console.log("\u{1F4E8} sendPOWithOriginalFormat called with:", {
             originalFilePath,
-            to: emailOptions2.to,
-            subject: emailOptions2.subject
+            to: emailOptions.to,
+            subject: emailOptions.subject
           });
           if (!this.isInitialized) {
             console.warn("\u26A0\uFE0F Email service not fully initialized, attempting to reconnect...");
@@ -4824,8 +4961,8 @@ var init_po_email_service_enhanced = __esm({
             }
           }
           const timestamp2 = Date.now();
-          const uploadsDir = path18.join(__dirname6, "../../uploads");
-          const processedPath = path18.join(uploadsDir, `po-advanced-format-${timestamp2}.xlsx`);
+          const uploadsDir = path19.join(__dirname6, "../../uploads");
+          const processedPath = path19.join(uploadsDir, `po-advanced-format-${timestamp2}.xlsx`);
           const removeResult = await removeAllInputSheets(
             originalFilePath,
             processedPath
@@ -4839,7 +4976,7 @@ var init_po_email_service_enhanced = __esm({
           console.log(`\u{1F4C4} \uACE0\uAE09 \uD615\uC2DD \uBCF4\uC874 \uD30C\uC77C \uC0DD\uC131: ${processedPath}`);
           console.log(`\u{1F3AF} Input \uC2DC\uD2B8 \uC81C\uAC70 \uC644\uB8CC`);
           console.log(`\u{1F4CB} \uB0A8\uC740 \uC2DC\uD2B8: ${removeResult.remainingSheets.join(", ")}`);
-          const pdfPath = path18.join(uploadsDir, `po-advanced-format-${timestamp2}.pdf`);
+          const pdfPath = path19.join(uploadsDir, `po-advanced-format-${timestamp2}.pdf`);
           let pdfResult = { success: false, error: "" };
           try {
             const enhancedResult = await EnhancedExcelToPDFConverter.convertExcelToPDF(processedPath, {
@@ -4847,7 +4984,7 @@ var init_po_email_service_enhanced = __esm({
               quality: "high",
               orientation: "landscape",
               excludeSheets: ["Input", "Settings"],
-              watermark: `\uBC1C\uC8FC\uC11C - ${emailOptions2.orderNumber || ""}`
+              watermark: `\uBC1C\uC8FC\uC11C - ${emailOptions.orderNumber || ""}`
             });
             if (enhancedResult.success) {
               pdfResult.success = true;
@@ -4866,38 +5003,38 @@ var init_po_email_service_enhanced = __esm({
             console.error("\u274C PDF \uBCC0\uD658 \uC624\uB958:", pdfError);
             pdfResult.error = pdfError instanceof Error ? pdfError.message : "PDF conversion error";
           }
-          const attachments4 = [];
-          if (fs21.existsSync(processedPath)) {
-            attachments4.push({
-              filename: `\uBC1C\uC8FC\uC11C_${emailOptions2.orderNumber || timestamp2}.xlsx`,
+          const attachments3 = [];
+          if (fs22.existsSync(processedPath)) {
+            attachments3.push({
+              filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`,
               path: processedPath,
               contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             });
-            console.log(`\u{1F4CE} Excel \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00: \uBC1C\uC8FC\uC11C_${emailOptions2.orderNumber || timestamp2}.xlsx`);
+            console.log(`\u{1F4CE} Excel \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00: \uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`);
           }
-          if (pdfResult.success && fs21.existsSync(pdfPath)) {
-            attachments4.push({
-              filename: `\uBC1C\uC8FC\uC11C_${emailOptions2.orderNumber || timestamp2}.pdf`,
+          if (pdfResult.success && fs22.existsSync(pdfPath)) {
+            attachments3.push({
+              filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`,
               path: pdfPath,
               contentType: "application/pdf"
             });
-            console.log(`\u{1F4CE} PDF \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00: \uBC1C\uC8FC\uC11C_${emailOptions2.orderNumber || timestamp2}.pdf`);
+            console.log(`\u{1F4CE} PDF \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00: \uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`);
           } else {
             console.warn("\u26A0\uFE0F PDF \uBCC0\uD658 \uC2E4\uD328\uB85C PDF \uD30C\uC77C \uCCA8\uBD80 \uC0DD\uB7B5:", pdfResult.error);
           }
-          const emailContent = this.generateEmailContent(emailOptions2);
+          const emailContent = this.generateEmailContent(emailOptions);
           console.log("\u{1F4E4} Sending email with attachments...");
           const result = await this.sendEmail({
-            to: emailOptions2.to,
-            cc: emailOptions2.cc,
-            bcc: emailOptions2.bcc,
-            subject: emailOptions2.subject || `\uBC1C\uC8FC\uC11C \uC804\uC1A1 - ${emailOptions2.orderNumber || ""}`,
+            to: emailOptions.to,
+            cc: emailOptions.cc,
+            bcc: emailOptions.bcc,
+            subject: emailOptions.subject || `\uBC1C\uC8FC\uC11C \uC804\uC1A1 - ${emailOptions.orderNumber || ""}`,
             html: emailContent,
-            attachments: attachments4
+            attachments: attachments3
           });
           this.cleanupTempFiles([processedPath, pdfPath]);
           if (result.success) {
-            console.log(`\u2705 \uC6D0\uBCF8 \uD615\uC2DD \uC720\uC9C0 \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC131\uACF5: ${emailOptions2.to}`);
+            console.log(`\u2705 \uC6D0\uBCF8 \uD615\uC2DD \uC720\uC9C0 \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC131\uACF5: ${emailOptions.to}`);
           } else {
             console.error(`\u274C \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC2E4\uD328: ${result.error}`);
           }
@@ -5135,12 +5272,12 @@ var init_po_email_service_enhanced = __esm({
         setTimeout(() => {
           filePaths.forEach((filePath) => {
             try {
-              if (fs21.existsSync(filePath)) {
-                fs21.unlinkSync(filePath);
-                console.log(`\u{1F5D1}\uFE0F \uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C: ${path18.basename(filePath)}`);
+              if (fs22.existsSync(filePath)) {
+                fs22.unlinkSync(filePath);
+                console.log(`\u{1F5D1}\uFE0F \uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C: ${path19.basename(filePath)}`);
               }
             } catch (error) {
-              console.warn(`\u26A0\uFE0F \uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328: ${path18.basename(filePath)}`, error);
+              console.warn(`\u26A0\uFE0F \uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328: ${path19.basename(filePath)}`, error);
             }
           });
         }, 5e3);
@@ -5671,16 +5808,16 @@ var DatabaseStorage = class {
     const items3 = await db.select().from(purchaseOrderItems).where(eq(purchaseOrderItems.orderId, id));
     console.log("Debug: Items found:", items3);
     const orderAttachments = await db.select({
-      id: attachments2.id,
-      orderId: attachments2.orderId,
-      originalName: attachments2.originalName,
-      storedName: attachments2.storedName,
-      filePath: attachments2.filePath,
-      fileSize: attachments2.fileSize,
-      mimeType: attachments2.mimeType,
-      uploadedBy: attachments2.uploadedBy,
-      uploadedAt: attachments2.uploadedAt
-    }).from(attachments2).where(eq(attachments2.orderId, id));
+      id: attachments.id,
+      orderId: attachments.orderId,
+      originalName: attachments.originalName,
+      storedName: attachments.storedName,
+      filePath: attachments.filePath,
+      fileSize: attachments.fileSize,
+      mimeType: attachments.mimeType,
+      uploadedBy: attachments.uploadedBy,
+      uploadedAt: attachments.uploadedAt
+    }).from(attachments).where(eq(attachments.orderId, id));
     console.log(`\u{1F4CE} Storage - Attachments found for order ID ${id}:`, orderAttachments);
     const result = {
       ...order.purchase_orders,
@@ -5758,7 +5895,7 @@ var DatabaseStorage = class {
       console.log(`\u{1F517} [storage.deletePurchaseOrder] Deleting purchaseOrderItems for order ${id}`);
       await db.delete(purchaseOrderItems).where(eq(purchaseOrderItems.orderId, id));
       console.log(`\u{1F517} [storage.deletePurchaseOrder] Deleting attachments for order ${id}`);
-      await db.delete(attachments2).where(eq(attachments2.orderId, id));
+      await db.delete(attachments).where(eq(attachments.orderId, id));
       console.log(`\u{1F517} [storage.deletePurchaseOrder] Deleting orderHistory for order ${id}`);
       await db.delete(orderHistory).where(eq(orderHistory.orderId, id));
       console.log(`\u{1F517} [storage.deletePurchaseOrder] Deleting purchaseOrder ${id}`);
@@ -5795,7 +5932,7 @@ var DatabaseStorage = class {
           console.log(`   \u{1F5D1}\uFE0F Deleted ${deletedApprovalSteps.length} approval step instances`);
           const deletedItems = await tx.delete(purchaseOrderItems).where(eq(purchaseOrderItems.orderId, orderId)).returning();
           console.log(`   \u{1F5D1}\uFE0F Deleted ${deletedItems.length} purchase order items`);
-          const deletedAttachments = await tx.delete(attachments2).where(eq(attachments2.orderId, orderId)).returning();
+          const deletedAttachments = await tx.delete(attachments).where(eq(attachments.orderId, orderId)).returning();
           console.log(`   \u{1F5D1}\uFE0F Deleted ${deletedAttachments.length} attachments`);
           const deletedHistory = await tx.delete(orderHistory).where(eq(orderHistory.orderId, orderId)).returning();
           console.log(`   \u{1F5D1}\uFE0F Deleted ${deletedHistory.length} order history entries`);
@@ -5852,7 +5989,7 @@ var DatabaseStorage = class {
       attachment.originalName = this.decodeKoreanFilename(attachment.originalName);
       console.log("\u{1F48E}\u{1F48E}\u{1F48E} AFTER DECODE \u{1F48E}\u{1F48E}\u{1F48E}", attachment.originalName);
     }
-    const [newAttachment] = await db.insert(attachments2).values(attachment).returning();
+    const [newAttachment] = await db.insert(attachments).values(attachment).returning();
     return newAttachment;
   }
   // Korean filename decoder
@@ -5891,21 +6028,21 @@ var DatabaseStorage = class {
   }
   async getAttachment(id) {
     const [attachment] = await db.select({
-      id: attachments2.id,
-      orderId: attachments2.orderId,
-      originalName: attachments2.originalName,
-      storedName: attachments2.storedName,
-      filePath: attachments2.filePath,
-      fileSize: attachments2.fileSize,
-      mimeType: attachments2.mimeType,
-      uploadedBy: attachments2.uploadedBy,
-      uploadedAt: attachments2.uploadedAt
-    }).from(attachments2).where(eq(attachments2.id, id));
+      id: attachments.id,
+      orderId: attachments.orderId,
+      originalName: attachments.originalName,
+      storedName: attachments.storedName,
+      filePath: attachments.filePath,
+      fileSize: attachments.fileSize,
+      mimeType: attachments.mimeType,
+      uploadedBy: attachments.uploadedBy,
+      uploadedAt: attachments.uploadedAt
+    }).from(attachments).where(eq(attachments.id, id));
     return attachment || void 0;
   }
   // getOrderAttachments - Duplicate function removed, better version exists later with error handling
   async deleteAttachment(id) {
-    await db.delete(attachments2).where(eq(attachments2.id, id));
+    await db.delete(attachments).where(eq(attachments.id, id));
   }
   // Order history operations
   async createOrderHistory(history) {
@@ -6766,16 +6903,16 @@ var DatabaseStorage = class {
   async getOrderAttachments(orderId) {
     try {
       return await db.select({
-        id: attachments2.id,
-        orderId: attachments2.orderId,
-        originalName: attachments2.originalName,
-        storedName: attachments2.storedName,
-        filePath: attachments2.filePath,
-        fileSize: attachments2.fileSize,
-        mimeType: attachments2.mimeType,
-        uploadedBy: attachments2.uploadedBy,
-        uploadedAt: attachments2.uploadedAt
-      }).from(attachments2).where(eq(attachments2.orderId, orderId));
+        id: attachments.id,
+        orderId: attachments.orderId,
+        originalName: attachments.originalName,
+        storedName: attachments.storedName,
+        filePath: attachments.filePath,
+        fileSize: attachments.fileSize,
+        mimeType: attachments.mimeType,
+        uploadedBy: attachments.uploadedBy,
+        uploadedAt: attachments.uploadedAt
+      }).from(attachments).where(eq(attachments.orderId, orderId));
     } catch (error) {
       console.error("Error getting order attachments:", error);
       return [];
@@ -6787,17 +6924,17 @@ var DatabaseStorage = class {
   async getAttachmentByPath(filePath) {
     try {
       const [attachment] = await db.select({
-        id: attachments2.id,
-        orderId: attachments2.orderId,
-        originalName: attachments2.originalName,
-        storedName: attachments2.storedName,
-        filePath: attachments2.filePath,
-        fileSize: attachments2.fileSize,
-        mimeType: attachments2.mimeType,
-        uploadedBy: attachments2.uploadedBy,
-        uploadedAt: attachments2.uploadedAt
+        id: attachments.id,
+        orderId: attachments.orderId,
+        originalName: attachments.originalName,
+        storedName: attachments.storedName,
+        filePath: attachments.filePath,
+        fileSize: attachments.fileSize,
+        mimeType: attachments.mimeType,
+        uploadedBy: attachments.uploadedBy,
+        uploadedAt: attachments.uploadedAt
         // fileData: attachments.fileData, // Temporarily commented out due to schema migration
-      }).from(attachments2).where(eq(attachments2.filePath, filePath));
+      }).from(attachments).where(eq(attachments.filePath, filePath));
       return attachment || void 0;
     } catch (error) {
       console.error("Error getting attachment by path:", error);
@@ -6908,7 +7045,13 @@ function extractToken(authHeader, cookies) {
     authHeaderValue: authHeader ? authHeader.substring(0, 20) + "..." : "none",
     hasCookies: !!cookies,
     cookieKeys: cookies ? Object.keys(cookies) : [],
-    hasAuthTokenCookie: !!(cookies && cookies.auth_token)
+    hasAuthTokenCookie: !!(cookies && cookies.auth_token),
+    authTokenValue: cookies?.auth_token ? cookies.auth_token.substring(0, 30) + "..." : "none",
+    environment: {
+      NODE_ENV: process.env.NODE_ENV,
+      VERCEL: process.env.VERCEL,
+      JWT_SECRET_SET: !!process.env.JWT_SECRET
+    }
   });
   if (authHeader && authHeader.startsWith("Bearer ")) {
     const token = authHeader.substring(7);
@@ -6920,6 +7063,7 @@ function extractToken(authHeader, cookies) {
     return cookies.auth_token;
   }
   console.log("\u274C JWT: No token found in headers or cookies");
+  console.log("\u{1F50D} JWT: Full cookie debug:", cookies);
   return null;
 }
 
@@ -7169,12 +7313,12 @@ async function login(req, res) {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production" || process.env.VERCEL === "1",
         sameSite: "lax",
-        // Use 'lax' for same-site requests
+        // Use 'lax' for same-site requests, Vercel should be same-origin
         maxAge: 7 * 24 * 60 * 60 * 1e3,
         // 7 days
         path: "/",
-        domain: process.env.COOKIE_DOMAIN || void 0
-        // Allow setting custom domain if needed
+        domain: void 0
+        // Don't set domain for Vercel deployment
       });
       console.log("\u2705 JWT token set as cookie for user:", user.id);
       console.log("=== LOGIN REQUEST END - SUCCESS (JWT) ===");
@@ -7236,7 +7380,7 @@ async function logout(req, res) {
     sameSite: "lax",
     // Match cookie setting
     path: "/",
-    domain: process.env.COOKIE_DOMAIN || void 0
+    domain: void 0
   });
   res.json({ message: "Logout successful" });
 }
@@ -8577,11 +8721,11 @@ var POEmailService = class {
   /**
    * 발주서 정보와 품목을 포함한 상세 이메일 발송 (원본 형식 유지)
    */
-  async sendPOWithOrderItemsFromDB(originalFilePath, orderId, emailOptions2) {
+  async sendPOWithOrderItemsFromDB(originalFilePath, orderId, emailOptions) {
     try {
       const orderItems = await this.getOrderItemsByOrderId(orderId);
       const enhancedOptions = {
-        ...emailOptions2,
+        ...emailOptions,
         orderItems
       };
       return await this.sendPOWithOriginalFormat(originalFilePath, enhancedOptions);
@@ -8597,7 +8741,7 @@ var POEmailService = class {
    * Input 시트만 제거한 원본 형식 유지 엑셀과 PDF로 첨부하여 이메일 발송
    * 기존 방식과 달리 엑셀 파일의 원본 형식(테두리, 병합, 색상 등)을 그대로 유지
    */
-  async sendPOWithOriginalFormat(originalFilePath, emailOptions2, orderInfo) {
+  async sendPOWithOriginalFormat(originalFilePath, emailOptions, orderInfo) {
     try {
       const timestamp2 = Date.now();
       const uploadsDir = path2.join(__dirname, "../../uploads");
@@ -8623,7 +8767,7 @@ var POEmailService = class {
           quality: "high",
           orientation: "landscape",
           excludeSheets: ["Input", "Settings"],
-          watermark: `\uBC1C\uC8FC\uC11C - ${emailOptions2.orderNumber || ""}`,
+          watermark: `\uBC1C\uC8FC\uC11C - ${emailOptions.orderNumber || ""}`,
           retryCount: 2
         });
         if (result2.success) {
@@ -8641,27 +8785,27 @@ var POEmailService = class {
         pdfResult.error = `\uD1B5\uD569 PDF \uC11C\uBE44\uC2A4 \uC624\uB958: ${error.message}`;
         console.warn(`\u26A0\uFE0F PDF \uBCC0\uD658 \uC644\uC804 \uC2E4\uD328: ${pdfResult.error}, Excel \uD30C\uC77C\uB9CC \uCCA8\uBD80\uD569\uB2C8\uB2E4.`);
       }
-      const attachments4 = [];
+      const attachments3 = [];
       if (fs4.existsSync(processedPath)) {
-        attachments4.push({
-          filename: `\uBC1C\uC8FC\uC11C_${emailOptions2.orderNumber || timestamp2}.xlsx`,
+        attachments3.push({
+          filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`,
           path: processedPath,
           contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         });
-        console.log(`\u{1F4CE} Excel \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00: \uBC1C\uC8FC\uC11C_${emailOptions2.orderNumber || timestamp2}.xlsx`);
+        console.log(`\u{1F4CE} Excel \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00: \uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`);
       }
       if (pdfResult.success && fs4.existsSync(pdfPath)) {
-        attachments4.push({
-          filename: `\uBC1C\uC8FC\uC11C_${emailOptions2.orderNumber || timestamp2}.pdf`,
+        attachments3.push({
+          filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`,
           path: pdfPath,
           contentType: "application/pdf"
         });
-        console.log(`\u{1F4CE} PDF \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00: \uBC1C\uC8FC\uC11C_${emailOptions2.orderNumber || timestamp2}.pdf`);
+        console.log(`\u{1F4CE} PDF \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00: \uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`);
       }
-      if (emailOptions2.additionalAttachments && emailOptions2.additionalAttachments.length > 0) {
-        console.log(`\u{1F4CE} \uCD94\uAC00 \uCCA8\uBD80\uD30C\uC77C ${emailOptions2.additionalAttachments.length}\uAC1C \uCC98\uB9AC \uC2DC\uC791`);
-        for (const additionalAttachment of emailOptions2.additionalAttachments) {
-          attachments4.push({
+      if (emailOptions.additionalAttachments && emailOptions.additionalAttachments.length > 0) {
+        console.log(`\u{1F4CE} \uCD94\uAC00 \uCCA8\uBD80\uD30C\uC77C ${emailOptions.additionalAttachments.length}\uAC1C \uCC98\uB9AC \uC2DC\uC791`);
+        for (const additionalAttachment of emailOptions.additionalAttachments) {
+          attachments3.push({
             filename: additionalAttachment.filename,
             content: additionalAttachment.content,
             contentType: additionalAttachment.contentType
@@ -8669,27 +8813,27 @@ var POEmailService = class {
           console.log(`\u{1F4CE} \uCD94\uAC00 \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00: ${additionalAttachment.filename} (${additionalAttachment.content.length} bytes)`);
         }
       }
-      if (attachments4.length === 0) {
+      if (attachments3.length === 0) {
         return {
           success: false,
           error: "\uCCA8\uBD80\uD560 \uD30C\uC77C\uC774 \uC0DD\uC131\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4."
         };
       }
-      const emailContent = this.generateEmailContent(emailOptions2);
+      const emailContent = this.generateEmailContent(emailOptions);
       const result = await this.sendEmail({
-        to: emailOptions2.to,
-        cc: emailOptions2.cc,
-        bcc: emailOptions2.bcc,
-        subject: emailOptions2.subject || `\uBC1C\uC8FC\uC11C \uC804\uC1A1 - ${emailOptions2.orderNumber || ""}`,
+        to: emailOptions.to,
+        cc: emailOptions.cc,
+        bcc: emailOptions.bcc,
+        subject: emailOptions.subject || `\uBC1C\uC8FC\uC11C \uC804\uC1A1 - ${emailOptions.orderNumber || ""}`,
         html: emailContent,
-        attachments: attachments4
+        attachments: attachments3
       }, {
         ...orderInfo,
-        orderNumber: emailOptions2.orderNumber
+        orderNumber: emailOptions.orderNumber
       });
       this.cleanupTempFiles([processedPath, pdfPath]);
       if (result.success) {
-        console.log(`\u2705 \uC6D0\uBCF8 \uD615\uC2DD \uC720\uC9C0 \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC131\uACF5: ${emailOptions2.to}`);
+        console.log(`\u2705 \uC6D0\uBCF8 \uD615\uC2DD \uC720\uC9C0 \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC131\uACF5: ${emailOptions.to}`);
       }
       return result;
     } catch (error) {
@@ -8704,7 +8848,7 @@ var POEmailService = class {
    * [기존 방식] 갑지/을지 시트를 Excel과 PDF로 첨부하여 이메일 발송
    * @deprecated 형식 손상 문제로 sendPOWithOriginalFormat 사용 권장
    */
-  async sendPOWithAttachments(originalFilePath, emailOptions2) {
+  async sendPOWithAttachments(originalFilePath, emailOptions) {
     try {
       const timestamp2 = Date.now();
       const uploadsDir = path2.join(__dirname, "../../uploads");
@@ -8727,7 +8871,7 @@ var POEmailService = class {
         quality: "high",
         orientation: "landscape",
         excludeSheets: ["Input", "Settings"],
-        watermark: `\uBC1C\uC8FC\uC11C - ${emailOptions2.orderNumber || ""}`,
+        watermark: `\uBC1C\uC8FC\uC11C - ${emailOptions.orderNumber || ""}`,
         retryCount: 2
       });
       if (!pdfResult.success) {
@@ -8736,29 +8880,29 @@ var POEmailService = class {
           error: `PDF \uBCC0\uD658 \uC2E4\uD328: ${pdfResult.error}`
         };
       }
-      const attachments4 = [];
+      const attachments3 = [];
       if (fs4.existsSync(extractedPath)) {
-        attachments4.push({
-          filename: `\uBC1C\uC8FC\uC11C_${emailOptions2.orderNumber || timestamp2}.xlsx`,
+        attachments3.push({
+          filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`,
           path: extractedPath,
           contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         });
       }
       if (fs4.existsSync(pdfPath)) {
-        attachments4.push({
-          filename: `\uBC1C\uC8FC\uC11C_${emailOptions2.orderNumber || timestamp2}.pdf`,
+        attachments3.push({
+          filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`,
           path: pdfPath,
           contentType: "application/pdf"
         });
       }
-      const emailContent = this.generateEmailContent(emailOptions2);
+      const emailContent = this.generateEmailContent(emailOptions);
       const result = await this.sendEmail({
-        to: emailOptions2.to,
-        cc: emailOptions2.cc,
-        bcc: emailOptions2.bcc,
-        subject: emailOptions2.subject,
+        to: emailOptions.to,
+        cc: emailOptions.cc,
+        bcc: emailOptions.bcc,
+        subject: emailOptions.subject,
         html: emailContent,
-        attachments: attachments4
+        attachments: attachments3
       });
       this.cleanupTempFiles([extractedPath, pdfPath]);
       return result;
@@ -9132,6 +9276,27 @@ var POEmailService = class {
 };
 
 // server/services/AuthEmailService.ts
+var poEmailService = new POEmailService();
+function getFrontendUrl(req) {
+  if (process.env.FRONTEND_URL && process.env.FRONTEND_URL.trim() !== "") {
+    console.log("\u{1F527} Using FRONTEND_URL from environment:", process.env.FRONTEND_URL);
+    return process.env.FRONTEND_URL;
+  }
+  if (req && req.get && req.get("host")) {
+    const protocol = req.get("x-forwarded-proto") || (req.secure ? "https" : "http");
+    const host = req.get("host");
+    const detectedUrl = `${protocol}://${host}`;
+    console.log("\u{1F50D} Detected URL from request headers:", detectedUrl);
+    return detectedUrl;
+  }
+  if (process.env.NODE_ENV === "production") {
+    console.warn("\u26A0\uFE0F FRONTEND_URL not set and unable to detect from request headers");
+    console.warn("\u26A0\uFE0F Please set FRONTEND_URL environment variable for production");
+    return "https://localhost:5173";
+  }
+  console.log("\u{1F527} Using development default URL");
+  return "http://localhost:5173";
+}
 var AUTH_EMAIL_TEMPLATES = {
   REGISTRATION_APPROVED: {
     subject: "[\uBC1C\uC8FC \uAD00\uB9AC \uC2DC\uC2A4\uD15C] \uD68C\uC6D0\uAC00\uC785\uC774 \uC2B9\uC778\uB418\uC5C8\uC2B5\uB2C8\uB2E4",
@@ -9361,11 +9526,13 @@ var AuthEmailService = class extends POEmailService {
     try {
       const template = AUTH_EMAIL_TEMPLATES.REGISTRATION_RECEIVED;
       const htmlContent = template.template(registration.name);
-      return await this.sendEmail({
+      const result = await poEmailService.sendEmail({
         to: registration.email,
         subject: template.subject,
         html: htmlContent
       });
+      console.log("\u{1F4E7} Registration received email sent:", result);
+      return result;
     } catch (error) {
       console.error("Send registration received email error:", error);
       return false;
@@ -9378,11 +9545,13 @@ var AuthEmailService = class extends POEmailService {
     try {
       const template = AUTH_EMAIL_TEMPLATES.REGISTRATION_APPROVED;
       const htmlContent = template.template(user.name);
-      return await this.sendEmail({
+      const result = await poEmailService.sendEmail({
         to: user.email,
         subject: template.subject,
         html: htmlContent
       });
+      console.log("\u{1F4E7} Registration approved email sent:", result);
+      return result;
     } catch (error) {
       console.error("Send registration approved email error:", error);
       return false;
@@ -9395,11 +9564,13 @@ var AuthEmailService = class extends POEmailService {
     try {
       const template = AUTH_EMAIL_TEMPLATES.REGISTRATION_REJECTED;
       const htmlContent = template.template(registration.name, reason);
-      return await this.sendEmail({
+      const result = await poEmailService.sendEmail({
         to: registration.email,
         subject: template.subject,
         html: htmlContent
       });
+      console.log("\u{1F4E7} Registration received email sent:", result);
+      return result;
     } catch (error) {
       console.error("Send registration rejected email error:", error);
       return false;
@@ -9408,16 +9579,22 @@ var AuthEmailService = class extends POEmailService {
   /**
    * 비밀번호 재설정 링크 이메일 발송
    */
-  static async sendPasswordReset(user, resetToken) {
+  static async sendPasswordReset(user, resetToken, req) {
     try {
       const template = AUTH_EMAIL_TEMPLATES.PASSWORD_RESET;
-      const resetLink = `${process.env.FRONTEND_URL || "http://localhost:5173"}/reset-password?token=${resetToken}`;
+      const frontendUrl = getFrontendUrl(req);
+      const resetLink = `${frontendUrl}/reset-password?token=${resetToken}`;
       const htmlContent = template.template(user.name, resetLink);
-      return await this.sendEmail({
+      console.log("\u{1F511} Sending password reset email to:", user.email);
+      console.log("\u{1F310} Frontend URL detected:", frontendUrl);
+      console.log("\u{1F517} Reset link:", resetLink);
+      const result = await poEmailService.sendEmail({
         to: user.email,
         subject: template.subject,
         html: htmlContent
       });
+      console.log("\u{1F4E7} Password reset email sent:", result);
+      return result;
     } catch (error) {
       console.error("Send password reset email error:", error);
       return false;
@@ -9480,11 +9657,12 @@ var AuthEmailService = class extends POEmailService {
       `;
       let allSent = true;
       for (const adminEmail of adminEmails) {
-        const sent = await this.sendEmail({
+        const sent = await poEmailService.sendEmail({
           to: adminEmail.trim(),
           subject,
           html: htmlContent
         });
+        console.log("\u{1F4E7} Admin notification email sent to:", adminEmail.trim(), sent);
         if (!sent) allSent = false;
       }
       return allSent;
@@ -10337,7 +10515,7 @@ router.post("/auth/forgot-password", async (req, res) => {
     const { email } = validationResult.data;
     try {
       const { token, user } = await PasswordResetService.requestPasswordReset(email);
-      const emailSent = await AuthEmailService.sendPasswordReset(user, token);
+      const emailSent = await AuthEmailService.sendPasswordReset(user, token, req);
       if (!emailSent) {
         console.error("Failed to send password reset email");
       }
@@ -10936,8 +11114,8 @@ var OptimizedDashboardQueries = class {
 var router2 = Router2();
 router2.get("/projects", async (req, res) => {
   try {
-    const projects2 = await storage.getProjects();
-    res.json(projects2);
+    const projects3 = await storage.getProjects();
+    res.json(projects3);
   } catch (error) {
     console.error("Error fetching projects:", error);
     res.status(500).json({ message: "Failed to fetch projects" });
@@ -10945,8 +11123,8 @@ router2.get("/projects", async (req, res) => {
 });
 router2.get("/projects/active", async (req, res) => {
   try {
-    const projects2 = await storage.getActiveProjects();
-    res.json(projects2);
+    const projects3 = await storage.getActiveProjects();
+    res.json(projects3);
   } catch (error) {
     console.error("Error fetching active projects:", error);
     res.status(500).json({ message: "Failed to fetch active projects" });
@@ -11652,11 +11830,355 @@ var approval_routing_service_default = ApprovalRoutingService;
 
 // server/routes/orders.ts
 init_professional_pdf_generation_service();
+
+// server/services/unified-order-creation-service.ts
 init_db();
-init_email_settings_service();
-import { eq as eq11, and as and7, or as or3, like as like2, desc as desc6, sql as sql4 } from "drizzle-orm";
+init_schema();
+init_professional_pdf_generation_service();
+import { eq as eq10, sql as sql4 } from "drizzle-orm";
+
+// server/utils/progress-manager.ts
+var ProgressManager = class {
+  constructor() {
+    this.sessions = /* @__PURE__ */ new Map();
+    this.sseClients = /* @__PURE__ */ new Map();
+  }
+  /**
+   * Generate a unique session ID
+   */
+  createSession() {
+    const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    this.sessions.set(sessionId, []);
+    this.sseClients.set(sessionId, []);
+    setTimeout(() => {
+      this.cleanupSession(sessionId);
+    }, 10 * 60 * 1e3);
+    return sessionId;
+  }
+  /**
+   * Add an SSE client for a session
+   */
+  addClient(sessionId, res) {
+    const clients = this.sseClients.get(sessionId) || [];
+    clients.push(res);
+    this.sseClients.set(sessionId, clients);
+    this.sendToClient(res, {
+      sessionId,
+      step: "connection",
+      status: "completed",
+      message: "\uC5F0\uACB0\uB418\uC5C8\uC2B5\uB2C8\uB2E4",
+      timestamp: Date.now()
+    });
+  }
+  /**
+   * Remove an SSE client
+   */
+  removeClient(sessionId, res) {
+    const clients = this.sseClients.get(sessionId) || [];
+    const index2 = clients.indexOf(res);
+    if (index2 > -1) {
+      clients.splice(index2, 1);
+      this.sseClients.set(sessionId, clients);
+    }
+  }
+  /**
+   * Send progress update
+   */
+  updateProgress(update) {
+    const progress = this.sessions.get(update.sessionId) || [];
+    progress.push(update);
+    this.sessions.set(update.sessionId, progress);
+    const clients = this.sseClients.get(update.sessionId) || [];
+    clients.forEach((client) => {
+      this.sendToClient(client, update);
+    });
+  }
+  /**
+   * Send data to a specific client
+   */
+  sendToClient(res, data) {
+    try {
+      res.write(`data: ${JSON.stringify(data)}
+
+`);
+    } catch (error) {
+      console.error("Error sending SSE data:", error);
+    }
+  }
+  /**
+   * Get all progress for a session
+   */
+  getSessionProgress(sessionId) {
+    return this.sessions.get(sessionId) || [];
+  }
+  /**
+   * Clean up session data
+   */
+  cleanupSession(sessionId) {
+    const clients = this.sseClients.get(sessionId) || [];
+    clients.forEach((client) => {
+      try {
+        client.end();
+      } catch (error) {
+      }
+    });
+    this.sessions.delete(sessionId);
+    this.sseClients.delete(sessionId);
+  }
+  /**
+   * Helper method to update specific steps
+   */
+  updateStep(sessionId, step, status, message, details) {
+    this.updateProgress({
+      sessionId,
+      step,
+      status,
+      message,
+      details,
+      timestamp: Date.now()
+    });
+  }
+};
+var progressManager = new ProgressManager();
+
+// server/services/unified-order-creation-service.ts
+init_debug_logger();
 import fs8 from "fs";
 import path6 from "path";
+var UnifiedOrderCreationService = class {
+  /**
+   * 통합 발주서 생성 메인 메서드
+   */
+  async createOrder(data, sessionId) {
+    const logger = new DebugLogger("UnifiedOrderCreation");
+    logger.log(`\u{1F680} \uBC1C\uC8FC\uC11C \uC0DD\uC131 \uC2DC\uC791 - \uBC29\uC2DD: ${data.method}, \uC138\uC158: ${sessionId}`);
+    try {
+      await this.notifyProgress(sessionId, "validation", "\uC785\uB825 \uB370\uC774\uD130 \uAC80\uC99D \uC911...", 10);
+      await this.validateInputData(data);
+      await this.notifyProgress(sessionId, "preparation", "\uB370\uC774\uD130 \uC900\uBE44 \uC911...", 20);
+      const preparedItems = await this.prepareItemsData(data);
+      await this.notifyProgress(sessionId, "saving", "DB\uC5D0 \uC800\uC7A5 \uC911...", 40);
+      const orderId = await this.saveOrderToDB(data, preparedItems);
+      await this.notifyProgress(sessionId, "attachments", "\uCCA8\uBD80\uD30C\uC77C \uCC98\uB9AC \uC911...", 60);
+      await this.processAttachments(orderId, data);
+      await this.notifyProgress(sessionId, "pdf", "PDF \uC0DD\uC131 \uC911...", 75);
+      const pdfResult = await this.generatePDF(orderId, data.userId);
+      await this.notifyProgress(sessionId, "status", "\uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8 \uC911...", 90);
+      await this.updateOrderStatus(orderId, "created");
+      await this.notifyProgress(sessionId, "complete", "\uBC1C\uC8FC\uC11C \uC0DD\uC131 \uC644\uB8CC!", 100);
+      const orderNumber = await this.getOrderNumber(orderId);
+      logger.log(`\u2705 \uBC1C\uC8FC\uC11C \uC0DD\uC131 \uC644\uB8CC - ID: ${orderId}, \uBC88\uD638: ${orderNumber}`);
+      return {
+        success: true,
+        orderId,
+        orderNumber,
+        pdfGenerated: pdfResult.success,
+        attachmentId: pdfResult.attachmentId
+      };
+    } catch (error) {
+      logger.error(`\u274C \uBC1C\uC8FC\uC11C \uC0DD\uC131 \uC2E4\uD328: ${error.message}`);
+      await this.notifyProgress(sessionId, "error", `\uC624\uB958 \uBC1C\uC0DD: ${error.message}`, 0);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+  /**
+   * 입력 데이터 검증
+   */
+  async validateInputData(data) {
+    if (!data.projectId || !data.vendorId) {
+      throw new Error("\uD604\uC7A5\uACFC \uAC70\uB798\uCC98\uB294 \uD544\uC218 \uC785\uB825 \uD56D\uBAA9\uC785\uB2C8\uB2E4.");
+    }
+    if (!data.orderDate) {
+      throw new Error("\uBC1C\uC8FC\uC77C\uC790\uB294 \uD544\uC218 \uC785\uB825 \uD56D\uBAA9\uC785\uB2C8\uB2E4.");
+    }
+    if (data.method === "manual") {
+      if (!data.items || data.items.length === 0) {
+        throw new Error("\uCD5C\uC18C \uD558\uB098\uC758 \uD488\uBAA9\uC744 \uCD94\uAC00\uD574\uC57C \uD569\uB2C8\uB2E4.");
+      }
+    } else if (data.method === "excel") {
+      if (!data.excelFilePath && (!data.parsedItems || data.parsedItems.length === 0)) {
+        throw new Error("\uC5D1\uC140 \uD30C\uC77C \uACBD\uB85C \uB610\uB294 \uD30C\uC2F1\uB41C \uC544\uC774\uD15C \uB370\uC774\uD130\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4.");
+      }
+    }
+  }
+  /**
+   * 아이템 데이터 준비 (입력 방식에 따라 다름)
+   */
+  async prepareItemsData(data) {
+    if (data.method === "manual") {
+      return data.items.map((item) => ({
+        ...item,
+        totalAmount: (item.quantity || 0) * (item.unitPrice || 0)
+      }));
+    } else {
+      if (data.parsedItems) {
+        return data.parsedItems.map((item) => ({
+          ...item,
+          totalAmount: (item.quantity || 0) * (item.unitPrice || 0)
+        }));
+      } else {
+        throw new Error("\uC5D1\uC140 \uD30C\uC2F1 \uB85C\uC9C1\uC774 \uAD6C\uD604\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4. parsedItems\uB97C \uC81C\uACF5\uD574\uC8FC\uC138\uC694.");
+      }
+    }
+  }
+  /**
+   * DB에 발주서 저장
+   */
+  async saveOrderToDB(data, items3) {
+    const logger = new DebugLogger("UnifiedOrderCreation");
+    const orderNumber = await this.generateOrderNumber();
+    const totalAmount = items3.reduce((sum2, item) => sum2 + (item.totalAmount || 0), 0);
+    logger.log(`\u{1F4BE} DB \uC800\uC7A5 \uC2DC\uC791 - \uBC1C\uC8FC\uBC88\uD638: ${orderNumber}, \uD488\uBAA9\uC218: ${items3.length}, \uCD1D\uC561: ${totalAmount}`);
+    const [savedOrder] = await db.insert(purchaseOrders).values({
+      orderNumber,
+      projectId: data.projectId,
+      vendorId: data.vendorId,
+      userId: data.userId,
+      orderDate: new Date(data.orderDate),
+      deliveryDate: data.deliveryDate ? new Date(data.deliveryDate) : null,
+      totalAmount,
+      notes: data.notes || null,
+      orderStatus: "draft",
+      // 초기 상태
+      approvalStatus: "not_required",
+      // 승인 불필요로 시작
+      customFields: data.customFields ? JSON.stringify(data.customFields) : null,
+      createdAt: /* @__PURE__ */ new Date(),
+      updatedAt: /* @__PURE__ */ new Date()
+    }).returning({ id: purchaseOrders.id });
+    const orderId = savedOrder.id;
+    if (items3.length > 0) {
+      const orderItemsToInsert = items3.map((item) => ({
+        orderId,
+        itemId: item.itemId || null,
+        itemName: item.itemName,
+        specification: item.specification || null,
+        majorCategory: item.majorCategory || null,
+        middleCategory: item.middleCategory || null,
+        minorCategory: item.minorCategory || null,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        totalAmount: item.totalAmount || 0,
+        notes: item.notes || null
+      }));
+      await db.insert(purchaseOrderItems).values(orderItemsToInsert);
+    }
+    logger.log(`\u2705 DB \uC800\uC7A5 \uC644\uB8CC - \uBC1C\uC8FC\uC11C ID: ${orderId}`);
+    return orderId;
+  }
+  /**
+   * 첨부파일 처리 (엑셀 파일 또는 기타 첨부파일)
+   */
+  async processAttachments(orderId, data) {
+    const logger = new DebugLogger("UnifiedOrderCreation");
+    if (data.method === "manual" && data.attachedFiles && data.attachedFiles.length > 0) {
+      logger.log(`\u{1F4CE} \uC9C1\uC811 \uC785\uB825 \uCCA8\uBD80\uD30C\uC77C \uCC98\uB9AC - ${data.attachedFiles.length}\uAC1C`);
+      for (const file of data.attachedFiles) {
+        await db.insert(attachments).values({
+          orderId,
+          fileName: file.originalname,
+          filePath: file.path,
+          fileSize: file.size,
+          mimeType: file.mimetype,
+          uploadedBy: data.userId,
+          createdAt: /* @__PURE__ */ new Date()
+        });
+      }
+    }
+    if (data.method === "excel" && data.excelFilePath) {
+      logger.log(`\u{1F4CA} \uC5D1\uC140 \uC6D0\uBCF8 \uD30C\uC77C \uCCA8\uBD80 - ${data.excelFilePath}`);
+      if (fs8.existsSync(data.excelFilePath)) {
+        const stat = fs8.statSync(data.excelFilePath);
+        const fileName = path6.basename(data.excelFilePath);
+        await db.insert(attachments).values({
+          orderId,
+          fileName,
+          filePath: data.excelFilePath,
+          fileSize: stat.size,
+          mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          uploadedBy: data.userId,
+          createdAt: /* @__PURE__ */ new Date()
+        });
+      }
+    }
+  }
+  /**
+   * PDF 생성
+   */
+  async generatePDF(orderId, userId) {
+    const logger = new DebugLogger("UnifiedOrderCreation");
+    try {
+      logger.log(`\u{1F4C4} PDF \uC0DD\uC131 \uC2DC\uC791 - \uBC1C\uC8FC\uC11C ID: ${orderId}`);
+      const result = await ProfessionalPDFGenerationService.generateProfessionalPurchaseOrderPDF(
+        orderId,
+        userId
+      );
+      if (result.success) {
+        logger.log(`\u2705 PDF \uC0DD\uC131 \uC644\uB8CC - \uCCA8\uBD80\uD30C\uC77C ID: ${result.attachmentId}`);
+        return { success: true, attachmentId: result.attachmentId };
+      } else {
+        logger.error(`\u274C PDF \uC0DD\uC131 \uC2E4\uD328: ${result.error}`);
+        return { success: false };
+      }
+    } catch (error) {
+      logger.error(`\u274C PDF \uC0DD\uC131 \uC911 \uC608\uC678 \uBC1C\uC0DD: ${error.message}`);
+      return { success: false };
+    }
+  }
+  /**
+   * 발주서 상태 업데이트
+   */
+  async updateOrderStatus(orderId, status) {
+    const logger = new DebugLogger("UnifiedOrderCreation");
+    logger.log(`\u{1F4CA} \uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8 - \uBC1C\uC8FC\uC11C ID: ${orderId}, \uC0C1\uD0DC: ${status}`);
+    await db.update(purchaseOrders).set({
+      orderStatus: status,
+      updatedAt: /* @__PURE__ */ new Date()
+    }).where(eq10(purchaseOrders.id, orderId));
+  }
+  /**
+   * 진행상황 알림 (SSE 사용)
+   */
+  async notifyProgress(sessionId, step, message, progress) {
+    if (!sessionId) return;
+    const progressData = {
+      step,
+      message,
+      progress,
+      completed: progress >= 100
+    };
+    progressManager.updateProgress(sessionId, progressData);
+  }
+  /**
+   * 발주서 번호 생성
+   */
+  async generateOrderNumber() {
+    const today = /* @__PURE__ */ new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, "0");
+    const day = String(today.getDate()).padStart(2, "0");
+    const [{ count: count5 }] = await db.select({ count: sql4`count(*)` }).from(purchaseOrders).where(sql4`DATE(${purchaseOrders.createdAt}) = CURRENT_DATE`);
+    const sequence = String(Number(count5) + 1).padStart(3, "0");
+    return `PO-${year}${month}${day}-${sequence}`;
+  }
+  /**
+   * 발주서 번호 조회
+   */
+  async getOrderNumber(orderId) {
+    const [order] = await db.select({ orderNumber: purchaseOrders.orderNumber }).from(purchaseOrders).where(eq10(purchaseOrders.id, orderId)).limit(1);
+    return order?.orderNumber || `ORDER-${orderId}`;
+  }
+};
+
+// server/routes/orders.ts
+init_db();
+init_email_settings_service();
+import { eq as eq12, and as and7, or as or3, like as like2, desc as desc6, sql as sql5 } from "drizzle-orm";
+import fs9 from "fs";
+import path7 from "path";
 import { fileURLToPath as fileURLToPath2 } from "url";
 import * as XLSX3 from "xlsx";
 import nodemailer3 from "nodemailer";
@@ -11664,7 +12186,7 @@ import nodemailer3 from "nodemailer";
 // server/utils/email-template-generator.ts
 init_db();
 init_schema();
-import { eq as eq10 } from "drizzle-orm";
+import { eq as eq11 } from "drizzle-orm";
 async function generateEmailTemplateData(orderId) {
   try {
     const [order] = await db.select({
@@ -11675,21 +12197,21 @@ async function generateEmailTemplateData(orderId) {
       deliveryDate: purchaseOrders.deliveryDate,
       totalAmount: purchaseOrders.totalAmount,
       notes: purchaseOrders.notes
-    }).from(purchaseOrders).where(eq10(purchaseOrders.id, orderId));
+    }).from(purchaseOrders).where(eq11(purchaseOrders.id, orderId));
     if (!order) {
       console.error(`\uC8FC\uBB38\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC74C: ${orderId}`);
       return null;
     }
     let vendorName = "\uAC70\uB798\uCC98 \uBBF8\uC9C0\uC815";
     if (order.vendorId) {
-      const [vendor] = await db.select({ name: vendors.name }).from(vendors).where(eq10(vendors.id, order.vendorId));
+      const [vendor] = await db.select({ name: vendors.name }).from(vendors).where(eq11(vendors.id, order.vendorId));
       if (vendor) {
         vendorName = vendor.name;
       }
     }
     let projectName = "\uD504\uB85C\uC81D\uD2B8 \uBBF8\uC9C0\uC815";
     if (order.projectId) {
-      const [project] = await db.select({ name: projects.name }).from(projects).where(eq10(projects.id, order.projectId));
+      const [project] = await db.select({ name: projects.name }).from(projects).where(eq11(projects.id, order.projectId));
       if (project) {
         projectName = project.name;
       }
@@ -11700,7 +12222,7 @@ async function generateEmailTemplateData(orderId) {
       quantity: purchaseOrderItems.quantity,
       unitPrice: purchaseOrderItems.unitPrice,
       totalAmount: purchaseOrderItems.totalAmount
-    }).from(purchaseOrderItems).where(eq10(purchaseOrderItems.orderId, orderId));
+    }).from(purchaseOrderItems).where(eq11(purchaseOrderItems.orderId, orderId));
     return {
       orderNumber: order.orderNumber,
       vendorName,
@@ -11878,7 +12400,7 @@ function generateEmailHTML(data) {
 
 // server/routes/orders.ts
 var __filename2 = fileURLToPath2(import.meta.url);
-var __dirname2 = path6.dirname(__filename2);
+var __dirname2 = path7.dirname(__filename2);
 var router3 = Router3();
 var db2 = db;
 var emailService = new POEmailService();
@@ -11889,8 +12411,29 @@ async function updateOrderStatusAfterEmail(orderNumber) {
     // 발주상태: 이메일 발송 완료 후 'sent'로 변경
     // approvalStatus는 이미 'approved' 또는 'not_required' 상태이므로 변경하지 않음
     updatedAt: /* @__PURE__ */ new Date()
-  }).where(eq11(purchaseOrders.orderNumber, orderNumber));
+  }).where(eq12(purchaseOrders.orderNumber, orderNumber));
 }
+router3.get("/orders/progress/:sessionId", (req, res) => {
+  const { sessionId } = req.params;
+  console.log(`\u{1F4E1} SSE \uC5F0\uACB0 \uC2DC\uC791 - \uC138\uC158: ${sessionId}`);
+  res.writeHead(200, {
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache",
+    "Connection": "keep-alive",
+    "Access-Control-Allow-Origin": "*"
+  });
+  progressManager.addClient(sessionId, res);
+  const existingProgress = progressManager.getSessionProgress(sessionId);
+  existingProgress.forEach((update) => {
+    res.write(`data: ${JSON.stringify(update)}
+
+`);
+  });
+  req.on("close", () => {
+    console.log(`\u{1F4E1} SSE \uC5F0\uACB0 \uC885\uB8CC - \uC138\uC158: ${sessionId}`);
+    progressManager.removeClient(sessionId, res);
+  });
+});
 router3.get("/orders", async (req, res) => {
   try {
     const {
@@ -12042,6 +12585,79 @@ router3.get("/orders/:id", async (req, res) => {
     res.status(500).json({ message: "Failed to fetch order" });
   }
 });
+router3.post("/orders/create-unified", requireAuth, upload.array("attachments"), async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: "User not authenticated" });
+    }
+    console.log("\u{1F680} \uD1B5\uD569 \uBC1C\uC8FC\uC11C \uC0DD\uC131 \uC694\uCCAD:", {
+      body: req.body,
+      files: req.files?.map((f) => ({
+        originalname: f.originalname,
+        filename: f.filename,
+        size: f.size
+      }))
+    });
+    let items3 = [];
+    try {
+      items3 = JSON.parse(req.body.items || "[]");
+    } catch (parseError) {
+      console.error("\uC544\uC774\uD15C \uD30C\uC2F1 \uC2E4\uD328:", parseError);
+      return res.status(400).json({ message: "Invalid items data" });
+    }
+    const sessionId = `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const orderCreationData = {
+      method: "manual",
+      projectId: parseInt(req.body.projectId),
+      vendorId: parseInt(req.body.vendorId),
+      orderDate: req.body.orderDate,
+      deliveryDate: req.body.deliveryDate || null,
+      notes: req.body.notes || null,
+      userId,
+      items: items3.map((item) => ({
+        itemId: item.itemId ? parseInt(item.itemId) : void 0,
+        itemName: item.itemName,
+        specification: item.specification || null,
+        majorCategory: item.majorCategory || null,
+        middleCategory: item.middleCategory || null,
+        minorCategory: item.minorCategory || null,
+        quantity: parseFloat(item.quantity),
+        unitPrice: parseFloat(item.unitPrice),
+        notes: item.notes || null
+      })),
+      attachedFiles: req.files,
+      customFields: req.body.customFields ? JSON.parse(req.body.customFields) : void 0
+    };
+    const unifiedService = new UnifiedOrderCreationService();
+    const result = await unifiedService.createOrder(orderCreationData, sessionId);
+    if (result.success) {
+      res.json({
+        success: true,
+        id: result.orderId,
+        orderNumber: result.orderNumber,
+        pdfGenerated: result.pdfGenerated,
+        attachmentId: result.attachmentId,
+        sessionId,
+        // 진행상황 추적용
+        message: "\uBC1C\uC8FC\uC11C\uAC00 \uC131\uACF5\uC801\uC73C\uB85C \uC0DD\uC131\uB418\uC5C8\uC2B5\uB2C8\uB2E4."
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        error: result.error,
+        message: "\uBC1C\uC8FC\uC11C \uC0DD\uC131\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4."
+      });
+    }
+  } catch (error) {
+    console.error("\uD1B5\uD569 \uBC1C\uC8FC\uC11C \uC0DD\uC131 \uC624\uB958:", error);
+    res.status(500).json({
+      success: false,
+      message: "\uBC1C\uC8FC\uC11C \uC0DD\uC131 \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4.",
+      error: error.message
+    });
+  }
+});
 router3.post("/orders", requireAuth, upload.array("attachments"), async (req, res) => {
   try {
     const userId = req.user?.id;
@@ -12110,8 +12726,8 @@ router3.post("/orders", requireAuth, upload.array("attachments"), async (req, re
     const order = await storage.createPurchaseOrder(orderData);
     console.log("\u{1F527}\u{1F527}\u{1F527} ORDERS.TS - Created order:", order);
     if (req.files && req.files.length > 0) {
-      const fs27 = __require("fs");
-      const path25 = __require("path");
+      const fs28 = __require("fs");
+      const path26 = __require("path");
       const { removeAllInputSheets: removeAllInputSheets2 } = (init_excel_input_sheet_remover(), __toCommonJS(excel_input_sheet_remover_exports));
       for (const file of req.files) {
         const decodedFilename = decodeKoreanFilename(file.originalname);
@@ -12126,21 +12742,21 @@ router3.post("/orders", requireAuth, upload.array("attachments"), async (req, re
           console.log("\u{1F4CA} Excel \uD30C\uC77C \uAC10\uC9C0, Input \uC2DC\uD2B8 \uC81C\uAC70 \uCC98\uB9AC \uC2DC\uC791...");
           const processedPath = file.path.replace(/\.(xlsx?)$/i, "_processed.$1");
           const removeResult = await removeAllInputSheets2(file.path, processedPath);
-          if (removeResult.success && fs27.existsSync(processedPath)) {
+          if (removeResult.success && fs28.existsSync(processedPath)) {
             console.log(`\u2705 Input \uC2DC\uD2B8 \uC81C\uAC70 \uC644\uB8CC: ${removeResult.removedSheets.join(", ")}`);
             fileToStore = processedPath;
-            fileBuffer = fs27.readFileSync(processedPath);
+            fileBuffer = fs28.readFileSync(processedPath);
             try {
-              fs27.unlinkSync(file.path);
+              fs28.unlinkSync(file.path);
             } catch (e) {
               console.warn("\uC6D0\uBCF8 \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328:", e);
             }
           } else {
             console.warn("\u26A0\uFE0F Input \uC2DC\uD2B8 \uC81C\uAC70 \uC2E4\uD328, \uC6D0\uBCF8 \uD30C\uC77C \uC0AC\uC6A9:", removeResult.error);
-            fileBuffer = fs27.readFileSync(file.path);
+            fileBuffer = fs28.readFileSync(file.path);
           }
         } else {
-          fileBuffer = fs27.readFileSync(file.path);
+          fileBuffer = fs28.readFileSync(file.path);
         }
         const base64Data = fileBuffer.toString("base64");
         let finalOriginalName = decodedFilename;
@@ -12173,9 +12789,9 @@ router3.post("/orders", requireAuth, upload.array("attachments"), async (req, re
           delete attachmentData.fileData;
           await storage.createAttachment(attachmentData);
         }
-        if (fileToStore !== file.path && fs27.existsSync(fileToStore)) {
+        if (fileToStore !== file.path && fs28.existsSync(fileToStore)) {
           try {
-            fs27.unlinkSync(fileToStore);
+            fs28.unlinkSync(fileToStore);
           } catch (e) {
             console.warn("\uCC98\uB9AC\uB41C \uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328:", e);
           }
@@ -12741,7 +13357,7 @@ router3.post("/orders/:id/regenerate-pdf", requireAuth, async (req, res) => {
     if (!userId) {
       return res.status(401).json({ message: "User not authenticated" });
     }
-    const [order] = await db.select().from(purchaseOrders).where(eq11(purchaseOrders.id, orderId)).limit(1);
+    const [order] = await db.select().from(purchaseOrders).where(eq12(purchaseOrders.id, orderId)).limit(1);
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
@@ -12898,13 +13514,13 @@ router3.get("/orders/download-pdf/:timestamp", async (req, res) => {
         console.error("\u274C \uB370\uC774\uD130\uBCA0\uC774\uC2A4 PDF \uC870\uD68C \uC624\uB958:", dbError);
       }
     }
-    const basePath = process.env.VERCEL ? path6.join("/tmp", "temp-pdf", `order-${timestamp2}`) : path6.join(process.cwd(), "uploads/temp-pdf", `order-${timestamp2}`);
+    const basePath = process.env.VERCEL ? path7.join("/tmp", "temp-pdf", `order-${timestamp2}`) : path7.join(process.cwd(), "uploads/temp-pdf", `order-${timestamp2}`);
     const pdfPath = `${basePath}.pdf`;
     const htmlPath = `${basePath}.html`;
     console.log(`\u{1F4C4} \uD30C\uC77C \uC2DC\uC2A4\uD15C\uC5D0\uC11C \uD30C\uC77C \uC694\uCCAD: ${basePath}.*`);
-    console.log(`\u{1F4C4} PDF \uC874\uC7AC: ${fs8.existsSync(pdfPath)}, HTML \uC874\uC7AC: ${fs8.existsSync(htmlPath)}`);
-    if (process.env.VERCEL && !fs8.existsSync(pdfPath) && fs8.existsSync(htmlPath)) {
-      const htmlContent = fs8.readFileSync(htmlPath, "utf-8");
+    console.log(`\u{1F4C4} PDF \uC874\uC7AC: ${fs9.existsSync(pdfPath)}, HTML \uC874\uC7AC: ${fs9.existsSync(htmlPath)}`);
+    if (process.env.VERCEL && !fs9.existsSync(pdfPath) && fs9.existsSync(htmlPath)) {
+      const htmlContent = fs9.readFileSync(htmlPath, "utf-8");
       res.setHeader("Content-Type", "text/html; charset=utf-8");
       res.setHeader("Cache-Control", "no-cache");
       if (download === "true") {
@@ -12913,9 +13529,9 @@ router3.get("/orders/download-pdf/:timestamp", async (req, res) => {
       res.send(htmlContent);
       return;
     }
-    if (fs8.existsSync(pdfPath)) {
+    if (fs9.existsSync(pdfPath)) {
       try {
-        const stat = fs8.statSync(pdfPath);
+        const stat = fs9.statSync(pdfPath);
         console.log(`\u{1F4CA} PDF \uD30C\uC77C \uC815\uBCF4: \uD06C\uAE30 ${(stat.size / 1024).toFixed(2)} KB`);
         res.setHeader("Access-Control-Allow-Origin", "*");
         res.setHeader("Access-Control-Allow-Methods", "GET");
@@ -12926,7 +13542,7 @@ router3.get("/orders/download-pdf/:timestamp", async (req, res) => {
           res.setHeader("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent("\uBC1C\uC8FC\uC11C.pdf")}`);
           res.setHeader("Content-Type", "application/pdf");
           res.setHeader("Content-Length", stat.size.toString());
-          const downloadStream = fs8.createReadStream(pdfPath);
+          const downloadStream = fs9.createReadStream(pdfPath);
           downloadStream.on("error", (error) => {
             console.error("\u274C PDF \uB2E4\uC6B4\uB85C\uB4DC \uC2A4\uD2B8\uB9BC \uC624\uB958:", error);
             if (!res.headersSent) {
@@ -12942,7 +13558,7 @@ router3.get("/orders/download-pdf/:timestamp", async (req, res) => {
           res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
           res.setHeader("Pragma", "no-cache");
           res.setHeader("Expires", "0");
-          const pdfStream = fs8.createReadStream(pdfPath);
+          const pdfStream = fs9.createReadStream(pdfPath);
           pdfStream.on("error", (error) => {
             console.error("\u274C PDF \uC2A4\uD2B8\uB9BC \uC624\uB958:", error);
             if (!res.headersSent) {
@@ -12990,22 +13606,22 @@ router3.get("/orders/:id/download-pdf", async (req, res) => {
   try {
     const orderId = parseInt(req.params.id);
     console.log(`\u{1F4C4} Order ID ${orderId}\uB85C PDF \uB2E4\uC6B4\uB85C\uB4DC \uC694\uCCAD`);
-    const attachments4 = await db2.select().from(attachments2).where(
+    const attachments3 = await db2.select().from(attachments).where(
       and7(
-        eq11(attachments2.orderId, orderId),
+        eq12(attachments.orderId, orderId),
         or3(
-          eq11(attachments2.mimeType, "application/pdf"),
-          like2(attachments2.originalName, "%.pdf")
+          eq12(attachments.mimeType, "application/pdf"),
+          like2(attachments.originalName, "%.pdf")
         )
       )
-    ).orderBy(desc6(attachments2.createdAt)).limit(1);
-    if (!attachments4 || attachments4.length === 0) {
+    ).orderBy(desc6(attachments.createdAt)).limit(1);
+    if (!attachments3 || attachments3.length === 0) {
       console.warn(`\u26A0\uFE0F Order ${orderId}\uC5D0 \uB300\uD55C PDF \uC5C6\uC74C`);
       return res.status(404).json({
         error: "PDF \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
       });
     }
-    const attachment = attachments4[0];
+    const attachment = attachments3[0];
     console.log(`\u{1F4C4} PDF \uBC1C\uACAC: ${attachment.originalName}`);
     const downloadUrl = `/api/attachments/${attachment.id}/download?download=true`;
     console.log(`\u{1F4C4} \uB9AC\uB2E4\uC774\uB809\uD2B8: ${downloadUrl}`);
@@ -13207,18 +13823,28 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
     }
     let excelFilePath = "";
     let additionalAttachments = [];
+    let attachments3 = [];
+    let attachmentsList = [];
+    const emailOptions = {
+      orderNumber: orderData.orderNumber,
+      vendorName: orderData.vendorName,
+      additionalMessage: message,
+      to: Array.isArray(to) ? to : [to],
+      cc: Array.isArray(cc) ? cc : cc ? [cc] : [],
+      subject: subject || `\uBC1C\uC8FC\uC11C - ${orderData.orderNumber}`
+    };
     if (selectedAttachmentIds && selectedAttachmentIds.length > 0) {
       console.log("\u{1F4CE} \uC120\uD0DD\uB41C \uCCA8\uBD80\uD30C\uC77C \uCC98\uB9AC:", selectedAttachmentIds);
       for (const attachmentId of selectedAttachmentIds) {
         try {
           console.log(`\u{1F4C8} \uCCA8\uBD80\uD30C\uC77C ID ${attachmentId} \uCC98\uB9AC \uC2DC\uC791`);
           const [attachment] = await db.select({
-            id: attachments2.id,
-            originalName: attachments2.originalName,
-            filePath: attachments2.filePath,
-            mimeType: attachments2.mimeType,
-            fileData: attachments2.fileData
-          }).from(attachments2).where(eq11(attachments2.id, attachmentId));
+            id: attachments.id,
+            originalName: attachments.originalName,
+            filePath: attachments.filePath,
+            mimeType: attachments.mimeType,
+            fileData: attachments.fileData
+          }).from(attachments).where(eq12(attachments.id, attachmentId));
           console.log(`\u{1F4CB} \uCCA8\uBD80\uD30C\uC77C \uB370\uC774\uD130\uBCA0\uC774\uC2A4 \uC870\uD68C \uACB0\uACFC:`, {
             found: !!attachment,
             name: attachment?.originalName,
@@ -13230,15 +13856,15 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
             const isExcelFile = attachment.mimeType?.includes("excel") || attachment.mimeType?.includes("spreadsheet") || attachment.originalName?.toLowerCase().endsWith(".xlsx") || attachment.originalName?.toLowerCase().endsWith(".xls");
             if (isExcelFile && !excelFilePath) {
               if (attachment.fileData) {
-                const tempDir = path6.join(__dirname2, "../../uploads");
-                const tempFilePath = path6.join(tempDir, `temp-${Date.now()}-${attachment.originalName}`);
-                if (!fs8.existsSync(tempDir)) {
-                  fs8.mkdirSync(tempDir, { recursive: true });
+                const tempDir = path7.join(__dirname2, "../../uploads");
+                const tempFilePath = path7.join(tempDir, `temp-${Date.now()}-${attachment.originalName}`);
+                if (!fs9.existsSync(tempDir)) {
+                  fs9.mkdirSync(tempDir, { recursive: true });
                 }
-                fs8.writeFileSync(tempFilePath, Buffer.from(attachment.fileData, "base64"));
+                fs9.writeFileSync(tempFilePath, Buffer.from(attachment.fileData, "base64"));
                 excelFilePath = tempFilePath;
                 console.log("\u2705 Excel \uD30C\uC77C \uC784\uC2DC \uC800\uC7A5:", tempFilePath);
-              } else if (attachment.filePath && fs8.existsSync(attachment.filePath)) {
+              } else if (attachment.filePath && fs9.existsSync(attachment.filePath)) {
                 excelFilePath = attachment.filePath;
                 console.log("\u2705 Excel \uD30C\uC77C \uACBD\uB85C \uC0AC\uC6A9:", attachment.filePath);
               }
@@ -13250,7 +13876,7 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
                   contentType: attachment.mimeType || "application/octet-stream"
                 });
                 console.log("\u2705 \uCD94\uAC00 \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00 (Base64):", attachment.originalName);
-              } else if (attachment.filePath && fs8.existsSync(attachment.filePath)) {
+              } else if (attachment.filePath && fs9.existsSync(attachment.filePath)) {
                 additionalAttachments.push({
                   filename: attachment.originalName,
                   path: attachment.filePath,
@@ -13267,10 +13893,10 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
     }
     if (!excelFilePath) {
       console.log("\u{1F4CE} Excel \uD30C\uC77C\uC774 \uC5C6\uC5B4 \uAE30\uBCF8 \uD30C\uC77C \uC0DD\uC131");
-      const tempDir = path6.join(__dirname2, "../../uploads");
-      const tempFilePath = path6.join(tempDir, `default-po-${Date.now()}.xlsx`);
-      if (!fs8.existsSync(tempDir)) {
-        fs8.mkdirSync(tempDir, { recursive: true });
+      const tempDir = path7.join(__dirname2, "../../uploads");
+      const tempFilePath = path7.join(tempDir, `default-po-${Date.now()}.xlsx`);
+      if (!fs9.existsSync(tempDir)) {
+        fs9.mkdirSync(tempDir, { recursive: true });
       }
       const workbook = XLSX3.utils.book_new();
       const worksheet = XLSX3.utils.json_to_sheet([{
@@ -13284,6 +13910,11 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
       excelFilePath = tempFilePath;
       console.log("\u2705 \uAE30\uBCF8 Excel \uD30C\uC77C \uC0DD\uC131:", tempFilePath);
     }
+    const selectedAttachments = req.body.selectedAttachments || [];
+    const attachPdf = req.body.attachPdf || false;
+    const attachExcel = req.body.attachExcel || false;
+    const pdfUrl = req.body.pdfUrl || "";
+    const excelUrl = req.body.excelUrl || "";
     const attachmentIdsToProcess = selectedAttachmentIds && selectedAttachmentIds.length > 0 ? selectedAttachmentIds : selectedAttachments;
     if (attachmentIdsToProcess && Array.isArray(attachmentIdsToProcess) && attachmentIdsToProcess.length > 0) {
       console.log("\u{1F4CE} \uCC98\uB9AC\uD560 \uC120\uD0DD\uB41C \uCCA8\uBD80\uD30C\uC77C IDs:", attachmentIdsToProcess);
@@ -13292,7 +13923,7 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
       const processedAttachmentIds = /* @__PURE__ */ new Set();
       if (attachPdf && pdfUrl && pdfUrl.includes("/api/attachments/") && pdfUrl.includes("/download")) {
         const pdfAttachmentIdMatch = pdfUrl.match(/\/api\/attachments\/(\d+)\/download/);
-        if (pdfAttachmentIdMatch && attachments.length > 0) {
+        if (pdfAttachmentIdMatch && attachments3.length > 0) {
           const pdfId = parseInt(pdfAttachmentIdMatch[1]);
           console.log("\u{1F50D} PDF already processed by old logic, ID:", pdfId);
           processedAttachmentIds.add(pdfId);
@@ -13318,16 +13949,16 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
             continue;
           }
           const [attachment] = await db.select({
-            id: attachments2.id,
-            originalName: attachments2.originalName,
-            filePath: attachments2.filePath,
-            mimeType: attachments2.mimeType,
-            fileData: attachments2.fileData
-          }).from(attachments2).where(eq11(attachments2.id, attachmentId));
+            id: attachments.id,
+            originalName: attachments.originalName,
+            filePath: attachments.filePath,
+            mimeType: attachments.mimeType,
+            fileData: attachments.fileData
+          }).from(attachments).where(eq12(attachments.id, attachmentId));
           if (attachment) {
             if (attachment.fileData) {
               const fileBuffer = Buffer.from(attachment.fileData, "base64");
-              attachments.push({
+              attachments3.push({
                 filename: attachment.originalName,
                 content: fileBuffer,
                 contentType: attachment.mimeType || "application/octet-stream"
@@ -13340,8 +13971,8 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
                 isExcel: attachment.mimeType?.includes("spreadsheet") || attachment.originalName?.endsWith(".xlsx"),
                 method: "content (Buffer)"
               });
-            } else if (attachment.filePath && fs8.existsSync(attachment.filePath)) {
-              attachments.push({
+            } else if (attachment.filePath && fs9.existsSync(attachment.filePath)) {
+              attachments3.push({
                 filename: attachment.originalName,
                 path: attachment.filePath,
                 contentType: attachment.mimeType || "application/octet-stream"
@@ -13365,7 +13996,7 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
         }
       }
     }
-    console.log(`\u{1F4CE} \uCD1D ${attachments.length}\uAC1C \uCCA8\uBD80\uD30C\uC77C:`, attachmentsList);
+    console.log(`\u{1F4CE} \uCD1D ${attachments3.length}\uAC1C \uCCA8\uBD80\uD30C\uC77C:`, attachmentsList);
     let emailHtmlContent;
     if (orderData.orderId) {
       const templateData = await generateEmailTemplateData(orderData.orderId);
@@ -13395,9 +14026,9 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
               <div class="content">
                 <p>\uC548\uB155\uD558\uC138\uC694, \uBC1C\uC8FC\uC11C\uB97C \uC804\uC1A1\uB4DC\uB9BD\uB2C8\uB2E4.</p>
                 <div class="order-info">
-                  <p><strong>\uBC1C\uC8FC\uBC88\uD638:</strong> ${emailOptions.orderNumber || "N/A"}</p>
-                  <p><strong>\uAC70\uB798\uCC98:</strong> ${emailOptions.vendorName || "N/A"}</p>
-                  <p><strong>\uBA54\uC2DC\uC9C0:</strong> ${emailOptions.additionalMessage || "\uC5C6\uC74C"}</p>
+                  <p><strong>\uBC1C\uC8FC\uBC88\uD638:</strong> ${orderData.orderNumber || "N/A"}</p>
+                  <p><strong>\uAC70\uB798\uCC98:</strong> ${orderData.vendorName || "N/A"}</p>
+                  <p><strong>\uBA54\uC2DC\uC9C0:</strong> ${message || "\uC5C6\uC74C"}</p>
                 </div>
               </div>
             </body>
@@ -13448,9 +14079,9 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
               <p>\uC548\uB155\uD558\uC138\uC694,</p>
               <p>\uBC1C\uC8FC\uC11C\uB97C \uC804\uC1A1\uB4DC\uB9BD\uB2C8\uB2E4.</p>
               <div class="order-info">
-                <p><strong>\uBC1C\uC8FC\uBC88\uD638:</strong> ${emailOptions.orderNumber || "N/A"}</p>
-                <p><strong>\uAC70\uB798\uCC98:</strong> ${emailOptions.vendorName || "N/A"}</p>
-                <p><strong>\uBA54\uC2DC\uC9C0:</strong> ${emailOptions.additionalMessage || "\uC5C6\uC74C"}</p>
+                <p><strong>\uBC1C\uC8FC\uBC88\uD638:</strong> ${orderData.orderNumber || "N/A"}</p>
+                <p><strong>\uAC70\uB798\uCC98:</strong> ${orderData.vendorName || "N/A"}</p>
+                <p><strong>\uBA54\uC2DC\uC9C0:</strong> ${message || "\uC5C6\uC74C"}</p>
               </div>
             </div>
           </body>
@@ -13461,7 +14092,7 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
       to: emailOptions.to,
       cc: emailOptions.cc,
       subject: emailOptions.subject,
-      attachmentsCount: attachments.length
+      attachmentsCount: attachments3.length
     });
     const emailHtml = emailHtmlContent;
     const emailSettingsService = new EmailSettingsService();
@@ -13484,7 +14115,7 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
       }
     }
     const transporter2 = nodemailer3.createTransport(smtpConfig);
-    const safeAttachments = attachments.map((att) => {
+    const safeAttachments = attachments3.map((att) => {
       const attachment = {
         filename: att.filename || "attachment"
       };
@@ -13528,17 +14159,84 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
       contentSize: att.content ? att.content.length : 0,
       contentType: att.contentType
     })));
-    if (process.env.NODE_ENV === "development" || !process.env.EMAIL_USER) {
+    console.log("\u{1F4E7} POEmailService\uB97C \uC0AC\uC6A9\uD55C \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC2DC\uC791");
+    const poServiceAttachments = attachments3.map((att) => ({
+      filename: att.filename || "attachment",
+      content: att.content || (att.path ? fs9.readFileSync(att.path) : Buffer.alloc(0)),
+      contentType: att.contentType || "application/octet-stream"
+    })).filter((att) => att.content && att.content.length > 0);
+    const tempExcelPath = path7.join(__dirname2, "../../uploads", `temp_email_${Date.now()}.txt`);
+    fs9.writeFileSync(tempExcelPath, `\uBC1C\uC8FC\uC11C \uC774\uBA54\uC77C \uCCA8\uBD80\uD30C\uC77C
+\uBC1C\uC8FC\uBC88\uD638: ${orderData.orderNumber}
+\uC804\uC1A1\uC2DC\uAC04: ${(/* @__PURE__ */ new Date()).toISOString()}`);
+    try {
+      const result = await emailService.sendPOWithOriginalFormat(tempExcelPath, {
+        to: emailOptions.to,
+        cc: emailOptions.cc,
+        subject: emailOptions.subject,
+        orderNumber: orderData.orderNumber,
+        vendorName: orderData.vendorName,
+        totalAmount: orderData.totalAmount,
+        additionalMessage: message || emailOptions.additionalMessage,
+        additionalAttachments: poServiceAttachments
+      }, {
+        orderId: orderData?.orderId,
+        senderUserId: req.user?.id
+      });
+      try {
+        fs9.unlinkSync(tempExcelPath);
+      } catch (unlinkError) {
+        console.warn("\uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328:", unlinkError);
+      }
+      if (result.success) {
+        console.log("\u2705 POEmailService \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC131\uACF5");
+        if (orderData && orderData.orderNumber) {
+          try {
+            console.log(`\u{1F504} \uBC1C\uC8FC\uC11C \uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8 \uC2DC\uB3C4: ${orderData.orderNumber} \u2192 sent`);
+            await updateOrderStatusAfterEmail(orderData.orderNumber);
+            console.log(`\u2705 \uBC1C\uC8FC\uC11C \uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8 \uC644\uB8CC: ${orderData.orderNumber} \u2192 sent`);
+          } catch (updateError) {
+            console.error(`\u274C \uBC1C\uC8FC\uC11C \uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8 \uC2E4\uD328: ${orderData.orderNumber}`, updateError);
+          }
+        }
+        res.json({
+          success: true,
+          messageId: result.messageId,
+          message: "\uC774\uBA54\uC77C\uC774 \uC131\uACF5\uC801\uC73C\uB85C \uBC1C\uC1A1\uB418\uC5C8\uC2B5\uB2C8\uB2E4."
+        });
+        return;
+      } else {
+        console.error("\u274C POEmailService \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC2E4\uD328:", result.error);
+        res.status(500).json({
+          error: "\uC774\uBA54\uC77C \uBC1C\uC1A1\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.",
+          details: result.error
+        });
+        return;
+      }
+    } catch (serviceError) {
+      try {
+        fs9.unlinkSync(tempExcelPath);
+      } catch (unlinkError) {
+        console.warn("\uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328 (\uC624\uB958 \uC2DC):", unlinkError);
+      }
+      console.error("\u274C POEmailService \uD638\uCD9C \uC624\uB958:", serviceError);
+      res.status(500).json({
+        error: "\uC774\uBA54\uC77C \uC11C\uBE44\uC2A4 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4.",
+        details: serviceError instanceof Error ? serviceError.message : "Unknown error"
+      });
+      return;
+    }
+    if (false) {
       console.log("\u{1F4E7} [\uAC1C\uBC1C \uBAA8\uB4DC] \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC2DC\uBBAC\uB808\uC774\uC158:", {
         to: mailOptions.to,
         cc: mailOptions.cc,
         subject: mailOptions.subject,
-        attachmentsCount: attachments.length
+        attachmentsCount: attachments3.length
       });
       if (orderData && orderData.orderId) {
         try {
           console.log("\u{1F4BE} \uC774\uBA54\uC77C \uD788\uC2A4\uD1A0\uB9AC DB \uC800\uC7A5 \uC2DC\uC791 (\uAC1C\uBC1C \uBAA8\uB4DC)");
-          const { emailSendHistory: emailSendHistory3 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
+          const { emailSendHistory: emailSendHistory3 } = await null;
           const recipients = Array.isArray(emailOptions.to) ? emailOptions.to : emailOptions.to.split(",").map((e) => e.trim());
           const ccRecipients = emailOptions.cc ? Array.isArray(emailOptions.cc) ? emailOptions.cc : emailOptions.cc.split(",").map((e) => e.trim()) : [];
           const historyData = {
@@ -13694,8 +14392,8 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
 });
 router3.post("/orders/send-email-simple", requireAuth, async (req, res) => {
   try {
-    const { to, cc, subject, body, orderData, attachPdf: attachPdf2, attachExcel: attachExcel2, selectedAttachmentIds } = req.body;
-    console.log("\u{1F4E7} \uAC04\uD3B8 \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC694\uCCAD:", { to, cc, subject, attachments: { attachPdf: attachPdf2, attachExcel: attachExcel2, selectedAttachmentIds } });
+    const { to, cc, subject, body, orderData, attachPdf, attachExcel, selectedAttachmentIds } = req.body;
+    console.log("\u{1F4E7} \uAC04\uD3B8 \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC694\uCCAD:", { to, cc, subject, attachments: { attachPdf, attachExcel, selectedAttachmentIds } });
     if (!to || to.length === 0) {
       return res.status(400).json({ error: "\uC218\uC2E0\uC790\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4." });
     }
@@ -13735,19 +14433,19 @@ router3.post("/orders/send-email-simple", requireAuth, async (req, res) => {
       userPhone: req.user?.phone || "\uC5F0\uB77D\uCC98"
     };
     let excelPath = "";
-    if (attachExcel2 && orderData?.excelFilePath) {
-      excelPath = path6.join(__dirname2, "../../", orderData.excelFilePath.replace(/^\//, ""));
-      if (!fs8.existsSync(excelPath)) {
+    if (attachExcel && orderData?.excelFilePath) {
+      excelPath = path7.join(__dirname2, "../../", orderData.excelFilePath.replace(/^\//, ""));
+      if (!fs9.existsSync(excelPath)) {
         console.warn("\u26A0\uFE0F \uC5D1\uC140 \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4:", excelPath);
         excelPath = "";
       }
     }
-    let attachments4 = [];
+    let attachments3 = [];
     if (selectedAttachmentIds && Array.isArray(selectedAttachmentIds) && selectedAttachmentIds.length > 0) {
       console.log("\u{1F4CE} \uCC98\uB9AC\uD560 \uC120\uD0DD\uB41C \uCCA8\uBD80\uD30C\uC77C IDs:", selectedAttachmentIds);
       for (const attachmentId of selectedAttachmentIds) {
         try {
-          const attachmentQuery = await db2.query(sql4`
+          const attachmentQuery = await db2.query(sql5`
             SELECT id, original_name, file_data, mime_type
             FROM attachments 
             WHERE id = ${attachmentId}
@@ -13757,7 +14455,7 @@ router3.post("/orders/send-email-simple", requireAuth, async (req, res) => {
             console.log(`\u{1F4CE} \uCC98\uB9AC \uC911\uC778 \uCCA8\uBD80\uD30C\uC77C: ID=${attachmentId}, name=${attachment.original_name}`);
             if (attachment.file_data) {
               const fileBuffer = Buffer.from(attachment.file_data, "base64");
-              attachments4.push({
+              attachments3.push({
                 filename: attachment.original_name,
                 content: fileBuffer,
                 contentType: attachment.mime_type || "application/octet-stream"
@@ -13775,16 +14473,16 @@ router3.post("/orders/send-email-simple", requireAuth, async (req, res) => {
       }
     }
     if (!excelPath) {
-      const tempDir = path6.join(__dirname2, "../../uploads/temp");
-      if (!fs8.existsSync(tempDir)) {
-        fs8.mkdirSync(tempDir, { recursive: true });
+      const tempDir = path7.join(__dirname2, "../../uploads/temp");
+      if (!fs9.existsSync(tempDir)) {
+        fs9.mkdirSync(tempDir, { recursive: true });
       }
-      excelPath = path6.join(tempDir, `temp_${Date.now()}.txt`);
-      fs8.writeFileSync(excelPath, `\uBC1C\uC8FC\uC11C \uC0C1\uC138 \uB0B4\uC6A9
+      excelPath = path7.join(tempDir, `temp_${Date.now()}.txt`);
+      fs9.writeFileSync(excelPath, `\uBC1C\uC8FC\uC11C \uC0C1\uC138 \uB0B4\uC6A9
 
 ${body}`);
     }
-    console.log(`\u{1F4E7} \uC774\uBA54\uC77C \uBC1C\uC1A1: \uAE30\uBCF8 \uCCA8\uBD80\uD30C\uC77C + \uCD94\uAC00 \uCCA8\uBD80\uD30C\uC77C ${attachments4.length}\uAC1C`);
+    console.log(`\u{1F4E7} \uC774\uBA54\uC77C \uBC1C\uC1A1: \uAE30\uBCF8 \uCCA8\uBD80\uD30C\uC77C + \uCD94\uAC00 \uCCA8\uBD80\uD30C\uC77C ${attachments3.length}\uAC1C`);
     const result = await emailService.sendPOWithOriginalFormat(excelPath, {
       to: toEmails,
       cc: ccEmails,
@@ -13797,7 +14495,7 @@ ${body}`);
 \uBC1C\uC8FC\uBC88\uD638: ${emailData.orderNumber}
 \uD504\uB85C\uC81D\uD2B8: ${emailData.projectName}
 \uAC70\uB798\uCC98: ${emailData.vendorName}`,
-      additionalAttachments: attachments4
+      additionalAttachments: attachments3
       // Pass additional attachments
     }, {
       orderId: orderData?.orderId,
@@ -13805,7 +14503,7 @@ ${body}`);
     });
     if (excelPath.includes("temp_")) {
       try {
-        fs8.unlinkSync(excelPath);
+        fs9.unlinkSync(excelPath);
       } catch (err) {
         console.warn("\uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328:", err);
       }
@@ -13845,9 +14543,9 @@ router3.post("/orders/send-email-with-excel", requireAuth, async (req, res) => {
       return res.status(400).json({ error: "\uC5D1\uC140 \uD30C\uC77C \uACBD\uB85C\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4." });
     }
     const absoluteExcelPath = excelFilePath.startsWith("http") ? excelFilePath.replace(/^https?:\/\/[^\/]+/, "") : excelFilePath;
-    const localExcelPath = path6.join(__dirname2, "../../", absoluteExcelPath.replace(/^\//, ""));
+    const localExcelPath = path7.join(__dirname2, "../../", absoluteExcelPath.replace(/^\//, ""));
     console.log("\u{1F4E7} \uC5D1\uC140 \uD30C\uC77C \uACBD\uB85C:", localExcelPath);
-    if (!fs8.existsSync(localExcelPath)) {
+    if (!fs9.existsSync(localExcelPath)) {
       return res.status(400).json({ error: "\uC5D1\uC140 \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4." });
     }
     const result = await emailService.sendPOWithOriginalFormat(
@@ -13911,10 +14609,10 @@ router3.post("/test-email-smtp", async (req, res) => {
       userName: "System Tester",
       userPhone: "010-0000-0000"
     };
-    const fs27 = __require("fs");
-    const path25 = __require("path");
-    const testExcelPath = path25.join(__dirname2, "../../uploads/smtp-test.txt");
-    fs27.writeFileSync(testExcelPath, "SMTP Test File - " + (/* @__PURE__ */ new Date()).toISOString());
+    const fs28 = __require("fs");
+    const path26 = __require("path");
+    const testExcelPath = path26.join(__dirname2, "../../uploads/smtp-test.txt");
+    fs28.writeFileSync(testExcelPath, "SMTP Test File - " + (/* @__PURE__ */ new Date()).toISOString());
     const result = await emailService.sendPOWithOriginalFormat(testExcelPath, {
       to: [recipientEmail],
       cc: [],
@@ -13927,7 +14625,7 @@ router3.post("/test-email-smtp", async (req, res) => {
       senderUserId: "system-test"
     });
     try {
-      fs27.unlinkSync(testExcelPath);
+      fs28.unlinkSync(testExcelPath);
     } catch (e) {
       console.warn("\uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328:", e.message);
     }
@@ -13971,8 +14669,8 @@ router3.get("/orders/:orderId/attachments", requireAuth, async (req, res) => {
   try {
     const orderId = parseInt(req.params.orderId, 10);
     console.log(`\u{1F4CE} \uBC1C\uC8FC\uC11C \uCCA8\uBD80\uD30C\uC77C \uBAA9\uB85D \uC694\uCCAD: \uBC1C\uC8FC\uC11C ID ${orderId}`);
-    const attachments4 = await storage.getOrderAttachments(orderId);
-    const attachmentList = attachments4.map((attachment) => ({
+    const attachments3 = await storage.getOrderAttachments(orderId);
+    const attachmentList = attachments3.map((attachment) => ({
       id: attachment.id,
       originalName: attachment.originalName,
       storedName: attachment.storedName,
@@ -14033,21 +14731,21 @@ router3.get("/orders/:orderId/attachments/:attachmentId/download", requireAuth, 
       console.log(`\u2705 \uD30C\uC77C \uB2E4\uC6B4\uB85C\uB4DC \uC644\uB8CC (DB): ${originalName}`);
     } else {
       let filePath = attachment.filePath;
-      if (!path6.isAbsolute(filePath)) {
-        filePath = path6.join(__dirname2, "../../", filePath);
+      if (!path7.isAbsolute(filePath)) {
+        filePath = path7.join(__dirname2, "../../", filePath);
       }
       console.log(`\u{1F4C2} \uD30C\uC77C \uACBD\uB85C: ${filePath}`);
-      if (!fs8.existsSync(filePath)) {
+      if (!fs9.existsSync(filePath)) {
         console.log(`\u274C \uD30C\uC77C\uC774 \uC874\uC7AC\uD558\uC9C0 \uC54A\uC74C: ${filePath}`);
         return res.status(404).json({
           error: "\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.",
           filePath: attachment.filePath
         });
       }
-      const stats = fs8.statSync(filePath);
+      const stats = fs9.statSync(filePath);
       console.log(`\u{1F4CA} \uD30C\uC77C \uD06C\uAE30: ${(stats.size / 1024).toFixed(2)} KB`);
       res.setHeader("Content-Length", stats.size);
-      const fileStream = fs8.createReadStream(filePath);
+      const fileStream = fs9.createReadStream(filePath);
       fileStream.on("error", (error) => {
         console.error("\u274C \uD30C\uC77C \uC2A4\uD2B8\uB9BC \uC624\uB958:", error);
         if (!res.headersSent) {
@@ -14119,7 +14817,7 @@ router3.get("/:orderId/email-history", async (req, res) => {
       return res.status(400).json({ error: "Invalid order ID" });
     }
     const { emailSendHistory: emailSendHistory3, users: users3 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-    const { eq: eq40, desc: desc19 } = await import("drizzle-orm");
+    const { eq: eq41, desc: desc19 } = await import("drizzle-orm");
     const emailHistory = await db.select({
       id: emailSendHistory3.id,
       orderId: emailSendHistory3.orderId,
@@ -14139,7 +14837,7 @@ router3.get("/:orderId/email-history", async (req, res) => {
       errorMessage: emailSendHistory3.errorMessage,
       createdAt: emailSendHistory3.createdAt,
       updatedAt: emailSendHistory3.updatedAt
-    }).from(emailSendHistory3).leftJoin(users3, eq40(emailSendHistory3.senderUserId, users3.id)).where(eq40(emailSendHistory3.orderId, orderId)).orderBy(desc19(emailSendHistory3.sentAt));
+    }).from(emailSendHistory3).leftJoin(users3, eq41(emailSendHistory3.senderUserId, users3.id)).where(eq41(emailSendHistory3.orderId, orderId)).orderBy(desc19(emailSendHistory3.sentAt));
     console.log(`\u{1F4E7} \uC774\uBA54\uC77C \uAE30\uB85D \uC870\uD68C: orderId=${orderId}, count=${emailHistory.length}`);
     res.json(emailHistory);
   } catch (error) {
@@ -14155,9 +14853,9 @@ var router4 = Router4();
 router4.get("/vendors", async (req, res) => {
   try {
     console.log("\u{1F3EA} Fetching vendors from database...");
-    const vendors3 = await storage.getVendors();
-    console.log(`\u2705 Successfully fetched ${vendors3.length} vendors`);
-    res.json(vendors3);
+    const vendors4 = await storage.getVendors();
+    console.log(`\u2705 Successfully fetched ${vendors4.length} vendors`);
+    res.json(vendors4);
   } catch (error) {
     console.error("\u274C Error fetching vendors:", error);
     console.error("Error name:", error?.name);
@@ -14258,8 +14956,8 @@ router4.post("/vendors/validate", async (req, res) => {
       });
     }
     console.log(`\u{1F50D} Validating vendor: ${vendorName}`);
-    const vendors3 = await storage.getVendors();
-    const matchedVendor = vendors3.find(
+    const vendors4 = await storage.getVendors();
+    const matchedVendor = vendors4.find(
       (vendor) => vendor.name.toLowerCase().includes(vendorName.toLowerCase()) || vendorName.toLowerCase().includes(vendor.name.toLowerCase())
     );
     if (matchedVendor) {
@@ -14277,7 +14975,7 @@ router4.post("/vendors/validate", async (req, res) => {
       res.json({
         isValid: false,
         message: "\uB4F1\uB85D\uB418\uC9C0 \uC54A\uC740 \uAC70\uB798\uCC98\uC785\uB2C8\uB2E4.",
-        suggestions: vendors3.filter(
+        suggestions: vendors4.filter(
           (vendor) => vendor.name.toLowerCase().includes(vendorName.toLowerCase().substring(0, 2)) || vendorName.toLowerCase().substring(0, 2).includes(vendor.name.toLowerCase().substring(0, 2))
         ).slice(0, 5).map((vendor) => ({
           id: vendor.id,
@@ -14498,12 +15196,12 @@ var items_default = router5;
 
 // server/routes/dashboard.ts
 import { Router as Router6 } from "express";
-import { sql as sql5 } from "drizzle-orm";
+import { sql as sql6 } from "drizzle-orm";
 var router6 = Router6();
 router6.get("/dashboard/test-db", async (req, res) => {
   try {
     const { db: db4 } = await Promise.resolve().then(() => (init_db(), db_exports));
-    const result = await db4.execute(sql5`SELECT COUNT(*) as count FROM purchase_orders`);
+    const result = await db4.execute(sql6`SELECT COUNT(*) as count FROM purchase_orders`);
     res.json({ success: true, data: result });
   } catch (error) {
     console.error("DB test error:", error);
@@ -14524,8 +15222,8 @@ router6.get("/dashboard/unified", async (req, res) => {
 });
 router6.get("/dashboard/recent-projects", async (req, res) => {
   try {
-    const projects2 = await storage.getRecentProjectsThisMonth();
-    res.json(projects2);
+    const projects3 = await storage.getRecentProjectsThisMonth();
+    res.json(projects3);
   } catch (error) {
     console.error("Error fetching recent projects:", error);
     res.status(500).json({ message: "Failed to fetch recent projects" });
@@ -14547,7 +15245,7 @@ router6.get("/dashboard/order-status-stats", async (req, res) => {
       throw new Error("Database connection not available");
     }
     const statsResult = await db4.execute(
-      sql5`SELECT 
+      sql6`SELECT 
         po.order_status as status,
         COUNT(*) as count,
         COALESCE(SUM(po.total_amount), 0) as totalAmount
@@ -14557,7 +15255,7 @@ router6.get("/dashboard/order-status-stats", async (req, res) => {
       ORDER BY po.order_status`
     );
     const totalResult = await db4.execute(
-      sql5`SELECT COUNT(*) as total FROM purchase_orders WHERE order_status IS NOT NULL`
+      sql6`SELECT COUNT(*) as total FROM purchase_orders WHERE order_status IS NOT NULL`
     );
     const total = parseInt(totalResult.rows[0]?.total || "0");
     const stats = statsResult.rows.map((row) => ({
@@ -14593,7 +15291,7 @@ var dashboard_default = router6;
 // server/routes/companies.ts
 import { Router as Router7 } from "express";
 init_schema();
-import { sql as sql6 } from "drizzle-orm";
+import { sql as sql7 } from "drizzle-orm";
 var router7 = Router7();
 router7.get("/companies/debug", async (req, res) => {
   console.log("\u{1F50D} Debug endpoint called");
@@ -14602,7 +15300,7 @@ router7.get("/companies/debug", async (req, res) => {
     const { db: db4 } = await Promise.resolve().then(() => (init_db(), db_exports));
     console.log("\u{1F50D} DB module imported successfully");
     console.log("\u{1F50D} Attempting basic query...");
-    const basicTest = await db4.execute(sql6`SELECT 1 as test`);
+    const basicTest = await db4.execute(sql7`SELECT 1 as test`);
     console.log("\u{1F50D} Basic query successful:", basicTest);
     res.json({
       databaseUrlSet: !!process.env.DATABASE_URL,
@@ -14716,7 +15414,7 @@ var companies_default = router7;
 import { Router as Router8 } from "express";
 init_db();
 init_schema();
-import { eq as eq12, and as and8 } from "drizzle-orm";
+import { eq as eq13, and as and8 } from "drizzle-orm";
 var router8 = Router8();
 router8.get("/users", requireAuth, requireAdmin, async (req, res) => {
   try {
@@ -14809,8 +15507,8 @@ router8.get("/approval-workflow-settings", requireAuth, requireAdmin, async (req
   try {
     const settings = await db.select().from(approvalWorkflowSettings).where(
       and8(
-        eq12(approvalWorkflowSettings.isActive, true),
-        eq12(approvalWorkflowSettings.companyId, 1)
+        eq13(approvalWorkflowSettings.isActive, true),
+        eq13(approvalWorkflowSettings.companyId, 1)
       )
     ).limit(1);
     if (settings.length === 0) {
@@ -14847,7 +15545,7 @@ router8.put("/approval-workflow-settings", requireAuth, requireAdmin, async (req
       requireAllStages,
       skipLowerStages
     } = req.body;
-    const existing = await db.select().from(approvalWorkflowSettings).where(eq12(approvalWorkflowSettings.companyId, 1)).limit(1);
+    const existing = await db.select().from(approvalWorkflowSettings).where(eq13(approvalWorkflowSettings.companyId, 1)).limit(1);
     if (existing.length === 0) {
       const [newSettings] = await db.insert(approvalWorkflowSettings).values({
         companyId: 1,
@@ -14868,7 +15566,7 @@ router8.put("/approval-workflow-settings", requireAuth, requireAdmin, async (req
         requireAllStages,
         skipLowerStages,
         updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq12(approvalWorkflowSettings.id, existing[0].id)).returning();
+      }).where(eq13(approvalWorkflowSettings.id, existing[0].id)).returning();
       res.json(updatedSettings);
     }
   } catch (error) {
@@ -14881,19 +15579,19 @@ var admin_default = router8;
 // server/routes/excel-automation.ts
 import { Router as Router9 } from "express";
 import multer2 from "multer";
-import path9 from "path";
-import fs11 from "fs";
+import path10 from "path";
+import fs12 from "fs";
 
 // server/utils/excel-automation-service.ts
 init_db();
 init_schema();
 init_po_template_processor_mock();
-import { eq as eq15, inArray as inArray2 } from "drizzle-orm";
+import { eq as eq16, inArray as inArray2 } from "drizzle-orm";
 
 // server/utils/vendor-validation.ts
 init_db();
 init_schema();
-import { eq as eq14, sql as sql7 } from "drizzle-orm";
+import { eq as eq15, sql as sql8 } from "drizzle-orm";
 function levenshteinDistance(str1, str2) {
   const matrix = [];
   if (str1.length === 0) return str2.length;
@@ -14984,7 +15682,7 @@ async function validateVendorName(vendorName, vendorType = "\uAC70\uB798\uCC98")
     const quickTest = new Promise((_, reject) => {
       setTimeout(() => reject(new Error("Quick DB test timeout")), 1e4);
     });
-    const testQuery = db.select({ count: sql7`1` }).from(vendors).limit(1);
+    const testQuery = db.select({ count: sql8`1` }).from(vendors).limit(1);
     await Promise.race([testQuery, quickTest]);
     console.log(`\u2705 \uB370\uC774\uD130\uBCA0\uC774\uC2A4 \uC5F0\uACB0 \uD655\uC778\uB428`);
   } catch (quickTestError) {
@@ -15013,7 +15711,7 @@ async function validateVendorName(vendorName, vendorType = "\uAC70\uB798\uCC98")
         phone: vendors.phone,
         contactPerson: vendors.contactPerson,
         aliases: vendors.aliases
-      }).from(vendors).where(eq14(vendors.name, vendorName)).limit(1);
+      }).from(vendors).where(eq15(vendors.name, vendorName)).limit(1);
       const aliasMatchQuery = db.select({
         id: vendors.id,
         name: vendors.name,
@@ -15021,7 +15719,7 @@ async function validateVendorName(vendorName, vendorType = "\uAC70\uB798\uCC98")
         phone: vendors.phone,
         contactPerson: vendors.contactPerson,
         aliases: vendors.aliases
-      }).from(vendors).where(sql7`${vendors.aliases}::jsonb @> ${JSON.stringify([vendorName])}::jsonb`).limit(1);
+      }).from(vendors).where(sql8`${vendors.aliases}::jsonb @> ${JSON.stringify([vendorName])}::jsonb`).limit(1);
       const allVendorsQuery = db.select({
         id: vendors.id,
         name: vendors.name,
@@ -15029,7 +15727,7 @@ async function validateVendorName(vendorName, vendorType = "\uAC70\uB798\uCC98")
         phone: vendors.phone,
         contactPerson: vendors.contactPerson,
         aliases: vendors.aliases
-      }).from(vendors).where(eq14(vendors.isActive, true));
+      }).from(vendors).where(eq15(vendors.isActive, true));
       exactMatch = await Promise.race([exactMatchQuery, dbTimeout]);
       aliasMatch = await Promise.race([aliasMatchQuery, dbTimeout]);
       allVendors = await Promise.race([allVendorsQuery, dbTimeout]);
@@ -15126,7 +15824,7 @@ async function checkEmailConflict(vendorName, excelEmail) {
         email: vendors.email,
         aliases: vendors.aliases
       }).from(vendors).where(
-        sql7`${vendors.name} = ${vendorName} OR ${vendors.aliases}::jsonb @> ${JSON.stringify([vendorName])}::jsonb`
+        sql8`${vendors.name} = ${vendorName} OR ${vendors.aliases}::jsonb @> ${JSON.stringify([vendorName])}::jsonb`
       ).limit(1);
       dbVendor = await Promise.race([dbVendorQuery, dbTimeout]);
     } catch (dbError) {
@@ -15243,8 +15941,8 @@ init_debug_logger();
 // server/utils/excel-attachment-service.ts
 init_db();
 init_schema();
-import fs9 from "fs";
-import path7 from "path";
+import fs10 from "fs";
+import path8 from "path";
 var ExcelAttachmentService = class {
   /**
    * 처리된 Excel 파일을 attachments 테이블에 저장
@@ -15257,13 +15955,13 @@ var ExcelAttachmentService = class {
   static async saveProcessedExcelFile(orderId, processedExcelPath, originalFileName, uploadedBy, orderNumber) {
     try {
       console.log(`\u{1F4CE} Excel \uCCA8\uBD80\uD30C\uC77C \uC800\uC7A5 \uC2DC\uC791: ${processedExcelPath}`);
-      if (!fs9.existsSync(processedExcelPath)) {
+      if (!fs10.existsSync(processedExcelPath)) {
         return {
           success: false,
           error: `\uCC98\uB9AC\uB41C Excel \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4: ${processedExcelPath}`
         };
       }
-      const stats = fs9.statSync(processedExcelPath);
+      const stats = fs10.statSync(processedExcelPath);
       let standardizedFileName;
       if (orderNumber) {
         const today = /* @__PURE__ */ new Date();
@@ -15273,9 +15971,9 @@ var ExcelAttachmentService = class {
         standardizedFileName = originalFileName;
       }
       console.log(`\u{1F4DD} \uD45C\uC900\uD654\uB41C Excel \uD30C\uC77C\uBA85: ${standardizedFileName}`);
-      const fileBuffer = fs9.readFileSync(processedExcelPath);
+      const fileBuffer = fs10.readFileSync(processedExcelPath);
       const base64Data = fileBuffer.toString("base64");
-      const [attachment] = await db.insert(attachments2).values({
+      const [attachment] = await db.insert(attachments).values({
         orderId,
         originalName: standardizedFileName,
         // 표준화된 파일명 사용
@@ -15288,7 +15986,7 @@ var ExcelAttachmentService = class {
         uploadedAt: /* @__PURE__ */ new Date(),
         fileData: base64Data
         // Base64 데이터 저장
-      }).returning({ id: attachments2.id });
+      }).returning({ id: attachments.id });
       console.log(`\u2705 Excel \uCCA8\uBD80\uD30C\uC77C \uC800\uC7A5 \uC644\uB8CC: ID ${attachment.id}, \uD06C\uAE30: ${Math.round(stats.size / 1024)}KB`);
       return {
         success: true,
@@ -15308,17 +16006,17 @@ var ExcelAttachmentService = class {
   static async saveOriginalExcelFile(orderId, originalExcelPath, originalFileName, uploadedBy) {
     try {
       console.log(`\u{1F4CE} \uC6D0\uBCF8 Excel \uCCA8\uBD80\uD30C\uC77C \uC800\uC7A5 \uC2DC\uC791: ${originalExcelPath}`);
-      if (!fs9.existsSync(originalExcelPath)) {
+      if (!fs10.existsSync(originalExcelPath)) {
         return {
           success: false,
           error: `\uC6D0\uBCF8 Excel \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4: ${originalExcelPath}`
         };
       }
-      const stats = fs9.statSync(originalExcelPath);
-      const fileName = `original_${path7.basename(originalExcelPath)}`;
-      const fileBuffer = fs9.readFileSync(originalExcelPath);
+      const stats = fs10.statSync(originalExcelPath);
+      const fileName = `original_${path8.basename(originalExcelPath)}`;
+      const fileBuffer = fs10.readFileSync(originalExcelPath);
       const base64Data = fileBuffer.toString("base64");
-      const [attachment] = await db.insert(attachments2).values({
+      const [attachment] = await db.insert(attachments).values({
         orderId,
         originalName: `[\uC6D0\uBCF8] ${originalFileName}`,
         storedName: fileName,
@@ -15328,7 +16026,7 @@ var ExcelAttachmentService = class {
         uploadedBy,
         uploadedAt: /* @__PURE__ */ new Date(),
         fileData: base64Data
-      }).returning({ id: attachments2.id });
+      }).returning({ id: attachments.id });
       console.log(`\u2705 \uC6D0\uBCF8 Excel \uCCA8\uBD80\uD30C\uC77C \uC800\uC7A5 \uC644\uB8CC: ID ${attachment.id}`);
       return {
         success: true,
@@ -15345,114 +16043,8 @@ var ExcelAttachmentService = class {
 };
 
 // server/utils/excel-automation-service.ts
-import fs10 from "fs";
-import path8 from "path";
-
-// server/utils/progress-manager.ts
-var ProgressManager = class {
-  constructor() {
-    this.sessions = /* @__PURE__ */ new Map();
-    this.sseClients = /* @__PURE__ */ new Map();
-  }
-  /**
-   * Generate a unique session ID
-   */
-  createSession() {
-    const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    this.sessions.set(sessionId, []);
-    this.sseClients.set(sessionId, []);
-    setTimeout(() => {
-      this.cleanupSession(sessionId);
-    }, 10 * 60 * 1e3);
-    return sessionId;
-  }
-  /**
-   * Add an SSE client for a session
-   */
-  addClient(sessionId, res) {
-    const clients = this.sseClients.get(sessionId) || [];
-    clients.push(res);
-    this.sseClients.set(sessionId, clients);
-    this.sendToClient(res, {
-      sessionId,
-      step: "connection",
-      status: "completed",
-      message: "\uC5F0\uACB0\uB418\uC5C8\uC2B5\uB2C8\uB2E4",
-      timestamp: Date.now()
-    });
-  }
-  /**
-   * Remove an SSE client
-   */
-  removeClient(sessionId, res) {
-    const clients = this.sseClients.get(sessionId) || [];
-    const index2 = clients.indexOf(res);
-    if (index2 > -1) {
-      clients.splice(index2, 1);
-      this.sseClients.set(sessionId, clients);
-    }
-  }
-  /**
-   * Send progress update
-   */
-  updateProgress(update) {
-    const progress = this.sessions.get(update.sessionId) || [];
-    progress.push(update);
-    this.sessions.set(update.sessionId, progress);
-    const clients = this.sseClients.get(update.sessionId) || [];
-    clients.forEach((client) => {
-      this.sendToClient(client, update);
-    });
-  }
-  /**
-   * Send data to a specific client
-   */
-  sendToClient(res, data) {
-    try {
-      res.write(`data: ${JSON.stringify(data)}
-
-`);
-    } catch (error) {
-      console.error("Error sending SSE data:", error);
-    }
-  }
-  /**
-   * Get all progress for a session
-   */
-  getSessionProgress(sessionId) {
-    return this.sessions.get(sessionId) || [];
-  }
-  /**
-   * Clean up session data
-   */
-  cleanupSession(sessionId) {
-    const clients = this.sseClients.get(sessionId) || [];
-    clients.forEach((client) => {
-      try {
-        client.end();
-      } catch (error) {
-      }
-    });
-    this.sessions.delete(sessionId);
-    this.sseClients.delete(sessionId);
-  }
-  /**
-   * Helper method to update specific steps
-   */
-  updateStep(sessionId, step, status, message, details) {
-    this.updateProgress({
-      sessionId,
-      step,
-      status,
-      message,
-      details,
-      timestamp: Date.now()
-    });
-  }
-};
-var progressManager = new ProgressManager();
-
-// server/utils/excel-automation-service.ts
+import fs11 from "fs";
+import path9 from "path";
 var ExcelAutomationService = class {
   /**
    * 1단계: Excel 파일 업로드 및 파싱, DB 저장
@@ -15516,7 +16108,7 @@ var ExcelAutomationService = class {
       }
       console.log(`\u{1F50D} [DEBUG] 2.5\uB2E8\uACC4: \uCC98\uB9AC\uB41C Excel \uD30C\uC77C \uCCA8\uBD80 \uC2DC\uC791`);
       console.log(`\u{1F4CA} [DEBUG] saveResult:`, JSON.stringify(saveResult, null, 2));
-      const originalFileName = path8.basename(filePath);
+      const originalFileName = path9.basename(filePath);
       if (saveResult.savedOrderNumbers && saveResult.savedOrderNumbers.length > 0) {
         console.log(`\u{1F4CB} [DEBUG] \uBC1C\uC8FC\uC11C \uBC88\uD638\uB4E4:`, saveResult.savedOrderNumbers);
         try {
@@ -15524,7 +16116,7 @@ var ExcelAutomationService = class {
           console.log(`\u{1F50D} [DEBUG] \uC870\uD68C\uB41C \uBC1C\uC8FC\uC11C\uB4E4:`, orders);
           const processedExcelPath = filePath.replace(/\.(xlsx?)$/i, "_processed.$1");
           const removeResult = await removeAllInputSheets(filePath, processedExcelPath);
-          if (removeResult.success && fs10.existsSync(processedExcelPath)) {
+          if (removeResult.success && fs11.existsSync(processedExcelPath)) {
             console.log(`\u2705 [DEBUG] Input \uC2DC\uD2B8 \uC81C\uAC70 \uC644\uB8CC: ${processedExcelPath}`);
             for (const order of orders) {
               const attachResult = await ExcelAttachmentService.saveProcessedExcelFile(
@@ -15544,14 +16136,14 @@ var ExcelAutomationService = class {
                 await db.update(purchaseOrders).set({
                   orderStatus: "draft",
                   status: "draft"
-                }).where(eq15(purchaseOrders.id, order.id));
+                }).where(eq16(purchaseOrders.id, order.id));
                 console.log(`\u2705 [DEBUG] \uBC1C\uC8FC\uC11C ${order.orderNumber} \uC0C1\uD0DC\uB97C 'draft'(\uC784\uC2DC\uC800\uC7A5)\uB85C \uC124\uC815 \uC644\uB8CC`);
               } catch (statusError) {
                 console.warn(`\u26A0\uFE0F [DEBUG] \uBC1C\uC8FC\uC11C ${order.orderNumber} \uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8 \uC2E4\uD328:`, statusError);
               }
             }
             try {
-              fs10.unlinkSync(processedExcelPath);
+              fs11.unlinkSync(processedExcelPath);
               console.log(`\u{1F9F9} [DEBUG] \uC784\uC2DC \uCC98\uB9AC\uB41C Excel \uD30C\uC77C \uC815\uB9AC \uC644\uB8CC: ${processedExcelPath}`);
             } catch (cleanupError) {
               console.warn(`\u26A0\uFE0F [DEBUG] \uC784\uC2DC \uD30C\uC77C \uC815\uB9AC \uC2E4\uD328:`, cleanupError);
@@ -15588,7 +16180,7 @@ var ExcelAutomationService = class {
       const orderIds = [];
       if (saveResult.savedOrderNumbers && saveResult.savedOrderNumbers.length > 0) {
         try {
-          const orders = await db.select({ id: purchaseOrders.id, orderNumber: purchaseOrders.orderNumber }).from(purchaseOrders).where(eq15(purchaseOrders.orderNumber, saveResult.savedOrderNumbers[0]));
+          const orders = await db.select({ id: purchaseOrders.id, orderNumber: purchaseOrders.orderNumber }).from(purchaseOrders).where(eq16(purchaseOrders.orderNumber, saveResult.savedOrderNumbers[0]));
           if (orders.length > 0) {
             orderIds.push(orders[0].id);
           }
@@ -15725,8 +16317,8 @@ var ExcelAutomationService = class {
         new Set(vendorValidation.validVendors.map((v) => v.email))
       ).filter((email) => email && email.trim());
       const timestamp2 = Date.now();
-      const processedPath = path8.join(
-        path8.dirname(filePath),
+      const processedPath = path9.join(
+        path9.dirname(filePath),
         `processed-${timestamp2}.xlsx`
       );
       await removeAllInputSheets(filePath, processedPath);
@@ -15755,15 +16347,15 @@ var ExcelAutomationService = class {
       } catch (pdfError) {
         console.error("\u26A0\uFE0F \uD1B5\uD569 PDF \uC11C\uBE44\uC2A4 \uC2E4\uD328 - Excel \uD30C\uC77C\uB9CC \uCCA8\uBD80\uB429\uB2C8\uB2E4:", pdfError);
       }
-      const stats = fs10.statSync(processedPath);
-      const pdfStats = pdfConversionSuccess && fs10.existsSync(pdfPath) ? fs10.statSync(pdfPath) : null;
+      const stats = fs11.statSync(processedPath);
+      const pdfStats = pdfConversionSuccess && fs11.existsSync(pdfPath) ? fs11.statSync(pdfPath) : null;
       const emailPreview = {
         recipients,
-        subject: `\uBC1C\uC8FC\uC11C - ${path8.basename(filePath, path8.extname(filePath))} (${(/* @__PURE__ */ new Date()).toLocaleDateString("ko-KR")})`,
+        subject: `\uBC1C\uC8FC\uC11C - ${path9.basename(filePath, path9.extname(filePath))} (${(/* @__PURE__ */ new Date()).toLocaleDateString("ko-KR")})`,
         attachmentInfo: {
-          originalFile: path8.basename(filePath),
-          processedFile: path8.basename(processedPath),
-          processedPdfFile: pdfStats ? path8.basename(pdfPath) : void 0,
+          originalFile: path9.basename(filePath),
+          processedFile: path9.basename(processedPath),
+          processedPdfFile: pdfStats ? path9.basename(pdfPath) : void 0,
           fileSize: stats.size,
           pdfFileSize: pdfStats ? pdfStats.size : void 0
         },
@@ -15792,11 +16384,11 @@ var ExcelAutomationService = class {
   /**
    * 4단계: 이메일 발송 실행 (Excel과 PDF 첨부)
    */
-  static async sendEmails(processedFilePath, recipients, emailOptions2 = {}) {
+  static async sendEmails(processedFilePath, recipients, emailOptions = {}) {
     DebugLogger.logFunctionEntry("ExcelAutomationService.sendEmails", {
       processedFilePath,
       recipients,
-      emailOptions: emailOptions2
+      emailOptions
     });
     try {
       const emailService5 = new POEmailService();
@@ -15809,13 +16401,13 @@ var ExcelAutomationService = class {
             processedFilePath,
             {
               to: email,
-              subject: emailOptions2.subject || `\uBC1C\uC8FC\uC11C - ${(/* @__PURE__ */ new Date()).toLocaleDateString("ko-KR")}`,
-              orderNumber: emailOptions2.orderNumber,
-              additionalMessage: emailOptions2.additionalMessage
+              subject: emailOptions.subject || `\uBC1C\uC8FC\uC11C - ${(/* @__PURE__ */ new Date()).toLocaleDateString("ko-KR")}`,
+              orderNumber: emailOptions.orderNumber,
+              additionalMessage: emailOptions.additionalMessage
             },
             {
-              orderId: emailOptions2.orderId,
-              senderUserId: emailOptions2.senderUserId || 0
+              orderId: emailOptions.orderId,
+              senderUserId: emailOptions.senderUserId || 0
               // 전달받은 사용자 ID 사용
             }
           );
@@ -15850,12 +16442,12 @@ var ExcelAutomationService = class {
         emailResults
       };
       if (result.success && result.sentEmails > 0) {
-        const orderNumbersToUpdate = emailOptions2.savedOrderNumbers || (emailOptions2.orderNumber ? [emailOptions2.orderNumber] : []);
+        const orderNumbersToUpdate = emailOptions.savedOrderNumbers || (emailOptions.orderNumber ? [emailOptions.orderNumber] : []);
         console.log(`\u{1F504} [Excel\uC790\uB3D9\uD654] \uBC1C\uC8FC\uC11C \uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8 \uC2DC\uB3C4:`, {
           resultSuccess: result.success,
           sentEmails: result.sentEmails,
-          savedOrderNumbers: emailOptions2.savedOrderNumbers?.length || 0,
-          singleOrderNumber: emailOptions2.orderNumber || "none",
+          savedOrderNumbers: emailOptions.savedOrderNumbers?.length || 0,
+          singleOrderNumber: emailOptions.orderNumber || "none",
           orderNumbersToUpdate: orderNumbersToUpdate.length
         });
         if (orderNumbersToUpdate.length > 0) {
@@ -15896,11 +16488,11 @@ var ExcelAutomationService = class {
   static async updateOrderStatusToSent(orderNumber) {
     const { db: db4 } = await Promise.resolve().then(() => (init_db(), db_exports));
     const { purchaseOrders: purchaseOrders3 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-    const { eq: eq40 } = await import("drizzle-orm");
+    const { eq: eq41 } = await import("drizzle-orm");
     await db4.update(purchaseOrders3).set({
       orderStatus: "sent",
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq40(purchaseOrders3.orderNumber, orderNumber));
+    }).where(eq41(purchaseOrders3.orderNumber, orderNumber));
   }
   /**
    * 여러 발주서의 상태를 'sent'로 업데이트하는 헬퍼 메소드
@@ -15927,8 +16519,8 @@ var ExcelAutomationService = class {
         new Set(selectedVendors.map((v) => v.selectedVendorEmail))
       ).filter((email) => email && email.trim());
       const timestamp2 = Date.now();
-      const processedPath = path8.join(
-        path8.dirname(filePath),
+      const processedPath = path9.join(
+        path9.dirname(filePath),
         `processed-${timestamp2}.xlsx`
       );
       await removeAllInputSheets(filePath, processedPath);
@@ -15957,15 +16549,15 @@ var ExcelAutomationService = class {
       } catch (pdfError) {
         console.error("\u26A0\uFE0F \uD1B5\uD569 PDF \uC11C\uBE44\uC2A4 \uC2E4\uD328 - Excel \uD30C\uC77C\uB9CC \uCCA8\uBD80\uB429\uB2C8\uB2E4:", pdfError);
       }
-      const stats = fs10.statSync(processedPath);
-      const pdfStats = pdfConversionSuccess && fs10.existsSync(pdfPath) ? fs10.statSync(pdfPath) : null;
+      const stats = fs11.statSync(processedPath);
+      const pdfStats = pdfConversionSuccess && fs11.existsSync(pdfPath) ? fs11.statSync(pdfPath) : null;
       return {
         recipients,
-        subject: `\uBC1C\uC8FC\uC11C - ${path8.basename(filePath, path8.extname(filePath))} (${(/* @__PURE__ */ new Date()).toLocaleDateString("ko-KR")})`,
+        subject: `\uBC1C\uC8FC\uC11C - ${path9.basename(filePath, path9.extname(filePath))} (${(/* @__PURE__ */ new Date()).toLocaleDateString("ko-KR")})`,
         attachmentInfo: {
-          originalFile: path8.basename(filePath),
-          processedFile: path8.basename(processedPath),
-          processedPdfFile: pdfStats ? path8.basename(pdfPath) : void 0,
+          originalFile: path9.basename(filePath),
+          processedFile: path9.basename(processedPath),
+          processedPdfFile: pdfStats ? path9.basename(pdfPath) : void 0,
           fileSize: stats.size,
           pdfFileSize: pdfStats ? pdfStats.size : void 0
         },
@@ -15992,8 +16584,8 @@ init_debug_logger();
 var storage2 = multer2.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir2 = process.env.VERCEL ? "/tmp" : "uploads";
-    if (!process.env.VERCEL && !fs11.existsSync(uploadDir2)) {
-      fs11.mkdirSync(uploadDir2, { recursive: true });
+    if (!process.env.VERCEL && !fs12.existsSync(uploadDir2)) {
+      fs12.mkdirSync(uploadDir2, { recursive: true });
     }
     cb(null, uploadDir2);
   },
@@ -16108,8 +16700,8 @@ router9.post("/upload-and-process", requireAuth, upload2.single("file"), async (
     const result = await ExcelAutomationService.processExcelUpload(filePath, userId, sessionId);
     console.log(`\u2705 [API] ExcelAutomationService.processExcelUpload \uC644\uB8CC:`, result.success ? "\uC131\uACF5" : "\uC2E4\uD328");
     if (!result.success) {
-      if (fs11.existsSync(filePath)) {
-        fs11.unlinkSync(filePath);
+      if (fs12.existsSync(filePath)) {
+        fs12.unlinkSync(filePath);
       }
       clearTimeout(timeoutHandler);
       if (!responseHandled) {
@@ -16137,9 +16729,9 @@ router9.post("/upload-and-process", requireAuth, upload2.single("file"), async (
   } catch (error) {
     clearTimeout(timeoutHandler);
     console.error("\u274C [API] Excel \uC790\uB3D9\uD654 \uCC98\uB9AC \uC624\uB958:", error);
-    if (req.file?.path && fs11.existsSync(req.file.path)) {
+    if (req.file?.path && fs12.existsSync(req.file.path)) {
       console.log(`\u{1F5D1}\uFE0F [API] \uC624\uB958\uB85C \uC778\uD55C \uC784\uC2DC \uD30C\uC77C \uC815\uB9AC: ${req.file.path}`);
-      fs11.unlinkSync(req.file.path);
+      fs12.unlinkSync(req.file.path);
     }
     let errorMessage = "\uC11C\uBC84 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4.";
     let statusCode = 500;
@@ -16213,7 +16805,7 @@ router9.post("/send-emails", requireAuth, async (req, res) => {
       recipients,
       savedOrderNumbers = [],
       orderIds = [],
-      emailOptions: emailOptions2 = {}
+      emailOptions = {}
     } = req.body;
     if (!processedFilePath) {
       return res.status(400).json({
@@ -16227,7 +16819,7 @@ router9.post("/send-emails", requireAuth, async (req, res) => {
         error: "\uC774\uBA54\uC77C \uC218\uC2E0\uC790\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4."
       });
     }
-    if (!fs11.existsSync(processedFilePath)) {
+    if (!fs12.existsSync(processedFilePath)) {
       return res.status(400).json({
         success: false,
         error: "\uCC98\uB9AC\uB41C \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
@@ -16238,7 +16830,7 @@ router9.post("/send-emails", requireAuth, async (req, res) => {
       processedFilePath,
       recipients,
       {
-        ...emailOptions2,
+        ...emailOptions,
         savedOrderNumbers,
         // 발주번호들을 함께 전달
         orderId: orderIds.length > 0 ? orderIds[0] : void 0,
@@ -16264,7 +16856,7 @@ router9.post("/send-emails", requireAuth, async (req, res) => {
 router9.post("/validate-vendors", requireAuth, async (req, res) => {
   try {
     const { filePath } = req.body;
-    if (!filePath || !fs11.existsSync(filePath)) {
+    if (!filePath || !fs12.existsSync(filePath)) {
       return res.status(400).json({
         success: false,
         error: "\uC720\uD6A8\uD55C \uD30C\uC77C \uACBD\uB85C\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4."
@@ -16288,8 +16880,8 @@ router9.post("/validate-vendors", requireAuth, async (req, res) => {
 router9.get("/download/:filename", requireAuth, (req, res) => {
   try {
     const filename = req.params.filename;
-    const filePath = path9.join("uploads", filename);
-    if (!fs11.existsSync(filePath)) {
+    const filePath = path10.join("uploads", filename);
+    if (!fs12.existsSync(filePath)) {
       return res.status(404).json({
         success: false,
         error: "\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
@@ -16336,8 +16928,8 @@ router9.post("/debug-upload", requireAuth, upload2.single("file"), async (req, r
     step = 3;
     console.log(`\u{1F41B} [DEBUG] Step ${step}: File path check`);
     const filePath = req.file.path;
-    const fs27 = await import("fs");
-    if (!fs27.existsSync(filePath)) {
+    const fs28 = await import("fs");
+    if (!fs28.existsSync(filePath)) {
       return res.status(400).json({
         success: false,
         error: "\uC5C5\uB85C\uB4DC\uB41C \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.",
@@ -16394,8 +16986,8 @@ router9.delete("/cleanup", requireAuth, async (req, res) => {
     const errors = [];
     for (const filePath of filePaths) {
       try {
-        if (fs11.existsSync(filePath)) {
-          fs11.unlinkSync(filePath);
+        if (fs12.existsSync(filePath)) {
+          fs12.unlinkSync(filePath);
           deletedCount++;
           console.log(`\u{1F5D1}\uFE0F \uD30C\uC77C \uC0AD\uC81C: ${filePath}`);
         }
@@ -16428,18 +17020,18 @@ init_po_template_processor_mock();
 init_debug_logger();
 import { Router as Router10 } from "express";
 import multer3 from "multer";
-import path13 from "path";
-import fs15 from "fs";
+import path14 from "path";
+import fs16 from "fs";
 import { fileURLToPath as fileURLToPath4 } from "url";
 
 // server/utils/po-email-service-mock.ts
 init_po_template_processor_mock();
 import nodemailer4 from "nodemailer";
-import path10 from "path";
-import fs12 from "fs";
+import path11 from "path";
+import fs13 from "fs";
 import { fileURLToPath as fileURLToPath3 } from "url";
 var __filename3 = fileURLToPath3(import.meta.url);
-var __dirname3 = path10.dirname(__filename3);
+var __dirname3 = path11.dirname(__filename3);
 var POEmailServiceMock = class {
   constructor() {
     this.transporter = null;
@@ -16462,11 +17054,11 @@ var POEmailServiceMock = class {
   /**
    * 갑지/을지 시트를 Excel과 PDF로 첨부하여 이메일 발송
    */
-  async sendPOWithAttachments(originalFilePath, emailOptions2) {
+  async sendPOWithAttachments(originalFilePath, emailOptions) {
     try {
       const timestamp2 = Date.now();
-      const uploadsDir = path10.join(__dirname3, "../../uploads");
-      const extractedPath = path10.join(uploadsDir, `po-sheets-${timestamp2}.xlsx`);
+      const uploadsDir = path11.join(__dirname3, "../../uploads");
+      const extractedPath = path11.join(uploadsDir, `po-sheets-${timestamp2}.xlsx`);
       const extractResult = POTemplateProcessorMock.extractSheetsToFile(
         originalFilePath,
         extractedPath,
@@ -16479,7 +17071,7 @@ var POEmailServiceMock = class {
           error: `\uC2DC\uD2B8 \uCD94\uCD9C \uC2E4\uD328: ${extractResultData.error}`
         };
       }
-      const pdfPath = path10.join(uploadsDir, `po-sheets-${timestamp2}.pdf`);
+      const pdfPath = path11.join(uploadsDir, `po-sheets-${timestamp2}.pdf`);
       const pdfResult = await this.createDummyPDF(pdfPath);
       if (!pdfResult.success) {
         return {
@@ -16487,40 +17079,40 @@ var POEmailServiceMock = class {
           error: `PDF \uBCC0\uD658 \uC2E4\uD328: ${pdfResult.error}`
         };
       }
-      const attachments4 = [];
-      if (fs12.existsSync(extractedPath)) {
-        attachments4.push({
-          filename: `\uBC1C\uC8FC\uC11C_${emailOptions2.orderNumber || timestamp2}.xlsx`,
+      const attachments3 = [];
+      if (fs13.existsSync(extractedPath)) {
+        attachments3.push({
+          filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`,
           path: extractedPath,
           contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         });
       }
-      if (fs12.existsSync(pdfPath)) {
-        attachments4.push({
-          filename: `\uBC1C\uC8FC\uC11C_${emailOptions2.orderNumber || timestamp2}.pdf`,
+      if (fs13.existsSync(pdfPath)) {
+        attachments3.push({
+          filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`,
           path: pdfPath,
           contentType: "application/pdf"
         });
       }
-      const emailContent = this.generateEmailContent(emailOptions2);
+      const emailContent = this.generateEmailContent(emailOptions);
       let result;
       if (this.transporter) {
         result = await this.sendEmail({
-          to: emailOptions2.to,
-          cc: emailOptions2.cc,
-          bcc: emailOptions2.bcc,
-          subject: emailOptions2.subject,
+          to: emailOptions.to,
+          cc: emailOptions.cc,
+          bcc: emailOptions.bcc,
+          subject: emailOptions.subject,
           html: emailContent,
-          attachments: attachments4
+          attachments: attachments3
         });
       } else {
         result = await this.sendMockEmail({
-          to: emailOptions2.to,
-          cc: emailOptions2.cc,
-          bcc: emailOptions2.bcc,
-          subject: emailOptions2.subject,
+          to: emailOptions.to,
+          cc: emailOptions.cc,
+          bcc: emailOptions.bcc,
+          subject: emailOptions.subject,
           html: emailContent,
-          attachments: attachments4
+          attachments: attachments3
         });
       }
       setTimeout(() => {
@@ -16587,12 +17179,12 @@ var POEmailServiceMock = class {
     console.log("  \uC81C\uBAA9:", options.subject);
     console.log("  \uCCA8\uBD80\uD30C\uC77C:", options.attachments?.length || 0, "\uAC1C");
     console.log("  \uBC1C\uC1A1 \uC2DC\uAC04:", mockLog.timestamp);
-    const logDir = path10.join(__dirname3, "../../logs");
-    if (!fs12.existsSync(logDir)) {
-      fs12.mkdirSync(logDir, { recursive: true });
+    const logDir = path11.join(__dirname3, "../../logs");
+    if (!fs13.existsSync(logDir)) {
+      fs13.mkdirSync(logDir, { recursive: true });
     }
-    const logFile = path10.join(logDir, `mock-email-${Date.now()}.json`);
-    fs12.writeFileSync(logFile, JSON.stringify(mockLog, null, 2));
+    const logFile = path11.join(logDir, `mock-email-${Date.now()}.json`);
+    fs13.writeFileSync(logFile, JSON.stringify(mockLog, null, 2));
     return {
       success: true,
       messageId: `mock-${Date.now()}@po-management.local`,
@@ -16671,7 +17263,7 @@ trailer
 startxref
 456
 %%EOF`;
-      fs12.writeFileSync(pdfPath, pdfContent);
+      fs13.writeFileSync(pdfPath, pdfContent);
       return { success: true };
     } catch (error) {
       return {
@@ -16685,7 +17277,7 @@ startxref
    */
   getFileSize(filePath) {
     try {
-      const stats = fs12.statSync(filePath);
+      const stats = fs13.statSync(filePath);
       const bytes = stats.size;
       if (bytes === 0) return "0 Bytes";
       const k = 1024;
@@ -16879,9 +17471,9 @@ startxref
   cleanupTempFiles(filePaths) {
     filePaths.forEach((filePath) => {
       try {
-        if (fs12.existsSync(filePath)) {
-          fs12.unlinkSync(filePath);
-          console.log(`\u2705 \uC784\uC2DC \uD30C\uC77C \uC815\uB9AC: ${path10.basename(filePath)}`);
+        if (fs13.existsSync(filePath)) {
+          fs13.unlinkSync(filePath);
+          console.log(`\u2705 \uC784\uC2DC \uD30C\uC77C \uC815\uB9AC: ${path11.basename(filePath)}`);
         }
       } catch (error) {
         console.error(`\u274C \uD30C\uC77C \uC815\uB9AC \uC2E4\uD328: ${filePath}`, error);
@@ -16917,15 +17509,15 @@ startxref
 
 // server/utils/excel-to-pdf-mock.ts
 import XLSX5 from "xlsx";
-import path11 from "path";
-import fs13 from "fs";
+import path12 from "path";
+import fs14 from "fs";
 var ExcelToPdfConverterMock = class {
   /**
    * Excel 파일을 PDF로 변환 (Mock 버전)
    */
   static async convertToPdf(excelPath, options = {}) {
     try {
-      if (!fs13.existsSync(excelPath)) {
+      if (!fs14.existsSync(excelPath)) {
         return {
           success: false,
           error: "Excel \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
@@ -16954,7 +17546,7 @@ var ExcelToPdfConverterMock = class {
    */
   static async convertSheetsToPdf(excelPath, sheetNames, options = {}) {
     try {
-      if (!fs13.existsSync(excelPath)) {
+      if (!fs14.existsSync(excelPath)) {
         return {
           success: false,
           error: "Excel \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
@@ -16983,7 +17575,7 @@ var ExcelToPdfConverterMock = class {
    */
   static async createMockPdf(htmlContent, pdfPath) {
     try {
-      console.log(`\u{1F4C4} PDFKit\uC73C\uB85C \uD55C\uAE00 \uC9C0\uC6D0 PDF \uC0DD\uC131 \uC2DC\uC791: ${path11.basename(pdfPath)}`);
+      console.log(`\u{1F4C4} PDFKit\uC73C\uB85C \uD55C\uAE00 \uC9C0\uC6D0 PDF \uC0DD\uC131 \uC2DC\uC791: ${path12.basename(pdfPath)}`);
       const PDFDocument = (await import("pdfkit")).default;
       const doc = new PDFDocument({
         size: "A4",
@@ -17004,7 +17596,7 @@ var ExcelToPdfConverterMock = class {
       ];
       for (const fontPath of possibleFonts) {
         try {
-          if (fs13.existsSync(fontPath)) {
+          if (fs14.existsSync(fontPath)) {
             koreanFontPath = fontPath;
             console.log(`\u2705 \uD55C\uAE00 \uD3F0\uD2B8 \uBC1C\uACAC: ${fontPath}`);
             break;
@@ -17034,7 +17626,7 @@ var ExcelToPdfConverterMock = class {
       doc.moveDown(0.5);
       doc.text("\u{1F4C5} \uC0DD\uC131 \uC2DC\uAC04: " + (/* @__PURE__ */ new Date()).toLocaleString("ko-KR"));
       doc.moveDown(0.5);
-      doc.text("\u{1F4C1} \uD30C\uC77C \uACBD\uB85C: " + path11.basename(pdfPath));
+      doc.text("\u{1F4C1} \uD30C\uC77C \uACBD\uB85C: " + path12.basename(pdfPath));
       doc.moveDown(1);
       doc.fontSize(14).text("\u{1F4CA} Excel \uD30C\uC77C \uC815\uBCF4:", 50, doc.y);
       doc.fontSize(10);
@@ -17049,14 +17641,14 @@ var ExcelToPdfConverterMock = class {
       doc.text("\u2022 \uD55C\uAE00 \uD3F0\uD2B8 \uBB38\uC81C\uAC00 \uD574\uACB0\uB418\uC5C8\uB294\uC9C0 \uD655\uC778\uD574 \uC8FC\uC138\uC694.");
       doc.fontSize(8);
       doc.text(`\uC2DC\uC2A4\uD15C: ${process.platform} | Node.js: ${process.version}`, 50, 700);
-      doc.text(`\uD55C\uAE00 \uD3F0\uD2B8: ${koreanFontPath ? path11.basename(koreanFontPath) : "Helvetica (\uAE30\uBCF8)"}`, 50, 715);
+      doc.text(`\uD55C\uAE00 \uD3F0\uD2B8: ${koreanFontPath ? path12.basename(koreanFontPath) : "Helvetica (\uAE30\uBCF8)"}`, 50, 715);
       const buffers = [];
       doc.on("data", buffers.push.bind(buffers));
       return new Promise((resolve) => {
         doc.on("end", () => {
           const pdfBuffer = Buffer.concat(buffers);
-          fs13.writeFileSync(pdfPath, pdfBuffer);
-          console.log(`\u2705 \uD55C\uAE00 \uC9C0\uC6D0 Mock PDF \uC0DD\uC131 \uC644\uB8CC: ${path11.basename(pdfPath)}`);
+          fs14.writeFileSync(pdfPath, pdfBuffer);
+          console.log(`\u2705 \uD55C\uAE00 \uC9C0\uC6D0 Mock PDF \uC0DD\uC131 \uC644\uB8CC: ${path12.basename(pdfPath)}`);
           resolve({ success: true });
         });
         doc.end();
@@ -17224,8 +17816,8 @@ async function convertExcelToPdfMock(excelPath, outputPath, sheetsOnly) {
 
 // server/utils/po-template-validator.ts
 import XLSX6 from "xlsx";
-import fs14 from "fs";
-import path12 from "path";
+import fs15 from "fs";
+import path13 from "path";
 var POTemplateValidator = class {
   static {
     this.REQUIRED_COLUMNS = [
@@ -17342,12 +17934,12 @@ var POTemplateValidator = class {
       }
     };
     try {
-      if (!fs14.existsSync(filePath)) {
+      if (!fs15.existsSync(filePath)) {
         result.isValid = false;
         result.errors.push("\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.");
         return result;
       }
-      const ext = path12.extname(filePath).toLowerCase();
+      const ext = path13.extname(filePath).toLowerCase();
       if (![".xlsx", ".xlsm", ".xls"].includes(ext)) {
         result.isValid = false;
         result.errors.push("\uC9C0\uC6D0\uD558\uC9C0 \uC54A\uB294 \uD30C\uC77C \uD615\uC2DD\uC785\uB2C8\uB2E4. Excel \uD30C\uC77C(.xlsx, .xlsm, .xls)\uB9CC \uC9C0\uC6D0\uB429\uB2C8\uB2E4.");
@@ -17584,7 +18176,7 @@ var POTemplateValidator = class {
       errors: []
     };
     try {
-      if (!fs14.existsSync(filePath)) {
+      if (!fs15.existsSync(filePath)) {
         result.isValid = false;
         result.errors.push("\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.");
         return result;
@@ -17617,26 +18209,26 @@ var POTemplateValidator = class {
 init_db();
 init_schema();
 init_professional_pdf_generation_service();
-import { eq as eq16 } from "drizzle-orm";
+import { eq as eq17 } from "drizzle-orm";
 var router10 = Router10();
 router10.get("/test", (req, res) => {
   res.json({ message: "PO Template router is working!", timestamp: /* @__PURE__ */ new Date() });
 });
 var __filename4 = fileURLToPath4(import.meta.url);
-var __dirname4 = path13.dirname(__filename4);
+var __dirname4 = path14.dirname(__filename4);
 var storage3 = multer3.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir2 = process.env.VERCEL ? "/tmp" : path13.join(__dirname4, "../../uploads");
-    if (!process.env.VERCEL && !fs15.existsSync(uploadDir2)) {
-      fs15.mkdirSync(uploadDir2, { recursive: true });
+    const uploadDir2 = process.env.VERCEL ? "/tmp" : path14.join(__dirname4, "../../uploads");
+    if (!process.env.VERCEL && !fs16.existsSync(uploadDir2)) {
+      fs16.mkdirSync(uploadDir2, { recursive: true });
     }
     cb(null, uploadDir2);
   },
   filename: (req, file, cb) => {
     const timestamp2 = Date.now();
     const originalName = Buffer.from(file.originalname, "latin1").toString("utf8");
-    const extension = path13.extname(originalName);
-    const basename = path13.basename(originalName, extension);
+    const extension = path14.extname(originalName);
+    const basename = path14.basename(originalName, extension);
     const safeBasename = basename.replace(/[^a-zA-Z0-9가-힣_-]/g, "_");
     cb(null, `${timestamp2}-${safeBasename}${extension}`);
   }
@@ -17761,7 +18353,7 @@ router10.post("/upload", simpleAuth, upload3.single("file"), async (req, res) =>
     });
     if (!quickValidation.isValid) {
       console.error("\u274C [\uC11C\uBC84] \uC720\uD6A8\uC131 \uAC80\uC0AC \uC2E4\uD328");
-      fs15.unlinkSync(filePath);
+      fs16.unlinkSync(filePath);
       clearTimeout(timeoutId);
       return responseHandler.send(400, {
         success: false,
@@ -17780,7 +18372,7 @@ router10.post("/upload", simpleAuth, upload3.single("file"), async (req, res) =>
     });
     if (!parseResult.success) {
       console.error("\u274C [\uC11C\uBC84] \uD30C\uC2F1 \uC2E4\uD328:", parseResult.error);
-      fs15.unlinkSync(filePath);
+      fs16.unlinkSync(filePath);
       clearTimeout(timeoutId);
       return responseHandler.send(400, {
         success: false,
@@ -17821,9 +18413,9 @@ router10.post("/upload", simpleAuth, upload3.single("file"), async (req, res) =>
       endpoint: "/api/po-template/upload",
       elapsedTime: Date.now() - startTime
     });
-    if (req.file && fs15.existsSync(req.file.path)) {
+    if (req.file && fs16.existsSync(req.file.path)) {
       console.log("\u{1F5D1}\uFE0F [\uC11C\uBC84] \uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C:", req.file.path);
-      fs15.unlinkSync(req.file.path);
+      fs16.unlinkSync(req.file.path);
     }
     clearTimeout(timeoutId);
     responseHandler.send(500, {
@@ -17852,7 +18444,7 @@ router10.post("/save", simpleAuth, async (req, res) => {
         const savedOrderNumbers = [];
         const pdfGenerationStatuses = [];
         for (const orderData of orders) {
-          let vendor = await db.select().from(vendors).where(eq16(vendors.name, orderData.vendorName)).limit(1);
+          let vendor = await db.select().from(vendors).where(eq17(vendors.name, orderData.vendorName)).limit(1);
           let vendorId;
           if (vendor.length === 0) {
             const newVendor = await db.insert(vendors).values({
@@ -17865,7 +18457,7 @@ router10.post("/save", simpleAuth, async (req, res) => {
           } else {
             vendorId = vendor[0].id;
           }
-          let project = await db.select().from(projects).where(eq16(projects.projectName, orderData.siteName)).limit(1);
+          let project = await db.select().from(projects).where(eq17(projects.projectName, orderData.siteName)).limit(1);
           let projectId;
           if (project.length === 0) {
             const newProject = await db.insert(projects).values({
@@ -17881,7 +18473,7 @@ router10.post("/save", simpleAuth, async (req, res) => {
           let suffix = 1;
           while (true) {
             try {
-              const existing = await db.select().from(purchaseOrders).where(eq16(purchaseOrders.orderNumber, orderNumber));
+              const existing = await db.select().from(purchaseOrders).where(eq17(purchaseOrders.orderNumber, orderNumber));
               if (existing.length === 0) {
                 break;
               }
@@ -18094,7 +18686,7 @@ router10.post("/save", simpleAuth, async (req, res) => {
             const cleanOrderNumber = orderNumber.startsWith("PO-") ? orderNumber.substring(3) : orderNumber;
             const pdfOriginalName = `PO_Professional_${cleanOrderNumber}_${Date.now()}.pdf`;
             const pdfStoredName = `PO_Professional_${cleanOrderNumber}_${Date.now()}.pdf`;
-            const pdfAttachment = await db.insert(attachments2).values({
+            const pdfAttachment = await db.insert(attachments).values({
               orderId: newOrder[0].id,
               originalName: pdfOriginalName,
               // 한글 포함 파일명
@@ -18127,14 +18719,14 @@ router10.post("/save", simpleAuth, async (req, res) => {
             pdfGenerationStatus.message = process.env.VERCEL ? `PDF \uC0DD\uC131 \uC2E4\uD328 (Vercel): ${pdfError instanceof Error ? pdfError.message : "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"}. \uD3F0\uD2B8 \uB610\uB294 \uD658\uACBD \uBB38\uC81C\uC77C \uC218 \uC788\uC2B5\uB2C8\uB2E4.` : `PDF \uC0DD\uC131 \uC2E4\uD328: ${pdfError instanceof Error ? pdfError.message : "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"}`;
           }
           pdfGenerationStatuses.push(pdfGenerationStatus);
-          if (extractedFilePath && fs15.existsSync(extractedFilePath)) {
+          if (extractedFilePath && fs16.existsSync(extractedFilePath)) {
             try {
               console.log("\u{1F4CA} Excel \uD30C\uC77C \uC800\uC7A5 \uC2DC\uC791:", extractedFilePath);
-              const excelBuffer = fs15.readFileSync(extractedFilePath);
+              const excelBuffer = fs16.readFileSync(extractedFilePath);
               const excelBase64 = excelBuffer.toString("base64");
               const excelOriginalName = `${orderNumber}_\uAC11\uC9C0\uC744\uC9C0.xlsx`;
               const excelStoredName = `${orderNumber}_${Date.now()}_extracted.xlsx`;
-              await db.insert(attachments2).values({
+              await db.insert(attachments).values({
                 orderId: newOrder[0].id,
                 originalName: excelOriginalName,
                 // 한글 포함 파일명
@@ -18221,12 +18813,12 @@ router10.post("/extract-sheets", simpleAuth, async (req, res) => {
     if (!filePath) {
       return res.status(400).json({ error: "\uD30C\uC77C \uACBD\uB85C\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4." });
     }
-    if (!fs15.existsSync(filePath)) {
+    if (!fs16.existsSync(filePath)) {
       return res.status(400).json({ error: "\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4." });
     }
     const timestamp2 = Date.now();
-    const extractedPath = path13.join(
-      path13.dirname(filePath),
+    const extractedPath = path14.join(
+      path14.dirname(filePath),
       `extracted-${timestamp2}.xlsx`
     );
     const extractResult = await POTemplateProcessorMock.extractSheetsToFile(
@@ -18344,7 +18936,7 @@ router10.post("/send-email", simpleAuth, async (req, res) => {
         error: "\uD544\uC218 \uB370\uC774\uD130\uAC00 \uB204\uB77D\uB418\uC5C8\uC2B5\uB2C8\uB2E4. (filePath, to, subject \uD544\uC218)"
       });
     }
-    if (!fs15.existsSync(filePath)) {
+    if (!fs16.existsSync(filePath)) {
       return res.status(400).json({ error: "\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4." });
     }
     const emailService5 = new POEmailServiceMock();
@@ -18370,13 +18962,13 @@ router10.post("/send-email", simpleAuth, async (req, res) => {
       try {
         const { db: db4 } = await Promise.resolve().then(() => (init_db(), db_exports));
         const { purchaseOrders: purchaseOrders3, emailSendHistory: emailSendHistory3 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-        const { eq: eq40 } = await import("drizzle-orm");
-        const order = await db4.select().from(purchaseOrders3).where(eq40(purchaseOrders3.orderNumber, orderNumber)).limit(1);
+        const { eq: eq41 } = await import("drizzle-orm");
+        const order = await db4.select().from(purchaseOrders3).where(eq41(purchaseOrders3.orderNumber, orderNumber)).limit(1);
         if (order.length > 0) {
           await db4.update(purchaseOrders3).set({
             orderStatus: "sent",
             updatedAt: /* @__PURE__ */ new Date()
-          }).where(eq40(purchaseOrders3.orderNumber, orderNumber));
+          }).where(eq41(purchaseOrders3.orderNumber, orderNumber));
           console.log(`\u{1F4CB} \uBC1C\uC8FC\uC11C \uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8 \uC644\uB8CC: ${orderNumber} \u2192 sent`);
           const recipients = Array.isArray(to) ? to : [to];
           const ccRecipients = cc ? Array.isArray(cc) ? cc : [cc] : [];
@@ -18425,12 +19017,12 @@ router10.post("/convert-to-pdf", simpleAuth, async (req, res) => {
     if (!filePath) {
       return res.status(400).json({ error: "\uD30C\uC77C \uACBD\uB85C\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4." });
     }
-    if (!fs15.existsSync(filePath)) {
+    if (!fs16.existsSync(filePath)) {
       return res.status(400).json({ error: "\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4." });
     }
     const timestamp2 = Date.now();
-    const pdfPath = outputPath || path13.join(
-      path13.dirname(filePath),
+    const pdfPath = outputPath || path14.join(
+      path14.dirname(filePath),
       `po-sheets-${timestamp2}.pdf`
     );
     const pdfResult = await convertExcelToPdfMock(filePath, pdfPath, ["\uAC11\uC9C0", "\uC744\uC9C0"]);
@@ -18483,7 +19075,7 @@ router10.post("/process-complete", simpleAuth, upload3.single("file"), async (re
     const validation = await POTemplateValidator.validatePOTemplateFile(filePath);
     results.validation = validation;
     if (!validation.isValid) {
-      fs15.unlinkSync(filePath);
+      fs16.unlinkSync(filePath);
       return res.status(400).json({
         error: "\uC720\uD6A8\uC131 \uAC80\uC0AC \uC2E4\uD328",
         details: validation.errors.join(", "),
@@ -18494,7 +19086,7 @@ router10.post("/process-complete", simpleAuth, upload3.single("file"), async (re
     const parseResult = POTemplateProcessorMock.parseInputSheet(filePath);
     results.parsing = parseResult;
     if (!parseResult.success) {
-      fs15.unlinkSync(filePath);
+      fs16.unlinkSync(filePath);
       return res.status(400).json({
         error: "\uD30C\uC2F1 \uC2E4\uD328",
         details: parseResult.error,
@@ -18506,8 +19098,8 @@ router10.post("/process-complete", simpleAuth, upload3.single("file"), async (re
     results.saving = saveResult;
     console.log("\u{1F4CB} 4\uB2E8\uACC4: \uAC11\uC9C0/\uC744\uC9C0 \uC2DC\uD2B8 \uCD94\uCD9C");
     const timestamp2 = Date.now();
-    const extractedPath = path13.join(
-      path13.dirname(filePath),
+    const extractedPath = path14.join(
+      path14.dirname(filePath),
       `extracted-${timestamp2}.xlsx`
     );
     const extractResult = await POTemplateProcessorMock.extractSheetsToFile(
@@ -18518,8 +19110,8 @@ router10.post("/process-complete", simpleAuth, upload3.single("file"), async (re
     results.extraction = extractResult;
     if (generatePDF) {
       console.log("\u{1F4C4} 5\uB2E8\uACC4: PDF \uBCC0\uD658");
-      const pdfPath = path13.join(
-        path13.dirname(filePath),
+      const pdfPath = path14.join(
+        path14.dirname(filePath),
         `po-sheets-${timestamp2}.pdf`
       );
       const pdfResult = await convertExcelToPdfMock(extractedPath, pdfPath);
@@ -18543,8 +19135,8 @@ router10.post("/process-complete", simpleAuth, upload3.single("file"), async (re
         try {
           const { db: db4 } = await Promise.resolve().then(() => (init_db(), db_exports));
           const { purchaseOrders: purchaseOrders3, emailSendHistory: emailSendHistory3 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-          const { eq: eq40 } = await import("drizzle-orm");
-          const order = await db4.select().from(purchaseOrders3).where(eq40(purchaseOrders3.orderNumber, parseResult.orders[0].orderNumber)).limit(1);
+          const { eq: eq41 } = await import("drizzle-orm");
+          const order = await db4.select().from(purchaseOrders3).where(eq41(purchaseOrders3.orderNumber, parseResult.orders[0].orderNumber)).limit(1);
           if (order.length > 0) {
             const recipients = Array.isArray(emailTo) ? emailTo : [emailTo];
             await db4.insert(emailSendHistory3).values({
@@ -18588,8 +19180,8 @@ router10.post("/process-complete", simpleAuth, upload3.single("file"), async (re
     });
   } catch (error) {
     console.error("\uD1B5\uD569 \uCC98\uB9AC \uC624\uB958:", error);
-    if (req.file && fs15.existsSync(req.file.path)) {
-      fs15.unlinkSync(req.file.path);
+    if (req.file && fs16.existsSync(req.file.path)) {
+      fs16.unlinkSync(req.file.path);
     }
     res.status(500).json({
       error: "\uC11C\uBC84 \uC624\uB958",
@@ -18637,7 +19229,7 @@ router10.saveToDatabase = async function(orders, userId) {
     try {
       let savedOrders = 0;
       for (const orderData of orders) {
-        let vendor = await db.select().from(vendors).where(eq16(vendors.name, orderData.vendorName)).limit(1);
+        let vendor = await db.select().from(vendors).where(eq17(vendors.name, orderData.vendorName)).limit(1);
         let vendorId;
         if (vendor.length === 0) {
           const newVendor = await db.insert(vendors).values({
@@ -18650,7 +19242,7 @@ router10.saveToDatabase = async function(orders, userId) {
         } else {
           vendorId = vendor[0].id;
         }
-        let project = await db.select().from(projects).where(eq16(projects.projectName, orderData.siteName)).limit(1);
+        let project = await db.select().from(projects).where(eq17(projects.projectName, orderData.siteName)).limit(1);
         let projectId;
         if (project.length === 0) {
           const newProject = await db.insert(projects).values({
@@ -18723,7 +19315,7 @@ var po_template_real_default = router10;
 import { Router as Router11 } from "express";
 init_db();
 init_schema();
-import { eq as eq17, sql as sql9, and as and9, gte as gte4, lte as lte4, inArray as inArray3 } from "drizzle-orm";
+import { eq as eq18, sql as sql10, and as and9, gte as gte4, lte as lte4, inArray as inArray3 } from "drizzle-orm";
 import * as XLSX7 from "xlsx";
 var formatKoreanWon = (amount) => {
   return `\u20A9${amount.toLocaleString("ko-KR")}`;
@@ -18733,19 +19325,19 @@ router11.get("/debug-data", async (req, res) => {
   try {
     console.log("Debug data endpoint called");
     const orderCount = await db.select({
-      count: sql9`count(*)`
+      count: sql10`count(*)`
     }).from(purchaseOrders);
     const itemCount = await db.select({
-      count: sql9`count(*)`
+      count: sql10`count(*)`
     }).from(purchaseOrderItems);
     const itemsWithCategories = await db.select({
-      count: sql9`count(*)`,
-      withMajor: sql9`count(${items.majorCategory})`,
-      withMiddle: sql9`count(${items.middleCategory})`,
-      withMinor: sql9`count(${items.minorCategory})`
+      count: sql10`count(*)`,
+      withMajor: sql10`count(${items.majorCategory})`,
+      withMiddle: sql10`count(${items.middleCategory})`,
+      withMinor: sql10`count(${items.minorCategory})`
     }).from(items);
     const vendorCount = await db.select({
-      count: sql9`count(*)`
+      count: sql10`count(*)`
     }).from(vendors);
     const sampleOrders = await db.select().from(purchaseOrders).limit(3);
     const sampleItems = await db.select().from(purchaseOrderItems).limit(3);
@@ -18786,7 +19378,7 @@ router11.get("/debug-processing", async (req, res) => {
       totalAmount: purchaseOrders.totalAmount,
       projectName: projects.projectName,
       vendorName: vendors.name
-    }).from(purchaseOrders).leftJoin(projects, eq17(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq17(purchaseOrders.vendorId, vendors.id)).limit(10);
+    }).from(purchaseOrders).leftJoin(projects, eq18(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq18(purchaseOrders.vendorId, vendors.id)).limit(10);
     res.json({
       totalOrders: allOrders.length,
       ordersWithoutJoins: allOrders,
@@ -18837,16 +19429,16 @@ router11.get("/by-category", async (req, res) => {
       orderStatus: purchaseOrders.status,
       specification: purchaseOrderItems.specification,
       unitPrice: purchaseOrderItems.unitPrice
-    }).from(purchaseOrderItems).innerJoin(purchaseOrders, eq17(purchaseOrderItems.orderId, purchaseOrders.id));
+    }).from(purchaseOrderItems).innerJoin(purchaseOrders, eq18(purchaseOrderItems.orderId, purchaseOrders.id));
     const filters = [...dateFilters];
     if (majorCategory && majorCategory !== "all") {
-      filters.push(eq17(purchaseOrderItems.majorCategory, majorCategory));
+      filters.push(eq18(purchaseOrderItems.majorCategory, majorCategory));
     }
     if (middleCategory && middleCategory !== "all") {
-      filters.push(eq17(purchaseOrderItems.middleCategory, middleCategory));
+      filters.push(eq18(purchaseOrderItems.middleCategory, middleCategory));
     }
     if (minorCategory && minorCategory !== "all") {
-      filters.push(eq17(purchaseOrderItems.minorCategory, minorCategory));
+      filters.push(eq18(purchaseOrderItems.minorCategory, minorCategory));
     }
     if (filters.length > 0) {
       query = query.where(and9(...filters));
@@ -18944,7 +19536,7 @@ router11.get("/by-project", requireAuth, async (req, res) => {
     const { startDate, endDate, projectId } = req.query;
     const filters = parseDateFilters(startDate, endDate);
     if (projectId) {
-      filters.push(eq17(purchaseOrders.projectId, parseInt(projectId)));
+      filters.push(eq18(purchaseOrders.projectId, parseInt(projectId)));
     }
     const ordersWithProjects = await db.select({
       projectId: projects.id,
@@ -18958,7 +19550,7 @@ router11.get("/by-project", requireAuth, async (req, res) => {
       orderStatus: purchaseOrders.status,
       vendorId: purchaseOrders.vendorId,
       vendorName: vendors.name
-    }).from(purchaseOrders).innerJoin(projects, eq17(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq17(purchaseOrders.vendorId, vendors.id)).where(filters.length > 0 ? and9(...filters) : void 0);
+    }).from(purchaseOrders).innerJoin(projects, eq18(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq18(purchaseOrders.vendorId, vendors.id)).where(filters.length > 0 ? and9(...filters) : void 0);
     const projectReport = ordersWithProjects.reduce((acc, order) => {
       const projectKey = order.projectId;
       if (!acc[projectKey]) {
@@ -19040,7 +19632,7 @@ router11.get("/by-vendor", async (req, res) => {
       projectName: projects.projectName,
       originalVendorId: purchaseOrders.vendorId
       // Add original vendorId for null check
-    }).from(purchaseOrders).leftJoin(vendors, eq17(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq17(purchaseOrders.projectId, projects.id));
+    }).from(purchaseOrders).leftJoin(vendors, eq18(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq18(purchaseOrders.projectId, projects.id));
     if (filters.length > 0) {
       vendorQuery = vendorQuery.where(and9(...filters));
     }
@@ -19381,21 +19973,21 @@ router11.get("/processing", requireAuth, async (req, res) => {
       );
     }
     if (status && status !== "all" && status !== "") {
-      filters.push(eq17(purchaseOrders.status, status));
+      filters.push(eq18(purchaseOrders.status, status));
     }
     if (projectId && projectId !== "all" && projectId !== "") {
-      filters.push(eq17(purchaseOrders.projectId, parseInt(projectId)));
+      filters.push(eq18(purchaseOrders.projectId, parseInt(projectId)));
     }
     if (vendorId && vendorId !== "all" && vendorId !== "") {
-      filters.push(eq17(purchaseOrders.vendorId, parseInt(vendorId)));
+      filters.push(eq18(purchaseOrders.vendorId, parseInt(vendorId)));
     }
     console.log(`Processing report filters count: ${filters.length}`);
-    let ordersQuery = db.select().from(purchaseOrders).leftJoin(projects, eq17(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq17(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq17(purchaseOrders.userId, users.id));
+    let ordersQuery = db.select().from(purchaseOrders).leftJoin(projects, eq18(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq18(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq18(purchaseOrders.userId, users.id));
     if (filters.length > 0) {
       ordersQuery = ordersQuery.where(and9(...filters));
     }
     if (search && search !== "") {
-      const searchFilter = sql9`(
+      const searchFilter = sql10`(
         ${purchaseOrders.orderNumber} ILIKE ${`%${search}%`} OR
         ${vendors.name} ILIKE ${`%${search}%`} OR
         ${projects.projectName} ILIKE ${`%${search}%`} OR
@@ -19467,12 +20059,12 @@ router11.get("/processing", requireAuth, async (req, res) => {
         ...order,
         items: orderItems.filter((item) => item.orderId === order.id)
       }));
-      let countQuery = db.select({ count: sql9`count(*)` }).from(purchaseOrders).leftJoin(projects, eq17(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq17(purchaseOrders.vendorId, vendors.id));
+      let countQuery = db.select({ count: sql10`count(*)` }).from(purchaseOrders).leftJoin(projects, eq18(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq18(purchaseOrders.vendorId, vendors.id));
       if (filters.length > 0) {
         countQuery = countQuery.where(and9(...filters));
       }
       if (search && search !== "") {
-        const searchFilter = sql9`(
+        const searchFilter = sql10`(
           ${purchaseOrders.orderNumber} ILIKE ${`%${search}%`} OR
           ${vendors.name} ILIKE ${`%${search}%`} OR
           ${projects.projectName} ILIKE ${`%${search}%`} OR
@@ -19524,32 +20116,32 @@ router11.get("/summary", requireAuth, async (req, res) => {
     const { startDate, endDate } = req.query;
     const dateFilters = parseDateFilters(startDate, endDate);
     const ordersSummary = await db.select({
-      totalOrders: sql9`count(*)`,
-      totalAmount: sql9`sum(${purchaseOrders.totalAmount})`,
-      avgAmount: sql9`avg(${purchaseOrders.totalAmount})`
+      totalOrders: sql10`count(*)`,
+      totalAmount: sql10`sum(${purchaseOrders.totalAmount})`,
+      avgAmount: sql10`avg(${purchaseOrders.totalAmount})`
     }).from(purchaseOrders).where(dateFilters.length > 0 ? and9(...dateFilters) : void 0);
     const statusBreakdown = await db.select({
       status: purchaseOrders.status,
-      count: sql9`count(*)`,
-      totalAmount: sql9`sum(${purchaseOrders.totalAmount})`
+      count: sql10`count(*)`,
+      totalAmount: sql10`sum(${purchaseOrders.totalAmount})`
     }).from(purchaseOrders).where(and9(...dateFilters)).groupBy(purchaseOrders.status);
     const topVendors = await db.select({
       vendorId: vendors.id,
       vendorName: vendors.name,
-      orderCount: sql9`count(${purchaseOrders.id})`,
-      totalAmount: sql9`sum(${purchaseOrders.totalAmount})`
-    }).from(purchaseOrders).innerJoin(vendors, eq17(purchaseOrders.vendorId, vendors.id)).where(and9(...dateFilters)).groupBy(vendors.id, vendors.name).orderBy(sql9`sum(${purchaseOrders.totalAmount}) desc`).limit(10);
+      orderCount: sql10`count(${purchaseOrders.id})`,
+      totalAmount: sql10`sum(${purchaseOrders.totalAmount})`
+    }).from(purchaseOrders).innerJoin(vendors, eq18(purchaseOrders.vendorId, vendors.id)).where(and9(...dateFilters)).groupBy(vendors.id, vendors.name).orderBy(sql10`sum(${purchaseOrders.totalAmount}) desc`).limit(10);
     const topProjects = await db.select({
       projectId: projects.id,
       projectName: projects.projectName,
-      orderCount: sql9`count(${purchaseOrders.id})`,
-      totalAmount: sql9`sum(${purchaseOrders.totalAmount})`
-    }).from(purchaseOrders).innerJoin(projects, eq17(purchaseOrders.projectId, projects.id)).where(and9(...dateFilters)).groupBy(projects.id, projects.projectName).orderBy(sql9`sum(${purchaseOrders.totalAmount}) desc`).limit(10);
+      orderCount: sql10`count(${purchaseOrders.id})`,
+      totalAmount: sql10`sum(${purchaseOrders.totalAmount})`
+    }).from(purchaseOrders).innerJoin(projects, eq18(purchaseOrders.projectId, projects.id)).where(and9(...dateFilters)).groupBy(projects.id, projects.projectName).orderBy(sql10`sum(${purchaseOrders.totalAmount}) desc`).limit(10);
     const monthlyTrend = await db.select({
-      month: sql9`to_char(${purchaseOrders.orderDate}, 'YYYY-MM')`,
-      orderCount: sql9`count(*)`,
-      totalAmount: sql9`sum(${purchaseOrders.totalAmount})`
-    }).from(purchaseOrders).where(and9(...dateFilters)).groupBy(sql9`to_char(${purchaseOrders.orderDate}, 'YYYY-MM')`).orderBy(sql9`to_char(${purchaseOrders.orderDate}, 'YYYY-MM')`);
+      month: sql10`to_char(${purchaseOrders.orderDate}, 'YYYY-MM')`,
+      orderCount: sql10`count(*)`,
+      totalAmount: sql10`sum(${purchaseOrders.totalAmount})`
+    }).from(purchaseOrders).where(and9(...dateFilters)).groupBy(sql10`to_char(${purchaseOrders.orderDate}, 'YYYY-MM')`).orderBy(sql10`to_char(${purchaseOrders.orderDate}, 'YYYY-MM')`);
     res.json({
       period: {
         startDate: startDate || "all",
@@ -19576,8 +20168,8 @@ init_db();
 init_schema();
 import * as XLSX8 from "xlsx";
 import Papa from "papaparse";
-import { eq as eq18 } from "drizzle-orm";
-import fs16 from "fs";
+import { eq as eq19 } from "drizzle-orm";
+import fs17 from "fs";
 var ImportExportService = class {
   // Parse Excel file
   static parseExcelFile(filePath) {
@@ -19590,7 +20182,7 @@ var ImportExportService = class {
   // Parse CSV file
   static parseCSVFile(filePath) {
     return new Promise((resolve, reject) => {
-      const fileContent = fs16.readFileSync(filePath, "utf8");
+      const fileContent = fs17.readFileSync(filePath, "utf8");
       Papa.parse(fileContent, {
         header: true,
         complete: (results) => {
@@ -19848,7 +20440,7 @@ var ImportExportService = class {
   }
   // Export Methods
   static async exportVendors(format2) {
-    const vendorData = await db.select().from(vendors).where(eq18(vendors.isActive, true));
+    const vendorData = await db.select().from(vendors).where(eq19(vendors.isActive, true));
     const exportData = vendorData.map((vendor) => ({
       "\uAC70\uB798\uCC98\uBA85": vendor.name,
       "\uAC70\uB798\uCC98\uCF54\uB4DC": vendor.vendorCode || "",
@@ -19875,7 +20467,7 @@ var ImportExportService = class {
     }
   }
   static async exportItems(format2) {
-    const itemData = await db.select().from(items).where(eq18(items.isActive, true));
+    const itemData = await db.select().from(items).where(eq19(items.isActive, true));
     const exportData = itemData.map((item) => ({
       "\uD488\uBAA9\uBA85": item.name,
       "\uADDC\uACA9": item.specification || "",
@@ -19901,7 +20493,7 @@ var ImportExportService = class {
     }
   }
   static async exportProjects(format2) {
-    const projectData = await db.select().from(projects).where(eq18(projects.isActive, true));
+    const projectData = await db.select().from(projects).where(eq19(projects.isActive, true));
     const typeMap = {
       "commercial": "\uC0C1\uC5C5\uC2DC\uC124",
       "residential": "\uC8FC\uAC70\uC2DC\uC124",
@@ -19961,7 +20553,7 @@ var ImportExportService = class {
       middleCategory: purchaseOrderItems.middleCategory,
       minorCategory: purchaseOrderItems.minorCategory,
       itemNotes: purchaseOrderItems.notes
-    }).from(purchaseOrders).leftJoin(purchaseOrderItems, eq18(purchaseOrders.id, purchaseOrderItems.orderId)).where(eq18(purchaseOrders.isActive, true));
+    }).from(purchaseOrders).leftJoin(purchaseOrderItems, eq19(purchaseOrders.id, purchaseOrderItems.orderId)).where(eq19(purchaseOrders.isActive, true));
     const statusMap = {
       "pending": "\uB300\uAE30",
       "approved": "\uC2B9\uC778",
@@ -20082,8 +20674,8 @@ var ImportExportService = class {
 
 // server/routes/import-export.ts
 import multer4 from "multer";
-import fs17 from "fs";
-import path14 from "path";
+import fs18 from "fs";
+import path15 from "path";
 var upload4 = multer4({
   dest: "uploads/",
   limits: {
@@ -20105,7 +20697,7 @@ var upload4 = multer4({
 });
 var router12 = Router12();
 var getFileType = (filename) => {
-  const ext = path14.extname(filename).toLowerCase();
+  const ext = path15.extname(filename).toLowerCase();
   return ext === ".csv" ? "csv" : "excel";
 };
 router12.post("/import/vendors", requireAuth, upload4.single("file"), async (req, res) => {
@@ -20115,7 +20707,7 @@ router12.post("/import/vendors", requireAuth, upload4.single("file"), async (req
     }
     const fileType = getFileType(req.file.filename);
     const result = await ImportExportService.importVendors(req.file.path, fileType);
-    fs17.unlinkSync(req.file.path);
+    fs18.unlinkSync(req.file.path);
     res.json({
       message: "Vendor import completed",
       imported: result.imported,
@@ -20134,7 +20726,7 @@ router12.post("/import/items", requireAuth, upload4.single("file"), async (req, 
     }
     const fileType = getFileType(req.file.filename);
     const result = await ImportExportService.importItems(req.file.path, fileType);
-    fs17.unlinkSync(req.file.path);
+    fs18.unlinkSync(req.file.path);
     res.json({
       message: "Item import completed",
       imported: result.imported,
@@ -20153,7 +20745,7 @@ router12.post("/import/projects", requireAuth, upload4.single("file"), async (re
     }
     const fileType = getFileType(req.file.filename);
     const result = await ImportExportService.importProjects(req.file.path, fileType);
-    fs17.unlinkSync(req.file.path);
+    fs18.unlinkSync(req.file.path);
     res.json({
       message: "Project import completed",
       imported: result.imported,
@@ -20172,7 +20764,7 @@ router12.post("/import/purchase_orders", requireAuth, upload4.single("file"), as
     }
     const fileType = getFileType(req.file.filename);
     const result = await ImportExportService.importPurchaseOrders(req.file.path, fileType);
-    fs17.unlinkSync(req.file.path);
+    fs18.unlinkSync(req.file.path);
     res.json({
       message: "Purchase order import completed",
       imported: result.imported,
@@ -20269,7 +20861,7 @@ var import_export_default = router12;
 init_db();
 init_schema();
 import { Router as Router13 } from "express";
-import { eq as eq19, desc as desc7, and as and10, sql as sql10 } from "drizzle-orm";
+import { eq as eq20, desc as desc7, and as and10, sql as sql11 } from "drizzle-orm";
 import { z as z4 } from "zod";
 var router13 = Router13();
 var createEmailHistorySchema = z4.object({
@@ -20291,7 +20883,7 @@ router13.get("/orders/:orderId/email-history", requireAuth, async (req, res) => 
       return res.status(400).json({ error: "Invalid order ID" });
     }
     const order = await db.query.purchaseOrders.findFirst({
-      where: eq19(purchaseOrders.id, orderId)
+      where: eq20(purchaseOrders.id, orderId)
     });
     if (!order) {
       return res.status(404).json({ error: "Order not found" });
@@ -20313,7 +20905,7 @@ router13.get("/orders/:orderId/email-history", requireAuth, async (req, res) => 
       errorMessage: emailSendHistory.error,
       createdAt: emailSendHistory.createdAt,
       updatedAt: emailSendHistory.updatedAt
-    }).from(emailSendHistory).leftJoin(users, eq19(emailSendHistory.senderUserId, users.id)).where(eq19(emailSendHistory.orderId, orderId)).orderBy(desc7(emailSendHistory.sentAt));
+    }).from(emailSendHistory).leftJoin(users, eq20(emailSendHistory.senderUserId, users.id)).where(eq20(emailSendHistory.orderId, orderId)).orderBy(desc7(emailSendHistory.sentAt));
     res.json(emailHistory);
   } catch (error) {
     console.error("Error fetching email history:", error);
@@ -20329,13 +20921,13 @@ router13.post("/email-history", requireAuth, async (req, res) => {
       attachments: validatedData.attachments || null
     }).returning();
     const order = await db.query.purchaseOrders.findFirst({
-      where: eq19(purchaseOrders.id, validatedData.orderId)
+      where: eq20(purchaseOrders.id, validatedData.orderId)
     });
     if (order && order.status === "approved") {
       await db.update(purchaseOrders).set({
         status: "sent",
         updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq19(purchaseOrders.id, validatedData.orderId));
+      }).where(eq20(purchaseOrders.id, validatedData.orderId));
     }
     res.json(newEmailHistory);
   } catch (error) {
@@ -20356,16 +20948,16 @@ router13.get("/orders-email-status", requireAuth, async (req, res) => {
         // This maps to sending_status column
         lastSentAt: emailSendHistory.sentAt,
         recipients: emailSendHistory.recipients
-      }).from(purchaseOrders).leftJoin(emailSendHistory, eq19(purchaseOrders.id, emailSendHistory.orderId)).orderBy(desc7(purchaseOrders.id));
+      }).from(purchaseOrders).leftJoin(emailSendHistory, eq20(purchaseOrders.id, emailSendHistory.orderId)).orderBy(desc7(purchaseOrders.id));
       res.json(orders);
     } catch (dbError) {
       console.error("Database query error:", dbError);
       const orders = await db.select({
         id: purchaseOrders.id,
         orderNumber: purchaseOrders.orderNumber,
-        emailStatus: sql10`null`.as("email_status"),
-        lastSentAt: sql10`null`.as("last_sent_at"),
-        recipients: sql10`null`.as("recipients")
+        emailStatus: sql11`null`.as("email_status"),
+        lastSentAt: sql11`null`.as("last_sent_at"),
+        recipients: sql11`null`.as("recipients")
       }).from(purchaseOrders).orderBy(desc7(purchaseOrders.id));
       res.json(orders);
     }
@@ -20384,7 +20976,7 @@ router13.put("/email-history/:id/status", requireAuth, async (req, res) => {
     if (!["pending", "sent", "failed"].includes(status)) {
       return res.status(400).json({ error: "Invalid status" });
     }
-    const [updated] = await db.update(emailSendHistory).set({ status, updatedAt: /* @__PURE__ */ new Date() }).where(eq19(emailSendHistory.id, emailId)).returning();
+    const [updated] = await db.update(emailSendHistory).set({ status, updatedAt: /* @__PURE__ */ new Date() }).where(eq20(emailSendHistory.id, emailId)).returning();
     if (!updated) {
       return res.status(404).json({ error: "Email not found" });
     }
@@ -20419,7 +21011,7 @@ router13.get("/email-history/:id", requireAuth, async (req, res) => {
       errorMessage: emailSendHistory.error,
       createdAt: emailSendHistory.createdAt,
       updatedAt: emailSendHistory.updatedAt
-    }).from(emailSendHistory).leftJoin(purchaseOrders, eq19(emailSendHistory.orderId, purchaseOrders.id)).leftJoin(vendors, eq19(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq19(emailSendHistory.senderUserId, users.id)).where(eq19(emailSendHistory.id, emailId));
+    }).from(emailSendHistory).leftJoin(purchaseOrders, eq20(emailSendHistory.orderId, purchaseOrders.id)).leftJoin(vendors, eq20(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq20(emailSendHistory.senderUserId, users.id)).where(eq20(emailSendHistory.id, emailId));
     if (!email || email.length === 0) {
       return res.status(404).json({ error: "Email not found" });
     }
@@ -20446,25 +21038,25 @@ router13.get("/email-history", requireAuth, async (req, res) => {
     const offset = (pageNum - 1) * limitNum;
     const conditions = [];
     if (startDate) {
-      conditions.push(sql10`${emailSendHistory.sentAt} >= ${new Date(startDate)}`);
+      conditions.push(sql11`${emailSendHistory.sentAt} >= ${new Date(startDate)}`);
     }
     if (endDate) {
-      conditions.push(sql10`${emailSendHistory.sentAt} <= ${new Date(endDate)}`);
+      conditions.push(sql11`${emailSendHistory.sentAt} <= ${new Date(endDate)}`);
     }
     if (status) {
-      conditions.push(eq19(emailSendHistory.status, status));
+      conditions.push(eq20(emailSendHistory.status, status));
     }
     if (orderNumber) {
-      conditions.push(sql10`${purchaseOrders.orderNumber} ILIKE ${`%${orderNumber}%`}`);
+      conditions.push(sql11`${purchaseOrders.orderNumber} ILIKE ${`%${orderNumber}%`}`);
     }
     if (vendorName) {
-      conditions.push(sql10`${vendors.name} ILIKE ${`%${vendorName}%`}`);
+      conditions.push(sql11`${vendors.name} ILIKE ${`%${vendorName}%`}`);
     }
     if (senderUserId) {
-      conditions.push(eq19(emailSendHistory.senderUserId, senderUserId));
+      conditions.push(eq20(emailSendHistory.senderUserId, senderUserId));
     }
     const whereClause = conditions.length > 0 ? and10(...conditions) : void 0;
-    const [{ count: count5 }] = await db.select({ count: sql10`count(*)` }).from(emailSendHistory).leftJoin(purchaseOrders, eq19(emailSendHistory.orderId, purchaseOrders.id)).leftJoin(vendors, eq19(purchaseOrders.vendorId, vendors.id)).where(whereClause);
+    const [{ count: count5 }] = await db.select({ count: sql11`count(*)` }).from(emailSendHistory).leftJoin(purchaseOrders, eq20(emailSendHistory.orderId, purchaseOrders.id)).leftJoin(vendors, eq20(purchaseOrders.vendorId, vendors.id)).where(whereClause);
     const emails = await db.select({
       id: emailSendHistory.id,
       orderId: emailSendHistory.orderId,
@@ -20481,11 +21073,11 @@ router13.get("/email-history", requireAuth, async (req, res) => {
       status: emailSendHistory.status,
       errorMessage: emailSendHistory.error,
       createdAt: emailSendHistory.createdAt
-    }).from(emailSendHistory).leftJoin(purchaseOrders, eq19(emailSendHistory.orderId, purchaseOrders.id)).leftJoin(vendors, eq19(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq19(emailSendHistory.senderUserId, users.id)).where(whereClause).orderBy(desc7(emailSendHistory.sentAt)).limit(limitNum).offset(offset);
+    }).from(emailSendHistory).leftJoin(purchaseOrders, eq20(emailSendHistory.orderId, purchaseOrders.id)).leftJoin(vendors, eq20(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq20(emailSendHistory.senderUserId, users.id)).where(whereClause).orderBy(desc7(emailSendHistory.sentAt)).limit(limitNum).offset(offset);
     const statusCounts = await db.select({
       status: emailSendHistory.status,
-      count: sql10`count(*)`
-    }).from(emailSendHistory).leftJoin(purchaseOrders, eq19(emailSendHistory.orderId, purchaseOrders.id)).leftJoin(vendors, eq19(purchaseOrders.vendorId, vendors.id)).where(whereClause).groupBy(emailSendHistory.status);
+      count: sql11`count(*)`
+    }).from(emailSendHistory).leftJoin(purchaseOrders, eq20(emailSendHistory.orderId, purchaseOrders.id)).leftJoin(vendors, eq20(purchaseOrders.vendorId, vendors.id)).where(whereClause).groupBy(emailSendHistory.status);
     const totalEmails = count5;
     const successfulEmails = statusCounts.find((s) => s.status === "sent")?.count || 0;
     const failedEmails = statusCounts.find((s) => s.status === "failed")?.count || 0;
@@ -20785,7 +21377,7 @@ import { Router as Router14 } from "express";
 // server/utils/optimized-orders-query.ts
 init_db();
 init_schema();
-import { eq as eq20, desc as desc8, asc as asc3, ilike as ilike3, and as and11, or as or4, between as between2, count as count3, sql as sql11, gte as gte5, lte as lte5 } from "drizzle-orm";
+import { eq as eq21, desc as desc8, asc as asc3, ilike as ilike3, and as and11, or as or4, between as between2, count as count3, sql as sql12, gte as gte5, lte as lte5 } from "drizzle-orm";
 var OptimizedOrdersService = class _OptimizedOrdersService {
   /**
    * 정렬 필드에 따른 ORDER BY 절 생성
@@ -20844,22 +21436,22 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
     } = filters;
     const whereConditions = [];
     if (userId && userId !== "all") {
-      whereConditions.push(eq20(purchaseOrders.userId, userId));
+      whereConditions.push(eq21(purchaseOrders.userId, userId));
     }
     if (status && status !== "all" && status !== "") {
-      whereConditions.push(sql11`${purchaseOrders.status} = ${status}`);
+      whereConditions.push(sql12`${purchaseOrders.status} = ${status}`);
     }
     if (orderStatus && orderStatus !== "all" && orderStatus !== "") {
-      whereConditions.push(sql11`${purchaseOrders.orderStatus} = ${orderStatus}`);
+      whereConditions.push(sql12`${purchaseOrders.orderStatus} = ${orderStatus}`);
     }
     if (approvalStatus && approvalStatus !== "all" && approvalStatus !== "") {
-      whereConditions.push(sql11`${purchaseOrders.approvalStatus} = ${approvalStatus}`);
+      whereConditions.push(sql12`${purchaseOrders.approvalStatus} = ${approvalStatus}`);
     }
     if (vendorId && vendorId !== "all") {
-      whereConditions.push(eq20(purchaseOrders.vendorId, vendorId));
+      whereConditions.push(eq21(purchaseOrders.vendorId, vendorId));
     }
     if (projectId && projectId !== "all") {
-      whereConditions.push(eq20(purchaseOrders.projectId, projectId));
+      whereConditions.push(eq21(purchaseOrders.projectId, projectId));
     }
     if (startDate && endDate) {
       whereConditions.push(between2(purchaseOrders.orderDate, startDate, endDate));
@@ -20881,7 +21473,7 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
           ilike3(projects.projectName, searchPattern),
           ilike3(users.name, searchPattern),
           // 품목명으로 검색: 해당 품목을 포함하는 발주서 조회
-          sql11`${purchaseOrders.id} IN (SELECT "order_id" FROM ${purchaseOrderItems} WHERE LOWER("item_name") LIKE ${searchPattern.toLowerCase()})`
+          sql12`${purchaseOrders.id} IN (SELECT "order_id" FROM ${purchaseOrderItems} WHERE LOWER("item_name") LIKE ${searchPattern.toLowerCase()})`
         )
       );
     }
@@ -20907,13 +21499,13 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
       projectName: projects.projectName,
       userName: users.name,
       // PDF attachment status - use correct column names (database uses snake_case)
-      hasPdf: sql11`EXISTS(SELECT 1 FROM attachments WHERE attachments.order_id = ${purchaseOrders.id} AND attachments.mime_type = 'application/pdf')`,
+      hasPdf: sql12`EXISTS(SELECT 1 FROM attachments WHERE attachments.order_id = ${purchaseOrders.id} AND attachments.mime_type = 'application/pdf')`,
       // Email statistics from email_send_history - use correct column name: sending_status
-      totalEmailsSent: sql11`COALESCE((SELECT COUNT(*) FROM email_sending_history WHERE order_id = ${purchaseOrders.id}), 0)`,
-      emailStatus: sql11`(SELECT sending_status FROM email_sending_history WHERE order_id = ${purchaseOrders.id} ORDER BY sent_at DESC LIMIT 1)`,
-      emailSentAt: sql11`(SELECT sent_at FROM email_sending_history WHERE order_id = ${purchaseOrders.id} ORDER BY sent_at DESC LIMIT 1)`
-    }).from(purchaseOrders).leftJoin(vendors, eq20(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq20(purchaseOrders.projectId, projects.id)).leftJoin(users, eq20(purchaseOrders.userId, users.id)).where(whereClause).orderBy(_OptimizedOrdersService.getOrderByClause(sortBy, sortOrder)).limit(limit).offset((page - 1) * limit);
-    const countQuery = db.select({ count: count3() }).from(purchaseOrders).leftJoin(vendors, eq20(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq20(purchaseOrders.projectId, projects.id)).leftJoin(users, eq20(purchaseOrders.userId, users.id)).where(whereClause);
+      totalEmailsSent: sql12`COALESCE((SELECT COUNT(*) FROM email_sending_history WHERE order_id = ${purchaseOrders.id}), 0)`,
+      emailStatus: sql12`(SELECT sending_status FROM email_sending_history WHERE order_id = ${purchaseOrders.id} ORDER BY sent_at DESC LIMIT 1)`,
+      emailSentAt: sql12`(SELECT sent_at FROM email_sending_history WHERE order_id = ${purchaseOrders.id} ORDER BY sent_at DESC LIMIT 1)`
+    }).from(purchaseOrders).leftJoin(vendors, eq21(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq21(purchaseOrders.projectId, projects.id)).leftJoin(users, eq21(purchaseOrders.userId, users.id)).where(whereClause).orderBy(_OptimizedOrdersService.getOrderByClause(sortBy, sortOrder)).limit(limit).offset((page - 1) * limit);
+    const countQuery = db.select({ count: count3() }).from(purchaseOrders).leftJoin(vendors, eq21(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq21(purchaseOrders.projectId, projects.id)).leftJoin(users, eq21(purchaseOrders.userId, users.id)).where(whereClause);
     const [orders, [{ count: totalCount }]] = await Promise.all([
       ordersQuery,
       countQuery
@@ -20945,19 +21537,19 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
       db.select({
         id: vendors.id,
         name: vendors.name
-      }).from(vendors).where(eq20(vendors.isActive, true)).orderBy(asc3(vendors.name)),
+      }).from(vendors).where(eq21(vendors.isActive, true)).orderBy(asc3(vendors.name)),
       // Only active projects
       db.select({
         id: projects.id,
         projectName: projects.projectName,
         projectCode: projects.projectCode
-      }).from(projects).where(eq20(projects.isActive, true)).orderBy(asc3(projects.projectName)),
+      }).from(projects).where(eq21(projects.isActive, true)).orderBy(asc3(projects.projectName)),
       // Only active users
       db.select({
         id: users.id,
         name: users.name,
         email: users.email
-      }).from(users).where(eq20(users.isActive, true)).orderBy(asc3(users.name))
+      }).from(users).where(eq21(users.isActive, true)).orderBy(asc3(users.name))
     ]);
     return {
       vendors: vendorsList,
@@ -20980,7 +21572,7 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
     const result = await db.update(purchaseOrders).set({
       status,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(sql11`${purchaseOrders.id} = ANY(${orderIds})`).returning();
+    }).where(sql12`${purchaseOrders.id} = ANY(${orderIds})`).returning();
     return result;
   }
   /**
@@ -20988,12 +21580,12 @@ var OptimizedOrdersService = class _OptimizedOrdersService {
    * Uses materialized view for better performance
    */
   static async getOrderStatistics(userId) {
-    const whereClause = userId ? eq20(purchaseOrders.userId, userId) : void 0;
+    const whereClause = userId ? eq21(purchaseOrders.userId, userId) : void 0;
     const stats = await db.select({
       status: purchaseOrders.status,
       count: count3(),
-      totalAmount: sql11`COALESCE(SUM(${purchaseOrders.totalAmount}), 0)`,
-      avgAmount: sql11`COALESCE(AVG(${purchaseOrders.totalAmount}), 0)`
+      totalAmount: sql12`COALESCE(SUM(${purchaseOrders.totalAmount}), 0)`,
+      avgAmount: sql12`COALESCE(AVG(${purchaseOrders.totalAmount}), 0)`
     }).from(purchaseOrders).where(whereClause).groupBy(purchaseOrders.status);
     return stats;
   }
@@ -21236,23 +21828,23 @@ var order_statuses_default = router16;
 init_db();
 init_schema();
 import { Router as Router16 } from "express";
-import { eq as eq21, desc as desc9 } from "drizzle-orm";
+import { eq as eq22, desc as desc9 } from "drizzle-orm";
 import multer5 from "multer";
-import path15 from "path";
-import fs18 from "fs";
+import path16 from "path";
+import fs19 from "fs";
 var router17 = Router16();
 var storage4 = multer5.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir2 = process.env.VERCEL ? "/tmp" : "uploads/invoices";
-    if (!process.env.VERCEL && !fs18.existsSync(uploadDir2)) {
-      fs18.mkdirSync(uploadDir2, { recursive: true });
+    if (!process.env.VERCEL && !fs19.existsSync(uploadDir2)) {
+      fs19.mkdirSync(uploadDir2, { recursive: true });
     }
     cb(null, uploadDir2);
   },
   filename: (req, file, cb) => {
     const timestamp2 = Date.now();
-    const ext = path15.extname(file.originalname);
-    const name = path15.basename(file.originalname, ext);
+    const ext = path16.extname(file.originalname);
+    const name = path16.basename(file.originalname, ext);
     cb(null, `${name}_${timestamp2}${ext}`);
   }
 });
@@ -21302,7 +21894,7 @@ router17.get("/invoices", async (req, res) => {
       updatedAt: invoices.updatedAt
     }).from(invoices);
     if (orderId) {
-      query = query.where(eq21(invoices.orderId, parseInt(orderId)));
+      query = query.where(eq22(invoices.orderId, parseInt(orderId)));
     }
     const invoiceList = await query.orderBy(desc9(invoices.createdAt));
     console.log(`\u2705 Successfully fetched ${invoiceList.length} invoices from database`);
@@ -21341,7 +21933,7 @@ router17.get("/invoices/:id", async (req, res) => {
       updatedAt: invoices.updatedAt,
       // Join with users for uploader name
       uploaderName: users.name
-    }).from(invoices).leftJoin(users, eq21(invoices.uploadedBy, users.id)).where(eq21(invoices.id, id)).limit(1);
+    }).from(invoices).leftJoin(users, eq22(invoices.uploadedBy, users.id)).where(eq22(invoices.id, id)).limit(1);
     if (!invoice) {
       return res.status(404).json({ message: "Invoice not found" });
     }
@@ -21381,7 +21973,7 @@ router17.post("/invoices", upload5.single("file"), async (req, res) => {
     if (req.file) {
       filePath = req.file.path;
       if (process.env.VERCEL) {
-        const fileBuffer = fs18.readFileSync(req.file.path);
+        const fileBuffer = fs19.readFileSync(req.file.path);
         fileData = fileBuffer.toString("base64");
         console.log(`\u{1F4CE} File data encoded for Vercel: ${Math.round(fileBuffer.length / 1024)}KB`);
       }
@@ -21423,7 +22015,7 @@ router17.post("/invoices", upload5.single("file"), async (req, res) => {
       updatedAt: invoices.updatedAt,
       // Join with users for uploader name
       uploaderName: users.name
-    }).from(invoices).leftJoin(users, eq21(invoices.uploadedBy, users.id)).where(eq21(invoices.id, newInvoice.id));
+    }).from(invoices).leftJoin(users, eq22(invoices.uploadedBy, users.id)).where(eq22(invoices.id, newInvoice.id));
     console.log(`\u2705 Successfully created invoice ${newInvoice.id}`);
     res.status(201).json(invoice);
   } catch (error) {
@@ -21444,7 +22036,7 @@ router17.post("/invoices/:id/verify", requireAuth, async (req, res) => {
       verifiedBy: userId,
       verifiedAt: /* @__PURE__ */ new Date(),
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq21(invoices.id, invoiceId)).returning();
+    }).where(eq22(invoices.id, invoiceId)).returning();
     if (!updatedInvoice) {
       return res.status(404).json({ message: "Invoice not found" });
     }
@@ -21468,7 +22060,7 @@ router17.post("/invoices/:id/issue-tax", requireAuth, async (req, res) => {
       taxInvoiceIssuedDate: /* @__PURE__ */ new Date(),
       taxInvoiceIssuedBy: userId,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq21(invoices.id, invoiceId)).returning();
+    }).where(eq22(invoices.id, invoiceId)).returning();
     if (!updatedInvoice) {
       return res.status(404).json({ message: "Invoice not found" });
     }
@@ -21506,7 +22098,7 @@ router17.patch("/invoices/:id", requireAuth, async (req, res) => {
     if (status !== void 0) updateData.status = status;
     if (notes !== void 0) updateData.notes = notes;
     updateData.updatedAt = /* @__PURE__ */ new Date();
-    const [updatedInvoice] = await db.update(invoices).set(updateData).where(eq21(invoices.id, invoiceId)).returning();
+    const [updatedInvoice] = await db.update(invoices).set(updateData).where(eq22(invoices.id, invoiceId)).returning();
     if (!updatedInvoice) {
       return res.status(404).json({ message: "Invoice not found" });
     }
@@ -21524,15 +22116,15 @@ router17.delete("/invoices/:id", requireAuth, async (req, res) => {
   try {
     const invoiceId = parseInt(req.params.id, 10);
     console.log(`\u{1F4B0} Deleting invoice ${invoiceId}...`);
-    const [invoice] = await db.select().from(invoices).where(eq21(invoices.id, invoiceId)).limit(1);
+    const [invoice] = await db.select().from(invoices).where(eq22(invoices.id, invoiceId)).limit(1);
     if (!invoice) {
       return res.status(404).json({ message: "Invoice not found" });
     }
-    await db.delete(invoices).where(eq21(invoices.id, invoiceId));
+    await db.delete(invoices).where(eq22(invoices.id, invoiceId));
     if (invoice.filePath && !process.env.VERCEL) {
       try {
-        if (fs18.existsSync(invoice.filePath)) {
-          fs18.unlinkSync(invoice.filePath);
+        if (fs19.existsSync(invoice.filePath)) {
+          fs19.unlinkSync(invoice.filePath);
           console.log(`\u{1F5D1}\uFE0F Deleted invoice file: ${invoice.filePath}`);
         }
       } catch (fileError) {
@@ -21621,7 +22213,7 @@ var verification_logs_default = router18;
 init_db();
 init_schema();
 import { Router as Router18 } from "express";
-import { eq as eq22, desc as desc10 } from "drizzle-orm";
+import { eq as eq23, desc as desc10 } from "drizzle-orm";
 var router19 = Router18();
 router19.get("/item-receipts", async (_req, res) => {
   try {
@@ -21645,7 +22237,7 @@ router19.get("/item-receipts", async (_req, res) => {
       orderId: purchaseOrderItems.orderId,
       // Join with users for verifier name
       verifierName: users.name
-    }).from(itemReceipts).leftJoin(purchaseOrderItems, eq22(itemReceipts.orderItemId, purchaseOrderItems.id)).leftJoin(users, eq22(itemReceipts.verifiedBy, users.id)).orderBy(desc10(itemReceipts.createdAt));
+    }).from(itemReceipts).leftJoin(purchaseOrderItems, eq23(itemReceipts.orderItemId, purchaseOrderItems.id)).leftJoin(users, eq23(itemReceipts.verifiedBy, users.id)).orderBy(desc10(itemReceipts.createdAt));
     console.log(`\u2705 Successfully fetched ${receipts.length} item receipts from database`);
     res.json(receipts);
   } catch (error) {
@@ -21679,7 +22271,7 @@ router19.get("/item-receipts/order/:orderId", async (req, res) => {
       orderId: purchaseOrderItems.orderId,
       // Join with users for verifier name
       verifierName: users.name
-    }).from(itemReceipts).leftJoin(purchaseOrderItems, eq22(itemReceipts.orderItemId, purchaseOrderItems.id)).leftJoin(users, eq22(itemReceipts.verifiedBy, users.id)).where(eq22(purchaseOrderItems.orderId, orderId)).orderBy(desc10(itemReceipts.createdAt));
+    }).from(itemReceipts).leftJoin(purchaseOrderItems, eq23(itemReceipts.orderItemId, purchaseOrderItems.id)).leftJoin(users, eq23(itemReceipts.verifiedBy, users.id)).where(eq23(purchaseOrderItems.orderId, orderId)).orderBy(desc10(itemReceipts.createdAt));
     console.log(`\u2705 Successfully fetched ${receipts.length} item receipts for order ${orderId}`);
     res.json(receipts);
   } catch (error) {
@@ -21740,7 +22332,7 @@ router19.post("/item-receipts", async (req, res) => {
       orderId: purchaseOrderItems.orderId,
       // Join with users for verifier name
       verifierName: users.name
-    }).from(itemReceipts).leftJoin(purchaseOrderItems, eq22(itemReceipts.orderItemId, purchaseOrderItems.id)).leftJoin(users, eq22(itemReceipts.verifiedBy, users.id)).where(eq22(itemReceipts.id, newReceipt.id));
+    }).from(itemReceipts).leftJoin(purchaseOrderItems, eq23(itemReceipts.orderItemId, purchaseOrderItems.id)).leftJoin(users, eq23(itemReceipts.verifiedBy, users.id)).where(eq23(itemReceipts.id, newReceipt.id));
     console.log(`\u2705 Successfully created item receipt ${newReceipt.id}`);
     res.status(201).json(receipt);
   } catch (error) {
@@ -21771,7 +22363,7 @@ router19.patch("/item-receipts/:id", async (req, res) => {
     if (status !== void 0) updateData.status = status;
     if (notes !== void 0) updateData.notes = notes;
     updateData.updatedAt = /* @__PURE__ */ new Date();
-    const [updatedReceipt] = await db.update(itemReceipts).set(updateData).where(eq22(itemReceipts.id, receiptId)).returning();
+    const [updatedReceipt] = await db.update(itemReceipts).set(updateData).where(eq23(itemReceipts.id, receiptId)).returning();
     if (!updatedReceipt) {
       return res.status(404).json({ message: "Item receipt not found" });
     }
@@ -21794,7 +22386,7 @@ router19.patch("/item-receipts/:id", async (req, res) => {
       orderId: purchaseOrderItems.orderId,
       // Join with users for verifier name
       verifierName: users.name
-    }).from(itemReceipts).leftJoin(purchaseOrderItems, eq22(itemReceipts.orderItemId, purchaseOrderItems.id)).leftJoin(users, eq22(itemReceipts.verifiedBy, users.id)).where(eq22(itemReceipts.id, receiptId));
+    }).from(itemReceipts).leftJoin(purchaseOrderItems, eq23(itemReceipts.orderItemId, purchaseOrderItems.id)).leftJoin(users, eq23(itemReceipts.verifiedBy, users.id)).where(eq23(itemReceipts.id, receiptId));
     console.log(`\u2705 Successfully updated item receipt ${receiptId}`);
     res.json(receipt);
   } catch (error) {
@@ -21809,7 +22401,7 @@ router19.delete("/item-receipts/:id", async (req, res) => {
   try {
     const receiptId = parseInt(req.params.id, 10);
     console.log(`\u{1F4E6} Deleting item receipt ${receiptId}...`);
-    const [deletedReceipt] = await db.delete(itemReceipts).where(eq22(itemReceipts.id, receiptId)).returning();
+    const [deletedReceipt] = await db.delete(itemReceipts).where(eq23(itemReceipts.id, receiptId)).returning();
     if (!deletedReceipt) {
       return res.status(404).json({ message: "Item receipt not found" });
     }
@@ -21829,12 +22421,12 @@ var item_receipts_default = router19;
 import { Router as Router19 } from "express";
 init_db();
 init_schema();
-import { eq as eq24, and as and13, desc as desc11, sql as sql13, inArray as inArray5 } from "drizzle-orm";
+import { eq as eq25, and as and13, desc as desc11, sql as sql14, inArray as inArray5 } from "drizzle-orm";
 
 // server/services/notification-service.ts
 init_db();
 init_schema();
-import { eq as eq23, and as and12, inArray as inArray4, sql as sql12 } from "drizzle-orm";
+import { eq as eq24, and as and12, inArray as inArray4, sql as sql13 } from "drizzle-orm";
 var NotificationService = class {
   /**
    * 승인 요청 시 알림 발송
@@ -21927,8 +22519,8 @@ var NotificationService = class {
       maxAmount: approvalAuthorities.maxAmount
     }).from(approvalAuthorities).where(
       and12(
-        eq23(approvalAuthorities.isActive, true),
-        sql12`CAST(${approvalAuthorities.maxAmount} AS DECIMAL) >= ${orderAmount}`
+        eq24(approvalAuthorities.isActive, true),
+        sql13`CAST(${approvalAuthorities.maxAmount} AS DECIMAL) >= ${orderAmount}`
       )
     );
     if (authorities.length === 0) {
@@ -21936,7 +22528,7 @@ var NotificationService = class {
         id: users.id,
         name: users.name,
         role: users.role
-      }).from(users).where(eq23(users.role, "admin")).limit(10);
+      }).from(users).where(eq24(users.role, "admin")).limit(10);
     }
     const eligibleRoles = authorities.map((auth) => auth.role);
     return await db.select({
@@ -21959,7 +22551,7 @@ var NotificationService = class {
       projectName: projects.projectName,
       vendorName: vendors.name,
       requesterName: users.name
-    }).from(purchaseOrders).leftJoin(projects, eq23(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq23(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq23(purchaseOrders.userId, users.id)).where(eq23(purchaseOrders.id, orderId)).limit(1);
+    }).from(purchaseOrders).leftJoin(projects, eq24(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq24(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq24(purchaseOrders.userId, users.id)).where(eq24(purchaseOrders.id, orderId)).limit(1);
     return result[0] || null;
   }
   /**
@@ -21973,7 +22565,7 @@ var NotificationService = class {
       stakeholders.add(orderInfo.userId);
     }
     if (orderInfo.projectId) {
-      const projectMembers3 = await db.select({ userId: users.id }).from(users).where(eq23(users.role, "project_manager")).limit(5);
+      const projectMembers3 = await db.select({ userId: users.id }).from(users).where(eq24(users.role, "project_manager")).limit(5);
       projectMembers3.forEach((member) => stakeholders.add(member.userId));
     }
     if (stakeholders.size === 0) return [];
@@ -22008,10 +22600,10 @@ var NotificationService = class {
     try {
       const result = await db.select().from(notifications).where(
         and12(
-          eq23(notifications.userId, userId),
-          eq23(notifications.isActive, true)
+          eq24(notifications.userId, userId),
+          eq24(notifications.isActive, true)
         )
-      ).orderBy(sql12`${notifications.createdAt} DESC`).limit(limit);
+      ).orderBy(sql13`${notifications.createdAt} DESC`).limit(limit);
       return result.map((notification) => ({
         ...notification,
         metadata: notification.metadata ? JSON.parse(notification.metadata) : null,
@@ -22033,8 +22625,8 @@ var NotificationService = class {
         updatedAt: /* @__PURE__ */ new Date()
       }).where(
         and12(
-          eq23(notifications.id, notificationId),
-          eq23(notifications.userId, userId)
+          eq24(notifications.id, notificationId),
+          eq24(notifications.userId, userId)
         )
       ).returning();
       return result.length > 0;
@@ -22053,9 +22645,9 @@ var NotificationService = class {
         updatedAt: /* @__PURE__ */ new Date()
       }).where(
         and12(
-          eq23(notifications.userId, userId),
-          eq23(notifications.isRead, false),
-          eq23(notifications.isActive, true)
+          eq24(notifications.userId, userId),
+          eq24(notifications.isRead, false),
+          eq24(notifications.isActive, true)
         )
       ).returning();
       return result.length;
@@ -22072,8 +22664,8 @@ async function checkApprovalPermission(userRole, orderAmount) {
   try {
     const authority = await db.select().from(approvalAuthorities).where(
       and13(
-        eq24(approvalAuthorities.role, userRole),
-        eq24(approvalAuthorities.isActive, true)
+        eq25(approvalAuthorities.role, userRole),
+        eq25(approvalAuthorities.isActive, true)
       )
     ).limit(1);
     if (authority.length === 0) {
@@ -22100,7 +22692,7 @@ router20.get("/approvals/history", requireAuth, requireRole(["admin", "executive
       comments: orderHistory.notes,
       amount: purchaseOrders.totalAmount,
       createdAt: orderHistory.performedAt
-    }).from(orderHistory).leftJoin(purchaseOrders, eq24(orderHistory.orderId, purchaseOrders.id)).leftJoin(users, eq24(orderHistory.performedBy, users.id)).where(
+    }).from(orderHistory).leftJoin(purchaseOrders, eq25(orderHistory.orderId, purchaseOrders.id)).leftJoin(users, eq25(orderHistory.performedBy, users.id)).where(
       inArray5(orderHistory.action, ["approved", "rejected"])
     ).orderBy(desc11(orderHistory.performedAt)).limit(50);
     const allHistory = approvalHistory.map((record) => ({
@@ -22144,7 +22736,7 @@ router20.get("/approvals/pending", requireAuth, requireRole(["admin", "executive
       // Vendor information
       vendorId: vendors.id,
       vendorName: vendors.name
-    }).from(purchaseOrders).leftJoin(projects, eq24(purchaseOrders.projectId, projects.id)).leftJoin(users, eq24(purchaseOrders.userId, users.id)).leftJoin(vendors, eq24(purchaseOrders.vendorId, vendors.id)).where(eq24(purchaseOrders.status, "pending")).orderBy(desc11(purchaseOrders.createdAt));
+    }).from(purchaseOrders).leftJoin(projects, eq25(purchaseOrders.projectId, projects.id)).leftJoin(users, eq25(purchaseOrders.userId, users.id)).leftJoin(vendors, eq25(purchaseOrders.vendorId, vendors.id)).where(eq25(purchaseOrders.status, "pending")).orderBy(desc11(purchaseOrders.createdAt));
     const formattedOrders = pendingOrders.map((order) => ({
       id: order.id,
       orderNumber: order.orderNumber,
@@ -22178,13 +22770,13 @@ router20.get("/approvals/stats", requireAuth, requireRole(["admin", "executive",
     console.log("\u{1F4CA} Fetching approval stats from database...");
     const [totalStats, pendingStats, approvedStats, rejectedStats] = await Promise.all([
       // 전체 발주서 수
-      db.select({ count: sql13`count(*)` }).from(purchaseOrders),
+      db.select({ count: sql14`count(*)` }).from(purchaseOrders),
       // 승인 대기 수
-      db.select({ count: sql13`count(*)` }).from(purchaseOrders).where(eq24(purchaseOrders.status, "pending")),
+      db.select({ count: sql14`count(*)` }).from(purchaseOrders).where(eq25(purchaseOrders.status, "pending")),
       // 승인 완료 수
-      db.select({ count: sql13`count(*)` }).from(purchaseOrders).where(eq24(purchaseOrders.status, "approved")),
+      db.select({ count: sql14`count(*)` }).from(purchaseOrders).where(eq25(purchaseOrders.status, "approved")),
       // 반려 수
-      db.select({ count: sql13`count(*)` }).from(purchaseOrders).where(eq24(purchaseOrders.status, "rejected"))
+      db.select({ count: sql14`count(*)` }).from(purchaseOrders).where(eq25(purchaseOrders.status, "rejected"))
     ]);
     const totalCount = totalStats[0]?.count || 0;
     const pendingCount = pendingStats[0]?.count || 0;
@@ -22192,10 +22784,10 @@ router20.get("/approvals/stats", requireAuth, requireRole(["admin", "executive",
     const rejectedCount = rejectedStats[0]?.count || 0;
     const approvalRate = totalCount > 0 ? approvedCount / (approvedCount + rejectedCount) * 100 : 0;
     const monthlyStatsQuery = await db.select({
-      month: sql13`to_char(created_at, 'YYYY-MM')`,
+      month: sql14`to_char(created_at, 'YYYY-MM')`,
       status: purchaseOrders.status,
-      count: sql13`count(*)`
-    }).from(purchaseOrders).where(sql13`created_at >= NOW() - INTERVAL '3 months'`).groupBy(sql13`to_char(created_at, 'YYYY-MM')`, purchaseOrders.status).orderBy(sql13`to_char(created_at, 'YYYY-MM') DESC`);
+      count: sql14`count(*)`
+    }).from(purchaseOrders).where(sql14`created_at >= NOW() - INTERVAL '3 months'`).groupBy(sql14`to_char(created_at, 'YYYY-MM')`, purchaseOrders.status).orderBy(sql14`to_char(created_at, 'YYYY-MM') DESC`);
     const monthlyStats = [];
     const monthlyData = {};
     monthlyStatsQuery.forEach((row) => {
@@ -22240,7 +22832,7 @@ router20.post("/approvals/:id/process", requireAuth, requireRole(["admin", "exec
     const { action, comments } = req.body;
     const user = req.user;
     console.log(`\u{1F4CB} Processing approval ${id} with action: ${action} by ${user.name} (${user.role})`);
-    const existingOrder = await db.select().from(purchaseOrders).where(eq24(purchaseOrders.id, id)).limit(1);
+    const existingOrder = await db.select().from(purchaseOrders).where(eq25(purchaseOrders.id, id)).limit(1);
     if (existingOrder.length === 0) {
       return res.status(404).json({ message: "\uBC1C\uC8FC\uC11C\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
     }
@@ -22255,7 +22847,7 @@ router20.post("/approvals/:id/process", requireAuth, requireRole(["admin", "exec
     await db.update(purchaseOrders).set({
       status: newStatus,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq24(purchaseOrders.id, id));
+    }).where(eq25(purchaseOrders.id, id));
     const historyEntry = {
       orderId: id,
       action: action === "approve" ? "approved" : "rejected",
@@ -22343,7 +22935,7 @@ router20.post("/approvals/:orderId/reject", requireAuth, requireRole(["admin", "
 });
 async function processApproval(req, res, orderId, action, note, user) {
   try {
-    const existingOrder = await db.select().from(purchaseOrders).where(eq24(purchaseOrders.id, orderId)).limit(1);
+    const existingOrder = await db.select().from(purchaseOrders).where(eq25(purchaseOrders.id, orderId)).limit(1);
     if (existingOrder.length === 0) {
       throw new Error("\uBC1C\uC8FC\uC11C\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4");
     }
@@ -22356,7 +22948,7 @@ async function processApproval(req, res, orderId, action, note, user) {
     await db.update(purchaseOrders).set({
       status: newStatus,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq24(purchaseOrders.id, orderId));
+    }).where(eq25(purchaseOrders.id, orderId));
     const historyEntry = {
       orderId,
       action: action === "approve" ? "approved" : "rejected",
@@ -22402,7 +22994,7 @@ router20.post("/approvals/:orderId/start-workflow", requireAuth, requireRole(["a
       totalAmount: purchaseOrders.totalAmount,
       status: purchaseOrders.status,
       userId: purchaseOrders.userId
-    }).from(purchaseOrders).where(eq24(purchaseOrders.id, orderId)).limit(1);
+    }).from(purchaseOrders).where(eq25(purchaseOrders.id, orderId)).limit(1);
     if (orderInfo.length === 0) {
       return res.status(404).json({ message: "\uBC1C\uC8FC\uC11C\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
     }
@@ -22441,7 +23033,7 @@ router20.post("/approvals/:orderId/start-workflow", requireAuth, requireRole(["a
       await db.update(purchaseOrders).set({
         status: "pending",
         updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq24(purchaseOrders.id, orderId));
+      }).where(eq25(purchaseOrders.id, orderId));
       await NotificationService.sendApprovalRequestNotification({
         orderId,
         action: "approval_requested",
@@ -22495,7 +23087,7 @@ router20.post("/approvals/:orderId/step/:stepId", requireAuth, requireRole(["adm
     const { action, comments } = req.body;
     const user = req.user;
     console.log(`\u{1F504} Processing approval step ${stepId} for order ${orderId} with action: ${action}`);
-    const stepInstance = await db.select().from(approvalStepInstances2).where(eq24(approvalStepInstances2.id, stepId)).limit(1);
+    const stepInstance = await db.select().from(approvalStepInstances2).where(eq25(approvalStepInstances2.id, stepId)).limit(1);
     if (stepInstance.length === 0) {
       return res.status(404).json({ message: "\uC2B9\uC778 \uB2E8\uACC4\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
     }
@@ -22512,7 +23104,7 @@ router20.post("/approvals/:orderId/step/:stepId", requireAuth, requireRole(["adm
       approvedAt: /* @__PURE__ */ new Date(),
       comments: comments || "",
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq24(approvalStepInstances2.id, stepId));
+    }).where(eq25(approvalStepInstances2.id, stepId));
     const isComplete = await ApprovalRoutingService.isApprovalComplete(orderId);
     const progress = await ApprovalRoutingService.getApprovalProgress(orderId);
     let finalOrderStatus = "pending";
@@ -22523,8 +23115,8 @@ router20.post("/approvals/:orderId/step/:stepId", requireAuth, requireRole(["adm
         updatedAt: /* @__PURE__ */ new Date()
       }).where(
         and13(
-          eq24(approvalStepInstances2.orderId, orderId),
-          eq24(approvalStepInstances2.status, "pending")
+          eq25(approvalStepInstances2.orderId, orderId),
+          eq25(approvalStepInstances2.status, "pending")
         )
       );
     } else if (isComplete) {
@@ -22534,7 +23126,7 @@ router20.post("/approvals/:orderId/step/:stepId", requireAuth, requireRole(["adm
       await db.update(purchaseOrders).set({
         status: finalOrderStatus,
         updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq24(purchaseOrders.id, orderId));
+      }).where(eq25(purchaseOrders.id, orderId));
       await db.insert(orderHistory).values({
         orderId,
         action: finalOrderStatus === "approved" ? "approved" : "rejected",
@@ -23152,12 +23744,12 @@ var test_accounts_default = router24;
 init_db();
 init_schema();
 import { Router as Router24 } from "express";
-import { eq as eq26, and as and15 } from "drizzle-orm";
+import { eq as eq27, and as and15 } from "drizzle-orm";
 
 // server/utils/category-mapping-validator.ts
 init_db();
 init_schema();
-import { eq as eq25 } from "drizzle-orm";
+import { eq as eq26 } from "drizzle-orm";
 async function validateCategoryMapping(request) {
   console.log("\u{1F50D} \uBD84\uB958 \uB9E4\uD551 \uAC80\uC99D \uC2DC\uC791:", request);
   const result = {
@@ -23172,7 +23764,7 @@ async function validateCategoryMapping(request) {
     confidence: 0
   };
   try {
-    const allCategories = await db.select().from(itemCategories).where(eq25(itemCategories.isActive, true));
+    const allCategories = await db.select().from(itemCategories).where(eq26(itemCategories.isActive, true));
     const majorCategories = allCategories.filter((c) => c.categoryType === "major");
     const middleCategories = allCategories.filter((c) => c.categoryType === "middle");
     const minorCategories = allCategories.filter((c) => c.categoryType === "minor");
@@ -23422,7 +24014,7 @@ router25.get("/hierarchy", async (req, res) => {
 router25.get("/", async (req, res) => {
   try {
     console.log("\u{1F4CB} Fetching all categories...");
-    const categories = await db.select().from(itemCategories).where(eq26(itemCategories.isActive, true)).orderBy(itemCategories.displayOrder, itemCategories.categoryName);
+    const categories = await db.select().from(itemCategories).where(eq27(itemCategories.isActive, true)).orderBy(itemCategories.displayOrder, itemCategories.categoryName);
     const majorCategories = categories.filter((c) => c.categoryType === "major");
     const middleCategories = categories.filter((c) => c.categoryType === "middle");
     const minorCategories = categories.filter((c) => c.categoryType === "minor");
@@ -23488,11 +24080,11 @@ router25.get("/:type", async (req, res) => {
     const { parentId } = req.query;
     console.log(`\u{1F4CB} Fetching ${type} categories...`);
     let query = db.select().from(itemCategories).where(and15(
-      eq26(itemCategories.categoryType, type),
-      eq26(itemCategories.isActive, true)
+      eq27(itemCategories.categoryType, type),
+      eq27(itemCategories.isActive, true)
     ));
     if (parentId) {
-      query = query.where(eq26(itemCategories.parentId, parseInt(parentId)));
+      query = query.where(eq27(itemCategories.parentId, parseInt(parentId)));
     }
     const categories = await query.orderBy(itemCategories.displayOrder, itemCategories.categoryName);
     res.json({
@@ -23543,7 +24135,7 @@ router25.put("/:id", async (req, res) => {
       displayOrder,
       isActive,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq26(itemCategories.id, parseInt(id))).returning();
+    }).where(eq27(itemCategories.id, parseInt(id))).returning();
     if (updatedCategory.length === 0) {
       return res.status(404).json({
         success: false,
@@ -23571,7 +24163,7 @@ router25.delete("/:id", async (req, res) => {
     const updatedCategory = await db.update(itemCategories).set({
       isActive: false,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq26(itemCategories.id, parseInt(id))).returning();
+    }).where(eq27(itemCategories.id, parseInt(id))).returning();
     if (updatedCategory.length === 0) {
       return res.status(404).json({
         success: false,
@@ -23654,7 +24246,7 @@ var categories_default = router25;
 init_db();
 init_schema();
 import { Router as Router25 } from "express";
-import { eq as eq27, and as and16, desc as desc12, asc as asc5 } from "drizzle-orm";
+import { eq as eq28, and as and16, desc as desc12, asc as asc5 } from "drizzle-orm";
 import { z as z6 } from "zod";
 var router26 = Router25();
 router26.get("/workflow-settings/:companyId", requireAuth, async (req, res) => {
@@ -23662,8 +24254,8 @@ router26.get("/workflow-settings/:companyId", requireAuth, async (req, res) => {
     const { companyId } = req.params;
     const settings = await db.select().from(approvalWorkflowSettings).where(
       and16(
-        eq27(approvalWorkflowSettings.companyId, parseInt(companyId)),
-        eq27(approvalWorkflowSettings.isActive, true)
+        eq28(approvalWorkflowSettings.companyId, parseInt(companyId)),
+        eq28(approvalWorkflowSettings.isActive, true)
       )
     ).orderBy(desc12(approvalWorkflowSettings.createdAt)).limit(1);
     return res.json({
@@ -23685,8 +24277,8 @@ router26.post("/workflow-settings", requireAuth, requireAdmin, async (req, res) 
     });
     const existingSettings = await db.select().from(approvalWorkflowSettings).where(
       and16(
-        eq27(approvalWorkflowSettings.companyId, validatedData.companyId),
-        eq27(approvalWorkflowSettings.isActive, true)
+        eq28(approvalWorkflowSettings.companyId, validatedData.companyId),
+        eq28(approvalWorkflowSettings.isActive, true)
       )
     ).limit(1);
     let result;
@@ -23694,7 +24286,7 @@ router26.post("/workflow-settings", requireAuth, requireAdmin, async (req, res) 
       result = await db.update(approvalWorkflowSettings).set({
         ...validatedData,
         updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq27(approvalWorkflowSettings.id, existingSettings[0].id)).returning();
+      }).where(eq28(approvalWorkflowSettings.id, existingSettings[0].id)).returning();
     } else {
       result = await db.insert(approvalWorkflowSettings).values(validatedData).returning();
     }
@@ -23721,16 +24313,16 @@ router26.get("/step-templates/:companyId", requireAuth, async (req, res) => {
     const { templateName } = req.query;
     let query = db.select().from(approvalStepTemplates).where(
       and16(
-        eq27(approvalStepTemplates.companyId, parseInt(companyId)),
-        eq27(approvalStepTemplates.isActive, true)
+        eq28(approvalStepTemplates.companyId, parseInt(companyId)),
+        eq28(approvalStepTemplates.isActive, true)
       )
     );
     if (templateName) {
       query = query.where(
         and16(
-          eq27(approvalStepTemplates.companyId, parseInt(companyId)),
-          eq27(approvalStepTemplates.isActive, true),
-          eq27(approvalStepTemplates.templateName, templateName)
+          eq28(approvalStepTemplates.companyId, parseInt(companyId)),
+          eq28(approvalStepTemplates.isActive, true),
+          eq28(approvalStepTemplates.templateName, templateName)
         )
       );
     }
@@ -23777,7 +24369,7 @@ router26.put("/step-templates/:id", requireAuth, requireAdmin, async (req, res) 
     const result = await db.update(approvalStepTemplates).set({
       ...validatedData,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq27(approvalStepTemplates.id, parseInt(id))).returning();
+    }).where(eq28(approvalStepTemplates.id, parseInt(id))).returning();
     if (result.length === 0) {
       return res.status(404).json({ error: "\uC2B9\uC778 \uB2E8\uACC4 \uD15C\uD50C\uB9BF\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
     }
@@ -23804,7 +24396,7 @@ router26.delete("/step-templates/:id", requireAuth, requireAdmin, async (req, re
     const result = await db.update(approvalStepTemplates).set({
       isActive: false,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq27(approvalStepTemplates.id, parseInt(id))).returning();
+    }).where(eq28(approvalStepTemplates.id, parseInt(id))).returning();
     if (result.length === 0) {
       return res.status(404).json({ error: "\uC2B9\uC778 \uB2E8\uACC4 \uD15C\uD50C\uB9BF\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
     }
@@ -23824,8 +24416,8 @@ router26.get("/step-instances/:orderId", requireAuth, async (req, res) => {
     const { orderId } = req.params;
     const instances = await db.select().from(approvalStepInstances2).where(
       and16(
-        eq27(approvalStepInstances2.orderId, parseInt(orderId)),
-        eq27(approvalStepInstances2.isActive, true)
+        eq28(approvalStepInstances2.orderId, parseInt(orderId)),
+        eq28(approvalStepInstances2.isActive, true)
       )
     ).orderBy(asc5(approvalStepInstances2.stepOrder));
     return res.json({
@@ -23849,9 +24441,9 @@ router26.post("/step-instances", requireAuth, async (req, res) => {
     }
     const templates = await db.select().from(approvalStepTemplates).where(
       and16(
-        eq27(approvalStepTemplates.companyId, companyId),
-        eq27(approvalStepTemplates.templateName, templateName),
-        eq27(approvalStepTemplates.isActive, true)
+        eq28(approvalStepTemplates.companyId, companyId),
+        eq28(approvalStepTemplates.templateName, templateName),
+        eq28(approvalStepTemplates.isActive, true)
       )
     ).orderBy(asc5(approvalStepTemplates.stepOrder));
     if (templates.length === 0) {
@@ -23895,7 +24487,7 @@ router26.put("/step-instances/:id", requireAuth, async (req, res) => {
     };
     if (comments) updateData.comments = comments;
     if (rejectionReason) updateData.rejectionReason = rejectionReason;
-    const result = await db.update(approvalStepInstances2).set(updateData).where(eq27(approvalStepInstances2.id, parseInt(id))).returning();
+    const result = await db.update(approvalStepInstances2).set(updateData).where(eq28(approvalStepInstances2.id, parseInt(id))).returning();
     if (result.length === 0) {
       return res.status(404).json({ error: "\uC2B9\uC778 \uB2E8\uACC4 \uC778\uC2A4\uD134\uC2A4\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
     }
@@ -23916,7 +24508,7 @@ var approval_settings_default = router26;
 import { Router as Router26 } from "express";
 init_db();
 init_schema();
-import { eq as eq28, and as and17, desc as desc13 } from "drizzle-orm";
+import { eq as eq29, and as and17, desc as desc13 } from "drizzle-orm";
 import { z as z7 } from "zod";
 var router27 = Router26();
 router27.get("/approval-authorities", requireAuth, requireRole(["admin"]), async (req, res) => {
@@ -23953,8 +24545,8 @@ router27.post("/approval-authorities", requireAuth, requireRole(["admin"]), asyn
     const validatedData = insertApprovalAuthoritySchema.parse(req.body);
     const existingAuthority = await db.select().from(approvalAuthorities).where(
       and17(
-        eq28(approvalAuthorities.role, validatedData.role),
-        eq28(approvalAuthorities.isActive, true)
+        eq29(approvalAuthorities.role, validatedData.role),
+        eq29(approvalAuthorities.isActive, true)
       )
     ).limit(1);
     if (existingAuthority.length > 0) {
@@ -23993,7 +24585,7 @@ router27.put("/approval-authorities/:id", requireAuth, requireRole(["admin"]), a
     const result = await db.update(approvalAuthorities).set({
       ...validatedData,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq28(approvalAuthorities.id, id)).returning();
+    }).where(eq29(approvalAuthorities.id, id)).returning();
     if (result.length === 0) {
       return res.status(404).json({
         message: "\uC2B9\uC778 \uAD8C\uD55C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4"
@@ -24028,7 +24620,7 @@ router27.delete("/approval-authorities/:id", requireAuth, requireRole(["admin"])
     const result = await db.update(approvalAuthorities).set({
       isActive: false,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq28(approvalAuthorities.id, id)).returning();
+    }).where(eq29(approvalAuthorities.id, id)).returning();
     if (result.length === 0) {
       return res.status(404).json({
         message: "\uC2B9\uC778 \uAD8C\uD55C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4"
@@ -24052,8 +24644,8 @@ router27.get("/approval-authorities/role/:role", requireAuth, requireRole(["admi
     console.log(`\u{1F4CB} Fetching approval authority for role: ${role}`);
     const authority = await db.select().from(approvalAuthorities).where(
       and17(
-        eq28(approvalAuthorities.role, role),
-        eq28(approvalAuthorities.isActive, true)
+        eq29(approvalAuthorities.role, role),
+        eq29(approvalAuthorities.isActive, true)
       )
     ).limit(1);
     if (authority.length === 0) {
@@ -24094,8 +24686,8 @@ router27.post("/approval-authorities/check-permission", requireAuth, requireRole
     }
     const authority = await db.select().from(approvalAuthorities).where(
       and17(
-        eq28(approvalAuthorities.role, checkRole),
-        eq28(approvalAuthorities.isActive, true)
+        eq29(approvalAuthorities.role, checkRole),
+        eq29(approvalAuthorities.isActive, true)
       )
     ).limit(1);
     let canApprove = false;
@@ -24243,26 +24835,26 @@ var notifications_default = router28;
 init_db();
 init_schema();
 import { Router as Router28 } from "express";
-import { eq as eq29, and as and18, desc as desc14, count as count4 } from "drizzle-orm";
+import { eq as eq30, and as and18, desc as desc14, count as count4 } from "drizzle-orm";
 init_professional_pdf_generation_service();
 import multer6 from "multer";
-import path19 from "path";
-import fs22 from "fs/promises";
+import path20 from "path";
+import fs23 from "fs/promises";
 import { readFileSync as readFileSync2, existsSync as existsSync3, unlinkSync } from "fs";
 import { z as z8 } from "zod";
 init_excel_input_sheet_remover();
 var router29 = Router28();
 var storage5 = multer6.diskStorage({
   destination: async (req, file, cb) => {
-    const uploadDir2 = process.env.VERCEL ? path19.join("/tmp", "uploads", "excel-simple") : path19.join(process.cwd(), "uploads", "excel-simple");
-    await fs22.mkdir(uploadDir2, { recursive: true });
+    const uploadDir2 = process.env.VERCEL ? path20.join("/tmp", "uploads", "excel-simple") : path20.join(process.cwd(), "uploads", "excel-simple");
+    await fs23.mkdir(uploadDir2, { recursive: true });
     cb(null, uploadDir2);
   },
   filename: (req, file, cb) => {
     const timestamp2 = Date.now();
     const decodedName = decodeKoreanFilename(file.originalname);
-    const ext = path19.extname(decodedName);
-    const basename = path19.basename(decodedName, ext);
+    const ext = path20.extname(decodedName);
+    const basename = path20.basename(decodedName, ext);
     cb(null, `${timestamp2}-${basename}${ext}`);
   }
 });
@@ -24275,7 +24867,7 @@ var upload6 = multer6({
   fileFilter: (req, file, cb) => {
     const decodedName = decodeKoreanFilename(file.originalname);
     file.originalname = decodedName;
-    const ext = path19.extname(decodedName).toLowerCase();
+    const ext = path20.extname(decodedName).toLowerCase();
     if ([".xlsx", ".xls", ".xlsm"].includes(ext)) {
       cb(null, true);
     } else {
@@ -24388,7 +24980,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
     let defaultProject;
     try {
       console.log("\u{1F50D} Fetching default project...");
-      defaultProject = await db.select().from(projects).where(eq29(projects.projectName, "\uAE30\uBCF8 \uD504\uB85C\uC81D\uD2B8")).then((rows) => rows[0]);
+      defaultProject = await db.select().from(projects).where(eq30(projects.projectName, "\uAE30\uBCF8 \uD504\uB85C\uC81D\uD2B8")).then((rows) => rows[0]);
       console.log("\u2705 Default project fetch successful");
     } catch (error) {
       console.error("\u274C Error fetching default project:", error);
@@ -24414,7 +25006,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
       try {
         let vendor = null;
         if (orderData.vendorName) {
-          const existingVendor = await db.select().from(vendors).where(eq29(vendors.name, orderData.vendorName)).then((rows) => rows[0]);
+          const existingVendor = await db.select().from(vendors).where(eq30(vendors.name, orderData.vendorName)).then((rows) => rows[0]);
           if (existingVendor) {
             vendor = existingVendor;
           } else {
@@ -24430,7 +25022,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
         }
         let project = defaultProject;
         if (orderData.projectName) {
-          const existingProject = await db.select().from(projects).where(eq29(projects.projectName, orderData.projectName)).then((rows) => rows[0]);
+          const existingProject = await db.select().from(projects).where(eq30(projects.projectName, orderData.projectName)).then((rows) => rows[0]);
           if (existingProject) {
             project = existingProject;
           }
@@ -24445,7 +25037,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
           const orderCount = await db.select().from(purchaseOrders).then((rows) => rows.length);
           const sequenceNumber = orderCount + 1 + attempts;
           orderNumber = `PO-${year}-${String(sequenceNumber).padStart(5, "0")}`;
-          const existingOrder = await db.select().from(purchaseOrders).where(eq29(purchaseOrders.orderNumber, orderNumber)).then((rows) => rows[0]);
+          const existingOrder = await db.select().from(purchaseOrders).where(eq30(purchaseOrders.orderNumber, orderNumber)).then((rows) => rows[0]);
           if (!existingOrder) {
             break;
           }
@@ -24551,7 +25143,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
               fileData = processedExcelFile.fileBuffer.toString("base64");
               console.log(`\u{1F4CE} File data encoded for Vercel: ${Math.round(processedExcelFile.fileSize / 1024)}KB`);
             }
-            const [savedAttachment] = await db.insert(attachments2).values({
+            const [savedAttachment] = await db.insert(attachments).values({
               orderId: newOrder.id,
               originalName: processedExcelFile.originalName,
               storedName: processedExcelFile.storedName,
@@ -24589,7 +25181,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
             totalAmount
           });
         }
-        const orderAttachments = await db.select().from(attachments2).where(eq29(attachments2.orderId, newOrder.id));
+        const orderAttachments = await db.select().from(attachments).where(eq30(attachments.orderId, newOrder.id));
         savedOrders.push({
           orderId: newOrder.id,
           orderNumber: newOrder.orderNumber,
@@ -24620,9 +25212,9 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
           try {
             let excelAttachment = null;
             if (req.file) {
-              const attachment = await db.select().from(attachments2).where(eq29(attachments2.orderId, emailInfo.orderId)).then((rows) => rows[0]);
+              const attachment = await db.select().from(attachments).where(eq30(attachments.orderId, emailInfo.orderId)).then((rows) => rows[0]);
               if (attachment) {
-                excelAttachment = process.env.VERCEL ? path19.join("/tmp", "uploads", "excel-simple", attachment.storedName) : attachment.filePath;
+                excelAttachment = process.env.VERCEL ? path20.join("/tmp", "uploads", "excel-simple", attachment.storedName) : attachment.filePath;
               }
             }
             if (excelAttachment && existsSync3(excelAttachment)) {
@@ -24644,7 +25236,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
                 await db.update(purchaseOrders).set({
                   status: "sent",
                   orderStatus: "sent"
-                }).where(eq29(purchaseOrders.id, emailInfo.orderId));
+                }).where(eq30(purchaseOrders.id, emailInfo.orderId));
                 await db.insert(orderHistory).values({
                   orderId: emailInfo.orderId,
                   userId: req.user.id,
@@ -24709,10 +25301,10 @@ router29.get("/orders/simple-upload-history", requireAuth, async (req, res) => {
       projectName: projects.projectName,
       vendorName: vendors.name,
       itemCount: count4(purchaseOrderItems.id)
-    }).from(purchaseOrders).leftJoin(projects, eq29(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq29(purchaseOrders.vendorId, vendors.id)).leftJoin(purchaseOrderItems, eq29(purchaseOrderItems.orderId, purchaseOrders.id)).leftJoin(orderHistory, eq29(orderHistory.orderId, purchaseOrders.id)).where(
+    }).from(purchaseOrders).leftJoin(projects, eq30(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq30(purchaseOrders.vendorId, vendors.id)).leftJoin(purchaseOrderItems, eq30(purchaseOrderItems.orderId, purchaseOrders.id)).leftJoin(orderHistory, eq30(orderHistory.orderId, purchaseOrders.id)).where(
       and18(
-        eq29(purchaseOrders.userId, req.user.id),
-        eq29(orderHistory.action, "created")
+        eq30(purchaseOrders.userId, req.user.id),
+        eq30(orderHistory.action, "created")
       )
     ).groupBy(
       purchaseOrders.id,
@@ -24748,7 +25340,7 @@ router29.get("/orders/drafts", requireAuth, async (req, res) => {
       userId: purchaseOrders.userId,
       userName: users.name,
       notes: purchaseOrders.notes
-    }).from(purchaseOrders).leftJoin(projects, eq29(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq29(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq29(purchaseOrders.userId, users.id)).where(eq29(purchaseOrders.status, "draft")).orderBy(desc14(purchaseOrders.createdAt));
+    }).from(purchaseOrders).leftJoin(projects, eq30(purchaseOrders.projectId, projects.id)).leftJoin(vendors, eq30(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq30(purchaseOrders.userId, users.id)).where(eq30(purchaseOrders.status, "draft")).orderBy(desc14(purchaseOrders.createdAt));
     console.log(`\u{1F4DD} Found ${drafts.length} draft orders`);
     res.json({
       success: true,
@@ -24793,7 +25385,7 @@ import { Router as Router30 } from "express";
 // server/services/audit-service.ts
 init_db();
 init_schema();
-import { eq as eq30, and as and19, or as or6, gte as gte6, lte as lte6, desc as desc15, asc as asc7, sql as sql15, inArray as inArray6 } from "drizzle-orm";
+import { eq as eq31, and as and19, or as or6, gte as gte6, lte as lte6, desc as desc15, asc as asc7, sql as sql16, inArray as inArray6 } from "drizzle-orm";
 var AuditService = class {
   /**
    * 감사 로그 조회
@@ -24813,11 +25405,11 @@ var AuditService = class {
       sortOrder = "desc"
     } = params;
     const conditions = [];
-    if (userId) conditions.push(eq30(systemAuditLogs.userId, userId));
-    if (eventType) conditions.push(eq30(systemAuditLogs.eventType, eventType));
-    if (eventCategory) conditions.push(eq30(systemAuditLogs.eventCategory, eventCategory));
-    if (entityType) conditions.push(eq30(systemAuditLogs.entityType, entityType));
-    if (entityId) conditions.push(eq30(systemAuditLogs.entityId, entityId));
+    if (userId) conditions.push(eq31(systemAuditLogs.userId, userId));
+    if (eventType) conditions.push(eq31(systemAuditLogs.eventType, eventType));
+    if (eventCategory) conditions.push(eq31(systemAuditLogs.eventCategory, eventCategory));
+    if (entityType) conditions.push(eq31(systemAuditLogs.entityType, entityType));
+    if (entityId) conditions.push(eq31(systemAuditLogs.entityId, entityId));
     if (startDate) conditions.push(gte6(systemAuditLogs.createdAt, startDate));
     if (endDate) conditions.push(lte6(systemAuditLogs.createdAt, endDate));
     const orderByColumn = sortBy === "eventType" ? systemAuditLogs.eventType : sortBy === "userName" ? systemAuditLogs.userName : systemAuditLogs.createdAt;
@@ -24825,7 +25417,7 @@ var AuditService = class {
     const query = db.select().from(systemAuditLogs).where(conditions.length > 0 ? and19(...conditions) : void 0).orderBy(orderByDirection(orderByColumn)).limit(limit).offset(offset);
     const [logs, countResult] = await Promise.all([
       query,
-      db.select({ count: sql15`count(*)` }).from(systemAuditLogs).where(conditions.length > 0 ? and19(...conditions) : void 0)
+      db.select({ count: sql16`count(*)` }).from(systemAuditLogs).where(conditions.length > 0 ? and19(...conditions) : void 0)
     ]);
     return {
       logs,
@@ -24842,23 +25434,23 @@ var AuditService = class {
     startDate.setDate(startDate.getDate() - days);
     const activities = await db.select({
       eventType: systemAuditLogs.eventType,
-      count: sql15`count(*)`
+      count: sql16`count(*)`
     }).from(systemAuditLogs).where(
       and19(
-        eq30(systemAuditLogs.userId, userId),
+        eq31(systemAuditLogs.userId, userId),
         gte6(systemAuditLogs.createdAt, startDate)
       )
     ).groupBy(systemAuditLogs.eventType);
     const lastLogin = await db.select().from(systemAuditLogs).where(
       and19(
-        eq30(systemAuditLogs.userId, userId),
-        eq30(systemAuditLogs.eventType, "login")
+        eq31(systemAuditLogs.userId, userId),
+        eq31(systemAuditLogs.eventType, "login")
       )
     ).orderBy(desc15(systemAuditLogs.createdAt)).limit(1);
-    const failedLogins = await db.select({ count: sql15`count(*)` }).from(systemAuditLogs).where(
+    const failedLogins = await db.select({ count: sql16`count(*)` }).from(systemAuditLogs).where(
       and19(
-        eq30(systemAuditLogs.userId, userId),
-        eq30(systemAuditLogs.eventType, "login_failed"),
+        eq31(systemAuditLogs.userId, userId),
+        eq31(systemAuditLogs.eventType, "login_failed"),
         gte6(systemAuditLogs.createdAt, startDate)
       )
     );
@@ -24877,25 +25469,25 @@ var AuditService = class {
     startDate.setHours(startDate.getHours() - hours);
     const categoryStats = await db.select({
       category: systemAuditLogs.eventCategory,
-      count: sql15`count(*)`
+      count: sql16`count(*)`
     }).from(systemAuditLogs).where(gte6(systemAuditLogs.createdAt, startDate)).groupBy(systemAuditLogs.eventCategory);
     const eventStats = await db.select({
       eventType: systemAuditLogs.eventType,
-      count: sql15`count(*)`
+      count: sql16`count(*)`
     }).from(systemAuditLogs).where(gte6(systemAuditLogs.createdAt, startDate)).groupBy(systemAuditLogs.eventType);
     const hourlyActivity = await db.select({
-      hour: sql15`date_trunc('hour', ${systemAuditLogs.createdAt})`,
-      count: sql15`count(*)`
-    }).from(systemAuditLogs).where(gte6(systemAuditLogs.createdAt, startDate)).groupBy(sql15`date_trunc('hour', ${systemAuditLogs.createdAt})`).orderBy(sql15`date_trunc('hour', ${systemAuditLogs.createdAt})`);
+      hour: sql16`date_trunc('hour', ${systemAuditLogs.createdAt})`,
+      count: sql16`count(*)`
+    }).from(systemAuditLogs).where(gte6(systemAuditLogs.createdAt, startDate)).groupBy(sql16`date_trunc('hour', ${systemAuditLogs.createdAt})`).orderBy(sql16`date_trunc('hour', ${systemAuditLogs.createdAt})`);
     const activeUsers = await db.select({
-      count: sql15`count(distinct ${systemAuditLogs.userId})`
+      count: sql16`count(distinct ${systemAuditLogs.userId})`
     }).from(systemAuditLogs).where(gte6(systemAuditLogs.createdAt, startDate));
     const errors = await db.select().from(systemAuditLogs).where(
       and19(
         or6(
-          eq30(systemAuditLogs.eventType, "system_error"),
-          eq30(systemAuditLogs.eventType, "security_alert"),
-          eq30(systemAuditLogs.eventType, "login_failed")
+          eq31(systemAuditLogs.eventType, "system_error"),
+          eq31(systemAuditLogs.eventType, "security_alert"),
+          eq31(systemAuditLogs.eventType, "login_failed")
         ),
         gte6(systemAuditLogs.createdAt, startDate)
       )
@@ -24903,9 +25495,9 @@ var AuditService = class {
     const securityEvents = await db.select().from(systemAuditLogs).where(
       and19(
         or6(
-          eq30(systemAuditLogs.eventType, "login_failed"),
-          eq30(systemAuditLogs.eventType, "security_alert"),
-          eq30(systemAuditLogs.eventCategory, "security")
+          eq31(systemAuditLogs.eventType, "login_failed"),
+          eq31(systemAuditLogs.eventType, "security_alert"),
+          eq31(systemAuditLogs.eventCategory, "security")
         ),
         gte6(systemAuditLogs.createdAt, startDate)
       )
@@ -24937,7 +25529,7 @@ var AuditService = class {
         ...settings,
         updatedBy: userId,
         updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq30(auditSettings.id, existingSettings.id)).returning();
+      }).where(eq31(auditSettings.id, existingSettings.id)).returning();
       await logAuditEvent("settings_change", "system", {
         userId,
         entityType: "audit_settings",
@@ -24995,7 +25587,7 @@ var AuditService = class {
   static async getArchivedLogs(params) {
     const { userId, startDate, endDate, limit = 50, offset = 0 } = params;
     const conditions = [];
-    if (userId) conditions.push(eq30(archivedAuditLogs.userId, userId));
+    if (userId) conditions.push(eq31(archivedAuditLogs.userId, userId));
     if (startDate) conditions.push(gte6(archivedAuditLogs.createdAt, startDate));
     if (endDate) conditions.push(lte6(archivedAuditLogs.createdAt, endDate));
     const logs = await db.select().from(archivedAuditLogs).where(conditions.length > 0 ? and19(...conditions) : void 0).orderBy(desc15(archivedAuditLogs.createdAt)).limit(limit).offset(offset);
@@ -25014,7 +25606,7 @@ var AuditService = class {
       gte6(systemAuditLogs.createdAt, startDate)
     ];
     if (userId) {
-      conditions.push(eq30(systemAuditLogs.userId, userId));
+      conditions.push(eq31(systemAuditLogs.userId, userId));
     }
     const history = await db.select({
       id: systemAuditLogs.id,
@@ -25074,9 +25666,9 @@ var AuditService = class {
       inArray6(systemAuditLogs.eventType, ["data_create", "data_update", "data_delete"]),
       gte6(systemAuditLogs.createdAt, startDate)
     ];
-    if (entityType) conditions.push(eq30(systemAuditLogs.entityType, entityType));
-    if (entityId) conditions.push(eq30(systemAuditLogs.entityId, entityId));
-    if (userId) conditions.push(eq30(systemAuditLogs.userId, userId));
+    if (entityType) conditions.push(eq31(systemAuditLogs.entityType, entityType));
+    if (entityId) conditions.push(eq31(systemAuditLogs.entityId, entityId));
+    if (userId) conditions.push(eq31(systemAuditLogs.userId, userId));
     const changes = await db.select().from(systemAuditLogs).where(and19(...conditions)).orderBy(desc15(systemAuditLogs.createdAt)).limit(100);
     return changes;
   }
@@ -25088,11 +25680,11 @@ var AuditService = class {
     const startDate = /* @__PURE__ */ new Date();
     startDate.setDate(startDate.getDate() - days);
     const conditions = [
-      eq30(systemAuditLogs.eventType, "data_delete"),
+      eq31(systemAuditLogs.eventType, "data_delete"),
       gte6(systemAuditLogs.createdAt, startDate)
     ];
     if (entityType) {
-      conditions.push(eq30(systemAuditLogs.entityType, entityType));
+      conditions.push(eq31(systemAuditLogs.entityType, entityType));
     }
     const deletions = await db.select().from(systemAuditLogs).where(and19(...conditions)).orderBy(desc15(systemAuditLogs.createdAt));
     const records = deletions.map((deletion) => ({
@@ -25124,7 +25716,7 @@ var AuditService = class {
       and19(
         or6(
           inArray6(systemAuditLogs.eventType, securityEventTypes),
-          eq30(systemAuditLogs.eventCategory, "security")
+          eq31(systemAuditLogs.eventCategory, "security")
         ),
         gte6(systemAuditLogs.createdAt, startDate)
       )
@@ -25150,7 +25742,7 @@ var AuditService = class {
    * 알림 규칙 조회
    */
   static async getAlertRules() {
-    return await db.select().from(auditAlertRules).where(eq30(auditAlertRules.isActive, true)).orderBy(desc15(auditAlertRules.severity));
+    return await db.select().from(auditAlertRules).where(eq31(auditAlertRules.isActive, true)).orderBy(desc15(auditAlertRules.severity));
   }
   /**
    * 알림 규칙 생성/업데이트
@@ -25160,7 +25752,7 @@ var AuditService = class {
       return await db.update(auditAlertRules).set({
         ...rule,
         updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq30(auditAlertRules.id, rule.id)).returning();
+      }).where(eq31(auditAlertRules.id, rule.id)).returning();
     } else {
       return await db.insert(auditAlertRules).values({
         ...rule,
@@ -25479,14 +26071,14 @@ var audit_default = router31;
 
 // server/routes/email-test.ts
 import express2 from "express";
-import path21 from "path";
+import path22 from "path";
 
 // server/services/email-service.ts
 init_db();
 init_schema();
 import nodemailer6 from "nodemailer";
-import path20 from "path";
-import fs23 from "fs/promises";
+import path21 from "path";
+import fs24 from "fs/promises";
 var transporter = nodemailer6.createTransport({
   host: process.env.SMTP_HOST || "smtp.naver.com",
   port: parseInt(process.env.SMTP_PORT || "587"),
@@ -25580,7 +26172,7 @@ var emailTemplates = {
 async function sendPurchaseOrderEmail(params) {
   const { orderData, excelFilePath, recipients, cc = [], userId, orderId } = params;
   try {
-    await fs23.access(excelFilePath);
+    await fs24.access(excelFilePath);
     const mailOptions = {
       from: `"(\uC8FC)\uC775\uC9C4\uC5D4\uC9C0\uB2C8\uC5B4\uB9C1" <${process.env.SMTP_USER}>`,
       to: recipients.join(", "),
@@ -25592,7 +26184,7 @@ async function sendPurchaseOrderEmail(params) {
       html: emailTemplates.purchaseOrder.html(orderData),
       attachments: [
         {
-          filename: path20.basename(excelFilePath),
+          filename: path21.basename(excelFilePath),
           path: excelFilePath,
           contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         }
@@ -25603,7 +26195,7 @@ async function sendPurchaseOrderEmail(params) {
     if (orderId && userId) {
       try {
         const trackingId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        const fileStats = await fs23.stat(excelFilePath);
+        const fileStats = await fs24.stat(excelFilePath);
         await db.insert(emailSendHistory).values({
           orderId,
           orderNumber: orderData.orderNumber,
@@ -25614,7 +26206,7 @@ async function sendPurchaseOrderEmail(params) {
           subject: mailOptions.subject,
           messageContent: mailOptions.html,
           attachmentFiles: [{
-            filename: path20.basename(excelFilePath),
+            filename: path21.basename(excelFilePath),
             path: excelFilePath,
             size: fileStats.size
           }],
@@ -25764,14 +26356,14 @@ router32.post("/send-test", async (req, res) => {
       userName: "Test User",
       userPhone: "010-1234-5678"
     };
-    const dummyFilePath = path21.join(process.cwd(), "uploads", "test-email.xlsx");
-    const fs27 = __require("fs");
-    const uploadsDir = path21.join(process.cwd(), "uploads");
-    if (!fs27.existsSync(uploadsDir)) {
-      fs27.mkdirSync(uploadsDir, { recursive: true });
+    const dummyFilePath = path22.join(process.cwd(), "uploads", "test-email.xlsx");
+    const fs28 = __require("fs");
+    const uploadsDir = path22.join(process.cwd(), "uploads");
+    if (!fs28.existsSync(uploadsDir)) {
+      fs28.mkdirSync(uploadsDir, { recursive: true });
     }
-    if (!fs27.existsSync(dummyFilePath)) {
-      fs27.writeFileSync(dummyFilePath, "test content");
+    if (!fs28.existsSync(dummyFilePath)) {
+      fs28.writeFileSync(dummyFilePath, "test content");
     }
     const result = await emailService2.sendPurchaseOrderEmail({
       orderData: testOrderData,
@@ -25836,8 +26428,8 @@ router32.post("/simple", async (req, res) => {
       });
     }
     console.log("\u{1F4E7} Simple email test started to:", to);
-    const poEmailService = new POEmailService2();
-    const result = await poEmailService.sendEmail({
+    const poEmailService2 = new POEmailService2();
+    const result = await poEmailService2.sendEmail({
       to,
       subject: `[\uD14C\uC2A4\uD2B8] \uBC1C\uC8FC \uC2DC\uC2A4\uD15C \uC774\uBA54\uC77C \uD14C\uC2A4\uD2B8 - ${(/* @__PURE__ */ new Date()).toLocaleString("ko-KR")}`,
       text: "\uC774\uAC83\uC740 \uBC1C\uC8FC \uC2DC\uC2A4\uD15C\uC758 \uC774\uBA54\uC77C \uD14C\uC2A4\uD2B8 \uBA54\uC2DC\uC9C0\uC785\uB2C8\uB2E4.\n\n\uC774\uBA54\uC77C\uC774 \uC815\uC0C1\uC801\uC73C\uB85C \uC218\uC2E0\uB418\uC5C8\uB2E4\uBA74 \uC2DC\uC2A4\uD15C\uC774 \uC62C\uBC14\uB974\uAC8C \uC124\uC815\uB41C \uAC83\uC785\uB2C8\uB2E4.",
@@ -26047,15 +26639,15 @@ import { Router as Router31 } from "express";
 // server/services/approval-authority-service.ts
 init_db();
 init_schema();
-import { eq as eq31, and as and20, gte as gte7 } from "drizzle-orm";
+import { eq as eq32, and as and20, gte as gte7 } from "drizzle-orm";
 var ApprovalAuthorityService = class {
   /**
    * Check user's approval authority for a given amount
    */
   async checkAuthority(user, orderAmount) {
     const authority = await db.select().from(approvalAuthorities).where(and20(
-      eq31(approvalAuthorities.role, user.role),
-      eq31(approvalAuthorities.isActive, true)
+      eq32(approvalAuthorities.role, user.role),
+      eq32(approvalAuthorities.isActive, true)
     )).limit(1);
     if (!authority || authority.length === 0) {
       return {
@@ -26103,16 +26695,16 @@ var ApprovalAuthorityService = class {
   async findNextApprover(orderAmount) {
     const authorities = await db.select().from(approvalAuthorities).where(and20(
       gte7(approvalAuthorities.maxAmount, orderAmount.toString()),
-      eq31(approvalAuthorities.isActive, true)
+      eq32(approvalAuthorities.isActive, true)
     )).orderBy(approvalAuthorities.maxAmount);
     if (authorities.length === 0) {
-      const executive = await db.select().from(users).where(eq31(users.role, "executive")).limit(1);
+      const executive = await db.select().from(users).where(eq32(users.role, "executive")).limit(1);
       return executive[0]?.id;
     }
     const lowestAuthority = authorities[0];
     const approver = await db.select().from(users).where(and20(
-      eq31(users.role, lowestAuthority.role),
-      eq31(users.isActive, true)
+      eq32(users.role, lowestAuthority.role),
+      eq32(users.isActive, true)
     )).limit(1);
     return approver[0]?.id;
   }
@@ -26127,7 +26719,7 @@ var ApprovalAuthorityService = class {
       canDirectApprove: approvalAuthorities.canDirectApprove,
       directApproveLimit: approvalAuthorities.directApproveLimit
     }).from(approvalAuthorities).where(and20(
-      eq31(approvalAuthorities.isActive, true),
+      eq32(approvalAuthorities.isActive, true),
       gte7(approvalAuthorities.maxAmount, orderAmount.toString())
     )).orderBy(approvalAuthorities.maxAmount);
     for (const auth of authorities) {
@@ -26137,9 +26729,9 @@ var ApprovalAuthorityService = class {
         email: users.email,
         role: users.role
       }).from(users).where(and20(
-        eq31(users.role, auth.role),
-        eq31(users.isActive, true),
-        companyId ? eq31(users.companyId, companyId) : void 0
+        eq32(users.role, auth.role),
+        eq32(users.isActive, true),
+        companyId ? eq32(users.companyId, companyId) : void 0
       ));
       if (usersInRole.length > 0) {
         approvers.push({
@@ -26186,8 +26778,8 @@ var ApprovalAuthorityService = class {
     }
     if (order.vendorId) {
       const recentOrders = await db.select().from(purchaseOrders).where(and20(
-        eq31(purchaseOrders.vendorId, order.vendorId),
-        eq31(purchaseOrders.orderStatus, "delivered")
+        eq32(purchaseOrders.vendorId, order.vendorId),
+        eq32(purchaseOrders.orderStatus, "delivered")
         // Check orders from last 30 days
       )).limit(1);
       if (recentOrders.length > 0) {
@@ -26220,7 +26812,7 @@ var ApprovalAuthorityService = class {
         updateData.rejectionReason = comments;
         updateData.orderStatus = "draft";
       }
-      await db.update(purchaseOrders).set(updateData).where(eq31(purchaseOrders.id, orderId));
+      await db.update(purchaseOrders).set(updateData).where(eq32(purchaseOrders.id, orderId));
       return true;
     } catch (error) {
       console.error("Error processing approval:", error);
@@ -26233,13 +26825,13 @@ var approvalAuthorityService = new ApprovalAuthorityService();
 // server/services/workflow-engine.ts
 init_db();
 init_schema();
-import { eq as eq33 } from "drizzle-orm";
+import { eq as eq34 } from "drizzle-orm";
 
 // server/services/websocket-service.ts
 init_db();
 init_schema();
 import { Server as SocketIOServer } from "socket.io";
-import { eq as eq32 } from "drizzle-orm";
+import { eq as eq33 } from "drizzle-orm";
 var WebSocketService = class _WebSocketService {
   constructor() {
     this.io = null;
@@ -26265,7 +26857,7 @@ var WebSocketService = class _WebSocketService {
       console.log("\u{1F50C} WebSocket connection established:", socket.id);
       socket.on("authenticate", async (data) => {
         try {
-          const user = await db.select().from(users).where(eq32(users.id, data.userId)).then((rows) => rows[0]);
+          const user = await db.select().from(users).where(eq33(users.id, data.userId)).then((rows) => rows[0]);
           if (user) {
             const webSocketUser = {
               id: user.id,
@@ -26418,7 +27010,7 @@ var WorkflowEngine = class {
    * Process the next step in the workflow automatically
    */
   async processNextStep(orderId, userId) {
-    const order = await db.select().from(purchaseOrders).where(eq33(purchaseOrders.id, orderId)).limit(1);
+    const order = await db.select().from(purchaseOrders).where(eq34(purchaseOrders.id, orderId)).limit(1);
     if (!order || order.length === 0) {
       throw new Error(`Order ${orderId} not found`);
     }
@@ -26465,7 +27057,7 @@ var WorkflowEngine = class {
    * Track workflow progress for an order
    */
   async trackWorkflowProgress(orderId) {
-    const order = await db.select().from(purchaseOrders).where(eq33(purchaseOrders.id, orderId)).limit(1);
+    const order = await db.select().from(purchaseOrders).where(eq34(purchaseOrders.id, orderId)).limit(1);
     if (!order || order.length === 0) {
       throw new Error(`Order ${orderId} not found`);
     }
@@ -26475,7 +27067,7 @@ var WorkflowEngine = class {
       event: orderHistory.changeType,
       actor: orderHistory.userId,
       details: orderHistory.changedData
-    }).from(orderHistory).where(eq33(orderHistory.orderId, orderId)).orderBy(orderHistory.changedAt);
+    }).from(orderHistory).where(eq34(orderHistory.orderId, orderId)).orderBy(orderHistory.changedAt);
     const { currentStep, nextStep, estimatedCompletion } = this.determineWorkflowSteps(
       currentOrder.orderStatus,
       currentOrder.approvalStatus
@@ -26505,7 +27097,7 @@ var WorkflowEngine = class {
       nextApproverId: purchaseOrders.nextApproverId,
       createdBy: purchaseOrders.createdBy,
       vendorId: purchaseOrders.vendorId
-    }).from(purchaseOrders).where(eq33(purchaseOrders.id, orderId)).limit(1);
+    }).from(purchaseOrders).where(eq34(purchaseOrders.id, orderId)).limit(1);
     if (!order || order.length === 0) return;
     const currentOrder = order[0];
     switch (event) {
@@ -26538,14 +27130,14 @@ var WorkflowEngine = class {
       orderStatus: purchaseOrders.orderStatus,
       approvalStatus: purchaseOrders.approvalStatus,
       userId: purchaseOrders.userId
-    }).from(purchaseOrders).where(eq33(purchaseOrders.id, orderId)).limit(1);
+    }).from(purchaseOrders).where(eq34(purchaseOrders.id, orderId)).limit(1);
     if (!beforeOrder || beforeOrder.length === 0) return;
     await db.update(purchaseOrders).set({
       orderStatus,
       approvalStatus,
       ...additionalData,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq33(purchaseOrders.id, orderId));
+    }).where(eq34(purchaseOrders.id, orderId));
     const updatedBy = await this.getUserAsWebSocketUser(beforeOrder[0].userId);
     if (updatedBy) {
       const event = {
@@ -26578,9 +27170,9 @@ var WorkflowEngine = class {
       id: purchaseOrders.id,
       orderNumber: purchaseOrders.orderNumber,
       vendorId: purchaseOrders.vendorId
-    }).from(purchaseOrders).where(eq33(purchaseOrders.id, orderId)).limit(1);
+    }).from(purchaseOrders).where(eq34(purchaseOrders.id, orderId)).limit(1);
     if (!order || order.length === 0) return;
-    const vendor = await db.select().from(vendors).where(eq33(vendors.id, order[0].vendorId)).limit(1);
+    const vendor = await db.select().from(vendors).where(eq34(vendors.id, order[0].vendorId)).limit(1);
     if (vendor[0]?.email) {
       try {
         console.log(`Email would be sent to ${vendor[0].email} for order ${order[0].orderNumber}`);
@@ -26657,7 +27249,7 @@ var WorkflowEngine = class {
    * Get user details
    */
   async getUser(userId) {
-    const user = await db.select().from(users).where(eq33(users.id, userId)).limit(1);
+    const user = await db.select().from(users).where(eq34(users.id, userId)).limit(1);
     if (!user || user.length === 0) {
       throw new Error(`User ${userId} not found`);
     }
@@ -26673,7 +27265,7 @@ var WorkflowEngine = class {
       orderNumber: purchaseOrders.orderNumber,
       totalAmount: purchaseOrders.totalAmount,
       userId: purchaseOrders.userId
-    }).from(purchaseOrders).where(eq33(purchaseOrders.id, orderId)).limit(1);
+    }).from(purchaseOrders).where(eq34(purchaseOrders.id, orderId)).limit(1);
     if (order[0] && approver) {
       const requestedBy = await this.getUserAsWebSocketUser(order[0].userId);
       if (requestedBy) {
@@ -26740,7 +27332,7 @@ var workflowEngine = new WorkflowEngine();
 // server/routes/workflow.ts
 init_db();
 init_schema();
-import { eq as eq34 } from "drizzle-orm";
+import { eq as eq35 } from "drizzle-orm";
 var router34 = Router31();
 router34.post("/api/orders/check-approval-authority", async (req, res) => {
   try {
@@ -26752,7 +27344,7 @@ router34.post("/api/orders/check-approval-authority", async (req, res) => {
     if (!amount || amount <= 0) {
       return res.status(400).json({ message: "Invalid amount" });
     }
-    const user = await db.select().from(users).where(eq34(users.id, userId)).limit(1);
+    const user = await db.select().from(users).where(eq35(users.id, userId)).limit(1);
     if (!user || user.length === 0) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -26787,7 +27379,7 @@ router34.post("/api/orders/create-with-workflow", async (req, res) => {
       return res.status(401).json({ message: "User not authenticated" });
     }
     const orderData = req.body;
-    const user = await db.select().from(users).where(eq34(users.id, userId)).limit(1);
+    const user = await db.select().from(users).where(eq35(users.id, userId)).limit(1);
     if (!user || user.length === 0) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -26924,7 +27516,7 @@ router34.post("/api/orders/:id/confirm-delivery", async (req, res) => {
       deliveredBy: userId,
       notes: notes || void 0,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq34(purchaseOrders.id, orderId));
+    }).where(eq35(purchaseOrders.id, orderId));
     await workflowEngine.sendNotifications(orderId, "delivery_completed");
     res.json({
       message: "Delivery confirmed",
@@ -27254,7 +27846,7 @@ var excel_smart_upload_simple_default = router35;
 init_db();
 init_schema();
 import { Router as Router33 } from "express";
-import { eq as eq35 } from "drizzle-orm";
+import { eq as eq36 } from "drizzle-orm";
 import { z as z11 } from "zod";
 var router36 = Router33();
 router36.post("/orders/check-approval-authority", requireAuth, async (req, res) => {
@@ -27263,7 +27855,7 @@ router36.post("/orders/check-approval-authority", requireAuth, async (req, res) 
       orderAmount: z11.number().positive()
     });
     const { orderAmount } = schema.parse(req.body);
-    const user = await db.select().from(users).where(eq35(users.id, req.user.id)).then((rows) => rows[0]);
+    const user = await db.select().from(users).where(eq36(users.id, req.user.id)).then((rows) => rows[0]);
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
@@ -27311,7 +27903,7 @@ router36.post("/orders/create-with-workflow", requireAuth, async (req, res) => {
       sendEmail: z11.boolean().optional()
     });
     const { orderData, sendEmail } = schema.parse(req.body);
-    const user = await db.select().from(users).where(eq35(users.id, req.user.id)).then((rows) => rows[0]);
+    const user = await db.select().from(users).where(eq36(users.id, req.user.id)).then((rows) => rows[0]);
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
@@ -27386,7 +27978,7 @@ router36.get("/orders/workflow-status/:id", requireAuth, async (req, res) => {
     if (isNaN(orderId)) {
       return res.status(400).json({ error: "Invalid order ID" });
     }
-    const order = await db.select().from(purchaseOrders).where(eq35(purchaseOrders.id, orderId)).then((rows) => rows[0]);
+    const order = await db.select().from(purchaseOrders).where(eq36(purchaseOrders.id, orderId)).then((rows) => rows[0]);
     if (!order) {
       return res.status(404).json({ error: "Order not found" });
     }
@@ -27412,7 +28004,7 @@ router36.post("/orders/:id/confirm-delivery", requireAuth, async (req, res) => {
       receivedBy: z11.string().optional()
     });
     const { deliveryNotes, actualDeliveryDate, receivedBy } = schema.parse(req.body);
-    const order = await db.select().from(purchaseOrders).where(eq35(purchaseOrders.id, orderId)).then((rows) => rows[0]);
+    const order = await db.select().from(purchaseOrders).where(eq36(purchaseOrders.id, orderId)).then((rows) => rows[0]);
     if (!order) {
       return res.status(404).json({ error: "Order not found" });
     }
@@ -27432,7 +28024,7 @@ router36.post("/orders/:id/confirm-delivery", requireAuth, async (req, res) => {
 
 \uBC30\uC1A1 \uBA54\uBAA8: ${deliveryNotes}` : deliveryNotes : order.notes,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq35(purchaseOrders.id, orderId)).returning();
+    }).where(eq36(purchaseOrders.id, orderId)).returning();
     await db.insert(orderHistory).values({
       orderId,
       userId: req.user.id,
@@ -27527,7 +28119,7 @@ var orders_workflow_default = router36;
 init_db();
 init_schema();
 import { Router as Router34 } from "express";
-import { eq as eq36 } from "drizzle-orm";
+import { eq as eq37 } from "drizzle-orm";
 init_professional_pdf_generation_service();
 var router37 = Router34();
 router37.post("/orders/:id/create-order", requireAuth, async (req, res) => {
@@ -27537,7 +28129,7 @@ router37.post("/orders/:id/create-order", requireAuth, async (req, res) => {
     return res.status(401).json({ error: "\uC778\uC99D\uC774 \uD544\uC694\uD569\uB2C8\uB2E4." });
   }
   try {
-    const [order] = await db.select().from(purchaseOrders).where(eq36(purchaseOrders.id, orderId));
+    const [order] = await db.select().from(purchaseOrders).where(eq37(purchaseOrders.id, orderId));
     if (!order) {
       return res.status(404).json({
         error: "\uBC1C\uC8FC\uC11C\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.",
@@ -27551,7 +28143,7 @@ router37.post("/orders/:id/create-order", requireAuth, async (req, res) => {
       });
     }
     const fullOrderData = await db.query.purchaseOrders.findFirst({
-      where: eq36(purchaseOrders.id, orderId),
+      where: eq37(purchaseOrders.id, orderId),
       with: {
         vendor: true,
         project: true,
@@ -27580,7 +28172,7 @@ router37.post("/orders/:id/create-order", requireAuth, async (req, res) => {
       status: "approved",
       // 레거시 호환성
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq36(purchaseOrders.id, orderId)).returning();
+    }).where(eq37(purchaseOrders.id, orderId)).returning();
     await db.insert(orderHistory).values({
       orderId,
       userId,
@@ -27624,7 +28216,7 @@ router37.get("/orders/:id/permissions", requireAuth, async (req, res) => {
       orderStatus: purchaseOrders.orderStatus,
       approvalStatus: purchaseOrders.approvalStatus,
       userId: purchaseOrders.userId
-    }).from(purchaseOrders).where(eq36(purchaseOrders.id, orderId));
+    }).from(purchaseOrders).where(eq37(purchaseOrders.id, orderId));
     if (!order) {
       return res.status(404).json({ error: "\uBC1C\uC8FC\uC11C\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4." });
     }
@@ -27652,7 +28244,7 @@ var orders_create_default = router37;
 // server/routes/health.ts
 init_db();
 import { Router as Router35 } from "express";
-import { sql as sql16 } from "drizzle-orm";
+import { sql as sql17 } from "drizzle-orm";
 var router38 = Router35();
 router38.get("/health", (req, res) => {
   res.json({
@@ -27693,7 +28285,7 @@ router38.get("/health/database", async (req, res) => {
     if (!db) {
       throw new Error("Database instance not initialized");
     }
-    const result = await db.execute(sql16`SELECT 1 as test`);
+    const result = await db.execute(sql17`SELECT 1 as test`);
     if (result) {
       status.database.connected = true;
     }
@@ -27760,7 +28352,7 @@ router38.get("/health/system", async (req, res) => {
   };
   if (process.env.DATABASE_URL && db) {
     try {
-      await db.execute(sql16`SELECT 1`);
+      await db.execute(sql17`SELECT 1`);
       results.database = true;
     } catch (error) {
       console.error("Database health check failed:", error);
@@ -27783,7 +28375,7 @@ var health_default = router38;
 init_db();
 init_schema();
 import { Router as Router36 } from "express";
-import { eq as eq37, sql as sql17, desc as desc17 } from "drizzle-orm";
+import { eq as eq38, sql as sql18, desc as desc17 } from "drizzle-orm";
 var router39 = Router36();
 router39.get("/debug/recent-drafts", async (req, res) => {
   try {
@@ -27797,7 +28389,7 @@ router39.get("/debug/recent-drafts", async (req, res) => {
       vendorId: purchaseOrders.vendorId,
       totalAmount: purchaseOrders.totalAmount,
       vendorName: vendors.name
-    }).from(purchaseOrders).leftJoin(vendors, eq37(purchaseOrders.vendorId, vendors.id)).where(eq37(purchaseOrders.status, "draft")).orderBy(desc17(purchaseOrders.createdAt)).limit(20);
+    }).from(purchaseOrders).leftJoin(vendors, eq38(purchaseOrders.vendorId, vendors.id)).where(eq38(purchaseOrders.status, "draft")).orderBy(desc17(purchaseOrders.createdAt)).limit(20);
     const allRecentOrders = await db.select({
       id: purchaseOrders.id,
       orderNumber: purchaseOrders.orderNumber,
@@ -27807,8 +28399,8 @@ router39.get("/debug/recent-drafts", async (req, res) => {
       vendorId: purchaseOrders.vendorId,
       totalAmount: purchaseOrders.totalAmount,
       vendorName: vendors.name
-    }).from(purchaseOrders).leftJoin(vendors, eq37(purchaseOrders.vendorId, vendors.id)).where(sql17`${purchaseOrders.createdAt} > ${oneHourAgo}`).orderBy(desc17(purchaseOrders.createdAt)).limit(50);
-    const jbVendor = await db.select().from(vendors).where(sql17`${vendors.name} LIKE '%제이비엔지니어링%'`).limit(5);
+    }).from(purchaseOrders).leftJoin(vendors, eq38(purchaseOrders.vendorId, vendors.id)).where(sql18`${purchaseOrders.createdAt} > ${oneHourAgo}`).orderBy(desc17(purchaseOrders.createdAt)).limit(50);
+    const jbVendor = await db.select().from(vendors).where(sql18`${vendors.name} LIKE '%제이비엔지니어링%'`).limit(5);
     res.json({
       recentDrafts,
       recentDraftsCount: recentDrafts.length,
@@ -27829,9 +28421,9 @@ var debug_default = router39;
 init_db();
 init_schema();
 import { Router as Router37 } from "express";
-import { eq as eq38 } from "drizzle-orm";
-import path22 from "path";
-import fs24 from "fs";
+import { eq as eq39 } from "drizzle-orm";
+import path23 from "path";
+import fs25 from "fs";
 import jwt2 from "jsonwebtoken";
 var router40 = Router37();
 router40.get("/attachments/:id/download", async (req, res) => {
@@ -27872,17 +28464,17 @@ router40.get("/attachments/:id/download", async (req, res) => {
       });
     }
     const [attachment] = await db.select({
-      id: attachments2.id,
-      orderId: attachments2.orderId,
-      originalName: attachments2.originalName,
-      storedName: attachments2.storedName,
-      filePath: attachments2.filePath,
-      fileSize: attachments2.fileSize,
-      mimeType: attachments2.mimeType,
-      uploadedBy: attachments2.uploadedBy,
-      uploadedAt: attachments2.uploadedAt,
-      fileData: attachments2.fileData
-    }).from(attachments2).where(eq38(attachments2.id, attachmentId));
+      id: attachments.id,
+      orderId: attachments.orderId,
+      originalName: attachments.originalName,
+      storedName: attachments.storedName,
+      filePath: attachments.filePath,
+      fileSize: attachments.fileSize,
+      mimeType: attachments.mimeType,
+      uploadedBy: attachments.uploadedBy,
+      uploadedAt: attachments.uploadedAt,
+      fileData: attachments.fileData
+    }).from(attachments).where(eq39(attachments.id, attachmentId));
     if (!attachment) {
       return res.status(404).json({
         error: "\uCCA8\uBD80\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.",
@@ -27913,20 +28505,20 @@ router40.get("/attachments/:id/download", async (req, res) => {
       fileName = fileName.replace("db://", "");
     }
     const possiblePaths = [];
-    if (path22.isAbsolute(fileName)) {
+    if (path23.isAbsolute(fileName)) {
       console.log("\u{1F4C4} Using absolute path directly:", fileName);
       possiblePaths.push(fileName);
     } else {
       possiblePaths.push(
-        path22.join(process.cwd(), "attached_assets", fileName),
-        path22.join(process.cwd(), "uploads", fileName),
-        path22.join(process.cwd(), "uploads", "temp-pdf", fileName),
-        path22.join(process.cwd(), fileName)
+        path23.join(process.cwd(), "attached_assets", fileName),
+        path23.join(process.cwd(), "uploads", fileName),
+        path23.join(process.cwd(), "uploads", "temp-pdf", fileName),
+        path23.join(process.cwd(), fileName)
       );
     }
     let foundPath = null;
     for (const testPath of possiblePaths) {
-      if (fs24.existsSync(testPath)) {
+      if (fs25.existsSync(testPath)) {
         foundPath = testPath;
         console.log(`\u2705 Found PDF file at: ${testPath}`);
         break;
@@ -27940,7 +28532,7 @@ router40.get("/attachments/:id/download", async (req, res) => {
       const contentDisposition = `${disposition}; filename*=UTF-8''${encodeURIComponent(displayName)}`;
       console.log(`\u{1F4C4} Setting Content-Disposition: ${contentDisposition} (mimeType: ${mimeType}, forceDownload: ${forceDownload})`);
       res.setHeader("Content-Disposition", contentDisposition);
-      const fileStream = fs24.createReadStream(foundPath);
+      const fileStream = fs25.createReadStream(foundPath);
       fileStream.pipe(res);
     } else {
       console.error(`File not found in any expected location for attachment ${attachmentId}`);
@@ -27972,17 +28564,17 @@ router40.delete("/attachments/:id", requireAuth, async (req, res) => {
     }
     console.log(`\u{1F5D1}\uFE0F Admin ${user.name} (ID: ${user.id}) requesting deletion of attachment ${attachmentId}`);
     const [attachment] = await db.select({
-      id: attachments2.id,
-      orderId: attachments2.orderId,
-      originalName: attachments2.originalName,
-      storedName: attachments2.storedName,
-      filePath: attachments2.filePath,
-      fileSize: attachments2.fileSize,
-      mimeType: attachments2.mimeType,
-      uploadedBy: attachments2.uploadedBy,
-      uploadedAt: attachments2.uploadedAt,
-      fileData: attachments2.fileData
-    }).from(attachments2).where(eq38(attachments2.id, attachmentId));
+      id: attachments.id,
+      orderId: attachments.orderId,
+      originalName: attachments.originalName,
+      storedName: attachments.storedName,
+      filePath: attachments.filePath,
+      fileSize: attachments.fileSize,
+      mimeType: attachments.mimeType,
+      uploadedBy: attachments.uploadedBy,
+      uploadedAt: attachments.uploadedAt,
+      fileData: attachments.fileData
+    }).from(attachments).where(eq39(attachments.id, attachmentId));
     if (!attachment) {
       return res.status(404).json({
         error: "\uCCA8\uBD80\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.",
@@ -27993,20 +28585,20 @@ router40.delete("/attachments/:id", requireAuth, async (req, res) => {
     if (attachment.filePath && !attachment.filePath.startsWith("db://")) {
       let fileName = attachment.filePath;
       const possiblePaths = [];
-      if (path22.isAbsolute(fileName)) {
+      if (path23.isAbsolute(fileName)) {
         possiblePaths.push(fileName);
       } else {
         possiblePaths.push(
-          path22.join(process.cwd(), "attached_assets", fileName),
-          path22.join(process.cwd(), "uploads", fileName),
-          path22.join(process.cwd(), "uploads", "temp-pdf", fileName),
-          path22.join(process.cwd(), fileName)
+          path23.join(process.cwd(), "attached_assets", fileName),
+          path23.join(process.cwd(), "uploads", fileName),
+          path23.join(process.cwd(), "uploads", "temp-pdf", fileName),
+          path23.join(process.cwd(), fileName)
         );
       }
       for (const testPath of possiblePaths) {
-        if (fs24.existsSync(testPath)) {
+        if (fs25.existsSync(testPath)) {
           try {
-            fs24.unlinkSync(testPath);
+            fs25.unlinkSync(testPath);
             console.log(`\u{1F5D1}\uFE0F Deleted physical file at: ${testPath}`);
             break;
           } catch (fileError) {
@@ -28015,7 +28607,7 @@ router40.delete("/attachments/:id", requireAuth, async (req, res) => {
         }
       }
     }
-    const deletedRows = await db.delete(attachments2).where(eq38(attachments2.id, attachmentId));
+    const deletedRows = await db.delete(attachments).where(eq39(attachments.id, attachmentId));
     console.log(`\u2705 Deleted attachment record from database (affected rows: ${deletedRows})`);
     return res.json({
       success: true,
@@ -28217,8 +28809,8 @@ init_korean_font_manager();
 import { Router as Router39 } from "express";
 
 // server/utils/embedded-fonts.ts
-import * as fs25 from "fs";
-import * as path23 from "path";
+import * as fs26 from "fs";
+import * as path24 from "path";
 var EmbeddedFontManager = class {
   /**
    * 폰트 파일을 Base64로 인코딩하여 코드에 임베드할 수 있는 형태로 변환
@@ -28226,7 +28818,7 @@ var EmbeddedFontManager = class {
    */
   static generateEmbeddedFont(fontPath) {
     try {
-      const fontBuffer = fs25.readFileSync(fontPath);
+      const fontBuffer = fs26.readFileSync(fontPath);
       return fontBuffer.toString("base64");
     } catch (error) {
       console.error("\uD3F0\uD2B8 \uC784\uBCA0\uB529 \uC2E4\uD328:", error);
@@ -28257,7 +28849,7 @@ var EmbeddedFontManager = class {
     ];
     return possiblePaths.filter((fontPath) => {
       try {
-        return fs25.existsSync(fontPath);
+        return fs26.existsSync(fontPath);
       } catch {
         return false;
       }
@@ -28306,18 +28898,18 @@ var EmbeddedFontManager = class {
    * 시스템 정보와 함께 폰트 상태 리포트 생성
    */
   static generateSystemReport() {
-    const projectFontDir = path23.join(process.cwd(), "fonts");
+    const projectFontDir = path24.join(process.cwd(), "fonts");
     const projectFonts = [
       "NotoSansKR-Regular.ttf",
       "NanumGothic-Regular.ttf"
     ].map((filename) => {
-      const fontPath = path23.join(projectFontDir, filename);
+      const fontPath = path24.join(projectFontDir, filename);
       let size;
       let exists = false;
       try {
-        if (fs25.existsSync(fontPath)) {
+        if (fs26.existsSync(fontPath)) {
           exists = true;
-          size = fs25.statSync(fontPath).size;
+          size = fs26.statSync(fontPath).size;
         }
       } catch {
       }
@@ -28474,16 +29066,16 @@ router42.post("/test-font-pdf", async (req, res) => {
 });
 router42.get("/font-files", (req, res) => {
   try {
-    const fs27 = __require("fs");
-    const path25 = __require("path");
-    const fontDir = path25.join(process.cwd(), "fonts");
+    const fs28 = __require("fs");
+    const path26 = __require("path");
+    const fontDir = path26.join(process.cwd(), "fonts");
     const results = [];
     try {
-      const files = fs27.readdirSync(fontDir);
+      const files = fs28.readdirSync(fontDir);
       for (const file of files) {
-        const filePath = path25.join(fontDir, file);
+        const filePath = path26.join(fontDir, file);
         try {
-          const stats = fs27.statSync(filePath);
+          const stats = fs28.statSync(filePath);
           results.push({
             name: file,
             path: filePath,
@@ -28532,13 +29124,13 @@ var font_debug_default = router42;
 import { Router as Router40 } from "express";
 init_schema();
 init_db();
-import { eq as eq39, desc as desc18 } from "drizzle-orm";
-import fs26 from "fs";
-import path24 from "path";
+import { eq as eq40, desc as desc18 } from "drizzle-orm";
+import fs27 from "fs";
+import path25 from "path";
 import { fileURLToPath as fileURLToPath7 } from "url";
 import * as XLSX10 from "xlsx";
 var __filename7 = fileURLToPath7(import.meta.url);
-var __dirname7 = path24.dirname(__filename7);
+var __dirname7 = path25.dirname(__filename7);
 var router43 = Router40();
 var db3 = db;
 var emailService4 = new POEmailService();
@@ -28548,7 +29140,7 @@ async function updateOrderStatusAfterEmail2(orderNumber) {
     orderStatus: "sent",
     // 발주상태: 이메일 발송 완료 후 'sent'로 변경
     updatedAt: /* @__PURE__ */ new Date()
-  }).where(eq39(purchaseOrders.orderNumber, orderNumber));
+  }).where(eq40(purchaseOrders.orderNumber, orderNumber));
 }
 router43.post("/orders/send-email", requireAuth, async (req, res) => {
   try {
@@ -28581,25 +29173,25 @@ router43.post("/orders/send-email", requireAuth, async (req, res) => {
       for (const attachmentId of selectedAttachmentIds) {
         try {
           const [attachment] = await db.select({
-            id: attachments2.id,
-            originalName: attachments2.originalName,
-            filePath: attachments2.filePath,
-            mimeType: attachments2.mimeType,
-            fileData: attachments2.fileData
-          }).from(attachments2).where(eq39(attachments2.id, attachmentId));
+            id: attachments.id,
+            originalName: attachments.originalName,
+            filePath: attachments.filePath,
+            mimeType: attachments.mimeType,
+            fileData: attachments.fileData
+          }).from(attachments).where(eq40(attachments.id, attachmentId));
           if (attachment) {
             const isExcelFile = attachment.mimeType?.includes("excel") || attachment.mimeType?.includes("spreadsheet") || attachment.originalName?.toLowerCase().endsWith(".xlsx") || attachment.originalName?.toLowerCase().endsWith(".xls");
             if (isExcelFile && !excelFilePath) {
               if (attachment.fileData) {
-                const tempDir = path24.join(__dirname7, "../../uploads");
-                const tempFilePath = path24.join(tempDir, `temp-${Date.now()}-${attachment.originalName}`);
-                if (!fs26.existsSync(tempDir)) {
-                  fs26.mkdirSync(tempDir, { recursive: true });
+                const tempDir = path25.join(__dirname7, "../../uploads");
+                const tempFilePath = path25.join(tempDir, `temp-${Date.now()}-${attachment.originalName}`);
+                if (!fs27.existsSync(tempDir)) {
+                  fs27.mkdirSync(tempDir, { recursive: true });
                 }
-                fs26.writeFileSync(tempFilePath, Buffer.from(attachment.fileData, "base64"));
+                fs27.writeFileSync(tempFilePath, Buffer.from(attachment.fileData, "base64"));
                 excelFilePath = tempFilePath;
                 console.log("\u2705 Excel \uD30C\uC77C \uC784\uC2DC \uC800\uC7A5:", tempFilePath);
-              } else if (attachment.filePath && fs26.existsSync(attachment.filePath)) {
+              } else if (attachment.filePath && fs27.existsSync(attachment.filePath)) {
                 excelFilePath = attachment.filePath;
                 console.log("\u2705 Excel \uD30C\uC77C \uACBD\uB85C \uC0AC\uC6A9:", attachment.filePath);
               }
@@ -28611,7 +29203,7 @@ router43.post("/orders/send-email", requireAuth, async (req, res) => {
                   contentType: attachment.mimeType || "application/octet-stream"
                 });
                 console.log("\u2705 \uCD94\uAC00 \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00 (Base64):", attachment.originalName);
-              } else if (attachment.filePath && fs26.existsSync(attachment.filePath)) {
+              } else if (attachment.filePath && fs27.existsSync(attachment.filePath)) {
                 additionalAttachments.push({
                   filename: attachment.originalName,
                   path: attachment.filePath,
@@ -28628,10 +29220,10 @@ router43.post("/orders/send-email", requireAuth, async (req, res) => {
     }
     if (!excelFilePath) {
       console.log("\u{1F4CE} Excel \uD30C\uC77C\uC774 \uC5C6\uC5B4 \uAE30\uBCF8 \uD30C\uC77C \uC0DD\uC131");
-      const tempDir = path24.join(__dirname7, "../../uploads");
-      const tempFilePath = path24.join(tempDir, `default-po-${Date.now()}.xlsx`);
-      if (!fs26.existsSync(tempDir)) {
-        fs26.mkdirSync(tempDir, { recursive: true });
+      const tempDir = path25.join(__dirname7, "../../uploads");
+      const tempFilePath = path25.join(tempDir, `default-po-${Date.now()}.xlsx`);
+      if (!fs27.existsSync(tempDir)) {
+        fs27.mkdirSync(tempDir, { recursive: true });
       }
       const workbook = XLSX10.utils.book_new();
       const worksheet = XLSX10.utils.json_to_sheet([{
@@ -28646,7 +29238,7 @@ router43.post("/orders/send-email", requireAuth, async (req, res) => {
       console.log("\u2705 \uAE30\uBCF8 Excel \uD30C\uC77C \uC0DD\uC131:", tempFilePath);
     }
     console.log("\u{1F4E7} POEmailService\uB97C \uC0AC\uC6A9\uD558\uC5EC \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC2DC\uC791");
-    const emailOptions2 = {
+    const emailOptions = {
       to,
       cc,
       subject: subject || `\uBC1C\uC8FC\uC11C - ${orderData.orderNumber}`,
@@ -28660,10 +29252,10 @@ router43.post("/orders/send-email", requireAuth, async (req, res) => {
       // 추가 첨부파일
     };
     console.log("\u{1F4E7} \uC774\uBA54\uC77C \uC635\uC158:", {
-      to: emailOptions2.to,
-      cc: emailOptions2.cc,
-      subject: emailOptions2.subject,
-      hasMessage: !!emailOptions2.additionalMessage,
+      to: emailOptions.to,
+      cc: emailOptions.cc,
+      subject: emailOptions.subject,
+      hasMessage: !!emailOptions.additionalMessage,
       additionalAttachmentsCount: additionalAttachments.length,
       excelFile: excelFilePath ? "\uC788\uC74C" : "\uC5C6\uC74C"
     });
@@ -28675,12 +29267,12 @@ router43.post("/orders/send-email", requireAuth, async (req, res) => {
     try {
       const result = await emailService4.sendPOWithOriginalFormat(
         excelFilePath,
-        emailOptions2,
+        emailOptions,
         orderInfo
       );
       if (excelFilePath.includes("temp-")) {
         try {
-          fs26.unlinkSync(excelFilePath);
+          fs27.unlinkSync(excelFilePath);
           console.log("\u{1F5D1}\uFE0F \uC784\uC2DC Excel \uD30C\uC77C \uC0AD\uC81C:", excelFilePath);
         } catch (cleanupError) {
           console.warn("\u26A0\uFE0F \uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328:", cleanupError);
@@ -28713,7 +29305,7 @@ router43.post("/orders/send-email", requireAuth, async (req, res) => {
       console.error("\u274C POEmailService \uD638\uCD9C \uC624\uB958:", error);
       if (excelFilePath.includes("temp-")) {
         try {
-          fs26.unlinkSync(excelFilePath);
+          fs27.unlinkSync(excelFilePath);
           console.log("\u{1F5D1}\uFE0F \uC784\uC2DC Excel \uD30C\uC77C \uC0AD\uC81C (\uC624\uB958 \uC2DC):", excelFilePath);
         } catch (cleanupError) {
           console.warn("\u26A0\uFE0F \uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328 (\uC624\uB958 \uC2DC):", cleanupError);
@@ -28752,7 +29344,7 @@ router43.get("/orders/:orderId/email-history", requireAuth, async (req, res) => 
       sentAt: emailSendHistory.sentAt,
       createdAt: emailSendHistory.createdAt,
       senderUserId: emailSendHistory.senderUserId
-    }).from(emailSendHistory).where(eq39(emailSendHistory.orderId, orderId)).orderBy(desc18(emailSendHistory.createdAt));
+    }).from(emailSendHistory).where(eq40(emailSendHistory.orderId, orderId)).orderBy(desc18(emailSendHistory.createdAt));
     console.log("\u{1F4E7} \uC774\uBA54\uC77C \uD788\uC2A4\uD1A0\uB9AC \uACB0\uACFC:", { count: emailHistoryData.length });
     res.json(emailHistoryData);
   } catch (error) {
@@ -28872,7 +29464,7 @@ app.use(session({
 console.log("\u2705 Session middleware configured globally");
 app.use((req, res, next) => {
   const start = Date.now();
-  const path25 = req.path;
+  const path26 = req.path;
   let capturedJsonResponse = void 0;
   const originalResJson = res.json;
   res.json = function(bodyJson, ...args) {
@@ -28881,8 +29473,8 @@ app.use((req, res, next) => {
   };
   res.on("finish", () => {
     const duration = Date.now() - start;
-    if (path25.startsWith("/api")) {
-      let logLine = `${req.method} ${path25} ${res.statusCode} in ${duration}ms`;
+    if (path26.startsWith("/api")) {
+      let logLine = `${req.method} ${path26} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }
@@ -28963,13 +29555,13 @@ if (process.env.VERCEL) {
     console.log("\u{1F50D} Session debug info:", sessionData);
     res.json(sessionData);
   });
-  const path25 = await import("path");
-  app.use(express4.static(path25.join(process.cwd(), "dist/public")));
+  const path26 = await import("path");
+  app.use(express4.static(path26.join(process.cwd(), "dist/public")));
   console.log("\u{1F4C1} Serving static files from dist/public");
   app.use(routes_default);
   app.get("*", (req, res) => {
     if (!req.path.startsWith("/api")) {
-      res.sendFile(path25.join(process.cwd(), "dist/public/index.html"));
+      res.sendFile(path26.join(process.cwd(), "dist/public/index.html"));
     }
   });
   app.use((err, _req, res, _next) => {
