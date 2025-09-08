@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Trash2, Upload, FileText, Copy } from "lucide-react";
+import { OrderItemLayout2Rows } from "./order-item-layout-2rows";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -1007,29 +1008,19 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
             </div>
           </CardHeader>
           <CardContent className="pt-2">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="py-2">품목명</TableHead>
-                    <TableHead className="py-2">규격</TableHead>
-                    <TableHead className="py-2">대분류</TableHead>
-                    <TableHead className="py-2">중분류</TableHead>
-                    <TableHead className="py-2">소분류</TableHead>
-                    <TableHead className="py-2">수량</TableHead>
-                    <TableHead className="py-2">단가</TableHead>
-                    <TableHead className="py-2">금액</TableHead>
-                    <TableHead className="py-2">비고</TableHead>
-                    <TableHead className="py-2 text-center">복사</TableHead>
-                    <TableHead className="py-2 text-center">삭제</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {orderItems.map((item, index) => (
-                    <TableRow key={index}>
-                      <TableCell className="py-1">
-                        <div className="min-w-[180px]">
-                          <Input
+            <div className="space-y-4">
+              {/* 2행 레이아웃으로 변경 - 각 품목을 카드 형태로 표시 */}
+              {orderItems.map((item, index) => (
+                <div key={index} className={`p-4 rounded-lg border transition-colors ${
+                  isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'
+                }`}>
+                  {/* 첫 번째 행: 품목명, 규격, 비고 */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                    <div>
+                      <Label className={`text-sm transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                        품목명 *
+                      </Label>
+                      <Input
                             className={`h-8 transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}
                             placeholder="품목명을 입력하세요"
                             value={item.itemName}

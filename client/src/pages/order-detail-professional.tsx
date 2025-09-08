@@ -457,25 +457,26 @@ export default function OrderDetailProfessional() {
         if (response.ok) {
           toast({
             title: "이메일 발송 완료",
-          description: `${order.vendor?.name || order.vendorName}에게 발주서 ${order.orderNumber}를 전송했습니다.`,
-        });
-        setEmailDialogOpen(false);
-        setSelectedOrder(null);
+            description: `${order.vendor?.name || order.vendorName}에게 발주서 ${order.orderNumber}를 전송했습니다.`,
+          });
+          setEmailDialogOpen(false);
+          setSelectedOrder(null);
 
-        // 🔄 Cache invalidation after successful email sending
-        queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
-        queryClient.invalidateQueries({ queryKey: [`/api/orders/${orderId}`] });
-        queryClient.invalidateQueries({ queryKey: ["orders-optimized"] });
-        queryClient.invalidateQueries({ queryKey: ["orders-metadata"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+          // 🔄 Cache invalidation after successful email sending
+          queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+          queryClient.invalidateQueries({ queryKey: [`/api/orders/${orderId}`] });
+          queryClient.invalidateQueries({ queryKey: ["orders-optimized"] });
+          queryClient.invalidateQueries({ queryKey: ["orders-metadata"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
 
-        // Force refetch with no cache for critical queries to immediately update UI
-        queryClient.refetchQueries({ 
-          queryKey: [`/api/orders/${orderId}`], 
-          type: 'active' 
-        });
-      } else {
-        throw new Error('이메일 발송 실패');
+          // Force refetch with no cache for critical queries to immediately update UI
+          queryClient.refetchQueries({ 
+            queryKey: [`/api/orders/${orderId}`], 
+            type: 'active' 
+          });
+        } else {
+          throw new Error('이메일 발송 실패');
+        }
       }
     } catch (error) {
       toast({

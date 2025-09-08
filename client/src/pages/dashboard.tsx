@@ -583,7 +583,6 @@ export default function Dashboard() {
                 maxItems={6}
                 orders={recentOrders}
                 onOrderClick={(orderId) => navigate(`/orders/${orderId}`)}
-                showActions={false}
                 sortBy={recentOrdersSorting.sortBy}
                 sortOrder={recentOrdersSorting.sortOrder}
                 onSort={handleRecentOrdersSort}

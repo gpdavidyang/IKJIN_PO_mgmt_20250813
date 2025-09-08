@@ -118,7 +118,7 @@ function CompactTableOrderItem({
   sortBy,
   sortOrder,
   onSort,
-  showActions = true
+  showActions = false
 }: { 
   order: UnifiedOrder; 
   onOrderClick?: (orderId: number) => void;
@@ -446,6 +446,9 @@ export function UnifiedOrdersList({
   const { theme } = useTheme();
   const isDarkMode = theme === 'dark';
   const [, navigate] = useLocation();
+  
+  // compact-table 모드에서는 기본적으로 액션을 숨김
+  const effectiveShowActions = mode === 'compact-table' ? false : showActions;
 
   // Determine which query to use based on props
   const shouldFetchData = !preloadedOrders;
@@ -598,7 +601,7 @@ export function UnifiedOrdersList({
                       {getSortIcon("orderStatus")}
                     </button>
                   </th>
-                  {showActions && (
+                  {effectiveShowActions && (
                     <th className={`px-3 py-3 text-center text-xs font-medium uppercase tracking-wider ${
                       isDarkMode ? 'text-gray-300' : 'text-gray-500'
                     }`}>
@@ -627,7 +630,7 @@ export function UnifiedOrdersList({
                     sortBy={sortBy}
                     sortOrder={sortOrder}
                     onSort={onSort}
-                    showActions={showActions}
+                    showActions={effectiveShowActions}
                   />
                 ))}
               </tbody>
@@ -660,7 +663,7 @@ export function UnifiedOrdersList({
                 onStatusChange={onStatusChange}
                 onDeleteOrder={onDeleteOrder}
                 isDarkMode={isDarkMode}
-                showActions={showActions}
+                showActions={effectiveShowActions}
               />
             ))}
           </div>
