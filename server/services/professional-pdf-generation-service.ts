@@ -1150,6 +1150,18 @@ export class ProfessionalPDFGenerationService {
         // === 한글 폰트 관리자를 통한 최적화된 폰트 로딩 ===
         console.log('📝 [ProfessionalPDF] PDFKit으로 PDF 생성 (한글 폰트 최적화 로딩)');
         
+        // CRITICAL FIX: 서버리스 환경에서 폰트 초기화 확인 및 재시도
+        console.log('🔧 [ProfessionalPDF] 서버리스 환경 폰트 초기화 검증...');
+        const availableFontsCount = fontManager.getAvailableFonts().length;
+        
+        if (availableFontsCount === 0 && process.env.VERCEL) {
+          console.log('⚠️ [ProfessionalPDF] 서버리스 환경에서 폰트 없음 - 강제 재초기화 시도');
+          // Force re-initialization in serverless environment
+          const { KoreanFontManager } = require('../utils/korean-font-manager.js');
+          const freshFontManager = KoreanFontManager.getInstance();
+          console.log(`🔄 [ProfessionalPDF] 폰트 재초기화 완료: ${freshFontManager.getAvailableFonts().length}개 폰트 발견`);
+        }
+        
         // 폰트 문제 진단
         const fontDiagnosis = fontManager.diagnoseFontIssues();
         console.log('🔍 [ProfessionalPDF] 폰트 진단 결과:', JSON.stringify(fontDiagnosis, null, 2));

@@ -114,24 +114,29 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
   });
 
   // Fetch categories from category management
-  const { data: categoriesResponse } = useQuery({
+  const { data: categoriesResponse, isLoading: isLoadingCategories, error: categoriesError } = useQuery({
     queryKey: ['/api/categories'],
     queryFn: async () => {
+      console.log('🔍 Fetching categories from /api/categories');
       const response = await fetch('/api/categories', {
         credentials: 'include'
       });
+      console.log('🔍 Categories response status:', response.status);
       if (!response.ok) throw new Error('Failed to fetch categories');
-      return response.json();
+      const data = await response.json();
+      console.log('🔍 Categories response data:', data);
+      return data;
     },
     retry: 1
   });
   
   const categories = categoriesResponse?.categories || [];
+  const flatCategories = categoriesResponse?.flatCategories || [];
   
-  // Extract different category types
-  const majorCategories = categories.filter((cat: any) => cat.categoryType === 'major');
-  const middleCategories = categories.filter((cat: any) => cat.categoryType === 'middle');  
-  const minorCategories = categories.filter((cat: any) => cat.categoryType === 'minor');
+  // Extract different category types from flat structure for easier filtering
+  const majorCategories = flatCategories.filter((cat: any) => cat.categoryType === 'major');
+  const middleCategories = flatCategories.filter((cat: any) => cat.categoryType === 'middle');  
+  const minorCategories = flatCategories.filter((cat: any) => cat.categoryType === 'minor');
 
   // Fetch projects from database
   const { data: projectsData, isLoading: isLoadingProjects } = useQuery({
@@ -145,6 +150,14 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
   console.log('Templates loading:', isLoadingTemplates);
   console.log('Templates error:', templatesError);
   console.log('API endpoint test for templates');
+  console.log('🔍 Categories debug:', {
+    isLoadingCategories,
+    categoriesError,
+    categoriesResponse,
+    majorCategoriesCount: majorCategories?.length,
+    middleCategoriesCount: middleCategories?.length,
+    minorCategoriesCount: minorCategories?.length
+  });
   
   const [orderItems, setOrderItems] = useState([
     {
@@ -432,10 +445,28 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
 
   // 대분류에 따른 중분류 필터링
   const getMiddleCategoriesForMajor = (majorCategoryName: string) => {
-    if (!majorCategoryName) return [];
+    console.log('🔍 getMiddleCategoriesForMajor called with:', majorCategoryName);
+    console.log('🔍 Major categories available:', majorCategories?.length);
+    console.log('🔍 Middle categories available:', middleCategories?.length);
+    
+    if (!majorCategoryName) {
+      console.log('❌ No major category name provided');
+      return [];
+    }
+    
     const majorCategory = majorCategories.find((cat: any) => cat.categoryName === majorCategoryName);
-    if (!majorCategory) return [];
-    return middleCategories.filter((cat: any) => cat.parentId === majorCategory.id);
+    console.log('🔍 Found major category:', majorCategory);
+    
+    if (!majorCategory) {
+      console.log('❌ Major category not found');
+      console.log('Available major categories:', majorCategories?.map(cat => cat.categoryName));
+      return [];
+    }
+    
+    const filteredMiddle = middleCategories.filter((cat: any) => cat.parentId === majorCategory.id);
+    console.log('🔍 Filtered middle categories:', filteredMiddle);
+    
+    return filteredMiddle;
   };
 
   // 중분류에 따른 소분류 필터링

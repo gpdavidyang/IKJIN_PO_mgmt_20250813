@@ -208,6 +208,17 @@ export class KoreanFontManager {
           return Buffer.from(base64Data, 'base64');
         }
         
+        // 임베디드 폰트인지 확인
+        if (font.path.startsWith('embedded://')) {
+          console.log(`📦 [FontManager] 임베디드 폰트 처리 중: ${font.name}`);
+          // For embedded fonts, return a minimal NotoSans-compatible font buffer for basic functionality
+          const minimalKoreanFont = this.getMinimalKoreanFontBuffer();
+          if (minimalKoreanFont) {
+            console.log(`✅ [FontManager] 임베디드 폰트 Buffer 반환: ${font.name}`);
+            return minimalKoreanFont;
+          }
+        }
+        
         // 캐시에 없으면 파일 읽고 캐시 저장
         try {
           const fontBuffer = fs.readFileSync(font.path);
@@ -217,6 +228,12 @@ export class KoreanFontManager {
           return fontBuffer;
         } catch (vercelError) {
           console.error(`❌ [FontManager] Vercel 폰트 로드 실패: ${font.name}`, vercelError);
+          // Last resort: try minimal Korean font
+          const minimalFont = this.getMinimalKoreanFontBuffer();
+          if (minimalFont) {
+            console.log(`🚨 [FontManager] 최후 수단: 최소 한글 폰트 사용`);
+            return minimalFont;
+          }
           return null;
         }
       }
@@ -414,6 +431,40 @@ export class KoreanFontManager {
       availableFonts,
       issues
     };
+  }
+
+  /**
+   * 최소한의 한글 폰트 버퍼 반환 (임베디드용)
+   * 실제 운영에서는 적절한 한글 폰트 파일을 번들해야 함
+   */
+  private getMinimalKoreanFontBuffer(): Buffer | null {
+    try {
+      // 시스템 폰트 경로들을 시도해 볼 수 있는 경로 목록
+      const fallbackFontPaths = [
+        '/System/Library/Fonts/AppleGothic.ttf',            // macOS
+        '/System/Library/Fonts/Supplemental/AppleGothic.ttf', // macOS alternative
+        '/usr/share/fonts/truetype/nanum/NanumGothic.ttf',  // Linux
+        '/Windows/Fonts/malgun.ttf',                        // Windows
+      ];
+
+      for (const fontPath of fallbackFontPaths) {
+        try {
+          if (fs.existsSync(fontPath)) {
+            const fontBuffer = fs.readFileSync(fontPath);
+            console.log(`✅ [FontManager] 시스템 폰트 발견: ${fontPath}`);
+            return fontBuffer;
+          }
+        } catch (error) {
+          continue; // 다음 경로 시도
+        }
+      }
+
+      console.log(`⚠️ [FontManager] 시스템 폰트를 찾을 수 없음 - null 반환`);
+      return null;
+    } catch (error) {
+      console.error(`❌ [FontManager] 최소 폰트 로드 실패:`, error);
+      return null;
+    }
   }
 }
 

@@ -1479,6 +1479,8 @@ router.get("/orders/:id/download-pdf", async (req, res) => {
 // 이메일 발송 (POEmailService 사용으로 완전히 재작성)
 
 router.post("/orders/send-email", requireAuth, async (req, res) => {
+  console.log('🔍 이메일 발송 엔드포인트 진입');
+  
   try {
     const { 
       orderData, 
@@ -1498,25 +1500,53 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
       selectedAttachmentIds
     });
     
+    // 입력 데이터 로깅
+    console.log('📄 수신 데이터:', {
+      hasOrderData: !!orderData,
+      orderNumber: orderData?.orderNumber,
+      orderId: orderData?.orderId,
+      toCount: Array.isArray(to) ? to.length : (typeof to === 'string' ? 1 : 0),
+      ccCount: Array.isArray(cc) ? cc.length : (typeof cc === 'string' ? 1 : 0),
+      hasSubject: !!subject,
+      hasMessage: !!message,
+      attachmentIds: selectedAttachmentIds
+    });
+    
     // 수신자 검증
     if (!to || to.length === 0) {
+      console.log('❌ 수신자 검증 실패');
       return res.status(400).json({ error: '수신자가 필요합니다.' });
     }
 
     // 주문 정보 검증
     if (!orderData || !orderData.orderNumber) {
+      console.log('❌ 주문 정보 검증 실패:', orderData);
       return res.status(400).json({ error: '주문 정보가 필요합니다.' });
     }
 
     // 첨부파일 처리: selectedAttachmentIds에서 Excel 파일 찾기
     let excelFilePath = '';
     let additionalAttachments: any[] = [];
+    let attachments: any[] = [];
+    let attachmentsList: string[] = [];
+    
+    // emailOptions를 req.body에서 추출하거나 기본값으로 설정
+    const emailOptions = {
+      orderNumber: orderData.orderNumber,
+      vendorName: orderData.vendorName,
+      additionalMessage: message,
+      to: Array.isArray(to) ? to : [to],
+      cc: Array.isArray(cc) ? cc : (cc ? [cc] : []),
+      subject: subject || `발주서 - ${orderData.orderNumber}`
+    };
     
     if (selectedAttachmentIds && selectedAttachmentIds.length > 0) {
       console.log('📎 선택된 첨부파일 처리:', selectedAttachmentIds);
       
       for (const attachmentId of selectedAttachmentIds) {
         try {
+          console.log(`📈 첨부파일 ID ${attachmentId} 처리 시작`);
+          
           const [attachment] = await database.db
             .select({
               id: attachmentsTable.id,
@@ -1527,6 +1557,14 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
             })
             .from(attachmentsTable)
             .where(eq(attachmentsTable.id, attachmentId));
+          
+          console.log(`📋 첨부파일 데이터베이스 조회 결과:`, {
+            found: !!attachment,
+            name: attachment?.originalName,
+            mimeType: attachment?.mimeType,
+            hasFileData: !!attachment?.fileData,
+            hasFilePath: !!attachment?.filePath
+          });
             
           if (attachment) {
             const isExcelFile = attachment.mimeType?.includes('excel') || 
@@ -1604,6 +1642,12 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
 
     // NEW: Process selectedAttachments/selectedAttachmentIds from frontend modal
     // Support both selectedAttachments and selectedAttachmentIds (frontend sends selectedAttachmentIds)
+    const selectedAttachments = req.body.selectedAttachments || [];
+    const attachPdf = req.body.attachPdf || false;
+    const attachExcel = req.body.attachExcel || false;
+    const pdfUrl = req.body.pdfUrl || '';
+    const excelUrl = req.body.excelUrl || '';
+    
     const attachmentIdsToProcess = (selectedAttachmentIds && selectedAttachmentIds.length > 0) 
       ? selectedAttachmentIds 
       : selectedAttachments;
@@ -1743,9 +1787,9 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
               <div class="content">
                 <p>안녕하세요, 발주서를 전송드립니다.</p>
                 <div class="order-info">
-                  <p><strong>발주번호:</strong> ${emailOptions.orderNumber || 'N/A'}</p>
-                  <p><strong>거래처:</strong> ${emailOptions.vendorName || 'N/A'}</p>
-                  <p><strong>메시지:</strong> ${emailOptions.additionalMessage || '없음'}</p>
+                  <p><strong>발주번호:</strong> ${orderData.orderNumber || 'N/A'}</p>
+                  <p><strong>거래처:</strong> ${orderData.vendorName || 'N/A'}</p>
+                  <p><strong>메시지:</strong> ${message || '없음'}</p>
                 </div>
               </div>
             </body>
@@ -1797,9 +1841,9 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
               <p>안녕하세요,</p>
               <p>발주서를 전송드립니다.</p>
               <div class="order-info">
-                <p><strong>발주번호:</strong> ${emailOptions.orderNumber || 'N/A'}</p>
-                <p><strong>거래처:</strong> ${emailOptions.vendorName || 'N/A'}</p>
-                <p><strong>메시지:</strong> ${emailOptions.additionalMessage || '없음'}</p>
+                <p><strong>발주번호:</strong> ${orderData.orderNumber || 'N/A'}</p>
+                <p><strong>거래처:</strong> ${orderData.vendorName || 'N/A'}</p>
+                <p><strong>메시지:</strong> ${message || '없음'}</p>
               </div>
             </div>
           </body>
@@ -2063,6 +2107,7 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
       // 개발 환경에서도 이메일 기록 저장
       if (orderData && orderData.orderId) {
         try {
+          console.log('💾 이메일 히스토리 DB 저장 시작 (개발 모드)');
           const { emailSendHistory } = await import('@shared/schema');
           
           const recipients = Array.isArray(emailOptions.to) 
@@ -2075,24 +2120,41 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
                 : emailOptions.cc.split(',').map((e: string) => e.trim())) 
             : [];
           
-          await database.db.insert(emailSendHistory).values({
+          const historyData = {
             orderId: orderData.orderId,
-            senderUserId: req.user?.id || 0,
+            orderNumber: orderData.orderNumber,
+            senderUserId: req.user?.id ? String(req.user.id) : null,
             recipients: recipients,
             cc: ccRecipients,
             bcc: [],
             subject: mailOptions.subject,
-            message: message || emailOptions.additionalMessage || '',
-            attachments: attachmentsList,
+            messageContent: message || emailOptions.additionalMessage || '',
+            attachmentFiles: attachmentsList,
             status: 'sent',
-            sentAt: new Date(),
-            messageId: `mock-${Date.now()}`,
-            error: null
-          });
+            sentCount: 1,
+            failedCount: 0,
+            errorMessage: null,
+            sentAt: new Date()
+          };
+          
+          console.log('📋 DB 삽입 데이터:', historyData);
+          
+          await database.db.insert(emailSendHistory).values(historyData);
+          
+          console.log('✅ 이메일 히스토리 DB 저장 성공');
           
           console.log(`📧 [개발 모드] 이메일 기록 저장 완료: 발주번호 ${orderData.orderNumber}`);
         } catch (historyError) {
-          console.error(`❌ [개발 모드] 이메일 기록 저장 실패:`, historyError);
+          console.error(`❌ [개발 모드] 이메일 기록 저장 실패 (상세):`, {
+            error: historyError,
+            message: historyError instanceof Error ? historyError.message : 'Unknown error',
+            stack: historyError instanceof Error ? historyError.stack : undefined,
+            orderData: {
+              orderId: orderData.orderId,
+              orderNumber: orderData.orderNumber
+            },
+            userId: req.user?.id
+          });
         }
       }
       
@@ -2118,6 +2180,7 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
             // 이메일 발송 기록 저장
             if (orderData.orderId) {
               try {
+                console.log('💾 이메일 히스토리 DB 저장 시작 (프로덕션)');
                 const { emailSendHistory } = await import('@shared/schema');
                 
                 // 수신자 목록 정리
@@ -2131,19 +2194,40 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
                       : emailOptions.cc.split(',').map((e: string) => e.trim())) 
                   : [];
                 
-                await database.db.insert(emailSendHistory).values({
+                const historyData = {
                   orderId: orderData.orderId,
-                  senderUserId: req.user?.id || 0,
+                  orderNumber: orderData.orderNumber,
+                  senderUserId: req.user?.id ? String(req.user.id) : null,
                   recipients: recipients,
                   cc: ccRecipients,
                   bcc: [],
                   subject: mailOptions.subject,
-                  message: message || emailOptions.additionalMessage || '',
-                  attachments: attachmentsList,
+                  messageContent: message || emailOptions.additionalMessage || '',
+                  attachmentFiles: attachmentsList,
                   status: 'sent',
-                  sentAt: new Date(),
-                  messageId: info.messageId,
-                  error: null
+                  sentCount: 1,
+                  failedCount: 0,
+                  errorMessage: null,
+                  sentAt: new Date()
+                };
+                
+                console.log('📋 DB 삽입 데이터 (프로덕션):', historyData);
+                
+                await database.db.insert(emailSendHistory).values({
+                  orderId: orderData.orderId,
+                  orderNumber: orderData.orderNumber,
+                  senderUserId: req.user?.id ? String(req.user.id) : null,
+                  recipients: recipients,
+                  cc: ccRecipients,
+                  bcc: [],
+                  subject: mailOptions.subject,
+                  messageContent: message || emailOptions.additionalMessage || '',
+                  attachmentFiles: attachmentsList,
+                  status: 'sent',
+                  sentCount: 1,
+                  failedCount: 0,
+                  errorMessage: null,
+                  sentAt: new Date()
                 });
                 
                 console.log(`📧 이메일 발송 기록 저장 완료: 발주번호 ${orderData.orderNumber}`);
@@ -2181,17 +2265,19 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
             
             await database.db.insert(emailSendHistory).values({
               orderId: orderData.orderId,
-              senderUserId: req.user?.id || 0,
+              orderNumber: orderData.orderNumber,
+              senderUserId: req.user?.id ? String(req.user.id) : null,
               recipients: recipients,
               cc: ccRecipients,
               bcc: [],
               subject: mailOptions.subject,
-              message: message || emailOptions.additionalMessage || '',
-              attachments: attachmentsList,
+              messageContent: message || emailOptions.additionalMessage || '',
+              attachmentFiles: attachmentsList,
               status: 'failed',
-              sentAt: new Date(),
-              messageId: null,
-              error: emailError instanceof Error ? emailError.message : 'Unknown error'
+              sentCount: 0,
+              failedCount: 1,
+              errorMessage: emailError instanceof Error ? emailError.message : 'Unknown error',
+              sentAt: new Date()
             });
             
             console.log(`📧 이메일 발송 실패 기록 저장 완료: 발주번호 ${orderData.orderNumber}`);
@@ -2208,10 +2294,28 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
     }
 
   } catch (error) {
-    console.error('이메일 발송 오류:', error);
+    console.error('❌ 이메일 발송 오류 (상세):', {
+      error: error,
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : undefined
+    });
+    
+    // 데이터베이스 관련 오류인지 확인
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const isDatabaseError = errorMessage.includes('column') || 
+                          errorMessage.includes('relation') || 
+                          errorMessage.includes('insert') ||
+                          errorMessage.includes('constraint') ||
+                          errorMessage.includes('violates');
+    
+    console.log(`🔍 데이터베이스 오류 여부: ${isDatabaseError}`);
+    
     res.status(500).json({ 
       error: '이메일 발송 실패',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: errorMessage,
+      isDatabaseError,
+      timestamp: new Date().toISOString()
     });
   }
 });
@@ -2786,11 +2890,12 @@ router.get("/:orderId/email-history", async (req, res) => {
         cc: emailSendHistory.cc,
         bcc: emailSendHistory.bcc,
         subject: emailSendHistory.subject,
-        message: emailSendHistory.message,
-        attachments: emailSendHistory.attachments,
+        messageContent: emailSendHistory.messageContent,
+        attachmentFiles: emailSendHistory.attachmentFiles,
         status: emailSendHistory.status,
-        error: emailSendHistory.error,
-        messageId: emailSendHistory.messageId,
+        sentCount: emailSendHistory.sentCount,
+        failedCount: emailSendHistory.failedCount,
+        errorMessage: emailSendHistory.errorMessage,
         createdAt: emailSendHistory.createdAt,
         updatedAt: emailSendHistory.updatedAt,
       })

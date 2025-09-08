@@ -15,11 +15,11 @@ var __export = (target, all) => {
   for (var name in all)
     __defProp(target, name, { get: all[name], enumerable: true });
 };
-var __copyProps = (to, from, except, desc18) => {
+var __copyProps = (to, from, except, desc19) => {
   if (from && typeof from === "object" || typeof from === "function") {
     for (let key of __getOwnPropNames(from))
       if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc18 = __getOwnPropDesc(from, key)) || desc18.enumerable });
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc19 = __getOwnPropDesc(from, key)) || desc19.enumerable });
   }
   return to;
 };
@@ -38,7 +38,7 @@ __export(schema_exports, {
   approvalStepTemplates: () => approvalStepTemplates,
   approvalWorkflowSettings: () => approvalWorkflowSettings,
   archivedAuditLogs: () => archivedAuditLogs,
-  attachments: () => attachments,
+  attachments: () => attachments2,
   attachmentsRelations: () => attachmentsRelations,
   auditAlertRules: () => auditAlertRules,
   auditAlertRulesRelations: () => auditAlertRulesRelations,
@@ -167,7 +167,7 @@ import {
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-var sessions, uiTerms, itemCategories, userRoleEnum, purchaseOrderStatusEnum, orderStatusEnum, approvalStatusEnum, projectStatusEnum, projectTypeEnum, invoiceStatusEnum, itemReceiptStatusEnum, verificationActionEnum, approvalStepStatusEnum, emailSettings, approvalAuthorities, accountStatusEnum, users, companies, vendors, items, terminology, projects, projectMembers, projectHistory, orderTemplates, templateFields, handsontableConfigs, templateVersions, purchaseOrders, purchaseOrderItems, attachments, orderHistory, emailSendHistory, invoices, itemReceipts, verificationLogs, usersRelations, vendorsRelations, itemsRelations, projectsRelations, projectMembersRelations, projectHistoryRelations, orderTemplatesRelations, purchaseOrdersRelations, purchaseOrderItemsRelations, attachmentsRelations, orderHistoryRelations, invoicesRelations, itemReceiptsRelations, verificationLogsRelations, templateFieldsRelations, handsontableConfigsRelations, templateVersionsRelations, itemCategoriesRelations, emailSendHistoryRelations, insertCompanySchema, insertVendorSchema, insertItemSchema, insertProjectSchema, insertOrderTemplateSchema, insertItemCategorySchema, insertPurchaseOrderSchema, insertPurchaseOrderItemSchema, insertAttachmentSchema, insertOrderHistorySchema, insertInvoiceSchema, insertItemReceiptSchema, insertVerificationLogSchema, insertEmailSendHistorySchema, insertTemplateFieldSchema, insertHandsontableConfigSchema, insertTemplateVersionSchema, insertProjectMemberSchema, insertProjectHistorySchema, insertUiTermSchema, insertTerminologySchema, insertUITermSchema, insertApprovalAuthoritySchema, approvalWorkflowSettings, approvalStepTemplates, approvalStepInstances2, insertApprovalWorkflowSettingsSchema, insertApprovalStepTemplateSchema, insertApprovalStepInstanceSchema, auditLogLevelEnum, auditEventTypeEnum, systemAuditLogs, auditSettings, archivedAuditLogs, auditAlertRules, systemAuditLogsRelations, auditSettingsRelations, auditAlertRulesRelations, insertSystemAuditLogSchema, insertAuditSettingsSchema, insertArchivedAuditLogSchema, insertAuditAlertRuleSchema, validationSessions, validationResults, aiSuggestions, vendorMappings, categoryMappings, validationSessionsRelations, validationResultsRelations, aiSuggestionsRelations, vendorMappingsRelations, categoryMappingsRelations, insertValidationSessionSchema, insertValidationResultSchema, insertAISuggestionSchema, insertVendorMappingSchema, insertCategoryMappingSchema, insertEmailSettingsSchema, registrationStatusEnum, userRegistrations, passwordResetTokens, userRegistrationsRelations, passwordResetTokensRelations, insertUserRegistrationSchema, insertPasswordResetTokenSchema;
+var sessions, uiTerms, itemCategories, userRoleEnum, purchaseOrderStatusEnum, orderStatusEnum, approvalStatusEnum, projectStatusEnum, projectTypeEnum, invoiceStatusEnum, itemReceiptStatusEnum, verificationActionEnum, approvalStepStatusEnum, emailSettings, approvalAuthorities, accountStatusEnum, users, companies, vendors, items, terminology, projects, projectMembers, projectHistory, orderTemplates, templateFields, handsontableConfigs, templateVersions, purchaseOrders, purchaseOrderItems, attachments2, orderHistory, emailSendHistory, invoices, itemReceipts, verificationLogs, usersRelations, vendorsRelations, itemsRelations, projectsRelations, projectMembersRelations, projectHistoryRelations, orderTemplatesRelations, purchaseOrdersRelations, purchaseOrderItemsRelations, attachmentsRelations, orderHistoryRelations, invoicesRelations, itemReceiptsRelations, verificationLogsRelations, templateFieldsRelations, handsontableConfigsRelations, templateVersionsRelations, itemCategoriesRelations, emailSendHistoryRelations, insertCompanySchema, insertVendorSchema, insertItemSchema, insertProjectSchema, insertOrderTemplateSchema, insertItemCategorySchema, insertPurchaseOrderSchema, insertPurchaseOrderItemSchema, insertAttachmentSchema, insertOrderHistorySchema, insertInvoiceSchema, insertItemReceiptSchema, insertVerificationLogSchema, insertEmailSendHistorySchema, insertTemplateFieldSchema, insertHandsontableConfigSchema, insertTemplateVersionSchema, insertProjectMemberSchema, insertProjectHistorySchema, insertUiTermSchema, insertTerminologySchema, insertUITermSchema, insertApprovalAuthoritySchema, approvalWorkflowSettings, approvalStepTemplates, approvalStepInstances2, insertApprovalWorkflowSettingsSchema, insertApprovalStepTemplateSchema, insertApprovalStepInstanceSchema, auditLogLevelEnum, auditEventTypeEnum, systemAuditLogs, auditSettings, archivedAuditLogs, auditAlertRules, systemAuditLogsRelations, auditSettingsRelations, auditAlertRulesRelations, insertSystemAuditLogSchema, insertAuditSettingsSchema, insertArchivedAuditLogSchema, insertAuditAlertRuleSchema, validationSessions, validationResults, aiSuggestions, vendorMappings, categoryMappings, validationSessionsRelations, validationResultsRelations, aiSuggestionsRelations, vendorMappingsRelations, categoryMappingsRelations, insertValidationSessionSchema, insertValidationResultSchema, insertAISuggestionSchema, insertVendorMappingSchema, insertCategoryMappingSchema, insertEmailSettingsSchema, registrationStatusEnum, userRegistrations, passwordResetTokens, userRegistrationsRelations, passwordResetTokensRelations, insertUserRegistrationSchema, insertPasswordResetTokenSchema;
 var init_schema = __esm({
   "shared/schema.ts"() {
     "use strict";
@@ -536,7 +536,7 @@ var init_schema = __esm({
       // index("idx_purchase_order_items_category_lv2").on(table.categoryLv2), // TODO: Add when column is added
       // index("idx_purchase_order_items_category_lv3").on(table.categoryLv3), // TODO: Add when column is added
     ]);
-    attachments = pgTable("attachments", {
+    attachments2 = pgTable("attachments", {
       id: serial("id").primaryKey(),
       orderId: integer("order_id").references(() => purchaseOrders.id).notNull(),
       originalName: varchar("original_name", { length: 255 }).notNull(),
@@ -710,7 +710,7 @@ var init_schema = __esm({
         references: [users.id]
       }),
       items: many(purchaseOrderItems),
-      attachments: many(attachments),
+      attachments: many(attachments2),
       history: many(orderHistory),
       invoices: many(invoices),
       verificationLogs: many(verificationLogs),
@@ -723,9 +723,9 @@ var init_schema = __esm({
       }),
       receipts: many(itemReceipts)
     }));
-    attachmentsRelations = relations(attachments, ({ one }) => ({
+    attachmentsRelations = relations(attachments2, ({ one }) => ({
       order: one(purchaseOrders, {
-        fields: [attachments.orderId],
+        fields: [attachments2.orderId],
         references: [purchaseOrders.id]
       })
     }));
@@ -871,7 +871,7 @@ var init_schema = __esm({
       supplyAmount: z.number().nonnegative().optional(),
       taxAmount: z.number().nonnegative().optional()
     });
-    insertAttachmentSchema = createInsertSchema(attachments).omit({
+    insertAttachmentSchema = createInsertSchema(attachments2).omit({
       id: true,
       uploadedAt: true
     });
@@ -1662,12 +1662,12 @@ var init_korean_font_manager = __esm({
         this.FONT_PRIORITIES = [
           {
             name: "NotoSansKR",
-            path: path4.join(process.cwd(), "fonts", "NotoSansKR-Regular.ttf"),
+            path: process.env.VERCEL ? path4.join(process.cwd(), "fonts", "NotoSansKR-Regular.ttf") : path4.join(process.cwd(), "fonts", "NotoSansKR-Regular.ttf"),
             available: false
           },
           {
             name: "NanumGothic",
-            path: path4.join(process.cwd(), "fonts", "NanumGothic-Regular.ttf"),
+            path: process.env.VERCEL ? path4.join(process.cwd(), "fonts", "NanumGothic-Regular.ttf") : path4.join(process.cwd(), "fonts", "NanumGothic-Regular.ttf"),
             available: false
           },
           // Fallback 시스템 폰트 (로컬 환경용)
@@ -1704,14 +1704,41 @@ var init_korean_font_manager = __esm({
        */
       initializeFonts() {
         console.log("\u{1F50D} [FontManager] \uD55C\uAE00 \uD3F0\uD2B8 \uCD08\uAE30\uD654 \uC2DC\uC791...");
+        console.log(`\u{1F50D} [FontManager] \uD658\uACBD: ${process.env.VERCEL ? "Vercel" : "Local"}, \uC791\uC5C5\uB514\uB809\uD1A0\uB9AC: ${process.cwd()}`);
+        if (process.env.VERCEL) {
+          console.log("\u2601\uFE0F [FontManager] Vercel \uD658\uACBD - \uBC88\uB4E4\uB41C \uD3F0\uD2B8 \uD0D0\uC0C9");
+          try {
+            const bundledFontsDir = path4.join(process.cwd(), "fonts");
+            console.log(`\u{1F4C2} [FontManager] \uBC88\uB4E4\uB41C \uD3F0\uD2B8 \uB514\uB809\uD1A0\uB9AC \uD655\uC778: ${bundledFontsDir}`);
+            if (fs6.existsSync(bundledFontsDir)) {
+              const files = fs6.readdirSync(bundledFontsDir);
+              console.log(`\u{1F4CB} [FontManager] \uBC88\uB4E4\uB41C \uD30C\uC77C \uBAA9\uB85D:`, files);
+            } else {
+              console.log(`\u274C [FontManager] \uBC88\uB4E4\uB41C \uD3F0\uD2B8 \uB514\uB809\uD1A0\uB9AC \uC5C6\uC74C: ${bundledFontsDir}`);
+            }
+          } catch (error) {
+            console.log(`\u26A0\uFE0F [FontManager] \uBC88\uB4E4 \uD655\uC778 \uC2E4\uD328:`, error);
+          }
+        }
         for (const font of _KoreanFontManager.FONT_PRIORITIES) {
           try {
+            console.log(`\u{1F50D} [FontManager] \uD3F0\uD2B8 \uD655\uC778 \uC911: ${font.name} at ${font.path}`);
             if (fs6.existsSync(font.path)) {
               const stats = fs6.statSync(font.path);
               font.available = true;
               font.size = stats.size;
               this.fontCache.set(font.name, { ...font });
               console.log(`\u2705 [FontManager] \uD3F0\uD2B8 \uBC1C\uACAC: ${font.name} (${Math.round(stats.size / 1024)}KB)`);
+              if (process.env.VERCEL) {
+                try {
+                  const fontBuffer = fs6.readFileSync(font.path);
+                  const base64Data = fontBuffer.toString("base64");
+                  this.base64Cache.set(font.name, base64Data);
+                  console.log(`\u{1F4BE} [FontManager] Vercel\uC6A9 Base64 \uBBF8\uB9AC \uB85C\uB4DC: ${font.name}`);
+                } catch (base64Error) {
+                  console.warn(`\u26A0\uFE0F [FontManager] Base64 \uBBF8\uB9AC \uB85C\uB4DC \uC2E4\uD328: ${font.name}`, base64Error);
+                }
+              }
             } else {
               font.available = false;
               console.log(`\u274C [FontManager] \uD3F0\uD2B8 \uC5C6\uC74C: ${font.name} - ${font.path}`);
@@ -1723,6 +1750,10 @@ var init_korean_font_manager = __esm({
         }
         const availableFonts = Array.from(this.fontCache.values()).filter((f) => f.available);
         console.log(`\u{1F4CA} [FontManager] \uCD1D ${availableFonts.length}\uAC1C \uD55C\uAE00 \uD3F0\uD2B8 \uC0AC\uC6A9 \uAC00\uB2A5`);
+        if (process.env.VERCEL && availableFonts.length === 0) {
+          console.log("\u{1F504} [FontManager] Vercel\uC5D0\uC11C \uD3F0\uD2B8 \uC5C6\uC74C - \uC784\uBCA0\uB514\uB4DC \uD3F0\uD2B8 \uC2DC\uB3C4");
+          this.loadEmbeddedFonts();
+        }
       }
       /**
        * 최적의 한글 폰트 선택
@@ -1769,6 +1800,24 @@ var init_korean_font_manager = __esm({
           const font = fontName ? this.fontCache.get(fontName) : this.getBestKoreanFont();
           if (!font || !font.available) {
             return null;
+          }
+          if (process.env.VERCEL) {
+            const cacheKey = font.name;
+            if (this.base64Cache.has(cacheKey)) {
+              console.log(`\u{1F4BE} [FontManager] Vercel - Base64 \uCE90\uC2DC\uC5D0\uC11C Buffer \uBC18\uD658: ${font.name}`);
+              const base64Data = this.base64Cache.get(cacheKey);
+              return Buffer.from(base64Data, "base64");
+            }
+            try {
+              const fontBuffer = fs6.readFileSync(font.path);
+              const base64Data = fontBuffer.toString("base64");
+              this.base64Cache.set(cacheKey, base64Data);
+              console.log(`\u2705 [FontManager] Vercel - \uD3F0\uD2B8 \uCE90\uC2DC \uD6C4 Buffer \uBC18\uD658: ${font.name}`);
+              return fontBuffer;
+            } catch (vercelError) {
+              console.error(`\u274C [FontManager] Vercel \uD3F0\uD2B8 \uB85C\uB4DC \uC2E4\uD328: ${font.name}`, vercelError);
+              return null;
+            }
           }
           return fs6.readFileSync(font.path);
         } catch (error) {
@@ -1864,6 +1913,58 @@ var init_korean_font_manager = __esm({
           (font) => font.path.includes(process.cwd())
         );
         return projectFonts.length > 0;
+      }
+      /**
+       * Vercel용 임베디드 폰트 로드 (Base64 방식)
+       */
+      loadEmbeddedFonts() {
+        console.log("\u{1F504} [FontManager] \uC784\uBCA0\uB514\uB4DC \uD3F0\uD2B8 \uB85C\uB4DC \uC2DC\uB3C4...");
+        const embeddedFonts = {
+          "NotoSansKR-Basic": {
+            name: "NotoSansKR-Basic",
+            path: "embedded://NotoSansKR-Basic",
+            available: true,
+            size: 0
+          }
+        };
+        for (const [key, font] of Object.entries(embeddedFonts)) {
+          this.fontCache.set(font.name, font);
+          console.log(`\u{1F4E6} [FontManager] \uC784\uBCA0\uB514\uB4DC \uD3F0\uD2B8 \uB4F1\uB85D: ${font.name}`);
+        }
+      }
+      /**
+       * 폰트 번들링 상태 진단
+       */
+      diagnoseFontIssues() {
+        const issues = [];
+        const fontDir = path4.join(process.cwd(), "fonts");
+        const fontDirExists = fs6.existsSync(fontDir);
+        let bundledFiles = [];
+        if (fontDirExists) {
+          try {
+            bundledFiles = fs6.readdirSync(fontDir);
+          } catch (error) {
+            issues.push(`\uD3F0\uD2B8 \uB514\uB809\uD1A0\uB9AC \uC77D\uAE30 \uC2E4\uD328: ${error}`);
+          }
+        } else {
+          issues.push("\uD3F0\uD2B8 \uB514\uB809\uD1A0\uB9AC\uAC00 \uC874\uC7AC\uD558\uC9C0 \uC54A\uC74C");
+        }
+        const availableFonts = this.getAvailableFonts().length;
+        if (availableFonts === 0) {
+          issues.push("\uC0AC\uC6A9 \uAC00\uB2A5\uD55C \uD55C\uAE00 \uD3F0\uD2B8\uAC00 \uC5C6\uC74C");
+        }
+        if (process.env.VERCEL && !fontDirExists) {
+          issues.push("Vercel \uD658\uACBD\uC5D0\uC11C \uD3F0\uD2B8\uAC00 \uBC88\uB4E4\uC5D0 \uD3EC\uD568\uB418\uC9C0 \uC54A\uC74C");
+        }
+        return {
+          environment: process.env.VERCEL ? "Vercel" : "Local",
+          workingDirectory: process.cwd(),
+          fontDirectory: fontDir,
+          fontDirectoryExists: fontDirExists,
+          bundledFiles,
+          availableFonts,
+          issues
+        };
       }
     };
     fontManager = KoreanFontManager.getInstance();
@@ -2041,8 +2142,8 @@ var init_email_settings_service = __esm({
           if (_EmailSettingsService.isCacheValid()) {
             return _EmailSettingsService.settingsCache;
           }
-          const db3 = db;
-          const result = await db3.select().from(emailSettings).where(eq8(emailSettings.isActive, true)).orderBy(desc4(emailSettings.isDefault), desc4(emailSettings.updatedAt)).limit(1);
+          const db4 = db;
+          const result = await db4.select().from(emailSettings).where(eq8(emailSettings.isActive, true)).orderBy(desc4(emailSettings.isDefault), desc4(emailSettings.updatedAt)).limit(1);
           const setting = result[0] || null;
           _EmailSettingsService.settingsCache = setting;
           _EmailSettingsService.cacheTimestamp = Date.now();
@@ -2057,8 +2158,8 @@ var init_email_settings_service = __esm({
        */
       async getAllSettings() {
         try {
-          const db3 = db;
-          const result = await db3.select().from(emailSettings).orderBy(desc4(emailSettings.isDefault), desc4(emailSettings.updatedAt));
+          const db4 = db;
+          const result = await db4.select().from(emailSettings).orderBy(desc4(emailSettings.isDefault), desc4(emailSettings.updatedAt));
           return result;
         } catch (error) {
           console.error("\uC774\uBA54\uC77C \uC124\uC815 \uBAA9\uB85D \uC870\uD68C \uC2E4\uD328:", error);
@@ -2071,16 +2172,16 @@ var init_email_settings_service = __esm({
       async createSettings(data, createdBy) {
         try {
           const encryptedPassword = EmailSettingsEncryption.encrypt(data.smtpPass);
-          const db3 = db;
+          const db4 = db;
           if (data.isDefault) {
-            await db3.update(emailSettings).set({ isDefault: false, updatedAt: /* @__PURE__ */ new Date() }).where(eq8(emailSettings.isDefault, true));
+            await db4.update(emailSettings).set({ isDefault: false, updatedAt: /* @__PURE__ */ new Date() }).where(eq8(emailSettings.isDefault, true));
           }
           const insertData = {
             ...data,
             smtpPass: encryptedPassword,
             createdBy
           };
-          const result = await db3.insert(emailSettings).values(insertData).returning();
+          const result = await db4.insert(emailSettings).values(insertData).returning();
           const newSetting = result[0];
           this.invalidateCache();
           return newSetting;
@@ -2094,7 +2195,7 @@ var init_email_settings_service = __esm({
        */
       async updateSettings(id, data, updatedBy) {
         try {
-          const db3 = db;
+          const db4 = db;
           const updateData = {
             ...data,
             updatedAt: /* @__PURE__ */ new Date()
@@ -2103,9 +2204,9 @@ var init_email_settings_service = __esm({
             updateData.smtpPass = EmailSettingsEncryption.encrypt(data.smtpPass);
           }
           if (data.isDefault === true) {
-            await db3.update(emailSettings).set({ isDefault: false, updatedAt: /* @__PURE__ */ new Date() }).where(eq8(emailSettings.isDefault, true));
+            await db4.update(emailSettings).set({ isDefault: false, updatedAt: /* @__PURE__ */ new Date() }).where(eq8(emailSettings.isDefault, true));
           }
-          const result = await db3.update(emailSettings).set(updateData).where(eq8(emailSettings.id, id)).returning();
+          const result = await db4.update(emailSettings).set(updateData).where(eq8(emailSettings.id, id)).returning();
           if (result.length === 0) {
             throw new Error("\uC5C5\uB370\uC774\uD2B8\uD560 \uC124\uC815\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4");
           }
@@ -2121,8 +2222,8 @@ var init_email_settings_service = __esm({
        */
       async deleteSettings(id) {
         try {
-          const db3 = db;
-          const result = await db3.delete(emailSettings).where(eq8(emailSettings.id, id)).returning();
+          const db4 = db;
+          const result = await db4.delete(emailSettings).where(eq8(emailSettings.id, id)).returning();
           this.invalidateCache();
           return result.length > 0;
         } catch (error) {
@@ -2225,8 +2326,8 @@ var init_email_settings_service = __esm({
         try {
           let setting;
           if (settingId) {
-            const db3 = db;
-            const result = await db3.select().from(emailSettings).where(eq8(emailSettings.id, settingId)).limit(1);
+            const db4 = db;
+            const result = await db4.select().from(emailSettings).where(eq8(emailSettings.id, settingId)).limit(1);
             setting = result[0] || null;
           } else {
             setting = await this.getDefaultSettings();
@@ -2281,8 +2382,8 @@ var init_email_settings_service = __esm({
        */
       async updateTestResult(settingId, testResult) {
         try {
-          const db3 = db;
-          await db3.update(emailSettings).set({
+          const db4 = db;
+          await db4.update(emailSettings).set({
             lastTestedAt: /* @__PURE__ */ new Date(),
             testResult,
             updatedAt: /* @__PURE__ */ new Date()
@@ -2333,8 +2434,8 @@ var init_professional_pdf_generation_service = __esm({
       static async getSystemEmail() {
         try {
           const { EmailSettingsService: EmailSettingsService2 } = await Promise.resolve().then(() => (init_email_settings_service(), email_settings_service_exports));
-          const emailService4 = new EmailSettingsService2();
-          const settings = await emailService4.getDefaultSettings();
+          const emailService5 = new EmailSettingsService2();
+          const settings = await emailService5.getDefaultSettings();
           if (settings && settings.smtpUser) {
             return settings.smtpUser;
           }
@@ -2411,7 +2512,7 @@ var init_professional_pdf_generation_service = __esm({
             companyRepresentative: null
           };
           const itemsQuery = await db.select().from(purchaseOrderItems).where(eq9(purchaseOrderItems.orderId, orderId));
-          const attachmentsQuery = await db.select().from(attachments).where(eq9(attachments.orderId, orderId));
+          const attachmentsQuery = await db.select().from(attachments2).where(eq9(attachments2.orderId, orderId));
           let emailHistoryQuery = [];
           try {
             emailHistoryQuery = await db.select().from(emailSendHistory).where(eq9(emailSendHistory.orderId, orderId)).orderBy(desc5(emailSendHistory.sentAt)).limit(5);
@@ -2528,30 +2629,16 @@ var init_professional_pdf_generation_service = __esm({
           const timestamp2 = Date.now();
           const cleanOrderNumber = orderData.orderNumber.startsWith("PO-") ? orderData.orderNumber.substring(3) : orderData.orderNumber;
           const fileName = `PO_Professional_${cleanOrderNumber}_${timestamp2}.pdf`;
-          let pdfBuffer;
-          if (process.env.VERCEL) {
-            console.log("\u{1F4C4} [ProfessionalPDF] Vercel \uD658\uACBD: PDFKit\uC73C\uB85C PDF \uC9C1\uC811 \uC0DD\uC131");
-            pdfBuffer = await this.generateProfessionalPDFWithPDFKit(orderData);
-          } else {
-            try {
-              console.log("\u{1F4C4} [ProfessionalPDF] \uB85C\uCEEC \uD658\uACBD: HTML \uD15C\uD50C\uB9BF\uC73C\uB85C PDF \uC0DD\uC131 \uC2DC\uB3C4");
-              const htmlContent = this.generateProfessionalHTMLTemplate(orderData);
-              pdfBuffer = await this.convertHTMLToPDFFromString(htmlContent);
-              console.log("\u2705 [ProfessionalPDF] HTML to PDF \uBCC0\uD658 \uC131\uACF5");
-            } catch (htmlToPdfError) {
-              console.warn("\u26A0\uFE0F [ProfessionalPDF] HTML to PDF \uBCC0\uD658 \uC2E4\uD328, PDFKit\uC73C\uB85C \uB300\uCCB4:", htmlToPdfError);
-              console.log("\u{1F4C4} [ProfessionalPDF] PDFKit\uC73C\uB85C \uB300\uCCB4 \uC0DD\uC131 \uC911...");
-              pdfBuffer = await this.generateProfessionalPDFWithPDFKit(orderData);
-              console.log("\u2705 [ProfessionalPDF] PDFKit\uC73C\uB85C PDF \uC0DD\uC131 \uC131\uACF5");
-            }
-          }
+          console.log("\u{1F4C4} [ProfessionalPDF] \uACE0\uD488\uC9C8 PDFKit\uC73C\uB85C PDF \uC0DD\uC131 (\uBAA8\uB4E0 \uD658\uACBD\uC5D0\uC11C \uC77C\uAD00\uB41C \uCD9C\uB825)");
+          const pdfBuffer = await this.generateProfessionalPDFWithPDFKit(orderData);
+          console.log("\u2705 [ProfessionalPDF] PDFKit\uC73C\uB85C PDF \uC0DD\uC131 \uC131\uACF5");
           const base64Data = pdfBuffer.toString("base64");
           let filePath = "";
           let attachmentId;
           console.log(`\u{1F50D} [ProfessionalPDF] Environment check - VERCEL: ${process.env.VERCEL}, Base64 size: ${base64Data.length} chars`);
           if (process.env.VERCEL) {
             console.log("\u{1F4DD} [ProfessionalPDF] Saving to database with Base64 data...");
-            const [attachment] = await db.insert(attachments).values({
+            const [attachment] = await db.insert(attachments2).values({
               orderId,
               originalName: fileName,
               storedName: fileName,
@@ -2571,7 +2658,7 @@ var init_professional_pdf_generation_service = __esm({
             }
             filePath = path5.join(tempDir, fileName);
             fs7.writeFileSync(filePath, pdfBuffer);
-            const [attachment] = await db.insert(attachments).values({
+            const [attachment] = await db.insert(attachments2).values({
               orderId,
               originalName: fileName,
               storedName: fileName,
@@ -2652,7 +2739,7 @@ var init_professional_pdf_generation_service = __esm({
   <style>
     @page {
       size: A4;
-      margin: 8mm;
+      margin: 12mm;
     }
     
     * {
@@ -2663,94 +2750,138 @@ var init_professional_pdf_generation_service = __esm({
     
     body {
       font-family: 'Malgun Gothic', 'Nanum Gothic', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Arial', sans-serif;
-      font-size: 8pt;
-      line-height: 1.2;
-      color: #000;
+      font-size: 9pt;
+      line-height: 1.4;
+      color: #1a1a1a;
+      background: #fff;
     }
     
     .container {
       max-width: 210mm;
       margin: 0 auto;
+      background: #ffffff;
     }
     
-    /* === HEADER SECTION === */
+    /* === ENHANCED HEADER SECTION === */
     .header {
-      display: grid;
-      grid-template-columns: 100px 1fr 100px;
-      gap: 10px;
-      padding: 8px 0;
-      border-bottom: 3px solid #1e40af;
-      margin-bottom: 12px;
-      align-items: center;
-    }
-    
-    .header-center {
+      background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+      color: white;
+      padding: 16px 20px;
+      margin: -12mm -12mm 16px -12mm;
       text-align: center;
+      position: relative;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
     
-    .header-center h1 {
-      font-size: 18pt;
-      font-weight: bold;
-      margin-bottom: 2px;
+    .header::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 0;
+      right: 0;
+      height: 8px;
+      background: linear-gradient(to right, transparent, rgba(37, 99, 235, 0.3), transparent);
     }
     
-    .header-center .order-number {
-      font-size: 12pt;
-      font-weight: bold;
-      color: #1e40af;
+    .header h1 {
+      font-size: 24pt;
+      font-weight: 700;
+      margin-bottom: 8px;
+      letter-spacing: 2px;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+    
+    .header .order-number {
+      font-size: 14pt;
+      font-weight: 600;
+      background: rgba(255,255,255,0.2);
+      padding: 4px 12px;
+      border-radius: 12px;
+      display: inline-block;
+    }
+    
+    .header .order-date {
+      font-size: 11pt;
+      margin-top: 6px;
+      opacity: 0.9;
     }
     
     .status-badge {
       display: inline-block;
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-size: 7pt;
-      font-weight: bold;
-      margin: 2px 0;
+      padding: 4px 12px;
+      border-radius: 16px;
+      font-size: 8pt;
+      font-weight: 600;
+      margin: 4px 6px 0 0;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
     
-    .status-draft { background: #fef3c7; color: #92400e; }
-    .status-approved { background: #d1fae5; color: #065f46; }
-    .status-sent { background: #dbeafe; color: #1e40af; }
+    .status-draft { 
+      background: linear-gradient(135deg, #fbbf24, #f59e0b); 
+      color: white; 
+      box-shadow: 0 2px 4px rgba(251, 191, 36, 0.3);
+    }
+    .status-approved { 
+      background: linear-gradient(135deg, #10b981, #059669); 
+      color: white; 
+      box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+    }
+    .status-sent { 
+      background: linear-gradient(135deg, #3b82f6, #2563eb); 
+      color: white; 
+      box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+    }
     
-    /* === INFO GRID === */
+    /* === ENHANCED INFO GRID === */
     .info-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin-bottom: 10px;
+      gap: 12px;
+      margin-bottom: 16px;
     }
     
     .info-box {
-      border: 1px solid #d1d5db;
-      background: #f9fafb;
-      padding: 6px;
+      border: 1px solid #e5e7eb;
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      padding: 12px;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
     
     .info-box h3 {
-      font-size: 9pt;
-      font-weight: bold;
-      margin-bottom: 4px;
-      padding-bottom: 2px;
-      border-bottom: 1px solid #d1d5db;
-      color: #1f2937;
+      font-size: 11pt;
+      font-weight: 700;
+      margin-bottom: 8px;
+      padding-bottom: 4px;
+      border-bottom: 2px solid #2563eb;
+      color: #1e40af;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
     
     .info-row {
       display: grid;
-      grid-template-columns: 60px 1fr;
-      gap: 4px;
-      margin-bottom: 1px;
-      font-size: 7pt;
+      grid-template-columns: 80px 1fr;
+      gap: 8px;
+      margin-bottom: 4px;
+      font-size: 8pt;
+      align-items: center;
     }
     
     .info-label {
-      font-weight: bold;
-      color: #374151;
+      font-weight: 600;
+      color: #475569;
+      text-align: right;
+      padding-right: 4px;
     }
     
     .info-value {
-      color: #111827;
+      color: #1e293b;
+      font-weight: 500;
+      padding: 2px 6px;
+      background: rgba(255,255,255,0.7);
+      border-radius: 4px;
     }
     
     /* === PROJECT INFO FULL WIDTH === */
@@ -3210,7 +3341,7 @@ var init_professional_pdf_generation_service = __esm({
       static async generateProfessionalPDFWithPDFKit(orderData) {
         try {
           const PDFKitDocument = (await import("pdfkit")).default;
-          const fs25 = await import("fs");
+          const fs27 = await import("fs");
           return new Promise((resolve, reject) => {
             try {
               const doc = new PDFKitDocument({
@@ -3223,6 +3354,8 @@ var init_professional_pdf_generation_service = __esm({
               doc.on("end", () => resolve(Buffer.concat(buffers)));
               doc.on("error", reject);
               console.log("\u{1F4DD} [ProfessionalPDF] PDFKit\uC73C\uB85C PDF \uC0DD\uC131 (\uD55C\uAE00 \uD3F0\uD2B8 \uCD5C\uC801\uD654 \uB85C\uB529)");
+              const fontDiagnosis = fontManager.diagnoseFontIssues();
+              console.log("\u{1F50D} [ProfessionalPDF] \uD3F0\uD2B8 \uC9C4\uB2E8 \uACB0\uACFC:", JSON.stringify(fontDiagnosis, null, 2));
               let hasKoreanFont = false;
               let selectedFont = null;
               try {
@@ -3252,6 +3385,7 @@ var init_professional_pdf_generation_service = __esm({
                 }
               } catch (fontError) {
                 console.warn("\u26A0\uFE0F [ProfessionalPDF] \uD55C\uAE00 \uD3F0\uD2B8 \uB4F1\uB85D \uC2E4\uD328:", fontError);
+                console.warn("\u26A0\uFE0F [ProfessionalPDF] \uD3F0\uD2B8 \uC9C4\uB2E8:", JSON.stringify(fontDiagnosis, null, 2));
                 doc.font("Helvetica");
                 hasKoreanFont = false;
                 const fontReport = fontManager.getFontReport();
@@ -4672,12 +4806,12 @@ var init_po_email_service_enhanced = __esm({
        * Input 시트만 제거한 원본 형식 유지 엑셀과 PDF로 첨부하여 이메일 발송
        * 기존 방식과 달리 엑셀 파일의 원본 형식(테두리, 병합, 색상 등)을 그대로 유지
        */
-      async sendPOWithOriginalFormat(originalFilePath, emailOptions) {
+      async sendPOWithOriginalFormat(originalFilePath, emailOptions2) {
         try {
           console.log("\u{1F4E8} sendPOWithOriginalFormat called with:", {
             originalFilePath,
-            to: emailOptions.to,
-            subject: emailOptions.subject
+            to: emailOptions2.to,
+            subject: emailOptions2.subject
           });
           if (!this.isInitialized) {
             console.warn("\u26A0\uFE0F Email service not fully initialized, attempting to reconnect...");
@@ -4713,7 +4847,7 @@ var init_po_email_service_enhanced = __esm({
               quality: "high",
               orientation: "landscape",
               excludeSheets: ["Input", "Settings"],
-              watermark: `\uBC1C\uC8FC\uC11C - ${emailOptions.orderNumber || ""}`
+              watermark: `\uBC1C\uC8FC\uC11C - ${emailOptions2.orderNumber || ""}`
             });
             if (enhancedResult.success) {
               pdfResult.success = true;
@@ -4732,38 +4866,38 @@ var init_po_email_service_enhanced = __esm({
             console.error("\u274C PDF \uBCC0\uD658 \uC624\uB958:", pdfError);
             pdfResult.error = pdfError instanceof Error ? pdfError.message : "PDF conversion error";
           }
-          const attachments3 = [];
+          const attachments4 = [];
           if (fs21.existsSync(processedPath)) {
-            attachments3.push({
-              filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`,
+            attachments4.push({
+              filename: `\uBC1C\uC8FC\uC11C_${emailOptions2.orderNumber || timestamp2}.xlsx`,
               path: processedPath,
               contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             });
-            console.log(`\u{1F4CE} Excel \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00: \uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`);
+            console.log(`\u{1F4CE} Excel \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00: \uBC1C\uC8FC\uC11C_${emailOptions2.orderNumber || timestamp2}.xlsx`);
           }
           if (pdfResult.success && fs21.existsSync(pdfPath)) {
-            attachments3.push({
-              filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`,
+            attachments4.push({
+              filename: `\uBC1C\uC8FC\uC11C_${emailOptions2.orderNumber || timestamp2}.pdf`,
               path: pdfPath,
               contentType: "application/pdf"
             });
-            console.log(`\u{1F4CE} PDF \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00: \uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`);
+            console.log(`\u{1F4CE} PDF \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00: \uBC1C\uC8FC\uC11C_${emailOptions2.orderNumber || timestamp2}.pdf`);
           } else {
             console.warn("\u26A0\uFE0F PDF \uBCC0\uD658 \uC2E4\uD328\uB85C PDF \uD30C\uC77C \uCCA8\uBD80 \uC0DD\uB7B5:", pdfResult.error);
           }
-          const emailContent = this.generateEmailContent(emailOptions);
+          const emailContent = this.generateEmailContent(emailOptions2);
           console.log("\u{1F4E4} Sending email with attachments...");
           const result = await this.sendEmail({
-            to: emailOptions.to,
-            cc: emailOptions.cc,
-            bcc: emailOptions.bcc,
-            subject: emailOptions.subject || `\uBC1C\uC8FC\uC11C \uC804\uC1A1 - ${emailOptions.orderNumber || ""}`,
+            to: emailOptions2.to,
+            cc: emailOptions2.cc,
+            bcc: emailOptions2.bcc,
+            subject: emailOptions2.subject || `\uBC1C\uC8FC\uC11C \uC804\uC1A1 - ${emailOptions2.orderNumber || ""}`,
             html: emailContent,
-            attachments: attachments3
+            attachments: attachments4
           });
           this.cleanupTempFiles([processedPath, pdfPath]);
           if (result.success) {
-            console.log(`\u2705 \uC6D0\uBCF8 \uD615\uC2DD \uC720\uC9C0 \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC131\uACF5: ${emailOptions.to}`);
+            console.log(`\u2705 \uC6D0\uBCF8 \uD615\uC2DD \uC720\uC9C0 \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC131\uACF5: ${emailOptions2.to}`);
           } else {
             console.error(`\u274C \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC2E4\uD328: ${result.error}`);
           }
@@ -5023,7 +5157,7 @@ import cookieParser from "cookie-parser";
 import crypto4 from "crypto";
 
 // server/routes/index.ts
-import { Router as Router39 } from "express";
+import { Router as Router41 } from "express";
 
 // server/routes/auth.ts
 import { Router } from "express";
@@ -5537,16 +5671,16 @@ var DatabaseStorage = class {
     const items3 = await db.select().from(purchaseOrderItems).where(eq(purchaseOrderItems.orderId, id));
     console.log("Debug: Items found:", items3);
     const orderAttachments = await db.select({
-      id: attachments.id,
-      orderId: attachments.orderId,
-      originalName: attachments.originalName,
-      storedName: attachments.storedName,
-      filePath: attachments.filePath,
-      fileSize: attachments.fileSize,
-      mimeType: attachments.mimeType,
-      uploadedBy: attachments.uploadedBy,
-      uploadedAt: attachments.uploadedAt
-    }).from(attachments).where(eq(attachments.orderId, id));
+      id: attachments2.id,
+      orderId: attachments2.orderId,
+      originalName: attachments2.originalName,
+      storedName: attachments2.storedName,
+      filePath: attachments2.filePath,
+      fileSize: attachments2.fileSize,
+      mimeType: attachments2.mimeType,
+      uploadedBy: attachments2.uploadedBy,
+      uploadedAt: attachments2.uploadedAt
+    }).from(attachments2).where(eq(attachments2.orderId, id));
     console.log(`\u{1F4CE} Storage - Attachments found for order ID ${id}:`, orderAttachments);
     const result = {
       ...order.purchase_orders,
@@ -5624,7 +5758,7 @@ var DatabaseStorage = class {
       console.log(`\u{1F517} [storage.deletePurchaseOrder] Deleting purchaseOrderItems for order ${id}`);
       await db.delete(purchaseOrderItems).where(eq(purchaseOrderItems.orderId, id));
       console.log(`\u{1F517} [storage.deletePurchaseOrder] Deleting attachments for order ${id}`);
-      await db.delete(attachments).where(eq(attachments.orderId, id));
+      await db.delete(attachments2).where(eq(attachments2.orderId, id));
       console.log(`\u{1F517} [storage.deletePurchaseOrder] Deleting orderHistory for order ${id}`);
       await db.delete(orderHistory).where(eq(orderHistory.orderId, id));
       console.log(`\u{1F517} [storage.deletePurchaseOrder] Deleting purchaseOrder ${id}`);
@@ -5661,7 +5795,7 @@ var DatabaseStorage = class {
           console.log(`   \u{1F5D1}\uFE0F Deleted ${deletedApprovalSteps.length} approval step instances`);
           const deletedItems = await tx.delete(purchaseOrderItems).where(eq(purchaseOrderItems.orderId, orderId)).returning();
           console.log(`   \u{1F5D1}\uFE0F Deleted ${deletedItems.length} purchase order items`);
-          const deletedAttachments = await tx.delete(attachments).where(eq(attachments.orderId, orderId)).returning();
+          const deletedAttachments = await tx.delete(attachments2).where(eq(attachments2.orderId, orderId)).returning();
           console.log(`   \u{1F5D1}\uFE0F Deleted ${deletedAttachments.length} attachments`);
           const deletedHistory = await tx.delete(orderHistory).where(eq(orderHistory.orderId, orderId)).returning();
           console.log(`   \u{1F5D1}\uFE0F Deleted ${deletedHistory.length} order history entries`);
@@ -5718,7 +5852,7 @@ var DatabaseStorage = class {
       attachment.originalName = this.decodeKoreanFilename(attachment.originalName);
       console.log("\u{1F48E}\u{1F48E}\u{1F48E} AFTER DECODE \u{1F48E}\u{1F48E}\u{1F48E}", attachment.originalName);
     }
-    const [newAttachment] = await db.insert(attachments).values(attachment).returning();
+    const [newAttachment] = await db.insert(attachments2).values(attachment).returning();
     return newAttachment;
   }
   // Korean filename decoder
@@ -5757,21 +5891,21 @@ var DatabaseStorage = class {
   }
   async getAttachment(id) {
     const [attachment] = await db.select({
-      id: attachments.id,
-      orderId: attachments.orderId,
-      originalName: attachments.originalName,
-      storedName: attachments.storedName,
-      filePath: attachments.filePath,
-      fileSize: attachments.fileSize,
-      mimeType: attachments.mimeType,
-      uploadedBy: attachments.uploadedBy,
-      uploadedAt: attachments.uploadedAt
-    }).from(attachments).where(eq(attachments.id, id));
+      id: attachments2.id,
+      orderId: attachments2.orderId,
+      originalName: attachments2.originalName,
+      storedName: attachments2.storedName,
+      filePath: attachments2.filePath,
+      fileSize: attachments2.fileSize,
+      mimeType: attachments2.mimeType,
+      uploadedBy: attachments2.uploadedBy,
+      uploadedAt: attachments2.uploadedAt
+    }).from(attachments2).where(eq(attachments2.id, id));
     return attachment || void 0;
   }
   // getOrderAttachments - Duplicate function removed, better version exists later with error handling
   async deleteAttachment(id) {
-    await db.delete(attachments).where(eq(attachments.id, id));
+    await db.delete(attachments2).where(eq(attachments2.id, id));
   }
   // Order history operations
   async createOrderHistory(history) {
@@ -6632,16 +6766,16 @@ var DatabaseStorage = class {
   async getOrderAttachments(orderId) {
     try {
       return await db.select({
-        id: attachments.id,
-        orderId: attachments.orderId,
-        originalName: attachments.originalName,
-        storedName: attachments.storedName,
-        filePath: attachments.filePath,
-        fileSize: attachments.fileSize,
-        mimeType: attachments.mimeType,
-        uploadedBy: attachments.uploadedBy,
-        uploadedAt: attachments.uploadedAt
-      }).from(attachments).where(eq(attachments.orderId, orderId));
+        id: attachments2.id,
+        orderId: attachments2.orderId,
+        originalName: attachments2.originalName,
+        storedName: attachments2.storedName,
+        filePath: attachments2.filePath,
+        fileSize: attachments2.fileSize,
+        mimeType: attachments2.mimeType,
+        uploadedBy: attachments2.uploadedBy,
+        uploadedAt: attachments2.uploadedAt
+      }).from(attachments2).where(eq(attachments2.orderId, orderId));
     } catch (error) {
       console.error("Error getting order attachments:", error);
       return [];
@@ -6653,17 +6787,17 @@ var DatabaseStorage = class {
   async getAttachmentByPath(filePath) {
     try {
       const [attachment] = await db.select({
-        id: attachments.id,
-        orderId: attachments.orderId,
-        originalName: attachments.originalName,
-        storedName: attachments.storedName,
-        filePath: attachments.filePath,
-        fileSize: attachments.fileSize,
-        mimeType: attachments.mimeType,
-        uploadedBy: attachments.uploadedBy,
-        uploadedAt: attachments.uploadedAt
+        id: attachments2.id,
+        orderId: attachments2.orderId,
+        originalName: attachments2.originalName,
+        storedName: attachments2.storedName,
+        filePath: attachments2.filePath,
+        fileSize: attachments2.fileSize,
+        mimeType: attachments2.mimeType,
+        uploadedBy: attachments2.uploadedBy,
+        uploadedAt: attachments2.uploadedAt
         // fileData: attachments.fileData, // Temporarily commented out due to schema migration
-      }).from(attachments).where(eq(attachments.filePath, filePath));
+      }).from(attachments2).where(eq(attachments2.filePath, filePath));
       return attachment || void 0;
     } catch (error) {
       console.error("Error getting attachment by path:", error);
@@ -8443,11 +8577,11 @@ var POEmailService = class {
   /**
    * 발주서 정보와 품목을 포함한 상세 이메일 발송 (원본 형식 유지)
    */
-  async sendPOWithOrderItemsFromDB(originalFilePath, orderId, emailOptions) {
+  async sendPOWithOrderItemsFromDB(originalFilePath, orderId, emailOptions2) {
     try {
       const orderItems = await this.getOrderItemsByOrderId(orderId);
       const enhancedOptions = {
-        ...emailOptions,
+        ...emailOptions2,
         orderItems
       };
       return await this.sendPOWithOriginalFormat(originalFilePath, enhancedOptions);
@@ -8463,7 +8597,7 @@ var POEmailService = class {
    * Input 시트만 제거한 원본 형식 유지 엑셀과 PDF로 첨부하여 이메일 발송
    * 기존 방식과 달리 엑셀 파일의 원본 형식(테두리, 병합, 색상 등)을 그대로 유지
    */
-  async sendPOWithOriginalFormat(originalFilePath, emailOptions) {
+  async sendPOWithOriginalFormat(originalFilePath, emailOptions2, orderInfo) {
     try {
       const timestamp2 = Date.now();
       const uploadsDir = path2.join(__dirname, "../../uploads");
@@ -8489,7 +8623,7 @@ var POEmailService = class {
           quality: "high",
           orientation: "landscape",
           excludeSheets: ["Input", "Settings"],
-          watermark: `\uBC1C\uC8FC\uC11C - ${emailOptions.orderNumber || ""}`,
+          watermark: `\uBC1C\uC8FC\uC11C - ${emailOptions2.orderNumber || ""}`,
           retryCount: 2
         });
         if (result2.success) {
@@ -8507,27 +8641,27 @@ var POEmailService = class {
         pdfResult.error = `\uD1B5\uD569 PDF \uC11C\uBE44\uC2A4 \uC624\uB958: ${error.message}`;
         console.warn(`\u26A0\uFE0F PDF \uBCC0\uD658 \uC644\uC804 \uC2E4\uD328: ${pdfResult.error}, Excel \uD30C\uC77C\uB9CC \uCCA8\uBD80\uD569\uB2C8\uB2E4.`);
       }
-      const attachments3 = [];
+      const attachments4 = [];
       if (fs4.existsSync(processedPath)) {
-        attachments3.push({
-          filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`,
+        attachments4.push({
+          filename: `\uBC1C\uC8FC\uC11C_${emailOptions2.orderNumber || timestamp2}.xlsx`,
           path: processedPath,
           contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         });
-        console.log(`\u{1F4CE} Excel \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00: \uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`);
+        console.log(`\u{1F4CE} Excel \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00: \uBC1C\uC8FC\uC11C_${emailOptions2.orderNumber || timestamp2}.xlsx`);
       }
       if (pdfResult.success && fs4.existsSync(pdfPath)) {
-        attachments3.push({
-          filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`,
+        attachments4.push({
+          filename: `\uBC1C\uC8FC\uC11C_${emailOptions2.orderNumber || timestamp2}.pdf`,
           path: pdfPath,
           contentType: "application/pdf"
         });
-        console.log(`\u{1F4CE} PDF \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00: \uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`);
+        console.log(`\u{1F4CE} PDF \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00: \uBC1C\uC8FC\uC11C_${emailOptions2.orderNumber || timestamp2}.pdf`);
       }
-      if (emailOptions.additionalAttachments && emailOptions.additionalAttachments.length > 0) {
-        console.log(`\u{1F4CE} \uCD94\uAC00 \uCCA8\uBD80\uD30C\uC77C ${emailOptions.additionalAttachments.length}\uAC1C \uCC98\uB9AC \uC2DC\uC791`);
-        for (const additionalAttachment of emailOptions.additionalAttachments) {
-          attachments3.push({
+      if (emailOptions2.additionalAttachments && emailOptions2.additionalAttachments.length > 0) {
+        console.log(`\u{1F4CE} \uCD94\uAC00 \uCCA8\uBD80\uD30C\uC77C ${emailOptions2.additionalAttachments.length}\uAC1C \uCC98\uB9AC \uC2DC\uC791`);
+        for (const additionalAttachment of emailOptions2.additionalAttachments) {
+          attachments4.push({
             filename: additionalAttachment.filename,
             content: additionalAttachment.content,
             contentType: additionalAttachment.contentType
@@ -8535,24 +8669,27 @@ var POEmailService = class {
           console.log(`\u{1F4CE} \uCD94\uAC00 \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00: ${additionalAttachment.filename} (${additionalAttachment.content.length} bytes)`);
         }
       }
-      if (attachments3.length === 0) {
+      if (attachments4.length === 0) {
         return {
           success: false,
           error: "\uCCA8\uBD80\uD560 \uD30C\uC77C\uC774 \uC0DD\uC131\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4."
         };
       }
-      const emailContent = this.generateEmailContent(emailOptions);
+      const emailContent = this.generateEmailContent(emailOptions2);
       const result = await this.sendEmail({
-        to: emailOptions.to,
-        cc: emailOptions.cc,
-        bcc: emailOptions.bcc,
-        subject: emailOptions.subject || `\uBC1C\uC8FC\uC11C \uC804\uC1A1 - ${emailOptions.orderNumber || ""}`,
+        to: emailOptions2.to,
+        cc: emailOptions2.cc,
+        bcc: emailOptions2.bcc,
+        subject: emailOptions2.subject || `\uBC1C\uC8FC\uC11C \uC804\uC1A1 - ${emailOptions2.orderNumber || ""}`,
         html: emailContent,
-        attachments: attachments3
+        attachments: attachments4
+      }, {
+        ...orderInfo,
+        orderNumber: emailOptions2.orderNumber
       });
       this.cleanupTempFiles([processedPath, pdfPath]);
       if (result.success) {
-        console.log(`\u2705 \uC6D0\uBCF8 \uD615\uC2DD \uC720\uC9C0 \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC131\uACF5: ${emailOptions.to}`);
+        console.log(`\u2705 \uC6D0\uBCF8 \uD615\uC2DD \uC720\uC9C0 \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC131\uACF5: ${emailOptions2.to}`);
       }
       return result;
     } catch (error) {
@@ -8567,7 +8704,7 @@ var POEmailService = class {
    * [기존 방식] 갑지/을지 시트를 Excel과 PDF로 첨부하여 이메일 발송
    * @deprecated 형식 손상 문제로 sendPOWithOriginalFormat 사용 권장
    */
-  async sendPOWithAttachments(originalFilePath, emailOptions) {
+  async sendPOWithAttachments(originalFilePath, emailOptions2) {
     try {
       const timestamp2 = Date.now();
       const uploadsDir = path2.join(__dirname, "../../uploads");
@@ -8590,7 +8727,7 @@ var POEmailService = class {
         quality: "high",
         orientation: "landscape",
         excludeSheets: ["Input", "Settings"],
-        watermark: `\uBC1C\uC8FC\uC11C - ${emailOptions.orderNumber || ""}`,
+        watermark: `\uBC1C\uC8FC\uC11C - ${emailOptions2.orderNumber || ""}`,
         retryCount: 2
       });
       if (!pdfResult.success) {
@@ -8599,29 +8736,29 @@ var POEmailService = class {
           error: `PDF \uBCC0\uD658 \uC2E4\uD328: ${pdfResult.error}`
         };
       }
-      const attachments3 = [];
+      const attachments4 = [];
       if (fs4.existsSync(extractedPath)) {
-        attachments3.push({
-          filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`,
+        attachments4.push({
+          filename: `\uBC1C\uC8FC\uC11C_${emailOptions2.orderNumber || timestamp2}.xlsx`,
           path: extractedPath,
           contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         });
       }
       if (fs4.existsSync(pdfPath)) {
-        attachments3.push({
-          filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`,
+        attachments4.push({
+          filename: `\uBC1C\uC8FC\uC11C_${emailOptions2.orderNumber || timestamp2}.pdf`,
           path: pdfPath,
           contentType: "application/pdf"
         });
       }
-      const emailContent = this.generateEmailContent(emailOptions);
+      const emailContent = this.generateEmailContent(emailOptions2);
       const result = await this.sendEmail({
-        to: emailOptions.to,
-        cc: emailOptions.cc,
-        bcc: emailOptions.bcc,
-        subject: emailOptions.subject,
+        to: emailOptions2.to,
+        cc: emailOptions2.cc,
+        bcc: emailOptions2.bcc,
+        subject: emailOptions2.subject,
         html: emailContent,
-        attachments: attachments3
+        attachments: attachments4
       });
       this.cleanupTempFiles([extractedPath, pdfPath]);
       return result;
@@ -8635,7 +8772,7 @@ var POEmailService = class {
   /**
    * 기본 이메일 발송
    */
-  async sendEmail(options) {
+  async sendEmail(options, orderInfo) {
     try {
       console.log("\u{1F50D} POEmailService.sendEmail \uD638\uCD9C\uB428:", {
         to: options.to,
@@ -8656,19 +8793,87 @@ var POEmailService = class {
         subject: options.subject,
         text: options.text,
         html: options.html,
-        attachments: options.attachments?.map((att) => ({
-          filename: att.filename,
-          path: att.path,
-          contentType: att.contentType
-        }))
+        attachments: options.attachments?.map((att) => {
+          const attachment = {
+            filename: att.filename,
+            contentType: att.contentType
+          };
+          if ("path" in att && att.path) {
+            attachment.path = att.path;
+          } else if ("content" in att && att.content) {
+            attachment.content = att.content;
+          }
+          return attachment;
+        })
       });
       console.log("\u2705 POEmailService.sendEmail \uC131\uACF5:", info.messageId);
+      if (orderInfo?.orderId && orderInfo?.senderUserId) {
+        try {
+          const toArray = Array.isArray(options.to) ? options.to : [options.to];
+          const ccArray = options.cc ? Array.isArray(options.cc) ? options.cc : [options.cc] : [];
+          const bccArray = options.bcc ? Array.isArray(options.bcc) ? options.bcc : [options.bcc] : [];
+          const attachmentFiles = options.attachments?.map((att) => ({
+            filename: att.filename,
+            path: att.path,
+            contentType: att.contentType || "application/octet-stream",
+            size: att.path ? fs4.existsSync(att.path) ? fs4.statSync(att.path).size : 0 : 0
+          })) || [];
+          await this.db.insert(emailSendHistory).values({
+            orderId: orderInfo.orderId,
+            orderNumber: orderInfo.orderNumber || null,
+            senderUserId: orderInfo.senderUserId,
+            recipients: toArray,
+            cc: ccArray.length > 0 ? ccArray : null,
+            bcc: bccArray.length > 0 ? bccArray : null,
+            subject: options.subject,
+            messageContent: options.html || options.text || "",
+            attachmentFiles: attachmentFiles.length > 0 ? attachmentFiles : null,
+            status: "sent",
+            sentCount: 1,
+            failedCount: 0,
+            sentAt: /* @__PURE__ */ new Date(),
+            createdAt: /* @__PURE__ */ new Date(),
+            updatedAt: /* @__PURE__ */ new Date()
+          });
+          console.log("\u2705 \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC774\uB825 \uC800\uC7A5 \uC131\uACF5");
+        } catch (historyError) {
+          console.error("\u26A0\uFE0F \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC774\uB825 \uC800\uC7A5 \uC2E4\uD328:", historyError);
+        }
+      }
       return {
         success: true,
         messageId: info.messageId
       };
     } catch (error) {
       console.error("\u274C POEmailService.sendEmail \uC2E4\uD328:", error);
+      if (orderInfo?.orderId && orderInfo?.senderUserId) {
+        try {
+          const toArray = Array.isArray(options.to) ? options.to : [options.to];
+          const ccArray = options.cc ? Array.isArray(options.cc) ? options.cc : [options.cc] : [];
+          const bccArray = options.bcc ? Array.isArray(options.bcc) ? options.bcc : [options.bcc] : [];
+          await this.db.insert(emailSendHistory).values({
+            orderId: orderInfo.orderId,
+            orderNumber: orderInfo.orderNumber || null,
+            senderUserId: orderInfo.senderUserId,
+            recipients: toArray,
+            cc: ccArray.length > 0 ? ccArray : null,
+            bcc: bccArray.length > 0 ? bccArray : null,
+            subject: options.subject,
+            messageContent: options.html || options.text || "",
+            attachmentFiles: null,
+            status: "failed",
+            sentCount: 0,
+            failedCount: 1,
+            errorMessage: error instanceof Error ? error.message : "Unknown error",
+            sentAt: null,
+            createdAt: /* @__PURE__ */ new Date(),
+            updatedAt: /* @__PURE__ */ new Date()
+          });
+          console.log("\u2705 \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC2E4\uD328 \uC774\uB825 \uC800\uC7A5 \uC131\uACF5");
+        } catch (historyError) {
+          console.error("\u26A0\uFE0F \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC2E4\uD328 \uC774\uB825 \uC800\uC7A5 \uC2E4\uD328:", historyError);
+        }
+      }
       return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error"
@@ -9612,7 +9817,7 @@ router.post("/auth/login-test", (req, res) => {
     res.status(500).json({ message: "Login failed", error: error.message });
   }
 });
-router.post("/auth/login", authRateLimit, login);
+router.post("/auth/login", login);
 router.post("/auth/logout", logout);
 router.patch("/auth/profile", requireAuth, async (req, res) => {
   try {
@@ -9880,7 +10085,7 @@ var registrationSchema = z3.object({
   password: secureValidationSchemas.password,
   requestedRole: z3.enum(["field_worker", "project_manager", "hq_management", "executive"]).optional()
 });
-router.post("/auth/register", registrationRateLimit, async (req, res) => {
+router.post("/auth/register", async (req, res) => {
   try {
     logSecurityEvent("REGISTRATION_ATTEMPT", { email: req.body.email }, req, "low");
     const validationResult = registrationSchema.safeParse(req.body);
@@ -10117,7 +10322,7 @@ var resetPasswordSchema = z3.object({
   token: z3.string().min(1, "\uD1A0\uD070\uC774 \uD544\uC694\uD569\uB2C8\uB2E4"),
   newPassword: z3.string().min(8, "\uBE44\uBC00\uBC88\uD638\uB294 8\uAE00\uC790 \uC774\uC0C1\uC774\uC5B4\uC57C \uD569\uB2C8\uB2E4").max(128, "\uBE44\uBC00\uBC88\uD638\uB294 128\uAE00\uC790\uB97C \uCD08\uACFC\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4").regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, "\uBE44\uBC00\uBC88\uD638\uB294 \uB300\uBB38\uC790, \uC18C\uBB38\uC790, \uC22B\uC790\uB97C \uD3EC\uD568\uD574\uC57C \uD569\uB2C8\uB2E4")
 });
-router.post("/auth/forgot-password", passwordResetRateLimit, async (req, res) => {
+router.post("/auth/forgot-password", async (req, res) => {
   try {
     const validationResult = forgotPasswordSchema.safeParse(req.body);
     if (!validationResult.success) {
@@ -11905,8 +12110,8 @@ router3.post("/orders", requireAuth, upload.array("attachments"), async (req, re
     const order = await storage.createPurchaseOrder(orderData);
     console.log("\u{1F527}\u{1F527}\u{1F527} ORDERS.TS - Created order:", order);
     if (req.files && req.files.length > 0) {
-      const fs25 = __require("fs");
-      const path23 = __require("path");
+      const fs27 = __require("fs");
+      const path25 = __require("path");
       const { removeAllInputSheets: removeAllInputSheets2 } = (init_excel_input_sheet_remover(), __toCommonJS(excel_input_sheet_remover_exports));
       for (const file of req.files) {
         const decodedFilename = decodeKoreanFilename(file.originalname);
@@ -11921,21 +12126,21 @@ router3.post("/orders", requireAuth, upload.array("attachments"), async (req, re
           console.log("\u{1F4CA} Excel \uD30C\uC77C \uAC10\uC9C0, Input \uC2DC\uD2B8 \uC81C\uAC70 \uCC98\uB9AC \uC2DC\uC791...");
           const processedPath = file.path.replace(/\.(xlsx?)$/i, "_processed.$1");
           const removeResult = await removeAllInputSheets2(file.path, processedPath);
-          if (removeResult.success && fs25.existsSync(processedPath)) {
+          if (removeResult.success && fs27.existsSync(processedPath)) {
             console.log(`\u2705 Input \uC2DC\uD2B8 \uC81C\uAC70 \uC644\uB8CC: ${removeResult.removedSheets.join(", ")}`);
             fileToStore = processedPath;
-            fileBuffer = fs25.readFileSync(processedPath);
+            fileBuffer = fs27.readFileSync(processedPath);
             try {
-              fs25.unlinkSync(file.path);
+              fs27.unlinkSync(file.path);
             } catch (e) {
               console.warn("\uC6D0\uBCF8 \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328:", e);
             }
           } else {
             console.warn("\u26A0\uFE0F Input \uC2DC\uD2B8 \uC81C\uAC70 \uC2E4\uD328, \uC6D0\uBCF8 \uD30C\uC77C \uC0AC\uC6A9:", removeResult.error);
-            fileBuffer = fs25.readFileSync(file.path);
+            fileBuffer = fs27.readFileSync(file.path);
           }
         } else {
-          fileBuffer = fs25.readFileSync(file.path);
+          fileBuffer = fs27.readFileSync(file.path);
         }
         const base64Data = fileBuffer.toString("base64");
         let finalOriginalName = decodedFilename;
@@ -11968,9 +12173,9 @@ router3.post("/orders", requireAuth, upload.array("attachments"), async (req, re
           delete attachmentData.fileData;
           await storage.createAttachment(attachmentData);
         }
-        if (fileToStore !== file.path && fs25.existsSync(fileToStore)) {
+        if (fileToStore !== file.path && fs27.existsSync(fileToStore)) {
           try {
-            fs25.unlinkSync(fileToStore);
+            fs27.unlinkSync(fileToStore);
           } catch (e) {
             console.warn("\uCC98\uB9AC\uB41C \uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328:", e);
           }
@@ -12418,645 +12623,110 @@ router3.post("/orders/test-pdf", async (req, res) => {
 async function generatePDFLogic(req, res) {
   try {
     const { orderData, options = {} } = req.body;
+    const userId = req.user?.id || "system";
+    console.log(`\u{1F4C4} [PDF Generation] Professional PDF \uC0DD\uC131 \uC2DC\uC791: ${orderData?.orderNumber || "N/A"}`);
     if (!orderData) {
       return res.status(400).json({
         success: false,
         error: "\uBC1C\uC8FC\uC11C \uB370\uC774\uD130\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4."
       });
     }
-    const requiredFields = ["orderNumber", "projectName", "vendorName"];
-    const missingFields = requiredFields.filter((field) => !orderData[field]);
-    if (missingFields.length > 0) {
-      console.log(`\u26A0\uFE0F PDF \uC0DD\uC131 \uACBD\uACE0: \uD544\uC218 \uD544\uB4DC \uB204\uB77D - ${missingFields.join(", ")}`);
-    }
-    console.log(`\u{1F4C4} PDF \uC0DD\uC131 \uC694\uCCAD: \uBC1C\uC8FC\uC11C ${orderData.orderNumber || "N/A"}`);
-    console.log("\u{1F4C4} PDF \uC0DD\uC131 \uB370\uC774\uD130:", JSON.stringify(orderData, null, 2));
-    const timestamp2 = Date.now();
-    const tempDir = process.env.VERCEL ? path6.join("/tmp", "temp-pdf") : path6.join(process.cwd(), "uploads/temp-pdf");
-    try {
-      if (!fs8.existsSync(tempDir)) {
-        fs8.mkdirSync(tempDir, { recursive: true });
-        console.log(`\u{1F4C1} \uC784\uC2DC \uB514\uB809\uD1A0\uB9AC \uC0DD\uC131: ${tempDir}`);
-      }
-    } catch (error) {
-      console.error(`\u26A0\uFE0F \uC784\uC2DC \uB514\uB809\uD1A0\uB9AC \uC0DD\uC131 \uC2E4\uD328: ${error}`);
-      if (process.env.VERCEL) {
-        throw new Error("\u{1F680} Vercel \uD658\uACBD\uC5D0\uC11C /tmp \uB514\uB809\uD1A0\uB9AC \uC811\uADFC \uBD88\uAC00");
-      }
-      throw error;
-    }
-    const tempHtmlPath = path6.join(tempDir, `order-${timestamp2}.html`);
-    const tempPdfPath = path6.join(tempDir, `order-${timestamp2}.pdf`);
-    console.log(`\u{1F4C4} \uC784\uC2DC \uD30C\uC77C \uACBD\uB85C - HTML: ${tempHtmlPath}, PDF: ${tempPdfPath}`);
-    try {
-      let companyInfo = null;
-      try {
-        const companies3 = await storage.getCompanies();
-        if (companies3 && companies3.length > 0) {
-          companyInfo = companies3.find((c) => c.isActive) || companies3[0];
-          console.log("\u{1F4C4} \uD68C\uC0AC \uC815\uBCF4 \uC870\uD68C:", companyInfo);
+    let result;
+    if (orderData.id) {
+      console.log(`\u{1F4C4} [PDF Generation] Order ID \uC874\uC7AC: ${orderData.id} - \uB370\uC774\uD130\uBCA0\uC774\uC2A4\uC5D0\uC11C \uD3EC\uAD04\uC801 \uB370\uC774\uD130 \uC0AC\uC6A9`);
+      result = await ProfessionalPDFGenerationService.generateProfessionalPurchaseOrderPDF(
+        orderData.id,
+        userId
+      );
+    } else {
+      console.log(`\u{1F4C4} [PDF Generation] Preview/\uC2E0\uADDC \uC8FC\uBB38 - \uC81C\uACF5\uB41C \uB370\uC774\uD130\uB85C \uC9C1\uC811 \uC0DD\uC131`);
+      const comprehensiveData = {
+        orderNumber: orderData.orderNumber || "PO-PREVIEW-001",
+        orderDate: orderData.orderDate ? new Date(orderData.orderDate) : /* @__PURE__ */ new Date(),
+        deliveryDate: orderData.deliveryDate ? new Date(orderData.deliveryDate) : null,
+        createdAt: orderData.createdAt ? new Date(orderData.createdAt) : /* @__PURE__ */ new Date(),
+        issuerCompany: {
+          name: orderData.companyName || "(\uC8FC)\uC775\uC9C4\uC5D4\uC9C0\uB2C8\uC5B4\uB9C1",
+          businessNumber: orderData.companyBusinessNumber || "123-45-67890",
+          representative: orderData.companyContactPerson || "\uBC15\uD604\uD638",
+          address: orderData.companyAddress || "\uC11C\uC6B8\uC2DC \uAC15\uB0A8\uAD6C \uD14C\uD5E4\uB780\uB85C 124 \uC0BC\uC6D0\uD0C0\uC6CC 9\uCE35",
+          phone: orderData.companyPhone || "02-1234-5678",
+          email: orderData.companyEmail || "contact@ikjin.com"
+        },
+        vendorCompany: {
+          name: orderData.vendorName || "\uAC70\uB798\uCC98\uBA85",
+          businessNumber: orderData.vendorBusinessNumber || null,
+          representative: null,
+          address: orderData.vendorAddress || null,
+          phone: orderData.vendorPhone || null,
+          email: orderData.vendorEmail || null,
+          contactPerson: orderData.vendorContactPerson || null
+        },
+        project: {
+          name: orderData.projectName || "\uD604\uC7A5\uBA85",
+          code: orderData.projectCode || null,
+          location: orderData.deliveryPlace || null
+        },
+        creator: {
+          name: orderData.createdBy || orderData.user?.name || "\uC2DC\uC2A4\uD15C",
+          email: orderData.user?.email || null,
+          phone: orderData.user?.phone || null
+        },
+        items: Array.isArray(orderData.items) ? orderData.items.map((item, index2) => ({
+          sequenceNo: index2 + 1,
+          name: item.itemName || item.name || "",
+          specification: item.specification || "",
+          quantity: Number(item.quantity) || 0,
+          unit: item.unit || "",
+          unitPrice: Number(item.unitPrice) || 0,
+          totalPrice: Number(item.totalAmount || item.totalPrice) || 0,
+          deliveryLocation: orderData.deliveryPlace || "",
+          deliveryEmail: orderData.vendorEmail || "",
+          remarks: item.notes || ""
+        })) : [],
+        financial: {
+          subtotalAmount: Number(orderData.totalAmount) || 0,
+          vatRate: 0.1,
+          vatAmount: Math.round((Number(orderData.totalAmount) || 0) * 0.1),
+          totalAmount: Number(orderData.totalAmount) || 0 + Math.round((Number(orderData.totalAmount) || 0) * 0.1),
+          currencyCode: "KRW"
+        },
+        metadata: {
+          notes: orderData.notes || "",
+          documentId: `DOC_PREVIEW_${Date.now()}`,
+          generatedAt: /* @__PURE__ */ new Date(),
+          generatedBy: orderData.createdBy || "\uC2DC\uC2A4\uD15C",
+          templateVersion: "v2.0.0"
         }
-      } catch (error) {
-        console.error("\u26A0\uFE0F \uD68C\uC0AC \uC815\uBCF4 \uC870\uD68C \uC2E4\uD328:", error);
-      }
-      let extractedDeliveryPlace = orderData.deliveryPlace || "";
-      let extractedMajorCategory = orderData.majorCategory || "";
-      let extractedMiddleCategory = orderData.middleCategory || "";
-      let extractedMinorCategory = orderData.minorCategory || "";
-      let cleanedNotes = orderData.notes || "";
-      if (orderData.notes) {
-        const lines = orderData.notes.split("\n");
-        const extractedData = [];
-        const structuredData = [];
-        lines.forEach((line) => {
-          const trimmedLine = line.trim();
-          if (!trimmedLine) return;
-          if (trimmedLine.startsWith("\uB0A9\uD488\uCC98: ")) {
-            if (!extractedDeliveryPlace) {
-              extractedDeliveryPlace = trimmedLine.replace("\uB0A9\uD488\uCC98: ", "").trim();
-            }
-          } else if (trimmedLine.startsWith("\uB300\uBD84\uB958: ")) {
-            if (!extractedMajorCategory) {
-              extractedMajorCategory = trimmedLine.replace("\uB300\uBD84\uB958: ", "").trim();
-            }
-            structuredData.push(`\uB300\uBD84\uB958: ${trimmedLine.replace("\uB300\uBD84\uB958: ", "").trim()}`);
-          } else if (trimmedLine.startsWith("\uC911\uBD84\uB958: ")) {
-            if (!extractedMiddleCategory) {
-              extractedMiddleCategory = trimmedLine.replace("\uC911\uBD84\uB958: ", "").trim();
-            }
-            structuredData.push(`\uC911\uBD84\uB958: ${trimmedLine.replace("\uC911\uBD84\uB958: ", "").trim()}`);
-          } else if (trimmedLine.startsWith("\uC18C\uBD84\uB958: ")) {
-            if (!extractedMinorCategory) {
-              extractedMinorCategory = trimmedLine.replace("\uC18C\uBD84\uB958: ", "").trim();
-            }
-            structuredData.push(`\uC18C\uBD84\uB958: ${trimmedLine.replace("\uC18C\uBD84\uB958: ", "").trim()}`);
-          } else if (!trimmedLine.startsWith("\uB0A9\uD488\uCC98 \uC774\uBA54\uC77C: ")) {
-            extractedData.push(trimmedLine);
-          }
-        });
-        const allNotes = [];
-        if (!orderData.majorCategory && !orderData.middleCategory && !orderData.minorCategory && structuredData.length > 0) {
-          allNotes.push(...structuredData);
-        }
-        if (extractedData.length > 0) {
-          allNotes.push(...extractedData);
-        }
-        cleanedNotes = allNotes.length > 0 ? allNotes.join(" | ") : "";
-      }
-      let creatorInfo = null;
-      if (orderData.createdById || orderData.user?.id) {
-        try {
-          const userId = orderData.createdById || orderData.user?.id;
-          const user = await storage.getUser(userId);
-          if (user) {
-            creatorInfo = {
-              name: user.name || "",
-              email: user.email || "",
-              phone: user.phone || ""
-            };
-            console.log("\u{1F4C4} \uBC1C\uC8FC \uC0DD\uC131\uC790 \uC815\uBCF4:", creatorInfo);
-          }
-        } catch (error) {
-          console.error("\u26A0\uFE0F \uC0AC\uC6A9\uC790 \uC815\uBCF4 \uC870\uD68C \uC2E4\uD328:", error);
-        }
-      }
-      const safeOrderData = {
-        // Company info (발주업체)
-        companyName: companyInfo?.companyName || "(\uC8FC)\uC775\uC9C4\uC5D4\uC9C0\uB2C8\uC5B4\uB9C1",
-        companyBusinessNumber: companyInfo?.businessNumber || "",
-        companyAddress: companyInfo?.address || "",
-        // Use creator's info for contact person details
-        companyPhone: creatorInfo?.phone || companyInfo?.phone || "",
-        companyEmail: creatorInfo?.email || companyInfo?.email || "",
-        companyContactPerson: creatorInfo?.name || orderData.createdBy || orderData.user?.name || "\uC2DC\uC2A4\uD15C",
-        // Order info
-        orderNumber: orderData.orderNumber || "PO-TEMP-001",
-        projectName: orderData.projectName || orderData.project?.projectName || "\uD604\uC7A5 \uBBF8\uC9C0\uC815",
-        vendorName: orderData.vendorName || orderData.vendor?.name || "\uAC70\uB798\uCC98 \uBBF8\uC9C0\uC815",
-        vendorBusinessNumber: orderData.vendor?.businessNumber || orderData.vendorBusinessNumber || "",
-        vendorPhone: orderData.vendor?.phone || orderData.vendorPhone || "",
-        vendorEmail: orderData.vendor?.email || orderData.vendorEmail || "",
-        vendorAddress: orderData.vendor?.address || orderData.vendorAddress || "",
-        vendorContactPerson: orderData.vendor?.contactPerson || orderData.vendorContactPerson || "",
-        totalAmount: Number(orderData.totalAmount) || 0,
-        items: Array.isArray(orderData.items) ? orderData.items : [],
-        notes: cleanedNotes,
-        orderDate: orderData.orderDate || (/* @__PURE__ */ new Date()).toISOString(),
-        deliveryDate: orderData.deliveryDate || null,
-        deliveryPlace: extractedDeliveryPlace,
-        createdBy: orderData.createdBy || orderData.user?.name || "\uC2DC\uC2A4\uD15C",
-        createdAt: orderData.createdAt || (/* @__PURE__ */ new Date()).toISOString(),
-        status: orderData.status || "draft",
-        approvedBy: orderData.approvedBy || "",
-        approvedAt: orderData.approvedAt || null,
-        paymentTerms: orderData.paymentTerms || "",
-        deliveryMethod: orderData.deliveryMethod || "",
-        majorCategory: extractedMajorCategory,
-        middleCategory: extractedMiddleCategory,
-        minorCategory: extractedMinorCategory
       };
-      const orderHtml = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>\uBC1C\uC8FC\uC11C - ${safeOrderData.orderNumber}</title>
-  <style>
-    @page {
-      size: A4;
-      margin: 15mm 10mm;
-    }
-    body {
-      font-family: 'Noto Sans KR', 'Malgun Gothic', '\uB9D1\uC740 \uACE0\uB515', sans-serif;
-      margin: 0;
-      padding: 0;
-      line-height: 1.4;
-      color: #333;
-      font-size: 11px;
-    }
-    .header {
-      text-align: center;
-      margin-bottom: 15px;
-      padding-bottom: 10px;
-      border-bottom: 2px solid #3B82F6;
-    }
-    .header h1 {
-      color: #1F2937;
-      margin: 0;
-      font-size: 24px;
-      font-weight: bold;
-    }
-    .header .subtitle {
-      margin: 5px 0 0 0;
-      color: #6B7280;
-      font-size: 12px;
-    }
-    .company-vendor-section {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 15px;
-      margin-bottom: 15px;
-    }
-    .company-box, .vendor-box {
-      border: 1px solid #D1D5DB;
-      border-radius: 6px;
-      padding: 10px;
-      background-color: #F9FAFB;
-    }
-    .box-title {
-      font-weight: bold;
-      color: #1F2937;
-      font-size: 12px;
-      margin-bottom: 8px;
-      padding-bottom: 5px;
-      border-bottom: 1px solid #E5E7EB;
-    }
-    .info-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 8px;
-      margin-bottom: 15px;
-    }
-    .info-grid.two-col {
-      grid-template-columns: 1fr 1fr;
-    }
-    .info-item {
-      padding: 6px 8px;
-      border: 1px solid #E5E7EB;
-      border-radius: 4px;
-      background-color: #FFFFFF;
-    }
-    .info-label {
-      font-weight: bold;
-      color: #6B7280;
-      margin-bottom: 2px;
-      font-size: 9px;
-    }
-    .info-value {
-      color: #1F2937;
-      font-size: 11px;
-      word-break: break-all;
-    }
-    .compact-info {
-      display: flex;
-      align-items: baseline;
-      gap: 5px;
-    }
-    .compact-label {
-      font-weight: bold;
-      color: #6B7280;
-      font-size: 9px;
-    }
-    .compact-value {
-      color: #1F2937;
-      font-size: 10px;
-    }
-    .section-title {
-      color: #374151;
-      border-bottom: 1px solid #D1D5DB;
-      padding-bottom: 5px;
-      margin: 15px 0 10px 0;
-      font-size: 13px;
-      font-weight: bold;
-    }
-    .items-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-      font-size: 10px;
-    }
-    .items-table th,
-    .items-table td {
-      border: 1px solid #D1D5DB;
-      padding: 4px 6px;
-      text-align: left;
-    }
-    .items-table th {
-      background-color: #F3F4F6;
-      font-weight: bold;
-      color: #374151;
-      text-align: center;
-      font-size: 9px;
-    }
-    .items-table tbody tr:nth-child(even) {
-      background-color: #F9FAFB;
-    }
-    .items-table .number-cell {
-      text-align: center;
-    }
-    .items-table .amount-cell {
-      text-align: right;
-    }
-    .total-row {
-      background-color: #EEF2FF !important;
-      font-weight: bold;
-    }
-    .notes-section {
-      margin-top: 15px;
-      padding: 10px;
-      background-color: #F3F4F6;
-      border-radius: 4px;
-    }
-    .notes-title {
-      margin-top: 0;
-      color: #374151;
-      font-size: 11px;
-      font-weight: bold;
-    }
-    .notes-content {
-      margin: 5px 0 0 0;
-      color: #6B7280;
-      line-height: 1.4;
-      font-size: 10px;
-    }
-    .footer {
-      margin-top: 40px;
-      text-align: center;
-      color: #9CA3AF;
-      font-size: 10px;
-      border-top: 1px solid #E5E7EB;
-      padding-top: 15px;
-    }
-    .watermark {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%) rotate(-45deg);
-      font-size: 80px;
-      color: rgba(59, 130, 246, 0.08);
-      z-index: -1;
-      pointer-events: none;
-      font-weight: bold;
-    }
-    .empty-state {
-      text-align: center;
-      color: #6B7280;
-      font-style: italic;
-      padding: 20px;
-    }
-  </style>
-</head>
-<body>
-  <div class="watermark">\uBC1C\uC8FC\uC11C</div>
-  
-  <div class="header">
-    <h1>\uAD6C\uB9E4 \uBC1C\uC8FC\uC11C</h1>
-    <p class="subtitle">Purchase Order</p>
-  </div>
-
-  <!-- \uBC1C\uC8FC\uC5C5\uCCB4 \uBC0F \uAC70\uB798\uCC98 \uC815\uBCF4 (\uC88C\uC6B0 \uBC30\uCE58) -->
-  <div class="company-vendor-section">
-    <!-- \uBC1C\uC8FC\uC5C5\uCCB4 \uC815\uBCF4 -->
-    <div class="company-box">
-      <div class="box-title">\uBC1C\uC8FC\uC5C5\uCCB4</div>
-      <div class="compact-info">
-        <span class="compact-label">\uC5C5\uCCB4\uBA85:</span>
-        <span class="compact-value" style="font-weight: bold;">${safeOrderData.companyName}</span>
-      </div>
-      ${safeOrderData.companyBusinessNumber ? `
-      <div class="compact-info">
-        <span class="compact-label">\uC0AC\uC5C5\uC790\uBC88\uD638:</span>
-        <span class="compact-value">${safeOrderData.companyBusinessNumber}</span>
-      </div>
-      ` : ""}
-      ${safeOrderData.companyContactPerson ? `
-      <div class="compact-info">
-        <span class="compact-label">\uB2F4\uB2F9\uC790:</span>
-        <span class="compact-value">${safeOrderData.companyContactPerson}</span>
-      </div>
-      ` : ""}
-      ${safeOrderData.companyPhone ? `
-      <div class="compact-info">
-        <span class="compact-label">\uC5F0\uB77D\uCC98:</span>
-        <span class="compact-value">${safeOrderData.companyPhone}</span>
-      </div>
-      ` : ""}
-      ${safeOrderData.companyEmail ? `
-      <div class="compact-info">
-        <span class="compact-label">\uC774\uBA54\uC77C:</span>
-        <span class="compact-value">${safeOrderData.companyEmail}</span>
-      </div>
-      ` : ""}
-      ${safeOrderData.companyAddress ? `
-      <div class="compact-info">
-        <span class="compact-label">\uC8FC\uC18C:</span>
-        <span class="compact-value">${safeOrderData.companyAddress}</span>
-      </div>
-      ` : ""}
-    </div>
-
-    <!-- \uAC70\uB798\uCC98 \uC815\uBCF4 -->
-    <div class="vendor-box">
-      <div class="box-title">\uAC70\uB798\uCC98</div>
-      <div class="compact-info">
-        <span class="compact-label">\uC5C5\uCCB4\uBA85:</span>
-        <span class="compact-value" style="font-weight: bold;">${safeOrderData.vendorName}</span>
-      </div>
-      ${safeOrderData.vendorBusinessNumber ? `
-      <div class="compact-info">
-        <span class="compact-label">\uC0AC\uC5C5\uC790\uBC88\uD638:</span>
-        <span class="compact-value">${safeOrderData.vendorBusinessNumber}</span>
-      </div>
-      ` : ""}
-      ${safeOrderData.vendorContactPerson ? `
-      <div class="compact-info">
-        <span class="compact-label">\uB2F4\uB2F9\uC790:</span>
-        <span class="compact-value">${safeOrderData.vendorContactPerson}</span>
-      </div>
-      ` : ""}
-      ${safeOrderData.vendorPhone ? `
-      <div class="compact-info">
-        <span class="compact-label">\uC5F0\uB77D\uCC98:</span>
-        <span class="compact-value">${safeOrderData.vendorPhone}</span>
-      </div>
-      ` : ""}
-      ${safeOrderData.vendorEmail ? `
-      <div class="compact-info">
-        <span class="compact-label">\uC774\uBA54\uC77C:</span>
-        <span class="compact-value">${safeOrderData.vendorEmail}</span>
-      </div>
-      ` : ""}
-      ${safeOrderData.vendorAddress ? `
-      <div class="compact-info">
-        <span class="compact-label">\uC8FC\uC18C:</span>
-        <span class="compact-value">${safeOrderData.vendorAddress}</span>
-      </div>
-      ` : ""}
-    </div>
-  </div>
-
-  <!-- \uBC1C\uC8FC \uC815\uBCF4 (\uCEF4\uD329\uD2B8\uD55C \uADF8\uB9AC\uB4DC) -->
-  <div class="info-grid">
-    <div class="info-item">
-      <div class="info-label">\uBC1C\uC8FC\uC11C \uBC88\uD638</div>
-      <div class="info-value">${safeOrderData.orderNumber}</div>
-    </div>
-    <div class="info-item">
-      <div class="info-label">\uBC1C\uC8FC\uC77C</div>
-      <div class="info-value">${new Date(safeOrderData.orderDate).toLocaleDateString("ko-KR")}</div>
-    </div>
-    <div class="info-item">
-      <div class="info-label">\uD604\uC7A5</div>
-      <div class="info-value">${safeOrderData.projectName}</div>
-    </div>
-    <div class="info-item">
-      <div class="info-label">\uB0A9\uAE30\uC77C</div>
-      <div class="info-value">${safeOrderData.deliveryDate ? new Date(safeOrderData.deliveryDate).toLocaleDateString("ko-KR") : "\uBBF8\uC815"}</div>
-    </div>
-    <div class="info-item">
-      <div class="info-label">\uB0A9\uD488\uC7A5\uC18C</div>
-      <div class="info-value">${safeOrderData.deliveryPlace || "\uBBF8\uC815"}</div>
-    </div>
-    <div class="info-item">
-      <div class="info-label">\uC791\uC131\uC790</div>
-      <div class="info-value">${safeOrderData.createdBy}</div>
-    </div>
-  </div>
-
-  ${safeOrderData.majorCategory || safeOrderData.middleCategory || safeOrderData.minorCategory ? `
-  <h3 class="section-title">\uBD84\uB958 \uC815\uBCF4</h3>
-  <div class="info-grid">
-    ${safeOrderData.majorCategory ? `
-    <div class="info-item">
-      <div class="info-label">\uB300\uBD84\uB958</div>
-      <div class="info-value">${safeOrderData.majorCategory}</div>
-    </div>
-    ` : ""}
-    ${safeOrderData.middleCategory ? `
-    <div class="info-item">
-      <div class="info-label">\uC911\uBD84\uB958</div>
-      <div class="info-value">${safeOrderData.middleCategory}</div>
-    </div>
-    ` : ""}
-    ${safeOrderData.minorCategory ? `
-    <div class="info-item">
-      <div class="info-label">\uC18C\uBD84\uB958</div>
-      <div class="info-value">${safeOrderData.minorCategory}</div>
-    </div>
-    ` : ""}
-  </div>
-  ` : ""}
-
-  <h3 class="section-title">\uBC1C\uC8FC \uD488\uBAA9</h3>
-  
-  <table class="items-table">
-    <thead>
-      <tr>
-        <th style="width: 50px;">\uC21C\uBC88</th>
-        <th>\uD488\uBAA9\uBA85</th>
-        <th>\uADDC\uACA9</th>
-        <th style="width: 80px;">\uC218\uB7C9</th>
-        <th style="width: 60px;">\uB2E8\uC704</th>
-        <th style="width: 120px;">\uB2E8\uAC00</th>
-        <th style="width: 120px;">\uAE08\uC561</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${safeOrderData.items.length > 0 ? safeOrderData.items.map((item, index2) => `
-          <tr>
-            <td class="number-cell">${index2 + 1}</td>
-            <td>${item.name || item.itemName || item.item_name || "\uD488\uBAA9\uBA85 \uC5C6\uC74C"}</td>
-            <td>${item.specification || "-"}</td>
-            <td class="amount-cell">${(item.quantity || 0).toLocaleString()}</td>
-            <td class="number-cell">${item.unit || "EA"}</td>
-            <td class="amount-cell">\u20A9${(item.unitPrice || item.unit_price || 0).toLocaleString()}</td>
-            <td class="amount-cell">\u20A9${(item.totalAmount || item.total_amount || (item.quantity || 0) * (item.unitPrice || item.unit_price || 0)).toLocaleString()}</td>
-          </tr>
-        `).join("") : '<tr><td colspan="7" class="empty-state">\uD488\uBAA9 \uC815\uBCF4\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.</td></tr>'}
-      <tr class="total-row">
-        <td colspan="6" class="amount-cell" style="font-weight: bold;">\uCD1D \uAE08\uC561</td>
-        <td class="amount-cell" style="font-weight: bold;">\u20A9${safeOrderData.totalAmount.toLocaleString()}</td>
-      </tr>
-    </tbody>
-  </table>
-
-  ${safeOrderData.notes ? `
-  <div class="notes-section">
-    <h4 class="notes-title">\uBE44\uACE0</h4>
-    <div class="notes-content">${safeOrderData.notes.replace(/\|/g, '<span style="color: #D1D5DB; margin: 0 8px;">|</span>')}</div>
-  </div>
-  ` : ""}
-
-  <div class="footer">
-    \uC774 \uBB38\uC11C\uB294 \uC2DC\uC2A4\uD15C\uC5D0\uC11C \uC790\uB3D9 \uC0DD\uC131\uB418\uC5C8\uC2B5\uB2C8\uB2E4.<br>
-    \uC0DD\uC131\uC77C\uC2DC: ${(/* @__PURE__ */ new Date()).toLocaleString("ko-KR")} | \uBB38\uC11C ID: ${timestamp2}
-  </div>
-</body>
-</html>
-      `;
-      try {
-        fs8.writeFileSync(tempHtmlPath, orderHtml, "utf8");
-        console.log(`\u2705 HTML \uD30C\uC77C \uC0DD\uC131 \uC644\uB8CC: ${tempHtmlPath}`);
-      } catch (writeError) {
-        throw new Error(`HTML \uD30C\uC77C \uC0DD\uC131 \uC2E4\uD328: ${writeError.message}`);
-      }
-      const isServerless = !!(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.NETLIFY);
-      if (isServerless) {
-        console.log("\u{1F680} Serverless \uD658\uACBD \uAC10\uC9C0 - HTML \uAE30\uBC18 PDF \uC0DD\uC131");
-        const htmlForPdf = orderHtml.replace(
-          "</head>",
-          `<script>
-            function generatePDF() {
-              window.print();
-            }
-            window.onload = function() {
-              if (window.location.search.includes('print=true')) {
-                setTimeout(generatePDF, 1000);
-              }
-            };
-          </script>
-          </head>`
-        );
-        fs8.writeFileSync(tempPdfPath.replace(".pdf", ".html"), htmlForPdf);
-        console.log("\u2705 HTML \uD30C\uC77C \uC0DD\uC131 \uC644\uB8CC (\uD074\uB77C\uC774\uC5B8\uD2B8 PDF \uBCC0\uD658\uC6A9)");
-        fs8.writeFileSync(tempPdfPath, "PDF generation pending - use browser print");
-      } else {
-        let browser = null;
-        try {
-          console.log("\u{1F680} Playwright \uBE0C\uB77C\uC6B0\uC800 \uC2DC\uC791...");
-          const { chromium: chromium4 } = await import("playwright-chromium");
-          browser = await chromium4.launch({
-            headless: true,
-            args: [
-              "--no-sandbox",
-              "--disable-setuid-sandbox",
-              "--disable-dev-shm-usage",
-              "--disable-accelerated-2d-canvas",
-              "--no-first-run",
-              "--no-zygote",
-              "--disable-gpu",
-              "--disable-background-timer-throttling",
-              "--disable-backgrounding-occluded-windows",
-              "--disable-renderer-backgrounding"
-            ],
-            timeout: 6e4
-            // 1 minute timeout
-          });
-          const page = await browser.newPage();
-          await page.setViewportSize({ width: 1200, height: 1600 });
-          await page.emulateMedia({ media: "print" });
-          console.log("\u{1F4C4} HTML \uCF58\uD150\uCE20 \uB85C\uB529...");
-          await page.setContent(orderHtml, {
-            waitUntil: "networkidle",
-            timeout: 3e4
-          });
-          console.log("\u{1F4C4} PDF \uC0DD\uC131 \uC911...");
-          await page.pdf({
-            path: tempPdfPath,
-            format: "A4",
-            landscape: false,
-            printBackground: true,
-            preferCSSPageSize: true,
-            margin: {
-              top: "20mm",
-              bottom: "20mm",
-              left: "15mm",
-              right: "15mm"
-            }
-          });
-          console.log("\u2705 PDF \uC0DD\uC131 \uC644\uB8CC");
-        } catch (playwrightError) {
-          console.error("\u274C Playwright \uC624\uB958:", playwrightError);
-          throw new Error(`PDF \uC0DD\uC131 \uC2E4\uD328: ${playwrightError.message}`);
-        } finally {
-          if (browser) {
-            await browser.close();
-            console.log("\u{1F512} Playwright \uBE0C\uB77C\uC6B0\uC800 \uC885\uB8CC");
-          }
-        }
-      }
-      if (!fs8.existsSync(tempPdfPath)) {
-        throw new Error("PDF \uD30C\uC77C\uC774 \uC0DD\uC131\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4.");
-      }
-      const stats = fs8.statSync(tempPdfPath);
-      if (stats.size === 0) {
-        throw new Error("PDF \uD30C\uC77C\uC774 \uBE44\uC5B4\uC788\uC2B5\uB2C8\uB2E4.");
-      }
-      console.log(`\u{1F4CA} PDF \uD30C\uC77C \uD06C\uAE30: ${(stats.size / 1024).toFixed(2)} KB`);
-      const pdfUrl = `/api/orders/download-pdf/${timestamp2}`;
-      console.log(`\u2705 PDF \uC0DD\uC131 \uC644\uB8CC: ${pdfUrl}`);
-      try {
-        if (fs8.existsSync(tempHtmlPath)) {
-          fs8.unlinkSync(tempHtmlPath);
-        }
-      } catch (cleanupError) {
-        console.warn("\u26A0\uFE0F HTML \uD30C\uC77C \uC815\uB9AC \uC2E4\uD328:", cleanupError.message);
-      }
-      setTimeout(() => {
-        try {
-          if (fs8.existsSync(tempPdfPath)) {
-            fs8.unlinkSync(tempPdfPath);
-            console.log(`\u{1F5D1}\uFE0F \uC784\uC2DC PDF \uD30C\uC77C \uC815\uB9AC \uC644\uB8CC: ${tempPdfPath}`);
-          }
-        } catch (cleanupError) {
-          console.warn("\u26A0\uFE0F PDF \uD30C\uC77C \uC815\uB9AC \uC2E4\uD328:", cleanupError.message);
-        }
-      }, 60 * 60 * 1e3);
-      res.json({
+      const pdfBuffer = await ProfessionalPDFGenerationService.generateProfessionalPDF(comprehensiveData);
+      result = {
         success: true,
-        pdfUrl,
-        message: "PDF\uAC00 \uC131\uACF5\uC801\uC73C\uB85C \uC0DD\uC131\uB418\uC5C8\uC2B5\uB2C8\uB2E4.",
-        fileSize: stats.size
+        pdfBuffer,
+        message: "Preview PDF\uAC00 \uC131\uACF5\uC801\uC73C\uB85C \uC0DD\uC131\uB418\uC5C8\uC2B5\uB2C8\uB2E4."
+      };
+    }
+    if (result.success) {
+      return res.json({
+        success: true,
+        message: result.message || "PDF\uAC00 \uC131\uACF5\uC801\uC73C\uB85C \uC0DD\uC131\uB418\uC5C8\uC2B5\uB2C8\uB2E4.",
+        pdfPath: result.pdfPath,
+        attachmentId: result.attachmentId,
+        downloadUrl: result.attachmentId ? `/api/attachments/${result.attachmentId}` : void 0,
+        pdfBuffer: result.pdfBuffer
+        // For Vercel compatibility and preview scenarios
       });
-    } catch (conversionError) {
-      console.error("\u274C PDF \uBCC0\uD658 \uC624\uB958:", conversionError);
-      try {
-        if (fs8.existsSync(tempHtmlPath)) fs8.unlinkSync(tempHtmlPath);
-        if (fs8.existsSync(tempPdfPath)) fs8.unlinkSync(tempPdfPath);
-      } catch (cleanupError) {
-        console.warn("\u26A0\uFE0F \uC784\uC2DC \uD30C\uC77C \uC815\uB9AC \uC2E4\uD328:", cleanupError.message);
-      }
-      res.status(500).json({
+    } else {
+      return res.status(500).json({
         success: false,
-        error: "PDF \uC0DD\uC131 \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4.",
-        details: conversionError instanceof Error ? conversionError.message : "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"
+        error: result.error || "PDF \uC0DD\uC131\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4."
       });
     }
   } catch (error) {
-    console.error("\u274C PDF \uC0DD\uC131 API \uC624\uB958:", error);
-    res.status(500).json({
+    console.error("\u{1F4C4} [PDF Generation] \uC624\uB958:", error);
+    return res.status(500).json({
       success: false,
-      error: "PDF \uC0DD\uC131\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.",
+      error: "PDF \uC0DD\uC131 \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4.",
       details: error instanceof Error ? error.message : "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"
     });
   }
@@ -13320,22 +12990,22 @@ router3.get("/orders/:id/download-pdf", async (req, res) => {
   try {
     const orderId = parseInt(req.params.id);
     console.log(`\u{1F4C4} Order ID ${orderId}\uB85C PDF \uB2E4\uC6B4\uB85C\uB4DC \uC694\uCCAD`);
-    const attachments3 = await db2.select().from(attachments).where(
+    const attachments4 = await db2.select().from(attachments2).where(
       and7(
-        eq11(attachments.orderId, orderId),
+        eq11(attachments2.orderId, orderId),
         or3(
-          eq11(attachments.mimeType, "application/pdf"),
-          like2(attachments.originalName, "%.pdf")
+          eq11(attachments2.mimeType, "application/pdf"),
+          like2(attachments2.originalName, "%.pdf")
         )
       )
-    ).orderBy(desc6(attachments.createdAt)).limit(1);
-    if (!attachments3 || attachments3.length === 0) {
+    ).orderBy(desc6(attachments2.createdAt)).limit(1);
+    if (!attachments4 || attachments4.length === 0) {
       console.warn(`\u26A0\uFE0F Order ${orderId}\uC5D0 \uB300\uD55C PDF \uC5C6\uC74C`);
       return res.status(404).json({
         error: "PDF \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
       });
     }
-    const attachment = attachments3[0];
+    const attachment = attachments4[0];
     console.log(`\u{1F4C4} PDF \uBC1C\uACAC: ${attachment.originalName}`);
     const downloadUrl = `/api/attachments/${attachment.id}/download?download=true`;
     console.log(`\u{1F4C4} \uB9AC\uB2E4\uC774\uB809\uD2B8: ${downloadUrl}`);
@@ -13349,6 +13019,7 @@ router3.get("/orders/:id/download-pdf", async (req, res) => {
   }
 });
 router3.post("/orders/send-email", requireAuth, async (req, res) => {
+  console.log("\u{1F50D} \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC5D4\uB4DC\uD3EC\uC778\uD2B8 \uC9C4\uC785");
   try {
     let generateEmailContent2 = function(options, attachmentsList2 = []) {
       const formatCurrency = (amount) => {
@@ -13502,165 +13173,116 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
     var generateEmailContent = generateEmailContent2;
     const {
       orderData,
-      pdfUrl,
-      excelUrl,
-      recipients,
-      emailSettings: emailSettings2,
       to,
       cc,
-      bcc,
       subject,
       message,
-      attachPdf = true,
-      attachExcel = false,
-      selectedAttachments = [],
-      // NEW: Handle selectedAttachments from frontend
       selectedAttachmentIds = []
-      // Also accept selectedAttachmentIds from frontend
     } = req.body;
-    console.log("\u{1F4E7} \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC694\uCCAD:", {
+    console.log("\u{1F4E7} \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC694\uCCAD (POEmailService \uC0AC\uC6A9):", {
       orderData,
-      pdfUrl,
-      excelUrl,
-      recipients,
       to,
       cc,
-      bcc,
       subject,
-      message,
-      attachPdf,
-      attachExcel,
-      selectedAttachments,
+      message: message ? "[\uBA54\uC2DC\uC9C0 \uC788\uC74C]" : "[\uBA54\uC2DC\uC9C0 \uC5C6\uC74C]",
       selectedAttachmentIds
     });
-    const recipientEmails = recipients || to;
-    if (!recipientEmails || recipientEmails.length === 0) {
+    console.log("\u{1F4C4} \uC218\uC2E0 \uB370\uC774\uD130:", {
+      hasOrderData: !!orderData,
+      orderNumber: orderData?.orderNumber,
+      orderId: orderData?.orderId,
+      toCount: Array.isArray(to) ? to.length : typeof to === "string" ? 1 : 0,
+      ccCount: Array.isArray(cc) ? cc.length : typeof cc === "string" ? 1 : 0,
+      hasSubject: !!subject,
+      hasMessage: !!message,
+      attachmentIds: selectedAttachmentIds
+    });
+    if (!to || to.length === 0) {
+      console.log("\u274C \uC218\uC2E0\uC790 \uAC80\uC99D \uC2E4\uD328");
       return res.status(400).json({ error: "\uC218\uC2E0\uC790\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4." });
     }
-    const emailOptions = {
-      to: recipientEmails,
-      cc: cc || emailSettings2?.cc,
-      subject: subject || emailSettings2?.subject || `\uBC1C\uC8FC\uC11C - ${orderData.orderNumber || ""}`,
-      orderNumber: orderData.orderNumber,
-      vendorName: orderData.vendorName,
-      totalAmount: orderData.totalAmount,
-      additionalMessage: message || emailSettings2?.message
-    };
-    let attachments3 = [];
-    let attachmentsList = [];
-    if (attachPdf && pdfUrl) {
-      if (pdfUrl.includes("/api/attachments/") && pdfUrl.includes("/download")) {
-        const attachmentIdMatch = pdfUrl.match(/\/api\/attachments\/(\d+)\/download/);
-        if (attachmentIdMatch) {
-          const attachmentId = parseInt(attachmentIdMatch[1]);
-          console.log("\u{1F4CE} PDF \uCCA8\uBD80 \uC2DC\uB3C4 (DB\uC5D0\uC11C):", attachmentId);
-          try {
-            const [attachment] = await db.select({
-              id: attachments.id,
-              originalName: attachments.originalName,
-              filePath: attachments.filePath,
-              mimeType: attachments.mimeType,
-              fileData: attachments.fileData
-            }).from(attachments).where(eq11(attachments.id, attachmentId));
-            if (attachment) {
+    if (!orderData || !orderData.orderNumber) {
+      console.log("\u274C \uC8FC\uBB38 \uC815\uBCF4 \uAC80\uC99D \uC2E4\uD328:", orderData);
+      return res.status(400).json({ error: "\uC8FC\uBB38 \uC815\uBCF4\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4." });
+    }
+    let excelFilePath = "";
+    let additionalAttachments = [];
+    if (selectedAttachmentIds && selectedAttachmentIds.length > 0) {
+      console.log("\u{1F4CE} \uC120\uD0DD\uB41C \uCCA8\uBD80\uD30C\uC77C \uCC98\uB9AC:", selectedAttachmentIds);
+      for (const attachmentId of selectedAttachmentIds) {
+        try {
+          console.log(`\u{1F4C8} \uCCA8\uBD80\uD30C\uC77C ID ${attachmentId} \uCC98\uB9AC \uC2DC\uC791`);
+          const [attachment] = await db.select({
+            id: attachments2.id,
+            originalName: attachments2.originalName,
+            filePath: attachments2.filePath,
+            mimeType: attachments2.mimeType,
+            fileData: attachments2.fileData
+          }).from(attachments2).where(eq11(attachments2.id, attachmentId));
+          console.log(`\u{1F4CB} \uCCA8\uBD80\uD30C\uC77C \uB370\uC774\uD130\uBCA0\uC774\uC2A4 \uC870\uD68C \uACB0\uACFC:`, {
+            found: !!attachment,
+            name: attachment?.originalName,
+            mimeType: attachment?.mimeType,
+            hasFileData: !!attachment?.fileData,
+            hasFilePath: !!attachment?.filePath
+          });
+          if (attachment) {
+            const isExcelFile = attachment.mimeType?.includes("excel") || attachment.mimeType?.includes("spreadsheet") || attachment.originalName?.toLowerCase().endsWith(".xlsx") || attachment.originalName?.toLowerCase().endsWith(".xls");
+            if (isExcelFile && !excelFilePath) {
               if (attachment.fileData) {
-                attachments3.push({
-                  filename: attachment.originalName || `\uBC1C\uC8FC\uC11C_${orderData.orderNumber || Date.now()}.pdf`,
-                  content: Buffer.from(attachment.fileData, "base64"),
-                  contentType: attachment.mimeType || "application/pdf"
-                });
-                attachmentsList.push("\uBC1C\uC8FC\uC11C.pdf (PDF \uD30C\uC77C)");
-                console.log("\u2705 PDF \uCCA8\uBD80 \uC131\uACF5 (DB Base64)");
+                const tempDir = path6.join(__dirname2, "../../uploads");
+                const tempFilePath = path6.join(tempDir, `temp-${Date.now()}-${attachment.originalName}`);
+                if (!fs8.existsSync(tempDir)) {
+                  fs8.mkdirSync(tempDir, { recursive: true });
+                }
+                fs8.writeFileSync(tempFilePath, Buffer.from(attachment.fileData, "base64"));
+                excelFilePath = tempFilePath;
+                console.log("\u2705 Excel \uD30C\uC77C \uC784\uC2DC \uC800\uC7A5:", tempFilePath);
               } else if (attachment.filePath && fs8.existsSync(attachment.filePath)) {
-                attachments3.push({
-                  filename: attachment.originalName || `\uBC1C\uC8FC\uC11C_${orderData.orderNumber || Date.now()}.pdf`,
-                  path: attachment.filePath,
-                  contentType: attachment.mimeType || "application/pdf"
-                });
-                attachmentsList.push("\uBC1C\uC8FC\uC11C.pdf (PDF \uD30C\uC77C)");
-                console.log("\u2705 PDF \uCCA8\uBD80 \uC131\uACF5 (\uD30C\uC77C \uACBD\uB85C)");
-              } else {
-                console.log("\u274C PDF \uCCA8\uBD80 \uC2E4\uD328: \uD30C\uC77C \uB370\uC774\uD130 \uC5C6\uC74C");
+                excelFilePath = attachment.filePath;
+                console.log("\u2705 Excel \uD30C\uC77C \uACBD\uB85C \uC0AC\uC6A9:", attachment.filePath);
               }
             } else {
-              console.log("\u274C PDF \uCCA8\uBD80 \uC2E4\uD328: \uCCA8\uBD80\uD30C\uC77C \uC815\uBCF4 \uC5C6\uC74C");
+              if (attachment.fileData) {
+                additionalAttachments.push({
+                  filename: attachment.originalName,
+                  content: Buffer.from(attachment.fileData, "base64"),
+                  contentType: attachment.mimeType || "application/octet-stream"
+                });
+                console.log("\u2705 \uCD94\uAC00 \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00 (Base64):", attachment.originalName);
+              } else if (attachment.filePath && fs8.existsSync(attachment.filePath)) {
+                additionalAttachments.push({
+                  filename: attachment.originalName,
+                  path: attachment.filePath,
+                  contentType: attachment.mimeType || "application/octet-stream"
+                });
+                console.log("\u2705 \uCD94\uAC00 \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00 (\uD30C\uC77C \uACBD\uB85C):", attachment.originalName);
+              }
             }
-          } catch (error) {
-            console.error("\u274C PDF \uCCA8\uBD80 \uC624\uB958:", error);
           }
-        }
-      } else {
-        const pdfPath = path6.join(__dirname2, "../../", pdfUrl.replace(/^\//, ""));
-        console.log("\u{1F4CE} PDF \uCCA8\uBD80 \uC2DC\uB3C4 (\uC9C1\uC811 \uACBD\uB85C):", pdfPath);
-        if (fs8.existsSync(pdfPath)) {
-          attachments3.push({
-            filename: `\uBC1C\uC8FC\uC11C_${orderData.orderNumber || Date.now()}.pdf`,
-            path: pdfPath,
-            contentType: "application/pdf"
-          });
-          attachmentsList.push("\uBC1C\uC8FC\uC11C.pdf (PDF \uD30C\uC77C)");
-          console.log("\u2705 PDF \uCCA8\uBD80 \uC131\uACF5 (\uC9C1\uC811 \uACBD\uB85C)");
-        } else {
-          console.log("\u274C PDF \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC74C:", pdfPath);
+        } catch (error) {
+          console.error("\u274C \uCCA8\uBD80\uD30C\uC77C \uCC98\uB9AC \uC624\uB958, ID:", attachmentId, error);
         }
       }
     }
-    if (attachExcel && excelUrl) {
-      if (excelUrl.includes("/api/attachments/") && excelUrl.includes("/download")) {
-        const attachmentIdMatch = excelUrl.match(/\/api\/attachments\/(\d+)\/download/);
-        if (attachmentIdMatch) {
-          const attachmentId = parseInt(attachmentIdMatch[1]);
-          console.log("\u{1F4CE} Excel \uCCA8\uBD80 \uC2DC\uB3C4 (DB\uC5D0\uC11C):", attachmentId);
-          try {
-            const [attachment] = await db.select({
-              id: attachments.id,
-              originalName: attachments.originalName,
-              filePath: attachments.filePath,
-              mimeType: attachments.mimeType,
-              fileData: attachments.fileData
-            }).from(attachments).where(eq11(attachments.id, attachmentId));
-            if (attachment) {
-              if (attachment.fileData) {
-                attachments3.push({
-                  filename: attachment.originalName || `\uBC1C\uC8FC\uC11C_${orderData.orderNumber || Date.now()}.xlsx`,
-                  content: Buffer.from(attachment.fileData, "base64"),
-                  contentType: attachment.mimeType || "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                });
-                attachmentsList.push("\uBC1C\uC8FC\uC11C.xlsx (Excel \uD30C\uC77C)");
-                console.log("\u2705 Excel \uCCA8\uBD80 \uC131\uACF5 (DB Base64)");
-              } else if (attachment.filePath && fs8.existsSync(attachment.filePath)) {
-                attachments3.push({
-                  filename: attachment.originalName || `\uBC1C\uC8FC\uC11C_${orderData.orderNumber || Date.now()}.xlsx`,
-                  path: attachment.filePath,
-                  contentType: attachment.mimeType || "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                });
-                attachmentsList.push("\uBC1C\uC8FC\uC11C.xlsx (Excel \uD30C\uC77C)");
-                console.log("\u2705 Excel \uCCA8\uBD80 \uC131\uACF5 (\uD30C\uC77C \uACBD\uB85C)");
-              } else {
-                console.log("\u274C Excel \uCCA8\uBD80 \uC2E4\uD328: \uD30C\uC77C \uB370\uC774\uD130 \uC5C6\uC74C");
-              }
-            } else {
-              console.log("\u274C Excel \uCCA8\uBD80 \uC2E4\uD328: \uCCA8\uBD80\uD30C\uC77C \uC815\uBCF4 \uC5C6\uC74C");
-            }
-          } catch (error) {
-            console.error("\u274C Excel \uCCA8\uBD80 \uC624\uB958:", error);
-          }
-        }
-      } else {
-        const excelPath = path6.join(__dirname2, "../../", excelUrl.replace(/^\//, ""));
-        console.log("\u{1F4CE} Excel \uCCA8\uBD80 \uC2DC\uB3C4 (\uC9C1\uC811 \uACBD\uB85C):", excelPath);
-        if (fs8.existsSync(excelPath)) {
-          attachments3.push({
-            filename: `\uBC1C\uC8FC\uC11C_${orderData.orderNumber || Date.now()}.xlsx`,
-            path: excelPath,
-            contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-          });
-          attachmentsList.push("\uBC1C\uC8FC\uC11C.xlsx (Excel \uD30C\uC77C)");
-          console.log("\u2705 Excel \uCCA8\uBD80 \uC131\uACF5 (\uC9C1\uC811 \uACBD\uB85C)");
-        } else {
-          console.log("\u274C Excel \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC74C:", excelPath);
-        }
+    if (!excelFilePath) {
+      console.log("\u{1F4CE} Excel \uD30C\uC77C\uC774 \uC5C6\uC5B4 \uAE30\uBCF8 \uD30C\uC77C \uC0DD\uC131");
+      const tempDir = path6.join(__dirname2, "../../uploads");
+      const tempFilePath = path6.join(tempDir, `default-po-${Date.now()}.xlsx`);
+      if (!fs8.existsSync(tempDir)) {
+        fs8.mkdirSync(tempDir, { recursive: true });
       }
+      const workbook = XLSX3.utils.book_new();
+      const worksheet = XLSX3.utils.json_to_sheet([{
+        "\uBC1C\uC8FC\uBC88\uD638": orderData.orderNumber,
+        "\uAC70\uB798\uCC98": orderData.vendorName,
+        "\uBC1C\uC8FC\uAE08\uC561": orderData.totalAmount,
+        "\uBC1C\uC8FC\uC77C\uC790": orderData.orderDate
+      }]);
+      XLSX3.utils.book_append_sheet(workbook, worksheet, "\uBC1C\uC8FC\uC11C");
+      XLSX3.writeFile(workbook, tempFilePath);
+      excelFilePath = tempFilePath;
+      console.log("\u2705 \uAE30\uBCF8 Excel \uD30C\uC77C \uC0DD\uC131:", tempFilePath);
     }
     const attachmentIdsToProcess = selectedAttachmentIds && selectedAttachmentIds.length > 0 ? selectedAttachmentIds : selectedAttachments;
     if (attachmentIdsToProcess && Array.isArray(attachmentIdsToProcess) && attachmentIdsToProcess.length > 0) {
@@ -13670,7 +13292,7 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
       const processedAttachmentIds = /* @__PURE__ */ new Set();
       if (attachPdf && pdfUrl && pdfUrl.includes("/api/attachments/") && pdfUrl.includes("/download")) {
         const pdfAttachmentIdMatch = pdfUrl.match(/\/api\/attachments\/(\d+)\/download/);
-        if (pdfAttachmentIdMatch && attachments3.length > 0) {
+        if (pdfAttachmentIdMatch && attachments.length > 0) {
           const pdfId = parseInt(pdfAttachmentIdMatch[1]);
           console.log("\u{1F50D} PDF already processed by old logic, ID:", pdfId);
           processedAttachmentIds.add(pdfId);
@@ -13696,29 +13318,42 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
             continue;
           }
           const [attachment] = await db.select({
-            id: attachments.id,
-            originalName: attachments.originalName,
-            filePath: attachments.filePath,
-            mimeType: attachments.mimeType,
-            fileData: attachments.fileData
-          }).from(attachments).where(eq11(attachments.id, attachmentId));
+            id: attachments2.id,
+            originalName: attachments2.originalName,
+            filePath: attachments2.filePath,
+            mimeType: attachments2.mimeType,
+            fileData: attachments2.fileData
+          }).from(attachments2).where(eq11(attachments2.id, attachmentId));
           if (attachment) {
             if (attachment.fileData) {
-              attachments3.push({
+              const fileBuffer = Buffer.from(attachment.fileData, "base64");
+              attachments.push({
                 filename: attachment.originalName,
-                content: Buffer.from(attachment.fileData, "base64"),
+                content: fileBuffer,
                 contentType: attachment.mimeType || "application/octet-stream"
               });
               attachmentsList.push(attachment.originalName);
-              console.log("\u2705 \uC120\uD0DD\uB41C \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00 \uC131\uACF5 (DB Base64):", attachment.originalName);
+              console.log("\u2705 \uC120\uD0DD\uB41C \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00 \uC131\uACF5 (DB Base64):", {
+                name: attachment.originalName,
+                mimeType: attachment.mimeType,
+                bufferSize: fileBuffer.length,
+                isExcel: attachment.mimeType?.includes("spreadsheet") || attachment.originalName?.endsWith(".xlsx"),
+                method: "content (Buffer)"
+              });
             } else if (attachment.filePath && fs8.existsSync(attachment.filePath)) {
-              attachments3.push({
+              attachments.push({
                 filename: attachment.originalName,
                 path: attachment.filePath,
                 contentType: attachment.mimeType || "application/octet-stream"
               });
               attachmentsList.push(attachment.originalName);
-              console.log("\u2705 \uC120\uD0DD\uB41C \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00 \uC131\uACF5 (\uD30C\uC77C \uACBD\uB85C):", attachment.originalName);
+              console.log("\u2705 \uC120\uD0DD\uB41C \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00 \uC131\uACF5 (\uD30C\uC77C \uACBD\uB85C):", {
+                name: attachment.originalName,
+                mimeType: attachment.mimeType,
+                filePath: attachment.filePath,
+                isExcel: attachment.mimeType?.includes("spreadsheet") || attachment.originalName?.endsWith(".xlsx"),
+                method: "path (File)"
+              });
             } else {
               console.log("\u274C \uC120\uD0DD\uB41C \uCCA8\uBD80\uD30C\uC77C \uCC98\uB9AC \uC2E4\uD328 (\uB370\uC774\uD130 \uC5C6\uC74C):", attachment.originalName);
             }
@@ -13730,7 +13365,7 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
         }
       }
     }
-    console.log(`\u{1F4CE} \uCD1D ${attachments3.length}\uAC1C \uCCA8\uBD80\uD30C\uC77C:`, attachmentsList);
+    console.log(`\u{1F4CE} \uCD1D ${attachments.length}\uAC1C \uCCA8\uBD80\uD30C\uC77C:`, attachmentsList);
     let emailHtmlContent;
     if (orderData.orderId) {
       const templateData = await generateEmailTemplateData(orderData.orderId);
@@ -13826,7 +13461,7 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
       to: emailOptions.to,
       cc: emailOptions.cc,
       subject: emailOptions.subject,
-      attachmentsCount: attachments3.length
+      attachmentsCount: attachments.length
     });
     const emailHtml = emailHtmlContent;
     const emailSettingsService = new EmailSettingsService();
@@ -13849,21 +13484,96 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
       }
     }
     const transporter2 = nodemailer3.createTransport(smtpConfig);
+    const safeAttachments = attachments.map((att) => {
+      const attachment = {
+        filename: att.filename || "attachment"
+      };
+      if (att.contentType) {
+        attachment.contentType = att.contentType;
+      }
+      try {
+        if (att.path && typeof att.path === "string" && att.path.length > 0) {
+          attachment.path = att.path;
+          attachment.valid = true;
+          console.log(`\u{1F4CE} \uCCA8\uBD80\uD30C\uC77C (\uD30C\uC77C): ${att.filename} -> ${att.path}`);
+        } else if (att.content && Buffer.isBuffer(att.content) && att.content.length > 0) {
+          attachment.content = att.content;
+          attachment.valid = true;
+          console.log(`\u{1F4CE} \uCCA8\uBD80\uD30C\uC77C (\uBC84\uD37C): ${att.filename} -> ${att.content.length} bytes`);
+        } else {
+          attachment.valid = false;
+          console.warn(`\u26A0\uFE0F \uCCA8\uBD80\uD30C\uC77C \uB370\uC774\uD130 \uC5C6\uC74C: ${att.filename}`);
+        }
+      } catch (attachError) {
+        attachment.valid = false;
+        console.error(`\u274C \uCCA8\uBD80\uD30C\uC77C \uCC98\uB9AC \uC624\uB958: ${att.filename}`, attachError);
+      }
+      return attachment;
+    }).filter((att) => att.valid).map((att) => {
+      const { valid, ...cleanAtt } = att;
+      return cleanAtt;
+    });
     const mailOptions = {
       from: smtpConfig.auth.user,
       to: Array.isArray(emailOptions.to) ? emailOptions.to.join(", ") : emailOptions.to,
       cc: emailOptions.cc ? Array.isArray(emailOptions.cc) ? emailOptions.cc.join(", ") : emailOptions.cc : void 0,
       subject: emailOptions.subject || `\uBC1C\uC8FC\uC11C - ${orderData.orderNumber || ""}`,
       html: emailHtml,
-      attachments: attachments3
+      attachments: safeAttachments
     };
+    console.log("\u{1F4E7} \uCD5C\uC885 \uCCA8\uBD80\uD30C\uC77C \uBAA9\uB85D:", safeAttachments.map((att) => ({
+      filename: att.filename,
+      hasPath: !!att.path,
+      hasContent: !!att.content,
+      contentSize: att.content ? att.content.length : 0,
+      contentType: att.contentType
+    })));
     if (process.env.NODE_ENV === "development" || !process.env.EMAIL_USER) {
       console.log("\u{1F4E7} [\uAC1C\uBC1C \uBAA8\uB4DC] \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC2DC\uBBAC\uB808\uC774\uC158:", {
         to: mailOptions.to,
         cc: mailOptions.cc,
         subject: mailOptions.subject,
-        attachmentsCount: attachments3.length
+        attachmentsCount: attachments.length
       });
+      if (orderData && orderData.orderId) {
+        try {
+          console.log("\u{1F4BE} \uC774\uBA54\uC77C \uD788\uC2A4\uD1A0\uB9AC DB \uC800\uC7A5 \uC2DC\uC791 (\uAC1C\uBC1C \uBAA8\uB4DC)");
+          const { emailSendHistory: emailSendHistory3 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
+          const recipients = Array.isArray(emailOptions.to) ? emailOptions.to : emailOptions.to.split(",").map((e) => e.trim());
+          const ccRecipients = emailOptions.cc ? Array.isArray(emailOptions.cc) ? emailOptions.cc : emailOptions.cc.split(",").map((e) => e.trim()) : [];
+          const historyData = {
+            orderId: orderData.orderId,
+            orderNumber: orderData.orderNumber,
+            senderUserId: req.user?.id ? String(req.user.id) : null,
+            recipients,
+            cc: ccRecipients,
+            bcc: [],
+            subject: mailOptions.subject,
+            messageContent: message || emailOptions.additionalMessage || "",
+            attachmentFiles: attachmentsList,
+            status: "sent",
+            sentCount: 1,
+            failedCount: 0,
+            errorMessage: null,
+            sentAt: /* @__PURE__ */ new Date()
+          };
+          console.log("\u{1F4CB} DB \uC0BD\uC785 \uB370\uC774\uD130:", historyData);
+          await db.insert(emailSendHistory3).values(historyData);
+          console.log("\u2705 \uC774\uBA54\uC77C \uD788\uC2A4\uD1A0\uB9AC DB \uC800\uC7A5 \uC131\uACF5");
+          console.log(`\u{1F4E7} [\uAC1C\uBC1C \uBAA8\uB4DC] \uC774\uBA54\uC77C \uAE30\uB85D \uC800\uC7A5 \uC644\uB8CC: \uBC1C\uC8FC\uBC88\uD638 ${orderData.orderNumber}`);
+        } catch (historyError) {
+          console.error(`\u274C [\uAC1C\uBC1C \uBAA8\uB4DC] \uC774\uBA54\uC77C \uAE30\uB85D \uC800\uC7A5 \uC2E4\uD328 (\uC0C1\uC138):`, {
+            error: historyError,
+            message: historyError instanceof Error ? historyError.message : "Unknown error",
+            stack: historyError instanceof Error ? historyError.stack : void 0,
+            orderData: {
+              orderId: orderData.orderId,
+              orderNumber: orderData.orderNumber
+            },
+            userId: req.user?.id
+          });
+        }
+      }
       res.json({
         success: true,
         messageId: `mock-${Date.now()}`,
@@ -13879,6 +13589,50 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
             console.log(`\u{1F504} \uBC1C\uC8FC\uC11C \uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8 \uC2DC\uB3C4: ${orderData.orderNumber} \u2192 sent`);
             await updateOrderStatusAfterEmail(orderData.orderNumber);
             console.log(`\u2705 \uBC1C\uC8FC\uC11C \uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8 \uC644\uB8CC: ${orderData.orderNumber} \u2192 sent`);
+            if (orderData.orderId) {
+              try {
+                console.log("\u{1F4BE} \uC774\uBA54\uC77C \uD788\uC2A4\uD1A0\uB9AC DB \uC800\uC7A5 \uC2DC\uC791 (\uD504\uB85C\uB355\uC158)");
+                const { emailSendHistory: emailSendHistory3 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
+                const recipients = Array.isArray(emailOptions.to) ? emailOptions.to : emailOptions.to.split(",").map((e) => e.trim());
+                const ccRecipients = emailOptions.cc ? Array.isArray(emailOptions.cc) ? emailOptions.cc : emailOptions.cc.split(",").map((e) => e.trim()) : [];
+                const historyData = {
+                  orderId: orderData.orderId,
+                  orderNumber: orderData.orderNumber,
+                  senderUserId: req.user?.id ? String(req.user.id) : null,
+                  recipients,
+                  cc: ccRecipients,
+                  bcc: [],
+                  subject: mailOptions.subject,
+                  messageContent: message || emailOptions.additionalMessage || "",
+                  attachmentFiles: attachmentsList,
+                  status: "sent",
+                  sentCount: 1,
+                  failedCount: 0,
+                  errorMessage: null,
+                  sentAt: /* @__PURE__ */ new Date()
+                };
+                console.log("\u{1F4CB} DB \uC0BD\uC785 \uB370\uC774\uD130 (\uD504\uB85C\uB355\uC158):", historyData);
+                await db.insert(emailSendHistory3).values({
+                  orderId: orderData.orderId,
+                  orderNumber: orderData.orderNumber,
+                  senderUserId: req.user?.id ? String(req.user.id) : null,
+                  recipients,
+                  cc: ccRecipients,
+                  bcc: [],
+                  subject: mailOptions.subject,
+                  messageContent: message || emailOptions.additionalMessage || "",
+                  attachmentFiles: attachmentsList,
+                  status: "sent",
+                  sentCount: 1,
+                  failedCount: 0,
+                  errorMessage: null,
+                  sentAt: /* @__PURE__ */ new Date()
+                });
+                console.log(`\u{1F4E7} \uC774\uBA54\uC77C \uBC1C\uC1A1 \uAE30\uB85D \uC800\uC7A5 \uC644\uB8CC: \uBC1C\uC8FC\uBC88\uD638 ${orderData.orderNumber}`);
+              } catch (historyError) {
+                console.error(`\u274C \uC774\uBA54\uC77C \uAE30\uB85D \uC800\uC7A5 \uC2E4\uD328:`, historyError);
+              }
+            }
           } catch (updateError) {
             console.error(`\u274C \uBC1C\uC8FC\uC11C \uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8 \uC2E4\uD328: ${orderData.orderNumber}`, updateError);
           }
@@ -13888,6 +13642,32 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
         res.json({ success: true, messageId: info.messageId });
       } catch (emailError) {
         console.error("\u{1F4E7} \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC2E4\uD328:", emailError);
+        if (orderData && orderData.orderId) {
+          try {
+            const { emailSendHistory: emailSendHistory3 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
+            const recipients = Array.isArray(emailOptions.to) ? emailOptions.to : emailOptions.to.split(",").map((e) => e.trim());
+            const ccRecipients = emailOptions.cc ? Array.isArray(emailOptions.cc) ? emailOptions.cc : emailOptions.cc.split(",").map((e) => e.trim()) : [];
+            await db.insert(emailSendHistory3).values({
+              orderId: orderData.orderId,
+              orderNumber: orderData.orderNumber,
+              senderUserId: req.user?.id ? String(req.user.id) : null,
+              recipients,
+              cc: ccRecipients,
+              bcc: [],
+              subject: mailOptions.subject,
+              messageContent: message || emailOptions.additionalMessage || "",
+              attachmentFiles: attachmentsList,
+              status: "failed",
+              sentCount: 0,
+              failedCount: 1,
+              errorMessage: emailError instanceof Error ? emailError.message : "Unknown error",
+              sentAt: /* @__PURE__ */ new Date()
+            });
+            console.log(`\u{1F4E7} \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC2E4\uD328 \uAE30\uB85D \uC800\uC7A5 \uC644\uB8CC: \uBC1C\uC8FC\uBC88\uD638 ${orderData.orderNumber}`);
+          } catch (historyError) {
+            console.error(`\u274C \uC774\uBA54\uC77C \uC2E4\uD328 \uAE30\uB85D \uC800\uC7A5 \uC2E4\uD328:`, historyError);
+          }
+        }
         res.status(500).json({
           error: "\uC774\uBA54\uC77C \uBC1C\uC1A1 \uC2E4\uD328",
           details: emailError instanceof Error ? emailError.message : "Unknown error"
@@ -13895,17 +13675,27 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
       }
     }
   } catch (error) {
-    console.error("\uC774\uBA54\uC77C \uBC1C\uC1A1 \uC624\uB958:", error);
+    console.error("\u274C \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC624\uB958 (\uC0C1\uC138):", {
+      error,
+      message: error instanceof Error ? error.message : "Unknown error",
+      stack: error instanceof Error ? error.stack : void 0,
+      name: error instanceof Error ? error.name : void 0
+    });
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const isDatabaseError = errorMessage.includes("column") || errorMessage.includes("relation") || errorMessage.includes("insert") || errorMessage.includes("constraint") || errorMessage.includes("violates");
+    console.log(`\u{1F50D} \uB370\uC774\uD130\uBCA0\uC774\uC2A4 \uC624\uB958 \uC5EC\uBD80: ${isDatabaseError}`);
     res.status(500).json({
       error: "\uC774\uBA54\uC77C \uBC1C\uC1A1 \uC2E4\uD328",
-      details: error instanceof Error ? error.message : "Unknown error"
+      details: errorMessage,
+      isDatabaseError,
+      timestamp: (/* @__PURE__ */ new Date()).toISOString()
     });
   }
 });
 router3.post("/orders/send-email-simple", requireAuth, async (req, res) => {
   try {
-    const { to, cc, subject, body, orderData, attachPdf, attachExcel, selectedAttachmentIds } = req.body;
-    console.log("\u{1F4E7} \uAC04\uD3B8 \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC694\uCCAD:", { to, cc, subject, attachments: { attachPdf, attachExcel, selectedAttachmentIds } });
+    const { to, cc, subject, body, orderData, attachPdf: attachPdf2, attachExcel: attachExcel2, selectedAttachmentIds } = req.body;
+    console.log("\u{1F4E7} \uAC04\uD3B8 \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC694\uCCAD:", { to, cc, subject, attachments: { attachPdf: attachPdf2, attachExcel: attachExcel2, selectedAttachmentIds } });
     if (!to || to.length === 0) {
       return res.status(400).json({ error: "\uC218\uC2E0\uC790\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4." });
     }
@@ -13945,14 +13735,14 @@ router3.post("/orders/send-email-simple", requireAuth, async (req, res) => {
       userPhone: req.user?.phone || "\uC5F0\uB77D\uCC98"
     };
     let excelPath = "";
-    if (attachExcel && orderData?.excelFilePath) {
+    if (attachExcel2 && orderData?.excelFilePath) {
       excelPath = path6.join(__dirname2, "../../", orderData.excelFilePath.replace(/^\//, ""));
       if (!fs8.existsSync(excelPath)) {
         console.warn("\u26A0\uFE0F \uC5D1\uC140 \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4:", excelPath);
         excelPath = "";
       }
     }
-    let attachments3 = [];
+    let attachments4 = [];
     if (selectedAttachmentIds && Array.isArray(selectedAttachmentIds) && selectedAttachmentIds.length > 0) {
       console.log("\u{1F4CE} \uCC98\uB9AC\uD560 \uC120\uD0DD\uB41C \uCCA8\uBD80\uD30C\uC77C IDs:", selectedAttachmentIds);
       for (const attachmentId of selectedAttachmentIds) {
@@ -13967,7 +13757,7 @@ router3.post("/orders/send-email-simple", requireAuth, async (req, res) => {
             console.log(`\u{1F4CE} \uCC98\uB9AC \uC911\uC778 \uCCA8\uBD80\uD30C\uC77C: ID=${attachmentId}, name=${attachment.original_name}`);
             if (attachment.file_data) {
               const fileBuffer = Buffer.from(attachment.file_data, "base64");
-              attachments3.push({
+              attachments4.push({
                 filename: attachment.original_name,
                 content: fileBuffer,
                 contentType: attachment.mime_type || "application/octet-stream"
@@ -13994,21 +13784,24 @@ router3.post("/orders/send-email-simple", requireAuth, async (req, res) => {
 
 ${body}`);
     }
-    console.log(`\u{1F4E7} \uC774\uBA54\uC77C \uBC1C\uC1A1: \uAE30\uBCF8 \uCCA8\uBD80\uD30C\uC77C + \uCD94\uAC00 \uCCA8\uBD80\uD30C\uC77C ${attachments3.length}\uAC1C`);
+    console.log(`\u{1F4E7} \uC774\uBA54\uC77C \uBC1C\uC1A1: \uAE30\uBCF8 \uCCA8\uBD80\uD30C\uC77C + \uCD94\uAC00 \uCCA8\uBD80\uD30C\uC77C ${attachments4.length}\uAC1C`);
     const result = await emailService.sendPOWithOriginalFormat(excelPath, {
       to: toEmails,
       cc: ccEmails,
       subject: subject || `\uBC1C\uC8FC\uC11C - ${emailData.orderNumber}`,
-      body: body || `\uBC1C\uC8FC\uC11C\uB97C \uCCA8\uBD80\uD569\uB2C8\uB2E4.
+      orderNumber: emailData.orderNumber,
+      vendorName: emailData.vendorName,
+      totalAmount: emailData.totalAmount,
+      additionalMessage: body || `\uBC1C\uC8FC\uC11C\uB97C \uCCA8\uBD80\uD569\uB2C8\uB2E4.
 
 \uBC1C\uC8FC\uBC88\uD638: ${emailData.orderNumber}
 \uD504\uB85C\uC81D\uD2B8: ${emailData.projectName}
 \uAC70\uB798\uCC98: ${emailData.vendorName}`,
-      orderData: emailData,
-      userId: req.user?.id,
-      orderId: orderData?.orderId,
-      additionalAttachments: attachments3
+      additionalAttachments: attachments4
       // Pass additional attachments
+    }, {
+      orderId: orderData?.orderId,
+      senderUserId: req.user?.id
     });
     if (excelPath.includes("temp_")) {
       try {
@@ -14067,6 +13860,10 @@ router3.post("/orders/send-email-with-excel", requireAuth, async (req, res) => {
         vendorName: emailSettings2.vendorName,
         totalAmount: emailSettings2.totalAmount,
         additionalMessage: emailSettings2.message
+      },
+      {
+        orderId: orderData?.id,
+        senderUserId: req.user?.id
       }
     );
     if (result.success) {
@@ -14114,21 +13911,23 @@ router3.post("/test-email-smtp", async (req, res) => {
       userName: "System Tester",
       userPhone: "010-0000-0000"
     };
-    const fs25 = __require("fs");
-    const path23 = __require("path");
-    const testExcelPath = path23.join(__dirname2, "../../uploads/smtp-test.txt");
-    fs25.writeFileSync(testExcelPath, "SMTP Test File - " + (/* @__PURE__ */ new Date()).toISOString());
+    const fs27 = __require("fs");
+    const path25 = __require("path");
+    const testExcelPath = path25.join(__dirname2, "../../uploads/smtp-test.txt");
+    fs27.writeFileSync(testExcelPath, "SMTP Test File - " + (/* @__PURE__ */ new Date()).toISOString());
     const result = await emailService.sendPOWithOriginalFormat(testExcelPath, {
       to: [recipientEmail],
       cc: [],
       subject: "SMTP \uD14C\uC2A4\uD2B8 - \uBC1C\uC8FC\uC11C",
-      body: "SMTP \uC124\uC815 \uD14C\uC2A4\uD2B8 \uC774\uBA54\uC77C\uC785\uB2C8\uB2E4.",
-      orderData: testOrderData,
-      userId: "system-test",
-      orderId: 9999
+      orderNumber: "TEST-001",
+      vendorName: "\uD14C\uC2A4\uD2B8 \uAC70\uB798\uCC98",
+      additionalMessage: "SMTP \uC124\uC815 \uD14C\uC2A4\uD2B8 \uC774\uBA54\uC77C\uC785\uB2C8\uB2E4."
+    }, {
+      orderId: 9999,
+      senderUserId: "system-test"
     });
     try {
-      fs25.unlinkSync(testExcelPath);
+      fs27.unlinkSync(testExcelPath);
     } catch (e) {
       console.warn("\uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328:", e.message);
     }
@@ -14172,8 +13971,8 @@ router3.get("/orders/:orderId/attachments", requireAuth, async (req, res) => {
   try {
     const orderId = parseInt(req.params.orderId, 10);
     console.log(`\u{1F4CE} \uBC1C\uC8FC\uC11C \uCCA8\uBD80\uD30C\uC77C \uBAA9\uB85D \uC694\uCCAD: \uBC1C\uC8FC\uC11C ID ${orderId}`);
-    const attachments3 = await storage.getOrderAttachments(orderId);
-    const attachmentList = attachments3.map((attachment) => ({
+    const attachments4 = await storage.getOrderAttachments(orderId);
+    const attachmentList = attachments4.map((attachment) => ({
       id: attachment.id,
       originalName: attachment.originalName,
       storedName: attachment.storedName,
@@ -14311,6 +14110,41 @@ router3.post("/orders/:id/complete-delivery", requireAuth, async (req, res) => {
       message: "\uB0A9\uD488\uAC80\uC218 \uC644\uB8CC \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4.",
       error: error instanceof Error ? error.message : "Unknown error"
     });
+  }
+});
+router3.get("/:orderId/email-history", async (req, res) => {
+  try {
+    const orderId = parseInt(req.params.orderId);
+    if (isNaN(orderId)) {
+      return res.status(400).json({ error: "Invalid order ID" });
+    }
+    const { emailSendHistory: emailSendHistory3, users: users3 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
+    const { eq: eq40, desc: desc19 } = await import("drizzle-orm");
+    const emailHistory = await db.select({
+      id: emailSendHistory3.id,
+      orderId: emailSendHistory3.orderId,
+      sentAt: emailSendHistory3.sentAt,
+      senderUserId: emailSendHistory3.senderUserId,
+      sentByName: users3.name,
+      sentByEmail: users3.email,
+      recipients: emailSendHistory3.recipients,
+      cc: emailSendHistory3.cc,
+      bcc: emailSendHistory3.bcc,
+      subject: emailSendHistory3.subject,
+      messageContent: emailSendHistory3.messageContent,
+      attachmentFiles: emailSendHistory3.attachmentFiles,
+      status: emailSendHistory3.status,
+      sentCount: emailSendHistory3.sentCount,
+      failedCount: emailSendHistory3.failedCount,
+      errorMessage: emailSendHistory3.errorMessage,
+      createdAt: emailSendHistory3.createdAt,
+      updatedAt: emailSendHistory3.updatedAt
+    }).from(emailSendHistory3).leftJoin(users3, eq40(emailSendHistory3.senderUserId, users3.id)).where(eq40(emailSendHistory3.orderId, orderId)).orderBy(desc19(emailSendHistory3.sentAt));
+    console.log(`\u{1F4E7} \uC774\uBA54\uC77C \uAE30\uB85D \uC870\uD68C: orderId=${orderId}, count=${emailHistory.length}`);
+    res.json(emailHistory);
+  } catch (error) {
+    console.error("Error fetching email history:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 var orders_default = router3;
@@ -14668,8 +14502,8 @@ import { sql as sql5 } from "drizzle-orm";
 var router6 = Router6();
 router6.get("/dashboard/test-db", async (req, res) => {
   try {
-    const { db: db3 } = await Promise.resolve().then(() => (init_db(), db_exports));
-    const result = await db3.execute(sql5`SELECT COUNT(*) as count FROM purchase_orders`);
+    const { db: db4 } = await Promise.resolve().then(() => (init_db(), db_exports));
+    const result = await db4.execute(sql5`SELECT COUNT(*) as count FROM purchase_orders`);
     res.json({ success: true, data: result });
   } catch (error) {
     console.error("DB test error:", error);
@@ -14708,11 +14542,11 @@ router6.get("/dashboard/urgent-orders", async (req, res) => {
 });
 router6.get("/dashboard/order-status-stats", async (req, res) => {
   try {
-    const { db: db3 } = await Promise.resolve().then(() => (init_db(), db_exports));
-    if (!db3) {
+    const { db: db4 } = await Promise.resolve().then(() => (init_db(), db_exports));
+    if (!db4) {
       throw new Error("Database connection not available");
     }
-    const statsResult = await db3.execute(
+    const statsResult = await db4.execute(
       sql5`SELECT 
         po.order_status as status,
         COUNT(*) as count,
@@ -14722,7 +14556,7 @@ router6.get("/dashboard/order-status-stats", async (req, res) => {
       GROUP BY po.order_status
       ORDER BY po.order_status`
     );
-    const totalResult = await db3.execute(
+    const totalResult = await db4.execute(
       sql5`SELECT COUNT(*) as total FROM purchase_orders WHERE order_status IS NOT NULL`
     );
     const total = parseInt(totalResult.rows[0]?.total || "0");
@@ -14765,10 +14599,10 @@ router7.get("/companies/debug", async (req, res) => {
   console.log("\u{1F50D} Debug endpoint called");
   try {
     console.log("\u{1F50D} Attempting to import db module...");
-    const { db: db3 } = await Promise.resolve().then(() => (init_db(), db_exports));
+    const { db: db4 } = await Promise.resolve().then(() => (init_db(), db_exports));
     console.log("\u{1F50D} DB module imported successfully");
     console.log("\u{1F50D} Attempting basic query...");
-    const basicTest = await db3.execute(sql6`SELECT 1 as test`);
+    const basicTest = await db4.execute(sql6`SELECT 1 as test`);
     console.log("\u{1F50D} Basic query successful:", basicTest);
     res.json({
       databaseUrlSet: !!process.env.DATABASE_URL,
@@ -15441,7 +15275,7 @@ var ExcelAttachmentService = class {
       console.log(`\u{1F4DD} \uD45C\uC900\uD654\uB41C Excel \uD30C\uC77C\uBA85: ${standardizedFileName}`);
       const fileBuffer = fs9.readFileSync(processedExcelPath);
       const base64Data = fileBuffer.toString("base64");
-      const [attachment] = await db.insert(attachments).values({
+      const [attachment] = await db.insert(attachments2).values({
         orderId,
         originalName: standardizedFileName,
         // 표준화된 파일명 사용
@@ -15454,7 +15288,7 @@ var ExcelAttachmentService = class {
         uploadedAt: /* @__PURE__ */ new Date(),
         fileData: base64Data
         // Base64 데이터 저장
-      }).returning({ id: attachments.id });
+      }).returning({ id: attachments2.id });
       console.log(`\u2705 Excel \uCCA8\uBD80\uD30C\uC77C \uC800\uC7A5 \uC644\uB8CC: ID ${attachment.id}, \uD06C\uAE30: ${Math.round(stats.size / 1024)}KB`);
       return {
         success: true,
@@ -15484,7 +15318,7 @@ var ExcelAttachmentService = class {
       const fileName = `original_${path7.basename(originalExcelPath)}`;
       const fileBuffer = fs9.readFileSync(originalExcelPath);
       const base64Data = fileBuffer.toString("base64");
-      const [attachment] = await db.insert(attachments).values({
+      const [attachment] = await db.insert(attachments2).values({
         orderId,
         originalName: `[\uC6D0\uBCF8] ${originalFileName}`,
         storedName: fileName,
@@ -15494,7 +15328,7 @@ var ExcelAttachmentService = class {
         uploadedBy,
         uploadedAt: /* @__PURE__ */ new Date(),
         fileData: base64Data
-      }).returning({ id: attachments.id });
+      }).returning({ id: attachments2.id });
       console.log(`\u2705 \uC6D0\uBCF8 Excel \uCCA8\uBD80\uD30C\uC77C \uC800\uC7A5 \uC644\uB8CC: ID ${attachment.id}`);
       return {
         success: true,
@@ -15683,8 +15517,6 @@ var ExcelAutomationService = class {
       console.log(`\u{1F50D} [DEBUG] 2.5\uB2E8\uACC4: \uCC98\uB9AC\uB41C Excel \uD30C\uC77C \uCCA8\uBD80 \uC2DC\uC791`);
       console.log(`\u{1F4CA} [DEBUG] saveResult:`, JSON.stringify(saveResult, null, 2));
       const originalFileName = path8.basename(filePath);
-      let pdfGenerationPromises = [];
-      let pdfResults = [];
       if (saveResult.savedOrderNumbers && saveResult.savedOrderNumbers.length > 0) {
         console.log(`\u{1F4CB} [DEBUG] \uBC1C\uC8FC\uC11C \uBC88\uD638\uB4E4:`, saveResult.savedOrderNumbers);
         try {
@@ -15694,13 +15526,6 @@ var ExcelAutomationService = class {
           const removeResult = await removeAllInputSheets(filePath, processedExcelPath);
           if (removeResult.success && fs10.existsSync(processedExcelPath)) {
             console.log(`\u2705 [DEBUG] Input \uC2DC\uD2B8 \uC81C\uAC70 \uC644\uB8CC: ${processedExcelPath}`);
-            if (sessionId) {
-              progressManager.updateStep(sessionId, "pdf", "processing", `PDF \uC0DD\uC131 \uC2DC\uC791: \uCD1D ${orders.length}\uAC1C \uBC1C\uC8FC\uC11C`, {
-                current: 0,
-                total: orders.length
-              });
-            }
-            let pdfProcessedCount = 0;
             for (const order of orders) {
               const attachResult = await ExcelAttachmentService.saveProcessedExcelFile(
                 order.id,
@@ -15715,90 +15540,15 @@ var ExcelAutomationService = class {
               } else {
                 console.warn(`\u26A0\uFE0F [DEBUG] \uBC1C\uC8FC\uC11C ${order.orderNumber}\uC5D0 Excel \uCCA8\uBD80\uD30C\uC77C \uC800\uC7A5 \uC2E4\uD328: ${attachResult.error}`);
               }
-              const pdfPromise = (async () => {
-                try {
-                  console.log(`\u{1F4C4} [DEBUG] \uBC1C\uC8FC\uC11C ${order.orderNumber}\uC5D0 \uB300\uD55C PDF \uC0DD\uC131 \uC2DC\uC791...`);
-                  const { ProfessionalPDFGenerationService: ProfessionalPDFGenerationService2 } = await Promise.resolve().then(() => (init_professional_pdf_generation_service(), professional_pdf_generation_service_exports));
-                  const pdfGenerationTimeout = process.env.VERCEL ? 3e4 : 6e4;
-                  const pdfResultPromise = ProfessionalPDFGenerationService2.generateProfessionalPurchaseOrderPDF(
-                    order.id,
-                    userId
-                  );
-                  const pdfResult = await Promise.race([
-                    pdfResultPromise,
-                    new Promise(
-                      (resolve) => setTimeout(() => resolve({ success: false, error: "PDF \uC0DD\uC131 \uD0C0\uC784\uC544\uC6C3" }), pdfGenerationTimeout)
-                    )
-                  ]);
-                  if (pdfResult.success) {
-                    console.log(`\u2705 [DEBUG] \uBC1C\uC8FC\uC11C ${order.orderNumber}\uC5D0 PDF \uC0DD\uC131 \uC644\uB8CC: ID ${pdfResult.attachmentId}`);
-                    pdfProcessedCount++;
-                    if (sessionId) {
-                      progressManager.updateStep(
-                        sessionId,
-                        "pdf",
-                        "processing",
-                        `PDF \uC0DD\uC131 \uC911: ${order.orderNumber} \uC644\uB8CC (${pdfProcessedCount}/${orders.length})`,
-                        {
-                          current: pdfProcessedCount,
-                          total: orders.length,
-                          currentItem: order.orderNumber,
-                          percentage: Math.round(pdfProcessedCount / orders.length * 100)
-                        }
-                      );
-                    }
-                    return { orderId: order.id, orderNumber: order.orderNumber, success: true, attachmentId: pdfResult.attachmentId };
-                  } else {
-                    console.warn(`\u26A0\uFE0F [DEBUG] \uBC1C\uC8FC\uC11C ${order.orderNumber}\uC5D0 PDF \uC0DD\uC131 \uC2E4\uD328: ${pdfResult.error}`);
-                    pdfProcessedCount++;
-                    if (sessionId) {
-                      progressManager.updateStep(
-                        sessionId,
-                        "pdf",
-                        "processing",
-                        `PDF \uC0DD\uC131 \uC911: ${order.orderNumber} \uC2E4\uD328 (${pdfProcessedCount}/${orders.length})`,
-                        {
-                          current: pdfProcessedCount,
-                          total: orders.length,
-                          currentItem: order.orderNumber,
-                          percentage: Math.round(pdfProcessedCount / orders.length * 100)
-                        }
-                      );
-                    }
-                    return { orderId: order.id, orderNumber: order.orderNumber, success: false, error: pdfResult.error };
-                  }
-                } catch (pdfError) {
-                  console.error(`\u274C [DEBUG] \uBC1C\uC8FC\uC11C ${order.orderNumber} PDF \uC0DD\uC131 \uC911 \uC624\uB958:`, pdfError);
-                  return { orderId: order.id, orderNumber: order.orderNumber, success: false, error: pdfError };
-                }
-              })();
-              pdfGenerationPromises.push(pdfPromise);
               try {
                 await db.update(purchaseOrders).set({
-                  orderStatus: "\uBC1C\uC8FC\uC0DD\uC131",
-                  status: "created"
+                  orderStatus: "draft",
+                  status: "draft"
                 }).where(eq15(purchaseOrders.id, order.id));
-                console.log(`\u2705 [DEBUG] \uBC1C\uC8FC\uC11C ${order.orderNumber} \uC0C1\uD0DC\uB97C '\uBC1C\uC8FC\uC0DD\uC131'\uC73C\uB85C \uC5C5\uB370\uC774\uD2B8 \uC644\uB8CC`);
+                console.log(`\u2705 [DEBUG] \uBC1C\uC8FC\uC11C ${order.orderNumber} \uC0C1\uD0DC\uB97C 'draft'(\uC784\uC2DC\uC800\uC7A5)\uB85C \uC124\uC815 \uC644\uB8CC`);
               } catch (statusError) {
                 console.warn(`\u26A0\uFE0F [DEBUG] \uBC1C\uC8FC\uC11C ${order.orderNumber} \uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8 \uC2E4\uD328:`, statusError);
               }
-            }
-            console.log(`\u23F3 [DEBUG] ${pdfGenerationPromises.length}\uAC1C PDF \uC0DD\uC131 \uB300\uAE30 \uC911...`);
-            pdfResults = await Promise.all(pdfGenerationPromises);
-            const successfulPdfs = pdfResults.filter((r) => r.success);
-            const failedPdfs = pdfResults.filter((r) => !r.success);
-            console.log(`\u{1F4CA} [DEBUG] PDF \uC0DD\uC131 \uC644\uB8CC: \uC131\uACF5 ${successfulPdfs.length}\uAC1C, \uC2E4\uD328 ${failedPdfs.length}\uAC1C`);
-            if (sessionId) {
-              const status = failedPdfs.length === 0 ? "completed" : "error";
-              const message = failedPdfs.length === 0 ? `\uBAA8\uB4E0 PDF \uC0DD\uC131 \uC644\uB8CC: ${successfulPdfs.length}\uAC1C \uC131\uACF5` : `PDF \uC0DD\uC131 \uC644\uB8CC: ${successfulPdfs.length}\uAC1C \uC131\uACF5, ${failedPdfs.length}\uAC1C \uC2E4\uD328`;
-              progressManager.updateStep(sessionId, "pdf", status, message, {
-                successful: successfulPdfs.length,
-                failed: failedPdfs.length,
-                total: pdfResults.length
-              });
-            }
-            if (failedPdfs.length > 0) {
-              console.warn(`\u26A0\uFE0F [DEBUG] PDF \uC0DD\uC131 \uC2E4\uD328 \uBAA9\uB85D:`, failedPdfs.map((f) => f.orderNumber).join(", "));
             }
             try {
               fs10.unlinkSync(processedExcelPath);
@@ -15846,18 +15596,7 @@ var ExcelAutomationService = class {
           console.warn("\uBC1C\uC8FC\uC11C ID \uC870\uD68C \uC2E4\uD328:", error);
         }
       }
-      let pdfGenerationInfo = void 0;
-      if (typeof pdfGenerationPromises !== "undefined" && pdfGenerationPromises.length > 0) {
-        if (typeof pdfResults !== "undefined") {
-          const successfulPdfs = pdfResults.filter((r) => r.success);
-          pdfGenerationInfo = {
-            total: pdfResults.length,
-            successful: successfulPdfs.length,
-            failed: pdfResults.length - successfulPdfs.length,
-            attachmentIds: successfulPdfs.map((p) => p.attachmentId).filter((id) => id !== void 0)
-          };
-        }
-      }
+      const pdfGenerationInfo = void 0;
       const result = {
         success: true,
         data: {
@@ -16053,26 +15792,31 @@ var ExcelAutomationService = class {
   /**
    * 4단계: 이메일 발송 실행 (Excel과 PDF 첨부)
    */
-  static async sendEmails(processedFilePath, recipients, emailOptions = {}) {
+  static async sendEmails(processedFilePath, recipients, emailOptions2 = {}) {
     DebugLogger.logFunctionEntry("ExcelAutomationService.sendEmails", {
       processedFilePath,
       recipients,
-      emailOptions
+      emailOptions: emailOptions2
     });
     try {
-      const emailService4 = new POEmailService();
+      const emailService5 = new POEmailService();
       const emailResults = [];
       const failedEmails = [];
       for (const email of recipients) {
         try {
           console.log(`\u{1F4E7} \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC911: ${email}`);
-          const sendResult = await emailService4.sendPOWithOriginalFormat(
+          const sendResult = await emailService5.sendPOWithOriginalFormat(
             processedFilePath,
             {
               to: email,
-              subject: emailOptions.subject || `\uBC1C\uC8FC\uC11C - ${(/* @__PURE__ */ new Date()).toLocaleDateString("ko-KR")}`,
-              orderNumber: emailOptions.orderNumber,
-              additionalMessage: emailOptions.additionalMessage
+              subject: emailOptions2.subject || `\uBC1C\uC8FC\uC11C - ${(/* @__PURE__ */ new Date()).toLocaleDateString("ko-KR")}`,
+              orderNumber: emailOptions2.orderNumber,
+              additionalMessage: emailOptions2.additionalMessage
+            },
+            {
+              orderId: emailOptions2.orderId,
+              senderUserId: emailOptions2.senderUserId || 0
+              // 전달받은 사용자 ID 사용
             }
           );
           if (sendResult.success) {
@@ -16106,12 +15850,12 @@ var ExcelAutomationService = class {
         emailResults
       };
       if (result.success && result.sentEmails > 0) {
-        const orderNumbersToUpdate = emailOptions.savedOrderNumbers || (emailOptions.orderNumber ? [emailOptions.orderNumber] : []);
+        const orderNumbersToUpdate = emailOptions2.savedOrderNumbers || (emailOptions2.orderNumber ? [emailOptions2.orderNumber] : []);
         console.log(`\u{1F504} [Excel\uC790\uB3D9\uD654] \uBC1C\uC8FC\uC11C \uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8 \uC2DC\uB3C4:`, {
           resultSuccess: result.success,
           sentEmails: result.sentEmails,
-          savedOrderNumbers: emailOptions.savedOrderNumbers?.length || 0,
-          singleOrderNumber: emailOptions.orderNumber || "none",
+          savedOrderNumbers: emailOptions2.savedOrderNumbers?.length || 0,
+          singleOrderNumber: emailOptions2.orderNumber || "none",
           orderNumbersToUpdate: orderNumbersToUpdate.length
         });
         if (orderNumbersToUpdate.length > 0) {
@@ -16150,22 +15894,22 @@ var ExcelAutomationService = class {
    * 발주서 상태를 'sent'로 업데이트하는 헬퍼 메소드
    */
   static async updateOrderStatusToSent(orderNumber) {
-    const { db: db3 } = await Promise.resolve().then(() => (init_db(), db_exports));
+    const { db: db4 } = await Promise.resolve().then(() => (init_db(), db_exports));
     const { purchaseOrders: purchaseOrders3 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-    const { eq: eq39 } = await import("drizzle-orm");
-    await db3.update(purchaseOrders3).set({
+    const { eq: eq40 } = await import("drizzle-orm");
+    await db4.update(purchaseOrders3).set({
       orderStatus: "sent",
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq39(purchaseOrders3.orderNumber, orderNumber));
+    }).where(eq40(purchaseOrders3.orderNumber, orderNumber));
   }
   /**
    * 여러 발주서의 상태를 'sent'로 업데이트하는 헬퍼 메소드
    */
   static async updateMultipleOrderStatusToSent(orderNumbers) {
-    const { db: db3 } = await Promise.resolve().then(() => (init_db(), db_exports));
+    const { db: db4 } = await Promise.resolve().then(() => (init_db(), db_exports));
     const { purchaseOrders: purchaseOrders3 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
     const { inArray: inArray7 } = await import("drizzle-orm");
-    await db3.update(purchaseOrders3).set({
+    await db4.update(purchaseOrders3).set({
       orderStatus: "sent",
       updatedAt: /* @__PURE__ */ new Date()
     }).where(inArray7(purchaseOrders3.orderNumber, orderNumbers));
@@ -16469,7 +16213,7 @@ router9.post("/send-emails", requireAuth, async (req, res) => {
       recipients,
       savedOrderNumbers = [],
       orderIds = [],
-      emailOptions = {}
+      emailOptions: emailOptions2 = {}
     } = req.body;
     if (!processedFilePath) {
       return res.status(400).json({
@@ -16494,11 +16238,13 @@ router9.post("/send-emails", requireAuth, async (req, res) => {
       processedFilePath,
       recipients,
       {
-        ...emailOptions,
+        ...emailOptions2,
         savedOrderNumbers,
         // 발주번호들을 함께 전달
-        orderId: orderIds.length > 0 ? orderIds[0] : void 0
+        orderId: orderIds.length > 0 ? orderIds[0] : void 0,
         // 첫 번째 발주서 ID 전달
+        senderUserId: req.user?.id
+        // 현재 사용자 ID 전달
       }
     );
     res.json({
@@ -16583,15 +16329,15 @@ router9.post("/debug-upload", requireAuth, upload2.single("file"), async (req, r
     }
     step = 2;
     console.log(`\u{1F41B} [DEBUG] Step ${step}: Database connection test`);
-    const { db: db3 } = await Promise.resolve().then(() => (init_db(), db_exports));
+    const { db: db4 } = await Promise.resolve().then(() => (init_db(), db_exports));
     const { purchaseOrders: purchaseOrders3 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-    await db3.select().from(purchaseOrders3).limit(1);
+    await db4.select().from(purchaseOrders3).limit(1);
     console.log(`\u{1F41B} [DEBUG] Step ${step} PASSED: DB connection OK`);
     step = 3;
     console.log(`\u{1F41B} [DEBUG] Step ${step}: File path check`);
     const filePath = req.file.path;
-    const fs25 = await import("fs");
-    if (!fs25.existsSync(filePath)) {
+    const fs27 = await import("fs");
+    if (!fs27.existsSync(filePath)) {
       return res.status(400).json({
         success: false,
         error: "\uC5C5\uB85C\uB4DC\uB41C \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.",
@@ -16716,7 +16462,7 @@ var POEmailServiceMock = class {
   /**
    * 갑지/을지 시트를 Excel과 PDF로 첨부하여 이메일 발송
    */
-  async sendPOWithAttachments(originalFilePath, emailOptions) {
+  async sendPOWithAttachments(originalFilePath, emailOptions2) {
     try {
       const timestamp2 = Date.now();
       const uploadsDir = path10.join(__dirname3, "../../uploads");
@@ -16741,40 +16487,40 @@ var POEmailServiceMock = class {
           error: `PDF \uBCC0\uD658 \uC2E4\uD328: ${pdfResult.error}`
         };
       }
-      const attachments3 = [];
+      const attachments4 = [];
       if (fs12.existsSync(extractedPath)) {
-        attachments3.push({
-          filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`,
+        attachments4.push({
+          filename: `\uBC1C\uC8FC\uC11C_${emailOptions2.orderNumber || timestamp2}.xlsx`,
           path: extractedPath,
           contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         });
       }
       if (fs12.existsSync(pdfPath)) {
-        attachments3.push({
-          filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`,
+        attachments4.push({
+          filename: `\uBC1C\uC8FC\uC11C_${emailOptions2.orderNumber || timestamp2}.pdf`,
           path: pdfPath,
           contentType: "application/pdf"
         });
       }
-      const emailContent = this.generateEmailContent(emailOptions);
+      const emailContent = this.generateEmailContent(emailOptions2);
       let result;
       if (this.transporter) {
         result = await this.sendEmail({
-          to: emailOptions.to,
-          cc: emailOptions.cc,
-          bcc: emailOptions.bcc,
-          subject: emailOptions.subject,
+          to: emailOptions2.to,
+          cc: emailOptions2.cc,
+          bcc: emailOptions2.bcc,
+          subject: emailOptions2.subject,
           html: emailContent,
-          attachments: attachments3
+          attachments: attachments4
         });
       } else {
         result = await this.sendMockEmail({
-          to: emailOptions.to,
-          cc: emailOptions.cc,
-          bcc: emailOptions.bcc,
-          subject: emailOptions.subject,
+          to: emailOptions2.to,
+          cc: emailOptions2.cc,
+          bcc: emailOptions2.bcc,
+          subject: emailOptions2.subject,
           html: emailContent,
-          attachments: attachments3
+          attachments: attachments4
         });
       }
       setTimeout(() => {
@@ -18348,7 +18094,7 @@ router10.post("/save", simpleAuth, async (req, res) => {
             const cleanOrderNumber = orderNumber.startsWith("PO-") ? orderNumber.substring(3) : orderNumber;
             const pdfOriginalName = `PO_Professional_${cleanOrderNumber}_${Date.now()}.pdf`;
             const pdfStoredName = `PO_Professional_${cleanOrderNumber}_${Date.now()}.pdf`;
-            const pdfAttachment = await db.insert(attachments).values({
+            const pdfAttachment = await db.insert(attachments2).values({
               orderId: newOrder[0].id,
               originalName: pdfOriginalName,
               // 한글 포함 파일명
@@ -18388,7 +18134,7 @@ router10.post("/save", simpleAuth, async (req, res) => {
               const excelBase64 = excelBuffer.toString("base64");
               const excelOriginalName = `${orderNumber}_\uAC11\uC9C0\uC744\uC9C0.xlsx`;
               const excelStoredName = `${orderNumber}_${Date.now()}_extracted.xlsx`;
-              await db.insert(attachments).values({
+              await db.insert(attachments2).values({
                 orderId: newOrder[0].id,
                 originalName: excelOriginalName,
                 // 한글 포함 파일명
@@ -18601,8 +18347,8 @@ router10.post("/send-email", simpleAuth, async (req, res) => {
     if (!fs15.existsSync(filePath)) {
       return res.status(400).json({ error: "\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4." });
     }
-    const emailService4 = new POEmailServiceMock();
-    const emailResult = await emailService4.sendPOWithAttachments(filePath, {
+    const emailService5 = new POEmailServiceMock();
+    const emailResult = await emailService5.sendPOWithAttachments(filePath, {
       to,
       cc,
       bcc,
@@ -18622,16 +18368,37 @@ router10.post("/send-email", simpleAuth, async (req, res) => {
     }
     if (emailResult.success && orderNumber) {
       try {
-        const { db: db3 } = await Promise.resolve().then(() => (init_db(), db_exports));
-        const { purchaseOrders: purchaseOrders3 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-        const { eq: eq39 } = await import("drizzle-orm");
-        await db3.update(purchaseOrders3).set({
-          orderStatus: "sent",
-          updatedAt: /* @__PURE__ */ new Date()
-        }).where(eq39(purchaseOrders3.orderNumber, orderNumber));
-        console.log(`\u{1F4CB} \uBC1C\uC8FC\uC11C \uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8 \uC644\uB8CC: ${orderNumber} \u2192 sent`);
+        const { db: db4 } = await Promise.resolve().then(() => (init_db(), db_exports));
+        const { purchaseOrders: purchaseOrders3, emailSendHistory: emailSendHistory3 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
+        const { eq: eq40 } = await import("drizzle-orm");
+        const order = await db4.select().from(purchaseOrders3).where(eq40(purchaseOrders3.orderNumber, orderNumber)).limit(1);
+        if (order.length > 0) {
+          await db4.update(purchaseOrders3).set({
+            orderStatus: "sent",
+            updatedAt: /* @__PURE__ */ new Date()
+          }).where(eq40(purchaseOrders3.orderNumber, orderNumber));
+          console.log(`\u{1F4CB} \uBC1C\uC8FC\uC11C \uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8 \uC644\uB8CC: ${orderNumber} \u2192 sent`);
+          const recipients = Array.isArray(to) ? to : [to];
+          const ccRecipients = cc ? Array.isArray(cc) ? cc : [cc] : [];
+          await db4.insert(emailSendHistory3).values({
+            orderId: order[0].id,
+            senderUserId: req.user?.id || 0,
+            // 사용자 ID
+            recipients,
+            cc: ccRecipients,
+            bcc: bcc ? Array.isArray(bcc) ? bcc : [bcc] : [],
+            subject,
+            message: additionalMessage || "",
+            attachments: ["\uAC11\uC9C0/\uC744\uC9C0 \uC2DC\uD2B8 (Excel)", "\uAC11\uC9C0/\uC744\uC9C0 \uC2DC\uD2B8 (PDF)"],
+            status: "sent",
+            sentAt: /* @__PURE__ */ new Date(),
+            messageId: emailResult.messageId || `mock-${Date.now()}`,
+            error: null
+          });
+          console.log(`\u{1F4E7} \uC774\uBA54\uC77C \uBC1C\uC1A1 \uAE30\uB85D \uC800\uC7A5 \uC644\uB8CC: \uBC1C\uC8FC\uBC88\uD638 ${orderNumber}`);
+        }
       } catch (updateError) {
-        console.error(`\u274C \uBC1C\uC8FC\uC11C \uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8 \uC2E4\uD328: ${orderNumber}`, updateError);
+        console.error(`\u274C \uBC1C\uC8FC\uC11C \uC0C1\uD0DC/\uC774\uBA54\uC77C \uAE30\uB85D \uC5C5\uB370\uC774\uD2B8 \uC2E4\uD328: ${orderNumber}`, updateError);
       }
     }
     res.json({
@@ -18760,8 +18527,8 @@ router10.post("/process-complete", simpleAuth, upload3.single("file"), async (re
     }
     if (sendEmail && emailTo && emailSubject) {
       console.log("\u{1F4E7} 6\uB2E8\uACC4: \uC774\uBA54\uC77C \uBC1C\uC1A1");
-      const emailService4 = new POEmailServiceMock();
-      const emailResult = await emailService4.sendPOWithAttachments(extractedPath, {
+      const emailService5 = new POEmailServiceMock();
+      const emailResult = await emailService5.sendPOWithAttachments(extractedPath, {
         to: emailTo,
         subject: emailSubject,
         orderNumber: parseResult.orders[0]?.orderNumber,
@@ -18772,6 +18539,34 @@ router10.post("/process-complete", simpleAuth, upload3.single("file"), async (re
         additionalMessage: emailMessage
       });
       results.email = emailResult;
+      if (emailResult.success && parseResult.orders[0]?.orderNumber) {
+        try {
+          const { db: db4 } = await Promise.resolve().then(() => (init_db(), db_exports));
+          const { purchaseOrders: purchaseOrders3, emailSendHistory: emailSendHistory3 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
+          const { eq: eq40 } = await import("drizzle-orm");
+          const order = await db4.select().from(purchaseOrders3).where(eq40(purchaseOrders3.orderNumber, parseResult.orders[0].orderNumber)).limit(1);
+          if (order.length > 0) {
+            const recipients = Array.isArray(emailTo) ? emailTo : [emailTo];
+            await db4.insert(emailSendHistory3).values({
+              orderId: order[0].id,
+              senderUserId: req.user?.id || 0,
+              recipients,
+              cc: [],
+              bcc: [],
+              subject: emailSubject,
+              message: emailMessage || "",
+              attachments: ["\uAC11\uC9C0/\uC744\uC9C0 \uC2DC\uD2B8 (Excel)", "\uAC11\uC9C0/\uC744\uC9C0 \uC2DC\uD2B8 (PDF)"],
+              status: "sent",
+              sentAt: /* @__PURE__ */ new Date(),
+              messageId: emailResult.messageId || `mock-${Date.now()}`,
+              error: null
+            });
+            console.log(`\u{1F4E7} \uC774\uBA54\uC77C \uBC1C\uC1A1 \uAE30\uB85D \uC800\uC7A5 \uC644\uB8CC: \uBC1C\uC8FC\uBC88\uD638 ${parseResult.orders[0].orderNumber}`);
+          }
+        } catch (recordError) {
+          console.error(`\u274C \uC774\uBA54\uC77C \uAE30\uB85D \uC800\uC7A5 \uC2E4\uD328:`, recordError);
+        }
+      }
     }
     console.log("\u2705 \uBAA8\uB4E0 \uB2E8\uACC4 \uC644\uB8CC");
     res.json({
@@ -18804,8 +18599,8 @@ router10.post("/process-complete", simpleAuth, upload3.single("file"), async (re
 });
 router10.get("/test-email", simpleAuth, async (req, res) => {
   try {
-    const emailService4 = new POEmailServiceMock();
-    const testResult = await emailService4.testConnection();
+    const emailService5 = new POEmailServiceMock();
+    const testResult = await emailService5.testConnection();
     res.json({
       success: true,
       message: testResult.mockMode ? "\uC774\uBA54\uC77C Mock \uBAA8\uB4DC \uC815\uC0C1" : "\uC774\uBA54\uC77C \uC11C\uBC84 \uC5F0\uACB0 \uC131\uACF5",
@@ -20480,27 +20275,14 @@ var router13 = Router13();
 var createEmailHistorySchema = z4.object({
   orderId: z4.number(),
   orderNumber: z4.string().optional(),
-  recipients: z4.array(z4.object({
-    email: z4.string().email(),
-    name: z4.string().optional()
-  })),
-  cc: z4.array(z4.object({
-    email: z4.string().email(),
-    name: z4.string().optional()
-  })).optional(),
-  bcc: z4.array(z4.object({
-    email: z4.string().email(),
-    name: z4.string().optional()
-  })).optional(),
+  recipients: z4.array(z4.string()),
+  cc: z4.array(z4.string()).optional(),
+  bcc: z4.array(z4.string()).optional(),
   subject: z4.string(),
-  messageContent: z4.string(),
-  attachmentFiles: z4.array(z4.object({
-    filename: z4.string(),
-    path: z4.string(),
-    size: z4.number()
-  })).optional(),
+  message: z4.string(),
+  attachments: z4.array(z4.string()).optional(),
   status: z4.string().default("pending"),
-  errorMessage: z4.string().optional()
+  error: z4.string().optional()
 });
 router13.get("/orders/:orderId/email-history", requireAuth, async (req, res) => {
   try {
@@ -20525,12 +20307,10 @@ router13.get("/orders/:orderId/email-history", requireAuth, async (req, res) => 
       cc: emailSendHistory.cc,
       bcc: emailSendHistory.bcc,
       subject: emailSendHistory.subject,
-      body: emailSendHistory.messageContent,
-      attachments: emailSendHistory.attachmentFiles,
+      body: emailSendHistory.message,
+      attachments: emailSendHistory.attachments,
       status: emailSendHistory.status,
-      errorMessage: emailSendHistory.errorMessage,
-      sentCount: emailSendHistory.sentCount,
-      failedCount: emailSendHistory.failedCount,
+      errorMessage: emailSendHistory.error,
       createdAt: emailSendHistory.createdAt,
       updatedAt: emailSendHistory.updatedAt
     }).from(emailSendHistory).leftJoin(users, eq19(emailSendHistory.senderUserId, users.id)).where(eq19(emailSendHistory.orderId, orderId)).orderBy(desc7(emailSendHistory.sentAt));
@@ -20546,7 +20326,7 @@ router13.post("/email-history", requireAuth, async (req, res) => {
     const [newEmailHistory] = await db.insert(emailSendHistory).values({
       ...validatedData,
       senderUserId: req.user.id,
-      attachmentFiles: validatedData.attachmentFiles || null
+      attachments: validatedData.attachments || null
     }).returning();
     const order = await db.query.purchaseOrders.findFirst({
       where: eq19(purchaseOrders.id, validatedData.orderId)
@@ -20633,12 +20413,10 @@ router13.get("/email-history/:id", requireAuth, async (req, res) => {
       cc: emailSendHistory.cc,
       bcc: emailSendHistory.bcc,
       subject: emailSendHistory.subject,
-      messageContent: emailSendHistory.messageContent,
-      attachmentFiles: emailSendHistory.attachmentFiles,
+      messageContent: emailSendHistory.message,
+      attachmentFiles: emailSendHistory.attachments,
       status: emailSendHistory.status,
-      errorMessage: emailSendHistory.errorMessage,
-      sentCount: emailSendHistory.sentCount,
-      failedCount: emailSendHistory.failedCount,
+      errorMessage: emailSendHistory.error,
       createdAt: emailSendHistory.createdAt,
       updatedAt: emailSendHistory.updatedAt
     }).from(emailSendHistory).leftJoin(purchaseOrders, eq19(emailSendHistory.orderId, purchaseOrders.id)).leftJoin(vendors, eq19(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq19(emailSendHistory.senderUserId, users.id)).where(eq19(emailSendHistory.id, emailId));
@@ -20698,12 +20476,10 @@ router13.get("/email-history", requireAuth, async (req, res) => {
       recipients: emailSendHistory.recipients,
       cc: emailSendHistory.cc,
       subject: emailSendHistory.subject,
-      messageContent: emailSendHistory.messageContent,
-      attachmentFiles: emailSendHistory.attachmentFiles,
+      messageContent: emailSendHistory.message,
+      attachmentFiles: emailSendHistory.attachments,
       status: emailSendHistory.status,
-      errorMessage: emailSendHistory.errorMessage,
-      sentCount: emailSendHistory.sentCount,
-      failedCount: emailSendHistory.failedCount,
+      errorMessage: emailSendHistory.error,
       createdAt: emailSendHistory.createdAt
     }).from(emailSendHistory).leftJoin(purchaseOrders, eq19(emailSendHistory.orderId, purchaseOrders.id)).leftJoin(vendors, eq19(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq19(emailSendHistory.senderUserId, users.id)).where(whereClause).orderBy(desc7(emailSendHistory.sentAt)).limit(limitNum).offset(offset);
     const statusCounts = await db.select({
@@ -24775,7 +24551,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
               fileData = processedExcelFile.fileBuffer.toString("base64");
               console.log(`\u{1F4CE} File data encoded for Vercel: ${Math.round(processedExcelFile.fileSize / 1024)}KB`);
             }
-            const [savedAttachment] = await db.insert(attachments).values({
+            const [savedAttachment] = await db.insert(attachments2).values({
               orderId: newOrder.id,
               originalName: processedExcelFile.originalName,
               storedName: processedExcelFile.storedName,
@@ -24813,7 +24589,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
             totalAmount
           });
         }
-        const orderAttachments = await db.select().from(attachments).where(eq29(attachments.orderId, newOrder.id));
+        const orderAttachments = await db.select().from(attachments2).where(eq29(attachments2.orderId, newOrder.id));
         savedOrders.push({
           orderId: newOrder.id,
           orderNumber: newOrder.orderNumber,
@@ -24839,19 +24615,19 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
       console.log(`\u{1F4E7} Preparing to send ${emailsToSend.length} emails...`);
       try {
         const { POEmailService: POEmailService3 } = await Promise.resolve().then(() => (init_po_email_service_enhanced(), po_email_service_enhanced_exports));
-        const emailService4 = new POEmailService3();
+        const emailService5 = new POEmailService3();
         for (const emailInfo of emailsToSend) {
           try {
             let excelAttachment = null;
             if (req.file) {
-              const attachment = await db.select().from(attachments).where(eq29(attachments.orderId, emailInfo.orderId)).then((rows) => rows[0]);
+              const attachment = await db.select().from(attachments2).where(eq29(attachments2.orderId, emailInfo.orderId)).then((rows) => rows[0]);
               if (attachment) {
                 excelAttachment = process.env.VERCEL ? path19.join("/tmp", "uploads", "excel-simple", attachment.storedName) : attachment.filePath;
               }
             }
             if (excelAttachment && existsSync3(excelAttachment)) {
               console.log(`\u{1F4CE} Sending email with attachment for order ${emailInfo.orderNumber}`);
-              const result = await emailService4.sendPOWithOriginalFormat(
+              const result = await emailService5.sendPOWithOriginalFormat(
                 excelAttachment,
                 {
                   to: emailInfo.vendorEmail,
@@ -25830,21 +25606,24 @@ async function sendPurchaseOrderEmail(params) {
         const fileStats = await fs23.stat(excelFilePath);
         await db.insert(emailSendHistory).values({
           orderId,
-          sentBy: userId,
-          recipientEmail: recipients.join(", "),
-          recipientName: orderData.vendorName,
-          ccEmails: cc.length > 0 ? cc.join(", ") : null,
+          orderNumber: orderData.orderNumber,
+          senderUserId: userId,
+          recipients,
+          cc: cc.length > 0 ? cc : null,
+          bcc: null,
           subject: mailOptions.subject,
-          body: mailOptions.html,
-          attachments: [{
+          messageContent: mailOptions.html,
+          attachmentFiles: [{
             filename: path20.basename(excelFilePath),
             path: excelFilePath,
             size: fileStats.size
           }],
           status: "sent",
-          emailProvider: "naver",
-          messageId: info.messageId,
-          trackingId
+          sentCount: 1,
+          failedCount: 0,
+          sentAt: /* @__PURE__ */ new Date(),
+          createdAt: /* @__PURE__ */ new Date(),
+          updatedAt: /* @__PURE__ */ new Date()
         });
       } catch (historyError) {
         console.error("\u26A0\uFE0F \uC774\uBA54\uC77C \uC774\uB825 \uC800\uC7A5 \uC2E4\uD328:", historyError);
@@ -25863,20 +25642,24 @@ async function sendPurchaseOrderEmail(params) {
         const trackingId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         await db.insert(emailSendHistory).values({
           orderId,
-          sentBy: userId,
-          recipientEmail: recipients.join(", "),
-          recipientName: orderData.vendorName,
-          ccEmails: cc.length > 0 ? cc.join(", ") : null,
+          orderNumber: orderData.orderNumber,
+          senderUserId: userId,
+          recipients,
+          cc: cc.length > 0 ? cc : null,
+          bcc: null,
           subject: emailTemplates.purchaseOrder.subject(
             orderData.orderNumber,
             orderData.projectName
           ),
-          body: emailTemplates.purchaseOrder.html(orderData),
-          attachments: null,
+          messageContent: emailTemplates.purchaseOrder.html(orderData),
+          attachmentFiles: null,
           status: "failed",
+          sentCount: 0,
+          failedCount: 1,
           errorMessage: error.message,
-          emailProvider: "naver",
-          trackingId
+          sentAt: null,
+          createdAt: /* @__PURE__ */ new Date(),
+          updatedAt: /* @__PURE__ */ new Date()
         });
       } catch (historyError) {
         console.error("\u26A0\uFE0F \uC774\uBA54\uC77C \uC2E4\uD328 \uC774\uB825 \uC800\uC7A5 \uC2E4\uD328:", historyError);
@@ -25982,13 +25765,13 @@ router32.post("/send-test", async (req, res) => {
       userPhone: "010-1234-5678"
     };
     const dummyFilePath = path21.join(process.cwd(), "uploads", "test-email.xlsx");
-    const fs25 = __require("fs");
+    const fs27 = __require("fs");
     const uploadsDir = path21.join(process.cwd(), "uploads");
-    if (!fs25.existsSync(uploadsDir)) {
-      fs25.mkdirSync(uploadsDir, { recursive: true });
+    if (!fs27.existsSync(uploadsDir)) {
+      fs27.mkdirSync(uploadsDir, { recursive: true });
     }
-    if (!fs25.existsSync(dummyFilePath)) {
-      fs25.writeFileSync(dummyFilePath, "test content");
+    if (!fs27.existsSync(dummyFilePath)) {
+      fs27.writeFileSync(dummyFilePath, "test content");
     }
     const result = await emailService2.sendPurchaseOrderEmail({
       orderData: testOrderData,
@@ -26119,13 +25902,13 @@ router33.get("/", async (req, res) => {
         message: "\uAD00\uB9AC\uC790 \uAD8C\uD55C\uC774 \uD544\uC694\uD569\uB2C8\uB2E4"
       });
     }
-    const emailService4 = new EmailSettingsService();
-    const dbSettings = await emailService4.getDefaultSettings();
+    const emailService5 = new EmailSettingsService();
+    const dbSettings = await emailService5.getDefaultSettings();
     let settings;
     if (dbSettings) {
-      settings = emailService4.getMaskedSettings(dbSettings);
+      settings = emailService5.getMaskedSettings(dbSettings);
     } else {
-      const envSettings = emailService4.getSettingsFromEnv();
+      const envSettings = emailService5.getSettingsFromEnv();
       settings = {
         smtpHost: envSettings.smtpHost || "",
         smtpPort: envSettings.smtpPort?.toString() || "",
@@ -28089,17 +27872,17 @@ router40.get("/attachments/:id/download", async (req, res) => {
       });
     }
     const [attachment] = await db.select({
-      id: attachments.id,
-      orderId: attachments.orderId,
-      originalName: attachments.originalName,
-      storedName: attachments.storedName,
-      filePath: attachments.filePath,
-      fileSize: attachments.fileSize,
-      mimeType: attachments.mimeType,
-      uploadedBy: attachments.uploadedBy,
-      uploadedAt: attachments.uploadedAt,
-      fileData: attachments.fileData
-    }).from(attachments).where(eq38(attachments.id, attachmentId));
+      id: attachments2.id,
+      orderId: attachments2.orderId,
+      originalName: attachments2.originalName,
+      storedName: attachments2.storedName,
+      filePath: attachments2.filePath,
+      fileSize: attachments2.fileSize,
+      mimeType: attachments2.mimeType,
+      uploadedBy: attachments2.uploadedBy,
+      uploadedAt: attachments2.uploadedAt,
+      fileData: attachments2.fileData
+    }).from(attachments2).where(eq38(attachments2.id, attachmentId));
     if (!attachment) {
       return res.status(404).json({
         error: "\uCCA8\uBD80\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.",
@@ -28189,17 +27972,17 @@ router40.delete("/attachments/:id", requireAuth, async (req, res) => {
     }
     console.log(`\u{1F5D1}\uFE0F Admin ${user.name} (ID: ${user.id}) requesting deletion of attachment ${attachmentId}`);
     const [attachment] = await db.select({
-      id: attachments.id,
-      orderId: attachments.orderId,
-      originalName: attachments.originalName,
-      storedName: attachments.storedName,
-      filePath: attachments.filePath,
-      fileSize: attachments.fileSize,
-      mimeType: attachments.mimeType,
-      uploadedBy: attachments.uploadedBy,
-      uploadedAt: attachments.uploadedAt,
-      fileData: attachments.fileData
-    }).from(attachments).where(eq38(attachments.id, attachmentId));
+      id: attachments2.id,
+      orderId: attachments2.orderId,
+      originalName: attachments2.originalName,
+      storedName: attachments2.storedName,
+      filePath: attachments2.filePath,
+      fileSize: attachments2.fileSize,
+      mimeType: attachments2.mimeType,
+      uploadedBy: attachments2.uploadedBy,
+      uploadedAt: attachments2.uploadedAt,
+      fileData: attachments2.fileData
+    }).from(attachments2).where(eq38(attachments2.id, attachmentId));
     if (!attachment) {
       return res.status(404).json({
         error: "\uCCA8\uBD80\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.",
@@ -28232,7 +28015,7 @@ router40.delete("/attachments/:id", requireAuth, async (req, res) => {
         }
       }
     }
-    const deletedRows = await db.delete(attachments).where(eq38(attachments.id, attachmentId));
+    const deletedRows = await db.delete(attachments2).where(eq38(attachments2.id, attachmentId));
     console.log(`\u2705 Deleted attachment record from database (affected rows: ${deletedRows})`);
     return res.json({
       success: true,
@@ -28429,50 +28212,605 @@ router41.get("/base64-font", async (req, res) => {
 });
 var korean_font_status_default = router41;
 
-// server/routes/index.ts
+// server/routes/font-debug.ts
+init_korean_font_manager();
+import { Router as Router39 } from "express";
+
+// server/utils/embedded-fonts.ts
+import * as fs25 from "fs";
+import * as path23 from "path";
+var EmbeddedFontManager = class {
+  /**
+   * 폰트 파일을 Base64로 인코딩하여 코드에 임베드할 수 있는 형태로 변환
+   * 개발 시에만 사용, 실제 운영에서는 파일 시스템 사용 권장
+   */
+  static generateEmbeddedFont(fontPath) {
+    try {
+      const fontBuffer = fs25.readFileSync(fontPath);
+      return fontBuffer.toString("base64");
+    } catch (error) {
+      console.error("\uD3F0\uD2B8 \uC784\uBCA0\uB529 \uC2E4\uD328:", error);
+      return null;
+    }
+  }
+  /**
+   * 임베디드 Base64 폰트를 Buffer로 변환
+   */
+  static base64ToBuffer(base64Data) {
+    return Buffer.from(base64Data, "base64");
+  }
+  /**
+   * 현재 시스템에서 사용 가능한 한글 폰트 찾기
+   */
+  static findSystemKoreanFonts() {
+    const possiblePaths = [
+      // macOS
+      "/System/Library/Fonts/AppleSDGothicNeo.ttc",
+      "/System/Library/Fonts/Supplemental/AppleGothic.ttf",
+      "/Library/Fonts/NanumGothic.ttf",
+      // Windows
+      "C:\\Windows\\Fonts\\malgun.ttf",
+      "C:\\Windows\\Fonts\\gulim.ttc",
+      // Linux
+      "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",
+      "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf"
+    ];
+    return possiblePaths.filter((fontPath) => {
+      try {
+        return fs25.existsSync(fontPath);
+      } catch {
+        return false;
+      }
+    });
+  }
+  /**
+   * 긴급 상황용 최소 한글 글리프 지원 확인
+   */
+  static validateKoreanFontSupport(fontBuffer) {
+    if (fontBuffer.length < 1e3) {
+      return false;
+    }
+    const header = fontBuffer.slice(0, 4).toString("binary");
+    return header === "\0\0\0" || // TTF
+    header === "OTTO" || // OTF
+    header === "ttcf";
+  }
+  /**
+   * 운영 환경에서 폰트 문제 해결 가이드
+   */
+  static getProductionFontTroubleshootingGuide() {
+    return [
+      {
+        issue: "Vercel\uC5D0\uC11C \uD3F0\uD2B8 \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC74C",
+        solution: "vercel.json\uC758 includeFiles \uC124\uC815\uACFC \uBE4C\uB4DC \uC2A4\uD06C\uB9BD\uD2B8\uC758 \uD3F0\uD2B8 \uBCF5\uC0AC \uBA85\uB839 \uD655\uC778",
+        priority: "high"
+      },
+      {
+        issue: "PDFKit\uC5D0\uC11C \uD3F0\uD2B8 \uB4F1\uB85D \uC2E4\uD328",
+        solution: "\uD3F0\uD2B8 \uD30C\uC77C \uAD8C\uD55C\uACFC \uACBD\uB85C \uD655\uC778, Buffer \uBC29\uC2DD\uC73C\uB85C \uB85C\uB4DC \uC2DC\uB3C4",
+        priority: "high"
+      },
+      {
+        issue: "\uD55C\uAE00 \uD14D\uC2A4\uD2B8\uAC00 \uAE68\uC838\uC11C \uD45C\uC2DC\uB428",
+        solution: "safeKoreanText \uD568\uC218\uB97C \uD1B5\uD55C \uD14D\uC2A4\uD2B8 \uBCC0\uD658 \uC801\uC6A9",
+        priority: "medium"
+      },
+      {
+        issue: "PDF \uC0DD\uC131 \uC18D\uB3C4\uAC00 \uB290\uB9BC",
+        solution: "\uD3F0\uD2B8 \uCE90\uC2F1 \uCD5C\uC801\uD654 \uBC0F \uBD88\uD544\uC694\uD55C \uD3F0\uD2B8 \uC81C\uAC70",
+        priority: "low"
+      }
+    ];
+  }
+  /**
+   * 시스템 정보와 함께 폰트 상태 리포트 생성
+   */
+  static generateSystemReport() {
+    const projectFontDir = path23.join(process.cwd(), "fonts");
+    const projectFonts = [
+      "NotoSansKR-Regular.ttf",
+      "NanumGothic-Regular.ttf"
+    ].map((filename) => {
+      const fontPath = path23.join(projectFontDir, filename);
+      let size;
+      let exists = false;
+      try {
+        if (fs25.existsSync(fontPath)) {
+          exists = true;
+          size = fs25.statSync(fontPath).size;
+        }
+      } catch {
+      }
+      return { path: fontPath, exists, size };
+    });
+    const recommendations = [];
+    if (projectFonts.every((f) => !f.exists)) {
+      recommendations.push("\uD504\uB85C\uC81D\uD2B8 fonts/ \uB514\uB809\uD1A0\uB9AC\uC5D0 \uD55C\uAE00 \uD3F0\uD2B8 \uD30C\uC77C\uC744 \uCD94\uAC00\uD558\uC138\uC694");
+    }
+    if (process.env.VERCEL && projectFonts.some((f) => !f.exists)) {
+      recommendations.push("vercel.json\uC758 includeFiles \uC124\uC815\uC744 \uD655\uC778\uD558\uACE0 \uBE4C\uB4DC \uC2DC \uD3F0\uD2B8 \uBCF5\uC0AC\uAC00 \uB418\uB294\uC9C0 \uD655\uC778\uD558\uC138\uC694");
+    }
+    return {
+      platform: process.platform,
+      nodeVersion: process.version,
+      workingDirectory: process.cwd(),
+      environment: process.env.NODE_ENV || "development",
+      availableSystemFonts: this.findSystemKoreanFonts(),
+      projectFonts,
+      recommendations
+    };
+  }
+};
+
+// server/routes/font-debug.ts
 var router42 = Router39();
-router42.use("/api", auth_default);
-router42.use("/api", projects_default);
-router42.use("/api", orders_default);
-router42.use("/api", vendors_default);
-router42.use("/api", items_default);
-router42.use("/api", dashboard_default);
-router42.use("/api", companies_default);
-router42.use("/api/admin", admin_default);
-router42.use("/api/excel-automation", excel_automation_default);
-router42.use("/api/po-template", po_template_real_default);
-router42.use("/api/reports", reports_default);
-router42.use("/api", import_export_default);
-router42.use("/api", email_history_default);
-router42.use("/api/excel-template", excel_template_default);
-router42.use("/api", orders_optimized_default);
-router42.use("/api", orders_create_default);
-router42.use("/api", order_statuses_default);
-router42.use("/api", invoices_default);
-router42.use("/api", verification_logs_default);
-router42.use("/api", item_receipts_default);
-router42.use("/api", approvals_default);
-router42.use("/api", project_members_default);
-router42.use("/api", project_types_default);
-router42.use("/api", simple_auth_default);
-router42.use("/api", test_accounts_default);
-router42.use("/api/categories", categories_default);
-router42.use("/api/approval-settings", approval_settings_default);
-router42.use("/api", approval_authorities_default);
-router42.use("/api", notifications_default);
-router42.use("/api", orders_simple_default);
-router42.use("/api", positions_default);
-router42.use("/api/audit", audit_default);
-router42.use("/api/email-test", email_test_default);
-router42.use("/api/email-settings", email_settings_default);
-router42.use(workflow_default);
-router42.use("/api", orders_workflow_default);
-router42.use("/api/excel-smart-upload", excel_smart_upload_simple_default);
-router42.use("/api", attachments_default);
-router42.use("/api", health_default);
-router42.use("/api", debug_default);
-router42.use("/api/korean-font", korean_font_status_default);
-var routes_default = router42;
+router42.get("/font-status", async (req, res) => {
+  try {
+    console.log("\u{1F50D} [FontDebug] \uD3F0\uD2B8 \uC0C1\uD0DC \uC9C4\uB2E8 \uC694\uCCAD");
+    const environmentInfo = {
+      environment: process.env.VERCEL ? "Vercel" : "Local",
+      nodeVersion: process.version,
+      platform: process.platform,
+      workingDirectory: process.cwd(),
+      vercelEnv: process.env.VERCEL,
+      timestamp: (/* @__PURE__ */ new Date()).toISOString()
+    };
+    const fontDiagnosis = fontManager.diagnoseFontIssues();
+    const fontReport = fontManager.getFontReport();
+    const systemReport = EmbeddedFontManager.generateSystemReport();
+    const availableFonts = fontManager.getAvailableFonts();
+    const bestFont = fontManager.getBestKoreanFont();
+    const isOptimized = fontManager.isVercelOptimized();
+    const troubleshooting = EmbeddedFontManager.getProductionFontTroubleshootingGuide();
+    const response = {
+      success: true,
+      environmentInfo,
+      fontDiagnosis,
+      fontReport,
+      systemReport,
+      availableFonts,
+      bestFont,
+      isOptimized,
+      troubleshooting,
+      summary: {
+        totalAvailableFonts: availableFonts.length,
+        hasKoreanFont: bestFont !== null,
+        isProductionReady: isOptimized && bestFont !== null,
+        criticalIssues: fontDiagnosis.issues.length
+      }
+    };
+    console.log("\u2705 [FontDebug] \uC9C4\uB2E8 \uC644\uB8CC:", response.summary);
+    res.json(response);
+  } catch (error) {
+    console.error("\u274C [FontDebug] \uC9C4\uB2E8 \uC2E4\uD328:", error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958",
+      environmentInfo: {
+        environment: process.env.VERCEL ? "Vercel" : "Local",
+        workingDirectory: process.cwd(),
+        timestamp: (/* @__PURE__ */ new Date()).toISOString()
+      }
+    });
+  }
+});
+router42.post("/test-font-pdf", async (req, res) => {
+  try {
+    console.log("\u{1F9EA} [FontDebug] \uD14C\uC2A4\uD2B8 PDF \uC0DD\uC131 \uC694\uCCAD");
+    const { ProfessionalPDFGenerationService: ProfessionalPDFGenerationService2 } = await Promise.resolve().then(() => (init_professional_pdf_generation_service(), professional_pdf_generation_service_exports));
+    const testOrderData = {
+      orderNumber: "TEST-FONT-001",
+      orderDate: /* @__PURE__ */ new Date(),
+      deliveryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1e3),
+      issuerCompany: {
+        name: "\uD14C\uC2A4\uD2B8 \uBC1C\uC8FC\uC5C5\uCCB4",
+        businessNumber: "123-45-67890",
+        representative: "\uAE40\uB300\uD45C",
+        address: "\uC11C\uC6B8\uC2DC \uAC15\uB0A8\uAD6C \uD14C\uC2A4\uD2B8\uB3D9 123-45",
+        phone: "02-1234-5678",
+        email: "test@example.com"
+      },
+      vendorCompany: {
+        name: "\uD14C\uC2A4\uD2B8 \uAC70\uB798\uCC98",
+        businessNumber: "098-76-54321",
+        representative: "\uC774\uC0AC\uC7A5",
+        address: "\uBD80\uC0B0\uC2DC \uD574\uC6B4\uB300\uAD6C \uC0D8\uD50C\uB85C 67-89",
+        phone: "051-9876-5432",
+        email: "vendor@example.com",
+        contactPerson: "\uBC15\uB2F4\uB2F9"
+      },
+      project: {
+        name: "\uD55C\uAE00 \uD3F0\uD2B8 \uD14C\uC2A4\uD2B8 \uD504\uB85C\uC81D\uD2B8",
+        code: "FONT-TEST",
+        location: "\uC11C\uC6B8\uC2DC \uC885\uB85C\uAD6C"
+      },
+      creator: {
+        name: "\uC2DC\uC2A4\uD15C \uD14C\uC2A4\uD2B8",
+        email: "system@test.com",
+        phone: "010-0000-0000"
+      },
+      items: [
+        {
+          sequenceNo: 1,
+          name: "\uD55C\uAE00 \uD3F0\uD2B8 \uD14C\uC2A4\uD2B8 \uC544\uC774\uD15C",
+          specification: "\uD55C\uAE00 \uD14D\uC2A4\uD2B8 \uB80C\uB354\uB9C1 \uAC80\uC99D\uC6A9",
+          quantity: 1,
+          unit: "EA",
+          unitPrice: 1e5,
+          totalPrice: 1e5,
+          deliveryLocation: "\uC11C\uC6B8\uC2DC \uC911\uAD6C \uBA85\uB3D9",
+          deliveryEmail: "delivery@test.com",
+          remarks: "\uD3F0\uD2B8 \uD14C\uC2A4\uD2B8\uC6A9 \uC544\uC774\uD15C\uC785\uB2C8\uB2E4"
+        }
+      ],
+      financial: {
+        subtotalAmount: 1e5,
+        vatRate: 0.1,
+        vatAmount: 1e4,
+        totalAmount: 11e4,
+        currencyCode: "KRW"
+      },
+      metadata: {
+        notes: "\uC774\uAC83\uC740 \uD55C\uAE00 \uD3F0\uD2B8 \uB80C\uB354\uB9C1 \uD14C\uC2A4\uD2B8\uB97C \uC704\uD55C PDF\uC785\uB2C8\uB2E4.",
+        documentId: "FONT-TEST-" + Date.now(),
+        generatedAt: /* @__PURE__ */ new Date(),
+        generatedBy: "Font Debug System",
+        templateVersion: "test-v1.0.0"
+      }
+    };
+    const pdfBuffer = await ProfessionalPDFGenerationService2.generateProfessionalPDFWithPDFKit(testOrderData);
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", 'attachment; filename="font-test.pdf"');
+    res.send(pdfBuffer);
+    console.log("\u2705 [FontDebug] \uD14C\uC2A4\uD2B8 PDF \uC0DD\uC131 \uC644\uB8CC");
+  } catch (error) {
+    console.error("\u274C [FontDebug] \uD14C\uC2A4\uD2B8 PDF \uC0DD\uC131 \uC2E4\uD328:", error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958",
+      stack: error instanceof Error ? error.stack : void 0
+    });
+  }
+});
+router42.get("/font-files", (req, res) => {
+  try {
+    const fs27 = __require("fs");
+    const path25 = __require("path");
+    const fontDir = path25.join(process.cwd(), "fonts");
+    const results = [];
+    try {
+      const files = fs27.readdirSync(fontDir);
+      for (const file of files) {
+        const filePath = path25.join(fontDir, file);
+        try {
+          const stats = fs27.statSync(filePath);
+          results.push({
+            name: file,
+            path: filePath,
+            size: stats.size,
+            sizeKB: Math.round(stats.size / 1024),
+            exists: true,
+            isFile: stats.isFile(),
+            modified: stats.mtime
+          });
+        } catch (statError) {
+          results.push({
+            name: file,
+            path: filePath,
+            exists: false,
+            error: statError.message
+          });
+        }
+      }
+    } catch (readError) {
+      results.push({
+        directory: fontDir,
+        exists: false,
+        error: readError.message
+      });
+    }
+    res.json({
+      success: true,
+      fontDirectory: fontDir,
+      environment: process.env.VERCEL ? "Vercel" : "Local",
+      files: results,
+      summary: {
+        totalFiles: results.length,
+        validFiles: results.filter((f) => f.exists && f.isFile).length
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+var font_debug_default = router42;
+
+// server/routes/orders-email-fixed.ts
+import { Router as Router40 } from "express";
+init_schema();
+init_db();
+import { eq as eq39, desc as desc18 } from "drizzle-orm";
+import fs26 from "fs";
+import path24 from "path";
+import { fileURLToPath as fileURLToPath7 } from "url";
+import * as XLSX10 from "xlsx";
+var __filename7 = fileURLToPath7(import.meta.url);
+var __dirname7 = path24.dirname(__filename7);
+var router43 = Router40();
+var db3 = db;
+var emailService4 = new POEmailService();
+async function updateOrderStatusAfterEmail2(orderNumber) {
+  console.log(`\u{1F4E7} \uC774\uBA54\uC77C \uBC1C\uC1A1 \uD6C4 \uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8: ${orderNumber} \u2192 sent`);
+  await db.update(purchaseOrders).set({
+    orderStatus: "sent",
+    // 발주상태: 이메일 발송 완료 후 'sent'로 변경
+    updatedAt: /* @__PURE__ */ new Date()
+  }).where(eq39(purchaseOrders.orderNumber, orderNumber));
+}
+router43.post("/orders/send-email", requireAuth, async (req, res) => {
+  try {
+    const {
+      orderData,
+      to,
+      cc,
+      subject,
+      message,
+      selectedAttachmentIds = []
+    } = req.body;
+    console.log("\u{1F4E7} \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC694\uCCAD (POEmailService \uC0AC\uC6A9):", {
+      orderData,
+      to,
+      cc,
+      subject,
+      message: message ? "[\uBA54\uC2DC\uC9C0 \uC788\uC74C]" : "[\uBA54\uC2DC\uC9C0 \uC5C6\uC74C]",
+      selectedAttachmentIds
+    });
+    if (!to || to.length === 0) {
+      return res.status(400).json({ error: "\uC218\uC2E0\uC790\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4." });
+    }
+    if (!orderData || !orderData.orderNumber) {
+      return res.status(400).json({ error: "\uC8FC\uBB38 \uC815\uBCF4\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4." });
+    }
+    let excelFilePath = "";
+    let additionalAttachments = [];
+    if (selectedAttachmentIds && selectedAttachmentIds.length > 0) {
+      console.log("\u{1F4CE} \uC120\uD0DD\uB41C \uCCA8\uBD80\uD30C\uC77C \uCC98\uB9AC:", selectedAttachmentIds);
+      for (const attachmentId of selectedAttachmentIds) {
+        try {
+          const [attachment] = await db.select({
+            id: attachments2.id,
+            originalName: attachments2.originalName,
+            filePath: attachments2.filePath,
+            mimeType: attachments2.mimeType,
+            fileData: attachments2.fileData
+          }).from(attachments2).where(eq39(attachments2.id, attachmentId));
+          if (attachment) {
+            const isExcelFile = attachment.mimeType?.includes("excel") || attachment.mimeType?.includes("spreadsheet") || attachment.originalName?.toLowerCase().endsWith(".xlsx") || attachment.originalName?.toLowerCase().endsWith(".xls");
+            if (isExcelFile && !excelFilePath) {
+              if (attachment.fileData) {
+                const tempDir = path24.join(__dirname7, "../../uploads");
+                const tempFilePath = path24.join(tempDir, `temp-${Date.now()}-${attachment.originalName}`);
+                if (!fs26.existsSync(tempDir)) {
+                  fs26.mkdirSync(tempDir, { recursive: true });
+                }
+                fs26.writeFileSync(tempFilePath, Buffer.from(attachment.fileData, "base64"));
+                excelFilePath = tempFilePath;
+                console.log("\u2705 Excel \uD30C\uC77C \uC784\uC2DC \uC800\uC7A5:", tempFilePath);
+              } else if (attachment.filePath && fs26.existsSync(attachment.filePath)) {
+                excelFilePath = attachment.filePath;
+                console.log("\u2705 Excel \uD30C\uC77C \uACBD\uB85C \uC0AC\uC6A9:", attachment.filePath);
+              }
+            } else {
+              if (attachment.fileData) {
+                additionalAttachments.push({
+                  filename: attachment.originalName,
+                  content: Buffer.from(attachment.fileData, "base64"),
+                  contentType: attachment.mimeType || "application/octet-stream"
+                });
+                console.log("\u2705 \uCD94\uAC00 \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00 (Base64):", attachment.originalName);
+              } else if (attachment.filePath && fs26.existsSync(attachment.filePath)) {
+                additionalAttachments.push({
+                  filename: attachment.originalName,
+                  path: attachment.filePath,
+                  contentType: attachment.mimeType || "application/octet-stream"
+                });
+                console.log("\u2705 \uCD94\uAC00 \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00 (\uD30C\uC77C \uACBD\uB85C):", attachment.originalName);
+              }
+            }
+          }
+        } catch (error) {
+          console.error("\u274C \uCCA8\uBD80\uD30C\uC77C \uCC98\uB9AC \uC624\uB958, ID:", attachmentId, error);
+        }
+      }
+    }
+    if (!excelFilePath) {
+      console.log("\u{1F4CE} Excel \uD30C\uC77C\uC774 \uC5C6\uC5B4 \uAE30\uBCF8 \uD30C\uC77C \uC0DD\uC131");
+      const tempDir = path24.join(__dirname7, "../../uploads");
+      const tempFilePath = path24.join(tempDir, `default-po-${Date.now()}.xlsx`);
+      if (!fs26.existsSync(tempDir)) {
+        fs26.mkdirSync(tempDir, { recursive: true });
+      }
+      const workbook = XLSX10.utils.book_new();
+      const worksheet = XLSX10.utils.json_to_sheet([{
+        "\uBC1C\uC8FC\uBC88\uD638": orderData.orderNumber,
+        "\uAC70\uB798\uCC98": orderData.vendorName,
+        "\uBC1C\uC8FC\uAE08\uC561": orderData.totalAmount,
+        "\uBC1C\uC8FC\uC77C\uC790": orderData.orderDate
+      }]);
+      XLSX10.utils.book_append_sheet(workbook, worksheet, "\uBC1C\uC8FC\uC11C");
+      XLSX10.writeFile(workbook, tempFilePath);
+      excelFilePath = tempFilePath;
+      console.log("\u2705 \uAE30\uBCF8 Excel \uD30C\uC77C \uC0DD\uC131:", tempFilePath);
+    }
+    console.log("\u{1F4E7} POEmailService\uB97C \uC0AC\uC6A9\uD558\uC5EC \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC2DC\uC791");
+    const emailOptions2 = {
+      to,
+      cc,
+      subject: subject || `\uBC1C\uC8FC\uC11C - ${orderData.orderNumber}`,
+      orderNumber: orderData.orderNumber,
+      vendorName: orderData.vendorName,
+      orderDate: orderData.orderDate,
+      totalAmount: orderData.totalAmount,
+      additionalMessage: message,
+      // 사용자 메시지를 올바르게 전달
+      additionalAttachments
+      // 추가 첨부파일
+    };
+    console.log("\u{1F4E7} \uC774\uBA54\uC77C \uC635\uC158:", {
+      to: emailOptions2.to,
+      cc: emailOptions2.cc,
+      subject: emailOptions2.subject,
+      hasMessage: !!emailOptions2.additionalMessage,
+      additionalAttachmentsCount: additionalAttachments.length,
+      excelFile: excelFilePath ? "\uC788\uC74C" : "\uC5C6\uC74C"
+    });
+    const orderInfo = {
+      orderId: orderData.orderId || orderData.id,
+      orderNumber: orderData.orderNumber,
+      senderUserId: req.user?.id || req.user?.email
+    };
+    try {
+      const result = await emailService4.sendPOWithOriginalFormat(
+        excelFilePath,
+        emailOptions2,
+        orderInfo
+      );
+      if (excelFilePath.includes("temp-")) {
+        try {
+          fs26.unlinkSync(excelFilePath);
+          console.log("\u{1F5D1}\uFE0F \uC784\uC2DC Excel \uD30C\uC77C \uC0AD\uC81C:", excelFilePath);
+        } catch (cleanupError) {
+          console.warn("\u26A0\uFE0F \uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328:", cleanupError);
+        }
+      }
+      if (result.success) {
+        console.log("\u2705 POEmailService \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC131\uACF5:", result.messageId);
+        if (orderData.orderNumber) {
+          try {
+            console.log(`\u{1F504} \uBC1C\uC8FC\uC11C \uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8 \uC2DC\uB3C4: ${orderData.orderNumber} \u2192 sent`);
+            await updateOrderStatusAfterEmail2(orderData.orderNumber);
+            console.log(`\u2705 \uBC1C\uC8FC\uC11C \uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8 \uC644\uB8CC: ${orderData.orderNumber} \u2192 sent`);
+          } catch (updateError) {
+            console.error(`\u274C \uBC1C\uC8FC\uC11C \uC0C1\uD0DC \uC5C5\uB370\uC774\uD2B8 \uC2E4\uD328: ${orderData.orderNumber}`, updateError);
+          }
+        }
+        res.json({
+          success: true,
+          messageId: result.messageId,
+          message: "\uC774\uBA54\uC77C\uC774 \uC131\uACF5\uC801\uC73C\uB85C \uBC1C\uC1A1\uB418\uC5C8\uC2B5\uB2C8\uB2E4. \uC774\uBA54\uC77C \uD788\uC2A4\uD1A0\uB9AC\uAC00 \uC790\uB3D9\uC73C\uB85C \uAE30\uB85D\uB418\uC5C8\uC2B5\uB2C8\uB2E4."
+        });
+      } else {
+        console.error("\u274C POEmailService \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC2E4\uD328:", result.error);
+        res.status(500).json({
+          error: "\uC774\uBA54\uC77C \uBC1C\uC1A1 \uC2E4\uD328",
+          details: result.error
+        });
+      }
+    } catch (error) {
+      console.error("\u274C POEmailService \uD638\uCD9C \uC624\uB958:", error);
+      if (excelFilePath.includes("temp-")) {
+        try {
+          fs26.unlinkSync(excelFilePath);
+          console.log("\u{1F5D1}\uFE0F \uC784\uC2DC Excel \uD30C\uC77C \uC0AD\uC81C (\uC624\uB958 \uC2DC):", excelFilePath);
+        } catch (cleanupError) {
+          console.warn("\u26A0\uFE0F \uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328 (\uC624\uB958 \uC2DC):", cleanupError);
+        }
+      }
+      res.status(500).json({
+        error: "\uC774\uBA54\uC77C \uBC1C\uC1A1 \uC911 \uC624\uB958 \uBC1C\uC0DD",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  } catch (error) {
+    console.error("\uC774\uBA54\uC77C \uBC1C\uC1A1 \uC624\uB958:", error);
+    res.status(500).json({
+      error: "\uC774\uBA54\uC77C \uBC1C\uC1A1 \uC2E4\uD328",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+router43.get("/orders/:orderId/email-history", requireAuth, async (req, res) => {
+  try {
+    const orderId = parseInt(req.params.orderId);
+    console.log("\u{1F4E7} \uC774\uBA54\uC77C \uD788\uC2A4\uD1A0\uB9AC \uC870\uD68C:", { orderId });
+    const emailHistoryData = await db3.select({
+      id: emailSendHistory.id,
+      orderNumber: emailSendHistory.orderNumber,
+      recipients: emailSendHistory.recipients,
+      cc: emailSendHistory.cc,
+      bcc: emailSendHistory.bcc,
+      subject: emailSendHistory.subject,
+      messageContent: emailSendHistory.messageContent,
+      attachmentFiles: emailSendHistory.attachmentFiles,
+      status: emailSendHistory.status,
+      sentCount: emailSendHistory.sentCount,
+      failedCount: emailSendHistory.failedCount,
+      errorMessage: emailSendHistory.errorMessage,
+      sentAt: emailSendHistory.sentAt,
+      createdAt: emailSendHistory.createdAt,
+      senderUserId: emailSendHistory.senderUserId
+    }).from(emailSendHistory).where(eq39(emailSendHistory.orderId, orderId)).orderBy(desc18(emailSendHistory.createdAt));
+    console.log("\u{1F4E7} \uC774\uBA54\uC77C \uD788\uC2A4\uD1A0\uB9AC \uACB0\uACFC:", { count: emailHistoryData.length });
+    res.json(emailHistoryData);
+  } catch (error) {
+    console.error("\uC774\uBA54\uC77C \uD788\uC2A4\uD1A0\uB9AC \uC870\uD68C \uC624\uB958:", error);
+    res.status(500).json({
+      error: "\uC774\uBA54\uC77C \uD788\uC2A4\uD1A0\uB9AC \uC870\uD68C \uC2E4\uD328",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+var orders_email_fixed_default = router43;
+
+// server/routes/index.ts
+var router44 = Router41();
+router44.use("/api", auth_default);
+router44.use("/api", projects_default);
+router44.use("/api", orders_default);
+router44.use("/api", orders_email_fixed_default);
+router44.use("/api", vendors_default);
+router44.use("/api", items_default);
+router44.use("/api", dashboard_default);
+router44.use("/api", companies_default);
+router44.use("/api/admin", admin_default);
+router44.use("/api/excel-automation", excel_automation_default);
+router44.use("/api/po-template", po_template_real_default);
+router44.use("/api/reports", reports_default);
+router44.use("/api", import_export_default);
+router44.use("/api/email-history", email_history_default);
+router44.use("/api/excel-template", excel_template_default);
+router44.use("/api", orders_optimized_default);
+router44.use("/api", orders_create_default);
+router44.use("/api", order_statuses_default);
+router44.use("/api", invoices_default);
+router44.use("/api", verification_logs_default);
+router44.use("/api", item_receipts_default);
+router44.use("/api", approvals_default);
+router44.use("/api", project_members_default);
+router44.use("/api", project_types_default);
+router44.use("/api", simple_auth_default);
+router44.use("/api", test_accounts_default);
+router44.use("/api/categories", categories_default);
+router44.use("/api/approval-settings", approval_settings_default);
+router44.use("/api", approval_authorities_default);
+router44.use("/api", notifications_default);
+router44.use("/api", orders_simple_default);
+router44.use("/api", positions_default);
+router44.use("/api/audit", audit_default);
+router44.use("/api/email-test", email_test_default);
+router44.use("/api/email-settings", email_settings_default);
+router44.use(workflow_default);
+router44.use("/api", orders_workflow_default);
+router44.use("/api/excel-smart-upload", excel_smart_upload_simple_default);
+router44.use("/api", attachments_default);
+router44.use("/api", health_default);
+router44.use("/api", debug_default);
+router44.use("/api/korean-font", korean_font_status_default);
+router44.use("/api/debug", font_debug_default);
+var routes_default = router44;
 
 // server/production.ts
 dotenv2.config();
@@ -28534,7 +28872,7 @@ app.use(session({
 console.log("\u2705 Session middleware configured globally");
 app.use((req, res, next) => {
   const start = Date.now();
-  const path23 = req.path;
+  const path25 = req.path;
   let capturedJsonResponse = void 0;
   const originalResJson = res.json;
   res.json = function(bodyJson, ...args) {
@@ -28543,8 +28881,8 @@ app.use((req, res, next) => {
   };
   res.on("finish", () => {
     const duration = Date.now() - start;
-    if (path23.startsWith("/api")) {
-      let logLine = `${req.method} ${path23} ${res.statusCode} in ${duration}ms`;
+    if (path25.startsWith("/api")) {
+      let logLine = `${req.method} ${path25} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }
@@ -28625,13 +28963,13 @@ if (process.env.VERCEL) {
     console.log("\u{1F50D} Session debug info:", sessionData);
     res.json(sessionData);
   });
-  const path23 = await import("path");
-  app.use(express4.static(path23.join(process.cwd(), "dist/public")));
+  const path25 = await import("path");
+  app.use(express4.static(path25.join(process.cwd(), "dist/public")));
   console.log("\u{1F4C1} Serving static files from dist/public");
   app.use(routes_default);
   app.get("*", (req, res) => {
     if (!req.path.startsWith("/api")) {
-      res.sendFile(path23.join(process.cwd(), "dist/public/index.html"));
+      res.sendFile(path25.join(process.cwd(), "dist/public/index.html"));
     }
   });
   app.use((err, _req, res, _next) => {
