@@ -17,7 +17,8 @@ import { eq } from 'drizzle-orm';
 
 export interface EmailAttachment {
   filename: string;
-  path: string;
+  path?: string;        // Made optional since we can use content instead
+  content?: Buffer;     // Added for in-memory attachments
   contentType?: string;
 }
 
@@ -389,11 +390,21 @@ export class POEmailService {
         subject: options.subject,
         text: options.text,
         html: options.html,
-        attachments: options.attachments?.map(att => ({
-          filename: att.filename,
-          path: att.path,
-          contentType: att.contentType
-        }))
+        attachments: options.attachments?.map(att => {
+          const attachment: any = {
+            filename: att.filename,
+            contentType: att.contentType
+          };
+          
+          // Handle both path-based and content-based attachments
+          if ('path' in att && att.path) {
+            attachment.path = att.path;
+          } else if ('content' in att && att.content) {
+            attachment.content = att.content;
+          }
+          
+          return attachment;
+        })
       });
 
       console.log('✅ POEmailService.sendEmail 성공:', info.messageId);

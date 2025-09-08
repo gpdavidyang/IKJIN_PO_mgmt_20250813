@@ -1665,13 +1665,20 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
           if (attachment) {
             if (attachment.fileData) {
               // Use Base64 data from database
+              const fileBuffer = Buffer.from(attachment.fileData, 'base64');
               attachments.push({
                 filename: attachment.originalName,
-                content: Buffer.from(attachment.fileData, 'base64'),
+                content: fileBuffer,
                 contentType: attachment.mimeType || 'application/octet-stream'
               });
               attachmentsList.push(attachment.originalName);
-              console.log('✅ 선택된 첨부파일 추가 성공 (DB Base64):', attachment.originalName);
+              console.log('✅ 선택된 첨부파일 추가 성공 (DB Base64):', {
+                name: attachment.originalName,
+                mimeType: attachment.mimeType,
+                bufferSize: fileBuffer.length,
+                isExcel: attachment.mimeType?.includes('spreadsheet') || attachment.originalName?.endsWith('.xlsx'),
+                method: 'content (Buffer)'
+              });
             } else if (attachment.filePath && fs.existsSync(attachment.filePath)) {
               // Use file path
               attachments.push({
@@ -1680,7 +1687,13 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
                 contentType: attachment.mimeType || 'application/octet-stream'
               });
               attachmentsList.push(attachment.originalName);
-              console.log('✅ 선택된 첨부파일 추가 성공 (파일 경로):', attachment.originalName);
+              console.log('✅ 선택된 첨부파일 추가 성공 (파일 경로):', {
+                name: attachment.originalName,
+                mimeType: attachment.mimeType,
+                filePath: attachment.filePath,
+                isExcel: attachment.mimeType?.includes('spreadsheet') || attachment.originalName?.endsWith('.xlsx'),
+                method: 'path (File)'
+              });
             } else {
               console.log('❌ 선택된 첨부파일 처리 실패 (데이터 없음):', attachment.originalName);
             }
@@ -1992,6 +2005,15 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
       html: emailHtml,
       attachments: attachments
     };
+    
+    // 디버깅: 첨부파일 상세 정보
+    console.log('📧 최종 첨부파일 목록:', attachments.map(att => ({
+      filename: att.filename,
+      hasPath: !!att.path,
+      hasContent: !!att.content,
+      contentSize: att.content ? att.content.length : 0,
+      contentType: att.contentType
+    })));
     
     // 개발 환경에서는 실제 이메일 발송 대신 로그만 출력
     if (process.env.NODE_ENV === 'development' || !process.env.EMAIL_USER) {
