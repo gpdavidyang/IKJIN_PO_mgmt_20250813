@@ -45,7 +45,15 @@ export function EmailHistoryModal({
   onClose,
   onResend
 }: EmailHistoryModalProps) {
-  const { data: emailHistory, isLoading } = useOrderEmailHistory(orderId);
+  const { data: emailHistory, isLoading, refetch } = useOrderEmailHistory(orderId);
+
+  // 모달이 열릴 때마다 데이터를 다시 불러오기
+  React.useEffect(() => {
+    if (isOpen && orderId) {
+      console.log('📧 이메일 기록 모달 열림 - 데이터 새로고침');
+      refetch();
+    }
+  }, [isOpen, orderId, refetch]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
