@@ -188,20 +188,33 @@ export class ProfessionalPDFGenerationService {
       '순번': 'No',
       '원': 'KRW',
       
-      // 회사명 및 고유명사
-      '익진엔지니어링': 'IKJIN Engineering',
-      '주식회사': 'Co., Ltd.',
+      // 회사명 및 고유명사 (구체적인 것부터)
       '(주)익진엔지니어링': 'IKJIN Engineering Co., Ltd.',
-      '삼성물산': 'Samsung C&T',
+      '익진엔지니어링': 'IKJIN Engineering',
       '삼성물산(주)': 'Samsung C&T Corporation',
+      '삼성물산': 'Samsung C&T',  
       '래미안 원베일리 신축공사': 'Raemian One Valley Construction',
+      '주식회사': 'Co., Ltd.',
       '(주)': '',
       '유한회사': 'Ltd.',
+      
+      // 공통 단어
       '건설': 'Construction',
       '엔지니어링': 'Engineering',
       '산업': 'Industries',
       '물산': 'Trading',
       '건설사': 'Construction Co.',
+      
+      // 인명 및 직책
+      '김철수': 'Kim Cheol-su',
+      '이영희': 'Lee Young-hee',
+      '박민수': 'Park Min-su',
+      '정호영': 'Jung Ho-young',
+      '홍길동': 'Hong Gil-dong',
+      '관리자': 'Manager',
+      '담당자': 'Contact Person',
+      '현장소장': 'Site Manager',
+      '팀장': 'Team Leader',
       
       // 건설 자재 관련
       '철근': 'Steel Rebar',
@@ -265,7 +278,31 @@ export class ProfessionalPDFGenerationService {
       '검토': 'Review',
       '확인': 'Confirm',
       '승인': 'Approval',
-      '보고': 'Report'
+      '보고': 'Report',
+      
+      // 날짜 및 시간
+      '생성일시': 'Generated',
+      '작성일시': 'Created',
+      '수정일시': 'Modified',
+      
+      // 지역 및 주소
+      '서울특별시': 'Seoul',
+      '경기도': 'Gyeonggi-do',
+      '부산광역시': 'Busan',
+      '구로구': 'Guro-gu',
+      '강남구': 'Gangnam-gu',
+      '도로': 'Road',
+      '길': 'Gil',
+      '번지': 'Beonji',
+      '층': 'Floor',
+      '호': 'Room',
+      
+      // 기타 필수 용어  
+      '별도': 'Separate',
+      '포함': 'Include',
+      '제외': 'Exclude',
+      '총': 'Total',
+      '없음': 'None'
     };
     
     let result = text;
@@ -359,8 +396,14 @@ export class ProfessionalPDFGenerationService {
    * 텍스트 출력 헬퍼 - 환경별 번역 적용
    */
   private static drawText(doc: PDFDocument, text: string, x: number, y: number, options?: any): void {
-    // 데이터가 이미 번역되었으므로 추가 번역 불필요
+    // Vercel 환경에서는 하드코딩된 한글도 번역 필요
+    const translatedText = this.translateForVercel(text);
     const fonts = this.getFonts();
+    
+    // Vercel 환경에서 번역 로그 출력
+    if (process.env.VERCEL && text !== translatedText) {
+      console.log(`🌐 [PDF] 텍스트 번역: "${text}" → "${translatedText}"`);
+    }
     
     // 폰트 설정
     const fontName = options?.font || fonts.regular;
@@ -373,7 +416,7 @@ export class ProfessionalPDFGenerationService {
       doc.font(fontName === fonts.bold ? 'Helvetica-Bold' : 'Helvetica');
     }
     
-    doc.text(text, x, y, options);
+    doc.text(translatedText, x, y, options);
   }
 
   /**
@@ -436,6 +479,18 @@ export class ProfessionalPDFGenerationService {
 
         const chunks: Buffer[] = [];
         let isResolved = false;
+
+        // Vercel 환경에서 doc.text 메서드 오버라이드
+        if (process.env.VERCEL) {
+          const originalText = doc.text.bind(doc);
+          doc.text = function(text: string, x?: number, y?: number, options?: any) {
+            const translatedText = ProfessionalPDFGenerationService.translateForVercel(text);
+            if (text !== translatedText) {
+              console.log(`🌐 [PDF] 자동번역: "${text}" → "${translatedText}"`);
+            }
+            return originalText(translatedText, x, y, options);
+          };
+        }
 
         // PDF 데이터 수집
         doc.on('data', (chunk) => {
@@ -807,8 +862,8 @@ export class ProfessionalPDFGenerationService {
     const titleY = y + (20 - 9) / 2; // 20px 박스에서 9px 폰트 중앙
     doc.font(fonts.bold)
        .fontSize(9)
-       .fillColor(this.COLORS.white)
-       .text(title, x + 5, titleY);
+       .fillColor(this.COLORS.white);
+    this.drawText(doc, title, x + 5, titleY);
 
     // 박스 본문
     const contentY = y + 20;
@@ -829,11 +884,12 @@ export class ProfessionalPDFGenerationService {
         const textY = currentY + 1; // 약간 위로 조정하여 중앙에 맞춤
         doc.font(fonts.medium)
            .fontSize(fontSize)
-           .fillColor(this.COLORS.gray)
-           .text(label, x + 5, textY, { continued: true })
-           .font(fonts.regular)
-           .fillColor(this.COLORS.darkGray)
-           .text(` ${value}`, { width: width - 10, ellipsis: true });
+           .fillColor(this.COLORS.gray);
+        this.drawText(doc, label, x + 5, textY);
+        
+        doc.font(fonts.regular)
+           .fillColor(this.COLORS.darkGray);
+        this.drawText(doc, ` ${value}`, x + 5 + doc.widthOfString(this.translateForVercel(label)), textY, { width: width - 10, ellipsis: true });
         currentY += lineHeight;
       }
     };
