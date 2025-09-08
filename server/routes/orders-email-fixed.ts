@@ -99,13 +99,19 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
                 const tempDir = path.join(__dirname, '../../uploads');
                 const tempFilePath = path.join(tempDir, `temp-${Date.now()}-${attachment.originalName}`);
                 
-                if (!fs.existsSync(tempDir)) {
-                  fs.mkdirSync(tempDir, { recursive: true });
+                try {
+                  if (!fs.existsSync(tempDir)) {
+                    fs.mkdirSync(tempDir, { recursive: true });
+                  }
+                  
+                  const buffer = Buffer.from(attachment.fileData, 'base64');
+                  fs.writeFileSync(tempFilePath, buffer);
+                  excelFilePath = tempFilePath;
+                  console.log('✅ Excel 파일 임시 저장 (Base64):', tempFilePath, `(${buffer.length} bytes)`);
+                } catch (saveError) {
+                  console.error('❌ Excel 파일 저장 실패:', saveError);
+                  console.log('🔄 해당 파일 건너뛰고 기본 Excel 파일을 생성합니다');
                 }
-                
-                fs.writeFileSync(tempFilePath, Buffer.from(attachment.fileData, 'base64'));
-                excelFilePath = tempFilePath;
-                console.log('✅ Excel 파일 임시 저장 (Base64):', tempFilePath);
               } else if (attachment.filePath) {
                 // 파일 경로가 있으면 존재 여부 확인
                 if (fs.existsSync(attachment.filePath)) {
@@ -173,6 +179,21 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
         console.error('❌ 기본 Excel 파일 생성 실패:', error);
         // Excel 파일 생성 실패해도 이메일 발송은 시도 (PDF만이라도)
         console.log('🔄 Excel 파일 없이 이메일 발송을 시도합니다');
+      }
+    }
+
+    // Excel 파일 최종 검증
+    if (excelFilePath) {
+      if (!fs.existsSync(excelFilePath)) {
+        console.error('❌ 최종 Excel 파일이 존재하지 않음:', excelFilePath);
+        excelFilePath = ''; // 빈 문자열로 초기화하여 기본 파일 생성 로직 트리거
+      } else {
+        const stats = fs.statSync(excelFilePath);
+        console.log('✅ 최종 Excel 파일 검증 완료:', {
+          path: excelFilePath,
+          size: `${Math.round(stats.size / 1024)}KB`,
+          modified: stats.mtime.toISOString()
+        });
       }
     }
 

@@ -8538,12 +8538,19 @@ var POEmailService = class {
       }
       if (fileExists && isExcelFile) {
         if (fs5.existsSync(processedPath)) {
-          attachments3.push({
-            filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`,
-            path: processedPath,
-            contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-          });
-          console.log(`\u{1F4CE} Excel \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00: \uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`);
+          const stats = fs5.statSync(processedPath);
+          if (stats.size > 0) {
+            attachments3.push({
+              filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`,
+              path: processedPath,
+              contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            });
+            console.log(`\u{1F4CE} Excel \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00: \uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx (${Math.round(stats.size / 1024)}KB)`);
+          } else {
+            console.warn(`\u26A0\uFE0F Excel \uD30C\uC77C\uC774 \uBE44\uC5B4\uC788\uC74C: ${processedPath}`);
+          }
+        } else {
+          console.warn(`\u26A0\uFE0F \uCC98\uB9AC\uB41C Excel \uD30C\uC77C\uC774 \uC874\uC7AC\uD558\uC9C0 \uC54A\uC74C: ${processedPath}`);
         }
         if (pdfResult.success && fs5.existsSync(pdfPath)) {
           attachments3.push({
@@ -9231,6 +9238,39 @@ var POEmailService = class {
         console.error(`\uD30C\uC77C \uC815\uB9AC \uC2E4\uD328: ${filePath}`, error);
       }
     });
+  }
+  /**
+   * 이메일 발송 이력 저장 (단순화된 버전)
+   */
+  async recordEmailSendHistory(historyData) {
+    try {
+      await this.db.insert(emailSendHistory).values({
+        orderId: historyData.orderId,
+        orderNumber: null,
+        // Will be populated by relation if needed
+        senderUserId: historyData.senderUserId || null,
+        recipients: historyData.recipients,
+        cc: null,
+        bcc: null,
+        subject: historyData.subject,
+        messageContent: "",
+        // Basic version doesn't store message content
+        attachmentFiles: historyData.attachmentCount ? [{
+          filename: "attachments",
+          count: historyData.attachmentCount
+        }] : null,
+        status: historyData.status === "success" ? "sent" : "failed",
+        sentCount: historyData.status === "success" ? 1 : 0,
+        failedCount: historyData.status === "failed" ? 1 : 0,
+        errorMessage: historyData.errorMessage || null,
+        sentAt: historyData.status === "success" ? /* @__PURE__ */ new Date() : null,
+        createdAt: /* @__PURE__ */ new Date(),
+        updatedAt: /* @__PURE__ */ new Date()
+      });
+      console.log("\u2705 \uC774\uBA54\uC77C \uC774\uB825 \uC800\uC7A5 \uC131\uACF5 (recordEmailSendHistory)");
+    } catch (error) {
+      console.error("\u274C \uC774\uBA54\uC77C \uC774\uB825 \uC800\uC7A5 \uC2E4\uD328 (recordEmailSendHistory):", error);
+    }
   }
   /**
    * 이메일 연결 테스트
@@ -29762,12 +29802,18 @@ router43.post("/orders/send-email", requireAuth, async (req, res) => {
               if (attachment.fileData) {
                 const tempDir = path27.join(__dirname7, "../../uploads");
                 const tempFilePath = path27.join(tempDir, `temp-${Date.now()}-${attachment.originalName}`);
-                if (!fs28.existsSync(tempDir)) {
-                  fs28.mkdirSync(tempDir, { recursive: true });
+                try {
+                  if (!fs28.existsSync(tempDir)) {
+                    fs28.mkdirSync(tempDir, { recursive: true });
+                  }
+                  const buffer = Buffer.from(attachment.fileData, "base64");
+                  fs28.writeFileSync(tempFilePath, buffer);
+                  excelFilePath = tempFilePath;
+                  console.log("\u2705 Excel \uD30C\uC77C \uC784\uC2DC \uC800\uC7A5 (Base64):", tempFilePath, `(${buffer.length} bytes)`);
+                } catch (saveError) {
+                  console.error("\u274C Excel \uD30C\uC77C \uC800\uC7A5 \uC2E4\uD328:", saveError);
+                  console.log("\u{1F504} \uD574\uB2F9 \uD30C\uC77C \uAC74\uB108\uB6F0\uACE0 \uAE30\uBCF8 Excel \uD30C\uC77C\uC744 \uC0DD\uC131\uD569\uB2C8\uB2E4");
                 }
-                fs28.writeFileSync(tempFilePath, Buffer.from(attachment.fileData, "base64"));
-                excelFilePath = tempFilePath;
-                console.log("\u2705 Excel \uD30C\uC77C \uC784\uC2DC \uC800\uC7A5 (Base64):", tempFilePath);
               } else if (attachment.filePath) {
                 if (fs28.existsSync(attachment.filePath)) {
                   excelFilePath = attachment.filePath;
@@ -29825,6 +29871,19 @@ router43.post("/orders/send-email", requireAuth, async (req, res) => {
       } catch (error) {
         console.error("\u274C \uAE30\uBCF8 Excel \uD30C\uC77C \uC0DD\uC131 \uC2E4\uD328:", error);
         console.log("\u{1F504} Excel \uD30C\uC77C \uC5C6\uC774 \uC774\uBA54\uC77C \uBC1C\uC1A1\uC744 \uC2DC\uB3C4\uD569\uB2C8\uB2E4");
+      }
+    }
+    if (excelFilePath) {
+      if (!fs28.existsSync(excelFilePath)) {
+        console.error("\u274C \uCD5C\uC885 Excel \uD30C\uC77C\uC774 \uC874\uC7AC\uD558\uC9C0 \uC54A\uC74C:", excelFilePath);
+        excelFilePath = "";
+      } else {
+        const stats = fs28.statSync(excelFilePath);
+        console.log("\u2705 \uCD5C\uC885 Excel \uD30C\uC77C \uAC80\uC99D \uC644\uB8CC:", {
+          path: excelFilePath,
+          size: `${Math.round(stats.size / 1024)}KB`,
+          modified: stats.mtime.toISOString()
+        });
       }
     }
     console.log("\u{1F4E7} POEmailService\uB97C \uC0AC\uC6A9\uD558\uC5EC \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC2DC\uC791");

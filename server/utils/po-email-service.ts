@@ -206,12 +206,19 @@ export class POEmailService {
       if (fileExists && isExcelFile) {
         // Excel 파일 첨부 (원본 형식 유지)
         if (fs.existsSync(processedPath)) {
-          attachments.push({
-            filename: `발주서_${emailOptions.orderNumber || timestamp}.xlsx`,
-            path: processedPath,
-            contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-          });
-          console.log(`📎 Excel 첨부파일 추가: 발주서_${emailOptions.orderNumber || timestamp}.xlsx`);
+          const stats = fs.statSync(processedPath);
+          if (stats.size > 0) {
+            attachments.push({
+              filename: `발주서_${emailOptions.orderNumber || timestamp}.xlsx`,
+              path: processedPath,
+              contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            });
+            console.log(`📎 Excel 첨부파일 추가: 발주서_${emailOptions.orderNumber || timestamp}.xlsx (${Math.round(stats.size / 1024)}KB)`);
+          } else {
+            console.warn(`⚠️ Excel 파일이 비어있음: ${processedPath}`);
+          }
+        } else {
+          console.warn(`⚠️ 처리된 Excel 파일이 존재하지 않음: ${processedPath}`);
         }
 
         // PDF 파일 첨부 (변환 성공한 경우에만)
@@ -1006,6 +1013,49 @@ export class POEmailService {
         console.error(`파일 정리 실패: ${filePath}`, error);
       }
     });
+  }
+
+  /**
+   * 이메일 발송 이력 저장 (단순화된 버전)
+   */
+  private async recordEmailSendHistory(historyData: {
+    orderId: number;
+    senderUserId?: string;
+    recipients: string[];
+    subject: string;
+    messageId?: string;
+    attachmentCount?: number;
+    status: 'success' | 'failed';
+    errorMessage?: string;
+  }): Promise<void> {
+    try {
+      await this.db.insert(emailSendHistory).values({
+        orderId: historyData.orderId,
+        orderNumber: null, // Will be populated by relation if needed
+        senderUserId: historyData.senderUserId || null,
+        recipients: historyData.recipients,
+        cc: null,
+        bcc: null,
+        subject: historyData.subject,
+        messageContent: '', // Basic version doesn't store message content
+        attachmentFiles: historyData.attachmentCount ? [{
+          filename: 'attachments',
+          count: historyData.attachmentCount
+        }] : null,
+        status: historyData.status === 'success' ? 'sent' : 'failed',
+        sentCount: historyData.status === 'success' ? 1 : 0,
+        failedCount: historyData.status === 'failed' ? 1 : 0,
+        errorMessage: historyData.errorMessage || null,
+        sentAt: historyData.status === 'success' ? new Date() : null,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+      
+      console.log('✅ 이메일 이력 저장 성공 (recordEmailSendHistory)');
+    } catch (error) {
+      console.error('❌ 이메일 이력 저장 실패 (recordEmailSendHistory):', error);
+      // 이력 저장 실패는 이메일 발송 성공에 영향을 주지 않음
+    }
   }
 
   /**

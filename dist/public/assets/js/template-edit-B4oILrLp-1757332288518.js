@@ -1,1 +1,0 @@
-import{V as a,j as e}from"./index-DXwZMnAa-1757332288518.js";import{T as r}from"./template-builder-fixed-DOEJmx97-1757332288518.js";import"./textarea-fpYpSC5x-1757332288518.js";import"./save-BmI1JANi-1757332288518.js";function d(){const t=a(),s=t.id?parseInt(t.id):void 0;return e.jsx("div",{className:"p-6",children:e.jsx(r,{templateId:s})})}export{d as default};
