@@ -48,7 +48,13 @@ export function extractToken(authHeader?: string, cookies?: any): string | null 
     authHeaderValue: authHeader ? authHeader.substring(0, 20) + '...' : 'none',
     hasCookies: !!cookies,
     cookieKeys: cookies ? Object.keys(cookies) : [],
-    hasAuthTokenCookie: !!(cookies && cookies.auth_token)
+    hasAuthTokenCookie: !!(cookies && cookies.auth_token),
+    authTokenValue: cookies?.auth_token ? cookies.auth_token.substring(0, 30) + '...' : 'none',
+    environment: {
+      NODE_ENV: process.env.NODE_ENV,
+      VERCEL: process.env.VERCEL,
+      JWT_SECRET_SET: !!process.env.JWT_SECRET
+    }
   });
   
   // Try Authorization header first
@@ -65,5 +71,6 @@ export function extractToken(authHeader?: string, cookies?: any): string | null 
   }
   
   console.log('❌ JWT: No token found in headers or cookies');
+  console.log('🔍 JWT: Full cookie debug:', cookies);
   return null;
 }

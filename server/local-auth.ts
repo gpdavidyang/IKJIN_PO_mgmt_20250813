@@ -205,10 +205,10 @@ export async function login(req: Request, res: Response) {
       res.cookie('auth_token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production' || process.env.VERCEL === '1',
-        sameSite: 'lax', // Use 'lax' for same-site requests
+        sameSite: 'lax', // Use 'lax' for same-site requests, Vercel should be same-origin
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         path: '/',
-        domain: process.env.COOKIE_DOMAIN || undefined // Allow setting custom domain if needed
+        domain: undefined // Don't set domain for Vercel deployment
       });
 
       console.log("✅ JWT token set as cookie for user:", user.id);
@@ -282,7 +282,7 @@ export async function logout(req: Request, res: Response) {
     secure: process.env.NODE_ENV === 'production' || process.env.VERCEL === '1',
     sameSite: 'lax', // Match cookie setting
     path: '/',
-    domain: process.env.COOKIE_DOMAIN || undefined
+    domain: undefined
   });
   
   res.json({ message: "Logout successful" });

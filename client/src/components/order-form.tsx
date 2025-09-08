@@ -17,6 +17,7 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 import { formatKoreanWon } from "@/lib/utils";
 import { ExcelLikeOrderForm } from "./excel-like-order-form";
 import { useTheme } from "@/components/ui/theme-provider";
+import { OrderCreationProgress } from "./order-creation-progress";
 
 const orderItemSchema = z.object({
   itemId: z.number().optional(),
@@ -180,6 +181,10 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
   const [isDragOver, setIsDragOver] = useState(false);
   const [selectedProjectInfo, setSelectedProjectInfo] = useState<any>(null);
   const [selectedVendorInfo, setSelectedVendorInfo] = useState<any>(null);
+  
+  // Progress tracking states
+  const [showProgress, setShowProgress] = useState(false);
+  const [progressSessionId, setProgressSessionId] = useState<string | null>(null);
 
   // Helper functions for currency formatting
   const formatCurrencyInput = (value: number): string => {
@@ -232,34 +237,65 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
 
   const createOrderMutation = useMutation({
     mutationFn: async (data: OrderFormData) => {
-      return await apiRequest("POST", "/api/orders", data);
-    },
-    onSuccess: async (response: any) => {
-      const orderId = response?.id;
+      // Generate session ID for progress tracking
+      const sessionId = `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      setProgressSessionId(sessionId);
+      setShowProgress(true);
       
-      // Upload files if any
-      if (uploadedFiles.length > 0 && orderId) {
-        try {
-          const formData = new FormData();
-          uploadedFiles.forEach(file => {
-            formData.append('files', file);
-          });
-          
-          await apiRequest("POST", `/api/orders/${orderId}/attachments`, formData);
-        } catch (fileError) {
-          console.error("Error uploading files:", fileError);
-          // Don't block the success flow for file upload errors
-        }
+      // Prepare FormData for unified service
+      const formData = new FormData();
+      
+      // Add order data
+      formData.append('method', 'manual');
+      formData.append('projectId', data.projectId.toString());
+      formData.append('vendorId', data.vendorId.toString());
+      formData.append('orderDate', data.orderDate);
+      if (data.deliveryDate) formData.append('deliveryDate', data.deliveryDate);
+      if (data.notes) formData.append('notes', data.notes);
+      if (data.customFields) formData.append('customFields', JSON.stringify(data.customFields));
+      
+      // Add items data
+      formData.append('items', JSON.stringify(orderItems.map(item => ({
+        ...item,
+        itemId: Number(item.itemId),
+        quantity: Number(item.quantity),
+        unitPrice: Number(item.unitPrice),
+        totalAmount: (item.quantity || 0) * (item.unitPrice || 0),
+      }))));
+      
+      // Add attached files
+      uploadedFiles.forEach(file => {
+        formData.append('attachments', file);
+      });
+      
+      const response = await fetch('/api/orders/create-unified', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || 'Order creation failed');
       }
+      
+      return response.json();
+    },
+    onSuccess: (result: any) => {
+      setShowProgress(false);
+      setProgressSessionId(null);
       
       queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
       toast({
         title: "성공",
-        description: "발주서가 생성되었습니다.",
+        description: `발주서가 생성되었습니다. (${result.orderNumber || result.orderId})`,
       });
       onSuccess?.();
     },
     onError: (error) => {
+      setShowProgress(false);
+      setProgressSessionId(null);
+      
       if (isUnauthorizedError(error)) {
         toast({
           title: "Unauthorized",
@@ -594,6 +630,40 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
     }
   };
 
+  // Progress handlers
+  const handleProgressComplete = (result: any) => {
+    setShowProgress(false);
+    setProgressSessionId(null);
+    
+    queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+    toast({
+      title: "성공",
+      description: `발주서가 생성되었습니다. (${result.orderNumber || result.orderId})`,
+    });
+    onSuccess?.();
+  };
+
+  const handleProgressError = (error: string) => {
+    setShowProgress(false);
+    setProgressSessionId(null);
+    
+    toast({
+      title: "오류",
+      description: error || "발주서 생성에 실패했습니다.",
+      variant: "destructive",
+    });
+  };
+
+  const handleProgressCancel = () => {
+    setShowProgress(false);
+    setProgressSessionId(null);
+    
+    toast({
+      title: "취소",
+      description: "발주서 생성이 취소되었습니다.",
+    });
+  };
+
   const removeFile = (index: number) => {
     setUploadedFiles(prev => prev.filter((_, i) => i !== index));
   };
@@ -707,28 +777,38 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
       return;
     }
 
-    const orderData = {
+    const projectId = Number(data.projectId);
+    if (!projectId || projectId === 0) {
+      toast({
+        title: "오류",
+        description: "현장을 선택해주세요.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (orderItems.length === 0) {
+      toast({
+        title: "오류",
+        description: "최소 하나의 품목을 추가해야 합니다.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const formData: OrderFormData = {
       ...data,
       vendorId,
-      projectId: data.projectId ? Number(data.projectId) : undefined,
-      templateId: undefined, // 템플릿 기능 사용하지 않음
+      projectId,
       orderDate: data.orderDate,
       deliveryDate: data.deliveryDate || undefined,
-      items: orderItems.map(item => ({
-        ...item,
-        itemId: Number(item.itemId),
-        quantity: Number(item.quantity),
-        unitPrice: Number(item.unitPrice),
-        totalAmount: calculateTotalAmount(item),
-      })),
-      totalAmount: calculateGrandTotal(),
-      isDirectSubmit: !orderId, // Flag to indicate direct submission for new orders
+      items: orderItems,
     };
     
     if (orderId) {
-      updateOrderMutation.mutate(orderData);
+      updateOrderMutation.mutate(formData);
     } else {
-      createOrderMutation.mutate(orderData);
+      createOrderMutation.mutate(formData);
     }
   };
 
@@ -740,6 +820,17 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
 
   return (
     <div className={`max-w-[1366px] mx-auto compact-form space-y-3 pb-20 transition-colors ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`} key={`general-${selectedTemplateId}`}>
+      {/* Progress indicator */}
+      {showProgress && progressSessionId && (
+        <OrderCreationProgress
+          sessionId={progressSessionId}
+          onComplete={handleProgressComplete}
+          onError={handleProgressError}
+          onCancel={handleProgressCancel}
+          showCancelButton={true}
+        />
+      )}
+      
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
         <Card className={`transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
           <CardHeader className="pb-2">
