@@ -94,15 +94,14 @@ export interface ComprehensivePurchaseOrderData {
 
 /**
  * 전문적인 PDF 생성 서비스
- * 건설업계 표준에 맞는 정보 집약적인 발주서 생성
+ * 타겟 PDF와 정확히 일치하는 레이아웃으로 완전히 재작성
  */
 export class ProfessionalPDFGenerationService {
   static async generateProfessionalPDF(orderData: ComprehensivePurchaseOrderData): Promise<Buffer> {
-    // CRITICAL: 모든 환경에서 일관된 고품질 PDFKit 버전만 사용
-    // 한글 폰트 실패 시에도 고품질 Times-Roman fallback으로 전문적 외관 보장
-    console.log('📄 [ProfessionalPDF] 일관된 고품질 PDFKit으로 PDF 생성 시작');
-    return await this.generateProfessionalPDFWithPDFKit(orderData);
+    console.log('📄 [ProfessionalPDF] 타겟 매칭 PDF 생성 시작');
+    return await this.generateTargetMatchingPDF(orderData);
   }
+
   private static uploadDir = process.env.VERCEL 
     ? '/tmp/pdf'
     : path.join(process.cwd(), 'uploads/pdf');
@@ -266,13 +265,13 @@ export class ProfessionalPDFGenerationService {
           representative: companyData.companyRepresentative,
           address: companyData.companyAddress,
           phone: companyData.companyPhone,
-          email: companyData.companyEmail || 'ikjin@example.com', // 이메일 설정 단순화
+          email: companyData.companyEmail || 'ikjin@example.com',
         },
 
         vendorCompany: {
           name: orderData.vendorName || '거래처명 없음',
           businessNumber: orderData.vendorBusinessNumber,
-          representative: orderData.vendorBusinessNumber ? '대표자' : undefined, // 실제 대표자 정보가 없으면 제외
+          representative: orderData.vendorBusinessNumber ? '대표자' : undefined,
           address: orderData.vendorAddress,
           phone: orderData.vendorPhone,
           email: orderData.vendorEmail,
@@ -283,9 +282,9 @@ export class ProfessionalPDFGenerationService {
           name: orderData.projectName || '현장명 없음',
           code: orderData.projectCode,
           location: orderData.projectLocation,
-          projectManager: orderData.creatorName, // 현장 책임자로 작성자 사용
+          projectManager: orderData.creatorName,
           projectManagerContact: orderData.creatorPhone,
-          orderManager: orderData.creatorName, // 발주 담당자로 작성자 사용
+          orderManager: orderData.creatorName,
           orderManagerContact: orderData.creatorEmail,
         },
 
@@ -332,7 +331,7 @@ export class ProfessionalPDFGenerationService {
           vatRate: this.VAT_RATE,
           vatAmount,
           totalAmount,
-          discountAmount: 0, // 할인 금액이 있으면 여기에 설정
+          discountAmount: 0,
           currencyCode: 'KRW',
         },
 
@@ -374,16 +373,15 @@ export class ProfessionalPDFGenerationService {
       }
 
       const timestamp = Date.now();
-      // orderNumber가 이미 PO-로 시작하므로 중복 제거
       const cleanOrderNumber = orderData.orderNumber.startsWith('PO-') ? orderData.orderNumber.substring(3) : orderData.orderNumber;
       const fileName = `PO_Professional_${cleanOrderNumber}_${timestamp}.pdf`;
 
-      // PDF 생성 - 항상 PDFKit 사용으로 일관된 고품질 출력 보장
-      console.log('📄 [ProfessionalPDF] 고품질 PDFKit으로 PDF 생성 (모든 환경에서 일관된 출력)');
-      const pdfBuffer = await this.generateProfessionalPDFWithPDFKit(orderData);
-      console.log('✅ [ProfessionalPDF] PDFKit으로 PDF 생성 성공');
+      // PDF 생성 - 타겟 매칭 방식
+      console.log('📄 [ProfessionalPDF] 타겟 매칭 PDF 생성');
+      const pdfBuffer = await this.generateTargetMatchingPDF(orderData);
+      console.log('✅ [ProfessionalPDF] 타겟 매칭 PDF 생성 성공');
       
-      // 파일 저장 및 DB 등록 (항상 Base64로 DB에 저장하여 Vercel 호환성 보장)
+      // 파일 저장 및 DB 등록
       const base64Data = pdfBuffer.toString('base64');
       let filePath = '';
       let attachmentId: number;
@@ -392,7 +390,6 @@ export class ProfessionalPDFGenerationService {
 
       if (process.env.VERCEL) {
         console.log('📝 [ProfessionalPDF] Saving to database with Base64 data...');
-        // Vercel 환경: Base64만 저장
         const [attachment] = await db.insert(attachments).values({
           orderId,
           originalName: fileName,
@@ -409,7 +406,6 @@ export class ProfessionalPDFGenerationService {
         
         console.log(`✅ [ProfessionalPDF] PDF 생성 완료 (Vercel): ${fileName}, 크기: ${Math.round(pdfBuffer.length / 1024)}KB`);
       } else {
-        // 로컬 환경: 파일 시스템 + Base64 둘 다 저장 (개발 편의성 + 배포 호환성)
         const tempDir = path.join(this.uploadDir, 'professional', String(new Date().getFullYear()));
         
         if (!fs.existsSync(tempDir)) {
@@ -427,7 +423,7 @@ export class ProfessionalPDFGenerationService {
           fileSize: pdfBuffer.length,
           mimeType: 'application/pdf',
           uploadedBy: userId,
-          fileData: base64Data // 로컬에서도 Base64 저장하여 배포 시 호환성 보장
+          fileData: base64Data
         }).returning();
         
         attachmentId = attachment.id;
@@ -451,1104 +447,560 @@ export class ProfessionalPDFGenerationService {
   }
 
   /**
-   * 전문적인 HTML 템플릿 생성
+   * 타겟 PDF와 정확히 일치하는 PDF 생성 (PDFKit 사용)
+   * 완전히 새로 작성된 구현
    */
-  private static generateProfessionalHTMLTemplate(data: ComprehensivePurchaseOrderData): string {
-    const formatDate = (date?: Date | null) => {
-      if (!date) return '-';
-      return format(new Date(date), 'yyyy년 MM월 dd일', { locale: ko });
-    };
-
-
-    const formatCurrency = (amount: number) => {
-      return new Intl.NumberFormat('ko-KR', {
-        style: 'currency',
-        currency: 'KRW'
-      }).format(amount);
-    };
-
-    const formatNumber = (num: number) => {
-      return new Intl.NumberFormat('ko-KR').format(num);
-    };
-
-    // 특이사항 포맷팅 함수 (납품처 정보를 글머리표로)
-    const formatRemarks = (item: any) => {
-      let result = '';
-      
-      // 납품처 정보
-      if (item.deliveryLocation) {
-        result += `• 납품처: ${item.deliveryLocation}`;
-      }
-      
-      // 이메일 정보
-      if (item.deliveryEmail) {
-        result += `<br/>• 이메일: ${item.deliveryEmail}`;
-      }
-      
-      // 기타 비고사항
-      if (item.remarks && item.remarks !== '-' && 
-          !item.remarks.includes('납품처:') && 
-          !item.remarks.includes('이메일:')) {
-        result += `<br/>${item.remarks}`;
-      }
-      
-      return result || '-';
-    };
-
-    // 품목 행 생성
-    const itemRows = data.items.map((item) => `
-      <tr>
-        <td class="text-center">${item.sequenceNo}</td>
-        <td class="text-small">${item.name}</td>
-        <td class="text-small">${item.specification || '-'}</td>
-        <td class="text-center">${formatNumber(item.quantity)}</td>
-        <td class="text-center">${item.unit || '-'}</td>
-        <td class="text-right">${formatCurrency(item.unitPrice)}</td>
-        <td class="text-right">${formatCurrency(item.totalPrice)}</td>
-        <td class="text-small">${formatRemarks(item)}</td>
-      </tr>
-    `).join('');
-
-    // 승인자 현황 제거 (간소화)
-
-    return `
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-  <meta charset="UTF-8">
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>구매 발주서 - ${data.orderNumber}</title>
-  <style>
-    @page {
-      size: A4;
-      margin: 12mm;
-    }
-    
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    
-    body {
-      font-family: 'Malgun Gothic', 'Nanum Gothic', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Arial', sans-serif;
-      font-size: 9pt;
-      line-height: 1.4;
-      color: #1a1a1a;
-      background: #fff;
-    }
-    
-    .container {
-      max-width: 210mm;
-      margin: 0 auto;
-      background: #ffffff;
-    }
-    
-    /* === ENHANCED HEADER SECTION === */
-    .header {
-      background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
-      color: white;
-      padding: 16px 20px;
-      margin: -12mm -12mm 16px -12mm;
-      text-align: center;
-      position: relative;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    
-    .header::after {
-      content: '';
-      position: absolute;
-      bottom: -8px;
-      left: 0;
-      right: 0;
-      height: 8px;
-      background: linear-gradient(to right, transparent, rgba(37, 99, 235, 0.3), transparent);
-    }
-    
-    .header h1 {
-      font-size: 24pt;
-      font-weight: 700;
-      margin-bottom: 8px;
-      letter-spacing: 2px;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.1);
-    }
-    
-    .header .order-number {
-      font-size: 14pt;
-      font-weight: 600;
-      background: rgba(255,255,255,0.2);
-      padding: 4px 12px;
-      border-radius: 12px;
-      display: inline-block;
-    }
-    
-    .header .order-date {
-      font-size: 11pt;
-      margin-top: 6px;
-      opacity: 0.9;
-    }
-    
-    .status-badge {
-      display: inline-block;
-      padding: 4px 12px;
-      border-radius: 16px;
-      font-size: 8pt;
-      font-weight: 600;
-      margin: 4px 6px 0 0;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    
-    .status-draft { 
-      background: linear-gradient(135deg, #fbbf24, #f59e0b); 
-      color: white; 
-      box-shadow: 0 2px 4px rgba(251, 191, 36, 0.3);
-    }
-    .status-approved { 
-      background: linear-gradient(135deg, #10b981, #059669); 
-      color: white; 
-      box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
-    }
-    .status-sent { 
-      background: linear-gradient(135deg, #3b82f6, #2563eb); 
-      color: white; 
-      box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
-    }
-    
-    /* === ENHANCED INFO GRID === */
-    .info-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-bottom: 16px;
-    }
-    
-    .info-box {
-      border: 1px solid #e5e7eb;
-      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-      padding: 12px;
-      border-radius: 8px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    }
-    
-    .info-box h3 {
-      font-size: 11pt;
-      font-weight: 700;
-      margin-bottom: 8px;
-      padding-bottom: 4px;
-      border-bottom: 2px solid #2563eb;
-      color: #1e40af;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    
-    .info-row {
-      display: grid;
-      grid-template-columns: 80px 1fr;
-      gap: 8px;
-      margin-bottom: 4px;
-      font-size: 8pt;
-      align-items: center;
-    }
-    
-    .info-label {
-      font-weight: 600;
-      color: #475569;
-      text-align: right;
-      padding-right: 4px;
-    }
-    
-    .info-value {
-      color: #1e293b;
-      font-weight: 500;
-      padding: 2px 6px;
-      background: rgba(255,255,255,0.7);
-      border-radius: 4px;
-    }
-    
-    /* === PROJECT INFO FULL WIDTH === */
-    .project-info {
-      grid-column: 1 / -1;
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-      margin: 8px 0;
-    }
-    
-    /* === ITEMS TABLE === */
-    .items-section {
-      margin: 10px 0;
-    }
-    
-    .items-header {
-      background: #1e40af;
-      color: white;
-      padding: 4px 8px;
-      font-weight: bold;
-      font-size: 9pt;
-    }
-    
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 7pt;
-      margin-bottom: 8px;
-    }
-    
-    th, td {
-      border: 1px solid #d1d5db;
-      padding: 2px 4px;
-      vertical-align: middle;
-    }
-    
-    th {
-      background-color: #f3f4f6;
-      font-weight: bold;
-      text-align: center;
-      font-size: 7pt;
-    }
-    
-    .text-center { text-align: center; }
-    .text-right { text-align: right; }
-    .text-small { font-size: 6pt; }
-    
-    .financial-summary {
-      margin-top: 5px;
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-    }
-    
-    .financial-row {
-      display: grid;
-      grid-template-columns: 1fr auto auto;
-      gap: 10px;
-      padding: 3px 8px;
-      border-bottom: 1px solid #e2e8f0;
-      font-size: 7pt;
-    }
-    
-    .financial-row:last-child {
-      border-bottom: none;
-      font-weight: bold;
-      background: #e2e8f0;
-    }
-    
-    /* === TERMS & CONDITIONS === */
-    .terms-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 6px;
-      margin: 8px 0;
-    }
-    
-    .terms-box {
-      border: 1px solid #d1d5db;
-      padding: 4px;
-      background: #fffbeb;
-    }
-    
-    .terms-box h4 {
-      font-size: 8pt;
-      font-weight: bold;
-      margin-bottom: 3px;
-      color: #92400e;
-    }
-    
-    .terms-content {
-      font-size: 7pt;
-      color: #451a03;
-    }
-    
-    /* === ATTACHMENTS & COMMUNICATION === */
-    .comm-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px;
-      margin: 8px 0;
-    }
-    
-    .comm-box {
-      border: 1px solid #d1d5db;
-      padding: 4px;
-      background: #f0f9ff;
-      font-size: 7pt;
-    }
-    
-    .comm-box h4 {
-      font-size: 8pt;
-      font-weight: bold;
-      margin-bottom: 3px;
-      color: #1e40af;
-    }
-    
-    .attachment-item {
-      background: #e0e7ff;
-      padding: 2px 4px;
-      margin: 1px 0;
-      border-radius: 2px;
-      font-size: 6pt;
-    }
-    
-    .email-item {
-      background: #f0f9ff;
-      padding: 2px 4px;
-      margin: 1px 0;
-      border-radius: 2px;
-      font-size: 6pt;
-    }
-    
-    
-    /* Approval styles removed */
-    .removed-approval-header {
-      background: #1e40af;
-      color: white;
-      padding: 4px 8px;
-      font-weight: bold;
-      font-size: 9pt;
-    }
-    
-    .approval-grid {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 1px;
-      padding: 4px;
-    }
-    
-    .approval-box {
-      border: 1px solid #d1d5db;
-      padding: 4px;
-      text-align: center;
-      background: white;
-      min-height: 50px;
-    }
-    
-    .approval-box.approved {
-      background: #d1fae5;
-      border-color: #10b981;
-    }
-    
-    .approval-box.rejected {
-      background: #fee2e2;
-      border-color: #ef4444;
-    }
-    
-    .approval-box.pending {
-      background: #fef3c7;
-      border-color: #f59e0b;
-    }
-    
-    .approval-title {
-      font-size: 7pt;
-      font-weight: bold;
-      margin-bottom: 2px;
-    }
-    
-    .approval-status {
-      font-size: 12pt;
-      font-weight: bold;
-      margin: 3px 0;
-    }
-    
-    .approval-name {
-      font-size: 6pt;
-      margin-bottom: 1px;
-    }
-    
-    .approval-date {
-      font-size: 6pt;
-      color: #666;
-    }
-    
-    /* === FOOTER === */
-    .footer {
-      margin-top: 10px;
-      padding-top: 8px;
-      border-top: 2px solid #374151;
-      font-size: 7pt;
-      color: #374151;
-    }
-    
-    .company-info {
-      text-align: center;
-      margin-bottom: 6px;
-    }
-    
-    .company-info .name {
-      font-size: 10pt;
-      font-weight: bold;
-      margin-bottom: 2px;
-    }
-    
-    .doc-metadata {
-      display: grid;
-      grid-template-columns: 1fr auto 1fr;
-      gap: 10px;
-      align-items: center;
-      font-size: 6pt;
-      color: #6b7280;
-      border-top: 1px solid #e5e7eb;
-      padding-top: 4px;
-    }
-    
-    .doc-metadata .center {
-      text-align: center;
-    }
-    
-    .doc-metadata .right {
-      text-align: right;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <!-- HEADER -->
-    <div class="header" style="text-align: left; padding: 20px 0;">
-      <h1 style="margin-bottom: 8px; white-space: nowrap;">구매발주서</h1>
-      <div class="order-number" style="margin-bottom: 5px;">발주번호: ${data.orderNumber}</div>
-    </div>
-    
-    <!-- COMPANY & VENDOR INFO -->
-    <div class="info-grid">
-      <div class="info-box">
-        <h3>발주업체 정보</h3>
-        <div class="info-row">
-          <span class="info-label">업체명</span>
-          <span class="info-value">${data.issuerCompany.name}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">사업자번호</span>
-          <span class="info-value">${data.issuerCompany.businessNumber || '-'}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">대표자</span>
-          <span class="info-value">${data.issuerCompany.representative || '-'}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">주소</span>
-          <span class="info-value">${data.issuerCompany.address || '-'}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">연락처</span>
-          <span class="info-value">${data.issuerCompany.phone || '-'}</span>
-        </div>
-      </div>
-      
-      <div class="info-box">
-        <h3>수주업체 정보</h3>
-        <div class="info-row">
-          <span class="info-label">업체명</span>
-          <span class="info-value">${data.vendorCompany.name}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">사업자번호</span>
-          <span class="info-value">${data.vendorCompany.businessNumber || '-'}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">대표자</span>
-          <span class="info-value">${data.vendorCompany.representative || '-'}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">담당자</span>
-          <span class="info-value">${data.vendorCompany.contactPerson || '-'}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">연락처</span>
-          <span class="info-value">${data.vendorCompany.phone || '-'}</span>
-        </div>
-      </div>
-      
-      <!-- PROJECT INFO (FULL WIDTH) -->
-      <div class="project-info">
-        <div class="info-box">
-          <h3>현장</h3>
-          <div class="info-row">
-            <span class="info-label">현장명</span>
-            <span class="info-value">${data.project.name}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">현장코드</span>
-            <span class="info-value">${data.project.code || '-'}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">발주처</span>
-            <span class="info-value">-</span>
-          </div>
-        </div>
-        
-        <div class="info-box">
-          <h3>일정</h3>
-          <div class="info-row">
-            <span class="info-label">발주일</span>
-            <span class="info-value">${formatDate(data.orderDate)}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">납기일</span>
-            <span class="info-value">${formatDate(data.deliveryDate)}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">등록일</span>
-            <span class="info-value">${formatDate(data.createdAt)}</span>
-          </div>
-        </div>
-        
-        <div class="info-box">
-          <h3>담당자</h3>
-          <div class="info-row">
-            <span class="info-label">작성자</span>
-            <span class="info-value">${data.creator.name}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">직책</span>
-            <span class="info-value">-</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">연락처</span>
-            <span class="info-value">${data.creator.phone || '-'}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <!-- ITEMS SECTION -->
-    <div class="items-section">
-      <div class="items-header">발주 품목 (총 ${data.items.length}개 품목)</div>
-      <table>
-        <thead>
-          <tr>
-            <th style="width: 5%">순번</th>
-            <th style="width: 22%">품목명</th>
-            <th style="width: 17%">규격</th>
-            <th style="width: 8%">수량</th>
-            <th style="width: 6%">단위</th>
-            <th style="width: 12%">단가</th>
-            <th style="width: 12%">금액</th>
-            <th style="width: 23%">특이사항</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${itemRows}
-        </tbody>
-      </table>
-      
-      <!-- FINANCIAL SUMMARY -->
-      <div class="financial-summary">
-        <div class="financial-row">
-          <span>소계 (부가세 별도)</span>
-          <span></span>
-          <span>${formatCurrency(data.financial.subtotalAmount)}</span>
-        </div>
-        <div class="financial-row">
-          <span>부가세 (${(data.financial.vatRate * 100).toFixed(0)}%)</span>
-          <span></span>
-          <span>${formatCurrency(data.financial.vatAmount)}</span>
-        </div>
-        <div class="financial-row">
-          <span>총 금액</span>
-          <span></span>
-          <span>${formatCurrency(data.financial.totalAmount)}</span>
-        </div>
-      </div>
-    </div>
-    
-    
-    <!-- NOTES -->
-    ${data.metadata.notes ? `
-    <div style="margin: 8px 0; padding: 6px; border: 1px solid #d1d5db; background: #fffbeb; font-size: 7pt;">
-      <strong>특이사항:</strong> ${data.metadata.notes}
-    </div>
-    ` : ''}
-    
-    <!-- FOOTER -->
-    <div class="footer">
-      <div class="company-info">
-        <div class="name">${data.issuerCompany.name}</div>
-        ${data.issuerCompany.representative ? `<div>대표자: ${data.issuerCompany.representative}</div>` : ''}
-        <div>${data.issuerCompany.address || ''}</div>
-        <div>TEL: ${data.issuerCompany.phone || ''} | EMAIL: ${data.issuerCompany.email || ''}</div>
-        ${data.issuerCompany.businessNumber ? `<div>사업자등록번호: ${data.issuerCompany.businessNumber}</div>` : ''}
-      </div>
-      
-      <div class="doc-metadata">
-        <div>생성일시: ${formatDate(data.metadata.generatedAt)}</div>
-        <div class="center">본 문서는 전자적으로 생성되었습니다</div>
-        <div class="right">Template ${data.metadata.templateVersion}</div>
-      </div>
-    </div>
-  </div>
-</body>
-</html>
-    `;
-  }
-
-  /**
-   * HTML을 PDF로 변환
-   */
-  private static async convertHTMLToPDFFromString(htmlContent: string): Promise<Buffer> {
-    if (process.env.VERCEL) {
-      // Vercel에서는 Playwright 사용 불가하므로 PDFKit으로 대체
-      throw new Error('HTML to PDF conversion not supported in Vercel - use PDFKit instead');
-    } else {
-      try {
-        const { chromium } = await import('playwright-chromium');
-        
-        const browser = await chromium.launch({ 
-          headless: true,
-          args: ['--no-sandbox', '--disable-dev-shm-usage'] 
-        });
-        const page = await browser.newPage();
-        
-        try {
-          await page.setContent(htmlContent, {
-            waitUntil: 'networkidle'
-          });
-          
-          const pdfBuffer = await page.pdf({
-            format: 'A4',
-            printBackground: true,
-            margin: {
-              top: '8mm',
-              right: '8mm',
-              bottom: '8mm',
-              left: '8mm'
-            }
-          });
-          
-          return pdfBuffer;
-          
-        } finally {
-          await browser.close();
-        }
-      } catch (playwrightError) {
-        console.warn('⚠️ Playwright 실패:', playwrightError);
-        // Playwright 오류를 상위로 전달하여 PDFKit으로 대체할 수 있도록 함
-        throw playwrightError;
-      }
-    }
-  }
-
-  /**
-   * PDFKit으로 전문적인 발주서 PDF 생성
-   */
-  public static async generateProfessionalPDFWithPDFKit(orderData: ComprehensivePurchaseOrderData): Promise<Buffer> {
+  public static async generateTargetMatchingPDF(orderData: ComprehensivePurchaseOrderData): Promise<Buffer> {
     try {
       const PDFKitDocument = (await import('pdfkit')).default;
-      const fs = await import('fs');
       
       return new Promise((resolve, reject) => {
         try {
-        const doc = new PDFKitDocument({ 
-          size: 'A4',
-          margins: { top: 20, bottom: 20, left: 20, right: 20 },
-          autoFirstPage: true
-        });
-        
-        const buffers: Buffer[] = [];
-        doc.on('data', buffers.push.bind(buffers));
-        doc.on('end', () => resolve(Buffer.concat(buffers)));
-        doc.on('error', reject);
-
-        // === 개선된 한글 폰트 관리자를 통한 최적화된 폰트 로딩 ===
-        console.log('📝 [ProfessionalPDF] PDFKit으로 PDF 생성 (한글 폰트 최적화 로딩)');
-        
-        // CRITICAL FIX: 서버리스 환경에서 폰트 초기화 확인 및 재시도
-        console.log('🔧 [ProfessionalPDF] 서버리스 환경 폰트 초기화 검증...');
-        const availableFontsCount = fontManager.getAvailableFonts().length;
-        
-        if (availableFontsCount === 0 && process.env.VERCEL) {
-          console.log('⚠️ [ProfessionalPDF] 서버리스 환경에서 폰트 없음 - 강제 재초기화 시도');
-          // Force re-initialization in serverless environment
-          const { KoreanFontManager } = require('../utils/korean-font-manager.js');
-          const freshFontManager = KoreanFontManager.getInstance();
-          console.log(`🔄 [ProfessionalPDF] 폰트 재초기화 완료: ${freshFontManager.getAvailableFonts().length}개 폰트 발견`);
-        }
-        
-        // 폰트 문제 진단
-        const fontDiagnosis = fontManager.diagnoseFontIssues();
-        console.log('🔍 [ProfessionalPDF] 폰트 진단 결과:', JSON.stringify(fontDiagnosis, null, 2));
-        
-        let hasKoreanFont = false;
-        let selectedFont: FontInfo | null = null;
-        let fontName = 'Helvetica'; // Default fallback font
-        
-        try {
-          // 폰트 관리자에서 최적의 한글 폰트 선택
-          selectedFont = fontManager.getBestKoreanFont();
+          const doc = new PDFKitDocument({ 
+            size: 'A4',
+            margins: { top: 30, bottom: 30, left: 30, right: 30 },
+            autoFirstPage: false
+          });
           
-          if (selectedFont && selectedFont.available) {
-            console.log(`🎯 [ProfessionalPDF] 선택된 한글 폰트: ${selectedFont.name}`);
+          const buffers: Buffer[] = [];
+          doc.on('data', buffers.push.bind(buffers));
+          doc.on('end', () => resolve(Buffer.concat(buffers)));
+          doc.on('error', reject);
+
+          console.log('📝 [ProfessionalPDF] 타겟 매칭 PDF 생성 시작');
+          
+          // 한글 폰트 설정
+          let hasKoreanFont = false;
+          let fontName = 'Helvetica';
+          
+          try {
+            const selectedFont = fontManager.getBestKoreanFont();
             
-            if (process.env.VERCEL) {
-              // Vercel 환경: Base64 방식으로 폰트 로드
-              console.log('☁️ [ProfessionalPDF] Vercel 환경: Base64 폰트 로딩 방식');
+            if (selectedFont && selectedFont.available) {
+              console.log(`🎯 [ProfessionalPDF] 선택된 한글 폰트: ${selectedFont.name}`);
               
-              const fontBuffer = fontManager.getFontBuffer(selectedFont.name);
-              if (fontBuffer) {
-                doc.registerFont('Korean', fontBuffer);
+              if (process.env.VERCEL) {
+                const fontBuffer = fontManager.getFontBuffer(selectedFont.name);
+                if (fontBuffer) {
+                  doc.registerFont('Korean', fontBuffer);
+                  fontName = 'Korean';
+                  hasKoreanFont = true;
+                  console.log('✅ [ProfessionalPDF] Vercel 환경에서 한글 폰트 등록 성공');
+                }
+              } else {
+                doc.registerFont('Korean', selectedFont.path);
                 fontName = 'Korean';
                 hasKoreanFont = true;
-                console.log('✅ [ProfessionalPDF] Vercel 환경에서 한글 폰트 등록 성공');
-              } else {
-                throw new Error('FontBuffer 로드 실패');
+                console.log(`✅ [ProfessionalPDF] 로컬 환경에서 한글 폰트 등록 성공: ${selectedFont.path}`);
               }
-            } else {
-              // 로컬 환경: 파일 경로 방식으로 폰트 로드
-              console.log('🏠 [ProfessionalPDF] 로컬 환경: 파일 경로 폰트 로딩 방식');
-              
-              doc.registerFont('Korean', selectedFont.path);
-              fontName = 'Korean';
-              hasKoreanFont = true;
-              console.log(`✅ [ProfessionalPDF] 로컬 환경에서 한글 폰트 등록 성공: ${selectedFont.path}`);
             }
-          } else {
-            throw new Error('사용 가능한 한글 폰트가 없음');
+          } catch (fontError) {
+            console.warn('⚠️ [ProfessionalPDF] 한글 폰트 등록 실패:', fontError);
+            fontName = 'Helvetica';
+            hasKoreanFont = false;
           }
-        } catch (fontError) {
-          console.warn('⚠️ [ProfessionalPDF] 한글 폰트 등록 실패:', fontError);
-          console.warn('⚠️ [ProfessionalPDF] 폰트 진단:', JSON.stringify(fontDiagnosis, null, 2));
           
-          // CRITICAL FIX: 폰트 실패 시에도 고품질 fallback 사용
-          // Helvetica 대신 Times-Roman을 사용하고 폰트 크기를 조정하여 품질 보장
-          try {
-            doc.registerFont('FallbackFont', 'Times-Roman');
-            fontName = 'FallbackFont';
-            console.log('📝 [ProfessionalPDF] 고품질 Times-Roman 대체 폰트 사용');
-          } catch {
-            fontName = 'Times-Roman';
-            console.log('📝 [ProfessionalPDF] 시스템 Times-Roman 폰트 사용');
-          }
-          hasKoreanFont = false;
+          doc.font(fontName);
           
-          // 폰트 지원 상태 보고서 출력
-          const fontReport = fontManager.getFontReport();
-          console.log('📊 [ProfessionalPDF] 폰트 지원 상태:', JSON.stringify(fontReport, null, 2));
-          console.log('📝 [ProfessionalPDF] 고품질 대체 폰트 사용 (한글 지원 모드 비활성화)');
-        }
-        
-        // 항상 선택된 폰트를 적용
-        doc.font(fontName);
-        
-        // 한글 텍스트를 안전하게 처리하는 함수 (개선된 버전 - 폰트 없어도 고품질 보장)
-        const safeText = (text: string) => {
-          if (!text) return '';
-          
-          // 한글 폰트가 없어도 텍스트 품질을 보장
-          if (hasKoreanFont) {
-            return fontManager.safeKoreanText(text, hasKoreanFont);
-          } else {
-            // 한글 폰트 없을 때도 텍스트를 그대로 출력 (Times-Roman이 일부 한글 지원)
-            return text;
-          }
-        };
-        
-        const formatDate = (date?: Date | null) => {
-          if (!date) return '-';
-          return format(new Date(date), 'yyyy년 MM월 dd일', { locale: ko });
-        };
-
-        const formatCurrency = (amount: number) => {
-          return new Intl.NumberFormat('ko-KR', {
-            style: 'currency',
-            currency: 'KRW'
-          }).format(amount);
-        };
-        
-        // === 개선된 헤더 섹션 - 타겟 디자인 매칭 ===
-        const headerY = 20;
-        
-        // 클린한 헤더 (배경색 없음, 심플한 디자인)
-        doc.fillColor('black').fontSize(24).font(fontName);
-        doc.text(safeText('구매발주서'), 30, headerY);
-        
-        // 발주번호 (우측 정렬, 적절한 크기)
-        doc.fontSize(14);
-        doc.text(safeText(`발주번호: ${orderData.orderNumber}`), 400, headerY);
-        
-        // 헤더 하단 구분선
-        doc.moveTo(20, headerY + 35).lineTo(575, headerY + 35).stroke();
-        
-        // 다음 섹션을 위해 위치 설정
-        doc.y = headerY + 50;
-        
-        // === 타겟 디자인 매칭: 정보 섹션 (2+3 그리드 레이아웃) ===
-        const infoY = doc.y + 10;
-        const boxHeight = 85;
-        
-        // 회색 테두리 박스 그리기 함수
-        const drawInfoBox = (x: number, width: number, y: number, title: string, items: {label: string, value: string}[]) => {
-          // 회색 테두리 박스
-          doc.rect(x, y, width, boxHeight).stroke('#d1d5db');
-          
-          // 제목 (흰 배경에 검은 텍스트)
-          doc.fillColor('black').fontSize(10).font(fontName);
-          doc.text(safeText(title), x + 8, y + 8);
-          
-          // 항목들
-          doc.fontSize(8);
-          items.forEach((item, index) => {
-            const itemY = y + 25 + (index * 12);
-            // 레이블
-            doc.fillColor('#666666');
-            doc.text(safeText(item.label), x + 12, itemY);
-            // 값
-            doc.fillColor('black');
-            doc.text(safeText(item.value), x + 80, itemY);
-          });
-        };
-        
-        // 첫 번째 행: 발주업체 정보 (좌측) + 수주업체 정보 (우측)
-        const firstRowY = infoY;
-        const boxWidth = 270;
-        
-        // 발주업체 정보
-        drawInfoBox(20, boxWidth, firstRowY, '발주업체 정보', [
-          { label: '업체명', value: orderData.issuerCompany.name },
-          { label: '사업자번호', value: orderData.issuerCompany.businessNumber || '-' },
-          { label: '대표자', value: orderData.issuerCompany.representative || '-' },
-          { label: '주소', value: (orderData.issuerCompany.address || '-').substring(0, 32) + (orderData.issuerCompany.address && orderData.issuerCompany.address.length > 32 ? '...' : '') },
-          { label: '연락처', value: orderData.issuerCompany.phone || '-' }
-        ]);
-        
-        // 수주업체 정보
-        drawInfoBox(305, boxWidth, firstRowY, '수주업체 정보', [
-          { label: '업체명', value: orderData.vendorCompany.name },
-          { label: '사업자번호', value: orderData.vendorCompany.businessNumber || '-' },
-          { label: '대표자', value: orderData.vendorCompany.representative || '-' },
-          { label: '담당자', value: orderData.vendorCompany.contactPerson || '-' },
-          { label: '연락처', value: orderData.vendorCompany.phone || '-' }
-        ]);
-        
-        // 두 번째 행: 현장 + 일정 + 담당자 (3개 컬럼)
-        const secondRowY = firstRowY + boxHeight + 10;
-        const smallBoxWidth = 183;
-        
-        // 현장 정보
-        drawInfoBox(20, smallBoxWidth, secondRowY, '현장', [
-          { label: '현장명', value: orderData.project.name },
-          { label: '현장코드', value: orderData.project.code || '-' },
-          { label: '발주처', value: '-' }
-        ]);
-        
-        // 일정 정보
-        drawInfoBox(210, smallBoxWidth, secondRowY, '일정', [
-          { label: '발주일', value: formatDate(orderData.orderDate) },
-          { label: '납기일', value: formatDate(orderData.deliveryDate) },
-          { label: '등록일', value: formatDate(orderData.createdAt) }
-        ]);
-        
-        // 담당자 정보
-        drawInfoBox(400, smallBoxWidth, secondRowY, '담당자', [
-          { label: '작성자', value: orderData.creator.name },
-          { label: '직책', value: '-' },
-          { label: '연락처', value: orderData.creator.phone || '-' }
-        ]);
-        
-        doc.y = secondRowY + boxHeight + 15;
-        
-        // 구분선 제거 (클린한 디자인)
-        
-        // === 타겟 디자인 매칭: 품목 테이블 ===
-        const titleY = doc.y;
-        
-        // 파란색 테이블 헤더 (타겟과 동일한 스타일)
-        const headerHeight = 22;
-        doc.rect(20, titleY, 555, headerHeight).fill('#2563eb');
-        doc.fillColor('white').fontSize(10).font(fontName);
-        doc.text(safeText(`발주 품목 (총 ${orderData.items.length}개 품목)`), 25, titleY + 6);
-        
-        // 테이블 컬럼 헤더
-        const tableHeaderY = titleY + headerHeight;
-        const rowHeight = 20;
-        
-        // 컬럼 정의 (타겟 레이아웃과 정확히 매칭)
-        const columns = [
-          { text: '순번', x: 25, width: 35, align: 'center' },
-          { text: '품목명', x: 65, width: 140, align: 'left' },
-          { text: '규격', x: 210, width: 100, align: 'center' },
-          { text: '수량', x: 315, width: 40, align: 'center' },
-          { text: '단위', x: 360, width: 35, align: 'center' },
-          { text: '단가', x: 400, width: 60, align: 'right' },
-          { text: '금액', x: 465, width: 70, align: 'right' },
-          { text: '특이사항', x: 540, width: 35, align: 'center' }
-        ];
-        
-        // 테이블 헤더 행 (회색 배경)
-        doc.rect(20, tableHeaderY, 555, rowHeight).fill('#f3f4f6').stroke('#d1d5db');
-        doc.fillColor('black').fontSize(8).font(fontName);
-        
-        // 컬럼 헤더 텍스트
-        columns.forEach(col => {
-          let textX = col.x;
-          if (col.align === 'center') textX = col.x + (col.width / 2) - 10;
-          else if (col.align === 'right') textX = col.x + col.width - 15;
-          doc.text(safeText(col.text), textX, tableHeaderY + 6);
-        });
-        
-        // 수직 구분선들
-        let currentX = 20;
-        columns.forEach((col, index) => {
-          if (index > 0) {
-            doc.moveTo(currentX, tableHeaderY).lineTo(currentX, tableHeaderY + rowHeight).stroke('#d1d5db');
-          }
-          currentX += col.width;
-        });
-        
-        doc.fillColor('black');
-        
-        // 품목 데이터 행들 (교대 배경색으로 가독성 향상)
-        let currentY = tableHeaderY + rowHeight;
-        orderData.items.slice(0, 15).forEach((item, index) => { // 최대 15개 품목만 표시
-          // 교대로 배경색 적용 (타겟 디자인과 매칭)
-          const bgColor = index % 2 === 0 ? '#ffffff' : '#f8fafc';
-          doc.rect(20, currentY, 555, rowHeight).fill(bgColor).stroke('#d1d5db');
-          doc.fillColor('black').fontSize(7).font(fontName);
-          
-          // 특이사항 포맷팅
-          const formatRemarksForPDF = (item: any) => {
-            if (item.deliveryLocation || item.deliveryEmail) {
-              return `납품처: ${item.deliveryLocation || ''} ${item.deliveryEmail || ''}`.trim();
-            }
-            return item.remarks && item.remarks !== '-' ? item.remarks.substring(0, 10) + '...' : '-';
+          // 안전한 텍스트 처리 함수
+          const safeText = (text: string) => {
+            if (!text) return '';
+            return hasKoreanFont ? text : text;
           };
           
-          // 각 컬럼에 데이터 정확히 배치 (정렬에 맞춰)
-          doc.text(`${item.sequenceNo}`, 37, currentY + 6); // 순번 (중앙정렬)
-          doc.text(safeText(item.name.substring(0, 20)), 70, currentY + 6); // 품목명
-          doc.text(safeText((item.specification || '-').substring(0, 14)), 240, currentY + 6); // 규격 (중앙정렬)
-          doc.text(safeText(item.quantity.toLocaleString()), 325, currentY + 6); // 수량 (중앙정렬)
-          doc.text(safeText(item.unit || '-'), 372, currentY + 6); // 단위 (중앙정렬)
-          doc.text(safeText(`₩${item.unitPrice.toLocaleString()}`), 450, currentY + 6); // 단가 (우측정렬)
-          doc.text(safeText(`₩${item.totalPrice.toLocaleString()}`), 520, currentY + 6); // 금액 (우측정렬)
-          doc.text(safeText(formatRemarksForPDF(item)), 545, currentY + 6); // 특이사항
+          const formatDate = (date?: Date | null) => {
+            if (!date) return '-';
+            return format(new Date(date), 'yyyy년 MM월 dd일', { locale: ko });
+          };
+
+          // ============ PAGE 1: 클린한 타겟 레이아웃 ============
+          doc.addPage();
           
-          // 수직 구분선들
-          let lineX = 20;
-          columns.forEach((col, colIndex) => {
-            if (colIndex > 0) {
-              doc.moveTo(lineX, currentY).lineTo(lineX, currentY + rowHeight).stroke('#d1d5db');
-            }
-            lineX += col.width;
+          // === PAGE 1 헤더 ===
+          doc.fontSize(20).fillColor('black');
+          doc.text(safeText('구매발주서'), 30, 50);
+          doc.fontSize(12);
+          doc.text(safeText(`발주번호: ${orderData.orderNumber}`), 450, 55);
+          
+          // 헤더 구분선
+          doc.moveTo(30, 85).lineTo(565, 85).stroke('#cccccc');
+          
+          let currentY = 100;
+          
+          // === PAGE 1 정보 박스들 ===
+          
+          // 첫 번째 행: 발주업체 정보 + 수주업체 정보 (2개 나란히)
+          const boxWidth = 260;
+          const boxHeight = 120;
+          
+          // 발주업체 정보 박스
+          doc.rect(30, currentY, boxWidth, boxHeight).stroke('#e5e7eb');
+          doc.fontSize(10).fillColor('black');
+          doc.text(safeText('발주업체 정보'), 40, currentY + 10);
+          
+          // 발주업체 정보 내용
+          let infoY = currentY + 30;
+          doc.fontSize(8);
+          doc.text(safeText('업체명'), 40, infoY);
+          doc.text(safeText(orderData.issuerCompany.name), 120, infoY);
+          infoY += 15;
+          doc.text(safeText('사업자번호'), 40, infoY);
+          doc.text(safeText(orderData.issuerCompany.businessNumber || '-'), 120, infoY);
+          infoY += 15;
+          doc.text(safeText('대표자'), 40, infoY);
+          doc.text(safeText(orderData.issuerCompany.representative || '-'), 120, infoY);
+          infoY += 15;
+          doc.text(safeText('주소'), 40, infoY);
+          const address = orderData.issuerCompany.address || '-';
+          const shortAddress = address.length > 20 ? address.substring(0, 20) + '...' : address;
+          doc.text(safeText(shortAddress), 120, infoY);
+          infoY += 15;
+          doc.text(safeText('연락처'), 40, infoY);
+          doc.text(safeText(orderData.issuerCompany.phone || '-'), 120, infoY);
+          
+          // 수주업체 정보 박스
+          const rightBoxX = 305;
+          doc.rect(rightBoxX, currentY, boxWidth, boxHeight).stroke('#e5e7eb');
+          doc.fontSize(10);
+          doc.text(safeText('수주업체 정보'), rightBoxX + 10, currentY + 10);
+          
+          // 수주업체 정보 내용
+          infoY = currentY + 30;
+          doc.fontSize(8);
+          doc.text(safeText('업체명'), rightBoxX + 10, infoY);
+          doc.text(safeText(orderData.vendorCompany.name), rightBoxX + 90, infoY);
+          infoY += 15;
+          doc.text(safeText('사업자번호'), rightBoxX + 10, infoY);
+          doc.text(safeText(orderData.vendorCompany.businessNumber || '-'), rightBoxX + 90, infoY);
+          infoY += 15;
+          doc.text(safeText('대표자'), rightBoxX + 10, infoY);
+          doc.text(safeText(orderData.vendorCompany.representative || '-'), rightBoxX + 90, infoY);
+          infoY += 15;
+          doc.text(safeText('담당자'), rightBoxX + 10, infoY);
+          doc.text(safeText(orderData.vendorCompany.contactPerson || '-'), rightBoxX + 90, infoY);
+          infoY += 15;
+          doc.text(safeText('연락처'), rightBoxX + 10, infoY);
+          doc.text(safeText(orderData.vendorCompany.phone || '-'), rightBoxX + 90, infoY);
+          
+          currentY += boxHeight + 20;
+          
+          // 두 번째 행: 현장 + 일정 + 담당자 (3개 나란히)
+          const smallBoxWidth = 175;
+          const smallBoxHeight = 90;
+          
+          // 현장 정보
+          doc.rect(30, currentY, smallBoxWidth, smallBoxHeight).stroke('#e5e7eb');
+          doc.fontSize(10);
+          doc.text(safeText('현장'), 40, currentY + 10);
+          
+          infoY = currentY + 30;
+          doc.fontSize(8);
+          doc.text(safeText('현장명'), 40, infoY);
+          doc.text(safeText(orderData.project.name), 85, infoY);
+          infoY += 15;
+          doc.text(safeText('현장코드'), 40, infoY);
+          doc.text(safeText(orderData.project.code || '-'), 85, infoY);
+          infoY += 15;
+          doc.text(safeText('발주처'), 40, infoY);
+          doc.text(safeText('-'), 85, infoY);
+          
+          // 일정 정보
+          const scheduleX = 210;
+          doc.rect(scheduleX, currentY, smallBoxWidth, smallBoxHeight).stroke('#e5e7eb');
+          doc.fontSize(10);
+          doc.text(safeText('일정'), scheduleX + 10, currentY + 10);
+          
+          infoY = currentY + 30;
+          doc.fontSize(8);
+          doc.text(safeText('발주일'), scheduleX + 10, infoY);
+          doc.text(safeText(formatDate(orderData.orderDate)), scheduleX + 55, infoY);
+          infoY += 15;
+          doc.text(safeText('납기일'), scheduleX + 10, infoY);
+          doc.text(safeText(formatDate(orderData.deliveryDate)), scheduleX + 55, infoY);
+          infoY += 15;
+          doc.text(safeText('등록일'), scheduleX + 10, infoY);
+          doc.text(safeText(formatDate(orderData.createdAt)), scheduleX + 55, infoY);
+          
+          // 담당자 정보
+          const managerX = 390;
+          doc.rect(managerX, currentY, smallBoxWidth, smallBoxHeight).stroke('#e5e7eb');
+          doc.fontSize(10);
+          doc.text(safeText('담당자'), managerX + 10, currentY + 10);
+          
+          infoY = currentY + 30;
+          doc.fontSize(8);
+          doc.text(safeText('작성자'), managerX + 10, infoY);
+          doc.text(safeText(orderData.creator.name), managerX + 55, infoY);
+          infoY += 15;
+          doc.text(safeText('직책'), managerX + 10, infoY);
+          doc.text(safeText('-'), managerX + 55, infoY);
+          infoY += 15;
+          doc.text(safeText('연락처'), managerX + 10, infoY);
+          doc.text(safeText(orderData.creator.phone || '-'), managerX + 55, infoY);
+          
+          currentY += smallBoxHeight + 30;
+          
+          // === PAGE 1 품목 테이블 ===
+          
+          // 파란색 헤더
+          doc.rect(30, currentY, 535, 25).fill('#2563eb');
+          doc.fontSize(10).fillColor('white');
+          doc.text(safeText(`발주 품목 (총 ${orderData.items.length}개 품목)`), 40, currentY + 8);
+          currentY += 25;
+          
+          // 테이블 헤더
+          const tableHeaders = ['순번', '품목명', '규격', '수량', '단위', '단가', '금액', '특이사항'];
+          const columnWidths = [35, 140, 85, 50, 35, 70, 80, 40];
+          let tableX = 30;
+          
+          doc.rect(30, currentY, 535, 20).fill('#f3f4f6').stroke('#d1d5db');
+          doc.fontSize(8).fillColor('black');
+          
+          tableHeaders.forEach((header, index) => {
+            const headerX = tableX + (columnWidths[index] / 2) - 10;
+            doc.text(safeText(header), headerX, currentY + 6);
+            tableX += columnWidths[index];
+          });
+          currentY += 20;
+          
+          // 품목 데이터 행들
+          orderData.items.slice(0, 10).forEach((item, index) => {
+            const bgColor = index % 2 === 0 ? '#ffffff' : '#f8fafc';
+            doc.rect(30, currentY, 535, 18).fill(bgColor).stroke('#d1d5db');
+            doc.fontSize(7).fillColor('black');
+            
+            tableX = 30;
+            
+            // 순번
+            doc.text(safeText(item.sequenceNo.toString()), tableX + 15, currentY + 5);
+            tableX += columnWidths[0];
+            
+            // 품목명
+            const itemName = item.name.length > 18 ? item.name.substring(0, 18) + '...' : item.name;
+            doc.text(safeText(itemName), tableX + 2, currentY + 5);
+            tableX += columnWidths[1];
+            
+            // 규격
+            const spec = (item.specification || '-').length > 12 ? (item.specification || '-').substring(0, 12) + '...' : (item.specification || '-');
+            doc.text(safeText(spec), tableX + 2, currentY + 5);
+            tableX += columnWidths[2];
+            
+            // 수량
+            doc.text(safeText(item.quantity.toString()), tableX + 15, currentY + 5);
+            tableX += columnWidths[3];
+            
+            // 단위
+            doc.text(safeText(item.unit || '-'), tableX + 12, currentY + 5);
+            tableX += columnWidths[4];
+            
+            // 단가
+            doc.text(safeText(`₩${item.unitPrice.toLocaleString()}`), tableX + 5, currentY + 5);
+            tableX += columnWidths[5];
+            
+            // 금액
+            doc.text(safeText(`₩${item.totalPrice.toLocaleString()}`), tableX + 5, currentY + 5);
+            tableX += columnWidths[6];
+            
+            // 특이사항
+            doc.text(safeText('-'), tableX + 15, currentY + 5);
+            
+            currentY += 18;
           });
           
-          currentY += rowHeight;
-        });
-        
-        // 더 많은 품목이 있는 경우 표시
-        if (orderData.items.length > 15) {
-          doc.rect(20, currentY, 555, 16).fill('#fef3c7');
-          doc.fillColor('black');
-          doc.fontSize(7).text(safeText(`... 외 ${orderData.items.length - 15}개 품목 (별도 첨부자료 참고)`), 25, currentY + 3);
-          doc.rect(20, currentY, 555, 16).stroke();
-          currentY += 16;
-        }
-        
-        // 타겟 디자인 매칭: 금액 합계 섹션
-        const summaryY = currentY + 5;
-        const summaryHeight = 18;
-        
-        // 소계 행
-        doc.rect(20, summaryY, 555, summaryHeight).fill('#ffffff').stroke('#d1d5db');
-        doc.fillColor('black').fontSize(8).font(fontName);
-        doc.text(safeText('소계 (부가세 별도)'), 30, summaryY + 5);
-        doc.text(safeText(`₩${orderData.financial.subtotalAmount.toLocaleString()}`), 500, summaryY + 5);
-        
-        // 부가세 행
-        const vatY = summaryY + summaryHeight;
-        doc.rect(20, vatY, 555, summaryHeight).fill('#ffffff').stroke('#d1d5db');
-        doc.fillColor('black').fontSize(8);
-        doc.text(safeText(`부가세 (${(orderData.financial.vatRate * 100).toFixed(0)}%)`), 30, vatY + 5);
-        doc.text(safeText(`₩${orderData.financial.vatAmount.toLocaleString()}`), 500, vatY + 5);
-        
-        // 총 금액 행 (강조된 배경)
-        const totalY = vatY + summaryHeight;
-        doc.rect(20, totalY, 555, summaryHeight + 2).fill('#e5e7eb').stroke('#d1d5db');
-        doc.fillColor('black').fontSize(10).font(fontName);
-        doc.text(safeText('총 금액'), 30, totalY + 6);
-        doc.fontSize(10);
-        doc.text(safeText(`₩${orderData.financial.totalAmount.toLocaleString()}`), 490, totalY + 6);
-        
-        currentY = totalY + summaryHeight + 2;
-        
-        doc.fillColor('black');
-        doc.moveDown(2);
-        
-        // === 특이사항 섹션 (타겟 디자인 매칭) ===
-        if (orderData.metadata.notes) {
-          const notesY = currentY + 10;
-          const notesHeight = 25;
+          // === PAGE 1 금액 합계 ===
+          const summaryY = currentY + 10;
           
-          // 연한 배경의 특이사항 박스
-          doc.rect(20, notesY, 555, notesHeight).fill('#fffbeb').stroke('#d1d5db');
+          // 소계
+          doc.rect(30, summaryY, 535, 18).fill('#ffffff').stroke('#d1d5db');
+          doc.fontSize(8).fillColor('black');
+          doc.text(safeText('소계 (부가세 별도)'), 400, summaryY + 5);
+          doc.text(safeText(`₩${orderData.financial.subtotalAmount.toLocaleString()}`), 480, summaryY + 5);
           
-          doc.fillColor('black').fontSize(8).font(fontName);
-          doc.text(safeText(`특이사항: ${orderData.metadata.notes}`), 25, notesY + 8);
+          // 부가세
+          doc.rect(30, summaryY + 18, 535, 18).fill('#ffffff').stroke('#d1d5db');
+          doc.text(safeText(`부가세 (${(orderData.financial.vatRate * 100).toFixed(0)}%)`), 400, summaryY + 23);
+          doc.text(safeText(`₩${orderData.financial.vatAmount.toLocaleString()}`), 480, summaryY + 23);
           
-          currentY = notesY + notesHeight + 5;
+          // 총 금액
+          doc.rect(30, summaryY + 36, 535, 20).fill('#e5e7eb').stroke('#d1d5db');
+          doc.fontSize(10).fillColor('black');
+          doc.text(safeText('총 금액'), 400, summaryY + 42);
+          doc.text(safeText(`₩${orderData.financial.totalAmount.toLocaleString()}`), 480, summaryY + 42);
+          
+          currentY = summaryY + 60;
+          
+          // === PAGE 1 특이사항 ===
+          if (orderData.metadata.notes) {
+            doc.rect(30, currentY, 535, 30).fill('#fffbeb').stroke('#d1d5db');
+            doc.fontSize(8).fillColor('black');
+            doc.text(safeText(`특이사항: ${orderData.metadata.notes}`), 40, currentY + 8);
+            currentY += 35;
+          }
+          
+          // === PAGE 1 하단 회사 정보 ===
+          doc.moveTo(30, currentY + 20).lineTo(565, currentY + 20).stroke('#374151');
+          
+          const footerY = currentY + 35;
+          doc.fontSize(12).fillColor('black');
+          doc.text(safeText(orderData.issuerCompany.name), 0, footerY, { align: 'center', width: 595 });
+          
+          if (orderData.issuerCompany.representative) {
+            doc.fontSize(8);
+            doc.text(safeText(`대표자: ${orderData.issuerCompany.representative}`), 0, footerY + 20, { align: 'center', width: 595 });
+          }
+          
+          doc.fontSize(7);
+          doc.text(safeText(orderData.issuerCompany.address || ''), 0, footerY + 35, { align: 'center', width: 595 });
+          doc.text(safeText(`TEL: ${orderData.issuerCompany.phone || ''} | EMAIL: ${orderData.issuerCompany.email || ''}`), 0, footerY + 50, { align: 'center', width: 595 });
+          
+          if (orderData.issuerCompany.businessNumber) {
+            doc.text(safeText(`사업자등록번호: ${orderData.issuerCompany.businessNumber}`), 0, footerY + 65, { align: 'center', width: 595 });
+          }
+          
+          // 문서 메타데이터
+          doc.fontSize(6).fillColor('#666666');
+          doc.text(safeText(`생성일시: ${formatDate(orderData.metadata.generatedAt)}`), 30, footerY + 85);
+          doc.text(safeText('본 문서는 전자적으로 생성되었습니다'), 0, footerY + 85, { align: 'center', width: 595 });
+          doc.text(safeText(`Template ${orderData.metadata.templateVersion}`), 0, footerY + 85, { align: 'right', width: 565 });
+          
+          // ============ PAGE 2: 파란색 헤더 버전 ============
+          doc.addPage();
+          
+          // === PAGE 2 파란색 헤더 ===
+          doc.rect(0, 0, 595, 60).fill('#2563eb');
+          doc.fontSize(18).fillColor('white');
+          doc.text(safeText('구매발주서'), 30, 20);
+          doc.fontSize(12);
+          doc.text(safeText(`발주번호: ${orderData.orderNumber}`), 450, 25);
+          
+          currentY = 80;
+          
+          // === PAGE 2 파란색 헤더를 가진 정보 박스들 ===
+          
+          // 첫 번째 행: 발주업체 정보 + 수주업체 정보
+          
+          // 발주업체 정보 - 파란색 헤더
+          doc.rect(30, currentY, boxWidth, 20).fill('#2563eb');
+          doc.fontSize(9).fillColor('white');
+          doc.text(safeText('발주업체 정보'), 40, currentY + 6);
+          
+          doc.rect(30, currentY + 20, boxWidth, 100).stroke('#e5e7eb');
+          
+          infoY = currentY + 35;
+          doc.fontSize(8).fillColor('black');
+          doc.text(safeText('업체명'), 40, infoY);
+          doc.text(safeText(orderData.issuerCompany.name), 120, infoY);
+          infoY += 15;
+          doc.text(safeText('사업자번호'), 40, infoY);
+          doc.text(safeText(orderData.issuerCompany.businessNumber || '-'), 120, infoY);
+          infoY += 15;
+          doc.text(safeText('대표자'), 40, infoY);
+          doc.text(safeText(orderData.issuerCompany.representative || '-'), 120, infoY);
+          infoY += 15;
+          doc.text(safeText('주소'), 40, infoY);
+          doc.text(safeText(shortAddress), 120, infoY);
+          infoY += 15;
+          doc.text(safeText('연락처'), 40, infoY);
+          doc.text(safeText(orderData.issuerCompany.phone || '-'), 120, infoY);
+          
+          // 수주업체 정보 - 파란색 헤더
+          doc.rect(rightBoxX, currentY, boxWidth, 20).fill('#2563eb');
+          doc.fontSize(9).fillColor('white');
+          doc.text(safeText('수주업체 정보'), rightBoxX + 10, currentY + 6);
+          
+          doc.rect(rightBoxX, currentY + 20, boxWidth, 100).stroke('#e5e7eb');
+          
+          infoY = currentY + 35;
+          doc.fontSize(8).fillColor('black');
+          doc.text(safeText('업체명'), rightBoxX + 10, infoY);
+          doc.text(safeText(orderData.vendorCompany.name), rightBoxX + 90, infoY);
+          infoY += 15;
+          doc.text(safeText('사업자번호'), rightBoxX + 10, infoY);
+          doc.text(safeText(orderData.vendorCompany.businessNumber || '-'), rightBoxX + 90, infoY);
+          infoY += 15;
+          doc.text(safeText('대표자'), rightBoxX + 10, infoY);
+          doc.text(safeText(orderData.vendorCompany.representative || '-'), rightBoxX + 90, infoY);
+          infoY += 15;
+          doc.text(safeText('담당자'), rightBoxX + 10, infoY);
+          doc.text(safeText(orderData.vendorCompany.contactPerson || '-'), rightBoxX + 90, infoY);
+          infoY += 15;
+          doc.text(safeText('연락처'), rightBoxX + 10, infoY);
+          doc.text(safeText(orderData.vendorCompany.phone || '-'), rightBoxX + 90, infoY);
+          
+          currentY += 140;
+          
+          // 두 번째 행: 현장 + 일정 + 담당자 - 각각 파란색 헤더
+          
+          // 현장 정보
+          doc.rect(30, currentY, smallBoxWidth, 18).fill('#2563eb');
+          doc.fontSize(9).fillColor('white');
+          doc.text(safeText('현장'), 40, currentY + 5);
+          
+          doc.rect(30, currentY + 18, smallBoxWidth, 72).stroke('#e5e7eb');
+          
+          infoY = currentY + 30;
+          doc.fontSize(8).fillColor('black');
+          doc.text(safeText('현장명'), 40, infoY);
+          doc.text(safeText(orderData.project.name), 85, infoY);
+          infoY += 15;
+          doc.text(safeText('현장코드'), 40, infoY);
+          doc.text(safeText(orderData.project.code || '-'), 85, infoY);
+          infoY += 15;
+          doc.text(safeText('발주처'), 40, infoY);
+          doc.text(safeText('-'), 85, infoY);
+          
+          // 일정 정보
+          doc.rect(scheduleX, currentY, smallBoxWidth, 18).fill('#2563eb');
+          doc.fontSize(9).fillColor('white');
+          doc.text(safeText('일정'), scheduleX + 10, currentY + 5);
+          
+          doc.rect(scheduleX, currentY + 18, smallBoxWidth, 72).stroke('#e5e7eb');
+          
+          infoY = currentY + 30;
+          doc.fontSize(8).fillColor('black');
+          doc.text(safeText('발주일'), scheduleX + 10, infoY);
+          doc.text(safeText(formatDate(orderData.orderDate)), scheduleX + 55, infoY);
+          infoY += 15;
+          doc.text(safeText('납기일'), scheduleX + 10, infoY);
+          doc.text(safeText(formatDate(orderData.deliveryDate)), scheduleX + 55, infoY);
+          infoY += 15;
+          doc.text(safeText('등록일'), scheduleX + 10, infoY);
+          doc.text(safeText(formatDate(orderData.createdAt)), scheduleX + 55, infoY);
+          
+          // 담당자 정보
+          doc.rect(managerX, currentY, smallBoxWidth, 18).fill('#2563eb');
+          doc.fontSize(9).fillColor('white');
+          doc.text(safeText('담당자'), managerX + 10, currentY + 5);
+          
+          doc.rect(managerX, currentY + 18, smallBoxWidth, 72).stroke('#e5e7eb');
+          
+          infoY = currentY + 30;
+          doc.fontSize(8).fillColor('black');
+          doc.text(safeText('작성자'), managerX + 10, infoY);
+          doc.text(safeText(orderData.creator.name), managerX + 55, infoY);
+          infoY += 15;
+          doc.text(safeText('직책'), managerX + 10, infoY);
+          doc.text(safeText('-'), managerX + 55, infoY);
+          infoY += 15;
+          doc.text(safeText('연락처'), managerX + 10, infoY);
+          doc.text(safeText(orderData.creator.phone || '-'), managerX + 55, infoY);
+          
+          currentY += 110;
+          
+          // === PAGE 2 파란색 품목 테이블 헤더 ===
+          doc.rect(30, currentY, 535, 25).fill('#2563eb');
+          doc.fontSize(10).fillColor('white');
+          doc.text(safeText(`발주 품목 (총 ${orderData.items.length}개 품목)`), 40, currentY + 8);
+          currentY += 25;
+          
+          // PAGE 2 테이블 구조는 PAGE 1과 동일하지만 남은 품목들 표시
+          tableX = 30;
+          doc.rect(30, currentY, 535, 20).fill('#f3f4f6').stroke('#d1d5db');
+          doc.fontSize(8).fillColor('black');
+          
+          tableHeaders.forEach((header, index) => {
+            const headerX = tableX + (columnWidths[index] / 2) - 10;
+            doc.text(safeText(header), headerX, currentY + 6);
+            tableX += columnWidths[index];
+          });
+          currentY += 20;
+          
+          // 남은 품목들 (10개 이후)
+          const remainingItems = orderData.items.slice(10);
+          if (remainingItems.length > 0) {
+            remainingItems.forEach((item, index) => {
+              const bgColor = index % 2 === 0 ? '#ffffff' : '#f8fafc';
+              doc.rect(30, currentY, 535, 18).fill(bgColor).stroke('#d1d5db');
+              doc.fontSize(7).fillColor('black');
+              
+              tableX = 30;
+              
+              // 순번
+              doc.text(safeText(item.sequenceNo.toString()), tableX + 15, currentY + 5);
+              tableX += columnWidths[0];
+              
+              // 품목명
+              const itemName = item.name.length > 18 ? item.name.substring(0, 18) + '...' : item.name;
+              doc.text(safeText(itemName), tableX + 2, currentY + 5);
+              tableX += columnWidths[1];
+              
+              // 규격
+              const spec = (item.specification || '-').length > 12 ? (item.specification || '-').substring(0, 12) + '...' : (item.specification || '-');
+              doc.text(safeText(spec), tableX + 2, currentY + 5);
+              tableX += columnWidths[2];
+              
+              // 수량
+              doc.text(safeText(item.quantity.toString()), tableX + 15, currentY + 5);
+              tableX += columnWidths[3];
+              
+              // 단위
+              doc.text(safeText(item.unit || '-'), tableX + 12, currentY + 5);
+              tableX += columnWidths[4];
+              
+              // 단가
+              doc.text(safeText(`₩${item.unitPrice.toLocaleString()}`), tableX + 5, currentY + 5);
+              tableX += columnWidths[5];
+              
+              // 금액
+              doc.text(safeText(`₩${item.totalPrice.toLocaleString()}`), tableX + 5, currentY + 5);
+              tableX += columnWidths[6];
+              
+              // 특이사항
+              doc.text(safeText('-'), tableX + 15, currentY + 5);
+              
+              currentY += 18;
+            });
+          } else {
+            // 품목이 10개 이하인 경우 빈 메시지
+            doc.rect(30, currentY, 535, 18).fill('#f8fafc').stroke('#d1d5db');
+            doc.fontSize(8).fillColor('#666666');
+            doc.text(safeText('모든 품목이 첫 번째 페이지에 표시되었습니다.'), 40, currentY + 5);
+            currentY += 18;
+          }
+          
+          // === PAGE 2 하단 회사 정보 (PAGE 1과 동일) ===
+          doc.moveTo(30, currentY + 30).lineTo(565, currentY + 30).stroke('#374151');
+          
+          const footer2Y = currentY + 45;
+          doc.fontSize(12).fillColor('black');
+          doc.text(safeText(orderData.issuerCompany.name), 0, footer2Y, { align: 'center', width: 595 });
+          
+          if (orderData.issuerCompany.representative) {
+            doc.fontSize(8);
+            doc.text(safeText(`대표자: ${orderData.issuerCompany.representative}`), 0, footer2Y + 20, { align: 'center', width: 595 });
+          }
+          
+          doc.fontSize(7);
+          doc.text(safeText(orderData.issuerCompany.address || ''), 0, footer2Y + 35, { align: 'center', width: 595 });
+          doc.text(safeText(`TEL: ${orderData.issuerCompany.phone || ''} | EMAIL: ${orderData.issuerCompany.email || ''}`), 0, footer2Y + 50, { align: 'center', width: 595 });
+          
+          if (orderData.issuerCompany.businessNumber) {
+            doc.text(safeText(`사업자등록번호: ${orderData.issuerCompany.businessNumber}`), 0, footer2Y + 65, { align: 'center', width: 595 });
+          }
+          
+          // 문서 메타데이터
+          doc.fontSize(6).fillColor('#666666');
+          doc.text(safeText(`생성일시: ${formatDate(orderData.metadata.generatedAt)}`), 30, footer2Y + 85);
+          doc.text(safeText('본 문서는 전자적으로 생성되었습니다'), 0, footer2Y + 85, { align: 'center', width: 595 });
+          doc.text(safeText(`Template ${orderData.metadata.templateVersion}`), 0, footer2Y + 85, { align: 'right', width: 565 });
+          
+          doc.end();
+          
+        } catch (error) {
+          reject(error);
         }
-        
-        // === 결재선 제거 (간소화) ===
-        doc.moveDown(2);
-        
-        // === 타겟 디자인 매칭: 하단 회사 정보 및 문서 메타데이터 ===
-        const footerY = currentY + 25;
-        doc.y = footerY;
-        
-        // 구분선
-        doc.moveTo(20, doc.y).lineTo(575, doc.y).stroke();
-        doc.y += 10;
-        
-        // 회사명 (중앙 정렬, 큰 폰트)
-        doc.fontSize(12).font(fontName);
-        doc.text(safeText(orderData.issuerCompany.name), 0, doc.y, { align: 'center', width: 595 });
-        doc.moveDown(0.3);
-        
-        // 대표자 정보
-        if (orderData.issuerCompany.representative) {
-          doc.fontSize(8);
-          doc.text(safeText(`대표자: ${orderData.issuerCompany.representative}`), 0, doc.y, { align: 'center', width: 595 });
-          doc.moveDown(0.3);
-        }
-        
-        // 주소
-        doc.fontSize(7);
-        doc.text(safeText(orderData.issuerCompany.address || ''), 0, doc.y, { align: 'center', width: 595 });
-        doc.moveDown(0.3);
-        
-        // 연락처 정보
-        doc.text(safeText(`TEL: ${orderData.issuerCompany.phone || ''} | EMAIL: ${orderData.issuerCompany.email || ''}`), 0, doc.y, { align: 'center', width: 595 });
-        doc.moveDown(0.3);
-        
-        // 사업자등록번호
-        if (orderData.issuerCompany.businessNumber) {
-          doc.text(safeText(`사업자등록번호: ${orderData.issuerCompany.businessNumber}`), 0, doc.y, { align: 'center', width: 595 });
-        }
-        
-        doc.moveDown(0.5);
-        
-        // 문서 메타데이터 (3열 레이아웃)
-        const metaY = doc.y + 5;
-        doc.fontSize(6).fillColor('#666666');
-        
-        // 좌측: 생성일시
-        doc.text(safeText(`생성일시: ${formatDate(orderData.metadata.generatedAt)}`), 20, metaY);
-        
-        // 중앙: 전자문서 표시
-        doc.text(safeText('본 문서는 전자적으로 생성되었습니다'), 0, metaY, { align: 'center', width: 595 });
-        
-        // 우측: 템플릿 버전
-        doc.text(safeText(`Template ${orderData.metadata.templateVersion}`), 0, metaY, { align: 'right', width: 575 });
-        
-        doc.end();
-        
-      } catch (error) {
-        reject(error);
-      }
-    });
-    
+      });
+      
     } catch (importError) {
       console.error('❌ [ProfessionalPDF] PDFKit import 실패:', importError);
-      throw new Error(`PDFKit을 로드할 수 없습니다 (환경: ${process.env.VERCEL ? 'Vercel' : 'Local'}): ${importError instanceof Error ? importError.message : 'Unknown error'}`);
+      throw new Error(`PDFKit을 로드할 수 없습니다: ${importError instanceof Error ? importError.message : 'Unknown error'}`);
     }
   }
 
+  /**
+   * 기존 호환성을 위한 메서드 (사용되지 않음)
+   */
+  public static async generateProfessionalPDFWithPDFKit(orderData: ComprehensivePurchaseOrderData): Promise<Buffer> {
+    return this.generateTargetMatchingPDF(orderData);
+  }
 }

@@ -66,6 +66,7 @@ export function EmailSendDialog({ open, onOpenChange, orderData, onSendEmail, at
   const [attachments, setAttachments] = useState<AttachmentInfo[]>([]);
   const [attachmentsLoading, setAttachmentsLoading] = useState(false);
   const [customAttachments, setCustomAttachments] = useState<AttachmentInfo[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
 
   // Use provided attachments or fetch them when dialog opens
   useEffect(() => {
@@ -224,11 +225,8 @@ export function EmailSendDialog({ open, onOpenChange, orderData, onSendEmail, at
     return <File className="h-4 w-4 text-gray-500" />;
   };
 
-  // 사용자 파일 업로드 처리
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (!files || files.length === 0) return;
-
+  // 파일 처리 공통 함수
+  const processFiles = (files: FileList | File[]) => {
     const newCustomAttachments: AttachmentInfo[] = [];
     const validFiles: File[] = [];
     const maxFileSize = 10 * 1024 * 1024; // 10MB 제한
@@ -289,10 +287,42 @@ export function EmailSendDialog({ open, onOpenChange, orderData, onSendEmail, at
         description: `${newCustomAttachments.length}개의 파일이 추가되었습니다.`,
       });
     }
+  };
+
+  // 사용자 파일 업로드 처리
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+    
+    processFiles(files);
 
     // 파일 입력 초기화
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
+    }
+  };
+
+  // 드래그 앤 드롭 핸들러
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      processFiles(files);
     }
   };
 
@@ -724,11 +754,29 @@ ${orderData.vendorName} 담당자님께 발주서를 전송드립니다.
                     })}
                   </div>
                 ) : (
-                  <div className="p-4 text-center text-sm text-muted-foreground">
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
-                      <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                      <p>추가로 첨부할 파일을 선택하세요</p>
-                      <p className="text-xs mt-1">최대 10MB, 여러 파일 선택 가능</p>
+                  <div 
+                    className="p-4 text-center text-sm text-muted-foreground"
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                  >
+                    <div 
+                      className={`border-2 border-dashed rounded-lg p-4 transition-colors ${
+                        isDragging 
+                          ? 'border-blue-400 bg-blue-50' 
+                          : 'border-gray-300 hover:border-gray-400'
+                      }`}
+                    >
+                      <Upload className={`h-8 w-8 mx-auto mb-2 ${isDragging ? 'text-blue-500' : 'text-gray-400'}`} />
+                      <p className={isDragging ? 'text-blue-600 font-medium' : ''}>
+                        {isDragging ? '파일을 놓으세요' : '추가로 첨부할 파일을 선택하세요'}
+                      </p>
+                      <p className="text-xs mt-1">
+                        {isDragging 
+                          ? '여기에 파일을 드롭하세요' 
+                          : '드래그 앤 드롭 또는 클릭하여 파일 선택'}
+                      </p>
+                      <p className="text-xs mt-1 text-gray-500">최대 10MB, 여러 파일 선택 가능</p>
                     </div>
                   </div>
                 )}
