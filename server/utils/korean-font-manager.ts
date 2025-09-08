@@ -199,6 +199,29 @@ export class KoreanFontManager {
         return null;
       }
 
+      // Vercel 환경에서 Base64 캐시 사용
+      if (process.env.VERCEL) {
+        const cacheKey = font.name;
+        if (this.base64Cache.has(cacheKey)) {
+          console.log(`💾 [FontManager] Vercel - Base64 캐시에서 Buffer 반환: ${font.name}`);
+          const base64Data = this.base64Cache.get(cacheKey)!;
+          return Buffer.from(base64Data, 'base64');
+        }
+        
+        // 캐시에 없으면 파일 읽고 캐시 저장
+        try {
+          const fontBuffer = fs.readFileSync(font.path);
+          const base64Data = fontBuffer.toString('base64');
+          this.base64Cache.set(cacheKey, base64Data);
+          console.log(`✅ [FontManager] Vercel - 폰트 캐시 후 Buffer 반환: ${font.name}`);
+          return fontBuffer;
+        } catch (vercelError) {
+          console.error(`❌ [FontManager] Vercel 폰트 로드 실패: ${font.name}`, vercelError);
+          return null;
+        }
+      }
+
+      // 로컬 환경에서는 직접 파일 읽기
       return fs.readFileSync(font.path);
     } catch (error) {
       console.error(`❌ [FontManager] 폰트 버퍼 로드 실패:`, error);
