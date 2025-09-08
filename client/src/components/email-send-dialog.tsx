@@ -50,11 +50,27 @@ interface EmailData {
 export function EmailSendDialog({ open, onOpenChange, orderData, onSendEmail, attachments: providedAttachments }: EmailSendDialogProps) {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // 기본 메시지 템플릿
+  const defaultMessage = `안녕하세요.
+
+${orderData.vendorName} 담당자님께 발주서를 전송드립니다.
+
+■ 발주 정보
+- 발주번호: ${orderData.orderNumber}
+- 발주일자: ${orderData.orderDate}
+- 현장명: ${orderData.siteName || 'N/A'}
+- 발주금액: ${orderData.totalAmount.toLocaleString()}원
+
+첨부된 발주서를 확인하시고, 납기일정에 맞춰 진행 부탁드립니다.
+
+감사합니다.`;
+  
   const [emailData, setEmailData] = useState<EmailData>({
     to: orderData.vendorEmail ? [orderData.vendorEmail] : [''],
     cc: [],
     subject: `발주서 전송 - ${orderData.orderNumber}`,
-    message: '',
+    message: defaultMessage, // 기본 메시지로 초기화
     selectedAttachmentIds: [],
     customFiles: []
   });
@@ -469,21 +485,6 @@ export function EmailSendDialog({ open, onOpenChange, orderData, onSendEmail, at
     }
   };
 
-  // 기본 메시지 템플릿
-  const defaultMessage = `안녕하세요.
-
-${orderData.vendorName} 담당자님께 발주서를 전송드립니다.
-
-■ 발주 정보
-- 발주번호: ${orderData.orderNumber}
-- 발주일자: ${orderData.orderDate}
-- 현장명: ${orderData.siteName || 'N/A'}
-- 발주금액: ${orderData.totalAmount.toLocaleString()}원
-
-첨부된 발주서를 확인하시고, 납기일정에 맞춰 진행 부탁드립니다.
-
-감사합니다.`;
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -807,7 +808,7 @@ ${orderData.vendorName} 담당자님께 발주서를 전송드립니다.
             </div>
             <Textarea
               id="message"
-              value={emailData.message || defaultMessage}
+              value={emailData.message}
               onChange={(e) => setEmailData(prev => ({ ...prev, message: e.target.value }))}
               placeholder="추가 메시지를 입력하세요..."
               rows={8}

@@ -6,6 +6,7 @@ import { ko } from 'date-fns/locale';
 import { db } from '../db';
 import { attachments, users, companies, vendors, projects, purchaseOrders, purchaseOrderItems, emailSendHistory } from '../../shared/schema';
 import { eq, desc } from 'drizzle-orm';
+import { getUploadsDir } from '../utils/upload-paths';
 
 // 조건부 import - Vercel 환경에서는 스킵
 let fontManager: any = null;
@@ -128,12 +129,107 @@ export class ProfessionalPDFGenerationService {
     blue: '#2563eb',        // 포인트 블루
   };
 
-  // 폰트 설정
-  private static readonly FONTS = {
-    regular: 'NotoSansKR-Regular',
-    bold: 'NotoSansKR-Bold',
-    medium: 'NotoSansKR-Medium',
-  };
+  /**
+   * 환경별 폰트 설정 가져오기 (런타임 결정)
+   */
+  private static getFonts() {
+    return {
+      regular: process.env.VERCEL ? 'Helvetica' : 'NotoSansKR-Regular',
+      bold: process.env.VERCEL ? 'Helvetica-Bold' : 'NotoSansKR-Bold',
+      medium: process.env.VERCEL ? 'Helvetica' : 'NotoSansKR-Medium',
+    };
+  }
+
+  /**
+   * Vercel 환경에서 한글 텍스트를 영어로 변환
+   */
+  private static translateForVercel(text: string): string {
+    if (!process.env.VERCEL || !text) return text;
+    
+    const translations = {
+      '구매발주서': 'Purchase Order',
+      '발주서': 'Purchase Order',
+      '발주번호': 'PO Number',
+      '발주업체': 'Issuer Company',
+      '수주업체': 'Vendor Company',
+      '거래처': 'Vendor',
+      '품목명': 'Item Name',
+      '품목': 'Item',
+      '규격': 'Specification',
+      '수량': 'Quantity',
+      '단위': 'Unit',
+      '단가': 'Unit Price',
+      '금액': 'Amount',
+      '합계': 'Total',
+      '총 금액': 'Total Amount',
+      '소계': 'Subtotal',
+      '부가세': 'VAT',
+      '사업자등록번호': 'Business Registration No',
+      '사업자번호': 'Business No',
+      '대표자': 'Representative',
+      '담당자': 'Contact Person',
+      '연락처': 'Phone',
+      '전화번호': 'Phone',
+      '주소': 'Address',
+      '이메일': 'Email',
+      '현장명': 'Project Name',
+      '현장정보': 'Project Info',
+      '현장': 'Project',
+      '발주일': 'Order Date',
+      '납기일': 'Delivery Date',
+      '등록일': 'Created Date',
+      '작성자': 'Creator',
+      '특이사항': 'Remarks',
+      '비고': 'Notes',
+      '참고사항': 'Reference',
+      '업체명': 'Company Name',
+      '일정': 'Schedule',
+      '순번': 'No',
+      '원': 'KRW'
+    };
+    
+    let result = text;
+    
+    // 정확한 단어 매칭으로 번역
+    for (const [korean, english] of Object.entries(translations)) {
+      result = result.replace(new RegExp(korean, 'g'), english);
+    }
+    
+    // 남은 한글 문자를 [Korean Text]로 대체
+    if (/[가-힣]/.test(result)) {
+      result = result.replace(/[가-힣]+/g, '[Korean Text]');
+    }
+    
+    return result;
+  }
+
+  /**
+   * 텍스트 출력 헬퍼 - 환경별 번역 적용
+   */
+  private static drawText(doc: PDFDocument, text: string, x: number, y: number, options?: any): void {
+    const translatedText = this.translateForVercel(text);
+    const fonts = this.getFonts();
+    
+    // 폰트 설정
+    const fontName = options?.font || fonts.regular;
+    
+    if (!process.env.VERCEL) {
+      // 로컬 환경에서는 등록된 폰트 사용
+      doc.font(fontName);
+    } else {
+      // Vercel 환경에서는 내장 폰트 직접 사용
+      doc.font(fontName === fonts.bold ? 'Helvetica-Bold' : 'Helvetica');
+    }
+    
+    doc.text(translatedText, x, y, options);
+  }
+
+  /**
+   * 폰트 크기 설정 헬퍼
+   */
+  private static setFontSize(doc: PDFDocument, size: number): void {
+    doc.fontSize(size);
+  }
 
   // 레이아웃 설정 - 매우 컴팩트하게 조정
   private static readonly LAYOUT = {
@@ -157,20 +253,27 @@ export class ProfessionalPDFGenerationService {
         console.log(`🚀 [PDF] PDF 생성 시작 - 발주번호: ${orderData.orderNumber}`);
         console.log(`📍 [PDF] 환경: ${process.env.VERCEL ? 'Vercel' : 'Local'}`);
         
-        // PDFDocument 생성
-        doc = new PDFDocument({
+        // PDFDocument 생성 (Vercel 최적화)
+        const docOptions: any = {
           size: 'A4',
           margin: this.LAYOUT.margin,
-          bufferPages: true,
-          info: {
+        };
+        
+        // Vercel 환경에서는 메타데이터와 버퍼링을 최소화
+        if (!process.env.VERCEL) {
+          docOptions.bufferPages = true;
+          docOptions.info = {
             Title: `구매발주서 ${orderData.orderNumber}`,
             Author: orderData.issuerCompany.name,
             Subject: '구매발주서',
             Creator: 'IKJIN PO Management System',
             Producer: 'PDFKit',
             CreationDate: new Date(),
-          },
-        });
+          };
+        }
+        
+        console.log(`📄 [PDF] PDFDocument 생성 옵션:`, docOptions);
+        doc = new PDFDocument(docOptions);
 
         const chunks: Buffer[] = [];
         let isResolved = false;
@@ -247,26 +350,27 @@ export class ProfessionalPDFGenerationService {
    * 한글 폰트 등록 - Vercel 서버리스 환경 특화 대응
    */
   private static async registerKoreanFonts(doc: PDFDocument): Promise<void> {
+    const fonts = this.getFonts();
+    
     try {
       console.log('🎯 [PDF] 한글 폰트 등록 시작...');
       console.log(`🌐 [PDF] 환경 체크: VERCEL=${process.env.VERCEL}, NODE_ENV=${process.env.NODE_ENV}`);
       
-      // Vercel 환경에서는 매우 보수적으로 접근
+      // Vercel 환경에서는 극도로 간소화된 접근 방식
       if (process.env.VERCEL) {
-        console.log('☁️ [PDF] Vercel 환경 감지 - 안전한 폰트 등록 모드');
+        console.log('☁️ [PDF] Vercel 서버리스 환경 - 폰트 등록 최적화 모드');
         
         try {
-          // Vercel에서는 기본 폰트만 사용 (가장 안전한 방법)
-          doc.registerFont(this.FONTS.regular, 'Helvetica');
-          doc.registerFont(this.FONTS.bold, 'Helvetica-Bold');
-          doc.registerFont(this.FONTS.medium, 'Helvetica');
-          console.log('✅ [PDF] Vercel - 기본 폰트 등록 완료');
+          // Vercel에서는 폰트 등록을 완전히 스킵하고 기본 폰트만 사용
+          // PDFKit의 내장 폰트만 사용하여 메모리 사용량과 로딩 시간 최소화
+          console.log('🚨 [PDF] Vercel - 한글 폰트 스킵, 내장 폰트 사용');
+          
+          // PDFKit 내장 폰트는 별도 등록 없이 바로 사용 가능
+          // 한글은 표시되지 않지만 PDF 생성 자체는 성공
           return;
         } catch (vercelError) {
-          console.error('❌ [PDF] Vercel - 기본 폰트 등록 실패:', vercelError);
-          // Vercel에서 기본 폰트도 실패하면 폰트 등록 자체를 건너뛰기
-          console.log('🚨 [PDF] Vercel - 폰트 등록 건너뜀 (기본 폰트 사용)');
-          return;
+          console.error('❌ [PDF] Vercel - 폰트 최적화 실패:', vercelError);
+          throw vercelError; // 서버리스에서는 빠르게 실패
         }
       }
       
@@ -289,9 +393,9 @@ export class ProfessionalPDFGenerationService {
             
             if (fontBuffer) {
               // 폰트 버퍼를 PDFKit에 등록
-              doc.registerFont(this.FONTS.regular, fontBuffer);
-              doc.registerFont(this.FONTS.bold, fontBuffer); // 같은 폰트를 Bold로도 사용
-              doc.registerFont(this.FONTS.medium, fontBuffer); // 같은 폰트를 Medium으로도 사용
+              doc.registerFont(fonts.regular, fontBuffer);
+              doc.registerFont(fonts.bold, fontBuffer); // 같은 폰트를 Bold로도 사용
+              doc.registerFont(fonts.medium, fontBuffer); // 같은 폰트를 Medium으로도 사용
               
               console.log(`✅ [PDF] 한글 폰트 등록 완료: ${bestFont.name}`);
               return;
@@ -315,9 +419,9 @@ export class ProfessionalPDFGenerationService {
       for (const systemFont of systemFonts) {
         try {
           if (fs.existsSync(systemFont.path)) {
-            doc.registerFont(this.FONTS.regular, systemFont.path);
-            doc.registerFont(this.FONTS.bold, systemFont.path);
-            doc.registerFont(this.FONTS.medium, systemFont.path);
+            doc.registerFont(fonts.regular, systemFont.path);
+            doc.registerFont(fonts.bold, systemFont.path);
+            doc.registerFont(fonts.medium, systemFont.path);
             console.log(`✅ [PDF] 시스템 폰트 등록: ${systemFont.name}`);
             return;
           }
@@ -328,9 +432,9 @@ export class ProfessionalPDFGenerationService {
       
       // 최후 폴백: 기본 폰트
       console.log('🚨 [PDF] 모든 한글 폰트 실패 - 기본 폰트 사용');
-      doc.registerFont(this.FONTS.regular, 'Helvetica');
-      doc.registerFont(this.FONTS.bold, 'Helvetica-Bold');
-      doc.registerFont(this.FONTS.medium, 'Helvetica');
+      doc.registerFont(fonts.regular, 'Helvetica');
+      doc.registerFont(fonts.bold, 'Helvetica-Bold');
+      doc.registerFont(fonts.medium, 'Helvetica');
       
     } catch (error) {
       console.error('❌ [PDF] 폰트 등록 중 예외 발생:', error);
@@ -343,9 +447,9 @@ export class ProfessionalPDFGenerationService {
       // 최종 폴백 - 에러가 발생해도 PDF 생성은 계속
       try {
         console.log('🆘 [PDF] 최종 폴백 시도...');
-        doc.registerFont(this.FONTS.regular, 'Helvetica');
-        doc.registerFont(this.FONTS.bold, 'Helvetica-Bold');
-        doc.registerFont(this.FONTS.medium, 'Helvetica');
+        doc.registerFont(fonts.regular, 'Helvetica');
+        doc.registerFont(fonts.bold, 'Helvetica-Bold');
+        doc.registerFont(fonts.medium, 'Helvetica');
         console.log('🔧 [PDF] 기본 폰트로 폴백 완료');
       } catch (fallbackError) {
         console.error('💥 [PDF] 기본 폰트 등록도 실패:', fallbackError);
@@ -353,6 +457,57 @@ export class ProfessionalPDFGenerationService {
         console.log('🏃 [PDF] 폰트 등록 실패 - 기본 시스템 폰트로 계속 진행');
       }
     }
+  }
+
+  /**
+   * Vercel 환경에서 한글 텍스트를 영어로 변환
+   */
+  private static translateForVercel(text: string): string {
+    if (!process.env.VERCEL) {
+      return text; // 로컬 환경에서는 변환 안함
+    }
+    
+    const translations: { [key: string]: string } = {
+      '구매발주서': 'Purchase Order',
+      '발주업체': 'Issuer Company',
+      '수주업체': 'Vendor Company',
+      '현장 정보': 'Project Information',
+      '현장명': 'Project Name',
+      '현장코드': 'Project Code',
+      '담당자': 'Contact Person',
+      '발주일': 'Order Date',
+      '납기일': 'Delivery Date',
+      '연락처': 'Phone',
+      '순번': 'No',
+      '품목명': 'Item Name',
+      '규격': 'Specification',
+      '수량': 'Quantity',
+      '단위': 'Unit',
+      '단가': 'Unit Price',
+      '금액': 'Amount',
+      '비고': 'Remarks',
+      '소계': 'Subtotal',
+      '부가세': 'VAT',
+      '총 금액': 'Total Amount',
+      '특이사항': 'Special Notes',
+      '업체명': 'Company Name',
+      '사업자번호': 'Business No',
+      '대표자': 'Representative',
+      '주소': 'Address',
+      '이메일': 'Email',
+    };
+    
+    let result = text;
+    for (const [korean, english] of Object.entries(translations)) {
+      result = result.replace(new RegExp(korean, 'g'), english);
+    }
+    
+    // 남은 한글을 [Korean Text]로 변환
+    if (/[가-힣]/.test(result)) {
+      result = result.replace(/[가-힣]+/g, '[Korean]');
+    }
+    
+    return result;
   }
 
   /**
@@ -396,10 +551,11 @@ export class ProfessionalPDFGenerationService {
   private static renderHeader(doc: PDFDocument, orderData: ComprehensivePurchaseOrderData, y: number): number {
     
     // 제목과 발주번호를 한 줄에 컴팩트하게
-    doc.font(this.FONTS.bold)
+    const fonts = this.getFonts();
+    doc.font(fonts.bold)
        .fontSize(18)
        .fillColor(this.COLORS.darkNavy)
-       .text('구매발주서', this.LAYOUT.margin, y);
+       .text(this.translateForVercel('구매발주서'), this.LAYOUT.margin, y);
 
     // 발주번호 박스 - 오른쪽 상단 (더 작게)
     const orderNumText = orderData.orderNumber;
@@ -411,7 +567,7 @@ export class ProfessionalPDFGenerationService {
        .fillColor(this.COLORS.lightGray)
        .fill();
     
-    doc.font(this.FONTS.medium)
+    doc.font(fonts.medium)
        .fontSize(8)
        .fillColor(this.COLORS.darkNavy)
        .text(orderNumText, boxX, y + 7, {
@@ -421,7 +577,7 @@ export class ProfessionalPDFGenerationService {
 
     // 발주일자 - 발주번호 박스 아래
     const dateText = format(orderData.orderDate, 'yyyy-MM-dd');
-    doc.font(this.FONTS.regular)
+    doc.font(fonts.regular)
        .fontSize(7)
        .fillColor(this.COLORS.gray)
        .text(dateText, boxX, y + boxHeight + 2, {
@@ -444,6 +600,7 @@ export class ProfessionalPDFGenerationService {
    * 업체 정보 렌더링 - 2단 레이아웃
    */
   private static renderCompanyInfo(doc: PDFDocument, orderData: ComprehensivePurchaseOrderData, y: number): number {
+    const fonts = this.getFonts();
     const columnWidth = (this.LAYOUT.pageWidth - (this.LAYOUT.margin * 2) - 10) / 2;
     const startY = y;
     
@@ -481,6 +638,7 @@ export class ProfessionalPDFGenerationService {
     y: number,
     width: number
   ): number {
+    const fonts = this.getFonts();
     // 박스 헤더
     doc.rect(x, y, width, 20)
        .fillColor(this.COLORS.navy)
@@ -488,7 +646,7 @@ export class ProfessionalPDFGenerationService {
 
     // 박스 헤더 텍스트 중앙 정렬
     const titleY = y + (20 - 9) / 2; // 20px 박스에서 9px 폰트 중앙
-    doc.font(this.FONTS.bold)
+    doc.font(fonts.bold)
        .fontSize(9)
        .fillColor(this.COLORS.white)
        .text(title, x + 5, titleY);
@@ -510,11 +668,11 @@ export class ProfessionalPDFGenerationService {
       if (value) {
         // 텍스트 수직 중앙 정렬
         const textY = currentY + 1; // 약간 위로 조정하여 중앙에 맞춤
-        doc.font(this.FONTS.medium)
+        doc.font(fonts.medium)
            .fontSize(fontSize)
            .fillColor(this.COLORS.gray)
            .text(label, x + 5, textY, { continued: true })
-           .font(this.FONTS.regular)
+           .font(fonts.regular)
            .fillColor(this.COLORS.darkGray)
            .text(` ${value}`, { width: width - 10, ellipsis: true });
         currentY += lineHeight;
@@ -538,6 +696,7 @@ export class ProfessionalPDFGenerationService {
    * 현장 정보 렌더링
    */
   private static renderProjectInfo(doc: PDFDocument, orderData: ComprehensivePurchaseOrderData, y: number): number {
+    const fonts = this.getFonts();
     const pageWidth = this.LAYOUT.pageWidth - (this.LAYOUT.margin * 2);
     
     // 섹션 헤더
@@ -547,7 +706,7 @@ export class ProfessionalPDFGenerationService {
 
     // 섹션 헤더 텍스트 수직 중앙
     const sectionTitleY = y + (18 - 8) / 2;
-    doc.font(this.FONTS.bold)
+    doc.font(fonts.bold)
        .fontSize(8)
        .fillColor(this.COLORS.darkNavy)
        .text('현장 정보', this.LAYOUT.margin + 5, sectionTitleY);
@@ -559,11 +718,11 @@ export class ProfessionalPDFGenerationService {
     const renderInfo = (label: string, value: string | undefined, x: number, y: number) => {
       // 현장 정보 텍스트 수직 중앙
       const infoTextY = y + 1;
-      doc.font(this.FONTS.medium)
+      doc.font(fonts.medium)
          .fontSize(8)
          .fillColor(this.COLORS.gray)
          .text(label, x + 5, infoTextY, { continued: true })
-         .font(this.FONTS.regular)
+         .font(fonts.regular)
          .fillColor(this.COLORS.darkGray)
          .text(` ${value || '-'}`, { width: colWidth - 10, ellipsis: true });
     };
@@ -583,6 +742,7 @@ export class ProfessionalPDFGenerationService {
    * 품목 테이블 렌더링
    */
   private static renderItemsTable(doc: PDFDocument, orderData: ComprehensivePurchaseOrderData, y: number): number {
+    const fonts = this.getFonts();
     const pageWidth = this.LAYOUT.pageWidth - (this.LAYOUT.margin * 2);
     
     // 테이블 헤더
@@ -609,7 +769,7 @@ export class ProfessionalPDFGenerationService {
     columns.forEach(col => {
       // 테이블 헤더 텍스트 수직 중앙
       const headerTextY = y + (headerHeight - 8) / 2;
-      doc.font(this.FONTS.bold)
+      doc.font(fonts.bold)
          .fontSize(8)
          .fillColor(this.COLORS.white)
          .text(col.label, currentX + 2, headerTextY, {
@@ -648,7 +808,7 @@ export class ProfessionalPDFGenerationService {
       values.forEach((value, i) => {
         // 테이블 데이터 수직 중앙 정렬
         const cellTextY = currentY + (rowHeight - 7.5) / 2;
-        doc.font(this.FONTS.regular)
+        doc.font(fonts.regular)
            .fontSize(7.5)
            .fillColor(this.COLORS.darkGray)
            .text(value, currentX + 2, cellTextY, {
@@ -676,6 +836,7 @@ export class ProfessionalPDFGenerationService {
    * 금액 요약 렌더링
    */
   private static renderFinancialSummary(doc: PDFDocument, orderData: ComprehensivePurchaseOrderData, y: number): number {
+    const fonts = this.getFonts();
     const summaryWidth = 220;
     const summaryX = this.LAYOUT.pageWidth - this.LAYOUT.margin - summaryWidth;
     
@@ -696,12 +857,12 @@ export class ProfessionalPDFGenerationService {
 
       // 금액 요약 텍스트 수직 중앙
       const summaryTextY = currentY + (rowHeight - 8) / 2;
-      doc.font(this.FONTS.regular)
+      doc.font(fonts.regular)
          .fontSize(8)
          .fillColor(this.COLORS.gray)
          .text(row.label, summaryX + 5, summaryTextY);
 
-      doc.font(this.FONTS.medium)
+      doc.font(fonts.medium)
          .fontSize(8)
          .fillColor(this.COLORS.darkGray)
          .text(row.value, summaryX + 5, summaryTextY, {
@@ -719,12 +880,12 @@ export class ProfessionalPDFGenerationService {
 
     // 총 금액 텍스트 수직 중앙
     const totalTextY = currentY + (22 - 8) / 2;
-    doc.font(this.FONTS.bold)
+    doc.font(fonts.bold)
        .fontSize(8)
        .fillColor(this.COLORS.white)
        .text('총 금액', summaryX + 5, totalTextY);
 
-    doc.font(this.FONTS.bold)
+    doc.font(fonts.bold)
        .fontSize(9)
        .fillColor(this.COLORS.white)
        .text(`₩${orderData.financial.totalAmount.toLocaleString('ko-KR')}`, summaryX + 5, totalTextY - 1, {
@@ -739,11 +900,12 @@ export class ProfessionalPDFGenerationService {
    * 특이사항 렌더링
    */
   private static renderNotes(doc: PDFDocument, orderData: ComprehensivePurchaseOrderData, y: number): number {
+    const fonts = this.getFonts();
     if (!orderData.metadata.notes) return y;
 
     const pageWidth = this.LAYOUT.pageWidth - (this.LAYOUT.margin * 2);
     
-    doc.font(this.FONTS.bold)
+    doc.font(fonts.bold)
        .fontSize(9)
        .fillColor(this.COLORS.darkNavy)
        .text('특이사항', this.LAYOUT.margin, y);
@@ -755,7 +917,7 @@ export class ProfessionalPDFGenerationService {
        .lineWidth(0.5)
        .stroke();
 
-    doc.font(this.FONTS.regular)
+    doc.font(fonts.regular)
        .fontSize(7.5)
        .fillColor(this.COLORS.darkGray)
        .text(orderData.metadata.notes, this.LAYOUT.margin + 5, y + 15, {
@@ -772,6 +934,7 @@ export class ProfessionalPDFGenerationService {
    * 푸터 렌더링 - 페이지 하단 고정
    */
   private static renderFooter(doc: PDFDocument, orderData: ComprehensivePurchaseOrderData): void {
+    const fonts = this.getFonts();
     const footerY = this.LAYOUT.pageHeight - this.LAYOUT.footerHeight - this.LAYOUT.margin;
     const pageWidth = this.LAYOUT.pageWidth - (this.LAYOUT.margin * 2);
 
@@ -783,7 +946,7 @@ export class ProfessionalPDFGenerationService {
        .stroke();
 
     // 회사 정보 - 줄간격 충분히 확보
-    doc.font(this.FONTS.bold)
+    doc.font(fonts.bold)
        .fontSize(8)
        .fillColor(this.COLORS.darkNavy)
        .text(orderData.issuerCompany.name, this.LAYOUT.margin, footerY + 5);
@@ -795,7 +958,7 @@ export class ProfessionalPDFGenerationService {
       `사업자번호: ${orderData.issuerCompany.businessNumber}`,
     ].filter(Boolean).join(' | ');
 
-    doc.font(this.FONTS.regular)
+    doc.font(fonts.regular)
        .fontSize(6.5)
        .fillColor(this.COLORS.gray)
        .text(footerInfo, this.LAYOUT.margin, footerY + 18, {  // 16 -> 18로 증가
@@ -804,7 +967,7 @@ export class ProfessionalPDFGenerationService {
 
     // 문서 정보
     const docInfo = `생성일시: ${format(orderData.metadata.generatedAt, 'yyyy-MM-dd HH:mm')} | ${orderData.metadata.templateVersion}`;
-    doc.font(this.FONTS.regular)
+    doc.font(fonts.regular)
        .fontSize(6)
        .fillColor(this.COLORS.gray)
        .text(docInfo, this.LAYOUT.margin, footerY + 28, {  // 25 -> 28로 증가
@@ -915,25 +1078,81 @@ export class ProfessionalPDFGenerationService {
       // PDF 생성
       const pdfBuffer = await this.generateProfessionalPDF(orderData);
 
-      // 생성 이력 저장
-      if (user?.id) {
-        await db.insert(emailSendHistory).values({
-          orderId,
-          userId: user.id,
-          recipientEmail: vendor?.email || '',
-          recipientName: vendor?.name || '',
-          subject: `구매발주서 - ${orderData.orderNumber}`,
-          body: 'PDF 생성됨',
-          status: 'generated',
-          sentAt: new Date(),
-          attachmentPaths: [`purchase_order_${orderData.orderNumber}.pdf`],
-        });
-      }
+      // 생성 이력 저장 (PDF 생성만 하는 경우이므로 이력 저장 생략)
+      // 이메일 발송이 아닌 PDF 생성만 하는 경우이므로 이력을 저장하지 않음
+      console.log('📋 [PDF] PDF 생성 완료 - 이메일 발송 히스토리는 별도 저장');
 
       return pdfBuffer;
     } catch (error) {
       console.error('Error generating PDF from order:', error);
       throw error;
+    }
+  }
+
+  /**
+   * 발주서 ID로 전문적인 PDF 생성 및 DB 저장 (Vercel 최적화)
+   * 라우터에서 호출하는 메인 메서드
+   */
+  static async generateProfessionalPurchaseOrderPDF(orderId: number, userId: string): Promise<{
+    success: boolean;
+    attachmentId?: number;
+    pdfPath?: string;
+    error?: string;
+  }> {
+    try {
+      console.log(`🚀 [Professional PDF] 발주서 PDF 생성 시작 - Order ID: ${orderId}`);
+      
+      // 1. PDF 버퍼 생성 (기존 로직 사용)
+      const pdfBuffer = await this.generatePDFFromOrder(orderId);
+      
+      // 2. 파일 저장을 위한 디렉토리 및 파일명 설정
+      const uploadsDir = getUploadsDir();
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const fileName = `professional_purchase_order_${orderId}_${timestamp}.pdf`;
+      const filePath = path.join(uploadsDir, fileName);
+      
+      // 3. 파일 시스템에 저장
+      await fs.promises.writeFile(filePath, pdfBuffer);
+      console.log(`💾 [Professional PDF] PDF 파일 저장 완료: ${filePath}`);
+      
+      // 4. DB에 첨부파일 레코드 생성
+      const attachmentResult = await db.insert(attachments).values({
+        orderId,
+        originalName: fileName,
+        storedName: fileName, // 스키마의 필수 필드
+        filePath,
+        fileSize: pdfBuffer.length,
+        mimeType: 'application/pdf',
+        uploadedBy: userId, // 이미 문자열
+        uploadedAt: new Date(),
+      }).returning({ id: attachments.id });
+      
+      const attachmentId = attachmentResult[0].id;
+      console.log(`✅ [Professional PDF] DB 레코드 생성 완료 - Attachment ID: ${attachmentId}`);
+      
+      return {
+        success: true,
+        attachmentId,
+        pdfPath: filePath
+      };
+      
+    } catch (error) {
+      console.error('❌ [Professional PDF] 생성 실패:', error);
+      
+      // Vercel 특화 에러 처리
+      if (process.env.VERCEL) {
+        console.error('☁️ [Professional PDF] Vercel 환경에서 PDF 생성 실패');
+        console.error('📊 [Professional PDF] 가능한 원인:');
+        console.error('   - 서버리스 함수 메모리 제한 초과');
+        console.error('   - Cold Start로 인한 타임아웃');
+        console.error('   - 폰트 파일 로딩 실패');
+        console.error('   - PDFKit 초기화 실패');
+      }
+      
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'PDF 생성 중 알 수 없는 오류 발생'
+      };
     }
   }
 

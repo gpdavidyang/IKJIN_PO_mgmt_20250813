@@ -1615,7 +1615,8 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
       to, 
       cc, 
       subject, 
-      message: message ? '[메시지 있음]' : '[메시지 없음]',
+      message: message ? `[메시지 있음: ${message.substring(0, 50)}...]` : '[메시지 없음]',
+      messageLength: message ? message.length : 0,
       selectedAttachmentIds
     });
     

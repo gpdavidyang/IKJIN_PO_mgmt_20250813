@@ -435,6 +435,13 @@ export class POEmailService {
       console.log('✅ POEmailService.sendEmail 성공:', info.messageId);
       
       // 이메일 발송 이력 저장
+      console.log('📧 이메일 발송 이력 저장 시도:', {
+        hasOrderInfo: !!orderInfo,
+        orderId: orderInfo?.orderId,
+        senderUserId: orderInfo?.senderUserId,
+        orderNumber: orderInfo?.orderNumber
+      });
+      
       if (orderInfo?.orderId && orderInfo?.senderUserId) {
         try {
           const toArray = Array.isArray(options.to) ? options.to : [options.to];
@@ -448,7 +455,17 @@ export class POEmailService {
             size: att.path ? (fs.existsSync(att.path) ? fs.statSync(att.path).size : 0) : 0
           })) || [];
 
-          await this.db.insert(emailSendHistory).values({
+          console.log('📧 이메일 히스토리 데이터 준비:', {
+            orderId: orderInfo.orderId,
+            orderNumber: orderInfo.orderNumber,
+            senderUserId: orderInfo.senderUserId,
+            recipientsCount: toArray.length,
+            ccCount: ccArray.length,
+            attachmentsCount: attachmentFiles.length,
+            messageContentLength: (options.html || options.text || '').length
+          });
+
+          const historyRecord = await this.db.insert(emailSendHistory).values({
             orderId: orderInfo.orderId,
             orderNumber: orderInfo.orderNumber || null,
             senderUserId: orderInfo.senderUserId,
@@ -464,13 +481,25 @@ export class POEmailService {
             sentAt: new Date(),
             createdAt: new Date(),
             updatedAt: new Date()
-          });
+          }).returning({ id: emailSendHistory.id });
           
-          console.log('✅ 이메일 발송 이력 저장 성공');
+          console.log('✅ 이메일 발송 이력 저장 성공, 생성된 ID:', historyRecord[0]?.id);
         } catch (historyError) {
           console.error('⚠️ 이메일 발송 이력 저장 실패:', historyError);
+          console.error('⚠️ 실패한 데이터:', {
+            orderId: orderInfo.orderId,
+            orderNumber: orderInfo.orderNumber,
+            senderUserId: orderInfo.senderUserId,
+            errorDetails: historyError instanceof Error ? historyError.message : 'Unknown error'
+          });
           // 이력 저장 실패는 이메일 발송 성공에 영향을 주지 않음
         }
+      } else {
+        console.warn('⚠️ 이메일 발송 이력 저장 건너뜀 - 필수 파라미터 누락:', {
+          hasOrderInfo: !!orderInfo,
+          orderId: orderInfo?.orderId,
+          senderUserId: orderInfo?.senderUserId
+        });
       }
       
       return {
@@ -482,13 +511,20 @@ export class POEmailService {
       console.error('❌ POEmailService.sendEmail 실패:', error);
       
       // 이메일 발송 실패 이력 저장
+      console.log('📧 이메일 발송 실패 이력 저장 시도:', {
+        hasOrderInfo: !!orderInfo,
+        orderId: orderInfo?.orderId,
+        senderUserId: orderInfo?.senderUserId,
+        orderNumber: orderInfo?.orderNumber
+      });
+      
       if (orderInfo?.orderId && orderInfo?.senderUserId) {
         try {
           const toArray = Array.isArray(options.to) ? options.to : [options.to];
           const ccArray = options.cc ? (Array.isArray(options.cc) ? options.cc : [options.cc]) : [];
           const bccArray = options.bcc ? (Array.isArray(options.bcc) ? options.bcc : [options.bcc]) : [];
 
-          await this.db.insert(emailSendHistory).values({
+          const failureRecord = await this.db.insert(emailSendHistory).values({
             orderId: orderInfo.orderId,
             orderNumber: orderInfo.orderNumber || null,
             senderUserId: orderInfo.senderUserId,
@@ -505,12 +541,24 @@ export class POEmailService {
             sentAt: null,
             createdAt: new Date(),
             updatedAt: new Date()
-          });
+          }).returning({ id: emailSendHistory.id });
           
-          console.log('✅ 이메일 발송 실패 이력 저장 성공');
+          console.log('✅ 이메일 발송 실패 이력 저장 성공, 생성된 ID:', failureRecord[0]?.id);
         } catch (historyError) {
           console.error('⚠️ 이메일 발송 실패 이력 저장 실패:', historyError);
+          console.error('⚠️ 실패한 데이터:', {
+            orderId: orderInfo?.orderId,
+            orderNumber: orderInfo?.orderNumber,
+            senderUserId: orderInfo?.senderUserId,
+            errorDetails: historyError instanceof Error ? historyError.message : 'Unknown error'
+          });
         }
+      } else {
+        console.warn('⚠️ 이메일 발송 실패 이력 저장 건너뜀 - 필수 파라미터 누락:', {
+          hasOrderInfo: !!orderInfo,
+          orderId: orderInfo?.orderId,
+          senderUserId: orderInfo?.senderUserId
+        });
       }
       
       return {
@@ -524,6 +572,13 @@ export class POEmailService {
    * 이메일 내용 생성
    */
   private generateEmailContent(options: POEmailOptions): string {
+    console.log('📧 이메일 콘텐츠 생성:', {
+      orderNumber: options.orderNumber,
+      vendorName: options.vendorName,
+      hasAdditionalMessage: !!options.additionalMessage,
+      additionalMessageLength: options.additionalMessage ? options.additionalMessage.length : 0,
+      additionalMessagePreview: options.additionalMessage ? options.additionalMessage.substring(0, 100) : null
+    });
     const formatCurrency = (amount: number) => {
       return new Intl.NumberFormat('ko-KR', {
         style: 'currency',
