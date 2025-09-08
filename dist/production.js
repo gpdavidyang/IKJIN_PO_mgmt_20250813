@@ -1644,1485 +1644,553 @@ var init_excel_input_sheet_remover = __esm({
   }
 });
 
-// server/utils/korean-font-manager.ts
-import * as fs6 from "fs";
-import * as path4 from "path";
-var KoreanFontManager, fontManager;
-var init_korean_font_manager = __esm({
-  "server/utils/korean-font-manager.ts"() {
-    "use strict";
-    KoreanFontManager = class _KoreanFontManager {
-      constructor() {
-        this.fontCache = /* @__PURE__ */ new Map();
-        this.base64Cache = /* @__PURE__ */ new Map();
-        this.initializeFonts();
-      }
-      static {
-        // 지원 폰트 목록 (우선순위 순)
-        this.FONT_PRIORITIES = [
-          {
-            name: "NotoSansKR",
-            path: process.env.VERCEL ? path4.join(process.cwd(), "fonts", "NotoSansKR-Regular.ttf") : path4.join(process.cwd(), "fonts", "NotoSansKR-Regular.ttf"),
-            available: false
-          },
-          {
-            name: "NanumGothic",
-            path: process.env.VERCEL ? path4.join(process.cwd(), "fonts", "NanumGothic-Regular.ttf") : path4.join(process.cwd(), "fonts", "NanumGothic-Regular.ttf"),
-            available: false
-          },
-          // Fallback 시스템 폰트 (로컬 환경용)
-          {
-            name: "AppleGothic",
-            path: "/System/Library/Fonts/Supplemental/AppleGothic.ttf",
-            available: false
-          },
-          {
-            name: "AppleSDGothicNeo",
-            path: "/System/Library/Fonts/AppleSDGothicNeo.ttc",
-            available: false
-          },
-          {
-            name: "MalgunGothic",
-            path: "C:\\Windows\\Fonts\\malgun.ttf",
-            available: false
-          },
-          {
-            name: "NanumGothicLinux",
-            path: "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",
-            available: false
-          }
-        ];
-      }
-      static getInstance() {
-        if (!_KoreanFontManager.instance) {
-          _KoreanFontManager.instance = new _KoreanFontManager();
-        }
-        return _KoreanFontManager.instance;
-      }
-      /**
-       * 사용 가능한 폰트 초기화 및 검색
-       */
-      initializeFonts() {
-        console.log("\u{1F50D} [FontManager] \uD55C\uAE00 \uD3F0\uD2B8 \uCD08\uAE30\uD654 \uC2DC\uC791...");
-        console.log(`\u{1F50D} [FontManager] \uD658\uACBD: ${process.env.VERCEL ? "Vercel" : "Local"}, \uC791\uC5C5\uB514\uB809\uD1A0\uB9AC: ${process.cwd()}`);
-        if (process.env.VERCEL) {
-          console.log("\u2601\uFE0F [FontManager] Vercel \uD658\uACBD - \uBC88\uB4E4\uB41C \uD3F0\uD2B8 \uD0D0\uC0C9");
-          try {
-            const bundledFontsDir = path4.join(process.cwd(), "fonts");
-            console.log(`\u{1F4C2} [FontManager] \uBC88\uB4E4\uB41C \uD3F0\uD2B8 \uB514\uB809\uD1A0\uB9AC \uD655\uC778: ${bundledFontsDir}`);
-            if (fs6.existsSync(bundledFontsDir)) {
-              const files = fs6.readdirSync(bundledFontsDir);
-              console.log(`\u{1F4CB} [FontManager] \uBC88\uB4E4\uB41C \uD30C\uC77C \uBAA9\uB85D:`, files);
-            } else {
-              console.log(`\u274C [FontManager] \uBC88\uB4E4\uB41C \uD3F0\uD2B8 \uB514\uB809\uD1A0\uB9AC \uC5C6\uC74C: ${bundledFontsDir}`);
-            }
-          } catch (error) {
-            console.log(`\u26A0\uFE0F [FontManager] \uBC88\uB4E4 \uD655\uC778 \uC2E4\uD328:`, error);
-          }
-        }
-        for (const font of _KoreanFontManager.FONT_PRIORITIES) {
-          try {
-            console.log(`\u{1F50D} [FontManager] \uD3F0\uD2B8 \uD655\uC778 \uC911: ${font.name} at ${font.path}`);
-            if (fs6.existsSync(font.path)) {
-              const stats = fs6.statSync(font.path);
-              font.available = true;
-              font.size = stats.size;
-              this.fontCache.set(font.name, { ...font });
-              console.log(`\u2705 [FontManager] \uD3F0\uD2B8 \uBC1C\uACAC: ${font.name} (${Math.round(stats.size / 1024)}KB)`);
-              if (process.env.VERCEL) {
-                try {
-                  const fontBuffer = fs6.readFileSync(font.path);
-                  const base64Data = fontBuffer.toString("base64");
-                  this.base64Cache.set(font.name, base64Data);
-                  console.log(`\u{1F4BE} [FontManager] Vercel\uC6A9 Base64 \uBBF8\uB9AC \uB85C\uB4DC: ${font.name}`);
-                } catch (base64Error) {
-                  console.warn(`\u26A0\uFE0F [FontManager] Base64 \uBBF8\uB9AC \uB85C\uB4DC \uC2E4\uD328: ${font.name}`, base64Error);
-                }
-              }
-            } else {
-              font.available = false;
-              console.log(`\u274C [FontManager] \uD3F0\uD2B8 \uC5C6\uC74C: ${font.name} - ${font.path}`);
-            }
-          } catch (error) {
-            font.available = false;
-            console.log(`\u26A0\uFE0F [FontManager] \uD3F0\uD2B8 \uC811\uADFC \uC2E4\uD328: ${font.name} - ${error}`);
-          }
-        }
-        const availableFonts = Array.from(this.fontCache.values()).filter((f) => f.available);
-        console.log(`\u{1F4CA} [FontManager] \uCD1D ${availableFonts.length}\uAC1C \uD55C\uAE00 \uD3F0\uD2B8 \uC0AC\uC6A9 \uAC00\uB2A5`);
-        if (process.env.VERCEL && availableFonts.length === 0) {
-          console.log("\u{1F504} [FontManager] Vercel\uC5D0\uC11C \uD3F0\uD2B8 \uC5C6\uC74C - \uC784\uBCA0\uB514\uB4DC \uD3F0\uD2B8 \uC2DC\uB3C4");
-          this.loadEmbeddedFonts();
-        }
-      }
-      /**
-       * 최적의 한글 폰트 선택
-       */
-      getBestKoreanFont() {
-        for (const font of _KoreanFontManager.FONT_PRIORITIES) {
-          const cachedFont = this.fontCache.get(font.name);
-          if (cachedFont && cachedFont.available) {
-            return cachedFont;
-          }
-        }
-        return null;
-      }
-      /**
-       * 폰트를 Base64로 인코딩 (서버리스 환경용)
-       */
-      async getFontAsBase64(fontName) {
-        try {
-          const font = fontName ? this.fontCache.get(fontName) : this.getBestKoreanFont();
-          if (!font || !font.available) {
-            console.warn(`\u26A0\uFE0F [FontManager] \uD3F0\uD2B8 \uC0AC\uC6A9 \uBD88\uAC00: ${fontName || "auto-select"}`);
-            return null;
-          }
-          const cacheKey = font.name;
-          if (this.base64Cache.has(cacheKey)) {
-            console.log(`\u{1F4BE} [FontManager] Base64 \uCE90\uC2DC \uD788\uD2B8: ${font.name}`);
-            return this.base64Cache.get(cacheKey);
-          }
-          const fontBuffer = fs6.readFileSync(font.path);
-          const base64Data = fontBuffer.toString("base64");
-          this.base64Cache.set(cacheKey, base64Data);
-          console.log(`\u2705 [FontManager] Base64 \uC778\uCF54\uB529 \uC644\uB8CC: ${font.name} (${Math.round(base64Data.length / 1024)}KB)`);
-          return base64Data;
-        } catch (error) {
-          console.error(`\u274C [FontManager] Base64 \uC778\uCF54\uB529 \uC2E4\uD328:`, error);
-          return null;
-        }
-      }
-      /**
-       * PDFKit에서 사용할 폰트 버퍼 반환
-       */
-      getFontBuffer(fontName) {
-        try {
-          const font = fontName ? this.fontCache.get(fontName) : this.getBestKoreanFont();
-          if (!font || !font.available) {
-            return null;
-          }
-          if (process.env.VERCEL) {
-            const cacheKey = font.name;
-            if (this.base64Cache.has(cacheKey)) {
-              console.log(`\u{1F4BE} [FontManager] Vercel - Base64 \uCE90\uC2DC\uC5D0\uC11C Buffer \uBC18\uD658: ${font.name}`);
-              const base64Data = this.base64Cache.get(cacheKey);
-              return Buffer.from(base64Data, "base64");
-            }
-            if (font.path.startsWith("embedded://")) {
-              console.log(`\u{1F4E6} [FontManager] \uC784\uBCA0\uB514\uB4DC \uD3F0\uD2B8 \uCC98\uB9AC \uC911: ${font.name}`);
-              const minimalKoreanFont = this.getMinimalKoreanFontBuffer();
-              if (minimalKoreanFont) {
-                console.log(`\u2705 [FontManager] \uC784\uBCA0\uB514\uB4DC \uD3F0\uD2B8 Buffer \uBC18\uD658: ${font.name}`);
-                return minimalKoreanFont;
-              }
-            }
-            try {
-              const fontBuffer = fs6.readFileSync(font.path);
-              const base64Data = fontBuffer.toString("base64");
-              this.base64Cache.set(cacheKey, base64Data);
-              console.log(`\u2705 [FontManager] Vercel - \uD3F0\uD2B8 \uCE90\uC2DC \uD6C4 Buffer \uBC18\uD658: ${font.name}`);
-              return fontBuffer;
-            } catch (vercelError) {
-              console.error(`\u274C [FontManager] Vercel \uD3F0\uD2B8 \uB85C\uB4DC \uC2E4\uD328: ${font.name}`, vercelError);
-              const minimalFont = this.getMinimalKoreanFontBuffer();
-              if (minimalFont) {
-                console.log(`\u{1F6A8} [FontManager] \uCD5C\uD6C4 \uC218\uB2E8: \uCD5C\uC18C \uD55C\uAE00 \uD3F0\uD2B8 \uC0AC\uC6A9`);
-                return minimalFont;
-              }
-              return null;
-            }
-          }
-          return fs6.readFileSync(font.path);
-        } catch (error) {
-          console.error(`\u274C [FontManager] \uD3F0\uD2B8 \uBC84\uD37C \uB85C\uB4DC \uC2E4\uD328:`, error);
-          return null;
-        }
-      }
-      /**
-       * 사용 가능한 폰트 목록 반환
-       */
-      getAvailableFonts() {
-        return Array.from(this.fontCache.values()).filter((f) => f.available);
-      }
-      /**
-       * 폰트 지원 상태 보고서
-       */
-      getFontReport() {
-        const availableFonts = this.getAvailableFonts();
-        const bestFont = this.getBestKoreanFont();
-        return {
-          environment: process.env.VERCEL ? "Vercel" : "Local",
-          totalFonts: _KoreanFontManager.FONT_PRIORITIES.length,
-          availableFonts: availableFonts.length,
-          recommendedFont: bestFont?.name || null,
-          fonts: availableFonts
-        };
-      }
-      /**
-       * 한글 텍스트 안전 변환 (폰트 없을 때 대체)
-       */
-      safeKoreanText(text2, hasKoreanFont = true) {
-        if (!text2) return "";
-        if (hasKoreanFont) {
-          return text2.replace(/[\x00-\x1F\x7F]/g, "").replace(/[\u2028\u2029]/g, "").trim();
-        }
-        const koreanToEnglish = {
-          "\uAD6C\uB9E4\uBC1C\uC8FC\uC11C": "Purchase Order",
-          "\uBC1C\uC8FC\uC11C": "Purchase Order",
-          "\uBC1C\uC8FC\uBC88\uD638": "Order No",
-          "\uBC1C\uC8FC\uC5C5\uCCB4": "Issuer Company",
-          "\uC218\uC8FC\uC5C5\uCCB4": "Vendor Company",
-          "\uAC70\uB798\uCC98": "Vendor",
-          "\uD488\uBAA9\uBA85": "Item Name",
-          "\uD488\uBAA9": "Item",
-          "\uADDC\uACA9": "Specification",
-          "\uC218\uB7C9": "Quantity",
-          "\uB2E8\uC704": "Unit",
-          "\uB2E8\uAC00": "Unit Price",
-          "\uAE08\uC561": "Amount",
-          "\uD569\uACC4": "Total",
-          "\uCD1D \uAE08\uC561": "Total Amount",
-          "\uC18C\uACC4": "Subtotal",
-          "\uBD80\uAC00\uC138": "VAT",
-          "\uC0AC\uC5C5\uC790\uB4F1\uB85D\uBC88\uD638": "Business Registration No",
-          "\uC0AC\uC5C5\uC790\uBC88\uD638": "Business No",
-          "\uB300\uD45C\uC790": "Representative",
-          "\uB2F4\uB2F9\uC790": "Contact Person",
-          "\uC5F0\uB77D\uCC98": "Phone",
-          "\uC804\uD654\uBC88\uD638": "Phone",
-          "\uC8FC\uC18C": "Address",
-          "\uC774\uBA54\uC77C": "Email",
-          "\uD604\uC7A5\uBA85": "Project Name",
-          "\uD604\uC7A5\uC815\uBCF4": "Project Info",
-          "\uD604\uC7A5": "Project",
-          "\uBC1C\uC8FC\uC77C": "Order Date",
-          "\uB0A9\uAE30\uC77C": "Delivery Date",
-          "\uB4F1\uB85D\uC77C": "Created Date",
-          "\uC791\uC131\uC790": "Creator",
-          "\uD2B9\uC774\uC0AC\uD56D": "Remarks",
-          "\uBE44\uACE0": "Notes",
-          "\uCC38\uACE0\uC0AC\uD56D": "Reference",
-          "\uC5C5\uCCB4\uBA85": "Company Name",
-          "\uC77C\uC815": "Schedule",
-          "\uC21C\uBC88": "No"
-        };
-        let result = text2;
-        for (const [korean, english] of Object.entries(koreanToEnglish)) {
-          result = result.replace(new RegExp(korean, "g"), english);
-        }
-        if (/[ᄀ-ᇿ㄰-㆏ꥠ-꥿가-힯ힰ-퟿]/g.test(result)) {
-          result = result.replace(/[ᄀ-ᇿ㄰-㆏ꥠ-꥿가-힯ힰ-퟿]+/g, "[Korean Text]");
-        }
-        return result.replace(/[\x00-\x1F\x7F]/g, "").replace(/[\u2028\u2029]/g, "").trim();
-      }
-      /**
-       * Vercel 환경에서 폰트 최적화 상태 확인
-       */
-      isVercelOptimized() {
-        if (!process.env.VERCEL) {
-          return true;
-        }
-        const projectFonts = this.getAvailableFonts().filter(
-          (font) => font.path.includes(process.cwd())
-        );
-        return projectFonts.length > 0;
-      }
-      /**
-       * Vercel용 임베디드 폰트 로드 (Base64 방식)
-       */
-      loadEmbeddedFonts() {
-        console.log("\u{1F504} [FontManager] \uC784\uBCA0\uB514\uB4DC \uD3F0\uD2B8 \uB85C\uB4DC \uC2DC\uB3C4...");
-        const embeddedFonts = {
-          "NotoSansKR-Basic": {
-            name: "NotoSansKR-Basic",
-            path: "embedded://NotoSansKR-Basic",
-            available: true,
-            size: 0
-          }
-        };
-        for (const [key, font] of Object.entries(embeddedFonts)) {
-          this.fontCache.set(font.name, font);
-          console.log(`\u{1F4E6} [FontManager] \uC784\uBCA0\uB514\uB4DC \uD3F0\uD2B8 \uB4F1\uB85D: ${font.name}`);
-        }
-      }
-      /**
-       * 폰트 번들링 상태 진단
-       */
-      diagnoseFontIssues() {
-        const issues = [];
-        const fontDir = path4.join(process.cwd(), "fonts");
-        const fontDirExists = fs6.existsSync(fontDir);
-        let bundledFiles = [];
-        if (fontDirExists) {
-          try {
-            bundledFiles = fs6.readdirSync(fontDir);
-          } catch (error) {
-            issues.push(`\uD3F0\uD2B8 \uB514\uB809\uD1A0\uB9AC \uC77D\uAE30 \uC2E4\uD328: ${error}`);
-          }
-        } else {
-          issues.push("\uD3F0\uD2B8 \uB514\uB809\uD1A0\uB9AC\uAC00 \uC874\uC7AC\uD558\uC9C0 \uC54A\uC74C");
-        }
-        const availableFonts = this.getAvailableFonts().length;
-        if (availableFonts === 0) {
-          issues.push("\uC0AC\uC6A9 \uAC00\uB2A5\uD55C \uD55C\uAE00 \uD3F0\uD2B8\uAC00 \uC5C6\uC74C");
-        }
-        if (process.env.VERCEL && !fontDirExists) {
-          issues.push("Vercel \uD658\uACBD\uC5D0\uC11C \uD3F0\uD2B8\uAC00 \uBC88\uB4E4\uC5D0 \uD3EC\uD568\uB418\uC9C0 \uC54A\uC74C");
-        }
-        return {
-          environment: process.env.VERCEL ? "Vercel" : "Local",
-          workingDirectory: process.cwd(),
-          fontDirectory: fontDir,
-          fontDirectoryExists: fontDirExists,
-          bundledFiles,
-          availableFonts,
-          issues
-        };
-      }
-      /**
-       * 최소한의 한글 폰트 버퍼 반환 (임베디드용)
-       * 실제 운영에서는 적절한 한글 폰트 파일을 번들해야 함
-       */
-      getMinimalKoreanFontBuffer() {
-        try {
-          const fallbackFontPaths = [
-            "/System/Library/Fonts/AppleGothic.ttf",
-            // macOS
-            "/System/Library/Fonts/Supplemental/AppleGothic.ttf",
-            // macOS alternative
-            "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",
-            // Linux
-            "/Windows/Fonts/malgun.ttf"
-            // Windows
-          ];
-          for (const fontPath of fallbackFontPaths) {
-            try {
-              if (fs6.existsSync(fontPath)) {
-                const fontBuffer = fs6.readFileSync(fontPath);
-                console.log(`\u2705 [FontManager] \uC2DC\uC2A4\uD15C \uD3F0\uD2B8 \uBC1C\uACAC: ${fontPath}`);
-                return fontBuffer;
-              }
-            } catch (error) {
-              continue;
-            }
-          }
-          console.log(`\u26A0\uFE0F [FontManager] \uC2DC\uC2A4\uD15C \uD3F0\uD2B8\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC74C - null \uBC18\uD658`);
-          return null;
-        } catch (error) {
-          console.error(`\u274C [FontManager] \uCD5C\uC18C \uD3F0\uD2B8 \uB85C\uB4DC \uC2E4\uD328:`, error);
-          return null;
-        }
-      }
-    };
-    fontManager = KoreanFontManager.getInstance();
-  }
-});
-
-// server/utils/email-settings-encryption.ts
-import crypto2 from "crypto";
-var EmailSettingsEncryption;
-var init_email_settings_encryption = __esm({
-  "server/utils/email-settings-encryption.ts"() {
-    "use strict";
-    EmailSettingsEncryption = class {
-      static {
-        this.algorithm = "aes-256-gcm";
-      }
-      static {
-        this.keyLength = 32;
-      }
-      static {
-        // 256 bits
-        this.ivLength = 16;
-      }
-      // 128 bits
-      /**
-       * 암호화 키 생성 (환경 변수 기반)
-       */
-      static getEncryptionKey() {
-        const secret = process.env.ENCRYPTION_SECRET || "default-secret-key-change-in-production";
-        return crypto2.scryptSync(secret, "salt", this.keyLength);
-      }
-      /**
-       * 비밀번호 암호화
-       * @param plainText 평문 비밀번호
-       * @returns 암호화된 문자열 (iv:tag:encrypted 형태)
-       */
-      static encrypt(plainText) {
-        try {
-          const key = this.getEncryptionKey();
-          const iv = crypto2.randomBytes(this.ivLength);
-          const cipher = crypto2.createCipherGCM(this.algorithm, key, iv);
-          cipher.setAAD(Buffer.from("email-settings", "utf8"));
-          let encrypted = cipher.update(plainText, "utf8", "hex");
-          encrypted += cipher.final("hex");
-          const tag = cipher.getAuthTag();
-          return `${iv.toString("hex")}:${tag.toString("hex")}:${encrypted}`;
-        } catch (error) {
-          console.error("\uC554\uD638\uD654 \uC2E4\uD328:", error);
-          throw new Error("\uBE44\uBC00\uBC88\uD638 \uC554\uD638\uD654\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4");
-        }
-      }
-      /**
-       * 비밀번호 복호화
-       * @param encryptedText 암호화된 문자열 (iv:tag:encrypted 형태)
-       * @returns 평문 비밀번호
-       */
-      static decrypt(encryptedText) {
-        try {
-          const parts = encryptedText.split(":");
-          if (parts.length !== 3) {
-            throw new Error("\uC798\uBABB\uB41C \uC554\uD638\uD654 \uD615\uC2DD");
-          }
-          const [ivHex, tagHex, encrypted] = parts;
-          const key = this.getEncryptionKey();
-          const iv = Buffer.from(ivHex, "hex");
-          const tag = Buffer.from(tagHex, "hex");
-          const decipher = crypto2.createDecipherGCM(this.algorithm, key, iv);
-          decipher.setAuthTag(tag);
-          decipher.setAAD(Buffer.from("email-settings", "utf8"));
-          let decrypted = decipher.update(encrypted, "hex", "utf8");
-          decrypted += decipher.final("utf8");
-          return decrypted;
-        } catch (error) {
-          console.error("\uBCF5\uD638\uD654 \uC2E4\uD328:", error);
-          throw new Error("\uBE44\uBC00\uBC88\uD638 \uBCF5\uD638\uD654\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4");
-        }
-      }
-      /**
-       * 암호화 테스트 함수
-       */
-      static test() {
-        try {
-          const testPassword = "test-password-123";
-          const encrypted = this.encrypt(testPassword);
-          const decrypted = this.decrypt(encrypted);
-          return testPassword === decrypted;
-        } catch (error) {
-          console.error("\uC554\uD638\uD654 \uD14C\uC2A4\uD2B8 \uC2E4\uD328:", error);
-          return false;
-        }
-      }
-      /**
-       * 안전한 비밀번호 비교
-       * @param plainText 평문 비밀번호
-       * @param encryptedText 암호화된 비밀번호
-       * @returns 일치 여부
-       */
-      static compare(plainText, encryptedText) {
-        try {
-          const decrypted = this.decrypt(encryptedText);
-          return plainText === decrypted;
-        } catch (error) {
-          return false;
-        }
-      }
-      /**
-       * 이메일 설정 마스킹 (UI 표시용)
-       * @param email 이메일 주소
-       * @returns 마스킹된 이메일
-       */
-      static maskEmail(email) {
-        if (!email || !email.includes("@")) {
-          return "***@***.***";
-        }
-        const [local, domain] = email.split("@");
-        const maskedLocal = local.length > 2 ? local.charAt(0) + "*".repeat(local.length - 2) + local.charAt(local.length - 1) : local;
-        return `${maskedLocal}@${domain}`;
-      }
-      /**
-       * 호스트 정보 마스킹 (보안을 위해)
-       * @param host SMTP 호스트
-       * @returns 마스킹된 호스트
-       */
-      static maskHost(host) {
-        if (!host) return "***";
-        if (host.includes(".")) {
-          const parts = host.split(".");
-          return parts.map(
-            (part, index2) => index2 === 0 || index2 === parts.length - 1 ? part : "*".repeat(part.length)
-          ).join(".");
-        }
-        return host.length > 4 ? host.substring(0, 2) + "*".repeat(host.length - 4) + host.substring(host.length - 2) : host;
-      }
-    };
-    if (process.env.NODE_ENV !== "production") {
-      if (EmailSettingsEncryption.test()) {
-        console.log("\u2705 \uC774\uBA54\uC77C \uC124\uC815 \uC554\uD638\uD654 \uAE30\uB2A5 \uC815\uC0C1 \uC791\uB3D9");
-      } else {
-        console.warn("\u26A0\uFE0F \uC774\uBA54\uC77C \uC124\uC815 \uC554\uD638\uD654 \uAE30\uB2A5 \uD14C\uC2A4\uD2B8 \uC2E4\uD328");
-      }
-    }
-  }
-});
-
-// server/services/email-settings-service.ts
-var email_settings_service_exports = {};
-__export(email_settings_service_exports, {
-  EmailSettingsService: () => EmailSettingsService
-});
-import { eq as eq8, desc as desc4 } from "drizzle-orm";
-import nodemailer2 from "nodemailer";
-var EmailSettingsService;
-var init_email_settings_service = __esm({
-  "server/services/email-settings-service.ts"() {
-    "use strict";
-    init_db();
-    init_schema();
-    init_email_settings_encryption();
-    EmailSettingsService = class _EmailSettingsService {
-      static {
-        this.settingsCache = null;
-      }
-      static {
-        this.cacheTimestamp = 0;
-      }
-      static {
-        this.CACHE_TTL = 5 * 60 * 1e3;
-      }
-      // 5분 캐시
-      /**
-       * 기본 설정 가져오기 (활성 + 기본 설정)
-       */
-      async getDefaultSettings() {
-        try {
-          if (_EmailSettingsService.isCacheValid()) {
-            return _EmailSettingsService.settingsCache;
-          }
-          const db4 = db;
-          const result = await db4.select().from(emailSettings).where(eq8(emailSettings.isActive, true)).orderBy(desc4(emailSettings.isDefault), desc4(emailSettings.updatedAt)).limit(1);
-          const setting = result[0] || null;
-          _EmailSettingsService.settingsCache = setting;
-          _EmailSettingsService.cacheTimestamp = Date.now();
-          return setting;
-        } catch (error) {
-          console.error("\uAE30\uBCF8 \uC774\uBA54\uC77C \uC124\uC815 \uC870\uD68C \uC2E4\uD328:", error);
-          return null;
-        }
-      }
-      /**
-       * 모든 설정 조회
-       */
-      async getAllSettings() {
-        try {
-          const db4 = db;
-          const result = await db4.select().from(emailSettings).orderBy(desc4(emailSettings.isDefault), desc4(emailSettings.updatedAt));
-          return result;
-        } catch (error) {
-          console.error("\uC774\uBA54\uC77C \uC124\uC815 \uBAA9\uB85D \uC870\uD68C \uC2E4\uD328:", error);
-          return [];
-        }
-      }
-      /**
-       * 새 설정 생성
-       */
-      async createSettings(data, createdBy) {
-        try {
-          const encryptedPassword = EmailSettingsEncryption.encrypt(data.smtpPass);
-          const db4 = db;
-          if (data.isDefault) {
-            await db4.update(emailSettings).set({ isDefault: false, updatedAt: /* @__PURE__ */ new Date() }).where(eq8(emailSettings.isDefault, true));
-          }
-          const insertData = {
-            ...data,
-            smtpPass: encryptedPassword,
-            createdBy
-          };
-          const result = await db4.insert(emailSettings).values(insertData).returning();
-          const newSetting = result[0];
-          this.invalidateCache();
-          return newSetting;
-        } catch (error) {
-          console.error("\uC774\uBA54\uC77C \uC124\uC815 \uC0DD\uC131 \uC2E4\uD328:", error);
-          throw new Error("\uC774\uBA54\uC77C \uC124\uC815 \uC0DD\uC131\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4");
-        }
-      }
-      /**
-       * 설정 업데이트
-       */
-      async updateSettings(id, data, updatedBy) {
-        try {
-          const db4 = db;
-          const updateData = {
-            ...data,
-            updatedAt: /* @__PURE__ */ new Date()
-          };
-          if (data.smtpPass && data.smtpPass !== "********") {
-            updateData.smtpPass = EmailSettingsEncryption.encrypt(data.smtpPass);
-          }
-          if (data.isDefault === true) {
-            await db4.update(emailSettings).set({ isDefault: false, updatedAt: /* @__PURE__ */ new Date() }).where(eq8(emailSettings.isDefault, true));
-          }
-          const result = await db4.update(emailSettings).set(updateData).where(eq8(emailSettings.id, id)).returning();
-          if (result.length === 0) {
-            throw new Error("\uC5C5\uB370\uC774\uD2B8\uD560 \uC124\uC815\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4");
-          }
-          this.invalidateCache();
-          return result[0];
-        } catch (error) {
-          console.error("\uC774\uBA54\uC77C \uC124\uC815 \uC5C5\uB370\uC774\uD2B8 \uC2E4\uD328:", error);
-          throw new Error("\uC774\uBA54\uC77C \uC124\uC815 \uC5C5\uB370\uC774\uD2B8\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4");
-        }
-      }
-      /**
-       * 설정 삭제
-       */
-      async deleteSettings(id) {
-        try {
-          const db4 = db;
-          const result = await db4.delete(emailSettings).where(eq8(emailSettings.id, id)).returning();
-          this.invalidateCache();
-          return result.length > 0;
-        } catch (error) {
-          console.error("\uC774\uBA54\uC77C \uC124\uC815 \uC0AD\uC81C \uC2E4\uD328:", error);
-          return false;
-        }
-      }
-      /**
-       * SMTP 연결 테스트
-       */
-      async testSMTPConnection(setting, testEmail) {
-        try {
-          const decryptedPassword = EmailSettingsEncryption.decrypt(setting.smtpPass);
-          const transporter2 = nodemailer2.createTransport({
-            host: setting.smtpHost,
-            port: setting.smtpPort,
-            secure: setting.smtpPort === 465,
-            auth: {
-              user: setting.smtpUser,
-              pass: decryptedPassword
-            },
-            tls: {
-              rejectUnauthorized: false
-            }
-          });
-          await transporter2.verify();
-          const info = await transporter2.sendMail({
-            from: setting.fromName ? `"${setting.fromName}" <${setting.smtpUser}>` : setting.smtpUser,
-            to: testEmail,
-            subject: "[IKJIN] \uC774\uBA54\uC77C \uC124\uC815 \uD14C\uC2A4\uD2B8",
-            html: `
-          <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px;">
-            <h2 style="color: #3b82f6;">\uC774\uBA54\uC77C \uC124\uC815 \uD14C\uC2A4\uD2B8 \uC644\uB8CC</h2>
-            <p>IKJIN \uAD6C\uB9E4 \uBC1C\uC8FC \uAD00\uB9AC \uC2DC\uC2A4\uD15C\uC758 \uC774\uBA54\uC77C \uC124\uC815\uC774 \uC815\uC0C1\uC801\uC73C\uB85C \uC791\uB3D9\uD569\uB2C8\uB2E4.</p>
-            <hr style="margin: 20px 0; border: 1px solid #e5e7eb;">
-            <div style="background: #f9fafb; padding: 15px; border-radius: 5px;">
-              <h3 style="margin-top: 0; color: #374151;">\uC124\uC815 \uC815\uBCF4</h3>
-              <p><strong>SMTP \uC11C\uBC84:</strong> ${EmailSettingsEncryption.maskHost(setting.smtpHost)}</p>
-              <p><strong>\uD3EC\uD2B8:</strong> ${setting.smtpPort}</p>
-              <p><strong>\uBC1C\uC1A1\uC790:</strong> ${EmailSettingsEncryption.maskEmail(setting.smtpUser)}</p>
-              <p><strong>\uD14C\uC2A4\uD2B8 \uC2DC\uAC04:</strong> ${(/* @__PURE__ */ new Date()).toLocaleString("ko-KR")}</p>
-            </div>
-          </div>
-        `
-          });
-          await this.updateTestResult(setting.id, {
-            success: true,
-            messageId: info.messageId,
-            testedAt: /* @__PURE__ */ new Date(),
-            testEmail
-          });
-          return {
-            success: true,
-            messageId: info.messageId
-          };
-        } catch (error) {
-          console.error("SMTP \uC5F0\uACB0 \uD14C\uC2A4\uD2B8 \uC2E4\uD328:", error);
-          await this.updateTestResult(setting.id, {
-            success: false,
-            error: error.message,
-            testedAt: /* @__PURE__ */ new Date(),
-            testEmail
-          });
-          return {
-            success: false,
-            error: error.message
-          };
-        }
-      }
-      /**
-       * 환경 변수에서 현재 설정 읽기 (백워드 호환성)
-       */
-      getSettingsFromEnv() {
-        return {
-          smtpHost: process.env.SMTP_HOST || "smtp.naver.com",
-          smtpPort: parseInt(process.env.SMTP_PORT || "587"),
-          smtpUser: process.env.SMTP_USER || "",
-          // smtpPass는 평문으로 반환 (암호화는 저장 시)
-          fromName: "IKJIN \uAD6C\uB9E4 \uBC1C\uC8FC \uC2DC\uC2A4\uD15C",
-          description: "\uD658\uACBD \uBCC0\uC218\uC5D0\uC11C \uAC00\uC838\uC628 \uAE30\uBCF8 \uC124\uC815",
-          isActive: true,
-          isDefault: true
-        };
-      }
-      /**
-       * UI용 마스킹된 설정 반환
-       */
-      getMaskedSettings(setting) {
-        return {
-          ...setting,
-          smtpPass: "********",
-          smtpUser: EmailSettingsEncryption.maskEmail(setting.smtpUser),
-          smtpHost: EmailSettingsEncryption.maskHost(setting.smtpHost)
-        };
-      }
-      /**
-       * 실제 SMTP 설정 반환 (이메일 발송용)
-       */
-      async getDecryptedSettings(settingId) {
-        try {
-          let setting;
-          if (settingId) {
-            const db4 = db;
-            const result = await db4.select().from(emailSettings).where(eq8(emailSettings.id, settingId)).limit(1);
-            setting = result[0] || null;
-          } else {
-            setting = await this.getDefaultSettings();
-          }
-          if (!setting) {
-            return {
-              host: process.env.SMTP_HOST || "smtp.naver.com",
-              port: parseInt(process.env.SMTP_PORT || "587"),
-              secure: parseInt(process.env.SMTP_PORT || "587") === 465,
-              auth: {
-                user: process.env.SMTP_USER || "",
-                pass: process.env.SMTP_PASS || ""
-              },
-              tls: {
-                rejectUnauthorized: false
-              }
-            };
-          }
-          const decryptedPassword = EmailSettingsEncryption.decrypt(setting.smtpPass);
-          return {
-            host: setting.smtpHost,
-            port: setting.smtpPort,
-            secure: setting.smtpPort === 465,
-            auth: {
-              user: setting.smtpUser,
-              pass: decryptedPassword
-            },
-            tls: {
-              rejectUnauthorized: false
-            }
-          };
-        } catch (error) {
-          console.error("SMTP \uC124\uC815 \uBCF5\uD638\uD654 \uC2E4\uD328:", error);
-          return null;
-        }
-      }
-      /**
-       * 캐시 유효성 확인
-       */
-      static isCacheValid() {
-        return _EmailSettingsService.settingsCache !== null && Date.now() - _EmailSettingsService.cacheTimestamp < _EmailSettingsService.CACHE_TTL;
-      }
-      /**
-       * 캐시 무효화
-       */
-      invalidateCache() {
-        _EmailSettingsService.settingsCache = null;
-        _EmailSettingsService.cacheTimestamp = 0;
-      }
-      /**
-       * 테스트 결과 업데이트
-       */
-      async updateTestResult(settingId, testResult) {
-        try {
-          const db4 = db;
-          await db4.update(emailSettings).set({
-            lastTestedAt: /* @__PURE__ */ new Date(),
-            testResult,
-            updatedAt: /* @__PURE__ */ new Date()
-          }).where(eq8(emailSettings.id, settingId));
-        } catch (error) {
-          console.error("\uD14C\uC2A4\uD2B8 \uACB0\uACFC \uC5C5\uB370\uC774\uD2B8 \uC2E4\uD328:", error);
-        }
-      }
-    };
-  }
-});
-
 // server/services/professional-pdf-generation-service.ts
 var professional_pdf_generation_service_exports = {};
 __export(professional_pdf_generation_service_exports, {
-  ProfessionalPDFGenerationService: () => ProfessionalPDFGenerationService
+  ProfessionalPDFGenerationService: () => ProfessionalPDFGenerationService,
+  default: () => professional_pdf_generation_service_default
 });
-import * as fs7 from "fs";
-import * as path5 from "path";
+import PDFDocument from "pdfkit";
+import * as fs6 from "fs";
+import * as path4 from "path";
 import { format } from "date-fns";
-import { ko } from "date-fns/locale";
-import { eq as eq9, desc as desc5 } from "drizzle-orm";
-var ProfessionalPDFGenerationService;
+import { eq as eq8 } from "drizzle-orm";
+var ProfessionalPDFGenerationService, professional_pdf_generation_service_default;
 var init_professional_pdf_generation_service = __esm({
   "server/services/professional-pdf-generation-service.ts"() {
     "use strict";
     init_db();
     init_schema();
-    init_korean_font_manager();
     ProfessionalPDFGenerationService = class {
-      static async generateProfessionalPDF(orderData) {
-        console.log("\u{1F4C4} [ProfessionalPDF] \uD0C0\uAC9F \uB9E4\uCE6D PDF \uC0DD\uC131 \uC2DC\uC791");
-        return await this.generateTargetMatchingPDF(orderData);
+      static {
+        // 색상 정의 - 네이비/그레이 톤
+        this.COLORS = {
+          navy: "#1e3a5f",
+          // 메인 네이비
+          darkNavy: "#0f2340",
+          // 진한 네이비
+          gray: "#6b7280",
+          // 중간 그레이
+          lightGray: "#f3f4f6",
+          // 연한 그레이
+          borderGray: "#d1d5db",
+          // 테두리 그레이
+          black: "#000000",
+          white: "#ffffff",
+          blue: "#2563eb"
+          // 포인트 블루
+        };
       }
       static {
-        this.uploadDir = process.env.VERCEL ? "/tmp/pdf" : path5.join(process.cwd(), "uploads/pdf");
+        // 폰트 설정
+        this.FONTS = {
+          regular: "NotoSansKR-Regular",
+          bold: "NotoSansKR-Bold",
+          medium: "NotoSansKR-Medium"
+        };
       }
       static {
-        this.TEMPLATE_VERSION = "v2.0.0";
+        // 레이아웃 설정 - 더 컴팩트하게 조정
+        this.LAYOUT = {
+          pageWidth: 595.28,
+          // A4 width in points
+          pageHeight: 841.89,
+          // A4 height in points
+          margin: 30,
+          // 페이지 여백 (40->30)
+          headerHeight: 60,
+          // 헤더 높이 (80->60)
+          footerHeight: 50,
+          // 푸터 높이 (60->50)
+          sectionGap: 10,
+          // 섹션 간격 (15->10)
+          cellPadding: 5
+          // 셀 패딩 (8->5)
+        };
       }
-      static {
-        this.VAT_RATE = 0.1;
-      }
-      // 10% 부가세
       /**
-       * 시스템 이메일 설정 가져오기 (DB 우선, 환경변수 fallback)
+       * 전문적인 PDF 생성
        */
-      static async getSystemEmail() {
-        try {
-          const { EmailSettingsService: EmailSettingsService2 } = await Promise.resolve().then(() => (init_email_settings_service(), email_settings_service_exports));
-          const emailService5 = new EmailSettingsService2();
-          const settings = await emailService5.getDefaultSettings();
-          if (settings && settings.smtpUser) {
-            return settings.smtpUser;
+      static async generateProfessionalPDF(orderData) {
+        return new Promise(async (resolve, reject) => {
+          try {
+            const doc = new PDFDocument({
+              size: "A4",
+              margin: this.LAYOUT.margin,
+              bufferPages: true,
+              info: {
+                Title: `\uAD6C\uB9E4\uBC1C\uC8FC\uC11C ${orderData.orderNumber}`,
+                Author: orderData.issuerCompany.name,
+                Subject: "\uAD6C\uB9E4\uBC1C\uC8FC\uC11C",
+                Creator: "IKJIN PO Management System",
+                Producer: "PDFKit",
+                CreationDate: /* @__PURE__ */ new Date()
+              }
+            });
+            const chunks = [];
+            doc.on("data", (chunk) => chunks.push(chunk));
+            doc.on("end", () => resolve(Buffer.concat(chunks)));
+            await this.registerKoreanFonts(doc);
+            await this.renderContent(doc, orderData);
+            doc.end();
+          } catch (error) {
+            console.error("PDF generation error:", error);
+            reject(error);
           }
-          return process.env.SMTP_USER || null;
+        });
+      }
+      /**
+       * 한글 폰트 등록
+       */
+      static async registerKoreanFonts(doc) {
+        try {
+          const fontsDir = path4.join(process.cwd(), "server", "assets", "fonts");
+          const fontPaths = {
+            regular: path4.join(fontsDir, "NotoSansKR-Regular.ttf"),
+            bold: path4.join(fontsDir, "NotoSansKR-Bold.ttf"),
+            medium: path4.join(fontsDir, "NotoSansKR-Medium.ttf")
+          };
+          for (const [key, fontPath] of Object.entries(fontPaths)) {
+            if (fs6.existsSync(fontPath)) {
+              doc.registerFont(this.FONTS[key], fontPath);
+            } else {
+              console.warn(`Font file not found: ${fontPath}`);
+              doc.registerFont(this.FONTS[key], "Helvetica");
+            }
+          }
         } catch (error) {
-          console.warn("\u26A0\uFE0F [ProfessionalPDF] \uC2DC\uC2A4\uD15C \uC774\uBA54\uC77C \uC870\uD68C \uC2E4\uD328, \uD658\uACBD\uBCC0\uC218 \uC0AC\uC6A9:", error);
-          return process.env.SMTP_USER || null;
+          console.error("Font registration error:", error);
+          doc.registerFont(this.FONTS.regular, "Helvetica");
+          doc.registerFont(this.FONTS.bold, "Helvetica-Bold");
+          doc.registerFont(this.FONTS.medium, "Helvetica");
         }
       }
       /**
-       * 발주서 ID로부터 포괄적인 데이터 수집
+       * 메인 콘텐츠 렌더링
        */
-      static async gatherComprehensiveOrderData(orderId) {
+      static async renderContent(doc, orderData) {
+        let currentY = this.LAYOUT.margin;
+        currentY = this.renderHeader(doc, orderData, currentY);
+        currentY += this.LAYOUT.sectionGap;
+        currentY = this.renderCompanyInfo(doc, orderData, currentY);
+        currentY += this.LAYOUT.sectionGap;
+        currentY = this.renderProjectInfo(doc, orderData, currentY);
+        currentY += this.LAYOUT.sectionGap;
+        currentY = this.renderItemsTable(doc, orderData, currentY);
+        currentY += this.LAYOUT.sectionGap;
+        currentY = this.renderFinancialSummary(doc, orderData, currentY);
+        currentY += this.LAYOUT.sectionGap;
+        if (orderData.metadata.notes) {
+          currentY = this.renderNotes(doc, orderData, currentY);
+        }
+        this.renderFooter(doc, orderData);
+      }
+      /**
+       * 헤더 렌더링 - 제목과 발주번호
+       */
+      static renderHeader(doc, orderData, y) {
+        doc.font(this.FONTS.bold).fontSize(20).fillColor(this.COLORS.darkNavy).text("\uAD6C\uB9E4\uBC1C\uC8FC\uC11C", this.LAYOUT.margin, y);
+        const orderNumText = orderData.orderNumber;
+        const boxWidth = 120;
+        const boxHeight = 25;
+        const boxX = this.LAYOUT.pageWidth - this.LAYOUT.margin - boxWidth;
+        doc.rect(boxX, y, boxWidth, boxHeight).fillColor(this.COLORS.lightGray).fill();
+        doc.font(this.FONTS.medium).fontSize(10).fillColor(this.COLORS.darkNavy).text(orderNumText, boxX, y + 8, {
+          width: boxWidth,
+          align: "center"
+        });
+        const dateText = format(orderData.orderDate, "yyyy-MM-dd");
+        doc.font(this.FONTS.regular).fontSize(9).fillColor(this.COLORS.gray).text(dateText, boxX, y + boxHeight + 3, {
+          width: boxWidth,
+          align: "center"
+        });
+        const lineY = y + 40;
+        doc.moveTo(this.LAYOUT.margin, lineY).lineTo(this.LAYOUT.pageWidth - this.LAYOUT.margin, lineY).strokeColor(this.COLORS.navy).lineWidth(1.5).stroke();
+        return lineY;
+      }
+      /**
+       * 업체 정보 렌더링 - 2단 레이아웃
+       */
+      static renderCompanyInfo(doc, orderData, y) {
+        const columnWidth = (this.LAYOUT.pageWidth - this.LAYOUT.margin * 2 - 20) / 2;
+        const startY = y;
+        let leftY = this.renderCompanyBox(
+          doc,
+          "\uBC1C\uC8FC\uC5C5\uCCB4",
+          orderData.issuerCompany,
+          this.LAYOUT.margin,
+          y,
+          columnWidth
+        );
+        let rightY = this.renderCompanyBox(
+          doc,
+          "\uC218\uC8FC\uC5C5\uCCB4",
+          orderData.vendorCompany,
+          this.LAYOUT.margin + columnWidth + 20,
+          y,
+          columnWidth
+        );
+        return Math.max(leftY, rightY);
+      }
+      /**
+       * 회사 정보 박스 렌더링
+       */
+      static renderCompanyBox(doc, title, company, x, y, width) {
+        doc.rect(x, y, width, 25).fillColor(this.COLORS.navy).fill();
+        doc.font(this.FONTS.bold).fontSize(10).fillColor(this.COLORS.white).text(title, x + 8, y + 7);
+        const contentY = y + 25;
+        const boxHeight = 85;
+        doc.rect(x, contentY, width, boxHeight).strokeColor(this.COLORS.borderGray).lineWidth(0.5).stroke();
+        let currentY = contentY + 8;
+        const fontSize = 8;
+        const lineHeight = 13;
+        const renderField = (label, value) => {
+          if (value) {
+            doc.font(this.FONTS.medium).fontSize(fontSize).fillColor(this.COLORS.gray).text(label, x + 10, currentY, { continued: true }).font(this.FONTS.regular).fillColor(this.COLORS.black).text(` ${value}`, { width: width - 20 });
+            currentY += lineHeight;
+          }
+        };
+        renderField("\uC5C5\uCCB4\uBA85:", company.name);
+        renderField("\uC0AC\uC5C5\uC790\uBC88\uD638:", company.businessNumber);
+        renderField("\uB300\uD45C\uC790:", company.representative);
+        if (company.contactPerson) renderField("\uB2F4\uB2F9\uC790:", company.contactPerson);
+        renderField("\uC5F0\uB77D\uCC98:", company.phone);
+        if (company.email && currentY < contentY + boxHeight - lineHeight) {
+          renderField("\uC774\uBA54\uC77C:", company.email);
+        }
+        return contentY + boxHeight;
+      }
+      /**
+       * 현장 정보 렌더링
+       */
+      static renderProjectInfo(doc, orderData, y) {
+        const pageWidth = this.LAYOUT.pageWidth - this.LAYOUT.margin * 2;
+        doc.rect(this.LAYOUT.margin, y, pageWidth, 20).fillColor(this.COLORS.lightGray).fill();
+        doc.font(this.FONTS.bold).fontSize(9).fillColor(this.COLORS.darkNavy).text("\uD604\uC7A5 \uC815\uBCF4", this.LAYOUT.margin + 8, y + 6);
+        const contentY = y + 20;
+        const colWidth = pageWidth / 3;
+        const renderInfo = (label, value, x, y2) => {
+          doc.font(this.FONTS.medium).fontSize(9).fillColor(this.COLORS.gray).text(label, x + 10, y2, { continued: true }).font(this.FONTS.regular).fillColor(this.COLORS.black).text(` ${value || "-"}`, { width: colWidth - 20 });
+        };
+        renderInfo("\uD604\uC7A5\uBA85:", orderData.project.name, this.LAYOUT.margin, contentY + 5);
+        renderInfo("\uD604\uC7A5\uCF54\uB4DC:", orderData.project.code, this.LAYOUT.margin + colWidth, contentY + 5);
+        renderInfo("\uB2F4\uB2F9\uC790:", orderData.creator.name, this.LAYOUT.margin + colWidth * 2, contentY + 5);
+        renderInfo("\uBC1C\uC8FC\uC77C:", format(orderData.orderDate, "yyyy-MM-dd"), this.LAYOUT.margin, contentY + 18);
+        renderInfo("\uB0A9\uAE30\uC77C:", orderData.deliveryDate ? format(orderData.deliveryDate, "yyyy-MM-dd") : "-", this.LAYOUT.margin + colWidth, contentY + 18);
+        renderInfo("\uC5F0\uB77D\uCC98:", orderData.creator.phone, this.LAYOUT.margin + colWidth * 2, contentY + 18);
+        return contentY + 35;
+      }
+      /**
+       * 품목 테이블 렌더링
+       */
+      static renderItemsTable(doc, orderData, y) {
+        const pageWidth = this.LAYOUT.pageWidth - this.LAYOUT.margin * 2;
+        const headerHeight = 28;
+        doc.rect(this.LAYOUT.margin, y, pageWidth, headerHeight).fillColor(this.COLORS.navy).fill();
+        const columns = [
+          { label: "\uC21C\uBC88", width: 35, align: "center" },
+          { label: "\uD488\uBAA9\uBA85", width: 155, align: "left" },
+          { label: "\uADDC\uACA9", width: 95, align: "left" },
+          { label: "\uC218\uB7C9", width: 45, align: "center" },
+          { label: "\uB2E8\uC704", width: 35, align: "center" },
+          { label: "\uB2E8\uAC00", width: 85, align: "right" },
+          { label: "\uAE08\uC561", width: 95, align: "right" },
+          { label: "\uBE44\uACE0", width: 40, align: "center" }
+        ];
+        let currentX = this.LAYOUT.margin;
+        columns.forEach((col) => {
+          doc.font(this.FONTS.bold).fontSize(9).fillColor(this.COLORS.white).text(col.label, currentX + 3, y + 9, {
+            width: col.width - 6,
+            align: col.align
+          });
+          currentX += col.width;
+        });
+        let currentY = y + headerHeight;
+        orderData.items.forEach((item, index2) => {
+          const rowHeight = 25;
+          const isEvenRow = index2 % 2 === 0;
+          if (isEvenRow) {
+            doc.rect(this.LAYOUT.margin, currentY, pageWidth, rowHeight).fillColor(this.COLORS.lightGray).fill();
+          }
+          currentX = this.LAYOUT.margin;
+          const values = [
+            item.sequenceNo.toString(),
+            item.name,
+            item.specification || "-",
+            item.quantity.toString(),
+            item.unit || "-",
+            `\u20A9${item.unitPrice.toLocaleString("ko-KR")}`,
+            `\u20A9${item.totalPrice.toLocaleString("ko-KR")}`,
+            item.remarks || "-"
+          ];
+          values.forEach((value, i) => {
+            doc.font(this.FONTS.regular).fontSize(8).fillColor(this.COLORS.black).text(value, currentX + 3, currentY + 8, {
+              width: columns[i].width - 6,
+              align: columns[i].align,
+              ellipsis: true
+            });
+            currentX += columns[i].width;
+          });
+          doc.moveTo(this.LAYOUT.margin, currentY + rowHeight).lineTo(this.LAYOUT.pageWidth - this.LAYOUT.margin, currentY + rowHeight).strokeColor(this.COLORS.borderGray).lineWidth(0.5).stroke();
+          currentY += rowHeight;
+        });
+        return currentY;
+      }
+      /**
+       * 금액 요약 렌더링
+       */
+      static renderFinancialSummary(doc, orderData, y) {
+        const summaryWidth = 250;
+        const summaryX = this.LAYOUT.pageWidth - this.LAYOUT.margin - summaryWidth;
+        const rows = [
+          { label: "\uC18C\uACC4 (\uBD80\uAC00\uC138 \uBCC4\uB3C4)", value: `\u20A9${orderData.financial.subtotalAmount.toLocaleString("ko-KR")}` },
+          { label: `\uBD80\uAC00\uC138 (${orderData.financial.vatRate}%)`, value: `\u20A9${orderData.financial.vatAmount.toLocaleString("ko-KR")}` }
+        ];
+        let currentY = y;
+        const rowHeight = 22;
+        rows.forEach((row) => {
+          doc.rect(summaryX, currentY, summaryWidth, rowHeight).strokeColor(this.COLORS.borderGray).lineWidth(0.5).stroke();
+          doc.font(this.FONTS.regular).fontSize(10).fillColor(this.COLORS.gray).text(row.label, summaryX + 10, currentY + 8);
+          doc.font(this.FONTS.regular).fontSize(10).fillColor(this.COLORS.black).text(row.value, summaryX + 10, currentY + 8, {
+            width: summaryWidth - 20,
+            align: "right"
+          });
+          currentY += rowHeight;
+        });
+        doc.rect(summaryX, currentY, summaryWidth, 30).fillColor(this.COLORS.navy).fill();
+        doc.font(this.FONTS.bold).fontSize(10).fillColor(this.COLORS.white).text("\uCD1D \uAE08\uC561", summaryX + 10, currentY + 10);
+        doc.font(this.FONTS.bold).fontSize(12).fillColor(this.COLORS.white).text(`\u20A9${orderData.financial.totalAmount.toLocaleString("ko-KR")}`, summaryX + 10, currentY + 9, {
+          width: summaryWidth - 20,
+          align: "right"
+        });
+        return currentY + 30;
+      }
+      /**
+       * 특이사항 렌더링
+       */
+      static renderNotes(doc, orderData, y) {
+        if (!orderData.metadata.notes) return y;
+        const pageWidth = this.LAYOUT.pageWidth - this.LAYOUT.margin * 2;
+        doc.font(this.FONTS.bold).fontSize(10).fillColor(this.COLORS.darkNavy).text("\uD2B9\uC774\uC0AC\uD56D", this.LAYOUT.margin, y);
+        const notesHeight = 50;
+        doc.rect(this.LAYOUT.margin, y + 15, pageWidth, notesHeight).strokeColor(this.COLORS.borderGray).lineWidth(0.5).stroke();
+        doc.font(this.FONTS.regular).fontSize(8).fillColor(this.COLORS.black).text(orderData.metadata.notes, this.LAYOUT.margin + 8, y + 20, {
+          width: pageWidth - 16,
+          height: notesHeight - 10,
+          ellipsis: true
+        });
+        return y + 15 + notesHeight;
+      }
+      /**
+       * 푸터 렌더링 - 페이지 하단 고정
+       */
+      static renderFooter(doc, orderData) {
+        const footerY = this.LAYOUT.pageHeight - this.LAYOUT.footerHeight - this.LAYOUT.margin;
+        const pageWidth = this.LAYOUT.pageWidth - this.LAYOUT.margin * 2;
+        doc.moveTo(this.LAYOUT.margin, footerY).lineTo(this.LAYOUT.pageWidth - this.LAYOUT.margin, footerY).strokeColor(this.COLORS.borderGray).lineWidth(0.5).stroke();
+        doc.font(this.FONTS.bold).fontSize(10).fillColor(this.COLORS.darkNavy).text(orderData.issuerCompany.name, this.LAYOUT.margin, footerY + 10);
+        const footerInfo = [
+          orderData.issuerCompany.address,
+          `TEL: ${orderData.issuerCompany.phone}`,
+          `\uC0AC\uC5C5\uC790\uBC88\uD638: ${orderData.issuerCompany.businessNumber}`
+        ].filter(Boolean).join(" | ");
+        doc.font(this.FONTS.regular).fontSize(7).fillColor(this.COLORS.gray).text(footerInfo, this.LAYOUT.margin, footerY + 20, {
+          width: pageWidth
+        });
+        const docInfo = `\uC0DD\uC131\uC77C\uC2DC: ${format(orderData.metadata.generatedAt, "yyyy-MM-dd HH:mm")} | ${orderData.metadata.templateVersion}`;
+        doc.font(this.FONTS.regular).fontSize(6).fillColor(this.COLORS.gray).text(docInfo, this.LAYOUT.margin, footerY + 32, {
+          width: pageWidth,
+          align: "right"
+        });
+      }
+      /**
+       * 데이터베이스에서 발주 데이터 조회 및 PDF 생성
+       */
+      static async generatePDFFromOrder(orderId) {
         try {
-          console.log(`\u{1F4CA} [ProfessionalPDF] \uD3EC\uAD04\uC801 \uB370\uC774\uD130 \uC218\uC9D1 \uC2DC\uC791: Order ID ${orderId}`);
-          const orderQuery = await db.select({
-            // Purchase Order 정보
-            orderNumber: purchaseOrders.orderNumber,
-            orderDate: purchaseOrders.orderDate,
-            deliveryDate: purchaseOrders.deliveryDate,
-            orderStatus: purchaseOrders.orderStatus,
-            approvalStatus: purchaseOrders.approvalStatus,
-            totalAmount: purchaseOrders.totalAmount,
-            notes: purchaseOrders.notes,
-            approvalLevel: purchaseOrders.approvalLevel,
-            createdAt: purchaseOrders.createdAt,
-            updatedAt: purchaseOrders.updatedAt,
-            // 거래처 정보
-            vendorName: vendors.name,
-            vendorBusinessNumber: vendors.businessNumber,
-            vendorContactPerson: vendors.contactPerson,
-            vendorEmail: vendors.email,
-            vendorPhone: vendors.phone,
-            vendorAddress: vendors.address,
-            vendorBusinessType: vendors.businessType,
-            // 현장 정보
-            projectName: projects.projectName,
-            projectCode: projects.projectCode,
-            projectClientName: projects.clientName,
-            projectLocation: projects.location,
-            projectStartDate: projects.startDate,
-            projectEndDate: projects.endDate,
-            projectTotalBudget: projects.totalBudget,
-            // 작성자 정보
-            creatorName: users.name,
-            creatorEmail: users.email,
-            creatorPhone: users.phoneNumber,
-            creatorPosition: users.position,
-            creatorRole: users.role
-          }).from(purchaseOrders).leftJoin(vendors, eq9(purchaseOrders.vendorId, vendors.id)).leftJoin(projects, eq9(purchaseOrders.projectId, projects.id)).leftJoin(users, eq9(purchaseOrders.userId, users.id)).where(eq9(purchaseOrders.id, orderId)).limit(1);
-          const companyQuery = await db.select({
-            companyName: companies.companyName,
-            companyBusinessNumber: companies.businessNumber,
-            companyAddress: companies.address,
-            companyContactPerson: companies.contactPerson,
-            companyPhone: companies.phone,
-            companyEmail: companies.email,
-            companyFax: companies.fax,
-            companyWebsite: companies.website,
-            companyRepresentative: companies.representative
-          }).from(companies).where(eq9(companies.isActive, true)).limit(1);
-          if (!orderQuery || orderQuery.length === 0) {
-            console.error(`\u274C [ProfessionalPDF] \uBC1C\uC8FC\uC11C \uC815\uBCF4 \uC5C6\uC74C: Order ID ${orderId}`);
-            return null;
+          const orderResult = await db.select().from(purchaseOrders).where(eq8(purchaseOrders.id, orderId)).limit(1);
+          if (!orderResult.length) {
+            throw new Error(`Order not found: ${orderId}`);
           }
-          const orderData = orderQuery[0];
-          const companyData = companyQuery.length > 0 ? companyQuery[0] : {
-            companyName: "\uBC1C\uC8FC\uC5C5\uCCB4",
-            companyBusinessNumber: null,
-            companyAddress: null,
-            companyContactPerson: null,
-            companyPhone: null,
-            companyEmail: null,
-            companyRepresentative: null
-          };
-          const itemsQuery = await db.select().from(purchaseOrderItems).where(eq9(purchaseOrderItems.orderId, orderId));
-          const attachmentsQuery = await db.select().from(attachments).where(eq9(attachments.orderId, orderId));
-          let emailHistoryQuery = [];
-          try {
-            emailHistoryQuery = await db.select().from(emailSendHistory).where(eq9(emailSendHistory.orderId, orderId)).orderBy(desc5(emailSendHistory.sentAt)).limit(5);
-          } catch (error) {
-            if (error.code !== "42P01") {
-              console.error("\u274C [ProfessionalPDF] \uC774\uBA54\uC77C \uC774\uB825 \uC870\uD68C \uC624\uB958:", error);
-            }
-          }
-          const subtotalAmount = Number(orderData.totalAmount) || 0;
-          const vatAmount = Math.round(subtotalAmount * this.VAT_RATE);
-          const totalAmount = subtotalAmount + vatAmount;
-          const comprehensiveData = {
-            orderNumber: orderData.orderNumber,
-            orderDate: orderData.orderDate,
-            deliveryDate: orderData.deliveryDate,
-            createdAt: orderData.createdAt,
+          const order = orderResult[0];
+          const [companyData, vendorData, projectData, userData, itemsData] = await Promise.all([
+            order.companyId ? db.select().from(companies).where(eq8(companies.id, order.companyId)).limit(1) : [null],
+            order.vendorId ? db.select().from(vendors).where(eq8(vendors.id, order.vendorId)).limit(1) : [null],
+            order.projectId ? db.select().from(projects).where(eq8(projects.id, order.projectId)).limit(1) : [null],
+            order.userId ? db.select().from(users).where(eq8(users.id, order.userId)).limit(1) : [null],
+            db.select().from(purchaseOrderItems).where(eq8(purchaseOrderItems.orderId, orderId))
+          ]);
+          const company = companyData[0];
+          const vendor = vendorData[0];
+          const project = projectData[0];
+          const user = userData[0];
+          const orderData = {
+            orderNumber: order.orderNumber || `PO-${orderId}`,
+            orderDate: order.orderDate || /* @__PURE__ */ new Date(),
+            deliveryDate: order.deliveryDate,
+            createdAt: order.createdAt || /* @__PURE__ */ new Date(),
             issuerCompany: {
-              name: companyData.companyName || "\uBC1C\uC8FC\uC5C5\uCCB4",
-              businessNumber: companyData.companyBusinessNumber,
-              representative: companyData.companyRepresentative,
-              address: companyData.companyAddress,
-              phone: companyData.companyPhone,
-              email: companyData.companyEmail || "ikjin@example.com"
+              name: company?.name || "(\uC8FC)\uC775\uC9C4\uC5D4\uC9C0\uB2C8\uC5B4\uB9C1",
+              businessNumber: company?.businessNumber || "123-45-67890",
+              representative: company?.representative || "\uBC15\uD604\uD638",
+              address: company?.address || "\uC11C\uC6B8\uC2DC \uAC15\uB0A8\uAD6C \uD14C\uD5E4\uB780\uB85C 124 \uC0BC\uC6D0\uD0C0\uC6CC 9\uCE35",
+              phone: company?.phone || "02-1234-5678",
+              email: company?.email || "contact@ikjin.com"
             },
             vendorCompany: {
-              name: orderData.vendorName || "\uAC70\uB798\uCC98\uBA85 \uC5C6\uC74C",
-              businessNumber: orderData.vendorBusinessNumber,
-              representative: orderData.vendorBusinessNumber ? "\uB300\uD45C\uC790" : void 0,
-              address: orderData.vendorAddress,
-              phone: orderData.vendorPhone,
-              email: orderData.vendorEmail,
-              contactPerson: orderData.vendorContactPerson
+              name: vendor?.name || "\uAC70\uB798\uCC98\uBA85",
+              businessNumber: vendor?.businessNumber,
+              representative: vendor?.representative,
+              address: vendor?.address,
+              phone: vendor?.phone,
+              email: vendor?.email,
+              contactPerson: vendor?.contactPerson
             },
             project: {
-              name: orderData.projectName || "\uD604\uC7A5\uBA85 \uC5C6\uC74C",
-              code: orderData.projectCode,
-              location: orderData.projectLocation,
-              projectManager: orderData.creatorName,
-              projectManagerContact: orderData.creatorPhone,
-              orderManager: orderData.creatorName,
-              orderManagerContact: orderData.creatorEmail
+              name: project?.name || "\uD504\uB85C\uC81D\uD2B8\uBA85",
+              code: project?.code,
+              location: project?.location
             },
             creator: {
-              name: orderData.creatorName || "\uC791\uC131\uC790 \uC815\uBCF4 \uC5C6\uC74C",
-              email: orderData.creatorEmail,
-              phone: orderData.creatorPhone
+              name: user?.name || "\uC791\uC131\uC790",
+              email: user?.email || void 0,
+              phone: user?.phone || void 0,
+              position: user?.position || void 0
             },
-            items: itemsQuery.map((item, index2) => {
-              let deliveryLocation = "";
-              let deliveryEmail = "";
-              const remarks = item.notes || "";
-              const deliveryMatch = remarks.match(/납품처:\s*([^,\n]+)/);
-              if (deliveryMatch) {
-                deliveryLocation = deliveryMatch[1].trim();
-              }
-              const emailMatch = remarks.match(/이메일:\s*([^\s,\n]+)/);
-              if (emailMatch) {
-                deliveryEmail = emailMatch[1].trim();
-              }
-              return {
-                sequenceNo: index2 + 1,
-                name: item.itemName,
-                specification: item.specification,
-                quantity: Number(item.quantity),
-                unit: item.unit,
-                unitPrice: Number(item.unitPrice),
-                totalPrice: Number(item.totalAmount),
-                deliveryLocation,
-                deliveryEmail,
-                remarks: item.notes
-              };
-            }),
+            items: itemsData.map((item, index2) => ({
+              sequenceNo: index2 + 1,
+              name: item.name || "\uD488\uBAA9\uBA85",
+              specification: item.specification || void 0,
+              quantity: item.quantity || 1,
+              unit: item.unit || void 0,
+              unitPrice: item.unitPrice || 0,
+              totalPrice: item.totalPrice || 0,
+              remarks: item.remarks || void 0
+            })),
             financial: {
-              subtotalAmount,
-              vatRate: this.VAT_RATE,
-              vatAmount,
-              totalAmount,
-              discountAmount: 0,
+              subtotalAmount: order.subtotalAmount || 0,
+              vatRate: 10,
+              vatAmount: order.vatAmount || 0,
+              totalAmount: order.totalAmount || 0,
               currencyCode: "KRW"
             },
             metadata: {
-              notes: orderData.notes,
-              documentId: `DOC_${orderId}_${Date.now()}`,
+              notes: order.notes || void 0,
+              documentId: `DOC-${orderId}-${Date.now()}`,
               generatedAt: /* @__PURE__ */ new Date(),
-              generatedBy: orderData.creatorName || "System",
-              templateVersion: this.TEMPLATE_VERSION
+              generatedBy: "System",
+              templateVersion: "Professional v3.0.0"
             }
           };
-          console.log(`\u2705 [ProfessionalPDF] \uB370\uC774\uD130 \uC218\uC9D1 \uC644\uB8CC: ${itemsQuery.length}\uAC1C \uD488\uBAA9, ${attachmentsQuery.length}\uAC1C \uCCA8\uBD80\uD30C\uC77C`);
-          return comprehensiveData;
-        } catch (error) {
-          console.error("\u274C [ProfessionalPDF] \uB370\uC774\uD130 \uC218\uC9D1 \uC624\uB958:", error);
-          return null;
-        }
-      }
-      /**
-       * 전문적인 발주서 PDF 생성
-       */
-      static async generateProfessionalPurchaseOrderPDF(orderId, userId) {
-        try {
-          console.log(`\u{1F4C4} [ProfessionalPDF] \uC804\uBB38\uC801 \uBC1C\uC8FC\uC11C PDF \uC0DD\uC131 \uC2DC\uC791: Order ID ${orderId}`);
-          const orderData = await this.gatherComprehensiveOrderData(orderId);
-          if (!orderData) {
-            return {
-              success: false,
-              error: "\uBC1C\uC8FC\uC11C \uB370\uC774\uD130\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
-            };
-          }
-          const timestamp2 = Date.now();
-          const cleanOrderNumber = orderData.orderNumber.startsWith("PO-") ? orderData.orderNumber.substring(3) : orderData.orderNumber;
-          const fileName = `PO_Professional_${cleanOrderNumber}_${timestamp2}.pdf`;
-          console.log("\u{1F4C4} [ProfessionalPDF] \uD0C0\uAC9F \uB9E4\uCE6D PDF \uC0DD\uC131");
-          const pdfBuffer = await this.generateTargetMatchingPDF(orderData);
-          console.log("\u2705 [ProfessionalPDF] \uD0C0\uAC9F \uB9E4\uCE6D PDF \uC0DD\uC131 \uC131\uACF5");
-          const base64Data = pdfBuffer.toString("base64");
-          let filePath = "";
-          let attachmentId;
-          console.log(`\u{1F50D} [ProfessionalPDF] Environment check - VERCEL: ${process.env.VERCEL}, Base64 size: ${base64Data.length} chars`);
-          if (process.env.VERCEL) {
-            console.log("\u{1F4DD} [ProfessionalPDF] Saving to database with Base64 data...");
-            const [attachment] = await db.insert(attachments).values({
+          const pdfBuffer = await this.generateProfessionalPDF(orderData);
+          if (user?.id) {
+            await db.insert(emailSendHistory).values({
               orderId,
-              originalName: fileName,
-              storedName: fileName,
-              filePath: `professional://${fileName}`,
-              fileSize: pdfBuffer.length,
-              mimeType: "application/pdf",
-              uploadedBy: userId,
-              fileData: base64Data
-            }).returning();
-            attachmentId = attachment.id;
-            filePath = `professional://${fileName}`;
-            console.log(`\u2705 [ProfessionalPDF] PDF \uC0DD\uC131 \uC644\uB8CC (Vercel): ${fileName}, \uD06C\uAE30: ${Math.round(pdfBuffer.length / 1024)}KB`);
-          } else {
-            const tempDir = path5.join(this.uploadDir, "professional", String((/* @__PURE__ */ new Date()).getFullYear()));
-            if (!fs7.existsSync(tempDir)) {
-              fs7.mkdirSync(tempDir, { recursive: true });
-            }
-            filePath = path5.join(tempDir, fileName);
-            fs7.writeFileSync(filePath, pdfBuffer);
-            const [attachment] = await db.insert(attachments).values({
-              orderId,
-              originalName: fileName,
-              storedName: fileName,
-              filePath,
-              fileSize: pdfBuffer.length,
-              mimeType: "application/pdf",
-              uploadedBy: userId,
-              fileData: base64Data
-            }).returning();
-            attachmentId = attachment.id;
-            console.log(`\u2705 [ProfessionalPDF] PDF \uC0DD\uC131 \uC644\uB8CC (\uB85C\uCEEC): ${filePath}, DB\uC5D0\uB3C4 Base64 \uC800\uC7A5`);
+              userId: user.id,
+              recipientEmail: vendor?.email || "",
+              recipientName: vendor?.name || "",
+              subject: `\uAD6C\uB9E4\uBC1C\uC8FC\uC11C - ${orderData.orderNumber}`,
+              body: "PDF \uC0DD\uC131\uB428",
+              status: "generated",
+              sentAt: /* @__PURE__ */ new Date(),
+              attachmentPaths: [`purchase_order_${orderData.orderNumber}.pdf`]
+            });
           }
-          return {
-            success: true,
-            pdfPath: filePath,
-            attachmentId,
-            pdfBuffer: process.env.VERCEL ? pdfBuffer : void 0
-          };
+          return pdfBuffer;
         } catch (error) {
-          console.error("\u274C [ProfessionalPDF] PDF \uC0DD\uC131 \uC624\uB958:", error);
-          return {
-            success: false,
-            error: error instanceof Error ? error.message : "PDF \uC0DD\uC131 \uC911 \uC624\uB958 \uBC1C\uC0DD"
-          };
+          console.error("Error generating PDF from order:", error);
+          throw error;
         }
       }
       /**
-       * 타겟 PDF와 정확히 일치하는 PDF 생성 (PDFKit 사용)
-       * 완전히 새로 작성된 구현
+       * 발주서 미리보기용 샘플 데이터로 PDF 생성
        */
-      static async generateTargetMatchingPDF(orderData) {
-        try {
-          const PDFKitDocument = (await import("pdfkit")).default;
-          return new Promise((resolve, reject) => {
-            try {
-              const doc = new PDFKitDocument({
-                size: "A4",
-                margins: { top: 30, bottom: 30, left: 30, right: 30 },
-                autoFirstPage: false
-              });
-              const buffers = [];
-              doc.on("data", buffers.push.bind(buffers));
-              doc.on("end", () => resolve(Buffer.concat(buffers)));
-              doc.on("error", reject);
-              console.log("\u{1F4DD} [ProfessionalPDF] \uD0C0\uAC9F \uB9E4\uCE6D PDF \uC0DD\uC131 \uC2DC\uC791");
-              let hasKoreanFont = false;
-              let fontName = "Helvetica";
-              try {
-                const selectedFont = fontManager.getBestKoreanFont();
-                if (selectedFont && selectedFont.available) {
-                  console.log(`\u{1F3AF} [ProfessionalPDF] \uC120\uD0DD\uB41C \uD55C\uAE00 \uD3F0\uD2B8: ${selectedFont.name}`);
-                  if (process.env.VERCEL) {
-                    const fontBuffer = fontManager.getFontBuffer(selectedFont.name);
-                    if (fontBuffer) {
-                      doc.registerFont("Korean", fontBuffer);
-                      fontName = "Korean";
-                      hasKoreanFont = true;
-                      console.log("\u2705 [ProfessionalPDF] Vercel \uD658\uACBD\uC5D0\uC11C \uD55C\uAE00 \uD3F0\uD2B8 \uB4F1\uB85D \uC131\uACF5");
-                    }
-                  } else {
-                    doc.registerFont("Korean", selectedFont.path);
-                    fontName = "Korean";
-                    hasKoreanFont = true;
-                    console.log(`\u2705 [ProfessionalPDF] \uB85C\uCEEC \uD658\uACBD\uC5D0\uC11C \uD55C\uAE00 \uD3F0\uD2B8 \uB4F1\uB85D \uC131\uACF5: ${selectedFont.path}`);
-                  }
-                }
-              } catch (fontError) {
-                console.warn("\u26A0\uFE0F [ProfessionalPDF] \uD55C\uAE00 \uD3F0\uD2B8 \uB4F1\uB85D \uC2E4\uD328:", fontError);
-                fontName = "Helvetica";
-                hasKoreanFont = false;
-              }
-              doc.font(fontName);
-              const safeText = (text2) => {
-                if (!text2) return "";
-                return hasKoreanFont ? text2 : text2;
-              };
-              const formatDate = (date2) => {
-                if (!date2) return "-";
-                return format(new Date(date2), "yyyy\uB144 MM\uC6D4 dd\uC77C", { locale: ko });
-              };
-              doc.addPage();
-              doc.fontSize(20).fillColor("black");
-              doc.text(safeText("\uAD6C\uB9E4\uBC1C\uC8FC\uC11C"), 30, 50);
-              doc.fontSize(12);
-              doc.text(safeText(`\uBC1C\uC8FC\uBC88\uD638: ${orderData.orderNumber}`), 450, 55);
-              doc.moveTo(30, 85).lineTo(565, 85).stroke("#cccccc");
-              let currentY = 100;
-              const boxWidth = 260;
-              const boxHeight = 120;
-              doc.rect(30, currentY, boxWidth, boxHeight).stroke("#e5e7eb");
-              doc.fontSize(10).fillColor("black");
-              doc.text(safeText("\uBC1C\uC8FC\uC5C5\uCCB4 \uC815\uBCF4"), 40, currentY + 10);
-              let infoY = currentY + 30;
-              doc.fontSize(8);
-              doc.text(safeText("\uC5C5\uCCB4\uBA85"), 40, infoY);
-              doc.text(safeText(orderData.issuerCompany.name), 120, infoY);
-              infoY += 15;
-              doc.text(safeText("\uC0AC\uC5C5\uC790\uBC88\uD638"), 40, infoY);
-              doc.text(safeText(orderData.issuerCompany.businessNumber || "-"), 120, infoY);
-              infoY += 15;
-              doc.text(safeText("\uB300\uD45C\uC790"), 40, infoY);
-              doc.text(safeText(orderData.issuerCompany.representative || "-"), 120, infoY);
-              infoY += 15;
-              doc.text(safeText("\uC8FC\uC18C"), 40, infoY);
-              const address = orderData.issuerCompany.address || "-";
-              const shortAddress = address.length > 20 ? address.substring(0, 20) + "..." : address;
-              doc.text(safeText(shortAddress), 120, infoY);
-              infoY += 15;
-              doc.text(safeText("\uC5F0\uB77D\uCC98"), 40, infoY);
-              doc.text(safeText(orderData.issuerCompany.phone || "-"), 120, infoY);
-              const rightBoxX = 305;
-              doc.rect(rightBoxX, currentY, boxWidth, boxHeight).stroke("#e5e7eb");
-              doc.fontSize(10);
-              doc.text(safeText("\uC218\uC8FC\uC5C5\uCCB4 \uC815\uBCF4"), rightBoxX + 10, currentY + 10);
-              infoY = currentY + 30;
-              doc.fontSize(8);
-              doc.text(safeText("\uC5C5\uCCB4\uBA85"), rightBoxX + 10, infoY);
-              doc.text(safeText(orderData.vendorCompany.name), rightBoxX + 90, infoY);
-              infoY += 15;
-              doc.text(safeText("\uC0AC\uC5C5\uC790\uBC88\uD638"), rightBoxX + 10, infoY);
-              doc.text(safeText(orderData.vendorCompany.businessNumber || "-"), rightBoxX + 90, infoY);
-              infoY += 15;
-              doc.text(safeText("\uB300\uD45C\uC790"), rightBoxX + 10, infoY);
-              doc.text(safeText(orderData.vendorCompany.representative || "-"), rightBoxX + 90, infoY);
-              infoY += 15;
-              doc.text(safeText("\uB2F4\uB2F9\uC790"), rightBoxX + 10, infoY);
-              doc.text(safeText(orderData.vendorCompany.contactPerson || "-"), rightBoxX + 90, infoY);
-              infoY += 15;
-              doc.text(safeText("\uC5F0\uB77D\uCC98"), rightBoxX + 10, infoY);
-              doc.text(safeText(orderData.vendorCompany.phone || "-"), rightBoxX + 90, infoY);
-              currentY += boxHeight + 20;
-              const smallBoxWidth = 175;
-              const smallBoxHeight = 90;
-              doc.rect(30, currentY, smallBoxWidth, smallBoxHeight).stroke("#e5e7eb");
-              doc.fontSize(10);
-              doc.text(safeText("\uD604\uC7A5"), 40, currentY + 10);
-              infoY = currentY + 30;
-              doc.fontSize(8);
-              doc.text(safeText("\uD604\uC7A5\uBA85"), 40, infoY);
-              doc.text(safeText(orderData.project.name), 85, infoY);
-              infoY += 15;
-              doc.text(safeText("\uD604\uC7A5\uCF54\uB4DC"), 40, infoY);
-              doc.text(safeText(orderData.project.code || "-"), 85, infoY);
-              infoY += 15;
-              doc.text(safeText("\uBC1C\uC8FC\uCC98"), 40, infoY);
-              doc.text(safeText("-"), 85, infoY);
-              const scheduleX = 210;
-              doc.rect(scheduleX, currentY, smallBoxWidth, smallBoxHeight).stroke("#e5e7eb");
-              doc.fontSize(10);
-              doc.text(safeText("\uC77C\uC815"), scheduleX + 10, currentY + 10);
-              infoY = currentY + 30;
-              doc.fontSize(8);
-              doc.text(safeText("\uBC1C\uC8FC\uC77C"), scheduleX + 10, infoY);
-              doc.text(safeText(formatDate(orderData.orderDate)), scheduleX + 55, infoY);
-              infoY += 15;
-              doc.text(safeText("\uB0A9\uAE30\uC77C"), scheduleX + 10, infoY);
-              doc.text(safeText(formatDate(orderData.deliveryDate)), scheduleX + 55, infoY);
-              infoY += 15;
-              doc.text(safeText("\uB4F1\uB85D\uC77C"), scheduleX + 10, infoY);
-              doc.text(safeText(formatDate(orderData.createdAt)), scheduleX + 55, infoY);
-              const managerX = 390;
-              doc.rect(managerX, currentY, smallBoxWidth, smallBoxHeight).stroke("#e5e7eb");
-              doc.fontSize(10);
-              doc.text(safeText("\uB2F4\uB2F9\uC790"), managerX + 10, currentY + 10);
-              infoY = currentY + 30;
-              doc.fontSize(8);
-              doc.text(safeText("\uC791\uC131\uC790"), managerX + 10, infoY);
-              doc.text(safeText(orderData.creator.name), managerX + 55, infoY);
-              infoY += 15;
-              doc.text(safeText("\uC9C1\uCC45"), managerX + 10, infoY);
-              doc.text(safeText("-"), managerX + 55, infoY);
-              infoY += 15;
-              doc.text(safeText("\uC5F0\uB77D\uCC98"), managerX + 10, infoY);
-              doc.text(safeText(orderData.creator.phone || "-"), managerX + 55, infoY);
-              currentY += smallBoxHeight + 30;
-              doc.rect(30, currentY, 535, 25).fill("#2563eb");
-              doc.fontSize(10).fillColor("white");
-              doc.text(safeText(`\uBC1C\uC8FC \uD488\uBAA9 (\uCD1D ${orderData.items.length}\uAC1C \uD488\uBAA9)`), 40, currentY + 8);
-              currentY += 25;
-              const tableHeaders = ["\uC21C\uBC88", "\uD488\uBAA9\uBA85", "\uADDC\uACA9", "\uC218\uB7C9", "\uB2E8\uC704", "\uB2E8\uAC00", "\uAE08\uC561", "\uD2B9\uC774\uC0AC\uD56D"];
-              const columnWidths = [35, 140, 85, 50, 35, 70, 80, 40];
-              let tableX = 30;
-              doc.rect(30, currentY, 535, 20).fill("#f3f4f6").stroke("#d1d5db");
-              doc.fontSize(8).fillColor("black");
-              tableHeaders.forEach((header, index2) => {
-                const headerX = tableX + columnWidths[index2] / 2 - 10;
-                doc.text(safeText(header), headerX, currentY + 6);
-                tableX += columnWidths[index2];
-              });
-              currentY += 20;
-              orderData.items.slice(0, 10).forEach((item, index2) => {
-                const bgColor = index2 % 2 === 0 ? "#ffffff" : "#f8fafc";
-                doc.rect(30, currentY, 535, 18).fill(bgColor).stroke("#d1d5db");
-                doc.fontSize(7).fillColor("black");
-                tableX = 30;
-                doc.text(safeText(item.sequenceNo.toString()), tableX + 15, currentY + 5);
-                tableX += columnWidths[0];
-                const itemName = item.name.length > 18 ? item.name.substring(0, 18) + "..." : item.name;
-                doc.text(safeText(itemName), tableX + 2, currentY + 5);
-                tableX += columnWidths[1];
-                const spec = (item.specification || "-").length > 12 ? (item.specification || "-").substring(0, 12) + "..." : item.specification || "-";
-                doc.text(safeText(spec), tableX + 2, currentY + 5);
-                tableX += columnWidths[2];
-                doc.text(safeText(item.quantity.toString()), tableX + 15, currentY + 5);
-                tableX += columnWidths[3];
-                doc.text(safeText(item.unit || "-"), tableX + 12, currentY + 5);
-                tableX += columnWidths[4];
-                doc.text(safeText(`\u20A9${item.unitPrice.toLocaleString()}`), tableX + 5, currentY + 5);
-                tableX += columnWidths[5];
-                doc.text(safeText(`\u20A9${item.totalPrice.toLocaleString()}`), tableX + 5, currentY + 5);
-                tableX += columnWidths[6];
-                doc.text(safeText("-"), tableX + 15, currentY + 5);
-                currentY += 18;
-              });
-              const summaryY = currentY + 10;
-              doc.rect(30, summaryY, 535, 18).fill("#ffffff").stroke("#d1d5db");
-              doc.fontSize(8).fillColor("black");
-              doc.text(safeText("\uC18C\uACC4 (\uBD80\uAC00\uC138 \uBCC4\uB3C4)"), 400, summaryY + 5);
-              doc.text(safeText(`\u20A9${orderData.financial.subtotalAmount.toLocaleString()}`), 480, summaryY + 5);
-              doc.rect(30, summaryY + 18, 535, 18).fill("#ffffff").stroke("#d1d5db");
-              doc.text(safeText(`\uBD80\uAC00\uC138 (${(orderData.financial.vatRate * 100).toFixed(0)}%)`), 400, summaryY + 23);
-              doc.text(safeText(`\u20A9${orderData.financial.vatAmount.toLocaleString()}`), 480, summaryY + 23);
-              doc.rect(30, summaryY + 36, 535, 20).fill("#e5e7eb").stroke("#d1d5db");
-              doc.fontSize(10).fillColor("black");
-              doc.text(safeText("\uCD1D \uAE08\uC561"), 400, summaryY + 42);
-              doc.text(safeText(`\u20A9${orderData.financial.totalAmount.toLocaleString()}`), 480, summaryY + 42);
-              currentY = summaryY + 60;
-              if (orderData.metadata.notes) {
-                doc.rect(30, currentY, 535, 30).fill("#fffbeb").stroke("#d1d5db");
-                doc.fontSize(8).fillColor("black");
-                doc.text(safeText(`\uD2B9\uC774\uC0AC\uD56D: ${orderData.metadata.notes}`), 40, currentY + 8);
-                currentY += 35;
-              }
-              doc.moveTo(30, currentY + 20).lineTo(565, currentY + 20).stroke("#374151");
-              const footerY = currentY + 35;
-              doc.fontSize(12).fillColor("black");
-              doc.text(safeText(orderData.issuerCompany.name), 0, footerY, { align: "center", width: 595 });
-              if (orderData.issuerCompany.representative) {
-                doc.fontSize(8);
-                doc.text(safeText(`\uB300\uD45C\uC790: ${orderData.issuerCompany.representative}`), 0, footerY + 20, { align: "center", width: 595 });
-              }
-              doc.fontSize(7);
-              doc.text(safeText(orderData.issuerCompany.address || ""), 0, footerY + 35, { align: "center", width: 595 });
-              doc.text(safeText(`TEL: ${orderData.issuerCompany.phone || ""} | EMAIL: ${orderData.issuerCompany.email || ""}`), 0, footerY + 50, { align: "center", width: 595 });
-              if (orderData.issuerCompany.businessNumber) {
-                doc.text(safeText(`\uC0AC\uC5C5\uC790\uB4F1\uB85D\uBC88\uD638: ${orderData.issuerCompany.businessNumber}`), 0, footerY + 65, { align: "center", width: 595 });
-              }
-              doc.fontSize(6).fillColor("#666666");
-              doc.text(safeText(`\uC0DD\uC131\uC77C\uC2DC: ${formatDate(orderData.metadata.generatedAt)}`), 30, footerY + 85);
-              doc.text(safeText("\uBCF8 \uBB38\uC11C\uB294 \uC804\uC790\uC801\uC73C\uB85C \uC0DD\uC131\uB418\uC5C8\uC2B5\uB2C8\uB2E4"), 0, footerY + 85, { align: "center", width: 595 });
-              doc.text(safeText(`Template ${orderData.metadata.templateVersion}`), 0, footerY + 85, { align: "right", width: 565 });
-              doc.addPage();
-              doc.rect(0, 0, 595, 60).fill("#2563eb");
-              doc.fontSize(18).fillColor("white");
-              doc.text(safeText("\uAD6C\uB9E4\uBC1C\uC8FC\uC11C"), 30, 20);
-              doc.fontSize(12);
-              doc.text(safeText(`\uBC1C\uC8FC\uBC88\uD638: ${orderData.orderNumber}`), 450, 25);
-              currentY = 80;
-              doc.rect(30, currentY, boxWidth, 20).fill("#2563eb");
-              doc.fontSize(9).fillColor("white");
-              doc.text(safeText("\uBC1C\uC8FC\uC5C5\uCCB4 \uC815\uBCF4"), 40, currentY + 6);
-              doc.rect(30, currentY + 20, boxWidth, 100).stroke("#e5e7eb");
-              infoY = currentY + 35;
-              doc.fontSize(8).fillColor("black");
-              doc.text(safeText("\uC5C5\uCCB4\uBA85"), 40, infoY);
-              doc.text(safeText(orderData.issuerCompany.name), 120, infoY);
-              infoY += 15;
-              doc.text(safeText("\uC0AC\uC5C5\uC790\uBC88\uD638"), 40, infoY);
-              doc.text(safeText(orderData.issuerCompany.businessNumber || "-"), 120, infoY);
-              infoY += 15;
-              doc.text(safeText("\uB300\uD45C\uC790"), 40, infoY);
-              doc.text(safeText(orderData.issuerCompany.representative || "-"), 120, infoY);
-              infoY += 15;
-              doc.text(safeText("\uC8FC\uC18C"), 40, infoY);
-              doc.text(safeText(shortAddress), 120, infoY);
-              infoY += 15;
-              doc.text(safeText("\uC5F0\uB77D\uCC98"), 40, infoY);
-              doc.text(safeText(orderData.issuerCompany.phone || "-"), 120, infoY);
-              doc.rect(rightBoxX, currentY, boxWidth, 20).fill("#2563eb");
-              doc.fontSize(9).fillColor("white");
-              doc.text(safeText("\uC218\uC8FC\uC5C5\uCCB4 \uC815\uBCF4"), rightBoxX + 10, currentY + 6);
-              doc.rect(rightBoxX, currentY + 20, boxWidth, 100).stroke("#e5e7eb");
-              infoY = currentY + 35;
-              doc.fontSize(8).fillColor("black");
-              doc.text(safeText("\uC5C5\uCCB4\uBA85"), rightBoxX + 10, infoY);
-              doc.text(safeText(orderData.vendorCompany.name), rightBoxX + 90, infoY);
-              infoY += 15;
-              doc.text(safeText("\uC0AC\uC5C5\uC790\uBC88\uD638"), rightBoxX + 10, infoY);
-              doc.text(safeText(orderData.vendorCompany.businessNumber || "-"), rightBoxX + 90, infoY);
-              infoY += 15;
-              doc.text(safeText("\uB300\uD45C\uC790"), rightBoxX + 10, infoY);
-              doc.text(safeText(orderData.vendorCompany.representative || "-"), rightBoxX + 90, infoY);
-              infoY += 15;
-              doc.text(safeText("\uB2F4\uB2F9\uC790"), rightBoxX + 10, infoY);
-              doc.text(safeText(orderData.vendorCompany.contactPerson || "-"), rightBoxX + 90, infoY);
-              infoY += 15;
-              doc.text(safeText("\uC5F0\uB77D\uCC98"), rightBoxX + 10, infoY);
-              doc.text(safeText(orderData.vendorCompany.phone || "-"), rightBoxX + 90, infoY);
-              currentY += 140;
-              doc.rect(30, currentY, smallBoxWidth, 18).fill("#2563eb");
-              doc.fontSize(9).fillColor("white");
-              doc.text(safeText("\uD604\uC7A5"), 40, currentY + 5);
-              doc.rect(30, currentY + 18, smallBoxWidth, 72).stroke("#e5e7eb");
-              infoY = currentY + 30;
-              doc.fontSize(8).fillColor("black");
-              doc.text(safeText("\uD604\uC7A5\uBA85"), 40, infoY);
-              doc.text(safeText(orderData.project.name), 85, infoY);
-              infoY += 15;
-              doc.text(safeText("\uD604\uC7A5\uCF54\uB4DC"), 40, infoY);
-              doc.text(safeText(orderData.project.code || "-"), 85, infoY);
-              infoY += 15;
-              doc.text(safeText("\uBC1C\uC8FC\uCC98"), 40, infoY);
-              doc.text(safeText("-"), 85, infoY);
-              doc.rect(scheduleX, currentY, smallBoxWidth, 18).fill("#2563eb");
-              doc.fontSize(9).fillColor("white");
-              doc.text(safeText("\uC77C\uC815"), scheduleX + 10, currentY + 5);
-              doc.rect(scheduleX, currentY + 18, smallBoxWidth, 72).stroke("#e5e7eb");
-              infoY = currentY + 30;
-              doc.fontSize(8).fillColor("black");
-              doc.text(safeText("\uBC1C\uC8FC\uC77C"), scheduleX + 10, infoY);
-              doc.text(safeText(formatDate(orderData.orderDate)), scheduleX + 55, infoY);
-              infoY += 15;
-              doc.text(safeText("\uB0A9\uAE30\uC77C"), scheduleX + 10, infoY);
-              doc.text(safeText(formatDate(orderData.deliveryDate)), scheduleX + 55, infoY);
-              infoY += 15;
-              doc.text(safeText("\uB4F1\uB85D\uC77C"), scheduleX + 10, infoY);
-              doc.text(safeText(formatDate(orderData.createdAt)), scheduleX + 55, infoY);
-              doc.rect(managerX, currentY, smallBoxWidth, 18).fill("#2563eb");
-              doc.fontSize(9).fillColor("white");
-              doc.text(safeText("\uB2F4\uB2F9\uC790"), managerX + 10, currentY + 5);
-              doc.rect(managerX, currentY + 18, smallBoxWidth, 72).stroke("#e5e7eb");
-              infoY = currentY + 30;
-              doc.fontSize(8).fillColor("black");
-              doc.text(safeText("\uC791\uC131\uC790"), managerX + 10, infoY);
-              doc.text(safeText(orderData.creator.name), managerX + 55, infoY);
-              infoY += 15;
-              doc.text(safeText("\uC9C1\uCC45"), managerX + 10, infoY);
-              doc.text(safeText("-"), managerX + 55, infoY);
-              infoY += 15;
-              doc.text(safeText("\uC5F0\uB77D\uCC98"), managerX + 10, infoY);
-              doc.text(safeText(orderData.creator.phone || "-"), managerX + 55, infoY);
-              currentY += 110;
-              doc.rect(30, currentY, 535, 25).fill("#2563eb");
-              doc.fontSize(10).fillColor("white");
-              doc.text(safeText(`\uBC1C\uC8FC \uD488\uBAA9 (\uCD1D ${orderData.items.length}\uAC1C \uD488\uBAA9)`), 40, currentY + 8);
-              currentY += 25;
-              tableX = 30;
-              doc.rect(30, currentY, 535, 20).fill("#f3f4f6").stroke("#d1d5db");
-              doc.fontSize(8).fillColor("black");
-              tableHeaders.forEach((header, index2) => {
-                const headerX = tableX + columnWidths[index2] / 2 - 10;
-                doc.text(safeText(header), headerX, currentY + 6);
-                tableX += columnWidths[index2];
-              });
-              currentY += 20;
-              const remainingItems = orderData.items.slice(10);
-              if (remainingItems.length > 0) {
-                remainingItems.forEach((item, index2) => {
-                  const bgColor = index2 % 2 === 0 ? "#ffffff" : "#f8fafc";
-                  doc.rect(30, currentY, 535, 18).fill(bgColor).stroke("#d1d5db");
-                  doc.fontSize(7).fillColor("black");
-                  tableX = 30;
-                  doc.text(safeText(item.sequenceNo.toString()), tableX + 15, currentY + 5);
-                  tableX += columnWidths[0];
-                  const itemName = item.name.length > 18 ? item.name.substring(0, 18) + "..." : item.name;
-                  doc.text(safeText(itemName), tableX + 2, currentY + 5);
-                  tableX += columnWidths[1];
-                  const spec = (item.specification || "-").length > 12 ? (item.specification || "-").substring(0, 12) + "..." : item.specification || "-";
-                  doc.text(safeText(spec), tableX + 2, currentY + 5);
-                  tableX += columnWidths[2];
-                  doc.text(safeText(item.quantity.toString()), tableX + 15, currentY + 5);
-                  tableX += columnWidths[3];
-                  doc.text(safeText(item.unit || "-"), tableX + 12, currentY + 5);
-                  tableX += columnWidths[4];
-                  doc.text(safeText(`\u20A9${item.unitPrice.toLocaleString()}`), tableX + 5, currentY + 5);
-                  tableX += columnWidths[5];
-                  doc.text(safeText(`\u20A9${item.totalPrice.toLocaleString()}`), tableX + 5, currentY + 5);
-                  tableX += columnWidths[6];
-                  doc.text(safeText("-"), tableX + 15, currentY + 5);
-                  currentY += 18;
-                });
-              } else {
-                doc.rect(30, currentY, 535, 18).fill("#f8fafc").stroke("#d1d5db");
-                doc.fontSize(8).fillColor("#666666");
-                doc.text(safeText("\uBAA8\uB4E0 \uD488\uBAA9\uC774 \uCCAB \uBC88\uC9F8 \uD398\uC774\uC9C0\uC5D0 \uD45C\uC2DC\uB418\uC5C8\uC2B5\uB2C8\uB2E4."), 40, currentY + 5);
-                currentY += 18;
-              }
-              doc.moveTo(30, currentY + 30).lineTo(565, currentY + 30).stroke("#374151");
-              const footer2Y = currentY + 45;
-              doc.fontSize(12).fillColor("black");
-              doc.text(safeText(orderData.issuerCompany.name), 0, footer2Y, { align: "center", width: 595 });
-              if (orderData.issuerCompany.representative) {
-                doc.fontSize(8);
-                doc.text(safeText(`\uB300\uD45C\uC790: ${orderData.issuerCompany.representative}`), 0, footer2Y + 20, { align: "center", width: 595 });
-              }
-              doc.fontSize(7);
-              doc.text(safeText(orderData.issuerCompany.address || ""), 0, footer2Y + 35, { align: "center", width: 595 });
-              doc.text(safeText(`TEL: ${orderData.issuerCompany.phone || ""} | EMAIL: ${orderData.issuerCompany.email || ""}`), 0, footer2Y + 50, { align: "center", width: 595 });
-              if (orderData.issuerCompany.businessNumber) {
-                doc.text(safeText(`\uC0AC\uC5C5\uC790\uB4F1\uB85D\uBC88\uD638: ${orderData.issuerCompany.businessNumber}`), 0, footer2Y + 65, { align: "center", width: 595 });
-              }
-              doc.fontSize(6).fillColor("#666666");
-              doc.text(safeText(`\uC0DD\uC131\uC77C\uC2DC: ${formatDate(orderData.metadata.generatedAt)}`), 30, footer2Y + 85);
-              doc.text(safeText("\uBCF8 \uBB38\uC11C\uB294 \uC804\uC790\uC801\uC73C\uB85C \uC0DD\uC131\uB418\uC5C8\uC2B5\uB2C8\uB2E4"), 0, footer2Y + 85, { align: "center", width: 595 });
-              doc.text(safeText(`Template ${orderData.metadata.templateVersion}`), 0, footer2Y + 85, { align: "right", width: 565 });
-              doc.end();
-            } catch (error) {
-              reject(error);
+      static async generateSamplePDF() {
+        const sampleData = {
+          orderNumber: "PO-2025-SAMPLE",
+          orderDate: /* @__PURE__ */ new Date(),
+          deliveryDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1e3),
+          // 14일 후
+          createdAt: /* @__PURE__ */ new Date(),
+          issuerCompany: {
+            name: "(\uC8FC)\uC775\uC9C4\uC5D4\uC9C0\uB2C8\uC5B4\uB9C1",
+            businessNumber: "123-45-67890",
+            representative: "\uBC15\uD604\uD638",
+            address: "\uC11C\uC6B8\uC2DC \uAC15\uB0A8\uAD6C \uD14C\uD5E4\uB780\uB85C 124 \uC0BC\uC6D0\uD0C0\uC6CC 9\uCE35",
+            phone: "02-1234-5678",
+            email: "contact@ikjin.com"
+          },
+          vendorCompany: {
+            name: "\uC0BC\uC131\uBB3C\uC0B0(\uC8FC)",
+            businessNumber: "987-65-43210",
+            representative: "\uAE40\uB300\uD45C",
+            address: "\uC11C\uC6B8\uC2DC \uC11C\uCD08\uAD6C \uC11C\uCD08\uB300\uB85C 74\uAE38 11",
+            phone: "02-2145-5678",
+            email: "vendor@samsung.com",
+            contactPerson: "\uC774\uACFC\uC7A5"
+          },
+          project: {
+            name: "\uB798\uBBF8\uC548 \uC6D0\uBCA0\uC77C\uB9AC \uC2E0\uCD95\uACF5\uC0AC",
+            code: "PRJ-2025-001",
+            location: "\uC11C\uC6B8\uC2DC \uAC15\uB0A8\uAD6C"
+          },
+          creator: {
+            name: "\uD64D\uAE38\uB3D9",
+            email: "hong@ikjin.com",
+            phone: "010-1234-5678",
+            position: "\uACFC\uC7A5"
+          },
+          items: [
+            {
+              sequenceNo: 1,
+              name: "\uCCA0\uADFC SD400 D10",
+              specification: "KS D 3504",
+              quantity: 100,
+              unit: "TON",
+              unitPrice: 85e4,
+              totalPrice: 85e6,
+              remarks: "\uAE34\uAE09"
+            },
+            {
+              sequenceNo: 2,
+              name: "\uB808\uBBF8\uCF58 25-24-150",
+              specification: "KS F 4009",
+              quantity: 500,
+              unit: "M3",
+              unitPrice: 75e3,
+              totalPrice: 375e5,
+              remarks: ""
+            },
+            {
+              sequenceNo: 3,
+              name: "\uAC70\uD478\uC9D1\uC6A9 \uD569\uD310",
+              specification: "12T",
+              quantity: 200,
+              unit: "\uC7A5",
+              unitPrice: 25e3,
+              totalPrice: 5e6,
+              remarks: "\uBC29\uC218\uCC98\uB9AC"
             }
-          });
-        } catch (importError) {
-          console.error("\u274C [ProfessionalPDF] PDFKit import \uC2E4\uD328:", importError);
-          throw new Error(`PDFKit\uC744 \uB85C\uB4DC\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4: ${importError instanceof Error ? importError.message : "Unknown error"}`);
-        }
-      }
-      /**
-       * 기존 호환성을 위한 메서드 (사용되지 않음)
-       */
-      static async generateProfessionalPDFWithPDFKit(orderData) {
-        return this.generateTargetMatchingPDF(orderData);
+          ],
+          financial: {
+            subtotalAmount: 1275e5,
+            vatRate: 10,
+            vatAmount: 1275e4,
+            totalAmount: 14025e4,
+            currencyCode: "KRW"
+          },
+          metadata: {
+            notes: "1. \uB0A9\uD488 \uC2DC \uD488\uC9C8\uC2DC\uD5D8 \uC131\uC801\uC11C\uB97C \uCCA8\uBD80\uD558\uC5EC \uC8FC\uC2DC\uAE30 \uBC14\uB78D\uB2C8\uB2E4.\n2. \uB300\uAE08 \uC9C0\uAE09\uC740 \uC6D4\uB9D0 \uB9C8\uAC10 \uD6C4 \uC775\uC6D4 25\uC77C \uD604\uAE08 \uC9C0\uAE09\uC785\uB2C8\uB2E4.\n3. \uD604\uC7A5 \uBC18\uC785 \uC2DC \uC548\uC804\uAD00\uB9AC\uC790\uC640 \uC0AC\uC804 \uD611\uC758 \uBC14\uB78D\uB2C8\uB2E4.",
+            documentId: "DOC-SAMPLE-001",
+            generatedAt: /* @__PURE__ */ new Date(),
+            generatedBy: "System",
+            templateVersion: "Professional v3.0.0"
+          }
+        };
+        return await this.generateProfessionalPDF(sampleData);
       }
     };
+    professional_pdf_generation_service_default = ProfessionalPDFGenerationService;
   }
 });
 
@@ -3576,8 +2644,8 @@ var init_po_template_processor_mock = __esm({
 // server/utils/enhanced-excel-to-pdf.ts
 import { chromium as chromium2 } from "playwright-chromium";
 import ExcelJS2 from "exceljs";
-import path17 from "path";
-import fs20 from "fs";
+import path16 from "path";
+import fs19 from "fs";
 var EnhancedExcelToPDFConverter;
 var init_enhanced_excel_to_pdf = __esm({
   "server/utils/enhanced-excel-to-pdf.ts"() {
@@ -3604,14 +2672,14 @@ var init_enhanced_excel_to_pdf = __esm({
         let browser = null;
         try {
           console.log(`\u{1F4C4} Enhanced PDF \uBCC0\uD658 \uC2DC\uC791: ${excelPath}`);
-          if (!fs20.existsSync(excelPath)) {
+          if (!fs19.existsSync(excelPath)) {
             throw new Error(`Excel \uD30C\uC77C\uC774 \uC874\uC7AC\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4: ${excelPath}`);
           }
           const finalOptions = { ...this.DEFAULT_OPTIONS, ...options };
           const pdfPath = finalOptions.outputPath || excelPath.replace(/\.(xlsx?|xlsm)$/i, "-enhanced.pdf");
-          const outputDir = path17.dirname(pdfPath);
-          if (!fs20.existsSync(outputDir)) {
-            fs20.mkdirSync(outputDir, { recursive: true });
+          const outputDir = path16.dirname(pdfPath);
+          if (!fs19.existsSync(outputDir)) {
+            fs19.mkdirSync(outputDir, { recursive: true });
           }
           console.log(`\u{1F4C4} PDF \uCD9C\uB825 \uACBD\uB85C: ${pdfPath}`);
           const workbook = new ExcelJS2.Workbook();
@@ -3669,10 +2737,10 @@ var init_enhanced_excel_to_pdf = __esm({
           await page.pdf(pdfOptions);
           await browser.close();
           browser = null;
-          if (!fs20.existsSync(pdfPath)) {
+          if (!fs19.existsSync(pdfPath)) {
             throw new Error("PDF \uD30C\uC77C\uC774 \uC0DD\uC131\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4.");
           }
-          const stats = fs20.statSync(pdfPath);
+          const stats = fs19.statSync(pdfPath);
           const processingTime = Date.now() - startTime;
           console.log(`\u2705 Enhanced PDF \uC0DD\uC131 \uC644\uB8CC: ${pdfPath}`);
           console.log(`\u{1F4CA} \uD30C\uC77C \uD06C\uAE30: ${Math.round(stats.size / 1024)}KB`);
@@ -3953,15 +3021,15 @@ var init_enhanced_excel_to_pdf = __esm({
        */
       static validatePDF(pdfPath) {
         try {
-          if (!fs20.existsSync(pdfPath)) {
+          if (!fs19.existsSync(pdfPath)) {
             return false;
           }
-          const stats = fs20.statSync(pdfPath);
+          const stats = fs19.statSync(pdfPath);
           if (stats.size < 1024) {
             console.warn(`\u26A0\uFE0F PDF \uD30C\uC77C \uD06C\uAE30\uAC00 \uB108\uBB34 \uC791\uC2B5\uB2C8\uB2E4: ${stats.size}bytes`);
             return false;
           }
-          const buffer = fs20.readFileSync(pdfPath, { start: 0, end: 4 });
+          const buffer = fs19.readFileSync(pdfPath, { start: 0, end: 4 });
           const header = buffer.toString();
           if (!header.startsWith("%PDF")) {
             console.warn("\u26A0\uFE0F \uC720\uD6A8\uD558\uC9C0 \uC54A\uC740 PDF \uD30C\uC77C \uD5E4\uB354");
@@ -3979,9 +3047,9 @@ var init_enhanced_excel_to_pdf = __esm({
       static cleanupTempFiles(filePaths) {
         filePaths.forEach((filePath) => {
           try {
-            if (fs20.existsSync(filePath)) {
-              fs20.unlinkSync(filePath);
-              console.log(`\u{1F5D1}\uFE0F \uC784\uC2DC \uD30C\uC77C \uC815\uB9AC: ${path17.basename(filePath)}`);
+            if (fs19.existsSync(filePath)) {
+              fs19.unlinkSync(filePath);
+              console.log(`\u{1F5D1}\uFE0F \uC784\uC2DC \uD30C\uC77C \uC815\uB9AC: ${path16.basename(filePath)}`);
             }
           } catch (error) {
             console.error(`\uD30C\uC77C \uC815\uB9AC \uC2E4\uD328: ${filePath}`, error);
@@ -3995,15 +3063,15 @@ var init_enhanced_excel_to_pdf = __esm({
 // server/utils/excel-to-pdf-converter.ts
 import { chromium as chromium3 } from "playwright-chromium";
 import ExcelJS3 from "exceljs";
-import path18 from "path";
-import fs21 from "fs";
+import path17 from "path";
+import fs20 from "fs";
 import { fileURLToPath as fileURLToPath5 } from "url";
 var __filename5, __dirname5, ExcelToPDFConverter;
 var init_excel_to_pdf_converter = __esm({
   "server/utils/excel-to-pdf-converter.ts"() {
     "use strict";
     __filename5 = fileURLToPath5(import.meta.url);
-    __dirname5 = path18.dirname(__filename5);
+    __dirname5 = path17.dirname(__filename5);
     ExcelToPDFConverter = class {
       /**
        * Excel 파일을 PDF로 변환
@@ -4015,15 +3083,15 @@ var init_excel_to_pdf_converter = __esm({
         let browser;
         try {
           console.log(`\u{1F4C4} PDF \uBCC0\uD658 \uC2DC\uC791: ${excelPath}`);
-          if (!fs21.existsSync(excelPath)) {
+          if (!fs20.existsSync(excelPath)) {
             throw new Error(`Excel \uD30C\uC77C\uC774 \uC874\uC7AC\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4: ${excelPath}`);
           }
           const pdfPath = outputPath || excelPath.replace(/\.(xlsx?|xlsm)$/i, ".pdf");
           console.log(`\u{1F4C4} PDF \uCD9C\uB825 \uACBD\uB85C: ${pdfPath}`);
-          const outputDir = path18.dirname(pdfPath);
+          const outputDir = path17.dirname(pdfPath);
           try {
-            if (!fs21.existsSync(outputDir)) {
-              fs21.mkdirSync(outputDir, { recursive: true });
+            if (!fs20.existsSync(outputDir)) {
+              fs20.mkdirSync(outputDir, { recursive: true });
               console.log(`\u{1F4C1} \uCD9C\uB825 \uB514\uB809\uD1A0\uB9AC \uC0DD\uC131: ${outputDir}`);
             }
           } catch (error) {
@@ -4080,10 +3148,10 @@ var init_excel_to_pdf_converter = __esm({
           console.log(`\u{1F4C4} PDF \uD30C\uC77C \uC0DD\uC131 \uC644\uB8CC: ${pdfPath}`);
           await browser.close();
           browser = null;
-          if (!fs21.existsSync(pdfPath)) {
+          if (!fs20.existsSync(pdfPath)) {
             throw new Error(`PDF \uD30C\uC77C\uC774 \uC0DD\uC131\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4: ${pdfPath}`);
           }
-          const stats = fs21.statSync(pdfPath);
+          const stats = fs20.statSync(pdfPath);
           console.log(`\u2705 PDF \uC0DD\uC131 \uC644\uB8CC: ${pdfPath} (${Math.round(stats.size / 1024)}KB)`);
           return pdfPath;
         } catch (error) {
@@ -4270,7 +3338,7 @@ var init_excel_to_pdf_converter = __esm({
 `;
           for (let i = 0; i < excelPaths.length; i++) {
             const excelPath = excelPaths[i];
-            const fileName = path18.basename(excelPath, path18.extname(excelPath));
+            const fileName = path17.basename(excelPath, path17.extname(excelPath));
             const workbook = new ExcelJS3.Workbook();
             await workbook.xlsx.readFile(excelPath);
             combinedHTML += `<div class="file-section">`;
@@ -4315,8 +3383,8 @@ __export(po_email_service_enhanced_exports, {
   POEmailService: () => POEmailService2
 });
 import nodemailer5 from "nodemailer";
-import path19 from "path";
-import fs22 from "fs";
+import path18 from "path";
+import fs21 from "fs";
 import { fileURLToPath as fileURLToPath6 } from "url";
 import { dirname as dirname2 } from "path";
 var __filename6, __dirname6, POEmailService2;
@@ -4415,8 +3483,8 @@ var init_po_email_service_enhanced = __esm({
             }
           }
           const timestamp2 = Date.now();
-          const uploadsDir = path19.join(__dirname6, "../../uploads");
-          const processedPath = path19.join(uploadsDir, `po-advanced-format-${timestamp2}.xlsx`);
+          const uploadsDir = path18.join(__dirname6, "../../uploads");
+          const processedPath = path18.join(uploadsDir, `po-advanced-format-${timestamp2}.xlsx`);
           const removeResult = await removeAllInputSheets(
             originalFilePath,
             processedPath
@@ -4430,7 +3498,7 @@ var init_po_email_service_enhanced = __esm({
           console.log(`\u{1F4C4} \uACE0\uAE09 \uD615\uC2DD \uBCF4\uC874 \uD30C\uC77C \uC0DD\uC131: ${processedPath}`);
           console.log(`\u{1F3AF} Input \uC2DC\uD2B8 \uC81C\uAC70 \uC644\uB8CC`);
           console.log(`\u{1F4CB} \uB0A8\uC740 \uC2DC\uD2B8: ${removeResult.remainingSheets.join(", ")}`);
-          const pdfPath = path19.join(uploadsDir, `po-advanced-format-${timestamp2}.pdf`);
+          const pdfPath = path18.join(uploadsDir, `po-advanced-format-${timestamp2}.pdf`);
           let pdfResult = { success: false, error: "" };
           try {
             const enhancedResult = await EnhancedExcelToPDFConverter.convertExcelToPDF(processedPath, {
@@ -4457,17 +3525,17 @@ var init_po_email_service_enhanced = __esm({
             console.error("\u274C PDF \uBCC0\uD658 \uC624\uB958:", pdfError);
             pdfResult.error = pdfError instanceof Error ? pdfError.message : "PDF conversion error";
           }
-          const attachments3 = [];
-          if (fs22.existsSync(processedPath)) {
-            attachments3.push({
+          const attachments4 = [];
+          if (fs21.existsSync(processedPath)) {
+            attachments4.push({
               filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`,
               path: processedPath,
               contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             });
             console.log(`\u{1F4CE} Excel \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00: \uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`);
           }
-          if (pdfResult.success && fs22.existsSync(pdfPath)) {
-            attachments3.push({
+          if (pdfResult.success && fs21.existsSync(pdfPath)) {
+            attachments4.push({
               filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`,
               path: pdfPath,
               contentType: "application/pdf"
@@ -4484,7 +3552,7 @@ var init_po_email_service_enhanced = __esm({
             bcc: emailOptions.bcc,
             subject: emailOptions.subject || `\uBC1C\uC8FC\uC11C \uC804\uC1A1 - ${emailOptions.orderNumber || ""}`,
             html: emailContent,
-            attachments: attachments3
+            attachments: attachments4
           });
           this.cleanupTempFiles([processedPath, pdfPath]);
           if (result.success) {
@@ -4726,12 +3794,12 @@ var init_po_email_service_enhanced = __esm({
         setTimeout(() => {
           filePaths.forEach((filePath) => {
             try {
-              if (fs22.existsSync(filePath)) {
-                fs22.unlinkSync(filePath);
-                console.log(`\u{1F5D1}\uFE0F \uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C: ${path19.basename(filePath)}`);
+              if (fs21.existsSync(filePath)) {
+                fs21.unlinkSync(filePath);
+                console.log(`\u{1F5D1}\uFE0F \uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C: ${path18.basename(filePath)}`);
               }
             } catch (error) {
-              console.warn(`\u26A0\uFE0F \uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328: ${path19.basename(filePath)}`, error);
+              console.warn(`\u26A0\uFE0F \uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328: ${path18.basename(filePath)}`, error);
             }
           });
         }, 5e3);
@@ -8199,49 +7267,57 @@ var POEmailService = class {
     try {
       const timestamp2 = Date.now();
       const uploadsDir = path2.join(__dirname, "../../uploads");
-      const processedPath = path2.join(uploadsDir, `po-advanced-format-${timestamp2}.xlsx`);
-      const removeResult = await removeAllInputSheets(
-        originalFilePath,
-        processedPath
-      );
-      if (!removeResult.success) {
-        return {
-          success: false,
-          error: `Input \uC2DC\uD2B8 \uC81C\uAC70 \uC2E4\uD328: ${removeResult.error}`
-        };
-      }
-      console.log(`\u{1F4C4} \uACE0\uAE09 \uD615\uC2DD \uBCF4\uC874 \uD30C\uC77C \uC0DD\uC131: ${processedPath}`);
-      console.log(`\u{1F3AF} Input \uC2DC\uD2B8 \uC81C\uAC70 \uC644\uB8CC`);
-      console.log(`\u{1F4CB} \uB0A8\uC740 \uC2DC\uD2B8: ${removeResult.remainingSheets.join(", ")}`);
-      const pdfPath = path2.join(uploadsDir, `po-advanced-format-${timestamp2}.pdf`);
+      const isExcelFile = originalFilePath.toLowerCase().endsWith(".xlsx") || originalFilePath.toLowerCase().endsWith(".xls");
+      const fileExists = fs4.existsSync(originalFilePath);
+      console.log(`\u{1F50D} \uD30C\uC77C \uAC80\uC99D: ${originalFilePath}`);
+      console.log(`\u{1F4C1} \uD30C\uC77C \uC874\uC7AC: ${fileExists}`);
+      console.log(`\u{1F4CA} Excel \uD30C\uC77C: ${isExcelFile}`);
+      let processedPath = originalFilePath;
+      let attachments4 = [];
+      let pdfPath = "";
       let pdfResult = { success: false, error: "" };
-      try {
-        const result2 = await UnifiedExcelPdfService.convertExcelToPDF(processedPath, {
-          outputPath: pdfPath,
-          quality: "high",
-          orientation: "landscape",
-          excludeSheets: ["Input", "Settings"],
-          watermark: `\uBC1C\uC8FC\uC11C - ${emailOptions.orderNumber || ""}`,
-          retryCount: 2
-        });
-        if (result2.success) {
-          pdfResult.success = true;
-          const fileSize = result2.stats ? Math.round(result2.stats.fileSize / 1024) : 0;
-          console.log(`\u2705 ${result2.engineUsed} \uC5D4\uC9C4\uC73C\uB85C PDF \uBCC0\uD658 \uC131\uACF5: ${pdfPath} (${fileSize}KB)`);
-          if (result2.warnings && result2.warnings.length > 0) {
-            console.warn(`\u26A0\uFE0F \uACBD\uACE0: ${result2.warnings.join(", ")}`);
-          }
+      if (fileExists && isExcelFile) {
+        processedPath = path2.join(uploadsDir, `po-advanced-format-${timestamp2}.xlsx`);
+        const removeResult = await removeAllInputSheets(
+          originalFilePath,
+          processedPath
+        );
+        if (!removeResult.success) {
+          console.warn(`\u26A0\uFE0F Input \uC2DC\uD2B8 \uC81C\uAC70 \uC2E4\uD328, \uC6D0\uBCF8 \uD30C\uC77C \uC0AC\uC6A9: ${removeResult.error}`);
+          processedPath = originalFilePath;
         } else {
-          pdfResult.error = result2.error || "\uD1B5\uD569 PDF \uC11C\uBE44\uC2A4 \uBCC0\uD658 \uC2E4\uD328";
-          console.warn(`\u26A0\uFE0F PDF \uBCC0\uD658 \uC2E4\uD328: ${pdfResult.error}, Excel \uD30C\uC77C\uB9CC \uCCA8\uBD80\uD569\uB2C8\uB2E4.`);
+          console.log(`\u{1F4C4} \uACE0\uAE09 \uD615\uC2DD \uBCF4\uC874 \uD30C\uC77C \uC0DD\uC131: ${processedPath}`);
+          console.log(`\u{1F3AF} Input \uC2DC\uD2B8 \uC81C\uAC70 \uC644\uB8CC`);
+          console.log(`\u{1F4CB} \uB0A8\uC740 \uC2DC\uD2B8: ${removeResult.remainingSheets.join(", ")}`);
         }
-      } catch (error) {
-        pdfResult.error = `\uD1B5\uD569 PDF \uC11C\uBE44\uC2A4 \uC624\uB958: ${error.message}`;
-        console.warn(`\u26A0\uFE0F PDF \uBCC0\uD658 \uC644\uC804 \uC2E4\uD328: ${pdfResult.error}, Excel \uD30C\uC77C\uB9CC \uCCA8\uBD80\uD569\uB2C8\uB2E4.`);
+        pdfPath = path2.join(uploadsDir, `po-advanced-format-${timestamp2}.pdf`);
+        try {
+          const result2 = await UnifiedExcelPdfService.convertExcelToPDF(processedPath, {
+            outputPath: pdfPath,
+            quality: "high",
+            orientation: "landscape",
+            excludeSheets: ["Input", "Settings"],
+            watermark: `\uBC1C\uC8FC\uC11C - ${emailOptions.orderNumber || ""}`,
+            retryCount: 2
+          });
+          if (result2.success) {
+            pdfResult.success = true;
+            const fileSize = result2.stats ? Math.round(result2.stats.fileSize / 1024) : 0;
+            console.log(`\u2705 ${result2.engineUsed} \uC5D4\uC9C4\uC73C\uB85C PDF \uBCC0\uD658 \uC131\uACF5: ${pdfPath} (${fileSize}KB)`);
+            if (result2.warnings && result2.warnings.length > 0) {
+              console.warn(`\u26A0\uFE0F \uACBD\uACE0: ${result2.warnings.join(", ")}`);
+            }
+          } else {
+            pdfResult.error = result2.error || "\uD1B5\uD569 PDF \uC11C\uBE44\uC2A4 \uBCC0\uD658 \uC2E4\uD328";
+            console.warn(`\u26A0\uFE0F PDF \uBCC0\uD658 \uC2E4\uD328: ${pdfResult.error}, Excel \uD30C\uC77C\uB9CC \uCCA8\uBD80\uD569\uB2C8\uB2E4.`);
+          }
+        } catch (error) {
+          pdfResult.error = `\uD1B5\uD569 PDF \uC11C\uBE44\uC2A4 \uC624\uB958: ${error.message}`;
+          console.warn(`\u26A0\uFE0F PDF \uBCC0\uD658 \uC644\uC804 \uC2E4\uD328: ${pdfResult.error}, Excel \uD30C\uC77C\uB9CC \uCCA8\uBD80\uD569\uB2C8\uB2E4.`);
+        }
       }
-      const attachments3 = [];
       if (fs4.existsSync(processedPath)) {
-        attachments3.push({
+        attachments4.push({
           filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`,
           path: processedPath,
           contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -8249,7 +7325,7 @@ var POEmailService = class {
         console.log(`\u{1F4CE} Excel \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00: \uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`);
       }
       if (pdfResult.success && fs4.existsSync(pdfPath)) {
-        attachments3.push({
+        attachments4.push({
           filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`,
           path: pdfPath,
           contentType: "application/pdf"
@@ -8259,7 +7335,7 @@ var POEmailService = class {
       if (emailOptions.additionalAttachments && emailOptions.additionalAttachments.length > 0) {
         console.log(`\u{1F4CE} \uCD94\uAC00 \uCCA8\uBD80\uD30C\uC77C ${emailOptions.additionalAttachments.length}\uAC1C \uCC98\uB9AC \uC2DC\uC791`);
         for (const additionalAttachment of emailOptions.additionalAttachments) {
-          attachments3.push({
+          attachments4.push({
             filename: additionalAttachment.filename,
             content: additionalAttachment.content,
             contentType: additionalAttachment.contentType
@@ -8267,7 +7343,7 @@ var POEmailService = class {
           console.log(`\u{1F4CE} \uCD94\uAC00 \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00: ${additionalAttachment.filename} (${additionalAttachment.content.length} bytes)`);
         }
       }
-      if (attachments3.length === 0) {
+      if (attachments4.length === 0) {
         return {
           success: false,
           error: "\uCCA8\uBD80\uD560 \uD30C\uC77C\uC774 \uC0DD\uC131\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4."
@@ -8280,7 +7356,7 @@ var POEmailService = class {
         bcc: emailOptions.bcc,
         subject: emailOptions.subject || `\uBC1C\uC8FC\uC11C \uC804\uC1A1 - ${emailOptions.orderNumber || ""}`,
         html: emailContent,
-        attachments: attachments3
+        attachments: attachments4
       }, {
         ...orderInfo,
         orderNumber: emailOptions.orderNumber
@@ -8334,16 +7410,16 @@ var POEmailService = class {
           error: `PDF \uBCC0\uD658 \uC2E4\uD328: ${pdfResult.error}`
         };
       }
-      const attachments3 = [];
+      const attachments4 = [];
       if (fs4.existsSync(extractedPath)) {
-        attachments3.push({
+        attachments4.push({
           filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`,
           path: extractedPath,
           contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         });
       }
       if (fs4.existsSync(pdfPath)) {
-        attachments3.push({
+        attachments4.push({
           filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`,
           path: pdfPath,
           contentType: "application/pdf"
@@ -8356,7 +7432,7 @@ var POEmailService = class {
         bcc: emailOptions.bcc,
         subject: emailOptions.subject,
         html: emailContent,
-        attachments: attachments3
+        attachments: attachments4
       });
       this.cleanupTempFiles([extractedPath, pdfPath]);
       return result;
@@ -11289,7 +10365,7 @@ init_professional_pdf_generation_service();
 init_db();
 init_schema();
 init_professional_pdf_generation_service();
-import { eq as eq10, sql as sql4 } from "drizzle-orm";
+import { eq as eq9, sql as sql4 } from "drizzle-orm";
 
 // server/utils/progress-manager.ts
 var ProgressManager = class {
@@ -11397,8 +10473,8 @@ var progressManager = new ProgressManager();
 
 // server/services/unified-order-creation-service.ts
 init_debug_logger();
-import fs8 from "fs";
-import path6 from "path";
+import fs7 from "fs";
+import path5 from "path";
 var UnifiedOrderCreationService = class {
   /**
    * 통합 발주서 생성 메인 메서드
@@ -11493,13 +10569,14 @@ var UnifiedOrderCreationService = class {
       userId: data.userId,
       orderDate: new Date(data.orderDate),
       deliveryDate: data.deliveryDate ? new Date(data.deliveryDate) : null,
-      totalAmount,
+      totalAmount: String(totalAmount),
+      // Convert to string for decimal type
       notes: data.notes || null,
       orderStatus: "draft",
       // 초기 상태
       approvalStatus: "not_required",
       // 승인 불필요로 시작
-      customFields: data.customFields ? JSON.stringify(data.customFields) : null,
+      // customFields 필드는 아직 DB에 추가되지 않음
       createdAt: /* @__PURE__ */ new Date(),
       updatedAt: /* @__PURE__ */ new Date()
     }).returning({ id: purchaseOrders.id });
@@ -11514,8 +10591,10 @@ var UnifiedOrderCreationService = class {
         middleCategory: item.middleCategory || null,
         minorCategory: item.minorCategory || null,
         quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        totalAmount: item.totalAmount || 0,
+        unitPrice: String(item.unitPrice),
+        // Convert to string for decimal type
+        totalAmount: String(item.totalAmount || 0),
+        // Convert to string for decimal type
         notes: item.notes || null
       }));
       await db.insert(purchaseOrderItems).values(orderItemsToInsert);
@@ -11544,9 +10623,9 @@ var UnifiedOrderCreationService = class {
     }
     if (data.method === "excel" && data.excelFilePath) {
       logger.log(`\u{1F4CA} \uC5D1\uC140 \uC6D0\uBCF8 \uD30C\uC77C \uCCA8\uBD80 - ${data.excelFilePath}`);
-      if (fs8.existsSync(data.excelFilePath)) {
-        const stat = fs8.statSync(data.excelFilePath);
-        const fileName = path6.basename(data.excelFilePath);
+      if (fs7.existsSync(data.excelFilePath)) {
+        const stat = fs7.statSync(data.excelFilePath);
+        const fileName = path5.basename(data.excelFilePath);
         await db.insert(attachments).values({
           orderId,
           fileName,
@@ -11591,7 +10670,7 @@ var UnifiedOrderCreationService = class {
     await db.update(purchaseOrders).set({
       orderStatus: status,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq10(purchaseOrders.id, orderId));
+    }).where(eq9(purchaseOrders.id, orderId));
   }
   /**
    * 진행상황 알림 (SSE 사용)
@@ -11622,20 +10701,429 @@ var UnifiedOrderCreationService = class {
    * 발주서 번호 조회
    */
   async getOrderNumber(orderId) {
-    const [order] = await db.select({ orderNumber: purchaseOrders.orderNumber }).from(purchaseOrders).where(eq10(purchaseOrders.id, orderId)).limit(1);
+    const [order] = await db.select({ orderNumber: purchaseOrders.orderNumber }).from(purchaseOrders).where(eq9(purchaseOrders.id, orderId)).limit(1);
     return order?.orderNumber || `ORDER-${orderId}`;
   }
 };
 
 // server/routes/orders.ts
 init_db();
-init_email_settings_service();
 import { eq as eq12, and as and7, or as or3, like as like2, desc as desc6, sql as sql5 } from "drizzle-orm";
-import fs9 from "fs";
-import path7 from "path";
+import fs8 from "fs";
+import path6 from "path";
 import { fileURLToPath as fileURLToPath2 } from "url";
 import * as XLSX3 from "xlsx";
 import nodemailer3 from "nodemailer";
+
+// server/services/email-settings-service.ts
+init_db();
+init_schema();
+import { eq as eq10, desc as desc5 } from "drizzle-orm";
+
+// server/utils/email-settings-encryption.ts
+import crypto2 from "crypto";
+var EmailSettingsEncryption = class {
+  static {
+    this.algorithm = "aes-256-gcm";
+  }
+  static {
+    this.keyLength = 32;
+  }
+  static {
+    // 256 bits
+    this.ivLength = 16;
+  }
+  // 128 bits
+  /**
+   * 암호화 키 생성 (환경 변수 기반)
+   */
+  static getEncryptionKey() {
+    const secret = process.env.ENCRYPTION_SECRET || "default-secret-key-change-in-production";
+    return crypto2.scryptSync(secret, "salt", this.keyLength);
+  }
+  /**
+   * 비밀번호 암호화
+   * @param plainText 평문 비밀번호
+   * @returns 암호화된 문자열 (iv:tag:encrypted 형태)
+   */
+  static encrypt(plainText) {
+    try {
+      const key = this.getEncryptionKey();
+      const iv = crypto2.randomBytes(this.ivLength);
+      const cipher = crypto2.createCipheriv(this.algorithm, key, iv);
+      cipher.setAAD(Buffer.from("email-settings", "utf8"));
+      let encrypted = cipher.update(plainText, "utf8", "hex");
+      encrypted += cipher.final("hex");
+      const tag = cipher.getAuthTag();
+      return `${iv.toString("hex")}:${tag.toString("hex")}:${encrypted}`;
+    } catch (error) {
+      console.error("\uC554\uD638\uD654 \uC2E4\uD328:", error);
+      throw new Error("\uBE44\uBC00\uBC88\uD638 \uC554\uD638\uD654\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4");
+    }
+  }
+  /**
+   * 비밀번호 복호화
+   * @param encryptedText 암호화된 문자열 (iv:tag:encrypted 형태)
+   * @returns 평문 비밀번호
+   */
+  static decrypt(encryptedText) {
+    try {
+      const parts = encryptedText.split(":");
+      if (parts.length !== 3) {
+        throw new Error("\uC798\uBABB\uB41C \uC554\uD638\uD654 \uD615\uC2DD");
+      }
+      const [ivHex, tagHex, encrypted] = parts;
+      const key = this.getEncryptionKey();
+      const iv = Buffer.from(ivHex, "hex");
+      const tag = Buffer.from(tagHex, "hex");
+      const decipher = crypto2.createDecipheriv(this.algorithm, key, iv);
+      decipher.setAuthTag(tag);
+      decipher.setAAD(Buffer.from("email-settings", "utf8"));
+      let decrypted = decipher.update(encrypted, "hex", "utf8");
+      decrypted += decipher.final("utf8");
+      return decrypted;
+    } catch (error) {
+      console.error("\uBCF5\uD638\uD654 \uC2E4\uD328:", error);
+      throw new Error("\uBE44\uBC00\uBC88\uD638 \uBCF5\uD638\uD654\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4");
+    }
+  }
+  /**
+   * 암호화 테스트 함수
+   */
+  static test() {
+    try {
+      const testPassword = "test-password-123";
+      const encrypted = this.encrypt(testPassword);
+      const decrypted = this.decrypt(encrypted);
+      return testPassword === decrypted;
+    } catch (error) {
+      console.error("\uC554\uD638\uD654 \uD14C\uC2A4\uD2B8 \uC2E4\uD328:", error);
+      return false;
+    }
+  }
+  /**
+   * 안전한 비밀번호 비교
+   * @param plainText 평문 비밀번호
+   * @param encryptedText 암호화된 비밀번호
+   * @returns 일치 여부
+   */
+  static compare(plainText, encryptedText) {
+    try {
+      const decrypted = this.decrypt(encryptedText);
+      return plainText === decrypted;
+    } catch (error) {
+      return false;
+    }
+  }
+  /**
+   * 이메일 설정 마스킹 (UI 표시용)
+   * @param email 이메일 주소
+   * @returns 마스킹된 이메일
+   */
+  static maskEmail(email) {
+    if (!email || !email.includes("@")) {
+      return "***@***.***";
+    }
+    const [local, domain] = email.split("@");
+    const maskedLocal = local.length > 2 ? local.charAt(0) + "*".repeat(local.length - 2) + local.charAt(local.length - 1) : local;
+    return `${maskedLocal}@${domain}`;
+  }
+  /**
+   * 호스트 정보 마스킹 (보안을 위해)
+   * @param host SMTP 호스트
+   * @returns 마스킹된 호스트
+   */
+  static maskHost(host) {
+    if (!host) return "***";
+    if (host.includes(".")) {
+      const parts = host.split(".");
+      return parts.map(
+        (part, index2) => index2 === 0 || index2 === parts.length - 1 ? part : "*".repeat(part.length)
+      ).join(".");
+    }
+    return host.length > 4 ? host.substring(0, 2) + "*".repeat(host.length - 4) + host.substring(host.length - 2) : host;
+  }
+};
+if (process.env.NODE_ENV !== "production") {
+  if (EmailSettingsEncryption.test()) {
+    console.log("\u2705 \uC774\uBA54\uC77C \uC124\uC815 \uC554\uD638\uD654 \uAE30\uB2A5 \uC815\uC0C1 \uC791\uB3D9");
+  } else {
+    console.warn("\u26A0\uFE0F \uC774\uBA54\uC77C \uC124\uC815 \uC554\uD638\uD654 \uAE30\uB2A5 \uD14C\uC2A4\uD2B8 \uC2E4\uD328");
+  }
+}
+
+// server/services/email-settings-service.ts
+import nodemailer2 from "nodemailer";
+var EmailSettingsService = class _EmailSettingsService {
+  static {
+    this.settingsCache = null;
+  }
+  static {
+    this.cacheTimestamp = 0;
+  }
+  static {
+    this.CACHE_TTL = 5 * 60 * 1e3;
+  }
+  // 5분 캐시
+  /**
+   * 기본 설정 가져오기 (활성 + 기본 설정)
+   */
+  async getDefaultSettings() {
+    try {
+      if (_EmailSettingsService.isCacheValid()) {
+        return _EmailSettingsService.settingsCache;
+      }
+      const db4 = db;
+      const result = await db4.select().from(emailSettings).where(eq10(emailSettings.isActive, true)).orderBy(desc5(emailSettings.isDefault), desc5(emailSettings.updatedAt)).limit(1);
+      const setting = result[0] || null;
+      _EmailSettingsService.settingsCache = setting;
+      _EmailSettingsService.cacheTimestamp = Date.now();
+      return setting;
+    } catch (error) {
+      console.error("\uAE30\uBCF8 \uC774\uBA54\uC77C \uC124\uC815 \uC870\uD68C \uC2E4\uD328:", error);
+      return null;
+    }
+  }
+  /**
+   * 모든 설정 조회
+   */
+  async getAllSettings() {
+    try {
+      const db4 = db;
+      const result = await db4.select().from(emailSettings).orderBy(desc5(emailSettings.isDefault), desc5(emailSettings.updatedAt));
+      return result;
+    } catch (error) {
+      console.error("\uC774\uBA54\uC77C \uC124\uC815 \uBAA9\uB85D \uC870\uD68C \uC2E4\uD328:", error);
+      return [];
+    }
+  }
+  /**
+   * 새 설정 생성
+   */
+  async createSettings(data, createdBy) {
+    try {
+      const encryptedPassword = EmailSettingsEncryption.encrypt(data.smtpPass);
+      const db4 = db;
+      if (data.isDefault) {
+        await db4.update(emailSettings).set({ isDefault: false, updatedAt: /* @__PURE__ */ new Date() }).where(eq10(emailSettings.isDefault, true));
+      }
+      const insertData = {
+        ...data,
+        smtpPass: encryptedPassword,
+        createdBy
+      };
+      const result = await db4.insert(emailSettings).values(insertData).returning();
+      const newSetting = result[0];
+      this.invalidateCache();
+      return newSetting;
+    } catch (error) {
+      console.error("\uC774\uBA54\uC77C \uC124\uC815 \uC0DD\uC131 \uC2E4\uD328:", error);
+      throw new Error("\uC774\uBA54\uC77C \uC124\uC815 \uC0DD\uC131\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4");
+    }
+  }
+  /**
+   * 설정 업데이트
+   */
+  async updateSettings(id, data, updatedBy) {
+    try {
+      const db4 = db;
+      const updateData = {
+        ...data,
+        updatedAt: /* @__PURE__ */ new Date()
+      };
+      if (data.smtpPass && data.smtpPass !== "********") {
+        updateData.smtpPass = EmailSettingsEncryption.encrypt(data.smtpPass);
+      }
+      if (data.isDefault === true) {
+        await db4.update(emailSettings).set({ isDefault: false, updatedAt: /* @__PURE__ */ new Date() }).where(eq10(emailSettings.isDefault, true));
+      }
+      const result = await db4.update(emailSettings).set(updateData).where(eq10(emailSettings.id, id)).returning();
+      if (result.length === 0) {
+        throw new Error("\uC5C5\uB370\uC774\uD2B8\uD560 \uC124\uC815\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4");
+      }
+      this.invalidateCache();
+      return result[0];
+    } catch (error) {
+      console.error("\uC774\uBA54\uC77C \uC124\uC815 \uC5C5\uB370\uC774\uD2B8 \uC2E4\uD328:", error);
+      throw new Error("\uC774\uBA54\uC77C \uC124\uC815 \uC5C5\uB370\uC774\uD2B8\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4");
+    }
+  }
+  /**
+   * 설정 삭제
+   */
+  async deleteSettings(id) {
+    try {
+      const db4 = db;
+      const result = await db4.delete(emailSettings).where(eq10(emailSettings.id, id)).returning();
+      this.invalidateCache();
+      return result.length > 0;
+    } catch (error) {
+      console.error("\uC774\uBA54\uC77C \uC124\uC815 \uC0AD\uC81C \uC2E4\uD328:", error);
+      return false;
+    }
+  }
+  /**
+   * SMTP 연결 테스트
+   */
+  async testSMTPConnection(setting, testEmail) {
+    try {
+      const decryptedPassword = EmailSettingsEncryption.decrypt(setting.smtpPass);
+      const transporter2 = nodemailer2.createTransport({
+        host: setting.smtpHost,
+        port: setting.smtpPort,
+        secure: setting.smtpPort === 465,
+        auth: {
+          user: setting.smtpUser,
+          pass: decryptedPassword
+        },
+        tls: {
+          rejectUnauthorized: false
+        }
+      });
+      await transporter2.verify();
+      const info = await transporter2.sendMail({
+        from: setting.fromName ? `"${setting.fromName}" <${setting.smtpUser}>` : setting.smtpUser,
+        to: testEmail,
+        subject: "[IKJIN] \uC774\uBA54\uC77C \uC124\uC815 \uD14C\uC2A4\uD2B8",
+        html: `
+          <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px;">
+            <h2 style="color: #3b82f6;">\uC774\uBA54\uC77C \uC124\uC815 \uD14C\uC2A4\uD2B8 \uC644\uB8CC</h2>
+            <p>IKJIN \uAD6C\uB9E4 \uBC1C\uC8FC \uAD00\uB9AC \uC2DC\uC2A4\uD15C\uC758 \uC774\uBA54\uC77C \uC124\uC815\uC774 \uC815\uC0C1\uC801\uC73C\uB85C \uC791\uB3D9\uD569\uB2C8\uB2E4.</p>
+            <hr style="margin: 20px 0; border: 1px solid #e5e7eb;">
+            <div style="background: #f9fafb; padding: 15px; border-radius: 5px;">
+              <h3 style="margin-top: 0; color: #374151;">\uC124\uC815 \uC815\uBCF4</h3>
+              <p><strong>SMTP \uC11C\uBC84:</strong> ${EmailSettingsEncryption.maskHost(setting.smtpHost)}</p>
+              <p><strong>\uD3EC\uD2B8:</strong> ${setting.smtpPort}</p>
+              <p><strong>\uBC1C\uC1A1\uC790:</strong> ${EmailSettingsEncryption.maskEmail(setting.smtpUser)}</p>
+              <p><strong>\uD14C\uC2A4\uD2B8 \uC2DC\uAC04:</strong> ${(/* @__PURE__ */ new Date()).toLocaleString("ko-KR")}</p>
+            </div>
+          </div>
+        `
+      });
+      await this.updateTestResult(setting.id, {
+        success: true,
+        messageId: info.messageId,
+        testedAt: /* @__PURE__ */ new Date(),
+        testEmail
+      });
+      return {
+        success: true,
+        messageId: info.messageId
+      };
+    } catch (error) {
+      console.error("SMTP \uC5F0\uACB0 \uD14C\uC2A4\uD2B8 \uC2E4\uD328:", error);
+      await this.updateTestResult(setting.id, {
+        success: false,
+        error: error.message,
+        testedAt: /* @__PURE__ */ new Date(),
+        testEmail
+      });
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+  /**
+   * 환경 변수에서 현재 설정 읽기 (백워드 호환성)
+   */
+  getSettingsFromEnv() {
+    return {
+      smtpHost: process.env.SMTP_HOST || "smtp.naver.com",
+      smtpPort: parseInt(process.env.SMTP_PORT || "587"),
+      smtpUser: process.env.SMTP_USER || "",
+      // smtpPass는 평문으로 반환 (암호화는 저장 시)
+      fromName: "IKJIN \uAD6C\uB9E4 \uBC1C\uC8FC \uC2DC\uC2A4\uD15C",
+      description: "\uD658\uACBD \uBCC0\uC218\uC5D0\uC11C \uAC00\uC838\uC628 \uAE30\uBCF8 \uC124\uC815",
+      isActive: true,
+      isDefault: true
+    };
+  }
+  /**
+   * UI용 마스킹된 설정 반환
+   */
+  getMaskedSettings(setting) {
+    return {
+      ...setting,
+      smtpPass: "********",
+      smtpUser: EmailSettingsEncryption.maskEmail(setting.smtpUser),
+      smtpHost: EmailSettingsEncryption.maskHost(setting.smtpHost)
+    };
+  }
+  /**
+   * 실제 SMTP 설정 반환 (이메일 발송용)
+   */
+  async getDecryptedSettings(settingId) {
+    try {
+      let setting;
+      if (settingId) {
+        const db4 = db;
+        const result = await db4.select().from(emailSettings).where(eq10(emailSettings.id, settingId)).limit(1);
+        setting = result[0] || null;
+      } else {
+        setting = await this.getDefaultSettings();
+      }
+      if (!setting) {
+        return {
+          host: process.env.SMTP_HOST || "smtp.naver.com",
+          port: parseInt(process.env.SMTP_PORT || "587"),
+          secure: parseInt(process.env.SMTP_PORT || "587") === 465,
+          auth: {
+            user: process.env.SMTP_USER || "",
+            pass: process.env.SMTP_PASS || ""
+          },
+          tls: {
+            rejectUnauthorized: false
+          }
+        };
+      }
+      const decryptedPassword = EmailSettingsEncryption.decrypt(setting.smtpPass);
+      return {
+        host: setting.smtpHost,
+        port: setting.smtpPort,
+        secure: setting.smtpPort === 465,
+        auth: {
+          user: setting.smtpUser,
+          pass: decryptedPassword
+        },
+        tls: {
+          rejectUnauthorized: false
+        }
+      };
+    } catch (error) {
+      console.error("SMTP \uC124\uC815 \uBCF5\uD638\uD654 \uC2E4\uD328:", error);
+      return null;
+    }
+  }
+  /**
+   * 캐시 유효성 확인
+   */
+  static isCacheValid() {
+    return _EmailSettingsService.settingsCache !== null && Date.now() - _EmailSettingsService.cacheTimestamp < _EmailSettingsService.CACHE_TTL;
+  }
+  /**
+   * 캐시 무효화
+   */
+  invalidateCache() {
+    _EmailSettingsService.settingsCache = null;
+    _EmailSettingsService.cacheTimestamp = 0;
+  }
+  /**
+   * 테스트 결과 업데이트
+   */
+  async updateTestResult(settingId, testResult) {
+    try {
+      const db4 = db;
+      await db4.update(emailSettings).set({
+        lastTestedAt: /* @__PURE__ */ new Date(),
+        testResult,
+        updatedAt: /* @__PURE__ */ new Date()
+      }).where(eq10(emailSettings.id, settingId));
+    } catch (error) {
+      console.error("\uD14C\uC2A4\uD2B8 \uACB0\uACFC \uC5C5\uB370\uC774\uD2B8 \uC2E4\uD328:", error);
+    }
+  }
+};
 
 // server/utils/email-template-generator.ts
 init_db();
@@ -11854,7 +11342,7 @@ function generateEmailHTML(data) {
 
 // server/routes/orders.ts
 var __filename2 = fileURLToPath2(import.meta.url);
-var __dirname2 = path7.dirname(__filename2);
+var __dirname2 = path6.dirname(__filename2);
 var router3 = Router3();
 var db2 = db;
 var emailService = new POEmailService();
@@ -12968,13 +12456,13 @@ router3.get("/orders/download-pdf/:timestamp", async (req, res) => {
         console.error("\u274C \uB370\uC774\uD130\uBCA0\uC774\uC2A4 PDF \uC870\uD68C \uC624\uB958:", dbError);
       }
     }
-    const basePath = process.env.VERCEL ? path7.join("/tmp", "temp-pdf", `order-${timestamp2}`) : path7.join(process.cwd(), "uploads/temp-pdf", `order-${timestamp2}`);
+    const basePath = process.env.VERCEL ? path6.join("/tmp", "temp-pdf", `order-${timestamp2}`) : path6.join(process.cwd(), "uploads/temp-pdf", `order-${timestamp2}`);
     const pdfPath = `${basePath}.pdf`;
     const htmlPath = `${basePath}.html`;
     console.log(`\u{1F4C4} \uD30C\uC77C \uC2DC\uC2A4\uD15C\uC5D0\uC11C \uD30C\uC77C \uC694\uCCAD: ${basePath}.*`);
-    console.log(`\u{1F4C4} PDF \uC874\uC7AC: ${fs9.existsSync(pdfPath)}, HTML \uC874\uC7AC: ${fs9.existsSync(htmlPath)}`);
-    if (process.env.VERCEL && !fs9.existsSync(pdfPath) && fs9.existsSync(htmlPath)) {
-      const htmlContent = fs9.readFileSync(htmlPath, "utf-8");
+    console.log(`\u{1F4C4} PDF \uC874\uC7AC: ${fs8.existsSync(pdfPath)}, HTML \uC874\uC7AC: ${fs8.existsSync(htmlPath)}`);
+    if (process.env.VERCEL && !fs8.existsSync(pdfPath) && fs8.existsSync(htmlPath)) {
+      const htmlContent = fs8.readFileSync(htmlPath, "utf-8");
       res.setHeader("Content-Type", "text/html; charset=utf-8");
       res.setHeader("Cache-Control", "no-cache");
       if (download === "true") {
@@ -12983,9 +12471,9 @@ router3.get("/orders/download-pdf/:timestamp", async (req, res) => {
       res.send(htmlContent);
       return;
     }
-    if (fs9.existsSync(pdfPath)) {
+    if (fs8.existsSync(pdfPath)) {
       try {
-        const stat = fs9.statSync(pdfPath);
+        const stat = fs8.statSync(pdfPath);
         console.log(`\u{1F4CA} PDF \uD30C\uC77C \uC815\uBCF4: \uD06C\uAE30 ${(stat.size / 1024).toFixed(2)} KB`);
         res.setHeader("Access-Control-Allow-Origin", "*");
         res.setHeader("Access-Control-Allow-Methods", "GET");
@@ -12996,7 +12484,7 @@ router3.get("/orders/download-pdf/:timestamp", async (req, res) => {
           res.setHeader("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent("\uBC1C\uC8FC\uC11C.pdf")}`);
           res.setHeader("Content-Type", "application/pdf");
           res.setHeader("Content-Length", stat.size.toString());
-          const downloadStream = fs9.createReadStream(pdfPath);
+          const downloadStream = fs8.createReadStream(pdfPath);
           downloadStream.on("error", (error) => {
             console.error("\u274C PDF \uB2E4\uC6B4\uB85C\uB4DC \uC2A4\uD2B8\uB9BC \uC624\uB958:", error);
             if (!res.headersSent) {
@@ -13012,7 +12500,7 @@ router3.get("/orders/download-pdf/:timestamp", async (req, res) => {
           res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
           res.setHeader("Pragma", "no-cache");
           res.setHeader("Expires", "0");
-          const pdfStream = fs9.createReadStream(pdfPath);
+          const pdfStream = fs8.createReadStream(pdfPath);
           pdfStream.on("error", (error) => {
             console.error("\u274C PDF \uC2A4\uD2B8\uB9BC \uC624\uB958:", error);
             if (!res.headersSent) {
@@ -13060,7 +12548,7 @@ router3.get("/orders/:id/download-pdf", async (req, res) => {
   try {
     const orderId = parseInt(req.params.id);
     console.log(`\u{1F4C4} Order ID ${orderId}\uB85C PDF \uB2E4\uC6B4\uB85C\uB4DC \uC694\uCCAD`);
-    const attachments3 = await db2.select().from(attachments).where(
+    const attachments4 = await db2.select().from(attachments).where(
       and7(
         eq12(attachments.orderId, orderId),
         or3(
@@ -13069,13 +12557,13 @@ router3.get("/orders/:id/download-pdf", async (req, res) => {
         )
       )
     ).orderBy(desc6(attachments.createdAt)).limit(1);
-    if (!attachments3 || attachments3.length === 0) {
+    if (!attachments4 || attachments4.length === 0) {
       console.warn(`\u26A0\uFE0F Order ${orderId}\uC5D0 \uB300\uD55C PDF \uC5C6\uC74C`);
       return res.status(404).json({
         error: "PDF \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
       });
     }
-    const attachment = attachments3[0];
+    const attachment = attachments4[0];
     console.log(`\u{1F4C4} PDF \uBC1C\uACAC: ${attachment.originalName}`);
     const downloadUrl = `/api/attachments/${attachment.id}/download?download=true`;
     console.log(`\u{1F4C4} \uB9AC\uB2E4\uC774\uB809\uD2B8: ${downloadUrl}`);
@@ -13277,7 +12765,7 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
     }
     let excelFilePath = "";
     let additionalAttachments = [];
-    let attachments3 = [];
+    let attachments4 = [];
     let attachmentsList = [];
     const emailOptions = {
       orderNumber: orderData.orderNumber,
@@ -13310,15 +12798,15 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
             const isExcelFile = attachment.mimeType?.includes("excel") || attachment.mimeType?.includes("spreadsheet") || attachment.originalName?.toLowerCase().endsWith(".xlsx") || attachment.originalName?.toLowerCase().endsWith(".xls");
             if (isExcelFile && !excelFilePath) {
               if (attachment.fileData) {
-                const tempDir = path7.join(__dirname2, "../../uploads");
-                const tempFilePath = path7.join(tempDir, `temp-${Date.now()}-${attachment.originalName}`);
-                if (!fs9.existsSync(tempDir)) {
-                  fs9.mkdirSync(tempDir, { recursive: true });
+                const tempDir = path6.join(__dirname2, "../../uploads");
+                const tempFilePath = path6.join(tempDir, `temp-${Date.now()}-${attachment.originalName}`);
+                if (!fs8.existsSync(tempDir)) {
+                  fs8.mkdirSync(tempDir, { recursive: true });
                 }
-                fs9.writeFileSync(tempFilePath, Buffer.from(attachment.fileData, "base64"));
+                fs8.writeFileSync(tempFilePath, Buffer.from(attachment.fileData, "base64"));
                 excelFilePath = tempFilePath;
                 console.log("\u2705 Excel \uD30C\uC77C \uC784\uC2DC \uC800\uC7A5:", tempFilePath);
-              } else if (attachment.filePath && fs9.existsSync(attachment.filePath)) {
+              } else if (attachment.filePath && fs8.existsSync(attachment.filePath)) {
                 excelFilePath = attachment.filePath;
                 console.log("\u2705 Excel \uD30C\uC77C \uACBD\uB85C \uC0AC\uC6A9:", attachment.filePath);
               }
@@ -13330,7 +12818,7 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
                   contentType: attachment.mimeType || "application/octet-stream"
                 });
                 console.log("\u2705 \uCD94\uAC00 \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00 (Base64):", attachment.originalName);
-              } else if (attachment.filePath && fs9.existsSync(attachment.filePath)) {
+              } else if (attachment.filePath && fs8.existsSync(attachment.filePath)) {
                 additionalAttachments.push({
                   filename: attachment.originalName,
                   path: attachment.filePath,
@@ -13347,10 +12835,10 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
     }
     if (!excelFilePath) {
       console.log("\u{1F4CE} Excel \uD30C\uC77C\uC774 \uC5C6\uC5B4 \uAE30\uBCF8 \uD30C\uC77C \uC0DD\uC131");
-      const tempDir = path7.join(__dirname2, "../../uploads");
-      const tempFilePath = path7.join(tempDir, `default-po-${Date.now()}.xlsx`);
-      if (!fs9.existsSync(tempDir)) {
-        fs9.mkdirSync(tempDir, { recursive: true });
+      const tempDir = path6.join(__dirname2, "../../uploads");
+      const tempFilePath = path6.join(tempDir, `default-po-${Date.now()}.xlsx`);
+      if (!fs8.existsSync(tempDir)) {
+        fs8.mkdirSync(tempDir, { recursive: true });
       }
       const workbook = XLSX3.utils.book_new();
       const worksheet = XLSX3.utils.json_to_sheet([{
@@ -13377,7 +12865,7 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
       const processedAttachmentIds = /* @__PURE__ */ new Set();
       if (attachPdf && pdfUrl && pdfUrl.includes("/api/attachments/") && pdfUrl.includes("/download")) {
         const pdfAttachmentIdMatch = pdfUrl.match(/\/api\/attachments\/(\d+)\/download/);
-        if (pdfAttachmentIdMatch && attachments3.length > 0) {
+        if (pdfAttachmentIdMatch && attachments4.length > 0) {
           const pdfId = parseInt(pdfAttachmentIdMatch[1]);
           console.log("\u{1F50D} PDF already processed by old logic, ID:", pdfId);
           processedAttachmentIds.add(pdfId);
@@ -13412,7 +12900,7 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
           if (attachment) {
             if (attachment.fileData) {
               const fileBuffer = Buffer.from(attachment.fileData, "base64");
-              attachments3.push({
+              attachments4.push({
                 filename: attachment.originalName,
                 content: fileBuffer,
                 contentType: attachment.mimeType || "application/octet-stream"
@@ -13425,8 +12913,8 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
                 isExcel: attachment.mimeType?.includes("spreadsheet") || attachment.originalName?.endsWith(".xlsx"),
                 method: "content (Buffer)"
               });
-            } else if (attachment.filePath && fs9.existsSync(attachment.filePath)) {
-              attachments3.push({
+            } else if (attachment.filePath && fs8.existsSync(attachment.filePath)) {
+              attachments4.push({
                 filename: attachment.originalName,
                 path: attachment.filePath,
                 contentType: attachment.mimeType || "application/octet-stream"
@@ -13450,7 +12938,7 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
         }
       }
     }
-    console.log(`\u{1F4CE} \uCD1D ${attachments3.length}\uAC1C \uCCA8\uBD80\uD30C\uC77C:`, attachmentsList);
+    console.log(`\u{1F4CE} \uCD1D ${attachments4.length}\uAC1C \uCCA8\uBD80\uD30C\uC77C:`, attachmentsList);
     let emailHtmlContent;
     if (orderData.orderId) {
       const templateData = await generateEmailTemplateData(orderData.orderId);
@@ -13546,7 +13034,7 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
       to: emailOptions.to,
       cc: emailOptions.cc,
       subject: emailOptions.subject,
-      attachmentsCount: attachments3.length
+      attachmentsCount: attachments4.length
     });
     const emailHtml = emailHtmlContent;
     const emailSettingsService = new EmailSettingsService();
@@ -13569,7 +13057,7 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
       }
     }
     const transporter2 = nodemailer3.createTransport(smtpConfig);
-    const safeAttachments = attachments3.map((att) => {
+    const safeAttachments = attachments4.map((att) => {
       const attachment = {
         filename: att.filename || "attachment"
       };
@@ -13614,13 +13102,13 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
       contentType: att.contentType
     })));
     console.log("\u{1F4E7} POEmailService\uB97C \uC0AC\uC6A9\uD55C \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC2DC\uC791");
-    const poServiceAttachments = attachments3.map((att) => ({
+    const poServiceAttachments = attachments4.map((att) => ({
       filename: att.filename || "attachment",
-      content: att.content || (att.path ? fs9.readFileSync(att.path) : Buffer.alloc(0)),
+      content: att.content || (att.path ? fs8.readFileSync(att.path) : Buffer.alloc(0)),
       contentType: att.contentType || "application/octet-stream"
     })).filter((att) => att.content && att.content.length > 0);
-    const tempExcelPath = path7.join(__dirname2, "../../uploads", `temp_email_${Date.now()}.txt`);
-    fs9.writeFileSync(tempExcelPath, `\uBC1C\uC8FC\uC11C \uC774\uBA54\uC77C \uCCA8\uBD80\uD30C\uC77C
+    const tempExcelPath = path6.join(__dirname2, "../../uploads", `temp_email_${Date.now()}.txt`);
+    fs8.writeFileSync(tempExcelPath, `\uBC1C\uC8FC\uC11C \uC774\uBA54\uC77C \uCCA8\uBD80\uD30C\uC77C
 \uBC1C\uC8FC\uBC88\uD638: ${orderData.orderNumber}
 \uC804\uC1A1\uC2DC\uAC04: ${(/* @__PURE__ */ new Date()).toISOString()}`);
     try {
@@ -13638,7 +13126,7 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
         senderUserId: req.user?.id
       });
       try {
-        fs9.unlinkSync(tempExcelPath);
+        fs8.unlinkSync(tempExcelPath);
       } catch (unlinkError) {
         console.warn("\uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328:", unlinkError);
       }
@@ -13669,7 +13157,7 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
       }
     } catch (serviceError) {
       try {
-        fs9.unlinkSync(tempExcelPath);
+        fs8.unlinkSync(tempExcelPath);
       } catch (unlinkError) {
         console.warn("\uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328 (\uC624\uB958 \uC2DC):", unlinkError);
       }
@@ -13685,7 +13173,7 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
         to: mailOptions.to,
         cc: mailOptions.cc,
         subject: mailOptions.subject,
-        attachmentsCount: attachments3.length
+        attachmentsCount: attachments4.length
       });
       if (orderData && orderData.orderId) {
         try {
@@ -13888,13 +13376,13 @@ router3.post("/orders/send-email-simple", requireAuth, async (req, res) => {
     };
     let excelPath = "";
     if (attachExcel && orderData?.excelFilePath) {
-      excelPath = path7.join(__dirname2, "../../", orderData.excelFilePath.replace(/^\//, ""));
-      if (!fs9.existsSync(excelPath)) {
+      excelPath = path6.join(__dirname2, "../../", orderData.excelFilePath.replace(/^\//, ""));
+      if (!fs8.existsSync(excelPath)) {
         console.warn("\u26A0\uFE0F \uC5D1\uC140 \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4:", excelPath);
         excelPath = "";
       }
     }
-    let attachments3 = [];
+    let attachments4 = [];
     if (selectedAttachmentIds && Array.isArray(selectedAttachmentIds) && selectedAttachmentIds.length > 0) {
       console.log("\u{1F4CE} \uCC98\uB9AC\uD560 \uC120\uD0DD\uB41C \uCCA8\uBD80\uD30C\uC77C IDs:", selectedAttachmentIds);
       for (const attachmentId of selectedAttachmentIds) {
@@ -13909,7 +13397,7 @@ router3.post("/orders/send-email-simple", requireAuth, async (req, res) => {
             console.log(`\u{1F4CE} \uCC98\uB9AC \uC911\uC778 \uCCA8\uBD80\uD30C\uC77C: ID=${attachmentId}, name=${attachment.original_name}`);
             if (attachment.file_data) {
               const fileBuffer = Buffer.from(attachment.file_data, "base64");
-              attachments3.push({
+              attachments4.push({
                 filename: attachment.original_name,
                 content: fileBuffer,
                 contentType: attachment.mime_type || "application/octet-stream"
@@ -13927,16 +13415,16 @@ router3.post("/orders/send-email-simple", requireAuth, async (req, res) => {
       }
     }
     if (!excelPath) {
-      const tempDir = path7.join(__dirname2, "../../uploads/temp");
-      if (!fs9.existsSync(tempDir)) {
-        fs9.mkdirSync(tempDir, { recursive: true });
+      const tempDir = path6.join(__dirname2, "../../uploads/temp");
+      if (!fs8.existsSync(tempDir)) {
+        fs8.mkdirSync(tempDir, { recursive: true });
       }
-      excelPath = path7.join(tempDir, `temp_${Date.now()}.txt`);
-      fs9.writeFileSync(excelPath, `\uBC1C\uC8FC\uC11C \uC0C1\uC138 \uB0B4\uC6A9
+      excelPath = path6.join(tempDir, `temp_${Date.now()}.txt`);
+      fs8.writeFileSync(excelPath, `\uBC1C\uC8FC\uC11C \uC0C1\uC138 \uB0B4\uC6A9
 
 ${body}`);
     }
-    console.log(`\u{1F4E7} \uC774\uBA54\uC77C \uBC1C\uC1A1: \uAE30\uBCF8 \uCCA8\uBD80\uD30C\uC77C + \uCD94\uAC00 \uCCA8\uBD80\uD30C\uC77C ${attachments3.length}\uAC1C`);
+    console.log(`\u{1F4E7} \uC774\uBA54\uC77C \uBC1C\uC1A1: \uAE30\uBCF8 \uCCA8\uBD80\uD30C\uC77C + \uCD94\uAC00 \uCCA8\uBD80\uD30C\uC77C ${attachments4.length}\uAC1C`);
     const result = await emailService.sendPOWithOriginalFormat(excelPath, {
       to: toEmails,
       cc: ccEmails,
@@ -13949,7 +13437,7 @@ ${body}`);
 \uBC1C\uC8FC\uBC88\uD638: ${emailData.orderNumber}
 \uD504\uB85C\uC81D\uD2B8: ${emailData.projectName}
 \uAC70\uB798\uCC98: ${emailData.vendorName}`,
-      additionalAttachments: attachments3
+      additionalAttachments: attachments4
       // Pass additional attachments
     }, {
       orderId: orderData?.orderId,
@@ -13957,7 +13445,7 @@ ${body}`);
     });
     if (excelPath.includes("temp_")) {
       try {
-        fs9.unlinkSync(excelPath);
+        fs8.unlinkSync(excelPath);
       } catch (err) {
         console.warn("\uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328:", err);
       }
@@ -13997,9 +13485,9 @@ router3.post("/orders/send-email-with-excel", requireAuth, async (req, res) => {
       return res.status(400).json({ error: "\uC5D1\uC140 \uD30C\uC77C \uACBD\uB85C\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4." });
     }
     const absoluteExcelPath = excelFilePath.startsWith("http") ? excelFilePath.replace(/^https?:\/\/[^\/]+/, "") : excelFilePath;
-    const localExcelPath = path7.join(__dirname2, "../../", absoluteExcelPath.replace(/^\//, ""));
+    const localExcelPath = path6.join(__dirname2, "../../", absoluteExcelPath.replace(/^\//, ""));
     console.log("\u{1F4E7} \uC5D1\uC140 \uD30C\uC77C \uACBD\uB85C:", localExcelPath);
-    if (!fs9.existsSync(localExcelPath)) {
+    if (!fs8.existsSync(localExcelPath)) {
       return res.status(400).json({ error: "\uC5D1\uC140 \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4." });
     }
     const result = await emailService.sendPOWithOriginalFormat(
@@ -14123,8 +13611,8 @@ router3.get("/orders/:orderId/attachments", requireAuth, async (req, res) => {
   try {
     const orderId = parseInt(req.params.orderId, 10);
     console.log(`\u{1F4CE} \uBC1C\uC8FC\uC11C \uCCA8\uBD80\uD30C\uC77C \uBAA9\uB85D \uC694\uCCAD: \uBC1C\uC8FC\uC11C ID ${orderId}`);
-    const attachments3 = await storage.getOrderAttachments(orderId);
-    const attachmentList = attachments3.map((attachment) => ({
+    const attachments4 = await storage.getOrderAttachments(orderId);
+    const attachmentList = attachments4.map((attachment) => ({
       id: attachment.id,
       originalName: attachment.originalName,
       storedName: attachment.storedName,
@@ -14185,21 +13673,21 @@ router3.get("/orders/:orderId/attachments/:attachmentId/download", requireAuth, 
       console.log(`\u2705 \uD30C\uC77C \uB2E4\uC6B4\uB85C\uB4DC \uC644\uB8CC (DB): ${originalName}`);
     } else {
       let filePath = attachment.filePath;
-      if (!path7.isAbsolute(filePath)) {
-        filePath = path7.join(__dirname2, "../../", filePath);
+      if (!path6.isAbsolute(filePath)) {
+        filePath = path6.join(__dirname2, "../../", filePath);
       }
       console.log(`\u{1F4C2} \uD30C\uC77C \uACBD\uB85C: ${filePath}`);
-      if (!fs9.existsSync(filePath)) {
+      if (!fs8.existsSync(filePath)) {
         console.log(`\u274C \uD30C\uC77C\uC774 \uC874\uC7AC\uD558\uC9C0 \uC54A\uC74C: ${filePath}`);
         return res.status(404).json({
           error: "\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.",
           filePath: attachment.filePath
         });
       }
-      const stats = fs9.statSync(filePath);
+      const stats = fs8.statSync(filePath);
       console.log(`\u{1F4CA} \uD30C\uC77C \uD06C\uAE30: ${(stats.size / 1024).toFixed(2)} KB`);
       res.setHeader("Content-Length", stats.size);
-      const fileStream = fs9.createReadStream(filePath);
+      const fileStream = fs8.createReadStream(filePath);
       fileStream.on("error", (error) => {
         console.error("\u274C \uD30C\uC77C \uC2A4\uD2B8\uB9BC \uC624\uB958:", error);
         if (!res.headersSent) {
@@ -15033,8 +14521,8 @@ var admin_default = router8;
 // server/routes/excel-automation.ts
 import { Router as Router9 } from "express";
 import multer2 from "multer";
-import path10 from "path";
-import fs12 from "fs";
+import path9 from "path";
+import fs11 from "fs";
 
 // server/utils/excel-automation-service.ts
 init_db();
@@ -15395,8 +14883,8 @@ init_debug_logger();
 // server/utils/excel-attachment-service.ts
 init_db();
 init_schema();
-import fs10 from "fs";
-import path8 from "path";
+import fs9 from "fs";
+import path7 from "path";
 var ExcelAttachmentService = class {
   /**
    * 처리된 Excel 파일을 attachments 테이블에 저장
@@ -15409,13 +14897,13 @@ var ExcelAttachmentService = class {
   static async saveProcessedExcelFile(orderId, processedExcelPath, originalFileName, uploadedBy, orderNumber) {
     try {
       console.log(`\u{1F4CE} Excel \uCCA8\uBD80\uD30C\uC77C \uC800\uC7A5 \uC2DC\uC791: ${processedExcelPath}`);
-      if (!fs10.existsSync(processedExcelPath)) {
+      if (!fs9.existsSync(processedExcelPath)) {
         return {
           success: false,
           error: `\uCC98\uB9AC\uB41C Excel \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4: ${processedExcelPath}`
         };
       }
-      const stats = fs10.statSync(processedExcelPath);
+      const stats = fs9.statSync(processedExcelPath);
       let standardizedFileName;
       if (orderNumber) {
         const today = /* @__PURE__ */ new Date();
@@ -15425,7 +14913,7 @@ var ExcelAttachmentService = class {
         standardizedFileName = originalFileName;
       }
       console.log(`\u{1F4DD} \uD45C\uC900\uD654\uB41C Excel \uD30C\uC77C\uBA85: ${standardizedFileName}`);
-      const fileBuffer = fs10.readFileSync(processedExcelPath);
+      const fileBuffer = fs9.readFileSync(processedExcelPath);
       const base64Data = fileBuffer.toString("base64");
       const [attachment] = await db.insert(attachments).values({
         orderId,
@@ -15460,15 +14948,15 @@ var ExcelAttachmentService = class {
   static async saveOriginalExcelFile(orderId, originalExcelPath, originalFileName, uploadedBy) {
     try {
       console.log(`\u{1F4CE} \uC6D0\uBCF8 Excel \uCCA8\uBD80\uD30C\uC77C \uC800\uC7A5 \uC2DC\uC791: ${originalExcelPath}`);
-      if (!fs10.existsSync(originalExcelPath)) {
+      if (!fs9.existsSync(originalExcelPath)) {
         return {
           success: false,
           error: `\uC6D0\uBCF8 Excel \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4: ${originalExcelPath}`
         };
       }
-      const stats = fs10.statSync(originalExcelPath);
-      const fileName = `original_${path8.basename(originalExcelPath)}`;
-      const fileBuffer = fs10.readFileSync(originalExcelPath);
+      const stats = fs9.statSync(originalExcelPath);
+      const fileName = `original_${path7.basename(originalExcelPath)}`;
+      const fileBuffer = fs9.readFileSync(originalExcelPath);
       const base64Data = fileBuffer.toString("base64");
       const [attachment] = await db.insert(attachments).values({
         orderId,
@@ -15497,8 +14985,8 @@ var ExcelAttachmentService = class {
 };
 
 // server/utils/excel-automation-service.ts
-import fs11 from "fs";
-import path9 from "path";
+import fs10 from "fs";
+import path8 from "path";
 var ExcelAutomationService = class {
   /**
    * 1단계: Excel 파일 업로드 및 파싱, DB 저장
@@ -15562,7 +15050,7 @@ var ExcelAutomationService = class {
       }
       console.log(`\u{1F50D} [DEBUG] 2.5\uB2E8\uACC4: \uCC98\uB9AC\uB41C Excel \uD30C\uC77C \uCCA8\uBD80 \uC2DC\uC791`);
       console.log(`\u{1F4CA} [DEBUG] saveResult:`, JSON.stringify(saveResult, null, 2));
-      const originalFileName = path9.basename(filePath);
+      const originalFileName = path8.basename(filePath);
       if (saveResult.savedOrderNumbers && saveResult.savedOrderNumbers.length > 0) {
         console.log(`\u{1F4CB} [DEBUG] \uBC1C\uC8FC\uC11C \uBC88\uD638\uB4E4:`, saveResult.savedOrderNumbers);
         try {
@@ -15570,7 +15058,7 @@ var ExcelAutomationService = class {
           console.log(`\u{1F50D} [DEBUG] \uC870\uD68C\uB41C \uBC1C\uC8FC\uC11C\uB4E4:`, orders);
           const processedExcelPath = filePath.replace(/\.(xlsx?)$/i, "_processed.$1");
           const removeResult = await removeAllInputSheets(filePath, processedExcelPath);
-          if (removeResult.success && fs11.existsSync(processedExcelPath)) {
+          if (removeResult.success && fs10.existsSync(processedExcelPath)) {
             console.log(`\u2705 [DEBUG] Input \uC2DC\uD2B8 \uC81C\uAC70 \uC644\uB8CC: ${processedExcelPath}`);
             for (const order of orders) {
               const attachResult = await ExcelAttachmentService.saveProcessedExcelFile(
@@ -15597,7 +15085,7 @@ var ExcelAutomationService = class {
               }
             }
             try {
-              fs11.unlinkSync(processedExcelPath);
+              fs10.unlinkSync(processedExcelPath);
               console.log(`\u{1F9F9} [DEBUG] \uC784\uC2DC \uCC98\uB9AC\uB41C Excel \uD30C\uC77C \uC815\uB9AC \uC644\uB8CC: ${processedExcelPath}`);
             } catch (cleanupError) {
               console.warn(`\u26A0\uFE0F [DEBUG] \uC784\uC2DC \uD30C\uC77C \uC815\uB9AC \uC2E4\uD328:`, cleanupError);
@@ -15771,8 +15259,8 @@ var ExcelAutomationService = class {
         new Set(vendorValidation.validVendors.map((v) => v.email))
       ).filter((email) => email && email.trim());
       const timestamp2 = Date.now();
-      const processedPath = path9.join(
-        path9.dirname(filePath),
+      const processedPath = path8.join(
+        path8.dirname(filePath),
         `processed-${timestamp2}.xlsx`
       );
       await removeAllInputSheets(filePath, processedPath);
@@ -15801,15 +15289,15 @@ var ExcelAutomationService = class {
       } catch (pdfError) {
         console.error("\u26A0\uFE0F \uD1B5\uD569 PDF \uC11C\uBE44\uC2A4 \uC2E4\uD328 - Excel \uD30C\uC77C\uB9CC \uCCA8\uBD80\uB429\uB2C8\uB2E4:", pdfError);
       }
-      const stats = fs11.statSync(processedPath);
-      const pdfStats = pdfConversionSuccess && fs11.existsSync(pdfPath) ? fs11.statSync(pdfPath) : null;
+      const stats = fs10.statSync(processedPath);
+      const pdfStats = pdfConversionSuccess && fs10.existsSync(pdfPath) ? fs10.statSync(pdfPath) : null;
       const emailPreview = {
         recipients,
-        subject: `\uBC1C\uC8FC\uC11C - ${path9.basename(filePath, path9.extname(filePath))} (${(/* @__PURE__ */ new Date()).toLocaleDateString("ko-KR")})`,
+        subject: `\uBC1C\uC8FC\uC11C - ${path8.basename(filePath, path8.extname(filePath))} (${(/* @__PURE__ */ new Date()).toLocaleDateString("ko-KR")})`,
         attachmentInfo: {
-          originalFile: path9.basename(filePath),
-          processedFile: path9.basename(processedPath),
-          processedPdfFile: pdfStats ? path9.basename(pdfPath) : void 0,
+          originalFile: path8.basename(filePath),
+          processedFile: path8.basename(processedPath),
+          processedPdfFile: pdfStats ? path8.basename(pdfPath) : void 0,
           fileSize: stats.size,
           pdfFileSize: pdfStats ? pdfStats.size : void 0
         },
@@ -15973,8 +15461,8 @@ var ExcelAutomationService = class {
         new Set(selectedVendors.map((v) => v.selectedVendorEmail))
       ).filter((email) => email && email.trim());
       const timestamp2 = Date.now();
-      const processedPath = path9.join(
-        path9.dirname(filePath),
+      const processedPath = path8.join(
+        path8.dirname(filePath),
         `processed-${timestamp2}.xlsx`
       );
       await removeAllInputSheets(filePath, processedPath);
@@ -16003,15 +15491,15 @@ var ExcelAutomationService = class {
       } catch (pdfError) {
         console.error("\u26A0\uFE0F \uD1B5\uD569 PDF \uC11C\uBE44\uC2A4 \uC2E4\uD328 - Excel \uD30C\uC77C\uB9CC \uCCA8\uBD80\uB429\uB2C8\uB2E4:", pdfError);
       }
-      const stats = fs11.statSync(processedPath);
-      const pdfStats = pdfConversionSuccess && fs11.existsSync(pdfPath) ? fs11.statSync(pdfPath) : null;
+      const stats = fs10.statSync(processedPath);
+      const pdfStats = pdfConversionSuccess && fs10.existsSync(pdfPath) ? fs10.statSync(pdfPath) : null;
       return {
         recipients,
-        subject: `\uBC1C\uC8FC\uC11C - ${path9.basename(filePath, path9.extname(filePath))} (${(/* @__PURE__ */ new Date()).toLocaleDateString("ko-KR")})`,
+        subject: `\uBC1C\uC8FC\uC11C - ${path8.basename(filePath, path8.extname(filePath))} (${(/* @__PURE__ */ new Date()).toLocaleDateString("ko-KR")})`,
         attachmentInfo: {
-          originalFile: path9.basename(filePath),
-          processedFile: path9.basename(processedPath),
-          processedPdfFile: pdfStats ? path9.basename(pdfPath) : void 0,
+          originalFile: path8.basename(filePath),
+          processedFile: path8.basename(processedPath),
+          processedPdfFile: pdfStats ? path8.basename(pdfPath) : void 0,
           fileSize: stats.size,
           pdfFileSize: pdfStats ? pdfStats.size : void 0
         },
@@ -16038,8 +15526,8 @@ init_debug_logger();
 var storage2 = multer2.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir2 = process.env.VERCEL ? "/tmp" : "uploads";
-    if (!process.env.VERCEL && !fs12.existsSync(uploadDir2)) {
-      fs12.mkdirSync(uploadDir2, { recursive: true });
+    if (!process.env.VERCEL && !fs11.existsSync(uploadDir2)) {
+      fs11.mkdirSync(uploadDir2, { recursive: true });
     }
     cb(null, uploadDir2);
   },
@@ -16154,8 +15642,8 @@ router9.post("/upload-and-process", requireAuth, upload2.single("file"), async (
     const result = await ExcelAutomationService.processExcelUpload(filePath, userId, sessionId);
     console.log(`\u2705 [API] ExcelAutomationService.processExcelUpload \uC644\uB8CC:`, result.success ? "\uC131\uACF5" : "\uC2E4\uD328");
     if (!result.success) {
-      if (fs12.existsSync(filePath)) {
-        fs12.unlinkSync(filePath);
+      if (fs11.existsSync(filePath)) {
+        fs11.unlinkSync(filePath);
       }
       clearTimeout(timeoutHandler);
       if (!responseHandled) {
@@ -16183,9 +15671,9 @@ router9.post("/upload-and-process", requireAuth, upload2.single("file"), async (
   } catch (error) {
     clearTimeout(timeoutHandler);
     console.error("\u274C [API] Excel \uC790\uB3D9\uD654 \uCC98\uB9AC \uC624\uB958:", error);
-    if (req.file?.path && fs12.existsSync(req.file.path)) {
+    if (req.file?.path && fs11.existsSync(req.file.path)) {
       console.log(`\u{1F5D1}\uFE0F [API] \uC624\uB958\uB85C \uC778\uD55C \uC784\uC2DC \uD30C\uC77C \uC815\uB9AC: ${req.file.path}`);
-      fs12.unlinkSync(req.file.path);
+      fs11.unlinkSync(req.file.path);
     }
     let errorMessage = "\uC11C\uBC84 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4.";
     let statusCode = 500;
@@ -16273,7 +15761,7 @@ router9.post("/send-emails", requireAuth, async (req, res) => {
         error: "\uC774\uBA54\uC77C \uC218\uC2E0\uC790\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4."
       });
     }
-    if (!fs12.existsSync(processedFilePath)) {
+    if (!fs11.existsSync(processedFilePath)) {
       return res.status(400).json({
         success: false,
         error: "\uCC98\uB9AC\uB41C \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
@@ -16310,7 +15798,7 @@ router9.post("/send-emails", requireAuth, async (req, res) => {
 router9.post("/validate-vendors", requireAuth, async (req, res) => {
   try {
     const { filePath } = req.body;
-    if (!filePath || !fs12.existsSync(filePath)) {
+    if (!filePath || !fs11.existsSync(filePath)) {
       return res.status(400).json({
         success: false,
         error: "\uC720\uD6A8\uD55C \uD30C\uC77C \uACBD\uB85C\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4."
@@ -16334,8 +15822,8 @@ router9.post("/validate-vendors", requireAuth, async (req, res) => {
 router9.get("/download/:filename", requireAuth, (req, res) => {
   try {
     const filename = req.params.filename;
-    const filePath = path10.join("uploads", filename);
-    if (!fs12.existsSync(filePath)) {
+    const filePath = path9.join("uploads", filename);
+    if (!fs11.existsSync(filePath)) {
       return res.status(404).json({
         success: false,
         error: "\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
@@ -16440,8 +15928,8 @@ router9.delete("/cleanup", requireAuth, async (req, res) => {
     const errors = [];
     for (const filePath of filePaths) {
       try {
-        if (fs12.existsSync(filePath)) {
-          fs12.unlinkSync(filePath);
+        if (fs11.existsSync(filePath)) {
+          fs11.unlinkSync(filePath);
           deletedCount++;
           console.log(`\u{1F5D1}\uFE0F \uD30C\uC77C \uC0AD\uC81C: ${filePath}`);
         }
@@ -16474,18 +15962,18 @@ init_po_template_processor_mock();
 init_debug_logger();
 import { Router as Router10 } from "express";
 import multer3 from "multer";
-import path14 from "path";
-import fs16 from "fs";
+import path13 from "path";
+import fs15 from "fs";
 import { fileURLToPath as fileURLToPath4 } from "url";
 
 // server/utils/po-email-service-mock.ts
 init_po_template_processor_mock();
 import nodemailer4 from "nodemailer";
-import path11 from "path";
-import fs13 from "fs";
+import path10 from "path";
+import fs12 from "fs";
 import { fileURLToPath as fileURLToPath3 } from "url";
 var __filename3 = fileURLToPath3(import.meta.url);
-var __dirname3 = path11.dirname(__filename3);
+var __dirname3 = path10.dirname(__filename3);
 var POEmailServiceMock = class {
   constructor() {
     this.transporter = null;
@@ -16511,8 +15999,8 @@ var POEmailServiceMock = class {
   async sendPOWithAttachments(originalFilePath, emailOptions) {
     try {
       const timestamp2 = Date.now();
-      const uploadsDir = path11.join(__dirname3, "../../uploads");
-      const extractedPath = path11.join(uploadsDir, `po-sheets-${timestamp2}.xlsx`);
+      const uploadsDir = path10.join(__dirname3, "../../uploads");
+      const extractedPath = path10.join(uploadsDir, `po-sheets-${timestamp2}.xlsx`);
       const extractResult = POTemplateProcessorMock.extractSheetsToFile(
         originalFilePath,
         extractedPath,
@@ -16525,7 +16013,7 @@ var POEmailServiceMock = class {
           error: `\uC2DC\uD2B8 \uCD94\uCD9C \uC2E4\uD328: ${extractResultData.error}`
         };
       }
-      const pdfPath = path11.join(uploadsDir, `po-sheets-${timestamp2}.pdf`);
+      const pdfPath = path10.join(uploadsDir, `po-sheets-${timestamp2}.pdf`);
       const pdfResult = await this.createDummyPDF(pdfPath);
       if (!pdfResult.success) {
         return {
@@ -16533,16 +16021,16 @@ var POEmailServiceMock = class {
           error: `PDF \uBCC0\uD658 \uC2E4\uD328: ${pdfResult.error}`
         };
       }
-      const attachments3 = [];
-      if (fs13.existsSync(extractedPath)) {
-        attachments3.push({
+      const attachments4 = [];
+      if (fs12.existsSync(extractedPath)) {
+        attachments4.push({
           filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`,
           path: extractedPath,
           contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         });
       }
-      if (fs13.existsSync(pdfPath)) {
-        attachments3.push({
+      if (fs12.existsSync(pdfPath)) {
+        attachments4.push({
           filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`,
           path: pdfPath,
           contentType: "application/pdf"
@@ -16557,7 +16045,7 @@ var POEmailServiceMock = class {
           bcc: emailOptions.bcc,
           subject: emailOptions.subject,
           html: emailContent,
-          attachments: attachments3
+          attachments: attachments4
         });
       } else {
         result = await this.sendMockEmail({
@@ -16566,7 +16054,7 @@ var POEmailServiceMock = class {
           bcc: emailOptions.bcc,
           subject: emailOptions.subject,
           html: emailContent,
-          attachments: attachments3
+          attachments: attachments4
         });
       }
       setTimeout(() => {
@@ -16633,12 +16121,12 @@ var POEmailServiceMock = class {
     console.log("  \uC81C\uBAA9:", options.subject);
     console.log("  \uCCA8\uBD80\uD30C\uC77C:", options.attachments?.length || 0, "\uAC1C");
     console.log("  \uBC1C\uC1A1 \uC2DC\uAC04:", mockLog.timestamp);
-    const logDir = path11.join(__dirname3, "../../logs");
-    if (!fs13.existsSync(logDir)) {
-      fs13.mkdirSync(logDir, { recursive: true });
+    const logDir = path10.join(__dirname3, "../../logs");
+    if (!fs12.existsSync(logDir)) {
+      fs12.mkdirSync(logDir, { recursive: true });
     }
-    const logFile = path11.join(logDir, `mock-email-${Date.now()}.json`);
-    fs13.writeFileSync(logFile, JSON.stringify(mockLog, null, 2));
+    const logFile = path10.join(logDir, `mock-email-${Date.now()}.json`);
+    fs12.writeFileSync(logFile, JSON.stringify(mockLog, null, 2));
     return {
       success: true,
       messageId: `mock-${Date.now()}@po-management.local`,
@@ -16717,7 +16205,7 @@ trailer
 startxref
 456
 %%EOF`;
-      fs13.writeFileSync(pdfPath, pdfContent);
+      fs12.writeFileSync(pdfPath, pdfContent);
       return { success: true };
     } catch (error) {
       return {
@@ -16731,7 +16219,7 @@ startxref
    */
   getFileSize(filePath) {
     try {
-      const stats = fs13.statSync(filePath);
+      const stats = fs12.statSync(filePath);
       const bytes = stats.size;
       if (bytes === 0) return "0 Bytes";
       const k = 1024;
@@ -16925,9 +16413,9 @@ startxref
   cleanupTempFiles(filePaths) {
     filePaths.forEach((filePath) => {
       try {
-        if (fs13.existsSync(filePath)) {
-          fs13.unlinkSync(filePath);
-          console.log(`\u2705 \uC784\uC2DC \uD30C\uC77C \uC815\uB9AC: ${path11.basename(filePath)}`);
+        if (fs12.existsSync(filePath)) {
+          fs12.unlinkSync(filePath);
+          console.log(`\u2705 \uC784\uC2DC \uD30C\uC77C \uC815\uB9AC: ${path10.basename(filePath)}`);
         }
       } catch (error) {
         console.error(`\u274C \uD30C\uC77C \uC815\uB9AC \uC2E4\uD328: ${filePath}`, error);
@@ -16963,15 +16451,15 @@ startxref
 
 // server/utils/excel-to-pdf-mock.ts
 import XLSX5 from "xlsx";
-import path12 from "path";
-import fs14 from "fs";
+import path11 from "path";
+import fs13 from "fs";
 var ExcelToPdfConverterMock = class {
   /**
    * Excel 파일을 PDF로 변환 (Mock 버전)
    */
   static async convertToPdf(excelPath, options = {}) {
     try {
-      if (!fs14.existsSync(excelPath)) {
+      if (!fs13.existsSync(excelPath)) {
         return {
           success: false,
           error: "Excel \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
@@ -17000,7 +16488,7 @@ var ExcelToPdfConverterMock = class {
    */
   static async convertSheetsToPdf(excelPath, sheetNames, options = {}) {
     try {
-      if (!fs14.existsSync(excelPath)) {
+      if (!fs13.existsSync(excelPath)) {
         return {
           success: false,
           error: "Excel \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
@@ -17029,9 +16517,9 @@ var ExcelToPdfConverterMock = class {
    */
   static async createMockPdf(htmlContent, pdfPath) {
     try {
-      console.log(`\u{1F4C4} PDFKit\uC73C\uB85C \uD55C\uAE00 \uC9C0\uC6D0 PDF \uC0DD\uC131 \uC2DC\uC791: ${path12.basename(pdfPath)}`);
-      const PDFDocument = (await import("pdfkit")).default;
-      const doc = new PDFDocument({
+      console.log(`\u{1F4C4} PDFKit\uC73C\uB85C \uD55C\uAE00 \uC9C0\uC6D0 PDF \uC0DD\uC131 \uC2DC\uC791: ${path11.basename(pdfPath)}`);
+      const PDFDocument2 = (await import("pdfkit")).default;
+      const doc = new PDFDocument2({
         size: "A4",
         margins: { top: 50, bottom: 50, left: 50, right: 50 }
       });
@@ -17050,7 +16538,7 @@ var ExcelToPdfConverterMock = class {
       ];
       for (const fontPath of possibleFonts) {
         try {
-          if (fs14.existsSync(fontPath)) {
+          if (fs13.existsSync(fontPath)) {
             koreanFontPath = fontPath;
             console.log(`\u2705 \uD55C\uAE00 \uD3F0\uD2B8 \uBC1C\uACAC: ${fontPath}`);
             break;
@@ -17080,7 +16568,7 @@ var ExcelToPdfConverterMock = class {
       doc.moveDown(0.5);
       doc.text("\u{1F4C5} \uC0DD\uC131 \uC2DC\uAC04: " + (/* @__PURE__ */ new Date()).toLocaleString("ko-KR"));
       doc.moveDown(0.5);
-      doc.text("\u{1F4C1} \uD30C\uC77C \uACBD\uB85C: " + path12.basename(pdfPath));
+      doc.text("\u{1F4C1} \uD30C\uC77C \uACBD\uB85C: " + path11.basename(pdfPath));
       doc.moveDown(1);
       doc.fontSize(14).text("\u{1F4CA} Excel \uD30C\uC77C \uC815\uBCF4:", 50, doc.y);
       doc.fontSize(10);
@@ -17095,14 +16583,14 @@ var ExcelToPdfConverterMock = class {
       doc.text("\u2022 \uD55C\uAE00 \uD3F0\uD2B8 \uBB38\uC81C\uAC00 \uD574\uACB0\uB418\uC5C8\uB294\uC9C0 \uD655\uC778\uD574 \uC8FC\uC138\uC694.");
       doc.fontSize(8);
       doc.text(`\uC2DC\uC2A4\uD15C: ${process.platform} | Node.js: ${process.version}`, 50, 700);
-      doc.text(`\uD55C\uAE00 \uD3F0\uD2B8: ${koreanFontPath ? path12.basename(koreanFontPath) : "Helvetica (\uAE30\uBCF8)"}`, 50, 715);
+      doc.text(`\uD55C\uAE00 \uD3F0\uD2B8: ${koreanFontPath ? path11.basename(koreanFontPath) : "Helvetica (\uAE30\uBCF8)"}`, 50, 715);
       const buffers = [];
       doc.on("data", buffers.push.bind(buffers));
       return new Promise((resolve) => {
         doc.on("end", () => {
           const pdfBuffer = Buffer.concat(buffers);
-          fs14.writeFileSync(pdfPath, pdfBuffer);
-          console.log(`\u2705 \uD55C\uAE00 \uC9C0\uC6D0 Mock PDF \uC0DD\uC131 \uC644\uB8CC: ${path12.basename(pdfPath)}`);
+          fs13.writeFileSync(pdfPath, pdfBuffer);
+          console.log(`\u2705 \uD55C\uAE00 \uC9C0\uC6D0 Mock PDF \uC0DD\uC131 \uC644\uB8CC: ${path11.basename(pdfPath)}`);
           resolve({ success: true });
         });
         doc.end();
@@ -17270,8 +16758,8 @@ async function convertExcelToPdfMock(excelPath, outputPath, sheetsOnly) {
 
 // server/utils/po-template-validator.ts
 import XLSX6 from "xlsx";
-import fs15 from "fs";
-import path13 from "path";
+import fs14 from "fs";
+import path12 from "path";
 var POTemplateValidator = class {
   static {
     this.REQUIRED_COLUMNS = [
@@ -17388,12 +16876,12 @@ var POTemplateValidator = class {
       }
     };
     try {
-      if (!fs15.existsSync(filePath)) {
+      if (!fs14.existsSync(filePath)) {
         result.isValid = false;
         result.errors.push("\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.");
         return result;
       }
-      const ext = path13.extname(filePath).toLowerCase();
+      const ext = path12.extname(filePath).toLowerCase();
       if (![".xlsx", ".xlsm", ".xls"].includes(ext)) {
         result.isValid = false;
         result.errors.push("\uC9C0\uC6D0\uD558\uC9C0 \uC54A\uB294 \uD30C\uC77C \uD615\uC2DD\uC785\uB2C8\uB2E4. Excel \uD30C\uC77C(.xlsx, .xlsm, .xls)\uB9CC \uC9C0\uC6D0\uB429\uB2C8\uB2E4.");
@@ -17630,7 +17118,7 @@ var POTemplateValidator = class {
       errors: []
     };
     try {
-      if (!fs15.existsSync(filePath)) {
+      if (!fs14.existsSync(filePath)) {
         result.isValid = false;
         result.errors.push("\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.");
         return result;
@@ -17669,20 +17157,20 @@ router10.get("/test", (req, res) => {
   res.json({ message: "PO Template router is working!", timestamp: /* @__PURE__ */ new Date() });
 });
 var __filename4 = fileURLToPath4(import.meta.url);
-var __dirname4 = path14.dirname(__filename4);
+var __dirname4 = path13.dirname(__filename4);
 var storage3 = multer3.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir2 = process.env.VERCEL ? "/tmp" : path14.join(__dirname4, "../../uploads");
-    if (!process.env.VERCEL && !fs16.existsSync(uploadDir2)) {
-      fs16.mkdirSync(uploadDir2, { recursive: true });
+    const uploadDir2 = process.env.VERCEL ? "/tmp" : path13.join(__dirname4, "../../uploads");
+    if (!process.env.VERCEL && !fs15.existsSync(uploadDir2)) {
+      fs15.mkdirSync(uploadDir2, { recursive: true });
     }
     cb(null, uploadDir2);
   },
   filename: (req, file, cb) => {
     const timestamp2 = Date.now();
     const originalName = Buffer.from(file.originalname, "latin1").toString("utf8");
-    const extension = path14.extname(originalName);
-    const basename = path14.basename(originalName, extension);
+    const extension = path13.extname(originalName);
+    const basename = path13.basename(originalName, extension);
     const safeBasename = basename.replace(/[^a-zA-Z0-9가-힣_-]/g, "_");
     cb(null, `${timestamp2}-${safeBasename}${extension}`);
   }
@@ -17807,7 +17295,7 @@ router10.post("/upload", simpleAuth, upload3.single("file"), async (req, res) =>
     });
     if (!quickValidation.isValid) {
       console.error("\u274C [\uC11C\uBC84] \uC720\uD6A8\uC131 \uAC80\uC0AC \uC2E4\uD328");
-      fs16.unlinkSync(filePath);
+      fs15.unlinkSync(filePath);
       clearTimeout(timeoutId);
       return responseHandler.send(400, {
         success: false,
@@ -17826,7 +17314,7 @@ router10.post("/upload", simpleAuth, upload3.single("file"), async (req, res) =>
     });
     if (!parseResult.success) {
       console.error("\u274C [\uC11C\uBC84] \uD30C\uC2F1 \uC2E4\uD328:", parseResult.error);
-      fs16.unlinkSync(filePath);
+      fs15.unlinkSync(filePath);
       clearTimeout(timeoutId);
       return responseHandler.send(400, {
         success: false,
@@ -17867,9 +17355,9 @@ router10.post("/upload", simpleAuth, upload3.single("file"), async (req, res) =>
       endpoint: "/api/po-template/upload",
       elapsedTime: Date.now() - startTime
     });
-    if (req.file && fs16.existsSync(req.file.path)) {
+    if (req.file && fs15.existsSync(req.file.path)) {
       console.log("\u{1F5D1}\uFE0F [\uC11C\uBC84] \uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C:", req.file.path);
-      fs16.unlinkSync(req.file.path);
+      fs15.unlinkSync(req.file.path);
     }
     clearTimeout(timeoutId);
     responseHandler.send(500, {
@@ -18173,10 +17661,10 @@ router10.post("/save", simpleAuth, async (req, res) => {
             pdfGenerationStatus.message = process.env.VERCEL ? `PDF \uC0DD\uC131 \uC2E4\uD328 (Vercel): ${pdfError instanceof Error ? pdfError.message : "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"}. \uD3F0\uD2B8 \uB610\uB294 \uD658\uACBD \uBB38\uC81C\uC77C \uC218 \uC788\uC2B5\uB2C8\uB2E4.` : `PDF \uC0DD\uC131 \uC2E4\uD328: ${pdfError instanceof Error ? pdfError.message : "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"}`;
           }
           pdfGenerationStatuses.push(pdfGenerationStatus);
-          if (extractedFilePath && fs16.existsSync(extractedFilePath)) {
+          if (extractedFilePath && fs15.existsSync(extractedFilePath)) {
             try {
               console.log("\u{1F4CA} Excel \uD30C\uC77C \uC800\uC7A5 \uC2DC\uC791:", extractedFilePath);
-              const excelBuffer = fs16.readFileSync(extractedFilePath);
+              const excelBuffer = fs15.readFileSync(extractedFilePath);
               const excelBase64 = excelBuffer.toString("base64");
               const excelOriginalName = `${orderNumber}_\uAC11\uC9C0\uC744\uC9C0.xlsx`;
               const excelStoredName = `${orderNumber}_${Date.now()}_extracted.xlsx`;
@@ -18267,12 +17755,12 @@ router10.post("/extract-sheets", simpleAuth, async (req, res) => {
     if (!filePath) {
       return res.status(400).json({ error: "\uD30C\uC77C \uACBD\uB85C\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4." });
     }
-    if (!fs16.existsSync(filePath)) {
+    if (!fs15.existsSync(filePath)) {
       return res.status(400).json({ error: "\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4." });
     }
     const timestamp2 = Date.now();
-    const extractedPath = path14.join(
-      path14.dirname(filePath),
+    const extractedPath = path13.join(
+      path13.dirname(filePath),
       `extracted-${timestamp2}.xlsx`
     );
     const extractResult = await POTemplateProcessorMock.extractSheetsToFile(
@@ -18390,7 +17878,7 @@ router10.post("/send-email", simpleAuth, async (req, res) => {
         error: "\uD544\uC218 \uB370\uC774\uD130\uAC00 \uB204\uB77D\uB418\uC5C8\uC2B5\uB2C8\uB2E4. (filePath, to, subject \uD544\uC218)"
       });
     }
-    if (!fs16.existsSync(filePath)) {
+    if (!fs15.existsSync(filePath)) {
       return res.status(400).json({ error: "\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4." });
     }
     const emailService5 = new POEmailServiceMock();
@@ -18471,12 +17959,12 @@ router10.post("/convert-to-pdf", simpleAuth, async (req, res) => {
     if (!filePath) {
       return res.status(400).json({ error: "\uD30C\uC77C \uACBD\uB85C\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4." });
     }
-    if (!fs16.existsSync(filePath)) {
+    if (!fs15.existsSync(filePath)) {
       return res.status(400).json({ error: "\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4." });
     }
     const timestamp2 = Date.now();
-    const pdfPath = outputPath || path14.join(
-      path14.dirname(filePath),
+    const pdfPath = outputPath || path13.join(
+      path13.dirname(filePath),
       `po-sheets-${timestamp2}.pdf`
     );
     const pdfResult = await convertExcelToPdfMock(filePath, pdfPath, ["\uAC11\uC9C0", "\uC744\uC9C0"]);
@@ -18529,7 +18017,7 @@ router10.post("/process-complete", simpleAuth, upload3.single("file"), async (re
     const validation = await POTemplateValidator.validatePOTemplateFile(filePath);
     results.validation = validation;
     if (!validation.isValid) {
-      fs16.unlinkSync(filePath);
+      fs15.unlinkSync(filePath);
       return res.status(400).json({
         error: "\uC720\uD6A8\uC131 \uAC80\uC0AC \uC2E4\uD328",
         details: validation.errors.join(", "),
@@ -18540,7 +18028,7 @@ router10.post("/process-complete", simpleAuth, upload3.single("file"), async (re
     const parseResult = POTemplateProcessorMock.parseInputSheet(filePath);
     results.parsing = parseResult;
     if (!parseResult.success) {
-      fs16.unlinkSync(filePath);
+      fs15.unlinkSync(filePath);
       return res.status(400).json({
         error: "\uD30C\uC2F1 \uC2E4\uD328",
         details: parseResult.error,
@@ -18552,8 +18040,8 @@ router10.post("/process-complete", simpleAuth, upload3.single("file"), async (re
     results.saving = saveResult;
     console.log("\u{1F4CB} 4\uB2E8\uACC4: \uAC11\uC9C0/\uC744\uC9C0 \uC2DC\uD2B8 \uCD94\uCD9C");
     const timestamp2 = Date.now();
-    const extractedPath = path14.join(
-      path14.dirname(filePath),
+    const extractedPath = path13.join(
+      path13.dirname(filePath),
       `extracted-${timestamp2}.xlsx`
     );
     const extractResult = await POTemplateProcessorMock.extractSheetsToFile(
@@ -18564,8 +18052,8 @@ router10.post("/process-complete", simpleAuth, upload3.single("file"), async (re
     results.extraction = extractResult;
     if (generatePDF) {
       console.log("\u{1F4C4} 5\uB2E8\uACC4: PDF \uBCC0\uD658");
-      const pdfPath = path14.join(
-        path14.dirname(filePath),
+      const pdfPath = path13.join(
+        path13.dirname(filePath),
         `po-sheets-${timestamp2}.pdf`
       );
       const pdfResult = await convertExcelToPdfMock(extractedPath, pdfPath);
@@ -18634,8 +18122,8 @@ router10.post("/process-complete", simpleAuth, upload3.single("file"), async (re
     });
   } catch (error) {
     console.error("\uD1B5\uD569 \uCC98\uB9AC \uC624\uB958:", error);
-    if (req.file && fs16.existsSync(req.file.path)) {
-      fs16.unlinkSync(req.file.path);
+    if (req.file && fs15.existsSync(req.file.path)) {
+      fs15.unlinkSync(req.file.path);
     }
     res.status(500).json({
       error: "\uC11C\uBC84 \uC624\uB958",
@@ -19623,7 +19111,7 @@ init_schema();
 import * as XLSX8 from "xlsx";
 import Papa from "papaparse";
 import { eq as eq19 } from "drizzle-orm";
-import fs17 from "fs";
+import fs16 from "fs";
 var ImportExportService = class {
   // Parse Excel file
   static parseExcelFile(filePath) {
@@ -19636,7 +19124,7 @@ var ImportExportService = class {
   // Parse CSV file
   static parseCSVFile(filePath) {
     return new Promise((resolve, reject) => {
-      const fileContent = fs17.readFileSync(filePath, "utf8");
+      const fileContent = fs16.readFileSync(filePath, "utf8");
       Papa.parse(fileContent, {
         header: true,
         complete: (results) => {
@@ -20128,8 +19616,8 @@ var ImportExportService = class {
 
 // server/routes/import-export.ts
 import multer4 from "multer";
-import fs18 from "fs";
-import path15 from "path";
+import fs17 from "fs";
+import path14 from "path";
 var upload4 = multer4({
   dest: "uploads/",
   limits: {
@@ -20151,7 +19639,7 @@ var upload4 = multer4({
 });
 var router12 = Router12();
 var getFileType = (filename) => {
-  const ext = path15.extname(filename).toLowerCase();
+  const ext = path14.extname(filename).toLowerCase();
   return ext === ".csv" ? "csv" : "excel";
 };
 router12.post("/import/vendors", requireAuth, upload4.single("file"), async (req, res) => {
@@ -20161,7 +19649,7 @@ router12.post("/import/vendors", requireAuth, upload4.single("file"), async (req
     }
     const fileType = getFileType(req.file.filename);
     const result = await ImportExportService.importVendors(req.file.path, fileType);
-    fs18.unlinkSync(req.file.path);
+    fs17.unlinkSync(req.file.path);
     res.json({
       message: "Vendor import completed",
       imported: result.imported,
@@ -20180,7 +19668,7 @@ router12.post("/import/items", requireAuth, upload4.single("file"), async (req, 
     }
     const fileType = getFileType(req.file.filename);
     const result = await ImportExportService.importItems(req.file.path, fileType);
-    fs18.unlinkSync(req.file.path);
+    fs17.unlinkSync(req.file.path);
     res.json({
       message: "Item import completed",
       imported: result.imported,
@@ -20199,7 +19687,7 @@ router12.post("/import/projects", requireAuth, upload4.single("file"), async (re
     }
     const fileType = getFileType(req.file.filename);
     const result = await ImportExportService.importProjects(req.file.path, fileType);
-    fs18.unlinkSync(req.file.path);
+    fs17.unlinkSync(req.file.path);
     res.json({
       message: "Project import completed",
       imported: result.imported,
@@ -20218,7 +19706,7 @@ router12.post("/import/purchase_orders", requireAuth, upload4.single("file"), as
     }
     const fileType = getFileType(req.file.filename);
     const result = await ImportExportService.importPurchaseOrders(req.file.path, fileType);
-    fs18.unlinkSync(req.file.path);
+    fs17.unlinkSync(req.file.path);
     res.json({
       message: "Purchase order import completed",
       imported: result.imported,
@@ -21284,21 +20772,21 @@ init_schema();
 import { Router as Router16 } from "express";
 import { eq as eq22, desc as desc9 } from "drizzle-orm";
 import multer5 from "multer";
-import path16 from "path";
-import fs19 from "fs";
+import path15 from "path";
+import fs18 from "fs";
 var router17 = Router16();
 var storage4 = multer5.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir2 = process.env.VERCEL ? "/tmp" : "uploads/invoices";
-    if (!process.env.VERCEL && !fs19.existsSync(uploadDir2)) {
-      fs19.mkdirSync(uploadDir2, { recursive: true });
+    if (!process.env.VERCEL && !fs18.existsSync(uploadDir2)) {
+      fs18.mkdirSync(uploadDir2, { recursive: true });
     }
     cb(null, uploadDir2);
   },
   filename: (req, file, cb) => {
     const timestamp2 = Date.now();
-    const ext = path16.extname(file.originalname);
-    const name = path16.basename(file.originalname, ext);
+    const ext = path15.extname(file.originalname);
+    const name = path15.basename(file.originalname, ext);
     cb(null, `${name}_${timestamp2}${ext}`);
   }
 });
@@ -21427,7 +20915,7 @@ router17.post("/invoices", upload5.single("file"), async (req, res) => {
     if (req.file) {
       filePath = req.file.path;
       if (process.env.VERCEL) {
-        const fileBuffer = fs19.readFileSync(req.file.path);
+        const fileBuffer = fs18.readFileSync(req.file.path);
         fileData = fileBuffer.toString("base64");
         console.log(`\u{1F4CE} File data encoded for Vercel: ${Math.round(fileBuffer.length / 1024)}KB`);
       }
@@ -21577,8 +21065,8 @@ router17.delete("/invoices/:id", requireAuth, async (req, res) => {
     await db.delete(invoices).where(eq22(invoices.id, invoiceId));
     if (invoice.filePath && !process.env.VERCEL) {
       try {
-        if (fs19.existsSync(invoice.filePath)) {
-          fs19.unlinkSync(invoice.filePath);
+        if (fs18.existsSync(invoice.filePath)) {
+          fs18.unlinkSync(invoice.filePath);
           console.log(`\u{1F5D1}\uFE0F Deleted invoice file: ${invoice.filePath}`);
         }
       } catch (fileError) {
@@ -24292,23 +23780,23 @@ import { Router as Router28 } from "express";
 import { eq as eq30, and as and18, desc as desc14, count as count4 } from "drizzle-orm";
 init_professional_pdf_generation_service();
 import multer6 from "multer";
-import path20 from "path";
-import fs23 from "fs/promises";
-import { readFileSync as readFileSync2, existsSync as existsSync3, unlinkSync } from "fs";
+import path19 from "path";
+import fs22 from "fs/promises";
+import { readFileSync, existsSync as existsSync2, unlinkSync } from "fs";
 import { z as z8 } from "zod";
 init_excel_input_sheet_remover();
 var router29 = Router28();
 var storage5 = multer6.diskStorage({
   destination: async (req, file, cb) => {
-    const uploadDir2 = process.env.VERCEL ? path20.join("/tmp", "uploads", "excel-simple") : path20.join(process.cwd(), "uploads", "excel-simple");
-    await fs23.mkdir(uploadDir2, { recursive: true });
+    const uploadDir2 = process.env.VERCEL ? path19.join("/tmp", "uploads", "excel-simple") : path19.join(process.cwd(), "uploads", "excel-simple");
+    await fs22.mkdir(uploadDir2, { recursive: true });
     cb(null, uploadDir2);
   },
   filename: (req, file, cb) => {
     const timestamp2 = Date.now();
     const decodedName = decodeKoreanFilename(file.originalname);
-    const ext = path20.extname(decodedName);
-    const basename = path20.basename(decodedName, ext);
+    const ext = path19.extname(decodedName);
+    const basename = path19.basename(decodedName, ext);
     cb(null, `${timestamp2}-${basename}${ext}`);
   }
 });
@@ -24321,7 +23809,7 @@ var upload6 = multer6({
   fileFilter: (req, file, cb) => {
     const decodedName = decodeKoreanFilename(file.originalname);
     file.originalname = decodedName;
-    const ext = path20.extname(decodedName).toLowerCase();
+    const ext = path19.extname(decodedName).toLowerCase();
     if ([".xlsx", ".xls", ".xlsm"].includes(ext)) {
       cb(null, true);
     } else {
@@ -24408,10 +23896,10 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
       let processedFileName = req.file.filename;
       const processedPath = req.file.path.replace(/\.(xlsx?)$/i, "_processed.$1");
       const removeResult = await removeAllInputSheets(req.file.path, processedPath);
-      if (removeResult.success && existsSync3(processedPath)) {
+      if (removeResult.success && existsSync2(processedPath)) {
         console.log(`\u2705 Input sheets removed: ${removeResult.removedSheets.join(", ")}`);
         fileToStore = processedPath;
-        fileBuffer = readFileSync2(processedPath);
+        fileBuffer = readFileSync(processedPath);
         processedFileName = req.file.filename.replace(/\.(xlsx?)$/i, "_processed.$1");
         try {
           unlinkSync(req.file.path);
@@ -24420,7 +23908,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
         }
       } else {
         console.warn("\u26A0\uFE0F Failed to remove Input sheets, using original:", removeResult.error);
-        fileBuffer = readFileSync2(req.file.path);
+        fileBuffer = readFileSync(req.file.path);
       }
       processedExcelFile = {
         originalName: decodedOriginalName,
@@ -24668,10 +24156,10 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
             if (req.file) {
               const attachment = await db.select().from(attachments).where(eq30(attachments.orderId, emailInfo.orderId)).then((rows) => rows[0]);
               if (attachment) {
-                excelAttachment = process.env.VERCEL ? path20.join("/tmp", "uploads", "excel-simple", attachment.storedName) : attachment.filePath;
+                excelAttachment = process.env.VERCEL ? path19.join("/tmp", "uploads", "excel-simple", attachment.storedName) : attachment.filePath;
               }
             }
-            if (excelAttachment && existsSync3(excelAttachment)) {
+            if (excelAttachment && existsSync2(excelAttachment)) {
               console.log(`\u{1F4CE} Sending email with attachment for order ${emailInfo.orderNumber}`);
               const result = await emailService5.sendPOWithOriginalFormat(
                 excelAttachment,
@@ -24718,7 +24206,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
     }
     const emailsSent = emailsToSend.length;
     if (processedExcelFile && processedExcelFile.filePath) {
-      if (existsSync3(processedExcelFile.filePath)) {
+      if (existsSync2(processedExcelFile.filePath)) {
         try {
           unlinkSync(processedExcelFile.filePath);
           console.log("\u2705 Cleaned up temporary processed Excel file");
@@ -25525,14 +25013,14 @@ var audit_default = router31;
 
 // server/routes/email-test.ts
 import express2 from "express";
-import path22 from "path";
+import path21 from "path";
 
 // server/services/email-service.ts
 init_db();
 init_schema();
 import nodemailer6 from "nodemailer";
-import path21 from "path";
-import fs24 from "fs/promises";
+import path20 from "path";
+import fs23 from "fs/promises";
 var transporter = nodemailer6.createTransport({
   host: process.env.SMTP_HOST || "smtp.naver.com",
   port: parseInt(process.env.SMTP_PORT || "587"),
@@ -25626,7 +25114,7 @@ var emailTemplates = {
 async function sendPurchaseOrderEmail(params) {
   const { orderData, excelFilePath, recipients, cc = [], userId, orderId } = params;
   try {
-    await fs24.access(excelFilePath);
+    await fs23.access(excelFilePath);
     const mailOptions = {
       from: `"(\uC8FC)\uC775\uC9C4\uC5D4\uC9C0\uB2C8\uC5B4\uB9C1" <${process.env.SMTP_USER}>`,
       to: recipients.join(", "),
@@ -25638,7 +25126,7 @@ async function sendPurchaseOrderEmail(params) {
       html: emailTemplates.purchaseOrder.html(orderData),
       attachments: [
         {
-          filename: path21.basename(excelFilePath),
+          filename: path20.basename(excelFilePath),
           path: excelFilePath,
           contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         }
@@ -25649,7 +25137,7 @@ async function sendPurchaseOrderEmail(params) {
     if (orderId && userId) {
       try {
         const trackingId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        const fileStats = await fs24.stat(excelFilePath);
+        const fileStats = await fs23.stat(excelFilePath);
         await db.insert(emailSendHistory).values({
           orderId,
           orderNumber: orderData.orderNumber,
@@ -25660,7 +25148,7 @@ async function sendPurchaseOrderEmail(params) {
           subject: mailOptions.subject,
           messageContent: mailOptions.html,
           attachmentFiles: [{
-            filename: path21.basename(excelFilePath),
+            filename: path20.basename(excelFilePath),
             path: excelFilePath,
             size: fileStats.size
           }],
@@ -25810,9 +25298,9 @@ router32.post("/send-test", async (req, res) => {
       userName: "Test User",
       userPhone: "010-1234-5678"
     };
-    const dummyFilePath = path22.join(process.cwd(), "uploads", "test-email.xlsx");
+    const dummyFilePath = path21.join(process.cwd(), "uploads", "test-email.xlsx");
     const fs28 = __require("fs");
-    const uploadsDir = path22.join(process.cwd(), "uploads");
+    const uploadsDir = path21.join(process.cwd(), "uploads");
     if (!fs28.existsSync(uploadsDir)) {
       fs28.mkdirSync(uploadsDir, { recursive: true });
     }
@@ -25929,7 +25417,6 @@ router32.post("/simple", async (req, res) => {
 var email_test_default = router32;
 
 // server/routes/email-settings.ts
-init_email_settings_service();
 import express3 from "express";
 import { z as z10 } from "zod";
 var router33 = express3.Router();
@@ -27876,8 +27363,8 @@ init_db();
 init_schema();
 import { Router as Router37 } from "express";
 import { eq as eq39 } from "drizzle-orm";
-import path23 from "path";
-import fs25 from "fs";
+import path22 from "path";
+import fs24 from "fs";
 import jwt2 from "jsonwebtoken";
 var router40 = Router37();
 router40.get("/attachments/:id/download", async (req, res) => {
@@ -27959,20 +27446,20 @@ router40.get("/attachments/:id/download", async (req, res) => {
       fileName = fileName.replace("db://", "");
     }
     const possiblePaths = [];
-    if (path23.isAbsolute(fileName)) {
+    if (path22.isAbsolute(fileName)) {
       console.log("\u{1F4C4} Using absolute path directly:", fileName);
       possiblePaths.push(fileName);
     } else {
       possiblePaths.push(
-        path23.join(process.cwd(), "attached_assets", fileName),
-        path23.join(process.cwd(), "uploads", fileName),
-        path23.join(process.cwd(), "uploads", "temp-pdf", fileName),
-        path23.join(process.cwd(), fileName)
+        path22.join(process.cwd(), "attached_assets", fileName),
+        path22.join(process.cwd(), "uploads", fileName),
+        path22.join(process.cwd(), "uploads", "temp-pdf", fileName),
+        path22.join(process.cwd(), fileName)
       );
     }
     let foundPath = null;
     for (const testPath of possiblePaths) {
-      if (fs25.existsSync(testPath)) {
+      if (fs24.existsSync(testPath)) {
         foundPath = testPath;
         console.log(`\u2705 Found PDF file at: ${testPath}`);
         break;
@@ -27986,7 +27473,7 @@ router40.get("/attachments/:id/download", async (req, res) => {
       const contentDisposition = `${disposition}; filename*=UTF-8''${encodeURIComponent(displayName)}`;
       console.log(`\u{1F4C4} Setting Content-Disposition: ${contentDisposition} (mimeType: ${mimeType}, forceDownload: ${forceDownload})`);
       res.setHeader("Content-Disposition", contentDisposition);
-      const fileStream = fs25.createReadStream(foundPath);
+      const fileStream = fs24.createReadStream(foundPath);
       fileStream.pipe(res);
     } else {
       console.error(`File not found in any expected location for attachment ${attachmentId}`);
@@ -28039,20 +27526,20 @@ router40.delete("/attachments/:id", requireAuth, async (req, res) => {
     if (attachment.filePath && !attachment.filePath.startsWith("db://")) {
       let fileName = attachment.filePath;
       const possiblePaths = [];
-      if (path23.isAbsolute(fileName)) {
+      if (path22.isAbsolute(fileName)) {
         possiblePaths.push(fileName);
       } else {
         possiblePaths.push(
-          path23.join(process.cwd(), "attached_assets", fileName),
-          path23.join(process.cwd(), "uploads", fileName),
-          path23.join(process.cwd(), "uploads", "temp-pdf", fileName),
-          path23.join(process.cwd(), fileName)
+          path22.join(process.cwd(), "attached_assets", fileName),
+          path22.join(process.cwd(), "uploads", fileName),
+          path22.join(process.cwd(), "uploads", "temp-pdf", fileName),
+          path22.join(process.cwd(), fileName)
         );
       }
       for (const testPath of possiblePaths) {
-        if (fs25.existsSync(testPath)) {
+        if (fs24.existsSync(testPath)) {
           try {
-            fs25.unlinkSync(testPath);
+            fs24.unlinkSync(testPath);
             console.log(`\u{1F5D1}\uFE0F Deleted physical file at: ${testPath}`);
             break;
           } catch (fileError) {
@@ -28083,9 +27570,378 @@ router40.delete("/attachments/:id", requireAuth, async (req, res) => {
 var attachments_default = router40;
 
 // server/routes/korean-font-status.ts
-init_korean_font_manager();
-init_professional_pdf_generation_service();
 import { Router as Router38 } from "express";
+
+// server/utils/korean-font-manager.ts
+import * as fs25 from "fs";
+import * as path23 from "path";
+var KoreanFontManager = class _KoreanFontManager {
+  constructor() {
+    this.fontCache = /* @__PURE__ */ new Map();
+    this.base64Cache = /* @__PURE__ */ new Map();
+    this.initializeFonts();
+  }
+  static {
+    // 지원 폰트 목록 (우선순위 순)
+    this.FONT_PRIORITIES = [
+      {
+        name: "NotoSansKR",
+        path: process.env.VERCEL ? path23.join(process.cwd(), "fonts", "NotoSansKR-Regular.ttf") : path23.join(process.cwd(), "fonts", "NotoSansKR-Regular.ttf"),
+        available: false
+      },
+      {
+        name: "NanumGothic",
+        path: process.env.VERCEL ? path23.join(process.cwd(), "fonts", "NanumGothic-Regular.ttf") : path23.join(process.cwd(), "fonts", "NanumGothic-Regular.ttf"),
+        available: false
+      },
+      // Fallback 시스템 폰트 (로컬 환경용)
+      {
+        name: "AppleGothic",
+        path: "/System/Library/Fonts/Supplemental/AppleGothic.ttf",
+        available: false
+      },
+      {
+        name: "AppleSDGothicNeo",
+        path: "/System/Library/Fonts/AppleSDGothicNeo.ttc",
+        available: false
+      },
+      {
+        name: "MalgunGothic",
+        path: "C:\\Windows\\Fonts\\malgun.ttf",
+        available: false
+      },
+      {
+        name: "NanumGothicLinux",
+        path: "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",
+        available: false
+      }
+    ];
+  }
+  static getInstance() {
+    if (!_KoreanFontManager.instance) {
+      _KoreanFontManager.instance = new _KoreanFontManager();
+    }
+    return _KoreanFontManager.instance;
+  }
+  /**
+   * 사용 가능한 폰트 초기화 및 검색
+   */
+  initializeFonts() {
+    console.log("\u{1F50D} [FontManager] \uD55C\uAE00 \uD3F0\uD2B8 \uCD08\uAE30\uD654 \uC2DC\uC791...");
+    console.log(`\u{1F50D} [FontManager] \uD658\uACBD: ${process.env.VERCEL ? "Vercel" : "Local"}, \uC791\uC5C5\uB514\uB809\uD1A0\uB9AC: ${process.cwd()}`);
+    if (process.env.VERCEL) {
+      console.log("\u2601\uFE0F [FontManager] Vercel \uD658\uACBD - \uBC88\uB4E4\uB41C \uD3F0\uD2B8 \uD0D0\uC0C9");
+      try {
+        const bundledFontsDir = path23.join(process.cwd(), "fonts");
+        console.log(`\u{1F4C2} [FontManager] \uBC88\uB4E4\uB41C \uD3F0\uD2B8 \uB514\uB809\uD1A0\uB9AC \uD655\uC778: ${bundledFontsDir}`);
+        if (fs25.existsSync(bundledFontsDir)) {
+          const files = fs25.readdirSync(bundledFontsDir);
+          console.log(`\u{1F4CB} [FontManager] \uBC88\uB4E4\uB41C \uD30C\uC77C \uBAA9\uB85D:`, files);
+        } else {
+          console.log(`\u274C [FontManager] \uBC88\uB4E4\uB41C \uD3F0\uD2B8 \uB514\uB809\uD1A0\uB9AC \uC5C6\uC74C: ${bundledFontsDir}`);
+        }
+      } catch (error) {
+        console.log(`\u26A0\uFE0F [FontManager] \uBC88\uB4E4 \uD655\uC778 \uC2E4\uD328:`, error);
+      }
+    }
+    for (const font of _KoreanFontManager.FONT_PRIORITIES) {
+      try {
+        console.log(`\u{1F50D} [FontManager] \uD3F0\uD2B8 \uD655\uC778 \uC911: ${font.name} at ${font.path}`);
+        if (fs25.existsSync(font.path)) {
+          const stats = fs25.statSync(font.path);
+          font.available = true;
+          font.size = stats.size;
+          this.fontCache.set(font.name, { ...font });
+          console.log(`\u2705 [FontManager] \uD3F0\uD2B8 \uBC1C\uACAC: ${font.name} (${Math.round(stats.size / 1024)}KB)`);
+          if (process.env.VERCEL) {
+            try {
+              const fontBuffer = fs25.readFileSync(font.path);
+              const base64Data = fontBuffer.toString("base64");
+              this.base64Cache.set(font.name, base64Data);
+              console.log(`\u{1F4BE} [FontManager] Vercel\uC6A9 Base64 \uBBF8\uB9AC \uB85C\uB4DC: ${font.name}`);
+            } catch (base64Error) {
+              console.warn(`\u26A0\uFE0F [FontManager] Base64 \uBBF8\uB9AC \uB85C\uB4DC \uC2E4\uD328: ${font.name}`, base64Error);
+            }
+          }
+        } else {
+          font.available = false;
+          console.log(`\u274C [FontManager] \uD3F0\uD2B8 \uC5C6\uC74C: ${font.name} - ${font.path}`);
+        }
+      } catch (error) {
+        font.available = false;
+        console.log(`\u26A0\uFE0F [FontManager] \uD3F0\uD2B8 \uC811\uADFC \uC2E4\uD328: ${font.name} - ${error}`);
+      }
+    }
+    const availableFonts = Array.from(this.fontCache.values()).filter((f) => f.available);
+    console.log(`\u{1F4CA} [FontManager] \uCD1D ${availableFonts.length}\uAC1C \uD55C\uAE00 \uD3F0\uD2B8 \uC0AC\uC6A9 \uAC00\uB2A5`);
+    if (process.env.VERCEL && availableFonts.length === 0) {
+      console.log("\u{1F504} [FontManager] Vercel\uC5D0\uC11C \uD3F0\uD2B8 \uC5C6\uC74C - \uC784\uBCA0\uB514\uB4DC \uD3F0\uD2B8 \uC2DC\uB3C4");
+      this.loadEmbeddedFonts();
+    }
+  }
+  /**
+   * 최적의 한글 폰트 선택
+   */
+  getBestKoreanFont() {
+    for (const font of _KoreanFontManager.FONT_PRIORITIES) {
+      const cachedFont = this.fontCache.get(font.name);
+      if (cachedFont && cachedFont.available) {
+        return cachedFont;
+      }
+    }
+    return null;
+  }
+  /**
+   * 폰트를 Base64로 인코딩 (서버리스 환경용)
+   */
+  async getFontAsBase64(fontName) {
+    try {
+      const font = fontName ? this.fontCache.get(fontName) : this.getBestKoreanFont();
+      if (!font || !font.available) {
+        console.warn(`\u26A0\uFE0F [FontManager] \uD3F0\uD2B8 \uC0AC\uC6A9 \uBD88\uAC00: ${fontName || "auto-select"}`);
+        return null;
+      }
+      const cacheKey = font.name;
+      if (this.base64Cache.has(cacheKey)) {
+        console.log(`\u{1F4BE} [FontManager] Base64 \uCE90\uC2DC \uD788\uD2B8: ${font.name}`);
+        return this.base64Cache.get(cacheKey);
+      }
+      const fontBuffer = fs25.readFileSync(font.path);
+      const base64Data = fontBuffer.toString("base64");
+      this.base64Cache.set(cacheKey, base64Data);
+      console.log(`\u2705 [FontManager] Base64 \uC778\uCF54\uB529 \uC644\uB8CC: ${font.name} (${Math.round(base64Data.length / 1024)}KB)`);
+      return base64Data;
+    } catch (error) {
+      console.error(`\u274C [FontManager] Base64 \uC778\uCF54\uB529 \uC2E4\uD328:`, error);
+      return null;
+    }
+  }
+  /**
+   * PDFKit에서 사용할 폰트 버퍼 반환
+   */
+  getFontBuffer(fontName) {
+    try {
+      const font = fontName ? this.fontCache.get(fontName) : this.getBestKoreanFont();
+      if (!font || !font.available) {
+        return null;
+      }
+      if (process.env.VERCEL) {
+        const cacheKey = font.name;
+        if (this.base64Cache.has(cacheKey)) {
+          console.log(`\u{1F4BE} [FontManager] Vercel - Base64 \uCE90\uC2DC\uC5D0\uC11C Buffer \uBC18\uD658: ${font.name}`);
+          const base64Data = this.base64Cache.get(cacheKey);
+          return Buffer.from(base64Data, "base64");
+        }
+        if (font.path.startsWith("embedded://")) {
+          console.log(`\u{1F4E6} [FontManager] \uC784\uBCA0\uB514\uB4DC \uD3F0\uD2B8 \uCC98\uB9AC \uC911: ${font.name}`);
+          const minimalKoreanFont = this.getMinimalKoreanFontBuffer();
+          if (minimalKoreanFont) {
+            console.log(`\u2705 [FontManager] \uC784\uBCA0\uB514\uB4DC \uD3F0\uD2B8 Buffer \uBC18\uD658: ${font.name}`);
+            return minimalKoreanFont;
+          }
+        }
+        try {
+          const fontBuffer = fs25.readFileSync(font.path);
+          const base64Data = fontBuffer.toString("base64");
+          this.base64Cache.set(cacheKey, base64Data);
+          console.log(`\u2705 [FontManager] Vercel - \uD3F0\uD2B8 \uCE90\uC2DC \uD6C4 Buffer \uBC18\uD658: ${font.name}`);
+          return fontBuffer;
+        } catch (vercelError) {
+          console.error(`\u274C [FontManager] Vercel \uD3F0\uD2B8 \uB85C\uB4DC \uC2E4\uD328: ${font.name}`, vercelError);
+          const minimalFont = this.getMinimalKoreanFontBuffer();
+          if (minimalFont) {
+            console.log(`\u{1F6A8} [FontManager] \uCD5C\uD6C4 \uC218\uB2E8: \uCD5C\uC18C \uD55C\uAE00 \uD3F0\uD2B8 \uC0AC\uC6A9`);
+            return minimalFont;
+          }
+          return null;
+        }
+      }
+      return fs25.readFileSync(font.path);
+    } catch (error) {
+      console.error(`\u274C [FontManager] \uD3F0\uD2B8 \uBC84\uD37C \uB85C\uB4DC \uC2E4\uD328:`, error);
+      return null;
+    }
+  }
+  /**
+   * 사용 가능한 폰트 목록 반환
+   */
+  getAvailableFonts() {
+    return Array.from(this.fontCache.values()).filter((f) => f.available);
+  }
+  /**
+   * 폰트 지원 상태 보고서
+   */
+  getFontReport() {
+    const availableFonts = this.getAvailableFonts();
+    const bestFont = this.getBestKoreanFont();
+    return {
+      environment: process.env.VERCEL ? "Vercel" : "Local",
+      totalFonts: _KoreanFontManager.FONT_PRIORITIES.length,
+      availableFonts: availableFonts.length,
+      recommendedFont: bestFont?.name || null,
+      fonts: availableFonts
+    };
+  }
+  /**
+   * 한글 텍스트 안전 변환 (폰트 없을 때 대체)
+   */
+  safeKoreanText(text2, hasKoreanFont = true) {
+    if (!text2) return "";
+    if (hasKoreanFont) {
+      return text2.replace(/[\x00-\x1F\x7F]/g, "").replace(/[\u2028\u2029]/g, "").trim();
+    }
+    const koreanToEnglish = {
+      "\uAD6C\uB9E4\uBC1C\uC8FC\uC11C": "Purchase Order",
+      "\uBC1C\uC8FC\uC11C": "Purchase Order",
+      "\uBC1C\uC8FC\uBC88\uD638": "Order No",
+      "\uBC1C\uC8FC\uC5C5\uCCB4": "Issuer Company",
+      "\uC218\uC8FC\uC5C5\uCCB4": "Vendor Company",
+      "\uAC70\uB798\uCC98": "Vendor",
+      "\uD488\uBAA9\uBA85": "Item Name",
+      "\uD488\uBAA9": "Item",
+      "\uADDC\uACA9": "Specification",
+      "\uC218\uB7C9": "Quantity",
+      "\uB2E8\uC704": "Unit",
+      "\uB2E8\uAC00": "Unit Price",
+      "\uAE08\uC561": "Amount",
+      "\uD569\uACC4": "Total",
+      "\uCD1D \uAE08\uC561": "Total Amount",
+      "\uC18C\uACC4": "Subtotal",
+      "\uBD80\uAC00\uC138": "VAT",
+      "\uC0AC\uC5C5\uC790\uB4F1\uB85D\uBC88\uD638": "Business Registration No",
+      "\uC0AC\uC5C5\uC790\uBC88\uD638": "Business No",
+      "\uB300\uD45C\uC790": "Representative",
+      "\uB2F4\uB2F9\uC790": "Contact Person",
+      "\uC5F0\uB77D\uCC98": "Phone",
+      "\uC804\uD654\uBC88\uD638": "Phone",
+      "\uC8FC\uC18C": "Address",
+      "\uC774\uBA54\uC77C": "Email",
+      "\uD604\uC7A5\uBA85": "Project Name",
+      "\uD604\uC7A5\uC815\uBCF4": "Project Info",
+      "\uD604\uC7A5": "Project",
+      "\uBC1C\uC8FC\uC77C": "Order Date",
+      "\uB0A9\uAE30\uC77C": "Delivery Date",
+      "\uB4F1\uB85D\uC77C": "Created Date",
+      "\uC791\uC131\uC790": "Creator",
+      "\uD2B9\uC774\uC0AC\uD56D": "Remarks",
+      "\uBE44\uACE0": "Notes",
+      "\uCC38\uACE0\uC0AC\uD56D": "Reference",
+      "\uC5C5\uCCB4\uBA85": "Company Name",
+      "\uC77C\uC815": "Schedule",
+      "\uC21C\uBC88": "No"
+    };
+    let result = text2;
+    for (const [korean, english] of Object.entries(koreanToEnglish)) {
+      result = result.replace(new RegExp(korean, "g"), english);
+    }
+    if (/[ᄀ-ᇿ㄰-㆏ꥠ-꥿가-힯ힰ-퟿]/g.test(result)) {
+      result = result.replace(/[ᄀ-ᇿ㄰-㆏ꥠ-꥿가-힯ힰ-퟿]+/g, "[Korean Text]");
+    }
+    return result.replace(/[\x00-\x1F\x7F]/g, "").replace(/[\u2028\u2029]/g, "").trim();
+  }
+  /**
+   * Vercel 환경에서 폰트 최적화 상태 확인
+   */
+  isVercelOptimized() {
+    if (!process.env.VERCEL) {
+      return true;
+    }
+    const projectFonts = this.getAvailableFonts().filter(
+      (font) => font.path.includes(process.cwd())
+    );
+    return projectFonts.length > 0;
+  }
+  /**
+   * Vercel용 임베디드 폰트 로드 (Base64 방식)
+   */
+  loadEmbeddedFonts() {
+    console.log("\u{1F504} [FontManager] \uC784\uBCA0\uB514\uB4DC \uD3F0\uD2B8 \uB85C\uB4DC \uC2DC\uB3C4...");
+    const embeddedFonts = {
+      "NotoSansKR-Basic": {
+        name: "NotoSansKR-Basic",
+        path: "embedded://NotoSansKR-Basic",
+        available: true,
+        size: 0
+      }
+    };
+    for (const [key, font] of Object.entries(embeddedFonts)) {
+      this.fontCache.set(font.name, font);
+      console.log(`\u{1F4E6} [FontManager] \uC784\uBCA0\uB514\uB4DC \uD3F0\uD2B8 \uB4F1\uB85D: ${font.name}`);
+    }
+  }
+  /**
+   * 폰트 번들링 상태 진단
+   */
+  diagnoseFontIssues() {
+    const issues = [];
+    const fontDir = path23.join(process.cwd(), "fonts");
+    const fontDirExists = fs25.existsSync(fontDir);
+    let bundledFiles = [];
+    if (fontDirExists) {
+      try {
+        bundledFiles = fs25.readdirSync(fontDir);
+      } catch (error) {
+        issues.push(`\uD3F0\uD2B8 \uB514\uB809\uD1A0\uB9AC \uC77D\uAE30 \uC2E4\uD328: ${error}`);
+      }
+    } else {
+      issues.push("\uD3F0\uD2B8 \uB514\uB809\uD1A0\uB9AC\uAC00 \uC874\uC7AC\uD558\uC9C0 \uC54A\uC74C");
+    }
+    const availableFonts = this.getAvailableFonts().length;
+    if (availableFonts === 0) {
+      issues.push("\uC0AC\uC6A9 \uAC00\uB2A5\uD55C \uD55C\uAE00 \uD3F0\uD2B8\uAC00 \uC5C6\uC74C");
+    }
+    if (process.env.VERCEL && !fontDirExists) {
+      issues.push("Vercel \uD658\uACBD\uC5D0\uC11C \uD3F0\uD2B8\uAC00 \uBC88\uB4E4\uC5D0 \uD3EC\uD568\uB418\uC9C0 \uC54A\uC74C");
+    }
+    return {
+      environment: process.env.VERCEL ? "Vercel" : "Local",
+      workingDirectory: process.cwd(),
+      fontDirectory: fontDir,
+      fontDirectoryExists: fontDirExists,
+      bundledFiles,
+      availableFonts,
+      issues
+    };
+  }
+  /**
+   * 최소한의 한글 폰트 버퍼 반환 (임베디드용)
+   * 실제 운영에서는 적절한 한글 폰트 파일을 번들해야 함
+   */
+  getMinimalKoreanFontBuffer() {
+    try {
+      const fallbackFontPaths = [
+        "/System/Library/Fonts/AppleGothic.ttf",
+        // macOS
+        "/System/Library/Fonts/Supplemental/AppleGothic.ttf",
+        // macOS alternative
+        "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",
+        // Linux
+        "/Windows/Fonts/malgun.ttf"
+        // Windows
+      ];
+      for (const fontPath of fallbackFontPaths) {
+        try {
+          if (fs25.existsSync(fontPath)) {
+            const fontBuffer = fs25.readFileSync(fontPath);
+            console.log(`\u2705 [FontManager] \uC2DC\uC2A4\uD15C \uD3F0\uD2B8 \uBC1C\uACAC: ${fontPath}`);
+            return fontBuffer;
+          }
+        } catch (error) {
+          continue;
+        }
+      }
+      console.log(`\u26A0\uFE0F [FontManager] \uC2DC\uC2A4\uD15C \uD3F0\uD2B8\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC74C - null \uBC18\uD658`);
+      return null;
+    } catch (error) {
+      console.error(`\u274C [FontManager] \uCD5C\uC18C \uD3F0\uD2B8 \uB85C\uB4DC \uC2E4\uD328:`, error);
+      return null;
+    }
+  }
+};
+var fontManager = KoreanFontManager.getInstance();
+
+// server/routes/korean-font-status.ts
+init_professional_pdf_generation_service();
 var router41 = Router38();
 router41.get("/status", async (req, res) => {
   try {
@@ -28259,7 +28115,6 @@ router41.get("/base64-font", async (req, res) => {
 var korean_font_status_default = router41;
 
 // server/routes/font-debug.ts
-init_korean_font_manager();
 import { Router as Router39 } from "express";
 
 // server/utils/embedded-fonts.ts

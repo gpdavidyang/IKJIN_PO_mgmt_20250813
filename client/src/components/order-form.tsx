@@ -60,6 +60,7 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
   const [templates, setTemplates] = useState<any[]>([]);
   const [isLoadingTemplates, setIsLoadingTemplates] = useState(true);
   const [templatesError, setTemplatesError] = useState<any>(null);
+  const [hasLoadedOrderData, setHasLoadedOrderData] = useState(false); // 데이터 로드 플래그 추가
   
   // Load templates on component mount
   useEffect(() => {
@@ -369,7 +370,7 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
 
   // Load existing order data for editing
   useEffect(() => {
-    if (orderData && !orderLoading && typeof orderData === 'object') {
+    if (orderData && !orderLoading && typeof orderData === 'object' && !hasLoadedOrderData) {
       const order = orderData as any;
       
       // Convert existing items to include itemId if missing
@@ -393,8 +394,9 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
         items: convertedItems,
       });
       setOrderItems(convertedItems);
+      setHasLoadedOrderData(true); // 데이터가 로드되었음을 표시
     }
-  }, [orderData, orderLoading, reset]);
+  }, [orderData, orderLoading, hasLoadedOrderData]); // 플래그를 의존성에 추가
 
   const addOrderItem = () => {
     // Get the last item to copy its values, or use empty values if no items exist

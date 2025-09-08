@@ -138,76 +138,98 @@ export class POEmailService {
       const timestamp = Date.now();
       const uploadsDir = path.join(__dirname, '../../uploads');
       
-      // 1. 고급 방식으로 Input 시트만 제거하고 원본 형식 완벽 유지
-      const processedPath = path.join(uploadsDir, `po-advanced-format-${timestamp}.xlsx`);
-      const removeResult = await removeAllInputSheets(
-        originalFilePath,
-        processedPath
-      );
-
-      if (!removeResult.success) {
-        return {
-          success: false,
-          error: `Input 시트 제거 실패: ${removeResult.error}`
-        };
-      }
-
-      console.log(`📄 고급 형식 보존 파일 생성: ${processedPath}`);
-      console.log(`🎯 Input 시트 제거 완료`);
-      console.log(`📋 남은 시트: ${removeResult.remainingSheets.join(', ')}`);
-
-      // 2. PDF 변환 (남은 모든 시트) - PRD 요구사항: 엑셀파일을 PDF화 한 파일도 첨부
-      const pdfPath = path.join(uploadsDir, `po-advanced-format-${timestamp}.pdf`);
+      // 파일이 실제 Excel 파일인지 확인
+      const isExcelFile = originalFilePath.toLowerCase().endsWith('.xlsx') || originalFilePath.toLowerCase().endsWith('.xls');
+      const fileExists = fs.existsSync(originalFilePath);
+      
+      console.log(`🔍 파일 검증: ${originalFilePath}`);
+      console.log(`📁 파일 존재: ${fileExists}`);
+      console.log(`📊 Excel 파일: ${isExcelFile}`);
+      
+      let processedPath = originalFilePath;
+      let attachments: EmailAttachment[] = [];
+      let pdfPath = '';
       let pdfResult: { success: boolean; pdfPath?: string; error?: string } = { success: false, error: '' };
       
-      try {
-        // 통합 PDF 서비스 사용 (모든 기존 변환기 통합, 자동 fallback)
-        const result = await UnifiedExcelPdfService.convertExcelToPDF(processedPath, {
-          outputPath: pdfPath,
-          quality: 'high',
-          orientation: 'landscape',
-          excludeSheets: ['Input', 'Settings'],
-          watermark: `발주서 - ${emailOptions.orderNumber || ''}`,
-          retryCount: 2
-        });
+      if (fileExists && isExcelFile) {
+        // 1. Excel 파일인 경우: Input 시트 제거 처리
+        processedPath = path.join(uploadsDir, `po-advanced-format-${timestamp}.xlsx`);
+        const removeResult = await removeAllInputSheets(
+          originalFilePath,
+          processedPath
+        );
 
-        if (result.success) {
-          pdfResult.success = true;
-          const fileSize = result.stats ? Math.round(result.stats.fileSize / 1024) : 0;
-          console.log(`✅ ${result.engineUsed} 엔진으로 PDF 변환 성공: ${pdfPath} (${fileSize}KB)`);
-          if (result.warnings && result.warnings.length > 0) {
-            console.warn(`⚠️ 경고: ${result.warnings.join(', ')}`);
-          }
+        if (!removeResult.success) {
+          console.warn(`⚠️ Input 시트 제거 실패, 원본 파일 사용: ${removeResult.error}`);
+          processedPath = originalFilePath; // 실패 시 원본 사용
         } else {
-          pdfResult.error = result.error || '통합 PDF 서비스 변환 실패';
-          console.warn(`⚠️ PDF 변환 실패: ${pdfResult.error}, Excel 파일만 첨부합니다.`);
+          console.log(`📄 고급 형식 보존 파일 생성: ${processedPath}`);
+          console.log(`🎯 Input 시트 제거 완료`);
+          console.log(`📋 남은 시트: ${removeResult.remainingSheets.join(', ')}`);
         }
-      } catch (error) {
-        pdfResult.error = `통합 PDF 서비스 오류: ${error.message}`;
-        console.warn(`⚠️ PDF 변환 완전 실패: ${pdfResult.error}, Excel 파일만 첨부합니다.`);
+
+        // 2. Excel 파일인 경우: PDF 변환 시도
+        pdfPath = path.join(uploadsDir, `po-advanced-format-${timestamp}.pdf`);
+        
+        try {
+          // 통합 PDF 서비스 사용 (모든 기존 변환기 통합, 자동 fallback)
+          const result = await UnifiedExcelPdfService.convertExcelToPDF(processedPath, {
+            outputPath: pdfPath,
+            quality: 'high',
+            orientation: 'landscape',
+            excludeSheets: ['Input', 'Settings'],
+            watermark: `발주서 - ${emailOptions.orderNumber || ''}`,
+            retryCount: 2
+          });
+
+          if (result.success) {
+            pdfResult.success = true;
+            const fileSize = result.stats ? Math.round(result.stats.fileSize / 1024) : 0;
+            console.log(`✅ ${result.engineUsed} 엔진으로 PDF 변환 성공: ${pdfPath} (${fileSize}KB)`);
+            if (result.warnings && result.warnings.length > 0) {
+              console.warn(`⚠️ 경고: ${result.warnings.join(', ')}`);
+            }
+          } else {
+            pdfResult.error = result.error || '통합 PDF 서비스 변환 실패';
+            console.warn(`⚠️ PDF 변환 실패: ${pdfResult.error}, Excel 파일만 첨부합니다.`);
+          }
+        } catch (error) {
+          pdfResult.error = `통합 PDF 서비스 오류: ${error.message}`;
+          console.warn(`⚠️ PDF 변환 완전 실패: ${pdfResult.error}, Excel 파일만 첨부합니다.`);
+        }
       }
 
       // 3. 첨부파일 준비
-      const attachments: EmailAttachment[] = [];
-      
-      // Excel 파일 첨부 (원본 형식 유지)
-      if (fs.existsSync(processedPath)) {
-        attachments.push({
-          filename: `발주서_${emailOptions.orderNumber || timestamp}.xlsx`,
-          path: processedPath,
-          contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        });
-        console.log(`📎 Excel 첨부파일 추가: 발주서_${emailOptions.orderNumber || timestamp}.xlsx`);
-      }
+      if (fileExists && isExcelFile) {
+        // Excel 파일 첨부 (원본 형식 유지)
+        if (fs.existsSync(processedPath)) {
+          attachments.push({
+            filename: `발주서_${emailOptions.orderNumber || timestamp}.xlsx`,
+            path: processedPath,
+            contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+          });
+          console.log(`📎 Excel 첨부파일 추가: 발주서_${emailOptions.orderNumber || timestamp}.xlsx`);
+        }
 
-      // PDF 파일 첨부 (변환 성공한 경우에만)
-      if (pdfResult.success && fs.existsSync(pdfPath)) {
+        // PDF 파일 첨부 (변환 성공한 경우에만)
+        if (pdfResult.success && fs.existsSync(pdfPath)) {
+          attachments.push({
+            filename: `발주서_${emailOptions.orderNumber || timestamp}.pdf`,
+            path: pdfPath,
+            contentType: 'application/pdf'
+          });
+          console.log(`📎 PDF 첨부파일 추가: 발주서_${emailOptions.orderNumber || timestamp}.pdf`);
+        }
+      } else if (fileExists) {
+        // Excel이 아닌 파일이지만 존재하는 경우 (텍스트 파일 등)
+        const fileExt = path.extname(originalFilePath) || '.txt';
+        const baseName = `발주서_${emailOptions.orderNumber || timestamp}`;
         attachments.push({
-          filename: `발주서_${emailOptions.orderNumber || timestamp}.pdf`,
-          path: pdfPath,
-          contentType: 'application/pdf'
+          filename: `${baseName}${fileExt}`,
+          path: originalFilePath,
+          contentType: fileExt === '.txt' ? 'text/plain' : 'application/octet-stream'
         });
-        console.log(`📎 PDF 첨부파일 추가: 발주서_${emailOptions.orderNumber || timestamp}.pdf`);
+        console.log(`📎 텍스트/기타 첨부파일 추가: ${baseName}${fileExt}`);
       }
 
       // 추가 첨부파일 처리 (selectedAttachmentIds로부터 전달받은 파일들)

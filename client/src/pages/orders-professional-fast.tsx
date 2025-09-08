@@ -624,8 +624,25 @@ export default function OrdersProfessionalFast() {
   }, []);
 
   // Email handlers
-  const handleEmailSend = useCallback((order: Order) => {
-    setSelectedOrder(order);
+  const handleEmailSend = useCallback(async (order: Order) => {
+    // 첨부파일 정보를 가져오기 위해 전체 order 데이터를 fetch
+    try {
+      const response = await fetch(`/api/orders/${order.id}`, {
+        credentials: 'include',
+      });
+      if (response.ok) {
+        const fullOrderData = await response.json();
+        setSelectedOrder({
+          ...order,
+          attachments: fullOrderData.attachments || []
+        });
+      } else {
+        setSelectedOrder(order);
+      }
+    } catch (error) {
+      console.error('Failed to fetch order attachments:', error);
+      setSelectedOrder(order);
+    }
     setEmailDialogOpen(true);
   }, []);
 
@@ -1530,7 +1547,14 @@ export default function OrdersProfessionalFast() {
               siteName: selectedOrder.projectName,
               orderId: selectedOrder.id
             }}
-            attachments={selectedOrder.attachments || []}
+            attachments={selectedOrder.attachments?.map(att => ({
+              id: att.id,
+              originalName: att.originalName,
+              filePath: att.filePath,
+              fileSize: att.fileSize,
+              mimeType: att.mimeType,
+              isSelected: false
+            })) || []}
             onSendEmail={handleSendEmail}
           />
         )}

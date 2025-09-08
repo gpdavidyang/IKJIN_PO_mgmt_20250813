@@ -28,7 +28,7 @@ export class EmailSettingsEncryption {
       const key = this.getEncryptionKey();
       const iv = crypto.randomBytes(this.ivLength);
       
-      const cipher = crypto.createCipherGCM(this.algorithm, key, iv);
+      const cipher = crypto.createCipheriv(this.algorithm, key, iv);
       cipher.setAAD(Buffer.from('email-settings', 'utf8'));
       
       let encrypted = cipher.update(plainText, 'utf8', 'hex');
@@ -61,7 +61,7 @@ export class EmailSettingsEncryption {
       const iv = Buffer.from(ivHex, 'hex');
       const tag = Buffer.from(tagHex, 'hex');
       
-      const decipher = crypto.createDecipherGCM(this.algorithm, key, iv);
+      const decipher = crypto.createDecipheriv(this.algorithm, key, iv);
       decipher.setAuthTag(tag);
       decipher.setAAD(Buffer.from('email-settings', 'utf8'));
       

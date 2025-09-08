@@ -208,11 +208,11 @@ export class UnifiedOrderCreationService {
       userId: data.userId,
       orderDate: new Date(data.orderDate),
       deliveryDate: data.deliveryDate ? new Date(data.deliveryDate) : null,
-      totalAmount,
+      totalAmount: String(totalAmount), // Convert to string for decimal type
       notes: data.notes || null,
       orderStatus: 'draft', // 초기 상태
       approvalStatus: 'not_required', // 승인 불필요로 시작
-      customFields: data.customFields ? JSON.stringify(data.customFields) : null,
+      // customFields 필드는 아직 DB에 추가되지 않음
       createdAt: new Date(),
       updatedAt: new Date(),
     }).returning({ id: purchaseOrders.id });
@@ -230,8 +230,8 @@ export class UnifiedOrderCreationService {
         middleCategory: item.middleCategory || null,
         minorCategory: item.minorCategory || null,
         quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        totalAmount: item.totalAmount || 0,
+        unitPrice: String(item.unitPrice), // Convert to string for decimal type
+        totalAmount: String(item.totalAmount || 0), // Convert to string for decimal type
         notes: item.notes || null,
       }));
       
