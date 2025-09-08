@@ -2002,6 +2002,42 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
         attachmentsCount: attachments.length
       });
       
+      // 개발 환경에서도 이메일 기록 저장
+      if (orderData && orderData.orderId) {
+        try {
+          const { emailSendHistory } = await import('@shared/schema');
+          
+          const recipients = Array.isArray(emailOptions.to) 
+            ? emailOptions.to 
+            : emailOptions.to.split(',').map((e: string) => e.trim());
+          
+          const ccRecipients = emailOptions.cc 
+            ? (Array.isArray(emailOptions.cc) 
+                ? emailOptions.cc 
+                : emailOptions.cc.split(',').map((e: string) => e.trim())) 
+            : [];
+          
+          await database.db.insert(emailSendHistory).values({
+            orderId: orderData.orderId,
+            senderUserId: req.user?.id || 0,
+            recipients: recipients,
+            cc: ccRecipients,
+            bcc: [],
+            subject: mailOptions.subject,
+            message: message || emailOptions.additionalMessage || '',
+            attachments: attachmentsList,
+            status: 'sent',
+            sentAt: new Date(),
+            messageId: `mock-${Date.now()}`,
+            error: null
+          });
+          
+          console.log(`📧 [개발 모드] 이메일 기록 저장 완료: 발주번호 ${orderData.orderNumber}`);
+        } catch (historyError) {
+          console.error(`❌ [개발 모드] 이메일 기록 저장 실패:`, historyError);
+        }
+      }
+      
       res.json({ 
         success: true, 
         messageId: `mock-${Date.now()}`,
@@ -2665,6 +2701,51 @@ router.post("/orders/:id/complete-delivery", requireAuth, async (req: any, res) 
       message: "납품검수 완료 중 오류가 발생했습니다.",
       error: error instanceof Error ? error.message : "Unknown error"
     });
+  }
+});
+
+// Get email history for an order
+router.get("/:orderId/email-history", async (req, res) => {
+  try {
+    const orderId = parseInt(req.params.orderId);
+    if (isNaN(orderId)) {
+      return res.status(400).json({ error: "Invalid order ID" });
+    }
+
+    const { emailSendHistory, users } = await import('@shared/schema');
+    const { eq, desc } = await import('drizzle-orm');
+    
+    // Get email history with sender details
+    const emailHistory = await database.db
+      .select({
+        id: emailSendHistory.id,
+        orderId: emailSendHistory.orderId,
+        sentAt: emailSendHistory.sentAt,
+        senderUserId: emailSendHistory.senderUserId,
+        sentByName: users.name,
+        sentByEmail: users.email,
+        recipients: emailSendHistory.recipients,
+        cc: emailSendHistory.cc,
+        bcc: emailSendHistory.bcc,
+        subject: emailSendHistory.subject,
+        message: emailSendHistory.message,
+        attachments: emailSendHistory.attachments,
+        status: emailSendHistory.status,
+        error: emailSendHistory.error,
+        messageId: emailSendHistory.messageId,
+        createdAt: emailSendHistory.createdAt,
+        updatedAt: emailSendHistory.updatedAt,
+      })
+      .from(emailSendHistory)
+      .leftJoin(users, eq(emailSendHistory.senderUserId, users.id))
+      .where(eq(emailSendHistory.orderId, orderId))
+      .orderBy(desc(emailSendHistory.sentAt));
+
+    console.log(`📧 이메일 기록 조회: orderId=${orderId}, count=${emailHistory.length}`);
+    res.json(emailHistory);
+  } catch (error) {
+    console.error("Error fetching email history:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
