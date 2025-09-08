@@ -191,6 +191,10 @@ export class ProfessionalPDFGenerationService {
       // 회사명 및 고유명사
       '익진엔지니어링': 'IKJIN Engineering',
       '주식회사': 'Co., Ltd.',
+      '(주)익진엔지니어링': 'IKJIN Engineering Co., Ltd.',
+      '삼성물산': 'Samsung C&T',
+      '삼성물산(주)': 'Samsung C&T Corporation',
+      '래미안 원베일리 신축공사': 'Raemian One Valley Construction',
       '(주)': '',
       '유한회사': 'Ltd.',
       '건설': 'Construction',
@@ -198,6 +202,26 @@ export class ProfessionalPDFGenerationService {
       '산업': 'Industries',
       '물산': 'Trading',
       '건설사': 'Construction Co.',
+      
+      // 건설 자재 관련
+      '철근': 'Steel Rebar',
+      '레미콘': 'Ready-Mixed Concrete',
+      '거푸집용 합판': 'Formwork Plywood',
+      '합판': 'Plywood',
+      '시멘트': 'Cement',
+      '콘크리트': 'Concrete',
+      '자재': 'Materials',
+      '강재': 'Steel',
+      
+      // 단위 및 규격
+      '톤': 'TON',
+      '개': 'PCS',
+      '매': 'SHEET',
+      '장': 'SHEET',
+      '미터': 'M',
+      '제곱미터': 'M2',
+      '세제곱미터': 'M3',
+      '킬로그램': 'KG',
       
       // 공통 한글 단어들
       '입니다': '',
@@ -222,7 +246,26 @@ export class ProfessionalPDFGenerationService {
       '일': 'D',
       '시': 'H',
       '분': 'Min',
-      '초': 'Sec'
+      '초': 'Sec',
+      
+      // 추가 일반 용어
+      '특기사항': 'Special Notes',
+      '참고': 'Reference',
+      '내용': 'Contents',
+      '설명': 'Description',
+      '상세': 'Details',
+      '정보': 'Information',
+      '관리': 'Management',
+      '담당': 'In Charge',
+      '업무': 'Work',
+      '계획': 'Plan',
+      '일정': 'Schedule',
+      '완료': 'Complete',
+      '진행': 'Progress',
+      '검토': 'Review',
+      '확인': 'Confirm',
+      '승인': 'Approval',
+      '보고': 'Report'
     };
     
     let result = text;
@@ -235,31 +278,88 @@ export class ProfessionalPDFGenerationService {
       result = result.replace(new RegExp(korean, 'g'), english);
     }
     
-    // 2단계: 남은 한글을 의미있는 영문으로 대체
+    // 2단계: 남은 한글을 더 스마트하게 처리
     result = result.replace(/[가-힣]{2,}/g, (match) => {
-      // 한글 단어를 라틴 문자로 근사치 변환
-      if (match.includes('주식회사') || match.includes('회사')) return 'Company';
+      // 특정 패턴별로 의미있는 영문으로 변환
+      if (match.includes('회사') || match.includes('기업')) return 'Company';
       if (match.includes('엔지니어링')) return 'Engineering';
-      if (match.includes('건설')) return 'Construction';
+      if (match.includes('건설') || match.includes('시공')) return 'Construction';
       if (match.includes('산업')) return 'Industries';
-      return `[${match.length > 6 ? 'Korean Company' : 'Korean Text'}]`;
+      if (match.includes('관리') || match.includes('관리소')) return 'Management';
+      if (match.includes('현장') || match.includes('공사')) return 'Site';
+      if (match.includes('자재') || match.includes('재료')) return 'Materials';
+      if (match.includes('품목') || match.includes('물품')) return 'Item';
+      if (match.includes('담당') || match.includes('책임')) return 'Manager';
+      if (match.includes('전화') || match.includes('연락')) return 'Contact';
+      if (match.includes('주소') || match.includes('위치')) return 'Address';
+      
+      // 숫자가 포함된 경우 (규격, 코드 등)
+      if (/\d/.test(match)) return match.replace(/[가-힣]/g, '');
+      
+      // 길이에 따른 범용 처리
+      if (match.length <= 2) return 'KR';
+      if (match.length <= 4) return 'Korean';
+      return 'Korean Company';
     });
     
     // 3단계: 단일 한글 문자 처리
     result = result.replace(/[가-힣]/g, '');
     
-    // 4단계: 불필요한 공백 및 특수문자 정리
+    // 4단계: 연속된 공백과 빈 대괄호 정리
     result = result.replace(/\s+/g, ' ').trim();
     result = result.replace(/\[\s*\]/g, '');
+    result = result.replace(/\s*\[\s*Korean\s*\]\s*/g, ' Korean ');
+    result = result.replace(/Korean\s+Korean/g, 'Korean');
     
     return result;
+  }
+
+  /**
+   * 전체 발주 데이터를 Vercel 환경에 맞게 번역
+   */
+  private static translateOrderData(data: ComprehensivePurchaseOrderData): ComprehensivePurchaseOrderData {
+    if (!process.env.VERCEL) return data;
+
+    const translateObject = (obj: any): any => {
+      if (!obj) return obj;
+      
+      // Date 객체는 번역하지 않고 그대로 유지
+      if (obj instanceof Date) {
+        return obj;
+      }
+      
+      if (typeof obj === 'string') {
+        return this.translateForVercel(obj);
+      }
+      
+      if (Array.isArray(obj)) {
+        return obj.map(item => translateObject(item));
+      }
+      
+      if (typeof obj === 'object' && obj !== null) {
+        const translated: any = {};
+        for (const [key, value] of Object.entries(obj)) {
+          // 날짜 관련 키는 번역하지 않음
+          if (['orderDate', 'deliveryDate', 'createdAt'].includes(key)) {
+            translated[key] = value; // 원본 Date 객체 유지
+          } else {
+            translated[key] = translateObject(value);
+          }
+        }
+        return translated;
+      }
+      
+      return obj;
+    };
+
+    return translateObject(data);
   }
 
   /**
    * 텍스트 출력 헬퍼 - 환경별 번역 적용
    */
   private static drawText(doc: PDFDocument, text: string, x: number, y: number, options?: any): void {
-    const translatedText = this.translateForVercel(text);
+    // 데이터가 이미 번역되었으므로 추가 번역 불필요
     const fonts = this.getFonts();
     
     // 폰트 설정
@@ -273,7 +373,7 @@ export class ProfessionalPDFGenerationService {
       doc.font(fontName === fonts.bold ? 'Helvetica-Bold' : 'Helvetica');
     }
     
-    doc.text(translatedText, x, y, options);
+    doc.text(text, x, y, options);
   }
 
   /**

@@ -81,6 +81,7 @@ export class EmailService {
    */
   static async sendPurchaseOrderEmail(
     orderData: {
+      orderId?: number | string; // Add orderId for email history recording
       orderNumber: string;
       vendorName: string;
       orderDate: string;
@@ -128,6 +129,7 @@ export class EmailService {
     try {
       const requestData: any = {
         orderData: {
+          orderId: orderData.orderId, // Include orderId for email history recording
           orderNumber: orderData.orderNumber,
           vendorName: orderData.vendorName,
           orderDate: orderData.orderDate,
