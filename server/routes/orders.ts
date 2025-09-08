@@ -1996,18 +1996,54 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
     
     const transporter = nodemailer.createTransport(smtpConfig);
     
-    // 이메일 옵션 설정
+    // 이메일 옵션 설정 - 안전한 attachments 처리
+    const safeAttachments = attachments.map(att => {
+      const attachment: any = {
+        filename: att.filename || 'attachment'
+      };
+      
+      // Set content type if provided
+      if (att.contentType) {
+        attachment.contentType = att.contentType;
+      }
+      
+      // Handle both path-based and content-based attachments with validation
+      try {
+        if (att.path && typeof att.path === 'string' && att.path.length > 0) {
+          attachment.path = att.path;
+          attachment.valid = true;
+          console.log(`📎 첨부파일 (파일): ${att.filename} -> ${att.path}`);
+        } else if (att.content && Buffer.isBuffer(att.content) && att.content.length > 0) {
+          attachment.content = att.content;
+          attachment.valid = true;
+          console.log(`📎 첨부파일 (버퍼): ${att.filename} -> ${att.content.length} bytes`);
+        } else {
+          attachment.valid = false;
+          console.warn(`⚠️ 첨부파일 데이터 없음: ${att.filename}`);
+        }
+      } catch (attachError) {
+        attachment.valid = false;
+        console.error(`❌ 첨부파일 처리 오류: ${att.filename}`, attachError);
+      }
+      
+      return attachment;
+    }).filter(att => att.valid).map(att => {
+      // Remove the valid flag before sending to nodemailer
+      const { valid, ...cleanAtt } = att;
+      return cleanAtt;
+    });
+    
     const mailOptions = {
       from: smtpConfig.auth.user,
       to: Array.isArray(emailOptions.to) ? emailOptions.to.join(', ') : emailOptions.to,
       cc: emailOptions.cc ? (Array.isArray(emailOptions.cc) ? emailOptions.cc.join(', ') : emailOptions.cc) : undefined,
       subject: emailOptions.subject || `발주서 - ${orderData.orderNumber || ''}`,
       html: emailHtml,
-      attachments: attachments
+      attachments: safeAttachments
     };
     
     // 디버깅: 첨부파일 상세 정보
-    console.log('📧 최종 첨부파일 목록:', attachments.map(att => ({
+    console.log('📧 최종 첨부파일 목록:', safeAttachments.map(att => ({
       filename: att.filename,
       hasPath: !!att.path,
       hasContent: !!att.content,
