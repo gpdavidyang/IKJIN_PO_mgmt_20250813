@@ -667,7 +667,12 @@ ${orderData.vendorName} 담당자님께 발주서를 전송드립니다.
               )}
 
               {/* 사용자 업로드 파일 섹션 */}
-              <div className="border-t">
+              <div 
+                className="border-t"
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+              >
                 <div className="p-3 bg-gray-50">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">

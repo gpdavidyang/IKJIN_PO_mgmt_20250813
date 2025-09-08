@@ -346,53 +346,117 @@ export default function OrderDetailProfessional() {
     if (!order) return;
 
     try {
-      // 선택된 첨부파일 URL 생성
-      const attachmentUrls: string[] = [];
+      // 사용자 업로드 파일과 서버 첨부파일 분리
+      const serverAttachmentIds: number[] = [];
+      const customFiles: File[] = emailData.customFiles || [];
       
+      // 선택된 첨부파일 ID에서 서버 파일만 필터링 (양수 ID)
       if (emailData.selectedAttachmentIds && emailData.selectedAttachmentIds.length > 0) {
         console.log('📎 선택된 첨부파일 ID:', emailData.selectedAttachmentIds);
         
-        // 각 첨부파일 ID를 다운로드 URL로 변환
         for (const attachmentId of emailData.selectedAttachmentIds) {
-          const attachmentUrl = `/api/attachments/${attachmentId}/download`;
-          attachmentUrls.push(attachmentUrl);
-          console.log('📎 첨부파일 URL 생성:', attachmentUrl);
+          if (attachmentId > 0) {
+            // 서버에 있는 파일 (양수 ID)
+            serverAttachmentIds.push(attachmentId);
+          }
+          // 음수 ID는 사용자 업로드 파일이므로 customFiles에서 처리됨
         }
       }
+      
+      // 서버 첨부파일 URL 생성
+      const attachmentUrls: string[] = [];
+      for (const attachmentId of serverAttachmentIds) {
+        const attachmentUrl = `/api/attachments/${attachmentId}/download`;
+        attachmentUrls.push(attachmentUrl);
+        console.log('📎 서버 첨부파일 URL 생성:', attachmentUrl);
+      }
 
-      const orderData = {
-        orderId: order.id, // Add orderId for proper backend handling
-        orderNumber: order.orderNumber,
-        vendorName: order.vendor?.name || order.vendorName || '',
-        orderDate: order.orderDate,
-        totalAmount: order.totalAmount,
-        siteName: order.project?.projectName || order.projectName || '',
-        // filePath: order.filePath || '', // REMOVED: Forces orders path to handle selectedAttachmentIds
-        attachmentUrls: attachmentUrls
-      };
-
-      console.log('📧 이메일 발송 데이터:', { 
-        orderData, 
-        emailData,
-        selectedAttachmentIds: emailData.selectedAttachmentIds,
-        attachmentUrls: attachmentUrls,
-        hasAttachments: order.attachments?.length || 0
-      });
-
-      const response = await fetch('/api/orders/send-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          orderData,
-          ...emailData,
+      // FormData 사용 여부 결정 (사용자 업로드 파일이 있는 경우)
+      if (customFiles.length > 0) {
+        console.log('📎 사용자 업로드 파일 포함:', customFiles.length, '개');
+        
+        // FormData로 전송
+        const formData = new FormData();
+        
+        // 기본 데이터
+        formData.append('orderData', JSON.stringify({
           orderId: order.id,
+          orderNumber: order.orderNumber,
+          vendorName: order.vendor?.name || order.vendorName || '',
+          orderDate: order.orderDate,
+          totalAmount: order.totalAmount,
+          siteName: order.project?.projectName || order.projectName || '',
           attachmentUrls: attachmentUrls
-        })
-      });
+        }));
+        
+        formData.append('to', JSON.stringify(emailData.to));
+        if (emailData.cc) formData.append('cc', JSON.stringify(emailData.cc));
+        formData.append('subject', emailData.subject);
+        if (emailData.message) formData.append('message', emailData.message);
+        formData.append('selectedAttachmentIds', JSON.stringify(serverAttachmentIds));
+        formData.append('orderId', order.id.toString());
+        
+        // 사용자 업로드 파일 추가
+        customFiles.forEach((file, index) => {
+          formData.append(`customFiles`, file);
+        });
+        
+        const response = await fetch('/api/orders/send-email', {
+          method: 'POST',
+          body: formData
+        });
+        
+        if (response.ok) {
+          toast({
+            title: "이메일 발송 완료",
+            description: "발주서가 성공적으로 전송되었습니다.",
+          });
+          
+          // 발주상태 업데이트
+          queryClient.invalidateQueries({
+            queryKey: ['order', Number(orderId)]
+          });
+          
+          sendEmailMutation.mutate();
+        } else {
+          throw new Error('Failed to send email');
+        }
+        
+      } else {
+        // 사용자 업로드 파일이 없는 경우 기존 JSON 방식
+        const orderData = {
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          vendorName: order.vendor?.name || order.vendorName || '',
+          orderDate: order.orderDate,
+          totalAmount: order.totalAmount,
+          siteName: order.project?.projectName || order.projectName || '',
+          attachmentUrls: attachmentUrls
+        };
 
-      if (response.ok) {
-        toast({
-          title: "이메일 발송 완료",
+        console.log('📧 이메일 발송 데이터 (JSON):', { 
+          orderData, 
+          emailData,
+          selectedAttachmentIds: serverAttachmentIds,
+          attachmentUrls: attachmentUrls,
+          hasAttachments: order.attachments?.length || 0
+        });
+
+        const response = await fetch('/api/orders/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderData,
+            ...emailData,
+            orderId: order.id,
+            attachmentUrls: attachmentUrls,
+            selectedAttachmentIds: serverAttachmentIds
+          })
+        });
+
+        if (response.ok) {
+          toast({
+            title: "이메일 발송 완료",
           description: `${order.vendor?.name || order.vendorName}에게 발주서 ${order.orderNumber}를 전송했습니다.`,
         });
         setEmailDialogOpen(false);
