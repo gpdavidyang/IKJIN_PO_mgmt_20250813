@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Mail, Send, X, Check, AlertTriangle, FileText, File, Loader2, Info } from 'lucide-react';
+import { Mail, Send, X, Check, AlertTriangle, FileText, File, Loader2, Info, Upload, Paperclip, Trash2 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
@@ -18,6 +18,8 @@ interface AttachmentInfo {
   fileSize?: number;
   mimeType?: string;
   isSelected?: boolean;
+  isCustom?: boolean; // 사용자가 업로드한 파일인지 표시
+  file?: File; // 실제 File 객체 (사용자 업로드 파일용)
 }
 
 interface EmailSendDialogProps {
@@ -42,16 +44,19 @@ interface EmailData {
   subject: string;
   message?: string;
   selectedAttachmentIds: number[];
+  customFiles?: File[]; // 사용자가 업로드한 파일들
 }
 
 export function EmailSendDialog({ open, onOpenChange, orderData, onSendEmail, attachments: providedAttachments }: EmailSendDialogProps) {
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [emailData, setEmailData] = useState<EmailData>({
     to: orderData.vendorEmail ? [orderData.vendorEmail] : [''],
     cc: [],
     subject: `발주서 전송 - ${orderData.orderNumber}`,
     message: '',
-    selectedAttachmentIds: []
+    selectedAttachmentIds: [],
+    customFiles: []
   });
   
   const [isLoading, setIsLoading] = useState(false);
@@ -60,6 +65,7 @@ export function EmailSendDialog({ open, onOpenChange, orderData, onSendEmail, at
   const [newCcEmail, setNewCcEmail] = useState('');
   const [attachments, setAttachments] = useState<AttachmentInfo[]>([]);
   const [attachmentsLoading, setAttachmentsLoading] = useState(false);
+  const [customAttachments, setCustomAttachments] = useState<AttachmentInfo[]>([]);
 
   // Use provided attachments or fetch them when dialog opens
   useEffect(() => {
@@ -209,7 +215,98 @@ export function EmailSendDialog({ open, onOpenChange, orderData, onSendEmail, at
         fileName?.toLowerCase().endsWith('.xlsx') || fileName?.toLowerCase().endsWith('.xls')) {
       return <File className="h-4 w-4 text-green-600" />;
     }
+    if (mimeType?.includes('image')) {
+      return <File className="h-4 w-4 text-purple-500" />;
+    }
+    if (mimeType?.includes('word') || fileName?.toLowerCase().endsWith('.docx') || fileName?.toLowerCase().endsWith('.doc')) {
+      return <File className="h-4 w-4 text-blue-500" />;
+    }
     return <File className="h-4 w-4 text-gray-500" />;
+  };
+
+  // 사용자 파일 업로드 처리
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    const newCustomAttachments: AttachmentInfo[] = [];
+    const validFiles: File[] = [];
+    const maxFileSize = 10 * 1024 * 1024; // 10MB 제한
+    const fileErrors: string[] = [];
+
+    Array.from(files).forEach((file) => {
+      // 파일 크기 체크
+      if (file.size > maxFileSize) {
+        fileErrors.push(`${file.name}: 파일 크기가 10MB를 초과합니다.`);
+        return;
+      }
+
+      // 중복 체크
+      const isDuplicate = customAttachments.some(att => att.originalName === file.name);
+      if (isDuplicate) {
+        fileErrors.push(`${file.name}: 이미 추가된 파일입니다.`);
+        return;
+      }
+
+      // 고유 ID 생성 (음수로 설정하여 서버 첨부파일과 구분)
+      const customId = -Date.now() - Math.random();
+      
+      newCustomAttachments.push({
+        id: customId,
+        originalName: file.name,
+        filePath: '', // 사용자 업로드 파일은 filePath가 없음
+        fileSize: file.size,
+        mimeType: file.type,
+        isSelected: true, // 기본적으로 선택됨
+        isCustom: true,
+        file: file
+      });
+
+      validFiles.push(file);
+    });
+
+    if (fileErrors.length > 0) {
+      toast({
+        title: "파일 업로드 경고",
+        description: fileErrors.join('\n'),
+        variant: "destructive"
+      });
+    }
+
+    if (newCustomAttachments.length > 0) {
+      setCustomAttachments(prev => [...prev, ...newCustomAttachments]);
+      setEmailData(prev => ({
+        ...prev,
+        customFiles: [...(prev.customFiles || []), ...validFiles],
+        selectedAttachmentIds: [
+          ...prev.selectedAttachmentIds,
+          ...newCustomAttachments.map(att => att.id)
+        ]
+      }));
+
+      toast({
+        title: "파일 추가 완료",
+        description: `${newCustomAttachments.length}개의 파일이 추가되었습니다.`,
+      });
+    }
+
+    // 파일 입력 초기화
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  // 사용자 업로드 파일 제거
+  const removeCustomFile = (attachmentId: number) => {
+    setCustomAttachments(prev => prev.filter(att => att.id !== attachmentId));
+    setEmailData(prev => ({
+      ...prev,
+      customFiles: prev.customFiles?.filter((_, index) => {
+        const customAtt = customAttachments[index];
+        return customAtt?.id !== attachmentId;
+      }),
+      selectedAttachmentIds: prev.selectedAttachmentIds.filter(id => id !== attachmentId)
+    }));
   };
 
   // 유효성 검사
@@ -472,69 +569,181 @@ ${orderData.vendorName} 담당자님께 발주서를 전송드립니다.
           <div className="space-y-3">
             <Label className="text-base font-medium">첨부파일</Label>
             
-            {attachmentsLoading ? (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                첨부파일 정보를 불러오는 중...
-              </div>
-            ) : attachments.length === 0 ? (
-              <div className="text-sm text-muted-foreground p-4 border border-dashed rounded-lg text-center">
-                <FileText className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                이 발주서에 첨부된 파일이 없습니다.
-              </div>
-            ) : (
-              <div className="space-y-2 max-h-64 overflow-y-auto border rounded-lg p-3">
-                <div className="text-xs font-medium text-muted-foreground mb-2">
-                  총 {attachments.length}개의 파일이 첨부되어 있습니다
+            {/* 탭 형식 UI */}
+            <div className="border rounded-lg">
+              {/* 기존 첨부파일 섹션 */}
+              <div className="border-b p-3 bg-gray-50">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Paperclip className="h-4 w-4 text-gray-600" />
+                    <span className="text-sm font-medium">발주서 첨부파일</span>
+                    <Badge variant="secondary" className="text-xs">
+                      {attachments.length}개
+                    </Badge>
+                  </div>
                 </div>
-                {attachments.map((attachment) => {
-                  const isSelected = emailData.selectedAttachmentIds.includes(attachment.id);
-                  return (
-                    <div 
-                      key={attachment.id} 
-                      className={`flex items-center space-x-3 p-2 rounded-md hover:bg-gray-50 transition-colors ${
-                        isSelected ? 'bg-blue-50 border border-blue-200' : 'border border-gray-200'
-                      }`}
-                    >
-                      <Checkbox
-                        id={`attach-${attachment.id}`}
-                        checked={isSelected}
-                        onCheckedChange={() => toggleAttachment(attachment.id)}
-                      />
-                      <div className="flex items-center space-x-2 flex-1 min-w-0">
-                        {getFileIcon(attachment.mimeType, attachment.originalName)}
-                        <div className="flex-1 min-w-0">
-                          <Label 
-                            htmlFor={`attach-${attachment.id}`}
-                            className="text-sm font-medium cursor-pointer block truncate"
-                            title={attachment.originalName}
-                          >
-                            {attachment.originalName}
-                          </Label>
-                          {attachment.fileSize && (
-                            <div className="text-xs text-muted-foreground">
-                              {formatFileSize(attachment.fileSize)}
-                              {attachment.mimeType && (
-                                <span className="ml-2">• {attachment.mimeType.split('/')[1]?.toUpperCase()}</span>
-                              )}
-                            </div>
-                          )}
+              </div>
+              
+              {attachmentsLoading ? (
+                <div className="p-4 flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  첨부파일 정보를 불러오는 중...
+                </div>
+              ) : attachments.length === 0 ? (
+                <div className="p-4 text-sm text-muted-foreground text-center">
+                  <FileText className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                  발주서에 첨부된 파일이 없습니다.
+                </div>
+              ) : (
+                <div className="max-h-48 overflow-y-auto p-3 space-y-2">
+                  {attachments.map((attachment) => {
+                    const isSelected = emailData.selectedAttachmentIds.includes(attachment.id);
+                    return (
+                      <div 
+                        key={attachment.id} 
+                        className={`flex items-center space-x-3 p-2 rounded-md hover:bg-gray-50 transition-colors ${
+                          isSelected ? 'bg-blue-50 border border-blue-200' : 'border border-gray-200'
+                        }`}
+                      >
+                        <Checkbox
+                          id={`attach-${attachment.id}`}
+                          checked={isSelected}
+                          onCheckedChange={() => toggleAttachment(attachment.id)}
+                        />
+                        <div className="flex items-center space-x-2 flex-1 min-w-0">
+                          {getFileIcon(attachment.mimeType, attachment.originalName)}
+                          <div className="flex-1 min-w-0">
+                            <Label 
+                              htmlFor={`attach-${attachment.id}`}
+                              className="text-sm font-medium cursor-pointer block truncate"
+                              title={attachment.originalName}
+                            >
+                              {attachment.originalName}
+                            </Label>
+                            {attachment.fileSize && (
+                              <div className="text-xs text-muted-foreground">
+                                {formatFileSize(attachment.fileSize)}
+                                {attachment.mimeType && (
+                                  <span className="ml-2">• {attachment.mimeType.split('/')[1]?.toUpperCase()}</span>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* 사용자 업로드 파일 섹션 */}
+              <div className="border-t">
+                <div className="p-3 bg-gray-50">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Upload className="h-4 w-4 text-gray-600" />
+                      <span className="text-sm font-medium">추가 파일 첨부</span>
+                      {customAttachments.length > 0 && (
+                        <Badge variant="secondary" className="text-xs">
+                          {customAttachments.length}개
+                        </Badge>
+                      )}
                     </div>
-                  );
-                })}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="text-xs"
+                    >
+                      <Upload className="h-3 w-3 mr-1" />
+                      파일 선택
+                    </Button>
+                  </div>
+                </div>
                 
-                {/* 선택된 파일 개수 표시 */}
-                {emailData.selectedAttachmentIds.length > 0 && (
-                  <div className="pt-2 border-t border-gray-200">
-                    <div className="text-xs text-blue-600 font-medium">
-                      ✓ {emailData.selectedAttachmentIds.length}개 파일이 선택되었습니다
+                {/* 숨겨진 파일 입력 */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif,.txt,.zip,.rar"
+                />
+                
+                {/* 업로드된 파일 목록 */}
+                {customAttachments.length > 0 ? (
+                  <div className="max-h-48 overflow-y-auto p-3 space-y-2">
+                    {customAttachments.map((attachment) => {
+                      const isSelected = emailData.selectedAttachmentIds.includes(attachment.id);
+                      return (
+                        <div 
+                          key={attachment.id} 
+                          className={`flex items-center space-x-3 p-2 rounded-md hover:bg-gray-50 transition-colors ${
+                            isSelected ? 'bg-green-50 border border-green-200' : 'border border-gray-200'
+                          }`}
+                        >
+                          <Checkbox
+                            id={`custom-${attachment.id}`}
+                            checked={isSelected}
+                            onCheckedChange={() => toggleAttachment(attachment.id)}
+                          />
+                          <div className="flex items-center space-x-2 flex-1 min-w-0">
+                            {getFileIcon(attachment.mimeType, attachment.originalName)}
+                            <div className="flex-1 min-w-0">
+                              <Label 
+                                htmlFor={`custom-${attachment.id}`}
+                                className="text-sm font-medium cursor-pointer block truncate"
+                                title={attachment.originalName}
+                              >
+                                {attachment.originalName}
+                                <Badge variant="outline" className="ml-2 text-xs">새 파일</Badge>
+                              </Label>
+                              {attachment.fileSize && (
+                                <div className="text-xs text-muted-foreground">
+                                  {formatFileSize(attachment.fileSize)}
+                                  {attachment.mimeType && (
+                                    <span className="ml-2">• {attachment.mimeType.split('/')[1]?.toUpperCase()}</span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeCustomFile(attachment.id)}
+                              className="h-6 w-6 p-0 hover:bg-red-100"
+                            >
+                              <Trash2 className="h-3 w-3 text-red-500" />
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="p-4 text-center text-sm text-muted-foreground">
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
+                      <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                      <p>추가로 첨부할 파일을 선택하세요</p>
+                      <p className="text-xs mt-1">최대 10MB, 여러 파일 선택 가능</p>
                     </div>
                   </div>
                 )}
               </div>
-            )}
+              
+              {/* 전체 선택 상태 표시 */}
+              {(emailData.selectedAttachmentIds.length > 0) && (
+                <div className="p-3 bg-blue-50 border-t border-blue-200">
+                  <div className="text-sm text-blue-700 font-medium flex items-center gap-2">
+                    <Check className="h-4 w-4" />
+                    총 {emailData.selectedAttachmentIds.length}개 파일이 선택되었습니다
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* 메시지 */}
