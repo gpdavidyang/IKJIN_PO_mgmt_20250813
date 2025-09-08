@@ -17,7 +17,7 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 import { formatKoreanWon } from "@/lib/utils";
 import { ExcelLikeOrderForm } from "./excel-like-order-form";
 import { useTheme } from "@/components/ui/theme-provider";
-import { OrderCreationProgress } from "./order-creation-progress";
+// import { OrderCreationProgress } from "./order-creation-progress"; // 제거됨 - 토스트 메시지 사용
 
 const orderItemSchema = z.object({
   itemId: z.number().optional(),
@@ -183,9 +183,9 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
   const [selectedProjectInfo, setSelectedProjectInfo] = useState<any>(null);
   const [selectedVendorInfo, setSelectedVendorInfo] = useState<any>(null);
   
-  // Progress tracking states
-  const [showProgress, setShowProgress] = useState(false);
-  const [progressSessionId, setProgressSessionId] = useState<string | null>(null);
+  // Progress tracking states - 토스트로 변경됨
+  // const [showProgress, setShowProgress] = useState(false);
+  // const [progressSessionId, setProgressSessionId] = useState<string | null>(null);
 
   // Helper functions for currency formatting
   const formatCurrencyInput = (value: number): string => {
@@ -238,13 +238,58 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
 
   const createOrderMutation = useMutation({
     mutationFn: async (data: OrderFormData) => {
-      // Generate session ID for progress tracking
+      // 세션 ID 생성 (SSE 이벤트 수신용)
       const sessionId = `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      setProgressSessionId(sessionId);
-      setShowProgress(true);
+      
+      // 토스트로 진행상황 알림
+      toast({
+        title: "📝 발주서 생성 시작",
+        description: "발주서를 생성하고 있습니다. 잠시만 기다려주세요.",
+      });
+      
+      // SSE 이벤트 리스너 설정
+      const eventSource = new EventSource(`/api/progress/${sessionId}`);
+      
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          
+          // 단계별 토스트 메시지 표시
+          if (data.step === 'validation') {
+            toast({
+              title: "✅ 데이터 검증 완료",
+              description: data.message,
+            });
+          } else if (data.step === 'saving') {
+            toast({
+              title: "💾 데이터베이스 저장 중",
+              description: data.message,
+            });
+          } else if (data.step === 'pdf') {
+            toast({
+              title: "📄 PDF 생성 중",
+              description: data.message,
+            });
+          } else if (data.step === 'complete') {
+            toast({
+              title: "✅ 발주서 생성 완료",
+              description: data.message,
+            });
+            eventSource.close();
+          }
+        } catch (err) {
+          console.error('SSE 메시지 파싱 오류:', err);
+        }
+      };
+      
+      eventSource.onerror = (error) => {
+        console.error('SSE 연결 오류:', error);
+        eventSource.close();
+      };
       
       // Prepare FormData for unified service
       const formData = new FormData();
+      formData.append('sessionId', sessionId); // SSE용 세션 ID 추가
       
       // Add order data
       formData.append('method', 'manual');
@@ -283,19 +328,17 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
       return response.json();
     },
     onSuccess: (result: any) => {
-      setShowProgress(false);
-      setProgressSessionId(null);
-      
       queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      
+      // 최종 성공 메시지 (SSE 메시지와 별개로 한 번 더 표시)
       toast({
-        title: "성공",
-        description: `발주서가 생성되었습니다. (${result.orderNumber || result.orderId})`,
+        title: "✅ 모든 작업 완료",
+        description: `발주서가 성공적으로 생성되었습니다.\n발주번호: ${result.orderNumber || result.orderId}${result.attachmentId ? '\nPDF 파일이 첨부되었습니다.' : ''}`,
       });
+      
       onSuccess?.();
     },
     onError: (error) => {
-      setShowProgress(false);
-      setProgressSessionId(null);
       
       if (isUnauthorizedError(error)) {
         toast({
@@ -617,38 +660,7 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
   };
 
   // Progress handlers
-  const handleProgressComplete = (result: any) => {
-    setShowProgress(false);
-    setProgressSessionId(null);
-    
-    queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
-    toast({
-      title: "성공",
-      description: `발주서가 생성되었습니다. (${result.orderNumber || result.orderId})`,
-    });
-    onSuccess?.();
-  };
-
-  const handleProgressError = (error: string) => {
-    setShowProgress(false);
-    setProgressSessionId(null);
-    
-    toast({
-      title: "오류",
-      description: error || "발주서 생성에 실패했습니다.",
-      variant: "destructive",
-    });
-  };
-
-  const handleProgressCancel = () => {
-    setShowProgress(false);
-    setProgressSessionId(null);
-    
-    toast({
-      title: "취소",
-      description: "발주서 생성이 취소되었습니다.",
-    });
-  };
+  // 진행상황 핸들러 제거 - 토스트 메시지로 대체
 
   const removeFile = (index: number) => {
     setUploadedFiles(prev => prev.filter((_, i) => i !== index));
@@ -806,16 +818,7 @@ export function OrderForm({ orderId, onSuccess, onCancel, preselectedTemplateId 
 
   return (
     <div className={`max-w-[1366px] mx-auto compact-form space-y-3 pb-20 transition-colors ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`} key={`general-${selectedTemplateId}`}>
-      {/* Progress indicator */}
-      {showProgress && progressSessionId && (
-        <OrderCreationProgress
-          sessionId={progressSessionId}
-          onComplete={handleProgressComplete}
-          onError={handleProgressError}
-          onCancel={handleProgressCancel}
-          showCancelButton={true}
-        />
-      )}
+      {/* Progress indicator 제거 - 토스트 메시지로 대체 */}
       
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
         <Card className={`transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>

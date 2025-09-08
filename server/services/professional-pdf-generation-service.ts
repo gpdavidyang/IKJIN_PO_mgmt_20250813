@@ -1383,16 +1383,25 @@ export class ProfessionalPDFGenerationService {
       console.log(`💾 [Professional PDF] PDF 파일 저장 완료: ${filePath}`);
       
       // 4. DB에 첨부파일 레코드 생성
-      const attachmentResult = await db.insert(attachments).values({
+      // Vercel 환경에서는 Base64로도 저장하여 안정성 확보
+      const attachmentData: any = {
         orderId,
         originalName: fileName,
         storedName: fileName, // 스키마의 필수 필드
-        filePath,
+        filePath: fileName, // 파일명만 저장 (상대 경로)
         fileSize: pdfBuffer.length,
         mimeType: 'application/pdf',
         uploadedBy: userId, // 이미 문자열
         uploadedAt: new Date(),
-      }).returning({ id: attachments.id });
+      };
+      
+      // Vercel 환경에서는 Base64 데이터도 함께 저장
+      if (process.env.VERCEL) {
+        attachmentData.fileData = pdfBuffer.toString('base64');
+        console.log('☁️ [Professional PDF] Vercel 환경 - Base64 데이터 포함하여 저장');
+      }
+      
+      const attachmentResult = await db.insert(attachments).values(attachmentData).returning({ id: attachments.id });
       
       const attachmentId = attachmentResult[0].id;
       console.log(`✅ [Professional PDF] DB 레코드 생성 완료 - Attachment ID: ${attachmentId}`);
