@@ -6,6 +6,7 @@ import { User as BaseUser } from "@shared/schema";
 import { seedData } from "./seed-data";
 import { OrderService } from "./services/order-service";
 import { OptimizedOrdersService } from "./utils/optimized-orders-query";
+import { getUploadsDir } from "./utils/upload-paths";
 
 // Extend User type to ensure id field is available
 interface User extends BaseUser {
@@ -86,7 +87,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   // Serve uploaded files statically with proper headers for PDFs
-  app.use('/uploads', express.static(path.join(process.cwd(), 'uploads'), {
+  app.use('/uploads', express.static(getUploadsDir(), {
     setHeaders: (res, filePath) => {
       if (filePath.endsWith('.pdf')) {
         res.setHeader('Content-Type', 'application/pdf');

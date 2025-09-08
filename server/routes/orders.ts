@@ -13,6 +13,7 @@ import { decodeKoreanFilename } from "../utils/korean-filename";
 import { OrderService } from "../services/order-service";
 import { OptimizedOrderQueries, OptimizedDashboardQueries } from "../utils/optimized-queries";
 import { ExcelToPDFConverter } from "../utils/excel-to-pdf-converter";
+import { getTempPdfDir, getUploadsDir, getTempDir, ensureUploadDir } from "../utils/upload-paths";
 import { POEmailService } from "../utils/po-email-service";
 import ApprovalRoutingService from "../services/approval-routing-service";
 import { ProfessionalPDFGenerationService } from "../services/professional-pdf-generation-service";
@@ -1438,7 +1439,7 @@ router.get("/orders/download-pdf/:timestamp", async (req, res) => {
     // File system mode (local or fallback)
     const basePath = process.env.VERCEL 
       ? path.join('/tmp', 'temp-pdf', `order-${timestamp}`)
-      : path.join(process.cwd(), 'uploads/temp-pdf', `order-${timestamp}`);
+      : path.join(getTempPdfDir(), `order-${timestamp}`);
     
     const pdfPath = `${basePath}.pdf`;
     const htmlPath = `${basePath}.html`;
@@ -1694,7 +1695,8 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
               // 첫 번째 Excel 파일을 주 첨부파일로 사용
               if (attachment.fileData) {
                 // Base64 데이터를 임시 파일로 저장
-                const tempDir = path.join(__dirname, '../../uploads');
+                const tempDir = getUploadsDir();
+                ensureUploadDir(tempDir);
                 const tempFilePath = path.join(tempDir, `temp-${Date.now()}-${attachment.originalName}`);
                 
                 if (!fs.existsSync(tempDir)) {
@@ -1736,7 +1738,8 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
     // Excel 파일이 없으면 기본 빈 Excel 파일 생성
     if (!excelFilePath) {
       console.log('📎 Excel 파일이 없어 기본 파일 생성');
-      const tempDir = path.join(__dirname, '../../uploads');
+      const tempDir = getUploadsDir();
+      ensureUploadDir(tempDir);
       const tempFilePath = path.join(tempDir, `default-po-${Date.now()}.xlsx`);
       
       if (!fs.existsSync(tempDir)) {
@@ -2224,7 +2227,7 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
     })).filter(att => att.content && att.content.length > 0);
     
     // 임시 Excel 파일 생성 (POEmailService가 Excel 파일을 요구하므로)
-    const tempExcelPath = path.join(__dirname, '../../uploads', `temp_email_${Date.now()}.txt`);
+    const tempExcelPath = path.join(getUploadsDir(), `temp_email_${Date.now()}.txt`);
     fs.writeFileSync(tempExcelPath, `발주서 이메일 첨부파일\n발주번호: ${orderData.orderNumber}\n전송시간: ${new Date().toISOString()}`);
     
     try {
@@ -2634,7 +2637,8 @@ router.post("/orders/send-email-simple", requireAuth, async (req, res) => {
 
     // 임시 엑셀 파일 생성 (첨부파일이 없는 경우)
     if (!excelPath) {
-      const tempDir = path.join(__dirname, '../../uploads/temp');
+      const tempDir = getTempDir();
+      ensureUploadDir(tempDir);
       if (!fs.existsSync(tempDir)) {
         fs.mkdirSync(tempDir, { recursive: true });
       }
@@ -2804,7 +2808,7 @@ router.post("/test-email-smtp", async (req, res) => {
     // 임시 더미 파일 생성 (Excel 첨부용)
     const fs = require('fs');
     const path = require('path');
-    const testExcelPath = path.join(__dirname, '../../uploads/smtp-test.txt');
+    const testExcelPath = path.join(getUploadsDir(), 'smtp-test.txt');
     fs.writeFileSync(testExcelPath, 'SMTP Test File - ' + new Date().toISOString());
 
     const result = await emailService.sendPOWithOriginalFormat(testExcelPath, {

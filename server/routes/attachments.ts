@@ -6,6 +6,7 @@ import path from 'path';
 import fs from 'fs';
 import jwt from 'jsonwebtoken';
 import { requireAuth } from '../local-auth';
+import { getUploadsDir, getTempPdfDir, ensureUploadDir } from '../utils/upload-paths';
 
 const router = Router();
 
@@ -132,8 +133,8 @@ router.get('/attachments/:id/download', async (req, res) => {
       // Try relative paths
       possiblePaths.push(
         path.join(process.cwd(), 'attached_assets', fileName),
-        path.join(process.cwd(), 'uploads', fileName),
-        path.join(process.cwd(), 'uploads', 'temp-pdf', fileName),
+        path.join(getUploadsDir(), fileName),
+        path.join(getTempPdfDir(), fileName),
         path.join(process.cwd(), fileName)
       );
     }
@@ -241,8 +242,8 @@ router.delete('/attachments/:id', requireAuth, async (req: any, res) => {
         // Try relative paths
         possiblePaths.push(
           path.join(process.cwd(), 'attached_assets', fileName),
-          path.join(process.cwd(), 'uploads', fileName),
-          path.join(process.cwd(), 'uploads', 'temp-pdf', fileName),
+          path.join(getUploadsDir(), fileName),
+          path.join(getTempPdfDir(), fileName),
           path.join(process.cwd(), fileName)
         );
       }

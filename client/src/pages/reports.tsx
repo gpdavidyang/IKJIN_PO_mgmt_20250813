@@ -669,7 +669,7 @@ export default function Reports() {
   });
 
   const { data: emailReport } = useQuery({
-    queryKey: ["/api/email-history/email-history", activeFilters?.startDate, activeFilters?.endDate, filters.status, filters.search],
+    queryKey: ["/api/email-history", activeFilters?.startDate, activeFilters?.endDate, filters.status, filters.search],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: '1',
@@ -680,7 +680,7 @@ export default function Reports() {
       if (filters.status && filters.status !== 'all') params.append('status', filters.status);
       if (filters.search) params.append('orderNumber', filters.search);
       
-      const response = await fetch(`/api/email-history/email-history?${params.toString()}`);
+      const response = await fetch(`/api/email-history?${params.toString()}`);
       if (!response.ok) throw new Error('Failed to fetch email history');
       return response.json();
     },

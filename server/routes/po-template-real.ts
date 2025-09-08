@@ -13,6 +13,7 @@ import { db } from '../db.js';
 import { purchaseOrders, purchaseOrderItems, vendors, projects, attachments, companies } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 import { ProfessionalPDFGenerationService } from '../services/professional-pdf-generation-service.js';
+import { getUploadBaseDir, ensureUploadDir } from '../utils/upload-paths.js';
 const router = Router();
 
 // 테스트용 엔드포인트
@@ -27,11 +28,9 @@ const __dirname = path.dirname(__filename);
 // 파일 업로드 설정 - Vercel serverless 환경 지원
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    // Vercel 환경에서는 /tmp 디렉토리만 쓰기 가능
-    const uploadDir = process.env.VERCEL ? '/tmp' : path.join(__dirname, '../../uploads');
-    if (!process.env.VERCEL && !fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
+    // 환경별 업로드 디렉토리 사용
+    const uploadDir = getUploadBaseDir();
+    ensureUploadDir(uploadDir);
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {

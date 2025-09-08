@@ -13,15 +13,14 @@ import { ExcelAutomationService } from '../utils/excel-automation-service.js';
 import { DebugLogger } from '../utils/debug-logger.js';
 import { requireAuth } from '../local-auth.js';
 import { progressManager } from '../utils/progress-manager.js';
+import { getUploadBaseDir, ensureUploadDir } from '../utils/upload-paths.js';
 
 // 파일 업로드 설정 - Vercel serverless 환경 지원
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    // Vercel 환경에서는 /tmp 디렉토리만 쓰기 가능
-    const uploadDir = process.env.VERCEL ? '/tmp' : 'uploads';
-    if (!process.env.VERCEL && !fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
+    // 환경별 업로드 디렉토리 사용
+    const uploadDir = getUploadBaseDir();
+    ensureUploadDir(uploadDir);
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
@@ -408,7 +407,7 @@ router.post('/validate-vendors', requireAuth, async (req: any, res) => {
 router.get('/download/:filename', requireAuth, (req: any, res) => {
   try {
     const filename = req.params.filename;
-    const filePath = path.join('uploads', filename);
+    const filePath = path.join(getUploadBaseDir(), filename);
 
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({

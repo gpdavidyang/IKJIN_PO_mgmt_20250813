@@ -3,6 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import { getUploadsDir, ensureUploadDir } from './upload-paths';
 
 // ES 모듈에서 __dirname 대체
 const __filename = fileURLToPath(import.meta.url);
@@ -132,7 +133,8 @@ export class POEmailService {
       }
 
       const timestamp = Date.now();
-      const uploadsDir = path.join(__dirname, '../../uploads');
+      const uploadsDir = getUploadsDir();
+      ensureUploadDir(uploadsDir);
       
       // 1. 고급 방식으로 Input 시트만 제거하고 원본 형식 완벽 유지
       const processedPath = path.join(uploadsDir, `po-advanced-format-${timestamp}.xlsx`);

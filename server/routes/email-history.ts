@@ -16,10 +16,10 @@ const createEmailHistorySchema = z.object({
   cc: z.array(z.string()).optional(),
   bcc: z.array(z.string()).optional(),
   subject: z.string(),
-  message: z.string(),
-  attachments: z.array(z.string()).optional(),
+  messageContent: z.string(),
+  attachmentFiles: z.array(z.string()).optional(),
   status: z.string().default('pending'),
-  error: z.string().optional(),
+  errorMessage: z.string().optional(),
 });
 
 // Get email history for a specific order
@@ -52,10 +52,10 @@ router.get("/orders/:orderId/email-history", requireAuth, async (req, res) => {
         cc: emailSendHistory.cc,
         bcc: emailSendHistory.bcc,
         subject: emailSendHistory.subject,
-        body: emailSendHistory.message,
-        attachments: emailSendHistory.attachments,
+        body: emailSendHistory.messageContent,
+        attachments: emailSendHistory.attachmentFiles,
         status: emailSendHistory.status,
-        errorMessage: emailSendHistory.error,
+        errorMessage: emailSendHistory.errorMessage,
         createdAt: emailSendHistory.createdAt,
         updatedAt: emailSendHistory.updatedAt,
       })
@@ -81,7 +81,7 @@ router.post("/email-history", requireAuth, async (req, res) => {
       .values({
         ...validatedData,
         senderUserId: req.user!.id,
-        attachments: validatedData.attachments || null,
+        attachmentFiles: validatedData.attachmentFiles || null,
       })
       .returning();
 
@@ -203,10 +203,10 @@ router.get("/email-history/:id", requireAuth, async (req, res) => {
         cc: emailSendHistory.cc,
         bcc: emailSendHistory.bcc,
         subject: emailSendHistory.subject,
-        messageContent: emailSendHistory.message,
-        attachmentFiles: emailSendHistory.attachments,
+        messageContent: emailSendHistory.messageContent,
+        attachmentFiles: emailSendHistory.attachmentFiles,
         status: emailSendHistory.status,
-        errorMessage: emailSendHistory.error,
+        errorMessage: emailSendHistory.errorMessage,
         createdAt: emailSendHistory.createdAt,
         updatedAt: emailSendHistory.updatedAt,
       })
@@ -290,10 +290,10 @@ router.get("/email-history", requireAuth, async (req, res) => {
         recipients: emailSendHistory.recipients,
         cc: emailSendHistory.cc,
         subject: emailSendHistory.subject,
-        messageContent: emailSendHistory.message,
-        attachmentFiles: emailSendHistory.attachments,
+        messageContent: emailSendHistory.messageContent,
+        attachmentFiles: emailSendHistory.attachmentFiles,
         status: emailSendHistory.status,
-        errorMessage: emailSendHistory.error,
+        errorMessage: emailSendHistory.errorMessage,
         createdAt: emailSendHistory.createdAt,
       })
       .from(emailSendHistory)

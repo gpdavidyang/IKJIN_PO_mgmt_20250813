@@ -11,17 +11,16 @@ import { z } from 'zod';
 import { ProfessionalPDFGenerationService } from '../services/professional-pdf-generation-service.js';
 import { decodeKoreanFilename } from '../utils/korean-filename';
 import { removeAllInputSheets } from '../utils/excel-input-sheet-remover';
+import { getExcelSimpleDir, ensureUploadDir } from '../utils/upload-paths';
 
 const router = Router();
 
 // Configure multer for file upload
 const storage = multer.diskStorage({
   destination: async (req, file, cb) => {
-    // Use /tmp directory for Vercel deployment
-    const uploadDir = process.env.VERCEL 
-      ? path.join('/tmp', 'uploads', 'excel-simple')
-      : path.join(process.cwd(), 'uploads', 'excel-simple');
-    await fs.mkdir(uploadDir, { recursive: true });
+    // 환경별 Excel Simple 디렉토리 사용
+    const uploadDir = getExcelSimpleDir();
+    ensureUploadDir(uploadDir);
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
@@ -523,7 +522,7 @@ router.post('/orders/bulk-create-simple', requireAuth, upload.single('excelFile'
                 // Use the actual file path stored in the database
                 excelAttachment = process.env.VERCEL 
                   ? path.join('/tmp', 'uploads', 'excel-simple', attachment.storedName)
-                  : attachment.filePath;
+                  : path.join(getExcelSimpleDir(), attachment.storedName);
               }
             }
             
