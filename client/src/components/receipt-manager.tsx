@@ -50,15 +50,6 @@ export function ReceiptManager({ orderItems, orderId }: ReceiptManagerProps) {
     }
   );
 
-  // Fetch invoices for selection
-  const { data: invoices = [] } = useSmartQuery(
-    ["/api/invoices", orderId],
-    {
-      queryFn: () => apiRequest("GET", `/api/invoices?orderId=${orderId}`),
-      cacheType: "MASTER",
-      enabled: !!orderId,
-    }
-  );
 
   // Create item receipt mutation
   const createReceiptMutation = useMutation({
@@ -208,12 +199,11 @@ export function ReceiptManager({ orderItems, orderId }: ReceiptManagerProps) {
     
     const data = {
       orderItemId: selectedOrderItem.id,
-      invoiceId: formData.get("invoiceId") ? parseInt(formData.get("invoiceId") as string) : undefined,
       receivedQuantity: parseFloat(formData.get("receivedQuantity") as string),
       receivedDate: formData.get("receivedDate"),
       qualityCheck: formData.get("qualityCheck") === "on",
       qualityNotes: formData.get("qualityNotes") || "",
-      status: formData.get("status") || "approved",
+      status: "approved",
       notes: formData.get("notes") || "",
     };
 
@@ -241,7 +231,7 @@ export function ReceiptManager({ orderItems, orderId }: ReceiptManagerProps) {
       receivedDate: formData.get("receivedDate"),
       qualityCheck: formData.get("qualityCheck") === "on",
       qualityNotes: formData.get("qualityNotes") || "",
-      status: formData.get("status") || "pending",
+      status: selectedReceipt.status || "approved",
       notes: formData.get("notes") || "",
     };
 
@@ -523,35 +513,6 @@ export function ReceiptManager({ orderItems, orderId }: ReceiptManagerProps) {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="invoiceId">연결된 청구서 (선택)</Label>
-                  <Select name="invoiceId">
-                    <SelectTrigger>
-                      <SelectValue placeholder="청구서 선택" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {invoices.map((invoice: any) => (
-                        <SelectItem key={invoice.id} value={invoice.id.toString()}>
-                          {invoice.invoiceNumber} - ₩{invoice.totalAmount.toLocaleString()}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="status">상태</Label>
-                  <Select name="status" defaultValue="pending">
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pending">대기중</SelectItem>
-                      <SelectItem value="approved">승인됨</SelectItem>
-                      <SelectItem value="rejected">반려됨</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
 
                 <div className="flex items-center space-x-2">
                   <Checkbox id="qualityCheck" name="qualityCheck" />
@@ -634,19 +595,6 @@ export function ReceiptManager({ orderItems, orderId }: ReceiptManagerProps) {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="edit-status">상태</Label>
-                  <Select name="status" defaultValue={selectedReceipt.status}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pending">대기중</SelectItem>
-                      <SelectItem value="approved">승인됨</SelectItem>
-                      <SelectItem value="rejected">반려됨</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
 
                 <div className="flex items-center space-x-2">
                   <Checkbox 

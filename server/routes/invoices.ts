@@ -198,8 +198,7 @@ router.post("/invoices", upload.single('file'), async (req, res) => {
         orderId: parseInt(orderId),
         invoiceNumber,
         invoiceType: invoiceType || 'invoice',
-        invoiceDate: new Date(issueDate), // Use actual DB column name
-        invoiceAmount: parseFloat(totalAmount), // Use actual DB column name
+        issueDate: new Date(issueDate), // Correct column name
         dueDate: dueDate ? new Date(dueDate) : null,
         totalAmount: parseFloat(totalAmount),
         vatAmount: vatAmount ? parseFloat(vatAmount) : 0,

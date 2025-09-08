@@ -168,6 +168,8 @@ export function InvoiceManager({ orderId }: InvoiceManagerProps) {
         return <Badge variant="outline">청구서</Badge>;
       case "tax_invoice":
         return <Badge variant="outline">세금계산서</Badge>;
+      case "other":
+        return <Badge variant="outline">기타</Badge>;
       default:
         return <Badge variant="outline">{type}</Badge>;
     }
@@ -223,6 +225,7 @@ export function InvoiceManager({ orderId }: InvoiceManagerProps) {
                     <SelectContent>
                       <SelectItem value="invoice">청구서</SelectItem>
                       <SelectItem value="tax_invoice">세금계산서</SelectItem>
+                      <SelectItem value="other">기타</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
