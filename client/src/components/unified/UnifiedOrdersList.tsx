@@ -117,7 +117,8 @@ function CompactTableOrderItem({
   isDarkMode,
   sortBy,
   sortOrder,
-  onSort
+  onSort,
+  showActions = true
 }: { 
   order: UnifiedOrder; 
   onOrderClick?: (orderId: number) => void;
@@ -125,6 +126,7 @@ function CompactTableOrderItem({
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
   onSort?: (field: string) => void;
+  showActions?: boolean;
 }) {
   const showPDF = useMemo(() => canShowPDF(order), [order]);
 
@@ -183,24 +185,26 @@ function CompactTableOrderItem({
       </td>
 
       {/* 액션 */}
-      <td className="px-3 py-2 text-center">
-        {showPDF && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              window.open(`/api/orders/${order.id}/download-pdf`, '_blank');
-            }}
-            className={`p-1 rounded transition-colors ${
-              isDarkMode 
-                ? 'text-orange-400 hover:bg-orange-900/20 hover:text-orange-300' 
-                : 'text-orange-500 hover:bg-orange-50 hover:text-orange-700'
-            }`}
-            title="PDF 다운로드"
-          >
-            <FileText className="h-3 w-3" />
-          </button>
-        )}
-      </td>
+      {showActions && (
+        <td className="px-3 py-2 text-center">
+          {showPDF && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                window.open(`/api/orders/${order.id}/download-pdf`, '_blank');
+              }}
+              className={`p-1 rounded transition-colors ${
+                isDarkMode 
+                  ? 'text-orange-400 hover:bg-orange-900/20 hover:text-orange-300' 
+                  : 'text-orange-500 hover:bg-orange-50 hover:text-orange-700'
+              }`}
+              title="PDF 다운로드"
+            >
+              <FileText className="h-3 w-3" />
+            </button>
+          )}
+        </td>
+      )}
     </tr>
   );
 }
@@ -594,19 +598,21 @@ export function UnifiedOrdersList({
                       {getSortIcon("orderStatus")}
                     </button>
                   </th>
-                  <th className={`px-3 py-3 text-center text-xs font-medium uppercase tracking-wider ${
-                    isDarkMode ? 'text-gray-300' : 'text-gray-500'
-                  }`}>
-                    <button
-                      onClick={() => onSort?.("actions")}
-                      className={`flex items-center gap-1 justify-center transition-colors ${
-                        isDarkMode ? 'hover:text-gray-100' : 'hover:text-gray-700'
-                      }`}
-                    >
-                      액션
-                      {getSortIcon("actions")}
-                    </button>
-                  </th>
+                  {showActions && (
+                    <th className={`px-3 py-3 text-center text-xs font-medium uppercase tracking-wider ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-500'
+                    }`}>
+                      <button
+                        onClick={() => onSort?.("actions")}
+                        className={`flex items-center gap-1 justify-center transition-colors ${
+                          isDarkMode ? 'hover:text-gray-100' : 'hover:text-gray-700'
+                        }`}
+                      >
+                        액션
+                        {getSortIcon("actions")}
+                      </button>
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody className={`divide-y ${
@@ -621,6 +627,7 @@ export function UnifiedOrdersList({
                     sortBy={sortBy}
                     sortOrder={sortOrder}
                     onSort={onSort}
+                    showActions={showActions}
                   />
                 ))}
               </tbody>

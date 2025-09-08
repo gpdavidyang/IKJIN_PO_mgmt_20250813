@@ -2095,8 +2095,88 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
       contentType: att.contentType
     })));
     
-    // 개발 환경에서는 실제 이메일 발송 대신 로그만 출력
-    if (process.env.NODE_ENV === 'development' || !process.env.EMAIL_USER) {
+    // POEmailService를 사용하여 실제 이메일 발송 (개발 모드 제한 해제)
+    console.log('📧 POEmailService를 사용한 이메일 발송 시작');
+    
+    // 첨부파일을 POEmailService 형식으로 변환
+    const poServiceAttachments = attachments.map(att => ({
+      filename: att.filename || 'attachment',
+      content: att.content || (att.path ? fs.readFileSync(att.path) : Buffer.alloc(0)),
+      contentType: att.contentType || 'application/octet-stream'
+    })).filter(att => att.content && att.content.length > 0);
+    
+    // 임시 Excel 파일 생성 (POEmailService가 Excel 파일을 요구하므로)
+    const tempExcelPath = path.join(__dirname, '../../uploads', `temp_email_${Date.now()}.txt`);
+    fs.writeFileSync(tempExcelPath, `발주서 이메일 첨부파일\n발주번호: ${orderData.orderNumber}\n전송시간: ${new Date().toISOString()}`);
+    
+    try {
+      const result = await emailService.sendPOWithOriginalFormat(tempExcelPath, {
+        to: emailOptions.to,
+        cc: emailOptions.cc,
+        subject: emailOptions.subject,
+        orderNumber: orderData.orderNumber,
+        vendorName: orderData.vendorName,
+        totalAmount: orderData.totalAmount,
+        additionalMessage: message || emailOptions.additionalMessage,
+        additionalAttachments: poServiceAttachments
+      }, {
+        orderId: orderData?.orderId,
+        senderUserId: req.user?.id
+      });
+
+      // 임시 파일 삭제
+      try {
+        fs.unlinkSync(tempExcelPath);
+      } catch (unlinkError) {
+        console.warn('임시 파일 삭제 실패:', unlinkError);
+      }
+
+      if (result.success) {
+        console.log('✅ POEmailService 이메일 발송 성공');
+        
+        // 발주서 상태 업데이트
+        if (orderData && orderData.orderNumber) {
+          try {
+            console.log(`🔄 발주서 상태 업데이트 시도: ${orderData.orderNumber} → sent`);
+            await updateOrderStatusAfterEmail(orderData.orderNumber);
+            console.log(`✅ 발주서 상태 업데이트 완료: ${orderData.orderNumber} → sent`);
+          } catch (updateError) {
+            console.error(`❌ 발주서 상태 업데이트 실패: ${orderData.orderNumber}`, updateError);
+          }
+        }
+        
+        res.json({ 
+          success: true, 
+          messageId: result.messageId,
+          message: '이메일이 성공적으로 발송되었습니다.'
+        });
+        return;
+      } else {
+        console.error('❌ POEmailService 이메일 발송 실패:', result.error);
+        res.status(500).json({ 
+          error: '이메일 발송에 실패했습니다.',
+          details: result.error
+        });
+        return;
+      }
+    } catch (serviceError) {
+      // 임시 파일 삭제 (오류 시에도)
+      try {
+        fs.unlinkSync(tempExcelPath);
+      } catch (unlinkError) {
+        console.warn('임시 파일 삭제 실패 (오류 시):', unlinkError);
+      }
+      
+      console.error('❌ POEmailService 호출 오류:', serviceError);
+      res.status(500).json({ 
+        error: '이메일 서비스 오류가 발생했습니다.',
+        details: serviceError instanceof Error ? serviceError.message : 'Unknown error'
+      });
+      return;
+    }
+    
+    // 아래 코드는 실행되지 않음 (POEmailService 사용으로 대체됨)
+    if (false) {
       console.log('📧 [개발 모드] 이메일 발송 시뮬레이션:', {
         to: mailOptions.to,
         cc: mailOptions.cc,
