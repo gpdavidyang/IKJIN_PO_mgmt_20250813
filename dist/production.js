@@ -8545,11 +8545,29 @@ var POEmailService = class {
               retryCount: 2
             });
             if (result2.success) {
-              pdfResult.success = true;
-              const fileSize = result2.stats ? Math.round(result2.stats.fileSize / 1024) : 0;
-              console.log(`\u2705 ${result2.engineUsed} \uC5D4\uC9C4\uC73C\uB85C PDF \uBCC0\uD658 \uC131\uACF5: ${pdfPath} (${fileSize}KB)`);
-              if (result2.warnings && result2.warnings.length > 0) {
-                console.warn(`\u26A0\uFE0F \uACBD\uACE0: ${result2.warnings.join(", ")}`);
+              if (fs5.existsSync(pdfPath)) {
+                const stats = fs5.statSync(pdfPath);
+                const fileSize = Math.round(stats.size / 1024);
+                if (stats.size > 1024) {
+                  pdfResult.success = true;
+                  pdfResult.pdfPath = pdfPath;
+                  console.log(`\u2705 ${result2.engineUsed} \uC5D4\uC9C4\uC73C\uB85C PDF \uBCC0\uD658 \uC131\uACF5: ${pdfPath} (${fileSize}KB)`);
+                  if (result2.warnings && result2.warnings.length > 0) {
+                    console.warn(`\u26A0\uFE0F \uACBD\uACE0: ${result2.warnings.join(", ")}`);
+                  }
+                } else {
+                  pdfResult.error = `PDF \uD30C\uC77C\uC774 \uB108\uBB34 \uC791\uC74C (${fileSize}KB)`;
+                  console.warn(`\u26A0\uFE0F PDF \uBCC0\uD658 \uACB0\uACFC\uAC00 \uC720\uD6A8\uD558\uC9C0 \uC54A\uC74C: ${pdfResult.error}`);
+                  try {
+                    fs5.unlinkSync(pdfPath);
+                    console.log(`\u{1F5D1}\uFE0F \uC720\uD6A8\uD558\uC9C0 \uC54A\uC740 PDF \uD30C\uC77C \uC0AD\uC81C: ${pdfPath}`);
+                  } catch (cleanupError) {
+                    console.warn(`\u26A0\uFE0F PDF \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328: ${cleanupError}`);
+                  }
+                }
+              } else {
+                pdfResult.error = "PDF \uD30C\uC77C\uC774 \uC0DD\uC131\uB418\uC9C0 \uC54A\uC74C";
+                console.warn(`\u26A0\uFE0F PDF \uBCC0\uD658 \uC644\uB8CC\uB418\uC5C8\uC73C\uB098 \uD30C\uC77C\uC774 \uC874\uC7AC\uD558\uC9C0 \uC54A\uC74C: ${pdfPath}`);
               }
             } else {
               pdfResult.error = result2.error || "\uD1B5\uD569 PDF \uC11C\uBE44\uC2A4 \uBCC0\uD658 \uC2E4\uD328";
@@ -8580,14 +8598,28 @@ var POEmailService = class {
           console.warn(`\u26A0\uFE0F \uCC98\uB9AC\uB41C Excel \uD30C\uC77C\uC774 \uC874\uC7AC\uD558\uC9C0 \uC54A\uC74C: ${processedPath}`);
         }
         if (!skipPdfGeneration && pdfResult.success && fs5.existsSync(pdfPath)) {
-          attachments3.push({
-            filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`,
-            path: pdfPath,
-            contentType: "application/pdf"
-          });
-          console.log(`\u{1F4CE} PDF \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00: \uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`);
+          const pdfStats = fs5.statSync(pdfPath);
+          const pdfSizeKB = Math.round(pdfStats.size / 1024);
+          if (pdfStats.size > 1024) {
+            attachments3.push({
+              filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`,
+              path: pdfPath,
+              contentType: "application/pdf"
+            });
+            console.log(`\u{1F4CE} PDF \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00: \uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf (${pdfSizeKB}KB)`);
+          } else {
+            console.warn(`\u26A0\uFE0F PDF \uD30C\uC77C\uC774 \uB108\uBB34 \uC791\uC74C (${pdfSizeKB}KB), \uCCA8\uBD80\uD558\uC9C0 \uC54A\uC74C: ${pdfPath}`);
+            try {
+              fs5.unlinkSync(pdfPath);
+              console.log(`\u{1F5D1}\uFE0F \uC720\uD6A8\uD558\uC9C0 \uC54A\uC740 PDF \uD30C\uC77C \uC0AD\uC81C: ${pdfPath}`);
+            } catch (cleanupError) {
+              console.warn(`\u26A0\uFE0F PDF \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328: ${cleanupError}`);
+            }
+          }
         } else if (skipPdfGeneration) {
           console.log(`\u{1F4CB} PDF \uCCA8\uBD80 \uAC74\uB108\uB700 (skipPdfGeneration=true)`);
+        } else if (!pdfResult.success) {
+          console.log(`\u{1F4CB} PDF \uBCC0\uD658 \uC2E4\uD328\uB85C \uC778\uD574 PDF \uCCA8\uBD80 \uAC74\uB108\uB700: ${pdfResult.error}`);
         }
       } else if (fileExists) {
         const fileExt = path3.extname(originalFilePath) || ".txt";
@@ -29964,6 +29996,7 @@ router43.post("/orders/send-email", requireAuth, async (req, res) => {
     }
     let excelFilePath = "";
     let additionalAttachments = [];
+    let hasPdfAttachment = false;
     if (selectedAttachmentIds && selectedAttachmentIds.length > 0) {
       console.log("\u{1F4CE} \uC120\uD0DD\uB41C \uCCA8\uBD80\uD30C\uC77C \uCC98\uB9AC \uC2DC\uC791:", selectedAttachmentIds.length, "\uAC1C");
       console.log("\u{1F4CE} \uCCA8\uBD80\uD30C\uC77C IDs:", selectedAttachmentIds);
@@ -29987,7 +30020,12 @@ router43.post("/orders/send-email", requireAuth, async (req, res) => {
               fileDataLength: attachment.fileData ? attachment.fileData.length : 0
             });
             const isExcelFile = attachment.mimeType?.includes("excel") || attachment.mimeType?.includes("spreadsheet") || attachment.originalName?.toLowerCase().endsWith(".xlsx") || attachment.originalName?.toLowerCase().endsWith(".xls");
-            console.log(`\u{1F4CA} Excel \uD30C\uC77C \uC5EC\uBD80: ${isExcelFile}, \uD604\uC7AC excelFilePath: ${excelFilePath ? "\uC788\uC74C" : "\uC5C6\uC74C"}`);
+            const isPdfFile = attachment.mimeType?.includes("pdf") || attachment.originalName?.toLowerCase().endsWith(".pdf");
+            console.log(`\u{1F4CA} \uD30C\uC77C \uD0C0\uC785 \uD655\uC778: Excel=${isExcelFile}, PDF=${isPdfFile}, \uD30C\uC77C\uBA85=${attachment.originalName}`);
+            if (isPdfFile) {
+              hasPdfAttachment = true;
+              console.log("\u{1F4C4} PDF \uCCA8\uBD80\uD30C\uC77C \uBC1C\uACAC, \uCD94\uAC00 PDF \uC0DD\uC131 \uAC74\uB108\uB6F8 \uC608\uC815");
+            }
             if (isExcelFile && !excelFilePath) {
               if (attachment.fileData) {
                 const tempDir = process.env.VERCEL ? "/tmp" : path27.join(__dirname7, "../../uploads");
@@ -30066,7 +30104,9 @@ router43.post("/orders/send-email", requireAuth, async (req, res) => {
     console.log("\u{1F4CA} \uCCA8\uBD80\uD30C\uC77C \uCC98\uB9AC \uACB0\uACFC:", {
       excelFilePath: excelFilePath || "\uC5C6\uC74C",
       additionalAttachmentsCount: additionalAttachments.length,
-      additionalFiles: additionalAttachments.map((a) => a.filename)
+      additionalFiles: additionalAttachments.map((a) => a.filename),
+      hasPdfAttachment,
+      skipPdfGeneration: hasPdfAttachment
     });
     if (!excelFilePath) {
       console.log("\u{1F4CE} Excel \uD30C\uC77C\uC774 \uC5C6\uC5B4 \uAE30\uBCF8 \uD30C\uC77C \uC0DD\uC131");
@@ -30141,7 +30181,9 @@ router43.post("/orders/send-email", requireAuth, async (req, res) => {
     const orderInfo = {
       orderId: orderData.orderId || orderData.id,
       orderNumber: orderData.orderNumber,
-      senderUserId: req.user?.id || req.user?.email
+      senderUserId: req.user?.id || req.user?.email,
+      skipPdfGeneration: hasPdfAttachment
+      // PDF 첨부파일이 있으면 추가 PDF 생성 건너뛰기
     };
     console.log("\u{1F4E7} \uAD6C\uC131\uB41C orderInfo:", orderInfo);
     try {

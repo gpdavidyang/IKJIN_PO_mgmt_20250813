@@ -216,11 +216,32 @@ export class POEmailService {
           });
 
           if (result.success) {
-            pdfResult.success = true;
-            const fileSize = result.stats ? Math.round(result.stats.fileSize / 1024) : 0;
-            console.log(`✅ ${result.engineUsed} 엔진으로 PDF 변환 성공: ${pdfPath} (${fileSize}KB)`);
-            if (result.warnings && result.warnings.length > 0) {
-              console.warn(`⚠️ 경고: ${result.warnings.join(', ')}`);
+            // PDF 파일이 실제로 생성되었고 유효한 크기인지 확인
+            if (fs.existsSync(pdfPath)) {
+              const stats = fs.statSync(pdfPath);
+              const fileSize = Math.round(stats.size / 1024);
+              
+              if (stats.size > 1024) { // 1KB 이상만 유효하다고 판단
+                pdfResult.success = true;
+                pdfResult.pdfPath = pdfPath;
+                console.log(`✅ ${result.engineUsed} 엔진으로 PDF 변환 성공: ${pdfPath} (${fileSize}KB)`);
+                if (result.warnings && result.warnings.length > 0) {
+                  console.warn(`⚠️ 경고: ${result.warnings.join(', ')}`);
+                }
+              } else {
+                pdfResult.error = `PDF 파일이 너무 작음 (${fileSize}KB)`;
+                console.warn(`⚠️ PDF 변환 결과가 유효하지 않음: ${pdfResult.error}`);
+                // 유효하지 않은 PDF 파일 삭제
+                try {
+                  fs.unlinkSync(pdfPath);
+                  console.log(`🗑️ 유효하지 않은 PDF 파일 삭제: ${pdfPath}`);
+                } catch (cleanupError) {
+                  console.warn(`⚠️ PDF 파일 삭제 실패: ${cleanupError}`);
+                }
+              }
+            } else {
+              pdfResult.error = 'PDF 파일이 생성되지 않음';
+              console.warn(`⚠️ PDF 변환 완료되었으나 파일이 존재하지 않음: ${pdfPath}`);
             }
           } else {
             pdfResult.error = result.error || '통합 PDF 서비스 변환 실패';
@@ -254,16 +275,33 @@ export class POEmailService {
           console.warn(`⚠️ 처리된 Excel 파일이 존재하지 않음: ${processedPath}`);
         }
 
-        // PDF 파일 첨부 (변환 성공한 경우에만)
+        // PDF 파일 첨부 (변환 성공하고 유효한 파일인 경우에만)
         if (!skipPdfGeneration && pdfResult.success && fs.existsSync(pdfPath)) {
-          attachments.push({
-            filename: `발주서_${emailOptions.orderNumber || timestamp}.pdf`,
-            path: pdfPath,
-            contentType: 'application/pdf'
-          });
-          console.log(`📎 PDF 첨부파일 추가: 발주서_${emailOptions.orderNumber || timestamp}.pdf`);
+          // PDF 파일 크기 검증 (0KB 파일 방지)
+          const pdfStats = fs.statSync(pdfPath);
+          const pdfSizeKB = Math.round(pdfStats.size / 1024);
+          
+          if (pdfStats.size > 1024) { // 최소 1KB 이상만 첨부
+            attachments.push({
+              filename: `발주서_${emailOptions.orderNumber || timestamp}.pdf`,
+              path: pdfPath,
+              contentType: 'application/pdf'
+            });
+            console.log(`📎 PDF 첨부파일 추가: 발주서_${emailOptions.orderNumber || timestamp}.pdf (${pdfSizeKB}KB)`);
+          } else {
+            console.warn(`⚠️ PDF 파일이 너무 작음 (${pdfSizeKB}KB), 첨부하지 않음: ${pdfPath}`);
+            // 0KB 또는 너무 작은 PDF 파일 삭제
+            try {
+              fs.unlinkSync(pdfPath);
+              console.log(`🗑️ 유효하지 않은 PDF 파일 삭제: ${pdfPath}`);
+            } catch (cleanupError) {
+              console.warn(`⚠️ PDF 파일 삭제 실패: ${cleanupError}`);
+            }
+          }
         } else if (skipPdfGeneration) {
           console.log(`📋 PDF 첨부 건너뜀 (skipPdfGeneration=true)`);
+        } else if (!pdfResult.success) {
+          console.log(`📋 PDF 변환 실패로 인해 PDF 첨부 건너뜀: ${pdfResult.error}`);
         }
       } else if (fileExists) {
         // Excel이 아닌 파일이지만 존재하는 경우 (텍스트 파일 등)

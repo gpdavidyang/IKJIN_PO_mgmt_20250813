@@ -69,6 +69,7 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
     // 첨부파일 처리: selectedAttachmentIds에서 Excel 파일 찾기
     let excelFilePath = '';
     let additionalAttachments: any[] = [];
+    let hasPdfAttachment = false; // PDF 첨부파일 존재 여부 추적
     
     if (selectedAttachmentIds && selectedAttachmentIds.length > 0) {
       console.log('📎 선택된 첨부파일 처리 시작:', selectedAttachmentIds.length, '개');
@@ -102,8 +103,17 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
                               attachment.mimeType?.includes('spreadsheet') ||
                               attachment.originalName?.toLowerCase().endsWith('.xlsx') ||
                               attachment.originalName?.toLowerCase().endsWith('.xls');
+                              
+            const isPdfFile = attachment.mimeType?.includes('pdf') ||
+                            attachment.originalName?.toLowerCase().endsWith('.pdf');
             
-            console.log(`📊 Excel 파일 여부: ${isExcelFile}, 현재 excelFilePath: ${excelFilePath ? '있음' : '없음'}`);
+            console.log(`📊 파일 타입 확인: Excel=${isExcelFile}, PDF=${isPdfFile}, 파일명=${attachment.originalName}`);
+            
+            // PDF 첨부파일 존재 여부 기록
+            if (isPdfFile) {
+              hasPdfAttachment = true;
+              console.log('📄 PDF 첨부파일 발견, 추가 PDF 생성 건너뛸 예정');
+            }
                               
             if (isExcelFile && !excelFilePath) {
               // 첫 번째 Excel 파일을 주 첨부파일로 사용
@@ -159,7 +169,7 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
                 console.log('✅ 추가 Excel 파일 추가 (파일 읽기):', attachment.originalName, `(${Math.round(fileContent.length / 1024)}KB)`);
               }
             } else {
-              // Excel이 아닌 파일들은 추가 첨부파일로 처리
+              // Excel이 아닌 파일들은 추가 첨부파일로 처리 (PDF 포함)
               console.log('📄 Excel이 아닌 파일 처리:', attachment.originalName);
               if (attachment.fileData) {
                 additionalAttachments.push({
@@ -192,7 +202,9 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
     console.log('📊 첨부파일 처리 결과:', {
       excelFilePath: excelFilePath || '없음',
       additionalAttachmentsCount: additionalAttachments.length,
-      additionalFiles: additionalAttachments.map(a => a.filename)
+      additionalFiles: additionalAttachments.map(a => a.filename),
+      hasPdfAttachment: hasPdfAttachment,
+      skipPdfGeneration: hasPdfAttachment
     });
 
     // Excel 파일이 없으면 기본 빈 Excel 파일 생성
@@ -282,7 +294,8 @@ router.post("/orders/send-email", requireAuth, async (req, res) => {
     const orderInfo = {
       orderId: orderData.orderId || orderData.id,
       orderNumber: orderData.orderNumber,
-      senderUserId: (req as any).user?.id || (req as any).user?.email
+      senderUserId: (req as any).user?.id || (req as any).user?.email,
+      skipPdfGeneration: hasPdfAttachment // PDF 첨부파일이 있으면 추가 PDF 생성 건너뛰기
     };
     
     console.log('📧 구성된 orderInfo:', orderInfo);
