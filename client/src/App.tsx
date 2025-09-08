@@ -26,7 +26,7 @@ import { QueryDevTools, useQueryDevTools } from "@/components/dev/query-devtools
 
 // Critical components (loaded immediately)
 import NotFound from "@/pages/not-found";
-import { ProtectedRoute, AdminRoute } from "@/components/ProtectedRoute";
+import { ProtectedRoute, AdminRoute, SystemManagementRoute } from "@/components/ProtectedRoute";
 import RegisterPage from "@/pages/register";
 import ForgotPasswordPage from "@/pages/forgot-password";
 import ResetPasswordPage from "@/pages/reset-password";
@@ -399,9 +399,11 @@ const Layout = React.memo(function Layout() {
                 </Suspense>
               </Route>
               <Route path="/admin">
-                <Suspense fallback={<PageLoadingFallback />}>
-                  <Admin />
-                </Suspense>
+                <SystemManagementRoute>
+                  <Suspense fallback={<PageLoadingFallback />}>
+                    <Admin />
+                  </Suspense>
+                </SystemManagementRoute>
               </Route>
               <Route path="/profile">
                 <Suspense fallback={<FormLoadingFallback />}>
@@ -474,11 +476,11 @@ const Layout = React.memo(function Layout() {
                 </Suspense>
               </Route>
               <Route path="/audit-management">
-                <AdminRoute>
+                <SystemManagementRoute>
                   <Suspense fallback={<PageLoadingFallback />}>
                     <AuditManagement />
                   </Suspense>
-                </AdminRoute>
+                </SystemManagementRoute>
               </Route>
               <Route path="/accessibility-example">
                 <Suspense fallback={<PageLoadingFallback />}>

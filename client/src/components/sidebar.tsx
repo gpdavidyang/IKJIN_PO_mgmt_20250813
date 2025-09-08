@@ -65,14 +65,15 @@ const navigationSections = [
     items: [
       { name: "보고서 및 분석", href: "/reports", icon: BarChart3 },
       { name: "가져오기/내보내기", href: "/import-export", icon: FileDown },
-      { name: "템플릿 관리", href: "/templates", icon: FileSpreadsheet, adminOnly: true },
+      { name: "템플릿 관리", href: "/templates", icon: FileSpreadsheet, adminOnly: true, hidden: true },
     ]
   },
   {
     title: "시스템 설정",
+    restrictedRoles: ["admin", "executive", "hq_management"], // Admin, 임원, 본사관리자만 접근
     items: [
-      { name: "시스템 관리", href: "/admin", icon: Settings, adminOnly: true },
-      { name: "로그 관리", href: "/audit-management", icon: ScrollText, adminOnly: true },
+      { name: "시스템 관리", href: "/admin", icon: Settings, restrictedRoles: ["admin", "executive", "hq_management"] },
+      { name: "로그 관리", href: "/audit-management", icon: ScrollText, restrictedRoles: ["admin", "executive", "hq_management"] },
     ]
   }
 ];
@@ -148,24 +149,46 @@ export function Sidebar() {
         "flex-1 mt-6 space-y-6 transition-all duration-200 bg-gray-50 overflow-y-auto", 
         isCollapsed ? "px-2" : "px-4"
       )} role="navigation" aria-label="메인 네비게이션">
-        {navigationSections.map((section, sectionIndex) => (
-          <div key={section.title} className={cn(isCollapsed && "space-y-1")}>
-            {/* 섹션 제목 */}
-            {!isCollapsed && (
-              <div className="px-2 mb-3">
-                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider transition-colors duration-200">
-                  {section.title}
-                </h3>
-              </div>
-            )}
-            
-            {/* 섹션 메뉴 아이템들 */}
-            <div className={cn("space-y-1", isCollapsed && "space-y-0.5")}>
-              {section.items.map((item) => {
-                // 관리자 전용 메뉴 필터링
-                if (item.adminOnly && (user as any)?.role !== "admin") {
-                  return null;
-                }
+        {navigationSections.map((section, sectionIndex) => {
+          // 섹션 전체 권한 확인
+          if ((section as any).restrictedRoles) {
+            const userRole = (user as any)?.role;
+            if (!userRole || !(section as any).restrictedRoles.includes(userRole)) {
+              return null; // 권한이 없으면 섹션 전체를 숨김
+            }
+          }
+          
+          return (
+            <div key={section.title} className={cn(isCollapsed && "space-y-1")}>
+              {/* 섹션 제목 */}
+              {!isCollapsed && (
+                <div className="px-2 mb-3">
+                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider transition-colors duration-200">
+                    {section.title}
+                  </h3>
+                </div>
+              )}
+              
+              {/* 섹션 메뉴 아이템들 */}
+              <div className={cn("space-y-1", isCollapsed && "space-y-0.5")}>
+                {section.items.map((item) => {
+                  // Hidden 메뉴 필터링
+                  if ((item as any).hidden) {
+                    return null;
+                  }
+                  
+                  // restrictedRoles 체크 (새로운 방식)
+                  if ((item as any).restrictedRoles) {
+                    const userRole = (user as any)?.role;
+                    if (!userRole || !(item as any).restrictedRoles.includes(userRole)) {
+                      return null;
+                    }
+                  }
+                  
+                  // 관리자 전용 메뉴 필터링 (기존 방식 - 하위 호환성)
+                  if (item.adminOnly && (user as any)?.role !== "admin") {
+                    return null;
+                  }
                 
                 // 승인 관리 메뉴 권한 필터링
                 if (item.name === "승인 관리") {
@@ -225,18 +248,19 @@ export function Sidebar() {
                       )}
                     </Button>
                   </div>
-                );
-              })}
-            </div>
-            
-            {/* 섹션 구분선 (마지막 섹션 제외) */}
-            {sectionIndex < navigationSections.length - 1 && (
-              <div className={cn("pt-4", isCollapsed && "pt-2")}>
-                <div className="border-t border-gray-200 transition-colors duration-200"></div>
+                  );
+                })}
               </div>
-            )}
-          </div>
-        ))}
+              
+              {/* 섹션 구분선 (마지막 섹션 제외) */}
+              {sectionIndex < navigationSections.length - 1 && (
+                <div className={cn("pt-4", isCollapsed && "pt-2")}>
+                  <div className="border-t border-gray-200 transition-colors duration-200"></div>
+                </div>
+              )}
+            </div>
+          );
+        })}
         
         {(user as any)?.role === "admin" && (
           <>

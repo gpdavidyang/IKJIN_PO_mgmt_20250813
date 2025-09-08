@@ -15786,10 +15786,12 @@ router3.post("/orders/send-email-with-files", requireAuth, upload.array("customF
     });
   }
 });
-router3.get("/:orderId/status-history", requireAuth, async (req, res) => {
+router3.get("/orders/:orderId/status-history", requireAuth, async (req, res) => {
   try {
+    console.log(`\u{1F4CA} Fetching order history for order ID: ${req.params.orderId}`);
     const orderId = parseInt(req.params.orderId);
     if (isNaN(orderId)) {
+      console.log(`\u274C Invalid order ID: ${req.params.orderId}`);
       return res.status(400).json({ error: "Invalid order ID" });
     }
     console.log(`\u{1F4CB} Fetching status history for order ${orderId}`);
@@ -16469,6 +16471,98 @@ router6.get("/dashboard/order-status-stats", async (req, res) => {
     console.error("\u274C Order status stats error:", error);
     res.status(500).json({
       message: "Failed to fetch order status statistics",
+      error: error.message
+    });
+  }
+});
+router6.get("/dashboard/monthly-comparison", async (req, res) => {
+  try {
+    const { db: db4 } = await Promise.resolve().then(() => (init_db(), db_exports));
+    if (!db4) {
+      throw new Error("Database connection not available");
+    }
+    const now = /* @__PURE__ */ new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1;
+    const lastMonth = currentMonth === 1 ? 12 : currentMonth - 1;
+    const lastMonthYear = currentMonth === 1 ? currentYear - 1 : currentYear;
+    const currentMonthResult = await db4.execute(
+      sql6`SELECT 
+        COUNT(*) as orderCount,
+        COALESCE(SUM(total_amount), 0) as totalAmount
+      FROM purchase_orders 
+      WHERE EXTRACT(YEAR FROM created_at) = ${currentYear}
+        AND EXTRACT(MONTH FROM created_at) = ${currentMonth}`
+    );
+    const lastMonthResult = await db4.execute(
+      sql6`SELECT 
+        COUNT(*) as orderCount,
+        COALESCE(SUM(total_amount), 0) as totalAmount
+      FROM purchase_orders 
+      WHERE EXTRACT(YEAR FROM created_at) = ${lastMonthYear}
+        AND EXTRACT(MONTH FROM created_at) = ${lastMonth}`
+    );
+    const dailyDataResult = await db4.execute(
+      sql6`SELECT 
+        EXTRACT(DAY FROM created_at) as day,
+        COUNT(*) as orderCount,
+        COALESCE(SUM(total_amount), 0) as totalAmount
+      FROM purchase_orders 
+      WHERE EXTRACT(YEAR FROM created_at) = ${currentYear}
+        AND EXTRACT(MONTH FROM created_at) = ${currentMonth}
+      GROUP BY EXTRACT(DAY FROM created_at)
+      ORDER BY day`
+    );
+    const currentMonthData = {
+      orderCount: parseInt(currentMonthResult.rows[0]?.orderCount || "0"),
+      totalAmount: parseFloat(currentMonthResult.rows[0]?.totalAmount || "0")
+    };
+    const lastMonthData = {
+      orderCount: parseInt(lastMonthResult.rows[0]?.orderCount || "0"),
+      totalAmount: parseFloat(lastMonthResult.rows[0]?.totalAmount || "0")
+    };
+    const orderCountChange = lastMonthData.orderCount > 0 ? Math.round((currentMonthData.orderCount - lastMonthData.orderCount) / lastMonthData.orderCount * 100) : currentMonthData.orderCount > 0 ? 100 : 0;
+    const totalAmountChange = lastMonthData.totalAmount > 0 ? Math.round((currentMonthData.totalAmount - lastMonthData.totalAmount) / lastMonthData.totalAmount * 100) : currentMonthData.totalAmount > 0 ? 100 : 0;
+    const dailyData = dailyDataResult.rows.map((row) => ({
+      day: parseInt(row.day || "0"),
+      orderCount: parseInt(row.orderCount || "0"),
+      totalAmount: parseFloat(row.totalAmount || "0")
+    }));
+    const monthNames = [
+      "1\uC6D4",
+      "2\uC6D4",
+      "3\uC6D4",
+      "4\uC6D4",
+      "5\uC6D4",
+      "6\uC6D4",
+      "7\uC6D4",
+      "8\uC6D4",
+      "9\uC6D4",
+      "10\uC6D4",
+      "11\uC6D4",
+      "12\uC6D4"
+    ];
+    res.json({
+      currentMonth: {
+        name: monthNames[currentMonth - 1],
+        year: currentYear,
+        ...currentMonthData
+      },
+      lastMonth: {
+        name: monthNames[lastMonth - 1],
+        year: lastMonthYear,
+        ...lastMonthData
+      },
+      changes: {
+        orderCount: orderCountChange,
+        totalAmount: totalAmountChange
+      },
+      dailyData
+    });
+  } catch (error) {
+    console.error("\u274C Monthly comparison error:", error);
+    res.status(500).json({
+      message: "Failed to fetch monthly comparison data",
       error: error.message
     });
   }
