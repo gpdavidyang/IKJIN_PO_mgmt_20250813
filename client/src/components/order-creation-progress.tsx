@@ -68,6 +68,13 @@ export function OrderCreationProgress({
   const connectToProgressStream = useCallback(() => {
     if (isCancelled) return;
     
+    // 이미 연결되어 있으면 종료
+    if (eventSource && eventSource.readyState !== EventSource.CLOSED) {
+      console.log('📡 기존 SSE 연결 종료');
+      eventSource.close();
+      setEventSource(null);
+    }
+    
     console.log(`📡 SSE 연결 시작 - 세션: ${sessionId}`);
     
     const es = new EventSource(`/api/orders/progress/${sessionId}`);
@@ -119,18 +126,23 @@ export function OrderCreationProgress({
       console.error('📡 SSE 연결 오류:', error);
       setIsConnected(false);
       setHasError(true);
+      es.close();
+      setEventSource(null);
       
-      // 재연결 시도
-      setTimeout(() => {
-        if (!isCancelled && !hasError) {
-          console.log('📡 SSE 재연결 시도...');
-          connectToProgressStream();
-        }
-      }, 3000);
+      // 재연결 시도 (취소되지 않은 경우에만, 그리고 무한 루프 방지)
+      if (!isCancelled) {
+        setTimeout(() => {
+          if (!isCancelled && eventSource === null) {
+            console.log('📡 SSE 재연결 시도...');
+            setHasError(false); // 재연결 전 에러 상태 리셋
+            connectToProgressStream();
+          }
+        }, 3000);
+      }
     };
     
     setEventSource(es);
-  }, [sessionId, onComplete, onError, isCancelled, hasError]);
+  }, [sessionId, onComplete, onError, isCancelled]); // hasError 제거 - 무한 재연결 방지
 
   // 컴포넌트 마운트시 연결
   useEffect(() => {
@@ -138,8 +150,10 @@ export function OrderCreationProgress({
     
     return () => {
       if (eventSource) {
-        console.log('📡 SSE 연결 종료');
+        console.log('📡 SSE 연결 종료 - 세션:', sessionId);
         eventSource.close();
+        setEventSource(null);
+        setIsConnected(false);
       }
     };
   }, [connectToProgressStream]);
@@ -148,7 +162,10 @@ export function OrderCreationProgress({
   const handleCancel = () => {
     setIsCancelled(true);
     if (eventSource) {
+      console.log('📡 SSE 연결 취소 - 세션:', sessionId);
       eventSource.close();
+      setEventSource(null);
+      setIsConnected(false);
     }
     onCancel?.();
   };
