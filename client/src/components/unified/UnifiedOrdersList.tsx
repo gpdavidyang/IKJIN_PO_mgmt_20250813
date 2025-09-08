@@ -605,15 +605,7 @@ export function UnifiedOrdersList({
                     <th className={`px-3 py-3 text-center text-xs font-medium uppercase tracking-wider ${
                       isDarkMode ? 'text-gray-300' : 'text-gray-500'
                     }`}>
-                      <button
-                        onClick={() => onSort?.("actions")}
-                        className={`flex items-center gap-1 justify-center transition-colors ${
-                          isDarkMode ? 'hover:text-gray-100' : 'hover:text-gray-700'
-                        }`}
-                      >
-                        액션
-                        {getSortIcon("actions")}
-                      </button>
+                      액션
                     </th>
                   )}
                 </tr>
