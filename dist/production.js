@@ -1482,18 +1482,61 @@ var init_db = __esm({
   }
 });
 
+// server/utils/upload-paths.ts
+import path from "path";
+import fs from "fs";
+function getUploadBaseDir() {
+  return process.env.VERCEL ? "/tmp" : path.join(process.cwd(), "uploads");
+}
+function getUploadPath(subDir = "") {
+  const baseDir = getUploadBaseDir();
+  return subDir ? path.join(baseDir, subDir) : baseDir;
+}
+function getUploadsDir() {
+  return getUploadBaseDir();
+}
+function getTempPdfDir() {
+  return getUploadPath("temp-pdf");
+}
+function getExcelSimpleDir() {
+  return getUploadPath("excel-simple");
+}
+function getTempDir() {
+  return getUploadPath("temp");
+}
+function ensureUploadDir(dirPath) {
+  try {
+    if (!fs.existsSync(dirPath)) {
+      fs.mkdirSync(dirPath, { recursive: true });
+      console.log(`\u2705 Upload directory created: ${dirPath}`);
+    }
+  } catch (error) {
+    if (process.env.VERCEL && !dirPath.startsWith("/tmp")) {
+      console.warn(`\u26A0\uFE0F Cannot create directory in Vercel environment: ${dirPath}`);
+    } else {
+      console.error(`\u274C Failed to create directory: ${dirPath}`, error);
+      throw error;
+    }
+  }
+}
+var init_upload_paths = __esm({
+  "server/utils/upload-paths.ts"() {
+    "use strict";
+  }
+});
+
 // server/utils/excel-input-sheet-remover.ts
 var excel_input_sheet_remover_exports = {};
 __export(excel_input_sheet_remover_exports, {
   removeAllInputSheets: () => removeAllInputSheets
 });
 import JSZip from "jszip";
-import fs2 from "fs";
+import fs3 from "fs";
 import { DOMParser, XMLSerializer } from "xmldom";
 async function removeAllInputSheets(sourcePath, targetPath) {
   try {
     console.log(`\u{1F527} Input \uC2DC\uD2B8 \uC644\uC804 \uC81C\uAC70 \uC2DC\uC791: ${sourcePath} -> ${targetPath}`);
-    const data = fs2.readFileSync(sourcePath);
+    const data = fs3.readFileSync(sourcePath);
     const zip = new JSZip();
     const zipData = await zip.loadAsync(data);
     const parser = new DOMParser();
@@ -1522,7 +1565,7 @@ async function removeAllInputSheets(sourcePath, targetPath) {
     console.log(`\u{1F4CB} \uBCF4\uC874\uD560 \uC2DC\uD2B8\uB4E4: ${remainingSheetNames.join(", ")}`);
     if (inputSheets.length === 0) {
       console.log(`\u26A0\uFE0F Input\uC73C\uB85C \uC2DC\uC791\uD558\uB294 \uC2DC\uD2B8\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.`);
-      fs2.copyFileSync(sourcePath, targetPath);
+      fs3.copyFileSync(sourcePath, targetPath);
       return {
         success: true,
         removedSheets: [],
@@ -1613,7 +1656,7 @@ async function removeAllInputSheets(sourcePath, targetPath) {
       compression: "DEFLATE",
       compressionOptions: { level: 6 }
     });
-    fs2.writeFileSync(targetPath, result);
+    fs3.writeFileSync(targetPath, result);
     console.log(`\u2705 Input \uC2DC\uD2B8 \uC644\uC804 \uC81C\uAC70 \uC644\uB8CC: ${targetPath}`);
     console.log(`\u{1F4CA} \uC81C\uAC70\uB41C \uC2DC\uD2B8: ${inputSheets.map((s) => s.name).join(", ")}`);
     console.log(`\u{1F4CA} \uBCF4\uC874\uB41C \uC2DC\uD2B8: ${remainingSheetNames.join(", ")}`);
@@ -1626,8 +1669,8 @@ async function removeAllInputSheets(sourcePath, targetPath) {
     };
   } catch (error) {
     console.error(`\u274C Input \uC2DC\uD2B8 \uC81C\uAC70 \uC2E4\uD328:`, error);
-    if (fs2.existsSync(targetPath)) {
-      fs2.unlinkSync(targetPath);
+    if (fs3.existsSync(targetPath)) {
+      fs3.unlinkSync(targetPath);
     }
     return {
       success: false,
@@ -1645,8 +1688,13 @@ var init_excel_input_sheet_remover = __esm({
 });
 
 // server/utils/korean-font-manager.ts
-import * as fs6 from "fs";
-import * as path4 from "path";
+var korean_font_manager_exports = {};
+__export(korean_font_manager_exports, {
+  KoreanFontManager: () => KoreanFontManager,
+  fontManager: () => fontManager
+});
+import * as fs7 from "fs";
+import * as path5 from "path";
 var KoreanFontManager, fontManager;
 var init_korean_font_manager = __esm({
   "server/utils/korean-font-manager.ts"() {
@@ -1662,12 +1710,12 @@ var init_korean_font_manager = __esm({
         this.FONT_PRIORITIES = [
           {
             name: "NotoSansKR",
-            path: process.env.VERCEL ? path4.join(process.cwd(), "fonts", "NotoSansKR-Regular.ttf") : path4.join(process.cwd(), "fonts", "NotoSansKR-Regular.ttf"),
+            path: process.env.VERCEL ? path5.join(process.cwd(), "fonts", "NotoSansKR-Regular.ttf") : path5.join(process.cwd(), "fonts", "NotoSansKR-Regular.ttf"),
             available: false
           },
           {
             name: "NanumGothic",
-            path: process.env.VERCEL ? path4.join(process.cwd(), "fonts", "NanumGothic-Regular.ttf") : path4.join(process.cwd(), "fonts", "NanumGothic-Regular.ttf"),
+            path: process.env.VERCEL ? path5.join(process.cwd(), "fonts", "NanumGothic-Regular.ttf") : path5.join(process.cwd(), "fonts", "NanumGothic-Regular.ttf"),
             available: false
           },
           // Fallback 시스템 폰트 (로컬 환경용)
@@ -1708,10 +1756,10 @@ var init_korean_font_manager = __esm({
         if (process.env.VERCEL) {
           console.log("\u2601\uFE0F [FontManager] Vercel \uD658\uACBD - \uBC88\uB4E4\uB41C \uD3F0\uD2B8 \uD0D0\uC0C9");
           try {
-            const bundledFontsDir = path4.join(process.cwd(), "fonts");
+            const bundledFontsDir = path5.join(process.cwd(), "fonts");
             console.log(`\u{1F4C2} [FontManager] \uBC88\uB4E4\uB41C \uD3F0\uD2B8 \uB514\uB809\uD1A0\uB9AC \uD655\uC778: ${bundledFontsDir}`);
-            if (fs6.existsSync(bundledFontsDir)) {
-              const files = fs6.readdirSync(bundledFontsDir);
+            if (fs7.existsSync(bundledFontsDir)) {
+              const files = fs7.readdirSync(bundledFontsDir);
               console.log(`\u{1F4CB} [FontManager] \uBC88\uB4E4\uB41C \uD30C\uC77C \uBAA9\uB85D:`, files);
             } else {
               console.log(`\u274C [FontManager] \uBC88\uB4E4\uB41C \uD3F0\uD2B8 \uB514\uB809\uD1A0\uB9AC \uC5C6\uC74C: ${bundledFontsDir}`);
@@ -1723,15 +1771,15 @@ var init_korean_font_manager = __esm({
         for (const font of _KoreanFontManager.FONT_PRIORITIES) {
           try {
             console.log(`\u{1F50D} [FontManager] \uD3F0\uD2B8 \uD655\uC778 \uC911: ${font.name} at ${font.path}`);
-            if (fs6.existsSync(font.path)) {
-              const stats = fs6.statSync(font.path);
+            if (fs7.existsSync(font.path)) {
+              const stats = fs7.statSync(font.path);
               font.available = true;
               font.size = stats.size;
               this.fontCache.set(font.name, { ...font });
               console.log(`\u2705 [FontManager] \uD3F0\uD2B8 \uBC1C\uACAC: ${font.name} (${Math.round(stats.size / 1024)}KB)`);
               if (process.env.VERCEL) {
                 try {
-                  const fontBuffer = fs6.readFileSync(font.path);
+                  const fontBuffer = fs7.readFileSync(font.path);
                   const base64Data = fontBuffer.toString("base64");
                   this.base64Cache.set(font.name, base64Data);
                   console.log(`\u{1F4BE} [FontManager] Vercel\uC6A9 Base64 \uBBF8\uB9AC \uB85C\uB4DC: ${font.name}`);
@@ -1782,7 +1830,7 @@ var init_korean_font_manager = __esm({
             console.log(`\u{1F4BE} [FontManager] Base64 \uCE90\uC2DC \uD788\uD2B8: ${font.name}`);
             return this.base64Cache.get(cacheKey);
           }
-          const fontBuffer = fs6.readFileSync(font.path);
+          const fontBuffer = fs7.readFileSync(font.path);
           const base64Data = fontBuffer.toString("base64");
           this.base64Cache.set(cacheKey, base64Data);
           console.log(`\u2705 [FontManager] Base64 \uC778\uCF54\uB529 \uC644\uB8CC: ${font.name} (${Math.round(base64Data.length / 1024)}KB)`);
@@ -1817,7 +1865,7 @@ var init_korean_font_manager = __esm({
               }
             }
             try {
-              const fontBuffer = fs6.readFileSync(font.path);
+              const fontBuffer = fs7.readFileSync(font.path);
               const base64Data = fontBuffer.toString("base64");
               this.base64Cache.set(cacheKey, base64Data);
               console.log(`\u2705 [FontManager] Vercel - \uD3F0\uD2B8 \uCE90\uC2DC \uD6C4 Buffer \uBC18\uD658: ${font.name}`);
@@ -1832,7 +1880,7 @@ var init_korean_font_manager = __esm({
               return null;
             }
           }
-          return fs6.readFileSync(font.path);
+          return fs7.readFileSync(font.path);
         } catch (error) {
           console.error(`\u274C [FontManager] \uD3F0\uD2B8 \uBC84\uD37C \uB85C\uB4DC \uC2E4\uD328:`, error);
           return null;
@@ -1950,12 +1998,12 @@ var init_korean_font_manager = __esm({
        */
       diagnoseFontIssues() {
         const issues = [];
-        const fontDir = path4.join(process.cwd(), "fonts");
-        const fontDirExists = fs6.existsSync(fontDir);
+        const fontDir = path5.join(process.cwd(), "fonts");
+        const fontDirExists = fs7.existsSync(fontDir);
         let bundledFiles = [];
         if (fontDirExists) {
           try {
-            bundledFiles = fs6.readdirSync(fontDir);
+            bundledFiles = fs7.readdirSync(fontDir);
           } catch (error) {
             issues.push(`\uD3F0\uD2B8 \uB514\uB809\uD1A0\uB9AC \uC77D\uAE30 \uC2E4\uD328: ${error}`);
           }
@@ -1997,8 +2045,8 @@ var init_korean_font_manager = __esm({
           ];
           for (const fontPath of fallbackFontPaths) {
             try {
-              if (fs6.existsSync(fontPath)) {
-                const fontBuffer = fs6.readFileSync(fontPath);
+              if (fs7.existsSync(fontPath)) {
+                const fontBuffer = fs7.readFileSync(fontPath);
                 console.log(`\u2705 [FontManager] \uC2DC\uC2A4\uD15C \uD3F0\uD2B8 \uBC1C\uACAC: ${fontPath}`);
                 return fontBuffer;
               }
@@ -2025,16 +2073,24 @@ __export(professional_pdf_generation_service_exports, {
   default: () => professional_pdf_generation_service_default
 });
 import PDFDocument from "pdfkit";
-import * as fs7 from "fs";
+import * as fs8 from "fs";
 import { format } from "date-fns";
 import { eq as eq8 } from "drizzle-orm";
-var ProfessionalPDFGenerationService, professional_pdf_generation_service_default;
+var fontManager2, ProfessionalPDFGenerationService, professional_pdf_generation_service_default;
 var init_professional_pdf_generation_service = __esm({
   "server/services/professional-pdf-generation-service.ts"() {
     "use strict";
     init_db();
     init_schema();
-    init_korean_font_manager();
+    fontManager2 = null;
+    try {
+      if (!process.env.VERCEL) {
+        const fontManagerModule = (init_korean_font_manager(), __toCommonJS(korean_font_manager_exports));
+        fontManager2 = fontManagerModule.fontManager;
+      }
+    } catch (error) {
+      console.warn("\u26A0\uFE0F [PDF] KoreanFontManager \uB85C\uB4DC \uC2E4\uD328 - \uAE30\uBCF8 \uD3F0\uD2B8\uB9CC \uC0AC\uC6A9:", error.message);
+    }
     ProfessionalPDFGenerationService = class {
       static {
         // 색상 정의 - 네이비/그레이 톤 (더 진하게)
@@ -2158,26 +2214,46 @@ var init_professional_pdf_generation_service = __esm({
         });
       }
       /**
-       * 한글 폰트 등록 - KoreanFontManager 사용으로 Vercel 환경 대응
+       * 한글 폰트 등록 - Vercel 서버리스 환경 특화 대응
        */
       static async registerKoreanFonts(doc) {
         try {
           console.log("\u{1F3AF} [PDF] \uD55C\uAE00 \uD3F0\uD2B8 \uB4F1\uB85D \uC2DC\uC791...");
-          const bestFont = fontManager.getBestKoreanFont();
-          if (bestFont && bestFont.available) {
-            console.log(`\u2705 [PDF] \uCD5C\uC801 \uD55C\uAE00 \uD3F0\uD2B8 \uBC1C\uACAC: ${bestFont.name}`);
+          console.log(`\u{1F310} [PDF] \uD658\uACBD \uCCB4\uD06C: VERCEL=${process.env.VERCEL}, NODE_ENV=${process.env.NODE_ENV}`);
+          if (process.env.VERCEL) {
+            console.log("\u2601\uFE0F [PDF] Vercel \uD658\uACBD \uAC10\uC9C0 - \uC548\uC804\uD55C \uD3F0\uD2B8 \uB4F1\uB85D \uBAA8\uB4DC");
             try {
-              const fontBuffer = fontManager.getFontBuffer(bestFont.name);
-              if (fontBuffer) {
-                doc.registerFont(this.FONTS.regular, fontBuffer);
-                doc.registerFont(this.FONTS.bold, fontBuffer);
-                doc.registerFont(this.FONTS.medium, fontBuffer);
-                console.log(`\u2705 [PDF] \uD55C\uAE00 \uD3F0\uD2B8 \uB4F1\uB85D \uC644\uB8CC: ${bestFont.name}`);
-                return;
-              }
-            } catch (bufferError) {
-              console.warn(`\u26A0\uFE0F [PDF] \uD3F0\uD2B8 \uBC84\uD37C \uB4F1\uB85D \uC2E4\uD328: ${bestFont.name}`, bufferError);
+              doc.registerFont(this.FONTS.regular, "Helvetica");
+              doc.registerFont(this.FONTS.bold, "Helvetica-Bold");
+              doc.registerFont(this.FONTS.medium, "Helvetica");
+              console.log("\u2705 [PDF] Vercel - \uAE30\uBCF8 \uD3F0\uD2B8 \uB4F1\uB85D \uC644\uB8CC");
+              return;
+            } catch (vercelError) {
+              console.error("\u274C [PDF] Vercel - \uAE30\uBCF8 \uD3F0\uD2B8 \uB4F1\uB85D \uC2E4\uD328:", vercelError);
+              console.log("\u{1F6A8} [PDF] Vercel - \uD3F0\uD2B8 \uB4F1\uB85D \uAC74\uB108\uB700 (\uAE30\uBCF8 \uD3F0\uD2B8 \uC0AC\uC6A9)");
+              return;
             }
+          }
+          console.log("\u{1F3E0} [PDF] \uB85C\uCEEC \uD658\uACBD - \uD55C\uAE00 \uD3F0\uD2B8 \uC2DC\uB3C4");
+          if (fontManager2) {
+            const bestFont = fontManager2.getBestKoreanFont();
+            if (bestFont && bestFont.available) {
+              console.log(`\u2705 [PDF] \uCD5C\uC801 \uD55C\uAE00 \uD3F0\uD2B8 \uBC1C\uACAC: ${bestFont.name}`);
+              try {
+                const fontBuffer = fontManager2.getFontBuffer(bestFont.name);
+                if (fontBuffer) {
+                  doc.registerFont(this.FONTS.regular, fontBuffer);
+                  doc.registerFont(this.FONTS.bold, fontBuffer);
+                  doc.registerFont(this.FONTS.medium, fontBuffer);
+                  console.log(`\u2705 [PDF] \uD55C\uAE00 \uD3F0\uD2B8 \uB4F1\uB85D \uC644\uB8CC: ${bestFont.name}`);
+                  return;
+                }
+              } catch (bufferError) {
+                console.warn(`\u26A0\uFE0F [PDF] \uD3F0\uD2B8 \uBC84\uD37C \uB4F1\uB85D \uC2E4\uD328: ${bestFont.name}`, bufferError);
+              }
+            }
+          } else {
+            console.log("\u26A0\uFE0F [PDF] FontManager \uB85C\uB4DC\uB418\uC9C0 \uC54A\uC74C - \uC2DC\uC2A4\uD15C \uD3F0\uD2B8\uB85C \uC9C4\uD589");
           }
           console.log("\u26A0\uFE0F [PDF] \uD55C\uAE00 \uD3F0\uD2B8\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC74C - \uC2DC\uC2A4\uD15C \uD3F0\uD2B8\uB85C \uD3F4\uBC31");
           const systemFonts = [
@@ -2186,7 +2262,7 @@ var init_professional_pdf_generation_service = __esm({
           ];
           for (const systemFont of systemFonts) {
             try {
-              if (fs7.existsSync(systemFont.path)) {
+              if (fs8.existsSync(systemFont.path)) {
                 doc.registerFont(this.FONTS.regular, systemFont.path);
                 doc.registerFont(this.FONTS.bold, systemFont.path);
                 doc.registerFont(this.FONTS.medium, systemFont.path);
@@ -2203,14 +2279,20 @@ var init_professional_pdf_generation_service = __esm({
           doc.registerFont(this.FONTS.medium, "Helvetica");
         } catch (error) {
           console.error("\u274C [PDF] \uD3F0\uD2B8 \uB4F1\uB85D \uC911 \uC608\uC678 \uBC1C\uC0DD:", error);
+          console.error("\u{1F4CA} [PDF] \uC5D0\uB7EC \uC0C1\uC138:", {
+            message: error.message,
+            stack: error.stack,
+            name: error.name
+          });
           try {
+            console.log("\u{1F198} [PDF] \uCD5C\uC885 \uD3F4\uBC31 \uC2DC\uB3C4...");
             doc.registerFont(this.FONTS.regular, "Helvetica");
             doc.registerFont(this.FONTS.bold, "Helvetica-Bold");
             doc.registerFont(this.FONTS.medium, "Helvetica");
             console.log("\u{1F527} [PDF] \uAE30\uBCF8 \uD3F0\uD2B8\uB85C \uD3F4\uBC31 \uC644\uB8CC");
           } catch (fallbackError) {
             console.error("\u{1F4A5} [PDF] \uAE30\uBCF8 \uD3F0\uD2B8 \uB4F1\uB85D\uB3C4 \uC2E4\uD328:", fallbackError);
-            throw new Error("PDF \uD3F0\uD2B8 \uB4F1\uB85D \uC2E4\uD328: \uBAA8\uB4E0 \uD3F0\uD2B8\uB97C \uB85C\uB4DC\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.");
+            console.log("\u{1F3C3} [PDF] \uD3F0\uD2B8 \uB4F1\uB85D \uC2E4\uD328 - \uAE30\uBCF8 \uC2DC\uC2A4\uD15C \uD3F0\uD2B8\uB85C \uACC4\uC18D \uC9C4\uD589");
           }
         }
       }
@@ -2668,9 +2750,21 @@ var DebugLogger;
 var init_debug_logger = __esm({
   "server/utils/debug-logger.ts"() {
     "use strict";
-    DebugLogger = class {
+    DebugLogger = class _DebugLogger {
       static {
         this.isDebugMode = process.env.NODE_ENV === "development";
+      }
+      constructor(context = "") {
+        this.context = context;
+      }
+      log(message) {
+        if (!_DebugLogger.isDebugMode) return;
+        const prefix = this.context ? `[${this.context}]` : "";
+        console.log(`\u{1F50D} ${prefix} ${message}`);
+      }
+      error(message) {
+        const prefix = this.context ? `[${this.context}]` : "";
+        console.error(`\u274C ${prefix} ${message}`);
       }
       static logFunctionEntry(functionName, params = {}) {
         if (!this.isDebugMode) return;
@@ -3113,8 +3207,8 @@ var init_po_template_processor_mock = __esm({
 // server/utils/enhanced-excel-to-pdf.ts
 import { chromium as chromium2 } from "playwright-chromium";
 import ExcelJS2 from "exceljs";
-import path16 from "path";
-import fs20 from "fs";
+import path17 from "path";
+import fs21 from "fs";
 var EnhancedExcelToPDFConverter;
 var init_enhanced_excel_to_pdf = __esm({
   "server/utils/enhanced-excel-to-pdf.ts"() {
@@ -3141,14 +3235,14 @@ var init_enhanced_excel_to_pdf = __esm({
         let browser = null;
         try {
           console.log(`\u{1F4C4} Enhanced PDF \uBCC0\uD658 \uC2DC\uC791: ${excelPath}`);
-          if (!fs20.existsSync(excelPath)) {
+          if (!fs21.existsSync(excelPath)) {
             throw new Error(`Excel \uD30C\uC77C\uC774 \uC874\uC7AC\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4: ${excelPath}`);
           }
           const finalOptions = { ...this.DEFAULT_OPTIONS, ...options };
           const pdfPath = finalOptions.outputPath || excelPath.replace(/\.(xlsx?|xlsm)$/i, "-enhanced.pdf");
-          const outputDir = path16.dirname(pdfPath);
-          if (!fs20.existsSync(outputDir)) {
-            fs20.mkdirSync(outputDir, { recursive: true });
+          const outputDir = path17.dirname(pdfPath);
+          if (!fs21.existsSync(outputDir)) {
+            fs21.mkdirSync(outputDir, { recursive: true });
           }
           console.log(`\u{1F4C4} PDF \uCD9C\uB825 \uACBD\uB85C: ${pdfPath}`);
           const workbook = new ExcelJS2.Workbook();
@@ -3206,10 +3300,10 @@ var init_enhanced_excel_to_pdf = __esm({
           await page.pdf(pdfOptions);
           await browser.close();
           browser = null;
-          if (!fs20.existsSync(pdfPath)) {
+          if (!fs21.existsSync(pdfPath)) {
             throw new Error("PDF \uD30C\uC77C\uC774 \uC0DD\uC131\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4.");
           }
-          const stats = fs20.statSync(pdfPath);
+          const stats = fs21.statSync(pdfPath);
           const processingTime = Date.now() - startTime;
           console.log(`\u2705 Enhanced PDF \uC0DD\uC131 \uC644\uB8CC: ${pdfPath}`);
           console.log(`\u{1F4CA} \uD30C\uC77C \uD06C\uAE30: ${Math.round(stats.size / 1024)}KB`);
@@ -3490,15 +3584,15 @@ var init_enhanced_excel_to_pdf = __esm({
        */
       static validatePDF(pdfPath) {
         try {
-          if (!fs20.existsSync(pdfPath)) {
+          if (!fs21.existsSync(pdfPath)) {
             return false;
           }
-          const stats = fs20.statSync(pdfPath);
+          const stats = fs21.statSync(pdfPath);
           if (stats.size < 1024) {
             console.warn(`\u26A0\uFE0F PDF \uD30C\uC77C \uD06C\uAE30\uAC00 \uB108\uBB34 \uC791\uC2B5\uB2C8\uB2E4: ${stats.size}bytes`);
             return false;
           }
-          const buffer = fs20.readFileSync(pdfPath, { start: 0, end: 4 });
+          const buffer = fs21.readFileSync(pdfPath, { start: 0, end: 4 });
           const header = buffer.toString();
           if (!header.startsWith("%PDF")) {
             console.warn("\u26A0\uFE0F \uC720\uD6A8\uD558\uC9C0 \uC54A\uC740 PDF \uD30C\uC77C \uD5E4\uB354");
@@ -3516,9 +3610,9 @@ var init_enhanced_excel_to_pdf = __esm({
       static cleanupTempFiles(filePaths) {
         filePaths.forEach((filePath) => {
           try {
-            if (fs20.existsSync(filePath)) {
-              fs20.unlinkSync(filePath);
-              console.log(`\u{1F5D1}\uFE0F \uC784\uC2DC \uD30C\uC77C \uC815\uB9AC: ${path16.basename(filePath)}`);
+            if (fs21.existsSync(filePath)) {
+              fs21.unlinkSync(filePath);
+              console.log(`\u{1F5D1}\uFE0F \uC784\uC2DC \uD30C\uC77C \uC815\uB9AC: ${path17.basename(filePath)}`);
             }
           } catch (error) {
             console.error(`\uD30C\uC77C \uC815\uB9AC \uC2E4\uD328: ${filePath}`, error);
@@ -3532,15 +3626,15 @@ var init_enhanced_excel_to_pdf = __esm({
 // server/utils/excel-to-pdf-converter.ts
 import { chromium as chromium3 } from "playwright-chromium";
 import ExcelJS3 from "exceljs";
-import path17 from "path";
-import fs21 from "fs";
+import path18 from "path";
+import fs22 from "fs";
 import { fileURLToPath as fileURLToPath5 } from "url";
 var __filename5, __dirname5, ExcelToPDFConverter;
 var init_excel_to_pdf_converter = __esm({
   "server/utils/excel-to-pdf-converter.ts"() {
     "use strict";
     __filename5 = fileURLToPath5(import.meta.url);
-    __dirname5 = path17.dirname(__filename5);
+    __dirname5 = path18.dirname(__filename5);
     ExcelToPDFConverter = class {
       /**
        * Excel 파일을 PDF로 변환
@@ -3552,15 +3646,15 @@ var init_excel_to_pdf_converter = __esm({
         let browser;
         try {
           console.log(`\u{1F4C4} PDF \uBCC0\uD658 \uC2DC\uC791: ${excelPath}`);
-          if (!fs21.existsSync(excelPath)) {
+          if (!fs22.existsSync(excelPath)) {
             throw new Error(`Excel \uD30C\uC77C\uC774 \uC874\uC7AC\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4: ${excelPath}`);
           }
           const pdfPath = outputPath || excelPath.replace(/\.(xlsx?|xlsm)$/i, ".pdf");
           console.log(`\u{1F4C4} PDF \uCD9C\uB825 \uACBD\uB85C: ${pdfPath}`);
-          const outputDir = path17.dirname(pdfPath);
+          const outputDir = path18.dirname(pdfPath);
           try {
-            if (!fs21.existsSync(outputDir)) {
-              fs21.mkdirSync(outputDir, { recursive: true });
+            if (!fs22.existsSync(outputDir)) {
+              fs22.mkdirSync(outputDir, { recursive: true });
               console.log(`\u{1F4C1} \uCD9C\uB825 \uB514\uB809\uD1A0\uB9AC \uC0DD\uC131: ${outputDir}`);
             }
           } catch (error) {
@@ -3617,10 +3711,10 @@ var init_excel_to_pdf_converter = __esm({
           console.log(`\u{1F4C4} PDF \uD30C\uC77C \uC0DD\uC131 \uC644\uB8CC: ${pdfPath}`);
           await browser.close();
           browser = null;
-          if (!fs21.existsSync(pdfPath)) {
+          if (!fs22.existsSync(pdfPath)) {
             throw new Error(`PDF \uD30C\uC77C\uC774 \uC0DD\uC131\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4: ${pdfPath}`);
           }
-          const stats = fs21.statSync(pdfPath);
+          const stats = fs22.statSync(pdfPath);
           console.log(`\u2705 PDF \uC0DD\uC131 \uC644\uB8CC: ${pdfPath} (${Math.round(stats.size / 1024)}KB)`);
           return pdfPath;
         } catch (error) {
@@ -3807,7 +3901,7 @@ var init_excel_to_pdf_converter = __esm({
 `;
           for (let i = 0; i < excelPaths.length; i++) {
             const excelPath = excelPaths[i];
-            const fileName = path17.basename(excelPath, path17.extname(excelPath));
+            const fileName = path18.basename(excelPath, path18.extname(excelPath));
             const workbook = new ExcelJS3.Workbook();
             await workbook.xlsx.readFile(excelPath);
             combinedHTML += `<div class="file-section">`;
@@ -3852,14 +3946,15 @@ __export(po_email_service_enhanced_exports, {
   POEmailService: () => POEmailService2
 });
 import nodemailer5 from "nodemailer";
-import path18 from "path";
-import fs22 from "fs";
+import path19 from "path";
+import fs23 from "fs";
 import { fileURLToPath as fileURLToPath6 } from "url";
 import { dirname as dirname2 } from "path";
 var __filename6, __dirname6, POEmailService2;
 var init_po_email_service_enhanced = __esm({
   "server/utils/po-email-service-enhanced.ts"() {
     "use strict";
+    init_upload_paths();
     init_excel_input_sheet_remover();
     init_enhanced_excel_to_pdf();
     init_excel_to_pdf_converter();
@@ -3952,8 +4047,9 @@ var init_po_email_service_enhanced = __esm({
             }
           }
           const timestamp2 = Date.now();
-          const uploadsDir = path18.join(__dirname6, "../../uploads");
-          const processedPath = path18.join(uploadsDir, `po-advanced-format-${timestamp2}.xlsx`);
+          const uploadsDir = getUploadsDir();
+          ensureUploadDir(uploadsDir);
+          const processedPath = path19.join(uploadsDir, `po-advanced-format-${timestamp2}.xlsx`);
           const removeResult = await removeAllInputSheets(
             originalFilePath,
             processedPath
@@ -3967,7 +4063,7 @@ var init_po_email_service_enhanced = __esm({
           console.log(`\u{1F4C4} \uACE0\uAE09 \uD615\uC2DD \uBCF4\uC874 \uD30C\uC77C \uC0DD\uC131: ${processedPath}`);
           console.log(`\u{1F3AF} Input \uC2DC\uD2B8 \uC81C\uAC70 \uC644\uB8CC`);
           console.log(`\u{1F4CB} \uB0A8\uC740 \uC2DC\uD2B8: ${removeResult.remainingSheets.join(", ")}`);
-          const pdfPath = path18.join(uploadsDir, `po-advanced-format-${timestamp2}.pdf`);
+          const pdfPath = path19.join(uploadsDir, `po-advanced-format-${timestamp2}.pdf`);
           let pdfResult = { success: false, error: "" };
           try {
             const enhancedResult = await EnhancedExcelToPDFConverter.convertExcelToPDF(processedPath, {
@@ -3995,7 +4091,7 @@ var init_po_email_service_enhanced = __esm({
             pdfResult.error = pdfError instanceof Error ? pdfError.message : "PDF conversion error";
           }
           const attachments4 = [];
-          if (fs22.existsSync(processedPath)) {
+          if (fs23.existsSync(processedPath)) {
             attachments4.push({
               filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`,
               path: processedPath,
@@ -4003,7 +4099,7 @@ var init_po_email_service_enhanced = __esm({
             });
             console.log(`\u{1F4CE} Excel \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00: \uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`);
           }
-          if (pdfResult.success && fs22.existsSync(pdfPath)) {
+          if (pdfResult.success && fs23.existsSync(pdfPath)) {
             attachments4.push({
               filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`,
               path: pdfPath,
@@ -4263,12 +4359,12 @@ var init_po_email_service_enhanced = __esm({
         setTimeout(() => {
           filePaths.forEach((filePath) => {
             try {
-              if (fs22.existsSync(filePath)) {
-                fs22.unlinkSync(filePath);
-                console.log(`\u{1F5D1}\uFE0F \uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C: ${path18.basename(filePath)}`);
+              if (fs23.existsSync(filePath)) {
+                fs23.unlinkSync(filePath);
+                console.log(`\u{1F5D1}\uFE0F \uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C: ${path19.basename(filePath)}`);
               }
             } catch (error) {
-              console.warn(`\u26A0\uFE0F \uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328: ${path18.basename(filePath)}`, error);
+              console.warn(`\u26A0\uFE0F \uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328: ${path19.basename(filePath)}`, error);
             }
           });
         }, 5e3);
@@ -6847,9 +6943,10 @@ var PasswordResetService = class {
 };
 
 // server/utils/po-email-service.ts
+init_upload_paths();
 import nodemailer from "nodemailer";
-import path2 from "path";
-import fs4 from "fs";
+import path3 from "path";
+import fs5 from "fs";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
 
@@ -6857,8 +6954,8 @@ import { dirname } from "path";
 import { chromium } from "playwright-chromium";
 import ExcelJS from "exceljs";
 import XLSX from "xlsx";
-import path from "path";
-import fs from "fs";
+import path2 from "path";
+import fs2 from "fs";
 var PlaywrightEngine = class {
   constructor() {
     this.name = "playwright";
@@ -6911,7 +7008,7 @@ var PlaywrightEngine = class {
         path: pdfPath,
         ...pdfOptions
       });
-      const stats = fs.statSync(pdfPath);
+      const stats = fs2.statSync(pdfPath);
       const processingTime = Date.now() - startTime;
       return {
         success: true,
@@ -7119,7 +7216,7 @@ var XLSXEngine = class {
         printBackground: true
       });
       await browser.close();
-      const stats = fs.statSync(pdfPath);
+      const stats = fs2.statSync(pdfPath);
       return {
         success: true,
         pdfPath,
@@ -7192,8 +7289,8 @@ var MockEngine = class {
   async convert(excelPath, options) {
     console.log(`\u{1F3AD} Mock \uC5D4\uC9C4\uC73C\uB85C PDF \uBCC0\uD658: ${excelPath}`);
     const pdfPath = options.outputPath || excelPath.replace(/\.(xlsx?|xlsm)$/i, "-mock.pdf");
-    const dummyContent = `Mock PDF for ${path.basename(excelPath)}`;
-    fs.writeFileSync(pdfPath, dummyContent);
+    const dummyContent = `Mock PDF for ${path2.basename(excelPath)}`;
+    fs2.writeFileSync(pdfPath, dummyContent);
     return {
       success: true,
       pdfPath,
@@ -7239,7 +7336,7 @@ var UnifiedExcelPdfService = class {
     const finalOptions = { ...this.DEFAULT_OPTIONS, ...options };
     console.log(`\u{1F504} \uD1B5\uD569 Excel PDF \uC11C\uBE44\uC2A4 \uC2DC\uC791: ${excelPath}`);
     console.log(`\u2699\uFE0F \uC635\uC158: ${JSON.stringify(finalOptions, null, 2)}`);
-    if (!fs.existsSync(excelPath)) {
+    if (!fs2.existsSync(excelPath)) {
       return {
         success: false,
         error: `Excel \uD30C\uC77C\uC774 \uC874\uC7AC\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4: ${excelPath}`,
@@ -7247,9 +7344,9 @@ var UnifiedExcelPdfService = class {
       };
     }
     const outputPath = finalOptions.outputPath || excelPath.replace(/\.(xlsx?|xlsm)$/i, "-unified.pdf");
-    const outputDir = path.dirname(outputPath);
-    if (!fs.existsSync(outputDir)) {
-      fs.mkdirSync(outputDir, { recursive: true });
+    const outputDir = path2.dirname(outputPath);
+    if (!fs2.existsSync(outputDir)) {
+      fs2.mkdirSync(outputDir, { recursive: true });
     }
     if (finalOptions.fallbackEngine) {
       const engine = this.engines.find((e) => e.name === finalOptions.fallbackEngine);
@@ -7295,8 +7392,8 @@ var UnifiedExcelPdfService = class {
     try {
       const result = await engine.convert(excelPath, options);
       if (result.success && result.pdfPath) {
-        if (fs.existsSync(result.pdfPath)) {
-          const stats = fs.statSync(result.pdfPath);
+        if (fs2.existsSync(result.pdfPath)) {
+          const stats = fs2.statSync(result.pdfPath);
           if (stats.size > 0) {
             console.log(`\u2705 ${engine.name} \uC5D4\uC9C4 \uC131\uACF5: ${result.pdfPath} (${stats.size} bytes)`);
             return result;
@@ -7368,14 +7465,14 @@ init_excel_input_sheet_remover();
 import { eq as eq4 } from "drizzle-orm";
 import * as XLSX2 from "xlsx";
 import { v4 as uuidv42 } from "uuid";
-import fs3 from "fs";
+import fs4 from "fs";
 var POTemplateProcessor = class _POTemplateProcessor {
   /**
    * Excel 파일에서 Input 시트를 파싱하여 발주서 데이터 추출
    */
   static parseInputSheet(filePath) {
     try {
-      const buffer = fs3.readFileSync(filePath);
+      const buffer = fs4.readFileSync(filePath);
       const workbook = XLSX2.read(buffer, { type: "buffer" });
       const inputSheetName = workbook.SheetNames.find(
         (name) => name === "Input"
@@ -7735,9 +7832,10 @@ var POEmailService = class {
   async sendPOWithOriginalFormat(originalFilePath, emailOptions, orderInfo) {
     try {
       const timestamp2 = Date.now();
-      const uploadsDir = path2.join(__dirname, "../../uploads");
+      const uploadsDir = getUploadsDir();
+      ensureUploadDir(uploadsDir);
       const isExcelFile = originalFilePath.toLowerCase().endsWith(".xlsx") || originalFilePath.toLowerCase().endsWith(".xls");
-      const fileExists = fs4.existsSync(originalFilePath);
+      const fileExists = fs5.existsSync(originalFilePath);
       console.log(`\u{1F50D} \uD30C\uC77C \uAC80\uC99D: ${originalFilePath}`);
       console.log(`\u{1F4C1} \uD30C\uC77C \uC874\uC7AC: ${fileExists}`);
       console.log(`\u{1F4CA} Excel \uD30C\uC77C: ${isExcelFile}`);
@@ -7746,7 +7844,7 @@ var POEmailService = class {
       let pdfPath = "";
       let pdfResult = { success: false, error: "" };
       if (fileExists && isExcelFile) {
-        processedPath = path2.join(uploadsDir, `po-advanced-format-${timestamp2}.xlsx`);
+        processedPath = path3.join(uploadsDir, `po-advanced-format-${timestamp2}.xlsx`);
         const removeResult = await removeAllInputSheets(
           originalFilePath,
           processedPath
@@ -7759,7 +7857,7 @@ var POEmailService = class {
           console.log(`\u{1F3AF} Input \uC2DC\uD2B8 \uC81C\uAC70 \uC644\uB8CC`);
           console.log(`\u{1F4CB} \uB0A8\uC740 \uC2DC\uD2B8: ${removeResult.remainingSheets.join(", ")}`);
         }
-        pdfPath = path2.join(uploadsDir, `po-advanced-format-${timestamp2}.pdf`);
+        pdfPath = path3.join(uploadsDir, `po-advanced-format-${timestamp2}.pdf`);
         try {
           const result2 = await UnifiedExcelPdfService.convertExcelToPDF(processedPath, {
             outputPath: pdfPath,
@@ -7781,12 +7879,12 @@ var POEmailService = class {
             console.warn(`\u26A0\uFE0F PDF \uBCC0\uD658 \uC2E4\uD328: ${pdfResult.error}, Excel \uD30C\uC77C\uB9CC \uCCA8\uBD80\uD569\uB2C8\uB2E4.`);
           }
         } catch (error) {
-          pdfResult.error = `\uD1B5\uD569 PDF \uC11C\uBE44\uC2A4 \uC624\uB958: ${error.message}`;
+          pdfResult.error = `\uD1B5\uD569 PDF \uC11C\uBE44\uC2A4 \uC624\uB958: ${error instanceof Error ? error.message : "Unknown error"}`;
           console.warn(`\u26A0\uFE0F PDF \uBCC0\uD658 \uC644\uC804 \uC2E4\uD328: ${pdfResult.error}, Excel \uD30C\uC77C\uB9CC \uCCA8\uBD80\uD569\uB2C8\uB2E4.`);
         }
       }
       if (fileExists && isExcelFile) {
-        if (fs4.existsSync(processedPath)) {
+        if (fs5.existsSync(processedPath)) {
           attachments4.push({
             filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`,
             path: processedPath,
@@ -7794,7 +7892,7 @@ var POEmailService = class {
           });
           console.log(`\u{1F4CE} Excel \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00: \uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`);
         }
-        if (pdfResult.success && fs4.existsSync(pdfPath)) {
+        if (pdfResult.success && fs5.existsSync(pdfPath)) {
           attachments4.push({
             filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`,
             path: pdfPath,
@@ -7803,7 +7901,7 @@ var POEmailService = class {
           console.log(`\u{1F4CE} PDF \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00: \uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`);
         }
       } else if (fileExists) {
-        const fileExt = path2.extname(originalFilePath) || ".txt";
+        const fileExt = path3.extname(originalFilePath) || ".txt";
         const baseName = `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}`;
         attachments4.push({
           filename: `${baseName}${fileExt}`,
@@ -7861,8 +7959,9 @@ var POEmailService = class {
   async sendPOWithAttachments(originalFilePath, emailOptions) {
     try {
       const timestamp2 = Date.now();
-      const uploadsDir = path2.join(__dirname, "../../uploads");
-      const extractedPath = path2.join(uploadsDir, `po-sheets-${timestamp2}.xlsx`);
+      const uploadsDir = getUploadsDir();
+      ensureUploadDir(uploadsDir);
+      const extractedPath = path3.join(uploadsDir, `po-sheets-${timestamp2}.xlsx`);
       const extractResult = POTemplateProcessor.extractSheetsToFile(
         originalFilePath,
         extractedPath,
@@ -7875,7 +7974,7 @@ var POEmailService = class {
           error: `\uC2DC\uD2B8 \uCD94\uCD9C \uC2E4\uD328: ${extractResultData.error}`
         };
       }
-      const pdfPath = path2.join(uploadsDir, `po-sheets-${timestamp2}.pdf`);
+      const pdfPath = path3.join(uploadsDir, `po-sheets-${timestamp2}.pdf`);
       const pdfResult = await UnifiedExcelPdfService.convertExcelToPDF(extractedPath, {
         outputPath: pdfPath,
         quality: "high",
@@ -7891,14 +7990,14 @@ var POEmailService = class {
         };
       }
       const attachments4 = [];
-      if (fs4.existsSync(extractedPath)) {
+      if (fs5.existsSync(extractedPath)) {
         attachments4.push({
           filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`,
           path: extractedPath,
           contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         });
       }
-      if (fs4.existsSync(pdfPath)) {
+      if (fs5.existsSync(pdfPath)) {
         attachments4.push({
           filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`,
           path: pdfPath,
@@ -7970,7 +8069,7 @@ var POEmailService = class {
             filename: att.filename,
             path: att.path,
             contentType: att.contentType || "application/octet-stream",
-            size: att.path ? fs4.existsSync(att.path) ? fs4.statSync(att.path).size : 0 : 0
+            size: att.path ? fs5.existsSync(att.path) ? fs5.statSync(att.path).size : 0 : 0
           })) || [];
           await this.db.insert(emailSendHistory).values({
             orderId: orderInfo.orderId,
@@ -8261,8 +8360,8 @@ var POEmailService = class {
   cleanupTempFiles(filePaths) {
     filePaths.forEach((filePath) => {
       try {
-        if (fs4.existsSync(filePath)) {
-          fs4.unlinkSync(filePath);
+        if (fs5.existsSync(filePath)) {
+          fs5.unlinkSync(filePath);
         }
       } catch (error) {
         console.error(`\uD30C\uC77C \uC815\uB9AC \uC2E4\uD328: ${filePath}`, error);
@@ -10324,8 +10423,8 @@ init_schema();
 
 // server/utils/multer-config.ts
 import multer from "multer";
-import path3 from "path";
-import fs5 from "fs";
+import path4 from "path";
+import fs6 from "fs";
 
 // server/utils/korean-filename.ts
 function decodeKoreanFilename(originalname) {
@@ -10418,9 +10517,9 @@ function fixCorruptedKoreanFilename(filename) {
 }
 
 // server/utils/multer-config.ts
-var uploadDir = process.env.VERCEL ? "/tmp" : path3.join(process.cwd(), "uploads");
-if (!process.env.VERCEL && !fs5.existsSync(uploadDir)) {
-  fs5.mkdirSync(uploadDir, { recursive: true });
+var uploadDir = process.env.VERCEL ? "/tmp" : path4.join(process.cwd(), "uploads");
+if (!process.env.VERCEL && !fs6.existsSync(uploadDir)) {
+  fs6.mkdirSync(uploadDir, { recursive: true });
 }
 var createMulterConfig = (prefix = "FILE") => {
   return multer({
@@ -10638,6 +10737,9 @@ var OrderService = class {
     }
   }
 };
+
+// server/routes/orders.ts
+init_upload_paths();
 
 // server/services/approval-routing-service.ts
 init_db();
@@ -10953,8 +11055,8 @@ var progressManager = new ProgressManager();
 
 // server/services/unified-order-creation-service.ts
 init_debug_logger();
-import fs8 from "fs";
-import path5 from "path";
+import fs9 from "fs";
+import path6 from "path";
 var UnifiedOrderCreationService = class {
   /**
    * 통합 발주서 생성 메인 메서드
@@ -11107,9 +11209,9 @@ var UnifiedOrderCreationService = class {
     }
     if (data.method === "excel" && data.excelFilePath) {
       logger.log(`\u{1F4CA} \uC5D1\uC140 \uC6D0\uBCF8 \uD30C\uC77C \uCCA8\uBD80 - ${data.excelFilePath}`);
-      if (fs8.existsSync(data.excelFilePath)) {
-        const stat = fs8.statSync(data.excelFilePath);
-        const fileName = path5.basename(data.excelFilePath);
+      if (fs9.existsSync(data.excelFilePath)) {
+        const stat = fs9.statSync(data.excelFilePath);
+        const fileName = path6.basename(data.excelFilePath);
         await db.insert(attachments).values({
           orderId,
           originalName: fileName,
@@ -11195,8 +11297,8 @@ var UnifiedOrderCreationService = class {
 // server/routes/orders.ts
 init_db();
 import { eq as eq12, and as and7, or as or3, like as like2, desc as desc6, sql as sql5 } from "drizzle-orm";
-import fs9 from "fs";
-import path6 from "path";
+import fs10 from "fs";
+import path7 from "path";
 import { fileURLToPath as fileURLToPath2 } from "url";
 import * as XLSX3 from "xlsx";
 import nodemailer3 from "nodemailer";
@@ -11828,7 +11930,7 @@ function generateEmailHTML(data) {
 
 // server/routes/orders.ts
 var __filename2 = fileURLToPath2(import.meta.url);
-var __dirname2 = path6.dirname(__filename2);
+var __dirname2 = path7.dirname(__filename2);
 var router3 = Router3();
 var db2 = db;
 var emailService = new POEmailService();
@@ -12157,7 +12259,7 @@ router3.post("/orders", requireAuth, upload.array("attachments"), async (req, re
     console.log("\u{1F527}\u{1F527}\u{1F527} ORDERS.TS - Created order:", order);
     if (req.files && req.files.length > 0) {
       const fs28 = __require("fs");
-      const path25 = __require("path");
+      const path26 = __require("path");
       const { removeAllInputSheets: removeAllInputSheets2 } = (init_excel_input_sheet_remover(), __toCommonJS(excel_input_sheet_remover_exports));
       for (const file of req.files) {
         const decodedFilename = decodeKoreanFilename(file.originalname);
@@ -12944,13 +13046,13 @@ router3.get("/orders/download-pdf/:timestamp", async (req, res) => {
         console.error("\u274C \uB370\uC774\uD130\uBCA0\uC774\uC2A4 PDF \uC870\uD68C \uC624\uB958:", dbError);
       }
     }
-    const basePath = process.env.VERCEL ? path6.join("/tmp", "temp-pdf", `order-${timestamp2}`) : path6.join(process.cwd(), "uploads/temp-pdf", `order-${timestamp2}`);
+    const basePath = process.env.VERCEL ? path7.join("/tmp", "temp-pdf", `order-${timestamp2}`) : path7.join(getTempPdfDir(), `order-${timestamp2}`);
     const pdfPath = `${basePath}.pdf`;
     const htmlPath = `${basePath}.html`;
     console.log(`\u{1F4C4} \uD30C\uC77C \uC2DC\uC2A4\uD15C\uC5D0\uC11C \uD30C\uC77C \uC694\uCCAD: ${basePath}.*`);
-    console.log(`\u{1F4C4} PDF \uC874\uC7AC: ${fs9.existsSync(pdfPath)}, HTML \uC874\uC7AC: ${fs9.existsSync(htmlPath)}`);
-    if (process.env.VERCEL && !fs9.existsSync(pdfPath) && fs9.existsSync(htmlPath)) {
-      const htmlContent = fs9.readFileSync(htmlPath, "utf-8");
+    console.log(`\u{1F4C4} PDF \uC874\uC7AC: ${fs10.existsSync(pdfPath)}, HTML \uC874\uC7AC: ${fs10.existsSync(htmlPath)}`);
+    if (process.env.VERCEL && !fs10.existsSync(pdfPath) && fs10.existsSync(htmlPath)) {
+      const htmlContent = fs10.readFileSync(htmlPath, "utf-8");
       res.setHeader("Content-Type", "text/html; charset=utf-8");
       res.setHeader("Cache-Control", "no-cache");
       if (download === "true") {
@@ -12959,9 +13061,9 @@ router3.get("/orders/download-pdf/:timestamp", async (req, res) => {
       res.send(htmlContent);
       return;
     }
-    if (fs9.existsSync(pdfPath)) {
+    if (fs10.existsSync(pdfPath)) {
       try {
-        const stat = fs9.statSync(pdfPath);
+        const stat = fs10.statSync(pdfPath);
         console.log(`\u{1F4CA} PDF \uD30C\uC77C \uC815\uBCF4: \uD06C\uAE30 ${(stat.size / 1024).toFixed(2)} KB`);
         res.setHeader("Access-Control-Allow-Origin", "*");
         res.setHeader("Access-Control-Allow-Methods", "GET");
@@ -12972,7 +13074,7 @@ router3.get("/orders/download-pdf/:timestamp", async (req, res) => {
           res.setHeader("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent("\uBC1C\uC8FC\uC11C.pdf")}`);
           res.setHeader("Content-Type", "application/pdf");
           res.setHeader("Content-Length", stat.size.toString());
-          const downloadStream = fs9.createReadStream(pdfPath);
+          const downloadStream = fs10.createReadStream(pdfPath);
           downloadStream.on("error", (error) => {
             console.error("\u274C PDF \uB2E4\uC6B4\uB85C\uB4DC \uC2A4\uD2B8\uB9BC \uC624\uB958:", error);
             if (!res.headersSent) {
@@ -12988,7 +13090,7 @@ router3.get("/orders/download-pdf/:timestamp", async (req, res) => {
           res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
           res.setHeader("Pragma", "no-cache");
           res.setHeader("Expires", "0");
-          const pdfStream = fs9.createReadStream(pdfPath);
+          const pdfStream = fs10.createReadStream(pdfPath);
           pdfStream.on("error", (error) => {
             console.error("\u274C PDF \uC2A4\uD2B8\uB9BC \uC624\uB958:", error);
             if (!res.headersSent) {
@@ -13286,15 +13388,16 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
             const isExcelFile = attachment.mimeType?.includes("excel") || attachment.mimeType?.includes("spreadsheet") || attachment.originalName?.toLowerCase().endsWith(".xlsx") || attachment.originalName?.toLowerCase().endsWith(".xls");
             if (isExcelFile && !excelFilePath) {
               if (attachment.fileData) {
-                const tempDir = path6.join(__dirname2, "../../uploads");
-                const tempFilePath = path6.join(tempDir, `temp-${Date.now()}-${attachment.originalName}`);
-                if (!fs9.existsSync(tempDir)) {
-                  fs9.mkdirSync(tempDir, { recursive: true });
+                const tempDir = getUploadsDir();
+                ensureUploadDir(tempDir);
+                const tempFilePath = path7.join(tempDir, `temp-${Date.now()}-${attachment.originalName}`);
+                if (!fs10.existsSync(tempDir)) {
+                  fs10.mkdirSync(tempDir, { recursive: true });
                 }
-                fs9.writeFileSync(tempFilePath, Buffer.from(attachment.fileData, "base64"));
+                fs10.writeFileSync(tempFilePath, Buffer.from(attachment.fileData, "base64"));
                 excelFilePath = tempFilePath;
                 console.log("\u2705 Excel \uD30C\uC77C \uC784\uC2DC \uC800\uC7A5:", tempFilePath);
-              } else if (attachment.filePath && fs9.existsSync(attachment.filePath)) {
+              } else if (attachment.filePath && fs10.existsSync(attachment.filePath)) {
                 excelFilePath = attachment.filePath;
                 console.log("\u2705 Excel \uD30C\uC77C \uACBD\uB85C \uC0AC\uC6A9:", attachment.filePath);
               }
@@ -13306,7 +13409,7 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
                   contentType: attachment.mimeType || "application/octet-stream"
                 });
                 console.log("\u2705 \uCD94\uAC00 \uCCA8\uBD80\uD30C\uC77C \uCD94\uAC00 (Base64):", attachment.originalName);
-              } else if (attachment.filePath && fs9.existsSync(attachment.filePath)) {
+              } else if (attachment.filePath && fs10.existsSync(attachment.filePath)) {
                 additionalAttachments.push({
                   filename: attachment.originalName,
                   path: attachment.filePath,
@@ -13323,10 +13426,11 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
     }
     if (!excelFilePath) {
       console.log("\u{1F4CE} Excel \uD30C\uC77C\uC774 \uC5C6\uC5B4 \uAE30\uBCF8 \uD30C\uC77C \uC0DD\uC131");
-      const tempDir = path6.join(__dirname2, "../../uploads");
-      const tempFilePath = path6.join(tempDir, `default-po-${Date.now()}.xlsx`);
-      if (!fs9.existsSync(tempDir)) {
-        fs9.mkdirSync(tempDir, { recursive: true });
+      const tempDir = getUploadsDir();
+      ensureUploadDir(tempDir);
+      const tempFilePath = path7.join(tempDir, `default-po-${Date.now()}.xlsx`);
+      if (!fs10.existsSync(tempDir)) {
+        fs10.mkdirSync(tempDir, { recursive: true });
       }
       const workbook = XLSX3.utils.book_new();
       const worksheet = XLSX3.utils.json_to_sheet([{
@@ -13401,7 +13505,7 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
                 isExcel: attachment.mimeType?.includes("spreadsheet") || attachment.originalName?.endsWith(".xlsx"),
                 method: "content (Buffer)"
               });
-            } else if (attachment.filePath && fs9.existsSync(attachment.filePath)) {
+            } else if (attachment.filePath && fs10.existsSync(attachment.filePath)) {
               attachments4.push({
                 filename: attachment.originalName,
                 path: attachment.filePath,
@@ -13592,11 +13696,11 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
     console.log("\u{1F4E7} POEmailService\uB97C \uC0AC\uC6A9\uD55C \uC774\uBA54\uC77C \uBC1C\uC1A1 \uC2DC\uC791");
     const poServiceAttachments = attachments4.map((att) => ({
       filename: att.filename || "attachment",
-      content: att.content || (att.path ? fs9.readFileSync(att.path) : Buffer.alloc(0)),
+      content: att.content || (att.path ? fs10.readFileSync(att.path) : Buffer.alloc(0)),
       contentType: att.contentType || "application/octet-stream"
     })).filter((att) => att.content && att.content.length > 0);
-    const tempExcelPath = path6.join(__dirname2, "../../uploads", `temp_email_${Date.now()}.txt`);
-    fs9.writeFileSync(tempExcelPath, `\uBC1C\uC8FC\uC11C \uC774\uBA54\uC77C \uCCA8\uBD80\uD30C\uC77C
+    const tempExcelPath = path7.join(getUploadsDir(), `temp_email_${Date.now()}.txt`);
+    fs10.writeFileSync(tempExcelPath, `\uBC1C\uC8FC\uC11C \uC774\uBA54\uC77C \uCCA8\uBD80\uD30C\uC77C
 \uBC1C\uC8FC\uBC88\uD638: ${orderData.orderNumber}
 \uC804\uC1A1\uC2DC\uAC04: ${(/* @__PURE__ */ new Date()).toISOString()}`);
     try {
@@ -13614,8 +13718,8 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
         senderUserId: req.user?.id
       });
       try {
-        if (fs9.existsSync(tempExcelPath)) {
-          fs9.unlinkSync(tempExcelPath);
+        if (fs10.existsSync(tempExcelPath)) {
+          fs10.unlinkSync(tempExcelPath);
         }
       } catch (unlinkError) {
         console.warn("\uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328:", unlinkError);
@@ -13647,8 +13751,8 @@ router3.post("/orders/send-email", requireAuth, async (req, res) => {
       }
     } catch (serviceError) {
       try {
-        if (fs9.existsSync(tempExcelPath)) {
-          fs9.unlinkSync(tempExcelPath);
+        if (fs10.existsSync(tempExcelPath)) {
+          fs10.unlinkSync(tempExcelPath);
         }
       } catch (unlinkError) {
         console.warn("\uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328 (\uC624\uB958 \uC2DC):", unlinkError);
@@ -13868,8 +13972,8 @@ router3.post("/orders/send-email-simple", requireAuth, async (req, res) => {
     };
     let excelPath = "";
     if (attachExcel && orderData?.excelFilePath) {
-      excelPath = path6.join(__dirname2, "../../", orderData.excelFilePath.replace(/^\//, ""));
-      if (!fs9.existsSync(excelPath)) {
+      excelPath = path7.join(__dirname2, "../../", orderData.excelFilePath.replace(/^\//, ""));
+      if (!fs10.existsSync(excelPath)) {
         console.warn("\u26A0\uFE0F \uC5D1\uC140 \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4:", excelPath);
         excelPath = "";
       }
@@ -13907,12 +14011,13 @@ router3.post("/orders/send-email-simple", requireAuth, async (req, res) => {
       }
     }
     if (!excelPath) {
-      const tempDir = path6.join(__dirname2, "../../uploads/temp");
-      if (!fs9.existsSync(tempDir)) {
-        fs9.mkdirSync(tempDir, { recursive: true });
+      const tempDir = getTempDir();
+      ensureUploadDir(tempDir);
+      if (!fs10.existsSync(tempDir)) {
+        fs10.mkdirSync(tempDir, { recursive: true });
       }
-      excelPath = path6.join(tempDir, `temp_${Date.now()}.txt`);
-      fs9.writeFileSync(excelPath, `\uBC1C\uC8FC\uC11C \uC0C1\uC138 \uB0B4\uC6A9
+      excelPath = path7.join(tempDir, `temp_${Date.now()}.txt`);
+      fs10.writeFileSync(excelPath, `\uBC1C\uC8FC\uC11C \uC0C1\uC138 \uB0B4\uC6A9
 
 ${body}`);
     }
@@ -13937,8 +14042,8 @@ ${body}`);
     });
     if (excelPath.includes("temp_")) {
       try {
-        if (fs9.existsSync(excelPath)) {
-          fs9.unlinkSync(excelPath);
+        if (fs10.existsSync(excelPath)) {
+          fs10.unlinkSync(excelPath);
         }
       } catch (err) {
         console.warn("\uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C \uC2E4\uD328:", err);
@@ -13979,9 +14084,9 @@ router3.post("/orders/send-email-with-excel", requireAuth, async (req, res) => {
       return res.status(400).json({ error: "\uC5D1\uC140 \uD30C\uC77C \uACBD\uB85C\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4." });
     }
     const absoluteExcelPath = excelFilePath.startsWith("http") ? excelFilePath.replace(/^https?:\/\/[^\/]+/, "") : excelFilePath;
-    const localExcelPath = path6.join(__dirname2, "../../", absoluteExcelPath.replace(/^\//, ""));
+    const localExcelPath = path7.join(__dirname2, "../../", absoluteExcelPath.replace(/^\//, ""));
     console.log("\u{1F4E7} \uC5D1\uC140 \uD30C\uC77C \uACBD\uB85C:", localExcelPath);
-    if (!fs9.existsSync(localExcelPath)) {
+    if (!fs10.existsSync(localExcelPath)) {
       return res.status(400).json({ error: "\uC5D1\uC140 \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4." });
     }
     const result = await emailService.sendPOWithOriginalFormat(
@@ -14046,8 +14151,8 @@ router3.post("/test-email-smtp", async (req, res) => {
       userPhone: "010-0000-0000"
     };
     const fs28 = __require("fs");
-    const path25 = __require("path");
-    const testExcelPath = path25.join(__dirname2, "../../uploads/smtp-test.txt");
+    const path26 = __require("path");
+    const testExcelPath = path26.join(getUploadsDir(), "smtp-test.txt");
     fs28.writeFileSync(testExcelPath, "SMTP Test File - " + (/* @__PURE__ */ new Date()).toISOString());
     const result = await emailService.sendPOWithOriginalFormat(testExcelPath, {
       to: [recipientEmail],
@@ -14169,21 +14274,21 @@ router3.get("/orders/:orderId/attachments/:attachmentId/download", requireAuth, 
       console.log(`\u2705 \uD30C\uC77C \uB2E4\uC6B4\uB85C\uB4DC \uC644\uB8CC (DB): ${originalName}`);
     } else {
       let filePath = attachment.filePath;
-      if (!path6.isAbsolute(filePath)) {
-        filePath = path6.join(__dirname2, "../../", filePath);
+      if (!path7.isAbsolute(filePath)) {
+        filePath = path7.join(__dirname2, "../../", filePath);
       }
       console.log(`\u{1F4C2} \uD30C\uC77C \uACBD\uB85C: ${filePath}`);
-      if (!fs9.existsSync(filePath)) {
+      if (!fs10.existsSync(filePath)) {
         console.log(`\u274C \uD30C\uC77C\uC774 \uC874\uC7AC\uD558\uC9C0 \uC54A\uC74C: ${filePath}`);
         return res.status(404).json({
           error: "\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.",
           filePath: attachment.filePath
         });
       }
-      const stats = fs9.statSync(filePath);
+      const stats = fs10.statSync(filePath);
       console.log(`\u{1F4CA} \uD30C\uC77C \uD06C\uAE30: ${(stats.size / 1024).toFixed(2)} KB`);
       res.setHeader("Content-Length", stats.size);
-      const fileStream = fs9.createReadStream(filePath);
+      const fileStream = fs10.createReadStream(filePath);
       fileStream.on("error", (error) => {
         console.error("\u274C \uD30C\uC77C \uC2A4\uD2B8\uB9BC \uC624\uB958:", error);
         if (!res.headersSent) {
@@ -15017,8 +15122,8 @@ var admin_default = router8;
 // server/routes/excel-automation.ts
 import { Router as Router9 } from "express";
 import multer2 from "multer";
-import path9 from "path";
-import fs12 from "fs";
+import path10 from "path";
+import fs13 from "fs";
 
 // server/utils/excel-automation-service.ts
 init_db();
@@ -15379,8 +15484,8 @@ init_debug_logger();
 // server/utils/excel-attachment-service.ts
 init_db();
 init_schema();
-import fs10 from "fs";
-import path7 from "path";
+import fs11 from "fs";
+import path8 from "path";
 var ExcelAttachmentService = class {
   /**
    * 처리된 Excel 파일을 attachments 테이블에 저장
@@ -15393,13 +15498,13 @@ var ExcelAttachmentService = class {
   static async saveProcessedExcelFile(orderId, processedExcelPath, originalFileName, uploadedBy, orderNumber) {
     try {
       console.log(`\u{1F4CE} Excel \uCCA8\uBD80\uD30C\uC77C \uC800\uC7A5 \uC2DC\uC791: ${processedExcelPath}`);
-      if (!fs10.existsSync(processedExcelPath)) {
+      if (!fs11.existsSync(processedExcelPath)) {
         return {
           success: false,
           error: `\uCC98\uB9AC\uB41C Excel \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4: ${processedExcelPath}`
         };
       }
-      const stats = fs10.statSync(processedExcelPath);
+      const stats = fs11.statSync(processedExcelPath);
       let standardizedFileName;
       if (orderNumber) {
         const today = /* @__PURE__ */ new Date();
@@ -15409,7 +15514,7 @@ var ExcelAttachmentService = class {
         standardizedFileName = originalFileName;
       }
       console.log(`\u{1F4DD} \uD45C\uC900\uD654\uB41C Excel \uD30C\uC77C\uBA85: ${standardizedFileName}`);
-      const fileBuffer = fs10.readFileSync(processedExcelPath);
+      const fileBuffer = fs11.readFileSync(processedExcelPath);
       const base64Data = fileBuffer.toString("base64");
       const [attachment] = await db.insert(attachments).values({
         orderId,
@@ -15444,15 +15549,15 @@ var ExcelAttachmentService = class {
   static async saveOriginalExcelFile(orderId, originalExcelPath, originalFileName, uploadedBy) {
     try {
       console.log(`\u{1F4CE} \uC6D0\uBCF8 Excel \uCCA8\uBD80\uD30C\uC77C \uC800\uC7A5 \uC2DC\uC791: ${originalExcelPath}`);
-      if (!fs10.existsSync(originalExcelPath)) {
+      if (!fs11.existsSync(originalExcelPath)) {
         return {
           success: false,
           error: `\uC6D0\uBCF8 Excel \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4: ${originalExcelPath}`
         };
       }
-      const stats = fs10.statSync(originalExcelPath);
-      const fileName = `original_${path7.basename(originalExcelPath)}`;
-      const fileBuffer = fs10.readFileSync(originalExcelPath);
+      const stats = fs11.statSync(originalExcelPath);
+      const fileName = `original_${path8.basename(originalExcelPath)}`;
+      const fileBuffer = fs11.readFileSync(originalExcelPath);
       const base64Data = fileBuffer.toString("base64");
       const [attachment] = await db.insert(attachments).values({
         orderId,
@@ -15481,8 +15586,8 @@ var ExcelAttachmentService = class {
 };
 
 // server/utils/excel-automation-service.ts
-import fs11 from "fs";
-import path8 from "path";
+import fs12 from "fs";
+import path9 from "path";
 var ExcelAutomationService = class {
   /**
    * 1단계: Excel 파일 업로드 및 파싱, DB 저장
@@ -15546,7 +15651,7 @@ var ExcelAutomationService = class {
       }
       console.log(`\u{1F50D} [DEBUG] 2.5\uB2E8\uACC4: \uCC98\uB9AC\uB41C Excel \uD30C\uC77C \uCCA8\uBD80 \uC2DC\uC791`);
       console.log(`\u{1F4CA} [DEBUG] saveResult:`, JSON.stringify(saveResult, null, 2));
-      const originalFileName = path8.basename(filePath);
+      const originalFileName = path9.basename(filePath);
       if (saveResult.savedOrderNumbers && saveResult.savedOrderNumbers.length > 0) {
         console.log(`\u{1F4CB} [DEBUG] \uBC1C\uC8FC\uC11C \uBC88\uD638\uB4E4:`, saveResult.savedOrderNumbers);
         try {
@@ -15554,7 +15659,7 @@ var ExcelAutomationService = class {
           console.log(`\u{1F50D} [DEBUG] \uC870\uD68C\uB41C \uBC1C\uC8FC\uC11C\uB4E4:`, orders);
           const processedExcelPath = filePath.replace(/\.(xlsx?)$/i, "_processed.$1");
           const removeResult = await removeAllInputSheets(filePath, processedExcelPath);
-          if (removeResult.success && fs11.existsSync(processedExcelPath)) {
+          if (removeResult.success && fs12.existsSync(processedExcelPath)) {
             console.log(`\u2705 [DEBUG] Input \uC2DC\uD2B8 \uC81C\uAC70 \uC644\uB8CC: ${processedExcelPath}`);
             for (const order of orders) {
               const attachResult = await ExcelAttachmentService.saveProcessedExcelFile(
@@ -15581,7 +15686,7 @@ var ExcelAutomationService = class {
               }
             }
             try {
-              fs11.unlinkSync(processedExcelPath);
+              fs12.unlinkSync(processedExcelPath);
               console.log(`\u{1F9F9} [DEBUG] \uC784\uC2DC \uCC98\uB9AC\uB41C Excel \uD30C\uC77C \uC815\uB9AC \uC644\uB8CC: ${processedExcelPath}`);
             } catch (cleanupError) {
               console.warn(`\u26A0\uFE0F [DEBUG] \uC784\uC2DC \uD30C\uC77C \uC815\uB9AC \uC2E4\uD328:`, cleanupError);
@@ -15755,8 +15860,8 @@ var ExcelAutomationService = class {
         new Set(vendorValidation.validVendors.map((v) => v.email))
       ).filter((email) => email && email.trim());
       const timestamp2 = Date.now();
-      const processedPath = path8.join(
-        path8.dirname(filePath),
+      const processedPath = path9.join(
+        path9.dirname(filePath),
         `processed-${timestamp2}.xlsx`
       );
       await removeAllInputSheets(filePath, processedPath);
@@ -15785,15 +15890,15 @@ var ExcelAutomationService = class {
       } catch (pdfError) {
         console.error("\u26A0\uFE0F \uD1B5\uD569 PDF \uC11C\uBE44\uC2A4 \uC2E4\uD328 - Excel \uD30C\uC77C\uB9CC \uCCA8\uBD80\uB429\uB2C8\uB2E4:", pdfError);
       }
-      const stats = fs11.statSync(processedPath);
-      const pdfStats = pdfConversionSuccess && fs11.existsSync(pdfPath) ? fs11.statSync(pdfPath) : null;
+      const stats = fs12.statSync(processedPath);
+      const pdfStats = pdfConversionSuccess && fs12.existsSync(pdfPath) ? fs12.statSync(pdfPath) : null;
       const emailPreview = {
         recipients,
-        subject: `\uBC1C\uC8FC\uC11C - ${path8.basename(filePath, path8.extname(filePath))} (${(/* @__PURE__ */ new Date()).toLocaleDateString("ko-KR")})`,
+        subject: `\uBC1C\uC8FC\uC11C - ${path9.basename(filePath, path9.extname(filePath))} (${(/* @__PURE__ */ new Date()).toLocaleDateString("ko-KR")})`,
         attachmentInfo: {
-          originalFile: path8.basename(filePath),
-          processedFile: path8.basename(processedPath),
-          processedPdfFile: pdfStats ? path8.basename(pdfPath) : void 0,
+          originalFile: path9.basename(filePath),
+          processedFile: path9.basename(processedPath),
+          processedPdfFile: pdfStats ? path9.basename(pdfPath) : void 0,
           fileSize: stats.size,
           pdfFileSize: pdfStats ? pdfStats.size : void 0
         },
@@ -15957,8 +16062,8 @@ var ExcelAutomationService = class {
         new Set(selectedVendors.map((v) => v.selectedVendorEmail))
       ).filter((email) => email && email.trim());
       const timestamp2 = Date.now();
-      const processedPath = path8.join(
-        path8.dirname(filePath),
+      const processedPath = path9.join(
+        path9.dirname(filePath),
         `processed-${timestamp2}.xlsx`
       );
       await removeAllInputSheets(filePath, processedPath);
@@ -15987,15 +16092,15 @@ var ExcelAutomationService = class {
       } catch (pdfError) {
         console.error("\u26A0\uFE0F \uD1B5\uD569 PDF \uC11C\uBE44\uC2A4 \uC2E4\uD328 - Excel \uD30C\uC77C\uB9CC \uCCA8\uBD80\uB429\uB2C8\uB2E4:", pdfError);
       }
-      const stats = fs11.statSync(processedPath);
-      const pdfStats = pdfConversionSuccess && fs11.existsSync(pdfPath) ? fs11.statSync(pdfPath) : null;
+      const stats = fs12.statSync(processedPath);
+      const pdfStats = pdfConversionSuccess && fs12.existsSync(pdfPath) ? fs12.statSync(pdfPath) : null;
       return {
         recipients,
-        subject: `\uBC1C\uC8FC\uC11C - ${path8.basename(filePath, path8.extname(filePath))} (${(/* @__PURE__ */ new Date()).toLocaleDateString("ko-KR")})`,
+        subject: `\uBC1C\uC8FC\uC11C - ${path9.basename(filePath, path9.extname(filePath))} (${(/* @__PURE__ */ new Date()).toLocaleDateString("ko-KR")})`,
         attachmentInfo: {
-          originalFile: path8.basename(filePath),
-          processedFile: path8.basename(processedPath),
-          processedPdfFile: pdfStats ? path8.basename(pdfPath) : void 0,
+          originalFile: path9.basename(filePath),
+          processedFile: path9.basename(processedPath),
+          processedPdfFile: pdfStats ? path9.basename(pdfPath) : void 0,
           fileSize: stats.size,
           pdfFileSize: pdfStats ? pdfStats.size : void 0
         },
@@ -16019,12 +16124,11 @@ var ExcelAutomationService = class {
 
 // server/routes/excel-automation.ts
 init_debug_logger();
+init_upload_paths();
 var storage2 = multer2.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir2 = process.env.VERCEL ? "/tmp" : "uploads";
-    if (!process.env.VERCEL && !fs12.existsSync(uploadDir2)) {
-      fs12.mkdirSync(uploadDir2, { recursive: true });
-    }
+    const uploadDir2 = getUploadBaseDir();
+    ensureUploadDir(uploadDir2);
     cb(null, uploadDir2);
   },
   filename: (req, file, cb) => {
@@ -16138,8 +16242,8 @@ router9.post("/upload-and-process", requireAuth, upload2.single("file"), async (
     const result = await ExcelAutomationService.processExcelUpload(filePath, userId, sessionId);
     console.log(`\u2705 [API] ExcelAutomationService.processExcelUpload \uC644\uB8CC:`, result.success ? "\uC131\uACF5" : "\uC2E4\uD328");
     if (!result.success) {
-      if (fs12.existsSync(filePath)) {
-        fs12.unlinkSync(filePath);
+      if (fs13.existsSync(filePath)) {
+        fs13.unlinkSync(filePath);
       }
       clearTimeout(timeoutHandler);
       if (!responseHandled) {
@@ -16167,9 +16271,9 @@ router9.post("/upload-and-process", requireAuth, upload2.single("file"), async (
   } catch (error) {
     clearTimeout(timeoutHandler);
     console.error("\u274C [API] Excel \uC790\uB3D9\uD654 \uCC98\uB9AC \uC624\uB958:", error);
-    if (req.file?.path && fs12.existsSync(req.file.path)) {
+    if (req.file?.path && fs13.existsSync(req.file.path)) {
       console.log(`\u{1F5D1}\uFE0F [API] \uC624\uB958\uB85C \uC778\uD55C \uC784\uC2DC \uD30C\uC77C \uC815\uB9AC: ${req.file.path}`);
-      fs12.unlinkSync(req.file.path);
+      fs13.unlinkSync(req.file.path);
     }
     let errorMessage = "\uC11C\uBC84 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4.";
     let statusCode = 500;
@@ -16257,7 +16361,7 @@ router9.post("/send-emails", requireAuth, async (req, res) => {
         error: "\uC774\uBA54\uC77C \uC218\uC2E0\uC790\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4."
       });
     }
-    if (!fs12.existsSync(processedFilePath)) {
+    if (!fs13.existsSync(processedFilePath)) {
       return res.status(400).json({
         success: false,
         error: "\uCC98\uB9AC\uB41C \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
@@ -16294,7 +16398,7 @@ router9.post("/send-emails", requireAuth, async (req, res) => {
 router9.post("/validate-vendors", requireAuth, async (req, res) => {
   try {
     const { filePath } = req.body;
-    if (!filePath || !fs12.existsSync(filePath)) {
+    if (!filePath || !fs13.existsSync(filePath)) {
       return res.status(400).json({
         success: false,
         error: "\uC720\uD6A8\uD55C \uD30C\uC77C \uACBD\uB85C\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4."
@@ -16318,8 +16422,8 @@ router9.post("/validate-vendors", requireAuth, async (req, res) => {
 router9.get("/download/:filename", requireAuth, (req, res) => {
   try {
     const filename = req.params.filename;
-    const filePath = path9.join("uploads", filename);
-    if (!fs12.existsSync(filePath)) {
+    const filePath = path10.join(getUploadBaseDir(), filename);
+    if (!fs13.existsSync(filePath)) {
       return res.status(404).json({
         success: false,
         error: "\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
@@ -16424,8 +16528,8 @@ router9.delete("/cleanup", requireAuth, async (req, res) => {
     const errors = [];
     for (const filePath of filePaths) {
       try {
-        if (fs12.existsSync(filePath)) {
-          fs12.unlinkSync(filePath);
+        if (fs13.existsSync(filePath)) {
+          fs13.unlinkSync(filePath);
           deletedCount++;
           console.log(`\u{1F5D1}\uFE0F \uD30C\uC77C \uC0AD\uC81C: ${filePath}`);
         }
@@ -16458,18 +16562,18 @@ init_po_template_processor_mock();
 init_debug_logger();
 import { Router as Router10 } from "express";
 import multer3 from "multer";
-import path13 from "path";
-import fs16 from "fs";
+import path14 from "path";
+import fs17 from "fs";
 import { fileURLToPath as fileURLToPath4 } from "url";
 
 // server/utils/po-email-service-mock.ts
 init_po_template_processor_mock();
 import nodemailer4 from "nodemailer";
-import path10 from "path";
-import fs13 from "fs";
+import path11 from "path";
+import fs14 from "fs";
 import { fileURLToPath as fileURLToPath3 } from "url";
 var __filename3 = fileURLToPath3(import.meta.url);
-var __dirname3 = path10.dirname(__filename3);
+var __dirname3 = path11.dirname(__filename3);
 var POEmailServiceMock = class {
   constructor() {
     this.transporter = null;
@@ -16495,8 +16599,8 @@ var POEmailServiceMock = class {
   async sendPOWithAttachments(originalFilePath, emailOptions) {
     try {
       const timestamp2 = Date.now();
-      const uploadsDir = path10.join(__dirname3, "../../uploads");
-      const extractedPath = path10.join(uploadsDir, `po-sheets-${timestamp2}.xlsx`);
+      const uploadsDir = path11.join(__dirname3, "../../uploads");
+      const extractedPath = path11.join(uploadsDir, `po-sheets-${timestamp2}.xlsx`);
       const extractResult = POTemplateProcessorMock.extractSheetsToFile(
         originalFilePath,
         extractedPath,
@@ -16509,7 +16613,7 @@ var POEmailServiceMock = class {
           error: `\uC2DC\uD2B8 \uCD94\uCD9C \uC2E4\uD328: ${extractResultData.error}`
         };
       }
-      const pdfPath = path10.join(uploadsDir, `po-sheets-${timestamp2}.pdf`);
+      const pdfPath = path11.join(uploadsDir, `po-sheets-${timestamp2}.pdf`);
       const pdfResult = await this.createDummyPDF(pdfPath);
       if (!pdfResult.success) {
         return {
@@ -16518,14 +16622,14 @@ var POEmailServiceMock = class {
         };
       }
       const attachments4 = [];
-      if (fs13.existsSync(extractedPath)) {
+      if (fs14.existsSync(extractedPath)) {
         attachments4.push({
           filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.xlsx`,
           path: extractedPath,
           contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         });
       }
-      if (fs13.existsSync(pdfPath)) {
+      if (fs14.existsSync(pdfPath)) {
         attachments4.push({
           filename: `\uBC1C\uC8FC\uC11C_${emailOptions.orderNumber || timestamp2}.pdf`,
           path: pdfPath,
@@ -16617,12 +16721,12 @@ var POEmailServiceMock = class {
     console.log("  \uC81C\uBAA9:", options.subject);
     console.log("  \uCCA8\uBD80\uD30C\uC77C:", options.attachments?.length || 0, "\uAC1C");
     console.log("  \uBC1C\uC1A1 \uC2DC\uAC04:", mockLog.timestamp);
-    const logDir = path10.join(__dirname3, "../../logs");
-    if (!fs13.existsSync(logDir)) {
-      fs13.mkdirSync(logDir, { recursive: true });
+    const logDir = path11.join(__dirname3, "../../logs");
+    if (!fs14.existsSync(logDir)) {
+      fs14.mkdirSync(logDir, { recursive: true });
     }
-    const logFile = path10.join(logDir, `mock-email-${Date.now()}.json`);
-    fs13.writeFileSync(logFile, JSON.stringify(mockLog, null, 2));
+    const logFile = path11.join(logDir, `mock-email-${Date.now()}.json`);
+    fs14.writeFileSync(logFile, JSON.stringify(mockLog, null, 2));
     return {
       success: true,
       messageId: `mock-${Date.now()}@po-management.local`,
@@ -16701,7 +16805,7 @@ trailer
 startxref
 456
 %%EOF`;
-      fs13.writeFileSync(pdfPath, pdfContent);
+      fs14.writeFileSync(pdfPath, pdfContent);
       return { success: true };
     } catch (error) {
       return {
@@ -16715,7 +16819,7 @@ startxref
    */
   getFileSize(filePath) {
     try {
-      const stats = fs13.statSync(filePath);
+      const stats = fs14.statSync(filePath);
       const bytes = stats.size;
       if (bytes === 0) return "0 Bytes";
       const k = 1024;
@@ -16909,9 +17013,9 @@ startxref
   cleanupTempFiles(filePaths) {
     filePaths.forEach((filePath) => {
       try {
-        if (fs13.existsSync(filePath)) {
-          fs13.unlinkSync(filePath);
-          console.log(`\u2705 \uC784\uC2DC \uD30C\uC77C \uC815\uB9AC: ${path10.basename(filePath)}`);
+        if (fs14.existsSync(filePath)) {
+          fs14.unlinkSync(filePath);
+          console.log(`\u2705 \uC784\uC2DC \uD30C\uC77C \uC815\uB9AC: ${path11.basename(filePath)}`);
         }
       } catch (error) {
         console.error(`\u274C \uD30C\uC77C \uC815\uB9AC \uC2E4\uD328: ${filePath}`, error);
@@ -16947,15 +17051,15 @@ startxref
 
 // server/utils/excel-to-pdf-mock.ts
 import XLSX5 from "xlsx";
-import path11 from "path";
-import fs14 from "fs";
+import path12 from "path";
+import fs15 from "fs";
 var ExcelToPdfConverterMock = class {
   /**
    * Excel 파일을 PDF로 변환 (Mock 버전)
    */
   static async convertToPdf(excelPath, options = {}) {
     try {
-      if (!fs14.existsSync(excelPath)) {
+      if (!fs15.existsSync(excelPath)) {
         return {
           success: false,
           error: "Excel \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
@@ -16984,7 +17088,7 @@ var ExcelToPdfConverterMock = class {
    */
   static async convertSheetsToPdf(excelPath, sheetNames, options = {}) {
     try {
-      if (!fs14.existsSync(excelPath)) {
+      if (!fs15.existsSync(excelPath)) {
         return {
           success: false,
           error: "Excel \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
@@ -17013,7 +17117,7 @@ var ExcelToPdfConverterMock = class {
    */
   static async createMockPdf(htmlContent, pdfPath) {
     try {
-      console.log(`\u{1F4C4} PDFKit\uC73C\uB85C \uD55C\uAE00 \uC9C0\uC6D0 PDF \uC0DD\uC131 \uC2DC\uC791: ${path11.basename(pdfPath)}`);
+      console.log(`\u{1F4C4} PDFKit\uC73C\uB85C \uD55C\uAE00 \uC9C0\uC6D0 PDF \uC0DD\uC131 \uC2DC\uC791: ${path12.basename(pdfPath)}`);
       const PDFDocument2 = (await import("pdfkit")).default;
       const doc = new PDFDocument2({
         size: "A4",
@@ -17034,7 +17138,7 @@ var ExcelToPdfConverterMock = class {
       ];
       for (const fontPath of possibleFonts) {
         try {
-          if (fs14.existsSync(fontPath)) {
+          if (fs15.existsSync(fontPath)) {
             koreanFontPath = fontPath;
             console.log(`\u2705 \uD55C\uAE00 \uD3F0\uD2B8 \uBC1C\uACAC: ${fontPath}`);
             break;
@@ -17064,7 +17168,7 @@ var ExcelToPdfConverterMock = class {
       doc.moveDown(0.5);
       doc.text("\u{1F4C5} \uC0DD\uC131 \uC2DC\uAC04: " + (/* @__PURE__ */ new Date()).toLocaleString("ko-KR"));
       doc.moveDown(0.5);
-      doc.text("\u{1F4C1} \uD30C\uC77C \uACBD\uB85C: " + path11.basename(pdfPath));
+      doc.text("\u{1F4C1} \uD30C\uC77C \uACBD\uB85C: " + path12.basename(pdfPath));
       doc.moveDown(1);
       doc.fontSize(14).text("\u{1F4CA} Excel \uD30C\uC77C \uC815\uBCF4:", 50, doc.y);
       doc.fontSize(10);
@@ -17079,14 +17183,14 @@ var ExcelToPdfConverterMock = class {
       doc.text("\u2022 \uD55C\uAE00 \uD3F0\uD2B8 \uBB38\uC81C\uAC00 \uD574\uACB0\uB418\uC5C8\uB294\uC9C0 \uD655\uC778\uD574 \uC8FC\uC138\uC694.");
       doc.fontSize(8);
       doc.text(`\uC2DC\uC2A4\uD15C: ${process.platform} | Node.js: ${process.version}`, 50, 700);
-      doc.text(`\uD55C\uAE00 \uD3F0\uD2B8: ${koreanFontPath ? path11.basename(koreanFontPath) : "Helvetica (\uAE30\uBCF8)"}`, 50, 715);
+      doc.text(`\uD55C\uAE00 \uD3F0\uD2B8: ${koreanFontPath ? path12.basename(koreanFontPath) : "Helvetica (\uAE30\uBCF8)"}`, 50, 715);
       const buffers = [];
       doc.on("data", buffers.push.bind(buffers));
       return new Promise((resolve) => {
         doc.on("end", () => {
           const pdfBuffer = Buffer.concat(buffers);
-          fs14.writeFileSync(pdfPath, pdfBuffer);
-          console.log(`\u2705 \uD55C\uAE00 \uC9C0\uC6D0 Mock PDF \uC0DD\uC131 \uC644\uB8CC: ${path11.basename(pdfPath)}`);
+          fs15.writeFileSync(pdfPath, pdfBuffer);
+          console.log(`\u2705 \uD55C\uAE00 \uC9C0\uC6D0 Mock PDF \uC0DD\uC131 \uC644\uB8CC: ${path12.basename(pdfPath)}`);
           resolve({ success: true });
         });
         doc.end();
@@ -17254,8 +17358,8 @@ async function convertExcelToPdfMock(excelPath, outputPath, sheetsOnly) {
 
 // server/utils/po-template-validator.ts
 import XLSX6 from "xlsx";
-import fs15 from "fs";
-import path12 from "path";
+import fs16 from "fs";
+import path13 from "path";
 var POTemplateValidator = class {
   static {
     this.REQUIRED_COLUMNS = [
@@ -17372,12 +17476,12 @@ var POTemplateValidator = class {
       }
     };
     try {
-      if (!fs15.existsSync(filePath)) {
+      if (!fs16.existsSync(filePath)) {
         result.isValid = false;
         result.errors.push("\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.");
         return result;
       }
-      const ext = path12.extname(filePath).toLowerCase();
+      const ext = path13.extname(filePath).toLowerCase();
       if (![".xlsx", ".xlsm", ".xls"].includes(ext)) {
         result.isValid = false;
         result.errors.push("\uC9C0\uC6D0\uD558\uC9C0 \uC54A\uB294 \uD30C\uC77C \uD615\uC2DD\uC785\uB2C8\uB2E4. Excel \uD30C\uC77C(.xlsx, .xlsm, .xls)\uB9CC \uC9C0\uC6D0\uB429\uB2C8\uB2E4.");
@@ -17614,7 +17718,7 @@ var POTemplateValidator = class {
       errors: []
     };
     try {
-      if (!fs15.existsSync(filePath)) {
+      if (!fs16.existsSync(filePath)) {
         result.isValid = false;
         result.errors.push("\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.");
         return result;
@@ -17647,26 +17751,25 @@ var POTemplateValidator = class {
 init_db();
 init_schema();
 init_professional_pdf_generation_service();
+init_upload_paths();
 import { eq as eq17 } from "drizzle-orm";
 var router10 = Router10();
 router10.get("/test", (req, res) => {
   res.json({ message: "PO Template router is working!", timestamp: /* @__PURE__ */ new Date() });
 });
 var __filename4 = fileURLToPath4(import.meta.url);
-var __dirname4 = path13.dirname(__filename4);
+var __dirname4 = path14.dirname(__filename4);
 var storage3 = multer3.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir2 = process.env.VERCEL ? "/tmp" : path13.join(__dirname4, "../../uploads");
-    if (!process.env.VERCEL && !fs16.existsSync(uploadDir2)) {
-      fs16.mkdirSync(uploadDir2, { recursive: true });
-    }
+    const uploadDir2 = getUploadBaseDir();
+    ensureUploadDir(uploadDir2);
     cb(null, uploadDir2);
   },
   filename: (req, file, cb) => {
     const timestamp2 = Date.now();
     const originalName = Buffer.from(file.originalname, "latin1").toString("utf8");
-    const extension = path13.extname(originalName);
-    const basename = path13.basename(originalName, extension);
+    const extension = path14.extname(originalName);
+    const basename = path14.basename(originalName, extension);
     const safeBasename = basename.replace(/[^a-zA-Z0-9가-힣_-]/g, "_");
     cb(null, `${timestamp2}-${safeBasename}${extension}`);
   }
@@ -17791,7 +17894,7 @@ router10.post("/upload", simpleAuth, upload3.single("file"), async (req, res) =>
     });
     if (!quickValidation.isValid) {
       console.error("\u274C [\uC11C\uBC84] \uC720\uD6A8\uC131 \uAC80\uC0AC \uC2E4\uD328");
-      fs16.unlinkSync(filePath);
+      fs17.unlinkSync(filePath);
       clearTimeout(timeoutId);
       return responseHandler.send(400, {
         success: false,
@@ -17810,7 +17913,7 @@ router10.post("/upload", simpleAuth, upload3.single("file"), async (req, res) =>
     });
     if (!parseResult.success) {
       console.error("\u274C [\uC11C\uBC84] \uD30C\uC2F1 \uC2E4\uD328:", parseResult.error);
-      fs16.unlinkSync(filePath);
+      fs17.unlinkSync(filePath);
       clearTimeout(timeoutId);
       return responseHandler.send(400, {
         success: false,
@@ -17851,9 +17954,9 @@ router10.post("/upload", simpleAuth, upload3.single("file"), async (req, res) =>
       endpoint: "/api/po-template/upload",
       elapsedTime: Date.now() - startTime
     });
-    if (req.file && fs16.existsSync(req.file.path)) {
+    if (req.file && fs17.existsSync(req.file.path)) {
       console.log("\u{1F5D1}\uFE0F [\uC11C\uBC84] \uC784\uC2DC \uD30C\uC77C \uC0AD\uC81C:", req.file.path);
-      fs16.unlinkSync(req.file.path);
+      fs17.unlinkSync(req.file.path);
     }
     clearTimeout(timeoutId);
     responseHandler.send(500, {
@@ -18157,10 +18260,10 @@ router10.post("/save", simpleAuth, async (req, res) => {
             pdfGenerationStatus.message = process.env.VERCEL ? `PDF \uC0DD\uC131 \uC2E4\uD328 (Vercel): ${pdfError instanceof Error ? pdfError.message : "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"}. \uD3F0\uD2B8 \uB610\uB294 \uD658\uACBD \uBB38\uC81C\uC77C \uC218 \uC788\uC2B5\uB2C8\uB2E4.` : `PDF \uC0DD\uC131 \uC2E4\uD328: ${pdfError instanceof Error ? pdfError.message : "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"}`;
           }
           pdfGenerationStatuses.push(pdfGenerationStatus);
-          if (extractedFilePath && fs16.existsSync(extractedFilePath)) {
+          if (extractedFilePath && fs17.existsSync(extractedFilePath)) {
             try {
               console.log("\u{1F4CA} Excel \uD30C\uC77C \uC800\uC7A5 \uC2DC\uC791:", extractedFilePath);
-              const excelBuffer = fs16.readFileSync(extractedFilePath);
+              const excelBuffer = fs17.readFileSync(extractedFilePath);
               const excelBase64 = excelBuffer.toString("base64");
               const excelOriginalName = `${orderNumber}_\uAC11\uC9C0\uC744\uC9C0.xlsx`;
               const excelStoredName = `${orderNumber}_${Date.now()}_extracted.xlsx`;
@@ -18251,12 +18354,12 @@ router10.post("/extract-sheets", simpleAuth, async (req, res) => {
     if (!filePath) {
       return res.status(400).json({ error: "\uD30C\uC77C \uACBD\uB85C\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4." });
     }
-    if (!fs16.existsSync(filePath)) {
+    if (!fs17.existsSync(filePath)) {
       return res.status(400).json({ error: "\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4." });
     }
     const timestamp2 = Date.now();
-    const extractedPath = path13.join(
-      path13.dirname(filePath),
+    const extractedPath = path14.join(
+      path14.dirname(filePath),
       `extracted-${timestamp2}.xlsx`
     );
     const extractResult = await POTemplateProcessorMock.extractSheetsToFile(
@@ -18374,7 +18477,7 @@ router10.post("/send-email", simpleAuth, async (req, res) => {
         error: "\uD544\uC218 \uB370\uC774\uD130\uAC00 \uB204\uB77D\uB418\uC5C8\uC2B5\uB2C8\uB2E4. (filePath, to, subject \uD544\uC218)"
       });
     }
-    if (!fs16.existsSync(filePath)) {
+    if (!fs17.existsSync(filePath)) {
       return res.status(400).json({ error: "\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4." });
     }
     const emailService5 = new POEmailServiceMock();
@@ -18455,12 +18558,12 @@ router10.post("/convert-to-pdf", simpleAuth, async (req, res) => {
     if (!filePath) {
       return res.status(400).json({ error: "\uD30C\uC77C \uACBD\uB85C\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4." });
     }
-    if (!fs16.existsSync(filePath)) {
+    if (!fs17.existsSync(filePath)) {
       return res.status(400).json({ error: "\uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4." });
     }
     const timestamp2 = Date.now();
-    const pdfPath = outputPath || path13.join(
-      path13.dirname(filePath),
+    const pdfPath = outputPath || path14.join(
+      path14.dirname(filePath),
       `po-sheets-${timestamp2}.pdf`
     );
     const pdfResult = await convertExcelToPdfMock(filePath, pdfPath, ["\uAC11\uC9C0", "\uC744\uC9C0"]);
@@ -18513,7 +18616,7 @@ router10.post("/process-complete", simpleAuth, upload3.single("file"), async (re
     const validation = await POTemplateValidator.validatePOTemplateFile(filePath);
     results.validation = validation;
     if (!validation.isValid) {
-      fs16.unlinkSync(filePath);
+      fs17.unlinkSync(filePath);
       return res.status(400).json({
         error: "\uC720\uD6A8\uC131 \uAC80\uC0AC \uC2E4\uD328",
         details: validation.errors.join(", "),
@@ -18524,7 +18627,7 @@ router10.post("/process-complete", simpleAuth, upload3.single("file"), async (re
     const parseResult = POTemplateProcessorMock.parseInputSheet(filePath);
     results.parsing = parseResult;
     if (!parseResult.success) {
-      fs16.unlinkSync(filePath);
+      fs17.unlinkSync(filePath);
       return res.status(400).json({
         error: "\uD30C\uC2F1 \uC2E4\uD328",
         details: parseResult.error,
@@ -18536,8 +18639,8 @@ router10.post("/process-complete", simpleAuth, upload3.single("file"), async (re
     results.saving = saveResult;
     console.log("\u{1F4CB} 4\uB2E8\uACC4: \uAC11\uC9C0/\uC744\uC9C0 \uC2DC\uD2B8 \uCD94\uCD9C");
     const timestamp2 = Date.now();
-    const extractedPath = path13.join(
-      path13.dirname(filePath),
+    const extractedPath = path14.join(
+      path14.dirname(filePath),
       `extracted-${timestamp2}.xlsx`
     );
     const extractResult = await POTemplateProcessorMock.extractSheetsToFile(
@@ -18548,8 +18651,8 @@ router10.post("/process-complete", simpleAuth, upload3.single("file"), async (re
     results.extraction = extractResult;
     if (generatePDF) {
       console.log("\u{1F4C4} 5\uB2E8\uACC4: PDF \uBCC0\uD658");
-      const pdfPath = path13.join(
-        path13.dirname(filePath),
+      const pdfPath = path14.join(
+        path14.dirname(filePath),
         `po-sheets-${timestamp2}.pdf`
       );
       const pdfResult = await convertExcelToPdfMock(extractedPath, pdfPath);
@@ -18618,8 +18721,8 @@ router10.post("/process-complete", simpleAuth, upload3.single("file"), async (re
     });
   } catch (error) {
     console.error("\uD1B5\uD569 \uCC98\uB9AC \uC624\uB958:", error);
-    if (req.file && fs16.existsSync(req.file.path)) {
-      fs16.unlinkSync(req.file.path);
+    if (req.file && fs17.existsSync(req.file.path)) {
+      fs17.unlinkSync(req.file.path);
     }
     res.status(500).json({
       error: "\uC11C\uBC84 \uC624\uB958",
@@ -19607,7 +19710,7 @@ init_schema();
 import * as XLSX8 from "xlsx";
 import Papa from "papaparse";
 import { eq as eq19 } from "drizzle-orm";
-import fs17 from "fs";
+import fs18 from "fs";
 var ImportExportService = class {
   // Parse Excel file
   static parseExcelFile(filePath) {
@@ -19620,7 +19723,7 @@ var ImportExportService = class {
   // Parse CSV file
   static parseCSVFile(filePath) {
     return new Promise((resolve, reject) => {
-      const fileContent = fs17.readFileSync(filePath, "utf8");
+      const fileContent = fs18.readFileSync(filePath, "utf8");
       Papa.parse(fileContent, {
         header: true,
         complete: (results) => {
@@ -20112,8 +20215,8 @@ var ImportExportService = class {
 
 // server/routes/import-export.ts
 import multer4 from "multer";
-import fs18 from "fs";
-import path14 from "path";
+import fs19 from "fs";
+import path15 from "path";
 var upload4 = multer4({
   dest: "uploads/",
   limits: {
@@ -20135,7 +20238,7 @@ var upload4 = multer4({
 });
 var router12 = Router12();
 var getFileType = (filename) => {
-  const ext = path14.extname(filename).toLowerCase();
+  const ext = path15.extname(filename).toLowerCase();
   return ext === ".csv" ? "csv" : "excel";
 };
 router12.post("/import/vendors", requireAuth, upload4.single("file"), async (req, res) => {
@@ -20145,7 +20248,7 @@ router12.post("/import/vendors", requireAuth, upload4.single("file"), async (req
     }
     const fileType = getFileType(req.file.filename);
     const result = await ImportExportService.importVendors(req.file.path, fileType);
-    fs18.unlinkSync(req.file.path);
+    fs19.unlinkSync(req.file.path);
     res.json({
       message: "Vendor import completed",
       imported: result.imported,
@@ -20164,7 +20267,7 @@ router12.post("/import/items", requireAuth, upload4.single("file"), async (req, 
     }
     const fileType = getFileType(req.file.filename);
     const result = await ImportExportService.importItems(req.file.path, fileType);
-    fs18.unlinkSync(req.file.path);
+    fs19.unlinkSync(req.file.path);
     res.json({
       message: "Item import completed",
       imported: result.imported,
@@ -20183,7 +20286,7 @@ router12.post("/import/projects", requireAuth, upload4.single("file"), async (re
     }
     const fileType = getFileType(req.file.filename);
     const result = await ImportExportService.importProjects(req.file.path, fileType);
-    fs18.unlinkSync(req.file.path);
+    fs19.unlinkSync(req.file.path);
     res.json({
       message: "Project import completed",
       imported: result.imported,
@@ -20202,7 +20305,7 @@ router12.post("/import/purchase_orders", requireAuth, upload4.single("file"), as
     }
     const fileType = getFileType(req.file.filename);
     const result = await ImportExportService.importPurchaseOrders(req.file.path, fileType);
-    fs18.unlinkSync(req.file.path);
+    fs19.unlinkSync(req.file.path);
     res.json({
       message: "Purchase order import completed",
       imported: result.imported,
@@ -20309,10 +20412,10 @@ var createEmailHistorySchema = z4.object({
   cc: z4.array(z4.string()).optional(),
   bcc: z4.array(z4.string()).optional(),
   subject: z4.string(),
-  message: z4.string(),
-  attachments: z4.array(z4.string()).optional(),
+  messageContent: z4.string(),
+  attachmentFiles: z4.array(z4.string()).optional(),
   status: z4.string().default("pending"),
-  error: z4.string().optional()
+  errorMessage: z4.string().optional()
 });
 router13.get("/orders/:orderId/email-history", requireAuth, async (req, res) => {
   try {
@@ -20337,10 +20440,10 @@ router13.get("/orders/:orderId/email-history", requireAuth, async (req, res) => 
       cc: emailSendHistory.cc,
       bcc: emailSendHistory.bcc,
       subject: emailSendHistory.subject,
-      body: emailSendHistory.message,
-      attachments: emailSendHistory.attachments,
+      body: emailSendHistory.messageContent,
+      attachments: emailSendHistory.attachmentFiles,
       status: emailSendHistory.status,
-      errorMessage: emailSendHistory.error,
+      errorMessage: emailSendHistory.errorMessage,
       createdAt: emailSendHistory.createdAt,
       updatedAt: emailSendHistory.updatedAt
     }).from(emailSendHistory).leftJoin(users, eq20(emailSendHistory.senderUserId, users.id)).where(eq20(emailSendHistory.orderId, orderId)).orderBy(desc7(emailSendHistory.sentAt));
@@ -20356,7 +20459,7 @@ router13.post("/email-history", requireAuth, async (req, res) => {
     const [newEmailHistory] = await db.insert(emailSendHistory).values({
       ...validatedData,
       senderUserId: req.user.id,
-      attachments: validatedData.attachments || null
+      attachmentFiles: validatedData.attachmentFiles || null
     }).returning();
     const order = await db.query.purchaseOrders.findFirst({
       where: eq20(purchaseOrders.id, validatedData.orderId)
@@ -20443,10 +20546,10 @@ router13.get("/email-history/:id", requireAuth, async (req, res) => {
       cc: emailSendHistory.cc,
       bcc: emailSendHistory.bcc,
       subject: emailSendHistory.subject,
-      messageContent: emailSendHistory.message,
-      attachmentFiles: emailSendHistory.attachments,
+      messageContent: emailSendHistory.messageContent,
+      attachmentFiles: emailSendHistory.attachmentFiles,
       status: emailSendHistory.status,
-      errorMessage: emailSendHistory.error,
+      errorMessage: emailSendHistory.errorMessage,
       createdAt: emailSendHistory.createdAt,
       updatedAt: emailSendHistory.updatedAt
     }).from(emailSendHistory).leftJoin(purchaseOrders, eq20(emailSendHistory.orderId, purchaseOrders.id)).leftJoin(vendors, eq20(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq20(emailSendHistory.senderUserId, users.id)).where(eq20(emailSendHistory.id, emailId));
@@ -20506,10 +20609,10 @@ router13.get("/email-history", requireAuth, async (req, res) => {
       recipients: emailSendHistory.recipients,
       cc: emailSendHistory.cc,
       subject: emailSendHistory.subject,
-      messageContent: emailSendHistory.message,
-      attachmentFiles: emailSendHistory.attachments,
+      messageContent: emailSendHistory.messageContent,
+      attachmentFiles: emailSendHistory.attachmentFiles,
       status: emailSendHistory.status,
-      errorMessage: emailSendHistory.error,
+      errorMessage: emailSendHistory.errorMessage,
       createdAt: emailSendHistory.createdAt
     }).from(emailSendHistory).leftJoin(purchaseOrders, eq20(emailSendHistory.orderId, purchaseOrders.id)).leftJoin(vendors, eq20(purchaseOrders.vendorId, vendors.id)).leftJoin(users, eq20(emailSendHistory.senderUserId, users.id)).where(whereClause).orderBy(desc7(emailSendHistory.sentAt)).limit(limitNum).offset(offset);
     const statusCounts = await db.select({
@@ -21268,21 +21371,21 @@ init_schema();
 import { Router as Router16 } from "express";
 import { eq as eq22, desc as desc9 } from "drizzle-orm";
 import multer5 from "multer";
-import path15 from "path";
-import fs19 from "fs";
+import path16 from "path";
+import fs20 from "fs";
 var router17 = Router16();
 var storage4 = multer5.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir2 = process.env.VERCEL ? "/tmp" : "uploads/invoices";
-    if (!process.env.VERCEL && !fs19.existsSync(uploadDir2)) {
-      fs19.mkdirSync(uploadDir2, { recursive: true });
+    if (!process.env.VERCEL && !fs20.existsSync(uploadDir2)) {
+      fs20.mkdirSync(uploadDir2, { recursive: true });
     }
     cb(null, uploadDir2);
   },
   filename: (req, file, cb) => {
     const timestamp2 = Date.now();
-    const ext = path15.extname(file.originalname);
-    const name = path15.basename(file.originalname, ext);
+    const ext = path16.extname(file.originalname);
+    const name = path16.basename(file.originalname, ext);
     cb(null, `${name}_${timestamp2}${ext}`);
   }
 });
@@ -21411,7 +21514,7 @@ router17.post("/invoices", upload5.single("file"), async (req, res) => {
     if (req.file) {
       filePath = req.file.path;
       if (process.env.VERCEL) {
-        const fileBuffer = fs19.readFileSync(req.file.path);
+        const fileBuffer = fs20.readFileSync(req.file.path);
         fileData = fileBuffer.toString("base64");
         console.log(`\u{1F4CE} File data encoded for Vercel: ${Math.round(fileBuffer.length / 1024)}KB`);
       }
@@ -21561,8 +21664,8 @@ router17.delete("/invoices/:id", requireAuth, async (req, res) => {
     await db.delete(invoices).where(eq22(invoices.id, invoiceId));
     if (invoice.filePath && !process.env.VERCEL) {
       try {
-        if (fs19.existsSync(invoice.filePath)) {
-          fs19.unlinkSync(invoice.filePath);
+        if (fs20.existsSync(invoice.filePath)) {
+          fs20.unlinkSync(invoice.filePath);
           console.log(`\u{1F5D1}\uFE0F Deleted invoice file: ${invoice.filePath}`);
         }
       } catch (fileError) {
@@ -24276,23 +24379,23 @@ import { Router as Router28 } from "express";
 import { eq as eq30, and as and18, desc as desc14, count as count4 } from "drizzle-orm";
 init_professional_pdf_generation_service();
 import multer6 from "multer";
-import path19 from "path";
-import fs23 from "fs/promises";
+import path20 from "path";
 import { readFileSync as readFileSync2, existsSync as existsSync3, unlinkSync } from "fs";
 import { z as z8 } from "zod";
 init_excel_input_sheet_remover();
+init_upload_paths();
 var router29 = Router28();
 var storage5 = multer6.diskStorage({
   destination: async (req, file, cb) => {
-    const uploadDir2 = process.env.VERCEL ? path19.join("/tmp", "uploads", "excel-simple") : path19.join(process.cwd(), "uploads", "excel-simple");
-    await fs23.mkdir(uploadDir2, { recursive: true });
+    const uploadDir2 = getExcelSimpleDir();
+    ensureUploadDir(uploadDir2);
     cb(null, uploadDir2);
   },
   filename: (req, file, cb) => {
     const timestamp2 = Date.now();
     const decodedName = decodeKoreanFilename(file.originalname);
-    const ext = path19.extname(decodedName);
-    const basename = path19.basename(decodedName, ext);
+    const ext = path20.extname(decodedName);
+    const basename = path20.basename(decodedName, ext);
     cb(null, `${timestamp2}-${basename}${ext}`);
   }
 });
@@ -24305,7 +24408,7 @@ var upload6 = multer6({
   fileFilter: (req, file, cb) => {
     const decodedName = decodeKoreanFilename(file.originalname);
     file.originalname = decodedName;
-    const ext = path19.extname(decodedName).toLowerCase();
+    const ext = path20.extname(decodedName).toLowerCase();
     if ([".xlsx", ".xls", ".xlsm"].includes(ext)) {
       cb(null, true);
     } else {
@@ -24652,7 +24755,7 @@ router29.post("/orders/bulk-create-simple", requireAuth, upload6.single("excelFi
             if (req.file) {
               const attachment = await db.select().from(attachments).where(eq30(attachments.orderId, emailInfo.orderId)).then((rows) => rows[0]);
               if (attachment) {
-                excelAttachment = process.env.VERCEL ? path19.join("/tmp", "uploads", "excel-simple", attachment.storedName) : attachment.filePath;
+                excelAttachment = process.env.VERCEL ? path20.join("/tmp", "uploads", "excel-simple", attachment.storedName) : path20.join(getExcelSimpleDir(), attachment.storedName);
               }
             }
             if (excelAttachment && existsSync3(excelAttachment)) {
@@ -25509,13 +25612,13 @@ var audit_default = router31;
 
 // server/routes/email-test.ts
 import express2 from "express";
-import path21 from "path";
+import path22 from "path";
 
 // server/services/email-service.ts
 init_db();
 init_schema();
 import nodemailer6 from "nodemailer";
-import path20 from "path";
+import path21 from "path";
 import fs24 from "fs/promises";
 var transporter = nodemailer6.createTransport({
   host: process.env.SMTP_HOST || "smtp.naver.com",
@@ -25622,7 +25725,7 @@ async function sendPurchaseOrderEmail(params) {
       html: emailTemplates.purchaseOrder.html(orderData),
       attachments: [
         {
-          filename: path20.basename(excelFilePath),
+          filename: path21.basename(excelFilePath),
           path: excelFilePath,
           contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         }
@@ -25644,7 +25747,7 @@ async function sendPurchaseOrderEmail(params) {
           subject: mailOptions.subject,
           messageContent: mailOptions.html,
           attachmentFiles: [{
-            filename: path20.basename(excelFilePath),
+            filename: path21.basename(excelFilePath),
             path: excelFilePath,
             size: fileStats.size
           }],
@@ -25794,9 +25897,9 @@ router32.post("/send-test", async (req, res) => {
       userName: "Test User",
       userPhone: "010-1234-5678"
     };
-    const dummyFilePath = path21.join(process.cwd(), "uploads", "test-email.xlsx");
+    const dummyFilePath = path22.join(process.cwd(), "uploads", "test-email.xlsx");
     const fs28 = __require("fs");
-    const uploadsDir = path21.join(process.cwd(), "uploads");
+    const uploadsDir = path22.join(process.cwd(), "uploads");
     if (!fs28.existsSync(uploadsDir)) {
       fs28.mkdirSync(uploadsDir, { recursive: true });
     }
@@ -27859,9 +27962,10 @@ init_db();
 init_schema();
 import { Router as Router37 } from "express";
 import { eq as eq39 } from "drizzle-orm";
-import path22 from "path";
+import path23 from "path";
 import fs25 from "fs";
 import jwt2 from "jsonwebtoken";
+init_upload_paths();
 var router40 = Router37();
 router40.get("/attachments/:id/download", async (req, res) => {
   const attachmentId = parseInt(req.params.id);
@@ -27942,15 +28046,15 @@ router40.get("/attachments/:id/download", async (req, res) => {
       fileName = fileName.replace("db://", "");
     }
     const possiblePaths = [];
-    if (path22.isAbsolute(fileName)) {
+    if (path23.isAbsolute(fileName)) {
       console.log("\u{1F4C4} Using absolute path directly:", fileName);
       possiblePaths.push(fileName);
     } else {
       possiblePaths.push(
-        path22.join(process.cwd(), "attached_assets", fileName),
-        path22.join(process.cwd(), "uploads", fileName),
-        path22.join(process.cwd(), "uploads", "temp-pdf", fileName),
-        path22.join(process.cwd(), fileName)
+        path23.join(process.cwd(), "attached_assets", fileName),
+        path23.join(getUploadsDir(), fileName),
+        path23.join(getTempPdfDir(), fileName),
+        path23.join(process.cwd(), fileName)
       );
     }
     let foundPath = null;
@@ -28022,14 +28126,14 @@ router40.delete("/attachments/:id", requireAuth, async (req, res) => {
     if (attachment.filePath && !attachment.filePath.startsWith("db://")) {
       let fileName = attachment.filePath;
       const possiblePaths = [];
-      if (path22.isAbsolute(fileName)) {
+      if (path23.isAbsolute(fileName)) {
         possiblePaths.push(fileName);
       } else {
         possiblePaths.push(
-          path22.join(process.cwd(), "attached_assets", fileName),
-          path22.join(process.cwd(), "uploads", fileName),
-          path22.join(process.cwd(), "uploads", "temp-pdf", fileName),
-          path22.join(process.cwd(), fileName)
+          path23.join(process.cwd(), "attached_assets", fileName),
+          path23.join(getUploadsDir(), fileName),
+          path23.join(getTempPdfDir(), fileName),
+          path23.join(process.cwd(), fileName)
         );
       }
       for (const testPath of possiblePaths) {
@@ -28247,7 +28351,7 @@ import { Router as Router39 } from "express";
 
 // server/utils/embedded-fonts.ts
 import * as fs26 from "fs";
-import * as path23 from "path";
+import * as path24 from "path";
 var EmbeddedFontManager = class {
   /**
    * 폰트 파일을 Base64로 인코딩하여 코드에 임베드할 수 있는 형태로 변환
@@ -28335,12 +28439,12 @@ var EmbeddedFontManager = class {
    * 시스템 정보와 함께 폰트 상태 리포트 생성
    */
   static generateSystemReport() {
-    const projectFontDir = path23.join(process.cwd(), "fonts");
+    const projectFontDir = path24.join(process.cwd(), "fonts");
     const projectFonts = [
       "NotoSansKR-Regular.ttf",
       "NanumGothic-Regular.ttf"
     ].map((filename) => {
-      const fontPath = path23.join(projectFontDir, filename);
+      const fontPath = path24.join(projectFontDir, filename);
       let size;
       let exists = false;
       try {
@@ -28504,13 +28608,13 @@ router42.post("/test-font-pdf", async (req, res) => {
 router42.get("/font-files", (req, res) => {
   try {
     const fs28 = __require("fs");
-    const path25 = __require("path");
-    const fontDir = path25.join(process.cwd(), "fonts");
+    const path26 = __require("path");
+    const fontDir = path26.join(process.cwd(), "fonts");
     const results = [];
     try {
       const files = fs28.readdirSync(fontDir);
       for (const file of files) {
-        const filePath = path25.join(fontDir, file);
+        const filePath = path26.join(fontDir, file);
         try {
           const stats = fs28.statSync(filePath);
           results.push({
@@ -28563,11 +28667,11 @@ init_schema();
 init_db();
 import { eq as eq40, desc as desc18 } from "drizzle-orm";
 import fs27 from "fs";
-import path24 from "path";
+import path25 from "path";
 import { fileURLToPath as fileURLToPath7 } from "url";
 import * as XLSX10 from "xlsx";
 var __filename7 = fileURLToPath7(import.meta.url);
-var __dirname7 = path24.dirname(__filename7);
+var __dirname7 = path25.dirname(__filename7);
 var router43 = Router40();
 var db3 = db;
 var emailService4 = new POEmailService();
@@ -28620,8 +28724,8 @@ router43.post("/orders/send-email", requireAuth, async (req, res) => {
             const isExcelFile = attachment.mimeType?.includes("excel") || attachment.mimeType?.includes("spreadsheet") || attachment.originalName?.toLowerCase().endsWith(".xlsx") || attachment.originalName?.toLowerCase().endsWith(".xls");
             if (isExcelFile && !excelFilePath) {
               if (attachment.fileData) {
-                const tempDir = path24.join(__dirname7, "../../uploads");
-                const tempFilePath = path24.join(tempDir, `temp-${Date.now()}-${attachment.originalName}`);
+                const tempDir = path25.join(__dirname7, "../../uploads");
+                const tempFilePath = path25.join(tempDir, `temp-${Date.now()}-${attachment.originalName}`);
                 if (!fs27.existsSync(tempDir)) {
                   fs27.mkdirSync(tempDir, { recursive: true });
                 }
@@ -28657,8 +28761,8 @@ router43.post("/orders/send-email", requireAuth, async (req, res) => {
     }
     if (!excelFilePath) {
       console.log("\u{1F4CE} Excel \uD30C\uC77C\uC774 \uC5C6\uC5B4 \uAE30\uBCF8 \uD30C\uC77C \uC0DD\uC131");
-      const tempDir = path24.join(__dirname7, "../../uploads");
-      const tempFilePath = path24.join(tempDir, `default-po-${Date.now()}.xlsx`);
+      const tempDir = path25.join(__dirname7, "../../uploads");
+      const tempFilePath = path25.join(tempDir, `default-po-${Date.now()}.xlsx`);
       if (!fs27.existsSync(tempDir)) {
         fs27.mkdirSync(tempDir, { recursive: true });
       }
@@ -28901,7 +29005,7 @@ app.use(session({
 console.log("\u2705 Session middleware configured globally");
 app.use((req, res, next) => {
   const start = Date.now();
-  const path25 = req.path;
+  const path26 = req.path;
   let capturedJsonResponse = void 0;
   const originalResJson = res.json;
   res.json = function(bodyJson, ...args) {
@@ -28910,8 +29014,8 @@ app.use((req, res, next) => {
   };
   res.on("finish", () => {
     const duration = Date.now() - start;
-    if (path25.startsWith("/api")) {
-      let logLine = `${req.method} ${path25} ${res.statusCode} in ${duration}ms`;
+    if (path26.startsWith("/api")) {
+      let logLine = `${req.method} ${path26} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }
@@ -28992,13 +29096,13 @@ if (process.env.VERCEL) {
     console.log("\u{1F50D} Session debug info:", sessionData);
     res.json(sessionData);
   });
-  const path25 = await import("path");
-  app.use(express4.static(path25.join(process.cwd(), "dist/public")));
+  const path26 = await import("path");
+  app.use(express4.static(path26.join(process.cwd(), "dist/public")));
   console.log("\u{1F4C1} Serving static files from dist/public");
   app.use(routes_default);
   app.get("*", (req, res) => {
     if (!req.path.startsWith("/api")) {
-      res.sendFile(path25.join(process.cwd(), "dist/public/index.html"));
+      res.sendFile(path26.join(process.cwd(), "dist/public/index.html"));
     }
   });
   app.use((err, _req, res, _next) => {

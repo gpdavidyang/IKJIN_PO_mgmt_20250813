@@ -4,6 +4,22 @@
 
 export class DebugLogger {
   private static isDebugMode = process.env.NODE_ENV === 'development';
+  private context: string;
+  
+  constructor(context: string = '') {
+    this.context = context;
+  }
+  
+  log(message: string) {
+    if (!DebugLogger.isDebugMode) return;
+    const prefix = this.context ? `[${this.context}]` : '';
+    console.log(`🔍 ${prefix} ${message}`);
+  }
+  
+  error(message: string) {
+    const prefix = this.context ? `[${this.context}]` : '';
+    console.error(`❌ ${prefix} ${message}`);
+  }
   
   static logFunctionEntry(functionName: string, params: any = {}) {
     if (!this.isDebugMode) return;

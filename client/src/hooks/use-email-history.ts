@@ -15,8 +15,8 @@ interface OrderEmailStatus {
 // Get email history for a specific order
 export function useOrderEmailHistory(orderId: number) {
   return useQuery({
-    queryKey: ["/api/orders", orderId, "email-history"],
-    queryFn: () => apiRequest<EmailSendHistory[]>("GET", `/api/orders/${orderId}/email-history`),
+    queryKey: ["/api/email-history/orders", orderId, "email-history"],
+    queryFn: () => apiRequest<EmailSendHistory[]>("GET", `/api/email-history/orders/${orderId}/email-history`),
     enabled: !!orderId,
     staleTime: 30 * 1000, // 30 seconds
   });

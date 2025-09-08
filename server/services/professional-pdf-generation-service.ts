@@ -6,7 +6,24 @@ import { ko } from 'date-fns/locale';
 import { db } from '../db';
 import { attachments, users, companies, vendors, projects, purchaseOrders, purchaseOrderItems, emailSendHistory } from '../../shared/schema';
 import { eq, desc } from 'drizzle-orm';
-import { fontManager } from '../utils/korean-font-manager';
+
+// 조건부 import - Vercel 환경에서는 스킵
+let fontManager: any = null;
+
+// 폰트 매니저 초기화 함수
+async function initializeFontManager() {
+  if (fontManager !== null || process.env.VERCEL) {
+    return; // 이미 로드되었거나 Vercel 환경이면 스킵
+  }
+  
+  try {
+    const fontManagerModule = await import('../utils/korean-font-manager');
+    fontManager = fontManagerModule.fontManager;
+    console.log('✅ [PDF] KoreanFontManager 로드 완료');
+  } catch (error) {
+    console.warn('⚠️ [PDF] KoreanFontManager 로드 실패 - 기본 폰트만 사용:', error.message);
+  }
+}
 
 /**
  * 포괄적인 발주서 PDF 데이터 모델
@@ -227,39 +244,69 @@ export class ProfessionalPDFGenerationService {
   }
 
   /**
-   * 한글 폰트 등록 - KoreanFontManager 사용으로 Vercel 환경 대응
+   * 한글 폰트 등록 - Vercel 서버리스 환경 특화 대응
    */
   private static async registerKoreanFonts(doc: PDFDocument): Promise<void> {
     try {
       console.log('🎯 [PDF] 한글 폰트 등록 시작...');
+      console.log(`🌐 [PDF] 환경 체크: VERCEL=${process.env.VERCEL}, NODE_ENV=${process.env.NODE_ENV}`);
       
-      // Korean Font Manager를 통해 최적의 폰트 얻기
-      const bestFont = fontManager.getBestKoreanFont();
-      
-      if (bestFont && bestFont.available) {
-        console.log(`✅ [PDF] 최적 한글 폰트 발견: ${bestFont.name}`);
+      // Vercel 환경에서는 매우 보수적으로 접근
+      if (process.env.VERCEL) {
+        console.log('☁️ [PDF] Vercel 환경 감지 - 안전한 폰트 등록 모드');
         
         try {
-          // FontManager에서 폰트 버퍼 가져오기
-          const fontBuffer = fontManager.getFontBuffer(bestFont.name);
-          
-          if (fontBuffer) {
-            // 폰트 버퍼를 PDFKit에 등록
-            doc.registerFont(this.FONTS.regular, fontBuffer);
-            doc.registerFont(this.FONTS.bold, fontBuffer); // 같은 폰트를 Bold로도 사용
-            doc.registerFont(this.FONTS.medium, fontBuffer); // 같은 폰트를 Medium으로도 사용
-            
-            console.log(`✅ [PDF] 한글 폰트 등록 완료: ${bestFont.name}`);
-            return;
-          }
-        } catch (bufferError) {
-          console.warn(`⚠️ [PDF] 폰트 버퍼 등록 실패: ${bestFont.name}`, bufferError);
+          // Vercel에서는 기본 폰트만 사용 (가장 안전한 방법)
+          doc.registerFont(this.FONTS.regular, 'Helvetica');
+          doc.registerFont(this.FONTS.bold, 'Helvetica-Bold');
+          doc.registerFont(this.FONTS.medium, 'Helvetica');
+          console.log('✅ [PDF] Vercel - 기본 폰트 등록 완료');
+          return;
+        } catch (vercelError) {
+          console.error('❌ [PDF] Vercel - 기본 폰트 등록 실패:', vercelError);
+          // Vercel에서 기본 폰트도 실패하면 폰트 등록 자체를 건너뛰기
+          console.log('🚨 [PDF] Vercel - 폰트 등록 건너뜀 (기본 폰트 사용)');
+          return;
         }
+      }
+      
+      // 로컬 환경에서만 고급 폰트 시도
+      console.log('🏠 [PDF] 로컬 환경 - 한글 폰트 시도');
+      
+      // 폰트 매니저 초기화
+      await initializeFontManager();
+      
+      // Korean Font Manager를 통해 최적의 폰트 얻기 (로드된 경우에만)
+      if (fontManager) {
+        const bestFont = fontManager.getBestKoreanFont();
+        
+        if (bestFont && bestFont.available) {
+          console.log(`✅ [PDF] 최적 한글 폰트 발견: ${bestFont.name}`);
+          
+          try {
+            // FontManager에서 폰트 버퍼 가져오기
+            const fontBuffer = fontManager.getFontBuffer(bestFont.name);
+            
+            if (fontBuffer) {
+              // 폰트 버퍼를 PDFKit에 등록
+              doc.registerFont(this.FONTS.regular, fontBuffer);
+              doc.registerFont(this.FONTS.bold, fontBuffer); // 같은 폰트를 Bold로도 사용
+              doc.registerFont(this.FONTS.medium, fontBuffer); // 같은 폰트를 Medium으로도 사용
+              
+              console.log(`✅ [PDF] 한글 폰트 등록 완료: ${bestFont.name}`);
+              return;
+            }
+          } catch (bufferError) {
+            console.warn(`⚠️ [PDF] 폰트 버퍼 등록 실패: ${bestFont.name}`, bufferError);
+          }
+        }
+      } else {
+        console.log('⚠️ [PDF] FontManager 로드되지 않음 - 시스템 폰트로 진행');
       }
       
       console.log('⚠️ [PDF] 한글 폰트를 찾을 수 없음 - 시스템 폰트로 폴백');
       
-      // 시스템 폰트 폴백 시도
+      // 시스템 폰트 폴백 시도 (로컬 환경에서만)
       const systemFonts = [
         { name: 'AppleGothic', path: '/System/Library/Fonts/Supplemental/AppleGothic.ttf' },
         { name: 'AppleSDGothicNeo', path: '/System/Library/Fonts/AppleSDGothicNeo.ttc' },
@@ -287,16 +334,23 @@ export class ProfessionalPDFGenerationService {
       
     } catch (error) {
       console.error('❌ [PDF] 폰트 등록 중 예외 발생:', error);
+      console.error('📊 [PDF] 에러 상세:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
       
-      // 최종 폴백
+      // 최종 폴백 - 에러가 발생해도 PDF 생성은 계속
       try {
+        console.log('🆘 [PDF] 최종 폴백 시도...');
         doc.registerFont(this.FONTS.regular, 'Helvetica');
         doc.registerFont(this.FONTS.bold, 'Helvetica-Bold');
         doc.registerFont(this.FONTS.medium, 'Helvetica');
         console.log('🔧 [PDF] 기본 폰트로 폴백 완료');
       } catch (fallbackError) {
         console.error('💥 [PDF] 기본 폰트 등록도 실패:', fallbackError);
-        throw new Error('PDF 폰트 등록 실패: 모든 폰트를 로드할 수 없습니다.');
+        // 폰트 등록 완전 실패 시에는 폰트 등록을 건너뛰고 계속 진행
+        console.log('🏃 [PDF] 폰트 등록 실패 - 기본 시스템 폰트로 계속 진행');
       }
     }
   }

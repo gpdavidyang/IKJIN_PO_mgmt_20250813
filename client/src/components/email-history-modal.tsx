@@ -50,14 +50,10 @@ export function EmailHistoryModal({
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'sent':
-        return <Send className="h-4 w-4" />;
-      case 'opened':
-        return <MailOpen className="h-4 w-4" />;
-      case 'clicked':
-        return <MousePointer className="h-4 w-4" />;
+        return <CheckCircle className="h-4 w-4" />;
+      case 'pending':
+        return <Clock className="h-4 w-4" />;
       case 'failed':
-        return <MailX className="h-4 w-4" />;
-      case 'bounced':
         return <XCircle className="h-4 w-4" />;
       default:
         return <Mail className="h-4 w-4" />;
@@ -66,14 +62,12 @@ export function EmailHistoryModal({
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      sent: { variant: "default" as const, label: "발주완료" },
-      opened: { variant: "success" as const, label: "열람됨" },
-      clicked: { variant: "secondary" as const, label: "클릭됨" },
-      failed: { variant: "destructive" as const, label: "실패" },
-      bounced: { variant: "warning" as const, label: "반송됨" }
+      sent: { variant: "default" as const, label: "발송완료" },
+      pending: { variant: "secondary" as const, label: "발송대기" },
+      failed: { variant: "destructive" as const, label: "발송실패" }
     };
 
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.sent;
+    const config = statusConfig[status as keyof typeof statusConfig] || { variant: "secondary" as const, label: status || "알 수 없음" };
     
     return (
       <Badge variant={config.variant}>
@@ -102,7 +96,10 @@ export function EmailHistoryModal({
             <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${Math.min(emailHistory.length, 5)}, 1fr)` }}>
               {emailHistory.slice(0, 5).map((email, index) => (
                 <TabsTrigger key={email.id} value={index.toString()}>
-                  {format(new Date(email.sentAt), "MM/dd HH:mm")}
+                  {email.sentAt 
+                    ? format(new Date(email.sentAt), "MM/dd HH:mm")
+                    : `#${index + 1}`
+                  }
                 </TabsTrigger>
               ))}
               {emailHistory.length > 5 && (
@@ -122,13 +119,19 @@ export function EmailHistoryModal({
                         <Clock className="h-4 w-4 text-gray-500" />
                         <span className="text-gray-600">발송 시간:</span>
                         <span className="font-medium">
-                          {format(new Date(email.sentAt), "yyyy년 MM월 dd일 HH:mm:ss", { locale: ko })}
+                          {email.sentAt 
+                            ? format(new Date(email.sentAt), "yyyy년 MM월 dd일 HH:mm:ss", { locale: ko })
+                            : "대기 중"
+                          }
                         </span>
                       </div>
                       <div className="flex items-center gap-2 text-sm">
                         <User className="h-4 w-4 text-gray-500" />
                         <span className="text-gray-600">발송자:</span>
-                        <span className="font-medium">{email.sentByName} ({email.sentByEmail})</span>
+                        <span className="font-medium">
+                          {email.sentByName || '시스템'} 
+                          {email.sentByEmail && `(${email.sentByEmail})`}
+                        </span>
                       </div>
                       <div className="flex items-center gap-2 text-sm">
                         <Mail className="h-4 w-4 text-gray-500" />
@@ -160,25 +163,7 @@ export function EmailHistoryModal({
                         {getStatusBadge(email.status)}
                       </div>
                       
-                      {email.openedAt && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <Eye className="h-4 w-4 text-green-500" />
-                          <span className="text-gray-600">열람 시간:</span>
-                          <span className="font-medium">
-                            {format(new Date(email.openedAt), "yyyy년 MM월 dd일 HH:mm:ss", { locale: ko })}
-                          </span>
-                        </div>
-                      )}
-                      
-                      {email.clickedAt && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <MousePointer className="h-4 w-4 text-purple-500" />
-                          <span className="text-gray-600">클릭 시간:</span>
-                          <span className="font-medium">
-                            {format(new Date(email.clickedAt), "yyyy년 MM월 dd일 HH:mm:ss", { locale: ko })}
-                          </span>
-                        </div>
-                      )}
+                      {/* 열람/클릭 추적 기능은 현재 SMTP에서 지원하지 않음 */}
 
                       {email.errorMessage && (
                         <div className="flex items-start gap-2 text-sm">
@@ -192,16 +177,17 @@ export function EmailHistoryModal({
                     </div>
                   </div>
 
-                  {email.attachments && email.attachments.length > 0 && (
+                  {email.attachments && Array.isArray(email.attachments) && email.attachments.length > 0 && (
                     <div className="mt-4 pt-4 border-t">
                       <div className="flex items-center gap-2 text-sm mb-2">
                         <Paperclip className="h-4 w-4 text-gray-500" />
                         <span className="text-gray-600">첨부 파일:</span>
                       </div>
                       <div className="space-y-1">
-                        {email.attachments.map((attachment, idx) => (
+                        {email.attachments.map((attachment: any, idx: number) => (
                           <div key={idx} className="text-sm text-gray-700">
-                            {attachment.filename} ({(attachment.size / 1024 / 1024).toFixed(2)} MB)
+                            {typeof attachment === 'string' ? attachment : attachment.filename || attachment.name || '첨부파일'}
+                            {attachment.size && ` (${(attachment.size / 1024 / 1024).toFixed(2)} MB)`}
                           </div>
                         ))}
                       </div>
