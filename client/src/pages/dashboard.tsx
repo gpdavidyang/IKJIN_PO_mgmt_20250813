@@ -17,6 +17,7 @@ import { RecentOrdersList } from "@/components/dashboard/recent-orders-list";
 import { UnifiedOrdersList } from "@/components/unified/UnifiedOrdersList";
 import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
 import { ApprovalWidget } from "@/components/dashboard/ApprovalWidget";
+import MonthlyComparisonWidget from "@/components/dashboard/MonthlyComparisonWidget";
 
 // Import new advanced chart components
 import { AdvancedBarChart, AdvancedPieChart, AdvancedLineChart } from "@/components/charts/advanced-chart";
@@ -390,6 +391,11 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Monthly Comparison Widget */}
+      <div className="mb-2">
+        <MonthlyComparisonWidget />
       </div>
 
       {/* Ultra-High Density 3-Column Layout */}

@@ -12,14 +12,13 @@ import {
   Minus
 } from 'lucide-react';
 import { 
-  LineChart, 
+  ComposedChart,
   Line, 
   XAxis, 
   YAxis, 
   CartesianGrid, 
   Tooltip, 
   ResponsiveContainer,
-  BarChart,
   Bar
 } from 'recharts';
 import { apiRequest } from '@/lib/queryClient';
@@ -190,7 +189,7 @@ const MonthlyComparisonWidget: React.FC = () => {
           
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData}>
+              <ComposedChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis 
                   dataKey="day" 
@@ -232,7 +231,7 @@ const MonthlyComparisonWidget: React.FC = () => {
                   name="totalAmount"
                   dot={{ fill: '#10B981', strokeWidth: 2, r: 3 }}
                 />
-              </BarChart>
+              </ComposedChart>
             </ResponsiveContainer>
           </div>
         </div>

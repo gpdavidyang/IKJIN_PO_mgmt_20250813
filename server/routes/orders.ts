@@ -3458,10 +3458,12 @@ router.post("/orders/send-email-with-files", requireAuth, upload.array('customFi
 });
 
 // Get order status change history
-router.get("/:orderId/status-history", requireAuth, async (req, res) => {
+router.get("/orders/:orderId/status-history", requireAuth, async (req, res) => {
   try {
+    console.log(`📊 Fetching order history for order ID: ${req.params.orderId}`);
     const orderId = parseInt(req.params.orderId);
     if (isNaN(orderId)) {
+      console.log(`❌ Invalid order ID: ${req.params.orderId}`);
       return res.status(400).json({ error: "Invalid order ID" });
     }
 
