@@ -23,7 +23,10 @@ export function AuditDashboard({ stats, loading }: AuditDashboardProps) {
     return (
       <Card>
         <CardContent className="flex items-center justify-center py-8">
-          <p className="text-muted-foreground">대시보드를 불러오는 중...</p>
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4 animate-spin" />
+            <p className="text-muted-foreground">대시보드를 불러오는 중...</p>
+          </div>
         </CardContent>
       </Card>
     );
@@ -32,15 +35,47 @@ export function AuditDashboard({ stats, loading }: AuditDashboardProps) {
   if (!stats) {
     return (
       <Card>
-        <CardContent className="flex items-center justify-center py-8">
-          <p className="text-muted-foreground">데이터가 없습니다.</p>
+        <CardContent className="py-8">
+          <div className="text-center space-y-4">
+            <Activity className="h-12 w-12 mx-auto text-muted-foreground/50" />
+            <div>
+              <p className="text-lg font-medium">감사 로그 대시보드</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                시스템 활동을 추적하기 위해 데이터를 수집 중입니다.
+              </p>
+              <p className="text-xs text-muted-foreground mt-2">
+                잠시 후 다시 확인해주세요.
+              </p>
+            </div>
+          </div>
         </CardContent>
       </Card>
     );
   }
+  
+  // Calculate total events
+  const totalEvents = stats.eventStats?.reduce((sum: number, e: any) => sum + (e.count || 0), 0) || 0;
+  const hasRecentActivity = totalEvents > 0 || stats.activeUserCount > 0;
 
   return (
     <div className="space-y-4">
+      {/* Low activity notice */}
+      {!hasRecentActivity && (
+        <Card className="border-dashed">
+          <CardContent className="py-4">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="h-5 w-5 text-yellow-500" />
+              <div className="flex-1">
+                <p className="text-sm font-medium">활동이 적습니다</p>
+                <p className="text-xs text-muted-foreground">
+                  지난 {stats.period}동안 기록된 활동이 매우 적습니다. 시스템이 정상적으로 로깅 중인지 확인하세요.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
@@ -50,7 +85,7 @@ export function AuditDashboard({ stats, loading }: AuditDashboardProps) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.activeUserCount || 0}</div>
-            <p className="text-xs text-muted-foreground">지난 24시간</p>
+            <p className="text-xs text-muted-foreground">지난 {stats.period || '24 hours'}</p>
           </CardContent>
         </Card>
 
@@ -61,9 +96,9 @@ export function AuditDashboard({ stats, loading }: AuditDashboardProps) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {stats.eventStats?.reduce((sum: number, e: any) => sum + e.count, 0) || 0}
+              {totalEvents}
             </div>
-            <p className="text-xs text-muted-foreground">지난 24시간</p>
+            <p className="text-xs text-muted-foreground">지난 {stats.period || '24 hours'}</p>
           </CardContent>
         </Card>
 

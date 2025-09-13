@@ -72,6 +72,7 @@ export default function AuditManagement() {
   const [dateRange, setDateRange] = useState({ start: "", end: "" });
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedLog, setSelectedLog] = useState<any>(null);
+  const [dashboardPeriod, setDashboardPeriod] = useState("24");
   const itemsPerPage = 50;
 
   // Fetch audit logs
@@ -105,9 +106,9 @@ export default function AuditManagement() {
   });
 
   // Fetch dashboard stats
-  const { data: dashboardStats, isLoading: statsLoading } = useQuery({
-    queryKey: ["audit-dashboard"],
-    queryFn: () => apiRequest("/api/audit/dashboard?hours=24", { method: "GET" }),
+  const { data: dashboardStats, isLoading: statsLoading, refetch: refetchDashboard } = useQuery({
+    queryKey: ["audit-dashboard", dashboardPeriod],
+    queryFn: () => apiRequest(`/api/audit/dashboard?hours=${dashboardPeriod}`, { method: "GET" }),
     enabled: user?.role === 'admin' && activeTab === 'dashboard',
     refetchInterval: 60000 // Refresh every minute
   });
@@ -257,7 +258,49 @@ export default function AuditManagement() {
 
         {/* Dashboard Tab */}
         <TabsContent value="dashboard">
-          <AuditDashboard stats={dashboardStats} loading={statsLoading} />
+          <div className="space-y-4">
+            {/* Period selector and refresh button */}
+            <Card>
+              <CardContent className="py-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <label className="text-sm font-medium">기간 선택:</label>
+                    <Select value={dashboardPeriod} onValueChange={setDashboardPeriod}>
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">지난 1시간</SelectItem>
+                        <SelectItem value="6">지난 6시간</SelectItem>
+                        <SelectItem value="12">지난 12시간</SelectItem>
+                        <SelectItem value="24">지난 24시간</SelectItem>
+                        <SelectItem value="48">지난 2일</SelectItem>
+                        <SelectItem value="168">지난 7일</SelectItem>
+                        <SelectItem value="720">지난 30일</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">
+                      자동 새로고침: 1분마다
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => refetchDashboard()}
+                      disabled={statsLoading}
+                    >
+                      <RefreshCw className={`h-4 w-4 mr-2 ${statsLoading ? 'animate-spin' : ''}`} />
+                      새로고침
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Dashboard component */}
+            <AuditDashboard stats={dashboardStats} loading={statsLoading} />
+          </div>
         </TabsContent>
 
         {/* Activity Logs Tab */}

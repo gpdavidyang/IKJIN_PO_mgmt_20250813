@@ -145,88 +145,155 @@ export class AuditService {
     const startDate = new Date();
     startDate.setHours(startDate.getHours() - hours);
 
-    // 카테고리별 통계
-    const categoryStats = await db
-      .select({
-        category: systemAuditLogs.eventCategory,
-        count: sql<number>`count(*)`
-      })
-      .from(systemAuditLogs)
-      .where(gte(systemAuditLogs.createdAt, startDate))
-      .groupBy(systemAuditLogs.eventCategory);
+    try {
+      // 카테고리별 통계
+      let categoryStats = [];
+      try {
+        categoryStats = await db
+          .select({
+            category: systemAuditLogs.eventCategory,
+            count: sql<number>`count(*)`
+          })
+          .from(systemAuditLogs)
+          .where(gte(systemAuditLogs.createdAt, startDate))
+          .groupBy(systemAuditLogs.eventCategory);
+      } catch (error) {
+        console.error('Failed to fetch category stats:', error);
+      }
 
-    // 이벤트 타입별 통계
-    const eventStats = await db
-      .select({
-        eventType: systemAuditLogs.eventType,
-        count: sql<number>`count(*)`
-      })
-      .from(systemAuditLogs)
-      .where(gte(systemAuditLogs.createdAt, startDate))
-      .groupBy(systemAuditLogs.eventType);
+      // 이벤트 타입별 통계
+      let eventStats = [];
+      try {
+        eventStats = await db
+          .select({
+            eventType: systemAuditLogs.eventType,
+            count: sql<number>`count(*)`
+          })
+          .from(systemAuditLogs)
+          .where(gte(systemAuditLogs.createdAt, startDate))
+          .groupBy(systemAuditLogs.eventType);
+      } catch (error) {
+        console.error('Failed to fetch event stats:', error);
+      }
 
-    // 시간대별 활동
-    const hourlyActivity = await db
-      .select({
-        hour: sql<string>`date_trunc('hour', ${systemAuditLogs.createdAt})`,
-        count: sql<number>`count(*)`
-      })
-      .from(systemAuditLogs)
-      .where(gte(systemAuditLogs.createdAt, startDate))
-      .groupBy(sql`date_trunc('hour', ${systemAuditLogs.createdAt})`)
-      .orderBy(sql`date_trunc('hour', ${systemAuditLogs.createdAt})`);
+      // 시간대별 활동 - with error handling
+      let hourlyActivity = [];
+      try {
+        hourlyActivity = await db
+          .select({
+            hour: sql<string>`date_trunc('hour', ${systemAuditLogs.createdAt})`,
+            count: sql<number>`count(*)`
+          })
+          .from(systemAuditLogs)
+          .where(gte(systemAuditLogs.createdAt, startDate))
+          .groupBy(sql`date_trunc('hour', ${systemAuditLogs.createdAt})`)
+          .orderBy(sql`date_trunc('hour', ${systemAuditLogs.createdAt})`);
+      } catch (error) {
+        console.error('Failed to fetch hourly activity:', error);
+      }
 
-    // 활성 사용자 수
-    const activeUsers = await db
-      .select({
-        count: sql<number>`count(distinct ${systemAuditLogs.userId})`
-      })
-      .from(systemAuditLogs)
-      .where(gte(systemAuditLogs.createdAt, startDate));
+      // 활성 사용자 수
+      let activeUserCount = 0;
+      try {
+        const activeUsers = await db
+          .select({
+            count: sql<number>`count(distinct ${systemAuditLogs.userId})`
+          })
+          .from(systemAuditLogs)
+          .where(gte(systemAuditLogs.createdAt, startDate));
+        activeUserCount = activeUsers[0]?.count || 0;
+      } catch (error) {
+        console.error('Failed to fetch active users:', error);
+      }
 
-    // 에러 이벤트 (system_error 또는 security_alert)
-    const errors = await db
-      .select()
-      .from(systemAuditLogs)
-      .where(
-        and(
-          or(
-            eq(systemAuditLogs.eventType, 'system_error' as any),
-            eq(systemAuditLogs.eventType, 'security_alert' as any),
-            eq(systemAuditLogs.eventType, 'login_failed' as any)
-          ),
-          gte(systemAuditLogs.createdAt, startDate)
-        )
-      )
-      .orderBy(desc(systemAuditLogs.createdAt))
-      .limit(10);
+      // 에러 이벤트
+      let errors = [];
+      try {
+        errors = await db
+          .select()
+          .from(systemAuditLogs)
+          .where(
+            and(
+              or(
+                eq(systemAuditLogs.eventType, 'system_error' as any),
+                eq(systemAuditLogs.eventType, 'security_alert' as any),
+                eq(systemAuditLogs.eventType, 'login_failed' as any)
+              ),
+              gte(systemAuditLogs.createdAt, startDate)
+            )
+          )
+          .orderBy(desc(systemAuditLogs.createdAt))
+          .limit(10);
+      } catch (error) {
+        console.error('Failed to fetch errors:', error);
+      }
 
-    // 보안 이벤트
-    const securityEvents = await db
-      .select()
-      .from(systemAuditLogs)
-      .where(
-        and(
-          or(
-            eq(systemAuditLogs.eventType, 'login_failed' as any),
-            eq(systemAuditLogs.eventType, 'security_alert' as any),
-            eq(systemAuditLogs.eventCategory, 'security')
-          ),
-          gte(systemAuditLogs.createdAt, startDate)
-        )
-      )
-      .orderBy(desc(systemAuditLogs.createdAt))
-      .limit(10);
+      // 보안 이벤트
+      let securityEvents = [];
+      try {
+        securityEvents = await db
+          .select()
+          .from(systemAuditLogs)
+          .where(
+            and(
+              or(
+                eq(systemAuditLogs.eventType, 'login_failed' as any),
+                eq(systemAuditLogs.eventType, 'security_alert' as any),
+                eq(systemAuditLogs.eventCategory, 'security')
+              ),
+              gte(systemAuditLogs.createdAt, startDate)
+            )
+          )
+          .orderBy(desc(systemAuditLogs.createdAt))
+          .limit(10);
+      } catch (error) {
+        console.error('Failed to fetch security events:', error);
+      }
 
-    return {
-      categoryStats,
-      eventStats,
-      hourlyActivity,
-      activeUserCount: activeUsers[0]?.count || 0,
-      recentErrors: errors,
-      securityEvents,
-      period: `${hours} hours`
-    };
+      // Always return a valid structure
+      return {
+        categoryStats: categoryStats.length > 0 ? categoryStats : [
+          { category: 'auth', count: 0 },
+          { category: 'data', count: 0 },
+          { category: 'system', count: 0 }
+        ],
+        eventStats: eventStats.length > 0 ? eventStats : [
+          { eventType: 'login', count: 0 },
+          { eventType: 'data_read', count: 0 }
+        ],
+        hourlyActivity,
+        activeUserCount,
+        recentErrors: errors,
+        securityEvents,
+        period: `${hours} hours`,
+        debug: process.env.NODE_ENV === 'development' ? {
+          hasData: categoryStats.length > 0 || eventStats.length > 0,
+          startDate: startDate.toISOString(),
+          totalCategories: categoryStats.length,
+          totalEvents: eventStats.length
+        } : undefined
+      };
+    } catch (error) {
+      console.error('Failed to get dashboard stats:', error);
+      // Return default structure on complete failure
+      return {
+        categoryStats: [
+          { category: 'auth', count: 0 },
+          { category: 'data', count: 0 },
+          { category: 'system', count: 0 }
+        ],
+        eventStats: [
+          { eventType: 'login', count: 0 },
+          { eventType: 'data_read', count: 0 }
+        ],
+        hourlyActivity: [],
+        activeUserCount: 0,
+        recentErrors: [],
+        securityEvents: [],
+        period: `${hours} hours`,
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      };
+    }
   }
 
   /**

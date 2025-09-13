@@ -16,6 +16,20 @@ import ReportPreview from "@/components/report-preview";
 import { formatKoreanWon } from "@/lib/formatters";
 import { CategoryHierarchyFilter } from "@/components/category-hierarchy-filter";
 import { 
+  generateAutoSummary, 
+  generateCategorySummary, 
+  generateProjectSummary, 
+  generateVendorSummary 
+} from "@/lib/reports/summaryGenerators";
+import { 
+  getSortedData, 
+  getSortedProjectData, 
+  getSortedVendorData
+} from "@/lib/reports/sortingHelpers";
+import { useReportFilters } from "@/hooks/reports/useReportFilters";
+import { useReportSorting } from "@/hooks/reports/useReportSorting";
+import { useReportSelection } from "@/hooks/reports/useReportSelection";
+import { 
   Calendar, 
   TrendingUp, 
   Package, 
@@ -48,58 +62,45 @@ export default function Reports() {
 
   // 리포트 타입 상태
   const [reportType, setReportType] = useState<'orders' | 'category' | 'project' | 'vendor' | 'email'>('orders');
-  const [categoryType, setCategoryType] = useState<'major' | 'middle' | 'minor'>('major');
   
-  // 계층적 카테고리 필터 상태
-  const [categoryFilters, setCategoryFilters] = useState({
-    majorCategory: 'all',
-    middleCategory: 'all',
-    minorCategory: 'all'
-  });
+  // 커스텀 훅 사용
+  const {
+    filters,
+    setFilters,
+    activeFilters,
+    setActiveFilters,
+    categoryFilters,
+    setCategoryFilters,
+    categoryType,
+    setCategoryType
+  } = useReportFilters();
 
-  // 필터 상태
-  const [filters, setFilters] = useState({
-    year: 'all',
-    startDate: '',
-    endDate: '',
-    vendorId: 'all',
-    status: 'all',
-    templateId: 'all',
-    amountRange: 'all',
-    userId: 'all',
-    search: '',
-    month: 'all',
-    projectId: 'all',
-    emailStatus: 'all',
-    recipientEmail: '',
-    orderNumber: ''
-  });
+  const {
+    sortConfig,
+    setSortConfig,
+    handleSort,
+    projectSortConfig,
+    setProjectSortConfig,
+    handleProjectSort,
+    vendorSortConfig,
+    setVendorSortConfig,
+    handleVendorSort
+  } = useReportSorting();
 
-  const [activeFilters, setActiveFilters] = useState<typeof filters | null>(null);
-
-  // 정렬 상태 (현장별 보고서용)
-  const [projectSortConfig, setProjectSortConfig] = useState<{
-    key: string;
-    direction: 'asc' | 'desc';
-  } | null>(null);
-
-  // 정렬 상태 (거래처별 보고서용)
-  const [vendorSortConfig, setVendorSortConfig] = useState<{
-    key: string;
-    direction: 'asc' | 'desc';
-  } | null>(null);
-
-  // 선택된 항목 상태 (발주 내역용)
-  const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
-  
-  // 선택된 항목 상태 (분류별 보고서용)
-  const [selectedCategoryItems, setSelectedCategoryItems] = useState<Set<string>>(new Set());
-  
-  // 선택된 항목 상태 (현장별 보고서용)
-  const [selectedProjectItems, setSelectedProjectItems] = useState<Set<number>>(new Set());
-  
-  // 선택된 항목 상태 (거래처별 보고서용)
-  const [selectedVendorItems, setSelectedVendorItems] = useState<Set<number>>(new Set());
+  const {
+    selectedItems,
+    setSelectedItems,
+    selectedCategoryItems,
+    setSelectedCategoryItems,
+    selectedProjectItems,
+    setSelectedProjectItems,
+    selectedVendorItems,
+    setSelectedVendorItems,
+    handleSelectAll,
+    handleSelectItem,
+    isAllSelected,
+    isIndeterminate
+  } = useReportSelection();
 
   // 보고서 생성 모달 상태
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
@@ -124,49 +125,8 @@ export default function Reports() {
     comments: ''
   });
 
-  // 정렬 상태
-  const [sortConfig, setSortConfig] = useState<{
-    key: string;
-    direction: 'asc' | 'desc';
-  } | null>(null);
 
-  // 현장별 보고서 정렬 함수
-  const handleProjectSort = (key: string) => {
-    let direction: 'asc' | 'desc' = 'asc';
-    if (projectSortConfig && projectSortConfig.key === key && projectSortConfig.direction === 'asc') {
-      direction = 'desc';
-    }
-    setProjectSortConfig({ key, direction });
-  };
 
-  // 현장별 보고서 정렬된 데이터 가져오기
-  const getSortedProjectData = (data: any[]) => {
-    if (!projectSortConfig || !data) return data;
-    
-    return [...data].sort((a, b) => {
-      let aValue = a[projectSortConfig.key];
-      let bValue = b[projectSortConfig.key];
-      
-      // 숫자 필드 처리
-      if (['orderCount', 'vendorCount', 'totalAmount', 'averageOrderAmount'].includes(projectSortConfig.key)) {
-        aValue = Number(aValue) || 0;
-        bValue = Number(bValue) || 0;
-      }
-      // 문자열 필드 처리 
-      else if (['projectName', 'projectCode', 'projectStatus'].includes(projectSortConfig.key)) {
-        aValue = String(aValue || '').toLowerCase();
-        bValue = String(bValue || '').toLowerCase();
-      }
-      
-      if (aValue < bValue) {
-        return projectSortConfig.direction === 'asc' ? -1 : 1;
-      }
-      if (aValue > bValue) {
-        return projectSortConfig.direction === 'asc' ? 1 : -1;
-      }
-      return 0;
-    });
-  };
 
   // 정렬 아이콘 렌더링 함수
   const renderProjectSortIcon = (key: string) => {
@@ -178,43 +138,7 @@ export default function Reports() {
       : <ArrowDown className="h-4 w-4 text-blue-600" />;
   };
 
-  // 거래처별 보고서 정렬 함수
-  const handleVendorSort = (key: string) => {
-    let direction: 'asc' | 'desc' = 'asc';
-    if (vendorSortConfig && vendorSortConfig.key === key && vendorSortConfig.direction === 'asc') {
-      direction = 'desc';
-    }
-    setVendorSortConfig({ key, direction });
-  };
 
-  // 거래처별 보고서 정렬된 데이터 가져오기
-  const getSortedVendorData = (data: any[]) => {
-    if (!vendorSortConfig || !data) return data;
-    
-    return [...data].sort((a, b) => {
-      let aValue = a[vendorSortConfig.key];
-      let bValue = b[vendorSortConfig.key];
-      
-      // 숫자 필드 처리
-      if (['orderCount', 'projectCount', 'totalAmount', 'averageOrderAmount'].includes(vendorSortConfig.key)) {
-        aValue = Number(aValue) || 0;
-        bValue = Number(bValue) || 0;
-      }
-      // 문자열 필드 처리 
-      else if (['vendorName', 'vendorCode', 'businessNumber'].includes(vendorSortConfig.key)) {
-        aValue = String(aValue || '').toLowerCase();
-        bValue = String(bValue || '').toLowerCase();
-      }
-      
-      if (aValue < bValue) {
-        return vendorSortConfig.direction === 'asc' ? -1 : 1;
-      }
-      if (aValue > bValue) {
-        return vendorSortConfig.direction === 'asc' ? 1 : -1;
-      }
-      return 0;
-    });
-  };
 
   // 거래처별 보고서 정렬 아이콘 렌더링 함수
   const renderVendorSortIcon = (key: string) => {
@@ -226,47 +150,7 @@ export default function Reports() {
       : <ArrowDown className="h-4 w-4 text-blue-600" />;
   };
 
-  // 정렬 함수
-  const handleSort = (key: string) => {
-    let direction: 'asc' | 'desc' = 'asc';
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
-    }
-    setSortConfig({ key, direction });
-  };
 
-  // 정렬된 데이터 가져오기
-  const getSortedData = (data: any[]) => {
-    if (!sortConfig) return data;
-    
-    return [...data].sort((a, b) => {
-      let aValue = a[sortConfig.key];
-      let bValue = b[sortConfig.key];
-      
-      // 특별한 경우 처리
-      if (sortConfig.key === 'vendor') {
-        aValue = a.vendor?.name || '';
-        bValue = b.vendor?.name || '';
-      } else if (sortConfig.key === 'user') {
-        aValue = a.user ? `${a.user.lastName || ''} ${a.user.firstName || ''}`.trim() : '';
-        bValue = b.user ? `${b.user.lastName || ''} ${b.user.firstName || ''}`.trim() : '';
-      } else if (sortConfig.key === 'orderDate') {
-        aValue = new Date(aValue || 0);
-        bValue = new Date(bValue || 0);
-      } else if (sortConfig.key === 'totalAmount') {
-        aValue = Number(aValue) || 0;
-        bValue = Number(bValue) || 0;
-      }
-      
-      if (aValue < bValue) {
-        return sortConfig.direction === 'asc' ? -1 : 1;
-      }
-      if (aValue > bValue) {
-        return sortConfig.direction === 'asc' ? 1 : -1;
-      }
-      return 0;
-    });
-  };
 
   // 정렬 아이콘 렌더링
   const getSortIcon = (columnKey: string) => {
@@ -278,34 +162,6 @@ export default function Reports() {
       : <ArrowDown className="h-4 w-4 text-blue-600" />;
   };
 
-  // 체크박스 관련 함수들
-  const handleSelectAll = (checked: boolean, orders: any[]) => {
-    if (checked) {
-      const allIds = new Set(orders.map(order => order.id));
-      setSelectedItems(allIds);
-    } else {
-      setSelectedItems(new Set());
-    }
-  };
-
-  const handleSelectItem = (orderId: number, checked: boolean) => {
-    const newSelected = new Set(selectedItems);
-    if (checked) {
-      newSelected.add(orderId);
-    } else {
-      newSelected.delete(orderId);
-    }
-    setSelectedItems(newSelected);
-  };
-
-  const isAllSelected = (orders: any[]) => {
-    return orders.length > 0 && orders.every(order => selectedItems.has(order.id));
-  };
-
-  const isIndeterminate = (orders: any[]) => {
-    const selectedCount = orders.filter(order => selectedItems.has(order.id)).length;
-    return selectedCount > 0 && selectedCount < orders.length;
-  };
 
   // 보고서 생성 관련 함수들
   const handleReportGeneration = () => {
@@ -321,46 +177,6 @@ export default function Reports() {
     setIsReportModalOpen(true);
   };
 
-  const generateAutoSummary = (orders: any[]) => {
-    if (orders.length === 0) return '';
-    
-    const totalAmount = orders.reduce((sum, order) => {
-      const amount = parseFloat(order.totalAmount) || 0;
-      return sum + amount;
-    }, 0);
-    const avgAmount = totalAmount / orders.length;
-    const statusCounts = orders.reduce((acc, order) => {
-      acc[order.status] = (acc[order.status] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-    
-    const topVendors = Object.entries(
-      orders.reduce((acc, order) => {
-        const vendorName = order.vendor?.name || '알 수 없음';
-        acc[vendorName] = (acc[vendorName] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>)
-    ).sort(([,a], [,b]) => (b as number) - (a as number)).slice(0, 3);
-
-    // 상태를 한국어로 변환
-    const getStatusKorean = (status: string) => {
-      switch (status) {
-        case 'draft': return '임시 저장';
-        case 'pending': return '승인 대기';
-        case 'approved': return '승인 완료';
-        case 'sent': return '발주완료';
-        case 'completed': return '발주 완료';
-        case 'rejected': return '반려';
-        default: return status;
-      }
-    };
-
-    return `총 ${orders.length}건의 발주 데이터를 분석한 결과:
-• 총 발주 금액: ₩${Math.floor(totalAmount).toLocaleString()}
-• 평균 발주 금액: ₩${Math.floor(avgAmount).toLocaleString()}
-• 주요 거래처: ${topVendors.map(([name, count]) => `${name}(${count}건)`).join(', ')}
-• 상태 분포: ${Object.entries(statusCounts).map(([status, count]) => `${getStatusKorean(status)}(${count}건)`).join(', ')}`;
-  };
 
   const handleGenerateReport = async () => {
     try {
@@ -469,59 +285,7 @@ export default function Reports() {
     setIsReportModalOpen(true);
   };
 
-  // 분류별 보고서 요약 생성
-  const generateCategorySummary = (categories: any[]) => {
-    if (categories.length === 0) return '';
-    
-    const totalAmount = categories.reduce((sum, item) => sum + (parseFloat(item.totalAmount) || 0), 0);
-    const totalItems = categories.reduce((sum, item) => sum + (parseInt(item.itemCount) || 0), 0);
-    const totalOrders = categories.reduce((sum, item) => sum + (parseInt(item.orderCount) || 0), 0);
-    
-    const topCategory = categories.reduce((max, item) => 
-      (parseFloat(item.totalAmount) || 0) > (parseFloat(max.totalAmount) || 0) ? item : max);
-      
-    return `총 ${categories.length}개 분류 분석 결과:
-• 총 발주 금액: ₩${Math.floor(totalAmount).toLocaleString()}
-• 총 품목 수: ${totalItems.toLocaleString()}개
-• 총 발주 수: ${totalOrders.toLocaleString()}건
-• 최대 금액 분류: ${topCategory.category} (₩${Math.floor(topCategory.totalAmount).toLocaleString()})`;
-  };
 
-  // 현장별 보고서 요약 생성
-  const generateProjectSummary = (projects: any[]) => {
-    if (projects.length === 0) return '';
-    
-    const totalAmount = projects.reduce((sum, item) => sum + (parseFloat(item.totalAmount) || 0), 0);
-    const totalVendors = projects.reduce((sum, item) => sum + (parseInt(item.vendorCount) || 0), 0);
-    const totalOrders = projects.reduce((sum, item) => sum + (parseInt(item.orderCount) || 0), 0);
-    
-    const topProject = projects.reduce((max, item) => 
-      (parseFloat(item.totalAmount) || 0) > (parseFloat(max.totalAmount) || 0) ? item : max);
-      
-    return `총 ${projects.length}개 현장 분석 결과:
-• 총 발주 금액: ₩${Math.floor(totalAmount).toLocaleString()}
-• 총 거래처 수: ${totalVendors.toLocaleString()}개
-• 총 발주 수: ${totalOrders.toLocaleString()}건
-• 최대 금액 현장: ${topProject.projectName} (₩${Math.floor(topProject.totalAmount).toLocaleString()})`;
-  };
-
-  // 거래처별 보고서 요약 생성
-  const generateVendorSummary = (vendors: any[]) => {
-    if (vendors.length === 0) return '';
-    
-    const totalAmount = vendors.reduce((sum, item) => sum + (parseFloat(item.totalAmount) || 0), 0);
-    const totalProjects = vendors.reduce((sum, item) => sum + (parseInt(item.projectCount) || 0), 0);
-    const totalOrders = vendors.reduce((sum, item) => sum + (parseInt(item.orderCount) || 0), 0);
-    
-    const topVendor = vendors.reduce((max, item) => 
-      (parseFloat(item.totalAmount) || 0) > (parseFloat(max.totalAmount) || 0) ? item : max);
-      
-    return `총 ${vendors.length}개 거래처 분석 결과:
-• 총 발주 금액: ₩${Math.floor(totalAmount).toLocaleString()}
-• 총 프로젝트 수: ${totalProjects.toLocaleString()}개
-• 총 발주 수: ${totalOrders.toLocaleString()}건
-• 최대 금액 거래처: ${topVendor.vendorName} (₩${Math.floor(topVendor.totalAmount).toLocaleString()})`;
-  };
 
   // 페이지 보호 - 인증되지 않은 사용자 처리
   useEffect(() => {
@@ -1458,7 +1222,7 @@ export default function Reports() {
                     </tr>
                   </thead>
                   <tbody>
-                    {getSortedData(processingReport.orders).map((order: any) => (
+                    {getSortedData(processingReport.orders, sortConfig).map((order: any) => (
                       <tr key={order.id} className={`border-b transition-colors ${
                         isDarkMode 
                           ? 'hover:bg-gray-700 border-gray-600' 
@@ -1920,7 +1684,7 @@ export default function Reports() {
                         </tr>
                       </thead>
                       <tbody>
-                        {getSortedProjectData(projectReport.data || [])?.map((item: any) => (
+                        {getSortedProjectData(projectReport.data || [], projectSortConfig)?.map((item: any) => (
                           <tr key={item.projectId} className={`border-b transition-colors ${
                             isDarkMode 
                               ? 'border-gray-600 hover:bg-gray-700' 
@@ -2161,7 +1925,7 @@ export default function Reports() {
                         </tr>
                       </thead>
                       <tbody>
-                        {getSortedVendorData(vendorReport.data || [])?.map((item: any) => (
+                        {getSortedVendorData(vendorReport.data || [], vendorSortConfig)?.map((item: any) => (
                           <tr key={item.vendorId} className="border-b hover:bg-gray-50">
                             <td className="py-3 px-4">
                               <Checkbox 
