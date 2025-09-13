@@ -101,14 +101,14 @@ export default function AuditManagement() {
   // Fetch audit settings
   const { data: settings, isLoading: settingsLoading } = useQuery({
     queryKey: ["audit-settings"],
-    queryFn: () => apiRequest("/api/audit/settings", { method: "GET" }),
+    queryFn: () => apiRequest("GET", "/api/audit/settings"),
     enabled: user?.role === 'admin'
   });
 
   // Fetch dashboard stats
   const { data: dashboardStats, isLoading: statsLoading, refetch: refetchDashboard } = useQuery({
     queryKey: ["audit-dashboard", dashboardPeriod],
-    queryFn: () => apiRequest(`/api/audit/dashboard?hours=${dashboardPeriod}`, { method: "GET" }),
+    queryFn: () => apiRequest("GET", `/api/audit/dashboard?hours=${dashboardPeriod}`),
     enabled: user?.role === 'admin' && activeTab === 'dashboard',
     refetchInterval: 60000 // Refresh every minute
   });
