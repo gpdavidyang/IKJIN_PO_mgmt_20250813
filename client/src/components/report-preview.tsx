@@ -39,13 +39,27 @@ export default function ReportPreview({ config, orders, onClose }: ReportPreview
     }, {} as Record<string, number>)
   ).map(([month, count]) => ({ month, orders: count }));
 
-  const vendorData = Object.entries(
+  const vendorData: Array<{ name: string; orders: number }> = Object.entries(
     orders.reduce((acc, order) => {
-      const vendorName = order.vendor?.name || '알 수 없음';
+      // 거래처 정보 확인 및 로깅
+      let vendorName = '알 수 없음';
+      
+      if (order.vendor && order.vendor.name) {
+        vendorName = order.vendor.name;
+      } else if (order.vendorName) {
+        vendorName = order.vendorName;
+      } else if (order.vendor && typeof order.vendor === 'string') {
+        vendorName = order.vendor;
+      }
+      
       acc[vendorName] = (acc[vendorName] || 0) + 1;
       return acc;
     }, {} as Record<string, number>)
-  ).sort(([,a], [,b]) => (b as number) - (a as number)).slice(0, 10).map(([name, count]) => ({ name, orders: count }));
+  ).sort(([,a], [,b]) => (b as number) - (a as number)).slice(0, 10).map(([name, count]) => ({ name, orders: count as number }));
+
+  // 디버깅을 위한 로그 추가
+  console.log('Orders for vendor analysis:', orders.slice(0, 3));
+  console.log('Generated vendor data:', vendorData);
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'];
 
@@ -224,7 +238,12 @@ export default function ReportPreview({ config, orders, onClose }: ReportPreview
                   <CardTitle>거래처별 발주 현황 (상위 10개)</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {config.chartTypes.vendorAnalysis === 'table' ? (
+                  {vendorData.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      <p>표시할 거래처 데이터가 없습니다.</p>
+                      <p className="text-sm mt-2">선택한 발주 데이터에 거래처 정보가 포함되어 있지 않습니다.</p>
+                    </div>
+                  ) : config.chartTypes.vendorAnalysis === 'table' ? (
                     <div className="overflow-x-auto">
                       <table className="w-full border-collapse border border-gray-200">
                         <thead>
