@@ -42,6 +42,7 @@ import {
   Trash2,
   Archive,
   Eye,
+  RotateCcw,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -91,11 +92,9 @@ export default function AuditManagement() {
       if (dateRange.end) params.append("endDate", dateRange.end);
       if (searchTerm) params.append("search", searchTerm);
 
-      return apiRequest(`/api/audit/logs?${params}`, {
-        method: "GET"
-      });
+      return apiRequest("GET", `/api/audit/logs?${params}`);
     },
-    enabled: user?.role === 'admin'
+    enabled: user?.role === 'admin' && activeTab === 'logs'
   });
 
   // Fetch audit settings
@@ -314,41 +313,100 @@ export default function AuditManagement() {
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Filters */}
-              <div className="flex gap-4 flex-wrap">
-                <div className="flex-1 min-w-[200px]">
-                  <Input
-                    placeholder="검색 (사용자, 작업, IP 등)..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full"
-                  />
+              <div className="space-y-4">
+                <div className="flex gap-4 flex-wrap">
+                  <div className="flex-1 min-w-[200px]">
+                    <Input
+                      placeholder="검색 (사용자, 작업, IP 등)..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          refetchLogs();
+                        }
+                      }}
+                    />
+                  </div>
+                  <Select value={selectedEventType} onValueChange={setSelectedEventType}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="이벤트 유형" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">모든 이벤트</SelectItem>
+                      <SelectItem value="login">로그인</SelectItem>
+                      <SelectItem value="logout">로그아웃</SelectItem>
+                      <SelectItem value="data_create">생성</SelectItem>
+                      <SelectItem value="data_update">수정</SelectItem>
+                      <SelectItem value="data_delete">삭제</SelectItem>
+                      <SelectItem value="data_read">조회</SelectItem>
+                      <SelectItem value="login_failed">로그인 실패</SelectItem>
+                      <SelectItem value="permission_change">권한 변경</SelectItem>
+                      <SelectItem value="file_upload">파일 업로드</SelectItem>
+                      <SelectItem value="email_send">이메일 발송</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="카테고리" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">모든 카테고리</SelectItem>
+                      <SelectItem value="auth">인증</SelectItem>
+                      <SelectItem value="data">데이터</SelectItem>
+                      <SelectItem value="system">시스템</SelectItem>
+                      <SelectItem value="security">보안</SelectItem>
+                      <SelectItem value="api">API</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                <Select value={selectedEventType} onValueChange={setSelectedEventType}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="이벤트 유형" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">모든 이벤트</SelectItem>
-                    <SelectItem value="login">로그인</SelectItem>
-                    <SelectItem value="logout">로그아웃</SelectItem>
-                    <SelectItem value="data_create">생성</SelectItem>
-                    <SelectItem value="data_update">수정</SelectItem>
-                    <SelectItem value="data_delete">삭제</SelectItem>
-                    <SelectItem value="security_alert">보안 경고</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="카테고리" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">모든 카테고리</SelectItem>
-                    <SelectItem value="auth">인증</SelectItem>
-                    <SelectItem value="data">데이터</SelectItem>
-                    <SelectItem value="system">시스템</SelectItem>
-                    <SelectItem value="security">보안</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="flex gap-4 items-end">
+                  <div className="flex gap-2 flex-1">
+                    <div className="space-y-2">
+                      <Label htmlFor="start-date">시작일</Label>
+                      <Input
+                        id="start-date"
+                        type="date"
+                        value={dateRange.start}
+                        onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="end-date">종료일</Label>
+                      <Input
+                        id="end-date"
+                        type="date"
+                        value={dateRange.end}
+                        onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => {
+                        setSearchTerm("");
+                        setSelectedEventType("all");
+                        setSelectedCategory("all");
+                        setDateRange({ start: "", end: "" });
+                        setCurrentPage(1);
+                      }}
+                      variant="outline"
+                    >
+                      <RotateCcw className="h-4 w-4 mr-2" />
+                      초기화
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setCurrentPage(1);
+                        refetchLogs();
+                      }}
+                      disabled={logsLoading}
+                    >
+                      <Search className="h-4 w-4 mr-2" />
+                      {logsLoading ? "검색 중..." : "검색"}
+                    </Button>
+                  </div>
+                </div>
               </div>
 
               {/* Logs Table */}
