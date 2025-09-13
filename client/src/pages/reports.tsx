@@ -69,7 +69,10 @@ export default function Reports() {
     userId: 'all',
     search: '',
     month: 'all',
-    projectId: 'all'
+    projectId: 'all',
+    emailStatus: 'all',
+    recipientEmail: '',
+    orderNumber: ''
   });
 
   const [activeFilters, setActiveFilters] = useState<typeof filters | null>(null);
@@ -669,7 +672,7 @@ export default function Reports() {
   });
 
   const { data: emailReport } = useQuery({
-    queryKey: ["/api/email-history", activeFilters?.startDate, activeFilters?.endDate, filters.status, filters.search],
+    queryKey: ["/api/email-history", activeFilters?.startDate, activeFilters?.endDate, activeFilters?.emailStatus, activeFilters?.recipientEmail, activeFilters?.orderNumber, activeFilters?.vendorId],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: '1',
@@ -677,8 +680,10 @@ export default function Reports() {
       });
       if (activeFilters?.startDate) params.append('startDate', activeFilters.startDate);
       if (activeFilters?.endDate) params.append('endDate', activeFilters.endDate);
-      if (filters.status && filters.status !== 'all') params.append('status', filters.status);
-      if (filters.search) params.append('orderNumber', filters.search);
+      if (activeFilters?.emailStatus && activeFilters.emailStatus !== 'all') params.append('status', activeFilters.emailStatus);
+      if (activeFilters?.recipientEmail) params.append('recipientEmail', activeFilters.recipientEmail);
+      if (activeFilters?.orderNumber) params.append('orderNumber', activeFilters.orderNumber);
+      if (activeFilters?.vendorId && activeFilters.vendorId !== 'all') params.append('vendorId', activeFilters.vendorId);
       
       const token = localStorage.getItem('token');
       const response = await fetch(`/api/email-history?${params.toString()}`, {
@@ -690,7 +695,7 @@ export default function Reports() {
       if (!response.ok) throw new Error('Failed to fetch email history');
       return response.json();
     },
-    enabled: isAuthenticated && reportType === 'email',
+    enabled: isAuthenticated && reportType === 'email' && !!activeFilters,
   });
 
   // Excel 내보내기 핸들러
@@ -860,7 +865,7 @@ export default function Reports() {
         <CardContent className="pt-1">
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
             {/* Common filters for all report types */}
-            {(reportType === 'orders' || reportType === 'category' || reportType === 'project' || reportType === 'vendor') && (
+            {(reportType === 'orders' || reportType === 'category' || reportType === 'project' || reportType === 'vendor' || reportType === 'email') && (
               <>
                 <div className="space-y-2">
                   <label className={`text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>시작일</label>
@@ -1021,6 +1026,71 @@ export default function Reports() {
                 </div>
               </>
             )}
+
+            {/* Email-specific filters */}
+            {reportType === 'email' && (
+              <>
+                <div className="space-y-2">
+                  <label className={`text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>발송 상태</label>
+                  <Select 
+                    value={filters.emailStatus || 'all'} 
+                    onValueChange={(value) => setFilters(prev => ({ ...prev, emailStatus: value }))}
+                  >
+                    <SelectTrigger className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
+                      <SelectItem value="all">전체 상태</SelectItem>
+                      <SelectItem value="sent">발송 성공</SelectItem>
+                      <SelectItem value="failed">발송 실패</SelectItem>
+                      <SelectItem value="pending">대기중</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className={`text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>수신자</label>
+                  <Input 
+                    type="text"
+                    placeholder="이메일 주소로 검색..."
+                    value={filters.recipientEmail || ''}
+                    onChange={(e) => setFilters(prev => ({ ...prev, recipientEmail: e.target.value }))}
+                    className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400' : 'bg-white border-gray-300 placeholder-gray-500'}`}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className={`text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>발주번호</label>
+                  <Input 
+                    type="text"
+                    placeholder="발주번호로 검색..."
+                    value={filters.orderNumber || ''}
+                    onChange={(e) => setFilters(prev => ({ ...prev, orderNumber: e.target.value }))}
+                    className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400' : 'bg-white border-gray-300 placeholder-gray-500'}`}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className={`text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>거래처</label>
+                  <Select 
+                    value={filters.vendorId || 'all'} 
+                    onValueChange={(value) => setFilters(prev => ({ ...prev, vendorId: value }))}
+                  >
+                    <SelectTrigger className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
+                      <SelectItem value="all">전체 거래처</SelectItem>
+                      {Array.isArray(vendors) && vendors.map((vendor: any) => (
+                        <SelectItem key={vendor.id} value={vendor.id.toString()}>
+                          {vendor.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
           </div>
           
           {/* 활성 필터 표시 */}
@@ -1092,7 +1162,10 @@ export default function Reports() {
                       userId: 'all',
                       search: '',
                       month: 'all',
-                      projectId: 'all'
+                      projectId: 'all',
+                      emailStatus: 'all',
+                      recipientEmail: '',
+                      orderNumber: ''
                     };
                     setFilters(resetFilters);
                     setActiveFilters(resetFilters);
@@ -1118,7 +1191,13 @@ export default function Reports() {
                   status: 'all',
                   templateId: 'all',
                   amountRange: 'all',
-                  userId: 'all'
+                  userId: 'all',
+                  search: '',
+                  month: 'all',
+                  projectId: 'all',
+                  emailStatus: 'all',
+                  recipientEmail: '',
+                  orderNumber: ''
                 };
                 setFilters(resetFilters);
               }}

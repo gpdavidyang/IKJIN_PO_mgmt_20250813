@@ -238,7 +238,9 @@ router.get("/", requireAuth, async (req, res) => {
       status,
       orderNumber,
       vendorName,
-      senderUserId 
+      senderUserId,
+      recipientEmail,
+      vendorId 
     } = req.query;
 
     const pageNum = parseInt(page as string);
@@ -265,6 +267,16 @@ router.get("/", requireAuth, async (req, res) => {
     }
     if (senderUserId) {
       conditions.push(eq(emailSendHistory.senderUserId, senderUserId as string));
+    }
+    if (recipientEmail) {
+      // Check if the recipient email is in the recipients array (JSON)
+      conditions.push(sql`EXISTS (
+        SELECT 1 FROM jsonb_array_elements_text(${emailSendHistory.recipients}) AS r
+        WHERE r ILIKE ${`%${recipientEmail}%`}
+      )`);
+    }
+    if (vendorId && vendorId !== 'all') {
+      conditions.push(eq(purchaseOrders.vendorId, parseInt(vendorId as string)));
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;

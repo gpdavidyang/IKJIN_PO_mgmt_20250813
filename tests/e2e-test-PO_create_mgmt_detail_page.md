@@ -154,4 +154,4 @@
 
 *테스트 수행자*: Claude Code  
 *테스트 프레임워크*: Playwright v1.40+  
-*테스트 브라우저*: Chromium (headed mode)
+*테스트 브라우저*: Chromium (headed mode)  
