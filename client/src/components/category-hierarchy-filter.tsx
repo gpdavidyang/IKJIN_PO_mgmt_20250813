@@ -71,23 +71,7 @@ export function CategoryHierarchyFilter({ onFilterChange }: CategoryHierarchyFil
   }, [selectedMajor, selectedMiddle, selectedMinor, onFilterChange]);
 
   return (
-    <div className="space-y-4">
-      {/* Info message about data source */}
-      <div className={`p-3 rounded-lg border transition-colors ${
-        isDarkMode 
-          ? 'bg-blue-900/20 border-blue-700 text-blue-200' 
-          : 'bg-blue-50 border-blue-200 text-blue-700'
-      }`}>
-        <div className="flex items-center space-x-2">
-          <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-          </svg>
-          <span className="text-xs font-medium">
-            실제 발주에 사용된 분류만 표시됩니다
-          </span>
-        </div>
-      </div>
-
+    <>
       {/* Major Category */}
       <div className="space-y-2">
         <Label className={`text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
@@ -111,67 +95,94 @@ export function CategoryHierarchyFilter({ onFilterChange }: CategoryHierarchyFil
         </Select>
       </div>
 
-      {/* Middle Category - Only show if major is selected */}
-      {selectedMajor !== 'all' && (
-        <div className="space-y-2">
-          <Label className={`text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-            중분류
-          </Label>
-          <Select 
-            value={selectedMiddle} 
-            onValueChange={setSelectedMiddle}
-          >
-            <SelectTrigger className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}>
-              <SelectValue placeholder="중분류 선택" />
-            </SelectTrigger>
-            <SelectContent className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
-              <SelectItem value="all">전체 중분류</SelectItem>
-              {middleCategories.map((category: string) => (
-                <SelectItem key={category} value={category}>
-                  {category}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-
-      {/* Minor Category - Only show if middle is selected */}
-      {selectedMiddle !== 'all' && selectedMajor !== 'all' && (
-        <div className="space-y-2">
-          <Label className={`text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-            소분류
-          </Label>
-          <Select 
-            value={selectedMinor} 
-            onValueChange={setSelectedMinor}
-          >
-            <SelectTrigger className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}>
-              <SelectValue placeholder="소분류 선택" />
-            </SelectTrigger>
-            <SelectContent className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
-              <SelectItem value="all">전체 소분류</SelectItem>
-              {minorCategories.map((category: string) => (
-                <SelectItem key={category} value={category}>
-                  {category}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-
-      {/* Display current selection path */}
-      <div className={`text-sm p-3 rounded-lg ${isDarkMode ? 'bg-gray-800 text-gray-300' : 'bg-gray-50 text-gray-600'}`}>
-        <span className="font-medium">선택된 분류: </span>
-        {selectedMajor === 'all' ? '전체' : (
-          <>
-            {selectedMajor}
-            {selectedMiddle !== 'all' && ` → ${selectedMiddle}`}
-            {selectedMinor !== 'all' && ` → ${selectedMinor}`}
-          </>
-        )}
+      {/* Middle Category - Always show but disabled if major is 'all' */}
+      <div className="space-y-2">
+        <Label className={`text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+          중분류
+        </Label>
+        <Select 
+          value={selectedMiddle} 
+          onValueChange={setSelectedMiddle}
+          disabled={selectedMajor === 'all'}
+        >
+          <SelectTrigger className={`transition-colors ${
+            selectedMajor === 'all' 
+              ? isDarkMode ? 'bg-gray-800 border-gray-600 text-gray-500' : 'bg-gray-100 border-gray-300 text-gray-400'
+              : isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'
+          }`}>
+            <SelectValue placeholder={selectedMajor === 'all' ? '대분류를 먼저 선택하세요' : '중분류 선택'} />
+          </SelectTrigger>
+          <SelectContent className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
+            <SelectItem value="all">전체 중분류</SelectItem>
+            {middleCategories.map((category: string) => (
+              <SelectItem key={category} value={category}>
+                {category}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
-    </div>
+
+      {/* Minor Category - Always show but disabled if middle is 'all' or major is 'all' */}
+      <div className="space-y-2">
+        <Label className={`text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+          소분류
+        </Label>
+        <Select 
+          value={selectedMinor} 
+          onValueChange={setSelectedMinor}
+          disabled={selectedMiddle === 'all' || selectedMajor === 'all'}
+        >
+          <SelectTrigger className={`transition-colors ${
+            selectedMiddle === 'all' || selectedMajor === 'all'
+              ? isDarkMode ? 'bg-gray-800 border-gray-600 text-gray-500' : 'bg-gray-100 border-gray-300 text-gray-400'
+              : isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'
+          }`}>
+            <SelectValue placeholder={
+              selectedMajor === 'all' ? '대분류를 먼저 선택하세요' :
+              selectedMiddle === 'all' ? '중분류를 먼저 선택하세요' : 
+              '소분류 선택'
+            } />
+          </SelectTrigger>
+          <SelectContent className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
+            <SelectItem value="all">전체 소분류</SelectItem>
+            {minorCategories.map((category: string) => (
+              <SelectItem key={category} value={category}>
+                {category}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Current selection status - Compact version */}
+      <div className="space-y-2">
+        <Label className={`text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+          선택된 분류
+        </Label>
+        <div className={`text-sm p-2 rounded border transition-colors ${
+          isDarkMode ? 'bg-gray-800 border-gray-600 text-gray-300' : 'bg-gray-50 border-gray-300 text-gray-600'
+        }`}>
+          {selectedMajor === 'all' ? '전체' : (
+            <>
+              {selectedMajor}
+              {selectedMiddle !== 'all' && ` → ${selectedMiddle}`}
+              {selectedMinor !== 'all' && ` → ${selectedMinor}`}
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Compact info message */}
+      <div className="space-y-2">
+        <div className={`text-xs p-2 rounded border transition-colors ${
+          isDarkMode 
+            ? 'bg-blue-900/20 border-blue-700 text-blue-300' 
+            : 'bg-blue-50 border-blue-200 text-blue-600'
+        }`}>
+          💡 실제 발주에 사용된 분류만 표시됩니다
+        </div>
+      </div>
+    </>
   );
 }

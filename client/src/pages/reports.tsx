@@ -50,6 +50,7 @@ import {
   BarChart3,
   PieChart,
   Download,
+  RotateCcw,
   Eye,
   Mail
 } from "lucide-react";
@@ -628,10 +629,11 @@ export default function Reports() {
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-1">
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-            {/* Common filters for all report types */}
-            {(reportType === 'orders' || reportType === 'category' || reportType === 'project' || reportType === 'vendor' || reportType === 'email') && (
-              <>
+          {/* Category report gets special layout */}
+          {reportType === 'category' ? (
+            <div className="space-y-4">
+              {/* First row: Common date filters */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className={`text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>시작일</label>
                   <Input 
@@ -651,15 +653,78 @@ export default function Reports() {
                     className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}
                   />
                 </div>
-              </>
-            )}
+              </div>
 
-            {/* Hierarchical category filter for category report */}
-            {reportType === 'category' && (
-              <CategoryHierarchyFilter 
-                onFilterChange={setCategoryFilters}
-              />
-            )}
+              {/* Second row: Category hierarchy filters in horizontal layout */}
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
+                <CategoryHierarchyFilter 
+                  onFilterChange={setCategoryFilters}
+                />
+              </div>
+
+              {/* Third row: Action buttons */}
+              <div className="flex justify-end gap-2 pt-2">
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const resetFilters = {
+                      startDate: '',
+                      endDate: ''
+                    };
+                    setFilters(resetFilters);
+                    setActiveFilters(resetFilters);
+                    setCategoryFilters({
+                      majorCategory: 'all',
+                      middleCategory: 'all',
+                      minorCategory: 'all'
+                    });
+                  }}
+                  className="text-gray-600 hover:text-gray-800"
+                >
+                  <RotateCcw className="h-4 w-4 mr-2" />
+                  초기화
+                </Button>
+                <Button 
+                  size="sm"
+                  onClick={() => {
+                    setActiveFilters(filters);
+                    refetchCategoryData();
+                  }}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  <Search className="h-4 w-4 mr-2" />
+                  검색
+                </Button>
+              </div>
+            </div>
+          ) : (
+            /* Other report types keep the original layout */
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+              {/* Common filters for all other report types */}
+              {(reportType === 'orders' || reportType === 'project' || reportType === 'vendor' || reportType === 'email') && (
+                <>
+                  <div className="space-y-2">
+                    <label className={`text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>시작일</label>
+                    <Input 
+                      type="date"
+                      value={filters.startDate}
+                      onChange={(e) => setFilters(prev => ({ ...prev, startDate: e.target.value }))}
+                      className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className={`text-sm font-medium transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>종료일</label>
+                    <Input 
+                      type="date"
+                      value={filters.endDate}
+                      onChange={(e) => setFilters(prev => ({ ...prev, endDate: e.target.value }))}
+                      className={`transition-colors ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}
+                    />
+                  </div>
+                </>
+              )}
 
             {/* Orders-specific filters */}
             {reportType === 'orders' && (
@@ -856,7 +921,8 @@ export default function Reports() {
                 </div>
               </>
             )}
-          </div>
+            </div>
+          )}
           
           {/* 활성 필터 표시 */}
           {activeFilters && Object.values(activeFilters).some(value => value !== 'all' && value !== '') && (
